@@ -7,11 +7,9 @@ public class CrossParameters
     static final int SMALL = 3; //SIG_SIZE
     public static final CrossParameters cross_rsdp_1_fast = new CrossParameters(
         "CROSS-RSDP-1-FAST", true, 1, FAST,
-        127,
-        1, 2, 4,
-        128, 127, 76, 0, 157, 82, 16,
+        127, 76, 0, 157, 82,
         16, 32, 32,
-        157, 313, 157, 313,
+        313, 313,
         new int[]{0, 0, 0, 0, 0, 2, 2, 58, 58},
         new int[]{1, 2, 4, 8, 16, 30, 60, 64, 128},
         new int[]{0, 0, 0, 0, 1, 0, 28, 0, 128},
@@ -24,11 +22,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdp_1_balanced = new CrossParameters(
         "CROSS-RSDP-1-BALANCED", true, 1, BALANCED,
-        127,
-        1, 2, 4,
-        128, 127, 76, 0, 256, 215, 16,
+        127, 76, 0, 256, 215,
         16, 32, 32,
-        256, 511, 256, 511,
+        511, 511,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 256},
@@ -41,11 +37,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdp_1_small = new CrossParameters(
         "CROSS-RSDP-1-SMALL", true, 1, SMALL,
-        127,
-        1, 2, 4,
-        128, 127, 76, 0, 520, 488, 16,
+        127, 76, 0, 520, 488,
         16, 32, 32,
-        520, 1039, 520, 1039,
+        1039, 1039,
         new int[]{0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16},
         new int[]{1, 2, 4, 8, 16, 16, 32, 64, 128, 256, 512},
         new int[]{0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 512},
@@ -59,11 +53,9 @@ public class CrossParameters
     // RSDP Category 3
     public static final CrossParameters cross_rsdp_3_fast = new CrossParameters(
         "CROSS-RSDP-3-FAST", true, 3, FAST,
-        127,
-        1, 2, 4,
-        192, 187, 111, 0, 239, 125, 16,
+        187, 111, 0, 239, 125,
         24, 48, 48,
-        239, 477, 239, 477,
+        477, 477,
         new int[]{0, 0, 0, 0, 0, 0, 0, 2, 30},
         new int[]{1, 2, 4, 8, 16, 32, 64, 126, 224},
         new int[]{0, 0, 0, 0, 0, 0, 1, 14, 224},
@@ -76,11 +68,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdp_3_balanced = new CrossParameters(
         "CROSS-RSDP-3-BALANCED", true, 3, BALANCED,
-        127,
-        1, 2, 4,
-        192, 187, 111, 0, 384, 321, 16,
+        187, 111, 0, 384, 321,
         24, 48, 48,
-        384, 767, 384, 767,
+        767, 767,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 256},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 256},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 128, 256},
@@ -93,11 +83,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdp_3_small = new CrossParameters(
         "CROSS-RSDP-3-SMALL", true, 3, SMALL,
-        127,
-        1, 2, 4,
-        192, 187, 111, 0, 580, 527, 16,
+        187, 111, 0, 580, 527,
         24, 48, 48,
-        580, 1159, 580, 1159,
+        1159, 1159,
         new int[]{0, 0, 0, 0, 0, 8, 8, 8, 8, 136, 136},
         new int[]{1, 2, 4, 8, 16, 24, 48, 96, 192, 256, 512},
         new int[]{0, 0, 0, 0, 4, 0, 0, 0, 64, 0, 512},
@@ -111,11 +99,9 @@ public class CrossParameters
     // RSDP Category 5
     public static final CrossParameters cross_rsdp_5_fast = new CrossParameters(
         "CROSS-RSDP-5-FAST", true, 5, FAST,
-        127,
-        1, 2, 4,
-        256, 251, 150, 0, 321, 167, 16,
+        251, 150, 0, 321, 167,
         32, 64, 64,
-        321, 641, 321, 641,
+        641, 641,
         new int[]{0, 0, 0, 2, 2, 2, 2, 2, 2, 130},
         new int[]{1, 2, 4, 6, 12, 24, 48, 96, 192, 256},
         new int[]{0, 0, 1, 0, 0, 0, 0, 0, 64, 256},
@@ -128,11 +114,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdp_5_balanced = new CrossParameters(
         "CROSS-RSDP-5-BALANCED", true, 5, BALANCED,
-        127,
-        1, 2, 4,
-        256, 251, 150, 0, 512, 427, 16,
+        251, 150, 0, 512, 427,
         32, 64, 64,
-        512, 1023, 512, 1023,
+        1023, 1023,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 512},
@@ -145,11 +129,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdp_5_small = new CrossParameters(
         "CROSS-RSDP-5-SMALL", true, 5, SMALL,
-        127,
-        1, 2, 4,
-        256, 251, 150, 0, 832, 762, 16,
+        251, 150, 0, 832, 762,
         32, 64, 64,
-        832, 1663, 832, 1663,
+        1663, 1663,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 128},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 768},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 768},
@@ -163,11 +145,9 @@ public class CrossParameters
     // RSDPG Category 1
     public static final CrossParameters cross_rsdpg_1_fast = new CrossParameters(
         "CROSS-RSDPG-1-FAST", false, 1, FAST,
-        509,
-        1, 4, 4,
-        128, 55, 36, 25, 147, 76, 8,
+        55, 36, 25, 147, 76,
         16, 32, 32,
-        147, 293, 147, 293,
+        293, 293,
         new int[]{0, 0, 0, 0, 2, 6, 6, 38, 38},
         new int[]{1, 2, 4, 8, 14, 24, 48, 64, 128},
         new int[]{0, 0, 0, 1, 2, 0, 16, 0, 128},
@@ -180,11 +160,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdpg_1_balanced = new CrossParameters(
         "CROSS-RSDPG-1-BALANCED", false, 1, BALANCED,
-        509,
-        1, 4, 4,
-        128, 55, 36, 25, 256, 220, 8,
+        55, 36, 25, 256, 220,
         16, 32, 32,
-        256, 511, 256, 511,
+        511, 511,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 256},
@@ -197,11 +175,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdpg_1_small = new CrossParameters(
         "CROSS-RSDPG-1-SMALL", false, 1, SMALL,
-        509,
-        1, 4, 4,
-        128, 55, 36, 25, 512, 484, 16,
+        55, 36, 25, 512, 484,
         16, 32, 32,
-        512, 1023, 512, 1023,
+        1023, 1023,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 512},
@@ -215,11 +191,9 @@ public class CrossParameters
     // RSDPG Category 3
     public static final CrossParameters cross_rsdpg_3_fast = new CrossParameters(
         "CROSS-RSDPG-3-FAST", false, 3, FAST,
-        509,
-        1, 4, 4,
-        192, 79, 48, 40, 224, 119, 8,
+        79, 48, 40, 224, 119,
         24, 48, 48,
-        224, 447, 224, 447,
+        447, 447,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 64},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 192},
         new int[]{0, 0, 0, 0, 0, 0, 0, 32, 192},
@@ -232,11 +206,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdpg_3_balanced = new CrossParameters(
         "CROSS-RSDPG-3-BALANCED", false, 3, BALANCED,
-        509,
-        1, 4, 4,
-        192, 79, 48, 40, 268, 196, 8,
+        79, 48, 40, 268, 196,
         24, 48, 48,
-        268, 535, 268, 535,
+        535, 535,
         new int[]{0, 0, 0, 0, 0, 8, 24, 24, 24, 24},
         new int[]{1, 2, 4, 8, 16, 24, 32, 64, 128, 256},
         new int[]{0, 0, 0, 0, 4, 8, 0, 0, 0, 256},
@@ -249,11 +221,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdpg_3_small = new CrossParameters(
         "CROSS-RSDPG-3-SMALL", false, 3, SMALL,
-        509,
-        1, 4, 4,
-        192, 79, 48, 40, 512, 463, 16,
+        79, 48, 40, 512, 463,
         24, 48, 48,
-        512, 1023, 512, 1023,
+        1023, 1023,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 512},
@@ -267,11 +237,9 @@ public class CrossParameters
     // RSDPG Category 5
     public static final CrossParameters cross_rsdpg_5_fast = new CrossParameters(
         "CROSS-RSDPG-5-FAST", false, 5, FAST,
-        509,
-        1, 4, 4,
-        256, 106, 69, 48, 300, 153, 16,
+        106, 69, 48, 300, 153,
         32, 64, 64,
-        300, 599, 300, 599,
+        599, 599,
         new int[]{0, 0, 0, 0, 0, 0, 8, 24, 88, 88},
         new int[]{1, 2, 4, 8, 16, 32, 56, 96, 128, 256},
         new int[]{0, 0, 0, 0, 0, 4, 8, 32, 0, 256},
@@ -284,11 +252,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdpg_5_balanced = new CrossParameters(
         "CROSS-RSDPG-5-BALANCED", false, 5, BALANCED,
-        509,
-        1, 4, 4,
-        256, 106, 69, 48, 356, 258, 16,
+        106, 69, 48, 356, 258,
         32, 64, 64,
-        356, 711, 356, 711,
+        711, 711,
         new int[]{0, 0, 0, 0, 0, 0, 8, 8, 8, 200},
         new int[]{1, 2, 4, 8, 16, 32, 56, 112, 224, 256},
         new int[]{0, 0, 0, 0, 0, 4, 0, 0, 96, 256},
@@ -301,11 +267,9 @@ public class CrossParameters
 
     public static final CrossParameters cross_rsdpg_5_small = new CrossParameters(
         "CROSS-RSDPG-5-SMALL", false, 5, SMALL,
-        509,
-        1, 4, 4,
-        256, 106, 69, 48, 642, 575, 16,
+        106, 69, 48, 642, 575,
         32, 64, 64,
-        642, 1283, 642, 1283,
+        1283, 1283,
         new int[]{0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 260},
         new int[]{1, 2, 4, 8, 12, 24, 48, 96, 192, 384, 512},
         new int[]{0, 0, 0, 2, 0, 0, 0, 0, 0, 128, 512},
@@ -322,26 +286,17 @@ public class CrossParameters
     final int variant;
     private final int p;
     private final int z;
-    private final long restrGTable;
-    private final int restrGGen;
-    private final int fpElemSize;
-    private final int fzElemSize;
-    private final int fpDoublePrecSize;
-    private final int fpTriplePrecSize;
     private final int secMarginLambda;
     private final int n;
     private final int k;
     private final int m;
     private final int t;
     private final int w;
-    private final int positionInFWStringTBits;
     private final int seedLengthBytes;
     private final int keypairSeedLengthBytes;
     private final int hashDigestLength;
     private final int saltLengthBytes;
-    private final int numLeavesMerkleTree;
     private final int numNodesMerkleTree;
-    private final int numLeavesSeedTree;
     private final int numNodesSeedTree;
     private final int denselyPackedFpVecSize;
     private final int denselyPackedFpSynSize;
@@ -364,12 +319,10 @@ public class CrossParameters
     private final int signatureSize;
 
     private CrossParameters(String name, boolean rsdp, int category, int variant,
-                            int fpElemSize, int fzElemSize, int fpDoublePrecSize, int fpTriplePrecSize,
-                            int secMarginLambda, int n, int k, int m, int t, int w,
-                            int positionInFWStringTBits,
+                            int n, int k, int m, int t, int w,
                             int seedLengthBytes, int hashDigestLength,
-                            int saltLengthBytes, int numLeavesMerkleTree, int numNodesMerkleTree,
-                            int numLeavesSeedTree, int numNodesSeedTree,
+                            int saltLengthBytes, int numNodesMerkleTree,
+                            int numNodesSeedTree,
                             int[] treeOffsets, int[] treeNodesPerLevel, int[] treeLeavesPerLevel,
                             int treeSubroots, int[] treeLeavesStartIndices, int[] treeConsecutiveLeaves,
                             int treeNodesToStore, int bitsNFpCtRng, int bitsChall1FpstarCtRng,
@@ -383,8 +336,6 @@ public class CrossParameters
         {
             this.p = 127;
             this.z = 7;
-            this.restrGTable = 0x0140201008040201L;
-            this.restrGGen = 2;
             this.bitsWCtRng = 0;
             this.bitsMFzCtRng = 0;
         }
@@ -392,8 +343,6 @@ public class CrossParameters
         {
             this.p = 509;
             this.z = 127;
-            this.restrGTable = 0L;
-            this.restrGGen = 16;
             switch (category)
             {
             case 1:
@@ -416,33 +365,28 @@ public class CrossParameters
         {
         case 1:
             this.keypairSeedLengthBytes = 32;
+            this.secMarginLambda = 128;
             break;
         case 3:
             this.keypairSeedLengthBytes = 48;
+            this.secMarginLambda = 192;
             break;
         case 5:
             this.keypairSeedLengthBytes = 64;
+            this.secMarginLambda = 256;
             break;
         default:
             throw new IllegalArgumentException("Invalid NIST category level");
         }
-        this.fpElemSize = fpElemSize;
-        this.fzElemSize = fzElemSize;
-        this.fpDoublePrecSize = fpDoublePrecSize;
-        this.fpTriplePrecSize = fpTriplePrecSize;
-        this.secMarginLambda = secMarginLambda;
         this.n = n;
         this.k = k;
         this.m = m;
         this.t = t;
         this.w = w;
-        this.positionInFWStringTBits = positionInFWStringTBits;
         this.seedLengthBytes = seedLengthBytes;
         this.hashDigestLength = hashDigestLength;
         this.saltLengthBytes = saltLengthBytes;
-        this.numLeavesMerkleTree = numLeavesMerkleTree;
         this.numNodesMerkleTree = numNodesMerkleTree;
-        this.numLeavesSeedTree = numLeavesSeedTree;
         this.numNodesSeedTree = numNodesSeedTree;
         this.denselyPackedFpVecSize = (n / 8 * Utils.bitsToRepresent(p - 1) + CrossEngine.roundUp((n % 8) * Utils.bitsToRepresent(p - 1), 8) / 8);
         this.denselyPackedFpSynSize = (n - k) / 8 * Utils.bitsToRepresent(p - 1) +
@@ -485,36 +429,6 @@ public class CrossParameters
         return z;
     }
 
-    public long getRestrGTable()
-    {
-        return restrGTable;
-    }
-
-    public int getRestrGGen()
-    {
-        return restrGGen;
-    }
-
-    public int getFpElemSize()
-    {
-        return fpElemSize;
-    }
-
-    public int getFzElemSize()
-    {
-        return fzElemSize;
-    }
-
-    public int getFpDoublePrecSize()
-    {
-        return fpDoublePrecSize;
-    }
-
-    public int getFpTriplePrecSize()
-    {
-        return fpTriplePrecSize;
-    }
-
     public int getSecMarginLambda()
     {
         return secMarginLambda;
@@ -545,11 +459,6 @@ public class CrossParameters
         return w;
     }
 
-    public int getPositionInFWStringTBits()
-    {
-        return positionInFWStringTBits;
-    }
-
     public int getSeedLengthBytes()
     {
         return seedLengthBytes;
@@ -570,19 +479,9 @@ public class CrossParameters
         return saltLengthBytes;
     }
 
-    public int getNumLeavesMerkleTree()
-    {
-        return numLeavesMerkleTree;
-    }
-
     public int getNumNodesMerkleTree()
     {
         return numNodesMerkleTree;
-    }
-
-    public int getNumLeavesSeedTree()
-    {
-        return numLeavesSeedTree;
     }
 
     public int getNumNodesSeedTree()

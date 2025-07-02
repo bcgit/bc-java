@@ -247,6 +247,11 @@ class CrossEngine
         return (x & 0x7F) + (x >>> 7);
     }
 
+    public static byte fzRedSingle(byte x)
+    {
+        int val = x & 0xFF;
+        return (byte)((val & 0x7F) + ((val >>> 7) & 0xff));
+    }
     public static int fpRedSingle(int x)
     {
         long xLong = x & 0xFFFFFFFFL; // Treat as unsigned
@@ -283,24 +288,16 @@ class CrossEngine
         System.arraycopy(e, 0, res, nMinusM, m);
 
         // Compute matrix-vector product
+        vecMatrixProduct(res, e, W_mat, m, nMinusM);
+    }
+
+    private static void vecMatrixProduct(byte[] res, byte[] e, byte[][] W_mat, int m, int nMinusM)
+    {
         for (int i = 0; i < m; i++)
         {
             for (int j = 0; j < nMinusM; j++)
             {
-                // Convert bytes to unsigned integers
-                int eVal = e[i] & 0xFF;
-                int wVal = W_mat[i][j] & 0xFF;
-                int current = res[j] & 0xFF;
-
-                // Compute product and sum
-                int product = eVal * wVal;
-                int sum = current + product;
-
-                // Apply double reduction
-                int reduced = fzRedSingle(fzRedSingle(sum));
-
-                // Store result
-                res[j] = (byte)reduced;
+                res[j] = (byte)fpRedDouble((res[j] & 0xFF) + (e[i] & 0xFF) * (W_mat[i][j] & 0xFF));
             }
         }
     }
@@ -387,12 +384,9 @@ class CrossEngine
             byte e_val = restrToVal(e[i] & 0xFF);
             for (int j = 0; j < nMinusK; j++)
             {
-                int current = (res[j] & 0xFF);
-                int product = (e_val * (V_tr[i][j] & 0xFF));
-                int sum = current + product;
+                int sum = (res[j] & 0xFF) + (e_val * (V_tr[i][j] & 0xFF));
                 int reduced = (sum & 0x7F) + (sum >>> 7);
-                reduced = (reduced & 0x7F) + (reduced >>> 7);
-                res[j] = (byte)reduced;
+                res[j] = (byte)((reduced & 0x7F) + (reduced >>> 7));
             }
         }
     }
@@ -415,39 +409,23 @@ class CrossEngine
             short e_val = restrToValRsdpg(e[i]);
             for (int j = 0; j < nMinusK; j++)
             {
-                int current = res[j] & 0xFFFF;
-                int product = (e_val & 0xFFFF) * (V_tr[i][j] & 0xFFFF);
-                int sum = current + product;
-                int reduced = fpRedSingle(sum);
-                res[j] = (short)reduced;
+                res[j] = (short)fpRedSingle(res[j] + e_val * V_tr[i][j]);
             }
         }
     }
 
-    // Normalizes a syndrome vector of finite field elements
-    public static void fpDzNormSynd(byte[] v)
+    // Vector normalization
+    public static void fpDzNorm(byte[] v, int n)
     {
-        for (int i = 0; i < v.length; i++)
+        for (int i = 0; i < n; i++)
         {
             int val = v[i] & 0xFF;
             v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
         }
     }
 
-    public void expandSk(CrossParameters params, byte[] seedSk, byte[] e_bar, byte[][] V_tr)
+    public void expandSk(CrossParameters params, byte[][] seedESeedPk, byte[] e_bar, byte[][] V_tr)
     {
-        int keypairSeedLen = params.getKeypairSeedLengthBytes();
-        byte[][] seedESeedPk = new byte[2][keypairSeedLen];
-
-        // Step 1: Initialize CSPRNG for secret key expansion
-        int dscCsprngSeedSk = (3 * params.getT() + 1); // CSPRNG_DOMAIN_SEP_CONST = 0
-        init(seedSk, seedSk.length, dscCsprngSeedSk);
-
-        // Step 2: Generate seeds for error vector and public key
-        randomBytes(seedESeedPk[0], keypairSeedLen);
-        randomBytes(seedESeedPk[1], keypairSeedLen);
-
-        // RSDP
         // Step 3: Expand public key matrix
         expandPk(params, V_tr, seedESeedPk[1]);
 
@@ -458,22 +436,9 @@ class CrossEngine
         csprngFVec(e_bar, params.getZ(), params.getN(), roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
     }
 
-    public void expandSk(CrossParameters params, byte[] seedSk,
-                         byte[] e_bar, byte[] e_G_bar,
+    public void expandSk(CrossParameters params, byte[][] seedESeedPk, byte[] e_bar, byte[] e_G_bar,
                          short[][] V_tr, byte[][] W_mat)
     {
-        int keypairSeedLen = params.getKeypairSeedLengthBytes();
-        byte[][] seedESeedPk = new byte[2][keypairSeedLen];
-
-        // Step 1: Initialize CSPRNG for secret key expansion
-        int dscCsprngSeedSk = (3 * params.getT() + 1); // CSPRNG_DOMAIN_SEP_CONST = 0
-        init(seedSk, seedSk.length, dscCsprngSeedSk);
-
-        // Step 2: Generate seeds for error vector and public key
-        randomBytes(seedESeedPk[0], keypairSeedLen);
-        randomBytes(seedESeedPk[1], keypairSeedLen);
-
-        // RSDPG
         // Step 3: Expand public key matrices
         short[][] V_tr_short = new short[params.getK()][params.getN() - params.getK()];
         expandPk(params, V_tr_short, W_mat, seedESeedPk[1]);
@@ -567,51 +532,12 @@ class CrossEngine
         }
     }
 
-    public static byte fzRedSingle(byte x)
-    {
-        int val = x & 0xFF;
-        return (byte)((val & 0x7F) + ((val >>> 7) & 0xff));
-    }
-
-    public static byte fzRedOpposite(byte x)
-    {
-        return (byte)(x ^ 0x7F);
-    }
-
-    public static byte fzDoubleZeroNorm(byte x)
-    {
-        int val = x & 0xFF;
-        return (byte)((val + ((val + 1) >> 7)) & 0x7F);
-    }
-
     // Vector subtraction: res = a - b (mod Z)
-    public static void fzVecSubM(byte[] res, byte[] a, byte[] b, int m)
+    public static void fzVecSub(byte[] res, byte[] a, byte[] b, int m)
     {
         for (int i = 0; i < m; i++)
         {
-            int aVal = a[i] & 0xFF;
-            int bVal = fzRedOpposite(b[i]) & 0xFF;
-            res[i] = fzRedSingle((byte)(aVal + bVal));
-        }
-    }
-
-    // Vector normalization for M elements
-    public static void fzDzNormM(byte[] v, int m)
-    {
-        for (int i = 0; i < m; i++)
-        {
-            v[i] = fzDoubleZeroNorm(v[i]);
-        }
-    }
-
-    // Vector subtraction: res = a - b (mod Z)
-    public static void fzVecSubN(byte[] res, byte[] a, byte[] b, CrossParameters params)
-    {
-        int n = params.getN();
-
-        for (int i = 0; i < n; i++)
-        {
-            res[i] = fzRedSingle((byte)((a[i] & 0xFF) + (fzRedOpposite(b[i]) & 0xFF)));
+            res[i] = fzRedSingle((byte)((a[i] & 0xFF) + ((b[i]^ 0x7F) & 0xFF)));
         }
     }
 
@@ -642,10 +568,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            int val1 = in1[i] & 0xFF;
-            int val2 = in2[i] & 0xFF;
-            long product = (long)val1 * val2;
-            res[i] = (byte)fpRedDouble((int)product);
+            res[i] = (byte)fpRedDouble((in1[i] & 0xFF) * (in2[i] & 0xFF));
         }
     }
 
@@ -673,19 +596,7 @@ class CrossEngine
         System.arraycopy(e, k, res, 0, nMinusK);
 
         // Compute matrix-vector product
-        for (int i = 0; i < k; i++)
-        {
-            for (int j = 0; j < nMinusK; j++)
-            {
-                int eVal = e[i] & 0xFF;
-                int vVal = V_tr[i][j] & 0xFF;
-                int current = res[j] & 0xFF;
-                long product = (long)eVal * vVal;
-                long sum = current + product;
-                res[j] = (byte)fpRedDouble((int)sum);
-
-            }
-        }
+        vecMatrixProduct(res, e, V_tr, k, nMinusK);
     }
 
     public static void fpVecByFpMatrix(short[] res, short[] e, short[][] V_tr, CrossParameters params)
@@ -797,10 +708,10 @@ class CrossEngine
         {
             int eVal = restrToVal(e[i]) & 0xFF;
             int uPrimeVal = u_prime[i] & 0xFF;
-            long product = (long)eVal * chall_1;
-            long sum = uPrimeVal + product;
+            int product = eVal * chall_1;
+            int sum = uPrimeVal + product;
 
-            res[i] = (byte)fpRedDouble((int)sum);
+            res[i] = (byte)fpRedDouble(sum);
         }
     }
 
@@ -811,23 +722,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            int eVal = restrToValRsdpg(e[i]) & 0xFFFF;
-            int uPrimeVal = u_prime[i] & 0xFFFF;
-            long product = (long)eVal * chall_1;
-            long sum = uPrimeVal + product;
-            res[i] = (short)fpRedSingle((int)sum);
-        }
-    }
-
-    // Vector normalization
-    public static void fpDzNorm(byte[] v, CrossParameters params)
-    {
-        int n = params.getN();
-
-        for (int i = 0; i < n; i++)
-        {
-            int val = v[i] & 0xFF;
-            v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
+            res[i] = (short)fpRedSingle(u_prime[i] + restrToValRsdpg(e[i]) * chall_1);
         }
     }
 
@@ -934,12 +829,33 @@ class CrossEngine
         {
             if (indicesToPublish[i] == TO_PUBLISH)
             {
-                System.arraycopy(roundsSeeds, i * seedLengthBytes,
-                    seedStorage, published * seedLengthBytes,
-                    seedLengthBytes);
+                System.arraycopy(roundsSeeds, i * seedLengthBytes, seedStorage, published * seedLengthBytes, seedLengthBytes);
                 published++;
             }
         }
+    }
+
+    /**
+     * Rebuild leaves (NO_TREES variant)
+     *
+     * @param roundsSeeds      Output array for reconstructed seeds (T * seedLength)
+     * @param indicesToPublish Array indicating which seeds to publish (T elements)
+     * @param seedStorage      Stored seeds to copy from
+     * @param seedLength       Length of each seed in bytes
+     * @return Always true (success)
+     */
+    public static boolean rebuildLeaves(byte[] roundsSeeds, byte[] indicesToPublish, byte[] seedStorage, int seedLength)
+    {
+        int published = 0;
+        for (int i = 0; i < indicesToPublish.length; i++)
+        {
+            if (indicesToPublish[i] == TO_PUBLISH)
+            {
+                System.arraycopy(seedStorage, published * seedLength, roundsSeeds, i * seedLength, seedLength);
+                published++;
+            }
+        }
+        return true;
     }
 
     // For BALANCED/SMALL variants (with trees)
@@ -1239,36 +1155,6 @@ class CrossEngine
     }
 
     /**
-     * Rebuild leaves (NO_TREES variant)
-     *
-     * @param roundsSeeds      Output array for reconstructed seeds (T * seedLength)
-     * @param indicesToPublish Array indicating which seeds to publish (T elements)
-     * @param seedStorage      Stored seeds to copy from
-     * @param seedLength       Length of each seed in bytes
-     * @return Always true (success)
-     */
-    public static boolean rebuildLeaves(byte[] roundsSeeds, byte[] indicesToPublish,
-                                        byte[] seedStorage, int seedLength)
-    {
-        int published = 0;
-        int T = indicesToPublish.length;
-
-        for (int i = 0; i < T; i++)
-        {
-            if (indicesToPublish[i] == TO_PUBLISH)
-            {
-                System.arraycopy(
-                    seedStorage, published * seedLength,
-                    roundsSeeds, i * seedLength,
-                    seedLength
-                );
-                published++;
-            }
-        }
-        return true;
-    }
-
-    /**
      * Rebuild full seed tree
      *
      * @param seedTree         Output seed tree (numNodes * seedLength)
@@ -1309,14 +1195,9 @@ class CrossEngine
                 int leftChild = leftChild(currentNode) - off[level];
 
                 // Copy stored seeds into tree
-                if (flagsTree[currentNode] == TO_PUBLISH &&
-                    flagsTree[fatherNode] == NOT_TO_PUBLISH)
+                if (flagsTree[currentNode] == TO_PUBLISH && flagsTree[fatherNode] == NOT_TO_PUBLISH)
                 {
-                    System.arraycopy(
-                        storedSeeds, nodesUsed * seedLength,
-                        seedTree, currentNode * seedLength,
-                        seedLength
-                    );
+                    System.arraycopy(storedSeeds, nodesUsed * seedLength, seedTree, currentNode * seedLength, seedLength);
                     nodesUsed++;
                 }
 
@@ -1337,27 +1218,14 @@ class CrossEngine
                     // Expand children
                     byte[] children = new byte[2 * seedLength];
                     randomBytes(children, children.length);
-                    System.arraycopy(
-                        children, 0,
-                        seedTree, leftChild * seedLength,
-                        children.length
-                    );
+                    System.arraycopy(children, 0, seedTree, leftChild * seedLength, children.length);
                 }
             }
             startNode += npl[level];
         }
 
         // Verify unused storage bytes are zero
-        int storedBytesUsed = nodesUsed * seedLength;
-        int storedBytesTotal = params.getTreeNodesToStore() * seedLength;
-        for (int i = storedBytesUsed; i < storedBytesTotal; i++)
-        {
-            if (storedSeeds[i] != 0)
-            {
-                return false;
-            }
-        }
-        return true;
+        return checkTree(storedSeeds, params, seedLength, nodesUsed);
     }
 
     /**
@@ -1418,7 +1286,7 @@ class CrossEngine
         Arrays.fill(flagTree, NOT_COMPUTED);
 
         // Place commitments in tree
-        placeCmtOnLeaves(tree, recomputedLeaves, params);
+        placeCmtOnLeaves(tree, recomputedLeaves, params.getTreeLeavesStartIndices(), params.getTreeConsecutiveLeaves(), params.getTreeSubroots(), params.getHashDigestLength());
         labelLeavesMerkle(flagTree, leavesToReveal, params);
 
         // Tree structure parameters
@@ -1481,6 +1349,11 @@ class CrossEngine
         System.arraycopy(tree, 0, root, 0, hashDigestLength);
 
         // Verify unused proof bytes are zero
+        return checkTree(mtp, params, hashDigestLength, published);
+    }
+
+    private static boolean checkTree(byte[] mtp, CrossParameters params, int hashDigestLength, int published)
+    {
         int bytesUsed = published * hashDigestLength;
         int totalProofBytes = params.getTreeNodesToStore() * hashDigestLength;
         for (int i = bytesUsed; i < totalProofBytes; i++)
@@ -1491,28 +1364,6 @@ class CrossEngine
             }
         }
         return true;
-    }
-
-    // Helper: Place commitments in tree
-    private static void placeCmtOnLeaves(byte[] tree, byte[][] leaves,
-                                         CrossParameters params)
-    {
-        int hashDigestLength = params.getHashDigestLength();
-        int[] consecutiveLeaves = params.getTreeConsecutiveLeaves();
-        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
-        int treeSubroots = params.getTreeSubroots();
-
-        int cnt = 0;
-        for (int i = 0; i < treeSubroots; i++)
-        {
-            int startIdx = leavesStartIndices[i];
-            for (int j = 0; j < consecutiveLeaves[i]; j++)
-            {
-                int treePos = (startIdx + j) * hashDigestLength;
-                System.arraycopy(leaves[cnt], 0, tree, treePos, hashDigestLength);
-                cnt++;
-            }
-        }
     }
 
     // Checks if all elements in an FZ vector are within [0, Z-1]
@@ -1532,58 +1383,31 @@ class CrossEngine
     }
 
     // Computes: res = synd - (s * chall_1) mod P
-    public static void fpSyndMinusFpVecScaled(
-        byte[] res,
-        byte[] synd,
-        byte chall_1,
-        byte[] s,
-        CrossParameters params)
+    public static void fpSyndMinusFpVecScaled(byte[] res, byte[] synd, byte chall_1, byte[] s, CrossParameters params)
     {
         int p = params.getP();
         int n_k = params.getN() - params.getK();
 
         for (int j = 0; j < n_k; j++)
         {
-            // Multiply s[j] * chall_1
-            int product = (s[j] & 0xFF) * (chall_1 & 0xFF);
-
-            // Reduce product mod P
-            int tmp = CrossEngine.fpRedDouble(product);
-            tmp = CrossEngine.fzDoubleZeroNorm(tmp);
-
-            // Compute negative equivalent mod P
-            int negative = (p - tmp) % p;
-
+            // Multiply s[j] * chall_1, Reduce product mod P, Compute negative equivalent mod P
             // res[j] = synd[j] + negative mod P
-            int value = (synd[j] & 0xFF) + negative;
-            res[j] = (byte)(value % p);
+            res[j] = (byte)(((synd[j] & 0xFF) + (p - fzDoubleZeroNorm(fpRedDouble((s[j] & 0xFF) * (chall_1 & 0xFF)))) % p) % p);
         }
     }
 
-    public static void fpSyndMinusFpVecScaled(
-        short[] res,
-        short[] synd,
-        short chall_1,
-        short[] s,
-        CrossParameters params)
+    public static void fpSyndMinusFpVecScaled(short[] res,
+                                              short[] synd,
+                                              short chall_1,
+                                              short[] s,
+                                              CrossParameters params)
     {
         int p = params.getP();
         int n_k = params.getN() - params.getK();
 
         for (int j = 0; j < n_k; j++)
         {
-            // Multiply s[j] * chall_1
-            int product = (s[j] & 0xFFFF) * (chall_1 & 0xFFFF);
-
-            // Reduce product mod P
-            int tmp = product % p;
-
-            // Compute negative equivalent mod P
-            int negative = (p - tmp) % p;
-
-            // res[j] = synd[j] + negative mod P
-            int value = (synd[j] & 0xFFFF) + negative;
-            res[j] = (short)(value % p);
+            res[j] = (short)((synd[j] + ((p - ((s[j] * (chall_1 & 0xFFFF)) % p)) % p)) % p);
         }
     }
 

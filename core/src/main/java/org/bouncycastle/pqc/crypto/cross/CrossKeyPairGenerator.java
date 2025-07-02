@@ -52,7 +52,7 @@ public class CrossKeyPairGenerator
             // Step 6: Compute syndrome
             byte[] s = new byte[params.getN() - params.getK()];
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
-            CrossEngine.fpDzNormSynd(s);
+            CrossEngine.fpDzNorm(s, s.length);
             byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
             Utils.genericPack7Bit(packedS, 0, s, s.length);
 
