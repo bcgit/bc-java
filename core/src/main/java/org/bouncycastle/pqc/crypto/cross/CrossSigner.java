@@ -176,7 +176,7 @@ public class CrossSigner
 
             if (params.rsdp)
             {
-                engine.csprngFzVec(e_bar_prime[i], params);
+                engine.csprngFVec(e_bar_prime[i], params.getZ(), params.getN(), CrossEngine.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
                 // Compute v_bar
                 CrossEngine.fzVecSubN(v_bar[i], e_bar, e_bar_prime[i], params);
                 byte[] v = new byte[params.getN()];
@@ -186,7 +186,7 @@ public class CrossSigner
                 // Convert to FP and compute u_prime
 
                 ((byte[][])u_prime)[i] = new byte[params.getN()];
-                engine.csprngFpVec(((byte[][])u_prime)[i], params);
+                engine.csprngFVec(((byte[][])u_prime)[i], params.getP(), params.getN(), CrossEngine.roundUp(params.getBitsNFpCtRng(), 8) >>> 3);
 
                 // Compute s_prime
                 byte[] u = new byte[params.getN()];
@@ -202,7 +202,7 @@ public class CrossSigner
             {
                 e_G_bar_prime[i] = new byte[params.getM()];
                 v_G_bar[i] = new byte[params.getM()];
-                engine.csprngFzInfW(e_G_bar_prime[i], params);
+                engine.csprngFVec(e_G_bar_prime[i], params.getZ(), params.getM(), CrossEngine.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
                 CrossEngine.fzVecSubM(v_G_bar[i], e_G_bar, e_G_bar_prime[i], m);
                 CrossEngine.fzDzNormM(v_G_bar[i], m);
                 CrossEngine.fzInfWByFzMatrix(e_bar_prime[i], e_G_bar_prime[i], W_mat, params);
@@ -604,15 +604,15 @@ public class CrossSigner
                 engine.init(csprngInput, csprngInput.length, domainSepCsprng);
                 if (params.rsdp)
                 {
-                    engine.csprngFzVec(e_bar_prime, params);
-                    engine.csprngFpVec((byte[])u_prime, params);
+                    engine.csprngFVec(e_bar_prime, params.getZ(), params.getN(), CrossEngine.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
+                    engine.csprngFVec((byte[])u_prime, params.getP(), params.getN(), CrossEngine.roundUp(params.getBitsNFpCtRng(), 8) >>> 3);
                     CrossEngine.fpVecByRestrVecScaled(((byte[][])y)[i], e_bar_prime, chall1[i], (byte[])u_prime, params);
                     CrossEngine.fpDzNorm(((byte[][])y)[i], params);
                 }
                 else
                 {
                     byte[] e_G_bar_prime = new byte[m];
-                    engine.csprngFzInfW(e_G_bar_prime, params);
+                    engine.csprngFVec(e_G_bar_prime, params.getZ(), params.getM(), CrossEngine.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
                     CrossEngine.fzInfWByFzMatrix(e_bar_prime, e_G_bar_prime, W_mat, params);
                     CrossEngine.fzDzNormN(e_bar_prime);
                     engine.csprngFpVec((short[])u_prime, params);

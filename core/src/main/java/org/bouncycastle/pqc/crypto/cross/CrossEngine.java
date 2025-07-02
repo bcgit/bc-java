@@ -34,23 +34,22 @@ class CrossEngine
 
     public void init(byte[] seed, int seedLen, int dsc)
     {
-        init(seed, 0, seedLen, dsc);
-    }
-
-    public void init(byte[] seed, int seedOff, int seedLen, int dsc)
-    {
         digest.reset();
-        digest.update(seed, seedOff, seedLen);
-        byte[] dscBytes = new byte[]{
-            (byte)(dsc & 0xFF),
-            (byte)((dsc >> 8) & 0xFF)
-        };
+        digest.update(seed, 0, seedLen);
+        byte[] dscBytes = Pack.shortToLittleEndian((short)dsc);
         digest.update(dscBytes, 0, 2);
     }
 
     public void randomBytes(byte[] out, int outLen)
     {
         randomBytes(out, 0, outLen);
+    }
+
+    public byte[] randomBytes(int outLen)
+    {
+        byte[] out = new byte[outLen];
+        randomBytes(out, 0, outLen);
+        return out;
     }
 
     public void randomBytes(byte[] out, int outOff, int outLen)
@@ -67,29 +66,25 @@ class CrossEngine
     // Expand public key for RSDP variant
     public void expandPk(CrossParameters params, byte[][] V_tr, byte[] seedPk)
     {
-        int dsc = (3 * params.getT() + 2); // CSPRNG_DOMAIN_SEP_CONST is 0
+        int dsc = 3 * params.getT() + 2;
         init(seedPk, seedPk.length, dsc);
-        csprngFpMat(V_tr, params);
+        csprngFMat(V_tr, params.getK(), params.getN() - params.getK(), params.getP(), roundUp(params.getBitsVCtRng(), 8) >>> 3);
     }
 
     // Expand public key for RSDPG variant
     public void expandPk(CrossParameters params, short[][] V_tr, byte[][] W_mat, byte[] seedPk)
     {
-        int dsc = (3 * params.getT() + 2); // CSPRNG_DOMAIN_SEP_CONST is 0
+        int dsc = 3 * params.getT() + 2;
         init(seedPk, seedPk.length, dsc);
-        csprngFzMat(W_mat, params);
+        csprngFMat(W_mat, params.getM(), params.getN() - params.getM(), params.getZ(), roundUp(params.getBitsWCtRng(), 8) >>> 3);
         csprngFpMat(V_tr, params);
     }
 
-    // Generate FP matrix (8-bit version)
-    private void csprngFpMat(byte[][] res, CrossParameters params)
+    private void csprngFMat(byte[][] res, int rows, int cols, int size, int bufferSize)
     {
-        int rows = params.getK();
-        int cols = params.getN() - params.getK();
         int total = rows * cols;
-        int bitsForP = Utils.bitsToRepresent(params.getP() - 1);
-        long mask = (1L << bitsForP) - 1;
-        int bufferSize = roundUp(params.getBitsVCtRng(), 8) >>> 3;
+        int bitsFor = Utils.bitsToRepresent(size - 1);
+        long mask = (1L << bitsFor) - 1;
         byte[] CSPRNG_buffer = new byte[bufferSize];
         randomBytes(CSPRNG_buffer, bufferSize);
 
@@ -113,59 +108,15 @@ class CrossEngine
             }
 
             long elementLong = subBuffer & mask;
-            if (elementLong < params.getP())
+            if (elementLong < size)
             {
                 int row = placed / cols;
                 int col = placed % cols;
                 res[row][col] = (byte)elementLong;
                 placed++;
             }
-            subBuffer >>>= bitsForP;
-            bitsInSubBuf -= bitsForP;
-        }
-    }
-
-    // Generate FZ matrix (8-bit version)
-    private void csprngFzMat(byte[][] res, CrossParameters params)
-    {
-        int rows = params.getM();
-        int cols = params.getN() - params.getM();
-        int total = rows * cols;
-        int bitsForZ = Utils.bitsToRepresent(params.getZ() - 1);
-        long mask = (1L << bitsForZ) - 1;
-        int bufferSize = roundUp(params.getBitsWCtRng(), 8) >>> 3;
-        byte[] CSPRNG_buffer = new byte[bufferSize];
-        randomBytes(CSPRNG_buffer, bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
-        int placed = 0;
-
-        while (placed < total)
-        {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            long elementLong = subBuffer & mask;
-            if (elementLong < params.getZ())
-            {
-                int row = placed / cols;
-                int col = placed % cols;
-                res[row][col] = (byte)elementLong;
-                placed++;
-            }
-            subBuffer >>>= bitsForZ; // Unsigned right shift
-            bitsInSubBuf -= bitsForZ;
+            subBuffer >>>= bitsFor; // Unsigned right shift
+            bitsInSubBuf -= bitsFor;
         }
     }
 
@@ -213,14 +164,50 @@ class CrossEngine
         }
     }
 
-    // Generate FZ vector for RSDP variant
-    public void csprngFzVec(byte[] res, CrossParameters params)
+    public void csprngFVec(byte[] res, int size, int loop, int bufferSize)
+    {
+        int bitsFor = Utils.bitsToRepresent(size - 1);
+        long mask = (1L << bitsFor) - 1;
+        byte[] CSPRNG_buffer = new byte[bufferSize];
+        randomBytes(CSPRNG_buffer, bufferSize);
+
+        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
+
+        int bitsInSubBuf = 64;
+        int posInBuf = 8;
+        int posRemaining = bufferSize - posInBuf;
+        int placed = 0;
+
+        while (placed < loop)
+        {
+            if (bitsInSubBuf <= 32 && posRemaining > 0)
+            {
+                int refreshAmount = Math.min(4, posRemaining);
+                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
+                posInBuf += refreshAmount;
+                posRemaining -= refreshAmount;
+                subBuffer |= refreshBuf << bitsInSubBuf;
+                bitsInSubBuf += 8 * refreshAmount;
+            }
+
+            byte elementLong = (byte)(subBuffer & mask);
+            if (elementLong < size)
+            {
+                res[placed] = elementLong;
+                placed++;
+            }
+            subBuffer >>>= bitsFor; // Unsigned right shift
+            bitsInSubBuf -= bitsFor;
+        }
+    }
+
+    public void csprngFpVec(short[] res, CrossParameters params)
     {
         int n = params.getN();
-        int z = params.getZ();
-        int bitsForZ = Utils.bitsToRepresent(z - 1);
-        long mask = (1L << bitsForZ) - 1;
-        int bufferSize = roundUp(params.getBitsNFzCtRng(), 8) >>> 3;
+        int p = params.getP();
+        int bitsForP = Utils.bitsToRepresent(p - 1);
+        long mask = (1L << bitsForP) - 1;
+        int bufferSize = roundUp(params.getBitsNFpCtRng(), 8) >>> 3;
         byte[] CSPRNG_buffer = new byte[bufferSize];
         randomBytes(CSPRNG_buffer, bufferSize);
 
@@ -243,55 +230,14 @@ class CrossEngine
                 bitsInSubBuf += 8 * refreshAmount;
             }
 
-            byte elementLong = (byte)(subBuffer & mask);
-            if (elementLong < z)
-            {
-                res[placed] = elementLong;
-                placed++;
-            }
-            subBuffer >>>= bitsForZ; // Unsigned right shift
-            bitsInSubBuf -= bitsForZ;
-        }
-    }
-
-    // Generate FZ vector for RSDPG variant
-    public void csprngFzInfW(byte[] res, CrossParameters params)
-    {
-        int m = params.getM();
-        int z = params.getZ();
-        int bitsForZ = Utils.bitsToRepresent(z - 1);
-        long mask = (1L << bitsForZ) - 1;
-        int bufferSize = roundUp(params.getBitsMFzCtRng(), 8) >>> 3;
-        byte[] CSPRNG_buffer = new byte[bufferSize];
-        randomBytes(CSPRNG_buffer, bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
-        int placed = 0;
-
-        while (placed < m)
-        {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
             long elementLong = subBuffer & mask;
-            if (elementLong < z)
+            if (elementLong < p)
             {
-                res[placed] = (byte)elementLong;
+                res[placed] = (short)elementLong;
                 placed++;
             }
-            subBuffer >>>= bitsForZ; // Unsigned right shift
-            bitsInSubBuf -= bitsForZ;
+            subBuffer >>>= bitsForP; // Unsigned right shift
+            bitsInSubBuf -= bitsForP;
         }
     }
 
@@ -315,11 +261,6 @@ class CrossEngine
             result -= 509;
         }
         return (int)result;
-    }
-
-    public static int fzRedDouble(int x)
-    {
-        return fzRedSingle(fzRedSingle(x));
     }
 
     public static int fzDoubleZeroNorm(int x)
@@ -356,7 +297,7 @@ class CrossEngine
                 int sum = current + product;
 
                 // Apply double reduction
-                int reduced = fzRedDouble(sum);
+                int reduced = fzRedSingle(fzRedSingle(sum));
 
                 // Store result
                 res[j] = (byte)reduced;
@@ -514,8 +455,7 @@ class CrossEngine
         int dscCsprngSeedE = (3 * params.getT() + 3);
 
         init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-        csprngFzVec(e_bar, params);
-
+        csprngFVec(e_bar, params.getZ(), params.getN(), roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
     }
 
     public void expandSk(CrossParameters params, byte[] seedSk,
@@ -548,7 +488,7 @@ class CrossEngine
         int dscCsprngSeedE = (3 * params.getT() + 3);
 
         init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-        csprngFzInfW(e_G_bar, params);
+        csprngFVec(e_G_bar, params.getZ(), params.getM(), roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
 
         // Step 5: Compute full error vector
         fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
@@ -695,87 +635,6 @@ class CrossEngine
         }
     }
 
-    // Generate random FP vector using CSPRNG
-    public void csprngFpVec(byte[] res, CrossParameters params)
-    {
-        int n = params.getN();
-        int p = params.getP();
-        int bitsForP = Utils.bitsToRepresent(p - 1);
-        long mask = (1L << bitsForP) - 1;
-        int bufferSize = roundUp(params.getBitsNFpCtRng(), 8) >>> 3;
-        byte[] CSPRNG_buffer = new byte[bufferSize];
-        randomBytes(CSPRNG_buffer, bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
-        int placed = 0;
-
-        while (placed < n)
-        {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            long elementLong = subBuffer & mask;
-            if (elementLong < p)
-            {
-                res[placed] = (byte)elementLong;
-                placed++;
-            }
-            subBuffer >>>= bitsForP; // Unsigned right shift
-            bitsInSubBuf -= bitsForP;
-        }
-    }
-
-    public void csprngFpVec(short[] res, CrossParameters params)
-    {
-        int n = params.getN();
-        int p = params.getP();
-        int bitsForP = Utils.bitsToRepresent(p - 1);
-        long mask = (1L << bitsForP) - 1;
-        int bufferSize = roundUp(params.getBitsNFpCtRng(), 8) >>> 3;
-        byte[] CSPRNG_buffer = new byte[bufferSize];
-        randomBytes(CSPRNG_buffer, bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
-        int placed = 0;
-
-        while (placed < n)
-        {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            long elementLong = subBuffer & mask;
-            if (elementLong < p)
-            {
-                res[placed] = (short)elementLong;
-                placed++;
-            }
-            subBuffer >>>= bitsForP; // Unsigned right shift
-            bitsInSubBuf -= bitsForP;
-        }
-    }
-
     // Pointwise vector multiplication: res = in1 * in2 (mod P)
     public static void fpVecByFpVecPointwise(byte[] res, byte[] in1, byte[] in2, CrossParameters params)
     {
@@ -895,11 +754,7 @@ class CrossEngine
         byte[] cspRngBuffer = new byte[bufferSize];
         randomBytes(cspRngBuffer, bufferSize);
 
-        long subBuffer = 0;
-        for (int i = 0; i < 8; i++)
-        {
-            subBuffer |= ((long)(cspRngBuffer[i] & 0xFF)) << (8 * i);
-        }
+        long subBuffer = Pack.littleEndianToLong(cspRngBuffer, 0);
 
         int bitsInSubBuf = 64;
         int posInBuf = 8;
@@ -912,11 +767,7 @@ class CrossEngine
             if (bitsInSubBuf <= 32 && posRemaining > 0)
             {
                 int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = 0;
-                for (int i = 0; i < refreshAmount; i++)
-                {
-                    refreshBuf |= ((long)(cspRngBuffer[posInBuf + i] & 0xFF)) << (8 * i);
-                }
+                long refreshBuf = Pack.littleEndianToLong(cspRngBuffer, posInBuf);
                 posInBuf += refreshAmount;
                 posRemaining -= refreshAmount;
                 subBuffer |= refreshBuf << bitsInSubBuf;
@@ -981,9 +832,7 @@ class CrossEngine
     }
 
     // Generate fixed-weight binary string
-    public void expandDigestToFixedWeight(byte[] fixedWeightString,
-                                          byte[] digest,
-                                          CrossParameters params)
+    public void expandDigestToFixedWeight(byte[] fixedWeightString, byte[] digest, CrossParameters params)
     {
         int t = params.getT();
         int w = params.getW();

@@ -83,7 +83,7 @@ public class CrossTest
         //NOTE: Cross uses a special SecureRandom so that it does not support sampleOnly option (and seed is useless).
         // We need to wait until the authors of Cross change their SecureRandom to NISTSecureRandom
         final boolean sampleOnly = false;
-        TestUtils.testTestVector(sampleOnly, false, false, "pqc/crypto/Cross", files, new TestUtils.KeyGenerationOperation()
+        TestUtils.testTestVector(sampleOnly, false, false, "pqc/crypto/cross", files, new TestUtils.KeyGenerationOperation()
         {
             final CsprngSecureRandom random = new CsprngSecureRandom(entropyInput);
 
