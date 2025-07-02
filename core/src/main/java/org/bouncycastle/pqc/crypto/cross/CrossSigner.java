@@ -90,7 +90,7 @@ public class CrossSigner
 
         if (params.rsdp)
         {
-            engine.expandSk(params, seed_sk, e_bar, null, (byte[][])V_tr, null);
+            engine.expandSk(params, seed_sk, e_bar, (byte[][])V_tr);
         }
         else
         {
@@ -230,7 +230,7 @@ public class CrossSigner
 
             // Compute commitments
             int domain_sep_hash = CrossEngine.HASH_DOMAIN_SEP_CONST + i + (2 * params.getT() - 1);
-            CrossEngine.hash(cmt_0[i], cmt_0_i_input, domain_sep_hash, params);
+            CrossEngine.hash(cmt_0[i], 0, cmt_0_i_input, domain_sep_hash, params);
 
             System.arraycopy(round_seeds, i * params.getSeedLengthBytes(), cmt_1_i_input, 0, params.getSeedLengthBytes());
             CrossEngine.hash(cmt_1, i * params.getHashDigestLength(), cmt_1_i_input, domain_sep_hash, params);
@@ -250,14 +250,14 @@ public class CrossSigner
         }
 
         byte[] cmt1_hash = new byte[params.getHashDigestLength()];
-        CrossEngine.hash(cmt1_hash, cmt_1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(cmt1_hash, 0, cmt_1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
         System.arraycopy(cmt1_hash, 0, digest_cmt0_cmt1, params.getHashDigestLength(), params.getHashDigestLength());
 
-        CrossEngine.hash(digest_cmt, digest_cmt0_cmt1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(digest_cmt, 0, digest_cmt0_cmt1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
 
         // First challenge extraction
         byte[] digest_msg = new byte[params.getHashDigestLength()];
-        CrossEngine.hash(digest_msg, message, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(digest_msg, 0, message, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
 
         byte[] digest_msg_cmt_salt = new byte[2 * params.getHashDigestLength() + params.getSaltLengthBytes()];
         System.arraycopy(digest_msg, 0, digest_msg_cmt_salt, 0, params.getHashDigestLength());
@@ -265,7 +265,7 @@ public class CrossSigner
         System.arraycopy(salt, 0, digest_msg_cmt_salt, 2 * params.getHashDigestLength(), params.getSaltLengthBytes());
 
         byte[] digest_chall_1 = new byte[params.getHashDigestLength()];
-        CrossEngine.hash(digest_chall_1, digest_msg_cmt_salt, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(digest_chall_1, 0, digest_msg_cmt_salt, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
 
         // Expand first challenge
         int dsc_csprng_chall_1 = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + (3 * params.getT() - 1);
@@ -306,7 +306,7 @@ public class CrossSigner
 
         System.arraycopy(digest_chall_1, 0, y_digest_chall_1, packedYSize, digest_chall_1.length);
 
-        CrossEngine.hash(digest_chall_2, y_digest_chall_1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(digest_chall_2, 0, y_digest_chall_1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
 
         // Expand to fixed weight challenge
         byte[] chall_2 = new byte[params.getT()];
@@ -534,14 +534,14 @@ public class CrossSigner
         // Compute digest_msg_cmt_salt
         byte[] digestMsgCmtSalt = new byte[2 * hashDigestLength + saltLength];
         byte[] tempHash = new byte[hashDigestLength];
-        CrossEngine.hash(tempHash, message, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(tempHash, 0, message, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
         System.arraycopy(tempHash, 0, digestMsgCmtSalt, 0, hashDigestLength);
         System.arraycopy(digest_cmt, 0, digestMsgCmtSalt, hashDigestLength, hashDigestLength);
         System.arraycopy(salt, 0, digestMsgCmtSalt, 2 * hashDigestLength, saltLength);
 
         // Compute digest_chall_1
         byte[] digestChall1 = new byte[hashDigestLength];
-        CrossEngine.hash(digestChall1, digestMsgCmtSalt, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(digestChall1, 0, digestMsgCmtSalt, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
         engine.init(digestChall1, digestChall1.length, CrossEngine.CSPRNG_DOMAIN_SEP_CONST + (3 * t - 1));
         // Generate challenge 1 vector
         int[] chall1 = engine.csprngFpVecChall1(params);
@@ -655,24 +655,11 @@ public class CrossSigner
 
                     CrossEngine.fzInfWByFzMatrix(v_bar, v_G_bar, W_mat, params);
 
-                    if (params.rsdp)
-                    {
-                        CrossEngine.convertRestrVecToFp((byte[])v, v_bar, params);
-                        CrossEngine.fpVecByFpVecPointwise((byte[])y_prime, (byte[])v, ((byte[][])y)[i], params);
-                        CrossEngine.fpVecByFpMatrix((byte[])y_prime_H, (byte[])y_prime, (byte[][])V_tr, params);
-                        CrossEngine.fpDzNormSynd((byte[])y_prime_H);
-                        CrossEngine.fpSyndMinusFpVecScaled((byte[])s_prime, (byte[])y_prime_H, (byte)chall1[i], (byte[])s, params);
-                        CrossEngine.fpDzNormSynd((byte[])s_prime);
-                        CrossEngine.packFpSyn(cmt0_i_input, (byte[])s_prime);
-                    }
-                    else
-                    {
-                        CrossEngine.convertRestrVecToFp((short[])v, v_bar, params);
-                        CrossEngine.fpVecByFpVecPointwise((short[])y_prime, (short[])v, ((short[][])y)[i], params);
-                        CrossEngine.fpVecByFpMatrix((short[])y_prime_H, (short[])y_prime, (short[][])V_tr, params);
-                        CrossEngine.fpSyndMinusFpVecScaled((short[])s_prime, (short[])y_prime_H, (short)chall1[i], (short[])s, params);
-                        CrossEngine.packFpSyn(cmt0_i_input, (short[])s_prime);
-                    }
+                    CrossEngine.convertRestrVecToFp((short[])v, v_bar, params);
+                    CrossEngine.fpVecByFpVecPointwise((short[])y_prime, (short[])v, ((short[][])y)[i], params);
+                    CrossEngine.fpVecByFpMatrix((short[])y_prime_H, (short[])y_prime, (short[][])V_tr, params);
+                    CrossEngine.fpSyndMinusFpVecScaled((short[])s_prime, (short[])y_prime_H, (short)chall1[i], (short[])s, params);
+                    CrossEngine.packFpSyn(cmt0_i_input, (short[])s_prime);
                     System.arraycopy(resp0[usedRsps].v_G_bar, 0, cmt0_i_input, packedFpSynSize, packedFzRsdpGVecSize);
                 }
 
@@ -695,11 +682,11 @@ public class CrossSigner
 
 
         byte[] cmt1Hash = new byte[hashDigestLength];
-        CrossEngine.hash(cmt1Hash, cmt1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(cmt1Hash, 0, cmt1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
         System.arraycopy(cmt1Hash, 0, digestCmt0Cmt1, hashDigestLength, hashDigestLength);
 
         byte[] digestCmtPrime = new byte[hashDigestLength];
-        CrossEngine.hash(digestCmtPrime, digestCmt0Cmt1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(digestCmtPrime, 0, digestCmt0Cmt1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
 
         // Compute challenge 2 prime
         int packedFpVecSize = params.getDenselyPackedFpVecSize();
@@ -720,7 +707,7 @@ public class CrossSigner
         System.arraycopy(digestChall1, 0, yDigestChall1, t * packedFpVecSize, hashDigestLength);
 
         byte[] digestChall2Prime = new byte[hashDigestLength];
-        CrossEngine.hash(digestChall2Prime, yDigestChall1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        CrossEngine.hash(digestChall2Prime, 0, yDigestChall1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
 
         // Final checks
         boolean doesDigestCmtMatch = Arrays.constantTimeAreEqual(digestCmtPrime, digest_cmt);

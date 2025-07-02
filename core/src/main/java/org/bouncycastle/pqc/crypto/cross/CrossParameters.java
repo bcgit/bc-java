@@ -444,12 +444,12 @@ public class CrossParameters
         this.numNodesMerkleTree = numNodesMerkleTree;
         this.numLeavesSeedTree = numLeavesSeedTree;
         this.numNodesSeedTree = numNodesSeedTree;
-        this.denselyPackedFpVecSize = (n / 8 * CrossEngine.bitsToRepresent(p - 1) + CrossEngine.roundUp((n % 8) * CrossEngine.bitsToRepresent(p - 1), 8) / 8);
-        this.denselyPackedFpSynSize = (n - k) / 8 * CrossEngine.bitsToRepresent(p - 1) +
-            CrossEngine.roundUp(((n - k) % 8) * CrossEngine.bitsToRepresent(p - 1), 8) / 8;
-        this.denselyPackedFzVecSize = (n / 8 * CrossEngine.bitsToRepresent(z - 1) + CrossEngine.roundUp((n % 8)
-            * CrossEngine.bitsToRepresent(z - 1), 8) / 8);
-        this.denselyPackedFzRsdpGVecSize = (m / 8) * CrossEngine.bitsToRepresent(z - 1) + CrossEngine.roundUp(m % 8 * CrossEngine.bitsToRepresent(z - 1), 8) / 8;
+        this.denselyPackedFpVecSize = (n / 8 * Utils.bitsToRepresent(p - 1) + CrossEngine.roundUp((n % 8) * Utils.bitsToRepresent(p - 1), 8) / 8);
+        this.denselyPackedFpSynSize = (n - k) / 8 * Utils.bitsToRepresent(p - 1) +
+            CrossEngine.roundUp(((n - k) % 8) * Utils.bitsToRepresent(p - 1), 8) / 8;
+        this.denselyPackedFzVecSize = (n / 8 * Utils.bitsToRepresent(z - 1) + CrossEngine.roundUp((n % 8)
+            * Utils.bitsToRepresent(z - 1), 8) / 8);
+        this.denselyPackedFzRsdpGVecSize = (m / 8) * Utils.bitsToRepresent(z - 1) + CrossEngine.roundUp(m % 8 * Utils.bitsToRepresent(z - 1), 8) / 8;
         this.treeOffsets = treeOffsets;
         this.treeNodesPerLevel = treeNodesPerLevel;
         this.treeLeavesPerLevel = treeLeavesPerLevel;
