@@ -37,6 +37,21 @@ class CrossEngine
         digest.update(dscBytes, 0, 2);
     }
 
+    public void init(byte[] in1, int in1Off, int in1Len, byte[] in2, int dsc)
+    {
+        digest.reset();
+        digest.update(in1, in1Off, in1Len);
+        digest.update(in2, 0, in2.length);
+        byte[] dscBytes = Pack.shortToLittleEndian((short)dsc);
+        digest.update(dscBytes, 0, 2);
+    }
+
+    public void randomBytes(byte[] out, int outOff, int outLen, byte[] in1, int in1Off, int in1Len, byte[] in2, int dsc)
+    {
+        init(in1, in1Off, in1Len, in2, dsc);
+        digest.doOutput(out, outOff, outLen);
+    }
+
     public void randomBytes(byte[] out, int outLen)
     {
         randomBytes(out, 0, outLen);
@@ -356,9 +371,7 @@ class CrossEngine
             byte e_val = restrToVal(e[i] & 0xFF);
             for (int j = 0; j < nMinusK; j++)
             {
-                int sum = (res[j] & 0xFF) + (e_val * (V_tr[i][j] & 0xFF));
-                int reduced = (sum & 0x7F) + (sum >>> 7);
-                res[j] = (byte)((reduced & 0x7F) + (reduced >>> 7));
+                res[j] = (byte)fpRedDouble((res[j] & 0xFF) + (e_val * (V_tr[i][j] & 0xFF)));
             }
         }
     }
@@ -394,11 +407,6 @@ class CrossEngine
             int val = v[i] & 0xFF;
             v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
         }
-    }
-
-    public static int fzDoubleZeroNorm(int x)
-    {
-        return (x + ((x + 1) >>> 7)) & 0x7F;
     }
 
     public void expandSk(CrossParameters params, byte[][] seedESeedPk, byte[] e_bar, byte[][] V_tr)
@@ -444,21 +452,14 @@ class CrossEngine
                                 byte[] rootSeed, byte[] salt)
     {
         int seedLen = params.getSeedLengthBytes();
-        int saltLen = params.getSaltLengthBytes();
         int t = params.getT();
 
-        // 1. Prepare CSPRNG input: root_seed || salt
-        byte[] csprngInput = new byte[seedLen + saltLen];
-        System.arraycopy(rootSeed, 0, csprngInput, 0, seedLen);
-        System.arraycopy(salt, 0, csprngInput, seedLen, saltLen);
-
-        // 2. Initialize CSPRNG and generate quad seeds
-        init(csprngInput, csprngInput.length, 0); // Domain sep = 0
+        // 1-2. Prepare CSPRNG input: root_seed || salt, Initialize CSPRNG and generate quad seeds
         byte[] quadSeed = new byte[4 * seedLen];
-        randomBytes(quadSeed, quadSeed.length);
+        randomBytes(quadSeed, 0, quadSeed.length, rootSeed, 0, seedLen, salt, 0);
 
         // 3. Determine remainders based on T mod 4
-        int r = t % 4;
+        int r = t & 3;
         int[] remainders = new int[4];
         remainders[0] = (r > 0) ? 1 : 0;
         remainders[1] = (r > 1) ? 1 : 0;
@@ -466,24 +467,12 @@ class CrossEngine
 
         // 4. Generate seeds in 4 groups
         int offset = 0;
-        int dscCounter = 0;
         for (int i = 0; i < 4; i++)
         {
             // Prepare input for group CSPRNG: seed_i || salt
-            byte[] groupInput = new byte[seedLen + saltLen];
-            System.arraycopy(quadSeed, i * seedLen, groupInput, 0, seedLen);
-            System.arraycopy(salt, 0, groupInput, seedLen, saltLen);
-
-            // Initialize group CSPRNG
-            dscCounter++;
-            init(groupInput, groupInput.length, dscCounter);
-
-            // Calculate number of seeds for this group
             int groupSeeds = (t / 4) + remainders[i];
             int startPos = ((t / 4) * i + offset) * seedLen;
-
-            // Generate seeds directly into output array
-            randomBytes(roundsSeeds, startPos, groupSeeds * seedLen);
+            randomBytes(roundsSeeds, startPos, groupSeeds * seedLen, quadSeed, i * seedLen, seedLen, salt, i + 1);
             offset += remainders[i];
         }
     }
@@ -984,10 +973,6 @@ class CrossEngine
         // 1. Initialize root seed
         System.arraycopy(rootSeed, 0, seedTree, 0, seedLen);
 
-        // 2. Prepare CSPRNG input buffer (seed + salt)
-        byte[] csprngInput = new byte[seedLen + saltLen];
-        System.arraycopy(salt, 0, csprngInput, seedLen, saltLen);
-
         // 3. Get tree structure parameters
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
@@ -1003,16 +988,8 @@ class CrossEngine
             {
                 int fatherNode = startNode + nodeInLevel;
                 int leftChildNode = leftChild(fatherNode) - off[level];
-
-                // Prepare CSPRNG input: father seed + salt
-                System.arraycopy(seedTree, fatherNode * seedLen, csprngInput, 0, seedLen);
-
-                // Initialize CSPRNG and generate children
-                init(csprngInput, csprngInput.length, fatherNode);
-
-                // Generate two children (2 * seedLen bytes)
                 int childPos = leftChildNode * seedLen;
-                randomBytes(seedTree, childPos, 2 * seedLen);
+                randomBytes(seedTree, childPos, 2 * seedLen, seedTree, fatherNode * seedLen, seedLen, salt, fatherNode);
             }
             startNode += npl[level];
         }
@@ -1020,7 +997,7 @@ class CrossEngine
 
     private static int leftChild(int nodeIndex)
     {
-        return 2 * nodeIndex + 1;
+        return (nodeIndex << 1) + 1;
     }
 
     // For NO_TREES (SPEED variant)
@@ -1150,20 +1127,10 @@ class CrossEngine
                 }
 
                 // Expand children for non-leaf nodes
-                if (flagsTree[currentNode] == TO_PUBLISH &&
-                    nodeInLevel < npl[level] - lpl[level])
+                if (flagsTree[currentNode] == TO_PUBLISH && nodeInLevel < npl[level] - lpl[level])
                 {
-                    // Prepare CSPRNG input: current seed + salt
-                    System.arraycopy(seedTree, currentNode * seedLength, csprngInput, 0, seedLength);
-
-                    // Initialize CSPRNG with domain separation
-                    int domainSep = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + currentNode;
-                    init(csprngInput, csprngInput.length, domainSep);
-
-                    // Expand children
-                    byte[] children = new byte[2 * seedLength];
-                    randomBytes(children, children.length);
-                    System.arraycopy(children, 0, seedTree, leftChild * seedLength, children.length);
+                    randomBytes(seedTree, leftChild * seedLength, 2 * seedLength, seedTree,
+                        currentNode * seedLength, seedLength, salt, CrossEngine.CSPRNG_DOMAIN_SEP_CONST + currentNode);
                 }
             }
             startNode += npl[level];
@@ -1334,7 +1301,7 @@ class CrossEngine
         {
             // Multiply s[j] * chall_1, Reduce product mod P, Compute negative equivalent mod P
             // res[j] = synd[j] + negative mod P
-            res[j] = (byte)(((synd[j] & 0xFF) + (p - fzDoubleZeroNorm(fpRedDouble((s[j] & 0xFF) * (chall_1 & 0xFF)))) % p) % p);
+            res[j] = (byte)(((synd[j] & 0xFF) + (p - (fzRedSingle(fpRedDouble((s[j] & 0xFF) * (chall_1 & 0xFF))) & 0x7F)) % p) % p);
         }
     }
 

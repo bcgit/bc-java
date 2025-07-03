@@ -95,8 +95,7 @@ public class CrossSigner
         byte[][] seedESeedPk = new byte[2][keypairSeedLen];
 
         // Step 1: Initialize CSPRNG for secret key expansion
-        int dscCsprngSeedSk = (3 * params.getT() + 1); // CSPRNG_DOMAIN_SEP_CONST = 0
-        engine.init(seed_sk, seed_sk.length, dscCsprngSeedSk);
+        engine.init(seed_sk, seed_sk.length, 3 * params.getT() + 1);
 
         // Step 2: Generate seeds for error vector and public key
         engine.randomBytes(seedESeedPk[0], keypairSeedLen);
@@ -171,12 +170,8 @@ public class CrossSigner
         for (int i = 0; i < t; i++)
         {
             // Prepare CSPRNG input
-            byte[] csprng_input = new byte[params.getSeedLengthBytes() + params.getSaltLengthBytes()];
-            System.arraycopy(round_seeds, i * params.getSeedLengthBytes(), csprng_input, 0, params.getSeedLengthBytes());
-            System.arraycopy(salt, 0, csprng_input, params.getSeedLengthBytes(), params.getSaltLengthBytes());
-
             int domain_sep_csprng = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + i + (2 * t - 1);
-            engine.init(csprng_input, csprng_input.length, domain_sep_csprng);
+            engine.init(round_seeds, i * params.getSeedLengthBytes(), params.getSeedLengthBytes(), salt, domain_sep_csprng);
 
             // Expand e_bar_prime
             e_bar_prime[i] = new byte[n];
@@ -357,8 +352,6 @@ public class CrossSigner
         int pos = 0;
         System.arraycopy(message, 0, sm, pos, message.length);
         pos += message.length;
-        //sm = Arrays.concatenate(salt, digest_cmt, digest_chall_2, path, proof, resp_1, resp_1, resp_0)
-
         System.arraycopy(salt, 0, sm, pos, salt.length);
         pos += salt.length;
         System.arraycopy(digest_cmt, 0, sm, pos, digest_cmt.length);
@@ -446,6 +439,7 @@ public class CrossSigner
             s_prime = new short[n - k];
             y = new short[t][n];
             v = new short[n];
+            W_mat = new byte[m][n - m];
         }
         if (params.variant == CrossParameters.FAST)
         {
@@ -525,8 +519,6 @@ public class CrossSigner
         }
         else
         {
-
-            W_mat = new byte[m][n - m];
             engine.expandPk(params, (short[][])V_tr, W_mat, seedSk);
             // Unpack syndrome
             isPaddKeyOk = Utils.genericUnpack9Bit((short[])s, Arrays.copyOfRange(publicKey, seedSk.length, publicKey.length),
@@ -571,10 +563,6 @@ public class CrossSigner
         byte[] cmt0_i_input = new byte[cmt0InputSize];
         System.arraycopy(salt, 0, cmt0_i_input, saltOffset, saltLength);
 
-        byte[] cmt1_i_input = new byte[seedLength + saltLength];
-        System.arraycopy(salt, 0, cmt1_i_input, seedLength, saltLength);
-
-
         int usedRsps = 0;
         boolean isSignatureOk = true;
         boolean isPackedPaddOk = true;
@@ -587,11 +575,7 @@ public class CrossSigner
                 // Round with challenge=1
                 engine.hash(cmt1, i * hashDigestLength, roundSeeds, i * seedLength, seedLength, salt, 0, saltLength, Pack.shortToLittleEndian((short)domainSepHash));
 
-                byte[] csprngInput = new byte[seedLength + saltLength];
-                System.arraycopy(roundSeeds, i * seedLength, csprngInput, 0, seedLength);
-                System.arraycopy(salt, 0, csprngInput, seedLength, saltLength);
-
-                engine.init(csprngInput, csprngInput.length, domainSepCsprng);
+                engine.init(roundSeeds, i * seedLength, seedLength, salt, domainSepCsprng);
                 if (params.rsdp)
                 {
                     engine.csprngFVec(e_bar_prime, z, n, CrossEngine.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
