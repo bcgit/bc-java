@@ -35,9 +35,6 @@ import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1IA5String;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -55,6 +52,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.cert.jcajce.JcaCertStoreBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
@@ -432,7 +430,7 @@ public class SignedMailValidator
         byte[] ext = cert.getExtensionValue(SUBJECT_ALTERNATIVE_NAME);
         if (ext != null)
         {
-            ASN1Sequence altNames = ASN1Sequence.getInstance(getObject(ext));
+            ASN1Sequence altNames = ASN1Sequence.getInstance(JcaX509ExtensionUtils.parseExtensionValue(ext));
             for (int j = 0; j < altNames.size(); j++)
             {
                 ASN1TaggedObject o = (ASN1TaggedObject)altNames
@@ -448,15 +446,6 @@ public class SignedMailValidator
         }
 
         return addresses;
-    }
-
-    private static ASN1Primitive getObject(byte[] ext)
-        throws IOException
-    {
-        ASN1InputStream aIn = new ASN1InputStream(ext);
-        ASN1OctetString octs = ASN1OctetString.getInstance(aIn.readObject());
-
-        return ASN1Primitive.fromByteArray(octs.getOctets());
     }
 
     protected void checkSignerCert(X509Certificate cert, List errors,
@@ -507,7 +496,7 @@ public class SignedMailValidator
             if (ext != null)
             {
                 ExtendedKeyUsage extKeyUsage = ExtendedKeyUsage
-                    .getInstance(getObject(ext));
+                    .getInstance(JcaX509ExtensionUtils.parseExtensionValue(ext));
                 if (!extKeyUsage
                     .hasKeyPurposeId(KeyPurposeId.anyExtendedKeyUsage)
                     && !extKeyUsage
@@ -762,7 +751,8 @@ public class SignedMailValidator
                 {
                     try
                     {
-                        AuthorityKeyIdentifier kid = AuthorityKeyIdentifier.getInstance(getObject(authKeyIdentBytes));
+                        AuthorityKeyIdentifier kid = AuthorityKeyIdentifier.getInstance(
+                            JcaX509ExtensionUtils.parseExtensionValue(authKeyIdentBytes));
                         if (kid.getKeyIdentifier() != null)
                         {
                             select.setSubjectKeyIdentifier(new DEROctetString(kid.getKeyIdentifier()).getEncoded(ASN1Encoding.DER));
