@@ -28,7 +28,7 @@ public class CrossKeyPairGenerator
 
         // Step 2: Initialize CSPRNG for key generation
         int dscCsprngSeedSk = (3 * params.getT() + 1); // CSPRNG_DOMAIN_SEP_CONST = 0
-        CrossEngine engine = new CrossEngine(params.getSecMarginLambda());
+        CrossEngine engine = new CrossEngine(params);
         engine.init(seedSk, seedSk.length, dscCsprngSeedSk);
 
         // Step 3: Generate seeds for error vector and public key
@@ -52,7 +52,7 @@ public class CrossKeyPairGenerator
             // Step 6: Compute syndrome
             byte[] s = new byte[params.getN() - params.getK()];
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
-            CrossEngine.fpDzNorm(s, s.length);
+            CrossEngine.fDzNorm(s, s.length);
             byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
             Utils.genericPack7Bit(packedS, 0, s, s.length);
 
@@ -74,7 +74,7 @@ public class CrossKeyPairGenerator
             engine.csprngFVec(e_G_bar, params.getZ(), params.getM(), CrossEngine.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
             byte[] e_bar = new byte[params.getN()];
             CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
-            CrossEngine.fzDzNormN(e_bar);
+            CrossEngine.fDzNorm(e_bar, e_bar.length);
 
             // Step 6: Compute syndrome
             short[] s = new short[params.getN() - params.getK()];

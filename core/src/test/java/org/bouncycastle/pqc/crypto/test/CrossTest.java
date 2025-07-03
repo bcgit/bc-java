@@ -131,7 +131,7 @@ public class CrossTest
         System.out.println("time cost: " + (end - start) + "\n");
     }
 
-    class CsprngSecureRandom
+    static class CsprngSecureRandom
         extends SecureRandom
     {
         byte[] seed;

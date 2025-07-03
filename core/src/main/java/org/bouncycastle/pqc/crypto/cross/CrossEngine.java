@@ -16,20 +16,17 @@ class CrossEngine
     private static final int RESTR_G_GEN_64 = 505;
     private static final long REDUCTION_CONST = 2160140723L;
     private static final long RESTR_G_TABLE = 0x0140201008040201L;
-    private final SHAKEDigest digest;
+    final SHAKEDigest digest;
     static final int CSPRNG_DOMAIN_SEP_CONST = 0;
     static final int HASH_DOMAIN_SEP_CONST = 32768;
+    static final byte[] HASH_DOMAIN_SEP = Pack.shortToLittleEndian((short)32768);
 
-    public CrossEngine(int securityLevel)
+    private final int digestLength;
+
+    public CrossEngine(CrossParameters params)
     {
-        if (securityLevel <= 128)
-        {
-            digest = new SHAKEDigest(128);
-        }
-        else
-        {
-            digest = new SHAKEDigest(256);
-        }
+        digest = new SHAKEDigest(params.getSecMarginLambda() <= 128 ? 128 : 256);
+        digestLength = params.getHashDigestLength();
     }
 
     public void init(byte[] seed, int seedLen, int dsc)
@@ -85,8 +82,7 @@ class CrossEngine
         int total = rows * cols;
         int bitsFor = Utils.bitsToRepresent(size - 1);
         long mask = (1L << bitsFor) - 1;
-        byte[] CSPRNG_buffer = new byte[bufferSize];
-        randomBytes(CSPRNG_buffer, bufferSize);
+        byte[] CSPRNG_buffer = randomBytes(bufferSize);
 
         long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
 
@@ -129,8 +125,7 @@ class CrossEngine
         int bitsForP = Utils.bitsToRepresent(params.getP() - 1);
         long mask = (1L << bitsForP) - 1;
         int bufferSize = roundUp(params.getBitsVCtRng(), 8) >>> 3;
-        byte[] CSPRNG_buffer = new byte[bufferSize];
-        randomBytes(CSPRNG_buffer, bufferSize);
+        byte[] CSPRNG_buffer = randomBytes(bufferSize);
 
         long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
 
@@ -168,8 +163,7 @@ class CrossEngine
     {
         int bitsFor = Utils.bitsToRepresent(size - 1);
         long mask = (1L << bitsFor) - 1;
-        byte[] CSPRNG_buffer = new byte[bufferSize];
-        randomBytes(CSPRNG_buffer, bufferSize);
+        byte[] CSPRNG_buffer = randomBytes(bufferSize);
 
         long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
 
@@ -208,8 +202,7 @@ class CrossEngine
         int bitsForP = Utils.bitsToRepresent(p - 1);
         long mask = (1L << bitsForP) - 1;
         int bufferSize = roundUp(params.getBitsNFpCtRng(), 8) >>> 3;
-        byte[] CSPRNG_buffer = new byte[bufferSize];
-        randomBytes(CSPRNG_buffer, bufferSize);
+        byte[] CSPRNG_buffer = randomBytes(bufferSize);
 
         long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
 
@@ -241,17 +234,11 @@ class CrossEngine
         }
     }
 
-    // Reduction methods for RSDPG (Z=127)
     public static int fzRedSingle(int x)
     {
         return (x & 0x7F) + (x >>> 7);
     }
 
-    public static byte fzRedSingle(byte x)
-    {
-        int val = x & 0xFF;
-        return (byte)((val & 0x7F) + ((val >>> 7) & 0xff));
-    }
     public static int fpRedSingle(int x)
     {
         long xLong = x & 0xFFFFFFFFL; // Treat as unsigned
@@ -266,11 +253,6 @@ class CrossEngine
             result -= 509;
         }
         return (int)result;
-    }
-
-    public static int fzDoubleZeroNorm(int x)
-    {
-        return (x + ((x + 1) >>> 7)) & 0x7F;
     }
 
     // Matrix-vector multiplication for RSDPG
@@ -299,16 +281,6 @@ class CrossEngine
             {
                 res[j] = (byte)fpRedDouble((res[j] & 0xFF) + (e[i] & 0xFF) * (W_mat[i][j] & 0xFF));
             }
-        }
-    }
-
-    // Vector normalization
-    public static void fzDzNormN(byte[] v)
-    {
-        for (int i = 0; i < v.length; i++)
-        {
-            int val = v[i] & 0xFF;
-            v[i] = (byte)fzDoubleZeroNorm(val);
         }
     }
 
@@ -415,13 +387,18 @@ class CrossEngine
     }
 
     // Vector normalization
-    public static void fpDzNorm(byte[] v, int n)
+    public static void fDzNorm(byte[] v, int n)
     {
         for (int i = 0; i < n; i++)
         {
             int val = v[i] & 0xFF;
             v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
         }
+    }
+
+    public static int fzDoubleZeroNorm(int x)
+    {
+        return (x + ((x + 1) >>> 7)) & 0x7F;
     }
 
     public void expandSk(CrossParameters params, byte[][] seedESeedPk, byte[] e_bar, byte[][] V_tr)
@@ -459,7 +436,7 @@ class CrossEngine
         fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
 
         // Step 6: Normalize error vector
-        fzDzNormN(e_bar);
+        fDzNorm(e_bar, e_bar.length);
     }
 
     // For SPEED variant (NO_TREES)
@@ -537,7 +514,7 @@ class CrossEngine
     {
         for (int i = 0; i < m; i++)
         {
-            res[i] = fzRedSingle((byte)((a[i] & 0xFF) + ((b[i]^ 0x7F) & 0xFF)));
+            res[i] = (byte)fzRedSingle(((a[i] & 0xFF) + ((b[i] ^ 0x7F) & 0xFF)));
         }
     }
 
@@ -578,10 +555,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            int val1 = in1[i] & 0xFFFF;
-            int val2 = in2[i] & 0xFFFF;
-            long product = (long)val1 * val2;
-            res[i] = (short)fpRedSingle((int)product);
+            res[i] = (short)fpRedSingle(in1[i] * in2[i]);
         }
     }
 
@@ -613,45 +587,46 @@ class CrossEngine
         {
             for (int j = 0; j < nMinusK; j++)
             {
-                int eVal = e[i] & 0xFFFF;
-                int vVal = V_tr[i][j] & 0xFFFF;
-                int current = res[j] & 0xFFFF;
-                long product = (long)eVal * vVal;
-                long sum = current + product;
-
-                res[j] = (short)fpRedSingle((int)sum);
+                res[j] = (short)fpRedSingle(res[j] + e[i] * V_tr[i][j]);
             }
         }
     }
 
-    public static void hash(byte[] digest, int outOff, byte[] m, int dsc, CrossParameters params)
+    public void hash(byte[] digest, int outOff, byte[] m, int mOff, int mLen, byte[] dsc)
     {
-        int securityLambda = params.getSecMarginLambda();
-        int digestLength = params.getHashDigestLength();
+        this.digest.reset();
+        this.digest.update(m, mOff, mLen);
+        this.digest.update(dsc, 0, 2);
+        this.digest.doFinal(digest, outOff, digestLength);
+    }
 
-        // Initialize SHAKE digest based on security level
-        SHAKEDigest shake;
-        if (securityLambda <= 128)
-        {
-            shake = new SHAKEDigest(128);
-        }
-        else
-        {
-            shake = new SHAKEDigest(256);
-        }
+    public void hash(byte[] digest, int outOff, byte[] m, int mOff, int mLen, int dsc)
+    {
+        this.digest.reset();
+        this.digest.update(m, mOff, mLen);
+        this.digest.update(Pack.shortToLittleEndian((short)dsc), 0, 2);
+        this.digest.doFinal(digest, outOff, digestLength);
+    }
 
-        // Process message
-        shake.update(m, 0, m.length);
+    public void hash(byte[] digest, int outOff, byte[] in1, int in1Off, int in1Len,
+                     byte[] in2, int in2Off, int in2Len, byte[] dsc)
+    {
+        this.digest.reset();
+        this.digest.update(in1, in1Off, in1Len);
+        this.digest.update(in2, in2Off, in2Len);
+        this.digest.update(dsc, 0, 2);
+        this.digest.doFinal(digest, outOff, digestLength);
+    }
 
-        // Process domain separation constant (little-endian)
-        byte[] dscBytes = new byte[]{
-            (byte)(dsc & 0xFF),
-            (byte)((dsc >> 8) & 0xFF)
-        };
-        shake.update(dscBytes, 0, 2);
-
-        // Finalize and extract digest
-        shake.doFinal(digest, outOff, digestLength);
+    public void hash(byte[] digest, int outOff, byte[] in1,
+                     byte[] in2, byte[] in3, byte[] dsc)
+    {
+        this.digest.reset();
+        this.digest.update(in1, 0, in1.length);
+        this.digest.update(in2, 0, in2.length);
+        this.digest.update(in3, 0, in3.length);
+        this.digest.update(dsc, 0, 2);
+        this.digest.doFinal(digest, outOff, digestLength);
     }
 
     public int[] csprngFpVecChall1(CrossParameters params)
@@ -662,8 +637,7 @@ class CrossEngine
         long mask = (1L << bitsForP) - 1;
         int bufferSize = roundUp(params.getBitsChall1FpstarCtRng(), 8) >>> 3;
 
-        byte[] cspRngBuffer = new byte[bufferSize];
-        randomBytes(cspRngBuffer, bufferSize);
+        byte[] cspRngBuffer = randomBytes(bufferSize);
 
         long subBuffer = Pack.littleEndianToLong(cspRngBuffer, 0);
 
@@ -706,12 +680,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            int eVal = restrToVal(e[i]) & 0xFF;
-            int uPrimeVal = u_prime[i] & 0xFF;
-            int product = eVal * chall_1;
-            int sum = uPrimeVal + product;
-
-            res[i] = (byte)fpRedDouble(sum);
+            res[i] = (byte)fpRedDouble((u_prime[i] & 0xFF) + (restrToVal(e[i]) & 0xFF) * chall_1);
         }
     }
 
@@ -737,10 +706,6 @@ class CrossEngine
         {
             fixedWeightString[i] = 1;
         }
-        for (int i = w; i < t; i++)
-        {
-            fixedWeightString[i] = 0;
-        }
 
         // Initialize CSPRNG with domain separation
         int dsc = 3 * t; // CSPRNG_DOMAIN_SEP_CONST = 0
@@ -748,14 +713,9 @@ class CrossEngine
         init(digest, digest.length, dsc);
 
         int bufferSize = roundUp(params.getBitsCWStrRng(), 8) >>> 3;
-        byte[] cspRngBuffer = new byte[bufferSize];
-        randomBytes(cspRngBuffer, bufferSize);
+        byte[] cspRngBuffer = randomBytes(bufferSize);
 
-        long subBuffer = 0;
-        for (int i = 0; i < 8; i++)
-        {
-            subBuffer |= ((long)(cspRngBuffer[i] & 0xFF)) << (8 * i);
-        }
+        long subBuffer = Pack.littleEndianToLong(cspRngBuffer, 0);
 
         int bitsInSubBuf = 64;
         int posInBuf = 8;
@@ -768,11 +728,7 @@ class CrossEngine
             if (bitsInSubBuf <= 32 && posRemaining > 0)
             {
                 int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = 0;
-                for (int i = 0; i < refreshAmount; i++)
-                {
-                    refreshBuf |= ((long)(cspRngBuffer[posInBuf + i] & 0xFF)) << (8 * i);
-                }
+                long refreshBuf = Pack.littleEndianToLong(cspRngBuffer, posInBuf);
                 posInBuf += refreshAmount;
                 posRemaining -= refreshAmount;
                 subBuffer |= refreshBuf << bitsInSubBuf;
@@ -785,10 +741,10 @@ class CrossEngine
             long posMask = (1L << bitsForPos) - 1;
 
             // Get candidate position
-            long candidatePos = subBuffer & posMask;
+            int candidatePos = (int)(subBuffer & posMask);
             if (candidatePos < range)
             {
-                int dest = curr + (int)candidatePos;
+                int dest = curr + candidatePos;
 
                 // Swap elements
                 byte tmp = fixedWeightString[curr];
@@ -1079,28 +1035,23 @@ class CrossEngine
 
         byte[] hashInput = new byte[4 * hashDigestLength];
         int offset = 0;
-
+        int t_div_4 = T >>> 2;
         for (int i = 0; i < 4; i++)
         {
-            int groupSize = T / 4 + remainders[i];
-            byte[] groupLeaves = new byte[groupSize * hashDigestLength];
-
+            int groupSize = t_div_4 + remainders[i];
+            digest.reset();
             // Flatten group leaves into contiguous array
             for (int j = 0; j < groupSize; j++)
             {
-                int leafIndex = (T / 4) * i + j + offset;
-                System.arraycopy(leaves[leafIndex], 0, groupLeaves, j * hashDigestLength, hashDigestLength);
+                digest.update(leaves[t_div_4 * i + j + offset], 0, hashDigestLength);
             }
-
-            // Hash group and store in hashInput
-            byte[] groupHash = new byte[hashDigestLength];
-            hash(groupHash, 0, groupLeaves, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
-            System.arraycopy(groupHash, 0, hashInput, i * hashDigestLength, hashDigestLength);
+            digest.update(HASH_DOMAIN_SEP, 0, 2);
+            digest.doFinal(hashInput, i * hashDigestLength, digestLength);
             offset += remainders[i];
         }
 
         // Compute final root hash
-        hash(root, 0, hashInput, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        hash(root, 0, hashInput, 0, hashInput.length, HASH_DOMAIN_SEP);
     }
 
     // For tree-based variants (BALANCED/SMALL)
@@ -1125,10 +1076,7 @@ class CrossEngine
                 int parentNode = parent(currentNode, level - 1, off);
 
                 // Hash sibling pair
-                byte[] siblingPair = Arrays.copyOfRange(tree, currentNode * hashDigestLength, (currentNode + 2) * hashDigestLength);
-                byte[] parentHash = new byte[hashDigestLength];
-                hash(parentHash, 0, siblingPair, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
-                System.arraycopy(parentHash, 0, tree, parentNode * hashDigestLength, hashDigestLength);
+                hash(tree, parentNode * hashDigestLength, tree, currentNode * hashDigestLength, hashDigestLength * 2, HASH_DOMAIN_SEP);
             }
             startNode -= npl[level - 1];
         }
@@ -1206,10 +1154,7 @@ class CrossEngine
                     nodeInLevel < npl[level] - lpl[level])
                 {
                     // Prepare CSPRNG input: current seed + salt
-                    System.arraycopy(
-                        seedTree, currentNode * seedLength,
-                        csprngInput, 0, seedLength
-                    );
+                    System.arraycopy(seedTree, currentNode * seedLength, csprngInput, 0, seedLength);
 
                     // Initialize CSPRNG with domain separation
                     int domainSep = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + currentNode;
@@ -1275,9 +1220,9 @@ class CrossEngine
      * @param params           Algorithm parameters
      * @return true if successful, false if unused bytes non-zero
      */
-    public static boolean recomputeRootTreeBased(byte[] root, byte[][] recomputedLeaves,
-                                                 byte[] mtp, byte[] leavesToReveal,
-                                                 CrossParameters params)
+    public boolean recomputeRootTreeBased(byte[] root, byte[][] recomputedLeaves,
+                                          byte[] mtp, byte[] leavesToReveal,
+                                          CrossParameters params)
     {
         int hashDigestLength = params.getHashDigestLength();
         int numNodes = params.getNumNodesMerkleTree();
@@ -1297,7 +1242,6 @@ class CrossEngine
 
         int published = 0;
         int startNode = leavesStartIndices[0];
-        byte[] hashInput = new byte[2 * hashDigestLength];
 
         for (int level = logT; level > 0; level--)
         {
@@ -1308,38 +1252,36 @@ class CrossEngine
                 int siblingNode = sibling(currentNode);
 
                 // Skip if both siblings unused
-                if (flagTree[currentNode] == NOT_COMPUTED &&
-                    flagTree[siblingNode] == NOT_COMPUTED)
+                if (flagTree[currentNode] == NOT_COMPUTED && flagTree[siblingNode] == NOT_COMPUTED)
                 {
                     continue;
                 }
-
+                digest.reset();
                 // Process left sibling (current node)
                 if (flagTree[currentNode] == COMPUTED)
                 {
-                    System.arraycopy(tree, currentNode * hashDigestLength, hashInput, 0, hashDigestLength);
+                    digest.update(tree, currentNode * hashDigestLength, hashDigestLength);
                 }
                 else
                 {
-                    System.arraycopy(mtp, published * hashDigestLength, hashInput, 0, hashDigestLength);
+                    digest.update(mtp, published * hashDigestLength, hashDigestLength);
                     published++;
                 }
 
                 // Process right sibling
                 if (flagTree[siblingNode] == COMPUTED)
                 {
-                    System.arraycopy(tree, siblingNode * hashDigestLength, hashInput, hashDigestLength, hashDigestLength);
+                    digest.update(tree, siblingNode * hashDigestLength, hashDigestLength);
                 }
                 else
                 {
-                    System.arraycopy(mtp, published * hashDigestLength, hashInput, hashDigestLength, hashDigestLength);
+                    digest.update(mtp, published * hashDigestLength, hashDigestLength);
                     published++;
                 }
-
+                digest.update(HASH_DOMAIN_SEP, 0, 2);
                 // Hash siblings and store at parent
-                byte[] parentHash = new byte[hashDigestLength];
-                hash(parentHash, 0, hashInput, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
-                System.arraycopy(parentHash, 0, tree, parentNode * hashDigestLength, hashDigestLength);
+                digest.doFinal(tree, parentNode * hashDigestLength, hashDigestLength);
+
                 flagTree[parentNode] = COMPUTED;
             }
             startNode -= npl[level - 1];
@@ -1396,18 +1338,14 @@ class CrossEngine
         }
     }
 
-    public static void fpSyndMinusFpVecScaled(short[] res,
-                                              short[] synd,
-                                              short chall_1,
-                                              short[] s,
-                                              CrossParameters params)
+    public static void fpSyndMinusFpVecScaled(short[] res, short[] synd, short chall_1, short[] s, CrossParameters params)
     {
         int p = params.getP();
         int n_k = params.getN() - params.getK();
 
         for (int j = 0; j < n_k; j++)
         {
-            res[j] = (short)((synd[j] + ((p - ((s[j] * (chall_1 & 0xFFFF)) % p)) % p)) % p);
+            res[j] = (short)((synd[j] + ((p - ((s[j] * chall_1) % p)) % p)) % p);
         }
     }
 
