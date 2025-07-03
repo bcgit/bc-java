@@ -35,10 +35,10 @@ import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1IA5String;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
@@ -746,16 +746,19 @@ public class SignedMailValidator
                 {
                     throw new IllegalStateException(e.toString());
                 }
-                byte[] authKeyIdentBytes = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
-                if (authKeyIdentBytes != null)
+
+                byte[] akiExtValue = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+                if (akiExtValue != null)
                 {
                     try
                     {
-                        AuthorityKeyIdentifier kid = AuthorityKeyIdentifier.getInstance(
-                            JcaX509ExtensionUtils.parseExtensionValue(authKeyIdentBytes));
-                        if (kid.getKeyIdentifier() != null)
+                        AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(
+                            JcaX509ExtensionUtils.parseExtensionValue(akiExtValue));
+
+                        ASN1OctetString keyIdentifier = aki.getKeyIdentifierObject();
+                        if (keyIdentifier != null)
                         {
-                            select.setSubjectKeyIdentifier(new DEROctetString(kid.getKeyIdentifier()).getEncoded(ASN1Encoding.DER));
+                            select.setSubjectKeyIdentifier(keyIdentifier.getEncoded(ASN1Encoding.DER));
                         }
                     }
                     catch (IOException ioe)
@@ -763,6 +766,7 @@ public class SignedMailValidator
                         // ignore
                     }
                 }
+
                 boolean userProvided = false;
 
                 cert = findNextCert(systemCertStores, select, certSet);
