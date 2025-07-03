@@ -878,8 +878,7 @@ class CrossEngine
                 if (flagsTree[currentNode] == TO_PUBLISH && flagsTree[fatherNode] == NOT_TO_PUBLISH)
                 {
                     int srcPos = currentNode * params.getSeedLengthBytes();
-                    System.arraycopy(seedTree, srcPos,
-                        seedStorage, numSeedsPublished * params.getSeedLengthBytes(),
+                    System.arraycopy(seedTree, srcPos, seedStorage, numSeedsPublished * params.getSeedLengthBytes(),
                         params.getSeedLengthBytes());
                     numSeedsPublished++;
                 }
@@ -967,7 +966,6 @@ class CrossEngine
                             byte[] rootSeed, byte[] salt)
     {
         int seedLen = params.getSeedLengthBytes();
-        int saltLen = params.getSaltLengthBytes();
         int logT = params.getTreeOffsets().length - 1; // LOG2(T)
 
         // 1. Initialize root seed
@@ -1098,10 +1096,6 @@ class CrossEngine
         byte[] flagsTree = new byte[numNodes];
         computeSeedsToPublish(flagsTree, indicesToPublish, params);
 
-        // Prepare CSPRNG input (seed + salt)
-        byte[] csprngInput = new byte[seedLength + salt.length];
-        System.arraycopy(salt, 0, csprngInput, seedLength, salt.length);
-
         // Tree structure parameters
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
@@ -1163,12 +1157,7 @@ class CrossEngine
         {
             if (leavesToReveal[i] == TO_PUBLISH)
             {
-                System.arraycopy(
-                    mtp, published * hashDigestLength,
-                    recomputedLeaves[i], 0,
-                    hashDigestLength
-                );
-                published++;
+                System.arraycopy(mtp, published++ * hashDigestLength, recomputedLeaves[i], 0, hashDigestLength);
             }
         }
 
@@ -1301,7 +1290,7 @@ class CrossEngine
         {
             // Multiply s[j] * chall_1, Reduce product mod P, Compute negative equivalent mod P
             // res[j] = synd[j] + negative mod P
-            res[j] = (byte)(((synd[j] & 0xFF) + (p - (fzRedSingle(fpRedDouble((s[j] & 0xFF) * (chall_1 & 0xFF))) & 0x7F)) % p) % p);
+            res[j] = (byte)(((synd[j] & 0xFF) + p - (fzRedSingle(fpRedDouble((s[j] & 0xFF) * (chall_1 & 0xFF))) & 0x7F)) % p);
         }
     }
 
@@ -1312,7 +1301,7 @@ class CrossEngine
 
         for (int j = 0; j < n_k; j++)
         {
-            res[j] = (short)((synd[j] + ((p - ((s[j] * chall_1) % p)) % p)) % p);
+            res[j] = (short)((synd[j] + p - ((s[j] * chall_1) % p)) % p);
         }
     }
 

@@ -82,6 +82,8 @@ public class CrossSigner
         else
         {
             V_tr = new short[k][n - k];
+            e_G_bar = new byte[m];
+            W_mat = new byte[m][n - m];
             for (int i = 0; i < resp_0.length; ++i)
             {
                 resp_0[i] = new Response0();
@@ -106,8 +108,6 @@ public class CrossSigner
         }
         else
         {
-            e_G_bar = new byte[m];
-            W_mat = new byte[m][n - m];
             engine.expandSk(params, seedESeedPk, e_bar, e_G_bar, (short[][])V_tr, W_mat);
         }
 
@@ -159,9 +159,6 @@ public class CrossSigner
         byte[] cmt0_i_input = new byte[cmt0InputSize];
         int saltOffset = cmt0InputSize - params.getSaltLengthBytes();
         System.arraycopy(salt, 0, cmt0_i_input, saltOffset, params.getSaltLengthBytes());
-
-        byte[] cmt_1_i_input = new byte[params.getSeedLengthBytes() + params.getSaltLengthBytes()];
-        System.arraycopy(salt, 0, cmt_1_i_input, params.getSeedLengthBytes(), params.getSaltLengthBytes());
 
         byte[][] cmt_0 = new byte[t][params.getHashDigestLength()];
         byte[] cmt_1 = new byte[t * params.getHashDigestLength()];
