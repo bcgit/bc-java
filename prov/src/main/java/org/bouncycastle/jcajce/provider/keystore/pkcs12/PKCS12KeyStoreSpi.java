@@ -441,13 +441,13 @@ public class PKCS12KeyStoreSpi
                 X509Certificate x509c = (X509Certificate)c;
                 Certificate nextC = null;
 
-                byte[] akiBytes = x509c.getExtensionValue(Extension.authorityKeyIdentifier.getId());
-                if (akiBytes != null)
+                byte[] akiExtValue = x509c.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+                if (akiExtValue != null)
                 {
-                    ASN1OctetString akiValue = ASN1OctetString.getInstance(akiBytes);
-                    AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(akiValue.getOctets());
+                    AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(
+                        ASN1OctetString.getInstance(akiExtValue).getOctets());
 
-                    byte[] keyID = aki.getKeyIdentifier();
+                    byte[] keyID = aki.getKeyIdentifierOctets();
                     if (null != keyID)
                     {
                         nextC = (Certificate)chainCerts.get(new CertId(keyID));

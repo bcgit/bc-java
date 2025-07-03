@@ -78,7 +78,11 @@ public class X509ExtensionUtilsTest
         {
             fail("v0 issuer not matched");
         }
-        if (!Arrays.areEqual(Hex.decode("f0d46a0a97e24c20ec857ee6831e0be8a797c49d"), authKeyId.getKeyIdentifier()))
+        if (!Arrays.areEqual(Hex.decode("f0d46a0a97e24c20ec857ee6831e0be8a797c49d"), authKeyId.getKeyIdentifierOctets()))
+        {
+            fail("v0 keyID not matched");
+        }
+        if (!Arrays.areEqual(Hex.decode("f0d46a0a97e24c20ec857ee6831e0be8a797c49d"), authKeyId.getKeyIdentifierObject().getOctets()))
         {
             fail("v0 keyID not matched");
         }
@@ -92,7 +96,11 @@ public class X509ExtensionUtilsTest
         {
             fail("v3 issuer not matched");
         }
-        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifier()))
+        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifierOctets()))
+        {
+            fail("v3 keyID not matched");
+        }
+        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifierObject().getOctets()))
         {
             fail("v3 keyID not matched");
         }
@@ -133,7 +141,11 @@ public class X509ExtensionUtilsTest
         {
             fail("v0 issuer not matched");
         }
-        if (!Arrays.areEqual(Hex.decode("f0d46a0a97e24c20ec857ee6831e0be8a797c49d"), authKeyId.getKeyIdentifier()))
+        if (!Arrays.areEqual(Hex.decode("f0d46a0a97e24c20ec857ee6831e0be8a797c49d"), authKeyId.getKeyIdentifierOctets()))
+        {
+            fail("v0 keyID not matched");
+        }
+        if (!Arrays.areEqual(Hex.decode("f0d46a0a97e24c20ec857ee6831e0be8a797c49d"), authKeyId.getKeyIdentifierObject().getOctets()))
         {
             fail("v0 keyID not matched");
         }
@@ -147,7 +159,11 @@ public class X509ExtensionUtilsTest
         {
             fail("v3 issuer not matched");
         }
-        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifier()))
+        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifierOctets()))
+        {
+            fail("v3 keyID not matched");
+        }
+        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifierObject().getOctets()))
         {
             fail("v3 keyID not matched");
         }
@@ -162,7 +178,11 @@ public class X509ExtensionUtilsTest
         {
             fail("v3 issuer not matched");
         }
-        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifier()))
+        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifierOctets()))
+        {
+            fail("v3 keyID not matched");
+        }
+        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifierObject().getOctets()))
         {
             fail("v3 keyID not matched");
         }
