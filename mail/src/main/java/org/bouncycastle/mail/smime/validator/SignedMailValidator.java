@@ -97,21 +97,20 @@ public class SignedMailValidator
     private Class certPathReviewerClass;
 
     /**
-     * Validates the signed {@link MimeMessage} message. The
-     * {@link PKIXParameters} from param are used for the certificate path
-     * validation. The actual PKIXParameters used for the certificate path
-     * validation is a copy of param with the followin changes: <br> - The
-     * validation date is changed to the signature time <br> - A CertStore with
-     * certificates and crls from the mail message is added to the CertStores.<br>
+     * Validates the signed {@link MimeMessage} message. The {@link PKIXParameters} from
+     * <code>param</code> are used for the certificate path validation. The actual
+     * {@link PKIXParameters} used for the certificate path validation are a copy of <code>param</code>
+     * with the following changes:<br>
+     * - The validation date is changed to the signature time.<br>
+     * - A CertStore with certificates and CRLs from the mail message is added to the CertStores.<br>
      * <br>
-     * In <code>param</code> it's also possible to add additional CertStores
-     * with intermediate Certificates and/or CRLs which then are also used for
-     * the validation.
+     * In <code>param</code> it's also possible to add additional CertStores with intermediate
+     * certificates and/or CRLs which then are also used for the validation.
      *
-     * @param message the signed MimeMessage
-     * @param param   the parameters for the certificate path validation
-     * @throws SignedMailValidatorException if the message is no signed message or if an exception occurs
-     * reading the message
+     * @param message the signed {@link MimeMessage}.
+     * @param param the parameters for the certificate path validation.
+     * @throws {@link SignedMailValidatorException} if the message is not a signed message or if an
+     * exception occurs reading the message.
      */
     public SignedMailValidator(MimeMessage message, PKIXParameters param)
         throws SignedMailValidatorException
@@ -120,27 +119,25 @@ public class SignedMailValidator
     }
 
     /**
-     * Validates the signed {@link MimeMessage} message. The
-     * {@link PKIXParameters} from param are used for the certificate path
-     * validation. The actual PKIXParameters used for the certificate path
-     * validation is a copy of param with the followin changes: <br> - The
-     * validation date is changed to the signature time <br> - A CertStore with
-     * certificates and crls from the mail message is added to the CertStores.<br>
+     * Validates the signed {@link MimeMessage} message. The {@link PKIXParameters} from
+     * <code>param</code> are used for the certificate path validation. The actual
+     * {@link PKIXParameters} used for the certificate path validation are a copy of <code>param</code>
+     * with the following changes:<br>
+     * - The validation date is changed to the signature time.<br>
+     * - A CertStore with certificates and CRLs from the mail message is added to the CertStores.<br>
      * <br>
-     * In <code>param</code> it's also possible to add additional CertStores
-     * with intermediate Certificates and/or CRLs which then are also used for
-     * the validation.
+     * In <code>param</code> it's also possible to add additional CertStores with intermediate
+     * certificates and/or CRLs which then are also used for the validation.
      *
-     * @param message               the signed MimeMessage
-     * @param param                 the parameters for the certificate path validation
+     * @param message the signed {@link MimeMessage}.
+     * @param param the parameters for the certificate path validation.
      * @param certPathReviewerClass a subclass of {@link PKIXCertPathReviewer}. The SignedMailValidator
-     *                              uses objects of this type for the cert path vailidation. The class must
-     *                              have an empty constructor.
-     * @throws SignedMailValidatorException if the message is no signed message or if an exception occurs
-     * reading the message
-     * @throws IllegalArgumentException if the certPathReviewerClass is not a
-     * subclass of {@link PKIXCertPathReviewer} or objects of
-     * certPathReviewerClass can not be instantiated
+     * uses objects of this type for the cert path vailidation. The class must have an empty
+     * constructor.
+     * @throws SignedMailValidatorException if the message is not a signed message or if an exception
+     * occurs reading the message.
+     * @throws {@link IllegalArgumentException} if the certPathReviewerClass is not a subclass of
+     * {@link PKIXCertPathReviewer} or objects of certPathReviewerClass can not be instantiated.
      */
     public SignedMailValidator(MimeMessage message, PKIXParameters param, Class certPathReviewerClass)
         throws SignedMailValidatorException
