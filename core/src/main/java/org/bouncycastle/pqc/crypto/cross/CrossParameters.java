@@ -8,7 +8,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_1_fast = new CrossParameters(
         "CROSS-RSDP-1-FAST", true, 1, FAST,
         127, 76, 0, 157, 82,
-        16, 32, 32,
         313, 313,
         new int[]{0, 0, 0, 0, 0, 2, 2, 58, 58},
         new int[]{1, 2, 4, 8, 16, 30, 60, 64, 128},
@@ -23,7 +22,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_1_balanced = new CrossParameters(
         "CROSS-RSDP-1-BALANCED", true, 1, BALANCED,
         127, 76, 0, 256, 215,
-        16, 32, 32,
         511, 511,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256},
@@ -38,7 +36,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_1_small = new CrossParameters(
         "CROSS-RSDP-1-SMALL", true, 1, SMALL,
         127, 76, 0, 520, 488,
-        16, 32, 32,
         1039, 1039,
         new int[]{0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16},
         new int[]{1, 2, 4, 8, 16, 16, 32, 64, 128, 256, 512},
@@ -54,7 +51,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_3_fast = new CrossParameters(
         "CROSS-RSDP-3-FAST", true, 3, FAST,
         187, 111, 0, 239, 125,
-        24, 48, 48,
         477, 477,
         new int[]{0, 0, 0, 0, 0, 0, 0, 2, 30},
         new int[]{1, 2, 4, 8, 16, 32, 64, 126, 224},
@@ -69,7 +65,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_3_balanced = new CrossParameters(
         "CROSS-RSDP-3-BALANCED", true, 3, BALANCED,
         187, 111, 0, 384, 321,
-        24, 48, 48,
         767, 767,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 256},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 256},
@@ -84,7 +79,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_3_small = new CrossParameters(
         "CROSS-RSDP-3-SMALL", true, 3, SMALL,
         187, 111, 0, 580, 527,
-        24, 48, 48,
         1159, 1159,
         new int[]{0, 0, 0, 0, 0, 8, 8, 8, 8, 136, 136},
         new int[]{1, 2, 4, 8, 16, 24, 48, 96, 192, 256, 512},
@@ -100,7 +94,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_5_fast = new CrossParameters(
         "CROSS-RSDP-5-FAST", true, 5, FAST,
         251, 150, 0, 321, 167,
-        32, 64, 64,
         641, 641,
         new int[]{0, 0, 0, 2, 2, 2, 2, 2, 2, 130},
         new int[]{1, 2, 4, 6, 12, 24, 48, 96, 192, 256},
@@ -115,7 +108,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_5_balanced = new CrossParameters(
         "CROSS-RSDP-5-BALANCED", true, 5, BALANCED,
         251, 150, 0, 512, 427,
-        32, 64, 64,
         1023, 1023,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
@@ -130,7 +122,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdp_5_small = new CrossParameters(
         "CROSS-RSDP-5-SMALL", true, 5, SMALL,
         251, 150, 0, 832, 762,
-        32, 64, 64,
         1663, 1663,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 128},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 768},
@@ -146,7 +137,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_1_fast = new CrossParameters(
         "CROSS-RSDPG-1-FAST", false, 1, FAST,
         55, 36, 25, 147, 76,
-        16, 32, 32,
         293, 293,
         new int[]{0, 0, 0, 0, 2, 6, 6, 38, 38},
         new int[]{1, 2, 4, 8, 14, 24, 48, 64, 128},
@@ -161,7 +151,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_1_balanced = new CrossParameters(
         "CROSS-RSDPG-1-BALANCED", false, 1, BALANCED,
         55, 36, 25, 256, 220,
-        16, 32, 32,
         511, 511,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256},
@@ -176,7 +165,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_1_small = new CrossParameters(
         "CROSS-RSDPG-1-SMALL", false, 1, SMALL,
         55, 36, 25, 512, 484,
-        16, 32, 32,
         1023, 1023,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
@@ -192,7 +180,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_3_fast = new CrossParameters(
         "CROSS-RSDPG-3-FAST", false, 3, FAST,
         79, 48, 40, 224, 119,
-        24, 48, 48,
         447, 447,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 64},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 192},
@@ -207,7 +194,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_3_balanced = new CrossParameters(
         "CROSS-RSDPG-3-BALANCED", false, 3, BALANCED,
         79, 48, 40, 268, 196,
-        24, 48, 48,
         535, 535,
         new int[]{0, 0, 0, 0, 0, 8, 24, 24, 24, 24},
         new int[]{1, 2, 4, 8, 16, 24, 32, 64, 128, 256},
@@ -222,7 +208,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_3_small = new CrossParameters(
         "CROSS-RSDPG-3-SMALL", false, 3, SMALL,
         79, 48, 40, 512, 463,
-        24, 48, 48,
         1023, 1023,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
@@ -238,7 +223,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_5_fast = new CrossParameters(
         "CROSS-RSDPG-5-FAST", false, 5, FAST,
         106, 69, 48, 300, 153,
-        32, 64, 64,
         599, 599,
         new int[]{0, 0, 0, 0, 0, 0, 8, 24, 88, 88},
         new int[]{1, 2, 4, 8, 16, 32, 56, 96, 128, 256},
@@ -253,7 +237,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_5_balanced = new CrossParameters(
         "CROSS-RSDPG-5-BALANCED", false, 5, BALANCED,
         106, 69, 48, 356, 258,
-        32, 64, 64,
         711, 711,
         new int[]{0, 0, 0, 0, 0, 0, 8, 8, 8, 200},
         new int[]{1, 2, 4, 8, 16, 32, 56, 112, 224, 256},
@@ -268,7 +251,6 @@ public class CrossParameters
     public static final CrossParameters cross_rsdpg_5_small = new CrossParameters(
         "CROSS-RSDPG-5-SMALL", false, 5, SMALL,
         106, 69, 48, 642, 575,
-        32, 64, 64,
         1283, 1283,
         new int[]{0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 260},
         new int[]{1, 2, 4, 8, 12, 24, 48, 96, 192, 384, 512},
@@ -294,8 +276,8 @@ public class CrossParameters
     private final int w;
     private final int seedLengthBytes;
     private final int keypairSeedLengthBytes;
+    // saltLengthBytes
     private final int hashDigestLength;
-    private final int saltLengthBytes;
     private final int numNodesMerkleTree;
     private final int numNodesSeedTree;
     private final int denselyPackedFpVecSize;
@@ -320,8 +302,7 @@ public class CrossParameters
 
     private CrossParameters(String name, boolean rsdp, int category, int variant,
                             int n, int k, int m, int t, int w,
-                            int seedLengthBytes, int hashDigestLength,
-                            int saltLengthBytes, int numNodesMerkleTree,
+                            int numNodesMerkleTree,
                             int numNodesSeedTree,
                             int[] treeOffsets, int[] treeNodesPerLevel, int[] treeLeavesPerLevel,
                             int treeSubroots, int[] treeLeavesStartIndices, int[] treeConsecutiveLeaves,
@@ -366,14 +347,20 @@ public class CrossParameters
         case 1:
             this.keypairSeedLengthBytes = 32;
             this.secMarginLambda = 128;
+            this.seedLengthBytes = 16;
+            this.hashDigestLength = 32;
             break;
         case 3:
             this.keypairSeedLengthBytes = 48;
             this.secMarginLambda = 192;
+            this.seedLengthBytes = 24;
+            this.hashDigestLength = 48;
             break;
         case 5:
             this.keypairSeedLengthBytes = 64;
             this.secMarginLambda = 256;
+            this.seedLengthBytes = 32;
+            this.hashDigestLength = 64;
             break;
         default:
             throw new IllegalArgumentException("Invalid NIST category level");
@@ -383,17 +370,15 @@ public class CrossParameters
         this.m = m;
         this.t = t;
         this.w = w;
-        this.seedLengthBytes = seedLengthBytes;
-        this.hashDigestLength = hashDigestLength;
-        this.saltLengthBytes = saltLengthBytes;
+
         this.numNodesMerkleTree = numNodesMerkleTree;
         this.numNodesSeedTree = numNodesSeedTree;
-        this.denselyPackedFpVecSize = (n / 8 * Utils.bitsToRepresent(p - 1) + CrossEngine.roundUp((n % 8) * Utils.bitsToRepresent(p - 1), 8) / 8);
+        this.denselyPackedFpVecSize = (n / 8 * Utils.bitsToRepresent(p - 1) + Utils.roundUp((n % 8) * Utils.bitsToRepresent(p - 1), 8) / 8);
         this.denselyPackedFpSynSize = (n - k) / 8 * Utils.bitsToRepresent(p - 1) +
-            CrossEngine.roundUp(((n - k) % 8) * Utils.bitsToRepresent(p - 1), 8) / 8;
-        this.denselyPackedFzVecSize = (n / 8 * Utils.bitsToRepresent(z - 1) + CrossEngine.roundUp((n % 8)
+            Utils.roundUp(((n - k) % 8) * Utils.bitsToRepresent(p - 1), 8) / 8;
+        this.denselyPackedFzVecSize = (n / 8 * Utils.bitsToRepresent(z - 1) + Utils.roundUp((n % 8)
             * Utils.bitsToRepresent(z - 1), 8) / 8);
-        this.denselyPackedFzRsdpGVecSize = (m / 8) * Utils.bitsToRepresent(z - 1) + CrossEngine.roundUp(m % 8 * Utils.bitsToRepresent(z - 1), 8) / 8;
+        this.denselyPackedFzRsdpGVecSize = (m / 8) * Utils.bitsToRepresent(z - 1) + Utils.roundUp(m % 8 * Utils.bitsToRepresent(z - 1), 8) / 8;
         this.treeOffsets = treeOffsets;
         this.treeNodesPerLevel = treeNodesPerLevel;
         this.treeLeavesPerLevel = treeLeavesPerLevel;
@@ -472,11 +457,6 @@ public class CrossParameters
     public int getHashDigestLength()
     {
         return hashDigestLength;
-    }
-
-    public int getSaltLengthBytes()
-    {
-        return saltLengthBytes;
     }
 
     public int getNumNodesMerkleTree()

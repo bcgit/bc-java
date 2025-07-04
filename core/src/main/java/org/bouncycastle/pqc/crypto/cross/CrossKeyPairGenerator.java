@@ -47,7 +47,7 @@ public class CrossKeyPairGenerator
             int dscCsprngSeedE = (3 * params.getT() + 3);
             engine.init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
             byte[] e_bar = new byte[params.getN()];
-            engine.csprngFVec(e_bar, params.getZ(), params.getN(), CrossEngine.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
+            engine.csprngFVec(e_bar, params.getZ(), params.getN(), Utils.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
 
             // Step 6: Compute syndrome
             byte[] s = new byte[params.getN() - params.getK()];
@@ -71,7 +71,7 @@ public class CrossKeyPairGenerator
             int dscCsprngSeedE = (3 * params.getT() + 3);
             engine.init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
             byte[] e_G_bar = new byte[params.getM()];
-            engine.csprngFVec(e_G_bar, params.getZ(), params.getM(), CrossEngine.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
+            engine.csprngFVec(e_G_bar, params.getZ(), params.getM(), Utils.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
             byte[] e_bar = new byte[params.getN()];
             CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
             CrossEngine.fDzNorm(e_bar, e_bar.length);

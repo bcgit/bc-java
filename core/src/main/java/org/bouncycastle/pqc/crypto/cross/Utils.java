@@ -434,4 +434,10 @@ class Utils
 
         return isPackedPaddOk;
     }
+
+    // Helper function to round up to nearest multiple
+    public static int roundUp(int amount, int roundAmt)
+    {
+        return ((amount + roundAmt - 1) / roundAmt) * roundAmt;
+    }
 }

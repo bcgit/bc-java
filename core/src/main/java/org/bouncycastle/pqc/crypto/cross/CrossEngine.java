@@ -37,6 +37,14 @@ class CrossEngine
         digest.update(dscBytes, 0, 2);
     }
 
+    public void init(byte[] seed, int seedOff, int seedLen, int dsc)
+    {
+        digest.reset();
+        digest.update(seed, seedOff, seedLen);
+        byte[] dscBytes = Pack.shortToLittleEndian((short)dsc);
+        digest.update(dscBytes, 0, 2);
+    }
+
     public void init(byte[] in1, int in1Off, int in1Len, byte[] in2, int dsc)
     {
         digest.reset();
@@ -69,18 +77,12 @@ class CrossEngine
         digest.doOutput(out, outOff, outLen);
     }
 
-    // Helper function to round up to nearest multiple
-    public static int roundUp(int amount, int roundAmt)
-    {
-        return ((amount + roundAmt - 1) / roundAmt) * roundAmt;
-    }
-
     // Expand public key for RSDP variant
     public void expandPk(CrossParameters params, byte[][] V_tr, byte[] seedPk)
     {
         int dsc = 3 * params.getT() + 2;
         init(seedPk, seedPk.length, dsc);
-        csprngFMat(V_tr, params.getK(), params.getN() - params.getK(), params.getP(), roundUp(params.getBitsVCtRng(), 8) >>> 3);
+        csprngFMat(V_tr, params.getK(), params.getN() - params.getK(), params.getP(), Utils.roundUp(params.getBitsVCtRng(), 8) >>> 3);
     }
 
     // Expand public key for RSDPG variant
@@ -88,7 +90,7 @@ class CrossEngine
     {
         int dsc = 3 * params.getT() + 2;
         init(seedPk, seedPk.length, dsc);
-        csprngFMat(W_mat, params.getM(), params.getN() - params.getM(), params.getZ(), roundUp(params.getBitsWCtRng(), 8) >>> 3);
+        csprngFMat(W_mat, params.getM(), params.getN() - params.getM(), params.getZ(), Utils.roundUp(params.getBitsWCtRng(), 8) >>> 3);
         csprngFpMat(V_tr, params);
     }
 
@@ -139,7 +141,7 @@ class CrossEngine
         int total = rows * cols;
         int bitsForP = Utils.bitsToRepresent(params.getP() - 1);
         long mask = (1L << bitsForP) - 1;
-        int bufferSize = roundUp(params.getBitsVCtRng(), 8) >>> 3;
+        int bufferSize = Utils.roundUp(params.getBitsVCtRng(), 8) >>> 3;
         byte[] CSPRNG_buffer = randomBytes(bufferSize);
 
         long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
@@ -216,7 +218,7 @@ class CrossEngine
         int p = params.getP();
         int bitsForP = Utils.bitsToRepresent(p - 1);
         long mask = (1L << bitsForP) - 1;
-        int bufferSize = roundUp(params.getBitsNFpCtRng(), 8) >>> 3;
+        int bufferSize = Utils.roundUp(params.getBitsNFpCtRng(), 8) >>> 3;
         byte[] CSPRNG_buffer = randomBytes(bufferSize);
 
         long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
@@ -418,7 +420,7 @@ class CrossEngine
         int dscCsprngSeedE = (3 * params.getT() + 3);
 
         init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-        csprngFVec(e_bar, params.getZ(), params.getN(), roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
+        csprngFVec(e_bar, params.getZ(), params.getN(), Utils.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
     }
 
     public void expandSk(CrossParameters params, byte[][] seedESeedPk, byte[] e_bar, byte[] e_G_bar,
@@ -438,7 +440,7 @@ class CrossEngine
         int dscCsprngSeedE = (3 * params.getT() + 3);
 
         init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-        csprngFVec(e_G_bar, params.getZ(), params.getM(), roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
+        csprngFVec(e_G_bar, params.getZ(), params.getM(), Utils.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
 
         // Step 5: Compute full error vector
         fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
@@ -618,13 +620,24 @@ class CrossEngine
         this.digest.doFinal(digest, outOff, digestLength);
     }
 
+    public void hash(byte[] digest, int outOff, byte[] in1,
+                     byte[] in2, int in2Off, int in2Len, byte[] in3, int in3Off, int in3Len, byte[] dsc)
+    {
+        this.digest.reset();
+        this.digest.update(in1, 0, in1.length);
+        this.digest.update(in2, in2Off, in2Len);
+        this.digest.update(in3, in3Off, in3Len);
+        this.digest.update(dsc, 0, 2);
+        this.digest.doFinal(digest, outOff, digestLength);
+    }
+
     public int[] csprngFpVecChall1(CrossParameters params)
     {
         int t = params.getT();
         int p = params.getP();
         int bitsForP = Utils.bitsToRepresent(p - 2);
         long mask = (1L << bitsForP) - 1;
-        int bufferSize = roundUp(params.getBitsChall1FpstarCtRng(), 8) >>> 3;
+        int bufferSize = Utils.roundUp(params.getBitsChall1FpstarCtRng(), 8) >>> 3;
 
         byte[] cspRngBuffer = randomBytes(bufferSize);
 
@@ -685,7 +698,7 @@ class CrossEngine
     }
 
     // Generate fixed-weight binary string
-    public void expandDigestToFixedWeight(byte[] fixedWeightString, byte[] digest, CrossParameters params)
+    public void expandDigestToFixedWeight(byte[] fixedWeightString, byte[] digest, int digestOff, CrossParameters params)
     {
         int t = params.getT();
         int w = params.getW();
@@ -696,12 +709,9 @@ class CrossEngine
             fixedWeightString[i] = 1;
         }
 
-        // Initialize CSPRNG with domain separation
-        int dsc = 3 * t; // CSPRNG_DOMAIN_SEP_CONST = 0
+        init(digest, digestOff, params.getHashDigestLength(), 3 * t);
 
-        init(digest, digest.length, dsc);
-
-        int bufferSize = roundUp(params.getBitsCWStrRng(), 8) >>> 3;
+        int bufferSize = Utils.roundUp(params.getBitsCWStrRng(), 8) >>> 3;
         byte[] cspRngBuffer = randomBytes(bufferSize);
 
         long subBuffer = Pack.littleEndianToLong(cspRngBuffer, 0);
@@ -755,26 +765,26 @@ class CrossEngine
     public static final byte NOT_COMPUTED = 0;
 
     // For SPEED variant (NO_TREES)
-    public static void treeProofSpeed(byte[] mtp, byte[][] leaves, byte[] leavesToReveal, int hashDigestLength)
+    public static void treeProofSpeed(byte[] mtp, int mtpOff, byte[][] leaves, byte[] leavesToReveal, int hashDigestLength)
     {
         int published = 0;
         for (int i = 0; i < leavesToReveal.length; i++)
         {
             if (leavesToReveal[i] == TO_PUBLISH)
             {
-                System.arraycopy(leaves[i], 0, mtp, published++ * hashDigestLength, hashDigestLength);
+                System.arraycopy(leaves[i], 0, mtp, mtpOff + published++ * hashDigestLength, hashDigestLength);
             }
         }
     }
 
-    public static void seedPathSpeed(byte[] seedStorage, byte[] roundsSeeds, byte[] indicesToPublish, int seedLengthBytes)
+    public static void seedPathSpeed(byte[] seedStorage, int seedStorageOff, byte[] roundsSeeds, byte[] indicesToPublish, int seedLengthBytes)
     {
         int published = 0;
         for (int i = 0; i < indicesToPublish.length; i++)
         {
             if (indicesToPublish[i] == TO_PUBLISH)
             {
-                System.arraycopy(roundsSeeds, i * seedLengthBytes, seedStorage, published * seedLengthBytes, seedLengthBytes);
+                System.arraycopy(roundsSeeds, i * seedLengthBytes, seedStorage, seedStorageOff + published * seedLengthBytes, seedLengthBytes);
                 published++;
             }
         }
@@ -804,7 +814,7 @@ class CrossEngine
     }
 
     // For BALANCED/SMALL variants (with trees)
-    public static void treeProofBalanced(byte[] mtp, byte[] tree, byte[] leavesToReveal, CrossParameters params)
+    public static void treeProofBalanced(byte[] mtp, int mtpOff, byte[] tree, byte[] leavesToReveal, CrossParameters params)
     {
         int numNodes = params.getNumNodesMerkleTree();
         byte[] flagTree = new byte[numNodes];
@@ -837,7 +847,7 @@ class CrossEngine
                 if (flagTree[currentNode] == NOT_COMPUTED && flagTree[sibling(currentNode)] == COMPUTED)
                 {
                     int srcPos = currentNode * params.getHashDigestLength();
-                    System.arraycopy(tree, srcPos, mtp, published * params.getHashDigestLength(), params.getHashDigestLength());
+                    System.arraycopy(tree, srcPos, mtp, mtpOff + published * params.getHashDigestLength(), params.getHashDigestLength());
                     published++;
                 }
 
@@ -845,7 +855,7 @@ class CrossEngine
                 if (flagTree[currentNode] == COMPUTED && flagTree[sibling(currentNode)] == NOT_COMPUTED)
                 {
                     int srcPos = sibling(currentNode) * params.getHashDigestLength();
-                    System.arraycopy(tree, srcPos, mtp, published * params.getHashDigestLength(), params.getHashDigestLength());
+                    System.arraycopy(tree, srcPos, mtp, mtpOff + published * params.getHashDigestLength(), params.getHashDigestLength());
                     published++;
                 }
             }
@@ -853,7 +863,7 @@ class CrossEngine
         }
     }
 
-    public static void seedPathBalanced(byte[] seedStorage, byte[] seedTree, byte[] indicesToPublish, CrossParameters params)
+    public static void seedPathBalanced(byte[] seedStorage, int seedStorageOff, byte[] seedTree, byte[] indicesToPublish, CrossParameters params)
     {
         int numNodes = params.getNumNodesSeedTree();
         byte[] flagsTree = new byte[numNodes];
@@ -878,7 +888,7 @@ class CrossEngine
                 if (flagsTree[currentNode] == TO_PUBLISH && flagsTree[fatherNode] == NOT_TO_PUBLISH)
                 {
                     int srcPos = currentNode * params.getSeedLengthBytes();
-                    System.arraycopy(seedTree, srcPos, seedStorage, numSeedsPublished * params.getSeedLengthBytes(),
+                    System.arraycopy(seedTree, srcPos, seedStorage, seedStorageOff + numSeedsPublished * params.getSeedLengthBytes(),
                         params.getSeedLengthBytes());
                     numSeedsPublished++;
                 }
