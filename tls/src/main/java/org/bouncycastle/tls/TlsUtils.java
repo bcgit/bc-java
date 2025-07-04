@@ -6062,8 +6062,6 @@ public class TlsUtils
         Hashtable clientHelloExtensions, HandshakeMessageInput clientHelloMessage, TlsHandshakeHash handshakeHash,
         boolean afterHelloRetryRequest) throws IOException
     {
-        boolean handshakeHashUpdated = false;
-
         OfferedPsks offeredPsks = TlsExtensionsUtils.getPreSharedKeyClientHello(clientHelloExtensions);
         if (null != offeredPsks)
         {
@@ -6089,6 +6087,14 @@ public class TlsUtils
                     int index = offeredPsks.getIndexOfIdentity(new PskIdentity(psk.getIdentity(), 0L));
                     if (index >= 0)
                     {
+                        /*
+                         * RFC 8446 4.2.11. Prior to accepting PSK key establishment, the server MUST validate the
+                         * corresponding binder value [..]. If this value is not present or does not validate, the
+                         * server MUST abort the handshake.  Servers SHOULD NOT attempt to validate multiple
+                         * binders; rather, they SHOULD select a single PSK and validate solely the binder that
+                         * corresponds to that PSK.
+                         */
+
                         byte[] binder = (byte[])offeredPsks.getBinders().elementAt(index);
 
                         TlsCrypto crypto = serverContext.getCrypto();
@@ -6100,7 +6106,6 @@ public class TlsUtils
 
                         byte[] transcriptHash;
                         {
-                            handshakeHashUpdated = true;
                             int bindersSize = offeredPsks.getBindersSize();
                             clientHelloMessage.updateHashPrefix(handshakeHash, bindersSize);
 
@@ -6121,20 +6126,18 @@ public class TlsUtils
                         byte[] calculatedBinder = calculatePSKBinder(crypto, isExternalPSK, pskCryptoHashAlgorithm,
                             earlySecret, transcriptHash);
 
-                        if (Arrays.constantTimeAreEqual(calculatedBinder, binder))
+                        if (!Arrays.constantTimeAreEqual(calculatedBinder, binder))
                         {
-                            return new OfferedPsks.SelectedConfig(index, psk, pskKeyExchangeModes, earlySecret);
+                            throw new TlsFatalAlert(AlertDescription.decrypt_error, "Invalid PSK binder");                            
                         }
+
+                        return new OfferedPsks.SelectedConfig(index, psk, pskKeyExchangeModes, earlySecret);
                     }
                 }
             }
         }
 
-        if (!handshakeHashUpdated)
-        {
-            clientHelloMessage.updateHash(handshakeHash);
-        }
-
+        clientHelloMessage.updateHash(handshakeHash);
         return null;
     }
 
