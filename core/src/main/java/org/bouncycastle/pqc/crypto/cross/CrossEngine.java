@@ -80,16 +80,14 @@ class CrossEngine
     // Expand public key for RSDP variant
     public void expandPk(CrossParameters params, byte[][] V_tr, byte[] seedPk)
     {
-        int dsc = 3 * params.getT() + 2;
-        init(seedPk, seedPk.length, dsc);
+        init(seedPk, params.getKeypairSeedLengthBytes(), 3 * params.getT() + 2);
         csprngFMat(V_tr, params.getK(), params.getN() - params.getK(), params.getP(), Utils.roundUp(params.getBitsVCtRng(), 8) >>> 3);
     }
 
     // Expand public key for RSDPG variant
     public void expandPk(CrossParameters params, short[][] V_tr, byte[][] W_mat, byte[] seedPk)
     {
-        int dsc = 3 * params.getT() + 2;
-        init(seedPk, seedPk.length, dsc);
+        init(seedPk, params.getKeypairSeedLengthBytes(), 3 * params.getT() + 2);
         csprngFMat(W_mat, params.getM(), params.getN() - params.getM(), params.getZ(), Utils.roundUp(params.getBitsWCtRng(), 8) >>> 3);
         csprngFpMat(V_tr, params);
     }
@@ -409,44 +407,6 @@ class CrossEngine
             int val = v[i] & 0xFF;
             v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
         }
-    }
-
-    public void expandSk(CrossParameters params, byte[][] seedESeedPk, byte[] e_bar, byte[][] V_tr)
-    {
-        // Step 3: Expand public key matrix
-        expandPk(params, V_tr, seedESeedPk[1]);
-
-        // Step 4: Generate error vector
-        int dscCsprngSeedE = (3 * params.getT() + 3);
-
-        init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-        csprngFVec(e_bar, params.getZ(), params.getN(), Utils.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
-    }
-
-    public void expandSk(CrossParameters params, byte[][] seedESeedPk, byte[] e_bar, byte[] e_G_bar,
-                         short[][] V_tr, byte[][] W_mat)
-    {
-        // Step 3: Expand public key matrices
-        short[][] V_tr_short = new short[params.getK()][params.getN() - params.getK()];
-        expandPk(params, V_tr_short, W_mat, seedESeedPk[1]);
-
-        // Convert to byte arrays for consistency
-        for (int i = 0; i < V_tr_short.length; i++)
-        {
-            System.arraycopy(V_tr_short[i], 0, V_tr[i], 0, V_tr_short[i].length);
-        }
-
-        // Step 4: Generate error information word
-        int dscCsprngSeedE = (3 * params.getT() + 3);
-
-        init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-        csprngFVec(e_G_bar, params.getZ(), params.getM(), Utils.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
-
-        // Step 5: Compute full error vector
-        fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
-
-        // Step 6: Normalize error vector
-        fDzNorm(e_bar, e_bar.length);
     }
 
     // For SPEED variant (NO_TREES)
@@ -1134,7 +1094,7 @@ class CrossEngine
                 if (flagsTree[currentNode] == TO_PUBLISH && nodeInLevel < npl[level] - lpl[level])
                 {
                     randomBytes(seedTree, leftChild * seedLength, 2 * seedLength, seedTree,
-                        currentNode * seedLength, seedLength, salt, CrossEngine.CSPRNG_DOMAIN_SEP_CONST + currentNode);
+                        currentNode * seedLength, seedLength, salt, currentNode);
                 }
             }
             startNode += npl[level];

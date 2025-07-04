@@ -22,73 +22,51 @@ public class CrossKeyPairGenerator
     @Override
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        // Step 1: Generate random seed for secret key
+        int k = params.getK();
+        int n = params.getN();
+        int keypairSeedLength = params.getKeypairSeedLengthBytes();
         byte[] seedSk = new byte[params.getKeypairSeedLengthBytes()];
+        byte[] pk = new byte[params.getDenselyPackedFpSynSize() + params.getKeypairSeedLengthBytes()];
+
         random.nextBytes(seedSk);
 
-        // Step 2: Initialize CSPRNG for key generation
-        int dscCsprngSeedSk = (3 * params.getT() + 1); // CSPRNG_DOMAIN_SEP_CONST = 0
         CrossEngine engine = new CrossEngine(params);
-        engine.init(seedSk, seedSk.length, dscCsprngSeedSk);
+        engine.init(seedSk, seedSk.length, 3 * params.getT() + 1);
 
-        // Step 3: Generate seeds for error vector and public key
-        byte[][] seedESeedPk = new byte[2][params.getKeypairSeedLengthBytes()];
-        engine.randomBytes(seedESeedPk[0], params.getKeypairSeedLengthBytes());
-        engine.randomBytes(seedESeedPk[1], params.getKeypairSeedLengthBytes());
-        byte[] seedPk = seedESeedPk[1].clone();
+        byte[] seedESeedPk = new byte[keypairSeedLength];
+        engine.randomBytes(seedESeedPk, params.getKeypairSeedLengthBytes());
+        engine.randomBytes(pk, params.getKeypairSeedLengthBytes());
 
-        // Step 4: Expand public key matrices
-        if (params.getP() == 127)
-        { // RSDP
-            byte[][] V_tr = new byte[params.getK()][params.getN() - params.getK()];
-            engine.expandPk(params, V_tr, seedPk);
-
-            // Step 5: Generate error vector
-            int dscCsprngSeedE = (3 * params.getT() + 3);
-            engine.init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-            byte[] e_bar = new byte[params.getN()];
-            engine.csprngFVec(e_bar, params.getZ(), params.getN(), Utils.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
-
-            // Step 6: Compute syndrome
-            byte[] s = new byte[params.getN() - params.getK()];
+        if (params.rsdp)
+        {
+            byte[][] V_tr = new byte[k][n - k];
+            byte[] e_bar = new byte[n];
+            byte[] s = new byte[n - k];
+            engine.expandPk(params, V_tr, pk);
+            engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
+            engine.csprngFVec(e_bar, params.getZ(), n, Utils.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
             CrossEngine.fDzNorm(s, s.length);
-            byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
-            Utils.genericPack7Bit(packedS, 0, s, s.length);
-
-            return new AsymmetricCipherKeyPair(
-                new CrossPublicKeyParameters(params, Arrays.concatenate(seedPk, packedS)),
-                new CrossPrivateKeyParameters(params, seedSk)
-            );
+            Utils.genericPack7Bit(pk, keypairSeedLength, s, s.length);
         }
-        else if (params.getP() == 509)
-        { // RSDPG
-            short[][] V_tr = new short[params.getK()][params.getN() - params.getK()];
-            byte[][] W_mat = new byte[params.getM()][params.getN() - params.getM()];
-            engine.expandPk(params, V_tr, W_mat, seedPk);
-
-            // Step 5: Generate error vector
-            int dscCsprngSeedE = (3 * params.getT() + 3);
-            engine.init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-            byte[] e_G_bar = new byte[params.getM()];
-            engine.csprngFVec(e_G_bar, params.getZ(), params.getM(), Utils.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
-            byte[] e_bar = new byte[params.getN()];
+        else
+        {
+            int m = params.getM();
+            short[][] V_tr = new short[k][n - k];
+            byte[][] W_mat = new byte[m][n - m];
+            byte[] e_G_bar = new byte[m];
+            byte[] e_bar = new byte[n];
+            short[] s = new short[n - k];
+            engine.expandPk(params, V_tr, W_mat, pk);
+            engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
+            engine.csprngFVec(e_G_bar, params.getZ(), m, Utils.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
             CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
             CrossEngine.fDzNorm(e_bar, e_bar.length);
-
-            // Step 6: Compute syndrome
-            short[] s = new short[params.getN() - params.getK()];
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
-
-            byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
-            Utils.genericPack9Bit(packedS, 0, s);
-
-            return new AsymmetricCipherKeyPair(
-                new CrossPublicKeyParameters(params, Arrays.concatenate(seedPk, packedS)),
-                new CrossPrivateKeyParameters(params, seedSk)
-            );
+            Utils.genericPack9Bit(pk, keypairSeedLength, s, s.length);
         }
-        return null;
+        return new AsymmetricCipherKeyPair(new CrossPublicKeyParameters(params, pk),
+            new CrossPrivateKeyParameters(params, seedSk));
     }
 
 }

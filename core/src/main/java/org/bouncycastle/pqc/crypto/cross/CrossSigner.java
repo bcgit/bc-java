@@ -51,7 +51,6 @@ public class CrossSigner
     @Override
     public byte[] generateSignature(byte[] message)
     {
-        byte[] seed_sk = privKey.getEncoded();
         int m = params.getM();
         int w = params.getW();
         int t = params.getT();
@@ -63,17 +62,10 @@ public class CrossSigner
         int pos = 0;
         byte[] salt = new byte[hashDigestLength]; //digest_chall_1
         // Key material expansion
-        Object V_tr;
         byte[] e_bar = new byte[n];
-        byte[] e_G_bar = null;
-        byte[][] W_mat = null;
         // Prepare arrays for T rounds
         byte[][] e_bar_prime = new byte[t][n];
         byte[][] v_bar = new byte[t][n];
-        Object u_prime;
-        Object s_prime;
-        byte[][] e_G_bar_prime = null;
-        byte[][] v_G_bar = null;
         // Generate root seed and salt
         byte[] root_seed = new byte[params.getSeedLengthBytes()];
         // Generate round seeds
@@ -90,15 +82,15 @@ public class CrossSigner
         byte[] digest_cmt0_cmt1 = new byte[2 * hashDigestLength];
         byte[] merkle_tree_0 = null;
         byte[] chall_2 = new byte[t];
-        Object y;
-        byte[] y_digest_chall_1 = new byte[t * params.getDenselyPackedFpVecSize()];
-
+        byte[] cmt0_i_input;
+        byte[] seed_sk = privKey.getEncoded();
         System.arraycopy(message, 0, sm, pos, message.length);
         pos += message.length;
         random.nextBytes(root_seed);
         random.nextBytes(salt);
         System.arraycopy(salt, 0, sm, pos, salt.length);
         pos += salt.length;
+
         if (params.variant == CrossParameters.FAST)
         {
             engine.seedLeavesSpeed(params, round_seeds, root_seed, salt);
@@ -116,143 +108,175 @@ public class CrossSigner
         // Step 2: Generate seeds for error vector and public key
         engine.randomBytes(seedESeedPk[0], keypairSeedLen);
         engine.randomBytes(seedESeedPk[1], keypairSeedLen);
+        engine.init(seedESeedPk[0], seedESeedPk[0].length, 3 * params.getT() + 3);
+        int bufferSize;
         if (params.rsdp)
         {
-            V_tr = new byte[k][n - k];
-            engine.expandSk(params, seedESeedPk, e_bar, (byte[][])V_tr);
+            byte[][] V_tr = new byte[k][n - k];
+            byte[][] y = new byte[t][Math.max(params.getDenselyPackedFpVecSize(), n)]; //u_prime
+            bufferSize = Utils.roundUp(params.getBitsNFzCtRng(), 8) >>> 3;
+            engine.csprngFVec(e_bar, z, n, bufferSize);
+            engine.expandPk(params, V_tr, seedESeedPk[1]);
             cmt0InputSize += params.getDenselyPackedFzVecSize();
-            u_prime = new byte[t][n];
-            s_prime = new byte[n - k];
-        }
-        else
-        {
-            V_tr = new short[k][n - k];
-            e_G_bar = new byte[m];
-            W_mat = new byte[m][n - m];
-            engine.expandSk(params, seedESeedPk, e_bar, e_G_bar, (short[][])V_tr, W_mat);
-            cmt0InputSize += params.getDenselyPackedFzRsdpGVecSize();
-            u_prime = new short[t][n];
-            e_G_bar_prime = new byte[t][m];
-            v_G_bar = new byte[t][m];
-            s_prime = new short[n - k];
-        }
-
-        byte[] cmt0_i_input = new byte[cmt0InputSize];
-
-        // Process each round
-        for (int i = 0, domain_sep_hash = CrossEngine.HASH_DOMAIN_SEP_CONST + (2 * t - 1); i < t; i++, domain_sep_hash++)
-        {
-            // Prepare CSPRNG input
-            int domain_sep_csprng = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + i + (2 * t - 1);
-            engine.init(round_seeds, i * params.getSeedLengthBytes(), params.getSeedLengthBytes(), salt, domain_sep_csprng);
-
-            if (params.rsdp)
+            cmt0_i_input = new byte[cmt0InputSize];
+            // Process each round
+            for (int i = 0, domain_sep_csprng = 2 * t - 1, domain_sep_hash = CrossEngine.HASH_DOMAIN_SEP_CONST + domain_sep_csprng; i < t; i++, domain_sep_hash++, domain_sep_csprng++)
             {
+                // Prepare CSPRNG input
+                engine.init(round_seeds, i * params.getSeedLengthBytes(), params.getSeedLengthBytes(), salt, domain_sep_csprng);
+
+                byte[] s_prime = new byte[n - k];
                 engine.csprngFVec(e_bar_prime[i], z, n, Utils.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
                 // Compute v_bar
                 CrossEngine.fzVecSub(v_bar[i], e_bar, e_bar_prime[i], n);
-                byte[] v = new byte[n];
-                CrossEngine.convertRestrVecToFp(v, v_bar[i], params);
+                byte[] u = new byte[n]; //v
+                CrossEngine.convertRestrVecToFp(u, v_bar[i], params);
                 CrossEngine.fDzNorm(v_bar[i], v_bar[i].length);
 
                 // Convert to FP and compute u_prime
-                engine.csprngFVec(((byte[][])u_prime)[i], params.getP(), n, Utils.roundUp(params.getBitsNFpCtRng(), 8) >>> 3);
+                engine.csprngFVec(y[i], params.getP(), n, Utils.roundUp(params.getBitsNFpCtRng(), 8) >>> 3);
 
                 // Compute s_prime
-                byte[] u = new byte[n];
-                CrossEngine.fpVecByFpVecPointwise(u, v, ((byte[][])u_prime)[i], params);
-                CrossEngine.fpVecByFpMatrix((byte[])s_prime, u, (byte[][])V_tr, params);
-                CrossEngine.fDzNorm((byte[])s_prime, ((byte[])s_prime).length);
+                CrossEngine.fpVecByFpVecPointwise(u, u, y[i], params);
+                CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, params);
+                CrossEngine.fDzNorm(s_prime, n - k);
 
                 // Build cmt_0 input
-                Utils.genericPack7Bit(cmt0_i_input, 0, (byte[])s_prime, ((byte[])s_prime).length);
+                Utils.genericPack7Bit(cmt0_i_input, 0, s_prime, n - k);
                 Utils.genericPack3Bit(cmt0_i_input, params.getDenselyPackedFpSynSize(), v_bar[i], n);
+
+                // Compute commitments
+                getCmt(hashDigestLength, salt, round_seeds, cmt_0, cmt_1, cmt0_i_input, i, (short)domain_sep_hash);
             }
-            else
+            int[] chall_1 = getChall1(message, t, hashDigestLength, sm, pos, salt, cmt_0, cmt_1, digest_cmt0_cmt1, merkle_tree_0);
+            pos += hashDigestLength;
+            for (int i = 0; i < t; i++)
             {
-                engine.csprngFVec(e_G_bar_prime[i], z, m, Utils.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
-                CrossEngine.fzVecSub(v_G_bar[i], e_G_bar, e_G_bar_prime[i], m);
+                CrossEngine.fpVecByRestrVecScaled(y[i], e_bar_prime[i], chall_1[i], y[i], params);
+                CrossEngine.fDzNorm(y[i], n);
+                Utils.genericPack7Bit(y[i], 0, y[i], y[i].length);
+                engine.digest.update(y[i], 0, params.getDenselyPackedFpVecSize());
+            }
+            pos = getPathAndProof(w, hashDigestLength, sm, pos, salt, round_seeds, seed_tree, cmt_0, merkle_tree_0, chall_2);
+            int published_rsps = 0;
+            int pos2 = pos + hashDigestLength * (t - w);
+            for (int i = 0; i < t; i++)
+            {
+                if (chall_2[i] == 0)
+                {
+                    if (published_rsps >= t - w)
+                    {
+                        throw new IllegalStateException("Too many responses to publish");
+                    }
+
+
+                    System.arraycopy(y[i], 0, sm, pos2, params.getDenselyPackedFpVecSize());
+                    pos2 += params.getDenselyPackedFpVecSize();
+                    Utils.genericPack3Bit(sm, pos2, v_bar[i], n);
+                    pos2 += params.getDenselyPackedFzVecSize();
+
+                    System.arraycopy(cmt_1, i * hashDigestLength, sm, pos, hashDigestLength);
+                    published_rsps++;
+                    pos += hashDigestLength;
+                }
+            }
+        }
+        else
+        {
+            short[][] V_tr = new short[k][n - k];
+            byte[] e_G_bar = new byte[m];
+            byte[][] W_mat = new byte[m][n - m];
+            short[][] y = new short[t][n];//u_prime
+            byte[][] y_digest_chall = new byte[t][params.getDenselyPackedFpVecSize()];
+            byte[][] v_G_bar = new byte[t][m];
+            bufferSize = Utils.roundUp(params.getBitsMFzCtRng(), 8) >>> 3;
+            engine.csprngFVec(e_G_bar, z, m, bufferSize);
+            engine.expandPk(params, V_tr, W_mat, seedESeedPk[1]);
+            CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
+            cmt0InputSize += params.getDenselyPackedFzRsdpGVecSize();
+            cmt0_i_input = new byte[cmt0InputSize];
+            // Process each round
+            for (int i = 0, domain_sep_csprng = 2 * t - 1, domain_sep_hash = CrossEngine.HASH_DOMAIN_SEP_CONST + domain_sep_csprng; i < t; i++, domain_sep_hash++, domain_sep_csprng++)
+            {
+                // Prepare CSPRNG input
+                engine.init(round_seeds, i * params.getSeedLengthBytes(), params.getSeedLengthBytes(), salt, domain_sep_csprng);
+
+                byte[] egBarPrime = new byte[m];
+                short[] u = new short[n];
+                short[] s_prime = new short[n - k];
+                engine.csprngFVec(egBarPrime, z, m, bufferSize);
+                CrossEngine.fzVecSub(v_G_bar[i], e_G_bar, egBarPrime, m);
                 CrossEngine.fDzNorm(v_G_bar[i], m);
-                CrossEngine.fzInfWByFzMatrix(e_bar_prime[i], e_G_bar_prime[i], W_mat, params);
+                CrossEngine.fzInfWByFzMatrix(e_bar_prime[i], egBarPrime, W_mat, params);
                 CrossEngine.fDzNorm(e_bar_prime[i], e_bar_prime[i].length);
                 // Compute v_bar
                 CrossEngine.fzVecSub(v_bar[i], e_bar, e_bar_prime[i], n);
-                short[] v = new short[n];
-                CrossEngine.convertRestrVecToFp(v, v_bar[i], params);
+                CrossEngine.convertRestrVecToFp(u, v_bar[i], params);
                 CrossEngine.fDzNorm(v_bar[i], v_bar[i].length);
 
                 // Convert to FP and compute u_prime
-                engine.csprngFpVec(((short[][])u_prime)[i], params);
+                engine.csprngFpVec(y[i], params);
 
                 // Compute s_prime
-                short[] u = new short[n];
-                CrossEngine.fpVecByFpVecPointwise(u, v, ((short[][])u_prime)[i], params);
-                CrossEngine.fpVecByFpMatrix((short[])s_prime, u, (short[][])V_tr, params);
+                CrossEngine.fpVecByFpVecPointwise(u, u, y[i], params);
+                CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, params);
 
                 // Build cmt_0 input
-                Utils.genericPack9Bit(cmt0_i_input, 0, (short[])s_prime);
+                Utils.genericPack9Bit(cmt0_i_input, 0, s_prime, s_prime.length);
                 Utils.genericPack7Bit(cmt0_i_input, params.getDenselyPackedFpSynSize(), v_G_bar[i], m);
+
+                // Compute commitments
+                getCmt(hashDigestLength, salt, round_seeds, cmt_0, cmt_1, cmt0_i_input, i, (short)domain_sep_hash);
             }
-
-            // Compute commitments
-
-            byte[] domain_sep_hash_bytes = Pack.shortToLittleEndian((short)domain_sep_hash);
-            engine.hash(cmt_0[i], 0, cmt0_i_input, 0, cmt0_i_input.length, salt, 0, salt.length, domain_sep_hash_bytes);
-            engine.hash(cmt_1, i * hashDigestLength, round_seeds, i * params.getSeedLengthBytes(), params.getSeedLengthBytes(),
-                salt, 0, hashDigestLength, domain_sep_hash_bytes);
-        }
-
-        if (params.variant == CrossParameters.FAST)
-        {
-            engine.treeRootSpeed(digest_cmt0_cmt1, cmt_0, params);
-        }
-        else
-        {
-            engine.treeRootBalanced(digest_cmt0_cmt1, merkle_tree_0, cmt_0, params);
-        }
-
-        engine.hash(digest_cmt0_cmt1, hashDigestLength, cmt_1, 0, cmt_1.length, CrossEngine.HASH_DOMAIN_SEP);
-        engine.hash(sm, pos, digest_cmt0_cmt1, 0, digest_cmt0_cmt1.length, CrossEngine.HASH_DOMAIN_SEP);
-
-        // First challenge extraction
-        engine.hash(salt, 0, message, 0, message.length, CrossEngine.HASH_DOMAIN_SEP);
-        // hash(digest_chall_1 || digest_cmt || salt || dsc)
-        engine.hash(salt, 0, salt, sm, pos, hashDigestLength, sm, message.length, hashDigestLength, CrossEngine.HASH_DOMAIN_SEP);
-        pos += hashDigestLength;
-        // Expand first challenge
-        int dsc_csprng_chall_1 = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + (3 * t - 1);
-        engine.init(salt, salt.length, dsc_csprng_chall_1);
-        int[] chall_1 = engine.csprngFpVecChall1(params);
-
-        // Compute first round responses
-        if (params.rsdp)
-        {
-            y = new byte[t][n];
+            int[] chall_1 = getChall1(message, t, hashDigestLength, sm, pos, salt, cmt_0, cmt_1, digest_cmt0_cmt1, merkle_tree_0);
+            pos += hashDigestLength;
             for (int i = 0; i < t; i++)
             {
-                CrossEngine.fpVecByRestrVecScaled(((byte[][])y)[i], e_bar_prime[i], chall_1[i], ((byte[][])u_prime)[i], params);
-                CrossEngine.fDzNorm(((byte[][])y)[i], n);
+                CrossEngine.fpVecByRestrVecScaled(y[i], e_bar_prime[i], chall_1[i], y[i], params);
+                Utils.genericPack9Bit(y_digest_chall[i], 0, y[i], n);
+                engine.digest.update(y_digest_chall[i], 0, params.getDenselyPackedFpVecSize());
             }
-            // Pack y vectors and compute second challenge
+
+            pos = getPathAndProof(w, hashDigestLength, sm, pos, salt, round_seeds, seed_tree, cmt_0, merkle_tree_0, chall_2);
+            // Collect responses
+            int published_rsps = 0;
+            int pos2 = pos + hashDigestLength * (t - w);
             for (int i = 0; i < t; i++)
             {
-                Utils.genericPack7Bit(y_digest_chall_1, i * params.getDenselyPackedFpVecSize(), ((byte[][])y)[i], ((byte[][])y)[i].length);
+                if (chall_2[i] == 0)
+                {
+                    if (published_rsps >= t - w)
+                    {
+                        throw new IllegalStateException("Too many responses to publish");
+                    }
+
+                    System.arraycopy(y_digest_chall[i], 0, sm, pos2, params.getDenselyPackedFpVecSize());
+                    pos2 += params.getDenselyPackedFpVecSize();
+                    Utils.genericPack7Bit(sm, pos2, v_G_bar[i], m);
+                    pos2 += params.getDenselyPackedFzRsdpGVecSize();
+
+                    System.arraycopy(cmt_1, i * hashDigestLength, sm, pos, hashDigestLength);
+                    published_rsps++;
+                    pos += hashDigestLength;
+                }
             }
         }
-        else
-        {
-            y = new short[t][n];
-            for (int i = 0; i < t; i++)
-            {
-                CrossEngine.fpVecByRestrVecScaled(((short[][])y)[i], e_bar_prime[i], chall_1[i], ((short[][])u_prime)[i], params);
-            }
-            // Pack y vectors and compute second challenge
-            for (int i = 0; i < t; i++)
-            {
-                Utils.genericPack9Bit(y_digest_chall_1, i * params.getDenselyPackedFpVecSize(), ((short[][])y)[i]);
-            }
-        }
-        engine.hash(sm, pos, y_digest_chall_1, 0, y_digest_chall_1.length, salt, 0, salt.length, CrossEngine.HASH_DOMAIN_SEP);
+        return sm;
+    }
+
+    private void getCmt(int hashDigestLength, byte[] salt, byte[] round_seeds, byte[][] cmt_0, byte[] cmt_1, byte[] cmt0_i_input, int i, short domain_sep_hash)
+    {
+        byte[] domain_sep_hash_bytes = Pack.shortToLittleEndian(domain_sep_hash);
+        engine.hash(cmt_0[i], 0, cmt0_i_input, 0, cmt0_i_input.length, salt, 0, salt.length, domain_sep_hash_bytes);
+        engine.hash(cmt_1, i * hashDigestLength, round_seeds, i * params.getSeedLengthBytes(), params.getSeedLengthBytes(),
+            salt, 0, hashDigestLength, domain_sep_hash_bytes);
+    }
+
+    private int getPathAndProof(int w, int hashDigestLength, byte[] sm, int pos, byte[] salt, byte[] round_seeds, byte[] seed_tree, byte[][] cmt_0, byte[] merkle_tree_0, byte[] chall_2)
+    {
+        engine.digest.update(salt, 0, salt.length);
+        engine.digest.update(CrossEngine.HASH_DOMAIN_SEP, 0, 2);
+        engine.digest.doFinal(sm, pos, hashDigestLength);
 
         // Expand to fixed weight challenge
         engine.expandDigestToFixedWeight(chall_2, sm, pos, params);
@@ -273,39 +297,34 @@ public class CrossSigner
             CrossEngine.treeProofBalanced(sm, pos, merkle_tree_0, chall_2, params);
             pos += hashDigestLength * params.getTreeNodesToStore();
         }
+        return pos;
+    }
 
-        // Collect responses
-        int published_rsps = 0;
-        int pos2 = pos + hashDigestLength * (t - w);
-        for (int i = 0; i < t; i++)
+    private int[] getChall1(byte[] message, int t, int hashDigestLength, byte[] sm, int pos, byte[] salt, byte[][] cmt_0, byte[] cmt_1, byte[] digest_cmt0_cmt1, byte[] merkle_tree_0)
+    {
+        if (params.variant == CrossParameters.FAST)
         {
-            if (chall_2[i] == 0)
-            {
-                if (published_rsps >= t - w)
-                {
-                    throw new IllegalStateException("Too many responses to publish");
-                }
-
-                if (params.rsdp)
-                {
-                    Utils.genericPack7Bit(sm, pos2, ((byte[][])y)[i], ((byte[][])y)[i].length);
-                    pos2 += params.getDenselyPackedFpVecSize();
-                    Utils.genericPack3Bit(sm, pos2, v_bar[i], n);
-                    pos2 += params.getDenselyPackedFzVecSize();
-                }
-                else
-                {
-                    Utils.genericPack9Bit(sm, pos2, ((short[][])y)[i]);
-                    pos2 += params.getDenselyPackedFpVecSize();
-                    Utils.genericPack7Bit(sm, pos2, v_G_bar[i], m);
-                    pos2 += params.getDenselyPackedFzRsdpGVecSize();
-                }
-                System.arraycopy(cmt_1, i * hashDigestLength, sm, pos, hashDigestLength);
-                published_rsps++;
-                pos += hashDigestLength;
-            }
+            engine.treeRootSpeed(digest_cmt0_cmt1, cmt_0, params);
         }
-        return sm;
+        else
+        {
+            engine.treeRootBalanced(digest_cmt0_cmt1, merkle_tree_0, cmt_0, params);
+        }
+
+        engine.hash(digest_cmt0_cmt1, hashDigestLength, cmt_1, 0, cmt_1.length, CrossEngine.HASH_DOMAIN_SEP);
+        engine.hash(sm, pos, digest_cmt0_cmt1, 0, digest_cmt0_cmt1.length, CrossEngine.HASH_DOMAIN_SEP);
+
+        // First challenge extraction
+        engine.hash(salt, 0, message, 0, message.length, CrossEngine.HASH_DOMAIN_SEP);
+        // hash(digest_chall_1 || digest_cmt || salt || dsc)
+        engine.hash(salt, 0, salt, sm, pos, hashDigestLength, sm, message.length, hashDigestLength, CrossEngine.HASH_DOMAIN_SEP);
+
+        // Expand first challenge
+        int dsc_csprng_chall_1 = 3 * t - 1;
+        engine.init(salt, salt.length, dsc_csprng_chall_1);
+        int[] chall_1 = engine.csprngFpVecChall1(params);
+        engine.digest.reset();
+        return chall_1;
     }
 
     @Override
@@ -447,7 +466,7 @@ public class CrossSigner
 
         engine.hash(digestChall1, 0, message, 0, message.length, CrossEngine.HASH_DOMAIN_SEP);
         engine.hash(digestChall1, 0, digestChall1, digest_cmt, salt, CrossEngine.HASH_DOMAIN_SEP);
-        engine.init(digestChall1, digestChall1.length, CrossEngine.CSPRNG_DOMAIN_SEP_CONST + (3 * t - 1));
+        engine.init(digestChall1, digestChall1.length, 3 * t - 1);
         // Generate challenge 1 vector
         int[] chall1 = engine.csprngFpVecChall1(params);
 
@@ -483,7 +502,7 @@ public class CrossSigner
         int usedRsps = 0;
         boolean isSignatureOk = true;
         boolean isPackedPaddOk = true;
-        int domainSepCsprng = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + (2 * t - 1);
+        int domainSepCsprng = 2 * t - 1;
         int domainSepHash = CrossEngine.HASH_DOMAIN_SEP_CONST + (2 * t - 1);
         for (int i = 0; i < t; i++, domainSepCsprng++, domainSepHash++)
         {
@@ -545,7 +564,7 @@ public class CrossSigner
                     CrossEngine.fpVecByFpVecPointwise((short[])y_prime, (short[])v, ((short[][])y)[i], params);
                     CrossEngine.fpVecByFpMatrix((short[])y_prime_H, (short[])y_prime, (short[][])V_tr, params);
                     CrossEngine.fpSyndMinusFpVecScaled((short[])s_prime, (short[])y_prime_H, (short)chall1[i], (short[])s, params);
-                    Utils.genericPack9Bit(cmt0_i_input, 0, (short[])s_prime);
+                    Utils.genericPack9Bit(cmt0_i_input, 0, (short[])s_prime, ((short[])s_prime).length);
                     System.arraycopy(resp0[usedRsps].v_bar, 0, cmt0_i_input, packedFpSynSize, packedFzRsdpGVecSize);
                 }
 
@@ -582,7 +601,7 @@ public class CrossSigner
             }
             else
             {
-                Utils.genericPack9Bit(yDigestChall1, i * packedFpVecSize, ((short[][])y)[i]);
+                Utils.genericPack9Bit(yDigestChall1, i * packedFpVecSize, ((short[][])y)[i], n);
             }
         }
         System.arraycopy(digestChall1, 0, yDigestChall1, t * packedFpVecSize, hashDigestLength);

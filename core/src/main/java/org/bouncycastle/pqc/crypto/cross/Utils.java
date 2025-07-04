@@ -9,9 +9,9 @@ class Utils
     }
 
     // Packs 9-bit elements (for P=509)
-    static void genericPack9Bit(byte[] out, int outOff, short[] in)
+    static void genericPack9Bit(byte[] out, int outOff, short[] in, int inlen)
     {
-        int inlen = in.length;
+
         int fullBlocks = inlen >>> 3;
         int i;
         int inOff = 0;
