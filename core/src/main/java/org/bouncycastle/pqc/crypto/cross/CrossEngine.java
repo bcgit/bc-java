@@ -17,10 +17,8 @@ class CrossEngine
     private static final long REDUCTION_CONST = 2160140723L;
     private static final long RESTR_G_TABLE = 0x0140201008040201L;
     final SHAKEDigest digest;
-    static final int CSPRNG_DOMAIN_SEP_CONST = 0;
     static final int HASH_DOMAIN_SEP_CONST = 32768;
     static final byte[] HASH_DOMAIN_SEP = Pack.shortToLittleEndian((short)32768);
-
     private final int digestLength;
 
     public CrossEngine(CrossParameters params)
