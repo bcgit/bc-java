@@ -83,7 +83,7 @@ public class CrossTest
         //NOTE: Cross uses a special SecureRandom so that it does not support sampleOnly option (and seed is useless).
         // We need to wait until the authors of Cross change their SecureRandom to NISTSecureRandom
         final boolean sampleOnly = false;
-        TestUtils.testTestVector(sampleOnly, false, false, "pqc/crypto/cross", files, new TestUtils.KeyGenerationOperation()
+        TestUtils.testTestVector(sampleOnly, true, false, "pqc/crypto/cross", files, new TestUtils.KeyGenerationOperation()
         {
             final CsprngSecureRandom random = new CsprngSecureRandom(entropyInput);
 
@@ -134,19 +134,13 @@ public class CrossTest
     static class CsprngSecureRandom
         extends SecureRandom
     {
-        byte[] seed;
+        private final byte[] seed;
         private SHAKEDigest digest;
-        int count;
-        int files;
+        private int count;
 
         public CsprngSecureRandom(byte[] seed)
         {
             this.seed = Arrays.clone(seed);
-//            digest = new SHAKEDigest(256);//category == 1 ? 128 : 256
-//            digest.update(seed, 0, seed.length);
-//            digest.update(new byte[2], 0, 2);
-//            count = 0;
-//            files = 0;
         }
 
         public void init(int category)
@@ -159,12 +153,6 @@ public class CrossTest
                 count = 0;
             }
             count++;
-        }
-
-        public void setSeed(byte[] seed, byte[] dsc)
-        {
-            digest.update(seed, 0, seed.length);
-            digest.update(dsc, 0, 2);
         }
 
         @Override
