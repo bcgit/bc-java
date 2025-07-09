@@ -23,6 +23,7 @@ import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
+import org.bouncycastle.pqc.crypto.cross.CrossParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -115,6 +116,9 @@ class Utils
 
     static final Map snovaOids = new HashMap<ASN1ObjectIdentifier, SnovaParameters>();
     static final Map snovaParams = new HashMap<SnovaParameters, ASN1ObjectIdentifier>();
+
+    static final Map crossOids = new HashMap<ASN1ObjectIdentifier, CrossParameters>();
+    static final Map crossParams = new HashMap<CrossParameters, ASN1ObjectIdentifier>();
 
     static
     {
@@ -581,6 +585,44 @@ class Utils
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_esk, SnovaParameters.SNOVA_75_33_2_ESK);
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, SnovaParameters.SNOVA_75_33_2_SHAKE_SSK);
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, SnovaParameters.SNOVA_75_33_2_SHAKE_ESK);
+
+        crossOids.put(CrossParameters.cross_rsdp_1_small, BCObjectIdentifiers.cross_rsdp_1_small);
+        crossOids.put(CrossParameters.cross_rsdp_1_balanced, BCObjectIdentifiers.cross_rsdp_1_balanced);
+        crossOids.put(CrossParameters.cross_rsdp_1_fast, BCObjectIdentifiers.cross_rsdp_1_fast);
+        crossOids.put(CrossParameters.cross_rsdp_3_small, BCObjectIdentifiers.cross_rsdp_3_small);
+        crossOids.put(CrossParameters.cross_rsdp_3_balanced, BCObjectIdentifiers.cross_rsdp_3_balanced);
+        crossOids.put(CrossParameters.cross_rsdp_3_fast, BCObjectIdentifiers.cross_rsdp_3_fast);
+        crossOids.put(CrossParameters.cross_rsdp_5_small, BCObjectIdentifiers.cross_rsdp_5_small);
+        crossOids.put(CrossParameters.cross_rsdp_5_balanced, BCObjectIdentifiers.cross_rsdp_5_balanced);
+        crossOids.put(CrossParameters.cross_rsdp_5_fast, BCObjectIdentifiers.cross_rsdp_5_fast);
+        crossOids.put(CrossParameters.cross_rsdpg_1_small, BCObjectIdentifiers.cross_rsdpg_1_small);
+        crossOids.put(CrossParameters.cross_rsdpg_1_balanced, BCObjectIdentifiers.cross_rsdpg_1_balanced);
+        crossOids.put(CrossParameters.cross_rsdpg_1_fast, BCObjectIdentifiers.cross_rsdpg_1_fast);
+        crossOids.put(CrossParameters.cross_rsdpg_3_small, BCObjectIdentifiers.cross_rsdpg_3_small);
+        crossOids.put(CrossParameters.cross_rsdpg_3_balanced, BCObjectIdentifiers.cross_rsdpg_3_balanced);
+        crossOids.put(CrossParameters.cross_rsdpg_3_fast, BCObjectIdentifiers.cross_rsdpg_3_fast);
+        crossOids.put(CrossParameters.cross_rsdpg_5_small, BCObjectIdentifiers.cross_rsdpg_5_small);
+        crossOids.put(CrossParameters.cross_rsdpg_5_balanced, BCObjectIdentifiers.cross_rsdpg_5_balanced);
+        crossOids.put(CrossParameters.cross_rsdpg_5_fast, BCObjectIdentifiers.cross_rsdpg_5_fast);
+
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_1_small, CrossParameters.cross_rsdp_1_small);
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_1_balanced, CrossParameters.cross_rsdp_1_balanced);
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_1_fast, CrossParameters.cross_rsdp_1_fast);
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_3_small, CrossParameters.cross_rsdp_3_small);
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_3_balanced, CrossParameters.cross_rsdp_3_balanced);
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_3_fast, CrossParameters.cross_rsdp_3_fast);
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_5_small, CrossParameters.cross_rsdp_5_small);
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_5_balanced, CrossParameters.cross_rsdp_5_balanced);
+        crossParams.put(BCObjectIdentifiers.cross_rsdp_5_fast, CrossParameters.cross_rsdp_5_fast);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_1_small, CrossParameters.cross_rsdpg_1_small);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_1_balanced, CrossParameters.cross_rsdpg_1_balanced);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_1_fast, CrossParameters.cross_rsdpg_1_fast);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_3_small, CrossParameters.cross_rsdpg_3_small);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_3_balanced, CrossParameters.cross_rsdpg_3_balanced);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_3_fast, CrossParameters.cross_rsdpg_3_fast);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_5_small, CrossParameters.cross_rsdpg_5_small);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_5_balanced, CrossParameters.cross_rsdpg_5_balanced);
+        crossParams.put(BCObjectIdentifiers.cross_rsdpg_5_fast, CrossParameters.cross_rsdpg_5_fast);
     }
 
     static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
@@ -911,6 +953,17 @@ class Utils
     static SnovaParameters snovaParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SnovaParameters)snovaParams.get(oid);
+    }
+
+
+    static ASN1ObjectIdentifier crossOidLookup(CrossParameters params)
+    {
+        return (ASN1ObjectIdentifier)crossOids.get(params);
+    }
+
+    static CrossParameters crossParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (CrossParameters)crossParams.get(oid);
     }
 
     private static boolean isRaw(byte[] data)

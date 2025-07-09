@@ -29,6 +29,8 @@ import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.cross.CrossParameters;
+import org.bouncycastle.pqc.crypto.cross.CrossPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
@@ -306,6 +308,25 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.snova_75_33_2_ssk, new SnovaConverter());
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaConverter());
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaConverter());
+
+        converters.put(BCObjectIdentifiers.cross_rsdp_1_small, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdp_1_balanced, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdp_1_fast, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdp_3_small, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdp_3_balanced, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdp_3_fast, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdp_5_small, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdp_5_balanced, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdp_5_fast, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_1_small, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_1_balanced, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_1_fast, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_3_small, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_3_balanced, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_3_fast, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_5_small, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_5_balanced, new CrossConverter());
+        converters.put(BCObjectIdentifiers.cross_rsdpg_5_fast, new CrossConverter());
     }
 
     /**
@@ -916,6 +937,20 @@ public class PublicKeyFactory
             SnovaParameters snovaParams = Utils.snovaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new SnovaPublicKeyParameters(snovaParams, keyEnc);
+        }
+    }
+
+    private static class CrossConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            CrossParameters crossParams = Utils.crossParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new CrossPublicKeyParameters(crossParams, keyEnc);
         }
     }
 }

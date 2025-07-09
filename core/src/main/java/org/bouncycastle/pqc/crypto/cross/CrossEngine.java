@@ -52,9 +52,24 @@ class CrossEngine
         digest.update(dscBytes, 0, 2);
     }
 
+    public void init(byte[] in1, int in1Off, int in1Len, byte[] in2, int in2Off, int in2Len, int dsc)
+    {
+        digest.reset();
+        digest.update(in1, in1Off, in1Len);
+        digest.update(in2, in2Off, in2Len);
+        byte[] dscBytes = Pack.shortToLittleEndian((short)dsc);
+        digest.update(dscBytes, 0, 2);
+    }
+
     public void randomBytes(byte[] out, int outOff, int outLen, byte[] in1, int in1Off, int in1Len, byte[] in2, int dsc)
     {
         init(in1, in1Off, in1Len, in2, dsc);
+        digest.doOutput(out, outOff, outLen);
+    }
+
+    public void randomBytes(byte[] out, int outOff, int outLen, byte[] in1, int in1Off, int in1Len, byte[] in2, int in2Off, int in2Len, int dsc)
+    {
+        init(in1, in1Off, in1Len, in2, in2Off, in2Len, dsc);
         digest.doOutput(out, outOff, outLen);
     }
 
@@ -757,14 +772,14 @@ class CrossEngine
      * @param seedLength       Length of each seed in bytes
      * @return Always true (success)
      */
-    public static boolean rebuildLeaves(byte[] roundsSeeds, byte[] indicesToPublish, byte[] seedStorage, int seedLength)
+    public static boolean rebuildLeaves(byte[] roundsSeeds, byte[] indicesToPublish, byte[] seedStorage, int seedStorageOff, int seedLength)
     {
         int published = 0;
         for (int i = 0; i < indicesToPublish.length; i++)
         {
             if (indicesToPublish[i] == TO_PUBLISH)
             {
-                System.arraycopy(seedStorage, published * seedLength, roundsSeeds, i * seedLength, seedLength);
+                System.arraycopy(seedStorage, seedStorageOff + published * seedLength, roundsSeeds, i * seedLength, seedLength);
                 published++;
             }
         }
@@ -1056,7 +1071,7 @@ class CrossEngine
      * @return true if reconstruction successful, false if unused bytes non-zero
      */
     public boolean rebuildTree(byte[] seedTree, byte[] indicesToPublish,
-                               byte[] storedSeeds, byte[] salt,
+                               byte[] storedSeeds, int storedSeedOff, byte[] salt, int saltOff,
                                CrossParameters params)
     {
         int seedLength = params.getSeedLengthBytes();
@@ -1084,7 +1099,7 @@ class CrossEngine
                 // Copy stored seeds into tree
                 if (flagsTree[currentNode] == TO_PUBLISH && flagsTree[fatherNode] == NOT_TO_PUBLISH)
                 {
-                    System.arraycopy(storedSeeds, nodesUsed * seedLength, seedTree, currentNode * seedLength, seedLength);
+                    System.arraycopy(storedSeeds, storedSeedOff + nodesUsed * seedLength, seedTree, currentNode * seedLength, seedLength);
                     nodesUsed++;
                 }
 
@@ -1092,14 +1107,14 @@ class CrossEngine
                 if (flagsTree[currentNode] == TO_PUBLISH && nodeInLevel < npl[level] - lpl[level])
                 {
                     randomBytes(seedTree, leftChild * seedLength, 2 * seedLength, seedTree,
-                        currentNode * seedLength, seedLength, salt, currentNode);
+                        currentNode * seedLength, seedLength, salt, saltOff, params.getHashDigestLength(), currentNode);
                 }
             }
             startNode += npl[level];
         }
 
         // Verify unused storage bytes are zero
-        return checkTree(storedSeeds, params, seedLength, nodesUsed);
+        return checkTree(storedSeeds, storedSeedOff, params, seedLength, nodesUsed);
     }
 
     /**
@@ -1113,7 +1128,7 @@ class CrossEngine
      * @return true if successful
      */
     public boolean recomputeRootSpeed(byte[] root, byte[][] recomputedLeaves,
-                                      byte[] mtp, byte[] leavesToReveal,
+                                      byte[] mtp, int mtpOff, byte[] leavesToReveal,
                                       CrossParameters params)
     {
         int T = params.getT();
@@ -1125,7 +1140,7 @@ class CrossEngine
         {
             if (leavesToReveal[i] == TO_PUBLISH)
             {
-                System.arraycopy(mtp, published++ * hashDigestLength, recomputedLeaves[i], 0, hashDigestLength);
+                System.arraycopy(mtp, mtpOff + published++ * hashDigestLength, recomputedLeaves[i], 0, hashDigestLength);
             }
         }
 
@@ -1145,7 +1160,7 @@ class CrossEngine
      * @return true if successful, false if unused bytes non-zero
      */
     public boolean recomputeRootTreeBased(byte[] root, byte[][] recomputedLeaves,
-                                          byte[] mtp, byte[] leavesToReveal,
+                                          byte[] mtp, int mtpOff, byte[] leavesToReveal,
                                           CrossParameters params)
     {
         int hashDigestLength = params.getHashDigestLength();
@@ -1188,7 +1203,7 @@ class CrossEngine
                 }
                 else
                 {
-                    digest.update(mtp, published * hashDigestLength, hashDigestLength);
+                    digest.update(mtp, mtpOff + published * hashDigestLength, hashDigestLength);
                     published++;
                 }
 
@@ -1199,7 +1214,7 @@ class CrossEngine
                 }
                 else
                 {
-                    digest.update(mtp, published * hashDigestLength, hashDigestLength);
+                    digest.update(mtp, mtpOff + published * hashDigestLength, hashDigestLength);
                     published++;
                 }
                 digest.update(HASH_DOMAIN_SEP, 0, 2);
@@ -1215,16 +1230,16 @@ class CrossEngine
         System.arraycopy(tree, 0, root, 0, hashDigestLength);
 
         // Verify unused proof bytes are zero
-        return checkTree(mtp, params, hashDigestLength, published);
+        return checkTree(mtp, mtpOff, params, hashDigestLength, published);
     }
 
-    private static boolean checkTree(byte[] mtp, CrossParameters params, int hashDigestLength, int published)
+    private static boolean checkTree(byte[] mtp, int mtpOff, CrossParameters params, int hashDigestLength, int published)
     {
         int bytesUsed = published * hashDigestLength;
         int totalProofBytes = params.getTreeNodesToStore() * hashDigestLength;
         for (int i = bytesUsed; i < totalProofBytes; i++)
         {
-            if (mtp[i] != 0)
+            if (mtp[mtpOff + i] != 0)
             {
                 return false;
             }

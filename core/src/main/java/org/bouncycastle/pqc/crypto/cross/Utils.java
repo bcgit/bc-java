@@ -197,11 +197,12 @@ class Utils
         }
     }
 
-    public static boolean genericUnpack7Bit(byte[] out, byte[] in, int outlen, int inlen)
+    public static boolean genericUnpack7Bit(byte[] out, byte[] in, int inOff, int outlen, int inlen)
     {
         boolean isPackedPaddOk = true;
         int i;
-        int inOff = 0, outOff = 0;
+        int outOff = 0;
+        inlen += inOff;
         // Process full blocks (8 elements per 7 bytes)
         for (i = 0; i < outlen >>> 3; i++)
         {
@@ -275,11 +276,12 @@ class Utils
         return isPackedPaddOk;
     }
 
-    public static boolean genericUnpack9Bit(short[] out, byte[] in, int outlen, int inlen)
+    public static boolean genericUnpack9Bit(short[] out, byte[] in, int inOff, int outlen, int inlen)
     {
         boolean isPackedPaddOk = true;
         int i;
-        int inOff = 0, outOff = 0;
+        int outOff = 0;
+        inlen += inOff;
         // Process full blocks (8 elements per 9 bytes)
         for (i = 0; i < outlen >>> 3; i++)
         {
@@ -353,11 +355,11 @@ class Utils
         return isPackedPaddOk;
     }
 
-    static boolean genericUnpack3Bit(byte[] out, byte[] in, int outlen)
+    static boolean genericUnpack3Bit(byte[] out, byte[] in, int inOff, int outlen)
     {
         boolean isPackedPaddOk = true;
         int i;
-        int inOff = 0, outOff = 0;
+        int outOff = 0;
 
         // Process full blocks (8 elements per 3 bytes)
         for (i = 0; i < outlen >>> 3; i++)
