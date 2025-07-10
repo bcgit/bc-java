@@ -18,6 +18,8 @@ import org.bouncycastle.util.io.Streams;
 public class SignaturePacket
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
+    public static int MAX_SUBPACKET_LEN = 2 * 1024 * 1024; // 2mb, allows for embedded McEliece keys for example.
+
     public static final int VERSION_2 = 2;
     public static final int VERSION_3 = 3;
     public static final int VERSION_4 = 4;  // https://datatracker.ietf.org/doc/rfc4880/
@@ -213,6 +215,14 @@ public class SignaturePacket
         else
         {
             hashedLength = StreamUtil.read2OctetLength(in);
+        }
+        if (hashedLength < 0)
+        {
+            throw new MalformedPacketException("Signature subpackets encoding length cannot be negative.");
+        }
+        if (hashedLength > MAX_SUBPACKET_LEN)
+        {
+            throw new MalformedPacketException("Signature subpackets encoding length (" + hashedLength + ") exceeds max limit (" + MAX_SUBPACKET_LEN + ")");
         }
         byte[] hashed = new byte[hashedLength];
 
