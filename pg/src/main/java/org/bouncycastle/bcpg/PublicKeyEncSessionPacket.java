@@ -55,6 +55,10 @@ public class PublicKeyEncSessionPacket
         else if (version == VERSION_6)
         {
             int keyInfoLen = in.read();
+            if (keyInfoLen < 0)
+            {
+                throw new MalformedPacketException("Key Info Length cannot be negative: " + keyInfoLen);
+            }
             if (keyInfoLen == 0)
             {
                 // anon recipient
