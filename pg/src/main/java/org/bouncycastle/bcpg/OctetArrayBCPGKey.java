@@ -10,11 +10,16 @@ public abstract class OctetArrayBCPGKey
     extends BCPGObject
     implements BCPGKey
 {
+    public static int MAX_LEN = 2 * 1024 * 1024; // 2mb; McEliece keys can get ~1mb in size, so allow some margin
     private final byte[] key;
 
     OctetArrayBCPGKey(int length, BCPGInputStream in)
         throws IOException
     {
+        if (length > MAX_LEN)
+        {
+            throw new IOException("Max key length (" + MAX_LEN + ") exceeded (" + length + ")");
+        }
         key = new byte[length];
         in.readFully(key);
     }
