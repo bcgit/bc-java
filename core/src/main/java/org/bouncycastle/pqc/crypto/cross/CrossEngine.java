@@ -11,9 +11,11 @@ class CrossEngine
     static final int HASH_DOMAIN_SEP_CONST = 32768;
     static final byte[] HASH_DOMAIN_SEP = Pack.shortToLittleEndian((short)32768);
     private final int digestLength;
+    private CrossParameters params;
 
     public CrossEngine(CrossParameters params)
     {
+        this.params = params;
         digest = new SHAKEDigest(params.getSecMarginLambda() <= 128 ? 128 : 256);
         digestLength = params.getHashDigestLength();
     }
@@ -82,18 +84,18 @@ class CrossEngine
     }
 
     // Expand public key for RSDP variant
-    public void expandPk(CrossParameters params, byte[][] V_tr, byte[] seedPk)
+    public void expandPk(byte[][] V_tr, byte[] seedPk)
     {
         init(seedPk, params.getKeypairSeedLengthBytes(), 3 * params.getT() + 2);
         csprngFMat(V_tr, params.getK(), params.getN() - params.getK(), params.getP(), params.getBitsVCtRng());
     }
 
     // Expand public key for RSDPG variant
-    public void expandPk(CrossParameters params, short[][] V_tr, byte[][] W_mat, byte[] seedPk)
+    public void expandPk(short[][] V_tr, byte[][] W_mat, byte[] seedPk)
     {
         init(seedPk, params.getKeypairSeedLengthBytes(), 3 * params.getT() + 2);
         csprngFMat(W_mat, params.getM(), params.getN() - params.getM(), params.getZ(), params.getBitsWCtRng());
-        csprngFpMat(V_tr, params);
+        csprngFpMat(V_tr);
     }
 
     private void csprngFMat(byte[][] res, int rows, int cols, int size, int bufferSize)
@@ -115,7 +117,7 @@ class CrossEngine
     }
 
     // Generate FP matrix (16-bit version)
-    private void csprngFpMat(short[][] res, CrossParameters params)
+    private void csprngFpMat(short[][] res)
     {
         int rows = params.getK();
         int cols = params.getN() - params.getK();
@@ -152,7 +154,7 @@ class CrossEngine
         }
     }
 
-    public void csprngFpVec(short[] res, CrossParameters params)
+    public void csprngFpVec(short[] res)
     {
         int n = params.getN();
         int p = params.getP();
@@ -171,17 +173,10 @@ class CrossEngine
     }
 
     // Matrix-vector multiplication for RSDPG
-    public static void fzInfWByFzMatrix(byte[] res, byte[] e, byte[][] W_mat, CrossParameters params)
+    public static void fzInfWByFzMatrix(byte[] res, byte[] e, byte[][] W_mat, int m, int nMinusM)
     {
-        int n = params.getN();
-        int m = params.getM();
-        int nMinusM = n - m;
-
         // Initialize result: first (n-m) elements = 0, last m elements = e
-        for (int j = 0; j < nMinusM; j++)
-        {
-            res[j] = 0;
-        }
+        Arrays.fill(res, 0, nMinusM, (byte)0);
         System.arraycopy(e, 0, res, nMinusM, m);
 
         // Compute matrix-vector product
@@ -199,12 +194,8 @@ class CrossEngine
         }
     }
 
-    public static void restrVecByFpMatrix(byte[] res, byte[] e, byte[][] V_tr, CrossParameters params)
+    public static void restrVecByFpMatrix(byte[] res, byte[] e, byte[][] V_tr, int n, int k, int nMinusK)
     {
-        int n = params.getN();
-        int k = params.getK();
-        int nMinusK = n - k;
-
         // Initialize res with restricted values from the last n-k elements of e
         for (int i = k; i < n; i++)
         {
@@ -222,12 +213,8 @@ class CrossEngine
         }
     }
 
-    public static void restrVecByFpMatrix(short[] res, byte[] e, short[][] V_tr, CrossParameters params)
+    public static void restrVecByFpMatrix(short[] res, byte[] e, short[][] V_tr, int n, int k, int nMinusK)
     {
-        int n = params.getN();
-        int k = params.getK();
-        int nMinusK = n - k;
-
         // Initialize res with restricted values from the last n-k elements of e
         for (int i = k; i < n; i++)
         {
@@ -317,19 +304,16 @@ class CrossEngine
     }
 
     // Convert restricted vector to finite field elements
-    public static void convertRestrVecToFp(byte[] fpOut, byte[] fzIn, CrossParameters params)
+    public static void convertRestrVecToFp(byte[] fpOut, byte[] fzIn, int n)
     {
-        int n = params.getN();
         for (int j = 0; j < n; j++)
         {
             fpOut[j] = Utils.restrToVal(fzIn[j]);
         }
     }
 
-    public static void convertRestrVecToFp(short[] fpOut, byte[] fzIn, CrossParameters params)
+    public static void convertRestrVecToFp(short[] fpOut, byte[] fzIn, int n)
     {
-        int n = params.getN();
-
         for (int j = 0; j < n; j++)
         {
             fpOut[j] = Utils.restrToValRsdpg(fzIn[j]);
@@ -337,20 +321,16 @@ class CrossEngine
     }
 
     // Pointwise vector multiplication: res = in1 * in2 (mod P)
-    public static void fpVecByFpVecPointwise(byte[] res, byte[] in1, byte[] in2, CrossParameters params)
+    public static void fpVecByFpVecPointwise(byte[] res, byte[] in1, byte[] in2, int n)
     {
-        int n = params.getN();
-
         for (int i = 0; i < n; i++)
         {
             res[i] = (byte)Utils.fpRedDouble((in1[i] & 0xFF) * (in2[i] & 0xFF));
         }
     }
 
-    public static void fpVecByFpVecPointwise(short[] res, short[] in1, short[] in2, CrossParameters params)
+    public static void fpVecByFpVecPointwise(short[] res, short[] in1, short[] in2, int n)
     {
-        int n = params.getN();
-
         for (int i = 0; i < n; i++)
         {
             res[i] = Utils.fpRedSingle(in1[i] * in2[i]);
@@ -358,12 +338,8 @@ class CrossEngine
     }
 
     // Matrix-vector multiplication: res = V_tr * e (mod P)
-    public static void fpVecByFpMatrix(byte[] res, byte[] e, byte[][] V_tr, CrossParameters params)
+    public static void fpVecByFpMatrix(byte[] res, byte[] e, byte[][] V_tr, int k, int nMinusK)
     {
-        int n = params.getN();
-        int k = params.getK();
-        int nMinusK = n - k;
-
         // Initialize with last n-k elements of e
         System.arraycopy(e, k, res, 0, nMinusK);
 
@@ -371,12 +347,8 @@ class CrossEngine
         vecMatrixProduct(res, e, V_tr, k, nMinusK);
     }
 
-    public static void fpVecByFpMatrix(short[] res, short[] e, short[][] V_tr, CrossParameters params)
+    public static void fpVecByFpMatrix(short[] res, short[] e, short[][] V_tr, int k, int nMinusK)
     {
-        int n = params.getN();
-        int k = params.getK();
-        int nMinusK = n - k;
-
         // Initialize with last n-k elements of e
         System.arraycopy(e, k, res, 0, nMinusK);
 

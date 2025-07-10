@@ -41,10 +41,10 @@ public class CrossKeyPairGenerator
             byte[][] V_tr = new byte[k][n - k];
             byte[] e_bar = new byte[n];
             byte[] s = new byte[n - k];
-            engine.expandPk(params, V_tr, pk);
+            engine.expandPk(V_tr, pk);
             engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
             engine.csprngFVec(e_bar, params.getZ(), n, params.getBitsNFzCtRng());
-            CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
+            CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, n, k, n - k);
             CrossEngine.fDzNorm(s, s.length);
             Utils.genericPack7Bit(pk, keypairSeedLength, s, s.length);
         }
@@ -56,12 +56,12 @@ public class CrossKeyPairGenerator
             byte[] e_G_bar = new byte[m];
             byte[] e_bar = new byte[n];
             short[] s = new short[n - k];
-            engine.expandPk(params, V_tr, W_mat, pk);
+            engine.expandPk(V_tr, W_mat, pk);
             engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
             engine.csprngFVec(e_G_bar, params.getZ(), m, params.getBitsMFzCtRng());
-            CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
+            CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, m, n - m);
             CrossEngine.fDzNorm(e_bar, e_bar.length);
-            CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
+            CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, n, k, n - k);
             Utils.genericPack9Bit(pk, keypairSeedLength, s, s.length);
         }
         return new AsymmetricCipherKeyPair(new CrossPublicKeyParameters(params, pk), new CrossPrivateKeyParameters(params, seedSk));

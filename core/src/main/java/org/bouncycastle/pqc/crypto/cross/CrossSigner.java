@@ -119,7 +119,7 @@ public class CrossSigner
             bufferSize = params.getBitsNFzCtRng();
             int bufferSize_y = params.getBitsNFpCtRng();
             engine.csprngFVec(e_bar, z, n, bufferSize);
-            engine.expandPk(params, V_tr, seedESeedPk[1]);
+            engine.expandPk(V_tr, seedESeedPk[1]);
 
             // Process each round
             for (int i = 0, domain_sep_csprng = 2 * t - 1, domain_sep_hash = CrossEngine.HASH_DOMAIN_SEP_CONST + domain_sep_csprng; i < t; i++, domain_sep_hash++, domain_sep_csprng++)
@@ -129,13 +129,13 @@ public class CrossSigner
                 engine.csprngFVec(e_bar_prime[i], z, n, bufferSize);
                 // Compute v_bar
                 CrossEngine.fzVecSub(v_bar[i], e_bar, e_bar_prime[i], n);
-                CrossEngine.convertRestrVecToFp(u, v_bar[i], params);
+                CrossEngine.convertRestrVecToFp(u, v_bar[i], n);
                 CrossEngine.fDzNorm(v_bar[i], v_bar[i].length);
                 // Convert to FP and compute u_prime
                 engine.csprngFVec(y[i], p, n, bufferSize_y);
                 // Compute s_prime
-                CrossEngine.fpVecByFpVecPointwise(u, u, y[i], params);
-                CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, params);
+                CrossEngine.fpVecByFpVecPointwise(u, u, y[i], n);
+                CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, k, n - k);
                 CrossEngine.fDzNorm(s_prime, n - k);
 
                 // Build cmt_0 input
@@ -189,8 +189,8 @@ public class CrossSigner
             byte[][] v_G_bar = new byte[t][m];
             bufferSize = params.getBitsMFzCtRng();
             engine.csprngFVec(e_G_bar, z, m, bufferSize);
-            engine.expandPk(params, V_tr, W_mat, seedESeedPk[1]);
-            CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
+            engine.expandPk(V_tr, W_mat, seedESeedPk[1]);
+            CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, m, n - m);
             int packedFzRsdpGVecSize = params.getDenselyPackedFzRsdpGVecSize();
             byte[] egBarPrime = new byte[m];
             short[] u = new short[n];
@@ -203,19 +203,19 @@ public class CrossSigner
                 engine.csprngFVec(egBarPrime, z, m, bufferSize);
                 CrossEngine.fzVecSub(v_G_bar[i], e_G_bar, egBarPrime, m);
                 CrossEngine.fDzNorm(v_G_bar[i], m);
-                CrossEngine.fzInfWByFzMatrix(e_bar_prime[i], egBarPrime, W_mat, params);
+                CrossEngine.fzInfWByFzMatrix(e_bar_prime[i], egBarPrime, W_mat, m, n - m);
                 CrossEngine.fDzNorm(e_bar_prime[i], e_bar_prime[i].length);
                 // Compute v_bar
                 CrossEngine.fzVecSub(v_bar[i], e_bar, e_bar_prime[i], n);
-                CrossEngine.convertRestrVecToFp(u, v_bar[i], params);
+                CrossEngine.convertRestrVecToFp(u, v_bar[i], n);
                 CrossEngine.fDzNorm(v_bar[i], v_bar[i].length);
 
                 // Convert to FP and compute u_prime
-                engine.csprngFpVec(y[i], params);
+                engine.csprngFpVec(y[i]);
 
                 // Compute s_prime
-                CrossEngine.fpVecByFpVecPointwise(u, u, y[i], params);
-                CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, params);
+                CrossEngine.fpVecByFpVecPointwise(u, u, y[i], n);
+                CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, k, n - k);
                 // Build cmt_0 input
                 Utils.genericPack9Bit(cmt0_i_input, 0, s_prime, s_prime.length);
                 Utils.genericPack7Bit(v_G_bar[i], 0, v_G_bar[i], m);
@@ -369,7 +369,7 @@ public class CrossSigner
             byte[][] V_tr = new byte[k][n - k];
             byte[] s = new byte[n - k]; // s_prime, y_prime_H
             byte[] s_prime = new byte[n - k]; //y_prime_H
-            engine.expandPk(params, V_tr, seedSk);
+            engine.expandPk(V_tr, seedSk);
             byte[] y = new byte[n]; // y, u_prime
             // Unpack syndrome
             isPaddKeyOk = Utils.genericUnpack7Bit(s, publicKey, seedSk.length, n - k);
@@ -396,9 +396,9 @@ public class CrossSigner
                     isPackedPaddOk &= Utils.genericUnpack7Bit(y, signature, yPos, n);
                     isPackedPaddOk &= Utils.genericUnpack3Bit(v_bar, signature, yPos + packedFpVecSize, n);
                     isSignatureOk &= CrossEngine.isFzVecInRestrGroup(v_bar, z, n);
-                    CrossEngine.convertRestrVecToFp(v_bar, v_bar, params);
-                    CrossEngine.fpVecByFpVecPointwise(v_bar, v_bar, y, params);
-                    CrossEngine.fpVecByFpMatrix(s_prime, v_bar, V_tr, params);
+                    CrossEngine.convertRestrVecToFp(v_bar, v_bar, n);
+                    CrossEngine.fpVecByFpVecPointwise(v_bar, v_bar, y, n);
+                    CrossEngine.fpVecByFpMatrix(s_prime, v_bar, V_tr, k, n - k);
                     CrossEngine.fDzNorm(s_prime, s_prime.length);
                     CrossEngine.fpSyndMinusFpVecScaled(s_prime, s_prime, (byte)chall1[i], s, params);
                     CrossEngine.fDzNorm(s_prime, s_prime.length);
@@ -419,7 +419,7 @@ public class CrossSigner
             short[] y = new short[n];
             byte[] v_G_bar = new byte[m]; //e_G_bar_prime
             bufferSize = params.getBitsMFzCtRng();
-            engine.expandPk(params, V_tr, W_mat, seedSk);
+            engine.expandPk(V_tr, W_mat, seedSk);
             // Unpack syndrome
             isPaddKeyOk = Utils.genericUnpack9Bit(s, publicKey, seedSk.length, n - k);
             for (int i = 0; i < t; i++, domainSepCsprng++, domainSepHash++)
@@ -430,9 +430,9 @@ public class CrossSigner
                     engine.hash(cmt1, i * hashDigestLength, roundSeeds, i * seedLength, seedLength, signature, saltPos, saltLength, Pack.shortToLittleEndian(domainSepHash));
                     engine.init(roundSeeds, i * seedLength, seedLength, signature, saltPos, saltLength, domainSepCsprng);
                     engine.csprngFVec(v_G_bar, z, m, bufferSize);
-                    CrossEngine.fzInfWByFzMatrix(v_bar, v_G_bar, W_mat, params);
+                    CrossEngine.fzInfWByFzMatrix(v_bar, v_G_bar, W_mat, m, n - m);
                     CrossEngine.fDzNorm(v_bar, v_bar.length);
-                    engine.csprngFpVec(u_prime, params);
+                    engine.csprngFpVec(u_prime);
                     CrossEngine.fpVecByRestrVecScaled(u_prime, v_bar, chall1[i], u_prime, n);
                     Utils.genericPack9Bit(yDigestChall1, i * packedFpVecSize, u_prime, n);
                 }
@@ -445,10 +445,10 @@ public class CrossSigner
                     isPackedPaddOk &= Utils.genericUnpack9Bit(y, signature, yPos, n);
                     isPackedPaddOk &= Utils.genericUnpack7Bit(v_G_bar, signature, yPos + packedFpVecSize, m);
                     isSignatureOk &= CrossEngine.isFzVecInRestrGroup(v_G_bar, z, m);
-                    CrossEngine.fzInfWByFzMatrix(v_bar, v_G_bar, W_mat, params);
-                    CrossEngine.convertRestrVecToFp(u_prime, v_bar, params);
-                    CrossEngine.fpVecByFpVecPointwise(u_prime, u_prime, y, params);
-                    CrossEngine.fpVecByFpMatrix(s_prime, u_prime, V_tr, params);
+                    CrossEngine.fzInfWByFzMatrix(v_bar, v_G_bar, W_mat, m, n - m);
+                    CrossEngine.convertRestrVecToFp(u_prime, v_bar, n);
+                    CrossEngine.fpVecByFpVecPointwise(u_prime, u_prime, y, n);
+                    CrossEngine.fpVecByFpMatrix(s_prime, u_prime, V_tr, k, n - k);
                     CrossEngine.fpSyndMinusFpVecScaled(s_prime, s_prime, (short)chall1[i], s, params);
                     Utils.genericPack9Bit(cmt0_i_input1, 0, s_prime, n - k);
                     engine.hash(cmt0[i], 0, cmt0_i_input1, signature, yPos + packedFpVecSize,
