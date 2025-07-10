@@ -461,7 +461,7 @@ class Utils
         return (x & 0x7F) + (x >>> 7);
     }
 
-    public static int fpRedSingle(int x)
+    public static short fpRedSingle(int x)
     {
         long xLong = x & 0xFFFFFFFFL; // Treat as unsigned
         long quotient = (xLong * REDUCTION_CONST) >>> 40;
@@ -474,7 +474,7 @@ class Utils
         {
             result -= 509;
         }
-        return (int)result;
+        return (short)result;
     }
 
     public static int fpRedDouble(int x)

@@ -327,16 +327,16 @@ public class CrossParameters
             switch (category)
             {
             case 1:
-                this.bitsWCtRng = 5677;
-                this.bitsMFzCtRng = 343;
+                this.bitsWCtRng = Utils.roundUp(5677, 8) >>> 3;
+                this.bitsMFzCtRng = Utils.roundUp(343, 8) >>> 3;
                 break;
             case 3:
-                this.bitsWCtRng = 11655;
-                this.bitsMFzCtRng = 539;
+                this.bitsWCtRng = Utils.roundUp(11655, 8) >>> 3;
+                this.bitsMFzCtRng = Utils.roundUp(539, 8) >>> 3;
                 break;
             case 5:
-                this.bitsWCtRng = 20594;
-                this.bitsMFzCtRng = 679;
+                this.bitsWCtRng = Utils.roundUp(20594, 8) >>> 3;
+                this.bitsMFzCtRng = Utils.roundUp(679, 8) >>> 3;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid NIST category level");
@@ -386,11 +386,11 @@ public class CrossParameters
         this.treeLeavesStartIndices = treeLeavesStartIndices;
         this.treeConsecutiveLeaves = treeConsecutiveLeaves;
         this.treeNodesToStore = treeNodesToStore;
-        this.bitsNFpCtRng = bitsNFpCtRng;
-        this.bitsChall1FpstarCtRng = bitsChall1FpstarCtRng;
-        this.bitsVCtRng = bitsVCtRng;
-        this.bitsNFzCtRng = bitsNFzCtRng;
-        this.bitsCWStrRng = bitsCWStrRng;
+        this.bitsNFpCtRng = Utils.roundUp(bitsNFpCtRng, 8) >>> 3;
+        this.bitsChall1FpstarCtRng = Utils.roundUp(bitsChall1FpstarCtRng, 8) >>> 3;
+        this.bitsVCtRng = Utils.roundUp(bitsVCtRng, 8) >>> 3;
+        this.bitsNFzCtRng = Utils.roundUp(bitsNFzCtRng, 8) >>> 3;
+        this.bitsCWStrRng = Utils.roundUp(bitsCWStrRng, 8) >>> 3;
         this.signatureSize = signatureSize;
     }
 

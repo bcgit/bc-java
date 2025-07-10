@@ -85,44 +85,25 @@ class CrossEngine
     public void expandPk(CrossParameters params, byte[][] V_tr, byte[] seedPk)
     {
         init(seedPk, params.getKeypairSeedLengthBytes(), 3 * params.getT() + 2);
-        csprngFMat(V_tr, params.getK(), params.getN() - params.getK(), params.getP(), Utils.roundUp(params.getBitsVCtRng(), 8) >>> 3);
+        csprngFMat(V_tr, params.getK(), params.getN() - params.getK(), params.getP(), params.getBitsVCtRng());
     }
 
     // Expand public key for RSDPG variant
     public void expandPk(CrossParameters params, short[][] V_tr, byte[][] W_mat, byte[] seedPk)
     {
         init(seedPk, params.getKeypairSeedLengthBytes(), 3 * params.getT() + 2);
-        csprngFMat(W_mat, params.getM(), params.getN() - params.getM(), params.getZ(), Utils.roundUp(params.getBitsWCtRng(), 8) >>> 3);
+        csprngFMat(W_mat, params.getM(), params.getN() - params.getM(), params.getZ(), params.getBitsWCtRng());
         csprngFpMat(V_tr, params);
     }
 
     private void csprngFMat(byte[][] res, int rows, int cols, int size, int bufferSize)
     {
         int total = rows * cols;
-        int bitsFor = Utils.bitsToRepresent(size - 1);
-        long mask = (1L << bitsFor) - 1;
-        byte[] CSPRNG_buffer = randomBytes(bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
+        Csprng csprng = new Csprng(size, bufferSize, this);
         int placed = 0;
-
         while (placed < total)
         {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            long elementLong = subBuffer & mask;
+            long elementLong = csprng.next();
             if (elementLong < size)
             {
                 int row = placed / cols;
@@ -130,8 +111,6 @@ class CrossEngine
                 res[row][col] = (byte)elementLong;
                 placed++;
             }
-            subBuffer >>>= bitsFor; // Unsigned right shift
-            bitsInSubBuf -= bitsFor;
         }
     }
 
@@ -141,76 +120,35 @@ class CrossEngine
         int rows = params.getK();
         int cols = params.getN() - params.getK();
         int total = rows * cols;
-        int bitsForP = Utils.bitsToRepresent(params.getP() - 1);
-        long mask = (1L << bitsForP) - 1;
-        int bufferSize = Utils.roundUp(params.getBitsVCtRng(), 8) >>> 3;
-        byte[] CSPRNG_buffer = randomBytes(bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
+        int size = params.getP();
+        int bufferSize = params.getBitsVCtRng();
+        Csprng csprng = new Csprng(size, bufferSize, this);
         int placed = 0;
-
         while (placed < total)
         {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            long elementLong = subBuffer & mask;
-            if (elementLong < params.getP())
+            long elementLong = csprng.next();
+            if (elementLong < size)
             {
                 int row = placed / cols;
                 int col = placed % cols;
                 res[row][col] = (short)elementLong;
                 placed++;
             }
-            subBuffer >>>= bitsForP;
-            bitsInSubBuf -= bitsForP;
         }
     }
 
     public void csprngFVec(byte[] res, int size, int loop, int bufferSize)
     {
-        int bitsFor = Utils.bitsToRepresent(size - 1);
-        long mask = (1L << bitsFor) - 1;
-        byte[] CSPRNG_buffer = randomBytes(bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
+        Csprng csprng = new Csprng(size, bufferSize, this);
         int placed = 0;
-
         while (placed < loop)
         {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            byte elementLong = (byte)(subBuffer & mask);
+            byte elementLong = (byte)csprng.next();
             if (elementLong < size)
             {
                 res[placed] = elementLong;
                 placed++;
             }
-            subBuffer >>>= bitsFor; // Unsigned right shift
-            bitsInSubBuf -= bitsFor;
         }
     }
 
@@ -218,38 +156,17 @@ class CrossEngine
     {
         int n = params.getN();
         int p = params.getP();
-        int bitsForP = Utils.bitsToRepresent(p - 1);
-        long mask = (1L << bitsForP) - 1;
-        int bufferSize = Utils.roundUp(params.getBitsNFpCtRng(), 8) >>> 3;
-        byte[] CSPRNG_buffer = randomBytes(bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
+        int bufferSize = params.getBitsNFpCtRng();
+        Csprng csprng = new Csprng(p, bufferSize, this);
         int placed = 0;
-
         while (placed < n)
         {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(CSPRNG_buffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            long elementLong = subBuffer & mask;
+            long elementLong = csprng.next();
             if (elementLong < p)
             {
                 res[placed] = (short)elementLong;
                 placed++;
             }
-            subBuffer >>>= bitsForP; // Unsigned right shift
-            bitsInSubBuf -= bitsForP;
         }
     }
 
@@ -323,7 +240,7 @@ class CrossEngine
             short e_val = Utils.restrToValRsdpg(e[i]);
             for (int j = 0; j < nMinusK; j++)
             {
-                res[j] = (short)Utils.fpRedSingle(res[j] + e_val * V_tr[i][j]);
+                res[j] = Utils.fpRedSingle(res[j] + e_val * V_tr[i][j]);
             }
         }
     }
@@ -436,7 +353,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            res[i] = (short)Utils.fpRedSingle(in1[i] * in2[i]);
+            res[i] = Utils.fpRedSingle(in1[i] * in2[i]);
         }
     }
 
@@ -468,7 +385,7 @@ class CrossEngine
         {
             for (int j = 0; j < nMinusK; j++)
             {
-                res[j] = (short)Utils.fpRedSingle(res[j] + e[i] * V_tr[i][j]);
+                res[j] = Utils.fpRedSingle(res[j] + e[i] * V_tr[i][j]);
             }
         }
     }
@@ -525,65 +442,36 @@ class CrossEngine
     {
         int t = params.getT();
         int p = params.getP();
-        int bitsForP = Utils.bitsToRepresent(p - 2);
-        long mask = (1L << bitsForP) - 1;
-        int bufferSize = Utils.roundUp(params.getBitsChall1FpstarCtRng(), 8) >>> 3;
-
-        byte[] cspRngBuffer = randomBytes(bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(cspRngBuffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
-        int placed = 0;
         int[] res = new int[t];
-
+        int bufferSize = params.getBitsChall1FpstarCtRng();
+        Csprng csprng = new Csprng(p, bufferSize, Utils.bitsToRepresent(p - 2), this);
+        int placed = 0;
         while (placed < t)
         {
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(cspRngBuffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            long elementLong = subBuffer & mask;
-            int element = (int)elementLong + 1;  // Map to [1, P-1]
+            int element = (int)csprng.next() + 1;
             if (element < p)
             {
                 res[placed] = element;
                 placed++;
             }
-            subBuffer >>>= bitsForP;  // Unsigned right shift
-            bitsInSubBuf -= bitsForP;
         }
         return res;
     }
 
     // Vector scaling: res = u_prime + e * chall_1 (mod P)
-    public static void fpVecByRestrVecScaled(byte[] res, byte[] e, int chall_1,
-                                             byte[] u_prime, CrossParameters params)
+    public static void fpVecByRestrVecScaled(byte[] res, byte[] e, int chall_1, byte[] u_prime, int n)
     {
-        int n = params.getN();
-
         for (int i = 0; i < n; i++)
         {
             res[i] = (byte)Utils.fpRedDouble((u_prime[i] & 0xFF) + (Utils.restrToVal(e[i]) & 0xFF) * chall_1);
         }
     }
 
-    public static void fpVecByRestrVecScaled(short[] res, byte[] e, int chall_1,
-                                             short[] u_prime, CrossParameters params)
+    public static void fpVecByRestrVecScaled(short[] res, byte[] e, int chall_1, short[] u_prime, int n)
     {
-        int n = params.getN();
-
         for (int i = 0; i < n; i++)
         {
-            res[i] = (short)Utils.fpRedSingle(u_prime[i] + Utils.restrToValRsdpg(e[i]) * chall_1);
+            res[i] = Utils.fpRedSingle(u_prime[i] + Utils.restrToValRsdpg(e[i]) * chall_1);
         }
     }
 
@@ -592,46 +480,24 @@ class CrossEngine
     {
         int t = params.getT();
         int w = params.getW();
-
         // Initialize fixed-weight string: first W ones, rest zeros
         for (int i = 0; i < w; i++)
         {
             fixedWeightString[i] = 1;
         }
-
         init(digest, digestOff, params.getHashDigestLength(), 3 * t);
-
-        int bufferSize = Utils.roundUp(params.getBitsCWStrRng(), 8) >>> 3;
-        byte[] cspRngBuffer = randomBytes(bufferSize);
-
-        long subBuffer = Pack.littleEndianToLong(cspRngBuffer, 0);
-
-        int bitsInSubBuf = 64;
-        int posInBuf = 8;
-        int posRemaining = bufferSize - posInBuf;
+        int bufferSize = params.getBitsCWStrRng();
+        Csprng csprng = new Csprng(t, bufferSize, this);
         int curr = 0;
-
         while (curr < t)
         {
-            // Refill buffer if needed
-            if (bitsInSubBuf <= 32 && posRemaining > 0)
-            {
-                int refreshAmount = Math.min(4, posRemaining);
-                long refreshBuf = Pack.littleEndianToLong(cspRngBuffer, posInBuf);
-                posInBuf += refreshAmount;
-                posRemaining -= refreshAmount;
-                subBuffer |= refreshBuf << bitsInSubBuf;
-                bitsInSubBuf += 8 * refreshAmount;
-            }
-
-            // Calculate bits needed for current range
-            int range = t - curr;
-            int bitsForPos = Utils.bitsToRepresent(range - 1);
-            long posMask = (1L << bitsForPos) - 1;
+            csprng.size = t - curr;
+            csprng.bitsFor = Utils.bitsToRepresent(csprng.size - 1);
+            csprng.mask = (1L << csprng.bitsFor) - 1;
 
             // Get candidate position
-            int candidatePos = (int)(subBuffer & posMask);
-            if (candidatePos < range)
+            int candidatePos = (int)(csprng.next() & csprng.mask);
+            if (candidatePos < csprng.size)
             {
                 int dest = curr + candidatePos;
 
@@ -642,10 +508,6 @@ class CrossEngine
 
                 curr++;
             }
-
-            // Update buffer
-            subBuffer >>>= bitsForPos;
-            bitsInSubBuf -= bitsForPos;
         }
     }
 
@@ -825,11 +687,10 @@ class CrossEngine
             int startIndex = leavesStartIndices[i];
             for (int j = 0; j < consecutiveLeaves[i]; j++)
             {
-                if (indicesToPublish[cnt] == 0)
+                if (indicesToPublish[cnt++] == 0)
                 {
                     flagTree[startIndex + j] = 1;
                 }
-                cnt++;
             }
         }
     }
@@ -846,8 +707,7 @@ class CrossEngine
             int startIndex = leavesStartIndices[i];
             for (int j = 0; j < consecutiveLeaves[i]; j++)
             {
-                flagTree[startIndex + j] = indicesToPublish[cnt];
-                cnt++;
+                flagTree[startIndex + j] = indicesToPublish[cnt++];
             }
         }
     }
@@ -904,11 +764,11 @@ class CrossEngine
         int T = params.getT();
         int hashDigestLength = params.getHashDigestLength();
         int[] remainders = new int[4];
-        remainders[0] = (T % 4 > 0) ? 1 : 0;
-        remainders[1] = (T % 4 > 1) ? 1 : 0;
-        remainders[2] = (T % 4 > 2) ? 1 : 0;
+        remainders[0] = ((T & 3) > 0) ? 1 : 0;
+        remainders[1] = ((T & 3) > 1) ? 1 : 0;
+        remainders[2] = ((T & 3) > 2) ? 1 : 0;
 
-        byte[] hashInput = new byte[4 * hashDigestLength];
+        byte[] hashInput = new byte[hashDigestLength << 2];
         int offset = 0;
         int t_div_4 = T >>> 2;
         for (int i = 0; i < 4; i++)

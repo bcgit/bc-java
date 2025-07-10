@@ -43,7 +43,7 @@ public class CrossKeyPairGenerator
             byte[] s = new byte[n - k];
             engine.expandPk(params, V_tr, pk);
             engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
-            engine.csprngFVec(e_bar, params.getZ(), n, Utils.roundUp(params.getBitsNFzCtRng(), 8) >>> 3);
+            engine.csprngFVec(e_bar, params.getZ(), n, params.getBitsNFzCtRng());
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
             CrossEngine.fDzNorm(s, s.length);
             Utils.genericPack7Bit(pk, keypairSeedLength, s, s.length);
@@ -58,7 +58,7 @@ public class CrossKeyPairGenerator
             short[] s = new short[n - k];
             engine.expandPk(params, V_tr, W_mat, pk);
             engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
-            engine.csprngFVec(e_G_bar, params.getZ(), m, Utils.roundUp(params.getBitsMFzCtRng(), 8) >>> 3);
+            engine.csprngFVec(e_G_bar, params.getZ(), m, params.getBitsMFzCtRng());
             CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
             CrossEngine.fDzNorm(e_bar, e_bar.length);
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
