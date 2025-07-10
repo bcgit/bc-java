@@ -81,7 +81,14 @@ public class SymmetricKeyEncSessionPacket
             }
             else
             {
-                ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+                try
+                {
+                    ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IOException(e.getMessage(), e);
+                }
             }
 
             s2k = new S2K(in);
