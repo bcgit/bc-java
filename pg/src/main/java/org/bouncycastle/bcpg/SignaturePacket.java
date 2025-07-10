@@ -176,11 +176,26 @@ public class SignaturePacket
             SignatureSubpacket p = (SignatureSubpacket)vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
-                keyID = ((IssuerKeyID)p).getKeyID();
+                try
+                {
+                    keyID = ((IssuerKeyID) p).getKeyID();
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // Too short key-id
+                    throw new MalformedPacketException("Malformed IssuerKeyId subpacket.", e);
+                }
             }
             else if (p instanceof SignatureCreationTime)
             {
-                creationTime = ((SignatureCreationTime)p).getTime().getTime();
+                try
+                {
+                    creationTime = ((SignatureCreationTime) p).getTime().getTime();
+                }
+                catch (IllegalStateException e)
+                {
+                    throw new MalformedPacketException("Malformed SignatureCreationTime subpacket.", e);
+                }
             }
 
             hashedData[i] = p;
