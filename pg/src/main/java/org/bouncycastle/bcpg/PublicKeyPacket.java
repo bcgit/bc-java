@@ -150,6 +150,10 @@ public class PublicKeyPacket
         {
             // TODO: Use keyOctets to be able to parse unknown keys
             keyOctets = StreamUtil.read4OctetLength(in);
+            if (keyOctets < 0)
+            {
+                throw new MalformedPacketException("Octet length cannot be negative.");
+            }
         }
 
         parseKey(in, algorithm, keyOctets);
