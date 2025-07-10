@@ -417,7 +417,16 @@ public class TlsTestUtils
         PemObject pem = loadPemResource(resource);
         if (pem.getType().equals("PRIVATE KEY"))
         {
-            return PrivateKeyFactory.createKey(pem.getContent());
+            AsymmetricKeyParameter kp;
+            try
+            {
+                kp = PrivateKeyFactory.createKey(pem.getContent());
+            }
+            catch (Exception e)
+            {
+                kp = org.bouncycastle.pqc.crypto.util.PrivateKeyFactory.createKey(pem.getContent());
+            }
+            return kp;
         }
         if (pem.getType().equals("ENCRYPTED PRIVATE KEY"))
         {

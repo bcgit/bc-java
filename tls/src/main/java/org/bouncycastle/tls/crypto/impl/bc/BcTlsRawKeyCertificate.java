@@ -409,13 +409,26 @@ public class BcTlsRawKeyCertificate
     {
         try
         {
-            return (MLDSAPublicKeyParameters)getPublicKey();
+            return (MLDSAPublicKeyParameters)getPQCPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not ML-DSA", e);
         }
     }
+
+    protected AsymmetricKeyParameter getPQCPublicKey() throws IOException
+    {
+        try
+        {
+            return org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(keyInfo);
+        }
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
+        }
+    }
+
 
     public RSAKeyParameters getPubKeyRSA() throws IOException
     {
