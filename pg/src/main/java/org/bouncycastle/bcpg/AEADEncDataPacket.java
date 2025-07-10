@@ -47,7 +47,15 @@ public class AEADEncDataPacket
         aeadAlgorithm = (byte)in.read();
         chunkSize = (byte)in.read();
 
-        iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+        try
+        {
+            int ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+            iv = new byte[ivLen];
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new MalformedPacketException("Unknown AEAD algorithm ID: " + aeadAlgorithm, e);
+        }
         in.readFully(iv);
     }
 
