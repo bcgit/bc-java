@@ -804,12 +804,20 @@ public class PGPSignature
                 byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
                 if (a.length + b.length > Ed25519.SIGNATURE_SIZE)
                 {
+                    if (a.length > Ed448.PUBLIC_KEY_SIZE || b.length > Ed448.SIGNATURE_SIZE)
+                    {
+                        throw new PGPException("Malformed Ed448 signature encoding (too long).");
+                    }
                     signature = new byte[Ed448.SIGNATURE_SIZE];
                     System.arraycopy(a, 0, signature, Ed448.PUBLIC_KEY_SIZE - a.length, a.length);
                     System.arraycopy(b, 0, signature, Ed448.SIGNATURE_SIZE - b.length, b.length);
                 }
                 else
                 {
+                    if (a.length > Ed25519.PUBLIC_KEY_SIZE || b.length > Ed25519.SIGNATURE_SIZE)
+                    {
+                        throw new PGPException("Malformed Ed25519 signature encoding (too long).");
+                    }
                     signature = new byte[Ed25519.SIGNATURE_SIZE];
                     System.arraycopy(a, 0, signature, Ed25519.PUBLIC_KEY_SIZE - a.length, a.length);
                     System.arraycopy(b, 0, signature, Ed25519.SIGNATURE_SIZE - b.length, b.length);
