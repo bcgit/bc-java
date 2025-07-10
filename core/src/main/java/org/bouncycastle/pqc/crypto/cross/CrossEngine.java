@@ -7,15 +7,6 @@ import org.bouncycastle.util.Pack;
 class CrossEngine
 {
     // Precomputed constants for exponentiation
-    private static final int RESTR_G_GEN_1 = 16;
-    private static final int RESTR_G_GEN_2 = 256;
-    private static final int RESTR_G_GEN_4 = 384;
-    private static final int RESTR_G_GEN_8 = 355;
-    private static final int RESTR_G_GEN_16 = 302;
-    private static final int RESTR_G_GEN_32 = 93;
-    private static final int RESTR_G_GEN_64 = 505;
-    private static final long REDUCTION_CONST = 2160140723L;
-    private static final long RESTR_G_TABLE = 0x0140201008040201L;
     final SHAKEDigest digest;
     static final int HASH_DOMAIN_SEP_CONST = 32768;
     static final byte[] HASH_DOMAIN_SEP = Pack.shortToLittleEndian((short)32768);
@@ -262,27 +253,6 @@ class CrossEngine
         }
     }
 
-    public static int fzRedSingle(int x)
-    {
-        return (x & 0x7F) + (x >>> 7);
-    }
-
-    public static int fpRedSingle(int x)
-    {
-        long xLong = x & 0xFFFFFFFFL; // Treat as unsigned
-        long quotient = (xLong * REDUCTION_CONST) >>> 40;
-        long result = xLong - quotient * 509;
-        if (result < 0)
-        {
-            result += 509;
-        }
-        else if (result >= 509)
-        {
-            result -= 509;
-        }
-        return (int)result;
-    }
-
     // Matrix-vector multiplication for RSDPG
     public static void fzInfWByFzMatrix(byte[] res, byte[] e, byte[][] W_mat, CrossParameters params)
     {
@@ -307,63 +277,9 @@ class CrossEngine
         {
             for (int j = 0; j < nMinusM; j++)
             {
-                res[j] = (byte)fpRedDouble((res[j] & 0xFF) + (e[i] & 0xFF) * (W_mat[i][j] & 0xFF));
+                res[j] = (byte)Utils.fpRedDouble((res[j] & 0xFF) + (e[i] & 0xFF) * (W_mat[i][j] & 0xFF));
             }
         }
-    }
-
-    public static int fpRedDouble(int x)
-    {
-        return fzRedSingle(fzRedSingle(x));
-    }
-
-    /**
-     * Converts a restricted exponent to a finite field value using precomputed table lookup.
-     * This method is optimized for RSDP variant (P=127) where elements are represented as 7-bit values.
-     * The implementation extracts an 8-bit value from a precomputed constant table by shifting
-     * 8*x bits and taking the least significant byte.
-     *
-     * @param x The exponent index (0-127) to convert
-     * @return The finite field element corresponding to the exponent
-     */
-    public static byte restrToVal(int x)
-    {
-        return (byte)(RESTR_G_TABLE >>> (x << 3));
-    }
-
-    /**
-     * Constant-time conditional move (CMOV) operation for cryptographic implementations.
-     * Returns either the true value (if bit=1) or 1 (if bit=0) without using branches,
-     * providing protection against timing side-channel attacks.
-     *
-     * @param bit     The condition bit (0 or 1)
-     * @param trueVal The value to return when bit=1
-     * @return trueVal if bit=1, 1 otherwise
-     */
-    private static int cmov(int bit, int trueVal)
-    {
-        int mask = -bit; // mask = 0xFFFFFFFF if bit=1, 0 if bit=0
-        return (trueVal & mask) | (1 & ~mask);
-    }
-
-    /**
-     * Converts a restricted exponent to a finite field value for RSDPG variant (P=509).
-     * This method computes g^x mod 509 using precomputed generator powers in constant time,
-     * where g is a fixed generator of the multiplicative group. The 7-bit exponent is decomposed
-     * into its binary representation, and the corresponding powers are multiplied together.
-     * Intermediate results are reduced modulo 509 to prevent overflow.
-     *
-     * @param x The 7-bit exponent (0-127) to raise the generator to
-     * @return The finite field element g^x mod 509 as a short value
-     */
-    public static short restrToValRsdpg(byte x)
-    {
-        int xInt = x & 0xFF;
-        int finalProd = fpRedSingle(fpRedSingle(cmov((xInt) & 1, RESTR_G_GEN_1) * cmov((xInt >> 1) & 1, RESTR_G_GEN_2)
-            * cmov((xInt >> 2) & 1, RESTR_G_GEN_4) * cmov((xInt >> 3) & 1, RESTR_G_GEN_8)) *
-            fpRedSingle(cmov((xInt >> 4) & 1, RESTR_G_GEN_16) * cmov((xInt >> 5) & 1, RESTR_G_GEN_32) * cmov((xInt >> 6) & 1, RESTR_G_GEN_64)));
-
-        return (short)finalProd;
     }
 
     public static void restrVecByFpMatrix(byte[] res, byte[] e, byte[][] V_tr, CrossParameters params)
@@ -375,16 +291,16 @@ class CrossEngine
         // Initialize res with restricted values from the last n-k elements of e
         for (int i = k; i < n; i++)
         {
-            res[i - k] = restrToVal(e[i]);
+            res[i - k] = Utils.restrToVal(e[i]);
         }
 
         // Accumulate matrix-vector product
         for (int i = 0; i < k; i++)
         {
-            byte e_val = restrToVal(e[i] & 0xFF);
+            byte e_val = Utils.restrToVal(e[i] & 0xFF);
             for (int j = 0; j < nMinusK; j++)
             {
-                res[j] = (byte)fpRedDouble((res[j] & 0xFF) + (e_val * (V_tr[i][j] & 0xFF)));
+                res[j] = (byte)Utils.fpRedDouble((res[j] & 0xFF) + (e_val * (V_tr[i][j] & 0xFF)));
             }
         }
     }
@@ -398,16 +314,16 @@ class CrossEngine
         // Initialize res with restricted values from the last n-k elements of e
         for (int i = k; i < n; i++)
         {
-            res[i - k] = restrToValRsdpg(e[i]);
+            res[i - k] = Utils.restrToValRsdpg(e[i]);
         }
 
         // Accumulate matrix-vector product
         for (int i = 0; i < k; i++)
         {
-            short e_val = restrToValRsdpg(e[i]);
+            short e_val = Utils.restrToValRsdpg(e[i]);
             for (int j = 0; j < nMinusK; j++)
             {
-                res[j] = (short)fpRedSingle(res[j] + e_val * V_tr[i][j]);
+                res[j] = (short)Utils.fpRedSingle(res[j] + e_val * V_tr[i][j]);
             }
         }
     }
@@ -435,6 +351,7 @@ class CrossEngine
 
         // 3. Determine remainders based on T mod 4
         int r = t & 3;
+        int q = t >>> 2;
         int[] remainders = new int[4];
         remainders[0] = (r > 0) ? 1 : 0;
         remainders[1] = (r > 1) ? 1 : 0;
@@ -445,8 +362,8 @@ class CrossEngine
         for (int i = 0; i < 4; i++)
         {
             // Prepare input for group CSPRNG: seed_i || salt
-            int groupSeeds = (t / 4) + remainders[i];
-            int startPos = ((t / 4) * i + offset) * seedLen;
+            int groupSeeds = q + remainders[i];
+            int startPos = (q * i + offset) * seedLen;
             randomBytes(roundsSeeds, startPos, groupSeeds * seedLen, quadSeed, i * seedLen, seedLen, salt, i + 1);
             offset += remainders[i];
         }
@@ -478,7 +395,7 @@ class CrossEngine
     {
         for (int i = 0; i < m; i++)
         {
-            res[i] = (byte)fzRedSingle(((a[i] & 0xFF) + ((b[i] ^ 0x7F) & 0xFF)));
+            res[i] = (byte)Utils.fzRedSingle(((a[i] & 0xFF) + ((b[i] ^ 0x7F) & 0xFF)));
         }
     }
 
@@ -488,7 +405,7 @@ class CrossEngine
         int n = params.getN();
         for (int j = 0; j < n; j++)
         {
-            fpOut[j] = restrToVal(fzIn[j]);
+            fpOut[j] = Utils.restrToVal(fzIn[j]);
         }
     }
 
@@ -498,7 +415,7 @@ class CrossEngine
 
         for (int j = 0; j < n; j++)
         {
-            fpOut[j] = restrToValRsdpg(fzIn[j]);
+            fpOut[j] = Utils.restrToValRsdpg(fzIn[j]);
         }
     }
 
@@ -509,7 +426,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            res[i] = (byte)fpRedDouble((in1[i] & 0xFF) * (in2[i] & 0xFF));
+            res[i] = (byte)Utils.fpRedDouble((in1[i] & 0xFF) * (in2[i] & 0xFF));
         }
     }
 
@@ -519,7 +436,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            res[i] = (short)fpRedSingle(in1[i] * in2[i]);
+            res[i] = (short)Utils.fpRedSingle(in1[i] * in2[i]);
         }
     }
 
@@ -551,7 +468,7 @@ class CrossEngine
         {
             for (int j = 0; j < nMinusK; j++)
             {
-                res[j] = (short)fpRedSingle(res[j] + e[i] * V_tr[i][j]);
+                res[j] = (short)Utils.fpRedSingle(res[j] + e[i] * V_tr[i][j]);
             }
         }
     }
@@ -655,7 +572,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            res[i] = (byte)fpRedDouble((u_prime[i] & 0xFF) + (restrToVal(e[i]) & 0xFF) * chall_1);
+            res[i] = (byte)Utils.fpRedDouble((u_prime[i] & 0xFF) + (Utils.restrToVal(e[i]) & 0xFF) * chall_1);
         }
     }
 
@@ -666,7 +583,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            res[i] = (short)fpRedSingle(u_prime[i] + restrToValRsdpg(e[i]) * chall_1);
+            res[i] = (short)Utils.fpRedSingle(u_prime[i] + Utils.restrToValRsdpg(e[i]) * chall_1);
         }
     }
 
@@ -1043,9 +960,8 @@ class CrossEngine
         System.arraycopy(tree, 0, root, 0, hashDigestLength);
     }
 
-    private static void placeCmtOnLeaves(byte[] merkleTree, byte[][] leaves,
-                                         int[] leavesStartIndices, int[] consecutiveLeaves,
-                                         int treeSubroots, int hashDigestLength)
+    private static void placeCmtOnLeaves(byte[] merkleTree, byte[][] leaves, int[] leavesStartIndices,
+                                         int[] consecutiveLeaves, int treeSubroots, int hashDigestLength)
     {
         int cnt = 0;
         for (int i = 0; i < treeSubroots; i++)
@@ -1247,20 +1163,24 @@ class CrossEngine
         return true;
     }
 
-    // Checks if all elements in an FZ vector are within [0, Z-1]
-    public static boolean isFzVecInRestrGroupN(byte[] vec, CrossParameters params)
+    /**
+     * Checks if all elements in the FZ vector are within [0, Z-1]
+     *
+     * @param vec Finite ring vector to validate
+     * @param z   Modulus value (upper bound for valid elements)
+     * @param m   Number of elements to check (first M elements)
+     * @return 1 if all elements are valid, 0 otherwise
+     */
+    public static boolean isFzVecInRestrGroup(byte[] vec, int z, int m)
     {
-        int z = params.getZ();
-        for (byte element : vec)
+        for (int i = 0; i < m; i++)
         {
-            // Convert to unsigned integer for comparison
-            int unsignedVal = element & 0xFF;
-            if (unsignedVal >= z)
+            if ((vec[i] & 0xFF) >= z)
             {
-                return false;
+                return false;  // Found invalid element
             }
         }
-        return true;
+        return true;  // All elements valid
     }
 
     // Computes: res = synd - (s * chall_1) mod P
@@ -1273,7 +1193,7 @@ class CrossEngine
         {
             // Multiply s[j] * chall_1, Reduce product mod P, Compute negative equivalent mod P
             // res[j] = synd[j] + negative mod P
-            res[j] = (byte)(((synd[j] & 0xFF) + p - (fzRedSingle(fpRedDouble((s[j] & 0xFF) * (chall_1 & 0xFF))) & 0x7F)) % p);
+            res[j] = (byte)(((synd[j] & 0xFF) + p - (Utils.fzRedSingle(Utils.fpRedDouble((s[j] & 0xFF) * (chall_1 & 0xFF))) & 0x7F)) % p);
         }
     }
 
@@ -1284,29 +1204,7 @@ class CrossEngine
 
         for (int j = 0; j < n_k; j++)
         {
-            res[j] = (short)((synd[j] + p - ((s[j] * chall_1) % p)) % p);
+            res[j] = (short)((synd[j] + p - (s[j] * chall_1) % p) % p);
         }
-    }
-
-    /**
-     * Checks if all elements in the FZ vector are within [0, Z-1]
-     *
-     * @param vec Finite ring vector to validate
-     * @param z   Modulus value (upper bound for valid elements)
-     * @param m   Number of elements to check (first M elements)
-     * @return 1 if all elements are valid, 0 otherwise
-     */
-    public static boolean isFzVecInRestrGroupM(byte[] vec, int z, int m)
-    {
-        for (int i = 0; i < m; i++)
-        {
-            // Convert byte to unsigned integer
-            int value = vec[i] & 0xFF;
-            if (value >= z)
-            {
-                return false;  // Found invalid element
-            }
-        }
-        return true;  // All elements valid
     }
 }

@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.util.Arrays;
 
 public class CrossKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -65,8 +64,7 @@ public class CrossKeyPairGenerator
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
             Utils.genericPack9Bit(pk, keypairSeedLength, s, s.length);
         }
-        return new AsymmetricCipherKeyPair(new CrossPublicKeyParameters(params, pk),
-            new CrossPrivateKeyParameters(params, seedSk));
+        return new AsymmetricCipherKeyPair(new CrossPublicKeyParameters(params, pk), new CrossPrivateKeyParameters(params, seedSk));
     }
 
 }

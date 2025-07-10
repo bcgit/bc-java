@@ -2,6 +2,16 @@ package org.bouncycastle.pqc.crypto.cross;
 
 class Utils
 {
+    private static final int RESTR_G_GEN_1 = 16;
+    private static final int RESTR_G_GEN_2 = 256;
+    private static final int RESTR_G_GEN_4 = 384;
+    private static final int RESTR_G_GEN_8 = 355;
+    private static final int RESTR_G_GEN_16 = 302;
+    private static final int RESTR_G_GEN_32 = 93;
+    private static final int RESTR_G_GEN_64 = 505;
+    private static final long REDUCTION_CONST = 2160140723L;
+    private static final long RESTR_G_TABLE = 0x0140201008040201L;
+
     // Calculate bits needed to represent a number
     public static int bitsToRepresent(int n)
     {
@@ -118,7 +128,7 @@ class Utils
             break;
         case 5:
             out[outOff++] = (byte)((in[inOff] & 0x07) | ((in[++inOff] & 0x07) << 3) | ((in[++inOff] & 0x03) << 6));
-            out[outOff + 1] = (byte)(((in[inOff] >>> 2) & 0x01) | ((in[++inOff] & 0x07) << 1) | ((in[++inOff] & 0x07) << 4));
+            out[outOff] = (byte)(((in[inOff] >>> 2) & 0x01) | ((in[++inOff] & 0x07) << 1) | ((in[++inOff] & 0x07) << 4));
             break;
         case 6:
             out[outOff++] = (byte)((in[inOff] & 0x07) | ((in[++inOff] & 0x07) << 3) | ((in[++inOff] & 0x03) << 6));
@@ -197,12 +207,11 @@ class Utils
         }
     }
 
-    public static boolean genericUnpack7Bit(byte[] out, byte[] in, int inOff, int outlen, int inlen)
+    public static boolean genericUnpack7Bit(byte[] out, byte[] in, int inOff, int outlen)
     {
         boolean isPackedPaddOk = true;
         int i;
         int outOff = 0;
-        inlen += inOff;
         // Process full blocks (8 elements per 7 bytes)
         for (i = 0; i < outlen >>> 3; i++)
         {
@@ -265,10 +274,7 @@ class Utils
                 out[outOff] = (byte)(((in[inOff] & 0xff) >>> 2) | ((in[++inOff] << 6) & 0x7F));
                 break;
             }
-            // Check padding bits in last byte
-            int unusedBits = 8 - nRemainder;
-            int lastByte = in[inlen - 1];
-            if ((lastByte & (0xFF << unusedBits)) != 0)
+            if ((in[inOff] & (0xFF << (8 - nRemainder))) != 0)
             {
                 isPackedPaddOk = false;
             }
@@ -276,12 +282,11 @@ class Utils
         return isPackedPaddOk;
     }
 
-    public static boolean genericUnpack9Bit(short[] out, byte[] in, int inOff, int outlen, int inlen)
+    public static boolean genericUnpack9Bit(short[] out, byte[] in, int inOff, int outlen)
     {
         boolean isPackedPaddOk = true;
         int i;
         int outOff = 0;
-        inlen += inOff;
         // Process full blocks (8 elements per 9 bytes)
         for (i = 0; i < outlen >>> 3; i++)
         {
@@ -345,9 +350,7 @@ class Utils
                 out[outOff] = (short)((((in[inOff] & 0xFF) >>> 6) | ((in[++inOff] & 0xFF) << 2)) & 0x1FF);
                 break;
             }
-            // Check padding bits in last byte
-            int lastByte = in[inlen - 1];
-            if ((lastByte & (0xFF << nRemainder)) != 0)
+            if ((in[inOff] & (0xFF << nRemainder)) != 0)
             {
                 isPackedPaddOk = false;
             }
@@ -423,12 +426,7 @@ class Utils
                 out[outOff] = (byte)((in[inOff] >>> 2) & 0x07);
                 break;
             }
-
-            // Check padding bits in last byte
-            int lastByte = in[inOff];
-            int paddingMask = 0xFF << (nRemainder * 3) & 7;
-
-            if ((lastByte & paddingMask) != 0)
+            if ((in[inOff] & (0xFF << (nRemainder * 3) & 7)) != 0)
             {
                 isPackedPaddOk = false;
             }
@@ -441,5 +439,80 @@ class Utils
     public static int roundUp(int amount, int roundAmt)
     {
         return ((amount + roundAmt - 1) / roundAmt) * roundAmt;
+    }
+
+    /**
+     * Constant-time conditional move (CMOV) operation for cryptographic implementations.
+     * Returns either the true value (if bit=1) or 1 (if bit=0) without using branches,
+     * providing protection against timing side-channel attacks.
+     *
+     * @param bit     The condition bit (0 or 1)
+     * @param trueVal The value to return when bit=1
+     * @return trueVal if bit=1, 1 otherwise
+     */
+    static int cmov(int bit, int trueVal)
+    {
+        int mask = -bit; // mask = 0xFFFFFFFF if bit=1, 0 if bit=0
+        return (trueVal & mask) | (1 & ~mask);
+    }
+
+    public static int fzRedSingle(int x)
+    {
+        return (x & 0x7F) + (x >>> 7);
+    }
+
+    public static int fpRedSingle(int x)
+    {
+        long xLong = x & 0xFFFFFFFFL; // Treat as unsigned
+        long quotient = (xLong * REDUCTION_CONST) >>> 40;
+        long result = xLong - quotient * 509;
+        if (result < 0)
+        {
+            result += 509;
+        }
+        else if (result >= 509)
+        {
+            result -= 509;
+        }
+        return (int)result;
+    }
+
+    public static int fpRedDouble(int x)
+    {
+        return fzRedSingle(fzRedSingle(x));
+    }
+
+    /**
+     * Converts a restricted exponent to a finite field value using precomputed table lookup.
+     * This method is optimized for RSDP variant (P=127) where elements are represented as 7-bit values.
+     * The implementation extracts an 8-bit value from a precomputed constant table by shifting
+     * 8*x bits and taking the least significant byte.
+     *
+     * @param x The exponent index (0-127) to convert
+     * @return The finite field element corresponding to the exponent
+     */
+    public static byte restrToVal(int x)
+    {
+        return (byte)(RESTR_G_TABLE >>> (x << 3));
+    }
+
+    /**
+     * Converts a restricted exponent to a finite field value for RSDPG variant (P=509).
+     * This method computes g^x mod 509 using precomputed generator powers in constant time,
+     * where g is a fixed generator of the multiplicative group. The 7-bit exponent is decomposed
+     * into its binary representation, and the corresponding powers are multiplied together.
+     * Intermediate results are reduced modulo 509 to prevent overflow.
+     *
+     * @param x The 7-bit exponent (0-127) to raise the generator to
+     * @return The finite field element g^x mod 509 as a short value
+     */
+    public static short restrToValRsdpg(byte x)
+    {
+        int xInt = x & 0xFF;
+        int finalProd = fpRedSingle(fpRedSingle(cmov((xInt) & 1, RESTR_G_GEN_1) * cmov((xInt >> 1) & 1, RESTR_G_GEN_2)
+            * cmov((xInt >> 2) & 1, RESTR_G_GEN_4) * cmov((xInt >> 3) & 1, RESTR_G_GEN_8)) *
+            fpRedSingle(cmov((xInt >> 4) & 1, RESTR_G_GEN_16) * cmov((xInt >> 5) & 1, RESTR_G_GEN_32) * cmov((xInt >> 6) & 1, RESTR_G_GEN_64)));
+
+        return (short)finalProd;
     }
 }
