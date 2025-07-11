@@ -6,6 +6,21 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
+/**
+ * Implementation of the Cross asymmetric key pair generator following the Cross signature scheme specifications.
+ * <p>
+ * This generator produces {@link CrossPublicKeyParameters} and {@link CrossPrivateKeyParameters} based on the
+ * Cross algorithm parameters. The implementation follows the specification defined in the official Cross
+ * documentation and reference implementation.
+ * </p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://https://cross-crypto.com/">Cross Official Website</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/cross-spec-round2-web.pdf">Cross Specification Document</a></li>
+ *   <li><a href="https://github.com/CROSS-signature">Cross Reference Implementation (C)</a></li>
+ * </ul>
+ */
 public class CrossKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {

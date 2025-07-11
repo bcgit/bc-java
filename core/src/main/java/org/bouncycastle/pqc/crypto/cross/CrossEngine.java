@@ -426,7 +426,7 @@ class CrossEngine
     }
 
     // Generate fixed-weight binary string
-    public void expandDigestToFixedWeight(byte[] fixedWeightString, byte[] digest, int digestOff, CrossParameters params)
+    public void expandDigestToFixedWeight(byte[] fixedWeightString, byte[] digest, int digestOff)
     {
         int t = params.getT();
         int w = params.getW();
@@ -815,7 +815,7 @@ class CrossEngine
         }
 
         // Verify unused storage bytes are zero
-        return checkTree(storedSeeds, storedSeedOff, params, seedLength, nodesUsed);
+        return checkTree(storedSeeds, storedSeedOff, seedLength, nodesUsed);
     }
 
     /**
@@ -922,10 +922,10 @@ class CrossEngine
             startNode -= npl[level - 1];
         }
         System.arraycopy(tree, 0, root, 0, hashDigestLength);
-        return checkTree(mtp, mtpOff, params, hashDigestLength, published);
+        return checkTree(mtp, mtpOff, hashDigestLength, published);
     }
 
-    private static boolean checkTree(byte[] mtp, int mtpOff, CrossParameters params, int hashDigestLength, int published)
+    private boolean checkTree(byte[] mtp, int mtpOff, int hashDigestLength, int published)
     {
         int bytesUsed = published * hashDigestLength;
         int totalProofBytes = params.getTreeNodesToStore() * hashDigestLength;
@@ -960,11 +960,8 @@ class CrossEngine
     }
 
     // Computes: res = synd - (s * chall_1) mod P
-    public static void fpSyndMinusFpVecScaled(byte[] res, byte[] synd, byte chall_1, byte[] s, CrossParameters params)
+    public static void fpSyndMinusFpVecScaled(byte[] res, byte[] synd, byte chall_1, byte[] s, int p, int n_k)
     {
-        int p = params.getP();
-        int n_k = params.getN() - params.getK();
-
         for (int j = 0; j < n_k; j++)
         {
             // Multiply s[j] * chall_1, Reduce product mod P, Compute negative equivalent mod P
@@ -973,11 +970,8 @@ class CrossEngine
         }
     }
 
-    public static void fpSyndMinusFpVecScaled(short[] res, short[] synd, short chall_1, short[] s, CrossParameters params)
+    public static void fpSyndMinusFpVecScaled(short[] res, short[] synd, short chall_1, short[] s, int p, int n_k)
     {
-        int p = params.getP();
-        int n_k = params.getN() - params.getK();
-
         for (int j = 0; j < n_k; j++)
         {
             res[j] = (short)((synd[j] + p - (s[j] * chall_1) % p) % p);

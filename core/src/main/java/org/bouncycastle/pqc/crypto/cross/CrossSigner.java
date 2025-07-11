@@ -9,6 +9,21 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
+/**
+ * Implementation of the Cross digital signature scheme as specified in the MAYO documentation.
+ * This class provides functionality for both signature generation and verification.
+ *
+ * <p>Cross is a candidate in the <b>NIST Post-Quantum Cryptography: Additional Digital Signature Schemes</b> project,
+ * currently in Round 2 of evaluations. For more details about the NIST standardization process, see:
+ * <a href="https://csrc.nist.gov/Projects/pqc-dig-sig">NIST PQC Additional Digital Signatures</a>.</p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://https://cross-crypto.com/">Cross Official Website</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/cross-spec-round2-web.pdf">Cross Specification Document</a></li>
+ *   <li><a href="https://github.com/CROSS-signature">Cross Reference Implementation (C)</a></li>
+ * </ul>
+ */
 public class CrossSigner
     implements MessageSigner
 {
@@ -59,6 +74,7 @@ public class CrossSigner
         int z = params.getZ();
         int p = params.getP();
         int hashDigestLength = params.getHashDigestLength();
+        int packedFpVecSize = params.getDenselyPackedFpVecSize();
         byte[] sm = new byte[params.getSignatureSize() + message.length];
         int pos = 0;
         byte[] salt = new byte[hashDigestLength]; //digest_chall_1
@@ -113,7 +129,7 @@ public class CrossSigner
         if (params.rsdp)
         {
             byte[][] V_tr = new byte[k][n - k];
-            byte[][] y = new byte[t][Math.max(params.getDenselyPackedFpVecSize(), n)]; //u_prime
+            byte[][] y = new byte[t][Math.max(packedFpVecSize, n)]; //u_prime
             byte[] s_prime = new byte[n - k];
             byte[] u = new byte[n]; //v
             bufferSize = params.getBitsNFzCtRng();
@@ -152,10 +168,10 @@ public class CrossSigner
                 CrossEngine.fpVecByRestrVecScaled(y[i], e_bar_prime[i], chall_1[i], y[i], n);
                 CrossEngine.fDzNorm(y[i], n);
                 Utils.genericPack7Bit(y[i], 0, y[i], y[i].length);
-                engine.digest.update(y[i], 0, params.getDenselyPackedFpVecSize());
+                engine.digest.update(y[i], 0, packedFpVecSize);
             }
             pos = getPathAndProof(w, hashDigestLength, sm, pos, salt, round_seeds, seed_tree, cmt0, merkle_tree_0, chall_2);
-            packResp0(pos, hashDigestLength, t, w, chall_2, sm, y, params.getDenselyPackedFpVecSize(), v_bar, params.getDenselyPackedFzVecSize(), cmt1);
+            packResp0(pos, hashDigestLength, t, w, chall_2, sm, y, packedFpVecSize, v_bar, params.getDenselyPackedFzVecSize(), cmt1);
         }
         else
         {
@@ -163,7 +179,7 @@ public class CrossSigner
             byte[] e_G_bar = new byte[m];
             byte[][] W_mat = new byte[m][n - m];
             short[][] y = new short[t][n];//u_prime
-            byte[][] y_digest_chall = new byte[t][params.getDenselyPackedFpVecSize()];
+            byte[][] y_digest_chall = new byte[t][packedFpVecSize];
             byte[][] v_G_bar = new byte[t][m];
             byte[] egBarPrime = new byte[m];
             short[] u = new short[n];
@@ -206,10 +222,10 @@ public class CrossSigner
             {
                 CrossEngine.fpVecByRestrVecScaled(y[i], e_bar_prime[i], chall_1[i], y[i], n);
                 Utils.genericPack9Bit(y_digest_chall[i], 0, y[i], n);
-                engine.digest.update(y_digest_chall[i], 0, params.getDenselyPackedFpVecSize());
+                engine.digest.update(y_digest_chall[i], 0, packedFpVecSize);
             }
             pos = getPathAndProof(w, hashDigestLength, sm, pos, salt, round_seeds, seed_tree, cmt0, merkle_tree_0, chall_2);
-            packResp0(pos, hashDigestLength, t, w, chall_2, sm, y_digest_chall, params.getDenselyPackedFpVecSize(), v_G_bar, packedFzRsdpGVecSize, cmt1);
+            packResp0(pos, hashDigestLength, t, w, chall_2, sm, y_digest_chall, packedFpVecSize, v_G_bar, packedFzRsdpGVecSize, cmt1);
         }
         return sm;
     }
@@ -299,7 +315,7 @@ public class CrossSigner
         }
 
         int[] chall1 = getChall1(message, t, hashDigestLength, signature, digestCmtPos, digestChall1);
-        engine.expandDigestToFixedWeight(chall2, signature, digestChall2Pos, params);
+        engine.expandDigestToFixedWeight(chall2, signature, digestChall2Pos);
         // Rebuild seed tree
         if (params.variant == CrossParameters.FAST)
         {
@@ -355,7 +371,7 @@ public class CrossSigner
                     CrossEngine.fpVecByFpVecPointwise(v_bar, v_bar, y, n);
                     CrossEngine.fpVecByFpMatrix(s_prime, v_bar, V_tr, k, n - k);
                     //CrossEngine.fDzNorm(s_prime, s_prime.length);
-                    CrossEngine.fpSyndMinusFpVecScaled(s_prime, s_prime, (byte)chall1[i], s, params);
+                    CrossEngine.fpSyndMinusFpVecScaled(s_prime, s_prime, (byte)chall1[i], s, p, n - k);
                     //CrossEngine.fDzNorm(s_prime, s_prime.length);
                     Utils.genericPack7Bit(cmt0_i_input1, 0, s_prime, s_prime.length);
                     engine.hash(cmt0, i * hashDigestLength, cmt0_i_input1, signature, yPos + packedFpVecSize, packedFzVecSize,
@@ -404,7 +420,7 @@ public class CrossSigner
                     CrossEngine.convertRestrVecToFp(u_prime, v_bar, n);
                     CrossEngine.fpVecByFpVecPointwise(u_prime, u_prime, y, n);
                     CrossEngine.fpVecByFpMatrix(s_prime, u_prime, V_tr, k, n - k);
-                    CrossEngine.fpSyndMinusFpVecScaled(s_prime, s_prime, (short)chall1[i], s, params);
+                    CrossEngine.fpSyndMinusFpVecScaled(s_prime, s_prime, (short)chall1[i], s, p, n - k);
                     Utils.genericPack9Bit(cmt0_i_input1, 0, s_prime, n - k);
                     engine.hash(cmt0, i * hashDigestLength, cmt0_i_input1, signature, yPos + packedFpVecSize,
                         packedFzRsdpGVecSize, signature, saltPos, saltLength, Pack.shortToLittleEndian(domainSepHash));
@@ -447,7 +463,7 @@ public class CrossSigner
         engine.digest.doFinal(sm, pos, hashDigestLength);
 
         // Expand to fixed weight challenge
-        engine.expandDigestToFixedWeight(chall_2, sm, pos, params);
+        engine.expandDigestToFixedWeight(chall_2, sm, pos);
         pos += hashDigestLength;
 
         // Generate Merkle proofs

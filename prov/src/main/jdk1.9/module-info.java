@@ -13,6 +13,7 @@ module org.bouncycastle.provider
     opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.falcon to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.dilithium to java.base;
+    opens org.bouncycastle.pqc.jcajce.provider.cross to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.mayo to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.snova to java.base;
 
@@ -122,6 +123,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto;
     exports org.bouncycastle.pqc.crypto.bike;
     exports org.bouncycastle.pqc.crypto.cmce;
+    exports org.bouncycastle.pqc.crypto.cross;
     exports org.bouncycastle.pqc.crypto.crystals.dilithium;
     exports org.bouncycastle.pqc.crypto.mldsa;
     exports org.bouncycastle.pqc.crypto.mlkem;
@@ -148,6 +150,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider;
     exports org.bouncycastle.pqc.jcajce.provider.bike;
     exports org.bouncycastle.pqc.jcajce.provider.cmce;
+    exports org.bouncycastle.pqc.jcajce.provider.cross;
     exports org.bouncycastle.pqc.jcajce.provider.dilithium;
     exports org.bouncycastle.pqc.jcajce.provider.falcon;
     exports org.bouncycastle.pqc.jcajce.provider.frodo;
