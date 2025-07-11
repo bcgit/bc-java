@@ -7,6 +7,8 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
+import static org.bouncycastle.bcpg.PublicKeyPacket.MAX_LEN;
+
 /**
  * Base class for OpenPGP secret (primary) keys.
  */
@@ -230,6 +232,7 @@ public class SecretKeyPacket
                 // encoded keyOctetCount does not contain checksum
                 keyOctetCount += 2;
             }
+            keyOctetCount = sanitizeLength((int) keyOctetCount, MAX_LEN, "Key octet count");
             this.secKeyData = new byte[(int) keyOctetCount];
             in.readFully(secKeyData);
         }
