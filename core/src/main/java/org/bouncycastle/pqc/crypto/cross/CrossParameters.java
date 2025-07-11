@@ -459,102 +459,102 @@ public class CrossParameters
         return hashDigestLength;
     }
 
-    public int getNumNodesMerkleTree()
+    int getNumNodesMerkleTree()
     {
         return numNodesMerkleTree;
     }
 
-    public int getNumNodesSeedTree()
+    int getNumNodesSeedTree()
     {
         return numNodesSeedTree;
     }
 
-    public int getDenselyPackedFpVecSize()
+    int getDenselyPackedFpVecSize()
     {
         return denselyPackedFpVecSize;
     }
 
-    public int getDenselyPackedFpSynSize()
+    int getDenselyPackedFpSynSize()
     {
         return denselyPackedFpSynSize;
     }
 
-    public int getDenselyPackedFzVecSize()
+    int getDenselyPackedFzVecSize()
     {
         return denselyPackedFzVecSize;
     }
 
-    public int getDenselyPackedFzRsdpGVecSize()
+    int getDenselyPackedFzRsdpGVecSize()
     {
         return denselyPackedFzRsdpGVecSize;
     }
 
-    public int[] getTreeOffsets()
+    int[] getTreeOffsets()
     {
         return treeOffsets;
     }
 
-    public int[] getTreeNodesPerLevel()
+    int[] getTreeNodesPerLevel()
     {
         return treeNodesPerLevel;
     }
 
-    public int[] getTreeLeavesPerLevel()
+    int[] getTreeLeavesPerLevel()
     {
         return treeLeavesPerLevel;
     }
 
-    public int getTreeSubroots()
+    int getTreeSubroots()
     {
         return treeSubroots;
     }
 
-    public int[] getTreeLeavesStartIndices()
+    int[] getTreeLeavesStartIndices()
     {
         return treeLeavesStartIndices;
     }
 
-    public int[] getTreeConsecutiveLeaves()
+    int[] getTreeConsecutiveLeaves()
     {
         return treeConsecutiveLeaves;
     }
 
-    public int getTreeNodesToStore()
+    int getTreeNodesToStore()
     {
         return treeNodesToStore;
     }
 
-    public int getBitsNFpCtRng()
+    int getBitsNFpCtRng()
     {
         return bitsNFpCtRng;
     }
 
-    public int getBitsChall1FpstarCtRng()
+    int getBitsChall1FpstarCtRng()
     {
         return bitsChall1FpstarCtRng;
     }
 
-    public int getBitsVCtRng()
+    int getBitsVCtRng()
     {
         return bitsVCtRng;
     }
 
-    public int getBitsNFzCtRng()
+    int getBitsNFzCtRng()
     {
         return bitsNFzCtRng;
     }
 
-    public int getBitsCWStrRng()
+    int getBitsCWStrRng()
     {
         return bitsCWStrRng;
     }
 
-    public int getBitsWCtRng()
+    int getBitsWCtRng()
     {
         return bitsWCtRng;
     }
 
-    public int getBitsMFzCtRng()
+    int getBitsMFzCtRng()
     {
         return bitsMFzCtRng;
     }

@@ -11,7 +11,7 @@ class CrossEngine
     static final int HASH_DOMAIN_SEP_CONST = 32768;
     static final byte[] HASH_DOMAIN_SEP = Pack.shortToLittleEndian((short)32768);
     private final int digestLength;
-    private CrossParameters params;
+    private final CrossParameters params;
 
     public CrossEngine(CrossParameters params)
     {
@@ -410,7 +410,7 @@ class CrossEngine
         this.digest.doFinal(digest, outOff, digestLength);
     }
 
-    public int[] csprngFpVecChall1(CrossParameters params)
+    public int[] csprngFpVecChall1()
     {
         int t = params.getT();
         int p = params.getP();

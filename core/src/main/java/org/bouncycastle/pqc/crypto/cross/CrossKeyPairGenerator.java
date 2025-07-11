@@ -26,7 +26,7 @@ public class CrossKeyPairGenerator
         int keypairSeedLength = params.getKeypairSeedLengthBytes();
         byte[] seedSk = new byte[params.getKeypairSeedLengthBytes()];
         byte[] pk = new byte[params.getDenselyPackedFpSynSize() + params.getKeypairSeedLengthBytes()];
-
+        byte[] e_bar = new byte[n];
         random.nextBytes(seedSk);
 
         CrossEngine engine = new CrossEngine(params);
@@ -35,15 +35,13 @@ public class CrossKeyPairGenerator
         byte[] seedESeedPk = new byte[keypairSeedLength];
         engine.randomBytes(seedESeedPk, params.getKeypairSeedLengthBytes());
         engine.randomBytes(pk, params.getKeypairSeedLengthBytes());
-
+        engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
         if (params.rsdp)
         {
             byte[][] V_tr = new byte[k][n - k];
-            byte[] e_bar = new byte[n];
             byte[] s = new byte[n - k];
-            engine.expandPk(V_tr, pk);
-            engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
             engine.csprngFVec(e_bar, params.getZ(), n, params.getBitsNFzCtRng());
+            engine.expandPk(V_tr, pk);
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, n, k, n - k);
             CrossEngine.fDzNorm(s, s.length);
             Utils.genericPack7Bit(pk, keypairSeedLength, s, s.length);
@@ -54,13 +52,11 @@ public class CrossKeyPairGenerator
             short[][] V_tr = new short[k][n - k];
             byte[][] W_mat = new byte[m][n - m];
             byte[] e_G_bar = new byte[m];
-            byte[] e_bar = new byte[n];
             short[] s = new short[n - k];
-            engine.expandPk(V_tr, W_mat, pk);
-            engine.init(seedESeedPk, seedESeedPk.length, 3 * params.getT() + 3);
             engine.csprngFVec(e_G_bar, params.getZ(), m, params.getBitsMFzCtRng());
+            engine.expandPk(V_tr, W_mat, pk);
             CrossEngine.fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, m, n - m);
-            CrossEngine.fDzNorm(e_bar, e_bar.length);
+            //CrossEngine.fDzNorm(e_bar, e_bar.length);
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, n, k, n - k);
             Utils.genericPack9Bit(pk, keypairSeedLength, s, s.length);
         }

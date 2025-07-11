@@ -458,6 +458,7 @@ class Utils
 
     public static int fzRedSingle(int x)
     {
+        //this is simplified, for RDSP, it should be (x & 0x07) + (x >>> 3). However, it seems norm function can solve this issue
         return (x & 0x7F) + (x >>> 7);
     }
 
