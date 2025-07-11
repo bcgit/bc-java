@@ -11,6 +11,7 @@ import java.net.Socket;
 import org.bouncycastle.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.tls.TlsClient;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsPSKIdentity;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -38,12 +39,10 @@ public class PSKTlsClientTest
          */
 //        String psk_identity = "Client_identity";
 //        byte[] psk = new byte[]{ 0x61, 0x61, 0x61, 0x61, 0x61 };
+//        TlsPSKIdentity pskIdentity = new BasicTlsPSKIdentity(psk_identity, psk);
 
-        // These correspond to the configuration of MockPSKTlsServer
-        String psk_identity = "client";
-        byte[] psk = Strings.toUTF8ByteArray("TLS_TEST_PSK");
-
-        BasicTlsPSKIdentity pskIdentity = new BasicTlsPSKIdentity(psk_identity, psk);
+        // This corresponds to the configuration of MockPskTlsServer
+        TlsPSKIdentity pskIdentity = TlsTestUtils.createDefaultPSKIdentity(false);
 
         MockPSKTlsClient client = new MockPSKTlsClient(null, pskIdentity);
         TlsClientProtocol protocol = openTlsConnection(address, port, client);
