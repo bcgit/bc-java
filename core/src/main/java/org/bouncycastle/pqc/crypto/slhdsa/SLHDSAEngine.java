@@ -30,8 +30,6 @@ abstract class SLHDSAEngine
     final int H; // FULL_HEIGHT
     final int H_PRIME;  // H / D
 
-    final int T; // T = 1 << A
-
     public SLHDSAEngine(int n, int w, int d, int a, int k, int h)
     {
         this.N = n;
@@ -87,7 +85,6 @@ abstract class SLHDSAEngine
         this.K = k;
         this.H = h;
         this.H_PRIME = h / d;
-        this.T = 1 << a;
     }
 
     abstract void init(byte[] pkSeed);
