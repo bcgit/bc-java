@@ -169,50 +169,56 @@ public class PublicKeyPacket
     private void parseKey(BCPGInputStream in, int algorithmId, long optLen)
         throws IOException
     {
-
-        switch (algorithmId)
+        try
         {
-        case RSA_ENCRYPT:
-        case RSA_GENERAL:
-        case RSA_SIGN:
-            key = new RSAPublicBCPGKey(in);
-            break;
-        case DSA:
-            key = new DSAPublicBCPGKey(in);
-            break;
-        case ELGAMAL_ENCRYPT:
-        case ELGAMAL_GENERAL:
-            key = new ElGamalPublicBCPGKey(in);
-            break;
-        case ECDH:
-            key = new ECDHPublicBCPGKey(in);
-            break;
-        case X25519:
-            key = new X25519PublicBCPGKey(in);
-            break;
-        case X448:
-            key = new X448PublicBCPGKey(in);
-            break;
-        case ECDSA:
-            key = new ECDSAPublicBCPGKey(in);
-            break;
-        case EDDSA_LEGACY:
-            key = new EdDSAPublicBCPGKey(in);
-            break;
-        case Ed25519:
-            key = new Ed25519PublicBCPGKey(in);
-            break;
-        case Ed448:
-            key = new Ed448PublicBCPGKey(in);
-            break;
-        default:
-            if (version == VERSION_6 || version == LIBREPGP_5)
+            switch (algorithmId)
             {
-                // with version 5 & 6, we can gracefully handle unknown key types, as the length is known.
-                key = new UnknownBCPGKey((int) optLen, in);
+            case RSA_ENCRYPT:
+            case RSA_GENERAL:
+            case RSA_SIGN:
+                key = new RSAPublicBCPGKey(in);
                 break;
+            case DSA:
+                key = new DSAPublicBCPGKey(in);
+                break;
+            case ELGAMAL_ENCRYPT:
+            case ELGAMAL_GENERAL:
+                key = new ElGamalPublicBCPGKey(in);
+                break;
+            case ECDH:
+                key = new ECDHPublicBCPGKey(in);
+                break;
+            case X25519:
+                key = new X25519PublicBCPGKey(in);
+                break;
+            case X448:
+                key = new X448PublicBCPGKey(in);
+                break;
+            case ECDSA:
+                key = new ECDSAPublicBCPGKey(in);
+                break;
+            case EDDSA_LEGACY:
+                key = new EdDSAPublicBCPGKey(in);
+                break;
+            case Ed25519:
+                key = new Ed25519PublicBCPGKey(in);
+                break;
+            case Ed448:
+                key = new Ed448PublicBCPGKey(in);
+                break;
+            default:
+                if (version == VERSION_6 || version == LIBREPGP_5)
+                {
+                    // with version 5 & 6, we can gracefully handle unknown key types, as the length is known.
+                    key = new UnknownBCPGKey((int) optLen, in);
+                    break;
+                }
+                throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
             }
-            throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
+        }
+        catch (IllegalStateException e)
+        {
+            throw new MalformedPacketException("Malformed PGP key.", e);
         }
     }
 
