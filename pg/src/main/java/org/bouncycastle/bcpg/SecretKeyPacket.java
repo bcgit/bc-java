@@ -14,6 +14,8 @@ public class SecretKeyPacket
     extends ContainedPacket
     implements PublicKeyAlgorithmTags
 {
+    public static int MAX_S2K_ENCODING_LEN = 8192; // arbitrary
+
     /**
      * S2K-usage octet indicating that the secret key material is unprotected.
      */
@@ -179,6 +181,7 @@ public class SecretKeyPacket
         if (version == PublicKeyPacket.VERSION_6 && (s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD))
         {
             int s2KLen = in.read();
+            s2KLen = sanitizeLength(s2KLen, MAX_S2K_ENCODING_LEN, "S2K length octet");
             byte[] s2kBytes = new byte[s2KLen];
             in.readFully(s2kBytes);
 
