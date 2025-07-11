@@ -151,6 +151,10 @@ public class SignaturePacket
         in.readFully(fingerPrint);
 
         int saltSize = in.read();
+        if (saltSize < 0)
+        {
+            throw new MalformedPacketException("Negative salt size.");
+        }
         salt = new byte[saltSize];
         in.readFully(salt);
 
