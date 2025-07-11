@@ -22,6 +22,8 @@ public class PublicKeyPacket
     extends ContainedPacket
     implements PublicKeyAlgorithmTags
 {
+    public static int MAX_LEN = 2 * 1024 * 1024; // 2mb; McEliece keys can get ~1mb in size, so allow some margin
+
     /**
      * OpenPGP v3 keys are deprecated.
      * They can only be used with RSA.
