@@ -199,7 +199,14 @@ public class SecretKeyPacket
         }
         if (s2kUsage == USAGE_AEAD)
         {
-            iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+            try
+            {
+                iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new MalformedPacketException("Unknown AEAD algorithm", e);
+            }
             in.readFully(iv);
         }
         else
