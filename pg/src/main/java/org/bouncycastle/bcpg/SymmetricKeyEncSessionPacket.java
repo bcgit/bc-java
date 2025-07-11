@@ -104,7 +104,15 @@ public class SymmetricKeyEncSessionPacket
                 throw new EOFException("Premature end of stream.");
             }
 
-            int authTagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+            int authTagLen;
+            try
+            {
+                authTagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new MalformedPacketException("Unknown AEAD algorithm.", e);
+            }
             authTag = new byte[authTagLen];
 
             // Read all trailing bytes
