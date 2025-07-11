@@ -243,8 +243,7 @@ class CrossEngine
     }
 
     // For SPEED variant (NO_TREES)
-    public void seedLeavesSpeed(CrossParameters params, byte[] roundsSeeds,
-                                byte[] rootSeed, byte[] salt)
+    public void seedLeavesSpeed(byte[] roundsSeeds, byte[] rootSeed, byte[] salt)
     {
         int seedLen = params.getSeedLengthBytes();
         int t = params.getT();
@@ -270,27 +269,6 @@ class CrossEngine
             int startPos = (q * i + offset) * seedLen;
             randomBytes(roundsSeeds, startPos, groupSeeds * seedLen, quadSeed, i * seedLen, seedLen, salt, i + 1);
             offset += remainders[i];
-        }
-    }
-
-    // For BALANCED/SMALL variants (with seed trees)
-    public static void seedLeavesTree(CrossParameters params, byte[] roundsSeeds, byte[] seedTree)
-    {
-        int seedLen = params.getSeedLengthBytes();
-        int cnt = 0;
-
-        for (int i = 0; i < params.getTreeSubroots(); i++)
-        {
-            int consecutive = params.getTreeConsecutiveLeaves()[i];
-            int startIndex = params.getTreeLeavesStartIndices()[i];
-
-            for (int j = 0; j < consecutive; j++)
-            {
-                int srcPos = (startIndex + j) * seedLen;
-                int destPos = cnt * seedLen;
-                System.arraycopy(seedTree, srcPos, roundsSeeds, destPos, seedLen);
-                cnt++;
-            }
         }
     }
 
@@ -488,32 +466,6 @@ class CrossEngine
     public static final byte COMPUTED = 1;
     public static final byte NOT_COMPUTED = 0;
 
-    // For SPEED variant (NO_TREES)
-    public static void treeProofSpeed(byte[] mtp, int mtpOff, byte[][] leaves, byte[] leavesToReveal, int hashDigestLength)
-    {
-        int published = 0;
-        for (int i = 0; i < leavesToReveal.length; i++)
-        {
-            if (leavesToReveal[i] == TO_PUBLISH)
-            {
-                System.arraycopy(leaves[i], 0, mtp, mtpOff + published++ * hashDigestLength, hashDigestLength);
-            }
-        }
-    }
-
-    public static void seedPathSpeed(byte[] seedStorage, int seedStorageOff, byte[] roundsSeeds, byte[] indicesToPublish, int seedLengthBytes)
-    {
-        int published = 0;
-        for (int i = 0; i < indicesToPublish.length; i++)
-        {
-            if (indicesToPublish[i] == TO_PUBLISH)
-            {
-                System.arraycopy(roundsSeeds, i * seedLengthBytes, seedStorage, seedStorageOff + published * seedLengthBytes, seedLengthBytes);
-                published++;
-            }
-        }
-    }
-
     /**
      * Rebuild leaves (NO_TREES variant)
      *
@@ -525,26 +477,25 @@ class CrossEngine
      */
     public static boolean rebuildLeaves(byte[] roundsSeeds, byte[] indicesToPublish, byte[] seedStorage, int seedStorageOff, int seedLength)
     {
-        int published = 0;
-        for (int i = 0; i < indicesToPublish.length; i++)
+        for (int i = 0, pos = 0; i < indicesToPublish.length; i++, pos += seedLength)
         {
             if (indicesToPublish[i] == TO_PUBLISH)
             {
-                System.arraycopy(seedStorage, seedStorageOff + published * seedLength, roundsSeeds, i * seedLength, seedLength);
-                published++;
+                System.arraycopy(seedStorage, seedStorageOff, roundsSeeds, pos, seedLength);
+                seedStorageOff += seedLength;
             }
         }
         return true;
     }
 
     // For BALANCED/SMALL variants (with trees)
-    public static void treeProofBalanced(byte[] mtp, int mtpOff, byte[] tree, byte[] leavesToReveal, CrossParameters params)
+    public void treeProofBalanced(byte[] mtp, int mtpOff, byte[] tree, byte[] leavesToReveal)
     {
         int numNodes = params.getNumNodesMerkleTree();
         byte[] flagTree = new byte[numNodes];
-        Arrays.fill(flagTree, NOT_COMPUTED);
+        int hashDigestLength = params.getHashDigestLength();
 
-        labelLeavesMerkle(flagTree, leavesToReveal, params);
+        labelLeavesMerkle(flagTree, leavesToReveal);
 
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
@@ -570,16 +521,16 @@ class CrossEngine
                 // Publish left sibling if needed
                 if (flagTree[currentNode] == NOT_COMPUTED && flagTree[sibling(currentNode)] == COMPUTED)
                 {
-                    int srcPos = currentNode * params.getHashDigestLength();
-                    System.arraycopy(tree, srcPos, mtp, mtpOff + published * params.getHashDigestLength(), params.getHashDigestLength());
+                    int srcPos = currentNode * hashDigestLength;
+                    System.arraycopy(tree, srcPos, mtp, mtpOff + published * hashDigestLength, hashDigestLength);
                     published++;
                 }
 
                 // Publish right sibling if needed
                 if (flagTree[currentNode] == COMPUTED && flagTree[sibling(currentNode)] == NOT_COMPUTED)
                 {
-                    int srcPos = sibling(currentNode) * params.getHashDigestLength();
-                    System.arraycopy(tree, srcPos, mtp, mtpOff + published * params.getHashDigestLength(), params.getHashDigestLength());
+                    int srcPos = sibling(currentNode) * hashDigestLength;
+                    System.arraycopy(tree, srcPos, mtp, mtpOff + published * hashDigestLength, hashDigestLength);
                     published++;
                 }
             }
@@ -587,13 +538,12 @@ class CrossEngine
         }
     }
 
-    public static void seedPathBalanced(byte[] seedStorage, int seedStorageOff, byte[] seedTree, byte[] indicesToPublish, CrossParameters params)
+    public void seedPathBalanced(byte[] seedStorage, int seedStorageOff, byte[] seedTree, byte[] indicesToPublish)
     {
         int numNodes = params.getNumNodesSeedTree();
         byte[] flagsTree = new byte[numNodes];
-        Arrays.fill(flagsTree, NOT_TO_PUBLISH);
 
-        computeSeedsToPublish(flagsTree, indicesToPublish, params);
+        computeSeedsToPublish(flagsTree, indicesToPublish);
 
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
@@ -621,14 +571,24 @@ class CrossEngine
         }
     }
 
-    private static void computeSeedsToPublish(byte[] flagsTree, byte[] indicesToPublish, CrossParameters params)
+    private void computeSeedsToPublish(byte[] flagsTree, byte[] indicesToPublish)
     {
-        labelLeavesSeedTree(flagsTree, indicesToPublish, params);
-
+        int cnt = 0;
+        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
+        int[] consecutiveLeaves = params.getTreeConsecutiveLeaves();
+        int subroots = params.getTreeSubroots();
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
-        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
         int logT = off.length - 1;  // LOG2(T)
+        //labelLeavesSeedTree
+        for (int i = 0; i < subroots; i++)
+        {
+            int startIndex = leavesStartIndices[i];
+            for (int j = 0; j < consecutiveLeaves[i]; j++)
+            {
+                flagsTree[startIndex + j] = indicesToPublish[cnt++];
+            }
+        }
 
         int startNode = leavesStartIndices[0];
         for (int level = logT; level > 0; level--)
@@ -647,7 +607,7 @@ class CrossEngine
         }
     }
 
-    private static void labelLeavesMerkle(byte[] flagTree, byte[] indicesToPublish, CrossParameters params)
+    private void labelLeavesMerkle(byte[] flagTree, byte[] indicesToPublish)
     {
         int cnt = 0;
         int[] leavesStartIndices = params.getTreeLeavesStartIndices();
@@ -659,27 +619,7 @@ class CrossEngine
             int startIndex = leavesStartIndices[i];
             for (int j = 0; j < consecutiveLeaves[i]; j++)
             {
-                if (indicesToPublish[cnt++] == 0)
-                {
-                    flagTree[startIndex + j] = 1;
-                }
-            }
-        }
-    }
-
-    private static void labelLeavesSeedTree(byte[] flagTree, byte[] indicesToPublish, CrossParameters params)
-    {
-        int cnt = 0;
-        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
-        int[] consecutiveLeaves = params.getTreeConsecutiveLeaves();
-        int subroots = params.getTreeSubroots();
-
-        for (int i = 0; i < subroots; i++)
-        {
-            int startIndex = leavesStartIndices[i];
-            for (int j = 0; j < consecutiveLeaves[i]; j++)
-            {
-                flagTree[startIndex + j] = indicesToPublish[cnt++];
+                flagTree[startIndex + j] = (byte)(indicesToPublish[cnt++] ^ 1);
             }
         }
     }
@@ -694,8 +634,7 @@ class CrossEngine
         return (node % 2 == 1) ? node + 1 : node - 1;
     }
 
-    public void genSeedTree(CrossParameters params, byte[] seedTree,
-                            byte[] rootSeed, byte[] salt)
+    public void genSeedTree(byte[] seedTree, byte[] rootSeed, byte[] salt)
     {
         int seedLen = params.getSeedLengthBytes();
         int logT = params.getTreeOffsets().length - 1; // LOG2(T)
@@ -731,7 +670,7 @@ class CrossEngine
     }
 
     // For NO_TREES (SPEED variant)
-    public void treeRootSpeed(byte[] root, byte[][] leaves, CrossParameters params)
+    public void treeRootSpeed(byte[] root, byte[] leaves)
     {
         int T = params.getT();
         int hashDigestLength = params.getHashDigestLength();
@@ -750,7 +689,7 @@ class CrossEngine
             // Flatten group leaves into contiguous array
             for (int j = 0; j < groupSize; j++)
             {
-                digest.update(leaves[t_div_4 * i + j + offset], 0, hashDigestLength);
+                digest.update(leaves, (t_div_4 * i + j + offset) * hashDigestLength, hashDigestLength);
             }
             digest.update(HASH_DOMAIN_SEP, 0, 2);
             digest.doFinal(hashInput, i * hashDigestLength, digestLength);
@@ -762,17 +701,16 @@ class CrossEngine
     }
 
     // For tree-based variants (BALANCED/SMALL)
-    public void treeRootBalanced(byte[] root, byte[] tree, byte[][] leaves, CrossParameters params)
+    public void treeRootBalanced(byte[] root, byte[] tree, byte[] leaves)
     {
         int hashDigestLength = params.getHashDigestLength();
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
         int[] leavesStartIndices = params.getTreeLeavesStartIndices();
         int logT = off.length - 1;
-        int treeSubroots = params.getTreeSubroots();
 
         // Place leaves in the tree
-        placeCmtOnLeaves(tree, leaves, leavesStartIndices, params.getTreeConsecutiveLeaves(), treeSubroots, hashDigestLength);
+        placeCmtOnLeaves(tree, leaves, leavesStartIndices, params.getTreeConsecutiveLeaves(), params.getTreeSubroots(), hashDigestLength);
 
         int startNode = leavesStartIndices[0];
         for (int level = logT; level > 0; level--)
@@ -792,18 +730,35 @@ class CrossEngine
         System.arraycopy(tree, 0, root, 0, hashDigestLength);
     }
 
-    private static void placeCmtOnLeaves(byte[] merkleTree, byte[][] leaves, int[] leavesStartIndices,
+    private static void placeCmtOnLeaves(byte[] merkleTree, byte[] leaves, int[] leavesStartIndices,
                                          int[] consecutiveLeaves, int treeSubroots, int hashDigestLength)
     {
-        int cnt = 0;
+        int pos = 0;
         for (int i = 0; i < treeSubroots; i++)
         {
-            int startIdx = leavesStartIndices[i];
-            for (int j = 0; j < consecutiveLeaves[i]; j++)
+            int startIdx = leavesStartIndices[i] * hashDigestLength;
+            for (int j = 0, treePos = startIdx; j < consecutiveLeaves[i]; j++, treePos += hashDigestLength)
             {
-                int treePos = (startIdx + j) * hashDigestLength;
-                System.arraycopy(leaves[cnt], 0, merkleTree, treePos, hashDigestLength);
-                cnt++;
+                System.arraycopy(leaves, pos, merkleTree, treePos, hashDigestLength);
+                pos += hashDigestLength;
+            }
+        }
+    }
+
+    // For BALANCED/SMALL variants (with seed trees)
+    public void seedLeavesTree(byte[] roundsSeeds, byte[] seedTree)
+    {
+        int seedLen = params.getSeedLengthBytes();
+        int pos = 0;
+        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
+        int[] consecutiveLeaves = params.getTreeConsecutiveLeaves();
+        for (int i = 0; i < params.getTreeSubroots(); i++)
+        {
+            int startIdx = leavesStartIndices[i] * seedLen;
+            for (int j = 0, srcPos = startIdx; j < consecutiveLeaves[i]; j++, srcPos += seedLen)
+            {
+                System.arraycopy(seedTree, srcPos, roundsSeeds, pos, seedLen);
+                pos += seedLen;
             }
         }
     }
@@ -815,17 +770,15 @@ class CrossEngine
      * @param indicesToPublish Array indicating which leaves to publish (T elements)
      * @param storedSeeds      Stored seeds to copy into the tree
      * @param salt             Salt used in CSPRNG initialization
-     * @param params           Algorithm parameters
      * @return true if reconstruction successful, false if unused bytes non-zero
      */
     public boolean rebuildTree(byte[] seedTree, byte[] indicesToPublish,
-                               byte[] storedSeeds, int storedSeedOff, byte[] salt, int saltOff,
-                               CrossParameters params)
+                               byte[] storedSeeds, int storedSeedOff, byte[] salt, int saltOff)
     {
         int seedLength = params.getSeedLengthBytes();
         int numNodes = params.getNumNodesSeedTree();
         byte[] flagsTree = new byte[numNodes];
-        computeSeedsToPublish(flagsTree, indicesToPublish, params);
+        computeSeedsToPublish(flagsTree, indicesToPublish);
 
         // Tree structure parameters
         int[] off = params.getTreeOffsets();
@@ -872,12 +825,10 @@ class CrossEngine
      * @param recomputedLeaves Output reconstructed leaves
      * @param mtp              Merkle proof data
      * @param leavesToReveal   Array indicating leaves to reveal
-     * @param params           Algorithm parameters
      * @return true if successful
      */
-    public boolean recomputeRootSpeed(byte[] root, byte[][] recomputedLeaves,
-                                      byte[] mtp, int mtpOff, byte[] leavesToReveal,
-                                      CrossParameters params)
+    public boolean recomputeRootSpeed(byte[] root, byte[] recomputedLeaves,
+                                      byte[] mtp, int mtpOff, byte[] leavesToReveal)
     {
         int T = params.getT();
         int hashDigestLength = params.getHashDigestLength();
@@ -888,12 +839,12 @@ class CrossEngine
         {
             if (leavesToReveal[i] == TO_PUBLISH)
             {
-                System.arraycopy(mtp, mtpOff + published++ * hashDigestLength, recomputedLeaves[i], 0, hashDigestLength);
+                System.arraycopy(mtp, mtpOff + published++ * hashDigestLength, recomputedLeaves, i * hashDigestLength, hashDigestLength);
             }
         }
 
         // Compute root from reconstructed leaves
-        treeRootSpeed(root, recomputedLeaves, params);
+        treeRootSpeed(root, recomputedLeaves);
         return true;
     }
 
@@ -904,22 +855,19 @@ class CrossEngine
      * @param recomputedLeaves Output reconstructed leaves
      * @param mtp              Merkle proof data
      * @param leavesToReveal   Array indicating leaves to reveal
-     * @param params           Algorithm parameters
      * @return true if successful, false if unused bytes non-zero
      */
-    public boolean recomputeRootTreeBased(byte[] root, byte[][] recomputedLeaves,
-                                          byte[] mtp, int mtpOff, byte[] leavesToReveal,
-                                          CrossParameters params)
+    public boolean recomputeRootTreeBased(byte[] root, byte[] recomputedLeaves,
+                                          byte[] mtp, int mtpOff, byte[] leavesToReveal)
     {
         int hashDigestLength = params.getHashDigestLength();
         int numNodes = params.getNumNodesMerkleTree();
         byte[] tree = new byte[numNodes * hashDigestLength];
         byte[] flagTree = new byte[numNodes];
-        Arrays.fill(flagTree, NOT_COMPUTED);
 
         // Place commitments in tree
         placeCmtOnLeaves(tree, recomputedLeaves, params.getTreeLeavesStartIndices(), params.getTreeConsecutiveLeaves(), params.getTreeSubroots(), params.getHashDigestLength());
-        labelLeavesMerkle(flagTree, leavesToReveal, params);
+        labelLeavesMerkle(flagTree, leavesToReveal);
 
         // Tree structure parameters
         int[] off = params.getTreeOffsets();
@@ -973,11 +921,7 @@ class CrossEngine
             }
             startNode -= npl[level - 1];
         }
-
-        // Root is at index 0
         System.arraycopy(tree, 0, root, 0, hashDigestLength);
-
-        // Verify unused proof bytes are zero
         return checkTree(mtp, mtpOff, params, hashDigestLength, published);
     }
 
