@@ -3,6 +3,8 @@ package org.bouncycastle.bcpg;
 import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
+import static org.bouncycastle.bcpg.PublicKeyPacket.MAX_LEN;
+
 /**
  * Public/Secret BCPGKey which is encoded as an array of octets rather than an MPI.
  */
@@ -10,7 +12,6 @@ public abstract class OctetArrayBCPGKey
     extends BCPGObject
     implements BCPGKey
 {
-    public static int MAX_LEN = 2 * 1024 * 1024; // 2mb; McEliece keys can get ~1mb in size, so allow some margin
     private final byte[] key;
 
     OctetArrayBCPGKey(int length, BCPGInputStream in)
