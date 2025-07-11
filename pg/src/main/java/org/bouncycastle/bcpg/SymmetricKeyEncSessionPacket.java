@@ -91,6 +91,11 @@ public class SymmetricKeyEncSessionPacket
                 }
             }
 
+            if (ivLen < 0)
+            {
+                throw new MalformedPacketException("IV length cannot be negative.");
+            }
+
             s2k = new S2K(in);
 
             iv = new byte[ivLen]; // also called nonce
