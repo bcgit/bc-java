@@ -117,6 +117,10 @@ public class SymmetricKeyEncSessionPacket
 
             // Read all trailing bytes
             byte[] sessKeyAndAuthTag = in.readAll();
+            if (sessKeyAndAuthTag.length - authTagLen < 0)
+            {
+                throw new MalformedPacketException("AuthTagLen exceeds session key data.");
+            }
             // determine session key length by subtracting auth tag
             this.secKeyData = new byte[sessKeyAndAuthTag.length - authTagLen];
 
