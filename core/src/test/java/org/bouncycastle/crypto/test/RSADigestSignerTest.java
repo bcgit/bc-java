@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -126,7 +127,7 @@ public class RSADigestSignerTest
         digest.doFinal(hash, 0);
 
         DigestInfo digInfo = new DigestInfo(new AlgorithmIdentifier(digOid, DERNull.INSTANCE), hash);
-        byte[] infoEnc = digInfo.getEncoded();
+        byte[] infoEnc = digInfo.getEncoded(ASN1Encoding.DER);
 
         signer.init(true, rsaPrivate);
 
