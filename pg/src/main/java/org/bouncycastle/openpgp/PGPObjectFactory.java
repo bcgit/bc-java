@@ -169,6 +169,8 @@ public class PGPObjectFactory
             return new PGPPadding(in);
         case PacketTags.MOD_DETECTION_CODE:
             return new UnknownPacket(PacketTags.MOD_DETECTION_CODE, in);
+        case PacketTags.TRUST:
+            return new UnknownPacket(PacketTags.TRUST, in);
         }
 
         int tag = in.nextPacketTag();
