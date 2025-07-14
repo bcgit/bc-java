@@ -13,7 +13,7 @@ public class UserAttributeSubpacketInputStream
     extends InputStream
     implements UserAttributeSubpacketTags
 {
-    public static int MAX_LEN = 5 * 1024 * 1024;
+    public static int MAX_LEN = 1 << 30;
 
     InputStream in;
 
