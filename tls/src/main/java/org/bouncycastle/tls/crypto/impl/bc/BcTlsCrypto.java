@@ -458,6 +458,9 @@ public class BcTlsCrypto
         {
         case SignatureScheme.sm2sig_sm3:
         // TODO[tls] Test coverage before adding
+        case SignatureScheme.DRAFT_mldsa44:
+        case SignatureScheme.DRAFT_mldsa65:
+        case SignatureScheme.DRAFT_mldsa87:
             return false;
         default:
         {
