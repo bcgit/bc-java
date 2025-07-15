@@ -380,9 +380,13 @@ public class OpenPGPKeyGenerator
             throws PGPException
         {
             // care - needs to run with Java 5.
-            if (userId == null || userId.trim().length() == 0)
+            if (userId == null)
             {
-                throw new IllegalArgumentException("User-ID cannot be null or empty.");
+                throw new IllegalArgumentException("User-ID cannot be null.");
+            }
+            if (userId.contains("\n") || userId.contains("\r"))
+            {
+                throw new IllegalArgumentException("User-ID cannot contain newlines and/or carriage returns.");
             }
 
             SignatureParameters parameters = Utils.applySignatureParameters(signatureParameters,
