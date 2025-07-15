@@ -9,7 +9,7 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.util.Arrays;
 
 /**
- * SLH-DA signer.
+ * SLH-DSA signer.
  * <p>
  * This version is based on the 3rd submission with deference to the updated reference
  * implementation on github as at November 9th 2021. This version includes the changes
