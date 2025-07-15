@@ -13,14 +13,21 @@ public class UserAttributeSubpacketInputStream
     extends InputStream
     implements UserAttributeSubpacketTags
 {
-    public static int MAX_LEN = 1 << 30;
-
     InputStream in;
+    private final int limit;
 
     public UserAttributeSubpacketInputStream(
         InputStream in)
     {
+        this(in, StreamUtil.findLimit(in));
+    }
+
+    public UserAttributeSubpacketInputStream(
+            InputStream in,
+            int limit
+    ) {
         this.in = in;
+        this.limit = limit;
     }
 
     public int available()
@@ -77,9 +84,9 @@ public class UserAttributeSubpacketInputStream
         if (bodyLen < 1) {
             throw new MalformedPacketException("Body length octet too small.");
         }
-        if (bodyLen > MAX_LEN)
+        if (bodyLen > limit)
         {
-            throw new MalformedPacketException("Body length octet (" + bodyLen + ") exceeds limitations (" + MAX_LEN + ").");
+            throw new MalformedPacketException("Body length octet (" + bodyLen + ") exceeds limitations (" + limit + ").");
         }
         if (flags[StreamUtil.flag_eof])
         {
