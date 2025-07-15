@@ -3,6 +3,8 @@ package org.bouncycastle.bcpg;
 import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
+import static org.bouncycastle.bcpg.PublicKeyPacket.MAX_LEN;
+
 /**
  * Public/Secret BCPGKey which is encoded as an array of octets rather than an MPI.
  */
@@ -15,6 +17,10 @@ public abstract class OctetArrayBCPGKey
     OctetArrayBCPGKey(int length, BCPGInputStream in)
         throws IOException
     {
+        if (length > MAX_LEN)
+        {
+            throw new IOException("Max key length (" + MAX_LEN + ") exceeded (" + length + ")");
+        }
         key = new byte[length];
         in.readFully(key);
     }
