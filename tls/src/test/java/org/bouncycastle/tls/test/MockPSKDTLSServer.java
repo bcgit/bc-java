@@ -22,7 +22,22 @@ class MockPSKDTLSServer
 {
     MockPSKDTLSServer()
     {
-        super(new BcTlsCrypto(), new MyIdentityManager());
+        this(false);
+    }
+
+    MockPSKDTLSServer(boolean badKey)
+    {
+        super(new BcTlsCrypto(), new MyIdentityManager(badKey));
+    }
+
+    public int getHandshakeTimeoutMillis()
+    {
+        return 1000;
+    }
+
+    public int getHandshakeResendTimeMillis()
+    {
+        return 100; // Fast resend only for tests!
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
@@ -129,6 +144,13 @@ class MockPSKDTLSServer
     static class MyIdentityManager
         implements TlsPSKIdentityManager
     {
+        private final boolean badKey;
+
+        MyIdentityManager(boolean badKey)
+        {
+            this.badKey = badKey;
+        }
+
         public byte[] getHint()
         {
             return Strings.toUTF8ByteArray("hint");
@@ -141,7 +163,7 @@ class MockPSKDTLSServer
                 String name = Strings.fromUTF8ByteArray(identity);
                 if (name.equals("client"))
                 {
-                    return Strings.toUTF8ByteArray("TLS_TEST_PSK");
+                    return TlsTestUtils.getPSKPasswordUTF8(badKey);                    
                 }
             }
             return null;

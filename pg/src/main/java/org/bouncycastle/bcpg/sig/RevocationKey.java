@@ -3,6 +3,7 @@ package org.bouncycastle.bcpg.sig;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Represents revocation key OpenPGP signature sub packet.
@@ -52,9 +53,7 @@ public class RevocationKey
 
     public byte[] getFingerprint()
     {
-        byte[] fingerprint = new byte[data.length - 2];
-        System.arraycopy(data, 2, fingerprint, 0, fingerprint.length);
-        return fingerprint;
+        return Arrays.copyOfRange(data, 2, data.length);
     }
 
     public KeyIdentifier getKeyIdentifier()

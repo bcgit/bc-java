@@ -19,7 +19,7 @@ import org.bouncycastle.pqc.crypto.DigestUtils;
 import org.bouncycastle.util.Arrays;
 
 /**
- * SLH-DA signer.
+ * SLH-DSA signer.
  */
 public class HashSLHDSASigner
     implements Signer

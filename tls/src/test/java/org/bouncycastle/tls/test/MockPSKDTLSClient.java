@@ -32,7 +32,12 @@ class MockPSKDTLSClient
 
     MockPSKDTLSClient(TlsSession session)
     {
-        this(session, new BasicTlsPSKIdentity("client", Strings.toUTF8ByteArray("TLS_TEST_PSK")));
+        this(session, false);
+    }
+
+    MockPSKDTLSClient(TlsSession session, boolean badKey)
+    {
+        this(session, TlsTestUtils.createDefaultPSKIdentity(badKey));
     }
 
     MockPSKDTLSClient(TlsSession session, TlsPSKIdentity pskIdentity)
@@ -40,6 +45,16 @@ class MockPSKDTLSClient
         super(new BcTlsCrypto(), pskIdentity);
 
         this.session = session;
+    }
+
+    public int getHandshakeTimeoutMillis()
+    {
+        return 1000;
+    }
+
+    public int getHandshakeResendTimeMillis()
+    {
+        return 100; // Fast resend only for tests!
     }
 
     public TlsSession getSessionToResume()

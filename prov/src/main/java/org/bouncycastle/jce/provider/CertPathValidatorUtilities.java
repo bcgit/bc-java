@@ -42,6 +42,7 @@ import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -51,7 +52,6 @@ import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -1236,14 +1236,16 @@ class CertPathValidatorUtilities
 
         try
         {
-            byte[] akiExtensionValue = cert.getExtensionValue(AUTHORITY_KEY_IDENTIFIER);
-            if (akiExtensionValue != null)
+            byte[] akiExtValue = cert.getExtensionValue(AUTHORITY_KEY_IDENTIFIER);
+            if (akiExtValue != null)
             {
-                ASN1OctetString aki = ASN1OctetString.getInstance(akiExtensionValue);
-                byte[] authorityKeyIdentifier = AuthorityKeyIdentifier.getInstance(aki.getOctets()).getKeyIdentifier();
-                if (authorityKeyIdentifier != null)
+                AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(
+                    ASN1OctetString.getInstance(akiExtValue).getOctets());
+
+                ASN1OctetString keyIdentifier = aki.getKeyIdentifierObject();
+                if (keyIdentifier != null)
                 {
-                    selector.setSubjectKeyIdentifier(new DEROctetString(authorityKeyIdentifier).getEncoded());
+                    selector.setSubjectKeyIdentifier(keyIdentifier.getEncoded(ASN1Encoding.DER));
                 }
             }
         }

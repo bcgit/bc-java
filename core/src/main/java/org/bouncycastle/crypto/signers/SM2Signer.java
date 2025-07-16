@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.signers;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
@@ -92,35 +93,37 @@ public class SM2Signer
 
         if (forSigning)
         {
+            SecureRandom random = null;
             if (baseParam instanceof ParametersWithRandom)
             {
-                ParametersWithRandom rParam = (ParametersWithRandom)baseParam;
-
-                ecKey = (ECKeyParameters)rParam.getParameters();
-                ecParams = ecKey.getParameters();
-                kCalculator.init(ecParams.getN(), rParam.getRandom());
-            }
-            else
-            {
-                ecKey = (ECKeyParameters)baseParam;
-                ecParams = ecKey.getParameters();
-                kCalculator.init(ecParams.getN(), CryptoServicesRegistrar.getSecureRandom());
+                ParametersWithRandom withRandom = (ParametersWithRandom)baseParam;
+                baseParam = withRandom.getParameters();
+                random = withRandom.getRandom();
             }
 
-            BigInteger d = ((ECPrivateKeyParameters)ecKey).getD();
-            BigInteger nSub1 = ecParams.getN().subtract(BigIntegers.ONE);
+            ECPrivateKeyParameters ecPrivateKey = (ECPrivateKeyParameters)baseParam;
 
-            if (d.compareTo(ONE) < 0  || d.compareTo(nSub1) >= 0)
+            ecKey = ecPrivateKey;
+            ecParams = ecPrivateKey.getParameters();
+
+            BigInteger d = ecPrivateKey.getD();
+            BigInteger n = ecParams.getN();
+
+            if (d.compareTo(ONE) < 0  || d.compareTo(n.subtract(ONE)) >= 0)
             {
                 throw new IllegalArgumentException("SM2 private key out of range");
             }
+
+            kCalculator.init(n, CryptoServicesRegistrar.getSecureRandom(random));
             pubPoint = createBasePointMultiplier().multiply(ecParams.getG(), d).normalize();
         }
         else
         {
-            ecKey = (ECKeyParameters)baseParam;
-            ecParams = ecKey.getParameters();
-            pubPoint = ((ECPublicKeyParameters)ecKey).getQ();
+            ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters)baseParam;
+
+            ecKey = ecPublicKey;
+            ecParams = ecPublicKey.getParameters();
+            pubPoint = ecPublicKey.getQ();
         }
 
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECNR", ecKey, forSigning));

@@ -22,8 +22,8 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.CMSAuthEnvelopedData;
@@ -216,9 +216,9 @@ public class AuthEnvelopedDataTest
             return;
         }
         byte[] message = Strings.toByteArray("Hello, world!");
-        OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305).setProvider(BC).build();
+        OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(CMSAlgorithm.ChaCha20Poly1305).setProvider(BC).build();
 
-        assertEquals(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305, candidate.getAlgorithmIdentifier().getAlgorithm());
+        assertEquals(CMSAlgorithm.ChaCha20Poly1305, candidate.getAlgorithmIdentifier().getAlgorithm());
         //assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
 
         assertTrue(candidate instanceof OutputAEADEncryptor);
