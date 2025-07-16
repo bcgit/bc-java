@@ -840,6 +840,9 @@ public class PGPSecretKey
         {
             Util.encodePGPSignatures(out, pub.subSigs, false);
         }
+
+        // For clarity; really only required if using partial body lengths
+        out.finish();
     }
 
     /**

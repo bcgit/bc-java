@@ -404,6 +404,8 @@ public class PGPEncryptedDataGenerator
                 //
                 BCPGOutputStream bOut = new BCPGOutputStream(genOut, PacketTags.MOD_DETECTION_CODE, 20);
 
+                // For clarity; really only required if using partial body lengths
+                bOut.finish();
                 bOut.flush();
 
                 byte[] dig = digestCalc.getDigest();
