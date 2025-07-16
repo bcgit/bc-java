@@ -53,9 +53,14 @@ public abstract class ASN1Null
         return null;
     }
 
-    public static ASN1Null getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1Null getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1Null)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1Null)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1Null getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1Null)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     ASN1Null()

@@ -93,14 +93,19 @@ public class ASN1GeneralizedTime
      * return a Generalized Time object from a tagged object.
      *
      * @param taggedObject the tagged object holding the object we want
-     * @param explicit     true if the object is meant to be explicitly tagged false
+     * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                     otherwise.
      * @return an ASN1GeneralizedTime instance.
      * @throws IllegalArgumentException if the tagged object cannot be converted.
      */
-    public static ASN1GeneralizedTime getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1GeneralizedTime getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1GeneralizedTime)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1GeneralizedTime)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1GeneralizedTime getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1GeneralizedTime)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     final byte[] contents;
