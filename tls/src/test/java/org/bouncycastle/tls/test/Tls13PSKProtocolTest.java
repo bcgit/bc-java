@@ -4,7 +4,10 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsFatalAlertReceived;
+import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
@@ -14,8 +17,27 @@ import junit.framework.TestCase;
 public class Tls13PSKProtocolTest
     extends TestCase
 {
+    public void testBadClientKey() throws Exception
+    {
+        MockPSKTls13Client client = new MockPSKTls13Client(true);
+        MockPSKTls13Server server = new MockPSKTls13Server();
+
+        implTestKeyMismatch(client, server);
+    }
+
+    public void testBadServerKey() throws Exception
+    {
+        MockPSKTls13Client client = new MockPSKTls13Client();
+        MockPSKTls13Server server = new MockPSKTls13Server(true);
+
+        implTestKeyMismatch(client, server);
+    }
+
     public void testClientServer() throws Exception
     {
+        MockPSKTls13Client client = new MockPSKTls13Client();
+        MockPSKTls13Server server = new MockPSKTls13Server();
+
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
         PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
         PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
@@ -24,10 +46,9 @@ public class Tls13PSKProtocolTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol);
+        ServerThread serverThread = new ServerThread(serverProtocol, server);
         serverThread.start();
 
-        MockPSKTls13Client client = new MockPSKTls13Client();
         clientProtocol.connect(client);
 
         // NOTE: Because we write-all before we read-any, this length can't be more than the pipe capacity
@@ -50,28 +71,67 @@ public class Tls13PSKProtocolTest
         serverThread.join();
     }
 
+    private void implTestKeyMismatch(MockPSKTls13Client client, MockPSKTls13Server server) throws Exception
+    {
+        PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
+        PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
+        PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
+        PipedOutputStream serverWrite = new PipedOutputStream(clientRead);
+
+        TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
+        TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
+
+        ServerThread serverThread = new ServerThread(serverProtocol, server);
+        serverThread.start();
+
+        boolean correctException = false;
+        short alertDescription = -1;
+
+        try
+        {
+            clientProtocol.connect(client);
+        }
+        catch (TlsFatalAlertReceived e)
+        {
+            correctException = true;
+            alertDescription = e.getAlertDescription();
+        }
+        catch (Exception e)
+        {
+        }
+        finally
+        {
+            clientProtocol.close();
+        }
+
+        serverThread.join();
+
+        assertTrue(correctException);
+        assertEquals(AlertDescription.decrypt_error, alertDescription);        
+    }
+
     static class ServerThread
         extends Thread
     {
         private final TlsServerProtocol serverProtocol;
+        private final TlsServer server;
 
-        ServerThread(TlsServerProtocol serverProtocol)
+        ServerThread(TlsServerProtocol serverProtocol, TlsServer server)
         {
             this.serverProtocol = serverProtocol;
+            this.server = server;
         }
 
         public void run()
         {
             try
             {
-                MockPSKTls13Server server = new MockPSKTls13Server();
                 serverProtocol.accept(server);
                 Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
                 serverProtocol.close();
             }
             catch (Exception e)
             {
-//                throw new RuntimeException(e);
             }
         }
     }

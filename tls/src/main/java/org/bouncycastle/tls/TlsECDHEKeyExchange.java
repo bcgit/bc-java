@@ -76,7 +76,7 @@ public class TlsECDHEKeyExchange
 
         generateEphemeral(digestBuffer);
 
-        TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, null, digestBuffer);
+        TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, digestBuffer);
 
         return digestBuffer.toByteArray();
     }
@@ -90,7 +90,7 @@ public class TlsECDHEKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(teeIn, 1);
 
-        TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, null, digestBuffer);
+        TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 

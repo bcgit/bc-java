@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -254,6 +255,24 @@ public class NewEnvelopedDataStreamTest
     public void testKeyTransAES128GCM()
         throws Exception
     {
+        implTestKeyTrans(CMSAlgorithm.AES128_GCM);
+    }
+
+    public void testKeyTransAES192GCM()
+        throws Exception
+    {
+        implTestKeyTrans(CMSAlgorithm.AES192_GCM);
+    }
+
+    public void testKeyTransAES256GCM()
+        throws Exception
+    {
+        implTestKeyTrans(CMSAlgorithm.AES256_GCM);
+    }
+
+    private void implTestKeyTrans(ASN1ObjectIdentifier contentEncryptionOID)
+        throws Exception
+    {
         byte[] data = new byte[2000];
 
         for (int i = 0; i != 2000; i++)
@@ -271,7 +290,7 @@ public class NewEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         OutputStream out = edGen.open(
-            bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(BC).build());
+            bOut, new JceCMSContentEncryptorBuilder(contentEncryptionOID).setProvider(BC).build());
 
         for (int i = 0; i != 2000; i++)
         {
@@ -280,7 +299,7 @@ public class NewEnvelopedDataStreamTest
 
         out.close();
 
-        verifyData(bOut, CMSAlgorithm.AES128_GCM.getId(), data);
+        verifyData(bOut, contentEncryptionOID.getId(), data);
 
         int unbufferedLength = bOut.toByteArray().length;
 
@@ -293,7 +312,7 @@ public class NewEnvelopedDataStreamTest
 
         bOut = new ByteArrayOutputStream();
 
-        out = edGen.open(bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(BC).build());
+        out = edGen.open(bOut, new JceCMSContentEncryptorBuilder(contentEncryptionOID).setProvider(BC).build());
 
         BufferedOutputStream bfOut = new BufferedOutputStream(out, 300);
 
@@ -304,7 +323,7 @@ public class NewEnvelopedDataStreamTest
 
         bfOut.close();
 
-        verifyData(bOut, CMSAlgorithm.AES128_GCM.getId(), data);
+        verifyData(bOut, contentEncryptionOID.getId(), data);
 
         assertTrue(bOut.toByteArray().length == unbufferedLength);
     }

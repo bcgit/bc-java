@@ -24,6 +24,7 @@ public class HashMLDSASigner
 
     private MLDSAEngine engine;
     private Digest digest;
+    private byte[] digestOIDEncoding;
 
     public HashMLDSASigner()
     {
@@ -63,6 +64,7 @@ public class HashMLDSASigner
 
             parameters = privKey.getParameters();
             engine = parameters.getEngine(random);
+
             engine.initSign(privKey.tr, true, ctx);
         }
         else
@@ -70,8 +72,10 @@ public class HashMLDSASigner
             pubKey = (MLDSAPublicKeyParameters)param;
             privKey = null;
             random = null;
+
             parameters = pubKey.getParameters();
             engine = parameters.getEngine(null);
+
             engine.initVerify(pubKey.rho, pubKey.t1, true, ctx);
         }
         digest = engine.shake256Digest;

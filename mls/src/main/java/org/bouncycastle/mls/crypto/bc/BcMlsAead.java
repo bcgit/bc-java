@@ -1,6 +1,5 @@
 package org.bouncycastle.mls.crypto.bc;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.hpke.HPKE;
@@ -10,12 +9,13 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.mls.crypto.MlsAead;
+import org.bouncycastle.util.Arrays;
 
 public class BcMlsAead
     implements MlsAead
 {
-    AEADCipher cipher;
     private final short aeadId;
+    private final AEADCipher cipher;
 
     public BcMlsAead(short aeadId)
     {
@@ -25,12 +25,14 @@ public class BcMlsAead
         {
         case HPKE.aead_AES_GCM128:
         case HPKE.aead_AES_GCM256:
-            cipher = new GCMBlockCipher(new AESEngine());
+            cipher = GCMBlockCipher.newInstance(AESEngine.newInstance());
             break;
         case HPKE.aead_CHACHA20_POLY1305:
             cipher = new ChaCha20Poly1305();
             break;
         case HPKE.aead_EXPORT_ONLY:
+        default:
+            cipher = null;
             break;
         }
     }
@@ -44,18 +46,6 @@ public class BcMlsAead
         case HPKE.aead_AES_GCM256:
         case HPKE.aead_CHACHA20_POLY1305:
             return 32;
-        }
-        return -1;
-    }
-
-    private int getTagSize()
-    {
-        switch (aeadId)
-        {
-        case HPKE.aead_AES_GCM128:
-        case HPKE.aead_AES_GCM256:
-        case HPKE.aead_CHACHA20_POLY1305:
-            return 16;
         }
         return -1;
     }
@@ -75,30 +65,34 @@ public class BcMlsAead
     public byte[] open(byte[] key, byte[] nonce, byte[] aad, byte[] ct)
         throws InvalidCipherTextException
     {
-        CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
-        cipher.init(false, params);
-        if (aad != null)
-        {
-            cipher.processAADBytes(aad, 0, aad.length);
-        }
-
-        byte[] pt = new byte[cipher.getOutputSize(ct.length)];
-
-        int len = cipher.processBytes(ct, 0, ct.length, pt, 0);
-        len += cipher.doFinal(pt, len);
-        return pt;
+        return crypt(false, key, nonce, aad, ct);
     }
 
     public byte[] seal(byte[] key, byte[] nonce, byte[] aad, byte[] pt)
         throws InvalidCipherTextException
     {
-        CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
-        cipher.init(true, params);
-        cipher.processAADBytes(aad, 0, aad.length);
+        return crypt(true, key, nonce, aad, pt);
+    }
 
-        byte[] ct = new byte[cipher.getOutputSize(pt.length)];
-        int len = cipher.processBytes(pt, 0, pt.length, ct, 0);
-        cipher.doFinal(ct, len);
-        return ct;
+    private byte[] crypt(boolean forEncryption, byte[] key, byte[] nonce, byte[] aad, byte[] input)
+        throws InvalidCipherTextException
+    {
+        cipher.init(forEncryption, new ParametersWithIV(new KeyParameter(key), nonce));
+
+        if (aad != null)
+        {
+            cipher.processAADBytes(aad, 0, aad.length);
+        }
+
+        byte[] output = new byte[cipher.getOutputSize(input.length)];
+        int len = cipher.processBytes(input, 0, input.length, output, 0);
+        len += cipher.doFinal(output, len);
+
+        if (len < output.length)
+        {
+            return Arrays.copyOf(output, len);
+        }
+
+        return output;
     }
 }
