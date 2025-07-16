@@ -83,20 +83,20 @@ public class ASN1ObjectIdentifier
      * Return an OBJECT IDENTIFIER from a tagged object.
      *
      * @param taggedObject      the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
+     * @param declaredExplicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
      * @return an ASN1ObjectIdentifier instance, or null.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
      */
-    public static ASN1ObjectIdentifier getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1ObjectIdentifier getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
         /*
          * TODO[asn1] This block here is for backward compatibility, but should eventually be removed.
          * 
          * - see https://github.com/bcgit/bc-java/issues/1015
          */
-        if (!explicit && !taggedObject.isParsed() && taggedObject.hasContextTag())
+        if (!declaredExplicit && !taggedObject.isParsed() && taggedObject.hasContextTag())
         {
             ASN1Primitive base = taggedObject.getBaseObject().toASN1Primitive();
             if (!(base instanceof ASN1ObjectIdentifier))
@@ -105,7 +105,12 @@ public class ASN1ObjectIdentifier
             }
         }
 
-        return (ASN1ObjectIdentifier)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1ObjectIdentifier)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1ObjectIdentifier getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1ObjectIdentifier)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     public static ASN1ObjectIdentifier tryFromID(String identifier)
