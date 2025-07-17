@@ -71,9 +71,14 @@ public class ASN1RelativeOID
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
     }
 
-    public static ASN1RelativeOID getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1RelativeOID getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1RelativeOID)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1RelativeOID)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1RelativeOID getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1RelativeOID)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     public static ASN1RelativeOID tryFromID(String identifier)

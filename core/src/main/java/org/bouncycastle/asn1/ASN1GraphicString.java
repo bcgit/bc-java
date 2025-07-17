@@ -57,14 +57,19 @@ public abstract class ASN1GraphicString
      * Return a GraphicString from a tagged object.
      *
      * @param taggedObject the tagged object holding the object we want.
-     * @param explicit     true if the object is meant to be explicitly tagged,
+     * @param declaredExplicit true if the object is meant to be explicitly tagged,
      *                     false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return an ASN1GraphicString instance, or null.
      */
-    public static ASN1GraphicString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1GraphicString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1GraphicString)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1GraphicString)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1GraphicString getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1GraphicString)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     final byte[] contents;

@@ -57,14 +57,19 @@ public abstract class ASN1UTF8String
      * Return an UTF8 String from a tagged object.
      * 
      * @param taggedObject the tagged object holding the object we want
-     * @param explicit     true if the object is meant to be explicitly tagged false
+     * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                     otherwise.
      * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return a DERUTF8String instance, or null
      */
-    public static ASN1UTF8String getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1UTF8String getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1UTF8String)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1UTF8String)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1UTF8String getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1UTF8String)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     final byte[] contents;
