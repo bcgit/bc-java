@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp;
 import java.io.InputStream;
 
 import org.bouncycastle.bcpg.AEADEncDataPacket;
-import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
@@ -31,11 +30,10 @@ public class PGPSymmetricKeyEncryptedData
                 throw new PGPException("session key and AEAD algorithm mismatch");
             }
 
-            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(
-                aeadData, sessionKey);
-            BCPGInputStream encIn = encData.getInputStream();
+            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(aeadData, sessionKey);
+            InputStream encIn = getInputStream();
 
-            return new BCPGInputStream(dataDecryptor.getInputStream(encIn));
+            return dataDecryptor.getInputStream(encIn);
         }
         else if (encData instanceof SymmetricEncIntegrityPacket)
         {
@@ -44,7 +42,8 @@ public class PGPSymmetricKeyEncryptedData
             // OpenPGP v4 (SEIPD v1 with integrity protection)
             if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_1)
             {
-                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(true, sessionKey.getAlgorithm(), sessionKey.getKey());
+                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(true,
+                    sessionKey.getAlgorithm(), sessionKey.getKey());
                 return getDataStream(true, dataDecryptor);
             }
 
@@ -52,7 +51,7 @@ public class PGPSymmetricKeyEncryptedData
             else if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_2)
             {
                 PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(seipd, sessionKey);
-                return new BCPGInputStream(dataDecryptor.getInputStream(encData.getInputStream()));
+                return dataDecryptor.getInputStream(getInputStream());
             }
 
             // Unsupported
@@ -76,7 +75,7 @@ public class PGPSymmetricKeyEncryptedData
     {
         try
         {
-            BCPGInputStream encIn = encData.getInputStream();
+            InputStream encIn = getInputStream();
             encIn.mark(dataDecryptor.getBlockSize() + 2); // iv + 2 octets checksum
             if (processSymmetricEncIntegrityPacketDataStream(withIntegrityPacket, dataDecryptor, encIn))
             {
