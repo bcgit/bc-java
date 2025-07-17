@@ -60,15 +60,20 @@ public class ASN1Integer
      * Return an Integer from a tagged object.
      *
      * @param taggedObject the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
+     * @param declaredExplicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
      * @return an ASN1Integer instance.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
      */
-    public static ASN1Integer getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1Integer getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1Integer)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1Integer)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1Integer getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1Integer)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     /**

@@ -65,14 +65,19 @@ public abstract class ASN1GeneralString
      * Return a GeneralString from a tagged object.
      *
      * @param taggedObject      the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly tagged false
+     * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                 otherwise.
      * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return an ASN1GeneralString instance.
      */
-    public static ASN1GeneralString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1GeneralString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1GeneralString)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1GeneralString)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1GeneralString getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1GeneralString)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     final byte[] contents;
