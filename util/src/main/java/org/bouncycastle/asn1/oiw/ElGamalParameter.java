@@ -12,20 +12,20 @@ import org.bouncycastle.asn1.DERSequence;
 public class ElGamalParameter
     extends ASN1Object
 {
-    ASN1Integer      p, g;
+    ASN1Integer p, g;
 
     public ElGamalParameter(
-        BigInteger  p,
-        BigInteger  g)
+        BigInteger p,
+        BigInteger g)
     {
         this.p = new ASN1Integer(p);
         this.g = new ASN1Integer(g);
     }
 
     private ElGamalParameter(
-        ASN1Sequence  seq)
+        ASN1Sequence seq)
     {
-        Enumeration     e = seq.getObjects();
+        Enumeration e = seq.getObjects();
 
         p = (ASN1Integer)e.nextElement();
         g = (ASN1Integer)e.nextElement();

@@ -25,20 +25,19 @@ import org.bouncycastle.asn1.x500.X500Name;
  *      extensions        [ 3 ] Extensions OPTIONAL
  *      }
  * </pre>
- *
  */
 public class V3TBSCertificateGenerator
 {
     private static final DERTaggedObject VERSION = new DERTaggedObject(true, 0, new ASN1Integer(2));
 
-    ASN1Integer             serialNumber;
-    AlgorithmIdentifier     signature;
-    X500Name                issuer;
-    Validity                validity;
-    Time                    startDate, endDate;
-    X500Name                subject;
-    SubjectPublicKeyInfo    subjectPublicKeyInfo;
-    Extensions              extensions;
+    ASN1Integer serialNumber;
+    AlgorithmIdentifier signature;
+    X500Name issuer;
+    Validity validity;
+    Time startDate, endDate;
+    X500Name subject;
+    SubjectPublicKeyInfo subjectPublicKeyInfo;
+    Extensions extensions;
 
     private boolean altNamePresentAndCritical;
     private DERBitString issuerUniqueID;
@@ -49,22 +48,22 @@ public class V3TBSCertificateGenerator
     }
 
     public void setSerialNumber(
-        ASN1Integer  serialNumber)
+        ASN1Integer serialNumber)
     {
         this.serialNumber = serialNumber;
     }
 
     public void setSignature(
-        AlgorithmIdentifier    signature)
+        AlgorithmIdentifier signature)
     {
         this.signature = signature;
     }
 
-        /**
+    /**
      * @deprecated use X500Name method
      */
     public void setIssuer(
-        X509Name    issuer)
+        X509Name issuer)
     {
         this.issuer = X500Name.getInstance(issuer);
     }
@@ -104,11 +103,11 @@ public class V3TBSCertificateGenerator
         setEndDate(new Time(endDate));
     }
 
-        /**
+    /**
      * @deprecated use X500Name method
      */
     public void setSubject(
-        X509Name    subject)
+        X509Name subject)
     {
         this.subject = X500Name.getInstance(subject.toASN1Primitive());
     }
@@ -132,23 +131,23 @@ public class V3TBSCertificateGenerator
     }
 
     public void setSubjectPublicKeyInfo(
-        SubjectPublicKeyInfo    pubKeyInfo)
+        SubjectPublicKeyInfo pubKeyInfo)
     {
         this.subjectPublicKeyInfo = pubKeyInfo;
     }
 
     /**
-     * @deprecated use method taking Extensions
      * @param extensions
+     * @deprecated use method taking Extensions
      */
     public void setExtensions(
-        X509Extensions    extensions)
+        X509Extensions extensions)
     {
         setExtensions(Extensions.getInstance(extensions));
     }
 
     public void setExtensions(
-        Extensions    extensions)
+        Extensions extensions)
     {
         this.extensions = extensions;
         if (extensions != null)

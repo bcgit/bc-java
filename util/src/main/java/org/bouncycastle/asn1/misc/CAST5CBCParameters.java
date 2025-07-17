@@ -12,11 +12,11 @@ import org.bouncycastle.util.Arrays;
 public class CAST5CBCParameters
     extends ASN1Object
 {
-    ASN1Integer      keyLength;
+    ASN1Integer keyLength;
     ASN1OctetString iv;
 
     public static CAST5CBCParameters getInstance(
-        Object  o)
+        Object o)
     {
         if (o instanceof CAST5CBCParameters)
         {
@@ -31,15 +31,15 @@ public class CAST5CBCParameters
     }
 
     public CAST5CBCParameters(
-        byte[]  iv,
-        int     keyLength)
+        byte[] iv,
+        int keyLength)
     {
         this.iv = new DEROctetString(Arrays.clone(iv));
         this.keyLength = new ASN1Integer(keyLength);
     }
 
     private CAST5CBCParameters(
-        ASN1Sequence  seq)
+        ASN1Sequence seq)
     {
         iv = (ASN1OctetString)seq.getObjectAt(0);
         keyLength = (ASN1Integer)seq.getObjectAt(1);

@@ -30,32 +30,32 @@ import org.bouncycastle.util.test.SimpleTest;
 public class X500NameTest
     extends SimpleTest
 {
-   String[] subjects =
-   {
-       "C=AU,ST=Victoria,L=South Melbourne,O=Connect 4 Pty Ltd,OU=Webserver Team,CN=www2.connect4.com.au,E=webmaster@connect4.com.au",
-       "C=AU,ST=Victoria,L=South Melbourne,O=Connect 4 Pty Ltd,OU=Certificate Authority,CN=Connect 4 CA,E=webmaster@connect4.com.au",
-       "C=AU,ST=QLD,CN=SSLeay/rsa test cert",
-       "C=US,O=National Aeronautics and Space Administration,SERIALNUMBER=16+CN=Steve Schoch",
-       "E=cooke@issl.atl.hp.com,C=US,OU=Hewlett Packard Company (ISSL),CN=Paul A. Cooke",
-       "O=Sun Microsystems Inc,CN=store.sun.com",
-       "unstructuredAddress=192.168.1.33,unstructuredName=pixfirewall.ciscopix.com,CN=pixfirewall.ciscopix.com",
-       "CN=*.canal-plus.com,OU=Provided by TBS INTERNET https://www.tbs-certificats.com/,OU=\\ CANAL \\+,O=CANAL\\+DISTRIBUTION,L=issy les moulineaux,ST=Hauts de Seine,C=FR",
-       "O=Bouncy Castle,CN=www.bouncycastle.org\\ ",
-       "O=Bouncy Castle,CN=c:\\\\fred\\\\bob",
-       "C=0,O=1,OU=2,T=3,CN=4,SERIALNUMBER=5,STREET=6,SERIALNUMBER=7,L=8,ST=9,SURNAME=10,GIVENNAME=11,INITIALS=12," +
-           "GENERATION=13,UniqueIdentifier=14,BusinessCategory=15,PostalCode=16,DN=17,Pseudonym=18,PlaceOfBirth=19," +
-           "Gender=20,CountryOfCitizenship=21,CountryOfResidence=22,NameAtBirth=23,PostalAddress=24,2.5.4.54=25," +
-           "TelephoneNumber=26,Name=27,E=28,unstructuredName=29,unstructuredAddress=30,E=31,DC=32,UID=33",
-        "C=DE,L=Berlin,O=Wohnungsbaugenossenschaft \\\"Humboldt-Universität\\\" eG,CN=transfer.wbg-hub.de"
-    };
+    String[] subjects =
+        {
+            "C=AU,ST=Victoria,L=South Melbourne,O=Connect 4 Pty Ltd,OU=Webserver Team,CN=www2.connect4.com.au,E=webmaster@connect4.com.au",
+            "C=AU,ST=Victoria,L=South Melbourne,O=Connect 4 Pty Ltd,OU=Certificate Authority,CN=Connect 4 CA,E=webmaster@connect4.com.au",
+            "C=AU,ST=QLD,CN=SSLeay/rsa test cert",
+            "C=US,O=National Aeronautics and Space Administration,SERIALNUMBER=16+CN=Steve Schoch",
+            "E=cooke@issl.atl.hp.com,C=US,OU=Hewlett Packard Company (ISSL),CN=Paul A. Cooke",
+            "O=Sun Microsystems Inc,CN=store.sun.com",
+            "unstructuredAddress=192.168.1.33,unstructuredName=pixfirewall.ciscopix.com,CN=pixfirewall.ciscopix.com",
+            "CN=*.canal-plus.com,OU=Provided by TBS INTERNET https://www.tbs-certificats.com/,OU=\\ CANAL \\+,O=CANAL\\+DISTRIBUTION,L=issy les moulineaux,ST=Hauts de Seine,C=FR",
+            "O=Bouncy Castle,CN=www.bouncycastle.org\\ ",
+            "O=Bouncy Castle,CN=c:\\\\fred\\\\bob",
+            "C=0,O=1,OU=2,T=3,CN=4,SERIALNUMBER=5,STREET=6,SERIALNUMBER=7,L=8,ST=9,SURNAME=10,GIVENNAME=11,INITIALS=12," +
+                "GENERATION=13,UniqueIdentifier=14,BusinessCategory=15,PostalCode=16,DN=17,Pseudonym=18,PlaceOfBirth=19," +
+                "Gender=20,CountryOfCitizenship=21,CountryOfResidence=22,NameAtBirth=23,PostalAddress=24,2.5.4.54=25," +
+                "TelephoneNumber=26,Name=27,E=28,unstructuredName=29,unstructuredAddress=30,E=31,DC=32,UID=33",
+            "C=DE,L=Berlin,O=Wohnungsbaugenossenschaft \\\"Humboldt-Universität\\\" eG,CN=transfer.wbg-hub.de"
+        };
 
     String[] hexSubjects =
-    {
-        "CN=\\20Test\\20X,O=\\20Test,C=GB",    // input
-        "CN=\\ Test X,O=\\ Test,C=GB",          // expected
-        "CN=\\20Test\\20X\\20,O=\\20Test,C=GB",    // input
-        "CN=\\ Test X\\ ,O=\\ Test,C=GB"          // expected
-    };
+        {
+            "CN=\\20Test\\20X,O=\\20Test,C=GB",    // input
+            "CN=\\ Test X,O=\\ Test,C=GB",          // expected
+            "CN=\\20Test\\20X\\20,O=\\20Test,C=GB",    // input
+            "CN=\\ Test X\\ ,O=\\ Test,C=GB"          // expected
+        };
 
     private static final String dnqSubject = "DNQ=Legion of the Bouncy Castle Inc.";
 
@@ -64,7 +64,8 @@ public class X500NameTest
         return "X500Name";
     }
 
-    private static X500Name fromBytes(byte[] bytes) throws IOException
+    private static X500Name fromBytes(byte[] bytes)
+        throws IOException
     {
         return X500Name.getInstance(bytes);
     }
@@ -74,7 +75,7 @@ public class X500NameTest
         X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
 
         builder.addRDN(oid, value);
-        
+
         X500Name name = builder.build();
 
         ASN1Sequence seq = ASN1Sequence.getInstance(name.toASN1Primitive());
@@ -162,7 +163,7 @@ public class X500NameTest
         testEncodingGeneralizedTime(BCStyle.DATE_OF_BIRTH, "20020122122220Z");
         testEncodingUTF8String(BCStyle.CN, "Mörsky");
         testEncodingUTF8String(BCStyle.ORGANIZATION_IDENTIFIER, "Mörsky");
-        
+
         //
         // composite
         //
@@ -174,7 +175,7 @@ public class X500NameTest
         builder.addRDN(BCStyle.ST, "Victoria");
         builder.addRDN(BCStyle.E, "feedback-crypto@bouncycastle.org");
 
-        X500Name    name1 = builder.build();
+        X500Name name1 = builder.build();
 
         if (!name1.equals(name1))
         {
@@ -185,7 +186,7 @@ public class X500NameTest
         X500Name dnqName = new X500Name(DNQStyle.INSTANCE, dnqSubject);
 
         isEquals(dnqName.toString(), "DNQ=Legion of the Bouncy Castle Inc.");
-        
+
 //        if (!name1.equals(name1, true))
 //        {
 //            fail("Failed same object test - in Order");
@@ -199,7 +200,7 @@ public class X500NameTest
         builder.addRDN(BCStyle.ST, "Victoria");
         builder.addRDN(BCStyle.E, "feedback-crypto@bouncycastle.org");
 
-        X500Name    name2 = builder.build();
+        X500Name name2 = builder.build();
 
         if (!name1.equals(name2))
         {
@@ -539,7 +540,7 @@ public class X500NameTest
 
         ASN1UTF8String converted = (ASN1UTF8String)
             new X509DefaultEntryConverter().getConvertedValue(
-                BCStyle.L , hexEncodedString);
+                BCStyle.L, hexEncodedString);
 
         if (!converted.equals(testString))
         {
@@ -551,7 +552,7 @@ public class X500NameTest
         //
         converted = (ASN1UTF8String)
             new X509DefaultEntryConverter().getConvertedValue(
-                BCStyle.L , "\\" + hexEncodedString);
+                BCStyle.L, "\\" + hexEncodedString);
 
         if (!converted.equals(new DERUTF8String(hexEncodedString)))
         {
@@ -703,8 +704,8 @@ public class X500NameTest
 
         private DNQStyle()
         {
-             defaultLookUp.put("dnq", BCStyle.DN_QUALIFIER);
-             defaultSymbols.put(BCStyle.DN_QUALIFIER, "DNQ");
+            defaultLookUp.put("dnq", BCStyle.DN_QUALIFIER);
+            defaultSymbols.put(BCStyle.DN_QUALIFIER, "DNQ");
         }
     }
 
@@ -784,7 +785,7 @@ public class X500NameTest
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         runTest(new X500NameTest());
     }
