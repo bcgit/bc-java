@@ -18,30 +18,30 @@ import org.bouncycastle.util.test.SimpleTest;
 public class ChaCha20Poly1305Test
     extends SimpleTest
 {
-    private static final String[][] TEST_VECTORS = new String[][] {
-    {
-        "Test Case 1",
-        "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
-        "4c616469657320616e642047656e746c"
-        + "656d656e206f662074686520636c6173"
-        + "73206f66202739393a20496620492063"
-        + "6f756c64206f6666657220796f75206f"
-        + "6e6c79206f6e652074697020666f7220"
-        + "746865206675747572652c2073756e73"
-        + "637265656e20776f756c642062652069"
-        + "742e",
-        "50515253c0c1c2c3c4c5c6c7",
-        "070000004041424344454647",
-        "d31a8d34648e60db7b86afbc53ef7ec2"
-        + "a4aded51296e08fea9e2b5a736ee62d6"
-        + "3dbea45e8ca9671282fafb69da92728b"
-        + "1a71de0a9e060b2905d6a5b67ecd3b36"
-        + "92ddbd7f2d778b8c9803aee328091b58"
-        + "fab324e4fad675945585808b4831d7bc"
-        + "3ff4def08e4b7a9de576d26586cec64b"
-        + "6116",
-        "1ae10b594f09e26a7e902ecbd0600691",
-    },
+    private static final String[][] TEST_VECTORS = new String[][]{
+        {
+            "Test Case 1",
+            "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+            "4c616469657320616e642047656e746c"
+                + "656d656e206f662074686520636c6173"
+                + "73206f66202739393a20496620492063"
+                + "6f756c64206f6666657220796f75206f"
+                + "6e6c79206f6e652074697020666f7220"
+                + "746865206675747572652c2073756e73"
+                + "637265656e20776f756c642062652069"
+                + "742e",
+            "50515253c0c1c2c3c4c5c6c7",
+            "070000004041424344454647",
+            "d31a8d34648e60db7b86afbc53ef7ec2"
+                + "a4aded51296e08fea9e2b5a736ee62d6"
+                + "3dbea45e8ca9671282fafb69da92728b"
+                + "1a71de0a9e060b2905d6a5b67ecd3b36"
+                + "92ddbd7f2d778b8c9803aee328091b58"
+                + "fab324e4fad675945585808b4831d7bc"
+                + "3ff4def08e4b7a9de576d26586cec64b"
+                + "6116",
+            "1ae10b594f09e26a7e902ecbd0600691",
+        },
     };
 
     public String getName()
@@ -49,7 +49,8 @@ public class ChaCha20Poly1305Test
         return "ChaCha20Poly1305";
     }
 
-    public void performTest() throws Exception
+    public void performTest()
+        throws Exception
     {
         testOverlapping();
         for (int i = 0; i < TEST_VECTORS.length; ++i)
@@ -63,13 +64,13 @@ public class ChaCha20Poly1305Test
     }
 
     private void checkTestCase(
-        ChaCha20Poly1305    encCipher,
-        ChaCha20Poly1305    decCipher,
-        String              testName,
-        byte[]              SA,
-        byte[]              P,
-        byte[]              C,
-        byte[]              T)
+        ChaCha20Poly1305 encCipher,
+        ChaCha20Poly1305 decCipher,
+        String testName,
+        byte[] SA,
+        byte[] P,
+        byte[] C,
+        byte[] T)
         throws InvalidCipherTextException
     {
         byte[] enc = new byte[encCipher.getOutputSize(P.length)];
@@ -188,7 +189,8 @@ public class ChaCha20Poly1305Test
         }
     }
 
-    private void randomTests() throws InvalidCipherTextException
+    private void randomTests()
+        throws InvalidCipherTextException
     {
         SecureRandom random = new SecureRandom();
         random.setSeed(Times.nanoTime());
@@ -199,7 +201,8 @@ public class ChaCha20Poly1305Test
         }
     }
 
-    private void randomTest(SecureRandom random) throws InvalidCipherTextException
+    private void randomTest(SecureRandom random)
+        throws InvalidCipherTextException
     {
         int kLength = 32;
         byte[] K = new byte[kLength];
@@ -332,13 +335,13 @@ public class ChaCha20Poly1305Test
     }
 
     private void runTestCase(
-        String  testName,
-        byte[]  K,
-        byte[]  N,
-        byte[]  A,
-        byte[]  P,
-        byte[]  C,
-        byte[]  T)
+        String testName,
+        byte[] K,
+        byte[] N,
+        byte[] A,
+        byte[] P,
+        byte[] C,
+        byte[] T)
         throws InvalidCipherTextException
     {
         byte[] fa = new byte[A.length / 2];
@@ -352,14 +355,14 @@ public class ChaCha20Poly1305Test
     }
 
     private void runTestCase(
-        String  testName,
-        byte[]  K,
-        byte[]  N,
-        byte[]  A,
-        byte[]  SA,
-        byte[]  P,
-        byte[]  C,
-        byte[]  T)
+        String testName,
+        byte[] K,
+        byte[] N,
+        byte[] A,
+        byte[] SA,
+        byte[] P,
+        byte[] C,
+        byte[] T)
         throws InvalidCipherTextException
     {
         AEADParameters parameters = new AEADParameters(new KeyParameter(K), T.length * 8, N, A);
@@ -383,7 +386,8 @@ public class ChaCha20Poly1305Test
         }
     }
 
-    private void testExceptions() throws InvalidCipherTextException
+    private void testExceptions()
+        throws InvalidCipherTextException
     {
         ChaCha20Poly1305 c = new ChaCha20Poly1305();
 

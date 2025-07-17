@@ -24,11 +24,5 @@ public class SimpleTestTest
             }
         }
     }
-
-    public static void main(String[] args)
-    {
-        SimpleTestTest test = new SimpleTestTest();
-        test.testCrypto();
-    }
 }
 

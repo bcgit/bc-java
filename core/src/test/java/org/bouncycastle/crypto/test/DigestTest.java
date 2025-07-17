@@ -372,8 +372,8 @@ public abstract class DigestTest
     /**
      * Check xof.
      *
-     * @param pXof the xof
-     * @param DATALEN DataLength
+     * @param pXof       the xof
+     * @param DATALEN    DataLength
      * @param PARTIALLEN Partial length
      */
     public static void checkXof(final Xof pXof, int DATALEN, int PARTIALLEN, SecureRandom random, SimpleTest test)

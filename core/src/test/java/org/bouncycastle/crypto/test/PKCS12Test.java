@@ -13,32 +13,32 @@ import org.bouncycastle.util.test.Test;
 import org.bouncycastle.util.test.TestResult;
 
 /**
- * test for PKCS12 key generation - vectors from 
+ * test for PKCS12 key generation - vectors from
  * <a href=https://www.drh-consultancy.demon.co.uk/test.txt>
  * https://www.drh-consultancy.demon.co.uk/test.txt</a>
  */
 public class PKCS12Test
     implements Test
 {
-    char[]  password1 = { 's', 'm', 'e', 'g' };
-    char[]  password2 = { 'q', 'u', 'e', 'e', 'g' };
+    char[] password1 = {'s', 'm', 'e', 'g'};
+    char[] password2 = {'q', 'u', 'e', 'e', 'g'};
 
     private TestResult run1(
-        int     id,
-        char[]  password,
-        byte[]  salt,
-        int     iCount,
-        byte[]  result)
+        int id,
+        char[] password,
+        byte[] salt,
+        int iCount,
+        byte[] result)
     {
-        PBEParametersGenerator  generator = new PKCS12ParametersGenerator(
-                                                    new SHA1Digest());
+        PBEParametersGenerator generator = new PKCS12ParametersGenerator(
+            new SHA1Digest());
 
         generator.init(
-                PBEParametersGenerator.PKCS12PasswordToBytes(password),
-                salt,
-                iCount);
+            PBEParametersGenerator.PKCS12PasswordToBytes(password),
+            salt,
+            iCount);
 
-        CipherParameters  key = generator.generateDerivedParameters(24 * 8);
+        CipherParameters key = generator.generateDerivedParameters(24 * 8);
 
         if (Arrays.areEqual(result, ((KeyParameter)key).getKey()))
         {
@@ -47,24 +47,24 @@ public class PKCS12Test
         else
         {
             return new SimpleTestResult(false, "PKCS12Test: id "
-                                                    + id + " Failed");
+                + id + " Failed");
         }
     }
 
     private TestResult run2(
-        int     id,
-        char[]  password,
-        byte[]  salt,
-        int     iCount,
-        byte[]  result)
+        int id,
+        char[] password,
+        byte[] salt,
+        int iCount,
+        byte[] result)
     {
-        PBEParametersGenerator  generator = new PKCS12ParametersGenerator(
-                                                    new SHA1Digest());
+        PBEParametersGenerator generator = new PKCS12ParametersGenerator(
+            new SHA1Digest());
 
         generator.init(
-                PBEParametersGenerator.PKCS12PasswordToBytes(password),
-                salt,
-                iCount);
+            PBEParametersGenerator.PKCS12PasswordToBytes(password),
+            salt,
+            iCount);
 
         ParametersWithIV params = (ParametersWithIV)generator.generateDerivedParameters(64, 64);
 
@@ -75,26 +75,26 @@ public class PKCS12Test
         else
         {
             return new SimpleTestResult(false, "PKCS12Test: id "
-                                                    + id + " Failed");
+                + id + " Failed");
         }
     }
 
     private TestResult run3(
-        int     id,
-        char[]  password,
-        byte[]  salt,
-        int     iCount,
-        byte[]  result)
+        int id,
+        char[] password,
+        byte[] salt,
+        int iCount,
+        byte[] result)
     {
-        PBEParametersGenerator  generator = new PKCS12ParametersGenerator(
-                                                    new SHA1Digest());
+        PBEParametersGenerator generator = new PKCS12ParametersGenerator(
+            new SHA1Digest());
 
         generator.init(
-                PBEParametersGenerator.PKCS12PasswordToBytes(password),
-                salt,
-                iCount);
+            PBEParametersGenerator.PKCS12PasswordToBytes(password),
+            salt,
+            iCount);
 
-        CipherParameters  key = generator.generateDerivedMacParameters(160);
+        CipherParameters key = generator.generateDerivedMacParameters(160);
 
         if (Arrays.areEqual(result, ((KeyParameter)key).getKey()))
         {
@@ -103,7 +103,7 @@ public class PKCS12Test
         else
         {
             return new SimpleTestResult(false, "PKCS12Test: id "
-                                                    + id + " Failed");
+                + id + " Failed");
         }
     }
 
@@ -114,10 +114,10 @@ public class PKCS12Test
 
     public TestResult perform()
     {
-        TestResult  result;
+        TestResult result;
 
         result = run1(1, password1, Hex.decode("0A58CF64530D823F"), 1,
-                Hex.decode("8AAAE6297B6CB04642AB5B077851284EB7128F1A2A7FBCA3"));
+            Hex.decode("8AAAE6297B6CB04642AB5B077851284EB7128F1A2A7FBCA3"));
 
         if (result.isSuccessful())
         {
@@ -177,10 +177,10 @@ public class PKCS12Test
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
-        PKCS12Test      test = new PKCS12Test();
-        TestResult      result = test.perform();
+        PKCS12Test test = new PKCS12Test();
+        TestResult result = test.perform();
 
         System.out.println(result);
     }

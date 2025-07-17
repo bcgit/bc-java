@@ -25,10 +25,10 @@ public class DSTU7624Test
     extends CipherTest
 {
     private static final SecureRandom RANDOM = new SecureRandom();
-    
+
     private static byte[] randomBytes(int min, int max)
     {
-        int count = min + RNGUtils.nextInt(RANDOM,max - min);
+        int count = min + RNGUtils.nextInt(RANDOM, max - min);
         byte[] result = new byte[count];
         RANDOM.nextBytes(result);
         return result;
@@ -201,7 +201,7 @@ public class DSTU7624Test
          */
         byte[] textA = randomBytes(1, 64);
         byte[] textB = randomBytes(1, 64);
-        byte[] textToWrap = Arrays.concatenate(new byte[][]{ textA, Hex.decode("101112131415161718191A1B1C1D1E1F"), textB });
+        byte[] textToWrap = Arrays.concatenate(new byte[][]{textA, Hex.decode("101112131415161718191A1B1C1D1E1F"), textB});
 
         byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
         byte[] expectedWrappedText = Hex.decode("1DC91DC6E52575F6DBED25ADDA95A1B6AD3E15056E489738972C199FB9EE2913");
@@ -218,7 +218,7 @@ public class DSTU7624Test
                 + " got " + Hex.toHexString(output));
         }
 
-        output = Arrays.concatenate(new byte[][]{ textB, output, textA });
+        output = Arrays.concatenate(new byte[][]{textB, output, textA});
 
         wrapper.init(false, new KeyParameter(key));
         output = wrapper.unwrap(output, textB.length, output.length - textB.length - textA.length);
