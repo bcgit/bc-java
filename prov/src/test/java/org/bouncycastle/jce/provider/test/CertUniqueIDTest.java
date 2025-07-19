@@ -129,7 +129,7 @@ public class CertUniqueIDTest
 
   private String arrayToString(boolean[] array)
   {
-      StringBuffer b = new StringBuffer();
+      StringBuilder b = new StringBuilder();
 
       for (int i = 0; i != array.length; i++)
       {
