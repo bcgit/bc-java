@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp;
 import java.io.InputStream;
 
 import org.bouncycastle.bcpg.AEADEncDataPacket;
-import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -201,93 +200,85 @@ public class PGPPublicKeyEncryptedData
         PGPSessionKey sessionKey)
         throws PGPException
     {
-        if (sessionKey.getAlgorithm() != SymmetricKeyAlgorithmTags.NULL)
+        if (sessionKey.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
         {
-            try
+            return getInputStream();
+        }
+
+        try
+        {
+            InputStream encIn = getInputStream();
+
+            // OpenPGP V5 style AEAD
+            if (encData instanceof AEADEncDataPacket)
             {
-                // OpenPGP V5 style AEAD
-                if (encData instanceof AEADEncDataPacket)
+                AEADEncDataPacket aeadData = (AEADEncDataPacket)encData;
+
+                if (aeadData.getAlgorithm() != sessionKey.getAlgorithm())
                 {
-                    AEADEncDataPacket aeadData = (AEADEncDataPacket)encData;
-
-                    if (aeadData.getAlgorithm() != sessionKey.getAlgorithm())
-                    {
-                        throw new PGPException("session key and AEAD algorithm mismatch");
-                    }
-
-                    PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(aeadData, sessionKey);
-
-                    BCPGInputStream encIn = encData.getInputStream();
-
-                    encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
+                    throw new PGPException("session key and AEAD algorithm mismatch");
                 }
-                else
+
+                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(aeadData, sessionKey);
+
+                encStream = dataDecryptor.getInputStream(encIn);
+            }
+            else
+            {
+
+                if (encData instanceof SymmetricEncIntegrityPacket)
                 {
-
-                    if (encData instanceof SymmetricEncIntegrityPacket)
+                    SymmetricEncIntegrityPacket seipd = (SymmetricEncIntegrityPacket) encData;
+                    // SEIPD v1 (OpenPGP v4)
+                    if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_1)
                     {
-                        SymmetricEncIntegrityPacket seipd = (SymmetricEncIntegrityPacket) encData;
-                        // SEIPD v1 (OpenPGP v4)
-                        if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_1)
-                        {
-                            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(true, sessionKey.getAlgorithm(), sessionKey.getKey());
+                        PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(true, sessionKey.getAlgorithm(), sessionKey.getKey());
 
-                            BCPGInputStream encIn = encData.getInputStream();
-
-                            processSymmetricEncIntegrityPacketDataStream(true, dataDecryptor, encIn);
-                        }
-                        // SEIPD v2 (OpenPGP v6 AEAD)
-                        else
-                        {
-                            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(seipd, sessionKey);
-
-                            BCPGInputStream encIn = encData.getInputStream();
-
-                            encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
-                        }
+                        processSymmetricEncIntegrityPacketDataStream(true, dataDecryptor, encIn);
                     }
-                    // SED (Symmetrically Encrypted Data without Integrity Protection; Deprecated)
+                    // SEIPD v2 (OpenPGP v6 AEAD)
                     else
                     {
-                        PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(false, sessionKey.getAlgorithm(), sessionKey.getKey());
+                        PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(seipd, sessionKey);
 
-                        BCPGInputStream encIn = encData.getInputStream();
-
-                        processSymmetricEncIntegrityPacketDataStream(false, dataDecryptor, encIn);
+                        encStream = dataDecryptor.getInputStream(encIn);
                     }
+                }
+                // SED (Symmetrically Encrypted Data without Integrity Protection; Deprecated)
+                else
+                {
+                    PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(false, sessionKey.getAlgorithm(), sessionKey.getKey());
 
-                    //
-                    // some versions of PGP appear to produce 0 for the extra
-                    // bytes rather than repeating the two previous bytes
-                    //
-                    /*
-                     * Commented out in the light of the oracle attack.
-                    if (iv[iv.length - 2] != (byte)v1 && v1 != 0)
-                    {
-                        throw new PGPDataValidationException("data check failed.");
-                    }
-
-                    if (iv[iv.length - 1] != (byte)v2 && v2 != 0)
-                    {
-                        throw new PGPDataValidationException("data check failed.");
-                    }
-                    */
+                    processSymmetricEncIntegrityPacketDataStream(false, dataDecryptor, encIn);
                 }
 
-                return encStream;
+                //
+                // some versions of PGP appear to produce 0 for the extra
+                // bytes rather than repeating the two previous bytes
+                //
+                /*
+                 * Commented out in the light of the oracle attack.
+                if (iv[iv.length - 2] != (byte)v1 && v1 != 0)
+                {
+                    throw new PGPDataValidationException("data check failed.");
+                }
+
+                if (iv[iv.length - 1] != (byte)v2 && v2 != 0)
+                {
+                    throw new PGPDataValidationException("data check failed.");
+                }
+                */
             }
-            catch (PGPException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new PGPException("Exception starting decryption", e);
-            }
+
+            return encStream;
         }
-        else
+        catch (PGPException e)
         {
-            return encData.getInputStream();
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("Exception starting decryption", e);
         }
     }
 
