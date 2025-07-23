@@ -213,7 +213,14 @@ public class SignaturePacket
             SignatureSubpacket p = (SignatureSubpacket)vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
-                keyID = ((IssuerKeyID)p).getKeyID();
+                try
+                {
+                    keyID = ((IssuerKeyID) p).getKeyID();
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new MalformedPacketException("Malformed IssuerKeyID subpacket.", e);
+                }
             }
 
             unhashedData[i] = p;
