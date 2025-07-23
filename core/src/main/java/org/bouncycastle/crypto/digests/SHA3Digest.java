@@ -1,7 +1,10 @@
 package org.bouncycastle.crypto.digests;
 
-
 import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.SavableDigest;
+import org.bouncycastle.util.Memoable;
+import org.bouncycastle.util.Pack;
 
 /**
  * implementation of SHA-3 based on following KeccakNISTInterface.c from https://keccak.noekeon.org/
@@ -10,6 +13,7 @@ import org.bouncycastle.crypto.CryptoServicePurpose;
  */
 public class SHA3Digest
     extends KeccakDigest
+    implements SavableDigest
 {
     private static int checkBitLength(int bitLength)
     {
@@ -45,9 +49,49 @@ public class SHA3Digest
         super(checkBitLength(bitLength), purpose);
     }
 
+    public SHA3Digest(byte[] encodedState)
+    {
+        super(getCryptoServicePurpose(encodedState[encodedState.length - 1]));
+
+        Pack.bigEndianToLong(encodedState, 0, state, 0, state.length);
+        int encOff = state.length * 8;
+        System.arraycopy(encodedState, encOff, dataQueue, 0, dataQueue.length);
+        encOff += dataQueue.length;
+        rate = Pack.bigEndianToInt(encodedState, encOff);
+        encOff += 4;
+        bitsInQueue = Pack.bigEndianToInt(encodedState, encOff);
+        encOff += 4;
+        fixedOutputLength = Pack.bigEndianToInt(encodedState, encOff);
+        encOff += 4;
+        squeezing = encodedState[encOff] != 0;
+    }
+
+    private static CryptoServicePurpose getCryptoServicePurpose(byte b)
+    {
+        CryptoServicePurpose[] values = CryptoServicePurpose.values();
+        return values[b];
+    }
+
     public SHA3Digest(SHA3Digest source)
     {
         super(source);
+    }
+
+    private void copyIn(SHA3Digest source)
+    {
+        if (this.purpose != source.purpose)
+        {
+            throw new IllegalArgumentException("attempt to copy digest of different purpose");
+        }
+
+        System.arraycopy(source.state, 0, this.state, 0, source.state.length);
+        System.arraycopy(source.dataQueue, 0, this.dataQueue, 0, source.dataQueue.length);
+        this.rate = source.rate;
+        this.bitsInQueue = source.bitsInQueue;
+        this.fixedOutputLength = source.fixedOutputLength;
+        this.squeezing = source.squeezing;
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
     }
 
     public String getAlgorithmName()
@@ -83,5 +127,42 @@ public class SHA3Digest
         }
 
         return super.doFinal(out, outOff, (byte)finalInput, finalBits);
+    }
+
+    public byte[] getEncodedState()
+    {
+        byte[] encState = new byte[state.length * 8 + dataQueue.length + 12 + 2];
+
+        for (int i = 0; i != state.length; i++)
+        {
+            Pack.longToBigEndian(state[i], encState, i * 8);
+        }
+
+        int sOff = state.length * 8;
+        System.arraycopy(dataQueue, 0, encState, sOff, dataQueue.length);
+
+        sOff += dataQueue.length;
+        Pack.intToBigEndian(rate, encState, sOff);
+        sOff += 4;
+        Pack.intToBigEndian(bitsInQueue, encState, sOff);
+        sOff += 4;
+        Pack.intToBigEndian(fixedOutputLength, encState, sOff);
+        sOff += 4;
+        encState[sOff++] = squeezing ? (byte)1 : (byte)0;
+        encState[sOff] = (byte)purpose.ordinal();
+
+        return encState;
+    }
+
+    public Memoable copy()
+    {
+        return new SHA3Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        SHA3Digest d = (SHA3Digest)other;
+
+        copyIn(d);
     }
 }
