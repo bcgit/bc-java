@@ -1,11 +1,11 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.CSHAKEDigest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * CSHAKE test vectors from:
@@ -13,16 +13,48 @@ import org.bouncycastle.util.test.SimpleTest;
  * https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/cSHAKE_samples.pdf
  */
 public class CSHAKETest
-    extends SimpleTest
+    extends DigestTest
 {
+    private static String[] messages =
+    {
+        "",
+        "a",
+        "abc",
+        "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+    };
+
+    private static String[] digests =
+    {
+        "28a0e58d342a45ef1522d69cd41748beee29c188364df18c84ed4ab8bed0cc85",
+        "cb0a67f6ff4a3b64497a757a85bda4a275cf11970ff226abd2bf2bbcba5890ea",
+        "346c136daea11c436d8d9e668e08888bd4e341dae05da4cb8773f74402c5bdbc",
+        "64602dc88c880bdfb6d0c9163a72b2e3653ab6114e4f4e25d7aaf5b8d441e36f"
+    };
+
+    public CSHAKETest()
+    {
+        super(new CSHAKEDigest(128, new byte[1], new byte[1]), messages, digests);
+    }
+
     public String getName()
     {
         return "CSHAKE";
     }
 
-    public void performTest()
-        throws Exception
+    protected Digest cloneDigest(Digest digest)
     {
+        return new CSHAKEDigest((CSHAKEDigest)digest);
+    }
+
+    protected Digest cloneDigest(byte[] encodedState)
+    {
+        return new CSHAKEDigest(encodedState);
+    }
+
+    public void performTest()
+    {
+        super.performTest();
+
         CSHAKEDigest cshake = new CSHAKEDigest(128, new byte[0], Strings.toByteArray("Email Signature"));
 
         cshake.update(Hex.decode("00010203"), 0, 4);
