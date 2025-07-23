@@ -180,26 +180,11 @@ public class SignaturePacket
             SignatureSubpacket p = (SignatureSubpacket)vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
-                try
-                {
-                    keyID = ((IssuerKeyID) p).getKeyID();
-                }
-                catch (IllegalArgumentException e)
-                {
-                    // Too short key-id
-                    throw new MalformedPacketException("Malformed IssuerKeyId subpacket.", e);
-                }
+                keyID = parseKeyIdOrThrow((IssuerKeyID) p);
             }
             else if (p instanceof SignatureCreationTime)
             {
-                try
-                {
-                    creationTime = ((SignatureCreationTime) p).getTime().getTime();
-                }
-                catch (IllegalStateException e)
-                {
-                    throw new MalformedPacketException("Malformed SignatureCreationTime subpacket.", e);
-                }
+                creationTime = parseCreationTimeOrThrow((SignatureCreationTime) p);
             }
 
             hashedData[i] = p;
@@ -213,14 +198,7 @@ public class SignaturePacket
             SignatureSubpacket p = (SignatureSubpacket)vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
-                try
-                {
-                    keyID = ((IssuerKeyID) p).getKeyID();
-                }
-                catch (IllegalArgumentException e)
-                {
-                    throw new MalformedPacketException("Malformed IssuerKeyID subpacket.", e);
-                }
+                keyID = parseKeyIdOrThrow((IssuerKeyID) p);
             }
 
             unhashedData[i] = p;
@@ -228,6 +206,45 @@ public class SignaturePacket
 
         setIssuerKeyId();
         setCreationTime();
+    }
+
+    private long parseKeyIdOrThrow(IssuerKeyID keyID)
+        throws MalformedPacketException
+    {
+        try
+        {
+            return keyID.getKeyID();
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new MalformedPacketException("Malformed IssuerKeyID subpacket.", e);
+        }
+    }
+
+    private long parseKeyIdOrThrow(IssuerFingerprint fingerprint)
+        throws MalformedPacketException
+    {
+        try
+        {
+            return fingerprint.getKeyID();
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new MalformedPacketException("Malformed IssuerFingerprint subpacket.", e);
+        }
+    }
+
+    private long parseCreationTimeOrThrow(SignatureCreationTime creationTime)
+        throws MalformedPacketException
+    {
+        try
+        {
+            return creationTime.getTime().getTime();
+        }
+        catch (IllegalStateException e)
+        {
+            throw new MalformedPacketException("Malformed SignatureCreationTime subpacket.", e);
+        }
     }
 
     private Vector<SignatureSubpacket> readSignatureSubpacketVector(BCPGInputStream in)
@@ -779,6 +796,7 @@ public class SignaturePacket
      * Therefore, we can also check the unhashed signature subpacket area.
      */
     private void setIssuerKeyId()
+        throws MalformedPacketException
     {
         if (keyID != 0L)
         {
@@ -790,12 +808,12 @@ public class SignaturePacket
             SignatureSubpacket p  = hashedData[idx];
             if (p instanceof IssuerKeyID)
             {
-                keyID = ((IssuerKeyID) p).getKeyID();
+                keyID = parseKeyIdOrThrow((IssuerKeyID) p);
                 return;
             }
             if (p instanceof IssuerFingerprint)
             {
-                keyID = ((IssuerFingerprint) p).getKeyID();
+                keyID = parseKeyIdOrThrow((IssuerFingerprint) p);
                 return;
             }
         }
@@ -805,12 +823,12 @@ public class SignaturePacket
             SignatureSubpacket p = unhashedData[idx];
             if (p instanceof IssuerKeyID)
             {
-                keyID = ((IssuerKeyID) p).getKeyID();
+                keyID = parseKeyIdOrThrow((IssuerKeyID) p);
                 return;
             }
             if (p instanceof IssuerFingerprint)
             {
-                keyID = ((IssuerFingerprint) p).getKeyID();
+                keyID = parseKeyIdOrThrow((IssuerFingerprint) p);
                 return;
             }
         }
