@@ -171,6 +171,10 @@ public class PGPObjectFactory
             return new UnknownPacket(PacketTags.MOD_DETECTION_CODE, in);
         case PacketTags.TRUST:
             return new UnknownPacket(PacketTags.TRUST, in);
+        case PacketTags.USER_ID:
+            return new UnknownPacket(PacketTags.USER_ID, in);
+        case PacketTags.USER_ATTRIBUTE:
+            return new UnknownPacket(PacketTags.USER_ATTRIBUTE, in);
         }
 
         int tag = in.nextPacketTag();
