@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.MalformedPacketException;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.UnknownPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
@@ -146,7 +147,14 @@ public class PGPObjectFactory
         case PacketTags.SYMMETRIC_KEY_ENC:
         case PacketTags.SYM_ENC_INTEGRITY_PRO:
         case PacketTags.AEAD_ENC_DATA:
-            return new PGPEncryptedDataList(in);
+            try
+            {
+                return new PGPEncryptedDataList(in);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new MalformedPacketException("Malformed encrypted data.", e);
+            }
         case PacketTags.ONE_PASS_SIGNATURE:
             l = new ArrayList();
 
