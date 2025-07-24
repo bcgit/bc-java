@@ -654,7 +654,7 @@ public class MLDSATest
             }
 
             // Look for test vector array start
-            if (line.indexOf("dilithium_rejection_testvectors[] = ") >= 0)
+            if (line.contains("dilithium_rejection_testvectors[] = "))
             {
                 continue;
             }
@@ -686,7 +686,7 @@ public class MLDSATest
                 }
 
                 // Check for field end
-                if (line.indexOf("},") >= 0)
+                if (line.contains("},"))
                 {
                     setField(currentVector, currentField, currentBytes);
                     currentField = null;
