@@ -144,7 +144,7 @@ public abstract class TlsProtocol
     private TlsOutputStream tlsOutputStream = null;
 
     private volatile boolean closed = false;
-    private volatile boolean failedWithError = false;
+    private volatile boolean failed = false;
     private volatile boolean appDataReady = false;
     private volatile boolean appDataSplitEnabled = true;
     private volatile boolean keyUpdateEnabled = false;
@@ -324,7 +324,7 @@ public abstract class TlsProtocol
     protected void handleFailure() throws IOException
     {
         this.closed = true;
-        this.failedWithError = true;
+        this.failed = true;
 
         /*
          * RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
@@ -819,7 +819,7 @@ public abstract class TlsProtocol
         {
             if (this.closed)
             {
-                if (this.failedWithError)
+                if (this.failed)
                 {
                     throw new IOException("Cannot read application data on failed TLS connection");
                 }
@@ -885,7 +885,7 @@ public abstract class TlsProtocol
         }
         catch (TlsFatalAlertReceived e)
         {
-            // Connection failure already handled at source
+//            assert isFailed();
             throw e;
         }
         catch (TlsFatalAlert e)
@@ -915,6 +915,11 @@ public abstract class TlsProtocol
         try
         {
             return recordStream.readFullRecord(input, inputOff, inputLen);
+        }
+        catch (TlsFatalAlertReceived e)
+        {
+//            assert isFailed();
+            throw e;
         }
         catch (TlsFatalAlert e)
         {
@@ -1915,6 +1920,11 @@ public abstract class TlsProtocol
         AbstractTlsContext context = getContextAdmin();
 
         return null != context && context.isConnected();
+    }
+
+    public boolean isFailed()
+    {
+        return failed;
     }
 
     public boolean isHandshaking()
