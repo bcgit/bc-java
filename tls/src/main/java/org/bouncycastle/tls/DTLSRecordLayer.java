@@ -150,6 +150,11 @@ class DTLSRecordLayer
         return closed;
     }
 
+    boolean isFailed()
+    {
+        return failed;
+    }
+
     void resetAfterHelloVerifyRequestServer(long recordSeq)
     {
         this.inConnection = true;
@@ -740,7 +745,7 @@ class DTLSRecordLayer
                 if (alertLevel == AlertLevel.fatal)
                 {
                     failed();
-                    throw new TlsFatalAlert(alertDescription);
+                    throw new TlsFatalAlertReceived(alertDescription);
                 }
 
                 // TODO Can close_notify be a fatal alert?

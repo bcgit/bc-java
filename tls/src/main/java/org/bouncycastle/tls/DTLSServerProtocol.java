@@ -67,6 +67,12 @@ public class DTLSServerProtocol
         {
             return serverHandshake(state, recordLayer, request);
         }
+        catch (TlsFatalAlertReceived fatalAlertReceived)
+        {
+//            assert recordLayer.isFailed();
+            invalidateSession(state);
+            throw fatalAlertReceived;
+        }
         catch (TlsFatalAlert fatalAlert)
         {
             abortServerHandshake(state, recordLayer, fatalAlert.getAlertDescription());
