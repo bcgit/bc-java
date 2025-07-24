@@ -19,9 +19,9 @@ public class BinaryTreeRootCalculator
     public byte[] computeRootHash(DigestCalculator digCalc, PartialHashtree[] nodes)
     {
         SortedHashList hashes = new SortedHashList();
-        for (int i = 0; i < nodes.length; i++)
+        for (PartialHashtree node : nodes)
         {
-            byte[] left = ERSUtil.computeNodeHash(digCalc, nodes[i]);
+            byte[] left = ERSUtil.computeNodeHash(digCalc, node);
 
             hashes.add(left);
         }

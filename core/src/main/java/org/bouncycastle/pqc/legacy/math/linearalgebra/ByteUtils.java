@@ -114,9 +114,9 @@ public final class ByteUtils
     public static int deepHashCode(byte[] array)
     {
         int result = 1;
-        for (int i = 0; i < array.length; i++)
+        for (byte b : array)
         {
-            result = 31 * result + array[i];
+            result = 31 * result + b;
         }
         return result;
     }
@@ -131,9 +131,9 @@ public final class ByteUtils
     public static int deepHashCode(byte[][] array)
     {
         int result = 1;
-        for (int i = 0; i < array.length; i++)
+        for (byte[] bytes : array)
         {
-            result = 31 * result + deepHashCode(array[i]);
+            result = 31 * result + deepHashCode(bytes);
         }
         return result;
     }
@@ -148,9 +148,9 @@ public final class ByteUtils
     public static int deepHashCode(byte[][][] array)
     {
         int result = 1;
-        for (int i = 0; i < array.length; i++)
+        for (byte[][] bytes : array)
         {
-            result = 31 * result + deepHashCode(array[i]);
+            result = 31 * result + deepHashCode(bytes);
         }
         return result;
     }
@@ -185,10 +185,10 @@ public final class ByteUtils
         char[] rawChars = Strings.toUpperCase(s).toCharArray();
 
         int hexChars = 0;
-        for (int i = 0; i < rawChars.length; i++)
+        for (char rawChar : rawChars)
         {
-            if ((rawChars[i] >= '0' && rawChars[i] <= '9')
-                || (rawChars[i] >= 'A' && rawChars[i] <= 'F'))
+            if ((rawChar >= '0' && rawChar <= '9')
+                || (rawChar >= 'A' && rawChar <= 'F'))
             {
                 hexChars++;
             }
@@ -198,17 +198,17 @@ public final class ByteUtils
 
         int pos = hexChars & 1;
 
-        for (int i = 0; i < rawChars.length; i++)
+        for (char rawChar : rawChars)
         {
-            if (rawChars[i] >= '0' && rawChars[i] <= '9')
+            if (rawChar >= '0' && rawChar <= '9')
             {
                 byteString[pos >> 1] <<= 4;
-                byteString[pos >> 1] |= rawChars[i] - '0';
+                byteString[pos >> 1] |= rawChar - '0';
             }
-            else if (rawChars[i] >= 'A' && rawChars[i] <= 'F')
+            else if (rawChar >= 'A' && rawChar <= 'F')
             {
                 byteString[pos >> 1] <<= 4;
-                byteString[pos >> 1] |= rawChars[i] - 'A' + 10;
+                byteString[pos >> 1] |= rawChar - 'A' + 10;
             }
             else
             {
@@ -229,10 +229,10 @@ public final class ByteUtils
     public static String toHexString(byte[] input)
     {
         String result = "";
-        for (int i = 0; i < input.length; i++)
+        for (byte b : input)
         {
-            result += HEX_CHARS[(input[i] >>> 4) & 0x0f];
-            result += HEX_CHARS[(input[i]) & 0x0f];
+            result += HEX_CHARS[(b >>> 4) & 0x0f];
+            result += HEX_CHARS[(b) & 0x0f];
         }
         return result;
     }
@@ -336,9 +336,9 @@ public final class ByteUtils
         int rowLength = array[0].length;
         byte[] result = new byte[array.length * rowLength];
         int index = 0;
-        for (int i = 0; i < array.length; i++)
+        for (byte[] bytes : array)
         {
-            System.arraycopy(array[i], 0, result, index, rowLength);
+            System.arraycopy(bytes, 0, result, index, rowLength);
             index += rowLength;
         }
         return result;

@@ -73,11 +73,11 @@ public class ArrayEncoder
         byte[] data = new byte[numBytes];
         int bitIndex = 0;
         int byteIndex = 0;
-        for (int i = 0; i < a.length; i++)
+        for (int ai : a)
         {
             for (int j = 0; j < bitsPerCoeff; j++)
             {
-                int currentBit = (a[i] >> j) & 1;
+                int currentBit = (ai >> j) & 1;
                 data[byteIndex] |= currentBit << bitIndex;
                 if (bitIndex == 7)
                 {

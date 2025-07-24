@@ -136,9 +136,8 @@ public class Argon2BytesGenerator
         // Reset memory.
         if (null != memory)
         {
-            for (int i = 0; i < memory.length; i++)
+            for (Block b : memory)
             {
-                Block b = memory[i];
                 if (null != b)
                 {
                     b.clear();

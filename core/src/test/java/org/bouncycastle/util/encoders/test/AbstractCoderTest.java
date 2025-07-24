@@ -65,9 +65,9 @@ public abstract class AbstractCoderTest extends TestCase
     public void testEncode()
         throws IOException
     {
-        for (int i = 0; i < SIZES_TO_CHECK.length; i++)
+        for (int j : SIZES_TO_CHECK)
         {
-            checkArrayOfSize(SIZES_TO_CHECK[i]);
+            checkArrayOfSize(j);
         }
     }
 

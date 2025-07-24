@@ -8,9 +8,9 @@ class BIKEUtils
     static int getHammingWeight(byte[] bytes)
     {
         int hammingWeight = 0;
-        for (int i = 0; i < bytes.length; i++)
+        for (byte aByte : bytes)
         {
-            hammingWeight += bytes[i];
+            hammingWeight += aByte;
         }
         return hammingWeight;
     }
