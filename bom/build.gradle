@@ -1,0 +1,31 @@
+plugins {
+    id("java-platform")
+    id("maven-publish")
+}
+
+description = "BouncyCastle Bill of Materials (BOM)"
+
+dependencies {
+    constraints {
+        api(project(":core"))
+        api(project(":util"))
+        api(project(":pg"))
+        api(project(":pkix"))
+        api(project(":prov"))
+        api(project(":tls"))
+        api(project(":test"))
+        api(project(":mls"))
+        api(project(":mail"))
+        api(project(":jmail"))
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bc-bom-$vmrange"
+            from components.javaPlatform
+        }
+    }
+}
