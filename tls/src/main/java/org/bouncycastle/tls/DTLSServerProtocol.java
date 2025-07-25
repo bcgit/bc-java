@@ -50,10 +50,6 @@ public class DTLSServerProtocol
 
         TlsServerContextImpl serverContext = new TlsServerContextImpl(server.getCrypto());
 
-        ServerHandshakeState state = new ServerHandshakeState();
-        state.server = server;
-        state.serverContext = serverContext;
-
         server.init(serverContext);
         serverContext.handshakeBeginning(server);
 
@@ -63,9 +59,14 @@ public class DTLSServerProtocol
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(serverContext, server, transport);
         server.notifyCloseHandle(recordLayer);
 
+        ServerHandshakeState state = new ServerHandshakeState();
+        state.server = server;
+        state.serverContext = serverContext;
+        state.recordLayer = recordLayer;
+
         try
         {
-            return serverHandshake(state, recordLayer, request);
+            return serverHandshake(state, request);
         }
         catch (TlsFatalAlertReceived fatalAlertReceived)
         {
@@ -75,17 +76,17 @@ public class DTLSServerProtocol
         }
         catch (TlsFatalAlert fatalAlert)
         {
-            abortServerHandshake(state, recordLayer, fatalAlert.getAlertDescription());
+            abortServerHandshake(state, fatalAlert.getAlertDescription());
             throw fatalAlert;
         }
         catch (IOException e)
         {
-            abortServerHandshake(state, recordLayer, AlertDescription.internal_error);
+            abortServerHandshake(state, AlertDescription.internal_error);
             throw e;
         }
         catch (RuntimeException e)
         {
-            abortServerHandshake(state, recordLayer, AlertDescription.internal_error);
+            abortServerHandshake(state, AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
         finally
@@ -94,17 +95,17 @@ public class DTLSServerProtocol
         }
     }
 
-    protected void abortServerHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer, short alertDescription)
+    protected void abortServerHandshake(ServerHandshakeState state, short alertDescription)
     {
-        recordLayer.fail(alertDescription);
+        state.recordLayer.fail(alertDescription);
         invalidateSession(state);
     }
 
-    protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer,
-        DTLSRequest request) throws IOException
+    protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRequest request) throws IOException
     {
         TlsServer server = state.server;
         TlsServerContextImpl serverContext = state.serverContext;
+        DTLSRecordLayer recordLayer = state.recordLayer;
         SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
 
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(serverContext, recordLayer,
@@ -138,7 +139,7 @@ public class DTLSServerProtocol
         }
 
         {
-            byte[] serverHelloBody = generateServerHello(state, recordLayer);
+            byte[] serverHelloBody = generateServerHello(state);
 
             // TODO[dtls13] Ideally, move this into generateServerHello once legacy_record_version clarified
             {
@@ -452,7 +453,7 @@ public class DTLSServerProtocol
         return buf.toByteArray();
     }
 
-    protected byte[] generateServerHello(ServerHandshakeState state, DTLSRecordLayer recordLayer)
+    protected byte[] generateServerHello(ServerHandshakeState state)
         throws IOException
     {
         TlsServer server = state.server;
@@ -710,7 +711,7 @@ public class DTLSServerProtocol
 
         state.clientHello = null;
 
-        applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
+        applyMaxFragmentLengthExtension(state.recordLayer, securityParameters.getMaxFragmentLength());
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         serverHello.encode(serverContext, buf);
@@ -1020,6 +1021,7 @@ public class DTLSServerProtocol
     {
         TlsServer server = null;
         TlsServerContextImpl serverContext = null;
+        DTLSRecordLayer recordLayer = null;
         TlsSession tlsSession = null;
         SessionParameters sessionParameters = null;
         TlsSecret sessionMasterSecret = null;
