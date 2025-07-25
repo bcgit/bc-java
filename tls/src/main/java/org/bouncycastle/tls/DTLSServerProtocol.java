@@ -117,9 +117,6 @@ public class DTLSServerProtocol
         {
             clientMessage = handshake.receiveMessage();
 
-            // NOTE: DTLSRecordLayer requires any DTLS version, we don't otherwise constrain this
-//            ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
-
             if (clientMessage.getType() == HandshakeType.client_hello)
             {
                 processClientHello(state, clientMessage.getBody());
@@ -140,13 +137,6 @@ public class DTLSServerProtocol
 
         {
             byte[] serverHelloBody = generateServerHello(state);
-
-            // TODO[dtls13] Ideally, move this into generateServerHello once legacy_record_version clarified
-            {
-                ProtocolVersion recordLayerVersion = serverContext.getServerVersion();
-                recordLayer.setReadVersion(recordLayerVersion);
-                recordLayer.setWriteVersion(recordLayerVersion);
-            }
 
             handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
@@ -460,8 +450,6 @@ public class DTLSServerProtocol
         TlsServerContextImpl serverContext = state.serverContext;
         SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
 
-        // TODO[dtls13] Negotiate cipher suite first?
-
         ProtocolVersion serverVersion;
 
         // NOT renegotiating
@@ -477,7 +465,7 @@ public class DTLSServerProtocol
 //                ? ProtocolVersion.DTLSv12
 //                : server_version;
 //
-//            recordLayer.setWriteVersion(legacy_record_version);
+//            state.recordLayer.setWriteVersion(legacy_record_version);
             securityParameters.negotiatedVersion = serverVersion;
         }
 
@@ -485,14 +473,16 @@ public class DTLSServerProtocol
 //        if (ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(serverVersion))
 //        {
 //            // See RFC 8446 D.4.
-//            recordStream.setIgnoreChangeCipherSpec(true);
+//            state.recordLayer.setIgnoreChangeCipherSpec(true);
 //
-//            recordStream.setWriteVersion(ProtocolVersion.DTLSv12);
+//            state.recordLayer.setReadVersion(ProtocolVersion.DTLSv12);
+//            state.recordLayer.setWriteVersion(ProtocolVersion.DTLSv12);
 //
 //            return generate13ServerHello(clientHello, clientHelloMessage, false);
 //        }
-//
-//        recordStream.setWriteVersion(serverVersion);
+
+        state.recordLayer.setReadVersion(serverVersion);
+        state.recordLayer.setWriteVersion(serverVersion);
 
         {
             boolean useGMTUnixTime = server.shouldUseGMTUnixTime();
@@ -845,6 +835,8 @@ public class DTLSServerProtocol
     protected void processClientHello(ServerHandshakeState state, ClientHello clientHello)
         throws IOException
     {
+        state.recordLayer.setWriteVersion(ProtocolVersion.DTLSv10);
+
         state.clientHello = clientHello;
 
         // TODO Read RFCs for guidance on the expected record layer version number
