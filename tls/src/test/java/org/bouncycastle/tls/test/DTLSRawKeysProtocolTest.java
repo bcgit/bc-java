@@ -348,23 +348,23 @@ public class DTLSRawKeysProtocolTest
                 TlsCrypto serverCrypto = server.getCrypto();
 
                 DTLSRequest request = null;
-    
+
                 // Use DTLSVerifier to require a HelloVerifyRequest cookie exchange before accepting
                 {
                     DTLSVerifier verifier = new DTLSVerifier(serverCrypto);
-    
+
                     // NOTE: Test value only - would typically be the client IP address
                     byte[] clientID = Strings.toUTF8ByteArray("MockRawKeysTlsClient");
-    
+
                     int receiveLimit = serverTransport.getReceiveLimit();
                     int dummyOffset = serverCrypto.getSecureRandom().nextInt(16) + 1;
                     byte[] buf = new byte[dummyOffset + serverTransport.getReceiveLimit()];
-    
+
                     do
                     {
                         if (isShutdown)
                             return;
-    
+
                         int length = serverTransport.receive(buf, dummyOffset, receiveLimit, 100);
                         if (length > 0)
                         {
