@@ -11,7 +11,7 @@ class GOSTUtil
 {
     static String privateKeyToString(String algorithm, BigInteger x, GOST3410Parameters gostParams)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String        nl = Strings.lineSeparator();
 
         BigInteger y = gostParams.getA().modPow(x, gostParams.getP());
@@ -25,7 +25,7 @@ class GOSTUtil
 
     static String publicKeyToString(String algorithm, BigInteger y, GOST3410Parameters gostParams)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String nl = Strings.lineSeparator();
 
         buf.append(algorithm);

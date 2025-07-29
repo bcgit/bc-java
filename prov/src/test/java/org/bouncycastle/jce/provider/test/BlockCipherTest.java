@@ -970,7 +970,7 @@ public class BlockCipherTest
 
         try
         {
-            if (algorithm.indexOf("CCM") < 0 && algorithm.indexOf("Threefish") < 0 && algorithm.indexOf("PGPCFB") < 0)
+            if (!algorithm.contains("CCM") && !algorithm.contains("Threefish") && !algorithm.contains("PGPCFB"))
             {
                 //
                 // short buffer on update test
@@ -1671,7 +1671,7 @@ public class BlockCipherTest
             }
             catch (NoSuchAlgorithmException e)
             {
-                if (!(e.getMessage().indexOf("can't support mode ") >= 0))      // old JVM
+                if (!e.getMessage().contains("can't support mode "))      // old JVM
                 {
                     isEquals("1 got: " + e.getMessage(), "No such algorithm: AES/" + cipherModes[i] + "NOT_REAL/NoPadding", e.getMessage());
                 }
@@ -1695,7 +1695,7 @@ public class BlockCipherTest
             }
             catch (NoSuchAlgorithmException e)
             {
-                if (!(e.getMessage().indexOf("can't support mode ") >= 0))      // old JVM
+                if (!e.getMessage().contains("can't support mode "))      // old JVM
                 {
                     isEquals("2 got: " + e.getMessage(), "No such algorithm: AES/" + cipherModes[i] + "256/NoPadding", e.getMessage());
                 }
@@ -1719,7 +1719,7 @@ public class BlockCipherTest
             }
             catch (NoSuchAlgorithmException e)
             {
-                if (!(e.getMessage().indexOf("can't support mode ") >= 0))      // old JVM
+                if (!e.getMessage().contains("can't support mode "))      // old JVM
                 {
                     isEquals("3 got: " + e.getMessage(), "No such algorithm: AES/" + cipherModes[i] + "2/NoPadding", e.getMessage());
                 }
@@ -1743,7 +1743,7 @@ public class BlockCipherTest
             }
             catch (NoSuchAlgorithmException e)
             {
-                if (!(e.getMessage().indexOf("can't support mode ") >= 0))      // old JVM
+                if (!e.getMessage().contains("can't support mode "))      // old JVM
                 {
                     isEquals("No such algorithm: AES/" + cipherModes[i] + "9/NoPadding", e.getMessage());
                 }
