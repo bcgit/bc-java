@@ -471,6 +471,13 @@ class ProvSSLSocketDirect
                 connection.getSession().invalidate();
             }
 
+            // Copy application data from handshake session to final session
+            String[] valueNames = handshakeSession.getValueNames();
+            for (String name : valueNames)
+            {
+                connection.getSession().putValue(name, handshakeSession.getValue(name));
+            }
+
             handshakeSession.getJsseSecurityParameters().clear();
         }
 
