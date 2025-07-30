@@ -122,17 +122,16 @@ public final class BDS
         this.authenticationPath = new ArrayList<XMSSNode>();  // note use of addAll to avoid serialization issues
         this.authenticationPath.addAll(last.authenticationPath);
         this.retain = new TreeMap<Integer, LinkedList<XMSSNode>>();
-        for (Iterator it = last.retain.keySet().iterator(); it.hasNext();)
+        for (Integer key : last.retain.keySet())
         {
-            Integer key = (Integer)it.next();
             this.retain.put(key, (LinkedList<XMSSNode>)last.retain.get(key).clone());
         }
         this.stack = new Stack<XMSSNode>(); // note use of addAll to avoid serialization issues
         this.stack.addAll(last.stack);
         this.treeHashInstances = new ArrayList<BDSTreeHash>();
-        for (Iterator it = last.treeHashInstances.iterator(); it.hasNext();)
+        for (BDSTreeHash treeHashInstance : last.treeHashInstances)
         {
-            this.treeHashInstances.add(((BDSTreeHash)it.next()).clone());
+            this.treeHashInstances.add(treeHashInstance.clone());
         }
         this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
         this.index = last.index;
@@ -149,17 +148,16 @@ public final class BDS
         this.authenticationPath = new ArrayList<XMSSNode>();  // note use of addAll to avoid serialization issues
         this.authenticationPath.addAll(last.authenticationPath);
         this.retain = new TreeMap<Integer, LinkedList<XMSSNode>>();
-        for (Iterator it = last.retain.keySet().iterator(); it.hasNext();)
+        for (Integer key : last.retain.keySet())
         {
-            Integer key = (Integer)it.next();
             this.retain.put(key, (LinkedList<XMSSNode>)last.retain.get(key).clone());
         }
         this.stack = new Stack<XMSSNode>(); // note use of addAll to avoid serialization issues
         this.stack.addAll(last.stack);
         this.treeHashInstances = new ArrayList<BDSTreeHash>();
-        for (Iterator it = last.treeHashInstances.iterator(); it.hasNext();)
+        for (BDSTreeHash treeHashInstance : last.treeHashInstances)
         {
-            this.treeHashInstances.add(((BDSTreeHash)it.next()).clone());
+            this.treeHashInstances.add(treeHashInstance.clone());
         }
         this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
         this.index = last.index;
@@ -178,17 +176,16 @@ public final class BDS
         this.authenticationPath = new ArrayList<XMSSNode>();  // note use of addAll to avoid serialization issues
         this.authenticationPath.addAll(last.authenticationPath);
         this.retain = new TreeMap<Integer, LinkedList<XMSSNode>>();
-        for (Iterator it = last.retain.keySet().iterator(); it.hasNext();)
+        for (Integer key : last.retain.keySet())
         {
-            Integer key = (Integer)it.next();
             this.retain.put(key, (LinkedList<XMSSNode>)last.retain.get(key).clone());
         }
         this.stack = new Stack<XMSSNode>();     // note use of addAll to avoid serialization issues
         this.stack.addAll(last.stack);
         this.treeHashInstances = new ArrayList<BDSTreeHash>();
-        for (Iterator it = last.treeHashInstances.iterator(); it.hasNext();)
+        for (BDSTreeHash treeHashInstance : last.treeHashInstances)
         {
-            this.treeHashInstances.add(((BDSTreeHash)it.next()).clone());
+            this.treeHashInstances.add(treeHashInstance.clone());
         }
         this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
         this.index = last.index;
@@ -206,17 +203,16 @@ public final class BDS
         this.authenticationPath = new ArrayList<XMSSNode>();  // note use of addAll to avoid serialization issues
         this.authenticationPath.addAll(last.authenticationPath);
         this.retain = new TreeMap<Integer, LinkedList<XMSSNode>>();
-        for (Iterator it = last.retain.keySet().iterator(); it.hasNext();)
+        for (Integer key : last.retain.keySet())
         {
-            Integer key = (Integer)it.next();
             this.retain.put(key, (LinkedList<XMSSNode>)last.retain.get(key).clone());
         }
         this.stack = new Stack<XMSSNode>();     // note use of addAll to avoid serialization issues
         this.stack.addAll(last.stack);
         this.treeHashInstances = new ArrayList<BDSTreeHash>();
-        for (Iterator it = last.treeHashInstances.iterator(); it.hasNext();)
+        for (BDSTreeHash treeHashInstance : last.treeHashInstances)
         {
-            this.treeHashInstances.add(((BDSTreeHash)it.next()).clone());
+            this.treeHashInstances.add(treeHashInstance.clone());
         }
         this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
         this.index = last.index;

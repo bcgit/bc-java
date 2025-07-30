@@ -122,12 +122,12 @@ public class BCryptTest
     public void testVectors()
         throws Exception
     {
-        for (int i = 0; i < testVectors.length; i++)
+        for (Object[] testVector : testVectors)
         {
-            byte[] password = Hex.decode((String)testVectors[i][0]);
-            byte[] salt = Hex.decode((String)testVectors[i][1]);
-            int cost = ((Integer)testVectors[i][2]).intValue();
-            byte[] expected = Hex.decode((String)testVectors[i][3]);
+            byte[] password = Hex.decode((String)testVector[0]);
+            byte[] salt = Hex.decode((String)testVector[1]);
+            int cost = ((Integer)testVector[2]).intValue();
+            byte[] expected = Hex.decode((String)testVector[3]);
 
             test(password, salt, cost, expected);
         }
