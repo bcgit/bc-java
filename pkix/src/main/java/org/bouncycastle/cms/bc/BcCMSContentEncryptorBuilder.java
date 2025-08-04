@@ -95,11 +95,11 @@ public class BcCMSContentEncryptorBuilder
     /**
      * Build the OutputEncryptor using a pre-generated key.
      *
-     * @param encKey a raw byte encoding of the key to be used for encryption.
-     * @return an OutputEncryptor configured to use encKey.
+     * @param rawEncKey a raw byte encoding of the key to be used for encryption.
+     * @return an OutputEncryptor configured to use rawEncKey.
      * @throws CMSException
      */
-    public OutputEncryptor build(byte[] encKey)
+    public OutputEncryptor build(byte[] rawEncKey)
         throws CMSException
     {
         if (random == null)
@@ -110,10 +110,10 @@ public class BcCMSContentEncryptorBuilder
         // fixed key size defined
         if (this.keySize > 0)
         {
-            if (((this.keySize + 7) / 8) != encKey.length)
+            if (((this.keySize + 7) / 8) != rawEncKey.length)
             {
-                if ((this.keySize != 56 && encKey.length != 8)
-                    && (this.keySize != 168 && encKey.length != 24))
+                if ((this.keySize != 56 && rawEncKey.length != 8)
+                    && (this.keySize != 168 && rawEncKey.length != 24))
                 {
                     throw new IllegalArgumentException("attempt to create encryptor with the wrong sized key");
                 }
@@ -122,10 +122,10 @@ public class BcCMSContentEncryptorBuilder
    
         if (helper.isAuthEnveloped(encryptionOID))
         {
-            return new CMSAuthOutputEncryptor(encryptionOID, new KeyParameter(encKey), random);
+            return new CMSAuthOutputEncryptor(encryptionOID, new KeyParameter(rawEncKey), random);
         }
 
-        return new CMSOutputEncryptor(encryptionOID, new KeyParameter(encKey), random);
+        return new CMSOutputEncryptor(encryptionOID, new KeyParameter(rawEncKey), random);
     }
 
     private class CMSOutputEncryptor
