@@ -239,8 +239,9 @@ public class BCPGInputStream
         }
         else
         {
-            objStream = new BCPGInputStream(
-                new BufferedInputStream(new PartialInputStream(this, partial, bodyLen)));
+//            assert !this.next;
+            PartialInputStream pis = new PartialInputStream(this.in, partial, bodyLen);
+            objStream = new BCPGInputStream(new BufferedInputStream(pis));
         }
 
         switch (tag)
@@ -339,14 +340,11 @@ public class BCPGInputStream
     private static class PartialInputStream
         extends InputStream
     {
-        private BCPGInputStream in;
+        private final InputStream in;
         private boolean partial;
         private int dataLength;
 
-        PartialInputStream(
-            BCPGInputStream in,
-            boolean partial,
-            int dataLength)
+        PartialInputStream(InputStream in, boolean partial, int dataLength)
         {
             this.in = in;
             this.partial = partial;
