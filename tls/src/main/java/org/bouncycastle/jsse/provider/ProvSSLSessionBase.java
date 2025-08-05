@@ -3,9 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,7 +25,7 @@ import org.bouncycastle.util.Arrays;
 abstract class ProvSSLSessionBase
     extends BCExtendedSSLSession
 {
-    protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
+    protected final ConcurrentHashMap<String, Object> valueMap = new ConcurrentHashMap<String, Object>();
 
     protected final AtomicReference<ProvSSLSessionContext> sslSessionContext;
     protected final boolean fipsMode;
@@ -237,15 +235,17 @@ abstract class ProvSSLSessionBase
 
     public Object getValue(String name)
     {
+        if (name == null)
+        {
+            throw new IllegalArgumentException("'name' cannot be null");
+        }
+
         return valueMap.get(name);
     }
 
     public String[] getValueNames()
     {
-        synchronized (valueMap)
-        {
-            return valueMap.keySet().toArray(new String[valueMap.size()]);
-        }
+        return valueMap.keySet().toArray(new String[0]);
     }
 
     @Override
@@ -287,12 +287,26 @@ abstract class ProvSSLSessionBase
 
     public void putValue(String name, Object value)
     {
+        if (name == null)
+        {
+            throw new IllegalArgumentException("'name' cannot be null");
+        }
+        if (value == null)
+        {
+            throw new IllegalArgumentException("'value' cannot be null");
+        }
+
         notifyUnbound(name, valueMap.put(name, value));
         notifyBound(name, value);
     }
 
     public void removeValue(String name)
     {
+        if (name == null)
+        {
+            throw new IllegalArgumentException("'name' cannot be null");
+        }
+
         notifyUnbound(name, valueMap.remove(name));
     }
 
