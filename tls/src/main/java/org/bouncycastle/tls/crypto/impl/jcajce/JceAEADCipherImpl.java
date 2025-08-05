@@ -6,6 +6,7 @@ import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -43,6 +44,7 @@ public class JceAEADCipherImpl
         });
     }
 
+    // TODO[tls] Once Java 7 or higher is the baseline, this will always be true
     private static final boolean canDoAEAD = checkForAEAD();
 
     private static String getAlgParamsName(JcaJceHelper helper, String cipherName)
@@ -68,8 +70,10 @@ public class JceAEADCipherImpl
     private final String algorithmParamsName;
 
     private SecretKey key;
-    private byte[]    nonce;
-    private int       macSize;
+
+    // TODO[tls] These two are only needed while the baseline is pre-Java7
+    private byte[] noncePre7;
+    private int macSizePre7;
 
     public JceAEADCipherImpl(JcaTlsCrypto crypto, JcaJceHelper helper, String cipherName, String algorithm, int keySize,
         boolean isEncrypting)
@@ -120,10 +124,27 @@ public class JceAEADCipherImpl
             }
             else
             {
-                // Otherwise fall back to the BC-specific AEADParameterSpec
-                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, null), random);
-                this.nonce = Arrays.clone(nonce);
-                this.macSize = macSize;
+                /*
+                 * Otherwise fall back to the BC-specific AEADParameterSpec. Since updateAAD is not available, we
+                 * need to use init to pass the associated data (in doFinal), but in order to call getOutputSize we
+                 * technically need to init the cipher first. So we init with a dummy nonce to avoid duplicate nonce
+                 * error from the init in doFinal.
+                 */
+
+                if (this.noncePre7 == null || this.noncePre7.length != nonce.length)
+                {
+                    this.noncePre7 = new byte[nonce.length];
+                }
+
+                System.arraycopy(nonce, 0, this.noncePre7, 0, nonce.length);
+                this.macSizePre7 = macSize;
+
+                this.noncePre7[0] ^= 0x80;
+
+                AlgorithmParameterSpec params = new AEADParameterSpec(noncePre7, macSizePre7 * 8, null);
+                cipher.init(cipherMode, key, params, random);
+
+                this.noncePre7[0] ^= 0x80;
             }
         }
         catch (Exception e)
@@ -150,7 +171,11 @@ public class JceAEADCipherImpl
             {
                 try
                 {
-                    cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData));
+                    // NOTE: Shouldn't need a SecureRandom, but this is cheaper if the provider would auto-create one
+                    SecureRandom random = crypto.getSecureRandom();
+
+                    AlgorithmParameterSpec params = new AEADParameterSpec(noncePre7, macSizePre7 * 8, additionalData);
+                    cipher.init(cipherMode, key, params, random);
                 }
                 catch (Exception e)
                 {
