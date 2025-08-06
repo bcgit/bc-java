@@ -8,6 +8,7 @@ import java.util.Vector;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
@@ -443,6 +444,40 @@ public class SignaturePacket
         if (hashedData != null)
         {
             setCreationTime();
+        }
+    }
+
+    public static SignaturePacket copyOfWith(SignaturePacket packet, SignatureSubpacket[] unhashedSubpackets)
+    {
+        if (packet.getVersion() == SignaturePacket.VERSION_6)
+        {
+            return new SignaturePacket(
+                packet.getVersion(),
+                packet.getSignatureType(),
+                packet.getKeyID(),
+                packet.getKeyAlgorithm(),
+                packet.getHashAlgorithm(),
+                packet.getHashedSubPackets(),
+                unhashedSubpackets,
+                packet.getFingerPrint(),
+                packet.getSignatureBytes(),
+                packet.getSalt()
+            );
+        }
+        else
+        {
+            return new SignaturePacket(
+                packet.getVersion(),
+                packet.hasNewPacketFormat(),
+                packet.getSignatureType(),
+                packet.getKeyID(),
+                packet.getKeyAlgorithm(),
+                packet.getHashAlgorithm(),
+                packet.getHashedSubPackets(),
+                unhashedSubpackets,
+                packet.getFingerPrint(),
+                packet.getSignature()
+            );
         }
     }
 

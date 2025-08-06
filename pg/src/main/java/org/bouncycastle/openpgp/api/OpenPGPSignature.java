@@ -452,19 +452,76 @@ public abstract class OpenPGPSignature
     public String toAsciiArmoredString()
             throws IOException
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ArmoredOutputStream.Builder aBuilder = ArmoredOutputStream.builder()
+        return toAsciiArmoredString(PacketFormat.ROUNDTRIP);
+    }
+
+    /**
+     * Return an ASCII armored String representation of the signature.
+     * If the signature contains issuer information, the fingerprint or key-id of the issuer will be added
+     * to the ASCII armor as a comment header.
+     *
+     * @param packetFormat decide, which packet format to use when encoding the signature
+     * @return ASCII armored signature
+     * @throws IOException if the signature cannot be encoded
+     */
+    public String toAsciiArmoredString(PacketFormat packetFormat)
+        throws IOException
+    {
+        ArmoredOutputStream.Builder armorBuilder = ArmoredOutputStream.builder()
                 .clearHeaders();
         if (getKeyIdentifier() != null)
         {
-            aBuilder.addSplitMultilineComment(getKeyIdentifier().toPrettyPrint());
+            armorBuilder.addSplitMultilineComment(getKeyIdentifier().toPrettyPrint());
         }
-        ArmoredOutputStream aOut = aBuilder.build(bOut);
-        BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
-        getSignature().encode(pOut);
-        pOut.close();
+        return toAsciiArmoredString(packetFormat, armorBuilder);
+    }
+
+    /**
+     * Return an ASCII armored String representation of the signature.
+     * The ASCII armor can be configured using the passed {@link ArmoredOutputStream.Builder}.
+     *
+     * @param packetFormat decide, which packet format to use when encoding the signature
+     * @param armorBuilder builder for the ASCII armored output stream
+     * @return ASCII armored signature
+     * @throws IOException if the signature cannot be encoded
+     */
+    public String toAsciiArmoredString(PacketFormat packetFormat, ArmoredOutputStream.Builder armorBuilder)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ArmoredOutputStream aOut = armorBuilder.build(bOut);
+        aOut.write(getEncoded(packetFormat));
         aOut.close();
         return bOut.toString();
+    }
+
+    /**
+     * Return the binary encoding of the signature.
+     *
+     * @return binary encoding
+     * @throws IOException if the signature cannot be encoded
+     */
+    public byte[] getEncoded()
+        throws IOException
+    {
+        return getEncoded(PacketFormat.ROUNDTRIP);
+    }
+
+    /**
+     * Return the binary encoding of the signature.
+     *
+     * @param packetFormat decide, which packet format to use when encoding the signature
+     * @return binary encoding
+     * @throws IOException if the signature cannot be encoded
+     */
+    public byte[] getEncoded(PacketFormat packetFormat)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, packetFormat);
+        signature.encode(pOut);
+        pOut.close();
+        return bOut.toByteArray();
     }
 
     /**

@@ -94,6 +94,16 @@ public abstract class PGPKeyRing
     }
 
     /**
+     * Return the {@link KeyIdentifier} of this key rings primary key.
+     *
+     * @return primary key identifier
+     */
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return getPublicKey().getKeyIdentifier();
+    }
+
+    /**
      * Return the first public key in the ring.  In the case of a {@link PGPSecretKeyRing}
      * this is also the public key of the master key pair.
      *

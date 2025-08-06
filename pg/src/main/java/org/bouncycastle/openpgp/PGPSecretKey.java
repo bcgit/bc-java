@@ -293,7 +293,7 @@ public class PGPSecretKey
         //
         // generate the certification
         //
-        PGPSignatureGenerator sGen = new PGPSignatureGenerator(certificationSignerBuilder);
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(certificationSignerBuilder, masterKeyPair.getPublicKey());
 
         sGen.init(PGPSignature.SUBKEY_BINDING, masterKeyPair.getPrivateKey());
 
@@ -302,7 +302,7 @@ public class PGPSecretKey
         {
             if (hashedPcks == null)
             {
-                PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(certificationSignerBuilder);
+                PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(certificationSignerBuilder, keyPair.getPublicKey());
 
                 signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, keyPair.getPrivateKey());
 
@@ -382,7 +382,7 @@ public class PGPSecretKey
 
         try
         {
-            sGen = new PGPSignatureGenerator(certificationSignerBuilder);
+            sGen = new PGPSignatureGenerator(certificationSignerBuilder, keyPair.getPublicKey());
         }
         catch (Exception e)
         {
