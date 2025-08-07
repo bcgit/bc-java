@@ -254,6 +254,9 @@ subprojects {
 
     nohttp {
         source.exclude '**/*.rsp'
+        source.exclude '**/*.pem'
+        source.exclude '**/*.crt'
+        source.exclude 'out/*'
     }
 
     jacocoTestReport {
