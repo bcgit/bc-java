@@ -152,7 +152,8 @@ public class DTLSClientProtocol
 
             handshake.finish();
 
-            if (securityParameters.isExtendedMasterSecret())
+            if (securityParameters.isExtendedMasterSecret() &&
+                ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(securityParameters.getNegotiatedVersion()))
             {
                 securityParameters.tlsUnique = securityParameters.getPeerVerifyData();
             }
@@ -380,7 +381,10 @@ public class DTLSClientProtocol
 
         state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), state.sessionParameters);
 
-        securityParameters.tlsUnique = securityParameters.getLocalVerifyData();
+        if (ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(securityParameters.getNegotiatedVersion()))
+        {
+            securityParameters.tlsUnique = securityParameters.getLocalVerifyData();
+        }
 
         clientContext.handshakeComplete(client, state.tlsSession);
 
