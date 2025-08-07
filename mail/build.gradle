@@ -65,7 +65,7 @@ jar {
     manifest.attributes('Permissions': 'all-permissions')
     manifest.attributes('Codebase': '*')
     manifest.attributes('Application-Library-Allowable-Codebase': '*')
-    manifest.attributes('Caller-Allowable-Codebase': '*) 
+    manifest.attributes('Caller-Allowable-Codebase': '*') 
     manifest.attributes('Trusted-Library': 'true')
 }
 
