@@ -2078,6 +2078,8 @@ public class PKCS12KeyStoreSpi
 
                 CipherParameters key = generator.generateDerivedParameters(BigIntegers.intValueExact(pbkdf2Params.getKeyLength()) * 8);
 
+                Arrays.clear(generator.getPassword());
+
                 hMac.init(key);
                 hMac.update(data, 0, data.length);
                 byte[] res = new byte[hMac.getMacSize()];
