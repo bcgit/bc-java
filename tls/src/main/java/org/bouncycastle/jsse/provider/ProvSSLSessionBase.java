@@ -25,9 +25,8 @@ import org.bouncycastle.util.Arrays;
 abstract class ProvSSLSessionBase
     extends BCExtendedSSLSession
 {
-    protected final ConcurrentHashMap<String, Object> valueMap = new ConcurrentHashMap<String, Object>();
-
     protected final AtomicReference<ProvSSLSessionContext> sslSessionContext;
+    protected final ConcurrentHashMap<String, Object> valueMap;
     protected final boolean fipsMode;
     protected final JcaTlsCrypto crypto;
     protected final String peerHost;
@@ -36,9 +35,11 @@ abstract class ProvSSLSessionBase
     protected final SSLSession exportSSLSession;
     protected final AtomicLong lastAccessedTime;
 
-    ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort)
+    ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, ConcurrentHashMap<String, Object> valueMap,
+        String peerHost, int peerPort)
     {
         this.sslSessionContext = new AtomicReference<ProvSSLSessionContext>(sslSessionContext);
+        this.valueMap = valueMap;
         this.fipsMode = (null == sslSessionContext) ? false : sslSessionContext.getContextData().isFipsMode();
         this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getContextData().getCrypto();
         this.peerHost = peerHost;
@@ -243,6 +244,11 @@ abstract class ProvSSLSessionBase
         return valueMap.get(name);
     }
 
+    ConcurrentHashMap<String, Object> getValueMap()
+    {
+        return valueMap;
+    }
+
     public String[] getValueNames()
     {
         return valueMap.keySet().toArray(new String[0]);
@@ -350,5 +356,10 @@ abstract class ProvSSLSessionBase
         }
 
         invalidateTLS();
+    }
+
+    protected static ConcurrentHashMap<String, Object> createValueMap()
+    {
+        return new ConcurrentHashMap<String, Object>();
     }
 }
