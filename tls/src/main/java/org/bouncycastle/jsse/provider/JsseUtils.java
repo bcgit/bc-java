@@ -939,7 +939,7 @@ abstract class JsseUtils
 
     static String stripTrailingDot(String s)
     {
-        if (s != null && s.endsWith("."))
+        if (s != null)
         {
             int sLast = s.length() - 1;
             if (sLast >= 0 && s.charAt(sLast) == '.')
