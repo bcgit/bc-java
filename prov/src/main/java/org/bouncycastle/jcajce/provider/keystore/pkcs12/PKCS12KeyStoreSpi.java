@@ -76,8 +76,8 @@ import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
 import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
-import org.bouncycastle.asn1.pkcs.PBMAC1Params;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
+import org.bouncycastle.asn1.pkcs.PBMAC1Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
@@ -757,12 +757,13 @@ public class PKCS12KeyStoreSpi
         if (algorithm.on(PKCSObjectIdentifiers.pkcs_12PbeIds))
         {
             PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(algId.getParameters());
+            PKCS12Key key = new PKCS12Key(password, wrongPKCS12Zero);
+
             try
             {
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
                     BigIntegers.intValueExact(pbeParams.getIterations()));
-                PKCS12Key key = new PKCS12Key(password, wrongPKCS12Zero);
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
 
@@ -772,6 +773,10 @@ public class PKCS12KeyStoreSpi
             catch (Exception e)
             {
                 throw new IOException("exception decrypting data - " + e.toString());
+            }
+            finally
+            {
+                Arrays.clear(key.getPassword());
             }
         }
         else if (algorithm.equals(PKCSObjectIdentifiers.id_PBES2))
@@ -2082,12 +2087,21 @@ public class PKCS12KeyStoreSpi
         }
         
         PBEParameterSpec defParams = new PBEParameterSpec(salt, itCount);
+        PKCS12Key key = new PKCS12Key(password, wrongPkcs12Zero);
 
-        Mac mac = helper.createMac(oid.getId());
-        mac.init(new PKCS12Key(password, wrongPkcs12Zero), defParams);
-        mac.update(data);
+        try
+        {
+            Mac mac = helper.createMac(oid.getId());
 
-        return mac.doFinal();
+            mac.init(key, defParams);
+            mac.update(data);
+
+            return mac.doFinal();
+        }
+        finally
+        {
+            Arrays.clear(key.getPassword());
+        }
     }
 
     private static Digest getPrf(ASN1ObjectIdentifier prfId)
