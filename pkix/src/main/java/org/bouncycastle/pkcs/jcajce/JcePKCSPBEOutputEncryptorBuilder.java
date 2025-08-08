@@ -307,7 +307,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
         {
             String algName = algorithmNameFinder.getAlgorithmName(keyEncAlgorithm);
 
-            if (algName.indexOf("AES") >= 0)
+            if (algName.contains("AES"))
             {
                 key = new SecretKeySpec(key.getEncoded(), "AES");
             }
