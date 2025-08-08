@@ -264,6 +264,7 @@ subprojects {
         source.exclude '**/*.pem'
         source.exclude '**/*.*pub'
         source.exclude '**/*.rsp'
+        source.exclude 'out/*'
     }
 
     jacocoTestReport {
