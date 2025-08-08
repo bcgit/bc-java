@@ -909,8 +909,8 @@ class ProvTlsServer
             // TODO[tls13] Resumption/PSK
             boolean addToCache = provServerEnableSessionResumption && !TlsUtils.isTLSv13(context);
 
-            this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
-                jsseSessionParameters, addToCache);
+            this.sslSession = sslSessionContext.reportSession(manager.getBCHandshakeSessionImpl(), peerHost, peerPort,
+                connectionTlsSession, jsseSessionParameters, addToCache);
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(this));

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -19,7 +20,14 @@ class ProvSSLSessionHandshake
     ProvSSLSessionHandshake(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort,
         SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters)
     {
-        super(sslSessionContext, peerHost, peerPort);
+        this(sslSessionContext, createValueMap(), peerHost, peerPort, securityParameters, jsseSecurityParameters);
+    }
+
+    protected ProvSSLSessionHandshake(ProvSSLSessionContext sslSessionContext,
+        ConcurrentHashMap<String, Object> valueMap, String peerHost, int peerPort,
+        SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters)
+    {
+        super(sslSessionContext, valueMap, peerHost, peerPort);
 
         this.securityParameters = securityParameters;
         this.jsseSecurityParameters = jsseSecurityParameters;
