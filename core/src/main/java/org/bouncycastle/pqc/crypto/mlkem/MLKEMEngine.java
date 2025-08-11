@@ -7,7 +7,8 @@ import org.bouncycastle.util.Arrays;
 class MLKEMEngine
 {
     private SecureRandom random;
-    private MLKEMIndCpa indCpa;
+
+    private final MLKEMIndCpa indCpa;
 
     // constant parameters
     public final static int KyberN = 256;
@@ -281,29 +282,18 @@ class MLKEMEngine
         return Arrays.copyOfRange(kr, 0, sessionKeyLength);
     }
 
-    public byte[][] kemEncrypt(byte[] publicKeyInput, byte[] randBytes)
+    MLKEMIndCpa getIndCpa()
     {
-        //TODO: do input validation elsewhere?
-        // Input validation (6.2 ML-KEM Encaps)
-        // Type Check
-        if (publicKeyInput.length != KyberIndCpaPublicKeyBytes)
-        {
-            throw new IllegalArgumentException("Input validation Error: Type check failed for ml-kem encapsulation");
-        }
-        // Modulus Check
-        PolyVec polyVec = new PolyVec(this);
-        byte[] seed = indCpa.unpackPublicKey(polyVec, publicKeyInput);
-        byte[] ek = indCpa.packPublicKey(polyVec, seed);
-        if (!Arrays.areEqual(ek, publicKeyInput))
-        {
-            throw new IllegalArgumentException("Input validation: Modulus check failed for ml-kem encapsulation");
-        }
+        return indCpa;
+    }
 
+    byte[][] kemEncrypt(byte[] publicKeyInput, byte[] randBytes)
+    {
         return kemEncryptInternal(publicKeyInput, randBytes);
     }
-    public byte[] kemDecrypt(byte[] secretKey, byte[] cipherText)
+    
+    byte[] kemDecrypt(byte[] secretKey, byte[] cipherText)
     {
-        //TODO: do input validation
         return kemDecryptInternal(secretKey, cipherText);
     }
 
