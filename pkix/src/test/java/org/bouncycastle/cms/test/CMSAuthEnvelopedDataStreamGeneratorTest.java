@@ -1,6 +1,7 @@
 package org.bouncycastle.cms.test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -24,8 +25,8 @@ import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
-import org.bouncycastle.cms.CMSAuthEnvelopedDataStreamGenerator;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataParser;
+import org.bouncycastle.cms.CMSAuthEnvelopedDataStreamGenerator;
 import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
@@ -111,6 +112,16 @@ public class CMSAuthEnvelopedDataStreamGeneratorTest
         init();
     }
 
+    public void testGCMCCMZeroLength()
+        throws Exception
+    {
+        GCMCCMtest(CMSAlgorithm.AES128_GCM, false, new byte[0]);
+        GCMCCMtest(CMSAlgorithm.AES128_GCM, true, new byte[0]);
+
+        GCMCCMtest(CMSAlgorithm.AES128_CCM, false, new byte[0]);
+        GCMCCMtest(CMSAlgorithm.AES128_CCM, true, new byte[0]);
+    }
+
     public void testGCMCCM()
         throws Exception
     {
@@ -129,14 +140,19 @@ public class CMSAuthEnvelopedDataStreamGeneratorTest
         GCMCCMtest(CMSAlgorithm.AES256_CCM, true);
     }
 
-    public void GCMCCMtest(ASN1ObjectIdentifier oid, boolean berEncodeRecipientSet)
+    private void GCMCCMtest(ASN1ObjectIdentifier oid, boolean berEncodeRecipientSet)
+        throws Exception
+    {
+         GCMCCMtest(oid, berEncodeRecipientSet, Strings.toByteArray("Hello, world!"));
+    }
+
+    private void GCMCCMtest(ASN1ObjectIdentifier oid, boolean berEncodeRecipientSet, byte[] message)
         throws Exception
     {
         if (!CMSTestUtil.isAeadAvailable())
         {
             return;
         }
-        byte[] message = Strings.toByteArray("Hello, world!");
 
         OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(oid).setProvider(BC).build();
 
@@ -207,6 +223,35 @@ public class CMSAuthEnvelopedDataStreamGeneratorTest
             assertTrue(Arrays.equals(ep.getMac(), recipient.getMac()));
             //assertEquals(1, ep.getAuthAttrs().size());
             assertEquals(1, ep.getUnauthAttrs().size());
+        }
+        ep.close();
+
+        // alternate read approach
+        ep = new CMSAuthEnvelopedDataParser(bOut.toByteArray());
+
+        recipients = ep.getRecipientInfos();
+
+        c = recipients.getRecipients();
+
+        it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), "1.2.840.113549.1.1.1");
+
+            CMSTypedStream recData = recipient.getContentStream(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            byte[] buf = new byte[message.length];
+
+            InputStream contentStream = recData.getContentStream();
+
+            contentStream.read(buf);
+            contentStream.close();
+            
+            assertEquals(true, Arrays.equals(message, buf));
+            assertTrue(Arrays.equals(ep.getMac(), recipient.getMac()));
         }
         ep.close();
     }
