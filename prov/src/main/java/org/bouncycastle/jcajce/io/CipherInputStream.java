@@ -31,6 +31,7 @@ public class CipherInputStream
     private final Cipher cipher;
     private final byte[] inputBuffer = new byte[512];
     private boolean finalized = false;
+    private boolean nextChunkCalled = false;
     private byte[] buf;
     private int maxBuf;
     private int bufOff;
@@ -58,6 +59,7 @@ public class CipherInputStream
             return -1;
         }
 
+        nextChunkCalled = true;
         bufOff = 0;
         maxBuf = 0;
 
@@ -86,10 +88,16 @@ public class CipherInputStream
     }
 
     private byte[] finaliseCipher()
-        throws InvalidCipherTextIOException
+        throws InvalidCipherTextIOException, IOException
     {
         try
         {
+            // for an AEAD cipher with 0 encrypted Data nextChunk may not have been
+            // called - we still need to read the MAC though!
+            if (!nextChunkCalled)
+            {
+                nextChunk();
+            }
             if (!finalized)
             {
                 finalized = true;
