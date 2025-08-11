@@ -414,20 +414,15 @@ public class MLKEMTest
                 byte[] key = Hex.decode(line);
                 MLKEMParameters parameters = params[fileIndex];
 
-                MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters) PublicKeyFactory.createKey(
-                    SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new MLKEMPublicKeyParameters(parameters, key)));
-
-                // KEM Enc
-                SecureRandom random = new SecureRandom();
-                MLKEMGenerator generator = new MLKEMGenerator(random);
                 try
                 {
-                    SecretWithEncapsulation secWenc = generator.generateEncapsulated(pubParams);
-                    byte[] generated_cipher_text = secWenc.getEncapsulation();
+                    MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
+                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new MLKEMPublicKeyParameters(parameters, key)));
                     fail();
                 }
-                catch (Exception ignored)
+                catch (IllegalArgumentException e)
                 {
+                    assertEquals("modulus check failed for ml-kem public key construction", e.getMessage());
                 }
             }
         }
