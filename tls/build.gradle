@@ -143,6 +143,11 @@ jar {
     manifest.attributes('Export-Package': "org.bouncycastle.{jsse|tls}.*;version=${v}")
     manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,!org.bouncycastle.{jsse|tls}.*,org.bouncycastle.*;version=\"[${v},${maxVersion})\"")
     manifest.attributes('Bundle-Version': "${v}")
+    manifest.attributes('Permissions': 'all-permissions')
+    manifest.attributes('Codebase': '*')
+    manifest.attributes('Application-Library-Allowable-Codebase': '*')
+    manifest.attributes('Caller-Allowable-Codebase': '*') 
+    manifest.attributes('Trusted-Library': 'true')
 }
 
 
