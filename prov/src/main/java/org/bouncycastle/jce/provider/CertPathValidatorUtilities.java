@@ -1055,7 +1055,7 @@ class CertPathValidatorUtilities
      * @param dp          The distribution point for which the complete CRL
      * @param cert        The <code>X509Certificate</code> for
      *                    which the CRL should be searched.
-     * @param currentDate The date for which the delta CRLs must be valid.
+     * @param validityDate The date for which the delta CRLs must be valid.
      * @param paramsPKIX  The extended PKIX parameters.
      * @return A <code>Set</code> of <code>X509CRL</code>s with complete
      *         CRLs.
