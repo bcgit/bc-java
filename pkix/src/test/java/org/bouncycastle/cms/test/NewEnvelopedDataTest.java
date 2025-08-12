@@ -1113,6 +1113,12 @@ public class NewEnvelopedDataTest
         doTestKeyTransOAEPDefaultNamed("SHA-256");
     }
 
+    public void testKeyTransOAEPSHA384()
+        throws Exception
+    {
+        doTestKeyTransOAEPDefaultNamed("SHA-384");
+    }
+
     public void testKeyTransOAEPSHA1AndSHA256()
         throws Exception
     {
