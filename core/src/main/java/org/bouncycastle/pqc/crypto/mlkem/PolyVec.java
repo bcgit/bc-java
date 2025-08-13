@@ -269,4 +269,14 @@ class PolyVec
         out.append("]");
         return out.toString();
     }
+
+    static int checkModulus(MLKEMEngine engine, byte[] inputBytes)
+    {
+        int result = -1;
+        for (int i = 0, k = engine.getKyberK(); i < k; i++)
+        {
+            result &= Poly.checkModulus(inputBytes, i * MLKEMEngine.KyberPolyBytes);
+        }
+        return result;
+    }
 }
