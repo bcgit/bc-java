@@ -223,39 +223,29 @@ class Poly
 
     public byte[] toBytes()
     {
+        conditionalSubQ();
+
         byte[] r = new byte[MLKEMEngine.KyberPolyBytes];
-        short t0, t1;
-        this.conditionalSubQ();
         for (int i = 0; i < MLKEMEngine.KyberN / 2; i++)
         {
-            t0 = this.getCoeffIndex(2 * i);
-            t1 = this.getCoeffIndex(2 * i + 1);
-            r[3 * i] = (byte)(t0 >> 0);
+            short t0 = coeffs[2 * i + 0];
+            short t1 = coeffs[2 * i + 1];
+            r[3 * i + 0] = (byte)(t0 >> 0);
             r[3 * i + 1] = (byte)((t0 >> 8) | (t1 << 4));
             r[3 * i + 2] = (byte)(t1 >> 4);
         }
-
         return r;
-
     }
 
     public void fromBytes(byte[] inpBytes)
     {
-        int i;
-        for (i = 0; i < MLKEMEngine.KyberN / 2; i++)
+        for (int i = 0; i < MLKEMEngine.KyberN / 2; ++i)
         {
-            this.setCoeffIndex(2 * i, (short)(
-                (
-                    ((inpBytes[3 * i + 0] & 0xFF) >> 0)
-                        | ((inpBytes[3 * i + 1] & 0xFF) << 8)
-                ) & 0xFFF)
-            );
-            this.setCoeffIndex(2 * i + 1, (short)(
-                (
-                    ((inpBytes[3 * i + 1] & 0xFF) >> 4)
-                        | (long)((inpBytes[3 * i + 2] & 0xFF) << 4)
-                ) & 0xFFF)
-            );
+            int a0 = inpBytes[3 * i + 0] & 0xFF;
+            int a1 = inpBytes[3 * i + 1] & 0xFF;
+            int a2 = inpBytes[3 * i + 2] & 0xFF;
+            coeffs[2 * i + 0] = (short)(((a0 >> 0) | (a1 << 8)) & 0xFFF);
+            coeffs[2 * i + 1] = (short)(((a1 >> 4) | (a2 << 4)) & 0xFFF);
         }
     }
 
