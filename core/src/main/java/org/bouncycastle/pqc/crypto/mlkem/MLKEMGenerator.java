@@ -20,23 +20,19 @@ public class MLKEMGenerator
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
-        MLKEMPublicKeyParameters key = (MLKEMPublicKeyParameters)recipientKey;
-        MLKEMEngine engine = key.getParameters().getEngine();
-        engine.init(sr);
-
         byte[] randBytes = new byte[32];
-        engine.getRandomBytes(randBytes);
+        sr.nextBytes(randBytes);
 
-        byte[][] kemEncrypt = engine.kemEncrypt(key.getEncoded(), randBytes);
-        return new SecretWithEncapsulationImpl(kemEncrypt[0], kemEncrypt[1]);
+        return internalGenerateEncapsulated(recipientKey, randBytes);
     }
+
     public SecretWithEncapsulation internalGenerateEncapsulated(AsymmetricKeyParameter recipientKey, byte[] randBytes)
     {
         MLKEMPublicKeyParameters key = (MLKEMPublicKeyParameters)recipientKey;
         MLKEMEngine engine = key.getParameters().getEngine();
         engine.init(sr);
 
-        byte[][] kemEncrypt = engine.kemEncryptInternal(key.getEncoded(), randBytes);
+        byte[][] kemEncrypt = engine.kemEncrypt(key, randBytes);
         return new SecretWithEncapsulationImpl(kemEncrypt[0], kemEncrypt[1]);
     }
 }

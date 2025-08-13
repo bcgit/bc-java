@@ -416,13 +416,12 @@ public class MLKEMTest
 
                 try
                 {
-                    MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
-                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new MLKEMPublicKeyParameters(parameters, key)));
+                    new MLKEMPublicKeyParameters(parameters, key);
                     fail();
                 }
                 catch (IllegalArgumentException e)
                 {
-                    assertEquals("modulus check failed for ml-kem public key construction", e.getMessage());
+                    assertEquals("Modulus check failed for ML-KEM public key", e.getMessage());
                 }
             }
         }
