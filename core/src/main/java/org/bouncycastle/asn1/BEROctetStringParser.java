@@ -10,6 +10,7 @@ import org.bouncycastle.util.io.Streams;
  * 
  * @deprecated Check for 'ASN1OctetStringParser' instead 
  */
+@Deprecated
 public class BEROctetStringParser
     implements ASN1OctetStringParser
 {

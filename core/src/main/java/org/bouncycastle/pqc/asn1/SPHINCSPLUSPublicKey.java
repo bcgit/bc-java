@@ -1,6 +1,12 @@
 package org.bouncycastle.pqc.asn1;
 
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -29,6 +35,7 @@ public class SPHINCSPLUSPublicKey
     /**
      * @deprecated use getInstance()
      */
+    @Deprecated
     public SPHINCSPLUSPublicKey(ASN1Sequence seq)
     {
         pkseed = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets());
