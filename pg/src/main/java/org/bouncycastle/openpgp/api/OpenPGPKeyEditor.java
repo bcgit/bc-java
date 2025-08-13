@@ -184,7 +184,7 @@ public class OpenPGPKeyEditor
     public OpenPGPKeyEditor addEncryptionSubkey()
         throws PGPException
     {
-        return addEncryptionSubkey(KeyPairGeneratorCallback.encryptionKey());
+        return addEncryptionSubkey(KeyPairGeneratorCallback.Util.encryptionKey());
     }
 
     public OpenPGPKeyEditor addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback)
@@ -228,7 +228,7 @@ public class OpenPGPKeyEditor
     public OpenPGPKeyEditor addSigningSubkey()
         throws PGPException
     {
-        return addSigningSubkey(KeyPairGeneratorCallback.signingKey());
+        return addSigningSubkey(KeyPairGeneratorCallback.Util.signingKey());
     }
 
     public OpenPGPKeyEditor addSigningSubkey(KeyPairGeneratorCallback keyGenCallback)

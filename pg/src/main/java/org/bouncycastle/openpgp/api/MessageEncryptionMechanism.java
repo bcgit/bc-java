@@ -57,6 +57,13 @@ public class MessageEncryptionMechanism
             SymmetricKeyAlgorithmTags.NULL, none);
     }
 
+    @Deprecated
+    public static MessageEncryptionMechanism legacyEncryptedNonIntegrityProtected(int symmetricKeyAlgorithm)
+    {
+        int none = 0;
+        return new MessageEncryptionMechanism(EncryptedDataPacketType.SED, symmetricKeyAlgorithm, none);
+    }
+
     /**
      * The data will be encrypted and integrity protected using a SEIPDv1 packet.
      *
@@ -136,5 +143,16 @@ public class MessageEncryptionMechanism
         return getMode() == m.getMode()
             && getSymmetricKeyAlgorithm() == m.getSymmetricKeyAlgorithm()
             && getAeadAlgorithm() == m.getAeadAlgorithm();
+    }
+
+    @Override
+    public String toString()
+    {
+        String out = mode.name() + "[cipher: " + symmetricKeyAlgorithm;
+        if (mode == EncryptedDataPacketType.SEIPDv2 || mode == EncryptedDataPacketType.LIBREPGP_OED)
+        {
+            out += " aead: " + aeadAlgorithm;
+        }
+        return out + "]";
     }
 }

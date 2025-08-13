@@ -7,7 +7,7 @@ import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 /**
  * Callback to generate a {@link PGPKeyPair} from a {@link PGPKeyPairGenerator} instance.
  */
-public abstract class KeyPairGeneratorCallback
+public interface KeyPairGeneratorCallback
 {
     /**
      * Generate a {@link PGPKeyPair} by calling a factory method on a given generator instance.
@@ -16,45 +16,48 @@ public abstract class KeyPairGeneratorCallback
      * @return generated key pair
      * @throws PGPException
      */
-    public abstract PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+    PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
         throws PGPException;
 
-    public static KeyPairGeneratorCallback primaryKey()
+    static class Util
     {
-        return new KeyPairGeneratorCallback()
+        public static KeyPairGeneratorCallback primaryKey()
         {
-            @Override
-            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                    throws PGPException
+            return new KeyPairGeneratorCallback()
             {
-                return generator.generatePrimaryKey();
-            }
-        };
-    }
+                @Override
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generatePrimaryKey();
+                }
+            };
+        }
 
-    public static KeyPairGeneratorCallback encryptionKey()
-    {
-        return new KeyPairGeneratorCallback()
+        public static KeyPairGeneratorCallback encryptionKey()
         {
-            @Override
-            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                    throws PGPException
+            return new KeyPairGeneratorCallback()
             {
-                return generator.generateEncryptionSubkey();
-            }
-        };
-    }
+                @Override
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateEncryptionSubkey();
+                }
+            };
+        }
 
-    public static KeyPairGeneratorCallback signingKey()
-    {
-        return new KeyPairGeneratorCallback()
+        public static KeyPairGeneratorCallback signingKey()
         {
-            @Override
-            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                    throws PGPException
+            return new KeyPairGeneratorCallback()
             {
-                return generator.generateSigningSubkey();
-            }
-        };
+                @Override
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateSigningSubkey();
+                }
+            };
+        }
     }
 }

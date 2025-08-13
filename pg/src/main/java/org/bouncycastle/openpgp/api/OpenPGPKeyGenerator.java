@@ -229,7 +229,7 @@ public class OpenPGPKeyGenerator
         throws PGPException
     {
         return withPrimaryKey(
-            KeyPairGeneratorCallback.primaryKey(),
+            KeyPairGeneratorCallback.Util.primaryKey(),
             SignatureParameters.Callback.Util.modifyHashedSubpackets(new SignatureSubpacketsFunction()
             {
                 @Override
@@ -252,7 +252,7 @@ public class OpenPGPKeyGenerator
     public WithPrimaryKey withPrimaryKey()
         throws PGPException
     {
-        return withPrimaryKey(KeyPairGeneratorCallback.primaryKey());
+        return withPrimaryKey(KeyPairGeneratorCallback.Util.primaryKey());
     }
 
     /**
@@ -408,7 +408,7 @@ public class OpenPGPKeyGenerator
         public WithPrimaryKey addEncryptionSubkey()
             throws PGPException
         {
-            return addEncryptionSubkey(KeyPairGeneratorCallback.encryptionKey());
+            return addEncryptionSubkey(KeyPairGeneratorCallback.Util.encryptionKey());
         }
 
         /**
@@ -500,7 +500,7 @@ public class OpenPGPKeyGenerator
         public WithPrimaryKey addSigningSubkey()
             throws PGPException
         {
-            return addSigningSubkey(KeyPairGeneratorCallback.signingKey());
+            return addSigningSubkey(KeyPairGeneratorCallback.Util.signingKey());
         }
 
         /**
