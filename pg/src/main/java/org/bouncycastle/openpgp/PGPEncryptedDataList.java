@@ -154,6 +154,11 @@ public class PGPEncryptedDataList
         return (PGPEncryptedData)methods.get(index);
     }
 
+    public InputStreamPacket getEncryptedData()
+    {
+        return data;
+    }
+
     /**
      * Gets the number of encryption methods in this list.
      */

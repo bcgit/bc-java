@@ -10,10 +10,10 @@ import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UnknownPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.util.Iterable;
 
 /**
  * General class for reading a PGP object stream.
@@ -141,6 +141,8 @@ public class PGPObjectFactory
             return new PGPCompressedData(in);
         case PacketTags.LITERAL_DATA:
             return new PGPLiteralData(in);
+        case PacketTags.TRUST:
+            return new PGPTrust(in);
         case PacketTags.PUBLIC_KEY_ENC_SESSION:
         case PacketTags.SYMMETRIC_KEY_ENC_SESSION:
         case PacketTags.SYMMETRIC_KEY_ENC:
