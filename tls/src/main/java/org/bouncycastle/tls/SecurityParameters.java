@@ -177,6 +177,7 @@ public class SecurityParameters
      * 
      * @deprecated Will be removed. Use constant CompressionMethod._null instead.
      */
+    @Deprecated
     public short getCompressionAlgorithm()
     {
         return CompressionMethod._null;
@@ -193,6 +194,7 @@ public class SecurityParameters
     /**
      * @deprecated Use {@link #getPRFAlgorithm()} instead.
      */
+    @Deprecated
     public int getPrfAlgorithm()
     {
         return prfAlgorithm;
