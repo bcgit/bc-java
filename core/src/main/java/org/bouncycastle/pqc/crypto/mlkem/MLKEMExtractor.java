@@ -21,7 +21,7 @@ public class MLKEMExtractor
 
     public byte[] extractSecret(byte[] encapsulation)
     {
-        return engine.kemDecrypt(privateKey.getEncoded(), encapsulation);
+        return engine.kemDecrypt(privateKey, encapsulation);
     }
 
     public int getEncapsulationLength()
