@@ -188,6 +188,11 @@ class MLKEMEngine
         this.random = random;
     }
 
+    boolean checkModulus(byte[] t)
+    {
+        return PolyVec.checkModulus(this, t) < 0;
+    }
+
     public byte[][] generateKemKeyPair()
     {
         byte[] d = new byte[KyberSymBytes];
@@ -224,9 +229,9 @@ class MLKEMEngine
         };
     }
 
-    public byte[][] kemEncryptInternal(byte[] publicKeyInput, byte[] randBytes)
+    byte[][] kemEncrypt(MLKEMPublicKeyParameters publicKey, byte[] randBytes)
     {
-        byte[] outputCipherText;
+        byte[] publicKeyInput = publicKey.getEncoded();
 
         byte[] buf = new byte[2 * KyberSymBytes];
         byte[] kr = new byte[2 * KyberSymBytes];
@@ -240,7 +245,8 @@ class MLKEMEngine
         symmetric.hash_g(kr, buf);
 
         // IndCpa Encryption
-        outputCipherText = indCpa.encrypt(publicKeyInput, Arrays.copyOfRange(buf, 0, KyberSymBytes), Arrays.copyOfRange(kr, 32, kr.length));
+        byte[] outputCipherText = indCpa.encrypt(publicKeyInput, Arrays.copyOfRange(buf, 0, KyberSymBytes),
+            Arrays.copyOfRange(kr, 32, kr.length));
 
         byte[] outputSharedSecret = new byte[sessionKeyLength];
 
@@ -252,8 +258,10 @@ class MLKEMEngine
         return outBuf;
     }
 
-    public byte[] kemDecryptInternal(byte[] secretKey, byte[] cipherText)
+    byte[] kemDecrypt(MLKEMPrivateKeyParameters privateKey, byte[] cipherText)
     {
+        byte[] secretKey = privateKey.getEncoded();
+
         byte[] buf = new byte[2 * KyberSymBytes],
                 kr = new byte[2 * KyberSymBytes];
 
@@ -282,21 +290,6 @@ class MLKEMEngine
         return Arrays.copyOfRange(kr, 0, sessionKeyLength);
     }
 
-    MLKEMIndCpa getIndCpa()
-    {
-        return indCpa;
-    }
-
-    byte[][] kemEncrypt(byte[] publicKeyInput, byte[] randBytes)
-    {
-        return kemEncryptInternal(publicKeyInput, randBytes);
-    }
-    
-    byte[] kemDecrypt(byte[] secretKey, byte[] cipherText)
-    {
-        return kemDecryptInternal(secretKey, cipherText);
-    }
-
     private void cmov(byte[] r, byte[] x, int xlen, boolean b)
     {
         if (b)
@@ -307,10 +300,5 @@ class MLKEMEngine
         {
             System.arraycopy(r, 0, r, 0, xlen);
         }
-    }
-
-    public void getRandomBytes(byte[] buf)
-    {
-        this.random.nextBytes(buf);
     }
 }

@@ -340,5 +340,20 @@ class Poly
         out.append("]");
         return out.toString();
     }
-}
 
+    static int checkModulus(byte[] a, int off)
+    {
+        int result = -1;
+        for (int i = 0; i < MLKEMEngine.KyberN / 2; ++i)
+        {
+            int a0 = a[off + 3 * i + 0] & 0xFF;
+            int a1 = a[off + 3 * i + 1] & 0xFF;
+            int a2 = a[off + 3 * i + 2] & 0xFF;
+            short c0 = (short)(((a0 >> 0) | (a1 << 8)) & 0xFFF);
+            short c1 = (short)(((a1 >> 4) | (a2 << 4)) & 0xFFF);
+            result &= Reduce.checkModulus(c0);
+            result &= Reduce.checkModulus(c1);
+        }
+        return result;
+    }
+}
