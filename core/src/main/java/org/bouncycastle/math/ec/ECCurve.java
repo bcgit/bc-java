@@ -691,6 +691,7 @@ public abstract class ECCurve
         /**
          * @deprecated use constructor taking order/cofactor
          */
+        @Deprecated
         public Fp(BigInteger q, BigInteger a, BigInteger b)
         {
             this(q, a, b, null, null);
@@ -1153,6 +1154,7 @@ public abstract class ECCurve
          * <code>F<sub>2<sup>m</sup></sub></code>.
          * @deprecated use constructor taking order/cofactor
          */
+        @Deprecated
         public F2m(
             int m,
             int k,
@@ -1211,6 +1213,7 @@ public abstract class ECCurve
          * <code>F<sub>2<sup>m</sup></sub></code>.
          * @deprecated use constructor taking order/cofactor
          */
+        @Deprecated
         public F2m(
             int m,
             int k1,

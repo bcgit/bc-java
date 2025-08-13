@@ -5,6 +5,7 @@ package org.bouncycastle.pqc.crypto.xmss;
  *
  * @deprecated use Encodable
  */
+@Deprecated
 public interface XMSSStoreableObjectInterface
 {
 
@@ -13,5 +14,5 @@ public interface XMSSStoreableObjectInterface
      *
      * @return Byte representation of object.
      */
-    public byte[] toByteArray();
+    byte[] toByteArray();
 }

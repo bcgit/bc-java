@@ -74,6 +74,7 @@ public class SubjectPublicKeyInfo
     /**
      @deprecated use SubjectPublicKeyInfo.getInstance()
      */
+    @Deprecated
     public SubjectPublicKeyInfo(
         ASN1Sequence  seq)
     {
@@ -98,6 +99,7 @@ public class SubjectPublicKeyInfo
      * @deprecated use getAlgorithm()
      * @return    alg ID.
      */
+    @Deprecated
     public AlgorithmIdentifier getAlgorithmId()
     {
         return algId;
@@ -126,6 +128,7 @@ public class SubjectPublicKeyInfo
      * @deprecated use parsePublicKey
      * @return the public key as an ASN.1 primitive.
      */
+    @Deprecated
     public ASN1Primitive getPublicKey()
         throws IOException
     {
