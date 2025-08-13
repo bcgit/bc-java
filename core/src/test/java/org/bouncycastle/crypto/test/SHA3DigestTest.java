@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -68,7 +69,7 @@ public class SHA3DigestTest
         }
         catch (Exception e)
         {
-            throw new IllegalStateException(e.toString(), e);
+            throw Exceptions.illegalStateException(e.toString(), e);
         }
     }
 
