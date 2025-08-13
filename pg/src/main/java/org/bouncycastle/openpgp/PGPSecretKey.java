@@ -36,6 +36,7 @@ import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.bcpg.X448SecretBCPGKey;
 import org.bouncycastle.gpg.SExprParser;
+import org.bouncycastle.openpgp.operator.GnuDivertToCardSecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
@@ -552,7 +553,8 @@ public class PGPSecretKey
         return pub.getUserAttributes();
     }
 
-    private byte[] extractKeyData(PBESecretKeyDecryptor decryptorFactory) throws PGPException
+    private byte[] extractKeyData(PBESecretKeyDecryptor decryptorFactory)
+        throws PGPException
     {
         byte[] encData = secret.getSecretKeyData();
 
@@ -887,7 +889,8 @@ public class PGPSecretKey
         byte[] keyData;
         int newEncAlgorithm = SymmetricKeyAlgorithmTags.NULL;
 
-        if (newKeyEncryptor == null || newKeyEncryptor.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
+        if (newKeyEncryptor == null
+            || (newKeyEncryptor.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL && !(newKeyEncryptor instanceof GnuDivertToCardSecretKeyEncryptor)))
         {
             s2kUsage = SecretKeyPacket.USAGE_NONE;
             if (key.secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1)   // SHA-1 hash, need to rewrite checksum
@@ -997,7 +1000,7 @@ public class PGPSecretKey
 
         SecretKeyPacket secret;
 
-        if (newKeyEncryptor!= null && newKeyEncryptor.getAeadAlgorithm() > 0)
+        if (newKeyEncryptor != null && newKeyEncryptor.getAeadAlgorithm() > 0)
         {
             s2kUsage = SecretKeyPacket.USAGE_AEAD;
             secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, newKeyEncryptor.getAeadAlgorithm(), s2kUsage, s2k, iv, keyData);
