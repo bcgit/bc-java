@@ -312,7 +312,7 @@ public class Group
         }
     }
 
-    class JoinersWithPSKS
+    static class JoinersWithPSKS
     {
         List<LeafIndex> joiners;
         List<KeyScheduleEpoch.PSKWithSecret> psks;
@@ -324,7 +324,7 @@ public class Group
         }
     }
 
-    public class EpochRef
+    public static class EpochRef
     {
         byte[] id;
         long epoch;
@@ -1184,7 +1184,7 @@ public class Group
         return new TombstoneWithMessage(gwm.group, reinit, gwm.message);
     }
 
-    static public MLSMessage newMemberAdd(byte[] groupID, long epoch, KeyPackage newMember, AsymmetricCipherKeyPair sigSk)
+    public static MLSMessage newMemberAdd(byte[] groupID, long epoch, KeyPackage newMember, AsymmetricCipherKeyPair sigSk)
         throws Exception
     {
         MlsCipherSuite suite = newMember.getSuite();
