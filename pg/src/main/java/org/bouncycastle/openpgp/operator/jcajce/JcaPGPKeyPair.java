@@ -18,24 +18,10 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 public class JcaPGPKeyPair
     extends PGPKeyPair
 {
-    @Deprecated
-    private static PGPPublicKey getPublicKey(int algorithm, PublicKey pubKey, Date date)
-        throws PGPException
-    {
-        return getPublicKey(PublicKeyPacket.VERSION_4, algorithm, pubKey, date);
-    }
-
     private static PGPPublicKey getPublicKey(int version, int algorithm, PublicKey pubKey, Date date)
         throws PGPException
     {
         return new JcaPGPKeyConverter().getPGPPublicKey(version, algorithm, pubKey, date);
-    }
-
-    @Deprecated
-    private static PGPPublicKey getPublicKey(int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey, Date date)
-        throws PGPException
-    {
-        return getPublicKey(PublicKeyPacket.VERSION_4, algorithm, algorithmParameters, pubKey, date);
     }
     
     private static PGPPublicKey getPublicKey(int version, int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey, Date date)
@@ -60,6 +46,7 @@ public class JcaPGPKeyPair
      * @deprecated use versioned {@link #JcaPGPKeyPair(int, int, KeyPair, Date)} instead
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public JcaPGPKeyPair(int algorithm, KeyPair keyPair, Date date)
         throws PGPException
     {
@@ -93,6 +80,7 @@ public class JcaPGPKeyPair
      * @deprecated use versioned {@link #JcaPGPKeyPair(int, int, PGPAlgorithmParameters, KeyPair, Date)} instead
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public JcaPGPKeyPair(int algorithm, PGPAlgorithmParameters parameters, KeyPair keyPair, Date date)
         throws PGPException
     {

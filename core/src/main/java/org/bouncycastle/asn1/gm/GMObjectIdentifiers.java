@@ -50,7 +50,7 @@ public interface GMObjectIdentifiers
 
     /**
      * &lt;Information security technology — Cryptographic application identifier criterion specification&gt;
-     * &lt;url&gt;http&#058;//c.gb688.cn/bzgk/gb/showGb&#63;type=online&hcno=252CF0F72A7BE339A56DEA7D774E8994&lt;/url&gt;,
+     * &lt;url&gt;http&#058;//c.gb688.cn/bzgk/gb/showGb&#63;type=online&#38;hcno=252CF0F72A7BE339A56DEA7D774E8994&lt;/url&gt;,
      * Page 21 only cover from 301.1 to 301.3
      * */
     ASN1ObjectIdentifier wapip192v1 =  sm_scheme.branch("301.101");

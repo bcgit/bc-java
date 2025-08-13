@@ -178,6 +178,7 @@ public class SecurityParameters
      * @deprecated Will be removed. Use constant CompressionMethod._null instead.
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public short getCompressionAlgorithm()
     {
         return CompressionMethod._null;
