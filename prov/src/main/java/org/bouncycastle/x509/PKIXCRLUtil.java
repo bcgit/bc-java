@@ -43,7 +43,7 @@ abstract class PKIXCRLUtil
      *            a List containing only {@link org.bouncycastle.x509.X509Store X509Store} objects.
      *            These are used to search for CRLs
      */
-    private static void findCRLs(HashSet crls, X509CRLStoreSelector crlSelect, List crlStores) throws AnnotatedException
+    private static void findCRLs(Set crls, X509CRLStoreSelector crlSelect, List crlStores) throws AnnotatedException
     {
         AnnotatedException lastException = null;
         boolean foundValidStore = false;

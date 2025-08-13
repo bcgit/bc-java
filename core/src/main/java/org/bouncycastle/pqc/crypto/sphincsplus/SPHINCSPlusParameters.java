@@ -194,6 +194,7 @@ public class SPHINCSPlusParameters
      * @deprecated Use {@link #getID()} instead
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static Integer getID(SPHINCSPlusParameters params)
     {
         return params.getID();

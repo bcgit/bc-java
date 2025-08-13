@@ -1246,6 +1246,7 @@ public class TlsUtils
      * @deprecated Will be removed
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(TlsContext context,
         TlsCredentialedSigner signerCredentials)
         throws IOException
@@ -1601,6 +1602,7 @@ public class TlsUtils
      * @deprecated Use {@link #PRF(SecurityParameters, TlsSecret, String, byte[], int)} instead.
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
         return PRF(context.getSecurityParametersHandshake(), secret, asciiLabel, seed, length);
@@ -4090,6 +4092,7 @@ public class TlsUtils
      * @deprecated Use {@link #isValidVersionForCipherSuite(int, ProtocolVersion)} instead.
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion version)
     {
         return isValidVersionForCipherSuite(cipherSuite, version);
@@ -4335,6 +4338,7 @@ public class TlsUtils
      * @deprecated Use {@link #getSupportedCipherSuites(TlsCrypto, int[], int, int)} instead.
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites, int suitesCount)
     {
         return getSupportedCipherSuites(crypto, suites, 0, suitesCount);

@@ -391,6 +391,7 @@ public class TreeKEMPublicKey
         return node.getLeafNode();
     }
 
+    @SuppressWarnings("NonApiType")
     public ArrayList<NodeIndex> resolve(NodeIndex index)
     {
         boolean atLeaf = (index.level() == 0);

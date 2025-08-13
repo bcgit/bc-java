@@ -221,6 +221,7 @@ public class PublicKeyPacket
      * @deprecated use versioned {@link #PublicKeyPacket(int, int, Date, BCPGKey)} instead
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public PublicKeyPacket(
         int algorithm,
         Date time,

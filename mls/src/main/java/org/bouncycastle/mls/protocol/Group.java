@@ -56,7 +56,7 @@ import org.bouncycastle.mls.crypto.Secret;
 public class Group
 {
 
-    public class GroupWithMessage
+    public static class GroupWithMessage
     {
         public Group group;
         public MLSMessage message;
@@ -393,7 +393,7 @@ public class Group
         return suite;
     }
 
-    public ArrayList<Extension> getExtensions()
+    public List<Extension> getExtensions()
     {
         return extensions;
     }

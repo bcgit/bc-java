@@ -33,6 +33,7 @@ public class JcaTlsRSASigner
      * @deprecated Use constructor without 'publicKey' parameter.
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public JcaTlsRSASigner(JcaTlsCrypto crypto, PrivateKey privateKey, PublicKey publicKey)
     {
         this(crypto, privateKey);
