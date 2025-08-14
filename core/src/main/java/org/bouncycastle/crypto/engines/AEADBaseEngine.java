@@ -106,6 +106,7 @@ abstract class AEADBaseEngine
     protected int KEY_SIZE;
     protected int IV_SIZE;
     protected int MAC_SIZE;
+    protected int macSizeLowerBound = 0;
     protected byte[] initialAssociatedText;
     protected byte[] mac;
     protected byte[] m_buf;
@@ -157,9 +158,22 @@ abstract class AEADBaseEngine
             initialAssociatedText = aeadParameters.getAssociatedText();
 
             int macSizeBits = aeadParameters.getMacSize();
-            if (macSizeBits != MAC_SIZE * 8)
+            if (macSizeLowerBound == 0)
             {
-                throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
+                if (macSizeBits != (MAC_SIZE << 3))
+                {
+                    throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
+                }
+            }
+            else
+            {
+                //TODO: set macSizeUpperBound instead of 128 fix value if necessary
+                if (macSizeBits > 128 || macSizeBits < (macSizeLowerBound << 3) || (macSizeBits & 7) != 0)
+                {
+                    throw new IllegalArgumentException("MAC size must be between " + (macSizeLowerBound << 3) +
+                        " and 128 bits for " + algorithmName);
+                }
+                MAC_SIZE = macSizeBits >>> 3;
             }
         }
         else if (params instanceof ParametersWithIV)
