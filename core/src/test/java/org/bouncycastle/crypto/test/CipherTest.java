@@ -362,7 +362,7 @@ public abstract class CipherTest
         }
         len += cipher.doFinal(plaintext1, len);
 
-        test.testException("Invalid value for MAC size: ", "IllegalArgumentException", new TestExceptionOperation()
+        test.testException("MAC size", "IllegalArgumentException", new TestExceptionOperation()
         {
             @Override
             public void operation()

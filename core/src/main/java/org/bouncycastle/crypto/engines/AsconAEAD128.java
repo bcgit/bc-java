@@ -4,15 +4,15 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
- * Ascon-AEAD128 was introduced as part of the NIST Lightweight Cryptography
- * competition and described in the NIST Special Publication SP 800-232 (Initial
- * Public Draft).
- * For additional details, see:
- * <ul>
- *     <li><a href="https://csrc.nist.gov/pubs/sp/800/232/ipd">NIST SP 800-232 (Initial Public Draft)</a></li>
- *     <li><a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
- *     ASM implementations of Ascon (NIST SP 800-232)</a></li>
- * </ul>
+ * Ascon-AEAD128 was introduced in NIST Special Publication (SP) 800-232
+ * <p>
+ * Additional details and the specification can be found in:
+ * <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-232.pdf">NIST SP 800-232
+ * Ascon-Based Lightweight Cryptography Standards for Constrained Devices</a>.
+ * For reference source code and implementation details, please see:
+ * <a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
+ * ASM implementations of Ascon (NIST SP 800-232)</a>.
+ * </p>
  *
  * @version 1.3
  */
@@ -26,6 +26,7 @@ public class AsconAEAD128
         algorithmName = "Ascon-AEAD128";
         nr = 8;
         dsep = -9223372036854775808L; //0x80L << 56
+        macSizeLowerBound = 4;
         setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Default);
     }
 
