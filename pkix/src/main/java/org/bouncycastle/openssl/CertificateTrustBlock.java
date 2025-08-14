@@ -103,9 +103,9 @@ public class CertificateTrustBlock
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        for (Iterator it = oids.iterator(); it.hasNext();)
+        for (ASN1ObjectIdentifier oid : oids)
         {
-           v.add((ASN1Encodable)it.next());
+            v.add((ASN1Encodable)oid);
         }
 
         return new DERSequence(v);

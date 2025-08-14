@@ -46,9 +46,9 @@ public class BERBitString
             contents[0] = padBits;
 
             int pos = 1;
-            for (int i = 0; i < count; ++i)
+            for (ASN1BitString bitString : bitStrings)
             {
-                byte[] elementContents = bitStrings[i].contents;
+                byte[] elementContents = bitString.contents;
                 int length = elementContents.length - 1;
                 System.arraycopy(elementContents, 1, contents, pos, length);
                 pos += length;
@@ -125,9 +125,9 @@ public class BERBitString
 
         if (null != elements)
         {
-            for (int i = 0; i < elements.length; ++i)
+            for (ASN1BitString element : elements)
             {
-                totalLength += elements[i].encodedLength(true);
+                totalLength += element.encodedLength(true);
             }
         }
         else if (contents.length < 2)
