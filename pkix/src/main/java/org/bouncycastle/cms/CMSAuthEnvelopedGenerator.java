@@ -1,8 +1,5 @@
 package org.bouncycastle.cms;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 
