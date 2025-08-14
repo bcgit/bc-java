@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
-import java.util.Enumeration;
-
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Object;
@@ -40,10 +39,9 @@ public class PrivateKeyUsagePeriod
 
     private PrivateKeyUsagePeriod(ASN1Sequence seq)
     {
-        Enumeration en = seq.getObjects();
-        while (en.hasMoreElements())
+        for (ASN1Encodable element : seq)
         {
-            ASN1TaggedObject tObj = (ASN1TaggedObject)en.nextElement();
+            ASN1TaggedObject tObj = (ASN1TaggedObject)element;
 
             if (tObj.getTagNo() == 0)
             {
