@@ -705,6 +705,54 @@ abstract class AEADBaseEngine
         }
     }
 
+    protected class DecryptionFailureCounter
+    {
+        public DecryptionFailureCounter(int n)
+        {
+            this.n = n;
+            counter = new int[(n + 31) >>> 5];
+        }
+
+        private final int n;
+        private final int[] counter;
+
+        public boolean increment()
+        {
+            int i = counter.length;
+            while (--i >= 0)
+            {
+                if (++counter[i] != 0)
+                {
+                    break;
+                }
+            }
+            if ((n & 31) == 0)
+            {
+                for (i = 0; i < counter.length; ++i)
+                {
+                    if (counter[i] != 0)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            for (i = 1; i < counter.length; ++i)
+            {
+                if (counter[i] != 0)
+                {
+                    return false;
+                }
+            }
+            return counter[0] != (1 << (n & 31));
+        }
+
+        public void reset()
+        {
+            Arrays.fill(counter, 0);
+        }
+    }
+
     @Override
     public void processAADByte(byte input)
     {
