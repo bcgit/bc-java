@@ -120,6 +120,8 @@ abstract class AEADBaseEngine
     protected AADProcessingBuffer processor;
     protected AADOperator aadOperator;
     protected DataOperator dataOperator;
+    //Only AsconAEAD128 uses this counter;
+    protected DecryptionFailureCounter decryptionFailureCounter = null;
 
     @Override
     public String getAlgorithmName()
@@ -705,16 +707,27 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected class DecryptionFailureCounter
+    protected static class DecryptionFailureCounter
     {
-        public DecryptionFailureCounter(int n)
-        {
-            this.n = n;
-            counter = new int[(n + 31) >>> 5];
-        }
+        private int n;
+        private int[] counter;
 
-        private final int n;
-        private final int[] counter;
+        public void init(int n)
+        {
+            if (this.n != n)
+            {
+                this.n = n;
+                int len = (n + 31) >>> 5;
+                if (counter == null || len != counter.length)
+                {
+                    counter = new int[len];
+                }
+                else
+                {
+                    reset();
+                }
+            }
+        }
 
         public boolean increment()
         {
@@ -726,17 +739,6 @@ abstract class AEADBaseEngine
                     break;
                 }
             }
-            if ((n & 31) == 0)
-            {
-                for (i = 0; i < counter.length; ++i)
-                {
-                    if (counter[i] != 0)
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
             for (i = 1; i < counter.length; ++i)
             {
                 if (counter[i] != 0)
@@ -744,7 +746,7 @@ abstract class AEADBaseEngine
                     return false;
                 }
             }
-            return counter[0] != (1 << (n & 31));
+            return counter[0] != ((n & 31) == 0 ? 0 : 1 << (n & 31));
         }
 
         public void reset()
@@ -953,6 +955,10 @@ abstract class AEADBaseEngine
         {
             if (!Arrays.constantTimeAreEqual(MAC_SIZE, mac, 0, m_buf, m_bufPos))
             {
+                if (decryptionFailureCounter != null && decryptionFailureCounter.increment())
+                {
+                    throw new InvalidCipherTextException(algorithmName + " decryption failure limit exceeded");
+                }
                 throw new InvalidCipherTextException(algorithmName + " mac does not match");
             }
         }
