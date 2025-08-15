@@ -1357,17 +1357,27 @@ public class AsconTest
         ascon.init(forEncryption, parameters);
     }
 
-    protected class DecryptionFailureCounter
+    protected static class DecryptionFailureCounter
     {
-        public DecryptionFailureCounter(int n)
+        int n;
+        int[] counter;
+
+        public void init(int n)
         {
-            this.n = n;
-            counter = new int[(n + 31) >>> 5];
+            if (this.n != n)
+            {
+                this.n = n;
+                int len = (n + 31) >>> 5;
+                if (counter == null || len != counter.length)
+                {
+                    counter = new int[len];
+                }
+                else
+                {
+                    reset();
+                }
+            }
         }
-
-        public final int n;
-
-        public final int[] counter;
 
         public boolean increment()
         {
@@ -1379,17 +1389,6 @@ public class AsconTest
                     break;
                 }
             }
-            if ((n & 31) == 0)
-            {
-                for (i = 0; i < counter.length; ++i)
-                {
-                    if (counter[i] != 0)
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
             for (i = 1; i < counter.length; ++i)
             {
                 if (counter[i] != 0)
@@ -1397,7 +1396,7 @@ public class AsconTest
                     return false;
                 }
             }
-            return counter[0] != (1 << (n & 31));
+            return counter[0] != ((n & 31) == 0 ? 0 : 1 << (n & 31));
         }
 
         public void reset()
@@ -1409,9 +1408,20 @@ public class AsconTest
     public void testDecryptionFailureCounter()
     {
         int n = 34;
-        DecryptionFailureCounter counter = new DecryptionFailureCounter(n);
+        DecryptionFailureCounter counter = new DecryptionFailureCounter();
+        counter.init(n);
         counter.counter[counter.counter.length - 1] = -2;
         counter.counter[0] = 1;
+        isTrue(!counter.increment());
+        isTrue(counter.increment());
+
+        counter.init(32);
+        counter.counter[counter.counter.length - 1] = -1;
+        isTrue(!counter.increment());
+        isTrue(counter.increment());
+
+        counter.init(5);
+        counter.counter[counter.counter.length - 1] = (1 << 5) - 1;
         isTrue(!counter.increment());
         isTrue(counter.increment());
     }

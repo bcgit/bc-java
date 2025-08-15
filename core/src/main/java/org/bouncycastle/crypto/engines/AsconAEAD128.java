@@ -28,6 +28,7 @@ public class AsconAEAD128
         dsep = -9223372036854775808L; //0x80L << 56
         macSizeLowerBound = 4;
         setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Default);
+        decryptionFailureCounter = new DecryptionFailureCounter();
     }
 
     protected long pad(int i)
@@ -141,8 +142,16 @@ public class AsconAEAD128
     protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        K0 = Pack.littleEndianToLong(key, 0);
-        K1 = Pack.littleEndianToLong(key, 8);
+        int lambda = (MAC_SIZE << 3) - 32;
+        long K0 = Pack.littleEndianToLong(key, 0);
+        long K1 = Pack.littleEndianToLong(key, 8);
+        decryptionFailureCounter.init(lambda);
+        if (this.K0 != K0 || this.K1 != K1)
+        {
+            decryptionFailureCounter.reset();
+            this.K0 = K0;
+            this.K1 = K1;
+        }
         N0 = Pack.littleEndianToLong(iv, 0);
         N1 = Pack.littleEndianToLong(iv, 8);
     }
