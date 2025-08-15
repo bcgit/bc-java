@@ -28,7 +28,7 @@ public class AsconAEAD128
         dsep = -9223372036854775808L; //0x80L << 56
         macSizeLowerBound = 4;
         setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Default);
-        decryptionFailureCounter = new DecryptionFailureCounter();
+        decryptionFailureCounter = new Counter();
     }
 
     protected long pad(int i)

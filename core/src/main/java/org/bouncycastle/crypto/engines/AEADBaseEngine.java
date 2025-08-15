@@ -121,7 +121,7 @@ abstract class AEADBaseEngine
     protected AADOperator aadOperator;
     protected DataOperator dataOperator;
     //Only AsconAEAD128 uses this counter;
-    protected DecryptionFailureCounter decryptionFailureCounter = null;
+    protected Counter decryptionFailureCounter = null;
 
     @Override
     public String getAlgorithmName()
@@ -707,7 +707,7 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected static class DecryptionFailureCounter
+    protected static class Counter
     {
         private int n;
         private int[] counter;
