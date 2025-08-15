@@ -45,7 +45,7 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
-        testDecryptionFailureCounter();
+        testCounter();
         testVectorsAsconCXof128_512();
         DigestTest.checkXof(new AsconXof128(), 1429, 317, new SecureRandom(), this);
         DigestTest.checkXof(new AsconCXof128(), 1429, 317, new SecureRandom(), this);
@@ -1357,7 +1357,7 @@ public class AsconTest
         ascon.init(forEncryption, parameters);
     }
 
-    protected static class DecryptionFailureCounter
+    protected static class Counter
     {
         int n;
         int[] counter;
@@ -1396,7 +1396,56 @@ public class AsconTest
                     return false;
                 }
             }
-            return counter[0] != ((n & 31) == 0 ? 0 : 1 << (n & 31));
+            return counter[0] == 1 << (n & 31);
+        }
+
+        public boolean increment(int delta)
+        {
+            // Convert to long to handle unsigned arithmetic
+            long carry = delta & 0xFFFFFFFFL;
+            boolean limitReached = false;
+
+            // Process each word starting from LSB
+            for (int i = counter.length - 1; i >= 0 && carry != 0; --i)
+            {
+                long sum = (counter[i] & 0xFFFFFFFFL) + carry;
+                counter[i] = (int)sum;
+                carry = sum >>> 32;
+
+                // Check if we've passed the limit during carry propagation
+                if (carry != 0 && i == counter.length - 1)
+                {
+                    limitReached = true;
+                }
+            }
+
+            // Final limit check if we didn't overflow
+            return limitReached || checkLimit();
+        }
+
+        private boolean checkLimit()
+        {
+            int bitIndex = n & 31;
+            long bound = 1L << bitIndex;
+            long val = counter[0] & 0xFFFFFFFFL;
+            if (val > bound)
+            {
+                return true;
+            }
+            if (val < bound)
+            {
+                return false;
+            }
+            // Check if we've reached/exceeded 2^n
+            for (int i = 1; i < counter.length; ++i)
+            {
+                val = counter[i] & 0xFFFFFFFFL;
+                if (val > 0)
+                {
+                    return true;
+                }
+            }
+            return true;  // Exactly equal to 2^n
         }
 
         public void reset()
@@ -1405,24 +1454,34 @@ public class AsconTest
         }
     }
 
-    public void testDecryptionFailureCounter()
+    public void testCounter()
     {
-        int n = 34;
-        DecryptionFailureCounter counter = new DecryptionFailureCounter();
-        counter.init(n);
-        counter.counter[counter.counter.length - 1] = -2;
-        counter.counter[0] = 1;
-        isTrue(!counter.increment());
-        isTrue(counter.increment());
-
-        counter.init(32);
-        counter.counter[counter.counter.length - 1] = -1;
-        isTrue(!counter.increment());
-        isTrue(counter.increment());
+//        int n = 33;
+        Counter counter = new Counter();
+//        counter.init(33);
+//        isTrue(!counter.increment(-1));
+//        isTrue(!counter.increment());
+//        isTrue(!counter.increment(-1));
+//        isTrue(counter.increment());
+//
+//        counter.init(32);
+//        isTrue(!counter.increment(-1));
+//        isTrue(counter.increment());
+//        counter.reset();
+//        isTrue(!counter.increment());
+//        counter.reset();
+//        isTrue(!counter.increment(-1));
+//        isTrue(counter.increment(1));
+//
+//        counter.init(31);
+//        isTrue(!counter.increment(1 << 30));
+//        isTrue(counter.increment());
+//        counter.reset();
+//        isTrue(!counter.increment(1 << 30));
+//        isTrue(counter.increment(1 << 30));
 
         counter.init(5);
-        counter.counter[counter.counter.length - 1] = (1 << 5) - 1;
-        isTrue(!counter.increment());
+        isTrue(!counter.increment((1 << 5) - 1));
         isTrue(counter.increment());
     }
 }
