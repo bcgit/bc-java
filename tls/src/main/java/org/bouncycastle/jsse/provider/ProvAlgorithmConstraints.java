@@ -10,7 +10,7 @@ import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 
 class ProvAlgorithmConstraints
-    extends AbstractAlgorithmConstraints
+    implements BCAlgorithmConstraints
 {
     private static final Logger LOG = Logger.getLogger(ProvAlgorithmConstraints.class.getName());
 
@@ -43,8 +43,6 @@ class ProvAlgorithmConstraints
 
     ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints, boolean enableX509Constraints)
     {
-        super(null);
-
         this.configAlgorithmConstraints = configAlgorithmConstraints;
         this.supportedSignatureAlgorithms = null;
         this.enableX509Constraints = enableX509Constraints;
@@ -53,17 +51,15 @@ class ProvAlgorithmConstraints
     ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints,
         String[] supportedSignatureAlgorithms, boolean enableX509Constraints)
     {
-        super(null);
-
         this.configAlgorithmConstraints = configAlgorithmConstraints;
-        this.supportedSignatureAlgorithms = asUnmodifiableSet(supportedSignatureAlgorithms);
+        this.supportedSignatureAlgorithms = AbstractAlgorithmConstraints.asUnmodifiableSet(supportedSignatureAlgorithms);
         this.enableX509Constraints = enableX509Constraints;
     }
 
     public boolean permits(Set<BCCryptoPrimitive> primitives, String algorithm, AlgorithmParameters parameters)
     {
-        checkPrimitives(primitives);
-        checkAlgorithmName(algorithm);
+        AbstractAlgorithmConstraints.checkPrimitives(primitives);
+        AbstractAlgorithmConstraints.checkAlgorithmName(algorithm);
 
         if (null != supportedSignatureAlgorithms)
         {
@@ -105,8 +101,8 @@ class ProvAlgorithmConstraints
 
     public boolean permits(Set<BCCryptoPrimitive> primitives, Key key)
     {
-        checkPrimitives(primitives);
-        checkKey(key);
+        AbstractAlgorithmConstraints.checkPrimitives(primitives);
+        AbstractAlgorithmConstraints.checkKey(key);
 
         if (null != configAlgorithmConstraints && !configAlgorithmConstraints.permits(primitives, key))
         {
@@ -129,9 +125,9 @@ class ProvAlgorithmConstraints
 
     public boolean permits(Set<BCCryptoPrimitive> primitives, String algorithm, Key key, AlgorithmParameters parameters)
     {
-        checkPrimitives(primitives);
-        checkAlgorithmName(algorithm);
-        checkKey(key);
+        AbstractAlgorithmConstraints.checkPrimitives(primitives);
+        AbstractAlgorithmConstraints.checkAlgorithmName(algorithm);
+        AbstractAlgorithmConstraints.checkKey(key);
 
         if (null != supportedSignatureAlgorithms)
         {
@@ -175,6 +171,6 @@ class ProvAlgorithmConstraints
 
     private boolean isSupportedSignatureAlgorithm(String algorithmBC)
     {
-        return containsIgnoreCase(supportedSignatureAlgorithms, algorithmBC);
+        return AbstractAlgorithmConstraints.containsIgnoreCase(supportedSignatureAlgorithms, algorithmBC);
     }
 }
