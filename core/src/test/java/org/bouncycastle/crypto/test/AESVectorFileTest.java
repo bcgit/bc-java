@@ -200,9 +200,9 @@ public class AESVectorFileTest
     public TestResult perform()
     {
         countOfTests = 0;
-        for (int i = 0; i < zipFileNames.length; i++)
+        for (String zipFileName : zipFileNames)
         {
-            File inf = new File(zipFileNames[i]);
+            File inf = new File(zipFileName);
             TestResult res = performTestsFromZipFile(inf);
             if (!res.isSuccessful())
             {

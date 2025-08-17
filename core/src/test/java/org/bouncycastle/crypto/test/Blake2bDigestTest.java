@@ -97,20 +97,20 @@ public class Blake2bDigestTest
         // test keyed test vectors:
 
         Blake2bDigest blake2bkeyed = new Blake2bDigest(Hex.decode(keyedTestVectors[0][1]));
-        for (int tv = 0; tv < keyedTestVectors.length; tv++)
+        for (String[] keyedTestVector : keyedTestVectors)
         {
 
-            byte[] input = Hex.decode(keyedTestVectors[tv][0]);
+            byte[] input = Hex.decode(keyedTestVector[0]);
             blake2bkeyed.reset();
 
             blake2bkeyed.update(input, 0, input.length);
             byte[] keyedHash = new byte[64];
             blake2bkeyed.doFinal(keyedHash, 0);
 
-            if (!Arrays.areEqual(Hex.decode(keyedTestVectors[tv][2]), keyedHash))
+            if (!Arrays.areEqual(Hex.decode(keyedTestVector[2]), keyedHash))
             {
                 fail("BLAKE2b mismatch on test vector ",
-                    keyedTestVectors[tv][2],
+                    keyedTestVector[2],
                     new String(Hex.encode(keyedHash)));
             }
 
@@ -119,27 +119,27 @@ public class Blake2bDigestTest
 
         Blake2bDigest blake2bunkeyed = new Blake2bDigest();
         // test unkeyed test vectors:
-        for (int i = 0; i < unkeyedTestVectors.length; i++)
+        for (String[] unkeyedTestVector : unkeyedTestVectors)
         {
 
             // blake2bunkeyed.update(
             // unkeyedTestVectors[i][1].getBytes("UTF-8"));
             // test update(byte b)
-            byte[] unkeyedInput = Strings.toUTF8ByteArray(unkeyedTestVectors[i][1]);
-            for (int j = 0; j < unkeyedInput.length; j++)
+            byte[] unkeyedInput = Strings.toUTF8ByteArray(unkeyedTestVector[1]);
+            for (byte b : unkeyedInput)
             {
-                blake2bunkeyed.update(unkeyedInput[j]);
+                blake2bunkeyed.update(b);
             }
 
             byte[] unkeyedHash = new byte[64];
             blake2bunkeyed.doFinal(unkeyedHash, 0);
             blake2bunkeyed.reset();
 
-            if (!Arrays.areEqual(Hex.decode(unkeyedTestVectors[i][0]),
+            if (!Arrays.areEqual(Hex.decode(unkeyedTestVector[0]),
                 unkeyedHash))
             {
                 fail("BLAKE2b mismatch on test vector ",
-                    unkeyedTestVectors[i][0],
+                    unkeyedTestVector[0],
                     new String(Hex.encode(unkeyedHash)));
             }
         }

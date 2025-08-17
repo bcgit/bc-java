@@ -184,9 +184,9 @@ public abstract class ASN1NumericString
 
     static boolean isNumericString(byte[] contents)
     {
-        for (int i = 0; i < contents.length; ++i)
+        for (byte content : contents)
         {
-            switch (contents[i])
+            switch (content)
             {
             case 0x20:
             case 0x30:

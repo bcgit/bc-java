@@ -151,9 +151,8 @@ public class BouncyCastlePQCProvider
 
     public void addAttributes(String key, Map<String, String> attributeMap)
     {
-        for (Iterator it = attributeMap.keySet().iterator(); it.hasNext(); )
+        for (String attributeName : attributeMap.keySet())
         {
-            String attributeName = (String)it.next();
             String attributeKey = key + " " + attributeName;
             if (containsKey(attributeKey))
             {

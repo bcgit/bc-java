@@ -1849,10 +1849,8 @@ public class BcSignedDataTest
     {
         CMSSignedData sd = new CMSSignedData(xtraCounterSig);
 
-        for (Iterator sI = sd.getSignerInfos().getSigners().iterator(); sI.hasNext();)
+        for (SignerInformation sigI : sd.getSignerInfos().getSigners())
         {
-            SignerInformation sigI = (SignerInformation)sI.next();
-
             SignerInformationStore counter = sigI.getCounterSignatures();
             List sigs = new ArrayList(counter.getSigners());
 

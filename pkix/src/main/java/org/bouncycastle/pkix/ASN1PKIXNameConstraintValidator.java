@@ -162,9 +162,9 @@ class ASN1PKIXNameConstraintValidator
             ((Set)subtreesMap.get(tagNo)).add(subtree);
         }
 
-        for (Iterator it = subtreesMap.entrySet().iterator(); it.hasNext();)
+        for (Object o : subtreesMap.entrySet())
         {
-            Map.Entry entry = (Map.Entry)it.next();
+            Map.Entry entry = (Map.Entry)o;
 
             // go through all subtree groups
             int nameType = ((Integer)entry.getKey()).intValue();
@@ -441,10 +441,9 @@ class ASN1PKIXNameConstraintValidator
     private Set intersectDN(Set permitted, Set dns)
     {
         Set intersect = new HashSet();
-        for (Iterator it = dns.iterator(); it.hasNext();)
+        for (Object object : dns)
         {
-            ASN1Sequence dn = ASN1Sequence.getInstance(((GeneralSubtree)it
-                .next()).getBase().getName().toASN1Primitive());
+            ASN1Sequence dn = ASN1Sequence.getInstance(((GeneralSubtree)object).getBase().getName().toASN1Primitive());
             if (permitted == null)
             {
                 if (dn != null)
@@ -535,9 +534,9 @@ class ASN1PKIXNameConstraintValidator
     private Set intersectEmail(Set permitted, Set emails)
     {
         Set intersect = new HashSet();
-        for (Iterator it = emails.iterator(); it.hasNext();)
+        for (Object object : emails)
         {
-            String email = extractNameAsString(((GeneralSubtree)it.next())
+            String email = extractNameAsString(((GeneralSubtree)object)
                 .getBase());
 
             if (permitted == null)
@@ -601,10 +600,9 @@ class ASN1PKIXNameConstraintValidator
     private Set intersectIP(Set permitted, Set ips)
     {
         Set intersect = new HashSet();
-        for (Iterator it = ips.iterator(); it.hasNext();)
+        for (Object object : ips)
         {
-            byte[] ip = ASN1OctetString.getInstance(
-                ((GeneralSubtree)it.next()).getBase().getName()).getOctets();
+            byte[] ip = ASN1OctetString.getInstance(((GeneralSubtree)object).getBase().getName()).getOctets();
             if (permitted == null)
             {
                 if (ip != null)
@@ -1415,9 +1413,9 @@ class ASN1PKIXNameConstraintValidator
     private Set intersectDNS(Set permitted, Set dnss)
     {
         Set intersect = new HashSet();
-        for (Iterator it = dnss.iterator(); it.hasNext();)
+        for (Object object : dnss)
         {
-            String dns = extractNameAsString(((GeneralSubtree)it.next())
+            String dns = extractNameAsString(((GeneralSubtree)object)
                 .getBase());
             if (permitted == null)
             {
@@ -1614,9 +1612,9 @@ class ASN1PKIXNameConstraintValidator
     private Set intersectURI(Set permitted, Set uris)
     {
         Set intersect = new HashSet();
-        for (Iterator it = uris.iterator(); it.hasNext();)
+        for (Object object : uris)
         {
-            String uri = extractNameAsString(((GeneralSubtree)it.next())
+            String uri = extractNameAsString(((GeneralSubtree)object)
                 .getBase());
             if (permitted == null)
             {
@@ -2037,13 +2035,13 @@ class ASN1PKIXNameConstraintValidator
     {
         StringBuilder temp = new StringBuilder();
         temp.append("[");
-        for (Iterator it = ips.iterator(); it.hasNext();)
+        for (Object ip : ips)
         {
             if (temp.length() > 1)
             {
                 temp.append(",");
             }
-            temp.append(stringifyIP((byte[])it.next()));
+            temp.append(stringifyIP((byte[])ip));
         }
         temp.append("]");
         return temp.toString();
@@ -2053,13 +2051,13 @@ class ASN1PKIXNameConstraintValidator
     {
         StringBuilder temp = new StringBuilder();
         temp.append("[");
-        for (Iterator it = otherNames.iterator(); it.hasNext();)
+        for (Object otherName : otherNames)
         {
             if (temp.length() > 1)
             {
                 temp.append(",");
             }
-            OtherName name = OtherName.getInstance(it.next());
+            OtherName name = OtherName.getInstance(otherName);
             temp.append(name.getTypeID().getId());
             temp.append(":");
             try
