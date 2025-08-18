@@ -301,6 +301,7 @@ abstract class AEADBaseEngine
             break;
         case AADOperatorType.DATA_LIMIT:
             m_aad = new byte[AADBufferSize];
+            dataLimitCounter = new DataLimitCounter();
             aadOperator = new DataLimitAADOperator();
             break;
         }
