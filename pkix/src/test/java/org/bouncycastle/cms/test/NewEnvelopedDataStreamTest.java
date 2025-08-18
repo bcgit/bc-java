@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -254,6 +255,24 @@ public class NewEnvelopedDataStreamTest
     public void testKeyTransAES128GCM()
         throws Exception
     {
+        implTestKeyTrans(CMSAlgorithm.AES128_GCM);
+    }
+
+    public void testKeyTransAES192GCM()
+        throws Exception
+    {
+        implTestKeyTrans(CMSAlgorithm.AES192_GCM);
+    }
+
+    public void testKeyTransAES256GCM()
+        throws Exception
+    {
+        implTestKeyTrans(CMSAlgorithm.AES256_GCM);
+    }
+
+    private void implTestKeyTrans(ASN1ObjectIdentifier contentEncryptionOID)
+        throws Exception
+    {
         byte[] data = new byte[2000];
 
         for (int i = 0; i != 2000; i++)
@@ -271,7 +290,7 @@ public class NewEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         OutputStream out = edGen.open(
-            bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(BC).build());
+            bOut, new JceCMSContentEncryptorBuilder(contentEncryptionOID).setProvider(BC).build());
 
         for (int i = 0; i != 2000; i++)
         {
@@ -280,7 +299,7 @@ public class NewEnvelopedDataStreamTest
 
         out.close();
 
-        verifyData(bOut, CMSAlgorithm.AES128_GCM.getId(), data);
+        verifyData(bOut, contentEncryptionOID.getId(), data);
 
         int unbufferedLength = bOut.toByteArray().length;
 
@@ -293,7 +312,7 @@ public class NewEnvelopedDataStreamTest
 
         bOut = new ByteArrayOutputStream();
 
-        out = edGen.open(bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(BC).build());
+        out = edGen.open(bOut, new JceCMSContentEncryptorBuilder(contentEncryptionOID).setProvider(BC).build());
 
         BufferedOutputStream bfOut = new BufferedOutputStream(out, 300);
 
@@ -304,7 +323,7 @@ public class NewEnvelopedDataStreamTest
 
         bfOut.close();
 
-        verifyData(bOut, CMSAlgorithm.AES128_GCM.getId(), data);
+        verifyData(bOut, contentEncryptionOID.getId(), data);
 
         assertTrue(bOut.toByteArray().length == unbufferedLength);
     }
@@ -742,6 +761,49 @@ public class NewEnvelopedDataStreamTest
         RecipientInformationStore recipients = ep.getRecipientInfos();
 
         assertEquals(ep.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
+
+        RecipientId recSel = new KEKRecipientId(kekId2);
+
+        RecipientInformation recipient = recipients.get(recSel);
+
+        assertEquals(recipient.getKeyEncryptionAlgOID(), "2.16.840.1.101.3.4.1.25");
+
+        CMSTypedStream recData = recipient.getContentStream(new JceKEKEnvelopedRecipient(kek2).setProvider(BC));
+
+        assertEquals(true, Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));
+
+        ep.close();
+    }
+
+    public void testTwoAESKEKWithPrecomputedContentKey()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+        SecretKey kek1 = CMSTestUtil.makeAES192Key();
+        SecretKey kek2 = CMSTestUtil.makeAES192Key();
+
+        CMSEnvelopedDataStreamGenerator edGen = new CMSEnvelopedDataStreamGenerator();
+
+        byte[] kekId1 = new byte[]{1, 2, 3, 4, 5};
+        byte[] kekId2 = new byte[]{5, 4, 3, 2, 1};
+
+        edGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId1, kek1).setProvider(BC));
+        edGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId2, kek2).setProvider(BC));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        OutputStream out = edGen.open(
+            bOut,
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build(Hex.decode("000102030405060708090a0b0c0d0e0f")));
+        out.write(data);
+
+        out.close();
+
+        CMSEnvelopedDataParser ep = new CMSEnvelopedDataParser(bOut.toByteArray());
+
+        RecipientInformationStore recipients = ep.getRecipientInfos();
+
+        assertEquals(ep.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
 
         RecipientId recSel = new KEKRecipientId(kekId2);
 

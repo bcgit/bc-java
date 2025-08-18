@@ -219,10 +219,10 @@ public class ECJPAKEUtil
 
         ECPoint x_normalized = X.normalize();
         // 2. Check x and y coordinates are in Fq, i.e., x, y in [0, q-1]
-        if (x_normalized.getAffineXCoord().toBigInteger().compareTo(BigInteger.ZERO) == -1 ||
-            x_normalized.getAffineXCoord().toBigInteger().compareTo(q.subtract(BigInteger.ONE)) == 1 ||
-            x_normalized.getAffineYCoord().toBigInteger().compareTo(BigInteger.ZERO) == -1 ||
-            x_normalized.getAffineYCoord().toBigInteger().compareTo(q.subtract(BigInteger.ONE)) == 1)
+        if (x_normalized.getAffineXCoord().toBigInteger().signum() < 0 ||
+            x_normalized.getAffineXCoord().toBigInteger().compareTo(q) >= 0 ||
+            x_normalized.getAffineYCoord().toBigInteger().signum() < 0 ||
+            x_normalized.getAffineYCoord().toBigInteger().compareTo(q) >= 0)
         {
             throw new CryptoException("Zero-knowledge proof validation failed: x and y are not in the field");
         }

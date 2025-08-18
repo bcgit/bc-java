@@ -26,9 +26,9 @@ import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.NameConstraints;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -42,7 +42,6 @@ import org.bouncycastle.pkix.util.ErrorBundle;
  */
 public class ValidateSignedMail
 {
-
     /*
      * Use trusted certificates from $JAVA_HOME/lib/security/cacerts as
      * trustanchors
@@ -51,7 +50,6 @@ public class ValidateSignedMail
 
     public static void main(String[] args) throws Exception
     {
-
         Security.addProvider(new BouncyCastleProvider());
 
         //
@@ -62,8 +60,7 @@ public class ValidateSignedMail
         Session session = Session.getDefaultInstance(props, null);
 
         // read message
-        MimeMessage msg = new MimeMessage(session, new FileInputStream(
-                "signed.message"));
+        MimeMessage msg = new MimeMessage(session, new FileInputStream("signed.message"));
 
         // create PKIXparameters
         PKIXParameters param;
@@ -137,8 +134,7 @@ public class ValidateSignedMail
         SignedMailValidator validator = new SignedMailValidator(msg, param);
 
         // iterate over all signatures and print results
-        Iterator it = validator.getSignerInformationStore().getSigners()
-                .iterator();
+        Iterator it = validator.getSignerInformationStore().getSigners().iterator();
         while (it.hasNext())
         {
             SignerInformation signer = (SignerInformation) it.next();
@@ -279,27 +275,26 @@ public class ValidateSignedMail
                 }
             }
         }
-
     }
 
-    protected static TrustAnchor getTrustAnchor(String trustcert)
-            throws Exception
+    protected static TrustAnchor getTrustAnchor(String trustcert) throws Exception
     {
         X509Certificate cert = loadCert(trustcert);
-        if (cert != null)
+        if (cert == null)
         {
-            byte[] ncBytes = cert
-                    .getExtensionValue(Extension.nameConstraints.getId());
-
-            if (ncBytes != null)
-            {
-                ASN1Encodable extValue = JcaX509ExtensionUtils
-                        .parseExtensionValue(ncBytes);
-                return new TrustAnchor(cert, extValue.toASN1Primitive().getEncoded(ASN1Encoding.DER));
-            }
-            return new TrustAnchor(cert, null);
+            return null;
         }
-        return null;
+
+        byte[] nameConstraints = null;
+
+        byte[] ncExtValue = cert.getExtensionValue(Extension.nameConstraints.getId());
+        if (ncExtValue != null)
+        {
+            NameConstraints nc = NameConstraints.getInstance(JcaX509ExtensionUtils.parseExtensionValue(ncExtValue));
+            nameConstraints = nc.getEncoded(ASN1Encoding.DER);
+        }
+
+        return new TrustAnchor(cert, nameConstraints);
     }
 
     protected static X509Certificate loadCert(String certfile)
@@ -350,5 +345,4 @@ public class ValidateSignedMail
         PublicKey trustPubKey = kpg.generateKeyPair().getPublic();
         return new TrustAnchor(principal, trustPubKey, null);
     }
-
 }

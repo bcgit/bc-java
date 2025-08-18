@@ -967,24 +967,42 @@ public class RSATest
 
         MessageDigest digest = MessageDigest.getInstance(digestOID.getId(), "BC");
         byte[] hash = digest.digest(sampleMessage);
-        byte[] digInfo = derEncode(digestOID, hash);
 
-        Signature rawSig = Signature.getInstance("RSA", "BC");
-        rawSig.initSign(privKey);
-        rawSig.update(digInfo);
-        byte[] rawResult = rawSig.sign();
-
-        if (!Arrays.areEqual(normalResult, rawResult))
         {
-            fail("raw mode signature differs from normal one");
+            Signature rawSig = Signature.getInstance("RSA", "BC");
+            rawSig.initSign(privKey);
+            rawSig.update(hash);
+            byte[] rawResult = rawSig.sign();
+
+            rawSig.initVerify(pubKey);
+            rawSig.update(hash);
+
+            if (!rawSig.verify(rawResult))
+            {
+                fail("raw mode (no DigestInfo) signature verification failed");
+            }
         }
 
-        rawSig.initVerify(pubKey);
-        rawSig.update(digInfo);
-
-        if (!rawSig.verify(rawResult))
         {
-            fail("raw mode signature verification failed");
+            byte[] digInfo = derEncode(digestOID, hash);
+
+            Signature rawSig = Signature.getInstance("RSA", "BC");
+            rawSig.initSign(privKey);
+            rawSig.update(digInfo);
+            byte[] rawResult = rawSig.sign();
+
+            if (!Arrays.areEqual(normalResult, rawResult))
+            {
+                fail("raw mode signature differs from normal one");
+            }
+
+            rawSig.initVerify(pubKey);
+            rawSig.update(digInfo);
+
+            if (!rawSig.verify(rawResult))
+            {
+                fail("raw mode signature verification failed");
+            }
         }
     }
 

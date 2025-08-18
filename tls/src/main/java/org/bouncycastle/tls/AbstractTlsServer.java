@@ -68,6 +68,8 @@ public abstract class AbstractTlsServer
     }
 
     /** @deprecated Use 'serverExtensions' directly, it is now never null */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     protected Hashtable checkServerExtensions()
     {
         return serverExtensions;

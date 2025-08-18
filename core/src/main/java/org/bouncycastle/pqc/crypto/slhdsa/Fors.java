@@ -70,8 +70,8 @@ class Fors
 //        int[] idxs = message_to_idxs(md, engine.K, engine.A);
         int[] idxs = base2B(md, engine.A, engine.K);
         SIG_FORS[] sig_fors = new SIG_FORS[engine.K];
+
 // compute signature elements
-        int t = engine.T;
         for (int i = 0; i < engine.K; i++)
         {
 // get next index
@@ -80,7 +80,7 @@ class Fors
             adrs.setTypeAndClear(ADRS.FORS_PRF);
             adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setTreeHeight(0);
-            adrs.setTreeIndex(i * t + idx);
+            adrs.setTreeIndex((i << engine.A) + idx);
 
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
 
@@ -90,8 +90,8 @@ class Fors
 // compute auth path
             for (int j = 0; j < engine.A; j++)
             {
-                int s = (idx / (1 << j)) ^ 1;
-                authPath[j] = treehash(skSeed, i * t + s * (1 << j), j, pkSeed, adrs);
+                int s = (idx >>> j) ^ 1;
+                authPath[j] = treehash(skSeed, (i << engine.A) + (s << j), j, pkSeed, adrs);
             }
             sig_fors[i] = new SIG_FORS(sk, authPath);
         }
@@ -102,7 +102,6 @@ class Fors
     {
         byte[][] node = new byte[2][];
         byte[][] root = new byte[engine.K][];
-        int t = engine.T;
 
 //        int[] idxs = message_to_idxs(message, engine.K, engine.A);
         int[] idxs = base2B(message, engine.A, engine.K);
@@ -114,16 +113,16 @@ class Fors
             // compute leaf
             byte[] sk = sig_fors[i].getSK();
             adrs.setTreeHeight(0);
-            adrs.setTreeIndex(i * t + idx);
+            adrs.setTreeIndex((i << engine.A) + idx);
             node[0] = engine.F(pkSeed, adrs, sk);
             // compute root from leaf and AUTH
             byte[][] authPath = sig_fors[i].getAuthPath();
 
-            adrs.setTreeIndex(i * t + idx);
+            adrs.setTreeIndex((i << engine.A) + idx);
             for (int j = 0; j < engine.A; j++)
             {
                 adrs.setTreeHeight(j + 1);
-                if (((idx / (1 << j)) % 2) == 0)
+                if ((idx & (1 << j)) == 0)
                 {
                     adrs.setTreeIndex(adrs.getTreeIndex() / 2);
                     node[1] = engine.H(pkSeed, adrs, node[0], authPath[j]);

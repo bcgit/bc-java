@@ -4,13 +4,13 @@ import org.bouncycastle.util.Arrays;
 
 class MLKEMIndCpa
 {
-    private MLKEMEngine engine;
-    private int kyberK;
-    private int indCpaPublicKeyBytes;
-    private int polyVecBytes;
-    private int indCpaBytes;
-    private int polyVecCompressedBytes;
-    private int polyCompressedBytes;
+    private final MLKEMEngine engine;
+    private final int kyberK;
+    private final int indCpaPublicKeyBytes;
+    private final int polyVecBytes;
+    private final int indCpaBytes;
+    private final int polyVecCompressedBytes;
+    private final int polyCompressedBytes;
 
     private Symmetric symmetric;
 

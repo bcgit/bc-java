@@ -79,7 +79,7 @@ public final class RC6
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new RC6Engine())));
+            super(new GMac(GCMBlockCipher.newInstance(new RC6Engine())));
         }
     }
 

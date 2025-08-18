@@ -170,8 +170,8 @@ public class TlsServerProtocol
             clientHelloExtensions, clientHelloMessage, handshakeHash, afterHelloRetryRequest);
 
         Vector clientShares = TlsExtensionsUtils.getKeyShareClientHello(clientHelloExtensions);
-        KeyShareEntry clientShare = null;
 
+        KeyShareEntry clientShare;
         if (afterHelloRetryRequest)
         {
             if (retryGroup < 0)

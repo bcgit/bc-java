@@ -66,6 +66,47 @@ public class KeccakDigest
         CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
     }
 
+    protected KeccakDigest(byte[] encodedState)
+    {
+        purpose = getCryptoServicePurpose(encodedState[0]);
+
+        int encOff = 1;
+        Pack.bigEndianToLong(encodedState, encOff, state, 0, state.length);
+        encOff += state.length * 8;
+        System.arraycopy(encodedState, encOff, dataQueue, 0, dataQueue.length);
+        encOff += dataQueue.length;
+        rate = Pack.bigEndianToInt(encodedState, encOff);
+        encOff += 4;
+        bitsInQueue = Pack.bigEndianToInt(encodedState, encOff);
+        encOff += 4;
+        fixedOutputLength = Pack.bigEndianToInt(encodedState, encOff);
+        encOff += 4;
+        squeezing = encodedState[encOff] != 0;
+    }
+
+    private static CryptoServicePurpose getCryptoServicePurpose(byte b)
+    {
+        CryptoServicePurpose[] values = CryptoServicePurpose.values();
+        return values[b];
+    }
+
+    protected void copyIn(KeccakDigest source)
+    {
+        if (this.purpose != source.purpose)
+        {
+            throw new IllegalArgumentException("attempt to copy digest of different purpose");
+        }
+
+        System.arraycopy(source.state, 0, this.state, 0, source.state.length);
+        System.arraycopy(source.dataQueue, 0, this.dataQueue, 0, source.dataQueue.length);
+        this.rate = source.rate;
+        this.bitsInQueue = source.bitsInQueue;
+        this.fixedOutputLength = source.fixedOutputLength;
+        this.squeezing = source.squeezing;
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
+    }
+
     public String getAlgorithmName()
     {
         return "Keccak-" + fixedOutputLength;
@@ -439,5 +480,30 @@ public class KeccakDigest
     protected CryptoServiceProperties cryptoServiceProperties()
     {
         return Utils.getDefaultProperties(this, getDigestSize() * 8, purpose);
+    }
+
+    protected byte[] getEncodedState(byte[] encState)
+    {
+        encState[0] = (byte)purpose.ordinal();
+
+        int sOff = 1;
+        for (int i = 0; i != state.length; i++)
+        {
+            Pack.longToBigEndian(state[i], encState, sOff);
+            sOff += 8;
+        }
+        
+        System.arraycopy(dataQueue, 0, encState, sOff, dataQueue.length);
+
+        sOff += dataQueue.length;
+        Pack.intToBigEndian(rate, encState, sOff);
+        sOff += 4;
+        Pack.intToBigEndian(bitsInQueue, encState, sOff);
+        sOff += 4;
+        Pack.intToBigEndian(fixedOutputLength, encState, sOff);
+        sOff += 4;
+        encState[sOff] = squeezing ? (byte)1 : (byte)0;
+
+        return encState;
     }
 }

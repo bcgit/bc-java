@@ -105,7 +105,7 @@ public class ASN1ObjectIdentifier
             }
         }
 
-        return (ASN1ObjectIdentifier)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1ObjectIdentifier)TYPE.getContextTagged(taggedObject, explicit);
     }
 
     public static ASN1ObjectIdentifier tryFromID(String identifier)

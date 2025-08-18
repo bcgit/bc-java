@@ -1,5 +1,13 @@
 package org.bouncycastle.openpgp.api;
 
+import org.bouncycastle.bcpg.AEADEncDataPacket;
+import org.bouncycastle.bcpg.InputStreamPacket;
+import org.bouncycastle.bcpg.SymmetricEncDataPacket;
+import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
+import org.bouncycastle.openpgp.PGPEncryptedDataList;
+import org.bouncycastle.openpgp.PGPException;
+
 /**
  * Encryption Mode.
  */
@@ -34,4 +42,58 @@ public enum EncryptedDataPacketType
      * Support for this feature is signalled using {@link org.bouncycastle.bcpg.sig.Features#FEATURE_AEAD_ENCRYPTED_DATA}.
      */
     LIBREPGP_OED // "v5"
+    ;
+
+    /**
+     * Detect the type of the PGPEncryptedDataList's encrypted data packet.
+     *
+     * @param encDataList encrypted data list
+     * @return encrypted data packet type
+     * @throws PGPException if an unexpected data packet is encountered.
+     */
+    public static EncryptedDataPacketType of(PGPEncryptedDataList encDataList)
+            throws PGPException
+    {
+        return of(encDataList.getEncryptedData());
+    }
+
+    /**
+     * Detect the type the provided encrypted data packet.
+     *
+     * @param encData encrypted data packet
+     * @return encrypted data packet type
+     * @throws PGPException if an unexpected data packet is encountered.
+     */
+    public static EncryptedDataPacketType of(InputStreamPacket encData)
+            throws PGPException
+    {
+        if (encData instanceof SymmetricEncIntegrityPacket)
+        {
+            SymmetricEncIntegrityPacket seipd = (SymmetricEncIntegrityPacket) encData;
+            if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_1)
+            {
+                return SEIPDv1;
+            }
+            else if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_2)
+            {
+                return SEIPDv2;
+            }
+            else
+            {
+                throw new UnsupportedPacketVersionException("Symmetrically-Encrypted Integrity-Protected Data Packet of unknown version encountered: " + seipd.getVersion());
+            }
+        }
+        else if (encData instanceof AEADEncDataPacket)
+        {
+            return LIBREPGP_OED;
+        }
+        else if (encData instanceof SymmetricEncDataPacket)
+        {
+            return SED;
+        }
+        else
+        {
+            throw new PGPException("Unexpected packet type: " + encData.getClass().getName());
+        }
+    }
 }

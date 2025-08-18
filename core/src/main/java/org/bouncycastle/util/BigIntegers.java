@@ -1,5 +1,7 @@
 package org.bouncycastle.util;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Map;
@@ -391,6 +393,16 @@ public final class BigIntegers
         while (!rv.isProbablePrime(certainty));
 
         return rv;
+    }
+
+    public static void writeUnsignedByteArray(OutputStream out, BigInteger n) throws IOException
+    {
+        byte[] b = n.toByteArray();
+
+        int off = b[0] == 0 ? 1 : 0;
+        int len = b.length - off;
+
+        out.write(b, off, len);
     }
 
     private static byte[] createRandom(int bitLength, SecureRandom random)

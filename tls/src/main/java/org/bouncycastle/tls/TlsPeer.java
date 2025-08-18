@@ -92,6 +92,7 @@ public interface TlsPeer
      *             {@link TlsUtils#checkPeerSigAlgs(TlsContext, TlsCertificate[])} once a complete
      *             CertPath has been determined (i.e. as part of chain validation).
      */
+    @Deprecated
     boolean shouldCheckSigAlgOfPeerCerts();
 
     boolean shouldUseExtendedMasterSecret();

@@ -7,18 +7,35 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * SHA3 Digest Test
  */
 public class SHA3DigestTest
-    extends SimpleTest
+    extends DigestTest
 {
+    private static String[] messages =
+    {
+        "",
+        "a",
+        "abc",
+        "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+    };
+
+    private static String[] digests =
+    {
+        "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a",
+        "80084bf2fba02475726feb2cab2d8215eab14bc6bdd8bfb2c8151257032ecd8b",
+        "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532",
+        "41c0dba2a9d6240849100376a8235e2c82e1b9998a999e21db32dd97496d3376"
+    };
+    
     static class MySHA3Digest extends SHA3Digest
     {
         MySHA3Digest(int bitLength)
@@ -34,6 +51,7 @@ public class SHA3DigestTest
 
     SHA3DigestTest()
     {
+        super(new SHA3Digest(), messages, digests);
     }
 
     public String getName()
@@ -41,9 +59,28 @@ public class SHA3DigestTest
         return "SHA-3";
     }
 
-    public void performTest() throws Exception
+    public void performTest()
     {
-        testVectors();
+        super.performTest();
+
+        try
+        {
+            testVectors();
+        }
+        catch (Exception e)
+        {
+            throw Exceptions.illegalStateException(e.toString(), e);
+        }
+    }
+
+    protected Digest cloneDigest(Digest digest)
+    {
+        return new SHA3Digest((SHA3Digest)digest);
+    }
+
+    protected Digest cloneDigest(byte[] encodedState)
+    {
+        return new SHA3Digest(encodedState);
     }
 
     public void testVectors() throws Exception

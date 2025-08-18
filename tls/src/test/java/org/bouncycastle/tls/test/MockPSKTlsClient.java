@@ -35,7 +35,12 @@ class MockPSKTlsClient
 
     MockPSKTlsClient(TlsSession session)
     {
-        this(session, new BasicTlsPSKIdentity("client", Strings.toUTF8ByteArray("TLS_TEST_PSK")));
+        this(session, false);
+    }
+
+    MockPSKTlsClient(TlsSession session, boolean badKey)
+    {
+        this(session, TlsTestUtils.createDefaultPSKIdentity(badKey));
     }
 
     MockPSKTlsClient(TlsSession session, TlsPSKIdentity pskIdentity)

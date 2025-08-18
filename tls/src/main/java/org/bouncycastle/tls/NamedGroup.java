@@ -103,10 +103,13 @@ public class NamedGroup
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
 
     /** @deprecated Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    @Deprecated
     public static final int OQS_mlkem512 = 0x0247;
     /** @deprecated Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    @Deprecated
     public static final int OQS_mlkem768 = 0x0248;
     /** @deprecated Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    @Deprecated
     public static final int OQS_mlkem1024 = 0x0249;
 
     /*

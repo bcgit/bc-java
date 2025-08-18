@@ -70,7 +70,7 @@ public class JPAKEPrimeOrderGroup
             {
                 throw new IllegalArgumentException("p-1 must be evenly divisible by q");
             }
-            if (g.compareTo(BigInteger.valueOf(2)) == -1 || g.compareTo(p.subtract(JPAKEUtil.ONE)) == 1)
+            if (g.compareTo(BigInteger.valueOf(2)) < 0 || g.compareTo(p) >= 0)
             {
                 throw new IllegalArgumentException("g must be in [2, p-1]");
             }

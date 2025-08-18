@@ -3,6 +3,7 @@ package org.bouncycastle.tls.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DTLSRequest;
@@ -13,6 +14,7 @@ import org.bouncycastle.tls.DatagramTransport;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsClient;
 import org.bouncycastle.tls.TlsExtensionsUtils;
+import org.bouncycastle.tls.TlsFatalAlertReceived;
 import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
@@ -206,8 +208,6 @@ public class DTLSRawKeysProtocolTest
         pumpData(client, server);
     }
 
-    // NOTE: Test disabled because of problems getting a clean exit of the DTLS server after a fatal alert.
-/*
     public void testClientSendsClientCertExtensionButServerHasNoCommonTypes() throws Exception
     {
         testClientSendsClientCertExtensionButServerHasNoCommonTypes(ProtocolVersion.DTLSv12);
@@ -244,10 +244,7 @@ public class DTLSRawKeysProtocolTest
             assertEquals("Should have caused unsupported_certificate alert", alert.getAlertDescription(), AlertDescription.unsupported_certificate);
         }
     }
-*/
 
-    // NOTE: Test disabled because of problems getting a clean exit of the DTLS server after a fatal alert.
-/*
     public void testClientSendsServerCertExtensionButServerHasNoCommonTypes() throws Exception
     {
         testClientSendsServerCertExtensionButServerHasNoCommonTypes(ProtocolVersion.DTLSv12);
@@ -284,7 +281,6 @@ public class DTLSRawKeysProtocolTest
             assertEquals("Should have caused unsupported_certificate alert", alert.getAlertDescription(), AlertDescription.unsupported_certificate);
         }
     }
-*/
 
     private Ed25519PrivateKeyParameters generateKeyPair()
     {
@@ -348,23 +344,23 @@ public class DTLSRawKeysProtocolTest
                 TlsCrypto serverCrypto = server.getCrypto();
 
                 DTLSRequest request = null;
-    
+
                 // Use DTLSVerifier to require a HelloVerifyRequest cookie exchange before accepting
                 {
                     DTLSVerifier verifier = new DTLSVerifier(serverCrypto);
-    
+
                     // NOTE: Test value only - would typically be the client IP address
                     byte[] clientID = Strings.toUTF8ByteArray("MockRawKeysTlsClient");
-    
+
                     int receiveLimit = serverTransport.getReceiveLimit();
                     int dummyOffset = serverCrypto.getSecureRandom().nextInt(16) + 1;
                     byte[] buf = new byte[dummyOffset + serverTransport.getReceiveLimit()];
-    
+
                     do
                     {
                         if (isShutdown)
                             return;
-    
+
                         int length = serverTransport.receive(buf, dummyOffset, receiveLimit, 100);
                         if (length > 0)
                         {

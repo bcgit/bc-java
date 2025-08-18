@@ -5,6 +5,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
@@ -24,10 +25,12 @@ public class TlsProtocolTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol);
+        MockTlsClient client = new MockTlsClient(null);
+        MockTlsServer server = new MockTlsServer();
+
+        ServerThread serverThread = new ServerThread(serverProtocol, server);
         serverThread.start();
 
-        MockTlsClient client = new MockTlsClient(null);
         clientProtocol.connect(client);
 
         // NOTE: Because we write-all before we read-any, this length can't be more than the pipe capacity
@@ -54,17 +57,18 @@ public class TlsProtocolTest
         extends Thread
     {
         private final TlsServerProtocol serverProtocol;
+        private final TlsServer server;
 
-        ServerThread(TlsServerProtocol serverProtocol)
+        ServerThread(TlsServerProtocol serverProtocol, TlsServer server)
         {
             this.serverProtocol = serverProtocol;
+            this.server = server;
         }
 
         public void run()
         {
             try
             {
-                MockTlsServer server = new MockTlsServer();
                 serverProtocol.accept(server);
                 Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
                 serverProtocol.close();

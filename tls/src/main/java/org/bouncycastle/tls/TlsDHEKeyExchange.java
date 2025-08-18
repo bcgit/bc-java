@@ -82,7 +82,7 @@ public class TlsDHEKeyExchange
 
         TlsUtils.writeOpaque16(y, digestBuffer);
 
-        TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, null, digestBuffer);
+        TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, digestBuffer);
 
         return digestBuffer.toByteArray();
     }
@@ -96,7 +96,7 @@ public class TlsDHEKeyExchange
 
         byte[] y = TlsUtils.readOpaque16(teeIn, 1);
 
-        TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, null, digestBuffer);
+        TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 

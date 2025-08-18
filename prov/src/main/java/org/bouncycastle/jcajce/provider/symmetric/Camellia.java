@@ -135,7 +135,7 @@ public final class Camellia
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new CamelliaEngine())));
+            super(new GMac(GCMBlockCipher.newInstance(new CamelliaEngine())));
         }
     }
 

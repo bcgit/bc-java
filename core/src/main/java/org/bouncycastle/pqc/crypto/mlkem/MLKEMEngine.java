@@ -7,7 +7,8 @@ import org.bouncycastle.util.Arrays;
 class MLKEMEngine
 {
     private SecureRandom random;
-    private MLKEMIndCpa indCpa;
+
+    private final MLKEMIndCpa indCpa;
 
     // constant parameters
     public final static int KyberN = 256;
@@ -187,6 +188,11 @@ class MLKEMEngine
         this.random = random;
     }
 
+    boolean checkModulus(byte[] t)
+    {
+        return PolyVec.checkModulus(this, t) < 0;
+    }
+
     public byte[][] generateKemKeyPair()
     {
         byte[] d = new byte[KyberSymBytes];
@@ -223,9 +229,9 @@ class MLKEMEngine
         };
     }
 
-    public byte[][] kemEncryptInternal(byte[] publicKeyInput, byte[] randBytes)
+    byte[][] kemEncrypt(MLKEMPublicKeyParameters publicKey, byte[] randBytes)
     {
-        byte[] outputCipherText;
+        byte[] publicKeyInput = publicKey.getEncoded();
 
         byte[] buf = new byte[2 * KyberSymBytes];
         byte[] kr = new byte[2 * KyberSymBytes];
@@ -239,7 +245,8 @@ class MLKEMEngine
         symmetric.hash_g(kr, buf);
 
         // IndCpa Encryption
-        outputCipherText = indCpa.encrypt(publicKeyInput, Arrays.copyOfRange(buf, 0, KyberSymBytes), Arrays.copyOfRange(kr, 32, kr.length));
+        byte[] outputCipherText = indCpa.encrypt(publicKeyInput, Arrays.copyOfRange(buf, 0, KyberSymBytes),
+            Arrays.copyOfRange(kr, 32, kr.length));
 
         byte[] outputSharedSecret = new byte[sessionKeyLength];
 
@@ -251,8 +258,10 @@ class MLKEMEngine
         return outBuf;
     }
 
-    public byte[] kemDecryptInternal(byte[] secretKey, byte[] cipherText)
+    byte[] kemDecrypt(MLKEMPrivateKeyParameters privateKey, byte[] cipherText)
     {
+        byte[] secretKey = privateKey.getEncoded();
+
         byte[] buf = new byte[2 * KyberSymBytes],
                 kr = new byte[2 * KyberSymBytes];
 
@@ -281,32 +290,6 @@ class MLKEMEngine
         return Arrays.copyOfRange(kr, 0, sessionKeyLength);
     }
 
-    public byte[][] kemEncrypt(byte[] publicKeyInput, byte[] randBytes)
-    {
-        //TODO: do input validation elsewhere?
-        // Input validation (6.2 ML-KEM Encaps)
-        // Type Check
-        if (publicKeyInput.length != KyberIndCpaPublicKeyBytes)
-        {
-            throw new IllegalArgumentException("Input validation Error: Type check failed for ml-kem encapsulation");
-        }
-        // Modulus Check
-        PolyVec polyVec = new PolyVec(this);
-        byte[] seed = indCpa.unpackPublicKey(polyVec, publicKeyInput);
-        byte[] ek = indCpa.packPublicKey(polyVec, seed);
-        if (!Arrays.areEqual(ek, publicKeyInput))
-        {
-            throw new IllegalArgumentException("Input validation: Modulus check failed for ml-kem encapsulation");
-        }
-
-        return kemEncryptInternal(publicKeyInput, randBytes);
-    }
-    public byte[] kemDecrypt(byte[] secretKey, byte[] cipherText)
-    {
-        //TODO: do input validation
-        return kemDecryptInternal(secretKey, cipherText);
-    }
-
     private void cmov(byte[] r, byte[] x, int xlen, boolean b)
     {
         if (b)
@@ -317,10 +300,5 @@ class MLKEMEngine
         {
             System.arraycopy(r, 0, r, 0, xlen);
         }
-    }
-
-    public void getRandomBytes(byte[] buf)
-    {
-        this.random.nextBytes(buf);
     }
 }

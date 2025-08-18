@@ -67,14 +67,19 @@ public abstract class ASN1NumericString
      * Return an Numeric String from a tagged object.
      *
      * @param taggedObject the tagged object holding the object we want
-     * @param explicit     true if the object is meant to be explicitly tagged false
+     * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                     otherwise.
      * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return an ASN1NumericString instance, or null.
      */
-    public static ASN1NumericString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1NumericString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1NumericString)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1NumericString)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1NumericString getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1NumericString)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     final byte[] contents;

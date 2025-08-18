@@ -110,7 +110,7 @@ public class TlsSRPKeyExchange
 
         if (serverCredentials != null)
         {
-            TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, null, digestBuffer);
+            TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, digestBuffer);
         }
 
         return digestBuffer.toByteArray();
@@ -131,7 +131,7 @@ public class TlsSRPKeyExchange
 
         if (digestBuffer != null)
         {
-            TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, null, digestBuffer);
+            TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, digestBuffer);
         }
 
         TlsSRPConfig config = new TlsSRPConfig();

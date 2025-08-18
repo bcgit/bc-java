@@ -184,8 +184,8 @@ public class UTF8
                 }
 
                 // Code points above U+10FFFF are caught by the DFA
-                utf16[j++] = (char)(0xD7C0 + (codePoint >>> 10));
-                utf16[j++] = (char)(0xDC00 | (codePoint & 0x3FF));
+                utf16[j++] = (char)(0xD7C0 + (codePoint >>> 10));   // [0xD800, 0xDBFF] high surrogate (W1)
+                utf16[j++] = (char)(0xDC00 | (codePoint & 0x3FF));  // [0xDC00, 0xDFFF] low surrogate (W2)
             }
         }
 

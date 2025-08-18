@@ -1,6 +1,6 @@
 package org.bouncycastle.tls.test;
 
-import java.security.SecureRandom;
+import java.util.Random;
 
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DTLSRequest;
@@ -8,8 +8,8 @@ import org.bouncycastle.tls.DTLSServerProtocol;
 import org.bouncycastle.tls.DTLSTransport;
 import org.bouncycastle.tls.DTLSVerifier;
 import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -20,23 +20,22 @@ public class DTLSProtocolTest
 {
     public void testClientServer() throws Exception
     {
-        SecureRandom secureRandom = new SecureRandom();
+        MockDTLSClient client = new MockDTLSClient(null);
+        MockDTLSServer server = new MockDTLSServer();
 
         DTLSClientProtocol clientProtocol = new DTLSClientProtocol();
         DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
         MockDatagramAssociation network = new MockDatagramAssociation(1500);
 
-        ServerThread serverThread = new ServerThread(serverProtocol, network.getServer());
+        ServerThread serverThread = new ServerThread(serverProtocol, server, network.getServer());
         serverThread.start();
 
         DatagramTransport clientTransport = network.getClient();
 
-        clientTransport = new UnreliableDatagramTransport(clientTransport, secureRandom, 0, 0);
+        clientTransport = new UnreliableDatagramTransport(clientTransport, new Random(), 0, 0);
 
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
-
-        MockDTLSClient client = new MockDTLSClient(null);
 
         DTLSTransport dtlsClient = clientProtocol.connect(client, clientTransport);
 
@@ -61,12 +60,14 @@ public class DTLSProtocolTest
         extends Thread
     {
         private final DTLSServerProtocol serverProtocol;
+        private final TlsServer server;
         private final DatagramTransport serverTransport;
         private volatile boolean isShutdown = false;
 
-        ServerThread(DTLSServerProtocol serverProtocol, DatagramTransport serverTransport)
+        ServerThread(DTLSServerProtocol serverProtocol, TlsServer server, DatagramTransport serverTransport)
         {
             this.serverProtocol = serverProtocol;
+            this.server = server;
             this.serverTransport = serverTransport;
         }
 
@@ -74,7 +75,7 @@ public class DTLSProtocolTest
         {
             try
             {
-                TlsCrypto serverCrypto = new BcTlsCrypto();
+                TlsCrypto serverCrypto = server.getCrypto();
 
                 DTLSRequest request = null;
 
@@ -105,7 +106,6 @@ public class DTLSProtocolTest
 
                 // NOTE: A real server would handle each DTLSRequest in a new task/thread and continue accepting
                 {
-                    MockDTLSServer server = new MockDTLSServer(serverCrypto);
                     DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport, request);
                     byte[] buf = new byte[dtlsTransport.getReceiveLimit()];
                     while (!isShutdown)

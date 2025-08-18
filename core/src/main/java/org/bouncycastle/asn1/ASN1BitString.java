@@ -56,9 +56,14 @@ public abstract class ASN1BitString
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
     }
 
-    public static ASN1BitString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1BitString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1BitString)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1BitString)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1BitString getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1BitString)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     private static final char[]  table = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };

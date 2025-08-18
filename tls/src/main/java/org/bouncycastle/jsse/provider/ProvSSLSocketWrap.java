@@ -68,6 +68,7 @@ class ProvSSLSocketWrap
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
+    protected ProvSSLSession dummySession = null;
     protected ProvSSLSessionHandshake handshakeSession = null;
 
     protected ProvSSLSocketWrap(ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
@@ -188,7 +189,12 @@ class ProvSSLSocketWrap
         return sslParameters.getSocketAPSelector();
     }
 
-    public synchronized BCExtendedSSLSession getBCHandshakeSession()
+    public BCExtendedSSLSession getBCHandshakeSession()
+    {
+        return getBCHandshakeSessionImpl();
+    }
+
+    public synchronized ProvSSLSessionHandshake getBCHandshakeSessionImpl()
     {
         return handshakeSession;
     }
@@ -679,7 +685,7 @@ class ProvSSLSocketWrap
         if (null != resumedSession)
         {
             this.handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
-                jsseSecurityParameters, resumedSession.getTlsSession(), resumedSession.getJsseSessionParameters());
+                jsseSecurityParameters, resumedSession);
         }
         else
         {
@@ -697,7 +703,17 @@ class ProvSSLSocketWrap
     {
         getConnection();
 
-        return null == connection ? ProvSSLSession.NULL_SESSION : connection.getSession();
+        if (connection != null)
+        {
+            return connection.getSession();
+        }
+
+        if (dummySession == null)
+        {
+            dummySession = ProvSSLSession.createDummySession();
+        }
+
+        return dummySession;
     }
 
     synchronized void handshakeIfNecessary(boolean resumable) throws IOException

@@ -10,6 +10,7 @@ import org.bouncycastle.util.io.Streams;
  * 
  * @deprecated Check for 'ASN1BitStringParser' instead 
  */
+@Deprecated
 public class BERBitStringParser
     implements ASN1BitStringParser
 {

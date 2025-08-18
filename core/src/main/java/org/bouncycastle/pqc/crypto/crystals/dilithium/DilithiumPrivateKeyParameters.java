@@ -63,6 +63,8 @@ public class DilithiumPrivateKeyParameters
     }
 
     /** @deprecated Use {@link #getEncoded()} instead. */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public byte[] getPrivateKey()
     {
         return getEncoded();

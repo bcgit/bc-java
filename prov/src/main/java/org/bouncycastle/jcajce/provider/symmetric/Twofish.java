@@ -50,7 +50,7 @@ public final class Twofish
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new TwofishEngine())));
+            super(new GMac(GCMBlockCipher.newInstance(new TwofishEngine())));
         }
     }
 

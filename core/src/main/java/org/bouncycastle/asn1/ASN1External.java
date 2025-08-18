@@ -48,9 +48,14 @@ public abstract class ASN1External
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
     }
 
-    public static ASN1External getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1External getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1External)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1External)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1External getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1External)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     ASN1ObjectIdentifier directReference;

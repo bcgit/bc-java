@@ -240,6 +240,11 @@
             <fileset dir="tls/src/test/jdk1.4" includes="**/*.java"/>
         </copy>
 
+        <replaceregexp match="@Deprecated" replace=" " flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
         <replaceregexp match="${regexp}" replace=" " flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>

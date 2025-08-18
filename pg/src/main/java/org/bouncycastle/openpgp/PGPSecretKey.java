@@ -36,6 +36,7 @@ import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.bcpg.X448SecretBCPGKey;
 import org.bouncycastle.gpg.SExprParser;
+import org.bouncycastle.openpgp.operator.GnuDivertToCardSecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
@@ -293,7 +294,7 @@ public class PGPSecretKey
         //
         // generate the certification
         //
-        PGPSignatureGenerator sGen = new PGPSignatureGenerator(certificationSignerBuilder);
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(certificationSignerBuilder, masterKeyPair.getPublicKey());
 
         sGen.init(PGPSignature.SUBKEY_BINDING, masterKeyPair.getPrivateKey());
 
@@ -302,7 +303,7 @@ public class PGPSecretKey
         {
             if (hashedPcks == null)
             {
-                PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(certificationSignerBuilder);
+                PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(certificationSignerBuilder, keyPair.getPublicKey());
 
                 signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, keyPair.getPrivateKey());
 
@@ -382,7 +383,7 @@ public class PGPSecretKey
 
         try
         {
-            sGen = new PGPSignatureGenerator(certificationSignerBuilder);
+            sGen = new PGPSignatureGenerator(certificationSignerBuilder, keyPair.getPublicKey());
         }
         catch (Exception e)
         {
@@ -552,119 +553,117 @@ public class PGPSecretKey
         return pub.getUserAttributes();
     }
 
-    private byte[] extractKeyData(
-        PBESecretKeyDecryptor decryptorFactory)
+    private byte[] extractKeyData(PBESecretKeyDecryptor decryptorFactory)
         throws PGPException
     {
         byte[] encData = secret.getSecretKeyData();
-        byte[] data = null;
 
-        if (secret.getEncAlgorithm() != SymmetricKeyAlgorithmTags.NULL)
+        if (secret.getEncAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
         {
-            try
+            return encData;
+        }
+
+        try
+        {
+            byte[] key = decryptorFactory.makeKeyFromPassPhrase(secret.getEncAlgorithm(), secret.getS2K());
+            byte[] data;
+
+            if (secret.getPublicKeyPacket().getVersion() >= PublicKeyPacket.VERSION_4)
             {
-                byte[] key = decryptorFactory.makeKeyFromPassPhrase(secret.getEncAlgorithm(), secret.getS2K());
-                if (secret.getPublicKeyPacket().getVersion() >= PublicKeyPacket.VERSION_4)
+                if (secret.getS2KUsage() == SecretKeyPacket.USAGE_AEAD)
                 {
-                    if (secret.getS2KUsage() == SecretKeyPacket.USAGE_AEAD)
-                    {
-                        // privKey := AEAD(HKDF(S2K(passphrase), info), secrets, packetprefix)
-                        return decryptorFactory.recoverKeyData(
-                            secret.getEncAlgorithm(),
-                            secret.getAeadAlgorithm(),
-                            key, // s2k output = ikm for hkdf
-                            secret.getIV(), // iv = aead nonce
-                            secret.getPacketTag(),
-                            secret.getPublicKeyPacket().getVersion(),
-                            secret.getSecretKeyData(),
-                            secret.getPublicKeyPacket().getEncodedContents());
-                    }
-                    else
-                    {
-                        data = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, secret.getIV(), encData, 0, encData.length);
+                    // privKey := AEAD(HKDF(S2K(passphrase), info), secrets, packetprefix)
+                    return decryptorFactory.recoverKeyData(
+                        secret.getEncAlgorithm(),
+                        secret.getAeadAlgorithm(),
+                        key, // s2k output = ikm for hkdf
+                        secret.getIV(), // iv = aead nonce
+                        secret.getPacketTag(),
+                        secret.getPublicKeyPacket().getVersion(),
+                        secret.getSecretKeyData(),
+                        secret.getPublicKeyPacket().getEncodedContents());
+                }
+                else
+                {
+                    data = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, secret.getIV(), encData, 0, encData.length);
 
-                        boolean useSHA1 = secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1;
-                        byte[] check = checksum(useSHA1 ? decryptorFactory.getChecksumCalculator(HashAlgorithmTags.SHA1) : null, data, (useSHA1) ? data.length - 20 : data.length - 2);
+                    boolean useSHA1 = secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1;
+                    byte[] check = checksum(useSHA1 ? decryptorFactory.getChecksumCalculator(HashAlgorithmTags.SHA1) : null, data, (useSHA1) ? data.length - 20 : data.length - 2);
 
-                        if (!Arrays.constantTimeAreEqual(check.length, check, 0, data, data.length - check.length))
-                        {
-                            throw new PGPException("checksum mismatch at in checksum of " + check.length + " bytes");
-                        }
+                    if (!Arrays.constantTimeAreEqual(check.length, check, 0, data, data.length - check.length))
+                    {
+                        throw new PGPException("checksum mismatch in checksum of " + check.length + " bytes");
                     }
                 }
-                else // version 2 or 3, RSA only.
+            }
+            else // version 2 or 3, RSA only.
+            {
+
+                data = new byte[encData.length];
+
+                byte[] iv = new byte[secret.getIV().length];
+
+                System.arraycopy(secret.getIV(), 0, iv, 0, iv.length);
+
+                //
+                // read in the four numbers
+                //
+                int pos = 0;
+
+                for (int i = 0; i != 4; i++)
                 {
-
-                    data = new byte[encData.length];
-
-                    byte[] iv = new byte[secret.getIV().length];
-
-                    System.arraycopy(secret.getIV(), 0, iv, 0, iv.length);
-
-                    //
-                    // read in the four numbers
-                    //
-                    int pos = 0;
-
-                    for (int i = 0; i != 4; i++)
-                    {
-                        int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
-
-                        data[pos] = encData[pos];
-                        data[pos + 1] = encData[pos + 1];
-
-                        if (encLen > (encData.length - (pos + 2)))
-                        {
-                            throw new PGPException("out of range encLen found in encData");
-                        }
-                        byte[] tmp = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, iv, encData, pos + 2, encLen);
-                        System.arraycopy(tmp, 0, data, pos + 2, tmp.length);
-                        pos += 2 + encLen;
-
-                        if (i != 3)
-                        {
-                            System.arraycopy(encData, pos - iv.length, iv, 0, iv.length);
-                        }
-                    }
-
-                    //
-                    // verify and copy checksum
-                    //
+                    int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
 
                     data[pos] = encData[pos];
                     data[pos + 1] = encData[pos + 1];
 
-                    int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
-                    int calcCs = 0;
-                    for (int j = 0; j < data.length - 2; j++)
+                    if (encLen > (encData.length - (pos + 2)))
                     {
-                        calcCs += data[j] & 0xff;
+                        throw new PGPException("out of range encLen found in encData");
                     }
+                    byte[] tmp = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, iv, encData, pos + 2, encLen);
+                    System.arraycopy(tmp, 0, data, pos + 2, tmp.length);
+                    pos += 2 + encLen;
 
-                    calcCs &= 0xffff;
-                    if (calcCs != cs)
+                    if (i != 3)
                     {
-                        throw new PGPException("checksum mismatch: passphrase wrong, expected "
-                            + Integer.toHexString(cs)
-                            + " found " + Integer.toHexString(calcCs));
+                        System.arraycopy(encData, pos - iv.length, iv, 0, iv.length);
                     }
                 }
-            }
-            catch (PGPException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new PGPException("Exception decrypting key", e);
-            }
-        }
-        else
-        {
-            data = encData;
-        }
 
-        return data;
+                //
+                // verify and copy checksum
+                //
+
+                data[pos] = encData[pos];
+                data[pos + 1] = encData[pos + 1];
+
+                int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
+                int calcCs = 0;
+                for (int j = 0; j < data.length - 2; j++)
+                {
+                    calcCs += data[j] & 0xff;
+                }
+
+                calcCs &= 0xffff;
+                if (calcCs != cs)
+                {
+                    throw new PGPException("checksum mismatch: passphrase wrong, expected "
+                        + Integer.toHexString(cs)
+                        + " found " + Integer.toHexString(calcCs));
+                }
+            }
+
+            return data;
+        }
+        catch (PGPException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("Exception decrypting key", e);
+        }
     }
 
     /**
@@ -840,6 +839,9 @@ public class PGPSecretKey
         {
             Util.encodePGPSignatures(out, pub.subSigs, false);
         }
+
+        // For clarity; really only required if using partial body lengths
+        out.finish();
     }
 
     /**
@@ -887,7 +889,8 @@ public class PGPSecretKey
         byte[] keyData;
         int newEncAlgorithm = SymmetricKeyAlgorithmTags.NULL;
 
-        if (newKeyEncryptor == null || newKeyEncryptor.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
+        if (newKeyEncryptor == null
+            || (newKeyEncryptor.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL && !(newKeyEncryptor instanceof GnuDivertToCardSecretKeyEncryptor)))
         {
             s2kUsage = SecretKeyPacket.USAGE_NONE;
             if (key.secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1)   // SHA-1 hash, need to rewrite checksum
@@ -997,7 +1000,7 @@ public class PGPSecretKey
 
         SecretKeyPacket secret;
 
-        if (newKeyEncryptor!= null && newKeyEncryptor.getAeadAlgorithm() > 0)
+        if (newKeyEncryptor != null && newKeyEncryptor.getAeadAlgorithm() > 0)
         {
             s2kUsage = SecretKeyPacket.USAGE_AEAD;
             secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, newKeyEncryptor.getAeadAlgorithm(), s2kUsage, s2k, iv, keyData);

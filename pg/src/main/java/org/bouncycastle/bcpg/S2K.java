@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.util.Integers;
 
 
 /**
@@ -54,7 +55,7 @@ public class S2K
      * This method is deprecated to use, since it can be brute-forced when used
      * with a low-entropy string, such as those typically provided by users.
      * Additionally, the usage of Simple S2K can lead to key and IV reuse.
-     * Therefore, in OpenPGP v6, Therefore, when generating an S2K specifier,
+     * Therefore, in OpenPGP v6, when generating an S2K specifier,
      * an implementation MUST NOT use Simple S2K.
      *
      * @deprecated use {@link #SALTED_AND_ITERATED} or {@link #ARGON_2} instead.
@@ -416,28 +417,26 @@ public class S2K
         BCPGOutputStream out)
         throws IOException
     {
+        out.write(type);
+
         switch (type)
         {
         case SIMPLE:
-            out.write(type);
             out.write(algorithm);
             break;
 
         case SALTED:
-            out.write(type);
             out.write(algorithm);
             out.write(iv);
             break;
 
         case SALTED_AND_ITERATED:
-            out.write(type);
             out.write(algorithm);
             out.write(iv);
             writeOneOctetOrThrow(out, itCount, "Iteration count");
             break;
 
         case ARGON_2:
-            out.write(type);
             out.write(iv);
             writeOneOctetOrThrow(out, passes, "Passes");
             writeOneOctetOrThrow(out, parallelism, "Parallelism");
@@ -445,7 +444,6 @@ public class S2K
             break;
 
         case GNU_DUMMY_S2K:
-            out.write(type);
             out.write(algorithm);
             out.write('G');
             out.write('N');
@@ -471,7 +469,7 @@ public class S2K
     private void writeOneOctetOrThrow(BCPGOutputStream out, int val, String valName)
         throws IOException
     {
-        if (val >= 256)
+        if ((val & 0xFFFFFF00) != 0)
         {
             throw new IllegalStateException(valName + " not encodable");
         }
@@ -539,27 +537,30 @@ public class S2K
             {
                 throw new IllegalArgumentException("Argon2 uses 16 bytes of salt");
             }
+            if (passes < 1 | passes > 255)
+            {
+                throw new IllegalArgumentException("Passes MUST be an integer value from 1 to 255.");
+            }
+            if (parallelism < 1 || parallelism > 255)
+            {
+                throw new IllegalArgumentException("Parallelism MUST be an integer value from 1 to 255.");
+            }
+
+            /*
+             * Memory size (i.e. 1 << memorySizeExponent) MUST be an integer number of kibibytes from 8*p to 2^32-1.
+             * Max here is 30 because we are treating memory size as a signed 32-bit value.
+             */
+            int minExp = 35 - Integers.numberOfLeadingZeros(parallelism - 1);
+            int maxExp = 30;
+            if (memSizeExp < minExp || memSizeExp > maxExp)
+            {
+                throw new IllegalArgumentException(
+                    "Memory size exponent MUST be an integer value from 3 + bitlen(parallelism - 1) to 30.");
+            }
+
             this.salt = salt;
-
-            if (passes < 1)
-            {
-                throw new IllegalArgumentException("Number of passes MUST be positive, non-zero");
-            }
             this.passes = passes;
-
-            if (parallelism < 1)
-            {
-                throw new IllegalArgumentException("Parallelism MUST be positive, non-zero.");
-            }
             this.parallelism = parallelism;
-
-            // log₂p = logₑp / logₑ2
-            double log2_p = Math.log(parallelism) / Math.log(2);
-            // see https://www.rfc-editor.org/rfc/rfc9580.html#section-3.7.1.4-5
-            if (memSizeExp < (3 + Math.ceil(log2_p)) || memSizeExp > 31)
-            {
-                throw new IllegalArgumentException("Memory size exponent MUST be between 3 + ⌈log₂(parallelism)⌉ and 31");
-            }
             this.memSizeExp = memSizeExp;
         }
 
@@ -685,7 +686,7 @@ public class S2K
         {
             return new GNUDummyParams(GNU_PROTECTION_MODE_INTERNAL);
         }
-        
+
         /**
          * Return the GNU Dummy S2K protection method.
          *

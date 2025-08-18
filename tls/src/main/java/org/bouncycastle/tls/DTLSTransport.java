@@ -55,6 +55,11 @@ public class DTLSTransport
         {
             return recordLayer.receive(buf, off, len, waitMillis, recordCallback);
         }
+        catch (TlsFatalAlertReceived fatalAlertReceived)
+        {
+//            assert recordLayer.isFailed();
+            throw fatalAlertReceived;
+        }
         catch (TlsFatalAlert fatalAlert)
         {
             if (AlertDescription.bad_record_mac == fatalAlert.getAlertDescription())
@@ -106,6 +111,11 @@ public class DTLSTransport
         try
         {
             return recordLayer.receivePending(buf, off, len, recordCallback);
+        }
+        catch (TlsFatalAlertReceived fatalAlertReceived)
+        {
+//            assert recordLayer.isFailed();
+            throw fatalAlertReceived;
         }
         catch (TlsFatalAlert fatalAlert)
         {

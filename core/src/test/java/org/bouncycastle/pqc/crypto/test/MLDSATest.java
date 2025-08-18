@@ -475,9 +475,10 @@ public class MLDSATest
         rejectionExternalMuTest(MLDSAParameters.ml_dsa_44, "dilithium_external_mu_rejection_vectors_44.h");
         rejectionExternalMuTest(MLDSAParameters.ml_dsa_65, "dilithium_external_mu_rejection_vectors_65.h");
         rejectionExternalMuTest(MLDSAParameters.ml_dsa_87, "dilithium_external_mu_rejection_vectors_87.h");
-        rejectionPrehashTest(MLDSAParameters.ml_dsa_44, "dilithium_prehash_rejection_vectors_44.h");
-        rejectionPrehashTest(MLDSAParameters.ml_dsa_65, "dilithium_prehash_rejection_vectors_65.h");
-        rejectionPrehashTest(MLDSAParameters.ml_dsa_87, "dilithium_prehash_rejection_vectors_87.h");
+        // TODO: rejection vectors based on non-compliant hash - SHA-512 is currently the only one accepted
+//        rejectionPrehashTest(MLDSAParameters.ml_dsa_44, "dilithium_prehash_rejection_vectors_44.h");
+//        rejectionPrehashTest(MLDSAParameters.ml_dsa_65, "dilithium_prehash_rejection_vectors_65.h");
+//        rejectionPrehashTest(MLDSAParameters.ml_dsa_87, "dilithium_prehash_rejection_vectors_87.h");
         rejectionTest(MLDSAParameters.ml_dsa_44, "dilithium_pure_rejection_vectors_44.h");
         rejectionTest(MLDSAParameters.ml_dsa_65, "dilithium_pure_rejection_vectors_65.h");
         rejectionTest(MLDSAParameters.ml_dsa_87, "dilithium_pure_rejection_vectors_87.h");
@@ -619,7 +620,7 @@ public class MLDSATest
                 signer.init(true, privParams);
                 return signer.internalGenerateSignature(msg, new byte[32]);
             }
-            
+
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 InternalMLDSASigner signer = new InternalMLDSASigner();

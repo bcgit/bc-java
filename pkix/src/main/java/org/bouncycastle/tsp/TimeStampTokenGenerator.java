@@ -219,6 +219,7 @@ public class TimeStampTokenGenerator
             }
             else
             {
+                // NB: The ASN.1 default for ESSCertIDv2.hashAlgorithm has absent parameters (rather than NULL) 
                 digestAlgID = new AlgorithmIdentifier(digestAlgOid);
 
                 final ESSCertIDv2 essCertIDv2 = new ESSCertIDv2(digestAlgID, certHash, issuerSerial);

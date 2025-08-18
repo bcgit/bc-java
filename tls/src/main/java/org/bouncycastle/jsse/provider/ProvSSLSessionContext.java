@@ -89,14 +89,15 @@ class ProvSSLSessionContext
         }
     }
 
-    synchronized ProvSSLSession reportSession(String peerHost, int peerPort, TlsSession tlsSession,
-        JsseSessionParameters jsseSessionParameters, boolean addToCache)
+    synchronized ProvSSLSession reportSession(ProvSSLSessionHandshake handshakeSession, String peerHost, int peerPort,
+        TlsSession tlsSession, JsseSessionParameters jsseSessionParameters, boolean addToCache)
     {
         processQueue();
 
         if (!addToCache)
         {
-            return new ProvSSLSession(this, peerHost, peerPort, tlsSession, jsseSessionParameters);
+            return new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort, tlsSession,
+                jsseSessionParameters);
         }
 
         SessionID sessionID = makeSessionID(tlsSession.getSessionID());
@@ -105,7 +106,8 @@ class ProvSSLSessionContext
         ProvSSLSession session = sessionEntry == null ? null : sessionEntry.get();
         if (null == session || session.getTlsSession() != tlsSession)
         {
-            session = new ProvSSLSession(this, peerHost, peerPort, tlsSession, jsseSessionParameters);
+            session = new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort, tlsSession,
+                jsseSessionParameters);
 
             if (null != sessionID)
             {

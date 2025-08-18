@@ -47,14 +47,15 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("SMIME tests");
 
-        suite.addTestSuite(NewSMIMESignedTest.class);
-        suite.addTestSuite(SignedMailValidatorTest.class);
+        suite.addTestSuite(JournalingSecureRandomEncryptTest.class);
+        suite.addTestSuite(MailGeneralTest.class);
         suite.addTestSuite(NewSMIMEAuthEnvelopedTest.class);
         suite.addTestSuite(NewSMIMEEnvelopedTest.class);
+        suite.addTestSuite(NewSMIMESignedTest.class);
+        suite.addTestSuite(SignedMailValidatorTest.class);
         suite.addTestSuite(SMIMECompressedTest.class);
         suite.addTestSuite(SMIMEMiscTest.class);
         suite.addTestSuite(SMIMEToolkitTest.class);
-        suite.addTestSuite(MailGeneralTest.class);
 
         return new BCTestSetup(suite);
     }

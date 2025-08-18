@@ -43,20 +43,14 @@ public class DTLSTestSuite extends TestSuite
             addTestCase(testSuite, c, "FallbackGood");
         }
 
-        /*
-         * NOTE: Temporarily disabled automatic test runs because of problems getting a clean exit
-         * of the DTLS server after a fatal alert. As of writing, manual runs show the correct
-         * alerts being raised
-         */
+        {
+            TlsTestConfig c = createDTLSTestConfig(ProtocolVersion.DTLSv12);
+            c.clientFallback = true;
+            c.clientSupportedVersions = ProtocolVersion.DTLSv10.only();
+            c.expectServerFatalAlert(AlertDescription.inappropriate_fallback);
 
-//        {
-//            TlsTestConfig c = createDTLSTestConfig(ProtocolVersion.DTLSv12);
-//            c.clientFallback = true;
-//            c.clientSupportedVersions = ProtocolVersion.DTLSv10.only();
-//            c.expectServerFatalAlert(AlertDescription.inappropriate_fallback);
-//
-//            addTestCase(testSuite, c, "FallbackBad");
-//        }
+            addTestCase(testSuite, c, "FallbackBad");
+        }
 
         {
             TlsTestConfig c = createDTLSTestConfig(ProtocolVersion.DTLSv12);

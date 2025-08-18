@@ -20,6 +20,7 @@ public class DLExternal
      * 
      * @deprecated Use {@link DLExternal#DLExternal(DLSequence)} instead.
      */
+    @Deprecated
     public DLExternal(ASN1EncodableVector vector)
     {
         this(DLFactory.createSequence(vector));

@@ -18,9 +18,11 @@ interface ProvTlsManager
 
     BCX509Key chooseServerKey(String[] keyTypes, Principal[] issuers);
 
-    boolean getEnableSessionCreation();
+    ProvSSLSessionHandshake getBCHandshakeSessionImpl();
 
     ContextData getContextData();
+
+    boolean getEnableSessionCreation();
 
     String getPeerHost();
 

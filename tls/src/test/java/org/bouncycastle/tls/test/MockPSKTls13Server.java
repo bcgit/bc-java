@@ -25,9 +25,18 @@ import org.bouncycastle.util.Strings;
 class MockPSKTls13Server
     extends AbstractTlsServer
 {
+    private final boolean badKey;
+
     MockPSKTls13Server()
     {
+        this(false);
+    }
+
+    MockPSKTls13Server(boolean badKey)
+    {
         super(new BcTlsCrypto());
+
+        this.badKey = badKey;
     }
 
     public TlsCredentials getCredentials() throws IOException
@@ -75,7 +84,7 @@ class MockPSKTls13Server
         {
             if (matchIdentity.equals(identities.elementAt(i)))
             {
-                TlsSecret key = getCrypto().createSecret(Strings.toUTF8ByteArray("TLS_TEST_PSK"));
+                TlsSecret key = getCrypto().createSecret(TlsTestUtils.getPSKPasswordUTF8(badKey));
                 int prfAlgorithm = PRFAlgorithm.tls13_hkdf_sha256;
 
                 return new BasicTlsPSKExternal(identity, key, prfAlgorithm);

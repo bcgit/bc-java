@@ -3,9 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,9 +25,8 @@ import org.bouncycastle.util.Arrays;
 abstract class ProvSSLSessionBase
     extends BCExtendedSSLSession
 {
-    protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
-
     protected final AtomicReference<ProvSSLSessionContext> sslSessionContext;
+    protected final ConcurrentHashMap<String, Object> valueMap;
     protected final boolean fipsMode;
     protected final JcaTlsCrypto crypto;
     protected final String peerHost;
@@ -38,9 +35,11 @@ abstract class ProvSSLSessionBase
     protected final SSLSession exportSSLSession;
     protected final AtomicLong lastAccessedTime;
 
-    ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort)
+    ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, ConcurrentHashMap<String, Object> valueMap,
+        String peerHost, int peerPort)
     {
         this.sslSessionContext = new AtomicReference<ProvSSLSessionContext>(sslSessionContext);
+        this.valueMap = valueMap;
         this.fipsMode = (null == sslSessionContext) ? false : sslSessionContext.getContextData().isFipsMode();
         this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getContextData().getCrypto();
         this.peerHost = peerHost;
@@ -237,15 +236,22 @@ abstract class ProvSSLSessionBase
 
     public Object getValue(String name)
     {
+        if (name == null)
+        {
+            throw new IllegalArgumentException("'name' cannot be null");
+        }
+
         return valueMap.get(name);
+    }
+
+    ConcurrentHashMap<String, Object> getValueMap()
+    {
+        return valueMap;
     }
 
     public String[] getValueNames()
     {
-        synchronized (valueMap)
-        {
-            return valueMap.keySet().toArray(new String[valueMap.size()]);
-        }
+        return valueMap.keySet().toArray(new String[0]);
     }
 
     @Override
@@ -287,12 +293,26 @@ abstract class ProvSSLSessionBase
 
     public void putValue(String name, Object value)
     {
+        if (name == null)
+        {
+            throw new IllegalArgumentException("'name' cannot be null");
+        }
+        if (value == null)
+        {
+            throw new IllegalArgumentException("'value' cannot be null");
+        }
+
         notifyUnbound(name, valueMap.put(name, value));
         notifyBound(name, value);
     }
 
     public void removeValue(String name)
     {
+        if (name == null)
+        {
+            throw new IllegalArgumentException("'name' cannot be null");
+        }
+
         notifyUnbound(name, valueMap.remove(name));
     }
 
@@ -336,5 +356,10 @@ abstract class ProvSSLSessionBase
         }
 
         invalidateTLS();
+    }
+
+    protected static ConcurrentHashMap<String, Object> createValueMap()
+    {
+        return new ConcurrentHashMap<String, Object>();
     }
 }

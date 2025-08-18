@@ -1,5 +1,8 @@
 package org.bouncycastle.openpgp.operator;
 
+import java.io.IOException;
+import java.math.BigInteger;
+
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -7,9 +10,6 @@ import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.util.Properties;
-
-import java.io.IOException;
-import java.math.BigInteger;
 
 /**
  * Abstract generator class for encryption methods that produce PKESK (public-key encrypted session key) packets.
@@ -21,7 +21,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 {
     public static final String SESSION_KEY_OBFUSCATION_PROPERTY = "org.bouncycastle.openpgp.session_key_obfuscation";
     public static final long WILDCARD_KEYID = 0L;
-    /**
+    /*@
      * @deprecated use WILDCARD_KEYID
      */
     public static final long WILDCARD = 0L;
@@ -94,6 +94,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
      * TODO: Remove in a future release
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public PublicKeyKeyEncryptionMethodGenerator setUseWildcardKeyID(boolean enabled)
     {
         return setUseWildcardRecipient(enabled);

@@ -67,7 +67,7 @@ public final class SM4
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new SM4Engine())));
+            super(new GMac(GCMBlockCipher.newInstance(new SM4Engine())));
         }
     }
 

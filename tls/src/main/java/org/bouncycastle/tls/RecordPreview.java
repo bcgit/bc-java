@@ -22,6 +22,7 @@ public final class RecordPreview
     }
 
     /** @deprecated Use {@link #getContentLimit} instead */
+    @Deprecated
     public int getApplicationDataLimit()
     {
         return contentLimit;

@@ -53,15 +53,20 @@ public class ASN1Enumerated
      * return an Enumerated from a tagged object.
      *
      * @param taggedObject the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
+     * @param declaredExplicit true if the object is meant to be explicitly
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
      * @return an ASN1Enumerated instance, or null.
      */
-    public static ASN1Enumerated getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1Enumerated getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1Enumerated)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1Enumerated)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1Enumerated getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1Enumerated)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     private final byte[] contents;

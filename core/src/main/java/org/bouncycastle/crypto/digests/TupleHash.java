@@ -1,8 +1,11 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.SavableDigest;
 import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Memoable;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -13,14 +16,14 @@ import org.bouncycastle.util.Strings;
  * </p>
  */
 public class TupleHash
-    implements Xof, Digest
+    implements Xof, SavableDigest
 {
     private static final byte[] N_TUPLE_HASH = Strings.toByteArray("TupleHash");
 
     private final CSHAKEDigest cshake;
-    private final int bitLength;
-    private final int outputLength;
 
+    private int bitLength;
+    private int outputLength;
     private boolean firstOutput;
 
     /**
@@ -46,11 +49,27 @@ public class TupleHash
     public TupleHash(TupleHash original)
     {
         this.cshake = new CSHAKEDigest(original.cshake);
+        this.bitLength = original.bitLength;
+        this.outputLength = original.outputLength;
+        this.firstOutput = original.firstOutput;
+    }
+
+    public TupleHash(byte[] state)
+    {
+        this.cshake = new CSHAKEDigest(Arrays.copyOfRange(state, 0, state.length - 9));
+        this.bitLength = Pack.bigEndianToInt(state, state.length - 9);
+        this.outputLength = Pack.bigEndianToInt(state, state.length - 5);
+        this.firstOutput = state[state.length - 1] != 0;
+    }
+
+    private void copyIn(TupleHash original)
+    {
+        this.cshake.reset(original.cshake);
         this.bitLength = cshake.fixedOutputLength;
         this.outputLength = bitLength * 2 / 8;
         this.firstOutput = original.firstOutput;
     }
-
+    
     public String getAlgorithmName()
     {
         return "TupleHash" + cshake.getAlgorithmName().substring(6);
@@ -132,5 +151,27 @@ public class TupleHash
     {
         cshake.reset();
         firstOutput = true;
+    }
+
+    public byte[] getEncodedState()
+    {
+        byte[] cshakeState = this.cshake.getEncodedState();
+        byte[] extraState = new byte[4 + 4 + 1];
+
+        Pack.intToBigEndian(this.bitLength, extraState, 0);
+        Pack.intToBigEndian(this.outputLength, extraState, 4);
+        extraState[8] = this.firstOutput ? (byte)1 : (byte)0;
+
+        return Arrays.concatenate(cshakeState, extraState);
+    }
+
+    public Memoable copy()
+    {
+        return new TupleHash(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        copyIn((TupleHash)other);
     }
 }

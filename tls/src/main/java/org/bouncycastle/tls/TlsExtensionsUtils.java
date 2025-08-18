@@ -325,6 +325,7 @@ public class TlsExtensionsUtils
     /**
      * @deprecated Use version without defaultValue instead
      */
+    @Deprecated
     public static short getClientCertificateTypeExtensionServer(Hashtable extensions, short defaultValue)
         throws IOException
     {
@@ -452,6 +453,7 @@ public class TlsExtensionsUtils
     /**
      * @deprecated Use version without defaultValue instead
      */
+    @Deprecated
     public static short getServerCertificateTypeExtensionServer(Hashtable extensions, short defaultValue)
         throws IOException
     {

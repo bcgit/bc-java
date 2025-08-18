@@ -505,7 +505,7 @@ public class BaseBlockCipher
             else
             {
                 ivLength = 12;
-                cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+                cipher = new AEADGenericBlockCipher(GCMBlockCipher.newInstance(baseEngine));
             }
         }
         else

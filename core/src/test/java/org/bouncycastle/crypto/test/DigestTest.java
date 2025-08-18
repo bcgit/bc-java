@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.EncodableDigest;
+import org.bouncycastle.crypto.digests.TupleHash;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
@@ -71,71 +72,115 @@ public abstract class DigestTest
 
     private void testEncodedState(byte[] resBuf, byte[] input, byte[] expected)
     {
-        // test state encoding;
-        digest.update(input, 0, input.length / 2);
-
-        // copy the Digest
-        Digest copy1 = cloneDigest(((EncodableDigest)digest).getEncodedState());
-        Digest copy2 = cloneDigest(((EncodableDigest)copy1).getEncodedState());
-
-        digest.update(input, input.length / 2, input.length - input.length / 2);
-
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        if (digest instanceof TupleHash)
         {
-            fail("failing state vector test", expected, new String(Hex.encode(resBuf)));
+            digest.update(input, 0, input.length);
+            Digest copy1 = cloneDigest(((EncodableDigest)digest).getEncodedState());
+            Digest copy2 = cloneDigest(((EncodableDigest)copy1).getEncodedState());
+
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing TupleHash state vector test", expected, new String(Hex.encode(resBuf)));
+            }
+
+            copy2.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing TupleHash state copy2 vector test", expected, new String(Hex.encode(resBuf)));
+            }
         }
-
-        copy1.update(input, input.length / 2, input.length - input.length / 2);
-        copy1.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        else
         {
-            fail("failing state copy1 vector test", expected, new String(Hex.encode(resBuf)));
-        }
+            // test state encoding;
+            digest.update(input, 0, input.length / 2);
 
-        copy2.update(input, input.length / 2, input.length - input.length / 2);
-        copy2.doFinal(resBuf, 0);
+            // copy the Digest
+            Digest copy1 = cloneDigest(((EncodableDigest)digest).getEncodedState());
+            Digest copy2 = cloneDigest(((EncodableDigest)copy1).getEncodedState());
 
-        if (!areEqual(expected, resBuf))
-        {
-            fail("failing state copy2 vector test", expected, new String(Hex.encode(resBuf)));
+            digest.update(input, input.length / 2, input.length - input.length / 2);
+
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing state vector test", expected, new String(Hex.encode(resBuf)));
+            }
+
+            copy1.update(input, input.length / 2, input.length - input.length / 2);
+            copy1.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing state copy1 vector test", expected, new String(Hex.encode(resBuf)));
+            }
+
+            copy2.update(input, input.length / 2, input.length - input.length / 2);
+            copy2.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing state copy2 vector test", expected, new String(Hex.encode(resBuf)));
+            }
         }
     }
 
     private void testMemo(byte[] resBuf, byte[] input, byte[] expected)
     {
-        Memoable m = (Memoable)digest;
-
-        digest.update(input, 0, input.length / 2);
-
-        // copy the Digest
-        Memoable copy1 = m.copy();
-        Memoable copy2 = copy1.copy();
-
-        digest.update(input, input.length / 2, input.length - input.length / 2);
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        if (digest instanceof TupleHash)
         {
-            fail("failing memo vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            Memoable m = (Memoable)digest;
+
+            digest.update(input, 0, input.length);
+
+            Memoable copy1 = m.copy();
+            Memoable copy2 = copy1.copy();
+
+            digest.doFinal(resBuf, 0);
+            if (!areEqual(expected, resBuf))
+            {
+               fail("failing tuplehash memo vector test 1", results[results.length - 1], new String(Hex.encode(resBuf)));
+            }
+
+            Digest d = (Digest)copy2;
+            d.doFinal(resBuf, 0);
         }
-
-        m.reset(copy1);
-
-        digest.update(input, input.length / 2, input.length - input.length / 2);
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        else
         {
-            fail("failing memo reset vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            Memoable m = (Memoable)digest;
+
+            digest.update(input, 0, input.length / 2);
+
+            // copy the Digest
+            Memoable copy1 = m.copy();
+            Memoable copy2 = copy1.copy();
+
+            digest.update(input, input.length / 2, input.length - input.length / 2);
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing memo vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            }
+
+            m.reset(copy1);
+
+            digest.update(input, input.length / 2, input.length - input.length / 2);
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing memo reset vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            }
+
+            Digest md = (Digest)copy2;
+
+            md.update(input, input.length / 2, input.length - input.length / 2);
+            md.doFinal(resBuf, 0);
         }
-
-        Digest md = (Digest)copy2;
-
-        md.update(input, input.length / 2, input.length - input.length / 2);
-        md.doFinal(resBuf, 0);
 
         if (!areEqual(expected, resBuf))
         {
@@ -145,21 +190,32 @@ public abstract class DigestTest
 
     private void testClone(byte[] resBuf, byte[] input, byte[] expected)
     {
-        digest.update(input, 0, input.length / 2);
-
-        // clone the Digest
-        Digest d = cloneDigest(digest);
-
-        digest.update(input, input.length / 2, input.length - input.length / 2);
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        if (digest instanceof TupleHash)
         {
-            fail("failing clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
-        }
+            // can't support multiple updates like the others - it's the whole point!
+            Digest d = cloneDigest(digest);
 
-        d.update(input, input.length / 2, input.length - input.length / 2);
-        d.doFinal(resBuf, 0);
+            d.update(input, 0, input.length);
+            d.doFinal(resBuf, 0);
+        }
+        else
+        {
+            digest.update(input, 0, input.length / 2);
+
+            // clone the Digest
+            Digest d = cloneDigest(digest);
+
+            digest.update(input, input.length / 2, input.length - input.length / 2);
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            }
+
+            d.update(input, input.length / 2, input.length - input.length / 2);
+            d.doFinal(resBuf, 0);
+        }
 
         if (!areEqual(expected, resBuf))
         {

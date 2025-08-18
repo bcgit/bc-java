@@ -64,15 +64,20 @@ public abstract class ASN1VisibleString
      * Return a Visible String from a tagged object.
      *
      * @param taggedObject the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
+     * @param declaredExplicit true if the object is meant to be explicitly
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
      * @return an ASN1VisibleString instance, or null
      */
-    public static ASN1VisibleString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1VisibleString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1VisibleString)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1VisibleString)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1VisibleString getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1VisibleString)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     final byte[] contents;
