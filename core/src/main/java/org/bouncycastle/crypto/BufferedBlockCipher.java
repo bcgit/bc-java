@@ -256,7 +256,7 @@ public class BufferedBlockCipher
 
             if (mbCipher != null)
             {
-                int blockCount = len / blockSize;
+                int blockCount = (len / mbCipher.getMultiBlockSize()) * (mbCipher.getMultiBlockSize() / blockSize);
 
                 if (blockCount > 0)
                 {
@@ -351,8 +351,8 @@ public class BufferedBlockCipher
                     }
 
                     cipher.processBlock(buf, index, buf, index);
+                    System.arraycopy(buf, index, out, outOff + resultLen, bufOff - index);
                     resultLen += bufOff - index;
-                    System.arraycopy(buf, index, out, outOff, bufOff - index);
                     bufOff = 0;
                 }
             }
