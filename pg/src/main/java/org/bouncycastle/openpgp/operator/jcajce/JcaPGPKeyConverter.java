@@ -143,6 +143,7 @@ public class JcaPGPKeyConverter
      * @deprecated use versioned {@link #getPGPPublicKey(int, int, PGPAlgorithmParameters, PublicKey, Date)} instead.
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public PGPPublicKey getPGPPublicKey(int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey, Date time)
         throws PGPException
     {

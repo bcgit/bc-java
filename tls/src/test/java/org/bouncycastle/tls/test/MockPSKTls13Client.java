@@ -24,9 +24,18 @@ import org.bouncycastle.util.Strings;
 class MockPSKTls13Client
     extends AbstractTlsClient
 {
+    private final boolean badKey;
+
     MockPSKTls13Client()
     {
+        this(false);
+    }
+
+    MockPSKTls13Client(boolean badKey)
+    {
         super(new BcTlsCrypto());
+
+        this.badKey = badKey;
     }
 
 //    public Vector getEarlyKeyShareGroups()
@@ -60,7 +69,7 @@ class MockPSKTls13Client
     public Vector getExternalPSKs()
     {
         byte[] identity = Strings.toUTF8ByteArray("client");
-        TlsSecret key = getCrypto().createSecret(Strings.toUTF8ByteArray("TLS_TEST_PSK"));
+        TlsSecret key = getCrypto().createSecret(TlsTestUtils.getPSKPasswordUTF8(badKey));
         int prfAlgorithm = PRFAlgorithm.tls13_hkdf_sha256;
 
         return TlsUtils.vectorOfOne(new BasicTlsPSKExternal(identity, key, prfAlgorithm));

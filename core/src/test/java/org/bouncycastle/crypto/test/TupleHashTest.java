@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.digests.TupleHash;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * TupleHash test vectors from:
@@ -13,16 +12,38 @@ import org.bouncycastle.util.test.SimpleTest;
  * https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/KMAC_samples.pdf
  */
 public class TupleHashTest
-    extends SimpleTest
+    extends DigestTest
 {
+    private static String[] messages =
+    {
+        "",
+        "a",
+        "abc",
+        "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+    };
+
+    private static String[] digests =
+    {
+        "549330469327c593eb95b1d467c48e5781939e135e10632c804ef8a69c73281c",
+        "98e1cb3104a046dcdc77a6acbee4177553ba15cb0235a3db99f506198dc9c8b5",
+        "873195cadfea6bc6a71cdd903da87afb49fd232d71db817c3abcad48ad8a7898",
+        "b9588fbf7302809815ebd989d00752f732a08dc9b1153b6f3a097f518cdc44ea"
+    };
+
+    public TupleHashTest()
+    {
+        super(new TupleHash(128, new byte[0]), messages, digests);
+    }
+
     public String getName()
     {
         return "TupleHash";
     }
 
     public void performTest()
-        throws Exception
     {
+        super.performTest();
+
         TupleHash tHash = new TupleHash(128, new byte[0]);
 
         tHash.update(Hex.decode("000102"), 0, 3);
@@ -103,6 +124,16 @@ public class TupleHashTest
         isTrue("oops!", Arrays.areEqual(Hex.decode("0c59b11464f2336c34663ed51b2b950bec743610856f36c28d1d088d8a2446284dd09830a6a178dc752376199fae935d86cfdee5913d4922dfd369b66a53c897"), res));
 
         testClone();
+    }
+
+    protected Digest cloneDigest(Digest digest)
+    {
+        return new TupleHash((TupleHash)digest);
+    }
+
+    protected Digest cloneDigest(byte[] state)
+    {
+        return new TupleHash(state);
     }
 
     private void testClone()

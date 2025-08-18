@@ -245,6 +245,8 @@ public class Certificate
      * @throws IOException
      * @deprecated Use version taking a {@link ParseOptions} argument instead. 
      */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static Certificate parse(TlsContext context, InputStream messageInput, OutputStream endPointHashOutput)
         throws IOException
     {

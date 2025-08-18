@@ -24,7 +24,6 @@ import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cms.CMSAlgorithm;
-import org.bouncycastle.cms.CMSAuthEnvelopedDataGenerator;
 import org.bouncycastle.cms.KeyTransRecipientId;
 import org.bouncycastle.cms.RecipientId;
 import org.bouncycastle.cms.RecipientInformation;
@@ -184,7 +183,7 @@ public class NewSMIMEAuthEnvelopedTest
         throws Exception
     {
         MimeBodyPart msg = SMIMETestUtil.makeMimeBodyPart("WallaWallaWashington");
-        String algorithm = SMIMEAuthEnvelopedGenerator.AES256_GCM;
+        String algorithm = SMIMEAuthEnvelopedGenerator.AES128_GCM;
 
         verifyAlgorithm(algorithm, msg);
     }
@@ -193,7 +192,7 @@ public class NewSMIMEAuthEnvelopedTest
         throws Exception
     {
         MimeBodyPart msg = SMIMETestUtil.makeMimeBodyPart("WallaWallaWashington");
-        String algorithm = SMIMEAuthEnvelopedGenerator.AES256_GCM;
+        String algorithm = SMIMEAuthEnvelopedGenerator.AES192_GCM;
 
         verifyAlgorithm(algorithm, msg);
     }
@@ -531,7 +530,7 @@ public class NewSMIMEAuthEnvelopedTest
 
         SMIMEAuthEnveloped ed = new SMIMEAuthEnveloped(res);
 
-        assertEquals(ed.getEncryptionAlgOID(), CMSAuthEnvelopedDataGenerator.AES128_GCM);
+        assertEquals(ed.getEncryptionAlgOID(), SMIMEAuthEnvelopedGenerator.AES128_GCM);
 
         RecipientInformationStore recipients = ed.getRecipientInfos();
 

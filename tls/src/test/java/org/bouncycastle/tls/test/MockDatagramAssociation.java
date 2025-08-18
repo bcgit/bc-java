@@ -22,6 +22,11 @@ public class MockDatagramAssociation
         this.server = new MockDatagramTransport(serverQueue, clientQueue);
     }
 
+    public int getMTU()
+    {
+        return mtu;
+    }
+
     public DatagramTransport getClient()
     {
         return client;
@@ -35,7 +40,7 @@ public class MockDatagramAssociation
     private class MockDatagramTransport
         implements DatagramTransport
     {
-        private Vector receiveQueue, sendQueue;
+        private final Vector receiveQueue, sendQueue;
 
         MockDatagramTransport(Vector receiveQueue, Vector sendQueue)
         {
@@ -46,13 +51,13 @@ public class MockDatagramAssociation
         public int getReceiveLimit()
             throws IOException
         {
-            return mtu;
+            return getMTU();
         }
 
         public int getSendLimit()
             throws IOException
         {
-            return mtu;
+            return getMTU();
         }
 
         public int receive(byte[] buf, int off, int len, int waitMillis)
@@ -85,7 +90,7 @@ public class MockDatagramAssociation
         public void send(byte[] buf, int off, int len)
             throws IOException
         {
-            if (len > mtu)
+            if (len > getMTU())
             {
                 // TODO Simulate rejection?
             }

@@ -47,7 +47,9 @@ public final class TlsAEADCipher
     private final int nonceMode;
     private final AEADNonceGenerator nonceGenerator;
 
-    /** @deprecated Use version with extra 'nonceGeneratorFactory' parameter */ 
+    /** @deprecated Use version with extra 'nonceGeneratorFactory' parameter */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher,
         TlsAEADCipherImpl decryptCipher, int keySize, int macSize, int aeadType) throws IOException
     {

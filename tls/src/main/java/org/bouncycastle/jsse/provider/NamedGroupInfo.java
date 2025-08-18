@@ -161,11 +161,11 @@ class NamedGroupInfo
 
     static class PerConnection
     {
-        private final LinkedHashMap<Integer, NamedGroupInfo> local;
+        private final Map<Integer, NamedGroupInfo> local;
         private final boolean localECDSA;
         private final AtomicReference<List<NamedGroupInfo>> peer;
 
-        PerConnection(LinkedHashMap<Integer, NamedGroupInfo> local, boolean localECDSA)
+        PerConnection(Map<Integer, NamedGroupInfo> local, boolean localECDSA)
         {
             if (local == null)
             {

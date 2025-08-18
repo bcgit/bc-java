@@ -252,15 +252,15 @@ public class JPAKEUtil
         BigInteger r = zeroKnowledgeProof[1];
 
         BigInteger h = calculateHashForZeroKnowledgeProof(g, gv, gx, participantId, digest);
-        if (!(gx.compareTo(ZERO) == 1 && // g^x > 0
-            gx.compareTo(p) == -1 && // g^x < p
-            gx.modPow(q, p).compareTo(ONE) == 0 && // g^x^q mod q = 1
+        if (!(gx.signum() > 0 && // g^x > 0
+            gx.compareTo(p) < 0 && // g^x < p
+            gx.modPow(q, p).equals(ONE) && // g^x^q mod q = 1
                 /*
                  * Below, I took an straightforward way to compute g^r * g^x^h,
                  * which needs 2 exp. Using a simultaneous computation technique
                  * would only need 1 exp.
                  */
-            g.modPow(r, p).multiply(gx.modPow(h, p)).mod(p).compareTo(gv) == 0)) // g^v=g^r * g^x^h
+            g.modPow(r, p).multiply(gx.modPow(h, p)).mod(p).equals(gv))) // g^v=g^r * g^x^h
         {
             throw new CryptoException("Zero-knowledge proof validation failed");
         }

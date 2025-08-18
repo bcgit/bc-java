@@ -23,7 +23,12 @@ class MockPSKTlsServer
 {
     MockPSKTlsServer()
     {
-        super(new BcTlsCrypto(), new MyIdentityManager());
+        this(false);
+    }
+
+    MockPSKTlsServer(boolean badKey)
+    {
+        super(new BcTlsCrypto(), new MyIdentityManager(badKey));
     }
 
     protected Vector getProtocolNames()
@@ -138,6 +143,13 @@ class MockPSKTlsServer
     static class MyIdentityManager
         implements TlsPSKIdentityManager
     {
+        private final boolean badKey;
+
+        MyIdentityManager(boolean badKey)
+        {
+            this.badKey = badKey;
+        }
+
         public byte[] getHint()
         {
             return Strings.toUTF8ByteArray("hint");
@@ -150,7 +162,7 @@ class MockPSKTlsServer
                 String name = Strings.fromUTF8ByteArray(identity);
                 if (name.equals("client"))
                 {
-                    return Strings.toUTF8ByteArray("TLS_TEST_PSK");
+                    return TlsTestUtils.getPSKPasswordUTF8(badKey);
                 }
             }
             return null;

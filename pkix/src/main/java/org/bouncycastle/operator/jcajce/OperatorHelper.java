@@ -23,15 +23,19 @@ import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -54,6 +58,10 @@ class OperatorHelper
     private static final Map symmetricWrapperKeySizes = new HashMap();
 
     private static DefaultSignatureNameFinder sigFinder = new DefaultSignatureNameFinder();
+
+    private static final RSAESOAEPparams oaepParams_sha256 = calculateDefForDigest(NISTObjectIdentifiers.id_sha256);
+    private static final RSAESOAEPparams oaepParams_sha384 = calculateDefForDigest(NISTObjectIdentifiers.id_sha384);
+    private static final RSAESOAEPparams oaepParams_sha512 = calculateDefForDigest(NISTObjectIdentifiers.id_sha512);
 
     static
     {
@@ -99,6 +107,17 @@ class OperatorHelper
         symmetricKeyAlgNames.put(NISTObjectIdentifiers.id_aes256_CBC, "AES");
         symmetricKeyAlgNames.put(PKCSObjectIdentifiers.des_EDE3_CBC, "DESede");
         symmetricKeyAlgNames.put(PKCSObjectIdentifiers.RC2_CBC, "RC2");
+    }
+
+    private static RSAESOAEPparams calculateDefForDigest(ASN1ObjectIdentifier digest)
+    {
+        AlgorithmIdentifier hashAlgorithm = new AlgorithmIdentifier(
+            digest,
+            DERNull.INSTANCE);
+        AlgorithmIdentifier maskGenAlgorithm = new AlgorithmIdentifier(
+            PKCSObjectIdentifiers.id_mgf1,
+            new AlgorithmIdentifier(digest, DERNull.INSTANCE));
+        return new RSAESOAEPparams(hashAlgorithm, maskGenAlgorithm, RSAESOAEPparams.DEFAULT_P_SOURCE_ALGORITHM);
     }
 
     private JcaJceHelper helper;
@@ -185,9 +204,10 @@ class OperatorHelper
         }
     }
 
-    Cipher createAsymmetricWrapper(ASN1ObjectIdentifier algorithm, Map extraAlgNames)
+    Cipher createAsymmetricWrapper(AlgorithmIdentifier algorithmID, Map extraAlgNames)
         throws OperatorCreationException
     {
+        ASN1ObjectIdentifier algorithm = algorithmID.getAlgorithm();
         try
         {
             String cipherName = null;
@@ -200,6 +220,35 @@ class OperatorHelper
             if (cipherName == null)
             {
                 cipherName = (String)asymmetricWrapperAlgNames.get(algorithm);
+                if (cipherName.indexOf("OAEPPadding") > 0)
+                {
+                    ASN1Encodable params = algorithmID.getParameters().toASN1Primitive();
+                    if ((params instanceof ASN1Sequence))
+                    {
+                        ASN1Sequence paramSeq = ASN1Sequence.getInstance(params);
+                        if (paramSeq.size() == 0)
+                        {
+                            cipherName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
+                        }
+                        else if (paramSeq.size() >= 2)
+                        {
+                            // we only check the first 2 as pSource may be different
+                            paramSeq = new DERSequence(new ASN1Encodable[]{ paramSeq.getObjectAt(0), paramSeq.getObjectAt(1) });
+                            if (oaepParams_sha256.equals(paramSeq))
+                            {
+                                cipherName = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+                            }
+                            else if (oaepParams_sha512.equals(paramSeq))
+                            {
+                                cipherName = "RSA/ECB/OAEPWithSHA-512AndMGF1Padding";
+                            }
+                            else if (oaepParams_sha384.equals(paramSeq))
+                            {
+                                cipherName = "RSA/ECB/OAEPWithSHA-384AndMGF1Padding";
+                            }
+                        }
+                    }
+                }
             }
 
             if (cipherName != null)
@@ -217,6 +266,18 @@ class OperatorHelper
                         try
                         {
                             return helper.createCipher("RSA/NONE/PKCS1Padding");
+                        }
+                        catch (NoSuchAlgorithmException ex)
+                        {
+                            // Ignore
+                        }
+                    }
+                    else if (cipherName.indexOf("ECB/OAEPWith") > 0)
+                    {
+                        int start = cipherName.indexOf("ECB");
+                        try
+                        {
+                            return helper.createCipher(cipherName.substring(0, start) + "NONE" + cipherName.substring(start + 3));
                         }
                         catch (NoSuchAlgorithmException ex)
                         {

@@ -2,6 +2,7 @@ package org.bouncycastle.mls.codec;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 
@@ -28,12 +29,12 @@ public class GroupContext
         return confirmedTranscriptHash;
     }
 
-    public ArrayList<Extension> getExtensions()
+    public List<Extension> getExtensions()
     {
         return extensions;
     }
 
-    public GroupContext(MlsCipherSuite ciphersuite, byte[] groupID, long epoch, byte[] treeHash, byte[] confirmedTranscriptHash, ArrayList<Extension> extensions)
+    public GroupContext(MlsCipherSuite ciphersuite, byte[] groupID, long epoch, byte[] treeHash, byte[] confirmedTranscriptHash, List<Extension> extensions)
     {
         this.suite = ciphersuite;
         this.ciphersuite = ciphersuite.getSuiteID();

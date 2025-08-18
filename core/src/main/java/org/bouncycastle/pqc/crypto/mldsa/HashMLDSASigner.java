@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
@@ -24,6 +27,7 @@ public class HashMLDSASigner
 
     private MLDSAEngine engine;
     private Digest digest;
+    private byte[] digestOIDEncoding;
 
     public HashMLDSASigner()
     {
@@ -63,6 +67,7 @@ public class HashMLDSASigner
 
             parameters = privKey.getParameters();
             engine = parameters.getEngine(random);
+
             engine.initSign(privKey.tr, true, ctx);
         }
         else
@@ -70,21 +75,29 @@ public class HashMLDSASigner
             pubKey = (MLDSAPublicKeyParameters)param;
             privKey = null;
             random = null;
+
             parameters = pubKey.getParameters();
             engine = parameters.getEngine(null);
+
             engine.initVerify(pubKey.rho, pubKey.t1, true, ctx);
         }
-        digest = engine.shake256Digest;
-        byte[] digestOIDEncoding;
+
+        initDigest(parameters);
+    }
+
+    private void initDigest(MLDSAParameters parameters)
+    {
+        digest = createDigest(parameters);
+
+        ASN1ObjectIdentifier oid = DigestUtils.getDigestOid(digest.getAlgorithmName());
         try
         {
-            digestOIDEncoding = DigestUtils.getDigestOid(digest.getAlgorithmName()).getEncoded(ASN1Encoding.DER);
+            digestOIDEncoding = oid.getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {
             throw new IllegalStateException("oid encoding failed: " + e.getMessage());
         }
-        digest.update(digestOIDEncoding, 0, digestOIDEncoding.length);
     }
 
     public void update(byte b)
@@ -97,22 +110,25 @@ public class HashMLDSASigner
         digest.update(in, off, len);
     }
 
-    public byte[] generateSignature()
-        throws CryptoException, DataLengthException
+    public byte[] generateSignature() throws CryptoException, DataLengthException
     {
+        SHAKEDigest msgDigest = finishPreHash();
+
         byte[] rnd = new byte[MLDSAEngine.RndBytes];
         if (random != null)
         {
             random.nextBytes(rnd);
         }
-        byte[] mu = engine.generateMu(engine.shake256Digest);
-        return engine.generateSignature(mu, engine.getShake256Digest(), privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        byte[] mu = engine.generateMu(msgDigest);
+
+        return engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
     }
 
     public boolean verifySignature(byte[] signature)
     {
-        byte[] mu = engine.generateMu(engine.shake256Digest);
-        return engine.verifyInternalMuSignature(mu, signature, signature.length, engine.getShake256Digest(), pubKey.rho, pubKey.t1);
+        SHAKEDigest msgDigest = finishPreHash();
+
+        return engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
     }
 
     /**
@@ -123,8 +139,20 @@ public class HashMLDSASigner
         digest.reset();
     }
 
+    private SHAKEDigest finishPreHash()
+    {
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+
+        SHAKEDigest msgDigest = engine.getShake256Digest();
+        // TODO It should be possible to include digestOIDEncoding in the memo'ed digest
+        msgDigest.update(digestOIDEncoding, 0, digestOIDEncoding.length);
+        msgDigest.update(hash, 0, hash.length);
+        return msgDigest;
+    }
+
 //    TODO: these are probably no longer correct and also need to be marked as protected
-//    protected byte[] internalGenerateSignature(byte[] message, SecureRandom random)
+//    protected byte[] internalGenerateSignature(byte[] message, byte[] random)
 //    {
 //        MLDSAEngine engine = privKey.getParameters().getEngine(random);
 //
@@ -138,19 +166,15 @@ public class HashMLDSASigner
 //        return engine.verifyInternal(signature, signature.length, message, message.length, pubKey.rho, pubKey.t1);
 //    }
 
-//    private static Digest createDigest(MLDSAParameters parameters)
-//    {
-    //TODO: MLDSA44 may use SHA2-256, SHA3-256, SHAKE128
-    //      MLDSA65 may use SHA3-384, SHA2-512
-    //      MLDSA44/65/87 may use SHA2-512, SHA3-512, SHAKE256
-
-//        switch (parameters.getType())
-//        {
-//        case MLDSAParameters.TYPE_PURE:
-//        case MLDSAParameters.TYPE_SHA2_512:
-//            return new SHAKEDigest(256);
-//        default:
-//            throw new IllegalArgumentException("unknown parameters type");
-//        }
-//    }
+    private static Digest createDigest(MLDSAParameters parameters)
+    {
+        switch (parameters.getType())
+        {
+        case MLDSAParameters.TYPE_PURE:
+        case MLDSAParameters.TYPE_SHA2_512:
+            return new SHA512Digest();
+        default:
+            throw new IllegalArgumentException("unknown parameters type");
+        }
+    }
 }

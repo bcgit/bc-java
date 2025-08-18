@@ -73,7 +73,7 @@ public class ASN1RelativeOID
 
     public static ASN1RelativeOID getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        return (ASN1RelativeOID)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1RelativeOID)TYPE.getContextTagged(taggedObject, explicit);
     }
 
     public static ASN1RelativeOID tryFromID(String identifier)

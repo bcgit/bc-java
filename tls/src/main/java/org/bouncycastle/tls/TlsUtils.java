@@ -1094,6 +1094,7 @@ public class TlsUtils
     }
 
     /** @deprecated Will be removed. Use readASN1Object in combination with requireDEREncoding instead */
+    @Deprecated
     public static ASN1Primitive readDERObject(byte[] encoding) throws IOException
     {
         /*
@@ -1244,6 +1245,8 @@ public class TlsUtils
     /**
      * @deprecated Will be removed
      */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(TlsContext context,
         TlsCredentialedSigner signerCredentials)
         throws IOException
@@ -1598,6 +1601,8 @@ public class TlsUtils
     /**
      * @deprecated Use {@link #PRF(SecurityParameters, TlsSecret, String, byte[], int)} instead.
      */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
         return PRF(context.getSecurityParametersHandshake(), secret, asciiLabel, seed, length);
@@ -2318,8 +2323,7 @@ public class TlsUtils
         return truncate(result, count);
     }
 
-    static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm,
-        byte[] extraSignatureInput, DigestInputBuffer buf)
+    static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm, DigestInputBuffer buf)
     {
         TlsCrypto crypto = context.getCrypto();
 
@@ -2332,28 +2336,17 @@ public class TlsUtils
         byte[] randoms = Arrays.concatenate(sp.getClientRandom(), sp.getServerRandom());
         h.update(randoms, 0, randoms.length);
 
-        if (null != extraSignatureInput)
-        {
-            h.update(extraSignatureInput, 0, extraSignatureInput.length);
-        }
-
         buf.updateDigest(h);
 
         return h.calculateHash();
     }
 
-    static void sendSignatureInput(TlsContext context, byte[] extraSignatureInput, DigestInputBuffer buf,
-        OutputStream output) throws IOException
+    static void sendSignatureInput(TlsContext context, DigestInputBuffer buf, OutputStream output) throws IOException
     {
         SecurityParameters sp = context.getSecurityParametersHandshake();
         // NOTE: The implicit copy here is intended (and important)
         byte[] randoms = Arrays.concatenate(sp.getClientRandom(), sp.getServerRandom());
         output.write(randoms);
-
-        if (null != extraSignatureInput)
-        {
-            output.write(extraSignatureInput);
-        }
 
         buf.copyInputTo(output);
 
@@ -2586,7 +2579,7 @@ public class TlsUtils
     }
 
     static void generateServerKeyExchangeSignature(TlsContext context, TlsCredentialedSigner credentials,
-        byte[] extraSignatureInput, DigestInputBuffer digestBuffer) throws IOException
+        DigestInputBuffer digestBuffer) throws IOException
     {
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
@@ -2597,12 +2590,12 @@ public class TlsUtils
         byte[] signature;
         if (streamSigner != null)
         {
-            sendSignatureInput(context, extraSignatureInput, digestBuffer, streamSigner.getOutputStream());
+            sendSignatureInput(context, digestBuffer, streamSigner.getOutputStream());
             signature = streamSigner.getSignature();
         }
         else
         {
-            byte[] hash = calculateSignatureHash(context, algorithm, extraSignatureInput, digestBuffer);
+            byte[] hash = calculateSignatureHash(context, algorithm, digestBuffer);
             signature = credentials.generateRawSignature(hash);
         }
 
@@ -2612,7 +2605,7 @@ public class TlsUtils
     }
 
     static void verifyServerKeyExchangeSignature(TlsContext context, InputStream signatureInput,
-        TlsCertificate serverCertificate, byte[] extraSignatureInput, DigestInputBuffer digestBuffer)
+        TlsCertificate serverCertificate, DigestInputBuffer digestBuffer)
         throws IOException
     {
         DigitallySigned digitallySigned = DigitallySigned.parse(context, signatureInput);
@@ -2645,12 +2638,12 @@ public class TlsUtils
         boolean verified;
         if (streamVerifier != null)
         {
-            sendSignatureInput(context, extraSignatureInput, digestBuffer, streamVerifier.getOutputStream());
+            sendSignatureInput(context, digestBuffer, streamVerifier.getOutputStream());
             verified = streamVerifier.isVerified();
         }
         else
         {
-            byte[] hash = calculateSignatureHash(context, sigAndHashAlg, extraSignatureInput, digestBuffer);
+            byte[] hash = calculateSignatureHash(context, sigAndHashAlg, digestBuffer);
             verified = verifier.verifyRawSignature(digitallySigned, hash);
         }
 
@@ -4098,6 +4091,8 @@ public class TlsUtils
     /**
      * @deprecated Use {@link #isValidVersionForCipherSuite(int, ProtocolVersion)} instead.
      */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion version)
     {
         return isValidVersionForCipherSuite(cipherSuite, version);
@@ -4342,6 +4337,8 @@ public class TlsUtils
     /**
      * @deprecated Use {@link #getSupportedCipherSuites(TlsCrypto, int[], int, int)} instead.
      */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites, int suitesCount)
     {
         return getSupportedCipherSuites(crypto, suites, 0, suitesCount);
@@ -5059,34 +5056,34 @@ public class TlsUtils
     static TlsCredentialedAgreement requireAgreementCredentials(TlsCredentials credentials)
         throws IOException
     {
-        if (!(credentials instanceof TlsCredentialedAgreement))
+        if (credentials instanceof TlsCredentialedAgreement)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            return (TlsCredentialedAgreement)credentials;
         }
 
-        return (TlsCredentialedAgreement)credentials;
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     static TlsCredentialedDecryptor requireDecryptorCredentials(TlsCredentials credentials)
         throws IOException
     {
-        if (!(credentials instanceof TlsCredentialedDecryptor))
+        if (credentials instanceof TlsCredentialedDecryptor)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            return (TlsCredentialedDecryptor)credentials;
         }
 
-        return (TlsCredentialedDecryptor)credentials;
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     static TlsCredentialedSigner requireSignerCredentials(TlsCredentials credentials)
         throws IOException
     {
-        if (!(credentials instanceof TlsCredentialedSigner))
+        if (credentials instanceof TlsCredentialedSigner)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            return (TlsCredentialedSigner)credentials;
         }
 
-        return (TlsCredentialedSigner)credentials;
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     private static void checkClientCertificateType(CertificateRequest certificateRequest, short clientCertificateType,
@@ -5187,7 +5184,7 @@ public class TlsUtils
     }
 
     static TlsAuthentication receiveServerCertificate(TlsClientContext clientContext, TlsClient client,
-        ByteArrayInputStream buf, Hashtable serverExtensions) throws IOException
+        ByteArrayInputStream buf) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         if (KeyExchangeAlgorithm.isAnonymous(securityParameters.getKeyExchangeAlgorithm())
@@ -5231,7 +5228,7 @@ public class TlsUtils
     }
 
     static TlsAuthentication receive13ServerCertificate(TlsClientContext clientContext, TlsClient client,
-        ByteArrayInputStream buf, Hashtable serverExtensions) throws IOException
+        ByteArrayInputStream buf) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         if (null != securityParameters.getPeerCertificate())
@@ -6074,8 +6071,6 @@ public class TlsUtils
         Hashtable clientHelloExtensions, HandshakeMessageInput clientHelloMessage, TlsHandshakeHash handshakeHash,
         boolean afterHelloRetryRequest) throws IOException
     {
-        boolean handshakeHashUpdated = false;
-
         OfferedPsks offeredPsks = TlsExtensionsUtils.getPreSharedKeyClientHello(clientHelloExtensions);
         if (null != offeredPsks)
         {
@@ -6085,8 +6080,14 @@ public class TlsUtils
                 throw new TlsFatalAlert(AlertDescription.missing_extension);
             }
 
+            // TODO[tls13] Fetch these from 'server'
+            short[] serverSupportedModes = { PskKeyExchangeMode.psk_dhe_ke };
+            boolean useServerOrder = false;
+
+            short selectedMode = selectPreSharedKeyMode(pskKeyExchangeModes, serverSupportedModes, useServerOrder);
+
             // TODO[tls13] Add support for psk_ke?
-            if (Arrays.contains(pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
+            if (PskKeyExchangeMode.psk_dhe_ke == selectedMode)
             {
                 // TODO[tls13] Prefer to get the exact index from the server?
                 TlsPSKExternal psk = server.getExternalPSK(offeredPsks.getIdentities());
@@ -6095,6 +6096,14 @@ public class TlsUtils
                     int index = offeredPsks.getIndexOfIdentity(new PskIdentity(psk.getIdentity(), 0L));
                     if (index >= 0)
                     {
+                        /*
+                         * RFC 8446 4.2.11. Prior to accepting PSK key establishment, the server MUST validate the
+                         * corresponding binder value [..]. If this value is not present or does not validate, the
+                         * server MUST abort the handshake.  Servers SHOULD NOT attempt to validate multiple
+                         * binders; rather, they SHOULD select a single PSK and validate solely the binder that
+                         * corresponds to that PSK.
+                         */
+
                         byte[] binder = (byte[])offeredPsks.getBinders().elementAt(index);
 
                         TlsCrypto crypto = serverContext.getCrypto();
@@ -6106,7 +6115,6 @@ public class TlsUtils
 
                         byte[] transcriptHash;
                         {
-                            handshakeHashUpdated = true;
                             int bindersSize = offeredPsks.getBindersSize();
                             clientHelloMessage.updateHashPrefix(handshakeHash, bindersSize);
 
@@ -6127,21 +6135,41 @@ public class TlsUtils
                         byte[] calculatedBinder = calculatePSKBinder(crypto, isExternalPSK, pskCryptoHashAlgorithm,
                             earlySecret, transcriptHash);
 
-                        if (Arrays.constantTimeAreEqual(calculatedBinder, binder))
+                        if (!Arrays.constantTimeAreEqual(calculatedBinder, binder))
                         {
-                            return new OfferedPsks.SelectedConfig(index, psk, pskKeyExchangeModes, earlySecret);
+                            throw new TlsFatalAlert(AlertDescription.decrypt_error, "Invalid PSK binder");                            
                         }
+
+                        return new OfferedPsks.SelectedConfig(index, psk, pskKeyExchangeModes, earlySecret);
                     }
                 }
             }
         }
 
-        if (!handshakeHashUpdated)
-        {
-            clientHelloMessage.updateHash(handshakeHash);
-        }
-
+        clientHelloMessage.updateHash(handshakeHash);
         return null;
+    }
+
+    private static short selectPreSharedKeyMode(short[] clientSupportedModes, short[] serverSupportedModes,
+        boolean useServerOrder)
+    {
+        if (!isNullOrEmpty(clientSupportedModes) && !isNullOrEmpty(serverSupportedModes))
+        {
+            short[] ordered = useServerOrder ? serverSupportedModes : clientSupportedModes;
+            short[] unordered = useServerOrder ? clientSupportedModes : serverSupportedModes;
+
+            for (int i = 0; i < ordered.length; ++i)
+            {
+                short candidate = ordered[i];
+
+                if (Arrays.contains(unordered, candidate) &&
+                    PskKeyExchangeMode.isRecognized(candidate))
+                {
+                    return candidate;
+                }
+            }
+        }
+        return -1;
     }
 
     static TlsSecret getPSKEarlySecret(TlsCrypto crypto, TlsPSK psk)

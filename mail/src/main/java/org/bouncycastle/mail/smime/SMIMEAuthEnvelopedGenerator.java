@@ -12,8 +12,8 @@ import javax.mail.internet.MimeBodyPart;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.cms.CMSAuthEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataStreamGenerator;
+import org.bouncycastle.cms.CMSAuthEnvelopedGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.RecipientInfoGenerator;
 import org.bouncycastle.operator.OutputAEADEncryptor;
@@ -38,9 +38,9 @@ import org.bouncycastle.operator.OutputEncryptor;
 public class SMIMEAuthEnvelopedGenerator
     extends SMIMEEnvelopedGenerator
 {
-    public static final String AES128_GCM = CMSAuthEnvelopedDataGenerator.AES128_GCM;
-    public static final String AES192_GCM = CMSAuthEnvelopedDataGenerator.AES192_GCM;
-    public static final String AES256_GCM = CMSAuthEnvelopedDataGenerator.AES256_GCM;
+    public static final String AES128_GCM = CMSAuthEnvelopedGenerator.AES128_GCM;
+    public static final String AES192_GCM = CMSAuthEnvelopedGenerator.AES192_GCM;
+    public static final String AES256_GCM = CMSAuthEnvelopedGenerator.AES256_GCM;
 
     static final String AUTH_ENVELOPED_DATA_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7m\"; smime-type=authEnveloped-data";
 

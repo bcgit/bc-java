@@ -2,6 +2,7 @@ package org.bouncycastle.bcpg.sig;
 
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.util.Integers;
 
 /**
  * Signature Subpacket encoding the capabilities / intended uses of a key.
@@ -49,29 +50,30 @@ public class KeyFlags
      * The private component of this key may be in the possession of more than one person.
      */
     public static final int SHARED = 0x80;
-    
-    private static byte[] intToByteArray(
-        int    v)
+
+    private static int dataToFlags(byte[] data)
     {
-        byte[] tmp = new byte[4];
-        int    size = 0;
-
-        for (int i = 0; i != 4; i++)
+        int flags = 0, bytes = Math.min(4, data.length);
+        for (int i = 0; i < bytes; ++i)
         {
-            tmp[i] = (byte)(v >> (i * 8));
-            if (tmp[i] != 0)
-            {
-                size = i;
-            }
+            flags |= (data[i] & 0xFF) << (i * 8);
         }
+        return flags;
+    }
 
-        byte[]    data = new byte[size + 1];
-        
-        System.arraycopy(tmp, 0, data, 0, data.length);
+    private static byte[] flagsToData(int flags)
+    {
+        int bits = 32 - Integers.numberOfLeadingZeros(flags);
+        int bytes = (bits + 7) / 8;
 
+        byte[] data = new byte[bytes];
+        for (int i = 0; i < bytes; ++i)
+        {
+            data[i] = (byte)(flags >> (i * 8));
+        }
         return data;
     }
-    
+
     public KeyFlags(
         boolean    critical,
         boolean    isLongLength,
@@ -84,7 +86,7 @@ public class KeyFlags
         boolean    critical,
         int        flags)
     {
-        super(SignatureSubpacketTags.KEY_FLAGS, critical, false, intToByteArray(flags));
+        super(SignatureSubpacketTags.KEY_FLAGS, critical, false, flagsToData(flags));
     }
 
     /**
@@ -95,13 +97,6 @@ public class KeyFlags
      */
     public int getFlags()
     {
-        int flags = 0;
-
-        for (int i = 0; i != data.length; i++)
-        {
-            flags |= (data[i] & 0xff) << (i * 8);
-        }
-
-        return flags;
+        return dataToFlags(data);
     }
 }

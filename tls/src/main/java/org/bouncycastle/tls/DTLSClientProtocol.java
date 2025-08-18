@@ -34,10 +34,6 @@ public class DTLSClientProtocol
 
         TlsClientContextImpl clientContext = new TlsClientContextImpl(client.getCrypto());
 
-        ClientHandshakeState state = new ClientHandshakeState();
-        state.client = client;
-        state.clientContext = clientContext;
-
         client.init(clientContext);
         clientContext.handshakeBeginning(client);
 
@@ -47,23 +43,34 @@ public class DTLSClientProtocol
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(clientContext, client, transport);
         client.notifyCloseHandle(recordLayer);
 
+        ClientHandshakeState state = new ClientHandshakeState();
+        state.client = client;
+        state.clientContext = clientContext;
+        state.recordLayer = recordLayer;
+
         try
         {
-            return clientHandshake(state, recordLayer);
+            return clientHandshake(state);
+        }
+        catch (TlsFatalAlertReceived fatalAlertReceived)
+        {
+//            assert recordLayer.isFailed();
+            invalidateSession(state);
+            throw fatalAlertReceived;
         }
         catch (TlsFatalAlert fatalAlert)
         {
-            abortClientHandshake(state, recordLayer, fatalAlert.getAlertDescription());
+            abortClientHandshake(state, fatalAlert.getAlertDescription());
             throw fatalAlert;
         }
         catch (IOException e)
         {
-            abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
+            abortClientHandshake(state, AlertDescription.internal_error);
             throw e;
         }
         catch (RuntimeException e)
         {
-            abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
+            abortClientHandshake(state, AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
         finally
@@ -72,17 +79,18 @@ public class DTLSClientProtocol
         }
     }
 
-    protected void abortClientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer, short alertDescription)
+    protected void abortClientHandshake(ClientHandshakeState state, short alertDescription)
     {
-        recordLayer.fail(alertDescription);
+        state.recordLayer.fail(alertDescription);
         invalidateSession(state);
     }
 
-    protected DTLSTransport clientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer)
+    protected DTLSTransport clientHandshake(ClientHandshakeState state)
         throws IOException
     {
         TlsClient client = state.client;
         TlsClientContextImpl clientContext = state.clientContext;
+        DTLSRecordLayer recordLayer = state.recordLayer;
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
 
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(clientContext, recordLayer,
@@ -144,7 +152,8 @@ public class DTLSClientProtocol
 
             handshake.finish();
 
-            if (securityParameters.isExtendedMasterSecret())
+            if (securityParameters.isExtendedMasterSecret() &&
+                ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(securityParameters.getNegotiatedVersion()))
             {
                 securityParameters.tlsUnique = securityParameters.getPeerVerifyData();
             }
@@ -372,7 +381,10 @@ public class DTLSClientProtocol
 
         state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), state.sessionParameters);
 
-        securityParameters.tlsUnique = securityParameters.getLocalVerifyData();
+        if (ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(securityParameters.getNegotiatedVersion()))
+        {
+            securityParameters.tlsUnique = securityParameters.getLocalVerifyData();
+        }
 
         clientContext.handshakeComplete(client, state.tlsSession);
 
@@ -725,7 +737,7 @@ public class DTLSClientProtocol
         throws IOException
     {
         state.authentication = TlsUtils.receiveServerCertificate(state.clientContext, state.client,
-            new ByteArrayInputStream(body), state.serverExtensions);
+            new ByteArrayInputStream(body));
     }
 
     protected void processServerHello(ClientHandshakeState state, byte[] body)
@@ -1136,6 +1148,7 @@ public class DTLSClientProtocol
     {
         TlsClient client = null;
         TlsClientContextImpl clientContext = null;
+        DTLSRecordLayer recordLayer = null;
         TlsSession tlsSession = null;
         SessionParameters sessionParameters = null;
         TlsSecret sessionMasterSecret = null;
