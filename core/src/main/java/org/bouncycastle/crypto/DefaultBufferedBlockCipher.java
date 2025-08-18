@@ -354,8 +354,8 @@ public class DefaultBufferedBlockCipher
 
                     cipher.processBlock(buf, index, buf, index);
                     resultLen += bufOff - index;
+                    System.arraycopy(buf, index, out, outOff, bufOff - index);
                     bufOff = 0;
-                    System.arraycopy(buf, index, out, outOff, resultLen);
                 }
             }
 
