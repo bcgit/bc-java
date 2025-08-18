@@ -27,8 +27,10 @@ public class AsconAEAD128
         nr = 8;
         dsep = -9223372036854775808L; //0x80L << 56
         macSizeLowerBound = 4;
-        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Default);
-        decryptionFailureCounter = new Counter();
+        dataLimitCounter = new DataLimitCounter();
+        dataLimitCounter.init(54);
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.DataLimit, DataOperatorType.DataLimit);
+        decryptionFailureCounter = new DecryptionFailureCounter();
     }
 
     protected long pad(int i)
@@ -148,6 +150,7 @@ public class AsconAEAD128
         decryptionFailureCounter.init(lambda);
         if (this.K0 != K0 || this.K1 != K1)
         {
+            dataLimitCounter.reset();
             decryptionFailureCounter.reset();
             this.K0 = K0;
             this.K1 = K1;
