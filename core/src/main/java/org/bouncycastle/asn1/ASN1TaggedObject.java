@@ -75,7 +75,7 @@ public abstract class ASN1TaggedObject
         return ASN1Util.getExplicitBaseTagged(checkInstance(taggedObject, declaredExplicit), tagClass, tagNo);
     }
 
-    public static ASN1TaggedObject getOptional(ASN1Object element)
+    public static ASN1TaggedObject getOptional(ASN1Encodable element)
     {
         if (element == null)
         {
@@ -90,7 +90,7 @@ public abstract class ASN1TaggedObject
         return null;
     }
 
-    public static ASN1TaggedObject getOptional(ASN1Object element, int tagClass)
+    public static ASN1TaggedObject getOptional(ASN1Encodable element, int tagClass)
     {
         ASN1TaggedObject taggedObject = getOptional(element);
         if (taggedObject != null && taggedObject.hasTagClass(tagClass))
@@ -100,7 +100,7 @@ public abstract class ASN1TaggedObject
         return null;
     }
 
-    public static ASN1TaggedObject getOptional(ASN1Object element, int tagClass, int tagNo)
+    public static ASN1TaggedObject getOptional(ASN1Encodable element, int tagClass, int tagNo)
     {
         ASN1TaggedObject taggedObject = getOptional(element);
         if (taggedObject != null && taggedObject.hasTag(tagClass, tagNo))

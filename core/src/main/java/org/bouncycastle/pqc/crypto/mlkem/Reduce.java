@@ -32,4 +32,9 @@ class Reduce
         return a;
     }
 
+    // NB: We only care about the sign bit of the result: it will be 1 iff the argument was in range
+    static int checkModulus(short a)
+    {
+        return a - MLKEMEngine.KyberQ;
+    }
 }

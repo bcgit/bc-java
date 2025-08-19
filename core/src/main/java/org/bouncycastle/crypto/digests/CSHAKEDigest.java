@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Memoable;
 
 /**
  * Customizable SHAKE function.
@@ -10,7 +11,8 @@ public class CSHAKEDigest
     extends SHAKEDigest
 {
     private static final byte[] padding = new byte[100];
-    private final byte[] diff;
+
+    private byte[] diff;
 
     /**
      * Base constructor.
@@ -50,6 +52,29 @@ public class CSHAKEDigest
     public CSHAKEDigest(CSHAKEDigest source)
     {
         super(source);
+
+        this.diff = Arrays.clone(source.diff);
+    }
+
+    public CSHAKEDigest(byte[] encodedState)
+    {
+        super(encodedState);
+
+        int sha3StateLength = state.length * 8 + dataQueue.length + 12 + 2;
+        if (encodedState.length != sha3StateLength)
+        {
+            this.diff = new byte[encodedState.length - sha3StateLength];
+            System.arraycopy(encodedState, sha3StateLength, diff, 0, diff.length);
+        }
+        else
+        {
+            this.diff = null;
+        }
+    }
+
+    private void copyIn(CSHAKEDigest source)
+    {
+        super.copyIn(source);
 
         this.diff = Arrays.clone(source.diff);
     }
@@ -119,5 +144,37 @@ public class CSHAKEDigest
         {
             diffPadAndAbsorb();
         }
+    }
+
+    public byte[] getEncodedState()
+    {
+        int sha3StateLength = state.length * 8 + dataQueue.length + 12 + 2;
+        byte[] encState;
+
+        if (diff == null)
+        {
+            encState = new byte[sha3StateLength];
+            super.getEncodedState(encState);
+        }
+        else
+        {
+            encState = new byte[sha3StateLength + diff.length];
+            super.getEncodedState(encState);
+            System.arraycopy(diff, 0, encState, sha3StateLength, diff.length);
+        }
+
+        return encState;
+    }
+
+    public Memoable copy()
+    {
+        return new CSHAKEDigest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        CSHAKEDigest d = (CSHAKEDigest)other;
+
+        copyIn(d);
     }
 }

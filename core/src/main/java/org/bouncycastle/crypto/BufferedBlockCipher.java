@@ -168,27 +168,26 @@ public class BufferedBlockCipher
     /**
      * process a single byte, producing an output block if necessary.
      *
-     * @param in     the input byte.
-     * @param out    the space for any output that might be produced.
+     * @param in the input byte.
+     * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @throws DataLengthException   if there isn't enough space in out.
-     * @throws IllegalStateException if the cipher isn't initialised.
+     * @exception DataLengthException if there isn't enough space in out.
+     * @exception IllegalStateException if the cipher isn't initialised.
      */
     public int processByte(
-        byte in,
-        byte[] out,
-        int outOff)
+        byte        in,
+        byte[]      out,
+        int         outOff)
         throws DataLengthException, IllegalStateException
     {
-        int resultLen = 0;
+        int         resultLen = 0;
 
         buf[bufOff++] = in;
 
         if (bufOff == buf.length)
         {
-            resultLen = cipher.processBlock(buf, 0, out, outOff);
-            bufOff = 0;
+            resultLen = processBuffer(out, outOff);
         }
 
         return resultLen;
@@ -197,21 +196,21 @@ public class BufferedBlockCipher
     /**
      * process an array of bytes, producing output if necessary.
      *
-     * @param in     the input byte array.
-     * @param inOff  the offset at which the input data starts.
-     * @param len    the number of bytes to be copied out of the input array.
-     * @param out    the space for any output that might be produced.
+     * @param in the input byte array.
+     * @param inOff the offset at which the input data starts.
+     * @param len the number of bytes to be copied out of the input array.
+     * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @throws DataLengthException   if there isn't enough space in out.
-     * @throws IllegalStateException if the cipher isn't initialised.
+     * @exception DataLengthException if there isn't enough space in out.
+     * @exception IllegalStateException if the cipher isn't initialised.
      */
     public int processBytes(
-        byte[] in,
-        int inOff,
-        int len,
-        byte[] out,
-        int outOff)
+        byte[]      in,
+        int         inOff,
+        int         len,
+        byte[]      out,
+        int         outOff)
         throws DataLengthException, IllegalStateException
     {
         if (len < 0)
@@ -219,8 +218,8 @@ public class BufferedBlockCipher
             throw new IllegalArgumentException("Can't have a negative input length!");
         }
 
-        int blockSize = getBlockSize();
-        int length = getUpdateOutputSize(len);
+        int blockSize   = getBlockSize();
+        int length      = getUpdateOutputSize(len);
 
         if (length > 0)
         {
@@ -235,9 +234,13 @@ public class BufferedBlockCipher
 
         if (len > gapLen)
         {
-            System.arraycopy(in, inOff, buf, bufOff, gapLen);
-            inOff += gapLen;
-            len -= gapLen;
+            if (bufOff != 0)
+            {
+                System.arraycopy(in, inOff, buf, bufOff, gapLen);
+                inOff += gapLen;
+                len -= gapLen;
+            }
+
             if (in == out && Arrays.segmentsOverlap(inOff, len, outOff, length))
             {
                 in = new byte[len];
@@ -245,19 +248,21 @@ public class BufferedBlockCipher
                 inOff = 0;
             }
 
-            resultLen += cipher.processBlock(buf, 0, out, outOff);
-
-            bufOff = 0;
+            // if bufOff non-zero buffer must now be full
+            if (bufOff != 0)
+            {
+                resultLen += processBuffer(out, outOff);
+            }
 
             if (mbCipher != null)
             {
-                int blockCount = len / mbCipher.getMultiBlockSize();
+                int blockCount = (len / mbCipher.getMultiBlockSize()) * (mbCipher.getMultiBlockSize() / blockSize);
 
                 if (blockCount > 0)
                 {
                     resultLen += mbCipher.processBlocks(in, inOff, blockCount, out, outOff + resultLen);
 
-                    int processed = blockCount * mbCipher.getMultiBlockSize();
+                    int processed = blockCount * blockSize;
 
                     len -= processed;
                     inOff += processed;
@@ -281,11 +286,23 @@ public class BufferedBlockCipher
 
         if (bufOff == buf.length)
         {
-            resultLen += cipher.processBlock(buf, 0, out, outOff + resultLen);
-            bufOff = 0;
+            resultLen += processBuffer(out, outOff + resultLen);
         }
 
         return resultLen;
+    }
+
+    private int processBuffer(byte[] out, int outOff)
+    {
+        bufOff = 0;
+        if (mbCipher != null)
+        {
+            return mbCipher.processBlocks(buf, 0, buf.length / mbCipher.getBlockSize(), out, outOff);
+        }
+        else
+        {
+            return cipher.processBlock(buf, 0, out, outOff);
+        }
     }
 
     /**
@@ -318,15 +335,26 @@ public class BufferedBlockCipher
 
             if (bufOff != 0)
             {
-                if (!partialBlockOkay)
+                int index = 0;
+                if (mbCipher != null)
                 {
-                    throw new DataLengthException("data not block size aligned");
+                    int nBlocks = bufOff / mbCipher.getBlockSize();
+                    resultLen += mbCipher.processBlocks(buf, 0, nBlocks, out, outOff);
+                    index = nBlocks * mbCipher.getBlockSize();
                 }
 
-                cipher.processBlock(buf, 0, buf, 0);
-                resultLen = bufOff;
-                bufOff = 0;
-                System.arraycopy(buf, 0, out, outOff, resultLen);
+                if (bufOff != index)
+                {
+                    if (!partialBlockOkay)
+                    {
+                        throw new DataLengthException("data not block size aligned");
+                    }
+
+                    cipher.processBlock(buf, index, buf, index);
+                    System.arraycopy(buf, index, out, outOff + resultLen, bufOff - index);
+                    resultLen += bufOff - index;
+                    bufOff = 0;
+                }
             }
 
             return resultLen;

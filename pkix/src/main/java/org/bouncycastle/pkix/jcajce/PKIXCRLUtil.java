@@ -7,7 +7,6 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -60,9 +59,9 @@ abstract class PKIXCRLUtil
         Set finalSet = new HashSet();
 
         // based on RFC 5280 6.3.3
-        for (Iterator it = initialSet.iterator(); it.hasNext();)
+        for (Object o : initialSet)
         {
-            X509CRL crl = (X509CRL)it.next();
+            X509CRL crl = (X509CRL)o;
 
             Date nextUpdate = crl.getNextUpdate();
             if (nextUpdate == null || nextUpdate.after(validityDate))
@@ -90,15 +89,13 @@ abstract class PKIXCRLUtil
      * @param crlStores
      *            a List containing only {@link Store} objects. These are used to search for CRLs
      */
-    private static void findCRLs(HashSet crls, PKIXCRLStoreSelector crlSelect, List crlStores) throws AnnotatedException
+    private static void findCRLs(Set crls, PKIXCRLStoreSelector crlSelect, List crlStores) throws AnnotatedException
     {
         AnnotatedException lastException = null;
         boolean foundValidStore = false;
 
-        Iterator iter = crlStores.iterator();
-        while (iter.hasNext())
+        for (Object obj : crlStores)
         {
-            Object obj = iter.next();
             if (obj instanceof Store)
             {
                 Store store = (Store)obj;

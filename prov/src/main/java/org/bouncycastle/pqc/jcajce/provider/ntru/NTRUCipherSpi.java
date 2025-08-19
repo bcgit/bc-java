@@ -25,8 +25,8 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -217,6 +217,7 @@ class NTRUCipherSpi
         throw new IllegalStateException("Not supported in a wrapping mode");
     }
 
+    @SuppressWarnings("Finally")
     protected byte[] engineWrap(
         Key key)
         throws IllegalBlockSizeException, InvalidKeyException

@@ -191,7 +191,7 @@ public class SAKKEPublicKeyParameters
     }
 
     /**
-     * @return The pairing result g = <P,P> (RFC 6508, Section 3.2)
+     * @return The pairing result {@code g = <P,P>} (RFC 6508, Section 3.2)
      */
     public BigInteger getG()
     {

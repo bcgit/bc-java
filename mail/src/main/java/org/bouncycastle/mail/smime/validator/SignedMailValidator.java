@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -83,6 +84,8 @@ public class SignedMailValidator
     private static final int KU_DIGITAL_SIGNATURE = 0;
     private static final int KU_NON_REPUDIATION = 1;
 
+    private static final Locale locale = Locale.getDefault();
+
     private CertStore certs;
 
     private SignerInformationStore signers;
@@ -106,7 +109,7 @@ public class SignedMailValidator
      *
      * @param message the signed {@link MimeMessage}.
      * @param param the parameters for the certificate path validation.
-     * @throws {@link SignedMailValidatorException} if the message is not a signed message or if an
+     * @throws SignedMailValidatorException if the message is not a signed message or if an
      * exception occurs reading the message.
      */
     public SignedMailValidator(MimeMessage message, PKIXParameters param) throws SignedMailValidatorException
@@ -132,7 +135,7 @@ public class SignedMailValidator
      * constructor.
      * @throws SignedMailValidatorException if the message is not a signed message or if an exception
      * occurs reading the message.
-     * @throws {@link IllegalArgumentException} if the certPathReviewerClass is not a subclass of
+     * @throws IllegalArgumentException if the certPathReviewerClass is not a subclass of
      * {@link PKIXCertPathReviewer} or objects of certPathReviewerClass can not be instantiated.
      */
     public SignedMailValidator(MimeMessage message, PKIXParameters param, Class certPathReviewerClass)
@@ -377,7 +380,7 @@ public class SignedMailValidator
             {
                 if (PKCSObjectIdentifiers.pkcs_9_at_emailAddress.equals(atVs[j].getType()))
                 {
-                    String email = ((ASN1String)atVs[j].getValue()).getString().toLowerCase();
+                    String email = ((ASN1String)atVs[j].getValue()).getString().toLowerCase(locale);
                     addresses.add(email);
                 }
             }
@@ -394,7 +397,7 @@ public class SignedMailValidator
                 GeneralName name = names[i];
                 if (name.getTagNo() == GeneralName.rfc822Name)
                 {
-                    String email = ASN1IA5String.getInstance(name.getName()).getString().toLowerCase();
+                    String email = ASN1IA5String.getInstance(name.getName()).getString().toLowerCase(locale);
                     addresses.add(email);
                 }
             }
@@ -496,7 +499,7 @@ public class SignedMailValidator
         // check if email in cert is equal to the from address in the message
         for (int i = 0; i < fromAddresses.length; ++i)
         {
-            if (certEmails.contains(fromAddresses[i].toLowerCase()))
+            if (certEmails.contains(fromAddresses[i].toLowerCase(locale)))
             {
                 return true;
             }

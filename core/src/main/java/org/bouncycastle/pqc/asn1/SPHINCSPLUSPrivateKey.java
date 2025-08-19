@@ -68,6 +68,7 @@ public class SPHINCSPLUSPrivateKey
     /**
      * @deprecated use getInstance()
      */
+    @Deprecated
     public SPHINCSPLUSPrivateKey(ASN1Sequence seq)
     {
         version = ASN1Integer.getInstance(seq.getObjectAt(0)).intValueExact();

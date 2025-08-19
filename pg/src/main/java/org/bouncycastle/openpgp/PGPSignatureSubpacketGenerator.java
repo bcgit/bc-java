@@ -321,6 +321,7 @@ public class PGPSignatureSubpacketGenerator
      * @deprecated use {@link #addPreferredKeyServer(boolean, String)} instead.
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public void setPreferredKeyServer(boolean isCritical, String uri)
     {
         addPreferredKeyServer(isCritical, uri);

@@ -530,8 +530,8 @@ class ProvTlsClient
             // TODO[tls13] Resumption/PSK
             boolean addToCache = provClientEnableSessionResumption && !TlsUtils.isTLSv13(context);
 
-            this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
-                jsseSessionParameters, addToCache);
+            this.sslSession = sslSessionContext.reportSession(manager.getBCHandshakeSessionImpl(), peerHost, peerPort,
+                connectionTlsSession, jsseSessionParameters, addToCache);
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(this));
@@ -896,7 +896,7 @@ class ProvTlsClient
         return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key, null);
     }
 
-    private void handleKeyManagerMisses(LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap, String selectedKeyType)
+    private void handleKeyManagerMisses(Map<String, SignatureSchemeInfo> keyTypeMap, String selectedKeyType)
     {
         for (Map.Entry<String, SignatureSchemeInfo> entry : keyTypeMap.entrySet())
         {

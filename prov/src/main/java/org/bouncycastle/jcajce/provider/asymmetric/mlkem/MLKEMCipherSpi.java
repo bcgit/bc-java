@@ -235,6 +235,7 @@ class MLKEMCipherSpi
         throw new IllegalStateException("Not supported in a wrapping mode");
     }
 
+    @SuppressWarnings("Finally")
     protected byte[] engineWrap(
         Key key)
         throws IllegalBlockSizeException, InvalidKeyException

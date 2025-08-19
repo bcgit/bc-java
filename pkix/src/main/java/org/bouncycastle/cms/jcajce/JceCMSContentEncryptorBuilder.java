@@ -181,16 +181,63 @@ public class JceCMSContentEncryptorBuilder
         return this;
     }
 
+    /**
+     * Build the OutputEncryptor with an internally generated key.
+     *
+     * @return an OutputEncryptor configured to use an internal key.
+     * @throws CMSException
+     */
     public OutputEncryptor build()
+        throws CMSException
+    {
+        KeyGenerator keyGen = helper.createKeyGenerator(encryptionOID);
+
+        random = CryptoServicesRegistrar.getSecureRandom(random);
+
+        if (keySize < 0)
+        {
+            keyGen.init(random);
+        }
+        else
+        {
+            keyGen.init(keySize, random);
+        }
+
+        return build(keyGen.generateKey());
+    }
+
+    /**
+     * Build the OutputEncryptor using a pre-generated key given as a raw encoding.
+     *
+     * @param rawEncKey a raw byte encoding of the key to be used for encryption.
+     * @return an OutputEncryptor configured to use rawEncKey.
+     * @throws CMSException
+     */
+    public OutputEncryptor build(byte[] rawEncKey)
+        throws CMSException
+    {
+        SecretKey encKey = new SecretKeySpec(rawEncKey, helper.getBaseCipherName(encryptionOID));
+
+        return build(encKey);
+    }
+
+    /**
+     * Build the OutputEncryptor using a pre-generated key.
+     *
+     * @param encKey a pre-generated key to be used for encryption.
+     * @return an OutputEncryptor configured to use encKey.
+     * @throws CMSException
+     */
+    public OutputEncryptor build(SecretKey encKey)
         throws CMSException
     {
         if (algorithmParameters != null)
         {
             if (helper.isAuthEnveloped(encryptionOID))
             {
-                return new CMSAuthOutputEncryptor(kdfAlgorithm, encryptionOID, keySize, algorithmParameters, random);
+                return new CMSAuthOutputEncryptor(kdfAlgorithm, encryptionOID, encKey, algorithmParameters, random);
             }
-            return new CMSOutputEncryptor(kdfAlgorithm, encryptionOID, keySize, algorithmParameters, random);
+            return new CMSOutputEncryptor(kdfAlgorithm, encryptionOID, encKey, algorithmParameters, random);
         }
         if (algorithmIdentifier != null)
         {
@@ -212,9 +259,9 @@ public class JceCMSContentEncryptorBuilder
 
         if (helper.isAuthEnveloped(encryptionOID))
         {
-            return new CMSAuthOutputEncryptor(kdfAlgorithm, encryptionOID, keySize, algorithmParameters, random);
+            return new CMSAuthOutputEncryptor(kdfAlgorithm, encryptionOID, encKey, algorithmParameters, random);
         }
-        return new CMSOutputEncryptor(kdfAlgorithm, encryptionOID, keySize, algorithmParameters, random);
+        return new CMSOutputEncryptor(kdfAlgorithm, encryptionOID, encKey, algorithmParameters, random);
     }
 
     private class CMSOutEncryptor
@@ -252,24 +299,14 @@ public class JceCMSContentEncryptorBuilder
             algorithmIdentifier = new AlgorithmIdentifier(kdfAlgorithm, algorithmIdentifier);
         }
 
-        protected void init(ASN1ObjectIdentifier kdfAlgorithm, ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
+        protected void init(ASN1ObjectIdentifier kdfAlgorithm, ASN1ObjectIdentifier encryptionOID, SecretKey encKey, AlgorithmParameters params, SecureRandom random)
             throws CMSException
         {
-            KeyGenerator keyGen = helper.createKeyGenerator(encryptionOID);
+            this.encKey = encKey;
 
             random = CryptoServicesRegistrar.getSecureRandom(random);
 
-            if (keySize < 0)
-            {
-                keyGen.init(random);
-            }
-            else
-            {
-                keyGen.init(keySize, random);
-            }
-
-            cipher = helper.createCipher(encryptionOID);
-            encKey = keyGen.generateKey();
+            this.cipher = helper.createCipher(encryptionOID);
 
             if (params == null)
             {
@@ -327,10 +364,10 @@ public class JceCMSContentEncryptorBuilder
         extends CMSOutEncryptor
         implements OutputEncryptor
     {
-        CMSOutputEncryptor(ASN1ObjectIdentifier kdfAlgorithm, ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
+        CMSOutputEncryptor(ASN1ObjectIdentifier kdfAlgorithm, ASN1ObjectIdentifier encryptionOID, SecretKey encKey, AlgorithmParameters params, SecureRandom random)
             throws CMSException
         {
-            init(kdfAlgorithm, encryptionOID, keySize, params, random);
+            init(kdfAlgorithm, encryptionOID, encKey, params, random);
         }
 
         public AlgorithmIdentifier getAlgorithmIdentifier()
@@ -355,10 +392,10 @@ public class JceCMSContentEncryptorBuilder
     {
         private MacCaptureStream    macOut;
 
-        CMSAuthOutputEncryptor(ASN1ObjectIdentifier kdfAlgorithm, ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
+        CMSAuthOutputEncryptor(ASN1ObjectIdentifier kdfAlgorithm, ASN1ObjectIdentifier encryptionOID, SecretKey encKey, AlgorithmParameters params, SecureRandom random)
             throws CMSException
         {
-            init(kdfAlgorithm, encryptionOID, keySize, params, random);
+            init(kdfAlgorithm, encryptionOID, encKey, params, random);
         }
 
         public AlgorithmIdentifier getAlgorithmIdentifier()

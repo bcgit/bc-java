@@ -775,6 +775,49 @@ public class NewEnvelopedDataStreamTest
         ep.close();
     }
 
+    public void testTwoAESKEKWithPrecomputedContentKey()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+        SecretKey kek1 = CMSTestUtil.makeAES192Key();
+        SecretKey kek2 = CMSTestUtil.makeAES192Key();
+
+        CMSEnvelopedDataStreamGenerator edGen = new CMSEnvelopedDataStreamGenerator();
+
+        byte[] kekId1 = new byte[]{1, 2, 3, 4, 5};
+        byte[] kekId2 = new byte[]{5, 4, 3, 2, 1};
+
+        edGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId1, kek1).setProvider(BC));
+        edGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId2, kek2).setProvider(BC));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        OutputStream out = edGen.open(
+            bOut,
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build(Hex.decode("000102030405060708090a0b0c0d0e0f")));
+        out.write(data);
+
+        out.close();
+
+        CMSEnvelopedDataParser ep = new CMSEnvelopedDataParser(bOut.toByteArray());
+
+        RecipientInformationStore recipients = ep.getRecipientInfos();
+
+        assertEquals(ep.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
+
+        RecipientId recSel = new KEKRecipientId(kekId2);
+
+        RecipientInformation recipient = recipients.get(recSel);
+
+        assertEquals(recipient.getKeyEncryptionAlgOID(), "2.16.840.1.101.3.4.1.25");
+
+        CMSTypedStream recData = recipient.getContentStream(new JceKEKEnvelopedRecipient(kek2).setProvider(BC));
+
+        assertEquals(true, Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));
+
+        ep.close();
+    }
+
     public void testECKeyAgree()
         throws Exception
     {
