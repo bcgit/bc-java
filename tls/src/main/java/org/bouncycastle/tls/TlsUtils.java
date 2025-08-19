@@ -2004,6 +2004,7 @@ public class TlsUtils
         case CipherSuite.TLS_AES_128_CCM_8_SHA256:
         case CipherSuite.TLS_AES_128_GCM_SHA256:
         case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_SHA256_SHA256:
         {
             if (isTLSv13)
             {
@@ -2013,6 +2014,7 @@ public class TlsUtils
         }
 
         case CipherSuite.TLS_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_SHA384_SHA384:
         {
             if (isTLSv13)
             {
@@ -2292,9 +2294,11 @@ public class TlsUtils
         case CipherSuite.TLS_AES_128_CCM_8_SHA256:
         case CipherSuite.TLS_AES_128_GCM_SHA256:
         case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_SHA256_SHA256:
             return PRFAlgorithm.tls13_hkdf_sha256;
 
         case CipherSuite.TLS_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_SHA384_SHA384:
             return PRFAlgorithm.tls13_hkdf_sha384;
 
         case CipherSuite.TLS_SM4_CCM_SM3:
@@ -3046,6 +3050,12 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA384:
             return EncryptionAlgorithm.NULL;
 
+        case CipherSuite.TLS_SHA256_SHA256:
+            return EncryptionAlgorithm.NULL_HMAC_SHA256;
+
+        case CipherSuite.TLS_SHA384_SHA384:
+            return EncryptionAlgorithm.NULL_HMAC_SHA384;
+
         case CipherSuite.TLS_DH_anon_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_SEED_CBC_SHA:
@@ -3080,6 +3090,8 @@ public class TlsUtils
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
         case EncryptionAlgorithm.CHACHA20_POLY1305:
+        case EncryptionAlgorithm.NULL_HMAC_SHA256:
+        case EncryptionAlgorithm.NULL_HMAC_SHA384:
         case EncryptionAlgorithm.SM4_CCM:
         case EncryptionAlgorithm.SM4_GCM:
             return CipherType.aead;
@@ -3359,6 +3371,8 @@ public class TlsUtils
         case CipherSuite.TLS_AES_128_GCM_SHA256:
         case CipherSuite.TLS_AES_256_GCM_SHA384:
         case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_SHA256_SHA256:
+        case CipherSuite.TLS_SHA384_SHA384:
         case CipherSuite.TLS_SM4_CCM_SM3:
         case CipherSuite.TLS_SM4_GCM_SM3:
             return KeyExchangeAlgorithm.NULL;
@@ -3587,6 +3601,8 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_ARIA_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_SHA256_SHA256:
+        case CipherSuite.TLS_SHA384_SHA384:
         case CipherSuite.TLS_SM4_CCM_SM3:
         case CipherSuite.TLS_SM4_GCM_SM3:
             return MACAlgorithm._null;
@@ -3786,6 +3802,8 @@ public class TlsUtils
         case CipherSuite.TLS_AES_128_GCM_SHA256:
         case CipherSuite.TLS_AES_256_GCM_SHA384:
         case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_SHA256_SHA256:
+        case CipherSuite.TLS_SHA384_SHA384:
         case CipherSuite.TLS_SM4_CCM_SM3:
         case CipherSuite.TLS_SM4_GCM_SM3:
             return ProtocolVersion.TLSv13;
