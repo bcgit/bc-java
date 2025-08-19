@@ -452,6 +452,12 @@ public class CipherSuite
     public static final int TLS_SM4_CCM_SM3 = 0x00C7;
 
     /*
+     * RFC 9150
+     */
+    public static final int TLS_SHA256_SHA256 = 0xC0B4;
+    public static final int TLS_SHA384_SHA384 = 0xC0B5;
+
+    /*
      * RFC 9189
      */
     public static final int TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC = 0xC100;
