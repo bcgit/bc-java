@@ -29,6 +29,7 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
+import org.bouncycastle.pqc.crypto.mirath.MirathParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
@@ -116,6 +117,9 @@ class Utils
 
     static final Map snovaOids = new HashMap<ASN1ObjectIdentifier, SnovaParameters>();
     static final Map snovaParams = new HashMap<SnovaParameters, ASN1ObjectIdentifier>();
+
+    static final Map mirathOids = new HashMap<ASN1ObjectIdentifier, MirathParameters>();
+    static final Map mirathParams = new HashMap<MirathParameters, ASN1ObjectIdentifier>();
 
     static final Map crossOids = new HashMap<ASN1ObjectIdentifier, CrossParameters>();
     static final Map crossParams = new HashMap<CrossParameters, ASN1ObjectIdentifier>();
@@ -586,6 +590,32 @@ class Utils
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, SnovaParameters.SNOVA_75_33_2_SHAKE_SSK);
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, SnovaParameters.SNOVA_75_33_2_SHAKE_ESK);
 
+        mirathOids.put(MirathParameters.mirath_1a_fast, BCObjectIdentifiers.mirath_1a_fast);
+        mirathOids.put(MirathParameters.mirath_1a_short, BCObjectIdentifiers.mirath_1a_short);
+        mirathOids.put(MirathParameters.mirath_1b_fast, BCObjectIdentifiers.mirath_1b_fast);
+        mirathOids.put(MirathParameters.mirath_1b_short, BCObjectIdentifiers.mirath_1b_short);
+        mirathOids.put(MirathParameters.mirath_3a_fast, BCObjectIdentifiers.mirath_3a_fast);
+        mirathOids.put(MirathParameters.mirath_3a_short, BCObjectIdentifiers.mirath_3a_short);
+        mirathOids.put(MirathParameters.mirath_3b_fast, BCObjectIdentifiers.mirath_3b_fast);
+        mirathOids.put(MirathParameters.mirath_3b_short, BCObjectIdentifiers.mirath_3b_short);
+        mirathOids.put(MirathParameters.mirath_5a_fast, BCObjectIdentifiers.mirath_5a_fast);
+        mirathOids.put(MirathParameters.mirath_5a_short, BCObjectIdentifiers.mirath_5a_short);
+        mirathOids.put(MirathParameters.mirath_5b_fast, BCObjectIdentifiers.mirath_5b_fast);
+        mirathOids.put(MirathParameters.mirath_5b_short, BCObjectIdentifiers.mirath_5b_short);
+
+        mirathParams.put(BCObjectIdentifiers.mirath_1a_fast, MirathParameters.mirath_1a_fast);
+        mirathParams.put(BCObjectIdentifiers.mirath_1a_short, MirathParameters.mirath_1a_short);
+        mirathParams.put(BCObjectIdentifiers.mirath_1b_fast, MirathParameters.mirath_1b_fast);
+        mirathParams.put(BCObjectIdentifiers.mirath_1b_short, MirathParameters.mirath_1b_short);
+        mirathParams.put(BCObjectIdentifiers.mirath_3a_fast, MirathParameters.mirath_3a_fast);
+        mirathParams.put(BCObjectIdentifiers.mirath_3a_short, MirathParameters.mirath_3a_short);
+        mirathParams.put(BCObjectIdentifiers.mirath_3b_fast, MirathParameters.mirath_3b_fast);
+        mirathParams.put(BCObjectIdentifiers.mirath_3b_short, MirathParameters.mirath_3b_short);
+        mirathParams.put(BCObjectIdentifiers.mirath_5a_fast, MirathParameters.mirath_5a_fast);
+        mirathParams.put(BCObjectIdentifiers.mirath_5a_short, MirathParameters.mirath_5a_short);
+        mirathParams.put(BCObjectIdentifiers.mirath_5b_fast, MirathParameters.mirath_5b_fast);
+        mirathParams.put(BCObjectIdentifiers.mirath_5b_short, MirathParameters.mirath_5b_short);
+
         crossOids.put(CrossParameters.cross_rsdp_1_small, BCObjectIdentifiers.cross_rsdp_1_small);
         crossOids.put(CrossParameters.cross_rsdp_1_balanced, BCObjectIdentifiers.cross_rsdp_1_balanced);
         crossOids.put(CrossParameters.cross_rsdp_1_fast, BCObjectIdentifiers.cross_rsdp_1_fast);
@@ -955,6 +985,15 @@ class Utils
         return (SnovaParameters)snovaParams.get(oid);
     }
 
+    static ASN1ObjectIdentifier mirathOidLookup(MirathParameters params)
+    {
+        return (ASN1ObjectIdentifier)mirathOids.get(params);
+    }
+
+    static MirathParameters mirathParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (MirathParameters)mirathParams.get(oid);
+    }
 
     static ASN1ObjectIdentifier crossOidLookup(CrossParameters params)
     {

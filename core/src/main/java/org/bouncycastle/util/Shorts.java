@@ -12,4 +12,12 @@ public class Shorts
     {
         return Short.valueOf(value);
     }
+
+    public static void xorTo(int len, short[] x, short[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] ^= x[i];
+        }
+    }
 }

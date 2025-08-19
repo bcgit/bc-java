@@ -5,8 +5,25 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mirath.MirathPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mirath.MirathPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Implementation of the Snova asymmetric key pair generator following the Snova signature scheme specifications.
+ * <p>
+ * This generator produces {@link SnovaPublicKeyParameters} and {@link SnovaPrivateKeyParameters} based on the
+ * Snova algorithm parameters. The implementation follows the specification defined in the official Snova
+ * documentation and reference implementation.
+ * </p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://snova.pqclab.org/">Snova Official Website</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/snova-spec-round2-web.pdf">Snova Specification Document</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/submission-pkg/snova-submission-round2.zip">Snova Reference Implementation</a></li>
+ * </ul>
+ */
 public class SnovaKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
