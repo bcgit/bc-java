@@ -139,7 +139,7 @@ class TestUtils
                             signer.init(false, pubParams);
                             Assert.assertTrue(signer.verifySignature(message, sigGenerated));
                         }
-                        System.out.println("Count " + count + " pass");
+                        //System.out.println("Count " + count + " pass");
                     }
                     buf.clear();
                     continue;

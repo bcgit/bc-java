@@ -6,7 +6,6 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.cross.CrossKeyGenerationParameters;
@@ -15,7 +14,6 @@ import org.bouncycastle.pqc.crypto.cross.CrossParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossSigner;
-import org.bouncycastle.util.Arrays;
 
 public class CrossTest
     extends TestCase
@@ -75,29 +73,19 @@ public class CrossTest
         throws Exception
     {
         long start = System.currentTimeMillis();
-        final byte[] entropyInput = new byte[48];
-        for (int i = 0; i < 48; ++i)
-        {
-            entropyInput[i] = (byte)i;
-        }
-        //NOTE: Cross uses a special SecureRandom so that it does not support sampleOnly option (and seed is useless).
-        // We need to wait until the authors of Cross change their SecureRandom to NISTSecureRandom
         final boolean sampleOnly = false;
         TestUtils.testTestVector(sampleOnly, true, false, "pqc/crypto/cross", files, new TestUtils.KeyGenerationOperation()
         {
-            final CsprngSecureRandom random = new CsprngSecureRandom(entropyInput);
-
             @Override
             public SecureRandom getSecureRandom(byte[] seed)
             {
-                return random;
+                return new NISTSecureRandom(seed, null);
             }
 
             @Override
             public AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random)
             {
                 CrossParameters parameters = PARAMETER_SETS[fileIndex];
-                this.random.init(parameters.getCategory());
                 CrossKeyPairGenerator kpGen = new CrossKeyPairGenerator();
                 kpGen.init(new CrossKeyGenerationParameters(random, parameters));
                 return kpGen;
@@ -129,36 +117,5 @@ public class CrossTest
         });
         long end = System.currentTimeMillis();
         System.out.println("time cost: " + (end - start) + "\n");
-    }
-
-    static class CsprngSecureRandom
-        extends SecureRandom
-    {
-        private final byte[] seed;
-        private SHAKEDigest digest;
-        private int count;
-
-        public CsprngSecureRandom(byte[] seed)
-        {
-            this.seed = Arrays.clone(seed);
-        }
-
-        public void init(int category)
-        {
-            if (count % 100 == 0)
-            {
-                digest = new SHAKEDigest(category == 1 ? 128 : 256);
-                digest.update(seed, 0, seed.length);
-                digest.update(new byte[2], 0, 2);
-                count = 0;
-            }
-            count++;
-        }
-
-        @Override
-        public void nextBytes(byte[] x)
-        {
-            digest.doOutput(x, 0, x.length);
-        }
     }
 }

@@ -20,7 +20,7 @@ import org.bouncycastle.util.Pack;
  * <p>References:</p>
  * <ul>
  *   <li><a href="https://https://cross-crypto.com/">Cross Official Website</a></li>
- *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/cross-spec-round2-web.pdf">Cross Specification Document</a></li>
+ *   <li><a href="https://www.cross-crypto.com/CROSS_Specification_v2.2.pdf">Cross Specification Document</a></li>
  *   <li><a href="https://github.com/CROSS-signature">Cross Reference Implementation (C)</a></li>
  * </ul>
  */
