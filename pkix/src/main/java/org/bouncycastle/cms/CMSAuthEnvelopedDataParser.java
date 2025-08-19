@@ -21,6 +21,16 @@ import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Parser for authenticated enveloped CMS data structures.
+ * <p>
+ * Important usage notes:
+ * <ul>
+ *   <li>The constructor <b>fully drains and closes</b> the provided InputStream</li>
+ *   <li>Plaintext content is buffered in memory and available via {@code RecipientInformation}</li>
+ *   <li>Do not reuse the input stream after parsing</li>
+ * </ul>
+ */
 public class CMSAuthEnvelopedDataParser
     extends CMSContentInfoParser
 {
@@ -36,6 +46,13 @@ public class CMSAuthEnvelopedDataParser
     private boolean unauthAttrNotRead;
     private OriginatorInformation originatorInfo;
 
+    /**
+     * Create a parser from a byte array.
+     * <p>
+     * <b>Note:</b> The input is fully consumed during parsing. Plaintext content is buffered in memory.
+     *
+     * @param envelopedData the CMS auth enveloped data bytes
+     */
     public CMSAuthEnvelopedDataParser(
         byte[] envelopedData)
         throws CMSException, IOException
@@ -43,6 +60,15 @@ public class CMSAuthEnvelopedDataParser
         this(new ByteArrayInputStream(envelopedData));
     }
 
+    /**
+     * Create a parser from an input stream.
+     * <p>
+     * <b>Stream handling note:</b> This constructor fully reads and <b>closes the input stream</b>
+     * before returning. The plaintext content is buffered in memory and accessible via
+     * {@link RecipientInformation#getContentStream}.
+     *
+     * @param envelopedData the CMS auth enveloped data stream
+     */
     public CMSAuthEnvelopedDataParser(
         InputStream envelopedData)
         throws CMSException, IOException
