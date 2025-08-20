@@ -10,12 +10,9 @@ import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.jcajce.CompositePublicKey;
 
 /**
  * JCA helper class to allow JCA objects to be used in the construction of a Version 3 certificate.
@@ -148,13 +145,6 @@ public class JcaX509v3CertificateBuilder
 
     private static SubjectPublicKeyInfo getSubjectPublicKeyInfo(PublicKey publicKey)
     {
-        if (publicKey instanceof CompositePublicKey && ((CompositePublicKey)publicKey).getAlgorithmIdentifier().on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
-        {
-            return new SubjectPublicKeyInfo(new AlgorithmIdentifier(((CompositePublicKey)publicKey).getAlgorithmIdentifier()), publicKey.getEncoded());
-        }
-        else
-        {
-            return SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
-        }
+        return SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
     }
 }
