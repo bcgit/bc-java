@@ -17,7 +17,6 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
-import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPublicKey;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.util.Arrays;
 
@@ -146,7 +145,7 @@ public class CompositePublicKey
             {
                 byte[] mldsaKey = org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(keys.get(0).getEncoded())).getPublicKeyData().getBytes();
                 byte[] tradKey = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(PublicKeyFactory.createKey(keys.get(1).getEncoded())).getPublicKeyData().getBytes();
-                return Arrays.concatenate(mldsaKey, tradKey);
+                return new SubjectPublicKeyInfo(new AlgorithmIdentifier(getAlgorithmIdentifier()), Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
             }
             catch (IOException e)
             {

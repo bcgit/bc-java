@@ -131,7 +131,7 @@ public class SignatureSpi
     {
         if (!(publicKey instanceof CompositePublicKey))
         {
-            throw new InvalidKeyException("Public key is not composite.");
+            throw new InvalidKeyException("public key is not composite");
         }
 
         this.compositeKey = publicKey;
