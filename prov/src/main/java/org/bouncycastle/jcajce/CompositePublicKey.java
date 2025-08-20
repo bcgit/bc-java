@@ -28,7 +28,7 @@ public class CompositePublicKey
 {
     private final List<PublicKey> keys;
 
-    private final ASN1ObjectIdentifier algorithmIdentifier;
+    private final AlgorithmIdentifier algorithmIdentifier;
 
     /**
      * Create a composite public key from an array of PublicKeys.
@@ -41,6 +41,11 @@ public class CompositePublicKey
         this(MiscObjectIdentifiers.id_composite_key, keys);
     }
 
+    public CompositePublicKey(ASN1ObjectIdentifier algorithmIdentifier, PublicKey... keys)
+    {
+        this(new AlgorithmIdentifier(algorithmIdentifier), keys);
+    }
+
     /**
      * Create a composite public key which corresponds to a composite signature algorithm in algorithmIdentifier.
      * The component public keys are not checked if they satisfy the composite definition at this point,
@@ -49,7 +54,7 @@ public class CompositePublicKey
      * @param algorithmIdentifier
      * @param keys
      */
-    public CompositePublicKey(ASN1ObjectIdentifier algorithmIdentifier, PublicKey... keys)
+    public CompositePublicKey(AlgorithmIdentifier algorithmIdentifier, PublicKey... keys)
     {
         this.algorithmIdentifier = algorithmIdentifier;
 
@@ -111,10 +116,10 @@ public class CompositePublicKey
 
     public String getAlgorithm()
     {
-        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier);
+        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier.getAlgorithm());
     }
 
-    public ASN1ObjectIdentifier getAlgorithmIdentifier()
+    public AlgorithmIdentifier getAlgorithmIdentifier()
     {
         return algorithmIdentifier;
     }
@@ -139,13 +144,13 @@ public class CompositePublicKey
     @Override
     public byte[] getEncoded()
     {
-        if (this.algorithmIdentifier.on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
+        if (this.algorithmIdentifier.getAlgorithm().on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
         {
             try
             {
                 byte[] mldsaKey = org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(keys.get(0).getEncoded())).getPublicKeyData().getBytes();
                 byte[] tradKey = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(PublicKeyFactory.createKey(keys.get(1).getEncoded())).getPublicKeyData().getBytes();
-                return new SubjectPublicKeyInfo(new AlgorithmIdentifier(getAlgorithmIdentifier()), Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
+                return new SubjectPublicKeyInfo(getAlgorithmIdentifier(), Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
             }
             catch (IOException e)
             {
@@ -157,7 +162,7 @@ public class CompositePublicKey
 
         for (int i = 0; i < keys.size(); i++)
         {
-            if (this.algorithmIdentifier.equals(MiscObjectIdentifiers.id_composite_key))
+            if (this.algorithmIdentifier.getAlgorithm().equals(MiscObjectIdentifiers.id_composite_key))
             {
                 //Legacy, component is the whole SubjectPublicKeyInfo
                 v.add(SubjectPublicKeyInfo.getInstance(keys.get(i).getEncoded()));
@@ -171,7 +176,7 @@ public class CompositePublicKey
         }
         try
         {
-            return new SubjectPublicKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+            return new SubjectPublicKeyInfo(this.algorithmIdentifier, new DERSequence(v)).getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {

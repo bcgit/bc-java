@@ -200,7 +200,7 @@ public class JcaContentSignerBuilder
         throws OperatorCreationException
     {
         //Use this legacy method only for composite private keys (they have that identifier)
-        if (privateKey instanceof CompositePrivateKey && ((CompositePrivateKey)privateKey).getAlgorithmIdentifier().equals(MiscObjectIdentifiers.id_composite_key))
+        if (privateKey instanceof CompositePrivateKey && ((CompositePrivateKey)privateKey).getAlgorithmIdentifier().getAlgorithm().equals(MiscObjectIdentifiers.id_composite_key))
         {
             return buildComposite((CompositePrivateKey)privateKey);
         }

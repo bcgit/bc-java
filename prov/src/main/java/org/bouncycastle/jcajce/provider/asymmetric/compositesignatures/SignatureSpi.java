@@ -137,7 +137,7 @@ public class SignatureSpi
         this.compositeKey = publicKey;
 
         CompositePublicKey compositePublicKey = (CompositePublicKey)this.compositeKey;
-        if (!compositePublicKey.getAlgorithmIdentifier().equals(this.algorithm))
+        if (!compositePublicKey.getAlgorithmIdentifier().getAlgorithm().equals(this.algorithm))
         {
             throw new InvalidKeyException("Provided composite public key cannot be used with the composite signature algorithm.");
         }
@@ -167,7 +167,7 @@ public class SignatureSpi
         this.compositeKey = privateKey;
 
         CompositePrivateKey compositePrivateKey = (CompositePrivateKey)privateKey;
-        if (!compositePrivateKey.getAlgorithmIdentifier().equals(this.algorithm))
+        if (!compositePrivateKey.getAlgorithmIdentifier().getAlgorithm().equals(this.algorithm))
         {
             throw new InvalidKeyException("Provided composite private key cannot be used with the composite signature algorithm.");
         }
