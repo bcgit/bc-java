@@ -5469,62 +5469,77 @@ public class CertTest
     }
 
     // TESTS REGARDING COMPOSITES https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
-    private static String[] compositeSignaturesOIDs = {
-            "2.16.840.1.114027.80.8.1.21", //id-MLDSA44-RSA2048-PSS-SHA256
-            "2.16.840.1.114027.80.8.1.22", //id-MLDSA44-RSA2048-PKCS15-SHA256
-            "2.16.840.1.114027.80.8.1.23", //id-MLDSA44-Ed25519-SHA512
-            "2.16.840.1.114027.80.8.1.24", //id-MLDSA44-ECDSA-P256-SHA256
-            "2.16.840.1.114027.80.8.1.26", //id-MLDSA65-RSA3072-PSS-SHA512
-            "2.16.840.1.114027.80.8.1.27", //id-MLDSA65-RSA3072-PKCS15-SHA512
-            "2.16.840.1.114027.80.8.1.30", //id-MLDSA65-Ed25519-SHA512
-            "2.16.840.1.114027.80.8.1.31", //id-MLDSA87-ECDSA-P384-SHA512
-            "2.16.840.1.114027.80.8.1.32", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA512
-            "2.16.840.1.114027.80.8.1.33", //id-MLDSA87-Ed448-SHA512
-        };
+    private static final String[] compositeSignaturesOIDs = {
+        "2.16.840.1.114027.80.9.1.0", //id-MLDSA44-RSA2048-PSS-SHA256
+        "2.16.840.1.114027.80.9.1.1", //id-MLDSA44-RSA2048-PKCS15-SHA256
+        "2.16.840.1.114027.80.9.1.2", //id-MLDSA44-Ed25519-SHA512
+        "2.16.840.1.114027.80.9.1.3", //id-MLDSA44-ECDSA-P256-SHA256
+        "2.16.840.1.114027.80.9.1.4", //id-MLDSA65-RSA3072-PSS-SHA512
+        "2.16.840.1.114027.80.9.1.5", //id-MLDSA65-RSA3072-PKCS15-SHA512
+        "2.16.840.1.114027.80.9.1.6", //id-MLDSA65-RSA4096-PSS-SHA512
+        "2.16.840.1.114027.80.9.1.7", //id-MLDSA65-RSA4096-PKCS15-SHA512
+        "2.16.840.1.114027.80.9.1.8", //id-MLDSA65-ECDSA-P256-SHA512
+        "2.16.840.1.114027.80.9.1.9", //id-MLDSA65-ECDSA-P384-SHA512
+        "2.16.840.1.114027.80.9.1.10", //id-MLDSA65-ECDSA-brainpoolP256r1-SHA512
+        "2.16.840.1.114027.80.9.1.11", //id-MLDSA65-Ed25519-SHA512
+        "2.16.840.1.114027.80.9.1.12", //id-MLDSA87-ECDSA-P384-SHA512
+        "2.16.840.1.114027.80.9.1.13", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA512
+        "2.16.840.1.114027.80.9.1.14", //id-MLDSA87-Ed448-SHAKE256
+        "2.16.840.1.114027.80.9.1.15", //id-MLDSA87-RSA3072-PSS-SHA512
+        "2.16.840.1.114027.80.9.1.16", //id-MLDSA87-RSA4096-PSS-SHA512
+        "2.16.840.1.114027.80.9.1.17", //id-MLDSA87-ECDSA-P521-SHA512
+    };
 
-    private static String[] compositeSignaturesIDs = {
+    private static final String[] compositeSignaturesIDs = {
         "MLDSA44-RSA2048-PSS-SHA256",
         "MLDSA44-RSA2048-PKCS15-SHA256",
         "MLDSA44-ED25519-SHA512",
         "MLDSA44-ECDSA-P256-SHA256",
-        "MLDSA65-RSA3072-PSS-SHA256",
-        "MLDSA65-RSA3072-PKCS15-SHA256",
-        "MLDSA65-ED25519-SHA512", 
-        "MLDSA87-ECDSA-P384-SHA384",
-        "MLDSA87-ECDSA-brainpoolP384r1-SHA384",
-        "MLDSA87-ED448-SHA512",
+        "MLDSA65-RSA3072-PSS-SHA512",
+        "MLDSA65-RSA3072-PKCS15-SHA512",
+        "MLDSA65-RSA4096-PSS-SHA512",
+        "MLDSA65-RSA4096-PKCS15-SHA512",
+        "MLDSA65-ECDSA-P256-SHA512",
+        "MLDSA65-ECDSA-P384-SHA512",
+        "MLDSA65-ECDSA-brainpoolP256r1-SHA512",
+        "MLDSA65-ED25519-SHA512",
+        "MLDSA87-ECDSA-P384-SHA512",
+        "MLDSA87-ECDSA-brainpoolP384r1-SHA512",
+        "MLDSA87-ED448-SHAKE256",
+        "MLDSA87-RSA3072-PSS-SHA512",
+        "MLDSA87-RSA4096-PSS-SHA512",
+        "MLDSA87-ECDSA-P521-SHA512",
     };
 
     private void checkCompositeSignatureCertificateCreation()
         throws Exception
     {
-            int index = 0;
-            for (String oid : compositeSignaturesOIDs)
-            {
-                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(oid, "BC");
-                KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        int index = 0;
+        for (String oid : compositeSignaturesOIDs)
+        {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(oid, "BC");
+            KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
-                String subjectName = "CN=ROOT CA";
-                X500Name issuer = new X500Name(subjectName);
-                BigInteger serial = BigInteger.valueOf(5);
-                Date notBefore = new Date();
-                Date notAfter = new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 365L);
-                X500Name subject = new X500Name(subjectName);
+            String subjectName = "CN=ROOT CA";
+            X500Name issuer = new X500Name(subjectName);
+            BigInteger serial = BigInteger.valueOf(5);
+            Date notBefore = new Date();
+            Date notAfter = new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 365L);
+            X500Name subject = new X500Name(subjectName);
+            JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(issuer, serial, notBefore, notAfter, subject, keyPair.getPublic());
+            X509CertificateHolder certHolder = certificateBuilder.build(new JcaContentSignerBuilder(compositeSignaturesIDs[index]).build(keyPair.getPrivate()));
+            X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
 
-                JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(issuer, serial, notBefore, notAfter, subject, keyPair.getPublic());
-                X509CertificateHolder certHolder = certificateBuilder.build(new JcaContentSignerBuilder(compositeSignaturesIDs[index]).build(keyPair.getPrivate()));
-                X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
+            isEquals(oid, cert.getSigAlgOID());
+            CompositePublicKey compositePublicKey = (CompositePublicKey)cert.getPublicKey();
 
-                isEquals(oid, cert.getSigAlgOID());
-                CompositePublicKey compositePublicKey = (CompositePublicKey)cert.getPublicKey();
+            // isEquals(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(new ASN1ObjectIdentifier(oid)).getId(), compositePublicKey.getAlgorithm());
 
-               // isEquals(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(new ASN1ObjectIdentifier(oid)).getId(), compositePublicKey.getAlgorithm());
+            isEquals(subjectName, cert.getSubjectX500Principal().getName());
 
-                isEquals(subjectName, cert.getSubjectX500Principal().getName());
-
-                cert.verify(cert.getPublicKey());
-                index++;
-            }
+            cert.verify(cert.getPublicKey());
+            index++;
+        }
     }
 
     private void checkParseCompositePublicKey()
@@ -5592,7 +5607,8 @@ public class CertTest
             //certificate.verify(compositePublicKey);
         }
         catch (Exception e)
-        {                e.printStackTrace();
+        {
+            e.printStackTrace();
             fail("checkParseAndVerifyCompositeCertificate failed: " + e.getMessage());
         }
     }
