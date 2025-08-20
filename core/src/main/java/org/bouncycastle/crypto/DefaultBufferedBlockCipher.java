@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto;
 
-import org.bouncycastle.util.Arrays;
-
 /**
  * A wrapper class that allows block ciphers to be used to process data in
  * a piecemeal fashion. The BufferedBlockCipher outputs a block only when the
@@ -243,7 +241,7 @@ public class DefaultBufferedBlockCipher
                 len -= gapLen;
             }
 
-            if (in == out && Arrays.segmentsOverlap(inOff, len, outOff, length))
+            if (in == out)
             {
                 in = new byte[len];
                 System.arraycopy(out, inOff, in, 0, len);
