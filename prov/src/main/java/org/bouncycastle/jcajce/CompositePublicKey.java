@@ -12,15 +12,20 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPublicKey;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A composite key class.
  */
-public class CompositePublicKey implements PublicKey
+public class CompositePublicKey
+    implements PublicKey
 {
     private final List<PublicKey> keys;
 
@@ -79,7 +84,7 @@ public class CompositePublicKey implements PublicKey
                 throw new IllegalStateException("unable to create CompositePublicKey from SubjectPublicKeyInfo");
             }
             AsymmetricKeyInfoConverter keyInfoConverter = new KeyFactorySpi();
-            publicKeyFromFactory = (CompositePublicKey) keyInfoConverter.generatePublic(keyInfo);
+            publicKeyFromFactory = (CompositePublicKey)keyInfoConverter.generatePublic(keyInfo);
 
             if (publicKeyFromFactory == null)
             {
@@ -124,7 +129,9 @@ public class CompositePublicKey implements PublicKey
      * Returns the composite public key encoded as a SubjectPublicKeyInfo.
      * If the composite public key is legacy (MiscObjectIdentifiers.id_composite_key),
      * it each component public key is wrapped in its own SubjectPublicKeyInfo.
-     * Other composite public keys are encoded according to https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-compositesignaturepublickey
+     * Other composite public keys are encoded according to
+     * <a href="https://lamps-wg.github.io/draft-composite-sigs/draft-ietf-lamps-pq-composite-sigs.html">
+     * Composite ML-DSA for use in X.509 Public Key Infrastructure</a>
      * where each component public key is a BIT STRING which contains the result of calling
      * getEncoded() for each component public key.
      *
@@ -133,6 +140,20 @@ public class CompositePublicKey implements PublicKey
     @Override
     public byte[] getEncoded()
     {
+        if (this.algorithmIdentifier.on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
+        {
+            try
+            {
+                byte[] mldsaKey = org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(keys.get(0).getEncoded())).getPublicKeyData().getBytes();
+                byte[] tradKey = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(PublicKeyFactory.createKey(keys.get(1).getEncoded())).getPublicKeyData().getBytes();
+                return Arrays.concatenate(mldsaKey, tradKey);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
+            }
+        }
+
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         for (int i = 0; i < keys.size(); i++)
@@ -175,7 +196,7 @@ public class CompositePublicKey implements PublicKey
         if (o instanceof CompositePublicKey)
         {
             boolean isEqual = true;
-            CompositePublicKey comparedKey = (CompositePublicKey) o;
+            CompositePublicKey comparedKey = (CompositePublicKey)o;
             if (!comparedKey.getAlgorithmIdentifier().equals(this.algorithmIdentifier) || !this.keys.equals(comparedKey.keys))
             {
                 isEqual = false;
