@@ -12,9 +12,13 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -22,7 +26,8 @@ import org.bouncycastle.util.Exceptions;
 /**
  * A composite private key class.
  */
-public class CompositePrivateKey implements PrivateKey
+public class CompositePrivateKey
+    implements PrivateKey
 {
     private final List<PrivateKey> keys;
 
@@ -80,7 +85,7 @@ public class CompositePrivateKey implements PrivateKey
                 throw new IllegalStateException("Unable to create CompositePrivateKey from PrivateKeyInfo");
             }
             AsymmetricKeyInfoConverter keyInfoConverter = new KeyFactorySpi();
-            privateKeyFromFactory = (CompositePrivateKey) keyInfoConverter.generatePrivate(keyInfo);
+            privateKeyFromFactory = (CompositePrivateKey)keyInfoConverter.generatePrivate(keyInfo);
 
             if (privateKeyFromFactory == null)
             {
@@ -123,13 +128,28 @@ public class CompositePrivateKey implements PrivateKey
 
     /**
      * Returns the encoding of the composite private key.
-     * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-compositesignatureprivateke
+     * It is compliant with <a href="https://lamps-wg.github.io/draft-composite-sigs/draft-ietf-lamps-pq-composite-sigs.html">
+     * Composite ML-DSA for use in X.509 Public Key Infrastructure</a>
      * as each component is encoded as a PrivateKeyInfo (older name for OneAsymmetricKey).
      *
      * @return
      */
     public byte[] getEncoded()
     {
+        if (this.algorithmIdentifier.on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
+        {
+            try
+            {
+                byte[] mldsaKey = ((BCMLDSAPrivateKey)keys.get(0)).getSeed();
+                PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(keys.get(1).getEncoded()));
+                byte[] tradKey = pki.getPrivateKey().getOctets();
+                return Arrays.concatenate(mldsaKey, tradKey);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
+            }
+        }
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         if (algorithmIdentifier.equals(MiscObjectIdentifiers.id_composite_key))
@@ -184,7 +204,7 @@ public class CompositePrivateKey implements PrivateKey
         if (o instanceof CompositePrivateKey)
         {
             boolean isEqual = true;
-            CompositePrivateKey comparedKey = (CompositePrivateKey) o;
+            CompositePrivateKey comparedKey = (CompositePrivateKey)o;
             if (!comparedKey.getAlgorithmIdentifier().equals(this.algorithmIdentifier) || !this.keys.equals(comparedKey.keys))
             {
                 isEqual = false;
