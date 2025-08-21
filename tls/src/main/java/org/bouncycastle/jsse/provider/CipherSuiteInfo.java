@@ -155,6 +155,14 @@ class CipherSuiteInfo
         case EncryptionAlgorithm.NULL:
             decomposition.add("C_NULL");
             break;
+        case EncryptionAlgorithm.NULL_HMAC_SHA256:
+            decomposition.add("C_NULL_HMAC");
+            decomposeHmacSHA256(decomposition);
+            break;
+        case EncryptionAlgorithm.NULL_HMAC_SHA384:
+            decomposition.add("C_NULL_HMAC");
+            decomposeHmacSHA384(decomposition);
+            break;
         case EncryptionAlgorithm.SM4_CBC:
             decomposition.add("SM4_CBC");
             break;
@@ -174,20 +182,35 @@ class CipherSuiteInfo
         switch (cryptoHashAlgorithm)
         {
         case CryptoHashAlgorithm.sha256:
-            addAll(decomposition, "SHA256", "SHA-256", "HmacSHA256");
+            decomposeHmacSHA256(decomposition);
             break;
         case CryptoHashAlgorithm.sha384:
-            addAll(decomposition, "SHA384", "SHA-384", "HmacSHA384");
+            decomposeHmacSHA384(decomposition);
             break;
-//        case CryptoHashAlgorithm.sha512:
-//            addAll(decomposition, "SHA512", "SHA-512", "HmacSHA512");
-//            break;
+        case CryptoHashAlgorithm.sha512:
+            decomposeHmacSHA512(decomposition);
+            break;
         case CryptoHashAlgorithm.sm3:
             addAll(decomposition, "SM3", "HmacSM3");
             break;
         default:
             throw new IllegalArgumentException();
         }
+    }
+
+    private static void decomposeHmacSHA256(Set<String> decomposition)
+    {
+        addAll(decomposition, "SHA256", "SHA-256", "HmacSHA256");
+    }
+
+    private static void decomposeHmacSHA384(Set<String> decomposition)
+    {
+        addAll(decomposition, "SHA384", "SHA-384", "HmacSHA384");
+    }
+
+    private static void decomposeHmacSHA512(Set<String> decomposition)
+    {
+        addAll(decomposition, "SHA512", "SHA-512", "HmacSHA512");
     }
 
     private static void decomposeKeyExchangeAlgorithm(Set<String> decomposition, int keyExchangeAlgorithm)
@@ -263,14 +286,14 @@ class CipherSuiteInfo
             addAll(decomposition, "SHA1", "SHA-1", "HmacSHA1");
             break;
         case MACAlgorithm.hmac_sha256:
-            addAll(decomposition, "SHA256", "SHA-256", "HmacSHA256");
+            decomposeHmacSHA256(decomposition);
             break;
         case MACAlgorithm.hmac_sha384:
-            addAll(decomposition, "SHA384", "SHA-384", "HmacSHA384");
+            decomposeHmacSHA384(decomposition);
             break;
-//        case MACAlgorithm.hmac_sha512:
-//            addAll(decomposition, "SHA512", "SHA-512", "HmacSHA512");
-//            break;
+        case MACAlgorithm.hmac_sha512:
+            decomposeHmacSHA512(decomposition);
+            break;
         default:
             throw new IllegalArgumentException();
         }
@@ -381,6 +404,7 @@ class CipherSuiteInfo
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
+        case CipherSuite.TLS_SHA256_SHA256:
             return CryptoHashAlgorithm.sha256;
 
         case CipherSuite.TLS_AES_256_GCM_SHA384:
@@ -412,6 +436,7 @@ class CipherSuiteInfo
         case CipherSuite.TLS_RSA_WITH_ARIA_256_CBC_SHA384:
         case CipherSuite.TLS_RSA_WITH_ARIA_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_SHA384_SHA384:
             return CryptoHashAlgorithm.sha384;
 
         case CipherSuite.TLS_SM4_CCM_SM3:
@@ -455,6 +480,8 @@ class CipherSuiteInfo
         case EncryptionAlgorithm.CHACHA20_POLY1305:
             return "ChaCha20-Poly1305";
         case EncryptionAlgorithm.NULL:
+        case EncryptionAlgorithm.NULL_HMAC_SHA256:
+        case EncryptionAlgorithm.NULL_HMAC_SHA384:
             return "NULL";
         case EncryptionAlgorithm.SM4_CBC:
             return "SM4/CBC/NoPadding";
