@@ -39,9 +39,7 @@ public class CMCEPrivateKeyParameters
     public byte[] reconstructPublicKey()
     {
         CMCEEngine engine = getParameters().getEngine();
-        byte[] pk = new byte[engine.getPublicKeySize()];
-        engine.generate_public_key_from_private_key(privateKey);
-        return pk;
+        return engine.generate_public_key_from_private_key(privateKey);
     }
 
     public byte[] getEncoded()

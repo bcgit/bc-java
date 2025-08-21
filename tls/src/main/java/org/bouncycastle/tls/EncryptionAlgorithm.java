@@ -84,4 +84,10 @@ public class EncryptionAlgorithm
     public static final int KUZNYECHIK_CTR_OMAC = 29;
     public static final int MAGMA_CTR_OMAC = 30;
     public static final int _28147_CNT_IMIT = 31;
+
+    /*
+     * RFC 9150
+     */
+    public static final int NULL_HMAC_SHA256 = 32;
+    public static final int NULL_HMAC_SHA384 = 33;
 }

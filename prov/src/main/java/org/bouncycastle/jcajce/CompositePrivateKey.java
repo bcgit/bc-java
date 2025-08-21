@@ -12,9 +12,12 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -22,11 +25,12 @@ import org.bouncycastle.util.Exceptions;
 /**
  * A composite private key class.
  */
-public class CompositePrivateKey implements PrivateKey
+public class CompositePrivateKey
+    implements PrivateKey
 {
     private final List<PrivateKey> keys;
 
-    private ASN1ObjectIdentifier algorithmIdentifier;
+    private AlgorithmIdentifier algorithmIdentifier;
 
     /**
      * Create a composite private key from an array of PublicKeys.
@@ -39,6 +43,11 @@ public class CompositePrivateKey implements PrivateKey
         this(MiscObjectIdentifiers.id_composite_key, keys);
     }
 
+    public CompositePrivateKey(ASN1ObjectIdentifier algorithm, PrivateKey... keys)
+    {
+        this(new AlgorithmIdentifier(algorithm), keys);
+    }
+
     /**
      * Create a composite private key which corresponds to a composite signature algorithm in algorithmIdentifier.
      * The component private keys are not checked if they satisfy the composite definition at this point,
@@ -47,7 +56,7 @@ public class CompositePrivateKey implements PrivateKey
      * @param algorithmIdentifier
      * @param keys
      */
-    public CompositePrivateKey(ASN1ObjectIdentifier algorithmIdentifier, PrivateKey... keys)
+    public CompositePrivateKey(AlgorithmIdentifier algorithmIdentifier, PrivateKey... keys)
     {
         this.algorithmIdentifier = algorithmIdentifier;
 
@@ -80,7 +89,7 @@ public class CompositePrivateKey implements PrivateKey
                 throw new IllegalStateException("Unable to create CompositePrivateKey from PrivateKeyInfo");
             }
             AsymmetricKeyInfoConverter keyInfoConverter = new KeyFactorySpi();
-            privateKeyFromFactory = (CompositePrivateKey) keyInfoConverter.generatePrivate(keyInfo);
+            privateKeyFromFactory = (CompositePrivateKey)keyInfoConverter.generatePrivate(keyInfo);
 
             if (privateKeyFromFactory == null)
             {
@@ -108,10 +117,10 @@ public class CompositePrivateKey implements PrivateKey
 
     public String getAlgorithm()
     {
-        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier);
+        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier.getAlgorithm());
     }
 
-    public ASN1ObjectIdentifier getAlgorithmIdentifier()
+    public AlgorithmIdentifier getAlgorithmIdentifier()
     {
         return algorithmIdentifier;
     }
@@ -123,16 +132,31 @@ public class CompositePrivateKey implements PrivateKey
 
     /**
      * Returns the encoding of the composite private key.
-     * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-compositesignatureprivateke
+     * It is compliant with <a href="https://lamps-wg.github.io/draft-composite-sigs/draft-ietf-lamps-pq-composite-sigs.html">
+     * Composite ML-DSA for use in X.509 Public Key Infrastructure</a>
      * as each component is encoded as a PrivateKeyInfo (older name for OneAsymmetricKey).
      *
      * @return
      */
     public byte[] getEncoded()
     {
+        if (this.algorithmIdentifier.getAlgorithm().on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
+        {
+            try
+            {
+                byte[] mldsaKey = ((BCMLDSAPrivateKey)keys.get(0)).getSeed();
+                PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(keys.get(1).getEncoded()));
+                byte[] tradKey = pki.getPrivateKey().getOctets();
+                return Arrays.concatenate(mldsaKey, tradKey);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
+            }
+        }
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        if (algorithmIdentifier.equals(MiscObjectIdentifiers.id_composite_key))
+        if (algorithmIdentifier.getAlgorithm().equals(MiscObjectIdentifiers.id_composite_key))
         {
             for (int i = 0; i < keys.size(); i++)
             {
@@ -142,7 +166,7 @@ public class CompositePrivateKey implements PrivateKey
 
             try
             {
-                return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+                return new PrivateKeyInfo(this.algorithmIdentifier, new DERSequence(v)).getEncoded(ASN1Encoding.DER);
             }
             catch (IOException e)
             {
@@ -160,7 +184,7 @@ public class CompositePrivateKey implements PrivateKey
 
             try
             {
-                return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), keyEncoding).getEncoded(ASN1Encoding.DER);
+                return new PrivateKeyInfo(this.algorithmIdentifier, keyEncoding).getEncoded(ASN1Encoding.DER);
             }
             catch (IOException e)
             {
@@ -184,7 +208,7 @@ public class CompositePrivateKey implements PrivateKey
         if (o instanceof CompositePrivateKey)
         {
             boolean isEqual = true;
-            CompositePrivateKey comparedKey = (CompositePrivateKey) o;
+            CompositePrivateKey comparedKey = (CompositePrivateKey)o;
             if (!comparedKey.getAlgorithmIdentifier().equals(this.algorithmIdentifier) || !this.keys.equals(comparedKey.keys))
             {
                 isEqual = false;
