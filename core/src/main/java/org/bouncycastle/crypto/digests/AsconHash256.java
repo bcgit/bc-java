@@ -6,7 +6,7 @@ import org.bouncycastle.util.Pack;
  * Ascon-Hash256 was introduced in NIST Special Publication (SP) 800-232
  * <p>
  * Additional details and the specification can be found in:
- * <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-232.pdf">NIST SP 800-232
+ * <a href="https://csrc.nist.gov/pubs/sp/800/232/final">NIST SP 800-232
  * Ascon-Based Lightweight Cryptography Standards for Constrained Devices</a>.
  * For reference source code and implementation details, please see:
  * <a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
