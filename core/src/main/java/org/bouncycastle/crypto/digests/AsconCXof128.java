@@ -7,7 +7,7 @@ import org.bouncycastle.util.Pack;
  * Ascon-CXOF128 was introduced in NIST Special Publication (SP) 800-232
  * <p>
  * Additional details and the specification can be found in:
- * <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-232.pdf">NIST SP 800-232
+ * <a href="https://csrc.nist.gov/pubs/sp/800/232/final">NIST SP 800-232
  * Ascon-Based Lightweight Cryptography Standards for Constrained Devices</a>.
  * For reference source code and implementation details, please see:
  * <a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
@@ -81,18 +81,18 @@ public class AsconCXof128
 
     private void initState(byte[] z, int zOff, int zLen)
     {
-//        if (zLen == 0)
-//        {
-//            p.set(0x500cccc894e3c9e8L, 0x5bed06f28f71248dL, 0x3b03a0f930afd512L, 0x112ef093aa5c698bL, 0x00c8356340a347f0L);
-//        }
-//        else
-//        {
-        p.set(0x675527c2a0e8de03L, 0x43d12d7dc0377bbcL, 0xe9901dec426e81b5L, 0x2ab14907720780b6L, 0x8f3f1d02d432bc46L);
-        p.x0 ^= ((long)zLen) << 3;
-        p.p(12);
-        update(z, zOff, zLen);
-        padAndAbsorb();
-//        }
+        if (zLen == 0)
+        {
+            p.set(0x500cccc894e3c9e8L, 0x5bed06f28f71248dL, 0x3b03a0f930afd512L, 0x112ef093aa5c698bL, 0x00c8356340a347f0L);
+        }
+        else
+        {
+            p.set(0x675527c2a0e8de03L, 0x43d12d7dc0377bbcL, 0xe9901dec426e81b5L, 0x2ab14907720780b6L, 0x8f3f1d02d432bc46L);
+            p.x0 ^= ((long)zLen) << 3;
+            p.p(12);
+            update(z, zOff, zLen);
+            padAndAbsorb();
+        }
         super.reset();
     }
 }
