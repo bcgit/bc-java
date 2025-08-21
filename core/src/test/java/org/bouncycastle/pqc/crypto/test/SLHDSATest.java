@@ -739,7 +739,7 @@ public class SLHDSATest
 //        return (String[]) l.toArray(new String[0]);
 //    }
 
-    private class InternalSLHDSASigner
+    private static class InternalSLHDSASigner
         extends SLHDSASigner
     {
         public byte[] internalGenerateSignature(byte[] message, byte[] optRand)
