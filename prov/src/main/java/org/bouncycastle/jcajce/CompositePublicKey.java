@@ -12,19 +12,23 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A composite key class.
  */
-public class CompositePublicKey implements PublicKey
+public class CompositePublicKey
+    implements PublicKey
 {
     private final List<PublicKey> keys;
 
-    private final ASN1ObjectIdentifier algorithmIdentifier;
+    private final AlgorithmIdentifier algorithmIdentifier;
 
     /**
      * Create a composite public key from an array of PublicKeys.
@@ -37,6 +41,11 @@ public class CompositePublicKey implements PublicKey
         this(MiscObjectIdentifiers.id_composite_key, keys);
     }
 
+    public CompositePublicKey(ASN1ObjectIdentifier algorithmIdentifier, PublicKey... keys)
+    {
+        this(new AlgorithmIdentifier(algorithmIdentifier), keys);
+    }
+
     /**
      * Create a composite public key which corresponds to a composite signature algorithm in algorithmIdentifier.
      * The component public keys are not checked if they satisfy the composite definition at this point,
@@ -45,7 +54,7 @@ public class CompositePublicKey implements PublicKey
      * @param algorithmIdentifier
      * @param keys
      */
-    public CompositePublicKey(ASN1ObjectIdentifier algorithmIdentifier, PublicKey... keys)
+    public CompositePublicKey(AlgorithmIdentifier algorithmIdentifier, PublicKey... keys)
     {
         this.algorithmIdentifier = algorithmIdentifier;
 
@@ -79,7 +88,7 @@ public class CompositePublicKey implements PublicKey
                 throw new IllegalStateException("unable to create CompositePublicKey from SubjectPublicKeyInfo");
             }
             AsymmetricKeyInfoConverter keyInfoConverter = new KeyFactorySpi();
-            publicKeyFromFactory = (CompositePublicKey) keyInfoConverter.generatePublic(keyInfo);
+            publicKeyFromFactory = (CompositePublicKey)keyInfoConverter.generatePublic(keyInfo);
 
             if (publicKeyFromFactory == null)
             {
@@ -107,10 +116,10 @@ public class CompositePublicKey implements PublicKey
 
     public String getAlgorithm()
     {
-        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier);
+        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier.getAlgorithm());
     }
 
-    public ASN1ObjectIdentifier getAlgorithmIdentifier()
+    public AlgorithmIdentifier getAlgorithmIdentifier()
     {
         return algorithmIdentifier;
     }
@@ -124,7 +133,9 @@ public class CompositePublicKey implements PublicKey
      * Returns the composite public key encoded as a SubjectPublicKeyInfo.
      * If the composite public key is legacy (MiscObjectIdentifiers.id_composite_key),
      * it each component public key is wrapped in its own SubjectPublicKeyInfo.
-     * Other composite public keys are encoded according to https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-compositesignaturepublickey
+     * Other composite public keys are encoded according to
+     * <a href="https://lamps-wg.github.io/draft-composite-sigs/draft-ietf-lamps-pq-composite-sigs.html">
+     * Composite ML-DSA for use in X.509 Public Key Infrastructure</a>
      * where each component public key is a BIT STRING which contains the result of calling
      * getEncoded() for each component public key.
      *
@@ -133,11 +144,25 @@ public class CompositePublicKey implements PublicKey
     @Override
     public byte[] getEncoded()
     {
+        if (this.algorithmIdentifier.getAlgorithm().on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
+        {
+            try
+            {
+                byte[] mldsaKey = org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(keys.get(0).getEncoded())).getPublicKeyData().getBytes();
+                byte[] tradKey = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(PublicKeyFactory.createKey(keys.get(1).getEncoded())).getPublicKeyData().getBytes();
+                return new SubjectPublicKeyInfo(getAlgorithmIdentifier(), Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
+            }
+        }
+
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         for (int i = 0; i < keys.size(); i++)
         {
-            if (this.algorithmIdentifier.equals(MiscObjectIdentifiers.id_composite_key))
+            if (this.algorithmIdentifier.getAlgorithm().equals(MiscObjectIdentifiers.id_composite_key))
             {
                 //Legacy, component is the whole SubjectPublicKeyInfo
                 v.add(SubjectPublicKeyInfo.getInstance(keys.get(i).getEncoded()));
@@ -151,7 +176,7 @@ public class CompositePublicKey implements PublicKey
         }
         try
         {
-            return new SubjectPublicKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+            return new SubjectPublicKeyInfo(this.algorithmIdentifier, new DERSequence(v)).getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {
@@ -175,7 +200,7 @@ public class CompositePublicKey implements PublicKey
         if (o instanceof CompositePublicKey)
         {
             boolean isEqual = true;
-            CompositePublicKey comparedKey = (CompositePublicKey) o;
+            CompositePublicKey comparedKey = (CompositePublicKey)o;
             if (!comparedKey.getAlgorithmIdentifier().equals(this.algorithmIdentifier) || !this.keys.equals(comparedKey.keys))
             {
                 isEqual = false;

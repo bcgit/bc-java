@@ -702,7 +702,7 @@ abstract class X509CertificateImpl
 
             //Use this only for legacy composite public keys (they have this identifier)
             if (key instanceof CompositePublicKey
-                && MiscObjectIdentifiers.id_composite_key.equals(((CompositePublicKey)key).getAlgorithmIdentifier()))
+                && MiscObjectIdentifiers.id_composite_key.equals(((CompositePublicKey)key).getAlgorithmIdentifier().getAlgorithm()))
             {
                 List<PublicKey> keys = ((CompositePublicKey)key).getPublicKeys();
 

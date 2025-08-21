@@ -34,7 +34,7 @@ public class CipherSuitesTestSuite
                  * we could modify that security property when running this test suite.
                  */
                 return cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_")
-                    || cipherSuite.contains("_anon_");
+                    || cipherSuite.contains("_anon_") || cipherSuite.startsWith("TLS_SHA");
             }
 
             public boolean isPermitted(String cipherSuite)

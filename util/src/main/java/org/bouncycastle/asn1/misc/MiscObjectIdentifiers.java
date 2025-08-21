@@ -162,7 +162,7 @@ public interface MiscObjectIdentifiers
     //    Algorithm(80) Composite(4) CompositeKey(1)
     ASN1ObjectIdentifier id_composite_key = new ASN1ObjectIdentifier("2.16.840.1.114027.80.4.1");
 
-    ASN1ObjectIdentifier id_oracle_pkcs12_trusted_key_usage = new ASN1ObjectIdentifier("2.16.840.1.113894.746875.1.1");
+    ASN1ObjectIdentifier id_oracle_PKCS12_trusted_key_usage = new ASN1ObjectIdentifier("2.16.840.1.113894.746875.1.1");
 
 
     // COMPOSITE SIGNATURES START
@@ -170,17 +170,12 @@ public interface MiscObjectIdentifiers
     // Composite signature related OIDs. Based https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
     // The current OIDs are EXPERIMENTAL and are going to change.
     ASN1ObjectIdentifier id_composite_signatures = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1");
-    ASN1ObjectIdentifier id_MLDSA44_RSA2048_PSS_SHA256 = id_composite_signatures.branch("21");
-    ASN1ObjectIdentifier id_MLDSA44_RSA2048_PKCS15_SHA256 = id_composite_signatures.branch("22");
-    ASN1ObjectIdentifier id_MLDSA44_Ed25519_SHA512 = id_composite_signatures.branch("23");
-    ASN1ObjectIdentifier id_MLDSA44_ECDSA_P256_SHA256 = id_composite_signatures.branch("24");
     ASN1ObjectIdentifier id_MLDSA65_RSA3072_PSS_SHA256 = id_composite_signatures.branch("26");
     ASN1ObjectIdentifier id_MLDSA65_RSA3072_PKCS15_SHA256 = id_composite_signatures.branch("27");
     ASN1ObjectIdentifier id_MLDSA65_RSA4096_PSS_SHA384 = id_composite_signatures.branch("34");
     ASN1ObjectIdentifier id_MLDSA65_RSA4096_PKCS15_SHA384 = id_composite_signatures.branch("35");
     ASN1ObjectIdentifier id_MLDSA65_ECDSA_P384_SHA384 = id_composite_signatures.branch("28");
     ASN1ObjectIdentifier id_MLDSA65_ECDSA_brainpoolP256r1_SHA256 = id_composite_signatures.branch("29");
-    ASN1ObjectIdentifier id_MLDSA65_Ed25519_SHA512 = id_composite_signatures.branch("30");
     ASN1ObjectIdentifier id_MLDSA87_ECDSA_P384_SHA384 = id_composite_signatures.branch("31");
     ASN1ObjectIdentifier id_MLDSA87_ECDSA_brainpoolP384r1_SHA384 = id_composite_signatures.branch("32");
     ASN1ObjectIdentifier id_MLDSA87_Ed448_SHA512 = id_composite_signatures.branch("33");
@@ -199,5 +194,43 @@ public interface MiscObjectIdentifiers
     ASN1ObjectIdentifier id_HashMLDSA87_ECDSA_P384_SHA512 = id_composite_signatures.branch("51");
     ASN1ObjectIdentifier id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512 = id_composite_signatures.branch("52");
     ASN1ObjectIdentifier id_HashMLDSA87_Ed448_SHA512 = id_composite_signatures.branch("53");
+
+    ASN1ObjectIdentifier id_MLDSA_COMPSIG = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1");
+    /** 2.16.840.1.114027.80.9.1.0 id-MLDSA44-RSA2048-PSS-SHA256 */
+    ASN1ObjectIdentifier id_MLDSA44_RSA2048_PSS_SHA256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.0");
+    /** 2.16.840.1.114027.80.9.1.1 id-MLDSA44-RSA2048-PKCS15-SHA256 */
+    ASN1ObjectIdentifier id_MLDSA44_RSA2048_PKCS15_SHA256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.1");
+    /** 2.16.840.1.114027.80.9.1.2 id-MLDSA44-Ed25519-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA44_Ed25519_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.2");
+    /** 2.16.840.1.114027.80.9.1.3 id-MLDSA44-ECDSA-P256-SHA256 */
+    ASN1ObjectIdentifier id_MLDSA44_ECDSA_P256_SHA256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.3");
+    /** 2.16.840.1.114027.80.9.1.4 id-MLDSA65-RSA3072-PSS-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_RSA3072_PSS_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.4");
+    /** 2.16.840.1.114027.80.9.1.5 id-MLDSA65-RSA3072-PKCS15-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_RSA3072_PKCS15_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.5");
+    /** 2.16.840.1.114027.80.9.1.6 id-MLDSA65-RSA4096-PSS-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_RSA4096_PSS_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.6");
+    /** 2.16.840.1.114027.80.9.1.7 id-MLDSA65-RSA4096-PKCS15-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_RSA4096_PKCS15_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.7");
+    /** 2.16.840.1.114027.80.9.1.8 id-MLDSA65-ECDSA-P256-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_ECDSA_P256_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.8");
+    /** 2.16.840.1.114027.80.9.1.9 id-MLDSA65-ECDSA-P384-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_ECDSA_P384_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.9");
+    /** 2.16.840.1.114027.80.9.1.10 id-MLDSA65-ECDSA-brainpoolP256r1-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_ECDSA_brainpoolP256r1_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.10");
+    /** 2.16.840.1.114027.80.9.1.11 id-MLDSA65-Ed25519-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_Ed25519_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.11");
+    /** 2.16.840.1.114027.80.9.1.12 id-MLDSA87-ECDSA-P384-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_ECDSA_P384_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.12");
+    /** 2.16.840.1.114027.80.9.1.13 id-MLDSA87-ECDSA-brainpoolP384r1-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_ECDSA_brainpoolP384r1_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.13");
+    /** 2.16.840.1.114027.80.9.1.14 id-MLDSA87-Ed448-SHAKE256 */
+    ASN1ObjectIdentifier id_MLDSA87_Ed448_SHAKE256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.14");
+    /** 2.16.840.1.114027.80.9.1.15 id-MLDSA87-RSA3072-PSS-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_RSA3072_PSS_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.15");
+    /** 2.16.840.1.114027.80.9.1.16 id-MLDSA87-RSA4096-PSS-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_RSA4096_PSS_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.16");
+    /** 2.16.840.1.114027.80.9.1.17 id-MLDSA87-ECDSA-P521-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_ECDSA_P521_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.17");
     // COMPOSITE SIGNATURES END
 }
