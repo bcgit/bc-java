@@ -26,11 +26,9 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
@@ -306,7 +304,47 @@ public class CompositeSignaturesTest
         TestCase.assertTrue(signature.verify(signatureValue));
 
         KeyFactory compFact = KeyFactory.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
-             System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(compPrivateKey.getEncoded())));
+        PrivateKey compPriv = compFact.generatePrivate(new PKCS8EncodedKeySpec(compPrivateKey.getEncoded()));
+        PublicKey compPub = compFact.generatePublic(new X509EncodedKeySpec(compPublicKey.getEncoded()));
+
+        signature.initSign(compPriv);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        signatureValue = signature.sign();
+
+        signature.initVerify(compPub);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        TestCase.assertTrue(signature.verify(signatureValue));
+
+    }
+
+    public void testMixedComposition()
+        throws Exception
+    {
+        KeyPairGenerator mldsaKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
+
+        mldsaKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
+
+        KeyPair mldsaKp = mldsaKpGen.generateKeyPair();
+
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "SunEC");
+
+        ecKpGen.initialize(new ECGenParameterSpec("secp256r1"));
+
+        KeyPair ecKp = ecKpGen.generateKeyPair();
+
+        CompositePublicKey compPublicKey = new CompositePublicKey(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaKp.getPublic(), ecKp.getPublic());
+        CompositePrivateKey compPrivateKey = new CompositePrivateKey(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaKp.getPrivate(), ecKp.getPrivate());
+
+        Signature signature = Signature.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
+        signature.initSign(compPrivateKey);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        byte[] signatureValue = signature.sign();
+
+        signature.initVerify(compPublicKey);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        TestCase.assertTrue(signature.verify(signatureValue));
+
+        KeyFactory compFact = KeyFactory.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
         PrivateKey compPriv = compFact.generatePrivate(new PKCS8EncodedKeySpec(compPrivateKey.getEncoded()));
         PublicKey compPub = compFact.generatePublic(new X509EncodedKeySpec(compPublicKey.getEncoded()));
 

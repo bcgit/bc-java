@@ -13,13 +13,14 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.util.Strings;
 
 public class BCRSAPrivateKey
-    implements RSAPrivateKey, PKCS12BagAttributeCarrier
+    implements RSAPrivateKey, PKCS12BagAttributeCarrier, BCKey
 {
     static final long serialVersionUID = 5110188922551353628L;
 

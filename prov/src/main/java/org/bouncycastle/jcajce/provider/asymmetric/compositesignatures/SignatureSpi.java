@@ -16,6 +16,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -29,6 +30,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -94,6 +96,7 @@ public class SignatureSpi
 
     //List of Signatures. Each entry corresponds to a component signature from the composite definition.
     private final ASN1ObjectIdentifier algorithm;
+    private final String[] algs;
     private final Signature[] componentSignatures;
     private final byte[] domain;
     private final Digest preHashDigest;
@@ -110,20 +113,8 @@ public class SignatureSpi
         this.preHashDigest = preHashDigest;
         this.domain = domainSeparators.get(algorithm);
 
-        String[] algs = CompositeIndex.getPairing(algorithm);
-
+        this.algs = CompositeIndex.getPairing(algorithm);
         this.componentSignatures = new Signature[algs.length];
-        try
-        {
-            for (int i = 0; i != componentSignatures.length; i++)
-            {
-                componentSignatures[i] = Signature.getInstance(algs[i], "BC");
-            }
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw Exceptions.illegalStateException(e.getMessage(), e);
-        }
     }
 
     protected void engineInitVerify(PublicKey publicKey)
@@ -137,11 +128,13 @@ public class SignatureSpi
         this.compositeKey = publicKey;
 
         CompositePublicKey compositePublicKey = (CompositePublicKey)this.compositeKey;
+
         if (!compositePublicKey.getAlgorithmIdentifier().getAlgorithm().equals(this.algorithm))
         {
             throw new InvalidKeyException("Provided composite public key cannot be used with the composite signature algorithm.");
         }
-
+        createComponentSignatures(compositePublicKey.getPublicKeys());
+        
         sigInitVerify();
     }
 
@@ -171,8 +164,31 @@ public class SignatureSpi
         {
             throw new InvalidKeyException("Provided composite private key cannot be used with the composite signature algorithm.");
         }
+        createComponentSignatures(compositePrivateKey.getPrivateKeys());
 
         sigInitSign();
+    }
+
+    private void createComponentSignatures(List keys)
+    {
+        try
+        {
+            for (int i = 0; i != componentSignatures.length; i++)
+            {
+                if (keys.get(i) instanceof BCKey)
+                {
+                    componentSignatures[i] = Signature.getInstance(algs[i], "BC");
+                }
+                else
+                {
+                    componentSignatures[i] = Signature.getInstance(algs[i]);
+                }
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw Exceptions.illegalStateException(e.getMessage(), e);
+        }
     }
 
     private void sigInitSign()
