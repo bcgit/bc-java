@@ -15,7 +15,7 @@ public class ChangeKeyPassphraseTest
     protected void performTestWith(OpenPGPApi api)
             throws PGPException, IOException
     {
-        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        if (!System.getProperty("java.version").contains("1.5."))
         {
             removeAEADPassphrase(api);
             addAEADPassphrase(api);

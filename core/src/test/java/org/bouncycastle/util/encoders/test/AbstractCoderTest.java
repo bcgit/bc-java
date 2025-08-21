@@ -202,7 +202,7 @@ public abstract class AbstractCoderTest extends TestCase
 
     private String convertBytesToString(byte[] encoded)
     {
-        StringBuffer    b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         
         for (int i = 0; i != encoded.length; i++)
         {
