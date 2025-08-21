@@ -13,6 +13,9 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -23,16 +26,19 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPublicKey;
-import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.MLDSAPrivateKeySpec;
@@ -122,26 +128,72 @@ public class CompositeSignaturesTest
             CompositePublicKey compositePublicKey = (CompositePublicKey)keyPair.getPublic();
             CompositePrivateKey compositePrivateKey = (CompositePrivateKey)keyPair.getPrivate();
 
-            String firstPublicKeyAlgorithm = Strings.toUpperCase(compositePublicKey.getPublicKeys().get(0).getAlgorithm());
-            String secondPublicKeyAlgorithm = Strings.toUpperCase(compositePublicKey.getPublicKeys().get(1).getAlgorithm());
-            String firstPrivateKeyAlgorithm = Strings.toUpperCase(compositePrivateKey.getPrivateKeys().get(0).getAlgorithm());
-            String secondPrivateKeyAlgorithm = Strings.toUpperCase(compositePrivateKey.getPrivateKeys().get(1).getAlgorithm());
-
-            BCRSAPublicKey rsaPublicKey = null;
-            BCRSAPublicKey rsaPrivateKey = null;
-
+            ASN1ObjectIdentifier compAlg = compositePrivateKey.getAlgorithmIdentifier().getAlgorithm();
+            if (compAlg.equals(BCObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256))
+            {
+                check_RSA_Composite("ML-DSA-44", 2048, compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512))
+            {
+                check_RSA_Composite("ML-DSA-65", 3072, compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512))
+            {
+                check_RSA_Composite("ML-DSA-87", 3072, compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512))
+            {
+                check_RSA_Composite("ML-DSA-87", 4096, compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA44_Ed25519_SHA512))
+            {
+                check_EdDSA_Composite("ML-DSA-44", "Ed25519", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA65_Ed25519_SHA512))
+            {
+                check_EdDSA_Composite("ML-DSA-65", "Ed25519", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256))
+            {
+                check_EdDSA_Composite("ML-DSA-87", "Ed448", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256))
+            {
+                check_ECDSA_Composite("ML-DSA-44", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512))
+            {
+                check_ECDSA_Composite("ML-DSA-65", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512))
+            {
+                check_ECDSA_Composite("ML-DSA-65", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA384))
+            {
+                check_ECDSA_Composite("ML-DSA-65", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512))
+            {
+                check_ECDSA_Composite("ML-DSA-87", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512))
+            {
+                check_ECDSA_Composite("ML-DSA-87", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512))
+            {
+                check_ECDSA_Composite("ML-DSA-87", compositePublicKey, compositePrivateKey);
+            }
+            else
+            {
+                System.out.println(CompositeIndex.getAlgorithmName(compAlg));
+            }
 //            switch (CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(new ASN1ObjectIdentifier(oid)))
 //            {
 //            case MLDSA44_RSA2048_PSS_SHA256:
 //            case MLDSA44_RSA2048_PKCS15_SHA256:
-//                TestCase.assertEquals("ML-DSA-44", firstPublicKeyAlgorithm);
-//                TestCase.assertEquals("ML-DSA-44", firstPrivateKeyAlgorithm);
-//                TestCase.assertEquals("RSA", secondPublicKeyAlgorithm);
-//                TestCase.assertEquals("RSA", secondPrivateKeyAlgorithm);
-//                rsaPublicKey = (BCRSAPublicKey)compositePublicKey.getPublicKeys().get(1);
-//                rsaPrivateKey = (BCRSAPublicKey)compositePublicKey.getPublicKeys().get(1);
-//                TestCase.assertEquals(2048, rsaPublicKey.getModulus().bitLength());
-//                TestCase.assertEquals(2048, rsaPrivateKey.getModulus().bitLength());
+//
 //                break;
 //            case MLDSA44_Ed25519_SHA512:
 //                TestCase.assertEquals("ML-DSA-44", firstPublicKeyAlgorithm);
@@ -174,7 +226,7 @@ public class CompositeSignaturesTest
 //                TestCase.assertEquals("ED25519", secondPrivateKeyAlgorithm);
 //                break;
 //            case MLDSA65_ECDSA_P256_SHA512:
-//            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:           ompositeK
+//            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
 //                TestCase.assertEquals("ML-DSA-65", firstPublicKeyAlgorithm);
 //                TestCase.assertEquals("ML-DSA-65", firstPrivateKeyAlgorithm);
 //                TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
@@ -198,6 +250,74 @@ public class CompositeSignaturesTest
 //                    "Unexpected key algorithm." + CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(new ASN1ObjectIdentifier(oid)));
 //            }
         }
+    }
+
+    private void check_RSA_Composite(String firstAlg, int rsaKeySize, CompositePublicKey compPub, CompositePrivateKey compPriv)
+    {
+        TestCase.assertEquals(firstAlg, compPub.getPublicKeys().get(0).getAlgorithm());
+        TestCase.assertEquals("RSA", compPub.getPublicKeys().get(1).getAlgorithm());
+        RSAPublicKey rsaPublicKey = (RSAPublicKey)compPub.getPublicKeys().get(1);
+        RSAPrivateKey rsaPrivateKey = (RSAPrivateKey)compPriv.getPrivateKeys().get(1);
+        TestCase.assertEquals(rsaKeySize, rsaPublicKey.getModulus().bitLength());
+        TestCase.assertEquals(rsaKeySize, rsaPrivateKey.getModulus().bitLength());
+    }
+
+    private void check_EdDSA_Composite(String firstAlg, String edDSAAlg, CompositePublicKey compPub, CompositePrivateKey compPriv)
+    {
+        TestCase.assertEquals(firstAlg, compPub.getPublicKeys().get(0).getAlgorithm());
+        TestCase.assertEquals(edDSAAlg, compPub.getPublicKeys().get(1).getAlgorithm());
+        TestCase.assertEquals(firstAlg, compPriv.getPrivateKeys().get(0).getAlgorithm());
+        TestCase.assertEquals(edDSAAlg, compPriv.getPrivateKeys().get(1).getAlgorithm());
+    }
+
+    private void check_ECDSA_Composite(String firstAlg, CompositePublicKey compPub, CompositePrivateKey compPriv)
+    {
+        TestCase.assertEquals(firstAlg, compPub.getPublicKeys().get(0).getAlgorithm());
+        TestCase.assertEquals("EC", compPub.getPublicKeys().get(1).getAlgorithm());
+        TestCase.assertEquals(firstAlg, compPriv.getPrivateKeys().get(0).getAlgorithm());
+        TestCase.assertEquals("EC", compPriv.getPrivateKeys().get(1).getAlgorithm());
+    }
+
+    public void testSelfComposition()
+        throws Exception
+    {
+        KeyPairGenerator mldsaKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
+
+        mldsaKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
+
+        KeyPair mldsaKp = mldsaKpGen.generateKeyPair();
+
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpGen.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair ecKp = ecKpGen.generateKeyPair();
+
+        CompositePublicKey compPublicKey = new CompositePublicKey(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaKp.getPublic(), ecKp.getPublic());
+        CompositePrivateKey compPrivateKey = new CompositePrivateKey(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaKp.getPrivate(), ecKp.getPrivate());
+
+        Signature signature = Signature.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
+        signature.initSign(compPrivateKey);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        byte[] signatureValue = signature.sign();
+
+        signature.initVerify(compPublicKey);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        TestCase.assertTrue(signature.verify(signatureValue));
+
+        KeyFactory compFact = KeyFactory.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
+             System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(compPrivateKey.getEncoded())));
+        PrivateKey compPriv = compFact.generatePrivate(new PKCS8EncodedKeySpec(compPrivateKey.getEncoded()));
+        PublicKey compPub = compFact.generatePublic(new X509EncodedKeySpec(compPublicKey.getEncoded()));
+
+        signature.initSign(compPriv);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        signatureValue = signature.sign();
+
+        signature.initVerify(compPub);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        TestCase.assertTrue(signature.verify(signatureValue));
+
     }
 
     public void testSigningAndVerificationInternal()

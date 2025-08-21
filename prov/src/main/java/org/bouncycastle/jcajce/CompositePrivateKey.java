@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPrivateKey;
@@ -68,7 +69,15 @@ public class CompositePrivateKey
         List<PrivateKey> keyList = new ArrayList<PrivateKey>(keys.length);
         for (int i = 0; i < keys.length; i++)
         {
-            keyList.add(keys[i]);
+            if (keys[i] instanceof MLDSAPrivateKey)
+            {
+                // TODO: we don't insist on seed but we try to accommodate it - the debate continues
+                keyList.add(((MLDSAPrivateKey)keys[i]).getPrivateKey(true));
+            }
+            else
+            {
+                keyList.add(keys[i]);
+            }
         }
         this.keys = Collections.unmodifiableList(keyList);
     }
@@ -147,7 +156,7 @@ public class CompositePrivateKey
                 byte[] mldsaKey = ((BCMLDSAPrivateKey)keys.get(0)).getSeed();
                 PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(keys.get(1).getEncoded()));
                 byte[] tradKey = pki.getPrivateKey().getOctets();
-                return Arrays.concatenate(mldsaKey, tradKey);
+                return new PrivateKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
             }
             catch (IOException e)
             {
