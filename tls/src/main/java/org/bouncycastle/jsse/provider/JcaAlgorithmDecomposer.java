@@ -17,7 +17,7 @@ class JcaAlgorithmDecomposer
 
     public Set<String> decompose(String algorithm)
     {
-        HashSet<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<String>();
 
         if (JsseUtils.isNameSpecified(algorithm))
         {
@@ -47,7 +47,7 @@ class JcaAlgorithmDecomposer
 
     static Set<String> decomposeName(String algorithm)
     {
-        HashSet<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<String>();
 
         if (JsseUtils.isNameSpecified(algorithm))
         {
@@ -67,7 +67,7 @@ class JcaAlgorithmDecomposer
 
     private static Map<String, String> createSHADigestMap()
     {
-        HashMap<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<String, String>();
         result.put("SHA-1", "SHA1");
         result.put("SHA-224", "SHA224");
         result.put("SHA-256", "SHA256");
@@ -78,7 +78,7 @@ class JcaAlgorithmDecomposer
         return result;
     }
 
-    private static void implDecompose(HashSet<String> result, String algorithm)
+    private static void implDecompose(Set<String> result, String algorithm)
     {
         for (String section : algorithm.split("/"))
         {
@@ -95,7 +95,7 @@ class JcaAlgorithmDecomposer
         }
     }
 
-    private static void includeBothIfEither(HashSet<String> elements, String a, String b)
+    private static void includeBothIfEither(Set<String> elements, String a, String b)
     {
         if (elements.contains(a))
         {
@@ -107,7 +107,7 @@ class JcaAlgorithmDecomposer
         }
     }
 
-    private static void replaceFirstWithSecond(HashSet<String> elements, String a, String b)
+    private static void replaceFirstWithSecond(Set<String> elements, String a, String b)
     {
         if (elements.remove(a))
         {
