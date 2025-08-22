@@ -8,6 +8,7 @@ import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
@@ -133,7 +134,7 @@ public class SignatureSpi
         {
             throw new InvalidKeyException("Provided composite public key cannot be used with the composite signature algorithm.");
         }
-        createComponentSignatures(compositePublicKey.getPublicKeys());
+        createComponentSignatures(compositePublicKey.getPublicKeys(), null);
         
         sigInitVerify();
     }
@@ -164,24 +165,34 @@ public class SignatureSpi
         {
             throw new InvalidKeyException("Provided composite private key cannot be used with the composite signature algorithm.");
         }
-        createComponentSignatures(compositePrivateKey.getPrivateKeys());
+        createComponentSignatures(compositePrivateKey.getPrivateKeys(), compositePrivateKey.getProviders());
 
         sigInitSign();
     }
 
-    private void createComponentSignatures(List keys)
+    private void createComponentSignatures(List keys, List<Provider> providers)
     {
         try
         {
-            for (int i = 0; i != componentSignatures.length; i++)
+            if (providers == null)
             {
-                if (keys.get(i) instanceof BCKey)
+                for (int i = 0; i != componentSignatures.length; i++)
                 {
-                    componentSignatures[i] = Signature.getInstance(algs[i], "BC");
+                    if (keys.get(i) instanceof BCKey)
+                    {
+                        componentSignatures[i] = Signature.getInstance(algs[i], "BC");
+                    }
+                    else
+                    {
+                        componentSignatures[i] = Signature.getInstance(algs[i]);
+                    }
                 }
-                else
+            }
+            else
+            {
+                for (int i = 0; i != componentSignatures.length; i++)
                 {
-                    componentSignatures[i] = Signature.getInstance(algs[i]);
+                    componentSignatures[i] = Signature.getInstance(algs[i], providers.get(i));
                 }
             }
         }

@@ -333,7 +333,10 @@ public class CompositeSignaturesTest
         KeyPair ecKp = ecKpGen.generateKeyPair();
 
         CompositePublicKey compPublicKey = new CompositePublicKey(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaKp.getPublic(), ecKp.getPublic());
-        CompositePrivateKey compPrivateKey = new CompositePrivateKey(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaKp.getPrivate(), ecKp.getPrivate());
+        CompositePrivateKey compPrivateKey = CompositePrivateKey.builder(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+                                                    .addPrivateKey(mldsaKp.getPrivate(), "BC")
+                                                    .addPrivateKey(ecKp.getPrivate(), "SunEC")
+                                                    .build();
 
         Signature signature = Signature.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
         signature.initSign(compPrivateKey);
