@@ -2,6 +2,8 @@ package org.bouncycastle.jcajce;
 
 import java.io.IOException;
 import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +31,50 @@ import org.bouncycastle.util.Exceptions;
 public class CompositePrivateKey
     implements PrivateKey
 {
+    public static class Builder
+    {
+        private final AlgorithmIdentifier algorithmIdentifier;
+        private final PrivateKey[] keys = new PrivateKey[2];
+        private final Provider[] providers = new Provider[2];
+
+        private int count = 0;
+
+        private Builder(AlgorithmIdentifier algorithmIdentifier)
+        {
+            this.algorithmIdentifier = algorithmIdentifier;
+        }
+
+        public Builder addPrivateKey(PrivateKey key, String providerName)
+        {
+            return addPrivateKey(key, Security.getProvider(providerName));
+        }
+
+        public Builder addPrivateKey(PrivateKey key, Provider provider)
+        {
+            if (count == keys.length)
+            {
+                throw new IllegalStateException("only " + keys.length + " allowed in composite");
+            }
+
+            keys[count] = key;
+            providers[count++] = provider;
+
+            return this;
+        }
+
+        public CompositePrivateKey build()
+        {
+            return new CompositePrivateKey(algorithmIdentifier, keys, providers);
+        }
+    }
+
+    public static Builder builder(ASN1ObjectIdentifier compAlgOid)
+    {
+        return new Builder(new AlgorithmIdentifier(compAlgOid));
+    }
+
     private final List<PrivateKey> keys;
+    private final List<Provider> providers;
 
     private AlgorithmIdentifier algorithmIdentifier;
 
@@ -69,17 +114,44 @@ public class CompositePrivateKey
         List<PrivateKey> keyList = new ArrayList<PrivateKey>(keys.length);
         for (int i = 0; i < keys.length; i++)
         {
-            if (keys[i] instanceof MLDSAPrivateKey)
-            {
-                // TODO: we don't insist on seed but we try to accommodate it - the debate continues
-                keyList.add(((MLDSAPrivateKey)keys[i]).getPrivateKey(true));
-            }
-            else
-            {
-                keyList.add(keys[i]);
-            }
+            keyList.add(processKey(keys[i]));
         }
         this.keys = Collections.unmodifiableList(keyList);
+        this.providers = null;
+    }
+
+    private PrivateKey processKey(PrivateKey key)
+    {
+        // we assume this also means BCKey
+        if (key instanceof MLDSAPrivateKey)
+        {
+            // TODO: we don't insist on seed but we try to accommodate it - the debate continues
+            return ((MLDSAPrivateKey)key).getPrivateKey(true);
+        }
+        else
+        {
+            return key;
+        }
+    }
+
+    private CompositePrivateKey(AlgorithmIdentifier algorithmIdentifier, PrivateKey[] keys, Provider[] providers)
+    {
+        this.algorithmIdentifier = algorithmIdentifier;
+
+        if (keys.length != 2)
+        {
+            throw new IllegalArgumentException("two keys required for composite private key");
+        }
+
+        List<PrivateKey> keyList = new ArrayList<PrivateKey>(keys.length);
+        List<Provider> providerList = new ArrayList<Provider>(providers.length);
+        for (int i = 0; i < keys.length; i++)
+        {
+            providerList.add(providers[i]);
+            keyList.add(processKey(keys[i]));
+        }
+        this.keys = Collections.unmodifiableList(keyList);
+        this.providers = Collections.unmodifiableList(providerList);
     }
 
     /**
@@ -111,6 +183,7 @@ public class CompositePrivateKey
         }
 
         this.keys = privateKeyFromFactory.getPrivateKeys();
+        this.providers = null;
         this.algorithmIdentifier = privateKeyFromFactory.getAlgorithmIdentifier();
     }
 
@@ -122,6 +195,16 @@ public class CompositePrivateKey
     public List<PrivateKey> getPrivateKeys()
     {
         return keys;
+    }
+
+    /**
+     * Return a list of the providers supporting the component private keys.
+     *
+     * @return an immutable list of Provider objects.
+     */
+    public List<Provider> getProviders()
+    {
+        return providers;
     }
 
     public String getAlgorithm()
