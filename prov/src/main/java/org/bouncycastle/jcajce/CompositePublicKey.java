@@ -1,7 +1,9 @@
 package org.bouncycastle.jcajce;
 
 import java.io.IOException;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +28,60 @@ import org.bouncycastle.util.Arrays;
 public class CompositePublicKey
     implements PublicKey
 {
+    public static class Builder
+    {
+        private final AlgorithmIdentifier algorithmIdentifier;
+        private final PublicKey[] keys = new PublicKey[2];
+        private final Provider[] providers = new Provider[2];
+
+        private int count = 0;
+
+        private Builder(AlgorithmIdentifier algorithmIdentifier)
+        {
+            this.algorithmIdentifier = algorithmIdentifier;
+        }
+
+        public Builder addPublicKey(PublicKey key)
+        {
+            return addPublicKey(key, (Provider)null);
+        }
+
+        public Builder addPublicKey(PublicKey key, String providerName)
+        {
+            return addPublicKey(key, Security.getProvider(providerName));
+        }
+
+        public Builder addPublicKey(PublicKey key, Provider provider)
+        {
+            if (count == keys.length)
+            {
+                throw new IllegalStateException("only " + keys.length + " allowed in composite");
+            }
+
+            keys[count] = key;
+            providers[count++] = provider;
+
+            return this;
+        }
+
+        public CompositePublicKey build()
+        {
+            if (providers[0] == null && providers[1] == null)
+            {
+                return new CompositePublicKey(algorithmIdentifier, keys, null);
+            }
+
+            return new CompositePublicKey(algorithmIdentifier, keys, providers);
+        }
+    }
+
+    public static Builder builder(ASN1ObjectIdentifier compAlgOid)
+    {
+        return new Builder(new AlgorithmIdentifier(compAlgOid));
+    }
+
     private final List<PublicKey> keys;
+    private final List<Provider> providers;
 
     private final AlgorithmIdentifier algorithmIdentifier;
 
@@ -69,6 +124,7 @@ public class CompositePublicKey
             keyList.add(keys[i]);
         }
         this.keys = Collections.unmodifiableList(keyList);
+        this.providers = null;
     }
 
     /**
@@ -102,6 +158,38 @@ public class CompositePublicKey
 
         this.keys = publicKeyFromFactory.getPublicKeys();
         this.algorithmIdentifier = publicKeyFromFactory.getAlgorithmIdentifier();
+        this.providers = null;
+    }
+
+    private CompositePublicKey(AlgorithmIdentifier algorithmIdentifier, PublicKey[] keys, Provider[] providers)
+    {
+        this.algorithmIdentifier = algorithmIdentifier;
+
+        if (keys.length != 2)
+        {
+            throw new IllegalArgumentException("two keys required for composite private key");
+        }
+
+        List<PublicKey> keyList = new ArrayList<PublicKey>(keys.length);
+        if (providers == null)
+        {
+            for (int i = 0; i < keys.length; i++)
+            {
+                keyList.add(keys[i]);
+            }
+            this.providers = null;
+        }
+        else
+        {
+            List<Provider> providerList = new ArrayList<Provider>(providers.length);
+            for (int i = 0; i < keys.length; i++)
+            {
+                providerList.add(providers[i]);
+                keyList.add(keys[i]);
+            }
+            this.providers = Collections.unmodifiableList(providerList);
+        }
+        this.keys = Collections.unmodifiableList(keyList);
     }
 
     /**
@@ -112,6 +200,16 @@ public class CompositePublicKey
     public List<PublicKey> getPublicKeys()
     {
         return keys;
+    }
+
+    /**
+     * Return a list of the providers supporting the component private keys.
+     *
+     * @return an immutable list of Provider objects.
+     */
+    public List<Provider> getProviders()
+    {
+        return providers;
     }
 
     public String getAlgorithm()

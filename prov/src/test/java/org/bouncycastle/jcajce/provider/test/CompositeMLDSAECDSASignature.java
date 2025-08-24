@@ -1,33 +1,41 @@
 package org.bouncycastle.jcajce.provider.test;
 
-import org.bouncycastle.asn1.*;
-import org.bouncycastle.crypto.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
+
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.*;
-import org.bouncycastle.crypto.signers.DSAKCalculator;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.jcajce.CompositePrivateKey;
+import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
+import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.*;
-import java.security.spec.ECGenParameterSpec;
 
 public class CompositeMLDSAECDSASignature
 {
@@ -44,7 +52,7 @@ public class CompositeMLDSAECDSASignature
     {
         Security.addProvider(new BouncyCastleProvider());
     }
-
+                                                       
     public static class CompositeKeyPair
     {
         private final CompositePublicKey publicKey;
@@ -67,88 +75,36 @@ public class CompositeMLDSAECDSASignature
         }
     }
 
-    public static class CompositePublicKey
-    {
-        private final byte[] mlDsaPubKey;
-        private final byte[] ecPubKey;
-
-        public CompositePublicKey(byte[] mlDsaPubKey, byte[] ecPubKey)
-        {
-            this.mlDsaPubKey = mlDsaPubKey;
-            this.ecPubKey = ecPubKey;
-        }
-
-        public byte[] getMlDsaPubKey()
-        {
-            return mlDsaPubKey;
-        }
-
-        public byte[] getEcPubKey()
-        {
-            return ecPubKey;
-        }
-
-        public byte[] getEncoded()
-        {
-            return Arrays.concatenate(mlDsaPubKey, ecPubKey);
-        }
-    }
-
-    public static class CompositePrivateKey
-    {
-        private final byte[] mlDsaSeed;
-        private final byte[] ecPrivKey;
-
-        public CompositePrivateKey(byte[] mlDsaSeed, byte[] ecPrivKey)
-        {
-            this.mlDsaSeed = mlDsaSeed;
-            this.ecPrivKey = ecPrivKey;
-        }
-
-        public byte[] getMlDsaSeed()
-        {
-            return mlDsaSeed;
-        }
-
-        public byte[] getEcPrivKey()
-        {
-            return ecPrivKey;
-        }
-
-        public byte[] getEncoded()
-        {
-            return Arrays.concatenate(mlDsaSeed, ecPrivKey);
-        }
-    }
-
     public static CompositeKeyPair generateKeyPair()
         throws Exception
     {
         SecureRandom random = new SecureRandom();
 
         // Generate ML-DSA key pair
-        MLDSAKeyPairGenerator mlDsaKpg = new MLDSAKeyPairGenerator();
-        mlDsaKpg.init(new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_44));
-        AsymmetricCipherKeyPair mlDsaKeyPair = mlDsaKpg.generateKeyPair();
-        MLDSAPublicKeyParameters mlDsaPub = (MLDSAPublicKeyParameters)mlDsaKeyPair.getPublic();
-        MLDSAPrivateKeyParameters mlDsaPriv = (MLDSAPrivateKeyParameters)mlDsaKeyPair.getPrivate();
+        KeyPairGenerator mlDsaKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        mlDsaKpg.initialize(MLDSAParameterSpec.ml_dsa_65);
+
+        KeyPair mlDsaKeyPair = mlDsaKpg.generateKeyPair();
+        MLDSAPublicKey mlDsaPub = (MLDSAPublicKey)mlDsaKeyPair.getPublic();
+        MLDSAPrivateKey mlDsaPriv = (MLDSAPrivateKey)mlDsaKeyPair.getPrivate();
 
         // Generate ECDSA key pair
         KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
         ecKpg.initialize(new ECGenParameterSpec("secp256r1"), random);
         KeyPair ecKeyPair = ecKpg.generateKeyPair();
-        BCECPublicKey ecPub = (BCECPublicKey)ecKeyPair.getPublic();
-        BCECPrivateKey ecPriv = (BCECPrivateKey)ecKeyPair.getPrivate();
+        ECPublicKey ecPub = (ECPublicKey)ecKeyPair.getPublic();
+        ECPrivateKey ecPriv = (ECPrivateKey)ecKeyPair.getPrivate();
 
         // Create composite keys
         CompositePublicKey pubKey = new CompositePublicKey(
-            mlDsaPub.getEncoded(),
-            ecPub.getQ().getEncoded(false)
-        );
+            BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256,
+            mlDsaPub,
+            ecPub);
 
         CompositePrivateKey privKey = new CompositePrivateKey(
-            mlDsaPriv.getEncoded(), // Note: This contains more than just seed
-            ecPriv.getD().toByteArray()
+            BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256,
+            mlDsaPriv,
+            ecPriv
         );
 
         return new CompositeKeyPair(pubKey, privKey);
@@ -187,7 +143,7 @@ public class CompositeMLDSAECDSASignature
 
         // Step 4: Sign M' with ML-DSA
         MLDSASigner mlDsaSigner = new MLDSASigner();
-        mlDsaSigner.init(true, recreateMlDsaPrivateKey(privateKey.getMlDsaSeed()));
+//        mlDsaSigner.init(true, recreateMlDsaPrivateKey(privateKey.getMlDsaSeed()));
         mlDsaSigner.update(mPrime, 0, mPrime.length);
         byte[] mlDsaSig = mlDsaSigner.generateSignature();
 
@@ -252,16 +208,16 @@ public class CompositeMLDSAECDSASignature
 
         // Step 3: Verify ML-DSA signature
         MLDSASigner mlDsaVerifier = new MLDSASigner();
-        mlDsaVerifier.init(false, recreateMlDsaPublicKey(publicKey.getMlDsaPubKey()));
+//        mlDsaVerifier.init(false, recreateMlDsaPublicKey(publicKey.getMlDsaPubKey()));
         mlDsaVerifier.update(mPrime, 0, mPrime.length);
         boolean mlDsaValid = mlDsaVerifier.verifySignature(mlDsaSig);
 
         // Step 4: Verify ECDSA signature
         BigInteger[] ecSig = derDecodeECSignature(ecDerSig);
         ECDSASigner ecdsaVerifier = new ECDSASigner();
-        ecdsaVerifier.init(false, recreateEcPublicKey(publicKey.getEcPubKey()));
+//        ecdsaVerifier.init(false, recreateEcPublicKey(publicKey.getEcPubKey()));
         boolean ecValid = ecdsaVerifier.verifySignature(mPrime, ecSig[0], ecSig[1]);
-
+                                               
         return mlDsaValid && ecValid;
     }
 
