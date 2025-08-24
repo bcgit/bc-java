@@ -7,6 +7,8 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
@@ -134,7 +136,7 @@ public class SignatureSpi
         {
             throw new InvalidKeyException("Provided composite public key cannot be used with the composite signature algorithm.");
         }
-        createComponentSignatures(compositePublicKey.getPublicKeys(), null);
+        createComponentSignatures(compositePublicKey.getPublicKeys(), compositePublicKey.getProviders());
         
         sigInitVerify();
     }
@@ -178,27 +180,41 @@ public class SignatureSpi
             {
                 for (int i = 0; i != componentSignatures.length; i++)
                 {
-                    if (keys.get(i) instanceof BCKey)
-                    {
-                        componentSignatures[i] = Signature.getInstance(algs[i], "BC");
-                    }
-                    else
-                    {
-                        componentSignatures[i] = Signature.getInstance(algs[i]);
-                    }
+                    componentSignatures[i] = getDefaultSignature(algs[i], keys.get(i));
                 }
             }
             else
             {
                 for (int i = 0; i != componentSignatures.length; i++)
                 {
-                    componentSignatures[i] = Signature.getInstance(algs[i], providers.get(i));
+                    Provider prov = providers.get(i);
+                    if (prov == null)
+                    {
+                        componentSignatures[i] = getDefaultSignature(algs[i], keys.get(i));
+                    }
+                    else
+                    {
+                        componentSignatures[i] = Signature.getInstance(algs[i], providers.get(i));
+                    }
                 }
             }
         }
         catch (GeneralSecurityException e)
         {
             throw Exceptions.illegalStateException(e.getMessage(), e);
+        }
+    }
+
+    private Signature getDefaultSignature(String alg, Object key)
+        throws NoSuchAlgorithmException, NoSuchProviderException
+    {
+        if (key instanceof BCKey)
+        {
+            return helper.createSignature(alg);
+        }
+        else
+        {
+            return Signature.getInstance(alg);
         }
     }
 
@@ -225,7 +241,6 @@ public class SignatureSpi
             {
                 componentSignatures[1].setParameter(pssSpec);
             }
-
         }
         catch (InvalidAlgorithmParameterException e)
         {

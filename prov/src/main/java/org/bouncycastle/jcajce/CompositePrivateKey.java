@@ -44,6 +44,11 @@ public class CompositePrivateKey
             this.algorithmIdentifier = algorithmIdentifier;
         }
 
+        public Builder addPrivateKey(PrivateKey key)
+        {
+            return addPrivateKey(key, (Provider)null);
+        }
+
         public Builder addPrivateKey(PrivateKey key, String providerName)
         {
             return addPrivateKey(key, Security.getProvider(providerName));
@@ -64,6 +69,11 @@ public class CompositePrivateKey
 
         public CompositePrivateKey build()
         {
+            if (providers[0] == null && providers[1] == null)
+             {
+                 return new CompositePrivateKey(algorithmIdentifier, keys, null);
+             }
+
             return new CompositePrivateKey(algorithmIdentifier, keys, providers);
         }
     }
@@ -144,14 +154,26 @@ public class CompositePrivateKey
         }
 
         List<PrivateKey> keyList = new ArrayList<PrivateKey>(keys.length);
-        List<Provider> providerList = new ArrayList<Provider>(providers.length);
-        for (int i = 0; i < keys.length; i++)
+        if (providers == null)
         {
-            providerList.add(providers[i]);
-            keyList.add(processKey(keys[i]));
+            for (int i = 0; i < keys.length; i++)
+            {
+                keyList.add(processKey(keys[i]));
+            }
+            this.providers = null;
+        }
+        else
+        {
+            List<Provider> providerList = new ArrayList<Provider>(providers.length);
+            for (int i = 0; i < keys.length; i++)
+            {
+                providerList.add(providers[i]);
+                keyList.add(processKey(keys[i]));
+            }
+            this.providers = Collections.unmodifiableList(providerList);
         }
         this.keys = Collections.unmodifiableList(keyList);
-        this.providers = Collections.unmodifiableList(providerList);
+
     }
 
     /**
