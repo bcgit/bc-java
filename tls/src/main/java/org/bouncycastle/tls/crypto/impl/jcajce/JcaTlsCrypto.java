@@ -85,6 +85,7 @@ public class JcaTlsCrypto
     extends AbstractTlsCrypto
 {
     private final JcaJceHelper helper;
+    private final JcaJceHelper altHelper;
     private final SecureRandom entropySource;
     private final SecureRandom nonceEntropySource;
 
@@ -95,13 +96,28 @@ public class JcaTlsCrypto
     /**
      * Base constructor.
      *
-     * @param helper a JCA/JCE helper configured for the class's default provider.
-     * @param entropySource primary entropy source, used for key generation.
+     * @param helper             a JCA/JCE helper configured for the class's default provider.
+     * @param entropySource      primary entropy source, used for key generation.
      * @param nonceEntropySource secondary entropy source, used for nonce and IV generation.
      */
     protected JcaTlsCrypto(JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
     {
+        this(helper, null, entropySource, nonceEntropySource);
+    }
+
+    /**
+     * Base constructor.
+     *
+     * @param helper             a JCA/JCE helper configured for the class's default provider.
+     * @param altHelper          a JCA/JCE helper configured for the class's secondary provider (tried for private keys).
+     * @param entropySource      primary entropy source, used for key generation.
+     * @param nonceEntropySource secondary entropy source, used for nonce and IV generation.
+     */
+    protected JcaTlsCrypto(JcaJceHelper helper, JcaJceHelper altHelper, SecureRandom entropySource,
+        SecureRandom nonceEntropySource)
+    {
         this.helper = helper;
+        this.altHelper = altHelper;
         this.entropySource = entropySource;
         this.nonceEntropySource = nonceEntropySource;
     }
@@ -934,7 +950,7 @@ public class JcaTlsCrypto
      *
      * @param macAlgorithm the name of the algorithm supporting the MAC.
      * @return a null cipher suite implementation.
-     * @throws IOException in case of failure.
+     * @throws IOException              in case of failure.
      * @throws GeneralSecurityException in case of a specific failure in the JCA/JCE layer.
      */
     protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
@@ -955,47 +971,84 @@ public class JcaTlsCrypto
     protected TlsStreamSigner createStreamSigner(String algorithmName, AlgorithmParameterSpec parameter,
         PrivateKey privateKey, boolean needsRandom) throws IOException
     {
+        SecureRandom random = needsRandom ? getSecureRandom() : null;
+
         try
         {
-            SecureRandom random = needsRandom ? getSecureRandom() : null;
-
-            JcaJceHelper helper = getHelper();
-
             try
             {
-                if (null != parameter)
-                {
-                    Signature dummySigner = helper.createSignature(algorithmName);
-                    dummySigner.initSign(privateKey, random);
-                    helper = new ProviderJcaJceHelper(dummySigner.getProvider());
-                }
-
-                Signature signer = helper.createSignature(algorithmName);
-                if (null != parameter)
-                {
-                    signer.setParameter(parameter);
-                }
-                signer.initSign(privateKey, random);
-                return new JcaTlsStreamSigner(signer);
+                return createStreamSigner(getHelper(), algorithmName, parameter, privateKey, random);
             }
             catch (InvalidKeyException e)
             {
-                String upperAlg = Strings.toUpperCase(algorithmName);
-                if (upperAlg.endsWith("MGF1"))
-                {
-                    // ANDMGF1 has vanished from the Sun PKCS11 provider.
-                    algorithmName = upperAlg.replace("ANDMGF1", "SSA-PSS");
-                    return createStreamSigner(algorithmName, parameter, privateKey, needsRandom);
-                }
-                else
+                JcaJceHelper altHelper = getAltHelper();
+                if (altHelper == null)
                 {
                     throw e;
                 }
+
+                return createStreamSigner(altHelper, algorithmName, parameter, privateKey, random);
             }
         }
         catch (GeneralSecurityException e)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
+    protected TlsStreamSigner createStreamSigner(JcaJceHelper helper, String algorithmName,
+        AlgorithmParameterSpec parameter, PrivateKey privateKey, SecureRandom random) throws GeneralSecurityException
+    {
+        try
+        {
+            if (null != parameter)
+            {
+                Signature dummySigner;
+                try
+                {
+                    dummySigner = helper.createSignature(algorithmName);
+                }
+                catch (NoSuchAlgorithmException e)
+                {
+                    // more PKCS#11 mischief
+                    String upperAlg = Strings.toUpperCase(algorithmName);
+                    if (upperAlg.endsWith("ANDMGF1"))
+                    {
+                        // ANDMGF1 has vanished from the Sun PKCS11 provider.
+                        algorithmName = upperAlg.replace("ANDMGF1", "SSA-PSS");
+                        dummySigner = helper.createSignature(algorithmName);
+                    }
+                    else
+                    {
+                        throw e;
+                    }
+                }
+
+                dummySigner.initSign(privateKey, random);
+                helper = new ProviderJcaJceHelper(dummySigner.getProvider());
+            }
+
+            Signature signer = helper.createSignature(algorithmName);
+            if (null != parameter)
+            {
+                signer.setParameter(parameter);
+            }
+            signer.initSign(privateKey, random);
+            return new JcaTlsStreamSigner(signer);
+        }
+        catch (InvalidKeyException e)
+        {
+            String upperAlg = Strings.toUpperCase(algorithmName);
+            if (upperAlg.endsWith("ANDMGF1"))
+            {
+                // ANDMGF1 has vanished from the Sun PKCS11 provider.
+                algorithmName = upperAlg.replace("ANDMGF1", "SSA-PSS");
+                return createStreamSigner(helper, algorithmName, parameter, privateKey, random);
+            }
+            else
+            {
+                throw e;
+            }
         }
     }
 
@@ -1207,6 +1260,11 @@ public class JcaTlsCrypto
     public JcaJceHelper getHelper()
     {
         return helper;
+    }
+
+    public JcaJceHelper getAltHelper()
+    {
+        return altHelper;
     }
 
     protected TlsBlockCipherImpl createCBCBlockCipherImpl(TlsCryptoParameters cryptoParams, String algorithm,
