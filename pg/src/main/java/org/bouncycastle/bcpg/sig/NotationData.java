@@ -27,7 +27,7 @@ public class NotationData
         boolean isLongLength,
         byte[] data)
     {
-        super(SignatureSubpacketTags.NOTATION_DATA, critical, isLongLength, data);
+        super(SignatureSubpacketTags.NOTATION_DATA, critical, isLongLength, verifyData(data));
     }
 
     public NotationData(
@@ -37,6 +37,21 @@ public class NotationData
         String notationValue)
     {
         super(SignatureSubpacketTags.NOTATION_DATA, critical, false, createData(humanReadable, notationName, notationValue));
+    }
+
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 8)
+        {
+            throw new IllegalArgumentException("Malformed notation data encoding (too short): " + data.length);
+        }
+        int nameLength = (((data[HEADER_FLAG_LENGTH] & 0xff) << 8) + (data[HEADER_FLAG_LENGTH + 1] & 0xff));
+        int valueLength = (((data[HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH] & 0xff) << 8) + (data[HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH + 1] & 0xff));
+        if (nameLength + valueLength + 4 > data.length)
+        {
+            throw new IllegalArgumentException("Malformed notation data encoding.");
+        }
+        return data;
     }
 
     private static byte[] createData(boolean humanReadable, String notationName, String notationValue)

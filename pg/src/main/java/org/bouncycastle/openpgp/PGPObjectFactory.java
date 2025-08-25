@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.MalformedPacketException;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UnknownPacket;
@@ -148,7 +149,14 @@ public class PGPObjectFactory
         case PacketTags.SYMMETRIC_KEY_ENC:
         case PacketTags.SYM_ENC_INTEGRITY_PRO:
         case PacketTags.AEAD_ENC_DATA:
-            return new PGPEncryptedDataList(in);
+            try
+            {
+                return new PGPEncryptedDataList(in);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new MalformedPacketException("Malformed encrypted data.", e);
+            }
         case PacketTags.ONE_PASS_SIGNATURE:
             l = new ArrayList();
 
@@ -169,6 +177,14 @@ public class PGPObjectFactory
             return new PGPMarker(in);
         case PacketTags.PADDING:
             return new PGPPadding(in);
+        case PacketTags.MOD_DETECTION_CODE:
+            return new UnknownPacket(PacketTags.MOD_DETECTION_CODE, in);
+        case PacketTags.TRUST:
+            return new UnknownPacket(PacketTags.TRUST, in);
+        case PacketTags.USER_ID:
+            return new UnknownPacket(PacketTags.USER_ID, in);
+        case PacketTags.USER_ATTRIBUTE:
+            return new UnknownPacket(PacketTags.USER_ATTRIBUTE, in);
         }
 
         int tag = in.nextPacketTag();

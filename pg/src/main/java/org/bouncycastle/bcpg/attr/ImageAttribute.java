@@ -37,8 +37,16 @@ public class ImageAttribute
         byte[]    data)
     {
         super(UserAttributeSubpacketTags.IMAGE_ATTRIBUTE, forceLongLength, data);
+        if (data.length < 4)
+        {
+            throw new IllegalArgumentException("Malformed ImageAttribute. Data length too short: " + data.length);
+        }
         
         hdrLength = ((data[1] & 0xff) << 8) | (data[0] & 0xff);
+        if (data.length < hdrLength)
+        {
+            throw new IllegalArgumentException("Malformed ImageAttribute. Header length exceeds data length.");
+        }
         version = data[2] & 0xff;
         encoding = data[3] & 0xff;
         
