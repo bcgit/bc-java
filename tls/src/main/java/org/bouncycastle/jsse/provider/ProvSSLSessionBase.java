@@ -36,7 +36,7 @@ abstract class ProvSSLSessionBase
     protected final AtomicLong lastAccessedTime;
 
     ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, ConcurrentHashMap<String, Object> valueMap,
-        String peerHost, int peerPort)
+        String peerHost, int peerPort, long creationTime)
     {
         this.sslSessionContext = new AtomicReference<ProvSSLSessionContext>(sslSessionContext);
         this.valueMap = valueMap;
@@ -44,7 +44,7 @@ abstract class ProvSSLSessionBase
         this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getContextData().getCrypto();
         this.peerHost = peerHost;
         this.peerPort = peerPort;
-        this.creationTime = System.currentTimeMillis();
+        this.creationTime = creationTime;
         this.exportSSLSession = SSLSessionUtil.exportSSLSession(this);
         this.lastAccessedTime = new AtomicLong(creationTime);
     }
@@ -356,6 +356,11 @@ abstract class ProvSSLSessionBase
         }
 
         invalidateTLS();
+    }
+
+    protected static long createCreationTime()
+    {
+        return System.currentTimeMillis();
     }
 
     protected static ConcurrentHashMap<String, Object> createValueMap()
