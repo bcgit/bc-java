@@ -20,7 +20,7 @@ class ProvSSLSessionHandshake
     ProvSSLSessionHandshake(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort,
         SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters)
     {
-        this(sslSessionContext, createValueMap(), peerHost, peerPort, createCreationTime(), securityParameters,
+        this(sslSessionContext, createValueMap(), peerHost, peerPort, getCurrentTime(), securityParameters,
             jsseSecurityParameters);
     }
 
@@ -61,6 +61,11 @@ class ProvSSLSessionHandshake
     protected JsseSessionParameters getJsseSessionParameters()
     {
         return null;
+    }
+
+    public long getLastAccessedTime()
+    {
+        return getCreationTime();
     }
 
     @Override

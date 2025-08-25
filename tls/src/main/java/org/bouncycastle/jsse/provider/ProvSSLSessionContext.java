@@ -63,7 +63,7 @@ class ProvSSLSessionContext
     {
         processQueue();
 
-        return accessSession(mapGet(sessionsByID, makeSessionID(sessionID)));
+        return getSessionImpl(mapGet(sessionsByID, makeSessionID(sessionID)));
     }
 
     synchronized ProvSSLSession getSessionImpl(String hostName, int port)
@@ -71,7 +71,7 @@ class ProvSSLSessionContext
         processQueue();
 
         SessionEntry sessionEntry = mapGet(sessionsByPeer, makePeerKey(hostName, port));
-        ProvSSLSession session = accessSession(sessionEntry);
+        ProvSSLSession session = getSessionImpl(sessionEntry);
         if (session != null)
         {
             // NOTE: For the current simple cache implementation, need to 'access' the sessionByIDs entry
@@ -207,17 +207,15 @@ class ProvSSLSessionContext
         removeAllExpiredSessions();
     }
 
-    private ProvSSLSession accessSession(SessionEntry sessionEntry)
+    private ProvSSLSession getSessionImpl(SessionEntry sessionEntry)
     {
         if (sessionEntry != null)
         {
             ProvSSLSession session = sessionEntry.get();
             if (session != null)
             {
-                long currentTimeMillis = System.currentTimeMillis();
-                if (!invalidateIfCreatedBefore(sessionEntry, getCreationTimeLimit(currentTimeMillis)))
+                if (!invalidateIfCreatedBefore(sessionEntry, getCreationTimeLimit()))
                 {
-                    session.accessedAt(currentTimeMillis);
                     return session;
                 }
             }
@@ -227,9 +225,9 @@ class ProvSSLSessionContext
         return null;
     }
 
-    private long getCreationTimeLimit(long expiryTimeMillis)
+    private long getCreationTimeLimit()
     {
-        return sessionTimeoutSeconds < 1 ? Long.MIN_VALUE : (expiryTimeMillis - 1000L * sessionTimeoutSeconds);
+        return sessionTimeoutSeconds < 1 ? Long.MIN_VALUE : (System.currentTimeMillis() - 1000L * sessionTimeoutSeconds);
     }
 
     private boolean invalidateIfCreatedBefore(SessionEntry sessionEntry, long creationTimeLimit)
@@ -267,7 +265,7 @@ class ProvSSLSessionContext
     {
         processQueue();
 
-        long creationTimeLimit = getCreationTimeLimit(System.currentTimeMillis());
+        long creationTimeLimit = getCreationTimeLimit();
 
         Iterator<SessionEntry> iter = sessionsByID.values().iterator();
         while (iter.hasNext())
