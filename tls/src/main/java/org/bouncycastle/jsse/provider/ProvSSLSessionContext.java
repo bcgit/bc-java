@@ -96,8 +96,8 @@ class ProvSSLSessionContext
 
         if (!addToCache)
         {
-            return new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort, tlsSession,
-                jsseSessionParameters);
+            return new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort,
+                handshakeSession.getCreationTime(), tlsSession, jsseSessionParameters);
         }
 
         SessionID sessionID = makeSessionID(tlsSession.getSessionID());
@@ -106,8 +106,8 @@ class ProvSSLSessionContext
         ProvSSLSession session = sessionEntry == null ? null : sessionEntry.get();
         if (null == session || session.getTlsSession() != tlsSession)
         {
-            session = new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort, tlsSession,
-                jsseSessionParameters);
+            session = new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort,
+                handshakeSession.getCreationTime(), tlsSession, jsseSessionParameters);
 
             if (null != sessionID)
             {

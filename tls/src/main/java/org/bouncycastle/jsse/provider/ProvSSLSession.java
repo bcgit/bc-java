@@ -17,9 +17,9 @@ class ProvSSLSession
     protected final JsseSessionParameters jsseSessionParameters;
 
     ProvSSLSession(ProvSSLSessionContext sslSessionContext, ConcurrentHashMap<String, Object> valueMap, String peerHost,
-        int peerPort, TlsSession tlsSession, JsseSessionParameters jsseSessionParameters)
+        int peerPort, long creationTime, TlsSession tlsSession, JsseSessionParameters jsseSessionParameters)
     {
-        super(sslSessionContext, valueMap, peerHost, peerPort);
+        super(sslSessionContext, valueMap, peerHost, peerPort, creationTime);
 
         this.tlsSession = tlsSession;
         this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
@@ -110,6 +110,7 @@ class ProvSSLSession
     static final ProvSSLSession createDummySession()
     {
         // NB: Allow session value binding on failed connections for SunJSSE compatibility 
-        return new ProvSSLSession(null, createValueMap(), null, -1, null, new JsseSessionParameters(null, null));
+        return new ProvSSLSession(null, createValueMap(), null, -1, createCreationTime(), null,
+            new JsseSessionParameters(null, null));
     }
 }

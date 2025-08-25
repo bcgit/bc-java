@@ -16,8 +16,8 @@ class ProvSSLSessionResumed
         SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters,
         ProvSSLSession resumedSession)
     {
-        super(sslSessionContext, resumedSession.getValueMap(), peerHost, peerPort, securityParameters,
-            jsseSecurityParameters);
+        super(sslSessionContext, resumedSession.getValueMap(), peerHost, peerPort, resumedSession.getCreationTime(),
+            securityParameters, jsseSecurityParameters);
 
         this.tlsSession = resumedSession.getTlsSession();
         this.sessionParameters = tlsSession.exportSessionParameters();
