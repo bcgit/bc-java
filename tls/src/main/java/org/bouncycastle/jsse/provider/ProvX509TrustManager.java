@@ -456,7 +456,20 @@ class ProvX509TrustManager
             }
         }
 
-        checkEndpointID(peerHost, certificate, endpointIDAlg);
+        try
+        {
+            checkEndpointID(peerHost, certificate, endpointIDAlg);
+        }
+        catch (CertificateException e)
+        {
+            // Special case for SunJSSE compatibility 
+            if (!checkServerTrusted && "HTTPS".equalsIgnoreCase(endpointIDAlg))
+            {
+                throw new CertificateException("Endpoint ID algorithm 'HTTPS' is not supported on the server side");                
+            }
+
+            throw e;
+        }
     }
 
     private static X509CertSelector createTargetCertConstraints(final X509Certificate eeCert,
