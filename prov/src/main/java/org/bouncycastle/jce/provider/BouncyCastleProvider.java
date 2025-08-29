@@ -594,7 +594,7 @@ public final class BouncyCastleProvider extends Provider
         AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
         if (converter == null)
-        {      System.err.println("returning null: " + privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+        {
             return null;
         }
 
