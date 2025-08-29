@@ -37,13 +37,17 @@ class HostnameUtil
             {
                 for (List<?> subjectAltName : subjectAltNames)
                 {
-                    int type = ((Integer)subjectAltName.get(0)).intValue();
-                    if (GeneralName.iPAddress != type)
+                    if (!isAltNameType(subjectAltName, GeneralName.iPAddress))
                     {
                         continue;
                     }
 
-                    String ipAddress = (String)subjectAltName.get(1);
+                    String ipAddress = getAltNameValue(subjectAltName);
+                    if (ipAddress == null)
+                    {
+                        continue;
+                    }
+
                     if (hostname.equalsIgnoreCase(ipAddress))
                     {
                         return;
@@ -76,15 +80,19 @@ class HostnameUtil
                 boolean foundAnyDNSNames = false;
                 for (List<?> subjectAltName : subjectAltNames)
                 {
-                    int type = ((Integer)subjectAltName.get(0)).intValue();
-                    if (GeneralName.dNSName != type)
+                    if (!isAltNameType(subjectAltName, GeneralName.dNSName))
                     {
                         continue;
                     }
 
                     foundAnyDNSNames = true;
 
-                    String dnsName = (String)subjectAltName.get(1);
+                    String dnsName = getAltNameValue(subjectAltName);
+                    if (dnsName == null)
+                    {
+                        continue;
+                    }
+
                     if (matchesDNSName(hostname, dnsName, allWildcards))
                     {
                         return;
@@ -134,6 +142,19 @@ class HostnameUtil
         return null;
     }
 
+    private static String getAltNameValue(List<?> subjectAltName)
+    {
+        if (subjectAltName != null && subjectAltName.size() >= 2)
+        {
+            Object objValue = subjectAltName.get(1);
+            if (objValue instanceof String)
+            {
+                return (String)objValue;
+            }
+        }
+        return null;
+    }
+
     private static String getLabel(String s, int begin)
     {
         int end = s.indexOf('.', begin);
@@ -142,6 +163,19 @@ class HostnameUtil
             end = s.length();
         }
         return s.substring(begin, end);
+    }
+
+    private static boolean isAltNameType(List<?> subjectAltName, int type)
+    {
+        if (subjectAltName != null && subjectAltName.size() >= 1)
+        {
+            Object objValue = subjectAltName.get(0);
+            if (objValue instanceof Integer)
+            {
+                return ((Integer)objValue).intValue() == type;
+            }
+        }
+        return false;
     }
 
     private static boolean isValidDomainName(String name)
