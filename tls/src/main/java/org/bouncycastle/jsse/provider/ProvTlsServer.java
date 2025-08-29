@@ -340,12 +340,10 @@ class ProvTlsServer
             }
         }
 
-        boolean result = super.selectCipherSuite(cipherSuite);
-        if (result)
-        {
-            this.credentials = cipherSuiteCredentials;
-        }
-        return result;
+        this.selectedCipherSuite = cipherSuite;
+        this.credentials = cipherSuiteCredentials;
+
+        return true;
     }
 
     @Override

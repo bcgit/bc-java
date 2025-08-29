@@ -436,8 +436,8 @@ public final class TlsAEADCipher
     private void setup13Cipher(TlsAEADCipherImpl cipher, byte[] nonce, TlsSecret secret, int cryptoHashAlgorithm)
         throws IOException
     {
-        byte[] key = TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, "key", TlsUtils.EMPTY_BYTES, keySize).extract();
-        byte[] iv = TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, "iv", TlsUtils.EMPTY_BYTES, fixed_iv_length).extract();
+        byte[] key = hkdfExpandLabel(secret, cryptoHashAlgorithm, "key", keySize).extract();
+        byte[] iv = hkdfExpandLabel(secret, cryptoHashAlgorithm, "iv", fixed_iv_length).extract();
 
         cipher.setKey(key, 0, keySize);
         System.arraycopy(iv, 0, nonce, 0, fixed_iv_length);
@@ -457,5 +457,11 @@ public final class TlsAEADCipher
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+    }
+
+    private static TlsSecret hkdfExpandLabel(TlsSecret secret, int cryptoHashAlgorithm, String label, int length)
+        throws IOException
+    {
+        return TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, label, TlsUtils.EMPTY_BYTES, length);
     }
 }

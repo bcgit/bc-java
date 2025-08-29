@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -33,10 +32,9 @@ abstract class ProvSSLSessionBase
     protected final int peerPort;
     protected final long creationTime;
     protected final SSLSession exportSSLSession;
-    protected final AtomicLong lastAccessedTime;
 
     ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, ConcurrentHashMap<String, Object> valueMap,
-        String peerHost, int peerPort)
+        String peerHost, int peerPort, long creationTime)
     {
         this.sslSessionContext = new AtomicReference<ProvSSLSessionContext>(sslSessionContext);
         this.valueMap = valueMap;
@@ -44,9 +42,8 @@ abstract class ProvSSLSessionBase
         this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getContextData().getCrypto();
         this.peerHost = peerHost;
         this.peerPort = peerPort;
-        this.creationTime = System.currentTimeMillis();
+        this.creationTime = creationTime;
         this.exportSSLSession = SSLSessionUtil.exportSSLSession(this);
-        this.lastAccessedTime = new AtomicLong(creationTime);
     }
 
     protected abstract int getCipherSuiteTLS();
@@ -68,15 +65,6 @@ abstract class ProvSSLSessionBase
     SSLSession getExportSSLSession()
     {
         return exportSSLSession;
-    }
-
-    void accessedAt(long accessTime)
-    {
-        long current = lastAccessedTime.get();
-        if (accessTime > current)
-        {
-            lastAccessedTime.compareAndSet(current, accessTime);
-        }
     }
 
     @Override
@@ -115,11 +103,6 @@ abstract class ProvSSLSessionBase
     {
         byte[] id = getIDArray();
         return TlsUtils.isNullOrEmpty(id) ? TlsUtils.EMPTY_BYTES : id.clone();
-    }
-
-    public long getLastAccessedTime()
-    {
-        return lastAccessedTime.get();
     }
 
     public Certificate[] getLocalCertificates()
@@ -361,5 +344,10 @@ abstract class ProvSSLSessionBase
     protected static ConcurrentHashMap<String, Object> createValueMap()
     {
         return new ConcurrentHashMap<String, Object>();
+    }
+
+    protected static long getCurrentTime()
+    {
+        return System.currentTimeMillis();
     }
 }

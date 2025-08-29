@@ -61,6 +61,7 @@ import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.impl.AEADNonceGenerator;
 import org.bouncycastle.tls.crypto.impl.AEADNonceGeneratorFactory;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.Tls13NullCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
@@ -245,6 +246,12 @@ public class JcaTlsCrypto
                 return createChaCha20Poly1305(cryptoParams);
             case EncryptionAlgorithm.NULL:
                 return createNullCipher(cryptoParams, macAlgorithm);
+            case EncryptionAlgorithm.NULL_HMAC_SHA256:
+                // NOTE: Ignores macAlgorithm
+                return create13NullCipher(cryptoParams, MACAlgorithm.hmac_sha256);
+            case EncryptionAlgorithm.NULL_HMAC_SHA384:
+                // NOTE: Ignores macAlgorithm
+                return create13NullCipher(cryptoParams, MACAlgorithm.hmac_sha384);
             case EncryptionAlgorithm.SEED_CBC:
                 return createCipher_CBC(cryptoParams, "SEED", 16, macAlgorithm);
             case EncryptionAlgorithm.SM4_CBC:
@@ -442,18 +449,13 @@ public class JcaTlsCrypto
     {
         if (NamedGroup.refersToAnXDHCurve(namedGroup))
         {
-            switch (namedGroup)
-            {
             /*
-             * TODO Return AlgorithmParameters to check against disabled algorithms
+             * TODO Return AlgorithmParameters to check against disabled algorithms?
              *
              * NOTE: The JDK doesn't even support AlgorithmParameters for XDH, so SunJSSE also winds
              * up using null AlgorithmParameters when checking algorithm constraints.
              */
-            case NamedGroup.x25519:
-            case NamedGroup.x448:
-                return null;
-            }
+            return null;
         }
         else if (NamedGroup.refersToAnECDSACurve(namedGroup))
         {
@@ -947,6 +949,12 @@ public class JcaTlsCrypto
         return new JcaTlsHash(helper.createDigest(digestName));
     }
 
+    protected Tls13NullCipher create13NullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
+        throws IOException
+    {
+        return new Tls13NullCipher(cryptoParams, createHMAC(macAlgorithm), createHMAC(macAlgorithm));
+    }
+
     /**
      * To disable the null cipher suite, override this method with one that throws an IOException.
      *
@@ -1005,7 +1013,7 @@ public class JcaTlsCrypto
         {
             if (null != parameter)
             {
-                Signature dummySigner;                
+                Signature dummySigner;
                 try
                 {
                     dummySigner = helper.createSignature(algorithmName);
@@ -1169,6 +1177,12 @@ public class JcaTlsCrypto
             return Boolean.valueOf(isUsableCipher("SM4/CCM/NoPadding", 128));
         case EncryptionAlgorithm.SM4_GCM:
             return Boolean.valueOf(isUsableCipher("SM4/GCM/NoPadding", 128));
+
+        case EncryptionAlgorithm.NULL_HMAC_SHA256:
+            return hasMacAlgorithm(MACAlgorithm.hmac_sha256);
+
+        case EncryptionAlgorithm.NULL_HMAC_SHA384:
+            return hasMacAlgorithm(MACAlgorithm.hmac_sha384);
 
         case EncryptionAlgorithm._28147_CNT_IMIT:
         case EncryptionAlgorithm.DES_CBC:

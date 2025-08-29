@@ -11,17 +11,19 @@ class ProvSSLSessionResumed
     protected final TlsSession tlsSession;
     protected final SessionParameters sessionParameters;
     protected final JsseSessionParameters jsseSessionParameters;
+    protected final long lastAccessedTime;
 
     ProvSSLSessionResumed(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort,
         SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters,
         ProvSSLSession resumedSession)
     {
-        super(sslSessionContext, resumedSession.getValueMap(), peerHost, peerPort, securityParameters,
-            jsseSecurityParameters);
+        super(sslSessionContext, resumedSession.getValueMap(), peerHost, peerPort, resumedSession.getCreationTime(),
+            securityParameters, jsseSecurityParameters);
 
         this.tlsSession = resumedSession.getTlsSession();
         this.sessionParameters = tlsSession.exportSessionParameters();
         this.jsseSessionParameters = resumedSession.getJsseSessionParameters();
+        this.lastAccessedTime = resumedSession.access();
     }
 
     @Override
@@ -34,6 +36,11 @@ class ProvSSLSessionResumed
     protected byte[] getIDArray()
     {
         return tlsSession.getSessionID();
+    }
+
+    public long getLastAccessedTime()
+    {
+        return lastAccessedTime;
     }
 
     @Override
