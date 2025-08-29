@@ -241,6 +241,8 @@ class Utils
 
         falconParams.put(BCObjectIdentifiers.falcon_512, FalconParameters.falcon_512);
         falconParams.put(BCObjectIdentifiers.falcon_1024, FalconParameters.falcon_1024);
+        falconParams.put(BCObjectIdentifiers.old_falcon_512, FalconParameters.falcon_512);
+        falconParams.put(BCObjectIdentifiers.old_falcon_1024, FalconParameters.falcon_1024);
 
         mlkemOids.put(MLKEMParameters.ml_kem_512, NISTObjectIdentifiers.id_alg_ml_kem_512);
         mlkemOids.put(MLKEMParameters.ml_kem_768, NISTObjectIdentifiers.id_alg_ml_kem_768);

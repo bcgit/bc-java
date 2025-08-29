@@ -387,6 +387,13 @@ public class PrivateKeyFactory
 
             return new FalconPrivateKeyParameters(falconParams, falconKey.getf(), falconKey.getG(), falconKey.getF(), falconKey.getPublicKey().getH());
         }
+        else if (algOID.equals(BCObjectIdentifiers.old_falcon_512) || algOID.equals(BCObjectIdentifiers.old_falcon_1024))
+        {
+            FalconPrivateKey falconKey = FalconPrivateKey.getInstance(keyInfo.parsePrivateKey());
+            FalconParameters falconParams = Utils.falconParamsLookup(algOID);
+
+            return new FalconPrivateKeyParameters(falconParams, falconKey.getf(), falconKey.getG(), falconKey.getF(), falconKey.getPublicKey().getH());
+        }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_bike))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
