@@ -290,6 +290,10 @@ public interface BCObjectIdentifiers
      * Falcon
      */
     ASN1ObjectIdentifier falcon = bc_sig.branch("7");
+
+    ASN1ObjectIdentifier old_falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.6");  // falcon.branch("1");
+    ASN1ObjectIdentifier old_falcon_1024 = new ASN1ObjectIdentifier("1.3.9999.3.9"); // falcon.branch("2");
+
     /** 1.3.9999.3.11 OQS_OID_FALCON512 */
     ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.11");
     /** 1.3.9999.3.12 OQS_OID_P256_FALCON512 */
