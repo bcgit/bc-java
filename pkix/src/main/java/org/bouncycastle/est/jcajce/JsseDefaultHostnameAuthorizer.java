@@ -3,6 +3,7 @@ package org.bouncycastle.est.jcajce;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -13,12 +14,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLSession;
+import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.est.ESTException;
+import org.bouncycastle.util.IPAddress;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -77,6 +83,17 @@ public class JsseDefaultHostnameAuthorizer
     public boolean verify(String name, X509Certificate cert)
         throws IOException
     {
+        if (name == null)
+        {
+            throw new NullPointerException("'name' cannot be null");
+        }
+
+        boolean foundAnyDNSNames = false;
+
+        boolean nameIsIPv4 = IPAddress.isValidIPv4(name);
+        boolean nameIsIPv6 = !nameIsIPv4 && IPAddress.isValidIPv6(name);
+        boolean nameIsIPAddress = nameIsIPv4 || nameIsIPv6;
+
         //
         // Test against san.
         //
@@ -85,25 +102,59 @@ public class JsseDefaultHostnameAuthorizer
             Collection n = cert.getSubjectAlternativeNames();
             if (n != null)
             {
+                InetAddress nameInetAddress = null;
+
                 for (Iterator it = n.iterator(); it.hasNext();)
                 {
                     List l = (List)it.next();
-                    int type = ((Number)l.get(0)).intValue();
+                    int type = ((Integer)l.get(0)).intValue();
                     switch (type)
                     {
-                    case 2:
-                        if (isValidNameMatch(name, l.get(1).toString(), knownSuffixes))
+                    case GeneralName.dNSName:
+                    {
+                        if (!nameIsIPAddress &&
+                            isValidNameMatch(name, (String)l.get(1), knownSuffixes))
                         {
                             return true;
                         }
+                        foundAnyDNSNames = true;
                         break;
-                    case 7:
-                        if (InetAddress.getByName(name).equals(InetAddress.getByName(l.get(1).toString())))
+                    }
+                    case GeneralName.iPAddress:
+                    {
+                        if (nameIsIPAddress)
                         {
-                            return true;
+                            String ipAddress = (String)l.get(1);
+
+                            if (name.equalsIgnoreCase(ipAddress))
+                            {
+                                return true;
+                            }
+
+                            // In case of IPv6 addresses, convert to InetAddress to handle abbreviated forms correctly
+                            if (nameIsIPv6 && IPAddress.isValidIPv6(ipAddress))
+                            {
+                                try
+                                {
+                                    if (nameInetAddress == null)
+                                    {
+                                        nameInetAddress = InetAddress.getByName(name);
+                                    }
+                                    if (nameInetAddress.equals(InetAddress.getByName(ipAddress)))
+                                    {
+                                        return true;
+                                    }
+                                }
+                                catch (UnknownHostException e)
+                                {
+                                    // Ignore
+                                }
+                            }
                         }
                         break;
+                    }
                     default:
+                    {
                         // ignore, maybe log
                         if (LOG.isLoggable(Level.INFO))
                         {
@@ -121,13 +172,8 @@ public class JsseDefaultHostnameAuthorizer
                             LOG.log(Level.INFO, "ignoring type " + type + " value = " + value);
                         }
                     }
+                    }
                 }
-
-                //
-                // As we had subject alternative names, we must not attempt to match against the CN.
-                //
-
-                return false;
             }
         }
         catch (Exception ex)
@@ -135,24 +181,33 @@ public class JsseDefaultHostnameAuthorizer
             throw new ESTException(ex.getMessage(), ex);
         }
 
+        // If we found any DNS names in the subject alternative names, we must not attempt to match against the CN.
+        if (nameIsIPAddress || foundAnyDNSNames)
+        {
+            return false;
+        }
+
+        X500Principal subject = cert.getSubjectX500Principal();
+
         // can't match - would need to check subjectAltName
-        if (cert.getSubjectX500Principal() == null)
+        if (subject == null)
         {
             return false;
         }
 
         // Common Name match only.
-        RDN[] rdNs = X500Name.getInstance(cert.getSubjectX500Principal().getEncoded()).getRDNs();
-        for (int i = rdNs.length - 1; i >= 0; --i)
+        RDN[] rdns = X500Name.getInstance(subject.getEncoded()).getRDNs();
+        for (int i = rdns.length - 1; i >= 0; --i)
         {
-            RDN rdn = rdNs[i];
-            AttributeTypeAndValue[] typesAndValues = rdn.getTypesAndValues();
+            AttributeTypeAndValue[] typesAndValues = rdns[i].getTypesAndValues();
             for (int j = 0; j != typesAndValues.length; j++)
             {
-                AttributeTypeAndValue atv = typesAndValues[j];
-                if (atv.getType().equals(BCStyle.CN))
+                AttributeTypeAndValue typeAndValue = typesAndValues[j];
+                if (BCStyle.CN.equals(typeAndValue.getType()))
                 {
-                    return isValidNameMatch(name, atv.getValue().toString(), knownSuffixes);
+                    ASN1Primitive commonName = typeAndValue.getValue().toASN1Primitive();
+                    return commonName instanceof ASN1String
+                        && isValidNameMatch(name, ((ASN1String)commonName).getString(), knownSuffixes);
                 }
             }
         }
