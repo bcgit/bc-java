@@ -1593,7 +1593,7 @@ public class TlsServerProtocol
                     this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
                 }
             }
-    
+
             TlsCredentialedSigner serverCredentials = TlsUtils.establish13ServerCredentials(tlsServer);
             if (null == serverCredentials)
             {

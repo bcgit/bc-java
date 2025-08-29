@@ -20,14 +20,15 @@ class ProvSSLSessionHandshake
     ProvSSLSessionHandshake(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort,
         SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters)
     {
-        this(sslSessionContext, createValueMap(), peerHost, peerPort, securityParameters, jsseSecurityParameters);
+        this(sslSessionContext, createValueMap(), peerHost, peerPort, getCurrentTime(), securityParameters,
+            jsseSecurityParameters);
     }
 
     protected ProvSSLSessionHandshake(ProvSSLSessionContext sslSessionContext,
-        ConcurrentHashMap<String, Object> valueMap, String peerHost, int peerPort,
+        ConcurrentHashMap<String, Object> valueMap, String peerHost, int peerPort, long creationTime,
         SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters)
     {
-        super(sslSessionContext, valueMap, peerHost, peerPort);
+        super(sslSessionContext, valueMap, peerHost, peerPort, creationTime);
 
         this.securityParameters = securityParameters;
         this.jsseSecurityParameters = jsseSecurityParameters;
@@ -60,6 +61,11 @@ class ProvSSLSessionHandshake
     protected JsseSessionParameters getJsseSessionParameters()
     {
         return null;
+    }
+
+    public long getLastAccessedTime()
+    {
+        return getCreationTime();
     }
 
     @Override

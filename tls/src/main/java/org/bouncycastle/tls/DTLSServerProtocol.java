@@ -188,11 +188,11 @@ public class DTLSServerProtocol
 
         state.keyExchange = TlsUtils.initKeyExchangeServer(serverContext, server);
 
-        state.serverCredentials = null;
+        TlsCredentials serverCredentials = null;
 
         if (!KeyExchangeAlgorithm.isAnonymous(securityParameters.getKeyExchangeAlgorithm()))
         {
-            state.serverCredentials = TlsUtils.establishServerCredentials(server);
+            serverCredentials = TlsUtils.establishServerCredentials(server);
         }
 
         // Server certificate
@@ -200,15 +200,15 @@ public class DTLSServerProtocol
             Certificate serverCertificate = null;
 
             ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
-            if (state.serverCredentials == null)
+            if (serverCredentials == null)
             {
                 state.keyExchange.skipServerCredentials();
             }
             else
             {
-                state.keyExchange.processServerCredentials(state.serverCredentials);
+                state.keyExchange.processServerCredentials(serverCredentials);
 
-                serverCertificate = state.serverCredentials.getCertificate();
+                serverCertificate = serverCredentials.getCertificate();
 
                 sendCertificateMessage(serverContext, handshake, serverCertificate, endPointHash);
             }
@@ -237,7 +237,7 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.server_key_exchange, serverKeyExchange);
         }
 
-        if (state.serverCredentials != null)
+        if (serverCredentials != null)
         {
             state.certificateRequest = server.getCertificateRequest();
 
@@ -1026,7 +1026,6 @@ public class DTLSServerProtocol
         Hashtable serverExtensions = null;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
-        TlsCredentials serverCredentials = null;
         CertificateRequest certificateRequest = null;
         TlsHeartbeat heartbeat = null;
         short heartbeatPolicy = HeartbeatMode.peer_not_allowed_to_send;
