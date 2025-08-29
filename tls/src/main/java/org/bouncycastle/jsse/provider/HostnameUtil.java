@@ -30,11 +30,16 @@ class HostnameUtil
             throw new CertificateException("No hostname specified for HTTPS endpoint ID check");
         }
 
-        if (IPAddress.isValid(hostname))
+        boolean hostnameIsIPv4 = IPAddress.isValidIPv4(hostname);
+        boolean hostnameIsIPv6 = !hostnameIsIPv4 && IPAddress.isValidIPv6(hostname);
+
+        if (hostnameIsIPv4 || hostnameIsIPv6)
         {
             Collection<List<?>> subjectAltNames = certificate.getSubjectAlternativeNames();
             if (null != subjectAltNames)
             {
+                InetAddress hostnameInetAddress = null;
+
                 for (List<?> subjectAltName : subjectAltNames)
                 {
                     if (!isAltNameType(subjectAltName, GeneralName.iPAddress))
@@ -53,20 +58,24 @@ class HostnameUtil
                         return;
                     }
 
-                    try
+                    // In case of IPv6 addresses, convert to InetAddress to handle abbreviated forms correctly
+                    if (hostnameIsIPv6 && IPAddress.isValidIPv6(ipAddress))
                     {
-                        if (InetAddress.getByName(hostname).equals(InetAddress.getByName(ipAddress)))
+                        try
                         {
-                            return;
+                            if (hostnameInetAddress == null)
+                            {
+                                hostnameInetAddress = InetAddress.getByName(hostname); 
+                            }
+                            if (hostnameInetAddress.equals(InetAddress.getByName(ipAddress)))
+                            {
+                                return;
+                            }
                         }
-                    }
-                    catch (UnknownHostException e)
-                    {
-                        // Ignore
-                    }
-                    catch (SecurityException e)
-                    {
-                        // Ignore
+                        catch (UnknownHostException e)
+                        {
+                            // Ignore
+                        }
                     }
                 }
             }
