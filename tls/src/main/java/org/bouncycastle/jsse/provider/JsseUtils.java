@@ -72,8 +72,6 @@ abstract class JsseUtils
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyMasterSecret", true);
     private static final boolean provTlsAllowLegacyResumption =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
-    private static final int provTlsMaxCertificateChainLength =
-        PropertyUtils.getIntegerSystemProperty("jdk.tls.maxCertificateChainLength", 10, 1, Integer.MAX_VALUE);
     private static final int provTlsMaxHandshakeMessageSize =
         PropertyUtils.getIntegerSystemProperty("jdk.tls.maxHandshakeMessageSize", 32768, 1024, Integer.MAX_VALUE);
     private static final boolean provTlsRequireCloseNotify =
@@ -83,6 +81,9 @@ abstract class JsseUtils
     // TODO SunJSSE additionally checks KeyGenerator.getInstance("SunTlsExtendedMasterSecret")
     private static final boolean provTlsUseExtendedMasterSecret =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.useExtendedMasterSecret", true);
+
+    private static final int provTlsClientMaxInboundCertChainLen;
+    private static final int provTlsServerMaxInboundCertChainLen;
 
     static final Set<BCCryptoPrimitive> KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC =
         Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
@@ -100,6 +101,25 @@ abstract class JsseUtils
         {
             super(nameType, encoded);
         }
+    }
+
+    static
+    {
+        int clientDefaultValue = 10;
+        int serverDefaultValue = 8;
+
+        int provTlsMaxCertificateChainLength = PropertyUtils.getIntegerSystemProperty(
+            "jdk.tls.maxCertificateChainLength", 0, 1, Integer.MAX_VALUE);
+        if (provTlsMaxCertificateChainLength > 0)
+        {
+            clientDefaultValue = provTlsMaxCertificateChainLength;
+            serverDefaultValue = provTlsMaxCertificateChainLength;
+        }
+
+        provTlsClientMaxInboundCertChainLen = PropertyUtils.getIntegerSystemProperty(
+            "jdk.tls.client.maxInboundCertificateChainLength", clientDefaultValue, 1, Integer.MAX_VALUE);
+        provTlsServerMaxInboundCertChainLen = PropertyUtils.getIntegerSystemProperty(
+            "jdk.tls.server.maxInboundCertificateChainLength", serverDefaultValue, 1, Integer.MAX_VALUE);
     }
 
     static boolean allowLegacyMasterSecret()
@@ -270,14 +290,19 @@ abstract class JsseUtils
         return a == b || (null != a && null != b && a.equals(b));
     }
 
-    static int getMaxCertificateChainLength()
-    {
-        return provTlsMaxCertificateChainLength;
-    }
-
     static int getMaxHandshakeMessageSize()
     {
         return provTlsMaxHandshakeMessageSize;
+    }
+
+    static int getMaxInboundCertChainLenClient()
+    {
+        return provTlsClientMaxInboundCertChainLen;
+    }
+
+    static int getMaxInboundCertChainLenServer()
+    {
+        return provTlsServerMaxInboundCertChainLen;
     }
 
     static ASN1ObjectIdentifier getNamedCurveOID(PublicKey publicKey)

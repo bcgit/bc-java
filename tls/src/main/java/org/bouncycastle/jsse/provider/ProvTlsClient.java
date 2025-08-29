@@ -396,7 +396,7 @@ class ProvTlsClient
     @Override
     public int getMaxCertificateChainLength()
     {
-        return JsseUtils.getMaxCertificateChainLength();
+        return JsseUtils.getMaxInboundCertChainLenClient();
     }
 
     @Override
