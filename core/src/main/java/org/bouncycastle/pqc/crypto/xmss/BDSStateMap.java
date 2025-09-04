@@ -27,10 +27,8 @@ public class BDSStateMap
 
     BDSStateMap(BDSStateMap stateMap, long maxIndex)
     {
-        for (Iterator it = stateMap.bdsState.keySet().iterator(); it.hasNext();)
+        for (Integer key : stateMap.bdsState.keySet())
         {
-            Integer key = (Integer)it.next();
-
             bdsState.put(key, new BDS(stateMap.bdsState.get(key)));
         }
         this.maxIndex = maxIndex;
@@ -123,10 +121,8 @@ public class BDSStateMap
     {
         BDSStateMap newStateMap = new BDSStateMap(this.maxIndex);
 
-        for (Iterator<Integer> keys = bdsState.keySet().iterator(); keys.hasNext();)
+        for (Integer key : bdsState.keySet())
         {
-            Integer key = keys.next();
-
             newStateMap.bdsState.put(key, bdsState.get(key).withWOTSDigest(digestName));
         }
         

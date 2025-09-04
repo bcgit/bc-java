@@ -274,9 +274,9 @@ public class CertificateRequestMessageBuilder
         {
             ASN1EncodableVector controlV = new ASN1EncodableVector();
 
-            for (Iterator it = controls.iterator(); it.hasNext();)
+            for (Object o : controls)
             {
-                Control control = (Control)it.next();
+                Control control = (Control)o;
 
                 controlV.add(new AttributeTypeAndValue(control.getType(), control.getValue()));
             }

@@ -230,9 +230,9 @@ public final class Arrays
 
     public static boolean contains(boolean[] a, boolean val)
     {
-        for (int i = 0; i < a.length; ++i)
+        for (boolean b : a)
         {
-            if (a[i] == val)
+            if (b == val)
             {
                 return true;
             }
@@ -242,9 +242,9 @@ public final class Arrays
 
     public static boolean contains(byte[] a, byte val)
     {
-        for (int i = 0; i < a.length; ++i)
+        for (byte b : a)
         {
-            if (a[i] == val)
+            if (b == val)
             {
                 return true;
             }
@@ -254,9 +254,9 @@ public final class Arrays
 
     public static boolean contains(char[] a, char val)
     {
-        for (int i = 0; i < a.length; ++i)
+        for (char c : a)
         {
-            if (a[i] == val)
+            if (c == val)
             {
                 return true;
             }
@@ -266,9 +266,9 @@ public final class Arrays
 
     public static boolean contains(int[] a, int val)
     {
-        for (int i = 0; i < a.length; ++i)
+        for (int j : a)
         {
-            if (a[i] == val)
+            if (j == val)
             {
                 return true;
             }
@@ -278,9 +278,9 @@ public final class Arrays
 
     public static boolean contains(long[] a, long val)
     {
-        for (int i = 0; i < a.length; ++i)
+        for (long l : a)
         {
-            if (a[i] == val)
+            if (l == val)
             {
                 return true;
             }
@@ -290,9 +290,9 @@ public final class Arrays
 
     public static boolean contains(short[] a, short val)
     {
-        for (int i = 0; i < a.length; ++i)
+        for (short value : a)
         {
-            if (a[i] == val)
+            if (value == val)
             {
                 return true;
             }
@@ -1236,10 +1236,9 @@ public final class Arrays
         {
             return true;
         }
-        int count = array.length;
-        for (int i = 0; i < count; ++i)
+        for (Object o : array)
         {
-            if (null == array[i])
+            if (null == o)
             {
                 return true;
             }

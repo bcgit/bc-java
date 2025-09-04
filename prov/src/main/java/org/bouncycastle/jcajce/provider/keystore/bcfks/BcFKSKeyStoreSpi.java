@@ -696,9 +696,8 @@ class BcFKSKeyStoreSpi
             return null;
         }
 
-        for (Iterator<String> it = entries.keySet().iterator(); it.hasNext(); )
+        for (String alias : entries.keySet())
         {
-            String alias = (String)it.next();
             ObjectData ent = (ObjectData)entries.get(alias);
 
             if (ent.getType().equals(CERTIFICATE))

@@ -181,9 +181,9 @@ public class BasicClientAuthTlsTest
                                 }
                                 if (chain instanceof X509Certificate[])
                                 {
-                                    for (int i = 0; i < chain.length; ++i)
+                                    for (java.security.cert.Certificate certificate : chain)
                                     {
-                                        if (null == chain[i])
+                                        if (null == certificate)
                                         {
                                             return null;
                                         }

@@ -117,9 +117,9 @@ public class ARIATest
 
     private void checkTestVectors_RFC5794()
     {
-        for (int i = 0; i < TEST_VECTORS_RFC5794.length; ++i)
+        for (String[] strings : TEST_VECTORS_RFC5794)
         {
-            checkTestVector_RFC5794(TEST_VECTORS_RFC5794[i]);
+            checkTestVector_RFC5794(strings);
         }
     }
 

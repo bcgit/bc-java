@@ -560,9 +560,9 @@ public class Blake3Digest
 
         /* Copy stack */
         theStack.clear();
-        for (Iterator it = mySource.theStack.iterator(); it.hasNext(); )
+        for (Object o : mySource.theStack)
         {
-            theStack.push(Arrays.clone((int[])it.next()));
+            theStack.push(Arrays.clone((int[])o));
         }
 
         /* Copy buffer */

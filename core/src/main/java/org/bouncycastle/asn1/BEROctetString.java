@@ -39,9 +39,9 @@ public class BEROctetString
         default:
         {
             int totalOctets = 0;
-            for (int i = 0; i < count; ++i)
+            for (ASN1OctetString octetString : octetStrings)
             {
-                totalOctets += octetStrings[i].string.length;
+                totalOctets += octetString.string.length;
             }
 
             byte[] string = new byte[totalOctets];
@@ -119,9 +119,9 @@ public class BEROctetString
 
         if (null != elements)
         {
-            for (int i = 0; i < elements.length; ++i)
+            for (ASN1OctetString element : elements)
             {
-                totalLength += elements[i].encodedLength(true);
+                totalLength += element.encodedLength(true);
             }
         }
         else
