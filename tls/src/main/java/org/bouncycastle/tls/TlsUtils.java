@@ -1535,6 +1535,24 @@ public class TlsUtils
         return supportedSignatureAlgorithms;
     }
 
+    static void verify12SignatureAlgorithm(SignatureAndHashAlgorithm signatureAlgorithm, short alertDescription)
+        throws IOException
+    {
+        if (signatureAlgorithm != null)
+        {
+            int signatureScheme = SignatureScheme.from(signatureAlgorithm);
+
+            // TODO In future there might be more cases, so we'd need a more general method.
+            if (SignatureScheme.isMLDSA(signatureScheme))
+            {
+                throw new TlsFatalAlert(alertDescription);
+            }
+        }
+    }
+
+    /**
+     * @deprecated Will be removed.
+     */
     public static void verifySupportedSignatureAlgorithm(Vector supportedSignatureAlgorithms,
         SignatureAndHashAlgorithm signatureAlgorithm) throws IOException
     {
@@ -2453,7 +2471,10 @@ public class TlsUtils
         }
         else
         {
-            verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(), sigAndHashAlg);
+            verify12SignatureAlgorithm(sigAndHashAlg, AlertDescription.illegal_parameter);
+
+            verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(), sigAndHashAlg,
+                AlertDescription.illegal_parameter);
 
             signatureAlgorithm = sigAndHashAlg.getSignature();
 
@@ -2538,7 +2559,7 @@ public class TlsUtils
             int signatureScheme = certificateVerify.getAlgorithm();
 
             SignatureAndHashAlgorithm algorithm = SignatureScheme.getSignatureAndHashAlgorithm(signatureScheme);
-            verifySupportedSignatureAlgorithm(supportedAlgorithms, algorithm);
+            verifySupportedSignatureAlgorithm(supportedAlgorithms, algorithm, AlertDescription.illegal_parameter);
 
             Tls13Verifier verifier = certificate.createVerifier(signatureScheme);
 
@@ -2633,7 +2654,10 @@ public class TlsUtils
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            verifySupportedSignatureAlgorithm(securityParameters.getClientSigAlgs(), sigAndHashAlg);
+            verify12SignatureAlgorithm(sigAndHashAlg, AlertDescription.illegal_parameter);
+
+            verifySupportedSignatureAlgorithm(securityParameters.getClientSigAlgs(), sigAndHashAlg,
+                AlertDescription.illegal_parameter);
         }
 
         TlsVerifier verifier = serverCertificate.createVerifier(signatureAlgorithm);
