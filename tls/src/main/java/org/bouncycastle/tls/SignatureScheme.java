@@ -46,7 +46,7 @@ public class SignatureScheme
     public static final int sm2sig_sm3 = 0x0708;
 
     /*
-     * draft-tls-westerbaan-mldsa-00
+     * draft-ietf-tls-mldsa-00
      */
     public static final int DRAFT_mldsa44 = 0x0904;
     public static final int DRAFT_mldsa65 = 0x0905;
