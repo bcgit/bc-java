@@ -277,6 +277,7 @@ public class JcaTlsCertificate
         case SignatureScheme.DRAFT_mldsa44:
         case SignatureScheme.DRAFT_mldsa65:
         case SignatureScheme.DRAFT_mldsa87:
+            return crypto.createTls13Verifier("ML-DSA", null, getPubKeyMLDSA());    
 
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -393,6 +394,11 @@ public class JcaTlsCertificate
     PublicKey getPubKeyRSA() throws IOException
     {
         // TODO[tls] How to reliably check that this is an RSA key?
+        return getPublicKey();
+    }
+
+    PublicKey getPubKeyMLDSA() throws IOException
+    {
         return getPublicKey();
     }
 
