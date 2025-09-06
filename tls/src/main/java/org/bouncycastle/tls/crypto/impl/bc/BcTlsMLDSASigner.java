@@ -27,6 +27,11 @@ public class BcTlsMLDSASigner
     {
         super(crypto, privateKey);
 
+        if (!SignatureScheme.isMLDSA(signatureScheme))
+        {
+            throw new IllegalArgumentException("signatureScheme");
+        }
+
         this.signatureScheme = signatureScheme;
     }
 
@@ -37,6 +42,9 @@ public class BcTlsMLDSASigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
+        /*
+         * draft-ietf-tls-mldsa-00 3. The context parameter [..] MUST be the empty string.
+         */
         MLDSASigner signer = new MLDSASigner();
         signer.init(true, new ParametersWithRandom(privateKey, crypto.getSecureRandom()));
 

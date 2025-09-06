@@ -582,6 +582,8 @@ public class TlsClientProtocol
                                 securityParameters.getNegotiatedVersion(), clientAuthSigner);
                             clientAuthStreamSigner = clientAuthSigner.getStreamSigner();
 
+                            TlsUtils.verify12SignatureAlgorithm(clientAuthAlgorithm, AlertDescription.internal_error);
+
                             if (ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
                             {
                                 TlsUtils.verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(),
