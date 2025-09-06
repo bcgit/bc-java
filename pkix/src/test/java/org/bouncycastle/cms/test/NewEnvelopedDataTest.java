@@ -736,7 +736,7 @@ public class NewEnvelopedDataTest
 
         // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(_reciMLKem512Cert, CMSAlgorithm.AES128_WRAP)
-            .setKDF(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256)));
+            .setKDF(CMSAlgorithm.SHA256_HKDF));
 
         CMSEnvelopedData ed = edGen.generate(
             new CMSProcessableByteArray(data),
@@ -781,7 +781,7 @@ public class NewEnvelopedDataTest
 
         // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(_reciMLKem768Cert, CMSAlgorithm.AES256_WRAP)
-            .setKDF(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256)));
+            .setKDF(CMSAlgorithm.SHA256_HKDF));
 
         CMSEnvelopedData ed = edGen.generate(
             new CMSProcessableByteArray(data),
