@@ -17,7 +17,11 @@ public class HPKE
 
     // kems
     public static final short kem_P256_SHA256 = 16;
+    /**
+     * @deprecated use kem_P384_SHA384
+     */
     public static final short kem_P384_SHA348 = 17;
+    public static final short kem_P384_SHA384 = 17;
     public static final short kem_P521_SHA512 = 18;
     public static final short kem_X25519_SHA256 = 32;
     public static final short kem_X448_SHA512 = 33;
