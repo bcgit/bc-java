@@ -73,7 +73,7 @@ class DHKEM
             this.kpGen.init(new ECKeyGenerationParameters(domainParams, getSecureRandom()));
 
             break;
-        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P384_SHA384:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA384);
             domainParams = getDomainParameters("P-384");
             rawAgreement = new BasicRawAgreement(new ECDHCBasicAgreement());
@@ -131,7 +131,7 @@ class DHKEM
         switch (kemId)
         {
         case HPKE.kem_P256_SHA256:
-        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P384_SHA384:
         case HPKE.kem_P521_SHA512:
             /*
              * RFC 9180 7.1.1. For P-256, P-384, and P-521, the SerializePublicKey() function of the KEM performs
@@ -152,7 +152,7 @@ class DHKEM
         switch (kemId)
         {
         case HPKE.kem_P256_SHA256:
-        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P384_SHA384:
         case HPKE.kem_P521_SHA512:
         {
             /*
@@ -205,7 +205,7 @@ class DHKEM
         switch (kemId)
         {
         case HPKE.kem_P256_SHA256:
-        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P384_SHA384:
         case HPKE.kem_P521_SHA512:
             /*
              * RFC 9180 7.1.1. For P-256, P-384, and P-521 [..]. DeserializePublicKey() performs the
@@ -248,7 +248,7 @@ class DHKEM
         switch (kemId)
         {
         case HPKE.kem_P256_SHA256:
-        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P384_SHA384:
         case HPKE.kem_P521_SHA512:
             /*
              * RFC 9180 7.1.2. For P-256, P-384, and P-521 [..]. DeserializePrivateKey() performs the Octet-
@@ -321,7 +321,7 @@ class DHKEM
         switch (kemId)
         {
         case HPKE.kem_P256_SHA256:
-        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P384_SHA384:
         case HPKE.kem_P521_SHA512:
         {
             byte[] dkp_prk = hkdf.LabeledExtract(null, suiteID, "dkp_prk", ikm);
