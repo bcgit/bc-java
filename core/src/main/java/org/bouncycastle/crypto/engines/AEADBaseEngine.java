@@ -630,6 +630,7 @@ abstract class AEADBaseEngine
 
         public int processByte(byte input, byte[] output, int outOff)
         {
+            checkData(false);
             ensureInitialized();
             stream.write(input);
             m_bufPos = stream.size();
@@ -639,6 +640,7 @@ abstract class AEADBaseEngine
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
+            checkData(false);
             ensureInitialized();
             stream.write(input, inOff, len);
             m_bufPos = stream.size();
