@@ -15,6 +15,16 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 
+/**
+ * Generate authenticated enveloped CMS data with streaming support.
+ * <p>
+ * When using this generator, note:
+ * <ul>
+ *   <li>The returned OutputStream must be closed to finalize encryption and authentication</li>
+ *   <li>Closing the returned stream <b>does not close</b> the underlying OutputStream passed to {@code open()}</li>
+ *   <li>Callers are responsible for closing the underlying OutputStream separately</li>
+ * </ul>
+ */
 public class CMSAuthEnvelopedDataStreamGenerator
     extends CMSAuthEnvelopedGenerator
 {
@@ -113,10 +123,16 @@ public class CMSAuthEnvelopedDataStreamGenerator
         }
     }
 
-
     /**
-     * generate an enveloped object that contains an CMS Enveloped Data
-     * object using the given encryptor.
+     * generate an enveloped object that contains an CMS Enveloped Data object using the given encryptor.
+     * <p>
+     * <b>Stream handling note:</b> Closing the returned stream finalizes the CMS structure but
+     * <b>does not close</b> the underlying output stream. The caller remains responsible for
+     * managing the lifecycle of {@code out}.
+     *
+     * @param out the output stream to write the CMS structure to
+     * @param encryptor the cipher to use for encryption
+     * @return an output stream that writes encrypted and authenticated content
      */
     public OutputStream open(
         OutputStream out,
