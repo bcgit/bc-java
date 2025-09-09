@@ -45,6 +45,7 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
+        testCounter();
         testVectorsAsconCXof128_512();
         DigestTest.checkXof(new AsconXof128(), 1429, 317, new SecureRandom(), this);
         DigestTest.checkXof(new AsconCXof128(), 1429, 317, new SecureRandom(), this);
@@ -108,7 +109,7 @@ public class AsconTest
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128a));
         CipherTest.checkAEADParemeter(this, 20, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon80pq));
 
-        CipherTest.testOverlapping(this,16, 16, 16, 16, new AsconAEAD128());
+        CipherTest.testOverlapping(this, 16, 16, 16, 16, new AsconAEAD128());
         CipherTest.testOverlapping(this, 16, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128));
         CipherTest.testOverlapping(this, 16, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128a));
         CipherTest.testOverlapping(this, 20, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon80pq));
@@ -1354,5 +1355,128 @@ public class AsconTest
 
         AEADParameters parameters = new AEADParameters(new KeyParameter(new byte[keySize]), macSize, new byte[ivSize], null);
         ascon.init(forEncryption, parameters);
+    }
+
+    protected static class Counter
+    {
+        int n;
+        int[] counter;
+
+        public void init(int n)
+        {
+            if (this.n != n)
+            {
+                this.n = n;
+                int len = (n + 31) >>> 5;
+                if (counter == null || len != counter.length)
+                {
+                    counter = new int[len];
+                }
+                else
+                {
+                    reset();
+                }
+            }
+        }
+
+        public boolean increment()
+        {
+            int i = counter.length;
+            while (--i >= 0)
+            {
+                if (++counter[i] != 0)
+                {
+                    break;
+                }
+            }
+            int r = n & 31;
+            return i <= 0 && counter[0] == (r == 0 ? 0 : (1 << r));
+        }
+
+        public boolean increment(int delta)
+        {
+            // Convert to long to handle unsigned arithmetic
+            long carry = delta & 0xFFFFFFFFL;
+            // Process each word starting from LSB
+            int i = counter.length;
+            while (carry != 0 && --i >= 0)
+            {
+                long sum = (counter[i] & 0xFFFFFFFFL) + carry;
+                counter[i] = (int)sum;
+                carry = sum >>> 32;
+            }
+
+            // Final limit check if we didn't overflow
+            return carry != 0 || checkLimit();
+        }
+
+        private boolean checkLimit()
+        {
+            int bitIndex = ((n - 1) & 31) + 1;
+            long bound = 1L << bitIndex;
+            long val = counter[0] & 0xFFFFFFFFL;
+            if (val > bound)
+            {
+                return true;
+            }
+            if (val < bound)
+            {
+                return false;
+            }
+            // Check if we've reached/exceeded 2^n
+            for (int i = 1; i < counter.length; ++i)
+            {
+                val = counter[i] & 0xFFFFFFFFL;
+                if (val > 0)
+                {
+                    return true;
+                }
+            }
+            return true;  // Exactly equal to 2^n
+        }
+
+        public void reset()
+        {
+            Arrays.fill(counter, 0);
+        }
+    }
+
+    public void testCounter()
+    {
+        Counter counter = new Counter();
+        counter.init(64);
+        isTrue(!counter.increment(-1));
+        isTrue(!counter.increment());
+        isTrue(!counter.increment(-1));
+        isTrue(!counter.increment());
+
+        counter.init(33);
+        isTrue(!counter.increment(-1));
+        isTrue(!counter.increment());
+        isTrue(!counter.increment(-1));
+        isTrue(counter.increment());
+
+        counter.init(32);
+        isTrue(!counter.increment(-1));
+        isTrue(counter.increment());
+        counter.reset();
+        isTrue(!counter.increment());
+        counter.reset();
+        isTrue(!counter.increment(-1));
+        isTrue(counter.increment(1));
+
+        counter.init(31);
+        isTrue(!counter.increment((1 << 31) - 1));
+        isTrue(counter.increment());
+        counter.reset();
+        isTrue(!counter.increment(1 << 30));
+        isTrue(counter.increment(1 << 30));
+        counter.reset();
+        isTrue(!counter.increment(1 << 30));
+        isTrue(counter.increment((1 << 30) + 1));
+
+        counter.init(5);
+        isTrue(!counter.increment((1 << 5) - 1));
+        isTrue(counter.increment());
     }
 }
