@@ -38,10 +38,12 @@ abstract class AEADBaseEngine
         public static final int DEFAULT = 0;
         public static final int COUNTER = 1;//add a counter to count the size of AAD
         public static final int STREAM = 2; //process AAD data during the process data, used for elephant
+        public static final int DATA_LIMIT = 3;// count AAD data to the counter, used for AsconAEAD128
 
         public static final AADOperatorType Default = new AADOperatorType(DEFAULT);
         public static final AADOperatorType Counter = new AADOperatorType(COUNTER);
         public static final AADOperatorType Stream = new AADOperatorType(STREAM);
+        public static final AADOperatorType DataLimit = new AADOperatorType(DATA_LIMIT);
 
         private final int ord;
 
@@ -57,11 +59,13 @@ abstract class AEADBaseEngine
         public static final int COUNTER = 1;
         public static final int STREAM = 2;
         public static final int STREAM_CIPHER = 3;
+        public static final int DATA_LIMIT = 4; // count AAD data to the counter, used for AsconAEAD128
 
         public static final DataOperatorType Default = new DataOperatorType(DEFAULT);
         public static final DataOperatorType Counter = new DataOperatorType(COUNTER);
         public static final DataOperatorType Stream = new DataOperatorType(STREAM);
         public static final DataOperatorType StreamCipher = new DataOperatorType(STREAM_CIPHER);
+        public static final DataOperatorType DataLimit = new DataOperatorType(DATA_LIMIT);
 
         private final int ord;
 
@@ -106,6 +110,7 @@ abstract class AEADBaseEngine
     protected int KEY_SIZE;
     protected int IV_SIZE;
     protected int MAC_SIZE;
+    protected int macSizeLowerBound = 0;
     protected byte[] initialAssociatedText;
     protected byte[] mac;
     protected byte[] m_buf;
@@ -119,6 +124,9 @@ abstract class AEADBaseEngine
     protected AADProcessingBuffer processor;
     protected AADOperator aadOperator;
     protected DataOperator dataOperator;
+    //Only AsconAEAD128 uses this counter;
+    protected DecryptionFailureCounter decryptionFailureCounter = null;
+    protected DataLimitCounter dataLimitCounter = null;
 
     @Override
     public String getAlgorithmName()
@@ -157,9 +165,22 @@ abstract class AEADBaseEngine
             initialAssociatedText = aeadParameters.getAssociatedText();
 
             int macSizeBits = aeadParameters.getMacSize();
-            if (macSizeBits != MAC_SIZE * 8)
+            if (macSizeLowerBound == 0)
             {
-                throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
+                if (macSizeBits != (MAC_SIZE << 3))
+                {
+                    throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
+                }
+            }
+            else
+            {
+                //TODO: set macSizeUpperBound instead of 128 fix value if necessary
+                if (macSizeBits > 128 || macSizeBits < (macSizeLowerBound << 3) || (macSizeBits & 7) != 0)
+                {
+                    throw new IllegalArgumentException("MAC size must be between " + (macSizeLowerBound << 3) +
+                        " and 128 bits for " + algorithmName);
+                }
+                MAC_SIZE = macSizeBits >>> 3;
             }
         }
         else if (params instanceof ParametersWithIV)
@@ -194,6 +215,10 @@ abstract class AEADBaseEngine
 
         m_state = forEncryption ? State.EncInit : State.DecInit;
         init(k, npub);
+        if (dataLimitCounter != null)
+        {
+            dataLimitCounter.increment(npub.length);
+        }
         reset(true);
         if (initialAssociatedText != null)
         {
@@ -274,6 +299,11 @@ abstract class AEADBaseEngine
             AADBufferSize = 0;
             aadOperator = new StreamAADOperator();
             break;
+        case AADOperatorType.DATA_LIMIT:
+            m_aad = new byte[AADBufferSize];
+            dataLimitCounter = new DataLimitCounter();
+            aadOperator = new DataLimitAADOperator();
+            break;
         }
 
         switch (dataOperatorType.ord)
@@ -294,6 +324,10 @@ abstract class AEADBaseEngine
             BlockSize = 0;
             m_buf = new byte[m_bufferSizeDecrypt];
             dataOperator = new StreamCipherOperator();
+            break;
+        case DataOperatorType.DATA_LIMIT:
+            m_buf = new byte[m_bufferSizeDecrypt];
+            dataOperator = new DataLimitDataOperator();
             break;
         }
     }
@@ -495,6 +529,34 @@ abstract class AEADBaseEngine
         }
     }
 
+    private class DataLimitAADOperator
+        implements AADOperator
+    {
+        @Override
+        public void processAADByte(byte input)
+        {
+            dataLimitCounter.increment();
+            processor.processAADByte(input);
+        }
+
+        @Override
+        public void processAADBytes(byte[] input, int inOff, int len)
+        {
+            dataLimitCounter.increment(len);
+            processAadBytes(input, inOff, len);
+        }
+
+        public void reset()
+        {
+        }
+
+        @Override
+        public int getLen()
+        {
+            return m_aadPos;
+        }
+    }
+
     protected interface DataOperator
     {
         int processByte(byte input, byte[] output, int outOff);
@@ -688,6 +750,154 @@ abstract class AEADBaseEngine
         @Override
         public void reset()
         {
+        }
+    }
+
+    private class DataLimitDataOperator
+        implements DataOperator
+    {
+        public int processByte(byte input, byte[] output, int outOff)
+        {
+            dataLimitCounter.increment();
+            return processor.processByte(input, output, outOff);
+        }
+
+        public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            dataLimitCounter.increment(len);
+            return processEncDecBytes(input, inOff, len, output, outOff);
+        }
+
+        @Override
+        public int getLen()
+        {
+            return m_bufPos;
+        }
+
+        @Override
+        public void reset()
+        {
+        }
+    }
+
+    protected static class DecryptionFailureCounter
+    {
+        private int n;
+        private int[] counter;
+
+        public void init(int n)
+        {
+            if (this.n != n)
+            {
+                this.n = n;
+                int len = (n + 31) >>> 5;
+                if (counter == null || len != counter.length)
+                {
+                    counter = new int[len];
+                }
+                else
+                {
+                    reset();
+                }
+            }
+        }
+
+        public boolean increment()
+        {
+            int i = counter.length;
+            while (--i >= 0)
+            {
+                if (++counter[i] != 0)
+                {
+                    break;
+                }
+            }
+            int r = n & 31;
+            return i <= 0 && counter[0] == (r == 0 ? 0 : (1 << r));
+        }
+
+        // In case when we need to use this counter to count data limit
+//        public boolean increment(int delta)
+//        {
+//            // Convert to long to handle unsigned arithmetic
+//            long carry = delta & 0xFFFFFFFFL;
+//            // Process each word starting from LSB
+//            int i = counter.length;
+//            while (carry != 0 && --i >= 0)
+//            {
+//                long sum = (counter[i] & 0xFFFFFFFFL) + carry;
+//                counter[i] = (int)sum;
+//                carry = sum >>> 32;
+//            }
+//
+//            // Final limit check if we didn't overflow
+//            return carry != 0 || checkLimit();
+//        }
+//
+//        private boolean checkLimit()
+//        {
+//            int bitIndex = ((n - 1) & 31) + 1;
+//            long bound = 1L << bitIndex;
+//            long val = counter[0] & 0xFFFFFFFFL;
+//            if (val > bound)
+//            {
+//                return true;
+//            }
+//            if (val < bound)
+//            {
+//                return false;
+//            }
+//            // Check if we've reached/exceeded 2^n
+//            for (int i = 1; i < counter.length; ++i)
+//            {
+//                val = counter[i] & 0xFFFFFFFFL;
+//                if (val > 0)
+//                {
+//                    return true;
+//                }
+//            }
+//            return true;  // Exactly equal to 2^n
+//        }
+
+        public void reset()
+        {
+            Arrays.fill(counter, 0);
+        }
+    }
+
+    protected static class DataLimitCounter
+    {
+        //if the maximum exceed Long.MAX_VALUE, Improve DecryptionFailureCounter and use it instead
+        private long count;
+        private long max;
+        private int n;
+
+        public void init(int n)
+        {
+            this.n = n;
+            this.max = 1L << n;
+        }
+
+        public void increment()
+        {
+            if (++count > max)
+            {
+                throw new IllegalStateException("Total data limit exceeded: maximum 2^" + n + " bytes per key (including nonce, AAD, and message)");
+            }
+        }
+
+        public void increment(int n)
+        {
+            count += n;
+            if (count > max)
+            {
+                throw new IllegalStateException("Total data limit exceeded: maximum 2^" + n + " bytes per key (including nonce, AAD, and message)");
+            }
+        }
+
+        public void reset()
+        {
+            count = 0;
         }
     }
 
@@ -891,6 +1101,10 @@ abstract class AEADBaseEngine
         {
             if (!Arrays.constantTimeAreEqual(MAC_SIZE, mac, 0, m_buf, m_bufPos))
             {
+                if (decryptionFailureCounter != null && decryptionFailureCounter.increment())
+                {
+                    throw new InvalidCipherTextException(algorithmName + " decryption failure limit exceeded");
+                }
                 throw new InvalidCipherTextException(algorithmName + " mac does not match");
             }
         }

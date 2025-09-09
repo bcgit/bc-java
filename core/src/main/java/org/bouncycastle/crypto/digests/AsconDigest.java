@@ -3,11 +3,11 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.util.Pack;
 
 /**
- * ASCON v1.2 Digest, https://ascon.iaik.tugraz.at/ .
+ * ASCON v1.2 Digest, <a href="https://ascon.iaik.tugraz.at/">...</a> .
  * <p>
- * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf
+ * <a href="https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf">...</a>
  * <p>
- * ASCON v1.2 Digest with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
+ * ASCON v1.2 Digest with reference to C Reference Impl from: <a href="https://github.com/ascon/ascon-c">...</a> .
  *
  * @deprecated use Ascon Hash 256 Digest
  */

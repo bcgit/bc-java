@@ -4,15 +4,15 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
- * Ascon-AEAD128 was introduced as part of the NIST Lightweight Cryptography
- * competition and described in the NIST Special Publication SP 800-232 (Initial
- * Public Draft).
- * For additional details, see:
- * <ul>
- *     <li><a href="https://csrc.nist.gov/pubs/sp/800/232/ipd">NIST SP 800-232 (Initial Public Draft)</a></li>
- *     <li><a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
- *     ASM implementations of Ascon (NIST SP 800-232)</a></li>
- * </ul>
+ * Ascon-AEAD128 was introduced in NIST Special Publication (SP) 800-232
+ * <p>
+ * Additional details and the specification can be found in:
+ * <a href="https://csrc.nist.gov/pubs/sp/800/232/final">NIST SP 800-232
+ * Ascon-Based Lightweight Cryptography Standards for Constrained Devices</a>.
+ * For reference source code and implementation details, please see:
+ * <a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
+ * ASM implementations of Ascon (NIST SP 800-232)</a>.
+ * </p>
  *
  * @version 1.3
  */
@@ -26,7 +26,10 @@ public class AsconAEAD128
         algorithmName = "Ascon-AEAD128";
         nr = 8;
         dsep = -9223372036854775808L; //0x80L << 56
-        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Default);
+        macSizeLowerBound = 4;
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.DataLimit, DataOperatorType.DataLimit);
+        dataLimitCounter.init(54);
+        decryptionFailureCounter = new DecryptionFailureCounter();
     }
 
     protected long pad(int i)
@@ -140,8 +143,17 @@ public class AsconAEAD128
     protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        K0 = Pack.littleEndianToLong(key, 0);
-        K1 = Pack.littleEndianToLong(key, 8);
+        int lambda = (MAC_SIZE << 3) - 32;
+        long K0 = Pack.littleEndianToLong(key, 0);
+        long K1 = Pack.littleEndianToLong(key, 8);
+        decryptionFailureCounter.init(lambda);
+        if (this.K0 != K0 || this.K1 != K1)
+        {
+            dataLimitCounter.reset();
+            decryptionFailureCounter.reset();
+            this.K0 = K0;
+            this.K1 = K1;
+        }
         N0 = Pack.littleEndianToLong(iv, 0);
         N1 = Pack.littleEndianToLong(iv, 8);
     }
