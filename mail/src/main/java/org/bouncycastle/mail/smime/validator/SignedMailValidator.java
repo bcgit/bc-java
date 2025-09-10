@@ -217,11 +217,18 @@ public class SignedMailValidator
             throw new SignedMailValidatorException(msg, e);
         }
 
-        // validate signatues
+        // validate signatures
         validateSignatures(param);
     }
 
     protected void validateSignatures(PKIXParameters pkixParam)
+    {
+        JcaSimpleSignerInfoVerifierBuilder signerInfoVerifierBuilder = new JcaSimpleSignerInfoVerifierBuilder()
+                  .setProvider("BC");
+        validateSignatures(signerInfoVerifierBuilder, pkixParam);
+    }
+
+    protected void validateSignatures(JcaSimpleSignerInfoVerifierBuilder signerInfoVerifierBuilder, PKIXParameters pkixParam)
     {
         PKIXParameters usedParameters = (PKIXParameters)pkixParam.clone();
 
@@ -261,8 +268,21 @@ public class SignedMailValidator
                 continue;
             }
 
-            // check signature
-            final boolean validSignature = isValidSignature(signerCert, signer, errors);
+            boolean validSignature;
+            try
+            {
+                SignerInformationVerifier verifier = signerInfoVerifierBuilder
+                                .build(signerCert.getPublicKey());
+
+                // check signature
+                validSignature = isValidSignature(verifier, signer, errors);
+            }
+            catch (Exception e)
+            {
+                validSignature = false;
+                ErrorBundle msg = createErrorBundle("SignedMailValidator.exceptionVerifyingSignature", e);
+                errors.add(msg);
+            }
 
             // check signer certificate (mail address, key usage, etc)
             checkSignerCert(signerCert, errors, notifications);
@@ -936,15 +956,11 @@ public class SignedMailValidator
         return findFirstCert(certStores, selector, null);
     }
 
-    private static boolean isValidSignature(X509Certificate cert, SignerInformation signer, List errors)
+    private static boolean isValidSignature(SignerInformationVerifier verifier, SignerInformation signer, List errors)
     {
         boolean validSignature = false;
         try
         {
-            SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder()
-                .setProvider("BC")
-                .build(cert.getPublicKey());
-
             validSignature = signer.verify(verifier);
             if (!validSignature)
             {

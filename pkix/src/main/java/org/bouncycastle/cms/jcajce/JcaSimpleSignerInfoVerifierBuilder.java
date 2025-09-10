@@ -18,6 +18,7 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 public class JcaSimpleSignerInfoVerifierBuilder
 {
     private Helper helper = new Helper();
+    private DigestCalculatorProvider digestCalculatorProvider = null;
 
     public JcaSimpleSignerInfoVerifierBuilder setProvider(Provider provider)
     {
@@ -33,22 +34,42 @@ public class JcaSimpleSignerInfoVerifierBuilder
         return this;
     }
 
+    public JcaSimpleSignerInfoVerifierBuilder setDigestCalculatorProvider(DigestCalculatorProvider digestCalculatorProvider)
+    {
+        this.digestCalculatorProvider = digestCalculatorProvider;
+
+        return this;
+    }
+
     public SignerInformationVerifier build(X509CertificateHolder certHolder)
         throws OperatorCreationException, CertificateException
     {
-        return new SignerInformationVerifier(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), helper.createContentVerifierProvider(certHolder), helper.createDigestCalculatorProvider());
+        return new SignerInformationVerifier(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), helper.createContentVerifierProvider(certHolder), getDigestCalculatorProvider());
     }
 
     public SignerInformationVerifier build(X509Certificate certificate)
         throws OperatorCreationException
     {
-        return new SignerInformationVerifier(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), helper.createContentVerifierProvider(certificate), helper.createDigestCalculatorProvider());
+        return new SignerInformationVerifier(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), helper.createContentVerifierProvider(certificate), getDigestCalculatorProvider());
     }
 
     public SignerInformationVerifier build(PublicKey pubKey)
         throws OperatorCreationException
     {
-        return new SignerInformationVerifier(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), helper.createContentVerifierProvider(pubKey), helper.createDigestCalculatorProvider());
+        return new SignerInformationVerifier(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), helper.createContentVerifierProvider(pubKey), getDigestCalculatorProvider());
+    }
+
+    private DigestCalculatorProvider getDigestCalculatorProvider()
+        throws OperatorCreationException
+    {
+        if (digestCalculatorProvider != null)
+        {
+            return digestCalculatorProvider;
+        }
+        else
+        {
+            return helper.createDigestCalculatorProvider();
+        }
     }
 
     private static class Helper
