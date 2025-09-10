@@ -454,6 +454,13 @@ public class BcTlsCrypto
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
+        int signatureScheme = SignatureScheme.from(sigAndHashAlgorithm);
+        if (SignatureScheme.isMLDSA(signatureScheme))
+        {
+            // TODO[tls-mldsa] Finish ML-DSA support before enabling
+            return false;
+        }
+        
         short signature = sigAndHashAlgorithm.getSignature();
 
         switch (sigAndHashAlgorithm.getHash())
@@ -470,10 +477,11 @@ public class BcTlsCrypto
         switch (signatureScheme)
         {
         case SignatureScheme.sm2sig_sm3:
-        // TODO[tls] Test coverage before adding
+            return false;
         case SignatureScheme.DRAFT_mldsa44:
         case SignatureScheme.DRAFT_mldsa65:
         case SignatureScheme.DRAFT_mldsa87:
+            // TODO[tls-mldsa] Finish ML-DSA support before enabling
             return false;
         default:
         {

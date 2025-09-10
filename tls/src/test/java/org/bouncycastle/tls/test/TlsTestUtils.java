@@ -37,12 +37,14 @@ import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsPSKIdentity;
+import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -152,12 +154,27 @@ public class TlsTestUtils
 
         if ("ed25519".equalsIgnoreCase(eeCertResource))
         {
-            return getCACertResource(SignatureAlgorithm.ed25519);
+            return getCACertResource13(SignatureScheme.ed25519);
         }
 
         if ("ed448".equalsIgnoreCase(eeCertResource))
         {
-            return getCACertResource(SignatureAlgorithm.ed448);
+            return getCACertResource13(SignatureScheme.ed448);
+        }
+
+        if ("ml_dsa_44".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource13(SignatureScheme.DRAFT_mldsa44);
+        }
+
+        if ("ml_dsa_65".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource13(SignatureScheme.DRAFT_mldsa65);
+        }
+
+        if ("ml_dsa_87".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource13(SignatureScheme.DRAFT_mldsa87);
         }
 
         if ("rsa".equalsIgnoreCase(eeCertResource)
@@ -181,6 +198,11 @@ public class TlsTestUtils
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    static String getCACertResource13(int signatureScheme) throws IOException
+    {
+        return "x509-ca-" + getResourceName13(signatureScheme) + ".pem";
     }
 
     static String getPSKPassword(boolean badKey)
@@ -220,6 +242,26 @@ public class TlsTestUtils
         // TODO[RFC 9189] Choose names here and apply reverse mappings in getCACertResource(String)
         case SignatureAlgorithm.gostr34102012_256:
         case SignatureAlgorithm.gostr34102012_512:
+
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    static String getResourceName13(int signatureScheme) throws IOException
+    {
+        switch (signatureScheme)
+        {
+        case SignatureScheme.ed25519:
+            return "ed25519";
+        case SignatureScheme.ed448:
+            return "ed448";
+        case SignatureScheme.DRAFT_mldsa44:
+            return "ml_dsa_44";
+        case SignatureScheme.DRAFT_mldsa65:
+            return "ml_dsa_65";
+        case SignatureScheme.DRAFT_mldsa87:
+            return "ml_dsa_87";
 
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
