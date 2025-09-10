@@ -63,7 +63,7 @@ public class TlsUtils
     // Map OID strings to HashAlgorithm values
     private static final Hashtable CERT_SIG_ALG_OIDS = createCertSigAlgOIDs();
     private static final Vector DEFAULT_SUPPORTED_SIG_ALGS = createDefaultSupportedSigAlgs();
-
+    
     private static void addCertSigAlgOID(Hashtable h, ASN1ObjectIdentifier oid, SignatureAndHashAlgorithm sigAndHash)
     {
         h.put(oid.getId(), sigAndHash);
@@ -115,6 +115,10 @@ public class TlsUtils
 
         addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed25519, SignatureAndHashAlgorithm.ed25519);
         addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed448, SignatureAndHashAlgorithm.ed448);
+
+        addCertSigAlgOID(h, NISTObjectIdentifiers.id_ml_dsa_44, SignatureAndHashAlgorithm.DRAFT_mldsa44);
+        addCertSigAlgOID(h, NISTObjectIdentifiers.id_ml_dsa_65, SignatureAndHashAlgorithm.DRAFT_mldsa65);
+        addCertSigAlgOID(h, NISTObjectIdentifiers.id_ml_dsa_87, SignatureAndHashAlgorithm.DRAFT_mldsa87);
 
         addCertSigAlgOID(h, RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256,
             SignatureAndHashAlgorithm.gostr34102012_256);

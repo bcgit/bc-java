@@ -15,14 +15,15 @@ public class SignatureAndHashAlgorithm
         create(SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384);
     public static final SignatureAndHashAlgorithm ecdsa_brainpoolP512r1tls13_sha512 =
         create(SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512);
-    public static final SignatureAndHashAlgorithm ed25519 =
-        create(SignatureScheme.ed25519);
-    public static final SignatureAndHashAlgorithm ed448 =
-        create(SignatureScheme.ed448);
+    public static final SignatureAndHashAlgorithm ed25519 = create(SignatureScheme.ed25519);
+    public static final SignatureAndHashAlgorithm ed448 = create(SignatureScheme.ed448);
     public static final SignatureAndHashAlgorithm gostr34102012_256 =
         create(HashAlgorithm.Intrinsic, SignatureAlgorithm.gostr34102012_256);
     public static final SignatureAndHashAlgorithm gostr34102012_512 =
         create(HashAlgorithm.Intrinsic, SignatureAlgorithm.gostr34102012_512);
+    public static final SignatureAndHashAlgorithm DRAFT_mldsa44 = create(SignatureScheme.DRAFT_mldsa44);
+    public static final SignatureAndHashAlgorithm DRAFT_mldsa65 = create(SignatureScheme.DRAFT_mldsa65);
+    public static final SignatureAndHashAlgorithm DRAFT_mldsa87 = create(SignatureScheme.DRAFT_mldsa87);
     public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha256 =
         create(SignatureScheme.rsa_pss_rsae_sha256);
     public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha384 =

@@ -227,9 +227,23 @@ public class SignatureScheme
 
     public static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(int signatureScheme)
     {
-        return SignatureAndHashAlgorithm.getInstance(
-            getHashAlgorithm(signatureScheme),
-            getSignatureAlgorithm(signatureScheme));
+        switch (signatureScheme)
+        {
+        case ed25519:
+            return SignatureAndHashAlgorithm.ed25519;
+        case ed448:
+            return SignatureAndHashAlgorithm.ed448;
+        case DRAFT_mldsa44:
+            return SignatureAndHashAlgorithm.DRAFT_mldsa44;
+        case DRAFT_mldsa65:
+            return SignatureAndHashAlgorithm.DRAFT_mldsa65;
+        case DRAFT_mldsa87:
+            return SignatureAndHashAlgorithm.DRAFT_mldsa87;
+        default:
+            return SignatureAndHashAlgorithm.getInstance(
+                getHashAlgorithm(signatureScheme),
+                getSignatureAlgorithm(signatureScheme));
+        }
     }
 
     public static String getText(int signatureScheme)
