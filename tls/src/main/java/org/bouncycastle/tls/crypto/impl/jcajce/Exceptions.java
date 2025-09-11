@@ -1,5 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
+import java.io.IOException;
+
 /**
  * In earlier JDK's these do not allow nested exceptions
  */
