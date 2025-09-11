@@ -19,7 +19,6 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.CMCEPublicKey;
-import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
@@ -46,7 +45,6 @@ import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -62,7 +60,6 @@ public class PublicKeyFactory
     {
         converters.put(PQCObjectIdentifiers.sphincs256, new SPHINCSConverter());
         converters.put(PQCObjectIdentifiers.newHope, new NHConverter());
-        converters.put(PQCObjectIdentifiers.mcElieceCca2, new McElieceCCA2Converter());
         converters.put(BCObjectIdentifiers.mceliece348864_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece348864f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece460896_r3, new CMCEConverter());
@@ -307,18 +304,6 @@ public class PublicKeyFactory
             SABERParameters saberParams = Utils.saberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new SABERPublicKeyParameters(saberParams, keyEnc);
-        }
-    }
-
-    private static class McElieceCCA2Converter
-        extends SubjectPublicKeyInfoConverter
-    {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
-        {
-            McElieceCCA2PublicKey mKey = McElieceCCA2PublicKey.getInstance(keyInfo.parsePublicKey());
-
-            return new McElieceCCA2PublicKeyParameters(mKey.getN(), mKey.getT(), mKey.getG(), Utils.getDigestName(mKey.getDigest().getAlgorithm()));
         }
     }
 
