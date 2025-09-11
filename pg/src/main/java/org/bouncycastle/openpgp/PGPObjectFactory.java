@@ -10,10 +10,10 @@ import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
-import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UnknownPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.util.Iterable;
 
 /**
  * General class for reading a PGP object stream.
@@ -38,7 +38,7 @@ import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
  * </ul>
  */
 public class PGPObjectFactory
-    implements Iterable
+    implements Iterable<Object>
 {
     private BCPGInputStream in;
     private KeyFingerPrintCalculator fingerPrintCalculator;

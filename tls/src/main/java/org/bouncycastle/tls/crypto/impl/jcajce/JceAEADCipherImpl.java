@@ -179,7 +179,7 @@ public class JceAEADCipherImpl
                 }
                 catch (Exception e)
                 {
-                    throw new IOException(e);
+                    throw Exceptions.ioException(e.getMessage(), e);
                 }
             }
         }

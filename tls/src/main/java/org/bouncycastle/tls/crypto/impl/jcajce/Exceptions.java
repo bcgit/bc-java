@@ -14,4 +14,9 @@ class Exceptions
     {
         return new IllegalArgumentException(message, cause);
     }
+
+    static IOException ioException(String message, Throwable cause)
+    {
+        return new IOException(message, cause);
+    }
 }

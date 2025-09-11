@@ -1179,10 +1179,10 @@ public class JcaTlsCrypto
             return Boolean.valueOf(isUsableCipher("SM4/GCM/NoPadding", 128));
 
         case EncryptionAlgorithm.NULL_HMAC_SHA256:
-            return hasMacAlgorithm(MACAlgorithm.hmac_sha256);
+            return Boolean.valueOf(hasMacAlgorithm(MACAlgorithm.hmac_sha256));
 
         case EncryptionAlgorithm.NULL_HMAC_SHA384:
-            return hasMacAlgorithm(MACAlgorithm.hmac_sha384);
+            return Boolean.valueOf(hasMacAlgorithm(MACAlgorithm.hmac_sha384));
 
         case EncryptionAlgorithm._28147_CNT_IMIT:
         case EncryptionAlgorithm.DES_CBC:
