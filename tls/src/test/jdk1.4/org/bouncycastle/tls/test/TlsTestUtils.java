@@ -31,16 +31,20 @@ import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsPSKIdentity;
+import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -54,6 +58,7 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedDecryptor;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -82,6 +87,11 @@ public class TlsTestUtils
             + "pL26Ymz66ZAPdqv7EhOdzl3lZWT6srZUMWWgQMYGiHQg4z2R7X7XAgERo0QwQjAOBgNVHQ8BAf8EBAMCAAEwEgYDVR"
             + "0lAQH/BAgwBgYEVR0lADAcBgNVHREBAf8EEjAQgQ50ZXN0QHRlc3QudGVzdDANBgkqhkiG9w0BAQQFAANBAJg55PBS"
             + "weg6obRUKF4FF6fCrWFi6oCYSQ99LWcAeupc5BofW5MstFMhCOaEucuGVqunwT5G7/DweazzCIrSzB0=");
+
+    static TlsPSKIdentity createDefaultPSKIdentity(boolean badKey)
+    {
+        return new BasicTlsPSKIdentity("client", getPSKPasswordUTF8(badKey));
+    }
 
     static String fingerprint(org.bouncycastle.asn1.x509.Certificate c)
         throws IOException
@@ -175,6 +185,16 @@ public class TlsTestUtils
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
+    static String getPSKPassword(boolean badKey)
+    {
+        return badKey ? "TLS_TEST_PSK_BAD" : "TLS_TEST_PSK";
+    }
+
+    static byte[] getPSKPasswordUTF8(boolean badKey)
+    {
+        return Strings.toUTF8ByteArray(getPSKPassword(badKey));
+    }
+    
     static String getResourceName(short signatureAlgorithm) throws IOException
     {
         switch (signatureAlgorithm)

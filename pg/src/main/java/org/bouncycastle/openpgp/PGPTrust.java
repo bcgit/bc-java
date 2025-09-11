@@ -1,10 +1,10 @@
 package org.bouncycastle.openpgp;
 
+import java.io.IOException;
+
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.TrustPacket;
-
-import java.io.IOException;
-import java.util.Arrays;
+import org.bouncycastle.util.Arrays;
 
 public class PGPTrust
 {
@@ -29,8 +29,6 @@ public class PGPTrust
 
     public byte[] getLevelAndTrust()
     {
-        return Arrays.copyOf(
-                packet.getLevelAndTrustAmount(),
-                packet.getLevelAndTrustAmount().length);
+        return Arrays.clone(packet.getLevelAndTrustAmount());
     }
 }
