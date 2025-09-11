@@ -151,12 +151,10 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.dilithium;
     exports org.bouncycastle.pqc.jcajce.provider.falcon;
     exports org.bouncycastle.pqc.jcajce.provider.frodo;
-    exports org.bouncycastle.pqc.jcajce.provider.gmss;
     exports org.bouncycastle.pqc.jcajce.provider.hqc;
     exports org.bouncycastle.pqc.jcajce.provider.kyber;
     exports org.bouncycastle.pqc.jcajce.provider.lms;
     exports org.bouncycastle.pqc.jcajce.provider.mayo;
-    exports org.bouncycastle.pqc.jcajce.provider.mceliece;
     exports org.bouncycastle.pqc.jcajce.provider.ntru;
     exports org.bouncycastle.pqc.jcajce.provider.ntruprime;
     exports org.bouncycastle.pqc.jcajce.provider.newhope;
@@ -168,12 +166,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.util;
     exports org.bouncycastle.pqc.jcajce.provider.xmss;
     exports org.bouncycastle.pqc.jcajce.spec;
-    exports org.bouncycastle.pqc.legacy.crypto.gemss;
-    exports org.bouncycastle.pqc.legacy.crypto.gmss;
-    exports org.bouncycastle.pqc.legacy.crypto.gmss.util;
-    exports org.bouncycastle.pqc.legacy.crypto.qtesla;
-    exports org.bouncycastle.pqc.legacy.crypto.mceliece;
-    exports org.bouncycastle.pqc.legacy.math.linearalgebra;
     exports org.bouncycastle.util;
     exports org.bouncycastle.util.encoders;
     exports org.bouncycastle.util.io;

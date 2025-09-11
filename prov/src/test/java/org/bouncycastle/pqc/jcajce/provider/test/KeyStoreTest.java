@@ -40,7 +40,7 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.McElieceKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 
@@ -116,10 +116,9 @@ public class KeyStoreTest
         store.setCertificateEntry("root ca", rootCA);
 
         // McEliece
-        kpg = KeyPairGenerator.getInstance("McEliece", "BCPQC");
-
-        McElieceKeyGenParameterSpec params = new McElieceKeyGenParameterSpec(9, 33);
-        kpg.initialize(params);
+        kpg = KeyPairGenerator.getInstance("CMCE", "BCPQC");
+        
+        kpg.initialize(CMCEParameterSpec.mceliece348864);
 
         KeyPair mcelieceKp = kpg.generateKeyPair();
 

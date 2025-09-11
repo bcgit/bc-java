@@ -19,7 +19,6 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
@@ -41,14 +40,9 @@ import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
-import org.bouncycastle.util.Integers;
 
 class Utils
 {
-    static final AlgorithmIdentifier AlgID_qTESLA_p_I = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_p_I);
-    static final AlgorithmIdentifier AlgID_qTESLA_p_III = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_p_III);
-
     static final AlgorithmIdentifier SPHINCS_SHA3_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256);
     static final AlgorithmIdentifier SPHINCS_SHA512_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256);
 
@@ -56,9 +50,7 @@ class Utils
     static final AlgorithmIdentifier XMSS_SHA512 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
     static final AlgorithmIdentifier XMSS_SHAKE128 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
     static final AlgorithmIdentifier XMSS_SHAKE256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
-
-    static final Map categories = new HashMap();
-
+    
     static final Map picnicOids = new HashMap();
     static final Map picnicParams = new HashMap();
 
@@ -118,10 +110,6 @@ class Utils
 
     static
     {
-        categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_I));
-        categories.put(PQCObjectIdentifiers.qTESLA_p_III, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_III));
-
-
         mcElieceOids.put(CMCEParameters.mceliece348864r3, BCObjectIdentifiers.mceliece348864_r3);
         mcElieceOids.put(CMCEParameters.mceliece348864fr3, BCObjectIdentifiers.mceliece348864f_r3);
         mcElieceOids.put(CMCEParameters.mceliece460896r3, BCObjectIdentifiers.mceliece460896_r3);
@@ -593,24 +581,6 @@ class Utils
     static SLHDSAParameters slhdsaParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SLHDSAParameters)slhdsaParams.get(oid);
-    }
-
-    static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
-    {
-        return ((Integer)categories.get(algorithm.getAlgorithm())).intValue();
-    }
-
-    static AlgorithmIdentifier qTeslaLookupAlgID(int securityCategory)
-    {
-        switch (securityCategory)
-        {
-        case QTESLASecurityCategory.PROVABLY_SECURE_I:
-            return AlgID_qTESLA_p_I;
-        case QTESLASecurityCategory.PROVABLY_SECURE_III:
-            return AlgID_qTESLA_p_III;
-        default:
-            throw new IllegalArgumentException("unknown security category: " + securityCategory);
-        }
     }
 
     static AlgorithmIdentifier sphincs256LookupTreeAlgID(String treeDigest)

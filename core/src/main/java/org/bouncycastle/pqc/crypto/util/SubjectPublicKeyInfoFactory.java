@@ -9,7 +9,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
@@ -41,8 +40,6 @@ import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PublicKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPublicKeyParameters;
 
 /**
  * Factory to create ASN.1 subject public key info objects from lightweight public keys.
@@ -64,14 +61,7 @@ public class SubjectPublicKeyInfoFactory
     public static SubjectPublicKeyInfo createSubjectPublicKeyInfo(AsymmetricKeyParameter publicKey)
         throws IOException
     {
-        if (publicKey instanceof QTESLAPublicKeyParameters)
-        {
-            QTESLAPublicKeyParameters keyParams = (QTESLAPublicKeyParameters)publicKey;
-            AlgorithmIdentifier algorithmIdentifier = Utils.qTeslaLookupAlgID(keyParams.getSecurityCategory());
-
-            return new SubjectPublicKeyInfo(algorithmIdentifier, keyParams.getPublicData());
-        }
-        else if (publicKey instanceof SPHINCSPublicKeyParameters)
+        if (publicKey instanceof SPHINCSPublicKeyParameters)
         {
             SPHINCSPublicKeyParameters params = (SPHINCSPublicKeyParameters)publicKey;
 
@@ -172,14 +162,6 @@ public class SubjectPublicKeyInfoFactory
                     Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
                 return new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSMTPublicKey(keyParams.getPublicSeed(), keyParams.getRoot()));
             }
-        }
-        else if (publicKey instanceof McElieceCCA2PublicKeyParameters)
-        {
-            McElieceCCA2PublicKeyParameters pub = (McElieceCCA2PublicKeyParameters)publicKey;
-            McElieceCCA2PublicKey mcEliecePub = new McElieceCCA2PublicKey(pub.getN(), pub.getT(), pub.getG(), Utils.getAlgorithmIdentifier(pub.getDigest()));
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.mcElieceCca2);
-
-            return new SubjectPublicKeyInfo(algorithmIdentifier, mcEliecePub);
         }
         else if (publicKey instanceof FrodoPublicKeyParameters)
         {
