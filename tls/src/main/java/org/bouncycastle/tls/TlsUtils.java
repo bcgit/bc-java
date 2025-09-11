@@ -1557,6 +1557,7 @@ public class TlsUtils
     /**
      * @deprecated Will be removed.
      */
+    @Deprecated
     public static void verifySupportedSignatureAlgorithm(Vector supportedSignatureAlgorithms,
         SignatureAndHashAlgorithm signatureAlgorithm) throws IOException
     {
