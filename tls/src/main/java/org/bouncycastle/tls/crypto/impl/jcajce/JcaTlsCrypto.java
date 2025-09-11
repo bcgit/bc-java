@@ -775,8 +775,7 @@ public class JcaTlsCrypto
         int signatureScheme = SignatureScheme.from(sigAndHashAlgorithm);
         if (SignatureScheme.isMLDSA(signatureScheme))
         {
-            // TODO[tls-mldsa] Finish ML-DSA support before enabling
-            return false;
+            return true;
         }
 
         short signature = sigAndHashAlgorithm.getSignature();
@@ -799,11 +798,10 @@ public class JcaTlsCrypto
         {
         case SignatureScheme.sm2sig_sm3:
             return false;
-        case SignatureScheme.DRAFT_mldsa44:
-        case SignatureScheme.DRAFT_mldsa65:
-        case SignatureScheme.DRAFT_mldsa87:
-            // TODO[tls-mldsa] Finish ML-DSA support before enabling
-            return false;
+        case SignatureScheme.mldsa44:
+        case SignatureScheme.mldsa65:
+        case SignatureScheme.mldsa87:
+            return true;
         default:
         {
             short signature = SignatureScheme.getSignatureAlgorithm(signatureScheme);

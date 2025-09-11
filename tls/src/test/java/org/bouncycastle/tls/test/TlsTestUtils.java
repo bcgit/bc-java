@@ -164,17 +164,17 @@ public class TlsTestUtils
 
         if ("ml_dsa_44".equalsIgnoreCase(eeCertResource))
         {
-            return getCACertResource13(SignatureScheme.DRAFT_mldsa44);
+            return getCACertResource13(SignatureScheme.mldsa44);
         }
 
         if ("ml_dsa_65".equalsIgnoreCase(eeCertResource))
         {
-            return getCACertResource13(SignatureScheme.DRAFT_mldsa65);
+            return getCACertResource13(SignatureScheme.mldsa65);
         }
 
         if ("ml_dsa_87".equalsIgnoreCase(eeCertResource))
         {
-            return getCACertResource13(SignatureScheme.DRAFT_mldsa87);
+            return getCACertResource13(SignatureScheme.mldsa87);
         }
 
         if ("rsa".equalsIgnoreCase(eeCertResource)
@@ -256,11 +256,11 @@ public class TlsTestUtils
             return "ed25519";
         case SignatureScheme.ed448:
             return "ed448";
-        case SignatureScheme.DRAFT_mldsa44:
+        case SignatureScheme.mldsa44:
             return "ml_dsa_44";
-        case SignatureScheme.DRAFT_mldsa65:
+        case SignatureScheme.mldsa65:
             return "ml_dsa_65";
-        case SignatureScheme.DRAFT_mldsa87:
+        case SignatureScheme.mldsa87:
             return "ml_dsa_87";
 
         default:

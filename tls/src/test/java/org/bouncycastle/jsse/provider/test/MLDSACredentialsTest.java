@@ -175,25 +175,20 @@ public class MLDSACredentialsTest
         }
     }
 
-    public void testDISABLED()
+    public void test13_MLDSA44() throws Exception
     {
-        // TODO[tls-mldsa] Enable below tests once support enabled in implementation(s).
+        implTestMLDSACredentials(PORT_NO_13_MLDSA44, "TLSv1.3", TestUtils.generateMLDSA44KeyPair());
     }
 
-//    public void test13_MLDSA44() throws Exception
-//    {
-//        implTestMLDSACredentials(PORT_NO_13_MLDSA44, "TLSv1.3", TestUtils.generateMLDSA44KeyPair());
-//    }
-//
-//    public void test13_MLDSA65() throws Exception
-//    {
-//        implTestMLDSACredentials(PORT_NO_13_MLDSA65, "TLSv1.3", TestUtils.generateMLDSA65KeyPair());
-//    }
-//
-//    public void test13_MLDSA87() throws Exception
-//    {
-//        implTestMLDSACredentials(PORT_NO_13_MLDSA87, "TLSv1.3", TestUtils.generateMLDSA87KeyPair());
-//    }
+    public void test13_MLDSA65() throws Exception
+    {
+        implTestMLDSACredentials(PORT_NO_13_MLDSA65, "TLSv1.3", TestUtils.generateMLDSA65KeyPair());
+    }
+
+    public void test13_MLDSA87() throws Exception
+    {
+        implTestMLDSACredentials(PORT_NO_13_MLDSA87, "TLSv1.3", TestUtils.generateMLDSA87KeyPair());
+    }
 
     private void implTestMLDSACredentials(int port, String protocol, KeyPair caKeyPair) throws Exception
     {
