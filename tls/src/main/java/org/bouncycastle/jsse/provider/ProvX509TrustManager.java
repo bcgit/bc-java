@@ -462,10 +462,10 @@ class ProvX509TrustManager
         }
         catch (CertificateException e)
         {
-            // Special case for SunJSSE compatibility 
+            // Special case for SunJSSE compatibility
             if (!checkServerTrusted && "HTTPS".equalsIgnoreCase(endpointIDAlg))
             {
-                throw new CertificateException("Endpoint ID algorithm 'HTTPS' is not supported on the server side");                
+                throw new CertificateException("Endpoint ID algorithm 'HTTPS' is not supported on the server side");
             }
 
             throw e;
