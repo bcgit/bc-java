@@ -69,9 +69,9 @@ public class RomulusTest
             int myRemaining = pCipher.getOutputSize(0);
             if (myRemaining + myOutLen < myMaxOutLen)
             {
-                /*********************************************************************/
-                /* FAILS HERE                                                                                   */
-                /*********************************************************************/
+                //
+                // FAILS HERE                                                                                   */
+                //
                 System.out.println("Bad outputLength on encryption for " + pCipher.getAlgorithmName());
             }
             int myProcessed = pCipher.doFinal(myEncrypted, myOutLen);
