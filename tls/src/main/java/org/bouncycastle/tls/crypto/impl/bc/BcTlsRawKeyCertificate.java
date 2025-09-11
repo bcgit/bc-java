@@ -250,9 +250,9 @@ public class BcTlsRawKeyCertificate
 //            return new BcTls13Verifier(verifier);
 //        }
 
-        case SignatureScheme.DRAFT_mldsa44:
-        case SignatureScheme.DRAFT_mldsa65:
-        case SignatureScheme.DRAFT_mldsa87:
+        case SignatureScheme.mldsa44:
+        case SignatureScheme.mldsa65:
+        case SignatureScheme.mldsa87:
         {
             ASN1ObjectIdentifier mlDsaAlgOid = PQCUtil.getMLDSAObjectidentifier(signatureScheme);
             validateMLDSA(mlDsaAlgOid);

@@ -68,15 +68,15 @@ public class JcaDefaultTlsCredentialedSigner
         }
         else if ("ML-DSA-44".equalsIgnoreCase(algorithm))
         {
-            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.DRAFT_mldsa44);
+            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.mldsa44);
         }
         else if ("ML-DSA-65".equalsIgnoreCase(algorithm))
         {
-            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.DRAFT_mldsa65);
+            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.mldsa65);
         }
         else if ("ML-DSA-87".equalsIgnoreCase(algorithm))
         {
-            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.DRAFT_mldsa87);
+            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.mldsa87);
         }
         else
         {

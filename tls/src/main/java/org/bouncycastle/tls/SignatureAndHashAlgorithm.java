@@ -21,9 +21,9 @@ public class SignatureAndHashAlgorithm
         create(HashAlgorithm.Intrinsic, SignatureAlgorithm.gostr34102012_256);
     public static final SignatureAndHashAlgorithm gostr34102012_512 =
         create(HashAlgorithm.Intrinsic, SignatureAlgorithm.gostr34102012_512);
-    public static final SignatureAndHashAlgorithm DRAFT_mldsa44 = create(SignatureScheme.DRAFT_mldsa44);
-    public static final SignatureAndHashAlgorithm DRAFT_mldsa65 = create(SignatureScheme.DRAFT_mldsa65);
-    public static final SignatureAndHashAlgorithm DRAFT_mldsa87 = create(SignatureScheme.DRAFT_mldsa87);
+    public static final SignatureAndHashAlgorithm mldsa44 = create(SignatureScheme.mldsa44);
+    public static final SignatureAndHashAlgorithm mldsa65 = create(SignatureScheme.mldsa65);
+    public static final SignatureAndHashAlgorithm mldsa87 = create(SignatureScheme.mldsa87);
     public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha256 =
         create(SignatureScheme.rsa_pss_rsae_sha256);
     public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha384 =

@@ -12,11 +12,11 @@ public class PQCUtil
     {
         switch (signatureScheme)
         {
-        case SignatureScheme.DRAFT_mldsa44:
+        case SignatureScheme.mldsa44:
             return NISTObjectIdentifiers.id_ml_dsa_44;
-        case SignatureScheme.DRAFT_mldsa65:
+        case SignatureScheme.mldsa65:
             return NISTObjectIdentifiers.id_ml_dsa_65;
-        case SignatureScheme.DRAFT_mldsa87:
+        case SignatureScheme.mldsa87:
             return NISTObjectIdentifiers.id_ml_dsa_87;
         default:
             throw new IllegalArgumentException();
@@ -27,15 +27,15 @@ public class PQCUtil
     {
         if (MLDSAParameters.ml_dsa_44 == parameters)
         {
-            return SignatureScheme.DRAFT_mldsa44;
+            return SignatureScheme.mldsa44;
         }
         if (MLDSAParameters.ml_dsa_65 == parameters)
         {
-            return SignatureScheme.DRAFT_mldsa65;
+            return SignatureScheme.mldsa65;
         }
         if (MLDSAParameters.ml_dsa_87 == parameters)
         {
-            return SignatureScheme.DRAFT_mldsa87;
+            return SignatureScheme.mldsa87;
         }
         throw new IllegalArgumentException();
     }
