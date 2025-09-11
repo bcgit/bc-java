@@ -16,7 +16,6 @@ import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
 import org.bouncycastle.pqc.asn1.CMCEPublicKey;
 import org.bouncycastle.pqc.asn1.FalconPrivateKey;
 import org.bouncycastle.pqc.asn1.FalconPublicKey;
-import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
@@ -52,8 +51,6 @@ import org.bouncycastle.pqc.crypto.xmss.BDSStateMap;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
-import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -87,15 +84,7 @@ public class PrivateKeyInfoFactory
      */
     public static PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter privateKey, ASN1Set attributes) throws IOException
     {
-        if (privateKey instanceof QTESLAPrivateKeyParameters)
-        {
-            QTESLAPrivateKeyParameters keyParams = (QTESLAPrivateKeyParameters)privateKey;
-
-            AlgorithmIdentifier algorithmIdentifier = Utils.qTeslaLookupAlgID(keyParams.getSecurityCategory());
-
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(keyParams.getSecret()), attributes);
-        }
-        else if (privateKey instanceof SPHINCSPrivateKeyParameters)
+        if (privateKey instanceof SPHINCSPrivateKeyParameters)
         {
             SPHINCSPrivateKeyParameters params = (SPHINCSPrivateKeyParameters)privateKey;
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256,
@@ -194,14 +183,6 @@ public class PrivateKeyInfoFactory
                     Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
 
             return new PrivateKeyInfo(algorithmIdentifier, xmssmtCreateKeyStructure(keyParams), attributes);
-        }
-        else if (privateKey instanceof McElieceCCA2PrivateKeyParameters)
-        {
-            McElieceCCA2PrivateKeyParameters priv = (McElieceCCA2PrivateKeyParameters)privateKey;
-            McElieceCCA2PrivateKey mcEliecePriv = new McElieceCCA2PrivateKey(priv.getN(), priv.getK(), priv.getField(), priv.getGoppaPoly(), priv.getP(), Utils.getAlgorithmIdentifier(priv.getDigest()));
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.mcElieceCca2);
-
-            return new PrivateKeyInfo(algorithmIdentifier, mcEliecePriv);
         }
         else if (privateKey instanceof FrodoPrivateKeyParameters)
         {
