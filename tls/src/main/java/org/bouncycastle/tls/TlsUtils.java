@@ -139,12 +139,15 @@ public class TlsUtils
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha256, SignatureAlgorithm.ecdsa));
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha384, SignatureAlgorithm.ecdsa));
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha512, SignatureAlgorithm.ecdsa));
-        result.addElement(SignatureAndHashAlgorithm.rsa_pss_rsae_sha256);
-        result.addElement(SignatureAndHashAlgorithm.rsa_pss_rsae_sha384);
-        result.addElement(SignatureAndHashAlgorithm.rsa_pss_rsae_sha512);
         result.addElement(SignatureAndHashAlgorithm.rsa_pss_pss_sha256);
         result.addElement(SignatureAndHashAlgorithm.rsa_pss_pss_sha384);
         result.addElement(SignatureAndHashAlgorithm.rsa_pss_pss_sha512);
+        result.addElement(SignatureAndHashAlgorithm.rsa_pss_rsae_sha256);
+        result.addElement(SignatureAndHashAlgorithm.rsa_pss_rsae_sha384);
+        result.addElement(SignatureAndHashAlgorithm.rsa_pss_rsae_sha512);
+        result.addElement(SignatureAndHashAlgorithm.mldsa44);
+        result.addElement(SignatureAndHashAlgorithm.mldsa65);
+        result.addElement(SignatureAndHashAlgorithm.mldsa87);
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha256, SignatureAlgorithm.rsa));
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha384, SignatureAlgorithm.rsa));
         result.addElement(SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha512, SignatureAlgorithm.rsa));
