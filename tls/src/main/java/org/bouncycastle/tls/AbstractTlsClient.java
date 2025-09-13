@@ -419,15 +419,41 @@ public abstract class AbstractTlsClient
         {
             return null;
         }
+
+        Vector<Integer> earlyKeyShareGroups = new Vector<>(1);
+
+        for (Object groupObj : supportedGroups)
+        {
+            Integer group = (Integer) groupObj;
+            if (NamedGroup.refersToASpecificKem(group))
+            {
+                earlyKeyShareGroups.addElement(group);
+                break;
+            }
+        }
+
         if (supportedGroups.contains(Integers.valueOf(NamedGroup.x25519)))
         {
-            return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.x25519));
+            earlyKeyShareGroups.addElement(Integers.valueOf(NamedGroup.x25519));
         }
-        if (supportedGroups.contains(Integers.valueOf(NamedGroup.secp256r1)))
+        else if (supportedGroups.contains(Integers.valueOf(NamedGroup.secp256r1)))
         {
-            return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.secp256r1));
+            earlyKeyShareGroups.addElement(Integers.valueOf(NamedGroup.secp256r1));
         }
-        return TlsUtils.vectorOfOne(supportedGroups.elementAt(0));
+        else
+        {
+            for (Object groupObj : supportedGroups)
+            {
+                Integer group = (Integer) groupObj;
+                if (!NamedGroup.refersToASpecificKem(group))
+                {
+                    earlyKeyShareGroups.addElement(group);
+                    break;
+                }
+            }
+        }
+
+        return earlyKeyShareGroups;
     }
 
     public boolean shouldUseCompatibilityMode()
