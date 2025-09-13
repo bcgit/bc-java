@@ -7,10 +7,12 @@ import java.io.InputStreamReader;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
@@ -37,6 +39,7 @@ import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPublicKey;
+import org.bouncycastle.jcajce.spec.CompositeSignatureSpec;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.MLDSAPrivateKeySpec;
@@ -45,6 +48,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 public class CompositeSignaturesTest
     extends TestCase
@@ -410,20 +414,136 @@ public class CompositeSignaturesTest
 
     }
 
+    public void testPrehash()
+        throws Exception
+    {
+        doTestPrehash("MLDSA44-ECDSA-P256-SHA256", "SHA256");
+        doTestPrehash("MLDSA65-ECDSA-P256-SHA512", "SHA512");
+    }
+
+    public void testPrehashWithContext()
+        throws Exception
+    {
+        doTestPrehash("MLDSA44-ECDSA-P256-SHA256", "SHA256", new ContextParameterSpec(Hex.decode("deadbeef")));
+        doTestPrehash("MLDSA65-ECDSA-P256-SHA512", "SHA512", new ContextParameterSpec(Hex.decode("deadbeef")));
+    }
+
+    private void doTestPrehash(String sigName, String digestName)
+        throws Exception
+    {
+        byte[] msg = Strings.toUTF8ByteArray(messageToBeSigned);
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(sigName, "BC");
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+        // full msg sign, verify hash
+        Signature signature = Signature.getInstance(sigName, "BC");
+        signature.initSign(keyPair.getPrivate());
+        signature.update(msg);
+
+        byte[] signatureValue = signature.sign();
+
+        signature.initVerify(keyPair.getPublic());
+        signature.setParameter(new CompositeSignatureSpec(true));
+        signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
+        assertTrue(signature.verify(signatureValue));
+
+        // full msg sign, verify hash
+        signature = Signature.getInstance(sigName, "BC");
+        signature.initSign(keyPair.getPrivate());
+        signature.setParameter(new CompositeSignatureSpec(true));
+        signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
+        
+        signatureValue = signature.sign();
+
+        signature.initVerify(keyPair.getPublic());
+        signature.setParameter(new CompositeSignatureSpec(false));
+        signature.update(msg);
+        assertTrue(signature.verify(signatureValue));
+
+        // exceptions
+        signature.initSign(keyPair.getPrivate());
+        try
+        {
+            signature.setParameter(new CompositeSignatureSpec(true));
+            signature.update(Hex.decode("beef"));
+            signature.sign();
+            fail("sign");
+        }
+        catch (SignatureException e)
+        {
+            assertEquals("provided pre-hash digest is the wrong length", e.getMessage());
+        }
+
+        // exceptions
+         signature.initVerify(keyPair.getPublic());
+         try
+         {
+             signature.setParameter(new CompositeSignatureSpec(true));
+             signature.update(Hex.decode("beef"));
+             signature.verify(signatureValue);
+             fail("verify");
+         }
+         catch (SignatureException e)
+         {
+             assertEquals("provided pre-hash digest is the wrong length", e.getMessage());
+         }
+    }
+
+    private void doTestPrehash(String sigName, String digestName, ContextParameterSpec contextSpec)
+        throws Exception
+    {
+        byte[] msg = Strings.toUTF8ByteArray(messageToBeSigned);
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(sigName, "BC");
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+        // full msg sign, verify hash
+        Signature signature = Signature.getInstance(sigName, "BC");
+        signature.initSign(keyPair.getPrivate());
+        signature.setParameter(contextSpec);
+        signature.update(msg);
+
+        byte[] signatureValue = signature.sign();
+
+        signature.initVerify(keyPair.getPublic());
+        signature.setParameter(new CompositeSignatureSpec(true, contextSpec));
+        signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
+        assertTrue(signature.verify(signatureValue));
+
+        // full msg sign, verify hash
+        signature = Signature.getInstance(sigName, "BC");
+        signature.initSign(keyPair.getPrivate());
+        signature.setParameter(new CompositeSignatureSpec(true, contextSpec));
+        signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
+
+        signatureValue = signature.sign();
+
+        signature.initVerify(keyPair.getPublic());
+        signature.setParameter(new CompositeSignatureSpec(false, contextSpec));
+        signature.update(msg);
+        assertTrue(signature.verify(signatureValue));
+
+        signature.initVerify(keyPair.getPublic());
+        signature.setParameter(new CompositeSignatureSpec(false));
+        signature.update(msg);
+        assertFalse(signature.verify(signatureValue));
+    }
+
     public void testSigningAndVerificationInternal()
         throws Exception
     {
+        byte[] msg = Strings.toUTF8ByteArray(messageToBeSigned);
+
         for (String oid : compositeSignaturesOIDs)
         {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(oid, "BC");
             KeyPair keyPair = keyPairGenerator.generateKeyPair();
             Signature signature = Signature.getInstance(oid, "BC");
             signature.initSign(keyPair.getPrivate());
-            signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+            signature.update(msg);
             byte[] signatureValue = signature.sign();
 
             signature.initVerify(keyPair.getPublic());
-            signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+            signature.update(msg);
             TestCase.assertTrue(signature.verify(signatureValue));
         }
     }
