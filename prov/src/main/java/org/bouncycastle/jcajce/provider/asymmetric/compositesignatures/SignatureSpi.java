@@ -34,9 +34,11 @@ import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.BCKey;
+import org.bouncycastle.jcajce.spec.CompositeSignatureSpec;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -102,9 +104,10 @@ public class SignatureSpi
     private final String[] algs;
     private final Signature[] componentSignatures;
     private final byte[] domain;
-    private final Digest preHashDigest;
+    private final Digest baseDigest;
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
+    private Digest preHashDigest;
     private ContextParameterSpec contextSpec;
     private AlgorithmParameters engineParams = null;
 
@@ -113,6 +116,7 @@ public class SignatureSpi
     SignatureSpi(ASN1ObjectIdentifier algorithm, Digest preHashDigest)
     {
         this.algorithm = algorithm;
+        this.baseDigest = preHashDigest;
         this.preHashDigest = preHashDigest;
         this.domain = domainSeparators.get(algorithm);
 
@@ -329,9 +333,16 @@ public class SignatureSpi
     private void processPreHashedMessage(byte[] r)
         throws SignatureException
     {
-        byte[] dig = new byte[preHashDigest.getDigestSize()];
+        byte[] dig = new byte[baseDigest.getDigestSize()];
 
-        preHashDigest.doFinal(dig, 0);
+        try
+        {
+            preHashDigest.doFinal(dig, 0);
+        }
+        catch (IllegalStateException e)
+        {
+            throw new SignatureException(e.getMessage());
+        }
 
         for (int i = 0; i < this.componentSignatures.length; i++)
         {
@@ -443,6 +454,20 @@ public class SignatureSpi
                 throw new InvalidAlgorithmParameterException("keys invalid on reset: " + e.getMessage(), e);
             }
         }
+        else if (algorithmParameterSpec instanceof CompositeSignatureSpec)
+        {
+            CompositeSignatureSpec compositeSignatureSpec = (CompositeSignatureSpec)algorithmParameterSpec;
+
+            if (compositeSignatureSpec.isPrehashMode())
+            {
+                this.preHashDigest = new NullDigest(baseDigest.getDigestSize());
+            }
+            else
+            {
+                this.preHashDigest = this.baseDigest;
+            }
+            this.contextSpec = (ContextParameterSpec)compositeSignatureSpec.getSecondarySpec();
+        }
         else
         {
             throw new InvalidAlgorithmParameterException("unknown parameterSpec passed to composite signature");
@@ -492,6 +517,74 @@ public class SignatureSpi
         }
 
         return engineParams;
+    }
+
+    private static class NullDigest
+        implements Digest
+    {
+        private final int expectedSize;
+        private final OpenByteArrayOutputStream bOut = new OpenByteArrayOutputStream();
+
+        NullDigest(int expectedSize)
+        {
+            this.expectedSize = expectedSize;
+        }
+
+        public String getAlgorithmName()
+        {
+            return "NULL";
+        }
+
+        public int getDigestSize()
+        {
+            return bOut.size();
+        }
+
+        public void update(byte in)
+        {
+            bOut.write(in);
+        }
+
+        public void update(byte[] in, int inOff, int len)
+        {
+            bOut.write(in, inOff, len);
+        }
+
+        public int doFinal(byte[] out, int outOff)
+        {
+            int size = bOut.size();
+            if (size != expectedSize)
+            {
+                throw new IllegalStateException("provided pre-hash digest is the wrong length");
+            }
+
+            bOut.copy(out, outOff);
+
+            reset();
+
+            return size;
+        }
+
+        public void reset()
+        {
+            bOut.reset();
+        }
+
+        private class OpenByteArrayOutputStream
+            extends ByteArrayOutputStream
+        {
+            public void reset()
+            {
+                super.reset();
+
+                Arrays.clear(buf);
+            }
+
+            void copy(byte[] out, int outOff)
+            {
+                System.arraycopy(buf, 0, out, outOff, this.size());
+            }
+        }
     }
 
     public static final class HashMLDSA44_ECDSA_P256_SHA256
