@@ -204,7 +204,7 @@ public class LocalizedMessage
     {
         if (extraArgs != null)
         {
-            StringBuffer sb = new StringBuffer(msg);
+            StringBuilder sb = new StringBuilder(msg);
             Object[] filteredArgs = extraArgs.getFilteredArgs(locale);
             for (int i = 0; i < filteredArgs.length; i++)
             {
@@ -460,7 +460,7 @@ public class LocalizedMessage
     
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Resource: \"").append(resource);
         sb.append("\" Id: \"").append(id).append("\"");
         sb.append(" Arguments: ").append(arguments.getArguments().length).append(" normal");

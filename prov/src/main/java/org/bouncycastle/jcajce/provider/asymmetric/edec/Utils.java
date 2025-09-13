@@ -30,7 +30,7 @@ class Utils
 
     static String keyToString(String label, String algorithm, AsymmetricKeyParameter pubKey)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String nl = Strings.lineSeparator();
 
         byte[] keyBytes;

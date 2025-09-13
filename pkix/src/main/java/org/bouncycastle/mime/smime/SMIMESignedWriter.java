@@ -185,7 +185,7 @@ public class SMIMESignedWriter
                 boundary = generateBoundary();
 
                 // handle Content-Type specially
-                StringBuffer contValue = new StringBuffer(detValues[0]);
+                StringBuilder contValue = new StringBuilder(detValues[0]);
 
                 addHashHeader(contValue, sigGen.getDigestAlgorithms());
 
@@ -208,7 +208,7 @@ public class SMIMESignedWriter
         }
 
         private void addHashHeader(
-            StringBuffer header,
+            StringBuilder header,
             List signers)
         {
             int count = 0;
@@ -272,7 +272,7 @@ public class SMIMESignedWriter
         }
 
         private void addBoundary(
-             StringBuffer header,
+             StringBuilder header,
              String boundary)
         {
              header.append(";\r\n\tboundary=\"");

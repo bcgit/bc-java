@@ -523,7 +523,7 @@ abstract class X509CRLImpl
      */
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String nl = Strings.lineSeparator();
 
         buf.append("              Version: ").append(this.getVersion()).append(

@@ -123,7 +123,7 @@ public class TimeStampResponse
             return null;
         }
 
-        StringBuffer statusStringBuf = new StringBuffer();
+        StringBuilder statusStringBuf = new StringBuilder();
         PKIFreeText text = resp.getStatus().getStatusString();
         for (int i = 0; i != text.size(); i++)
         {

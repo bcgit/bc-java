@@ -237,7 +237,7 @@ public class SMIMEUtil
     private static String readLine(InputStream in)
         throws IOException
     {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
 
         int ch;
         while ((ch = in.read()) >= 0 && ch != '\n')

@@ -178,7 +178,7 @@ public class BCDSAPrivateKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder   buf = new StringBuilder();
         String          nl = Strings.lineSeparator();
 
         BigInteger y = getParams().getG().modPow(x, getParams().getP());

@@ -184,7 +184,7 @@ public class DVCSRequestInformation
     public String toString()
     {
 
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
 
         s.append("DVCSRequestInformation {\n");
 

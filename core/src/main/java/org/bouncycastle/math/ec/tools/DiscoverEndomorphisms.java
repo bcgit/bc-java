@@ -201,7 +201,7 @@ public class DiscoverEndomorphisms
 
     private static void printProperty(String name, Object value)
     {
-        StringBuffer sb = new StringBuffer("  ");
+        StringBuilder sb = new StringBuilder("  ");
         sb.append(name);
         while (sb.length() < 20)
         {

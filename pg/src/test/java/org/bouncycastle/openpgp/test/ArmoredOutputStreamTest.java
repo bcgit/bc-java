@@ -71,7 +71,7 @@ public class ArmoredOutputStreamTest
         aOut.close();
 
         byte[] res = bOut.toByteArray();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         byte lastC = 0;
         for (int i = 0; i != res.length; i++)
         {

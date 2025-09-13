@@ -115,7 +115,7 @@ public class HSSTests
         BufferedReader bin = new BufferedReader(new InputStreamReader(inputStream));
         String line;
         List<byte[]> blocks = new ArrayList<byte[]>();
-        StringBuffer sw = new StringBuffer();
+        StringBuilder sw = new StringBuilder();
         while ((line = bin.readLine()) != null)
         {
             if (line.startsWith("!"))

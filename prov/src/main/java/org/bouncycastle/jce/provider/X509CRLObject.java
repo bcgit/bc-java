@@ -408,7 +408,7 @@ public class X509CRLObject
      */
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String nl = Strings.lineSeparator();
 
         buf.append("              Version: ").append(this.getVersion()).append(

@@ -178,7 +178,7 @@ public class CMSTestUtil
     public static String dumpBase64(
         byte[]  data)
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder    buf = new StringBuilder();
         
         data = Base64.encode(data);
         

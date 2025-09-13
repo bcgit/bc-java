@@ -253,7 +253,7 @@ public class SMIMESignedGenerator
     }
 
     private void addHashHeader(
-        StringBuffer header,
+        StringBuilder header,
         List signers)
     {
         int count = 0;
@@ -343,7 +343,7 @@ public class SMIMESignedGenerator
             //
             // build the multipart header
             //
-            StringBuffer header = new StringBuffer(
+            StringBuilder header = new StringBuilder(
                 "signed; protocol=\"application/pkcs7-signature\"");
 
             List allSigners = new ArrayList(_signers);

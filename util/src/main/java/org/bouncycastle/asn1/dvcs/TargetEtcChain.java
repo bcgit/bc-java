@@ -131,7 +131,7 @@ public class TargetEtcChain
 
     public String toString()
     {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
         s.append("TargetEtcChain {\n");
         s.append("target: " + target + "\n");
         if (chain != null)

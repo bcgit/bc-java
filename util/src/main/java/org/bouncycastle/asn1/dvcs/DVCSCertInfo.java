@@ -190,7 +190,7 @@ public class DVCSCertInfo
 
     public String toString()
     {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
 
         s.append("DVCSCertInfo {\n");
 

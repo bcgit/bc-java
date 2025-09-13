@@ -441,7 +441,7 @@ abstract class X509CertificateImpl
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder   buf = new StringBuilder();
         String          nl = Strings.lineSeparator();
 
         buf.append("  [0]         Version: ").append(this.getVersion()).append(nl);
