@@ -570,7 +570,7 @@ public class SignatureSpi
             bOut.reset();
         }
 
-        private class OpenByteArrayOutputStream
+        private static class OpenByteArrayOutputStream
             extends ByteArrayOutputStream
         {
             public void reset()
