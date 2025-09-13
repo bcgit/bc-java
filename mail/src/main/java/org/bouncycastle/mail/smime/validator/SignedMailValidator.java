@@ -534,7 +534,7 @@ public class SignedMailValidator
             return "null";
         }
 
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append('[');
 
         for (int i = 0; i != a.length; i++)

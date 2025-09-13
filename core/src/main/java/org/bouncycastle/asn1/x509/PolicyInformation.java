@@ -89,14 +89,14 @@ public class PolicyInformation
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         sb.append("Policy information: ");
         sb.append(policyIdentifier);
 
         if (policyQualifiers != null)
         {
-            StringBuffer p = new StringBuffer();
+            StringBuilder p = new StringBuilder();
             for (int i = 0; i < policyQualifiers.size(); i++)
             {
                 if (p.length() != 0)

@@ -93,7 +93,7 @@ public class HCFamilyVecTest
 
     private String dellChar(String s, char c)
     {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
 
         for (int i = 0; i != s.length(); i++)
         {

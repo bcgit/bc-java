@@ -256,7 +256,7 @@ class PolyVec
 
     public String toString()
     {
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         out.append("[");
         for (int i = 0; i < kyberK; i++)
         {

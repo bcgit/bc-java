@@ -88,7 +88,7 @@ public abstract class ASN1UniversalString
     public final String getString()
     {
         int dl = contents.length;
-        StringBuffer buf = new StringBuffer(3 + 2 * (ASN1OutputStream.getLengthOfDL(dl) + dl));
+        StringBuilder buf = new StringBuilder(3 + 2 * (ASN1OutputStream.getLengthOfDL(dl) + dl));
         buf.append("#1C");
         encodeHexDL(buf, dl);
 
@@ -147,13 +147,13 @@ public abstract class ASN1UniversalString
         return new DERUniversalString(contents, false);
     }
 
-    private static void encodeHexByte(StringBuffer buf, int i)
+    private static void encodeHexByte(StringBuilder buf, int i)
     {
         buf.append(table[(i >>> 4) & 0xF]);
         buf.append(table[i & 0xF]);
     }
 
-    private static void encodeHexDL(StringBuffer buf, int dl)
+    private static void encodeHexDL(StringBuilder buf, int dl)
     {
         if (dl < 128)
         {

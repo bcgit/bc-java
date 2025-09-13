@@ -216,7 +216,7 @@ class SimpleBigDecimal
         }
         String rightOfPoint = new String(fractCharArr);
 
-        StringBuffer sb = new StringBuffer(leftOfPoint);
+        StringBuilder sb = new StringBuilder(leftOfPoint);
         sb.append(".");
         sb.append(rightOfPoint);
 

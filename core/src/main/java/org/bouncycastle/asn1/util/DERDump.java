@@ -17,7 +17,7 @@ public class DERDump
     public static String dumpAsString(
         ASN1Primitive obj)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         _dumpAsString("", false, obj, buf);
 

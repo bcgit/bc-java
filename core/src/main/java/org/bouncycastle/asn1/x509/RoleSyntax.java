@@ -216,7 +216,7 @@ public class RoleSyntax
     
     public String toString() 
     {
-        StringBuffer buff = new StringBuffer("Name: " + this.getRoleNameAsString() +
+        StringBuilder buff = new StringBuilder("Name: " + this.getRoleNameAsString() +
                 " - Auth: ");
         if(this.roleAuthority == null || roleAuthority.getNames().length == 0)
         {

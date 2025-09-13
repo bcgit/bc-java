@@ -112,7 +112,7 @@ public class CertificatePolicies
 
     public String toString()
     {
-        StringBuffer p = new StringBuffer();
+        StringBuilder p = new StringBuilder();
         for (int i = 0; i < policyInformation.length; i++)
         {
             if (p.length() != 0)

@@ -52,7 +52,7 @@ public class ASN1Dump
      *
      * @param obj the ASN1Primitive to be dumped out.
      */
-    static void _dumpAsString(String indent, boolean verbose, ASN1Primitive obj, StringBuffer buf)
+    static void _dumpAsString(String indent, boolean verbose, ASN1Primitive obj, StringBuilder buf)
     {
         String nl = Strings.lineSeparator();
         buf.append(indent);
@@ -317,12 +317,12 @@ public class ASN1Dump
             return "unknown object type " + obj.toString();
         }
 
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         _dumpAsString("", verbose, primitive, buf);
         return buf.toString();
     }
 
-    private static void dumpBinaryDataAsString(StringBuffer buf, String indent, byte[] bytes)
+    private static void dumpBinaryDataAsString(StringBuilder buf, String indent, byte[] bytes)
     {
         if (bytes.length < 1)
         {
@@ -351,7 +351,7 @@ public class ASN1Dump
         }
     }
 
-    private static void appendAscString(StringBuffer buf, byte[] bytes, int off, int len)
+    private static void appendAscString(StringBuilder buf, byte[] bytes, int off, int len)
     {
         for (int i = off; i != off + len; i++)
         {

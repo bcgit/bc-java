@@ -95,7 +95,7 @@ public class SphincsPlusTest
                         boolean simple = nameParts[2].equals("simple.rsp");
                         boolean robust = nameParts[2].equals("robust.rsp");
 
-                        StringBuffer b = new StringBuffer();
+                        StringBuilder b = new StringBuilder();
                         if (sha2)
                         {
                             b.append("sha2");

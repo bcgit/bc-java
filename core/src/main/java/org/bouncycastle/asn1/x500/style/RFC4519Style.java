@@ -222,7 +222,7 @@ public class RFC4519Style
     // convert in reverse
     public String toString(X500Name name)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         boolean first = true;
 
         RDN[] rdns = name.getRDNs();

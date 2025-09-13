@@ -225,7 +225,7 @@ class X509SignatureUtil
         return null;
     }
 
-    static void prettyPrintSignature(byte[] sig, StringBuffer buf, String nl)
+    static void prettyPrintSignature(byte[] sig, StringBuilder buf, String nl)
     {
         // -DM Hex.toHexString
         // -DM Hex.toHexString
