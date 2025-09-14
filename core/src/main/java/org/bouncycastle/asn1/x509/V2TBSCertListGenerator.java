@@ -195,6 +195,10 @@ public class V2TBSCertListGenerator
         addCRLEntry(new DERSequence(v));
     }
 
+    /**
+     * @deprecated use the method taking Extensions
+     */
+    @Deprecated
     public void setExtensions(
         X509Extensions    extensions)
     {

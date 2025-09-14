@@ -21,7 +21,7 @@ public class KeccakDigest
         0x000000008000808bL, 0x800000000000008bL, 0x8000000000008089L, 0x8000000000008003L, 0x8000000000008002L,
         0x8000000000000080L, 0x000000000000800aL, 0x800000008000000aL, 0x8000000080008081L, 0x8000000000008080L,
         0x0000000080000001L, 0x8000000080008008L };
-    protected final CryptoServicePurpose purpose;
+    protected CryptoServicePurpose purpose;
 
     protected long[] state = new long[25];
     protected byte[] dataQueue = new byte[192];
@@ -82,6 +82,15 @@ public class KeccakDigest
         fixedOutputLength = Pack.bigEndianToInt(encodedState, encOff);
         encOff += 4;
         squeezing = encodedState[encOff] != 0;
+    }
+
+    protected KeccakDigest(byte[] encodedState, CryptoServicePurpose purpose)
+    {
+        this(encodedState);
+        if (!this.purpose.equals(purpose))
+        {
+            throw new IllegalStateException("digest encoded for a different purpose");
+        }
     }
 
     private static CryptoServicePurpose getCryptoServicePurpose(byte b)
