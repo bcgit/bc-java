@@ -499,7 +499,7 @@ public class ExtendedPKIXParameters
     {
         if (trustedACIssuers == null)
         {
-            trustedACIssuers.clear();
+            this.trustedACIssuers.clear();
             return;
         }
         for (Iterator it = trustedACIssuers.iterator(); it.hasNext();)
