@@ -128,58 +128,65 @@ public class SignatureSubpacketInputStream
             }
         }
 
-        switch (type)
+        try
         {
-        case CREATION_TIME:
-            return new SignatureCreationTime(isCritical, isLongLength, data);
-        case EMBEDDED_SIGNATURE:
-            return new EmbeddedSignature(isCritical, isLongLength, data);
-        case KEY_EXPIRE_TIME:
-            return new KeyExpirationTime(isCritical, isLongLength, data);
-        case EXPIRE_TIME:
-            return new SignatureExpirationTime(isCritical, isLongLength, data);
-        case REVOCABLE:
-            return new Revocable(isCritical, isLongLength, data);
-        case EXPORTABLE:
-            return new Exportable(isCritical, isLongLength, data);
-        case FEATURES:
-            return new Features(isCritical, isLongLength, data);
-        case ISSUER_KEY_ID:
-            return new IssuerKeyID(isCritical, isLongLength, data);
-        case TRUST_SIG:
-            return new TrustSignature(isCritical, isLongLength, data);
-        case PREFERRED_COMP_ALGS:
-        case PREFERRED_HASH_ALGS:
-        case PREFERRED_SYM_ALGS:
-            return new PreferredAlgorithms(type, isCritical, isLongLength, data);
-        case LIBREPGP_PREFERRED_ENCRYPTION_MODES:
-            return new LibrePGPPreferredEncryptionModes(isCritical, isLongLength, data);
-        case PREFERRED_AEAD_ALGORITHMS:
-            return new PreferredAEADCiphersuites(isCritical, isLongLength, data);
-        case PREFERRED_KEY_SERV:
-            return new PreferredKeyServer(isCritical, isLongLength, data);
-        case KEY_FLAGS:
-            return new KeyFlags(isCritical, isLongLength, data);
-        case POLICY_URL:
-            return new PolicyURI(isCritical, isLongLength, data);
-        case PRIMARY_USER_ID:
-            return new PrimaryUserID(isCritical, isLongLength, data);
-        case SIGNER_USER_ID:
-            return new SignerUserID(isCritical, isLongLength, data);
-        case NOTATION_DATA:
-            return new NotationData(isCritical, isLongLength, data);
-        case REG_EXP:
-            return new RegularExpression(isCritical, isLongLength, data);
-        case REVOCATION_REASON:
-            return new RevocationReason(isCritical, isLongLength, data);
-        case REVOCATION_KEY:
-            return new RevocationKey(isCritical, isLongLength, data);
-        case SIGNATURE_TARGET:
-            return new SignatureTarget(isCritical, isLongLength, data);
-        case ISSUER_FINGERPRINT:
-            return new IssuerFingerprint(isCritical, isLongLength, data);
-        case INTENDED_RECIPIENT_FINGERPRINT:
-            return new IntendedRecipientFingerprint(isCritical, isLongLength, data);
+            switch (type)
+            {
+            case CREATION_TIME:
+                return new SignatureCreationTime(isCritical, isLongLength, data);
+            case EMBEDDED_SIGNATURE:
+                return new EmbeddedSignature(isCritical, isLongLength, data);
+            case KEY_EXPIRE_TIME:
+                return new KeyExpirationTime(isCritical, isLongLength, data);
+            case EXPIRE_TIME:
+                return new SignatureExpirationTime(isCritical, isLongLength, data);
+            case REVOCABLE:
+                return new Revocable(isCritical, isLongLength, data);
+            case EXPORTABLE:
+                return new Exportable(isCritical, isLongLength, data);
+            case FEATURES:
+                return new Features(isCritical, isLongLength, data);
+            case ISSUER_KEY_ID:
+                return new IssuerKeyID(isCritical, isLongLength, data);
+            case TRUST_SIG:
+                return new TrustSignature(isCritical, isLongLength, data);
+            case PREFERRED_COMP_ALGS:
+            case PREFERRED_HASH_ALGS:
+            case PREFERRED_SYM_ALGS:
+                return new PreferredAlgorithms(type, isCritical, isLongLength, data);
+            case LIBREPGP_PREFERRED_ENCRYPTION_MODES:
+                return new LibrePGPPreferredEncryptionModes(isCritical, isLongLength, data);
+            case PREFERRED_AEAD_ALGORITHMS:
+                return new PreferredAEADCiphersuites(isCritical, isLongLength, data);
+            case PREFERRED_KEY_SERV:
+                return new PreferredKeyServer(isCritical, isLongLength, data);
+            case KEY_FLAGS:
+                return new KeyFlags(isCritical, isLongLength, data);
+            case POLICY_URL:
+                return new PolicyURI(isCritical, isLongLength, data);
+            case PRIMARY_USER_ID:
+                return new PrimaryUserID(isCritical, isLongLength, data);
+            case SIGNER_USER_ID:
+                return new SignerUserID(isCritical, isLongLength, data);
+            case NOTATION_DATA:
+                return new NotationData(isCritical, isLongLength, data);
+            case REG_EXP:
+                return new RegularExpression(isCritical, isLongLength, data);
+            case REVOCATION_REASON:
+                return new RevocationReason(isCritical, isLongLength, data);
+            case REVOCATION_KEY:
+                return new RevocationKey(isCritical, isLongLength, data);
+            case SIGNATURE_TARGET:
+                return new SignatureTarget(isCritical, isLongLength, data);
+            case ISSUER_FINGERPRINT:
+                return new IssuerFingerprint(isCritical, isLongLength, data);
+            case INTENDED_RECIPIENT_FINGERPRINT:
+                return new IntendedRecipientFingerprint(isCritical, isLongLength, data);
+            }
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new MalformedPacketException("Malformed signature subpacket.", e);
         }
 
         return new SignatureSubpacket(type, isCritical, isLongLength, data);

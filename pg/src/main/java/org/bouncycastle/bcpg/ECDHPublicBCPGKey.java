@@ -36,12 +36,12 @@ public class ECDHPublicBCPGKey
         super(in);
 
         int length = in.read();
-        byte[] kdfParameters = new byte[length];
-        if (kdfParameters.length != 3)
+        if (length != 3)
         {
-            throw new IllegalStateException("kdf parameters size of 3 expected.");
+            throw new MalformedPacketException("KDF parameters size of 3 expected.");
         }
 
+        byte[] kdfParameters = new byte[length];
         in.readFully(kdfParameters);
 
         reserved = kdfParameters[0];

@@ -60,4 +60,18 @@ public class Packet
     {
         return getPacketTag() <= 39;
     }
+
+    static int sanitizeLength(int len, int max, String variableName)
+            throws MalformedPacketException
+    {
+        if (len < 0)
+        {
+            throw new MalformedPacketException(variableName + " cannot be negative.");
+        }
+        if (len > max)
+        {
+            throw new MalformedPacketException(variableName + " (" + len + ") exceeds limit (" + max + ").");
+        }
+        return len;
+    }
 }

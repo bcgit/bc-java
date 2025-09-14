@@ -55,6 +55,10 @@ public class PublicKeyEncSessionPacket
         else if (version == VERSION_6)
         {
             int keyInfoLen = in.read();
+            if (keyInfoLen < 0)
+            {
+                throw new MalformedPacketException("Key Info Length cannot be negative: " + keyInfoLen);
+            }
             if (keyInfoLen == 0)
             {
                 // anon recipient
@@ -69,13 +73,20 @@ public class PublicKeyEncSessionPacket
                 in.readFully(keyFingerprint);
                 // Derived key-ID from fingerprint
                 // TODO: Replace with getKeyIdentifier
-                if (keyVersion == PublicKeyPacket.VERSION_4)
+                try
                 {
-                    keyID = FingerprintUtil.keyIdFromV4Fingerprint(keyFingerprint);
+                    if (keyVersion == PublicKeyPacket.VERSION_4)
+                    {
+                        keyID = FingerprintUtil.keyIdFromV4Fingerprint(keyFingerprint);
+                    }
+                    else
+                    {
+                        keyID = FingerprintUtil.keyIdFromV6Fingerprint(keyFingerprint);
+                    }
                 }
-                else
+                catch (IllegalArgumentException e)
                 {
-                    keyID = FingerprintUtil.keyIdFromV6Fingerprint(keyFingerprint);
+                    throw new MalformedPacketException("Malformed fingerprint encoding.", e);
                 }
             }
         }
