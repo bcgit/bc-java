@@ -13,7 +13,6 @@ dependencies {
         api(project(":pkix"))
         api(project(":prov"))
         api(project(":tls"))
-        api(project(":test"))
         api(project(":mls"))
         api(project(":mail"))
         api(project(":jmail"))
@@ -24,7 +23,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             groupId = 'org.bouncycastle'
-            artifactId = "bc-bom-$vmrange"
+            artifactId = "bc-$vmrange-bom"
             from components.javaPlatform
         }
     }
