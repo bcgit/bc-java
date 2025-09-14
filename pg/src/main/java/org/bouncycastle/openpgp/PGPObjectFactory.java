@@ -169,6 +169,12 @@ public class PGPObjectFactory
             return new PGPMarker(in);
         case PacketTags.PADDING:
             return new PGPPadding(in);
+        case PacketTags.MOD_DETECTION_CODE:
+            return new UnknownPacket(PacketTags.MOD_DETECTION_CODE, in);
+        case PacketTags.USER_ID:
+            return new UnknownPacket(PacketTags.USER_ID, in);
+        case PacketTags.USER_ATTRIBUTE:
+            return new UnknownPacket(PacketTags.USER_ATTRIBUTE, in);
         }
 
         int tag = in.nextPacketTag();

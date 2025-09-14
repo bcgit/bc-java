@@ -81,7 +81,19 @@ public class SymmetricKeyEncSessionPacket
             }
             else
             {
-                ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+                try
+                {
+                    ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new MalformedPacketException(e.getMessage(), e);
+                }
+            }
+
+            if (ivLen < 0)
+            {
+                throw new MalformedPacketException("IV length cannot be negative.");
             }
 
             s2k = new S2K(in);
@@ -92,11 +104,23 @@ public class SymmetricKeyEncSessionPacket
                 throw new EOFException("Premature end of stream.");
             }
 
-            int authTagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+            int authTagLen;
+            try
+            {
+                authTagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new MalformedPacketException("Unknown AEAD algorithm.", e);
+            }
             authTag = new byte[authTagLen];
 
             // Read all trailing bytes
             byte[] sessKeyAndAuthTag = in.readAll();
+            if (sessKeyAndAuthTag.length - authTagLen < 0)
+            {
+                throw new MalformedPacketException("AuthTagLen exceeds session key data.");
+            }
             // determine session key length by subtracting auth tag
             this.secKeyData = new byte[sessKeyAndAuthTag.length - authTagLen];
 

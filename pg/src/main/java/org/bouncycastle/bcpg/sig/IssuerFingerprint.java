@@ -22,7 +22,7 @@ public class IssuerFingerprint
         boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.ISSUER_FINGERPRINT, critical, isLongLength, data);
+        super(SignatureSubpacketTags.ISSUER_FINGERPRINT, critical, isLongLength, verifyData(data));
     }
 
     public IssuerFingerprint(
@@ -32,6 +32,15 @@ public class IssuerFingerprint
     {
         super(SignatureSubpacketTags.ISSUER_FINGERPRINT, critical, false,
             Arrays.prepend(fingerprint, (byte)keyVersion));
+    }
+
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 1)
+        {
+            throw new IllegalArgumentException("Data too short. Expect at least one octet of key version.");
+        }
+        return data;
     }
 
     public int getKeyVersion()

@@ -14,11 +14,20 @@ public class UserAttributeSubpacketInputStream
     implements UserAttributeSubpacketTags
 {
     InputStream in;
-
+    private final int limit;
+    
     public UserAttributeSubpacketInputStream(
         InputStream in)
     {
+        this(in, StreamUtil.findLimit(in));
+    }
+
+    public UserAttributeSubpacketInputStream(
+        InputStream in,
+        int limit)
+    {
         this.in = in;
+        this.limit = limit;
     }
 
     public int available()
@@ -78,7 +87,15 @@ public class UserAttributeSubpacketInputStream
         }
         else if (flags[StreamUtil.flag_partial])
         {
-            throw new IOException("unrecognised length reading user attribute sub packet");
+            throw new MalformedPacketException("unrecognised length reading user attribute sub packet");
+        }
+        if (bodyLen < 1)
+        {
+            throw new MalformedPacketException("Body length octet too small.");
+        }
+        if (bodyLen > limit)
+        {
+            throw new MalformedPacketException("Body length octet (" + bodyLen + ") exceeds limitations (" + limit + ").");
         }
         boolean longLength = flags[StreamUtil.flag_isLongLength];
 
@@ -95,10 +112,17 @@ public class UserAttributeSubpacketInputStream
 
         int type = tag;
 
-        switch (type)
+        try
         {
-        case IMAGE_ATTRIBUTE:
-            return new ImageAttribute(longLength, data);
+            switch (type)
+            {
+            case IMAGE_ATTRIBUTE:
+                return new ImageAttribute(longLength, data);
+            }
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new MalformedPacketException("Malformed UserAttribute subpacket.", e);
         }
 
         return new UserAttributeSubpacket(type, longLength, data);

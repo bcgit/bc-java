@@ -29,7 +29,7 @@ public class SignatureExpirationTime
         boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.EXPIRE_TIME, critical, isLongLength, data);
+        super(SignatureSubpacketTags.EXPIRE_TIME, critical, isLongLength, verifyData(data));
     }
 
     public SignatureExpirationTime(
@@ -39,6 +39,15 @@ public class SignatureExpirationTime
         super(SignatureSubpacketTags.EXPIRE_TIME, critical, false, Utils.timeToBytes(seconds));
     }
 
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length != 4)
+        {
+            throw new IllegalArgumentException("Malformed data length. Expected 4, got " + data.length);
+        }
+        return data;
+    }
+    
     /**
      * return time in seconds before signature expires after creation time.
      */
