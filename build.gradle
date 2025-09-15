@@ -284,16 +284,12 @@ configure(subprojects.findAll {it.name != 'bom'}) {
         }
     }
 
-//    tasks.withType(JavaCompile).configureEach {
-//        javaCompiler = javaToolchains.compilerFor {
-//            languageVersion = JavaLanguageVersion.of(21)
-//        }
-//    }
-
 }
 
 
 test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+
+apply from: "publish.gradle"
 
 
 
