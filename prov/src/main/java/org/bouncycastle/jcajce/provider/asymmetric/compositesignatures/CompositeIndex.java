@@ -18,31 +18,6 @@ public class CompositeIndex
       
     static
     {
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, new String[] { "ML-DSA-65", "SHA256withRSAandMGF1"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, new String[] { "ML-DSA-65", "SHA256withRSA"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA384, new String[] { "ML-DSA-65", "SHA384withRSAandMGF1"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA384, new String[] { "ML-DSA-65", "SHA384withRSA"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA384, new String[] { "ML-DSA-65", "SHA384withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA256, new String[] { "ML-DSA-65", "SHA256withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384, new String[] { "ML-DSA-87", "SHA384withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384, new String[] { "ML-DSA-87", "SHA384withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, new String[] { "ML-DSA-87", "Ed448"});
-    
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256, new String[] { "ML-DSA-44", "SHA256withRSAandMGF1"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256, new String[] { "ML-DSA-44", "SHA256withRSA"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512, new String[] { "ML-DSA-44", "Ed25519"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA44_ECDSA_P256_SHA256, new String[] { "ML-DSA-44", "SHA256withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PSS_SHA512, new String[] { "ML-DSA-65", "SHA256withRSAandMGF1"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PKCS15_SHA512, new String[] { "ML-DSA-65", "SHA256withRSA"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PSS_SHA512, new String[] { "ML-DSA-65", "SHA384withRSAandMGF1"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PKCS15_SHA512, new String[] { "ML-DSA-65", "SHA512withRSA"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_P384_SHA512, new String[] { "ML-DSA-65", "SHA384withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_brainpoolP256r1_SHA512, new String[] { "ML-DSA-65", "SHA256withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA65_Ed25519_SHA512, new String[] { "ML-DSA-65", "Ed25519"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_P384_SHA512, new String[] { "ML-DSA-87", "SHA384withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512, new String[] { "ML-DSA-87", "SHA384withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512, new String[] { "ML-DSA-87", "Ed448"});
-
         pairings.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new String[] { "ML-DSA-44", "RSASSA-PSS"});
         pairings.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new String[] { "ML-DSA-44", "sha256WithRSAEncryption"});
         pairings.put(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new String[] { "ML-DSA-44", "Ed25519"});
@@ -59,9 +34,9 @@ public class CompositeIndex
         pairings.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new String[] { "ML-DSA-87", "SHA384withECDSA"});
         pairings.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new String[] { "ML-DSA-87", "SHA384withECDSA"});
         pairings.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new String[] { "ML-DSA-87", "Ed448"});
+        pairings.put(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new String[] { "ML-DSA-87", "RSASSA-PSS"});
         pairings.put(MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new String[] { "ML-DSA-87", "RSASSA-PSS"});
         pairings.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new String[] { "ML-DSA-87", "SHA512withECDSA"});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new String[] { "ML-DSA-87", "RSASSA-PSS"});
 
         kpgInitSpecs.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, new AlgorithmParameterSpec[] { null, new RSAKeyGenParameterSpec(3072, RSAKeyGenParameterSpec.F4)});
         kpgInitSpecs.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, new AlgorithmParameterSpec[] { null, new RSAKeyGenParameterSpec(3072, RSAKeyGenParameterSpec.F4)});
