@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 public class HQCKeyGenerationParameters
     extends KeyGenerationParameters
 {
-    private HQCParameters params;
+    private final HQCParameters params;
 
     public HQCKeyGenerationParameters(
         SecureRandom random,

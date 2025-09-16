@@ -1,78 +1,59 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
+import java.security.SecureRandom;
+
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 class HQCEngine
 {
-    private int n;
-    private int n1;
-    private int n2;
-    private int k;
-    private int delta;
-    private int w;
-    private int wr;
-    private int we;
-    private int g;
-    private int rejectionThreshold;
-    private int fft;
-    private int mulParam;
+    private final int n;
+    private final int n1;
+    private final int k;
+    private final int delta;
+    private final int w;
+    private final int wr;
+    private final int g;
+    private final int fft;
+    private final int mulParam;
+    private static final int SEED_BYTES = 32;
+    private final int N_BYTE;
+    private final int N_BYTE_64;
+    private final int K_BYTE;
+    private final int N1N2_BYTE_64;
+    private final int N1N2_BYTE;
+    private static final int SALT_SIZE_BYTES = 16;
+    private final int[] generatorPoly;
+    private final int N_MU;
+    private final int pkSize;
+    private final GF2PolynomialCalculator gf;
+    private final long rejectionThreshold;
 
-    private int SEED_SIZE = 40;
-    private byte G_FCT_DOMAIN = 3;
-    private byte K_FCT_DOMAIN = 4;
-
-    private int N_BYTE;
-    private int n1n2;
-    private int N_BYTE_64;
-    private int K_BYTE;
-    private int K_BYTE_64;
-    private int N1_BYTE_64;
-    private int N1N2_BYTE_64;
-    private int N1N2_BYTE;
-    private int N1_BYTE;
-
-    private int GF_POLY_WT  = 5;
-    private int GF_POLY_M2 = 4;
-    private int SALT_SIZE_BYTES = 16;
-    private int SALT_SIZE_64 = 2;
-
-    private int[] generatorPoly;
-    private int SHA512_BYTES = 512 / 8;
-
-    private long RED_MASK;
-
-    private GF2PolynomialCalculator gfCalculator;
-
-    public HQCEngine(int n, int n1, int n2, int k, int g, int delta, int w, int wr, int we, int rejectionThreshold, int fft, int[] generatorPoly)
+    public HQCEngine(int n, int n1, int n2, int k, int g, int delta, int w, int wr,
+                     int fft, int nmu, int pkSize, int[] generatorPoly)
     {
         this.n = n;
         this.k = k;
         this.delta = delta;
         this.w = w;
         this.wr = wr;
-        this.we = we;
         this.n1 = n1;
-        this.n2 = n2;
-        this.n1n2 = n1 * n2;
         this.generatorPoly = generatorPoly;
         this.g = g;
-        this.rejectionThreshold = rejectionThreshold;
         this.fft = fft;
-
-        this.mulParam = (int)Math.ceil(n2 / 128);
+        this.N_MU = nmu;
+        this.pkSize = pkSize;
+        this.mulParam = n2 >> 7;
         this.N_BYTE = Utils.getByteSizeFromBitSize(n);
         this.K_BYTE = k;
         this.N_BYTE_64 = Utils.getByte64SizeFromBitSize(n);
-        this.K_BYTE_64 = Utils.getByteSizeFromBitSize(k);
-        this.N1_BYTE_64 = Utils.getByteSizeFromBitSize(n1);
         this.N1N2_BYTE_64 = Utils.getByte64SizeFromBitSize(n1 * n2);
         this.N1N2_BYTE = Utils.getByteSizeFromBitSize(n1 * n2);
-        this.N1_BYTE = Utils.getByteSizeFromBitSize(n1);
-
-        this.RED_MASK = ((1L << ((long)n % 64)) - 1);
-
-        this.gfCalculator = new GF2PolynomialCalculator(N_BYTE_64, n, RED_MASK);
+        long RED_MASK = ((1L << (n & 63)) - 1);
+        this.gf = new GF2PolynomialCalculator(N_BYTE_64, n, RED_MASK);
+        this.rejectionThreshold = ((1L << 24) / n) * n;
     }
 
     /**
@@ -82,49 +63,39 @@ class HQCEngine
      *
      * @param pk output pk = (publicSeed||s)
      **/
-    public void genKeyPair(byte[] pk, byte[] sk, byte[] seed)
+    public void genKeyPair(byte[] pk, byte[] sk, SecureRandom secureRandom)
     {
         // Randomly generate seeds for secret keys and public keys
-        byte[] secretKeySeed = new byte[SEED_SIZE];
-        byte[] sigma = new byte[K_BYTE];
-
-        KeccakRandomGenerator randomGenerator = new KeccakRandomGenerator(256);
-        randomGenerator.randomGeneratorInit(seed, null, seed.length, 0);
-        randomGenerator.squeeze(secretKeySeed, 40);
-        randomGenerator.squeeze(sigma, K_BYTE);
-
-        // 1. Randomly generate secret keys x, y
-        KeccakRandomGenerator secretKeySeedExpander = new KeccakRandomGenerator(256);
-        secretKeySeedExpander.seedExpanderInit(secretKeySeed, secretKeySeed.length);
-
+        byte[] seedKem = new byte[SEED_BYTES]; // seedKem
+        byte[] keypairSeed = new byte[SEED_BYTES << 1];
         long[] xLongBytes = new long[N_BYTE_64];
         long[] yLongBytes = new long[N_BYTE_64];
+        long[] h = new long[N_BYTE_64]; // s
 
-        generateRandomFixedWeight(yLongBytes, secretKeySeedExpander, w);
-        generateRandomFixedWeight(xLongBytes, secretKeySeedExpander, w);
+        secureRandom.nextBytes(seedKem);
+        Shake256RandomGenerator ctxKem = new Shake256RandomGenerator(seedKem, (byte)1);
+        System.arraycopy(seedKem, 0, sk, pkSize + SEED_BYTES + K_BYTE, SEED_BYTES);
 
-        // 2. Randomly generate h
-        byte[] publicKeySeed = new byte[SEED_SIZE];
-        randomGenerator.squeeze(publicKeySeed, 40);
+        ctxKem.nextBytes(seedKem);
+        ctxKem.nextBytes(sk, pkSize + SEED_BYTES, K_BYTE);
 
-        KeccakRandomGenerator randomPublic = new KeccakRandomGenerator(256);
-        randomPublic.seedExpanderInit(publicKeySeed, publicKeySeed.length);
+        hashHI(keypairSeed, 512, seedKem, seedKem.length, (byte)2);
+        ctxKem.init(keypairSeed, 0, SEED_BYTES, (byte)1);
 
-        long[] hLongBytes = new long[N_BYTE_64];
-        generatePublicKeyH(hLongBytes, randomPublic);
-
-        // 3. Compute s
-        long[] s = new long[N_BYTE_64];
-        gfCalculator.multLongs(s, yLongBytes, hLongBytes);
-        GF2PolynomialCalculator.addLongs(s, s, xLongBytes);
-        byte[] sBytes = new byte[N_BYTE];
-        Utils.fromLongArrayToByteArray(sBytes, s);
-
-        byte[] tmpPk = Arrays.concatenate(publicKeySeed, sBytes);
-        byte[] tmpSk = Arrays.concatenate(secretKeySeed, sigma, tmpPk);
-
-        System.arraycopy(tmpPk, 0, pk, 0, tmpPk.length);
-        System.arraycopy(tmpSk, 0, sk, 0, tmpSk.length);
+        vectSampleFixedWeight1(yLongBytes, ctxKem, w);
+        vectSampleFixedWeight1(xLongBytes, ctxKem, w);
+        System.arraycopy(keypairSeed, SEED_BYTES, pk, 0, SEED_BYTES);
+        ctxKem.init(keypairSeed, SEED_BYTES, SEED_BYTES, (byte)1);
+        vectSetRandom(ctxKem, h);
+        gf.vectMul(h, yLongBytes, h); // h is s as the output
+        Longs.xorTo(N_BYTE_64, xLongBytes, 0, h, 0); // h is s
+        Utils.fromLongArrayToByteArray(pk, SEED_BYTES, pk.length - SEED_BYTES, h);
+        System.arraycopy(keypairSeed, 0, sk, pkSize, SEED_BYTES);
+        System.arraycopy(pk, 0, sk, 0, pkSize);
+        Arrays.clear(keypairSeed);
+        Arrays.clear(xLongBytes);
+        Arrays.clear(yLongBytes);
+        Arrays.clear(h);
     }
 
     /**
@@ -132,56 +103,31 @@ class HQCEngine
      * - Input: pk, seed
      * - Output: c = (u,v,d), K
      *
-     * @param u    u
-     * @param v    v
-     * @param K    session key
-     * @param pk   public key
-     * @param seed seed
+     * @param u      u
+     * @param v      v
+     * @param kTheta session key
+     * @param pk     public key
      **/
-    public void encaps(byte[] u, byte[] v, byte[] K, byte[] pk, byte[] seed, byte[] salt)
+    public void encaps(byte[] u, byte[] v, byte[] kTheta, byte[] pk, byte[] salt, SecureRandom secureRandom)
     {
         // 1. Randomly generate m
         byte[] m = new byte[K_BYTE];
+        byte[] hashEkKem = new byte[SEED_BYTES];
+        long[] u64 = new long[N_BYTE_64];
+        long[] v64 = new long[N1N2_BYTE_64];
 
-        byte[] secretKeySeed = new byte[SEED_SIZE];
-        KeccakRandomGenerator randomGenerator = new KeccakRandomGenerator(256);
-        randomGenerator.randomGeneratorInit(seed, null, seed.length, 0);
-        randomGenerator.squeeze(secretKeySeed, 40);
+        secureRandom.nextBytes(m);
+        secureRandom.nextBytes(salt);
 
-        byte[] sigma = new byte[K_BYTE];
-        randomGenerator.squeeze(sigma, K_BYTE);
-
-        byte[] publicKeySeed = new byte[SEED_SIZE];
-        randomGenerator.squeeze(publicKeySeed, 40);
-
-        // gen m
-        randomGenerator.squeeze(m, K_BYTE);
-
-        // 2. Generate theta
-        byte[] theta = new byte[SHA512_BYTES];
-        byte[] tmp = new byte[K_BYTE + (SALT_SIZE_BYTES * 2) + SALT_SIZE_BYTES];
-        randomGenerator.squeeze(salt, SALT_SIZE_BYTES);
-
-        System.arraycopy(m, 0, tmp, 0, m.length);
-        System.arraycopy(pk, 0, tmp, K_BYTE, SALT_SIZE_BYTES * 2);
-        System.arraycopy(salt, 0, tmp, K_BYTE + (SALT_SIZE_BYTES * 2), SALT_SIZE_BYTES);
-        KeccakRandomGenerator shakeDigest = new KeccakRandomGenerator(256);
-        shakeDigest.SHAKE256_512_ds(theta, tmp, tmp.length, new byte[]{G_FCT_DOMAIN});
-
-        // 3. Generate ciphertext c = (u,v)
-        // Extract public keys
-        long[] h = new long[N_BYTE_64];
-        byte[] s = new byte[N_BYTE];
-        extractPublicKeys(h, s, pk);
-
-        long[] vTmp = new long[N1N2_BYTE_64];
-        encrypt(u, vTmp, h, s, m, theta);
-
-        Utils.fromLongArrayToByteArray(v, vTmp);
-
-        // 5. Compute session key K
-        byte[] hashInputK = Arrays.concatenate(m, u, v);
-        shakeDigest.SHAKE256_512_ds(K, hashInputK, hashInputK.length, new byte[]{K_FCT_DOMAIN});
+        hashHI(hashEkKem, 256, pk, pk.length, (byte)1);
+        hashGJ(kTheta, 512, hashEkKem, m, 0, m.length, salt, 0, SALT_SIZE_BYTES, (byte)0);
+        pkeEncrypt(u64, v64, pk, m, kTheta, SEED_BYTES);
+        Utils.fromLongArrayToByteArray(u, u64);
+        Utils.fromLongArrayToByteArray(v, v64);
+        Arrays.clear(u64);
+        Arrays.clear(v64);
+        Arrays.clear(m);
+        Arrays.clear(hashEkKem);
     }
 
     /**
@@ -197,53 +143,48 @@ class HQCEngine
     public int decaps(byte[] ss, byte[] ct, byte[] sk)
     {
         //Extract Y and Public Keys from sk
-        long[] y = new long[N_BYTE_64];
-        byte[] pk = new byte[40 + N_BYTE];
-        byte[] sigma = new byte[K_BYTE];
-        extractKeysFromSecretKeys(y, sigma, pk, sk);
+        long[] u64 = new long[N_BYTE_64];
+        long[] v64 = new long[N_BYTE_64];
+        long[] cKemPrimeU64 = new long[N_BYTE_64]; // tmpLong
+        long[] cKemPrimeV64 = new long[N_BYTE_64]; // y
+        byte[] hashEkKem = new byte[SEED_BYTES];
+        byte[] kThetaPrime = new byte[32 + SEED_BYTES];
+        byte[] mPrime = new byte[k];
+        byte[] kBar = new byte[32];
+        byte[] tmp = new byte[n1];
+
+        Shake256RandomGenerator generator = new Shake256RandomGenerator(sk, pkSize, SEED_BYTES, (byte)1);
+        vectSampleFixedWeight1(cKemPrimeV64, generator, w); // cKemPrimeV64 is y
 
         // Extract u, v, d from ciphertext
-        byte[] u = new byte[N_BYTE];
-        byte[] v = new byte[N1N2_BYTE];
-        byte[] salt = new byte[SALT_SIZE_BYTES];
-        extractCiphertexts(u, v, salt, ct);
+        Utils.fromByteArrayToLongArray(u64, ct, 0, N_BYTE);
+        Utils.fromByteArrayToLongArray(v64, ct, N_BYTE, N1N2_BYTE);
 
-        // 1. Decrypt -> m'
-        byte[] mPrimeBytes = new byte[k];
-        int result = decrypt(mPrimeBytes, mPrimeBytes, sigma, u, v, y);
+        // cKemPrimeU64 is tmpLong
+        gf.vectMul(cKemPrimeU64, cKemPrimeV64, u64);
+        vectTruncate(cKemPrimeU64);
+        Longs.xorTo(N_BYTE_64, v64, 0, cKemPrimeU64, 0);
 
-        // 2. Compute theta'
-        byte[] theta = new byte[SHA512_BYTES];
-        byte[] tmp = new byte[K_BYTE + (SALT_SIZE_BYTES * 2) + SALT_SIZE_BYTES];
-        System.arraycopy(mPrimeBytes, 0, tmp, 0, mPrimeBytes.length);
-        System.arraycopy(pk, 0, tmp, K_BYTE, SALT_SIZE_BYTES * 2);
-        System.arraycopy(salt, 0, tmp, K_BYTE + (SALT_SIZE_BYTES * 2), SALT_SIZE_BYTES);
+        ReedMuller.decode(tmp, cKemPrimeU64, n1, mulParam);
+        ReedSolomon.decode(mPrime, tmp, n1, fft, delta, k, g);
 
-        KeccakRandomGenerator shakeDigest = new KeccakRandomGenerator(256);
-        shakeDigest.SHAKE256_512_ds(theta, tmp, tmp.length, new byte[]{G_FCT_DOMAIN});
+        int result = 0;
 
-        // 3. Compute c' = Enc(pk, m', theta')
-        // Extract public keys
-        long[] h = new long[N_BYTE_64];
-        byte[] s = new byte[N_BYTE];
-        extractPublicKeys(h, s, pk);
+        // Compute shared key K_prime and ciphertext cKemPrime
+        hashHI(hashEkKem, 256, sk, pkSize, (byte)1);
+        hashGJ(kThetaPrime, 512, hashEkKem, mPrime, 0, mPrime.length, ct,
+            N_BYTE + N1N2_BYTE, SALT_SIZE_BYTES, (byte)0);
+        System.arraycopy(kThetaPrime, 0, ss, 0, 32);
+        Arrays.fill(cKemPrimeV64, 0L);
+        pkeEncrypt(cKemPrimeU64, cKemPrimeV64, sk, mPrime, kThetaPrime, 32);
+        hashGJ(kBar, 256, hashEkKem, sk, pkSize + SEED_BYTES, K_BYTE, ct, 0, ct.length, (byte)3);
 
-        byte[] u2Bytes = new byte[N_BYTE];
-        byte[] v2Bytes = new byte[N1N2_BYTE];
-        long[] vTmp = new long[N1N2_BYTE_64];
-        encrypt(u2Bytes, vTmp, h, s, mPrimeBytes, theta);
-        Utils.fromLongArrayToByteArray(v2Bytes, vTmp);
-
-        // 5. Compute session key KPrime
-        byte[] hashInputK = new byte[K_BYTE + N_BYTE + N1N2_BYTE];
-
-        // Compare u, v, d
-        if (!Arrays.constantTimeAreEqual(u, u2Bytes))
+        if (!Arrays.constantTimeAreEqual(u64, cKemPrimeU64))
         {
             result = 1;
         }
 
-        if (!Arrays.constantTimeAreEqual(v, v2Bytes))
+        if (!Arrays.constantTimeAreEqual(v64, cKemPrimeV64))
         {
             result = 1;
         }
@@ -252,191 +193,182 @@ class HQCEngine
 
         for (int i = 0; i < K_BYTE; i++)
         {
-            hashInputK[i] = (byte)(((mPrimeBytes[i] & result) ^ (sigma[i] & ~result)) & 0xff);
+            ss[i] = (byte)(((ss[i] & result) ^ (kBar[i] & ~result)) & 0xff);
         }
-        System.arraycopy(u, 0, hashInputK, K_BYTE, N_BYTE);
-        System.arraycopy(v, 0, hashInputK, K_BYTE + N_BYTE, N1N2_BYTE);
 
-        shakeDigest.SHAKE256_512_ds(ss, hashInputK, hashInputK.length, new byte[]{K_FCT_DOMAIN});
-
+        Arrays.clear(u64);
+        Arrays.clear(v64);
+        Arrays.clear(cKemPrimeU64);
+        Arrays.clear(cKemPrimeV64);
+        Arrays.clear(hashEkKem);
+        Arrays.clear(kThetaPrime);
+        Arrays.clear(mPrime);
+        Arrays.clear(kBar);
+        Arrays.clear(tmp);
         return -result;
     }
 
-    int getSessionKeySize()
+    private void pkeEncrypt(long[] u, long[] v, byte[] ekPke, byte[] m, byte[] theta, int thetaOff)
     {
-        return SHA512_BYTES;
-    }
-
-    /**
-     * HQC Encryption
-     * - Input: (h,s, m)
-     * - Output: (u,v) = c
-     *
-     * @param h public key
-     * @param s public key
-     * @param m message
-     * @param u ciphertext
-     * @param v ciphertext
-     **/
-    private void encrypt(byte[] u, long[] v, long[] h, byte[] s, byte[] m, byte[] theta)
-    {
-        // Randomly generate e, r1, r2
-        KeccakRandomGenerator randomGenerator = new KeccakRandomGenerator(256);
-        randomGenerator.seedExpanderInit(theta, SEED_SIZE);
-        long[] e = new long[N_BYTE_64];
-        long[] r1 = new long[N_BYTE_64];
-        long[] r2 = new long[N_BYTE_64];
-        generateRandomFixedWeight(r2, randomGenerator, wr);
-        generateRandomFixedWeight(e, randomGenerator, we);
-        generateRandomFixedWeight(r1, randomGenerator, wr);
-
-        // Calculate u
-        long[] uLong = new long[N_BYTE_64];
-        gfCalculator.multLongs(uLong, r2, h);
-        GF2PolynomialCalculator.addLongs(uLong, uLong, r1);
-        Utils.fromLongArrayToByteArray(u, uLong);
-
-        // Calculate v
-        // encode m
+        long[] e = new long[N_BYTE_64]; // r2
+        long[] tmp = new long[N_BYTE_64]; // s, h1, h
         byte[] res = new byte[n1];
-        long[] vLong = new long[N1N2_BYTE_64];
-        long[] tmpVLong = new long[N_BYTE_64];
-        ReedSolomon.encode(res, m, K_BYTE * 8, n1, k, g, generatorPoly);
-        ReedMuller.encode(vLong, res, n1, mulParam);
-        System.arraycopy(vLong, 0, tmpVLong, 0, vLong.length);
 
-        //Compute v
-        long[] sLong = new long[N_BYTE_64];
-        Utils.fromByteArrayToLongArray(sLong, s);
+        ReedSolomon.encode(res, m, n1, k, g, generatorPoly);
+        ReedMuller.encode(v, res, n1, mulParam);
 
-        long[] tmpLong = new long[N_BYTE_64];
-        gfCalculator.multLongs(tmpLong, r2, sLong);
-        GF2PolynomialCalculator.addLongs(tmpLong, tmpLong, tmpVLong);
-        GF2PolynomialCalculator.addLongs(tmpLong, tmpLong, e);
+        Shake256RandomGenerator randomGenerator = new Shake256RandomGenerator(ekPke, 0, SEED_BYTES, (byte)1);
+        vectSetRandom(randomGenerator, tmp);
 
-        Utils.resizeArray(v, n1n2, tmpLong, n, N1N2_BYTE_64, N1N2_BYTE_64);
+        randomGenerator.init(theta, thetaOff, SEED_BYTES, (byte)1);
+        vectSampleFixedWeights2(randomGenerator, e, wr); // e is r2
+        gf.vectMul(u, e, tmp); // e is r2
+        Utils.fromByteArrayToLongArray(tmp, ekPke, SEED_BYTES, pkSize - SEED_BYTES);
+        gf.vectMul(tmp, e, tmp);
+        vectSampleFixedWeights2(randomGenerator, e, wr);
+        Longs.xorTo(N_BYTE_64, e, 0, tmp, 0);
+        vectTruncate(tmp);
+        Longs.xorTo(N1N2_BYTE_64, tmp, 0, v, 0);
+
+        vectSampleFixedWeights2(randomGenerator, tmp, wr);// tmp is r1
+        Longs.xorTo(N_BYTE_64, tmp, 0, u, 0);
+        Arrays.clear(e);
+        Arrays.clear(tmp);
+        Arrays.clear(res);
     }
 
-    private int decrypt(byte[] output, byte[] m, byte[] sigma, byte[] u, byte[] v, long[] y)
+    private int barrettReduce(int x)
     {
-        long[] uLongs = new long[N_BYTE_64];
-        Utils.fromByteArrayToLongArray(uLongs, u);
-
-        long[] vLongs = new long[N1N2_BYTE_64];
-        Utils.fromByteArrayToLongArray(vLongs, v);
-
-        long[] tmpV = new long[N_BYTE_64];
-        System.arraycopy(vLongs, 0, tmpV, 0, vLongs.length);
-
-        long[] tmpLong = new long[N_BYTE_64];
-        gfCalculator.multLongs(tmpLong, y, uLongs);
-        GF2PolynomialCalculator.addLongs(tmpLong, tmpLong, tmpV);
-
-        // Decode res
-        byte[] tmp = new byte[n1];
-        ReedMuller.decode(tmp, tmpLong, n1, mulParam);
-        ReedSolomon.decode(m, tmp, n1, fft, delta, k, g);
-
-        System.arraycopy(m, 0, output, 0, output.length);
-        return 0;
+        long q = ((long)x * N_MU) >>> 32;
+        int r = x - (int)(q * n);
+        r -= (-(((r - n) >>> 31) ^ 1)) & n;
+        return r;
     }
 
-    private void generateRandomFixedWeight(long[] output, KeccakRandomGenerator random, int weight)
+    private void generateRandomSupport(int[] support, int weight, Shake256RandomGenerator random)
     {
-        int[] rand_u32 = new int[this.wr];
-        byte[] rand_bytes = new byte[this.wr * 4];
-        int[] support = new int[this.wr];
-        int[] index_tab = new int[this.wr];
-        long[] bit_tab = new long[this.wr];
+        int randomBytesSize = 3 * weight;
+        byte[] randBytes = new byte[randomBytesSize];
+        int j = randomBytesSize;
 
-        random.expandSeed(rand_bytes, 4 * weight);
-        Pack.littleEndianToInt(rand_bytes, 0, rand_u32, 0, rand_u32.length);
-
-        for (int i = 0; i < weight; i++)
+        int count = 0;
+        while (count < weight)
         {
-            support[i] = (int) (i + ((rand_u32[i]&0xFFFFFFFFL) % (n - i)));
-        }
-
-        for (int i = (weight - 1); i >= 0; i--)
-        {
-            int found = 0;
-            for (int j = i + 1; j < weight; j++)
+            if (j == randomBytesSize)
             {
-                if (support[j] == support[i])
+                random.xofGetBytes(randBytes, randomBytesSize);
+                j = 0;
+            }
+            int candidate = ((randBytes[j++] & 0xFF) << 16) | ((randBytes[j++] & 0xFF) << 8) | randBytes[j++] & 0xFF;
+            if (candidate >= rejectionThreshold)
+            {
+                continue;
+            }
+            candidate = barrettReduce(candidate);
+            boolean duplicate = false;
+
+            for (int k = 0; k < count; k++)
+            {
+                if (support[k] == candidate)
                 {
-                    found |= 1;
+                    duplicate = true;
+                    break;
                 }
             }
 
-            int mask = -found;
-            support[i] = (mask & i) ^ (~mask & support[i]);
+            if (!duplicate)
+            {
+                support[count++] = candidate;
+            }
         }
+    }
 
+    private void writeSupportToVector(long[] v, int[] support, int weight)
+    {
+        int[] indexTab = new int[wr];
+        long[] bitTab = new long[wr];
         for (int i = 0; i < weight; i++)
         {
-            index_tab[i] = support[i] >>> 6;
-            int pos = support[i] & 0x3f;
-            bit_tab[i] = (1L) << pos;
+            indexTab[i] = support[i] >>> 6;
+            bitTab[i] = 1L << (support[i] & 0x3F);
         }
-        long val = 0;
-        for (int i = 0; i < N_BYTE_64; i++)
+        for (int i = 0; i < v.length; i++)
         {
-            val = 0;
+            long val = 0;
             for (int j = 0; j < weight; j++)
             {
-                int tmp = i - index_tab[j];
-                int val1 = 1 ^ ((tmp | -tmp) >>> 31);
-                long mask = -val1;
-                val |= (bit_tab[j] & mask);
+                int tmp = i - indexTab[j];
+                val |= (bitTab[j] & -(1 ^ ((tmp | -tmp) >>> 31)));
             }
-            output[i] |= val;
+            v[i] = val;
         }
     }
 
-    void generatePublicKeyH(long[] out, KeccakRandomGenerator random)
+    public void vectSampleFixedWeight1(long[] output, Shake256RandomGenerator random, int weight)
     {
-        byte[] randBytes = new byte[N_BYTE];
-        random.expandSeed(randBytes, N_BYTE);
-        long[] tmp = new long[N_BYTE_64];
-        Utils.fromByteArrayToLongArray(tmp, randBytes);
-        tmp[N_BYTE_64 - 1] &= Utils.bitMask(n, 64);
-        System.arraycopy(tmp, 0, out, 0, out.length);
+        int[] support = new int[wr];
+        generateRandomSupport(support, weight, random);
+        writeSupportToVector(output, support, weight);
     }
 
-    private void extractPublicKeys(long[] h, byte[] s, byte[] pk)
+    private static void hashHI(byte[] output, int bitLength, byte[] in, int inLen, byte domain)
     {
-        byte[] publicKeySeed = new byte[SEED_SIZE];
-        System.arraycopy(pk, 0, publicKeySeed, 0, publicKeySeed.length);
-
-        KeccakRandomGenerator randomPublic = new KeccakRandomGenerator(256);
-        randomPublic.seedExpanderInit(publicKeySeed, publicKeySeed.length);
-
-        long[] hLongBytes = new long[N_BYTE_64];
-        generatePublicKeyH(hLongBytes, randomPublic);
-
-        System.arraycopy(hLongBytes, 0, h, 0, h.length);
-        System.arraycopy(pk, 40, s, 0, s.length);
+        SHA3Digest digest = new SHA3Digest(bitLength);
+        digest.update(in, 0, inLen);
+        digest.update(domain);
+        digest.doFinal(output, 0);
     }
 
-    private void extractKeysFromSecretKeys(long[] y, byte[] sigma, byte[] pk, byte[] sk)
+    private void hashGJ(byte[] output, int bitLength, byte[] hashEkKem, byte[] mOrSigma, int mOrSigmaOff, int mOrSigmaLen,
+                        byte[] saltOrCt, int saltOrCtOff, int saltOrCtOffLen, byte domain)
     {
-        byte[] secretKeySeed = new byte[SEED_SIZE];
-        System.arraycopy(sk, 0, secretKeySeed, 0, secretKeySeed.length);
-        System.arraycopy(sk, SEED_SIZE, sigma, 0, K_BYTE);
-
-        // Randomly generate secret keys x, y
-        KeccakRandomGenerator secretKeySeedExpander = new KeccakRandomGenerator(256);
-        secretKeySeedExpander.seedExpanderInit(secretKeySeed, secretKeySeed.length);
-
-        generateRandomFixedWeight(y, secretKeySeedExpander, w);
-
-        System.arraycopy(sk, SEED_SIZE + K_BYTE, pk, 0, pk.length);
+        SHA3Digest digest = new SHA3Digest(bitLength);
+        digest.update(hashEkKem, 0, hashEkKem.length);
+        digest.update(mOrSigma, mOrSigmaOff, mOrSigmaLen);
+        digest.update(saltOrCt, saltOrCtOff, saltOrCtOffLen);
+        digest.update(domain);
+        digest.doFinal(output, 0);
     }
 
-    private void extractCiphertexts(byte[] u, byte[] v, byte[] salt, byte[] ct)
+    private void vectSetRandom(Shake256RandomGenerator generator, long[] v)
     {
-        System.arraycopy(ct, 0, u, 0, u.length);
-        System.arraycopy(ct, u.length, v, 0, v.length);
-        System.arraycopy(ct, u.length + v.length, salt, 0, salt.length);
+        byte[] tmp = new byte[v.length << 3];
+        generator.xofGetBytes(tmp, N_BYTE);
+        Pack.littleEndianToLong(tmp, 0, v);
+        v[N_BYTE_64 - 1] &= Utils.bitMask(n, 64);
+    }
+
+    private void vectSampleFixedWeights2(Shake256RandomGenerator generator, long[] v, int weight)
+    {
+        int[] support = new int[wr];
+        byte[] rand = new byte[wr << 2];
+        generator.xofGetBytes(rand, rand.length);
+        Pack.littleEndianToInt(rand, 0, support);
+        for (int i = 0; i < weight; ++i)
+        {
+            support[i] = i + (int)(((support[i] & 0xFFFFFFFFL) * (n - i)) >> 32);
+        }
+
+        for (int i = weight - 1; i-- > 0; )
+        {
+            int found = 0;
+            for (int j = i + 1; j < weight; ++j)
+            {
+                found |= compareU32(support[j], support[i]);
+            }
+            found = -found;
+            support[i] = (found & i) ^ (~found & support[i]);
+        }
+        writeSupportToVector(v, support, weight);
+    }
+
+    private static int compareU32(int v1, int v2)
+    {
+        return 1 ^ (((v1 - v2) | (v2 - v1)) >>> 31);
+    }
+
+    private void vectTruncate(long[] v)
+    {
+        Arrays.fill(v, N1N2_BYTE_64, (n + 63) >> 6, 0L);
     }
 }
