@@ -147,6 +147,36 @@ public final class Arrays
         return 0 == d;
     }
 
+    public static boolean constantTimeAreEqual(
+        long[] expected,
+        long[] supplied)
+    {
+        if (expected == null || supplied == null)
+        {
+            return false;
+        }
+
+        if (expected == supplied)
+        {
+            return true;
+        }
+
+        int len = (expected.length < supplied.length) ? expected.length : supplied.length;
+
+        long nonEqual = expected.length ^ supplied.length;
+
+        for (int i = 0; i != len; i++)
+        {
+            nonEqual |= (expected[i] ^ supplied[i]);
+        }
+        for (int i = len; i < supplied.length; i++)
+        {
+            nonEqual |= (supplied[i] ^ ~supplied[i]);
+        }
+
+        return nonEqual == 0;
+    }
+
     public static int compareUnsigned(byte[] a, byte[] b)
     {
         if (a == b)
@@ -875,7 +905,7 @@ public final class Arrays
             output[i] = input[last - i];
         }
     }
-    
+
     public static byte[] reverseInPlace(byte[] a)
     {
         if (null == a)
@@ -940,7 +970,7 @@ public final class Arrays
 
         return a;
     }
-    
+
     /**
      * Fill input array by zeros
      *
