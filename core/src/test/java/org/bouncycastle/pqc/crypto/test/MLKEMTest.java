@@ -29,6 +29,7 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.FixedSecureRandom;
 
 public class MLKEMTest
     extends TestCase
@@ -84,13 +85,13 @@ public class MLKEMTest
                         MLKEMParameters parameters = params[fileIndex];
 
                         MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
-                        MLKEMKeyGenerationParameters genParam = new MLKEMKeyGenerationParameters(new SecureRandom(), parameters);
+                        MLKEMKeyGenerationParameters genParam = new MLKEMKeyGenerationParameters(new FixedSecureRandom(Arrays.concatenate(d, z)), parameters);
 
                         //
                         // Generate keys and test.
                         //
                         kpGen.init(genParam);
-                        AsymmetricCipherKeyPair kp = kpGen.internalGenerateKeyPair(d, z);
+                        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
                         MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
                             SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters)kp.getPublic()));
@@ -142,13 +143,13 @@ public class MLKEMTest
                     MLKEMParameters parameters = (MLKEMParameters)parametersMap.get((String)buf.get("parameterSet"));
 
                     MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
-                    MLKEMKeyGenerationParameters genParam = new MLKEMKeyGenerationParameters(new SecureRandom(), parameters);
+                    MLKEMKeyGenerationParameters genParam = new MLKEMKeyGenerationParameters(new FixedSecureRandom(Arrays.concatenate(d, z)), parameters);
 
                     //
                     // Generate keys and test.
                     //
                     kpGen.init(genParam);
-                    AsymmetricCipherKeyPair kp = kpGen.internalGenerateKeyPair(d, z);
+                    AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
                     MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
                         SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters)kp.getPublic()));
@@ -458,9 +459,9 @@ public class MLKEMTest
         SecureRandom random = new SecureRandom();
         MLKEMKeyPairGenerator keyGen = new MLKEMKeyPairGenerator();
 
-        keyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_1024));
+        keyGen.init(new MLKEMKeyGenerationParameters(new FixedSecureRandom(Arrays.concatenate(d, z)), MLKEMParameters.ml_kem_1024));
 
-        AsymmetricCipherKeyPair keyPair = keyGen.internalGenerateKeyPair(d, z);
+        AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
         assertTrue(Arrays.areEqual(Hex.decode(expectedPubKey), ((MLKEMPublicKeyParameters)keyPair.getPublic()).getEncoded()));
 
         assertTrue(Arrays.areEqual(Hex.decode(expectedPrivKey), ((MLKEMPrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
