@@ -4,58 +4,6 @@ import org.bouncycastle.util.Pack;
 
 class Utils
 {
-    static void resizeArray(long[] out, int sizeOutBits, long[] in, int sizeInBits, int n1n2ByteSize, int n1n2Byte64Size)
-    {
-        long mask = 0x7FFFFFFFFFFFFFFFl;
-        int val = 0;
-        if (sizeOutBits < sizeInBits)
-        {
-            if (sizeOutBits % 64 != 0)
-            {
-                val = 64 - (sizeOutBits % 64);
-            }
-
-            System.arraycopy(in, 0, out, 0, n1n2ByteSize);
-
-            for (int i = 0; i < val; ++i)
-            {
-                out[n1n2Byte64Size - 1] &= (mask >> i);
-            }
-        }
-        else
-        {
-            System.arraycopy(in, 0, out, 0, (sizeInBits + 7) / 8);
-        }
-    }
-
-    static void fromByte16ArrayToLongArray(long[] output, int[] input)
-    {
-        for (int i = 0; i != input.length; i += 4)
-        {
-            output[i / 4] = (long)input[i] & 0xffffL;
-            output[i / 4] |= (long)input[i + 1] << 16;
-            output[i / 4] |= (long)input[i + 2] << 32;
-            output[i / 4] |= (long)input[i + 3] << 48;
-        }
-    }
-
-    static void fromByteArrayToByte16Array(int[] output, byte[] input)
-    {
-        byte[] tmp = input;
-        if (input.length % 2 != 0)
-        {
-            tmp = new byte[((input.length + 1) / 2) * 2];
-            System.arraycopy(input, 0, tmp, 0, input.length);
-        }
-
-        int off = 0;
-        for (int i = 0; i < output.length; i++)
-        {
-            output[i] = (int)Pack.littleEndianToShort(tmp, off) & 0xffff;
-            off += 2;
-        }
-    }
-
     static void fromLongArrayToByteArray(byte[] out, long[] in)
     {
         int max = out.length / 8;
@@ -75,22 +23,42 @@ class Utils
         }
     }
 
+    static void fromLongArrayToByteArray(byte[] out, int outOff, int outLen, long[] in)
+    {
+        int max = outLen >> 3;
+        for (int i = 0; i != max; i++)
+        {
+            Pack.longToLittleEndian(in[i], out, outOff);
+            outOff += 8;
+        }
+
+        if ((outLen & 7) != 0)
+        {
+            int count = 0;
+            while (outOff < out.length)
+            {
+                out[outOff++] = (byte)(in[max] >>> (count++ * 8));
+            }
+        }
+    }
+
     static long bitMask(long a, long b)
     {
         return ((1L << (a % b)) - 1);
     }
 
-    static void fromByteArrayToLongArray(long[] out, byte[] in)
+    static void fromByteArrayToLongArray(long[] out, byte[] in, int off, int inLen)
     {
         byte[] tmp = in;
-        if (in.length % 8 != 0)
+        if (inLen % 8 != 0)
         {
-            tmp = new byte[((in.length + 7) / 8) * 8];
-            System.arraycopy(in, 0, tmp, 0, in.length);
+            tmp = new byte[((inLen + 7) / 8) * 8];
+            System.arraycopy(in, off, tmp, 0, inLen);
+            off = 0;
         }
 
-        int off = 0;
-        for (int i = 0; i < out.length; i++)
+        int len = Math.min(out.length, (inLen + 7) >>> 3);
+        for (int i = 0; i < len; i++)
         {
             out[i] = Pack.littleEndianToLong(tmp, off);
             off += 8;
@@ -138,13 +106,5 @@ class Utils
     static int toUnsigned16Bits(int a)
     {
         return a & 0xffff;
-    }
-
-    static void xorLongToByte16Array(int[] output, long input, int startIndex)
-    {
-        output[startIndex + 0] ^= (int)input & 0xffff;
-        output[startIndex + 1] ^= (int)(input >>> 16) & 0xffff;
-        output[startIndex + 2] ^= (int)(input >>> 32) & 0xffff;
-        output[startIndex + 3] ^= (int)(input >>> 48) & 0xffff;
     }
 }

@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
+import org.bouncycastle.util.Arrays;
+
 class GF2PolynomialCalculator
 {
     private final int VEC_N_SIZE_64;
@@ -13,218 +15,122 @@ class GF2PolynomialCalculator
         RED_MASK = red_mask;
     }
 
-    protected void multLongs(long[] res, long[] a, long[] b)
+    public void vectMul(long[] o, long[] a1, long[] a2)
     {
-        long[] stack = new long[VEC_N_SIZE_64 << 3];
-        long[] o_karat = new long[(VEC_N_SIZE_64 << 1) + 1];
-
-        karatsuba(o_karat, 0, a, 0,  b, 0, VEC_N_SIZE_64, stack, 0);
-        reduce(res, o_karat);
+        long[] unreduced = new long[VEC_N_SIZE_64 << 1];
+        long[] tmpBuffer = new long[VEC_N_SIZE_64 << 4];
+        karatsuba(unreduced, 0, a1, 0, a2, 0, VEC_N_SIZE_64, tmpBuffer, 0);
+        reduce(o, unreduced);
     }
-
-
-    private void base_mul(long[] c, int cOffset, long a, long b)
-    {
-        long h = 0;
-        long l = 0;
-        long g;
-        long[] u = new long[16];
-        long[] mask_tab = new long[4];
-
-        // Step 1
-        u[0] = 0;
-        u[1] = b & ((1L << (64 - 4)) - 1L);
-        u[2] = u[1] << 1;
-        u[3] = u[2] ^ u[1];
-        u[4] = u[2] << 1;
-        u[5] = u[4] ^ u[1];
-        u[6] = u[3] << 1;
-        u[7] = u[6] ^ u[1];
-        u[8] = u[4] << 1;
-        u[9] = u[8] ^ u[1];
-        u[10] = u[5] << 1;
-        u[11] = u[10] ^ u[1];
-        u[12] = u[6] << 1;
-        u[13] = u[12] ^ u[1];
-        u[14] = u[7] << 1;
-        u[15] = u[14] ^ u[1];
-
-        g=0;
-        long tmp1 = a & 15;
-
-        for(int i = 0; i < 16; i++)
-        {
-            long tmp2 = tmp1 - i;
-            g ^= (u[i] & -(1 - ((tmp2 | -tmp2) >>> 63)));
-        }
-        l = g;
-        h = 0;
-
-        // Step 2
-        for (byte i = 4; i < 64; i += 4)
-        {
-            g = 0;
-            long temp1 = (a >> i) & 15;
-            for (int j = 0; j < 16; ++j)
-            {
-                long tmp2 = temp1 - j;
-                g ^= (u[j] & -(1 - ((tmp2 | -tmp2) >>> 63)));
-            }
-
-            l ^= g << i;
-            h ^= g >>> (64 - i);
-        }
-
-        // Step 3
-        mask_tab [0] = - ((b >> 60) & 1);
-        mask_tab [1] = - ((b >> 61) & 1);
-        mask_tab [2] = - ((b >> 62) & 1);
-        mask_tab [3] = - ((b >> 63) & 1);
-
-        l ^= ((a << 60) & mask_tab[0]);
-        h ^= ((a >>> 4) & mask_tab[0]);
-
-        l ^= ((a << 61) & mask_tab[1]);
-        h ^= ((a >>> 3) & mask_tab[1]);
-
-        l ^= ((a << 62) & mask_tab[2]);
-        h ^= ((a >>> 2) & mask_tab[2]);
-
-        l ^= ((a << 63) & mask_tab[3]);
-        h ^= ((a >>> 1) & mask_tab[3]);
-
-        c[0 + cOffset] = l;
-        c[1 + cOffset] = h;
-    }
-
-
-
-
-    private void karatsuba_add1(long[] alh, int alhOffset,
-                        long[] blh, int blhOffset,
-                        long[] a, int aOffset,
-                        long[] b, int bOffset,
-                        int size_l, int size_h)
-    {
-        for (int i = 0; i < size_h; i++)
-        {
-            alh[i + alhOffset] = a[i+ aOffset] ^ a[i + size_l + aOffset];
-            blh[i + blhOffset] = b[i+ bOffset] ^ b[i + size_l + bOffset];
-        }
-
-        if (size_h < size_l)
-        {
-            alh[size_h + alhOffset] = a[size_h + aOffset];
-            blh[size_h + blhOffset] = b[size_h + bOffset];
-        }
-    }
-
-
-
-    private void karatsuba_add2(long[] o, int oOffset,
-                        long[] tmp1, int tmp1Offset,
-                        long[] tmp2, int tmp2Offset,
-                        int size_l, int size_h)
-    {
-        for (int i = 0; i < (2 * size_l) ; i++)
-        {
-            tmp1[i + tmp1Offset] = tmp1[i + tmp1Offset] ^ o[i + oOffset];
-        }
-
-        for (int i = 0; i < ( 2 * size_h); i++)
-        {
-            tmp1[i + tmp1Offset] = tmp1[i + tmp1Offset] ^ tmp2[i + tmp2Offset];
-        }
-
-        for (int i = 0; i < (2 * size_l); i++)
-        {
-            o[i + size_l + oOffset] = o[i + size_l + oOffset] ^ tmp1[i + tmp1Offset];
-        }
-    }
-
-
 
     /**
-     * Karatsuba multiplication of a and b, Implementation inspired from the NTL library.
+     * Performs schoolbook multiplication over GF(2).
      *
-     * \param[out] o Polynomial
-     * \param[in] a Polynomial
-     * \param[in] b Polynomial
-     * \param[in] size Length of polynomial
-     * \param[in] stack Length of polynomial
+     * <p>This method computes {@code r = a * b}, where {@code a} and {@code b} are
+     * polynomials over GF(2), each represented as {@code n} 64-bit words. The result
+     * is stored in {@code r} as {@code 2 * n} 64-bit words.</p>
      */
-    private void karatsuba(long[] o, int oOffset, long[] a, int aOffset, long[] b, int bOffset, int size, long[] stack, int stackOffset)
+    private void schoolbookMul(long[] r, int rOff, long[] a, int aOff, long[] b, int bOff, int n)
     {
-        int size_l, size_h;
-        int ahOffset, bhOffset;
+        Arrays.fill(r, rOff, rOff + (n << 1), 0L);
 
-        if (size == 1)
+        for (int i = 0; i < n; i++, rOff++)
         {
-            base_mul(o, oOffset, a[0 + aOffset], b[0 + bOffset]);
+            long ai = a[i + aOff];
+            for (int bit = 0; bit < 64; bit++)
+            {
+                long mask = -((ai >> bit) & 1L);
+                if (bit == 0)
+                {
+                    for (int j = 0, rOff1 = rOff, bOff1 = bOff; j < n; j++, rOff1++, bOff1++)
+                    {
+                        r[rOff1] ^= b[bOff1] & mask;
+                    }
+                }
+                else
+                {
+                    int inv = 64 - bit;
+                    for (int j = 0, rOff1 = rOff, bOff1 = bOff; j < n; j++, bOff1++)
+                    {
+                        r[rOff1++] ^= (b[bOff1] << bit) & mask;
+                        r[rOff1] ^= (b[bOff1] >>> inv) & mask;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Performs Karatsuba multiplication over GF(2) using a caller-supplied temporary buffer.
+     *
+     * <p>If {@code n <= 16}, this method falls back to
+     * {@link #schoolbookMul(long[], int, long[], int, long[], int, int)}.
+     * Otherwise, the operands are split in half and the algorithm is applied recursively.</p>
+     *
+     */
+    private void karatsuba(long[] r, int rOffset, long[] a, int aOffset,
+                           long[] b, int bOffset, int n, long[] tmpBuffer, int tmpOffset)
+    {
+        if (n <= 16)
+        {
+            schoolbookMul(r, rOffset, a, aOffset, b, bOffset, n);
             return;
         }
 
-        size_h = size / 2;
-        size_l = (size + 1) / 2;
+        int m = n >> 1;
+        int n1 = n - m;
+        int nx2 = n << 1;
+        int mx2 = m << 1;
+        int n1x2 = n1 << 1;
 
-        // alh = stack
-        int alhOffset = stackOffset;
-        // blh = stack with size_l offset
-        int blhOffset = alhOffset + size_l;
-        // tmp1 = stack with size_l * 2 offset;
-        int tmp1Offset = blhOffset + size_l;
-        // tmp2 = o with size_l * 2 offset;
-        int tmp2Offset = oOffset + size_l*2;
+        int z2Offset = tmpOffset + nx2;
+        int zMidOffset = z2Offset + nx2;
+        int taOffset = zMidOffset + nx2;
+        int tbOffset = taOffset + n;
+        int childBufferOffset = tmpOffset + (n << 3);
 
-        stackOffset += 4 * size_l;
+        karatsuba(tmpBuffer, tmpOffset, a, aOffset, b, bOffset, m, tmpBuffer, childBufferOffset);
+        karatsuba(tmpBuffer, z2Offset, a, aOffset + m, b, bOffset + m, n1, tmpBuffer, childBufferOffset);
 
-        ahOffset = aOffset + size_l;
-        bhOffset = bOffset + size_l;
+        for (int i = 0; i < n1; i++)
+        {
+            long loa = (i < m) ? a[aOffset + i] : 0;
+            long lob = (i < m) ? b[bOffset + i] : 0;
+            tmpBuffer[taOffset + i] = loa ^ a[aOffset + m + i];
+            tmpBuffer[tbOffset + i] = lob ^ b[bOffset + m + i];
+        }
 
-        karatsuba(o, oOffset, a, aOffset, b, bOffset, size_l, stack, stackOffset);
+        karatsuba(tmpBuffer, zMidOffset, tmpBuffer, taOffset, tmpBuffer, tbOffset, n1, tmpBuffer, childBufferOffset);
 
-        karatsuba(o, tmp2Offset, a, ahOffset, b, bhOffset, size_h, stack, stackOffset);
+        System.arraycopy(tmpBuffer, tmpOffset, r, rOffset, mx2);
+        System.arraycopy(tmpBuffer, z2Offset, r, rOffset + mx2, n1x2);
 
-        karatsuba_add1(stack, alhOffset, stack, blhOffset, a, aOffset, b, bOffset, size_l, size_h);
-
-        karatsuba(stack, tmp1Offset, stack, alhOffset, stack, blhOffset, size_l, stack, stackOffset);
-
-        karatsuba_add2(o, oOffset, stack, tmp1Offset, o, tmp2Offset, size_l, size_h);
+        for (int i = 0; i < 2 * n1; i++)
+        {
+            long z0i = (i < mx2) ? tmpBuffer[tmpOffset + i] : 0;
+            long z2i = (i < n1x2) ? tmpBuffer[z2Offset + i] : 0;
+            r[rOffset + m + i] ^= tmpBuffer[zMidOffset + i] ^ z0i ^ z2i;
+        }
     }
 
-
-
     /**
-     * @brief Compute o(x) = a(x) mod \f$ X^n - 1\f$
+     * Reduces a polynomial modulo {@code X^n - 1}.
      *
-     * This function computes the modular reduction of the polynomial a(x)
+     * <p>This computes {@code o(x) = a(x) mod (X^n - 1)}, where
+     * {@code a(x)} may have degree up to {@code 2n - 2}. The result
+     * is a polynomial of degree less than {@code n}, represented as
+     * {@code n} 64-bit words.</p>
      *
-     * @param[in] a Pointer to the polynomial a(x)
-     * @param[out] o Pointer to the result
+     * @param o  the result buffer of length {@code n} words,
+     *           where the reduced polynomial is stored
+     * @param a  the input polynomial to be reduced
      */
     private void reduce(long[] o, long[] a)
     {
-        int i;
-        long r;
-        long carry;
-
-        for (i = 0; i < VEC_N_SIZE_64; i++)
+        for (int i = 0; i < VEC_N_SIZE_64; i++)
         {
-            r = a[i + VEC_N_SIZE_64 - 1] >>> (PARAM_N & 0x3F);
-            carry = (long) (a[i + VEC_N_SIZE_64 ] << (64 - (PARAM_N & 0x3FL)));
-            o[i] = a[i] ^ r ^ carry;
+            o[i] = a[i] ^ (a[i + VEC_N_SIZE_64 - 1] >>> (PARAM_N & 0x3F)) ^ ((a[i + VEC_N_SIZE_64] << (64 - (PARAM_N & 0x3FL))));
         }
         o[VEC_N_SIZE_64 - 1] &= RED_MASK;
     }
-
-
-
-    static void addLongs(long[] res, long[] a, long[] b)
-    {
-        for (int i = 0; i < a.length; i++)
-        {
-            res[i] = a[i] ^ b[i];
-        }
-    }
-
 }

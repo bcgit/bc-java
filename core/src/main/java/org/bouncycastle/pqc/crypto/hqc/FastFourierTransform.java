@@ -36,7 +36,7 @@ class FastFourierTransform
         computeFFTRec(v, f1, noCoefs / 2, m - 1, fft - 1, deltas, fft, m);
 
         // Step 6.7
-        int k = 1;
+        int k;
         k = 1 << (m - 1);
 
         System.arraycopy(v, 0, output, k, k);
@@ -131,13 +131,13 @@ class FastFourierTransform
         n <<= (mf - 2);
         int fftSize = 1 << (fft - 2);
 
-        int Q[] = new int[2 * fftSize + 1];
-        int R[] = new int[2 * fftSize + 1];
+        int[] Q = new int[2 * fftSize + 1];
+        int[] R = new int[2 * fftSize + 1];
 
-        int Q0[] = new int[fftSize];
-        int Q1[] = new int[fftSize];
-        int R0[] = new int[fftSize];
-        int R1[] = new int[fftSize];
+        int[] Q0 = new int[fftSize];
+        int[] Q1 = new int[fftSize];
+        int[] R0 = new int[fftSize];
+        int[] R1 = new int[fftSize];
 
 
         Utils.copyBytes(f, 3 * n, Q, 0, 2 * n);
@@ -168,13 +168,13 @@ class FastFourierTransform
         int[] fx1 = new int[fftSize];
         int[] gammaSet = new int[m - 2];
         int[] deltaSet = new int[m - 2];
-        int k = 1;
+        int k;
         int[] gammaSumSet = new int[mSize];
         int[] uSet = new int[mSize];
         int[] vSet = new int[mSize];
         int[] tempSet = new int[m - fft + 1];
 
-        int x = 0;
+        int x;
         if (noCoeffsPlus == 1)
         {
             for (int i = 0; i < noOfBetas; i++)
@@ -235,9 +235,6 @@ class FastFourierTransform
         {
             computeFFTRec(vSet, fx1, noCoeffs / 2, noOfBetas - 1, noCoeffsPlus - 1, deltaSet, fft, m);
 
-//            int[] tmp = new int[3*k];
-//            System.arraycopy(output, 0, tmp, 0 , output.length);
-//            System.arraycopy(vSet, 0, tmp, k , 2*k);
             System.arraycopy(vSet, 0, output, k, k);
 
             output[0] = uSet[0];
@@ -247,8 +244,6 @@ class FastFourierTransform
                 output[i] = uSet[i] ^ GFCalculator.mult(gammaSumSet[i], vSet[i]);
                 output[k + i] ^= output[i];
             }
-
-
         }
     }
 
@@ -259,21 +254,20 @@ class FastFourierTransform
 
         int[] gammaSet = new int[m - 1];
         int[] gammaSumSet = new int[mSize];
-        int k = mSize;
 
         computeFFTBetas(gammaSet, m);
         computeSubsetSum(gammaSumSet, gammaSet, m - 1);
 
         errorSet[0] ^= 1 ^ Utils.toUnsigned16Bits(-input[0] >> 15);
-        errorSet[0] ^= 1 ^ Utils.toUnsigned16Bits(-input[k] >> 15);
+        errorSet[0] ^= 1 ^ Utils.toUnsigned16Bits(-input[mSize] >> 15);
 
-        for (int i = 1; i < k; i++)
+        for (int i = 1; i < mSize; i++)
         {
             int tmp = gfMulOrder - logArrays[gammaSumSet[i]];
             errorSet[tmp] ^= 1 ^ Math.abs(-input[i] >> 15);
 
             tmp = gfMulOrder - logArrays[gammaSumSet[i] ^ 1];
-            errorSet[tmp] ^= 1 ^ Math.abs(-input[k + i] >> 15);
+            errorSet[tmp] ^= 1 ^ Math.abs(-input[mSize + i] >> 15);
         }
     }
 }
