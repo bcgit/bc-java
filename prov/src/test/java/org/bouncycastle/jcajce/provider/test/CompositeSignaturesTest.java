@@ -743,7 +743,7 @@ public class CompositeSignaturesTest
 
     private static Map<String, Object> parseJsonObject(String json)
     {
-        HashMap<String, Object> testCase = new HashMap<>();
+        HashMap<String, Object> testCase = new HashMap<String, Object>();
         testCase.put("tcId", extractString(json, "tcId"));
         testCase.put("pk", Base64.getDecoder().decode(extractString(json, "pk")));
         testCase.put("x5c", Base64.getDecoder().decode(extractString(json, "x5c")));
