@@ -23,6 +23,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -187,70 +188,30 @@ public class CompositeSignaturesTest
             {
                 check_ECDSA_Composite("ML-DSA-87", compositePublicKey, compositePrivateKey);
             }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512))
+            {
+                check_ECDSA_Composite("ML-DSA-65", compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256))
+            {
+                check_RSA_Composite("ML-DSA-44", 2048, compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512))
+            {
+                check_RSA_Composite("ML-DSA-65", 3072, compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512))
+            {
+                check_RSA_Composite("ML-DSA-65", 4096, compositePublicKey, compositePrivateKey);
+            }
+            else if (compAlg.equals(BCObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512))
+            {
+                check_RSA_Composite("ML-DSA-65", 4096, compositePublicKey, compositePrivateKey);
+            }
             else
             {
-                System.out.println(CompositeIndex.getAlgorithmName(compAlg));
+                throw new IllegalStateException("untested: " + CompositeIndex.getAlgorithmName(compAlg));
             }
-//            switch (CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(new ASN1ObjectIdentifier(oid)))
-//            {
-//            case MLDSA44_RSA2048_PSS_SHA256:
-//            case MLDSA44_RSA2048_PKCS15_SHA256:
-//
-//                break;
-//            case MLDSA44_Ed25519_SHA512:
-//                TestCase.assertEquals("ML-DSA-44", firstPublicKeyAlgorithm);
-//                TestCase.assertEquals("ML-DSA-44", firstPrivateKeyAlgorithm);
-//                TestCase.assertEquals("ED25519", secondPublicKeyAlgorithm);
-//                TestCase.assertEquals("ED25519", secondPrivateKeyAlgorithm);
-//                break;
-//            case MLDSA44_ECDSA_P256_SHA256:
-//            case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-//                TestCase.assertEquals("ML-DSA-44", firstPublicKeyAlgorithm);
-//                TestCase.assertEquals("ML-DSA-44", firstPrivateKeyAlgorithm);
-//                TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
-//                TestCase.assertEquals("ECDSA", secondPrivateKeyAlgorithm);
-//                break;
-//            case MLDSA65_RSA3072_PSS_SHA512:
-//            case MLDSA65_RSA3072_PKCS15_SHA512:
-//                TestCase.assertEquals("ML-DSA-65", firstPublicKeyAlgorithm);
-//                TestCase.assertEquals("ML-DSA-65", firstPrivateKeyAlgorithm);
-//                TestCase.assertEquals("RSA", secondPublicKeyAlgorithm);
-//                TestCase.assertEquals("RSA", secondPrivateKeyAlgorithm);
-//                rsaPublicKey = (BCRSAPublicKey)compositePublicKey.getPublicKeys().get(1);
-//                rsaPrivateKey = (BCRSAPublicKey)compositePublicKey.getPublicKeys().get(1);
-//                TestCase.assertEquals(3072, rsaPublicKey.getModulus().bitLength());
-//                TestCase.assertEquals(3072, rsaPrivateKey.getModulus().bitLength());
-//                break;
-//            case MLDSA65_Ed25519_SHA512:
-//                TestCase.assertEquals("ML-DSA-65", firstPublicKeyAlgorithm);
-//                TestCase.assertEquals("ML-DSA-65", firstPrivateKeyAlgorithm);
-//                TestCase.assertEquals("ED25519", secondPublicKeyAlgorithm);
-//                TestCase.assertEquals("ED25519", secondPrivateKeyAlgorithm);
-//                break;
-//            case MLDSA65_ECDSA_P256_SHA512:
-//            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-//                TestCase.assertEquals("ML-DSA-65", firstPublicKeyAlgorithm);
-//                TestCase.assertEquals("ML-DSA-65", firstPrivateKeyAlgorithm);
-//                TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
-//                TestCase.assertEquals("ECDSA", secondPrivateKeyAlgorithm);
-//                break;
-//            case MLDSA87_Ed448_SHA512:
-//                TestCase.assertEquals("ML-DSA-87", firstPublicKeyAlgorithm);
-//                TestCase.assertEquals("ML-DSA-87", firstPrivateKeyAlgorithm);
-//                TestCase.assertEquals("ED448", secondPublicKeyAlgorithm);
-//                TestCase.assertEquals("ED448", secondPrivateKeyAlgorithm);
-//                break;
-//            case MLDSA87_ECDSA_P384_SHA512:
-//            case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-//                TestCase.assertEquals("ML-DSA-87", firstPublicKeyAlgorithm);
-//                TestCase.assertEquals("ML-DSA-87", firstPrivateKeyAlgorithm);
-//                TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
-//                TestCase.assertEquals("ECDSA", secondPrivateKeyAlgorithm);
-//                break;
-//            default:
-//                throw new IllegalStateException(
-//                    "Unexpected key algorithm." + CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(new ASN1ObjectIdentifier(oid)));
-//            }
         }
     }
 
@@ -337,13 +298,13 @@ public class CompositeSignaturesTest
         KeyPair ecKp = ecKpGen.generateKeyPair();
 
         CompositePublicKey compPublicKey = CompositePublicKey.builder(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
-                                                .addPublicKey(mldsaKp.getPublic(), "BC")
-                                                .addPublicKey(ecKp.getPublic(), "SunEC")
-                                                .build();
+            .addPublicKey(mldsaKp.getPublic(), "BC")
+            .addPublicKey(ecKp.getPublic(), "SunEC")
+            .build();
         CompositePrivateKey compPrivateKey = CompositePrivateKey.builder(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
-                                                    .addPrivateKey(mldsaKp.getPrivate(), "BC")
-                                                    .addPrivateKey(ecKp.getPrivate(), "SunEC")
-                                                    .build();
+            .addPrivateKey(mldsaKp.getPrivate(), "BC")
+            .addPrivateKey(ecKp.getPrivate(), "SunEC")
+            .build();
 
         Signature signature = Signature.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
         signature.initSign(compPrivateKey);
@@ -421,6 +382,16 @@ public class CompositeSignaturesTest
         doTestPrehash("MLDSA65-ECDSA-P256-SHA512", "SHA512");
     }
 
+    public void testNamedPrehash()
+        throws Exception
+    {
+        for (Iterator it = CompositeIndex.getSupportedIdentifiers().iterator(); it.hasNext(); )
+        {
+            String name = CompositeIndex.getAlgorithmName((ASN1ObjectIdentifier)it.next());
+            doTestNamedPrehash(name, name.substring(name.lastIndexOf("-") + 1));
+        }
+    }
+
     public void testPrehashWithContext()
         throws Exception
     {
@@ -452,7 +423,7 @@ public class CompositeSignaturesTest
         signature.initSign(keyPair.getPrivate());
         signature.setParameter(new CompositeSignatureSpec(true));
         signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
-        
+
         signatureValue = signature.sign();
 
         signature.initVerify(keyPair.getPublic());
@@ -475,18 +446,78 @@ public class CompositeSignaturesTest
         }
 
         // exceptions
-         signature.initVerify(keyPair.getPublic());
-         try
-         {
-             signature.setParameter(new CompositeSignatureSpec(true));
-             signature.update(Hex.decode("beef"));
-             signature.verify(signatureValue);
-             fail("verify");
-         }
-         catch (SignatureException e)
-         {
-             assertEquals("provided pre-hash digest is the wrong length", e.getMessage());
-         }
+        signature.initVerify(keyPair.getPublic());
+        try
+        {
+            signature.setParameter(new CompositeSignatureSpec(true));
+            signature.update(Hex.decode("beef"));
+            signature.verify(signatureValue);
+            fail("verify");
+        }
+        catch (SignatureException e)
+        {
+            assertEquals("provided pre-hash digest is the wrong length", e.getMessage());
+        }
+    }
+
+    private void doTestNamedPrehash(String sigName, String digestName)
+        throws Exception
+    {
+        byte[] msg = Strings.toUTF8ByteArray(messageToBeSigned);
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(sigName, "BC");
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+        // full msg sign, verify hash
+        Signature signature = Signature.getInstance(sigName, "BC");
+        signature.initSign(keyPair.getPrivate());
+        signature.update(msg);
+
+        byte[] signatureValue = signature.sign();
+
+        signature = Signature.getInstance(sigName + "-PREHASH", "BC");
+        signature.initVerify(keyPair.getPublic());
+        signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
+        assertTrue(signature.verify(signatureValue));
+
+        // full msg sign, verify hash
+        signature = Signature.getInstance(sigName + "-PREHASH", "BC");
+        signature.initSign(keyPair.getPrivate());
+        signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
+
+        signatureValue = signature.sign();
+
+        signature = Signature.getInstance(sigName, "BC");
+        signature.initVerify(keyPair.getPublic());
+        signature.update(msg);
+        assertTrue(signature.verify(signatureValue));
+
+        // exceptions
+        signature = Signature.getInstance(sigName + "-PREHASH", "BC");
+        signature.initSign(keyPair.getPrivate());
+        try
+        {
+            signature.update(Hex.decode("beef"));
+            signature.sign();
+            fail("sign");
+        }
+        catch (SignatureException e)
+        {
+            assertEquals("provided pre-hash digest is the wrong length", e.getMessage());
+        }
+
+        // exceptions
+        signature.initVerify(keyPair.getPublic());
+        try
+        {
+            signature.setParameter(new CompositeSignatureSpec(true));
+            signature.update(Hex.decode("beef"));
+            signature.verify(signatureValue);
+            fail("verify");
+        }
+        catch (SignatureException e)
+        {
+            assertEquals("provided pre-hash digest is the wrong length", e.getMessage());
+        }
     }
 
     private void doTestPrehash(String sigName, String digestName, ContextParameterSpec contextSpec)

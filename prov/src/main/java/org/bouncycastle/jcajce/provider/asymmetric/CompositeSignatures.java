@@ -47,6 +47,9 @@ public class CompositeSignatures
                 provider.addAlgorithm("Signature." + algorithmName, PREFIX + "SignatureSpi$" + className);
                 provider.addAlgorithm("Alg.Alias.Signature", oid, algorithmName);
 
+                // add pre-hash versions
+                provider.addAlgorithm("Signature." + algorithmName + "-PREHASH", PREFIX + "SignatureSpi$" + className + "_PREHASH");
+
                 provider.addKeyInfoConverter(oid, new KeyFactorySpi());
             }
         }
