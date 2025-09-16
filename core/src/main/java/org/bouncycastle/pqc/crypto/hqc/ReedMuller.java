@@ -22,7 +22,7 @@ class ReedMuller
         int word1;
         word1 = Bit0Mask(m >> 7);
 
-        word1 ^= Bit0Mask(m >> 0) & 0xaaaaaaaa;
+        word1 ^= Bit0Mask(m) & 0xaaaaaaaa;
         word1 ^= Bit0Mask(m >> 1) & 0xcccccccc;
         word1 ^= Bit0Mask(m >> 2) & 0xf0f0f0f0;
         word1 ^= Bit0Mask(m >> 3) & 0xff00ff00;
@@ -69,8 +69,7 @@ class ReedMuller
         {
             for (int j = 0; j < 32; j++)
             {
-                long ii = srcCode[0 + off].type32[i] >> j & 1;
-                desCode[i * 32 + j] = srcCode[0 + off].type32[i] >> j & 1;
+                desCode[i * 32 + j] = srcCode[off].type32[i] >> j & 1;
             }
         }
 
@@ -102,7 +101,7 @@ class ReedMuller
 
             peakVal = abs > peakAbsVal ? t : peakVal;
             peakPos = abs > peakAbsVal ? i : peakPos;
-            peakAbsVal = abs > peakAbsVal ? abs : peakAbsVal;
+            peakAbsVal = Math.max(abs, peakAbsVal);
         }
         int tmp = peakVal > 0 ? 1 : 0;
         peakPos |= 128 * tmp;
@@ -112,7 +111,7 @@ class ReedMuller
 
     private static int Bit0Mask(int b)
     {
-        return (-(b & 1)) & 0xffffffff;
+        return (-(b & 1));
     }
 
     public static void encode(long[] codeword, byte[] m, int n1, int mulParam)
@@ -136,6 +135,11 @@ class ReedMuller
             }
         }
 
+        CopyCWD(codeword, codewordCopy);
+    }
+
+    private static void CopyCWD(long[] codeword, Codeword[] codewordCopy)
+    {
         int[] cwd64 = new int[codewordCopy.length * 4];
         int off = 0;
         for (int i = 0; i < codewordCopy.length; i++)
@@ -159,35 +163,21 @@ class ReedMuller
         for (int i = 0; i < codewordCopy.length; i++)
         {
             codewordCopy[i] = new Codeword();
-            for (int j = 0; j < 4; j++)
-            {
-                codewordCopy[i].type32[j] = byteCodeWords[i * 4 + j];
-            }
+            System.arraycopy(byteCodeWords, i * 4, codewordCopy[i].type32, 0, 4);
         }
 
         int[] expandedCodeword = new int[128];
-
+        int[] tmp = new int[128];
 
         for (int i = 0; i < n1; i++)
         {
             expandThenSum(expandedCodeword, codewordCopy, i * mulParam, mulParam);
-
-
-            int[] tmp = new int[128];
             hadamardTransform(expandedCodeword, tmp);
-
             tmp[0] -= 64 * mulParam;
             mBytes[i] = (byte)findPeaks(tmp);
         }
 
-        int[] cwd64 = new int[codewordCopy.length * 4];
-        int off = 0;
-        for (int i = 0; i < codewordCopy.length; i++)
-        {
-            System.arraycopy(codewordCopy[i].type32, 0, cwd64, off, codewordCopy[i].type32.length);
-            off += 4;
-        }
-        Utils.fromByte32ArrayToLongArray(codeword, cwd64);
+        CopyCWD(codeword, codewordCopy);
         System.arraycopy(mBytes, 0, m, 0, m.length);
     }
 

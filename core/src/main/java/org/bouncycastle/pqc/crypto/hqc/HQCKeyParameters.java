@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 public class HQCKeyParameters
     extends AsymmetricKeyParameter
 {
-    private HQCParameters params;
+    private final HQCParameters params;
 
     public HQCKeyParameters(
         boolean isPrivate,

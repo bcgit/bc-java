@@ -8,8 +8,7 @@ class GFCalculator
 
     static int mult(int a, int b)
     {
-        int mask;
-        mask = Utils.toUnsigned16Bits(-a >> 31); // a != 0
+        int mask = Utils.toUnsigned16Bits(-a >> 31); // a != 0
         mask &= Utils.toUnsigned16Bits(-b >> 31); // b != 0
         return Utils.toUnsigned16Bits(mask & exp[mod(log[a] + log[b])]);
     }
