@@ -20,14 +20,20 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv82"><h3>2.1.1 Version</h3></a>
 Release: 1.82<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2025, 17th September.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>SNOVA and MAYO are now correctly added to the JCA provider module-info file.</li>
 <li>TLS: Avoid nonce reuse error in JCE AEAD workaround for pre-Java7.</li>
 <li>BCJSSE: Session binding map is now shared across all stages of the session lifecycle (SunJSSE compatibility).</li>
-<li>Fix CMCEPrivateKeyParameters#reconstructPublicKey method.</li>
-<li>Don't auto-close CBZip2InputStream at end-of-contents.</li>
+<li>The CMCEPrivateKeyParameters#reconstructPublicKey method was returning an empty byte array. It now returns an encoding of the public key.</li>
+<li>CBZip2InputStream no longer auto-closes at end-of-contents.</li>
+<li>The BC CertPath implementation was eliminating certificates on the bases of the Key-ID. This is not in accordance with RFC 4158 and has been fixed.</li>
+<li>Support for the previous set of libOQS Falcon OIDs has been restored.</li>
+<li>The BC CipherInputStream could throw an exception if asked to handle an AEAD stream consisting of the MAC only. This has been fixed.</li>
+<li>Some KeyAgreement classes were missing in the Java 11 class hierarchy. This has been fixed.</li>
+<li>A typo in a constant name in the HPKE class has been fixed and the old constant deprecated.</li>
+<li>Fuzzing analysis has been done on the OpenPGP API and additional code has been added to prevent escaping exceptions.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -35,6 +41,22 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <li>BCJSSE: Added support for integrity-only cipher suites in TLS 1.3 per RFC 9150.</li>
 <li>BCJSSE: Added support for system properties "jdk.tls.client.maxInboundCertificateChainLength" and "jdk.tls.server.maxInboundCertificateChainLength".</li>
 <li>BCJSSE: Added support for ML-DSA signature schemes in TLS 1.3 per draft-ietf-tls-mldsa-00.</li>
+<li>The Composite post-quantum signatures implementation has been updated to the latest draft (07) <a href="https://datatracker.ietf.org/doc/html/draft-ietf-lamps-pq-composite-sigs">draft-ietf-lamps-pq-composite-sigs</a>.</li>
+<li>"<name>_PREHASH" implementations are now provided for all composite signatures to allow the hash of the date to be used instead of the actual data in signature calculation.</li>
+<li>The gradle build can now be used to generate an Bill of Materials (BOM) file.</li>
+<li>It is now possible to configure the SignerInfoVerifierBuilder used by the SignedMailValidator class.</li>
+<li>The Ascon family of algorithms has been updated with the latest published changes.</li>
+<li>Composite signature keys can now be constructed from the individual keys of the algorithms composing the composite.</li>
+<li>PGPSecretKey, PGPSignatureGenerator now support version 6.</li>
+<li>Further optimisation work has been done on ML-KEM public key validation.</li>
+<li>Zeroization of passwords in the JCA PKCS12 key store has been improved.</li>
+<li>The "org.bouncycastle.drbg.effective_256bits_entropy" property has been added for platforms where the entropy source is not producing 1 full bit of entropy per bit and additional bits are required (default value 282).</li>
+<li>Support has been added to the CMS content encryptors to allow a generated key to be passed in, rather than always having them generate their own.</li>
+<li>OpenPGPKeyGenerator now allows for the use of empty UserIDs (version 4 compatibility).</li>
+</ul>
+<h3>2.1.4 Additional Notes</h3>
+<ul>
+<li>The legacy post-quantum package has now been removed.</li>
 </ul>
 
 <a id="r1rv81"><h3>2.2.1 Version</h3></a>
