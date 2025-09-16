@@ -21,7 +21,6 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +48,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
 public class CompositeSignaturesTest
@@ -285,6 +285,10 @@ public class CompositeSignaturesTest
     public void testMixedComposition()
         throws Exception
     {
+        if (Security.getProvider("SunEC") == null)
+        {
+            return;
+        }
         KeyPairGenerator mldsaKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
         mldsaKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
@@ -332,6 +336,10 @@ public class CompositeSignaturesTest
     public void testMixedCompositionWithNull()
         throws Exception
     {
+        if (Security.getProvider("SunEC") == null)
+        {
+            return;
+        }
         KeyPairGenerator mldsaKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
         mldsaKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
@@ -733,7 +741,7 @@ public class CompositeSignaturesTest
 
             if (currentObject != null && currentObject.toString().contains("\"m\":"))
             {
-                m = Base64.getDecoder().decode(extractString(currentObject.toString(), "m"));
+                m = Base64.decode(extractString(currentObject.toString(), "m"));
                 currentObject = new StringBuilder();
             }
         }
@@ -745,11 +753,11 @@ public class CompositeSignaturesTest
     {
         HashMap<String, Object> testCase = new HashMap<String, Object>();
         testCase.put("tcId", extractString(json, "tcId"));
-        testCase.put("pk", Base64.getDecoder().decode(extractString(json, "pk")));
-        testCase.put("x5c", Base64.getDecoder().decode(extractString(json, "x5c")));
-        testCase.put("sk", Base64.getDecoder().decode(extractString(json, "sk")));
-        testCase.put("sk_pkcs8", Base64.getDecoder().decode(extractString(json, "sk_pkcs8")));
-        testCase.put("s", Base64.getDecoder().decode(extractString(json, "s")));
+        testCase.put("pk", Base64.decode(extractString(json, "pk")));
+        testCase.put("x5c", Base64.decode(extractString(json, "x5c")));
+        testCase.put("sk", Base64.decode(extractString(json, "sk")));
+        testCase.put("sk_pkcs8", Base64.decode(extractString(json, "sk_pkcs8")));
+        testCase.put("s", Base64.decode(extractString(json, "s")));
         return testCase;
     }
 
