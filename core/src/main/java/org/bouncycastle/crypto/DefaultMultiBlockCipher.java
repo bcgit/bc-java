@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto;
 
-import org.bouncycastle.util.Arrays;
-
 public abstract class DefaultMultiBlockCipher
     implements MultiBlockCipher
 {
@@ -23,7 +21,7 @@ public abstract class DefaultMultiBlockCipher
         int resultLen = 0;
         int blockSize = this.getBlockSize();
         int len = blockCount * blockSize;
-        if (in == out && Arrays.segmentsOverlap(inOff, len, outOff, len))
+        if (in == out)
         {
             in = new byte[len];
             System.arraycopy(out, inOff, in, 0, len);
