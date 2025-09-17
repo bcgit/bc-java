@@ -18,6 +18,12 @@ sourceSets {
         }
     }
 
+    java25 {
+        java {
+            srcDirs = ['src/main/jdk25']
+        }
+    }
+
     test11 {
         java {
             compileClasspath += main.output + test.output
@@ -127,6 +133,9 @@ task sourcesJar(type: Jar) {
     exclude("**/*.so")
     into('META-INF/versions/9') {
         from sourceSets.java9.allSource
+    }
+    into('META-INF/versions/25') {
+        from sourceSets.java25.allSource
     }
 }
 
