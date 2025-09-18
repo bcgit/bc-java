@@ -6318,7 +6318,7 @@ public class TlsUtils
         return maxFragmentLength;
     }
 
-    static short processClientCertificateTypeExtension(Hashtable clientExtensions, Hashtable serverExtensions,
+    static short processClientCertificateTypeExtension(TlsCrypto tlsCrypto, Hashtable clientExtensions, Hashtable serverExtensions,
         short alertDescription)
         throws IOException
     {
@@ -6328,7 +6328,7 @@ public class TlsUtils
             return CertificateType.X509;
         }
 
-        if (!CertificateType.isValid(serverValue))
+        if (!tlsCrypto.isCertificateTypeValid(serverValue))
         {
             throw new TlsFatalAlert(alertDescription, "Unknown value for client_certificate_type");
         }
@@ -6342,17 +6342,17 @@ public class TlsUtils
         return serverValue;
     }
 
-    static short processClientCertificateTypeExtension13(Hashtable clientExtensions, Hashtable serverExtensions,
+    static short processClientCertificateTypeExtension13(TlsCrypto tlsCrypto, Hashtable clientExtensions, Hashtable serverExtensions,
         short alertDescription)
         throws IOException
     {
-        short certificateType = processClientCertificateTypeExtension(clientExtensions, serverExtensions,
+        short certificateType = processClientCertificateTypeExtension(tlsCrypto, clientExtensions, serverExtensions,
             alertDescription);
 
         return validateCertificateType13(certificateType, alertDescription);
     }
 
-    static short processServerCertificateTypeExtension(Hashtable clientExtensions, Hashtable serverExtensions,
+    static short processServerCertificateTypeExtension(TlsCrypto tlsCrypto, Hashtable clientExtensions, Hashtable serverExtensions,
         short alertDescription)
         throws IOException
     {
@@ -6362,7 +6362,7 @@ public class TlsUtils
             return CertificateType.X509;
         }
 
-        if (!CertificateType.isValid(serverValue))
+        if (!tlsCrypto.isCertificateTypeValid(serverValue))
         {
             throw new TlsFatalAlert(alertDescription, "Unknown value for server_certificate_type");
         }
@@ -6376,11 +6376,11 @@ public class TlsUtils
         return serverValue;
     }
 
-    static short processServerCertificateTypeExtension13(Hashtable clientExtensions, Hashtable serverExtensions,
+    static short processServerCertificateTypeExtension13(TlsCrypto tlsCrypto, Hashtable clientExtensions, Hashtable serverExtensions,
         short alertDescription)
         throws IOException
     {
-        short certificateType = processServerCertificateTypeExtension(clientExtensions, serverExtensions,
+        short certificateType = processServerCertificateTypeExtension(tlsCrypto, clientExtensions, serverExtensions,
             alertDescription);
 
         return validateCertificateType13(certificateType, alertDescription);
