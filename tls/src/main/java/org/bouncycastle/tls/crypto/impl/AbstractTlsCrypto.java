@@ -1,5 +1,6 @@
 package org.bouncycastle.tls.crypto.impl;
 
+import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -20,5 +21,10 @@ public abstract class AbstractTlsCrypto
         }
 
         throw new IllegalArgumentException("unrecognized TlsSecret - cannot copy data: " + secret.getClass().getName());
+    }
+
+    public boolean isCertificateTypeValid(short certificateType)
+    {
+        return CertificateType.isValid(certificateType);
     }
 }
