@@ -366,9 +366,9 @@ public class TlsServerProtocol
             if (!securityParameters.isResumedSession())
             {
                 securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension13(
-                    clientHelloExtensions, serverEncryptedExtensions, AlertDescription.internal_error);
+                    crypto, clientHelloExtensions, serverEncryptedExtensions, AlertDescription.internal_error);
                 securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension13(
-                    clientHelloExtensions, serverEncryptedExtensions, AlertDescription.internal_error);
+                    crypto, clientHelloExtensions, serverEncryptedExtensions, AlertDescription.internal_error);
             }
         }
 
@@ -826,10 +826,11 @@ public class TlsServerProtocol
                     securityParameters.statusRequestVersion = 1;
                 }
 
+                TlsCrypto crypto = tlsServerContext.getCrypto();
                 securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension(
-                    clientExtensions, serverExtensions, AlertDescription.internal_error);
+                    crypto, clientExtensions, serverExtensions, AlertDescription.internal_error);
                 securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension(
-                    clientExtensions, serverExtensions, AlertDescription.internal_error);
+                    crypto, clientExtensions, serverExtensions, AlertDescription.internal_error);
 
                 this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
                     TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
