@@ -26,6 +26,7 @@ import javax.crypto.KeyAgreement;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
@@ -207,52 +208,62 @@ class OperatorHelper
     Cipher createAsymmetricWrapper(AlgorithmIdentifier algorithmID, Map extraAlgNames)
         throws OperatorCreationException
     {
-        ASN1ObjectIdentifier algorithm = algorithmID.getAlgorithm();
+        if (algorithmID == null)
+        {
+            throw new NullPointerException("'algorithmID' cannot be null");
+        }
+
+        ASN1ObjectIdentifier algOID = algorithmID.getAlgorithm();
         try
         {
             String cipherName = null;
 
-            if (!extraAlgNames.isEmpty())
+            if (extraAlgNames != null && !extraAlgNames.isEmpty())
             {
-                cipherName = (String)extraAlgNames.get(algorithm);
+                cipherName = (String)extraAlgNames.get(algOID);
             }
 
             if (cipherName == null)
             {
-                cipherName = (String)asymmetricWrapperAlgNames.get(algorithm);
-                if (cipherName.indexOf("OAEPPadding") > 0)
-                {
-                    ASN1Encodable params = algorithmID.getParameters().toASN1Primitive();
-                    if ((params instanceof ASN1Sequence))
-                    {
-                        ASN1Sequence paramSeq = ASN1Sequence.getInstance(params);
-                        if (paramSeq.size() == 0)
-                        {
-                            cipherName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
-                        }
-                        else if (paramSeq.size() >= 2)
-                        {
-                            // we only check the first 2 as pSource may be different
-                            paramSeq = new DERSequence(new ASN1Encodable[]{ paramSeq.getObjectAt(0), paramSeq.getObjectAt(1) });
-                            if (oaepParams_sha256.equals(paramSeq))
-                            {
-                                cipherName = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
-                            }
-                            else if (oaepParams_sha512.equals(paramSeq))
-                            {
-                                cipherName = "RSA/ECB/OAEPWithSHA-512AndMGF1Padding";
-                            }
-                            else if (oaepParams_sha384.equals(paramSeq))
-                            {
-                                cipherName = "RSA/ECB/OAEPWithSHA-384AndMGF1Padding";
-                            }
-                        }
-                    }
-                }
+                cipherName = (String)asymmetricWrapperAlgNames.get(algOID);
             }
 
             if (cipherName != null)
             {
+                if (cipherName.indexOf("OAEPPadding") > 0)
+                {
+                    ASN1Encodable algParams = algorithmID.getParameters();
+                    if (algParams != null)
+                    {
+                        ASN1Primitive primitive = algParams.toASN1Primitive();
+                        if ((primitive instanceof ASN1Sequence))
+                        {
+                            ASN1Sequence oaepParams = (ASN1Sequence)primitive;
+                            if (oaepParams.size() == 0)
+                            {
+                                cipherName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
+                            }
+                            else if (oaepParams.size() >= 2)
+                            {
+                                // we only check the first 2 as pSource may be different
+                                oaepParams = new DERSequence(new ASN1Encodable[]{ oaepParams.getObjectAt(0), oaepParams.getObjectAt(1) });
+                                if (oaepParams_sha256.equals(oaepParams))
+                                {
+                                    cipherName = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+                                }
+                                else if (oaepParams_sha512.equals(oaepParams))
+                                {
+                                    cipherName = "RSA/ECB/OAEPWithSHA-512AndMGF1Padding";
+                                }
+                                else if (oaepParams_sha384.equals(oaepParams))
+                                {
+                                    cipherName = "RSA/ECB/OAEPWithSHA-384AndMGF1Padding";
+                                }
+                            }
+                        }
+                    }
+                }
+
                 try
                 {
                     // this is reversed as the Sun policy files now allow unlimited strength RSA
@@ -288,7 +299,7 @@ class OperatorHelper
                 }
             }
 
-            return helper.createCipher(algorithm.getId());
+            return helper.createCipher(algOID.getId());
         }
         catch (GeneralSecurityException e)
         {
