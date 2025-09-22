@@ -100,7 +100,17 @@ public class RSAESOAEPparams
     {
         return pSourceAlgorithm;
     }
-    
+
+    public RSAESOAEPparams withDefaultPSource()
+    {
+        if (DEFAULT_P_SOURCE_ALGORITHM == pSourceAlgorithm)
+        {
+            return this;
+        }
+
+        return new RSAESOAEPparams(hashAlgorithm, maskGenAlgorithm, DEFAULT_P_SOURCE_ALGORITHM);
+    }
+
     /**
      * <pre>
      *  RSAES-OAEP-params ::= SEQUENCE {
@@ -145,7 +155,7 @@ public class RSAESOAEPparams
         {
             v.add(new DERTaggedObject(true, 2, pSourceAlgorithm));
         }
-        
+
         return new DERSequence(v);
     }
 }

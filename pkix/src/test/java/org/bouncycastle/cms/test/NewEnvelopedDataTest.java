@@ -130,8 +130,10 @@ public class NewEnvelopedDataTest
     private static String _reciDN;
     private static String _reciDN2;
     private static KeyPair _reciKP;
+    private static KeyPair _reciKP_2048;
     private static KeyPair _reciOaepKP;
     private static X509Certificate _reciCert;
+    private static X509Certificate _reciCert_2048;
     private static X509Certificate _reciCertOaep;
 
     private static KeyPair _origEcKP;
@@ -594,7 +596,9 @@ public class NewEnvelopedDataTest
             _reciDN = "CN=Doug, OU=Sales, O=Bouncy Castle, C=AU";
             _reciDN2 = "CN=Fred, OU=Sales, O=Bouncy Castle, C=AU";
             _reciKP = CMSTestUtil.makeKeyPair();
+            _reciKP_2048 = CMSTestUtil.makeKeyPair_2048();
             _reciCert = CMSTestUtil.makeCertificate(_reciKP, _reciDN, _signKP, _signDN);
+            _reciCert_2048 = CMSTestUtil.makeCertificate(_reciKP_2048, _reciDN, _signKP, _signDN);
             _reciCertOaep = CMSTestUtil.makeOaepCertificate(_reciKP, _reciDN, _signKP, _signDN);
 
             _origEcKP = CMSTestUtil.makeEcDsaKeyPair();
@@ -1119,19 +1123,19 @@ public class NewEnvelopedDataTest
         doTestKeyTransOAEPDefaultNamed("SHA-384");
     }
 
+    public void testKeyTransOAEPSHA512()
+        throws Exception
+    {
+        doTestKeyTransOAEPDefaultNamed_2048("SHA-512");
+    }
+
     public void testKeyTransOAEPSHA1AndSHA256()
         throws Exception
     {
         doTestKeyTransOAEPDefaultNamed("SHA-1", "SHA-256");
     }
 
-    private void doTestKeyTransOAEPDefaultNamed(String digest)
-        throws Exception
-    {
-        doTestKeyTransOAEPDefaultNamed(digest, digest);
-    }
-
-    private void doTestKeyTransOAEPDefaultNamed(String digest, String mgfDigest)
+    private void doTestKeyTransOAEPDefaultNamed(String digest, String mgfDigest, X509Certificate reciCert, KeyPair reciKP)
         throws Exception
     {
         byte[] data = "WallaWallaWashington".getBytes();
@@ -1142,8 +1146,8 @@ public class NewEnvelopedDataTest
         OAEPParameterSpec oaepSpec = new OAEPParameterSpec(digest, "MGF1", new MGF1ParameterSpec(mgfDigest), new PSource.PSpecified(new byte[]{1, 2, 3, 4, 5}));
         AlgorithmIdentifier oaepAlgId = paramsConverter.getAlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP, oaepSpec);
 
-        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert, oaepAlgId).setProvider(BC));
-        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(ASN1OctetString.getInstance(ASN1OctetString.getInstance(_reciCert.getExtensionValue(Extension.subjectKeyIdentifier.getId())).getOctets()).getOctets(), oaepAlgId, _reciCert.getPublicKey()).setProvider(BC));
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(reciCert, oaepAlgId).setProvider(BC));
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(ASN1OctetString.getInstance(ASN1OctetString.getInstance(reciCert.getExtensionValue(Extension.subjectKeyIdentifier.getId())).getOctets()).getOctets(), oaepAlgId, reciCert.getPublicKey()).setProvider(BC));
 
         CMSEnvelopedData ed = edGen.generate(
             new CMSProcessableByteArray(data),
@@ -1166,12 +1170,12 @@ public class NewEnvelopedDataTest
 
             assertEquals(PKCSObjectIdentifiers.id_RSAES_OAEP, recipient.getKeyEncryptionAlgorithm().getAlgorithm());
 
-            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(reciKP.getPrivate()).setProvider(BC));
 
             assertEquals(true, Arrays.equals(data, recData));
         }
 
-        RecipientId id = new JceKeyTransRecipientId(_reciCert);
+        RecipientId id = new JceKeyTransRecipientId(reciCert);
 
         Collection collection = recipients.getRecipients(id);
         if (collection.size() != 2)
@@ -1179,6 +1183,30 @@ public class NewEnvelopedDataTest
             fail("recipients not matched using general recipient ID.");
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    private void doTestKeyTransOAEPDefaultNamed(String digest)
+        throws Exception
+    {
+        doTestKeyTransOAEPDefaultNamed(digest, digest);
+    }
+
+    private void doTestKeyTransOAEPDefaultNamed(String digest, String mgfDigest)
+        throws Exception
+    {
+        doTestKeyTransOAEPDefaultNamed(digest, digest, _reciCert, _reciKP);
+    }
+
+    private void doTestKeyTransOAEPDefaultNamed_2048(String digest)
+        throws Exception
+    {
+        doTestKeyTransOAEPDefaultNamed_2048(digest, digest);
+    }
+
+    private void doTestKeyTransOAEPDefaultNamed_2048(String digest, String mgfDigest)
+        throws Exception
+    {
+        doTestKeyTransOAEPDefaultNamed(digest, digest, _reciCert_2048, _reciKP_2048);
     }
 
     public void testKeyTransOAEPInCert()

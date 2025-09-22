@@ -23,13 +23,11 @@ import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 
-import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -48,6 +46,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.operator.DefaultSignatureNameFinder;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 class OperatorHelper
@@ -57,12 +56,10 @@ class OperatorHelper
     private static final Map symmetricWrapperAlgNames = new HashMap();
     private static final Map symmetricKeyAlgNames = new HashMap();
     private static final Map symmetricWrapperKeySizes = new HashMap();
+    // ASN1ObjectIdentifier -> OAEPParamsValue
+    private static final Map oaepParamsMap = new HashMap();
 
     private static DefaultSignatureNameFinder sigFinder = new DefaultSignatureNameFinder();
-
-    private static final RSAESOAEPparams oaepParams_sha256 = calculateDefForDigest(NISTObjectIdentifiers.id_sha256);
-    private static final RSAESOAEPparams oaepParams_sha384 = calculateDefForDigest(NISTObjectIdentifiers.id_sha384);
-    private static final RSAESOAEPparams oaepParams_sha512 = calculateDefForDigest(NISTObjectIdentifiers.id_sha512);
 
     static
     {
@@ -108,17 +105,12 @@ class OperatorHelper
         symmetricKeyAlgNames.put(NISTObjectIdentifiers.id_aes256_CBC, "AES");
         symmetricKeyAlgNames.put(PKCSObjectIdentifiers.des_EDE3_CBC, "DESede");
         symmetricKeyAlgNames.put(PKCSObjectIdentifiers.RC2_CBC, "RC2");
-    }
 
-    private static RSAESOAEPparams calculateDefForDigest(ASN1ObjectIdentifier digest)
-    {
-        AlgorithmIdentifier hashAlgorithm = new AlgorithmIdentifier(
-            digest,
-            DERNull.INSTANCE);
-        AlgorithmIdentifier maskGenAlgorithm = new AlgorithmIdentifier(
-            PKCSObjectIdentifiers.id_mgf1,
-            new AlgorithmIdentifier(digest, DERNull.INSTANCE));
-        return new RSAESOAEPparams(hashAlgorithm, maskGenAlgorithm, RSAESOAEPparams.DEFAULT_P_SOURCE_ALGORITHM);
+        OAEPParamsValue.add(oaepParamsMap, "RSA/ECB/OAEPWithSHA-1AndMGF1Padding", OIWObjectIdentifiers.idSHA1);
+        OAEPParamsValue.add(oaepParamsMap, "RSA/ECB/OAEPWithSHA-224AndMGF1Padding", NISTObjectIdentifiers.id_sha224);
+        OAEPParamsValue.add(oaepParamsMap, "RSA/ECB/OAEPWithSHA-256AndMGF1Padding", NISTObjectIdentifiers.id_sha256);
+        OAEPParamsValue.add(oaepParamsMap, "RSA/ECB/OAEPWithSHA-384AndMGF1Padding", NISTObjectIdentifiers.id_sha384);
+        OAEPParamsValue.add(oaepParamsMap, "RSA/ECB/OAEPWithSHA-512AndMGF1Padding", NISTObjectIdentifiers.id_sha512);
     }
 
     private JcaJceHelper helper;
@@ -232,35 +224,24 @@ class OperatorHelper
             {
                 if (cipherName.indexOf("OAEPPadding") > 0)
                 {
-                    ASN1Encodable algParams = algorithmID.getParameters();
-                    if (algParams != null)
+                    try
                     {
-                        ASN1Primitive primitive = algParams.toASN1Primitive();
-                        if ((primitive instanceof ASN1Sequence))
+                        RSAESOAEPparams oaepParams = RSAESOAEPparams.getInstance(algorithmID.getParameters());
+                        if (oaepParams != null)
                         {
-                            ASN1Sequence oaepParams = (ASN1Sequence)primitive;
-                            if (oaepParams.size() == 0)
+                            ASN1ObjectIdentifier digestOID = oaepParams.getHashAlgorithm().getAlgorithm();
+                            OAEPParamsValue oaepParamsValue = (OAEPParamsValue)oaepParamsMap.get(digestOID);
+
+                            // Note that the original pSourceAlgorithm is ignored for this comparison 
+                            if (oaepParamsValue != null && oaepParamsValue.matches(oaepParams.withDefaultPSource()))
                             {
-                                cipherName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
-                            }
-                            else if (oaepParams.size() >= 2)
-                            {
-                                // we only check the first 2 as pSource may be different
-                                oaepParams = new DERSequence(new ASN1Encodable[]{ oaepParams.getObjectAt(0), oaepParams.getObjectAt(1) });
-                                if (oaepParams_sha256.equals(oaepParams))
-                                {
-                                    cipherName = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
-                                }
-                                else if (oaepParams_sha512.equals(oaepParams))
-                                {
-                                    cipherName = "RSA/ECB/OAEPWithSHA-512AndMGF1Padding";
-                                }
-                                else if (oaepParams_sha384.equals(oaepParams))
-                                {
-                                    cipherName = "RSA/ECB/OAEPWithSHA-384AndMGF1Padding";
-                                }
+                                cipherName = oaepParamsValue.getCipherName();
                             }
                         }
+                    }
+                    catch (Exception e)
+                    {
+                        // Ignore
                     }
                 }
 
@@ -636,5 +617,53 @@ class OperatorHelper
         MessageDigest digest = createDigest(pssParams.getHashAlgorithm());
 
         return pssParams.getSaltLength().intValue() != digest.getDigestLength();
+    }
+
+    private static class OAEPParamsValue
+    {
+        static void add(Map oaepParamsMap, String cipherName, ASN1ObjectIdentifier digestOID)
+        {
+            try
+            {
+                RSAESOAEPparams oaepParams = createOAEPParams(digestOID);
+                byte[] derEncoding = getDEREncoding(oaepParams);
+                oaepParamsMap.put(digestOID, new OAEPParamsValue(cipherName, derEncoding));
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private String cipherName;
+        private byte[] derEncoding;
+
+        private OAEPParamsValue(String cipherName, byte[] derEncoding)
+        {
+            this.cipherName = cipherName;
+            this.derEncoding = derEncoding;
+        }
+
+        String getCipherName()
+        {
+            return cipherName;
+        }
+
+        boolean matches(RSAESOAEPparams oaepParams) throws IOException
+        {
+            return Arrays.areEqual(derEncoding, getDEREncoding(oaepParams));
+        }
+
+        private static RSAESOAEPparams createOAEPParams(ASN1ObjectIdentifier digestOID)
+        {
+            AlgorithmIdentifier hashAlgorithm = new AlgorithmIdentifier(digestOID, DERNull.INSTANCE);
+            AlgorithmIdentifier maskGenAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgorithm);
+            return new RSAESOAEPparams(hashAlgorithm, maskGenAlgorithm, RSAESOAEPparams.DEFAULT_P_SOURCE_ALGORITHM);
+        }
+
+        private static byte[] getDEREncoding(RSAESOAEPparams oaepParams) throws IOException
+        {
+            return oaepParams.getEncoded(ASN1Encoding.DER);
+        }
     }
 }
