@@ -149,6 +149,37 @@ public final class Arrays
         return 0 == d;
     }
 
+    public static boolean constantTimeAreEqual(int len, long[] a, int aOff, long[] b, int bOff)
+    {
+        if (null == a)
+        {
+            throw new NullPointerException("'a' cannot be null");
+        }
+        if (null == b)
+        {
+            throw new NullPointerException("'b' cannot be null");
+        }
+        if (len < 0)
+        {
+            throw new IllegalArgumentException("'len' cannot be negative");
+        }
+        if (aOff > (a.length - len))
+        {
+            throw new IndexOutOfBoundsException("'aOff' value invalid for specified length");
+        }
+        if (bOff > (b.length - len))
+        {
+            throw new IndexOutOfBoundsException("'bOff' value invalid for specified length");
+        }
+
+        long d = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= (a[aOff + i] ^ b[bOff + i]);
+        }
+        return 0L == d;
+    }
+
     /**
      * A constant time equals comparison - does not terminate early if
      * comparison fails. For best results always pass the expected value
