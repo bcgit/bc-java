@@ -179,12 +179,12 @@ class HQCEngine
         pkeEncrypt(cKemPrimeU64, cKemPrimeV64, sk, mPrime, kThetaPrime, 32);
         hashGJ(kBar, 256, hashEkKem, sk, pkSize + SEED_BYTES, K_BYTE, ct, 0, ct.length, (byte)3);
 
-        if (!Arrays.constantTimeAreEqual(u64, cKemPrimeU64))
+        if (!Arrays.constantTimeAreEqual(N_BYTE_64, u64, 0, cKemPrimeU64, 0))
         {
             result = 1;
         }
 
-        if (!Arrays.constantTimeAreEqual(v64, cKemPrimeV64))
+        if (!Arrays.constantTimeAreEqual(N_BYTE_64, v64, 0, cKemPrimeV64, 0))
         {
             result = 1;
         }

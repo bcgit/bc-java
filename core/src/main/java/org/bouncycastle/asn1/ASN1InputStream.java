@@ -540,7 +540,10 @@ public class ASN1InputStream
             case INTEGER:
                 return ASN1Integer.createPrimitive(defIn.toByteArray());
             case NULL:
-                return ASN1Null.createPrimitive(defIn.toByteArray());
+            {
+                ASN1Null.checkContentsLength(defIn.getRemaining());
+                return ASN1Null.createPrimitive();
+            }
             case NUMERIC_STRING:
                 return ASN1NumericString.createPrimitive(defIn.toByteArray());
             case OBJECT_DESCRIPTOR:

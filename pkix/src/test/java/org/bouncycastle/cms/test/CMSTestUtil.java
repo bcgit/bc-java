@@ -53,6 +53,7 @@ public class CMSTestUtil
 {
     public static SecureRandom     rand;
     public static KeyPairGenerator kpg;
+    public static KeyPairGenerator kpg_2048;
 
     public static KeyPairGenerator gostKpg;
     public static KeyPairGenerator dsaKpg;
@@ -156,8 +157,8 @@ public class CMSTestUtil
             kpg  = KeyPairGenerator.getInstance("RSA", "BC");
             kpg.initialize(1024, rand);
 
-            kpg  = KeyPairGenerator.getInstance("RSA", "BC");
-            kpg.initialize(1024, rand);
+            kpg_2048  = KeyPairGenerator.getInstance("RSA", "BC");
+            kpg_2048.initialize(2048, rand);
 
             gostKpg  = KeyPairGenerator.getInstance("GOST3410", "BC");
             GOST3410ParameterSpec gost3410P = new GOST3410ParameterSpec(CryptoProObjectIdentifiers.gostR3410_94_CryptoPro_A.getId());
@@ -276,6 +277,11 @@ public class CMSTestUtil
     public static KeyPair makeKeyPair()
     {
         return kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeKeyPair_2048()
+    {
+        return kpg_2048.generateKeyPair();
     }
 
     public static KeyPair makeGostKeyPair()
