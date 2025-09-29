@@ -322,6 +322,8 @@ public class DTLSClientProtocol
         securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(handshake.getHandshakeHash());
 
         TlsProtocol.establishMasterSecret(clientContext, state.keyExchange);
+        state.keyExchange = null;
+
         recordLayer.initPendingEpoch(TlsUtils.initCipher(clientContext));
 
         if (clientAuthSigner != null)

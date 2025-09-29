@@ -345,6 +345,8 @@ public class DTLSServerProtocol
         securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(handshake.getHandshakeHash());
 
         TlsProtocol.establishMasterSecret(serverContext, state.keyExchange);
+        state.keyExchange = null;
+
         recordLayer.initPendingEpoch(TlsUtils.initCipher(serverContext));
 
         /*

@@ -551,7 +551,7 @@ public class TlsClientProtocol
                 handleServerCertificate();
 
                 // There was no server key exchange message; check it's OK
-                this.keyExchange.skipServerKeyExchange();
+                keyExchange.skipServerKeyExchange();
 
                 // NB: Fall through to next case label
             }
@@ -645,6 +645,8 @@ public class TlsClientProtocol
                     establishMasterSecret(tlsClientContext, keyExchange);
                 }
 
+                this.keyExchange = null;
+
                 recordStream.setPendingCipher(TlsUtils.initCipher(tlsClientContext));
 
                 if (clientAuthSigner != null)
@@ -688,7 +690,7 @@ public class TlsClientProtocol
             {
                 handleServerCertificate();
 
-                this.keyExchange.processServerKeyExchange(buf);
+                keyExchange.processServerKeyExchange(buf);
 
                 assertEmpty(buf);
                 break;
@@ -710,7 +712,7 @@ public class TlsClientProtocol
                 handleServerCertificate();
 
                 // There was no server key exchange message; check it's OK
-                this.keyExchange.skipServerKeyExchange();
+                keyExchange.skipServerKeyExchange();
 
                 // NB: Fall through to next case label
             }
@@ -1993,7 +1995,7 @@ public class TlsClientProtocol
         throws IOException
     {
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.client_key_exchange);
-        this.keyExchange.generateClientKeyExchange(message);
+        keyExchange.generateClientKeyExchange(message);
         message.send(this);
     }
 

@@ -1121,11 +1121,11 @@ public class TlsServerProtocol
                     ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
                     if (null == serverCredentials)
                     {
-                        this.keyExchange.skipServerCredentials();
+                        keyExchange.skipServerCredentials();
                     }
                     else
                     {
-                        this.keyExchange.processServerCredentials(serverCredentials);
+                        keyExchange.processServerCredentials(serverCredentials);
 
                         serverCertificate = serverCredentials.getCertificate();
                         sendCertificateMessage(serverCertificate, endPointHash);
@@ -1151,7 +1151,7 @@ public class TlsServerProtocol
                     }
                 }
 
-                byte[] serverKeyExchange = this.keyExchange.generateServerKeyExchange();
+                byte[] serverKeyExchange = keyExchange.generateServerKeyExchange();
                 if (serverKeyExchange != null)
                 {
                     sendServerKeyExchangeMessage(serverKeyExchange);
@@ -1181,7 +1181,7 @@ public class TlsServerProtocol
                             throw new TlsFatalAlert(AlertDescription.internal_error);
                         }
 
-                        this.certificateRequest = TlsUtils.validateCertificateRequest(this.certificateRequest, this.keyExchange);
+                        this.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, keyExchange);
 
                         TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
 
@@ -1270,7 +1270,7 @@ public class TlsServerProtocol
             {
                 if (null == certificateRequest)
                 {
-                    this.keyExchange.skipClientCredentials();
+                    keyExchange.skipClientCredentials();
                 }
                 else if (TlsUtils.isTLSv12(tlsServerContext))
                 {
@@ -1535,6 +1535,8 @@ public class TlsServerProtocol
             // NOTE: For (D)TLS, session hash potentially needed for extended_master_secret
             establishMasterSecret(tlsServerContext, keyExchange);
         }
+
+        this.keyExchange = null;
 
         recordStream.setPendingCipher(TlsUtils.initCipher(tlsServerContext));
 
