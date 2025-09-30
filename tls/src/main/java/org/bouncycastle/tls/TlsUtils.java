@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.tls.Certificate.ParseOptions;
 import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -5233,6 +5234,22 @@ public class TlsUtils
         return false;
     }
 
+    static Certificate parseCertificate(ParseOptions options, TlsContext context, ByteArrayInputStream buf,
+            ByteArrayOutputStream endPointHashOutput) throws TlsFatalAlert {
+        try
+        {
+          return Certificate.parse(options, context, buf, endPointHashOutput); 
+        }
+        catch (TlsFatalAlert e)
+        {
+            throw e;
+        }
+        catch (IOException e)
+        {
+          throw new TlsFatalAlert(AlertDescription.bad_certificate, e);
+        }
+    }
+
     static TlsAuthentication receiveServerCertificate(TlsClientContext clientContext, TlsClient client,
         ByteArrayInputStream buf) throws IOException
     {
@@ -5249,7 +5266,7 @@ public class TlsUtils
             .setCertificateType(securityParameters.getServerCertificateType())            
             .setMaxChainLength(client.getMaxCertificateChainLength());
 
-        Certificate serverCertificate = Certificate.parse(options, clientContext, buf, endPointHash);
+        Certificate serverCertificate = parseCertificate(options, clientContext, buf, endPointHash);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -5290,7 +5307,7 @@ public class TlsUtils
             .setCertificateType(securityParameters.getServerCertificateType())            
             .setMaxChainLength(client.getMaxCertificateChainLength());
 
-        Certificate serverCertificate = Certificate.parse(options, clientContext, buf, null);
+        Certificate serverCertificate = parseCertificate(options, clientContext, buf, null);
 
         TlsProtocol.assertEmpty(buf);
 
