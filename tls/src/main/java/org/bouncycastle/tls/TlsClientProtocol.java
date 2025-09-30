@@ -1913,6 +1913,8 @@ public class TlsClientProtocol
             this.clientExtensions.remove(TlsExtensionsUtils.EXT_extended_master_secret);
         }
 
+        boolean hasRenegSCSV = Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+
         if (securityParameters.isRenegotiating())
         {
             /*
@@ -1922,13 +1924,19 @@ public class TlsClientProtocol
              */
             if (!securityParameters.isSecureRenegotiation())
             {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
+                throw new TlsFatalAlert(AlertDescription.internal_error, "Renegotiation requires secure_renegotiation");
             }
 
             /*
              * The client MUST include the "renegotiation_info" extension in the ClientHello,
              * containing the saved client_verify_data. The SCSV MUST NOT be included.
              */
+            if (hasRenegSCSV)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error,
+                    "Renegotiation cannot use TLS_EMPTY_RENEGOTIATION_INFO_SCSV");
+            }
+
             SecurityParameters saved = tlsClientContext.getSecurityParametersConnection();
 
             this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(saved.getLocalVerifyData()));
@@ -1945,7 +1953,7 @@ public class TlsClientProtocol
              * Including both is NOT RECOMMENDED.
              */
             boolean noRenegExt = (null == TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo));
-            boolean noRenegSCSV = !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            boolean noRenegSCSV = !hasRenegSCSV;
 
             if (noRenegExt && noRenegSCSV)
             {
