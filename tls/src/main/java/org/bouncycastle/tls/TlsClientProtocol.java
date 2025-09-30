@@ -869,7 +869,7 @@ public class TlsClientProtocol
                 if (null == TlsUtils.getExtensionData(clientExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension,
-                        "received unrequested extension response: " + ExtensionType.getText(extensionType));
+                        "Unrequested extension in HelloRetryRequest: " + ExtensionType.getText(extensionType));
                 }
             }
         }
@@ -1529,7 +1529,8 @@ public class TlsClientProtocol
 
                 if (null == TlsUtils.getExtensionData(clientExtensions, extType))
                 {
-                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension,
+                        "Unrequested extension in EncryptedExtensions: " + ExtensionType.getText(extType.intValue()));
                 }
             }
         }
