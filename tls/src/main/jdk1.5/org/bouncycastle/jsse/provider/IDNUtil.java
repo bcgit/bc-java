@@ -2,6 +2,8 @@ package org.bouncycastle.jsse.provider;
 
 import java.lang.reflect.Method;
 
+import org.bouncycastle.tls.ReflectionUtil;
+
 public class IDNUtil
 {
     public static final int ALLOW_UNASSIGNED;
