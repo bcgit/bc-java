@@ -5,6 +5,8 @@ import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 
+import org.bouncycastle.tls.ReflectionUtil;
+
 abstract class PKIXUtil
 {
     private static final Class<?> pkixRevocationCheckerClass;
