@@ -586,6 +586,11 @@ public class PQCSignedDataTest
 
         CMSSignedData s = gen.generate(msg, true);
 
+        AlgorithmIdentifier digestAlgorithmID = s.getSignerInfos().getSigners().iterator().next().getDigestAlgorithmID();
+        // CNSA compliance requires SHA-384 or SHA-512. We now default to SHA-512
+        assertEquals(NISTObjectIdentifiers.id_sha512, digestAlgorithmID.getAlgorithm());
+        assertNull(digestAlgorithmID.getParameters());
+
         checkSignature(s, gen);
     }
 
