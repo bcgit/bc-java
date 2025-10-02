@@ -551,7 +551,7 @@ public class TlsClientProtocol
                 handleServerCertificate();
 
                 // There was no server key exchange message; check it's OK
-                this.keyExchange.skipServerKeyExchange();
+                keyExchange.skipServerKeyExchange();
 
                 // NB: Fall through to next case label
             }
@@ -645,6 +645,8 @@ public class TlsClientProtocol
                     establishMasterSecret(tlsClientContext, keyExchange);
                 }
 
+                this.keyExchange = null;
+
                 recordStream.setPendingCipher(TlsUtils.initCipher(tlsClientContext));
 
                 if (clientAuthSigner != null)
@@ -688,7 +690,7 @@ public class TlsClientProtocol
             {
                 handleServerCertificate();
 
-                this.keyExchange.processServerKeyExchange(buf);
+                keyExchange.processServerKeyExchange(buf);
 
                 assertEmpty(buf);
                 break;
@@ -710,7 +712,7 @@ public class TlsClientProtocol
                 handleServerCertificate();
 
                 // There was no server key exchange message; check it's OK
-                this.keyExchange.skipServerKeyExchange();
+                keyExchange.skipServerKeyExchange();
 
                 // NB: Fall through to next case label
             }
@@ -867,7 +869,7 @@ public class TlsClientProtocol
                 if (null == TlsUtils.getExtensionData(clientExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension,
-                        "received unrequested extension response: " + ExtensionType.getText(extensionType));
+                        "Unrequested extension in HelloRetryRequest: " + ExtensionType.getText(extensionType));
                 }
             }
         }
@@ -1527,7 +1529,8 @@ public class TlsClientProtocol
 
                 if (null == TlsUtils.getExtensionData(clientExtensions, extType))
                 {
-                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension,
+                        "Unrequested extension in EncryptedExtensions: " + ExtensionType.getText(extType.intValue()));
                 }
             }
         }
@@ -1910,6 +1913,8 @@ public class TlsClientProtocol
             this.clientExtensions.remove(TlsExtensionsUtils.EXT_extended_master_secret);
         }
 
+        boolean hasRenegSCSV = Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+
         if (securityParameters.isRenegotiating())
         {
             /*
@@ -1919,13 +1924,19 @@ public class TlsClientProtocol
              */
             if (!securityParameters.isSecureRenegotiation())
             {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
+                throw new TlsFatalAlert(AlertDescription.internal_error, "Renegotiation requires secure_renegotiation");
             }
 
             /*
              * The client MUST include the "renegotiation_info" extension in the ClientHello,
              * containing the saved client_verify_data. The SCSV MUST NOT be included.
              */
+            if (hasRenegSCSV)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error,
+                    "Renegotiation cannot use TLS_EMPTY_RENEGOTIATION_INFO_SCSV");
+            }
+
             SecurityParameters saved = tlsClientContext.getSecurityParametersConnection();
 
             this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(saved.getLocalVerifyData()));
@@ -1942,7 +1953,7 @@ public class TlsClientProtocol
              * Including both is NOT RECOMMENDED.
              */
             boolean noRenegExt = (null == TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo));
-            boolean noRenegSCSV = !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            boolean noRenegSCSV = !hasRenegSCSV;
 
             if (noRenegExt && noRenegSCSV)
             {
@@ -1993,7 +2004,7 @@ public class TlsClientProtocol
         throws IOException
     {
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.client_key_exchange);
-        this.keyExchange.generateClientKeyExchange(message);
+        keyExchange.generateClientKeyExchange(message);
         message.send(this);
     }
 

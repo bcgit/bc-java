@@ -322,6 +322,8 @@ public class DTLSClientProtocol
         securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(handshake.getHandshakeHash());
 
         TlsProtocol.establishMasterSecret(clientContext, state.keyExchange);
+        state.keyExchange = null;
+
         recordLayer.initPendingEpoch(TlsUtils.initCipher(clientContext));
 
         if (clientAuthSigner != null)
@@ -875,7 +877,8 @@ public class DTLSClientProtocol
                  */
                 if (null == TlsUtils.getExtensionData(state.clientExtensions, extType))
                 {
-                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension,
+                        "Unrequested extension in ServerHello: " + ExtensionType.getText(extType.intValue()));
                 }
 
                 /*

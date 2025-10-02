@@ -15,6 +15,7 @@ import javax.net.ssl.SSLSocket;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCSSLSocket;
+import org.bouncycastle.tls.ReflectionUtil;
 
 abstract class SSLSocketUtil
 {
