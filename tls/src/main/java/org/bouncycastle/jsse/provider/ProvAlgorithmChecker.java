@@ -68,6 +68,9 @@ class ProvAlgorithmChecker
 
         names.put(EdECObjectIdentifiers.id_Ed25519.getId(), "Ed25519");
         names.put(EdECObjectIdentifiers.id_Ed448.getId(), "Ed448");
+        names.put(NISTObjectIdentifiers.id_ml_dsa_44.getId(), "ML-DSA-44");
+        names.put(NISTObjectIdentifiers.id_ml_dsa_65.getId(), "ML-DSA-65");
+        names.put(NISTObjectIdentifiers.id_ml_dsa_87.getId(), "ML-DSA-87");
         names.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "SHA1withDSA");
         names.put(X9ObjectIdentifiers.id_dsa_with_sha1.getId(), "SHA1withDSA");
 
