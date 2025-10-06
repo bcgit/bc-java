@@ -319,9 +319,16 @@ public class CompositeSignaturesTest
         signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
         TestCase.assertTrue(signature.verify(signatureValue));
 
+        signature = Signature.getInstance("COMPOSITE", "BC");
+
+        signature.initVerify(compPublicKey);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        TestCase.assertTrue(signature.verify(signatureValue));
+
         KeyFactory compFact = KeyFactory.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
         PrivateKey compPriv = compFact.generatePrivate(new PKCS8EncodedKeySpec(compPrivateKey.getEncoded()));
         PublicKey compPub = compFact.generatePublic(new X509EncodedKeySpec(compPublicKey.getEncoded()));
+        signature = Signature.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
 
         signature.initSign(compPriv);
         signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
@@ -330,6 +337,7 @@ public class CompositeSignaturesTest
         signature.initVerify(compPub);
         signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
         TestCase.assertTrue(signature.verify(signatureValue));
+
 
     }
 
@@ -580,6 +588,21 @@ public class CompositeSignaturesTest
             signature.initSign(keyPair.getPrivate());
             signature.update(msg);
             byte[] signatureValue = signature.sign();
+
+            signature.initVerify(keyPair.getPublic());
+            signature.update(msg);
+            TestCase.assertTrue(signature.verify(signatureValue));
+
+            Signature compSig = Signature.getInstance("COMPOSITE", "BC");
+
+            compSig.initVerify(keyPair.getPublic());
+            compSig.update(msg);
+
+            TestCase.assertTrue(compSig.verify(signatureValue));
+
+            compSig.initSign(keyPair.getPrivate());
+            compSig.update(msg);
+            signatureValue = compSig.sign();
 
             signature.initVerify(keyPair.getPublic());
             signature.update(msg);
