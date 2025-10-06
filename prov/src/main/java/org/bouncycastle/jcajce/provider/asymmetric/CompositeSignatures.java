@@ -33,6 +33,8 @@ public class CompositeSignatures
 
         public void configure(ConfigurableProvider provider)
         {
+            provider.addAlgorithm("Signature.COMPOSITE", PREFIX + "SignatureSpi$COMPOSITE");
+
             for (ASN1ObjectIdentifier oid : CompositeIndex.getSupportedIdentifiers())
             {
                 String algorithmName = CompositeIndex.getAlgorithmName(oid);

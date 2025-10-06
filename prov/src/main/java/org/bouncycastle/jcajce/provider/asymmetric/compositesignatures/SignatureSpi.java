@@ -24,6 +24,8 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -99,12 +101,15 @@ public class SignatureSpi
 
 
     //List of Signatures. Each entry corresponds to a component signature from the composite definition.
-    private final ASN1ObjectIdentifier algorithm;
-    private final String[] algs;
-    private final Signature[] componentSignatures;
-    private final byte[] domain;
-    private final Digest baseDigest;
-    private final JcaJceHelper helper = new BCJcaJceHelper();
+
+    private final boolean isPrehash;
+
+    private ASN1ObjectIdentifier algorithm;
+    private String[] algs;
+    private Signature[] componentSignatures;
+    private byte[] domain;
+    private Digest baseDigest;
+    private JcaJceHelper helper = new BCJcaJceHelper();
 
     private Digest preHashDigest;
     private ContextParameterSpec contextSpec;
@@ -120,12 +125,16 @@ public class SignatureSpi
     SignatureSpi(ASN1ObjectIdentifier algorithm, Digest preHashDigest, boolean isPrehash)
     {
         this.algorithm = algorithm;
-        this.baseDigest = preHashDigest;
-        this.preHashDigest = isPrehash ? new NullDigest(preHashDigest.getDigestSize()) : preHashDigest;
-        this.domain = domainSeparators.get(algorithm);
+        this.isPrehash = isPrehash;
 
-        this.algs = CompositeIndex.getPairing(algorithm);
-        this.componentSignatures = new Signature[algs.length];
+        if (algorithm != null)
+        {
+            this.baseDigest = preHashDigest;
+            this.preHashDigest = isPrehash ? new NullDigest(preHashDigest.getDigestSize()) : preHashDigest;
+            this.domain = domainSeparators.get(algorithm);
+            this.algs = CompositeIndex.getPairing(algorithm);
+            this.componentSignatures = new Signature[algs.length];
+        }
     }
 
     protected void engineInitVerify(PublicKey publicKey)
@@ -140,12 +149,27 @@ public class SignatureSpi
 
         CompositePublicKey compositePublicKey = (CompositePublicKey)this.compositeKey;
 
-        if (!compositePublicKey.getAlgorithmIdentifier().getAlgorithm().equals(this.algorithm))
+        if (this.algorithm != null)
         {
-            throw new InvalidKeyException("Provided composite public key cannot be used with the composite signature algorithm.");
+            if (!compositePublicKey.getAlgorithmIdentifier().getAlgorithm().equals(this.algorithm))
+            {
+                throw new InvalidKeyException("provided composite public key cannot be used with the composite signature algorithm");
+            }
         }
+        else
+        {
+            ASN1ObjectIdentifier sigAlgorithm = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()).getAlgorithm().getAlgorithm();
+
+            this.algorithm = sigAlgorithm;
+            this.baseDigest = CompositeIndex.getDigest(sigAlgorithm);
+            this.preHashDigest = isPrehash ? new NullDigest(baseDigest.getDigestSize()) : baseDigest;
+            this.domain = domainSeparators.get(sigAlgorithm);
+            this.algs = CompositeIndex.getPairing(sigAlgorithm);
+            this.componentSignatures = new Signature[algs.length];
+        }
+
         createComponentSignatures(compositePublicKey.getPublicKeys(), compositePublicKey.getProviders());
-        
+
         sigInitVerify();
     }
 
@@ -171,10 +195,25 @@ public class SignatureSpi
         this.compositeKey = privateKey;
 
         CompositePrivateKey compositePrivateKey = (CompositePrivateKey)privateKey;
-        if (!compositePrivateKey.getAlgorithmIdentifier().getAlgorithm().equals(this.algorithm))
+        if (this.algorithm != null)
         {
-            throw new InvalidKeyException("Provided composite private key cannot be used with the composite signature algorithm.");
+            if (!compositePrivateKey.getAlgorithmIdentifier().getAlgorithm().equals(this.algorithm))
+            {
+                throw new InvalidKeyException("provided composite public key cannot be used with the composite signature algorithm");
+            }
         }
+        else
+        {
+            ASN1ObjectIdentifier sigAlgorithm = PrivateKeyInfo.getInstance(compositePrivateKey.getEncoded()).getPrivateKeyAlgorithm().getAlgorithm();
+
+            this.algorithm = sigAlgorithm;
+            this.baseDigest = CompositeIndex.getDigest(sigAlgorithm);
+            this.preHashDigest = isPrehash ? new NullDigest(baseDigest.getDigestSize()) : baseDigest;
+            this.domain = domainSeparators.get(sigAlgorithm);
+            this.algs = CompositeIndex.getPairing(sigAlgorithm);
+            this.componentSignatures = new Signature[algs.length];
+        }
+
         createComponentSignatures(compositePrivateKey.getPrivateKeys(), compositePrivateKey.getProviders());
 
         sigInitSign();
@@ -597,6 +636,15 @@ public class SignatureSpi
         public MLDSA44_ECDSA_P256_SHA256()
         {
             super(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new SHA256Digest());
+        }
+    }
+
+    public static final class COMPOSITE
+        extends SignatureSpi
+    {
+        public COMPOSITE()
+        {
+            super(null, null, false);
         }
     }
 
