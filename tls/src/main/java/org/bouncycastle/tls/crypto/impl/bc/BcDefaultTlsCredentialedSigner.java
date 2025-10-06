@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.DefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -86,6 +87,20 @@ public class BcDefaultTlsCredentialedSigner
             }
 
             throw new IllegalArgumentException("ML-DSA private key of wrong type for signature algorithm");
+        }
+        else if (privateKey instanceof SLHDSAPrivateKeyParameters)
+        {
+            if (signatureAndHashAlgorithm != null)
+            {
+                TlsSigner signer = BcTlsSLHDSASigner.create(crypto, (SLHDSAPrivateKeyParameters)privateKey,
+                    SignatureScheme.from(signatureAndHashAlgorithm));
+                if (signer != null)
+                {
+                    return signer;
+                }
+            }
+
+            throw new IllegalArgumentException("SLH-DSA private key of wrong type for signature algorithm");
         }
         else
         {

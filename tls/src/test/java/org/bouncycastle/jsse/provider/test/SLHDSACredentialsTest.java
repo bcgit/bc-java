@@ -19,20 +19,55 @@ import javax.net.ssl.TrustManagerFactory;
 
 import junit.framework.TestCase;
 
-public class MLDSACredentialsTest
+public class SLHDSACredentialsTest
     extends TestCase
 {
+    private static final String PROPERTY_CLIENT_SIGNATURE_SCHEMES = "jdk.tls.client.SignatureSchemes";
+    private static final String PROPERTY_SERVER_SIGNATURE_SCHEMES = "jdk.tls.server.SignatureSchemes";
+    
+    private static final String PROPERTY_MAX_HANDSHAKE_MESSAGE_SIZE = "jdk.tls.maxHandshakeMessageSize";
+
     protected void setUp()
     {
         ProviderUtils.setupLowPriority(false);
+
+        String signatureSchemes =
+            "slhdsa_sha2_128s, slhdsa_sha2_128f, " +
+            "slhdsa_sha2_192s, slhdsa_sha2_192f, " +
+            "slhdsa_sha2_256s, slhdsa_sha2_256f, " +
+            "slhdsa_shake_128s, slhdsa_shake_128f, " +
+            "slhdsa_shake_192s, slhdsa_shake_192f, " +
+            "slhdsa_shake_256s, slhdsa_shake_256f";
+
+        System.setProperty(PROPERTY_CLIENT_SIGNATURE_SCHEMES, signatureSchemes);
+        System.setProperty(PROPERTY_SERVER_SIGNATURE_SCHEMES, signatureSchemes);
+
+        System.setProperty(PROPERTY_MAX_HANDSHAKE_MESSAGE_SIZE, "65536");
+    }
+
+    protected void tearDown()
+    {
+        System.clearProperty(PROPERTY_CLIENT_SIGNATURE_SCHEMES);
+        System.clearProperty(PROPERTY_SERVER_SIGNATURE_SCHEMES);
+
+        System.clearProperty(PROPERTY_MAX_HANDSHAKE_MESSAGE_SIZE);
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_13_MLDSA44 = 9060;
-    private static final int PORT_NO_13_MLDSA65 = 9061;
-    private static final int PORT_NO_13_MLDSA87 = 9062;
+    private static final int PORT_NO_13_SLHDSA_SHA2_128F = 9070;
+    private static final int PORT_NO_13_SLHDSA_SHA2_192F = 9071;
+    private static final int PORT_NO_13_SLHDSA_SHA2_256F = 9072;
+    private static final int PORT_NO_13_SLHDSA_SHAKE_128F = 9073;
+    private static final int PORT_NO_13_SLHDSA_SHAKE_192F = 9074;
+    private static final int PORT_NO_13_SLHDSA_SHAKE_256F = 9075;
+//    private static final int PORT_NO_13_SLHDSA_SHA2_128S = 9080;
+//    private static final int PORT_NO_13_SLHDSA_SHA2_192S = 9081;
+//    private static final int PORT_NO_13_SLHDSA_SHA2_256S = 9082;
+//    private static final int PORT_NO_13_SLHDSA_SHAKE_128S = 9083;
+//    private static final int PORT_NO_13_SLHDSA_SHAKE_192S = 9084;
+//    private static final int PORT_NO_13_SLHDSA_SHAKE_256S = 9085;
 
-    static class MLDSAClient
+    static class SLHDSAClient
         implements TestProtocolUtil.BlockingCallable
     {
         private final int port;
@@ -42,7 +77,7 @@ public class MLDSACredentialsTest
         private final char[] clientKeyPass;
         private final CountDownLatch latch;
 
-        MLDSAClient(int port, String protocol, KeyStore clientStore, char[] clientKeyPass,
+        SLHDSAClient(int port, String protocol, KeyStore clientStore, char[] clientKeyPass,
             X509Certificate trustAnchor) throws GeneralSecurityException, IOException
         {
             KeyStore trustStore = createKeyStore();
@@ -99,7 +134,7 @@ public class MLDSACredentialsTest
         }
     }
 
-    static class MLDSAServer
+    static class SLHDSAServer
         implements TestProtocolUtil.BlockingCallable
     {
         private final int port;
@@ -109,7 +144,7 @@ public class MLDSACredentialsTest
         private final KeyStore trustStore;
         private final CountDownLatch latch;
 
-        MLDSAServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
+        SLHDSAServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
             throws GeneralSecurityException, IOException
         {
             KeyStore trustStore = createKeyStore();
@@ -175,22 +210,82 @@ public class MLDSACredentialsTest
         }
     }
 
-    public void test13_MLDSA44() throws Exception
+    public void test13_SLHDSA_SHA2_128F() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA44, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-44"));
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_128F, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-128F"));
     }
 
-    public void test13_MLDSA65() throws Exception
+    public void test13_SLHDSA_SHA2_192F() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA65, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-65"));
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_192F, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-192F"));
     }
 
-    public void test13_MLDSA87() throws Exception
+    public void test13_SLHDSA_SHA2_256F() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA87, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-87"));
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_256F, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-256F"));
     }
 
-    private void implTestMLDSACredentials(int port, String protocol, KeyPair caKeyPair) throws Exception
+    public void test13_SLHDSA_SHAKE_128F() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_128F, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-128F"));
+    }
+
+    public void test13_SLHDSA_SHAKE_192F() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_192F, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-192F"));
+    }
+
+    public void test13_SLHDSA_SHAKE_256F() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_256F, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-256F"));
+    }
+
+    // TODO[tls-slhdsa] Too slow to run routinely
+/*
+    public void test13_SLHDSA_SHA2_128S() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_128S, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-128S"));
+    }
+
+    public void test13_SLHDSA_SHA2_192S() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_192S, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-192S"));
+    }
+
+    public void test13_SLHDSA_SHA2_256S() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_256S, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-256S"));
+    }
+
+    public void test13_SLHDSA_SHAKE_128S() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_128S, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-128S"));
+    }
+
+    public void test13_SLHDSA_SHAKE_192S() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_192S, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-192S"));
+    }
+
+    public void test13_SLHDSA_SHAKE_256S() throws Exception
+    {
+        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_256S, "TLSv1.3",
+            TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-256S"));
+    }
+*/
+
+    private void implTestSLHDSACredentials(int port, String protocol, KeyPair caKeyPair) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
 
@@ -202,8 +297,8 @@ public class MLDSACredentialsTest
         KeyStore clientKs = createKeyStore();
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new MLDSAServer(port, protocol, serverKs, keyPass, caCert),
-            new MLDSAClient(port, protocol, clientKs, keyPass, caCert));
+        TestProtocolUtil.runClientAndServer(new SLHDSAServer(port, protocol, serverKs, keyPass, caCert),
+            new SLHDSAClient(port, protocol, clientKs, keyPass, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException

@@ -36,6 +36,18 @@ public class SignatureAndHashAlgorithm
         create(SignatureScheme.rsa_pss_pss_sha384);
     public static final SignatureAndHashAlgorithm rsa_pss_pss_sha512 =
         create(SignatureScheme.rsa_pss_pss_sha512);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_128s = create(SignatureScheme.DRAFT_slhdsa_sha2_128s);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_128f = create(SignatureScheme.DRAFT_slhdsa_sha2_128f);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_192s = create(SignatureScheme.DRAFT_slhdsa_sha2_192s);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_192f = create(SignatureScheme.DRAFT_slhdsa_sha2_192f);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_256s = create(SignatureScheme.DRAFT_slhdsa_sha2_256s);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_256f = create(SignatureScheme.DRAFT_slhdsa_sha2_256f);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_128s = create(SignatureScheme.DRAFT_slhdsa_shake_128s);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_128f = create(SignatureScheme.DRAFT_slhdsa_shake_128f);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_192s = create(SignatureScheme.DRAFT_slhdsa_shake_192s);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_192f = create(SignatureScheme.DRAFT_slhdsa_shake_192f);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_256s = create(SignatureScheme.DRAFT_slhdsa_shake_256s);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_256f = create(SignatureScheme.DRAFT_slhdsa_shake_256f);
 
     public static SignatureAndHashAlgorithm getInstance(short hashAlgorithm, short signatureAlgorithm)
     {

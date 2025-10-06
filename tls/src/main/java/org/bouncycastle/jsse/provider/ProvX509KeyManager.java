@@ -162,6 +162,19 @@ class ProvX509KeyManager
         addFilter(filters, "ML-DSA-65");
         addFilter(filters, "ML-DSA-87");
 
+        addFilter(filters, "SLH-DSA-SHA2-128S");
+        addFilter(filters, "SLH-DSA-SHA2-128F");
+        addFilter(filters, "SLH-DSA-SHA2-192S");
+        addFilter(filters, "SLH-DSA-SHA2-192F");
+        addFilter(filters, "SLH-DSA-SHA2-256S");
+        addFilter(filters, "SLH-DSA-SHA2-256F");
+        addFilter(filters, "SLH-DSA-SHAKE-128S");
+        addFilter(filters, "SLH-DSA-SHAKE-128F");
+        addFilter(filters, "SLH-DSA-SHAKE-192S");
+        addFilter(filters, "SLH-DSA-SHAKE-192F");
+        addFilter(filters, "SLH-DSA-SHAKE-256S");
+        addFilter(filters, "SLH-DSA-SHAKE-256F");
+
         addECFilter13(filters, NamedGroup.brainpoolP256r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP384r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP512r1tls13);
@@ -190,6 +203,19 @@ class ProvX509KeyManager
         addFilter(filters, "ML-DSA-44");
         addFilter(filters, "ML-DSA-65");
         addFilter(filters, "ML-DSA-87");
+
+        addFilter(filters, "SLH-DSA-SHA2-128S");
+        addFilter(filters, "SLH-DSA-SHA2-128F");
+        addFilter(filters, "SLH-DSA-SHA2-192S");
+        addFilter(filters, "SLH-DSA-SHA2-192F");
+        addFilter(filters, "SLH-DSA-SHA2-256S");
+        addFilter(filters, "SLH-DSA-SHA2-256F");
+        addFilter(filters, "SLH-DSA-SHAKE-128S");
+        addFilter(filters, "SLH-DSA-SHAKE-128F");
+        addFilter(filters, "SLH-DSA-SHAKE-192S");
+        addFilter(filters, "SLH-DSA-SHAKE-192F");
+        addFilter(filters, "SLH-DSA-SHAKE-256S");
+        addFilter(filters, "SLH-DSA-SHAKE-256F");
 
         addECFilter13(filters, NamedGroup.brainpoolP256r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP384r1tls13);

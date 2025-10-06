@@ -773,9 +773,10 @@ public class JcaTlsCrypto
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
         int signatureScheme = SignatureScheme.from(sigAndHashAlgorithm);
-        if (SignatureScheme.isMLDSA(signatureScheme))
+        if (SignatureScheme.isMLDSA(signatureScheme) ||
+            SignatureScheme.isSLHDSA(signatureScheme))
         {
-            return true;
+            return hasSignatureScheme(signatureScheme);
         }
 
         short signature = sigAndHashAlgorithm.getSignature();
@@ -798,9 +799,22 @@ public class JcaTlsCrypto
         {
         case SignatureScheme.sm2sig_sm3:
             return false;
+        // TODO[tls] Dynamic detection of the signature algorithm
         case SignatureScheme.mldsa44:
         case SignatureScheme.mldsa65:
         case SignatureScheme.mldsa87:
+        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
+        case SignatureScheme.DRAFT_slhdsa_shake_128s:
+        case SignatureScheme.DRAFT_slhdsa_shake_128f:
+        case SignatureScheme.DRAFT_slhdsa_shake_192s:
+        case SignatureScheme.DRAFT_slhdsa_shake_192f:
+        case SignatureScheme.DRAFT_slhdsa_shake_256s:
+        case SignatureScheme.DRAFT_slhdsa_shake_256f:
             return true;
         default:
         {
