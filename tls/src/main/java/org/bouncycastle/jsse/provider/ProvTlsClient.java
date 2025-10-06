@@ -402,7 +402,7 @@ class ProvTlsClient
     @Override
     public int getMaxHandshakeMessageSize()
     {
-        return JsseUtils.getMaxHandshakeMessageSize();
+        return manager.getContextData().getMaxHandshakeMessageSize();
     }
 
     @Override

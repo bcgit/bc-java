@@ -452,7 +452,7 @@ class ProvTlsServer
     @Override
     public int getMaxHandshakeMessageSize()
     {
-        return JsseUtils.getMaxHandshakeMessageSize();
+        return manager.getContextData().getMaxHandshakeMessageSize();
     }
 
     public synchronized boolean isHandshakeComplete()

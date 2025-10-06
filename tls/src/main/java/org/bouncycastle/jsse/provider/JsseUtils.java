@@ -72,8 +72,6 @@ abstract class JsseUtils
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyMasterSecret", true);
     private static final boolean provTlsAllowLegacyResumption =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
-    private static final int provTlsMaxHandshakeMessageSize =
-        PropertyUtils.getIntegerSystemProperty("jdk.tls.maxHandshakeMessageSize", 32768, 1024, Integer.MAX_VALUE);
     private static final boolean provTlsRequireCloseNotify =
         PropertyUtils.getBooleanSystemProperty("com.sun.net.ssl.requireCloseNotify", true);
     private static final boolean provTlsUseCompatibilityMode =
@@ -288,11 +286,6 @@ abstract class JsseUtils
     static boolean equals(Object a, Object b)
     {
         return a == b || (null != a && null != b && a.equals(b));
-    }
-
-    static int getMaxHandshakeMessageSize()
-    {
-        return provTlsMaxHandshakeMessageSize;
     }
 
     static int getMaxInboundCertChainLenClient()
