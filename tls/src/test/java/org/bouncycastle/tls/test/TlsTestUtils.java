@@ -318,29 +318,29 @@ public class TlsTestUtils
         case SignatureScheme.mldsa87:
             return "ml_dsa_87";
         case SignatureScheme.DRAFT_slhdsa_sha2_128s:
-            return "slhdsa_sha2_128s";
+            return "slh_dsa_sha2_128s";
         case SignatureScheme.DRAFT_slhdsa_sha2_128f:
-            return "slhdsa_sha2_128f";
+            return "slh_dsa_sha2_128f";
         case SignatureScheme.DRAFT_slhdsa_sha2_192s:
-            return "slhdsa_sha2_192s";
+            return "slh_dsa_sha2_192s";
         case SignatureScheme.DRAFT_slhdsa_sha2_192f:
-            return "slhdsa_sha2_192f";
+            return "slh_dsa_sha2_192f";
         case SignatureScheme.DRAFT_slhdsa_sha2_256s:
-            return "slhdsa_sha2_256s";
+            return "slh_dsa_sha2_256s";
         case SignatureScheme.DRAFT_slhdsa_sha2_256f:
-            return "slhdsa_sha2_256f";
+            return "slh_dsa_sha2_256f";
         case SignatureScheme.DRAFT_slhdsa_shake_128s:
-            return "slhdsa_shake_128s";
+            return "slh_dsa_shake_128s";
         case SignatureScheme.DRAFT_slhdsa_shake_128f:
-            return "slhdsa_shake_128f";
+            return "slh_dsa_shake_128f";
         case SignatureScheme.DRAFT_slhdsa_shake_192s:
-            return "slhdsa_shake_192s";
+            return "slh_dsa_shake_192s";
         case SignatureScheme.DRAFT_slhdsa_shake_192f:
-            return "slhdsa_shake_192f";
+            return "slh_dsa_shake_192f";
         case SignatureScheme.DRAFT_slhdsa_shake_256s:
-            return "slhdsa_shake_256s";
+            return "slh_dsa_shake_256s";
         case SignatureScheme.DRAFT_slhdsa_shake_256f:
-            return "slhdsa_shake_256f";
+            return "slh_dsa_shake_256f";
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
