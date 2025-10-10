@@ -78,7 +78,7 @@ public final class BouncyCastleProvider extends Provider
 {
     private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
 
-    private static String info = "BouncyCastle Security Provider v1.82";
+    private static String info = "BouncyCastle Security Provider v1.83b";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -172,7 +172,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.82, info);
+        super(PROVIDER_NAME, 1.8299, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
