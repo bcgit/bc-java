@@ -3,7 +3,6 @@ package org.bouncycastle.operator;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 
@@ -16,7 +15,7 @@ public class NoSignatureContentSigner
     @Override
     public AlgorithmIdentifier getAlgorithmIdentifier()
     {
-        return new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE);
+        return new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_unsigned);
     }
 
     @Override

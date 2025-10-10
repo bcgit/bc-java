@@ -4024,8 +4024,8 @@ public class CertTest
 
         org.bouncycastle.asn1.x509.Certificate crt = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
 
-        isTrue(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE).equals(crt.getTBSCertificate().getSignature()));
-        isTrue(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE).equals(crt.getSignatureAlgorithm()));
+        isTrue(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_unsigned).equals(crt.getTBSCertificate().getSignature()));
+        isTrue(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_unsigned).equals(crt.getSignatureAlgorithm()));
         isTrue(0 == cert.getSignature().length);
     }
 

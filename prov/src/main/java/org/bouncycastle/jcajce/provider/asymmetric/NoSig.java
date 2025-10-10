@@ -85,6 +85,7 @@ public class NoSig
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("Signature." + X509ObjectIdentifiers.id_alg_noSignature, PREFIX + "SigSpi");
+            provider.addAlgorithm("Signature." + X509ObjectIdentifiers.id_alg_unsigned, PREFIX + "SigSpi");
         }
     }
 }
