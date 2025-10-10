@@ -100,6 +100,11 @@ public interface X509ObjectIdentifiers
      */
     ASN1ObjectIdentifier id_alg_noSignature = pkix_algorithms.branch("2");
 
+    /**
+     * id-alg-unsigned OBJECT IDENTIFIER ::= {id-pkix id-alg(6) 36}
+     */
+    ASN1ObjectIdentifier id_alg_unsigned = pkix_algorithms.branch("36");
+    
     /** 1.3.6.1.5.5.7.9 */
     static final ASN1ObjectIdentifier id_pda = id_pkix.branch("9");
 
