@@ -16,11 +16,6 @@ class Timeout
         this.startMillis = Math.max(0, currentTimeMillis);
     }
 
-//    long remainingMillis()
-//    {
-//        return remainingMillis(System.currentTimeMillis());
-//    }
-
     synchronized long remainingMillis(long currentTimeMillis)
     {
         // If clock jumped backwards, reset start time 
@@ -41,11 +36,6 @@ class Timeout
 
         return remaining;
     }
-
-//    static int constrainWaitMillis(int waitMillis, Timeout timeout)
-//    {
-//        return constrainWaitMillis(waitMillis, timeout, System.currentTimeMillis());
-//    }
 
     static int constrainWaitMillis(int waitMillis, Timeout timeout, long currentTimeMillis)
     {
@@ -72,11 +62,6 @@ class Timeout
         return Math.min(waitMillis, timeoutMillis);
     }
 
-    static Timeout forWaitMillis(int waitMillis)
-    {
-        return forWaitMillis(waitMillis, System.currentTimeMillis());
-    }
-
     static Timeout forWaitMillis(int waitMillis, long currentTimeMillis)
     {
         if (waitMillis < 0)
@@ -89,11 +74,6 @@ class Timeout
         }
         return null;
     }
-
-//    static int getWaitMillis(Timeout timeout)
-//    {
-//        return getWaitMillis(timeout, System.currentTimeMillis());
-//    }
 
     static int getWaitMillis(Timeout timeout, long currentTimeMillis)
     {
@@ -112,11 +92,6 @@ class Timeout
         }
         return (int)remainingMillis;
     }
-
-//    static boolean hasExpired(Timeout timeout)
-//    {
-//        return hasExpired(timeout, System.currentTimeMillis());
-//    }
 
     static boolean hasExpired(Timeout timeout, long currentTimeMillis)
     {

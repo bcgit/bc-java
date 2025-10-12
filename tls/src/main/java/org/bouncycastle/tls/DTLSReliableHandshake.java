@@ -100,15 +100,17 @@ class DTLSReliableHandshake
     DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport, int timeoutMillis, int initialResendMillis,
         DTLSRequest request)
     {
+        long currentTimeMillis = System.currentTimeMillis();
+
         this.recordLayer = transport;
         this.handshakeHash = new DeferredHash(context);
-        this.handshakeTimeout = Timeout.forWaitMillis(timeoutMillis);
+        this.handshakeTimeout = Timeout.forWaitMillis(timeoutMillis, currentTimeMillis);
         this.initialResendMillis = initialResendMillis;
 
         if (null != request)
         {
             resendMillis = initialResendMillis;
-            resendTimeout = new Timeout(resendMillis);
+            resendTimeout = new Timeout(resendMillis, currentTimeMillis);
 
             long recordSeq = request.getRecordSeq();
             int messageSeq = request.getMessageSeq();
