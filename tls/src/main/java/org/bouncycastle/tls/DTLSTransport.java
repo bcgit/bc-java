@@ -31,6 +31,9 @@ public class DTLSTransport
         return receive(buf, off, len, waitMillis, null);
     }
 
+    /**
+     * A waitMillis of zero is interpreted as an infinite timeout.
+     */
     public int receive(byte[] buf, int off, int len, int waitMillis, DTLSRecordCallback recordCallback)    
         throws IOException
     {
