@@ -53,7 +53,7 @@ public class Challenge
     {
         int index = 0;
 
-        if (seq.getObjectAt(0) instanceof ASN1Sequence)
+        if (seq.getObjectAt(0).toASN1Primitive() instanceof ASN1Sequence)
         {
             owf = AlgorithmIdentifier.getInstance(seq.getObjectAt(index++));
         }
@@ -66,15 +66,14 @@ public class Challenge
         challenge = ASN1OctetString.getInstance(seq.getObjectAt(index++));
         if (seq.size() > index)
         {
-            encryptedRand = EnvelopedData.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index)), true);
-        }
-        else
-        {
             if (challenge.getOctets().length != 0)
             {
                 throw new IllegalArgumentException("ambigous challenge");
             }
-
+            encryptedRand = EnvelopedData.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index)), true);
+        }
+        else
+        {
             encryptedRand = null;
         }
     }
@@ -180,7 +179,10 @@ public class Challenge
         v.addOptional(owf);
         v.add(witness);
         v.add(challenge);
-        v.addOptional(new DERTaggedObject(0, encryptedRand));
+        if (encryptedRand != null)
+        {
+            v.add(new DERTaggedObject(0, encryptedRand));
+        }
 
         return new DERSequence(v);
     }
