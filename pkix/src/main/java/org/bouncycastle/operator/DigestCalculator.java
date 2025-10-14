@@ -2,6 +2,7 @@ package org.bouncycastle.operator;
 
 import java.io.OutputStream;
 
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -10,6 +11,9 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  */
 public interface DigestCalculator
 {
+    static final AlgorithmIdentifier SHA_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+    static final AlgorithmIdentifier SHA_512 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+
     /**
      * Return the algorithm identifier representing the digest implemented by
      * this calculator.
