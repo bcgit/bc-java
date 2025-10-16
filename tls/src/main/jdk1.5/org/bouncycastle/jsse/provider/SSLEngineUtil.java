@@ -9,7 +9,6 @@ import javax.net.ssl.SSLSession;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.jsse.BCSSLParameters;
-import org.bouncycastle.tls.ReflectionUtil;
 
 abstract class SSLEngineUtil
 {
