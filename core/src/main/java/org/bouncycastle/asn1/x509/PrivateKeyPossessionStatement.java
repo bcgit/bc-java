@@ -9,35 +9,33 @@ import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 
 /**
  * <pre>
- * PrivateKeyStatement ::= SEQUENCE {
+ * PrivateKeyPossessionStatement ::= SEQUENCE {
  *       signer  IssuerAndSerialNumber,
  *       cert    Certificate OPTIONAL }
  * </pre>
- * @deprecated use PrivateKeyPossessionStatement
  */
-@Deprecated
-public class PrivateKeyStatement
+public class PrivateKeyPossessionStatement
     extends ASN1Object
 {
     private final IssuerAndSerialNumber signer;
     private final Certificate cert;
 
-    public static PrivateKeyStatement getInstance(Object obj)
+    public static PrivateKeyPossessionStatement getInstance(Object obj)
     {
-        if (obj instanceof PrivateKeyStatement)
+        if (obj instanceof PrivateKeyPossessionStatement)
         {
-            return (PrivateKeyStatement)obj;
+            return (PrivateKeyPossessionStatement)obj;
         }
 
         if (obj != null)
         {
-            return new PrivateKeyStatement(ASN1Sequence.getInstance(obj));
+            return new PrivateKeyPossessionStatement(ASN1Sequence.getInstance(obj));
         }
 
         return null;
     }
 
-    private PrivateKeyStatement(ASN1Sequence seq)
+    private PrivateKeyPossessionStatement(ASN1Sequence seq)
     {
         if (seq.size() == 1)
         {
@@ -55,13 +53,13 @@ public class PrivateKeyStatement
         }
     }
 
-    public PrivateKeyStatement(IssuerAndSerialNumber signer)
+    public PrivateKeyPossessionStatement(IssuerAndSerialNumber signer)
     {
         this.signer = signer;
         this.cert = null;
     }
 
-    public PrivateKeyStatement(Certificate cert)
+    public PrivateKeyPossessionStatement(Certificate cert)
     {
         this.signer = new IssuerAndSerialNumber(cert.getIssuer(), cert.getSerialNumber().getValue());
         this.cert = cert;
