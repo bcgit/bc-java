@@ -7,6 +7,7 @@ public interface X509AttributeIdentifiers
     /**
      * @deprecated use id_at_role
      */
+    @Deprecated
     ASN1ObjectIdentifier RoleSyntax = new ASN1ObjectIdentifier("2.5.4.72");
 
     ASN1ObjectIdentifier id_pe_ac_auditIdentity = X509ObjectIdentifiers.id_pe.branch("4");
@@ -27,5 +28,10 @@ public interface X509AttributeIdentifiers
     ASN1ObjectIdentifier id_at_role = new ASN1ObjectIdentifier("2.5.4.72");
     ASN1ObjectIdentifier id_at_clearance = new ASN1ObjectIdentifier("2.5.1.5.55");
 
+    /**
+     * @deprecated use statementOfPossession
+     */
+    @Deprecated
     ASN1ObjectIdentifier id_at_privateKeyStatement = new ASN1ObjectIdentifier("1.3.6.1.4.1.22112.2.1");
+    ASN1ObjectIdentifier id_at_statementOfPossession = new ASN1ObjectIdentifier("1.3.6.1.4.1.22112.2.1");
 }
