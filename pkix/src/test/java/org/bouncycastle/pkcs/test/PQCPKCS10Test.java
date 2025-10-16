@@ -12,7 +12,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.PrivateKeyStatement;
+import org.bouncycastle.asn1.x509.PrivateKeyPossessionStatement;
 import org.bouncycastle.asn1.x509.X509AttributeIdentifiers;
 import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.CertIOException;
@@ -59,8 +59,8 @@ public class PQCPKCS10Test
         PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
                                                         new X500Name("CN=ML-KEM Client"), kemKp.getPublic());
 
-        pkcs10Builder.addAttribute(X509AttributeIdentifiers.id_at_privateKeyStatement,
-                                        new PrivateKeyStatement(sigCert.toASN1Structure()));
+        pkcs10Builder.addAttribute(X509AttributeIdentifiers.id_at_statementOfPossession,
+                                        new PrivateKeyPossessionStatement(sigCert.toASN1Structure()));
 
         PKCS10CertificationRequest request = pkcs10Builder.build(
                             new JcaContentSignerBuilder("ML-DSA").setProvider("BC").build(dilKp.getPrivate()));
