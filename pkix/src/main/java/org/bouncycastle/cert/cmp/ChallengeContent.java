@@ -29,7 +29,6 @@ public class ChallengeContent
     public byte[] extractChallenge(PKIHeader sourceMessageHdr, Recipient recipient)
         throws CMPException
     {
-          // TODO: add check for recipientName
         try
         {
             CMSEnvelopedData cmsEnvelopedData = new CMSEnvelopedData(new ContentInfo(PKCSObjectIdentifiers.envelopedData, challenge.getEncryptedRand()));
