@@ -7,8 +7,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 
-import org.bouncycastle.tls.ReflectionUtil;
-
 abstract class KeyStoreUtil
 {
     private static final Method getProtectionAlgorithm;

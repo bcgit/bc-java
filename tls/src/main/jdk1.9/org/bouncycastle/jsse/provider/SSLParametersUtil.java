@@ -13,7 +13,6 @@ import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
-import org.bouncycastle.tls.ReflectionUtil;
 
 abstract class SSLParametersUtil
 {
