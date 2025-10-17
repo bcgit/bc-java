@@ -1,4 +1,4 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.jsse.provider;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -7,9 +7,9 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-public abstract class ReflectionUtil
+class ReflectionUtil
 {
-    public static Method findMethod(Method[] methods, String name)
+    static Method findMethod(Method[] methods, String name)
     {
         if (methods != null)
         {
@@ -24,12 +24,13 @@ public abstract class ReflectionUtil
         return null;
     }
 
-    public static boolean hasMethod(Method[] methods, String name)
+    static boolean hasMethod(Method[] methods, String name)
     {
         return null != findMethod(methods, name);
     }
 
-    public static Class<?> getClass(final String className)
+
+    static Class<?> getClass(final String className)
     {
         if (null == className)
         {
@@ -57,7 +58,7 @@ public abstract class ReflectionUtil
         });
     }
 
-    public static <T> Constructor<T> getDeclaredConstructor(final String className, final Class<?>... parameterTypes)
+    static <T> Constructor<T> getDeclaredConstructor(final String className, final Class<?>... parameterTypes)
     {
         if (null == className)
         {
@@ -89,7 +90,7 @@ public abstract class ReflectionUtil
         });
     }
 
-    public static Method getMethod(final String className, final String methodName, final Class<?>... parameterTypes)
+    static Method getMethod(final String className, final String methodName, final Class<?>... parameterTypes)
     {
         if (null == className || null == methodName)
         {
@@ -121,7 +122,7 @@ public abstract class ReflectionUtil
         });
     }
 
-    public static Method[] getMethods(final String className)
+    static Method[] getMethods(final String className)
     {
         if (null == className)
         {
@@ -153,7 +154,7 @@ public abstract class ReflectionUtil
         });
     }
 
-    public static Integer getStaticInt(final String className, final String fieldName)
+    static Integer getStaticInt(final String className, final String fieldName)
     {
         return AccessController.doPrivileged(new PrivilegedAction<Integer>()
         {
@@ -188,18 +189,18 @@ public abstract class ReflectionUtil
         });
     }
 
-    public static Integer getStaticIntOrDefault(final String className, final String fieldName, int defaultValue)
+    static Integer getStaticIntOrDefault(final String className, final String fieldName, int defaultValue)
     {
         Integer value = getStaticInt(className, fieldName);
         return null == value ? defaultValue : value.intValue();
     }
 
-    public static Object invokeGetter(final Object obj, final Method method)
+    static Object invokeGetter(final Object obj, final Method method)
     {
         return invokeMethod(obj, method);
     }
 
-    public static Object invokeMethod(final Object obj, final Method method, final Object... args)
+    static Object invokeMethod(final Object obj, final Method method, final Object... args)
     {
         return AccessController.doPrivileged(new PrivilegedAction<Object>()
         {
@@ -221,7 +222,7 @@ public abstract class ReflectionUtil
         });
     }
 
-    public static void invokeSetter(final Object obj, final Method method, final Object arg)
+    static void invokeSetter(final Object obj, final Method method, final Object arg)
     {
         invokeMethod(obj, method, arg);
     }

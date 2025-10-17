@@ -6,12 +6,15 @@ abstract class PrivateKeyUtil
 {
     void destroy(PrivateKey privateKey)
     {
-        try
+        if (privateKey != null)
         {
-            privateKey.destroy();
-        }
-        catch (Exception e)
-        {
+            try
+            {
+                privateKey.destroy();
+            }
+            catch (Exception e)
+            {
+            }
         }
     }
 }

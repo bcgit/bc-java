@@ -8,7 +8,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
-import org.bouncycastle.tls.ReflectionUtil;
 
 abstract class X509TrustManagerUtil
 {

@@ -6,7 +6,6 @@ import java.lang.reflect.Method;
 import javax.net.ssl.SSLSession;
 
 import org.bouncycastle.jsse.BCExtendedSSLSession;
-import org.bouncycastle.tls.ReflectionUtil;
 
 abstract class SSLSessionUtil
 {
