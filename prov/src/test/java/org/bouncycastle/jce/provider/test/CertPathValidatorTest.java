@@ -1668,7 +1668,7 @@ public class CertPathValidatorTest
         }
     }
 
-    private class DodgyCertificate
+    private static class DodgyCertificate
         extends ASN1Object
     {
         ASN1Sequence  seq;
@@ -1758,7 +1758,7 @@ public class CertPathValidatorTest
         }
     }
 
-    private class DodgyTBSCertificate
+    private static class DodgyTBSCertificate
         extends ASN1Object
     {
         ASN1Sequence            seq;
