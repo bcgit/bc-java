@@ -404,6 +404,7 @@ public class OpenPGPKey
 
         /**
          * Return true if the provided passphrase is correct.
+         * Note: This method will always return false for stripped secret keys.
          *
          * @param passphrase passphrase
          * @return true if the passphrase is correct
@@ -418,7 +419,7 @@ public class OpenPGPKey
             try
             {
                 OpenPGPPrivateKey privateKey = unlock(passphrase);
-                return privateKey.unlockedKey != null;
+                return privateKey != null && privateKey.unlockedKey != null;
             }
             catch (PGPException e)
             {
