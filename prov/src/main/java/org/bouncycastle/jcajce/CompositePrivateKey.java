@@ -20,7 +20,6 @@ import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
-import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -136,7 +135,14 @@ public class CompositePrivateKey
         if (key instanceof MLDSAPrivateKey)
         {
             // TODO: we don't insist on seed but we try to accommodate it - the debate continues
-            return ((MLDSAPrivateKey)key).getPrivateKey(true);
+            try
+            {
+                return ((MLDSAPrivateKey)key).getPrivateKey(true);
+            }
+            catch (Exception e)
+            {
+                return key;
+            }
         }
         else
         {
@@ -258,7 +264,7 @@ public class CompositePrivateKey
         {
             try
             {
-                byte[] mldsaKey = ((BCMLDSAPrivateKey)keys.get(0)).getSeed();
+                byte[] mldsaKey = ((MLDSAPrivateKey)keys.get(0)).getSeed();
                 PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(keys.get(1).getEncoded()));
                 byte[] tradKey = pki.getPrivateKey().getOctets();
                 return new PrivateKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
