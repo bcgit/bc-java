@@ -2785,7 +2785,7 @@ public class PKCS12StoreTest
         testRawKeyBagStore();
         testAES256_AES128();
         testAES256GCM_AES128_GCM();
-       // testPKCS12StoreWrongPassword();
+        testPKCS12StoreWrongPassword();
 
         // converter tests
 
