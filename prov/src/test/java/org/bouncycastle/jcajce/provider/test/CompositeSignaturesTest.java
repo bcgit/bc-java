@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -37,6 +38,7 @@ import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
+import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPublicKey;
 import org.bouncycastle.jcajce.spec.CompositeSignatureSpec;
@@ -338,7 +340,70 @@ public class CompositeSignaturesTest
         signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
         TestCase.assertTrue(signature.verify(signatureValue));
 
+        //
+        // as COMPOSITE on sig creation
+        //
+        compPublicKey = CompositePublicKey.builder(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+            .addPublicKey(mldsaKp.getPublic(), "BC")
+            .addPublicKey(ecKp.getPublic(), "SunEC")
+            .build();
+        compPrivateKey = CompositePrivateKey.builder(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+            .addPrivateKey(mldsaKp.getPrivate(), "BC")
+            .addPrivateKey(ecKp.getPrivate(), "SunEC")
+            .build();
 
+        signature = Signature.getInstance("COMPOSITE", "BC");
+
+        signature.initSign(compPriv);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        signatureValue = signature.sign();
+
+        signature = Signature.getInstance(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId(), "BC");
+        signature.initVerify(compPub);
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        TestCase.assertTrue(signature.verify(signatureValue));
+    }
+
+    public void testMixedCompositionHSMStyle()
+        throws Exception
+    {
+        if (Security.getProvider("SunEC") == null)
+        {
+            return;
+        }
+        KeyPairGenerator mldsaKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
+
+        mldsaKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
+
+        KeyPair mldsaKp = mldsaKpGen.generateKeyPair();
+
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "SunEC");
+
+        ecKpGen.initialize(new ECGenParameterSpec("secp256r1"));
+
+        KeyPair ecKp = ecKpGen.generateKeyPair();
+
+        CompositePublicKey compPublicKey = CompositePublicKey.builder(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+            .addPublicKey(mldsaKp.getPublic(), "BC")
+            .addPublicKey(ecKp.getPublic(), "SunEC")
+            .build();
+        CompositePrivateKey compPrivateKey = CompositePrivateKey.builder(BCObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+            .addPrivateKey(new ProxyHSMPrivateKey((MLDSAPrivateKey)mldsaKp.getPrivate()), "BC")
+            .addPrivateKey(ecKp.getPrivate(), "SunEC")
+            .build();
+
+        Signature signature = Signature.getInstance("COMPOSITE", "BC");
+        
+        try
+        {
+            signature.initSign(compPrivateKey);
+            fail("proxy HSM key did not fail with BC");
+        }
+        catch (InvalidKeyException e)
+        {
+            // we want to make sure it got at least as far as passing key to ML-DSA implementation
+            assertEquals("unknown private key passed to ML-DSA", e.getMessage());
+        }
     }
 
     public void testMixedCompositionWithNull()
@@ -807,5 +872,64 @@ public class CompositeSignaturesTest
         }
 
         return json.substring(start, end).replace("\\\"", "\"");
+    }
+
+    private static class ProxyHSMPrivateKey
+        implements MLDSAPrivateKey
+    {
+        private final MLDSAPrivateKey privateKey;
+
+        ProxyHSMPrivateKey(MLDSAPrivateKey privateKey)
+        {
+            this.privateKey = privateKey;
+        }
+
+        @Override
+        public String getAlgorithm()
+        {
+            return privateKey.getAlgorithm();
+        }
+
+        @Override
+        public String getFormat()
+        {
+            throw new IllegalStateException("getFormat() called");
+        }
+
+        @Override
+        public byte[] getEncoded()
+        {
+            throw new IllegalStateException("getEncoded() called");
+        }
+
+        @Override
+        public MLDSAParameterSpec getParameterSpec()
+        {
+            return privateKey.getParameterSpec();
+        }
+
+        @Override
+        public MLDSAPublicKey getPublicKey()
+        {
+            return privateKey.getPublicKey();
+        }
+
+        @Override
+        public byte[] getPrivateData()
+        {
+            throw new IllegalStateException("getPrivateData() called");
+        }
+
+        @Override
+        public byte[] getSeed()
+        {
+            throw new IllegalStateException("getSeed() called");
+        }
+
+        @Override
+        public MLDSAPrivateKey getPrivateKey(boolean preferSeedOnly)
+        {
+            throw new IllegalStateException("getPrivateKey() called");
+        }
     }
 }

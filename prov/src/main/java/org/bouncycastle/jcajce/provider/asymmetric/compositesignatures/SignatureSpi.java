@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
@@ -204,7 +203,7 @@ public class SignatureSpi
         }
         else
         {
-            ASN1ObjectIdentifier sigAlgorithm = PrivateKeyInfo.getInstance(compositePrivateKey.getEncoded()).getPrivateKeyAlgorithm().getAlgorithm();
+            ASN1ObjectIdentifier sigAlgorithm = compositePrivateKey.getAlgorithmIdentifier().getAlgorithm();
 
             this.algorithm = sigAlgorithm;
             this.baseDigest = CompositeIndex.getDigest(sigAlgorithm);
