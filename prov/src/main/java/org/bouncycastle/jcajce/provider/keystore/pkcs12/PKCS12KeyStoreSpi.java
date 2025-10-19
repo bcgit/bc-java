@@ -672,9 +672,13 @@ public class PKCS12KeyStoreSpi
                 return (PrivateKey)cipher.unwrap(data, "", Cipher.PRIVATE_KEY);
             }
         }
+        catch (InvalidKeyException e)
+        {
+            throw Exceptions.ioException("exception unwrapping private key:" + e.getMessage(), new UnrecoverableKeyException(e.toString()));
+        }
         catch (Exception e)
         {
-            throw new IOException("exception unwrapping private key - " + e.toString());
+            throw Exceptions.ioException("exception unwrapping private key: " + e.getMessage(), e);
         }
 
         throw new IOException("exception unwrapping private key - cannot recognise: " + algorithm);
