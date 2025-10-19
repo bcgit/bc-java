@@ -2374,7 +2374,7 @@ public class PKCS12StoreTest
             fail("no exception");
         }
         catch (IOException e)
-        {               e.printStackTrace();
+        {            
             if (!(e.getCause() instanceof UnrecoverableKeyException))
             {
                 fail("no exception cause found for wrong password");
