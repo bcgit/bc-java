@@ -238,12 +238,7 @@ class Poly
 
     public void power2Round(Poly a)
     {
-        for (int i = 0; i < DilithiumN; ++i)
-        {
-            int[] p2r = Rounding.power2Round(this.getCoeffIndex(i));
-            this.setCoeffIndex(i, p2r[0]);
-            a.setCoeffIndex(i, p2r[1]);
-        }
+        Rounding.power2RoundAll(this.coeffs, a.coeffs);
     }
 
     public byte[] polyt1Pack()
