@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.mldsa.HashMLDSASigner;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
@@ -41,15 +42,21 @@ public class MLDSATest
             put("ML-DSA-44", MLDSAParameters.ml_dsa_44);
             put("ML-DSA-65", MLDSAParameters.ml_dsa_65);
             put("ML-DSA-87", MLDSAParameters.ml_dsa_87);
+            put("ML-DSA-44-WITH-SHA512", MLDSAParameters.ml_dsa_44_with_sha512);
+            put("ML-DSA-65-WITH-SHA512", MLDSAParameters.ml_dsa_65_with_sha512);
+            put("ML-DSA-87-WITH-SHA512", MLDSAParameters.ml_dsa_87_with_sha512);
         }
     };
 
     private static final MLDSAParameters[] PARAMETER_SETS = new MLDSAParameters[]
-        {
-            MLDSAParameters.ml_dsa_44,
-            MLDSAParameters.ml_dsa_65,
-            MLDSAParameters.ml_dsa_87,
-        };
+    {
+        MLDSAParameters.ml_dsa_44,
+        MLDSAParameters.ml_dsa_65,
+        MLDSAParameters.ml_dsa_87,
+        MLDSAParameters.ml_dsa_44_with_sha512,
+        MLDSAParameters.ml_dsa_65_with_sha512,
+        MLDSAParameters.ml_dsa_87_with_sha512,
+    };
 
     public void testConsistency()
         throws Exception
@@ -72,7 +79,7 @@ public class MLDSATest
                 {
                     AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
 
-                    MLDSASigner signer = new MLDSASigner();
+                    Signer signer = parameters.isPreHash() ? new HashMLDSASigner() : new MLDSASigner();
 
                     for (int j = 0; j < 2; ++j)
                     {

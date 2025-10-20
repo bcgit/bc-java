@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.mldsa;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 
@@ -30,8 +29,6 @@ class MLDSAEngine
     private final int DilithiumPolyW1PackedBytes;
     private final int DilithiumPolyEtaPackedBytes;
 
-    private final int DilithiumMode;
-
     private final int DilithiumK;
     private final int DilithiumL;
     private final int DilithiumEta;
@@ -43,7 +40,7 @@ class MLDSAEngine
     private final int DilithiumCTilde;
 
     private final int CryptoPublicKeyBytes;
-    private final int CryptoSecretKeyBytes;
+//    private final int CryptoSecretKeyBytes;
     private final int CryptoBytes;
 
     private final int PolyUniformGamma1NBlocks;
@@ -147,7 +144,6 @@ class MLDSAEngine
 
     MLDSAEngine(int mode, SecureRandom random)
     {
-        this.DilithiumMode = mode;
         switch (mode)
         {
         case 2:
@@ -201,14 +197,14 @@ class MLDSAEngine
         this.random = random;
         this.DilithiumPolyVecHPackedBytes = this.DilithiumOmega + this.DilithiumK;
         this.CryptoPublicKeyBytes = SeedBytes + this.DilithiumK * DilithiumPolyT1PackedBytes;
-        this.CryptoSecretKeyBytes =
-            (
-                2 * SeedBytes
-                    + TrBytes
-                    + DilithiumL * this.DilithiumPolyEtaPackedBytes
-                    + DilithiumK * this.DilithiumPolyEtaPackedBytes
-                    + DilithiumK * DilithiumPolyT0PackedBytes
-            );
+//        this.CryptoSecretKeyBytes =
+//            (
+//                2 * SeedBytes
+//                    + TrBytes
+//                    + DilithiumL * this.DilithiumPolyEtaPackedBytes
+//                    + DilithiumK * this.DilithiumPolyEtaPackedBytes
+//                    + DilithiumK * DilithiumPolyT0PackedBytes
+//            );
         this.CryptoBytes = DilithiumCTilde + DilithiumL * this.DilithiumPolyZPackedBytes + this.DilithiumPolyVecHPackedBytes;
 
         if (this.DilithiumGamma1 == (1 << 17))
