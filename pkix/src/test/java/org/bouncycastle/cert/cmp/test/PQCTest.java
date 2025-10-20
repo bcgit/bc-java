@@ -397,7 +397,7 @@ public class PQCTest
         assertEquals(true, Arrays.equals(new CMPCertificate(cert.toASN1Structure()).getEncoded(), recData));
 
         // confirmation message calculation - this isn't actually required as part of the protocol, other than
-        // to allow the user to confirm they received the certificate. A CA can publish at this point.
+        // to allow the user to confirm they received the certificate. A CA could have published prior to this point.
 
         CertificateConfirmationContent content = new CertificateConfirmationContentBuilder()
             .addAcceptedCertificate(cert, BigInteger.ONE)
