@@ -1949,7 +1949,7 @@ public class OpenPGPCertificate
                     throw new IncorrectOpenPGPSignatureException(this, "Key Signature is not correct.");
                 }
             }
-            catch (PGPException e)
+            catch (PGPException | ClassCastException e)
             {
                 this.isCorrect = false;
                 throw new PGPSignatureException("Key Signature could not be verified.", e);
@@ -1982,7 +1982,7 @@ public class OpenPGPCertificate
                     throw new IncorrectOpenPGPSignatureException(this, "UserID Signature is not correct.");
                 }
             }
-            catch (PGPException e)
+            catch (PGPException | ClassCastException e)
             {
                 this.isCorrect = false;
                 throw new PGPSignatureException("UserID Signature could not be verified.", e);
@@ -2015,7 +2015,7 @@ public class OpenPGPCertificate
                     throw new IncorrectOpenPGPSignatureException(this, "UserAttribute Signature is not correct.");
                 }
             }
-            catch (PGPException e)
+            catch (PGPException | ClassCastException e)
             {
                 this.isCorrect = false;
                 throw new PGPSignatureException("Could not verify UserAttribute Signature.", e);
