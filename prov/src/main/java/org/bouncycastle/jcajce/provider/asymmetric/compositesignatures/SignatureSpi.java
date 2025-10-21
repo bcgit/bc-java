@@ -77,9 +77,9 @@ public class SignatureSpi
         domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-RSA3072-PKCS15-SHA512"));
         domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-RSA4096-PSS-SHA512"));
         domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-RSA4096-PKCS15-SHA512"));
-        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-ECDSA-P256-SHA512"));
-        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-ECDSA-P384-SHA512"));
-        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-ECDSA-brainpoolP256r1-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-P256-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-P384-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-BP256-SHA512"));
         domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-Ed25519-SHA512"));
         domainSeparators.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, Strings.toByteArray("COMPSIG-MLDSA87-P384-SHA512"));
         domainSeparators.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, Strings.toByteArray("COMPSIG-MLDSA87-BP384-SHA512"));

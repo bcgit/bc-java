@@ -100,10 +100,10 @@ public class CompositeSignaturesTest
         oidMap.put("id-MLDSA65-RSA3072-PSS-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512.getId());
         oidMap.put("id-MLDSA65-RSA3072-PKCS15-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512.getId());
         oidMap.put("id-MLDSA65-RSA4096-PSS-SHA512",  IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512.getId());
-        oidMap.put("id-MLDSA65-RSA4096-PKCS15-SHA512", "2.16.840.1.114027.80.9.1.7");
-        oidMap.put("id-MLDSA65-ECDSA-P256-SHA512", "2.16.840.1.114027.80.9.1.8");
-        oidMap.put("id-MLDSA65-ECDSA-P384-SHA512", "2.16.840.1.114027.80.9.1.9");
-        oidMap.put("id-MLDSA65-ECDSA-brainpoolP256r1-SHA512", "2.16.840.1.114027.80.9.1.10");
+        oidMap.put("id-MLDSA65-RSA4096-PKCS15-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512.getId());
+        oidMap.put("id-MLDSA65-ECDSA-P256-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512.getId());
+        oidMap.put("id-MLDSA65-ECDSA-P384-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512.getId());
+        oidMap.put("id-MLDSA65-ECDSA-brainpoolP256r1-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512.getId());
         oidMap.put("id-MLDSA65-Ed25519-SHA512", IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512.getId());
         oidMap.put("id-MLDSA87-ECDSA-P384-SHA512", IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512.getId());
         oidMap.put("id-MLDSA87-ECDSA-brainpoolP384r1-SHA512", IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512.getId());
@@ -723,14 +723,10 @@ public class CompositeSignaturesTest
                 //Ignore IOException
             }
             System.err.println(tcId);
-            if (tcId.equals("id-MLDSA65-RSA4096-PSS-SHA512")
-                || tcId.equals("id-MLDSA65-RSA4096-PKCS15-SHA512")
-            || tcId.equals("id-MLDSA65-ECDSA-P256-SHA512")
-            || tcId.equals("id-MLDSA65-ECDSA-P384-SHA512")
-                || tcId.equals("id-MLDSA65-ECDSA-brainpoolP256r1-SHA512"))
-            {
-                continue;
-            }
+//            if (tcId.equals("id-MLDSA65-RSA4096-PSS-SHA512"))
+//            {
+//                continue;
+//            }
             if (tcId.contains("id-ML-DSA"))
             {
                 KeyFactory kFact = KeyFactory.getInstance("ML-DSA", "BC");
