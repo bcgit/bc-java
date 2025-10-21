@@ -23,6 +23,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -474,7 +475,7 @@ public class CompositeKeyTest
         PrivateKey mldsaPriv = mldsaKp.getPrivate();
         PublicKey mldsaPub = mldsaKp.getPublic();
 
-        CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaPriv, ecPriv);
+        CompositePrivateKey mlecPriv = new CompositePrivateKey(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaPriv, ecPriv);
 
         StringWriter sWrt = new StringWriter();
         JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
@@ -519,7 +520,7 @@ public class CompositeKeyTest
         PrivateKey mldsaPriv = mldsaKp.getPrivate();
         PublicKey mldsaPub = mldsaKp.getPublic();
 
-        CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, mldsaPriv, ecPriv);
+        CompositePrivateKey mlecPriv = new CompositePrivateKey(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, mldsaPriv, ecPriv);
 
         StringWriter sWrt = new StringWriter();
         JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
@@ -564,7 +565,7 @@ public class CompositeKeyTest
         PrivateKey mldsaPriv = mldsaKp.getPrivate();
         PublicKey mldsaPub = mldsaKp.getPublic();
 
-        CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, mldsaPriv, ecPriv);
+        CompositePrivateKey mlecPriv = new CompositePrivateKey(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, mldsaPriv, ecPriv);
 
         StringWriter sWrt = new StringWriter();
         JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);

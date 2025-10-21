@@ -30,7 +30,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.BCKey;
@@ -40,6 +40,7 @@ import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -49,7 +50,7 @@ public class SignatureSpi
     extends java.security.SignatureSpi
 {
     //the byte encoding of the ASCII string "CompositeAlgorithmSignatures2025"
-    private static final byte[] prefix = Hex.decode("436F6D706F73697465416C676F726974686D5369676E61747572657332303235");
+    private static final byte[] prefix = Hex.decode("436f6d706f73697465416c676f726974686d5369676e61747572657332303235");
     private static final Map<String, String> canonicalNames = new HashMap<String, String>();
     private static final HashMap<ASN1ObjectIdentifier, byte[]> domainSeparators = new HashMap<ASN1ObjectIdentifier, byte[]>();
     private static final HashMap<ASN1ObjectIdentifier, AlgorithmParameterSpec> algorithmsParameterSpecs = new HashMap<ASN1ObjectIdentifier, AlgorithmParameterSpec>();
@@ -67,34 +68,35 @@ public class SignatureSpi
         canonicalNames.put(NISTObjectIdentifiers.id_ml_dsa_44.getId(), ML_DSA_44);
         canonicalNames.put(NISTObjectIdentifiers.id_ml_dsa_65.getId(), ML_DSA_65);
         canonicalNames.put(NISTObjectIdentifiers.id_ml_dsa_87.getId(), ML_DSA_87);
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, Hex.decode("060B6086480186FA6B50090100"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, Hex.decode("060B6086480186FA6B50090101"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, Hex.decode("060B6086480186FA6B50090102"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, Hex.decode("060B6086480186FA6B50090103"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, Hex.decode("060B6086480186FA6B50090104"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, Hex.decode("060B6086480186FA6B50090105"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, Hex.decode("060B6086480186FA6B50090106"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, Hex.decode("060B6086480186FA6B50090107"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, Hex.decode("060B6086480186FA6B50090108"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, Hex.decode("060B6086480186FA6B50090109"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, Hex.decode("060B6086480186FA6B5009010A"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, Hex.decode("060B6086480186FA6B5009010B"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, Hex.decode("060B6086480186FA6B5009010C"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, Hex.decode("060B6086480186FA6B5009010D"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, Hex.decode("060B6086480186FA6B5009010E"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, Hex.decode("060B6086480186FA6B5009010F"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, Hex.decode("060B6086480186FA6B50090110"));
-        domainSeparators.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, Hex.decode("060B6086480186FA6B50090111"));
 
-        algorithmsParameterSpecs.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256,
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, Strings.toByteArray("COMPSIG-MLDSA44-RSA2048-PSS-SHA256"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, Strings.toByteArray("COMPSIG-MLDSA44-RSA2048-PKCS15-SHA256"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, Strings.toByteArray("COMPSIG-MLDSA44-Ed25519-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, Strings.toByteArray("COMPSIG-MLDSA44-ECDSA-P256-SHA256"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-RSA3072-PSS-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-RSA3072-PKCS15-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-RSA4096-PSS-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-RSA4096-PKCS15-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-ECDSA-P256-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-ECDSA-P384-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-ECDSA-brainpoolP256r1-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, Strings.toByteArray("COMPSIG-MLDSA65-Ed25519-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, Strings.toByteArray("COMPSIG-MLDSA87-P384-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, Strings.toByteArray("COMPSIG-MLDSA87-BP384-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, Strings.toByteArray("COMPSIG-MLDSA87-Ed448-SHAKE256"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, Strings.toByteArray("COMPSIG-MLDSA87-RSA3072-PSS-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, Strings.toByteArray("COMPSIG-MLDSA87-RSA4096-PSS-SHA512"));
+        domainSeparators.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, Strings.toByteArray("COMPSIG-MLDSA87-P521-SHA512"));
+
+        algorithmsParameterSpecs.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256,
             new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 32, 1));
-        algorithmsParameterSpecs.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512,
+        algorithmsParameterSpecs.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512,
             new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 32, 1));
-        algorithmsParameterSpecs.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512,
+        algorithmsParameterSpecs.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512,
             new PSSParameterSpec("SHA-384", "MGF1", new MGF1ParameterSpec("SHA-384"), 48, 1));
-        algorithmsParameterSpecs.put(MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512,
+        algorithmsParameterSpecs.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512,
             new PSSParameterSpec("SHA-384", "MGF1", new MGF1ParameterSpec("SHA-384"), 48, 1));
-        algorithmsParameterSpecs.put(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512,
+        algorithmsParameterSpecs.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512,
             new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 32, 1));
     }
 
@@ -357,17 +359,17 @@ public class SignatureSpi
 
         if (preHashDigest != null)
         {
-            processPreHashedMessage(r);
+            processPreHashedMessage(null);
         }
 
         byte[] mldsaSig = this.componentSignatures[0].sign();
         byte[] tradSig = this.componentSignatures[1].sign();
 
-        // Concatenate: r || ML-DSA sig || Traditional sig
-        byte[] compositeSig = new byte[32 + mldsaSig.length + tradSig.length];
-        System.arraycopy(r, 0, compositeSig, 0, 32);
-        System.arraycopy(mldsaSig, 0, compositeSig, 32, mldsaSig.length);
-        System.arraycopy(tradSig, 0, compositeSig, 32 + mldsaSig.length, tradSig.length);
+        // Concatenate: ML-DSA sig || Traditional sig
+        byte[] compositeSig = new byte[mldsaSig.length + tradSig.length];
+        //System.arraycopy(r, 0, compositeSig, 0, 32);
+        System.arraycopy(mldsaSig, 0, compositeSig, 0, mldsaSig.length);
+        System.arraycopy(tradSig, 0, compositeSig, mldsaSig.length, tradSig.length);
 
         return compositeSig;
     }
@@ -389,6 +391,17 @@ public class SignatureSpi
         for (int i = 0; i < this.componentSignatures.length; i++)
         {
             Signature componentSig = this.componentSignatures[i];
+            if (i == 0)  // ML-DSA Component
+            {
+                try
+                {
+                    componentSig.setParameter(new ContextParameterSpec(domain));
+                }
+                catch (Exception e)
+                {
+                    // TODO:
+                }
+            }
             componentSig.update(prefix);
             componentSig.update(domain);
             if (contextSpec == null)
@@ -402,22 +415,25 @@ public class SignatureSpi
                 componentSig.update((byte)ctx.length);
                 componentSig.update(ctx);
             }
-            componentSig.update(r, 0, r.length);
+            if (r != null)
+            {
+                componentSig.update(r, 0, r.length);
+            }
             componentSig.update(dig, 0, dig.length);
         }
     }
 
     public static byte[][] splitCompositeSignature(byte[] compositeSignature, int mldsaSigLen)
     {
-        byte[] r = new byte[32];
+        //byte[] r = new byte[32];
         byte[] mldsaSig = new byte[mldsaSigLen];
-        byte[] tradSig = new byte[compositeSignature.length - 32 - mldsaSigLen];
+        byte[] tradSig = new byte[compositeSignature.length - mldsaSigLen];
 
-        System.arraycopy(compositeSignature, 0, r, 0, 32);
-        System.arraycopy(compositeSignature, 32, mldsaSig, 0, mldsaSigLen);
-        System.arraycopy(compositeSignature, 32 + mldsaSigLen, tradSig, 0, tradSig.length);
+        //System.arraycopy(compositeSignature, 0, r, 0, 32);
+        System.arraycopy(compositeSignature, 0, mldsaSig, 0, mldsaSigLen);
+        System.arraycopy(compositeSignature, mldsaSigLen, tradSig, 0, tradSig.length);
 
-        return new byte[][]{r, mldsaSig, tradSig};
+        return new byte[][]{mldsaSig, tradSig};
     }
 
     /**
@@ -449,7 +465,7 @@ public class SignatureSpi
 
         if (preHashDigest != null)
         {
-            processPreHashedMessage(signatures[0]);
+            processPreHashedMessage(null);
         }
 
         // Currently all signatures try to verify even if, e.g., the first is invalid.
@@ -460,7 +476,7 @@ public class SignatureSpi
         for (int i = 0; i < this.componentSignatures.length; i++)
         {
             //signatures[0] is 32-byte random number
-            if (!this.componentSignatures[i].verify(signatures[i + 1]))
+            if (!this.componentSignatures[i].verify(signatures[i]))
             {
                 fail = true;
             }
@@ -634,7 +650,7 @@ public class SignatureSpi
     {
         public MLDSA44_ECDSA_P256_SHA256()
         {
-            super(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new SHA256Digest());
+            super(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new SHA256Digest());
         }
     }
 
@@ -652,7 +668,7 @@ public class SignatureSpi
     {
         public MLDSA44_ECDSA_P256_SHA256_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new SHA256Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new SHA256Digest(), true);
         }
     }
 
@@ -661,7 +677,7 @@ public class SignatureSpi
     {
         public MLDSA44_Ed25519_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new SHA512Digest());
         }
     }
 
@@ -670,7 +686,7 @@ public class SignatureSpi
     {
         public MLDSA44_Ed25519_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -679,7 +695,7 @@ public class SignatureSpi
     {
         public MLDSA44_RSA2048_PKCS15_SHA256()
         {
-            super(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new SHA256Digest());
+            super(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new SHA256Digest());
         }
     }
 
@@ -688,7 +704,7 @@ public class SignatureSpi
     {
         public MLDSA44_RSA2048_PKCS15_SHA256_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new SHA256Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new SHA256Digest(), true);
         }
     }
 
@@ -697,7 +713,7 @@ public class SignatureSpi
     {
         public MLDSA44_RSA2048_PSS_SHA256()
         {
-            super(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new SHA256Digest());
+            super(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new SHA256Digest());
         }
     }
 
@@ -706,7 +722,7 @@ public class SignatureSpi
     {
         public MLDSA44_RSA2048_PSS_SHA256_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new SHA256Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new SHA256Digest(), true);
         }
     }
 
@@ -715,7 +731,7 @@ public class SignatureSpi
     {
         public MLDSA65_Ed25519_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new SHA512Digest());
         }
     }
 
@@ -724,61 +740,7 @@ public class SignatureSpi
     {
         public MLDSA65_Ed25519_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new SHA512Digest(), true);
-        }
-    }
-
-    public static final class MLDSA65_RSA3072_PKCS15_SHA256
-        extends SignatureSpi
-    {
-        public MLDSA65_RSA3072_PKCS15_SHA256()
-        {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, new SHA256Digest());
-        }
-    }
-
-    public static final class MLDSA65_RSA3072_PKCS15_SHA256_PREHASH
-        extends SignatureSpi
-    {
-        public MLDSA65_RSA3072_PKCS15_SHA256_PREHASH()
-        {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, new SHA256Digest(), true);
-        }
-    }
-
-    public static final class MLDSA65_RSA3072_PSS_SHA256
-        extends SignatureSpi
-    {
-        public MLDSA65_RSA3072_PSS_SHA256()
-        {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, new SHA256Digest());
-        }
-    }
-
-    public static final class MLDSA65_RSA3072_PSS_SHA256_PREHASH
-        extends SignatureSpi
-    {
-        public MLDSA65_RSA3072_PSS_SHA256_PREHASH()
-        {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, new SHA256Digest(), true);
-        }
-    }
-
-    public static final class MLDSA87_Ed448_SHA512
-        extends SignatureSpi
-    {
-        public MLDSA87_Ed448_SHA512()
-        {
-            super(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, new SHA512Digest());
-        }
-    }
-
-    public static final class MLDSA87_Ed448_SHA512_PREHASH
-        extends SignatureSpi
-    {
-        public MLDSA87_Ed448_SHA512_PREHASH()
-        {
-            super(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -787,7 +749,7 @@ public class SignatureSpi
     {
         public MLDSA65_RSA3072_PSS_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new SHA512Digest());
         }
     }
 
@@ -796,7 +758,7 @@ public class SignatureSpi
     {
         public MLDSA65_RSA3072_PSS_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -805,7 +767,7 @@ public class SignatureSpi
     {
         public MLDSA65_RSA3072_PKCS15_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new SHA512Digest());
         }
     }
 
@@ -814,7 +776,7 @@ public class SignatureSpi
     {
         public MLDSA65_RSA3072_PKCS15_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -823,7 +785,7 @@ public class SignatureSpi
     {
         public MLDSA65_RSA4096_PSS_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new SHA512Digest());
         }
     }
 
@@ -832,7 +794,7 @@ public class SignatureSpi
     {
         public MLDSA65_RSA4096_PSS_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -841,7 +803,7 @@ public class SignatureSpi
     {
         public MLDSA65_RSA4096_PKCS15_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new SHA512Digest());
         }
     }
 
@@ -850,7 +812,7 @@ public class SignatureSpi
     {
         public MLDSA65_RSA4096_PKCS15_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -859,7 +821,7 @@ public class SignatureSpi
     {
         public MLDSA65_ECDSA_P256_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new SHA512Digest());
         }
     }
 
@@ -868,7 +830,7 @@ public class SignatureSpi
     {
         public MLDSA65_ECDSA_P256_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -877,7 +839,7 @@ public class SignatureSpi
     {
         public MLDSA65_ECDSA_P384_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new SHA512Digest());
         }
     }
 
@@ -886,7 +848,7 @@ public class SignatureSpi
     {
         public MLDSA65_ECDSA_P384_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -895,7 +857,7 @@ public class SignatureSpi
     {
         public MLDSA65_ECDSA_brainpoolP256r1_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new SHA512Digest());
         }
     }
 
@@ -904,7 +866,7 @@ public class SignatureSpi
     {
         public MLDSA65_ECDSA_brainpoolP256r1_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -913,7 +875,7 @@ public class SignatureSpi
     {
         public MLDSA87_ECDSA_P384_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new SHA512Digest());
         }
     }
 
@@ -922,7 +884,7 @@ public class SignatureSpi
     {
         public MLDSA87_ECDSA_P384_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -931,7 +893,7 @@ public class SignatureSpi
     {
         public MLDSA87_ECDSA_brainpoolP384r1_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new SHA512Digest());
         }
     }
 
@@ -940,7 +902,7 @@ public class SignatureSpi
     {
         public MLDSA87_ECDSA_brainpoolP384r1_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -949,7 +911,7 @@ public class SignatureSpi
     {
         public MLDSA87_Ed448_SHAKE256()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new SHAKEDigest(256));
+            super(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new SHAKEDigest(256));
         }
     }
 
@@ -958,7 +920,7 @@ public class SignatureSpi
     {
         public MLDSA87_Ed448_SHAKE256_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new SHAKEDigest(256), true);
+            super(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new SHAKEDigest(256), true);
         }
     }
 
@@ -967,7 +929,7 @@ public class SignatureSpi
     {
         public MLDSA87_RSA3072_PSS_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new SHA512Digest());
         }
     }
 
@@ -976,7 +938,7 @@ public class SignatureSpi
     {
         public MLDSA87_RSA3072_PSS_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -985,7 +947,7 @@ public class SignatureSpi
     {
         public MLDSA87_RSA4096_PSS_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new SHA512Digest());
         }
     }
 
@@ -994,7 +956,7 @@ public class SignatureSpi
     {
         public MLDSA87_RSA4096_PSS_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new SHA512Digest(), true);
         }
     }
 
@@ -1003,7 +965,7 @@ public class SignatureSpi
     {
         public MLDSA87_ECDSA_P521_SHA512()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new SHA512Digest());
+            super(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new SHA512Digest());
         }
     }
 
@@ -1012,7 +974,7 @@ public class SignatureSpi
     {
         public MLDSA87_ECDSA_P521_SHA512_PREHASH()
         {
-            super(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new SHA512Digest(), true);
+            super(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new SHA512Digest(), true);
         }
     }
 

@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -309,18 +310,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("SHA512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha512);
         addAlgorithm("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
         addAlgorithm("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
-
-        addAlgorithm("MLDSA65-RSA3072-PSS-SHA256", MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256);
-        addAlgorithm("MLDSA65-RSA3072-PKCS15-SHA256", MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256);
-        addAlgorithm("MLDSA65-RSA4096-PSS-SHA384", MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA384);
-        addAlgorithm("MLDSA65-RSA4096-PKCS15-SHA384", MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA384);
-        addAlgorithm("MLDSA65-ECDSA-P384-SHA384", MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA384);
-        addAlgorithm("MLDSA65-ECDSA-BRAINPOOLP256R1-SHA256", MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA256);
-        addAlgorithm("MLDSA65-ED25519-SHA512", MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
-        addAlgorithm("MLDSA87-ECDSA-P384-SHA384", MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384);
-        addAlgorithm("MLDSA87-ECDSA-BRAINPOOLP384R1-SHA384", MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384);
-        addAlgorithm("MLDSA87-ED448-SHA512", MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
-
+        
         addAlgorithm("HASHMLDSA44-RSA2048-PSS-SHA256", MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256);
         addAlgorithm("HASHMLDSA44-RSA2048-PKCS15-SHA256", MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256);
         addAlgorithm("HASHMLDSA44-ED25519-SHA512", MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512);
@@ -336,24 +326,24 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("HASHMLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512);
         addAlgorithm("HASHMLDSA87-ED448-SHA512", MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512);
 
-        addAlgorithm("MLDSA44-RSA2048-PSS-SHA256", MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
-        addAlgorithm("MLDSA44-RSA2048-PKCS15-SHA256", MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
-        addAlgorithm("MLDSA44-ED25519-SHA512", MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
-        addAlgorithm("MLDSA44-ECDSA-P256-SHA256", MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
-        addAlgorithm("MLDSA65-RSA3072-PSS-SHA512", MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512);
-        addAlgorithm("MLDSA65-RSA3072-PKCS15-SHA512", MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512);
-        addAlgorithm("MLDSA65-RSA4096-PSS-SHA512", MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512);
-        addAlgorithm("MLDSA65-RSA4096-PKCS15-SHA512", MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512);
-        addAlgorithm("MLDSA65-ECDSA-P256-SHA512", MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
-        addAlgorithm("MLDSA65-ECDSA-P384-SHA512", MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512);
-        addAlgorithm("MLDSA65-ECDSA-BRAINPOOLP256R1-SHA512", MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
-        addAlgorithm("MLDSA65-Ed25519-SHA512", MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
-        addAlgorithm("MLDSA87-ECDSA-P384-SHA512", MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
-        addAlgorithm("MLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
-        addAlgorithm("MLDSA87-ED448-SHAKE256", MiscObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256);
-        addAlgorithm("MLDSA87-RSA4096-PSS-SHA512", MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512);
-        addAlgorithm("MLDSA87-ECDSA-P521-SHA512", MiscObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512);
-        addAlgorithm("MLDSA87-RSA3072-PSS-SHA512", MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512);
+        addAlgorithm("MLDSA44-RSA2048-PSS-SHA256", IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
+        addAlgorithm("MLDSA44-RSA2048-PKCS15-SHA256", IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
+        addAlgorithm("MLDSA44-ED25519-SHA512", IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
+        addAlgorithm("MLDSA44-ECDSA-P256-SHA256", IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+        addAlgorithm("MLDSA65-RSA3072-PSS-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512);
+        addAlgorithm("MLDSA65-RSA3072-PKCS15-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512);
+        addAlgorithm("MLDSA65-RSA4096-PSS-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512);
+        addAlgorithm("MLDSA65-RSA4096-PKCS15-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512);
+        addAlgorithm("MLDSA65-ECDSA-P256-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
+        addAlgorithm("MLDSA65-ECDSA-P384-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512);
+        addAlgorithm("MLDSA65-ECDSA-BRAINPOOLP256R1-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
+        addAlgorithm("MLDSA65-Ed25519-SHA512", IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
+        addAlgorithm("MLDSA87-ECDSA-P384-SHA512", IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
+        addAlgorithm("MLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
+        addAlgorithm("MLDSA87-ED448-SHAKE256", IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256);
+        addAlgorithm("MLDSA87-RSA4096-PSS-SHA512", IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512);
+        addAlgorithm("MLDSA87-ECDSA-P521-SHA512", IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512);
+        addAlgorithm("MLDSA87-RSA3072-PSS-SHA512", IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512);
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
@@ -550,16 +540,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         // Composite - Draft 13
         //
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA384);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA384);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA384);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA256);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
-
         noParams.add(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256);
         noParams.add(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256);
         noParams.add(MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512);
@@ -578,24 +558,24 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         // ML-DSA Composite version 7
         //
-        noParams.add(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512);
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512);
+        noParams.add(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512);
         //
         // PKCS 1.5 encrypted  algorithms
         //
