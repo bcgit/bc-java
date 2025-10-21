@@ -11,11 +11,15 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
@@ -260,13 +264,24 @@ public class CompositePrivateKey
      */
     public byte[] getEncoded()
     {
-        if (this.algorithmIdentifier.getAlgorithm().on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
+        if (this.algorithmIdentifier.getAlgorithm().on(IANAObjectIdentifiers.id_alg))
         {
             try
             {
                 byte[] mldsaKey = ((MLDSAPrivateKey)keys.get(0)).getSeed();
                 PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(keys.get(1).getEncoded()));
                 byte[] tradKey = pki.getPrivateKey().getOctets();
+                if (keys.get(1).getAlgorithm().contains("Ed"))
+                {
+                    tradKey = ASN1OctetString.getInstance(tradKey).getOctets();
+                }
+                else if (keys.get(1).getAlgorithm().contains("EC"))
+                {
+                    ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(tradKey);
+
+                    tradKey = new ECPrivateKey(ECNamedCurveTable.getByOID(
+                        ASN1ObjectIdentifier.getInstance(ecPrivateKey.getParametersObject())).getCurve().getFieldSize(), ecPrivateKey.getKey(), ecPrivateKey.getParametersObject()).getEncoded();
+                }
                 return new PrivateKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
             }
             catch (IOException e)
