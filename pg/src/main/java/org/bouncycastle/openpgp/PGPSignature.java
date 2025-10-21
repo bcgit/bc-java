@@ -907,7 +907,8 @@ public class PGPSignature
         throws IOException
     {
         // Exportable signatures MUST NOT be exported if forTransfer==true
-        if (forTransfer && (!getHashedSubPackets().isExportable() || !getUnhashedSubPackets().isExportable()))
+        if (forTransfer && ((getHashedSubPackets() != null && !getHashedSubPackets().isExportable()) ||
+                (getUnhashedSubPackets() != null && !getUnhashedSubPackets().isExportable())))
         {
             return;
         }
