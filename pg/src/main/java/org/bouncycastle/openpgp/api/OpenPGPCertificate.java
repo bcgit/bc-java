@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -183,7 +182,7 @@ public class OpenPGPCertificate
      */
     public Map<KeyIdentifier, OpenPGPComponentKey> getPublicKeys()
     {
-        Map<KeyIdentifier, OpenPGPComponentKey> keys = new HashMap<KeyIdentifier, OpenPGPComponentKey>();
+        Map<KeyIdentifier, OpenPGPComponentKey> keys = new LinkedHashMap<KeyIdentifier, OpenPGPComponentKey>();
         keys.put(primaryKey.getKeyIdentifier(), primaryKey);
         keys.putAll(subkeys);
         return keys;
