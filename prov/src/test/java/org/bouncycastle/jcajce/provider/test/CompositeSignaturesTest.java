@@ -99,7 +99,7 @@ public class CompositeSignaturesTest
         oidMap.put("id-MLDSA44-ECDSA-P256-SHA256", IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.getId());
         oidMap.put("id-MLDSA65-RSA3072-PSS-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512.getId());
         oidMap.put("id-MLDSA65-RSA3072-PKCS15-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512.getId());
-        oidMap.put("id-MLDSA65-RSA4096-PSS-SHA512",  IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512.getId());
+        oidMap.put("id-MLDSA65-RSA4096-PSS-SHA512",  IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512.getId());
         oidMap.put("id-MLDSA65-RSA4096-PKCS15-SHA512", IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512.getId());
         oidMap.put("id-MLDSA65-ECDSA-P256-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512.getId());
         oidMap.put("id-MLDSA65-ECDSA-P384-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512.getId());
