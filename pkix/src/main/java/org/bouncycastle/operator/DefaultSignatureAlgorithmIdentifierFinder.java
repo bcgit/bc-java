@@ -83,8 +83,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 
     static
     {
-        addAlgorithm("COMPOSITE", MiscObjectIdentifiers.id_alg_composite);
-
         addAlgorithm("MD2WITHRSAENCRYPTION", PKCSObjectIdentifiers.md2WithRSAEncryption);
         addAlgorithm("MD2WITHRSA", PKCSObjectIdentifiers.md2WithRSAEncryption);
         addAlgorithm("MD5WITHRSAENCRYPTION", PKCSObjectIdentifiers.md5WithRSAEncryption);

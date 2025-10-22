@@ -2908,7 +2908,7 @@ public class CertTest
         CompositePublicKey compPub = new CompositePublicKey(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, mlDsaKp.getPublic(), ecPub);
         CompositePrivateKey compPrivKey = new CompositePrivateKey(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, mlDsaKp.getPrivate(), ecPriv);
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("MLDSA65-ECDSA-P256-SHA512").setProvider(BC).build(compPrivKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("COMPOSITE").setProvider(BC).build(compPrivKey);
 
         Date now = new Date();
 
