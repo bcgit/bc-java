@@ -81,6 +81,11 @@ public class CompositePublicKey
         return new Builder(new AlgorithmIdentifier(compAlgOid));
     }
 
+    public static Builder builder(String algorithmName)
+    {
+        return builder(CompositeUtil.getOid(algorithmName));
+    }
+
     private final List<PublicKey> keys;
     private final List<Provider> providers;
 
