@@ -183,7 +183,6 @@ public class SignatureSpi
             this.componentSignatures[i].initVerify(compositePublicKey.getPublicKeys().get(i));
         }
         this.unprimed = true;
-        System.err.println("verified init");
     }
 
     protected void engineInitSign(PrivateKey privateKey)
@@ -284,7 +283,7 @@ public class SignatureSpi
     {
         try
         {
-            componentSignatures[0].setParameter(new ContextParameterSpec(domain));
+            //componentSignatures[0].setParameter(new ContextParameterSpec(domain));
             AlgorithmParameterSpec pssSpec = algorithmsParameterSpecs.get(this.algorithm);
             if (pssSpec != null)
             {
@@ -468,12 +467,7 @@ public class SignatureSpi
             //signatures[0] is 32-byte random number
             if (!this.componentSignatures[i].verify(signatures[i]))
             {
-                System.err.println(i + " fails");
                 fail = true;
-            }
-            else
-            {
-                System.err.println(i + " works");
             }
         }
 
