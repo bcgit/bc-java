@@ -337,7 +337,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("MLDSA65-ECDSA-P256-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
         addAlgorithm("MLDSA65-ECDSA-P384-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512);
         addAlgorithm("MLDSA65-ECDSA-BRAINPOOLP256R1-SHA512", IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
-        addAlgorithm("MLDSA65-Ed25519-SHA512", IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
+        addAlgorithm("MLDSA65-ED25519-SHA512", IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
         addAlgorithm("MLDSA87-ECDSA-P384-SHA512", IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
         addAlgorithm("MLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
         addAlgorithm("MLDSA87-ED448-SHAKE256", IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256);

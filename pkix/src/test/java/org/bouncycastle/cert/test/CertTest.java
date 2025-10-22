@@ -101,6 +101,7 @@ import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAValidationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
@@ -2890,14 +2891,11 @@ public class CertTest
         PrivateKey ecPriv = ecKp.getPrivate();
         PublicKey ecPub = ecKp.getPublic();
 
-        KeyPairGenerator lmsKpg = KeyPairGenerator.getInstance("LMS", "BCPQC");
+        KeyPairGenerator mlDsaKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        lmsKpg.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+        mlDsaKpg.initialize(MLDSAParameterSpec.ml_dsa_65);
 
-        KeyPair lmsKp = lmsKpg.generateKeyPair();
-
-        PrivateKey lmsPriv = lmsKp.getPrivate();
-        PublicKey lmsPub = lmsKp.getPublic();
+        KeyPair mlDsaKp = mlDsaKpg.generateKeyPair();
 
         //
         // distinguished name table.
@@ -2907,14 +2905,10 @@ public class CertTest
         //
         // create the certificate - version 3
         //
-        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
-            .add("SHA256withECDSA")
-            .add("LMS")
-            .build();
-        CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
-        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
+        CompositePublicKey compPub = new CompositePublicKey(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, mlDsaKp.getPublic(), ecPub);
+        CompositePrivateKey compPrivKey = new CompositePrivateKey(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, mlDsaKp.getPrivate(), ecPriv);
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).setProvider(BC).build(compPrivKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("MLDSA65-ECDSA-P256-SHA512").setProvider(BC).build(compPrivKey);
 
         Date now = new Date();
 
@@ -2956,14 +2950,15 @@ public class CertTest
         try
         {
             crl.verify(new CompositePublicKey(new PublicKey[]{null, null}));
+            fail("no exception");
         }
         catch (InvalidKeyException e)
         {
-            isTrue(e.getMessage().equals("no matching key found"));
+            isTrue(e.getMessage().equals("provided composite public key cannot be used with the composite signature algorithm"));
         }
 
         // single key test
-        crl.verify(ecPub, BC);
+//        crl.verify(ecPub, BC);   no longer supported... possibly TODO
 
         if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
         {
@@ -3012,14 +3007,14 @@ public class CertTest
             fail("CRL entry reasonCode not found");
         }
 
-        sigGen = new JcaContentSignerBuilder("SHA256withECDSA", compAlgSpec).setProvider(BC).build(compPrivKey);
-
-        crlHolder = crlGen.build(sigGen);
-
-        crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
-
-        // comp test - single key
-        crl.verify(compPub);
+//        sigGen = new JcaContentSignerBuilder("SHA256withECDSA", compAlgSpec).setProvider(BC).build(compPrivKey);
+//
+//        crlHolder = crlGen.build(sigGen);
+//
+//        crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
+//
+//        // comp test - single key
+//        crl.verify(compPub);
     }
 
     public void checkCrlECDSAwithDilithiumCreation()
@@ -5469,26 +5464,26 @@ public class CertTest
     }
 
     // TESTS REGARDING COMPOSITES https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
-    private static final String[] compositeSignaturesOIDs = {
-        "2.16.840.1.114027.80.9.1.0", //id-MLDSA44-RSA2048-PSS-SHA256
-        "2.16.840.1.114027.80.9.1.1", //id-MLDSA44-RSA2048-PKCS15-SHA256
-        "2.16.840.1.114027.80.9.1.2", //id-MLDSA44-Ed25519-SHA512
-        "2.16.840.1.114027.80.9.1.3", //id-MLDSA44-ECDSA-P256-SHA256
-        "2.16.840.1.114027.80.9.1.4", //id-MLDSA65-RSA3072-PSS-SHA512
-        "2.16.840.1.114027.80.9.1.5", //id-MLDSA65-RSA3072-PKCS15-SHA512
-        "2.16.840.1.114027.80.9.1.6", //id-MLDSA65-RSA4096-PSS-SHA512
-        "2.16.840.1.114027.80.9.1.7", //id-MLDSA65-RSA4096-PKCS15-SHA512
-        "2.16.840.1.114027.80.9.1.8", //id-MLDSA65-ECDSA-P256-SHA512
-        "2.16.840.1.114027.80.9.1.9", //id-MLDSA65-ECDSA-P384-SHA512
-        "2.16.840.1.114027.80.9.1.10", //id-MLDSA65-ECDSA-brainpoolP256r1-SHA512
-        "2.16.840.1.114027.80.9.1.11", //id-MLDSA65-Ed25519-SHA512
-        "2.16.840.1.114027.80.9.1.12", //id-MLDSA87-ECDSA-P384-SHA512
-        "2.16.840.1.114027.80.9.1.13", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA512
-        "2.16.840.1.114027.80.9.1.14", //id-MLDSA87-Ed448-SHAKE256
-        "2.16.840.1.114027.80.9.1.15", //id-MLDSA87-RSA3072-PSS-SHA512
-        "2.16.840.1.114027.80.9.1.16", //id-MLDSA87-RSA4096-PSS-SHA512
-        "2.16.840.1.114027.80.9.1.17", //id-MLDSA87-ECDSA-P521-SHA512
-    };
+    private static String[] compositeSignaturesOIDs = {
+         "1.3.6.1.5.5.7.6.37", // id_MLDSA44_RSA2048_PSS_SHA256
+         "1.3.6.1.5.5.7.6.38", // id_MLDSA44_RSA2048_PKCS15_SHA256
+         "1.3.6.1.5.5.7.6.39", // id_MLDSA44_Ed25519_SHA512
+         "1.3.6.1.5.5.7.6.40", // id_MLDSA44_ECDSA_P256_SHA256
+         "1.3.6.1.5.5.7.6.41", // id_MLDSA65_RSA3072_PSS_SHA512
+         "1.3.6.1.5.5.7.6.42", // id_MLDSA65_RSA3072_PKCS15_SHA512
+         "1.3.6.1.5.5.7.6.43", // id_MLDSA65_RSA4096_PSS_SHA512
+         "1.3.6.1.5.5.7.6.44", // id_MLDSA65_RSA4096_PKCS15_SHA512
+         "1.3.6.1.5.5.7.6.45", // id_MLDSA65_ECDSA_P256_SHA512
+         "1.3.6.1.5.5.7.6.46", // id_MLDSA65_ECDSA_P384_SHA512
+         "1.3.6.1.5.5.7.6.47", // id_MLDSA65_ECDSA_brainpoolP256r1_SHA512
+         "1.3.6.1.5.5.7.6.48", // id_MLDSA65_Ed25519_SHA512
+         "1.3.6.1.5.5.7.6.49", // id_MLDSA87_ECDSA_P384_SHA512
+         "1.3.6.1.5.5.7.6.50", // id_MLDSA87_ECDSA_brainpoolP384r1_SHA512
+         "1.3.6.1.5.5.7.6.51", // id_MLDSA87_Ed448_SHAKE256
+         "1.3.6.1.5.5.7.6.52", // id_MLDSA87_RSA3072_PSS_SHA512
+         "1.3.6.1.5.5.7.6.53", // id_MLDSA87_RSA4096_PSS_SHA512
+         "1.3.6.1.5.5.7.6.54"  // id_MLDSA87_ECDSA_P521_SHA512
+     };
 
     private static final String[] compositeSignaturesIDs = {
         "MLDSA44-RSA2048-PSS-SHA256",
@@ -5549,7 +5544,7 @@ public class CertTest
 //            //compositePublicKeyExampleRFC.pem contains the sample public key from https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
 //            PEMParser pemParser = new PEMParser(new InputStreamReader(TestResourceFinder.findTestResource("pqc/composite", "compositePublicKeyExampleRFC.pem")));
 //            SubjectPublicKeyInfo subjectPublicKeyInfo = (SubjectPublicKeyInfo)pemParser.readObject();
-//            isEquals(subjectPublicKeyInfo.getAlgorithm().getAlgorithm(), MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+//            isEquals(subjectPublicKeyInfo.getAlgorithm().getAlgorithm(), IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
 //
 //            CompositePublicKey compositePublicKey = new CompositePublicKey(subjectPublicKeyInfo);
 //
@@ -5573,7 +5568,7 @@ public class CertTest
 //            PEMParser pemParser = new PEMParser(new InputStreamReader(TestResourceFinder.findTestResource("pqc/composite", "compositePrivateKeyExample.pem")));
 //            PrivateKeyInfo privateKeyInfo = (PrivateKeyInfo)pemParser.readObject();
 //
-//            isEquals(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm(), MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+//            isEquals(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm(), IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
 //
 //            CompositePrivateKey compositePrivateKey = new CompositePrivateKey(privateKeyInfo);
 //
@@ -5596,7 +5591,7 @@ public class CertTest
 //            JcaX509CertificateConverter x509Converter = new JcaX509CertificateConverter().setProvider("BC");
 //            X509Certificate certificate = x509Converter.getCertificate(certificateHolder);
 //
-//            isEquals(certificate.getSigAlgOID(), MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.toString());
+//            isEquals(certificate.getSigAlgOID(), IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.toString());
 //
 //            CompositePublicKey compositePublicKey = (CompositePublicKey)certificate.getPublicKey();
 //
