@@ -1,11 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.util;
 
-import java.lang.reflect.Method;
 import java.math.BigInteger;
-import java.security.AccessController;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
-import java.security.PrivilegedAction;
 import java.security.PublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Enumeration;
@@ -32,6 +29,7 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Fingerprint;
 import org.bouncycastle.util.Strings;
@@ -437,24 +435,7 @@ public class ECUtil
 
     public static String getNameFrom(final AlgorithmParameterSpec paramSpec)
     {
-        return (String)AccessController.doPrivileged(new PrivilegedAction()
-        {
-            public Object run()
-            {
-                try
-                {
-                    Method m = paramSpec.getClass().getMethod("getName");
-
-                    return m.invoke(paramSpec);
-                }
-                catch (Exception e)
-                {
-                    // ignore - maybe log?
-                }
-
-                return null;
-            }
-        });
+        return SpecUtil.getNameFrom(paramSpec);
     }
 
     private static ASN1ObjectIdentifier getOID(String curveName)
