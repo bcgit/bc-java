@@ -58,6 +58,7 @@ public class JcaContentSignerBuilder
 
     static
     {
+        isAlgIdFromPrivate.add("COMPOSITE");
         isAlgIdFromPrivate.add("DILITHIUM");
         isAlgIdFromPrivate.add("SPHINCS+");
         isAlgIdFromPrivate.add("SPHINCSPlus");
