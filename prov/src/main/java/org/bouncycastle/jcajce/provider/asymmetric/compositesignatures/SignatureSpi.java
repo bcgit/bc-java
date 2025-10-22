@@ -283,7 +283,7 @@ public class SignatureSpi
     {
         try
         {
-            //componentSignatures[0].setParameter(new ContextParameterSpec(domain));
+            componentSignatures[0].setParameter(new ContextParameterSpec(domain));
             AlgorithmParameterSpec pssSpec = algorithmsParameterSpecs.get(this.algorithm);
             if (pssSpec != null)
             {
