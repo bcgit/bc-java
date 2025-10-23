@@ -121,6 +121,13 @@ public class CompositeSignaturesTest
         Security.addProvider(new BouncyCastleProvider());
     }
 
+    public void testTestVectors()
+        throws Exception
+    {
+        List<Map<String, Object>> testVectors = readTestVectorsFromJson("pqc/crypto/composite", "testvectors.json");
+        compositeSignaturesTest(testVectors);
+    }
+
     public void testKeyPairGeneration()
         throws Exception
     {
@@ -722,11 +729,7 @@ public class CompositeSignaturesTest
             {
                 //Ignore IOException
             }
-            System.err.println(tcId);
-//            if (tcId.equals("id-MLDSA65-RSA4096-PSS-SHA512"))
-//            {
-//                continue;
-//            }
+
             if (tcId.contains("id-ML-DSA"))
             {
                 KeyFactory kFact = KeyFactory.getInstance("ML-DSA", "BC");
