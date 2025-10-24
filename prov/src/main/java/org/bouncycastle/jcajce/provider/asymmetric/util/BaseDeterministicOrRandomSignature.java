@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Exceptions;
 
 public abstract class BaseDeterministicOrRandomSignature
@@ -123,7 +124,16 @@ public abstract class BaseDeterministicOrRandomSignature
         }
         else
         {
-            throw new InvalidAlgorithmParameterException("unknown AlgorithmParameterSpec in signature");
+            byte[] context = SpecUtil.getContextFrom(params);
+            if (context != null)
+            {                   
+                this.paramSpec = new ContextParameterSpec(context);
+                reInit();
+            }
+            else
+            {
+                throw new InvalidAlgorithmParameterException("unknown AlgorithmParameterSpec in signature");
+            }
         }
     }
 
