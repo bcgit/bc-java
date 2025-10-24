@@ -18,6 +18,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -623,6 +624,12 @@ public class CompositeSignaturesTest
         signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
         assertTrue(signature.verify(signatureValue));
 
+        // check reflection case
+        signature.initVerify(keyPair.getPublic());
+        signature.setParameter(new CompositeSignatureSpec(true, new MyContextSpec(contextSpec.getContext())));
+        signature.update(MessageDigest.getInstance(digestName, "BC").digest(msg));
+        assertTrue(signature.verify(signatureValue));
+
         // full msg sign, verify hash
         signature = Signature.getInstance(sigName, "BC");
         signature.initSign(keyPair.getPrivate());
@@ -874,6 +881,22 @@ public class CompositeSignaturesTest
         }
 
         return json.substring(start, end).replace("\\\"", "\"");
+    }
+
+    public static class MyContextSpec
+        implements AlgorithmParameterSpec
+    {
+        private final byte[] context;
+
+        MyContextSpec(byte[] context)
+        {
+            this.context = context;
+        }
+
+        public byte[] getContext()
+        {
+            return context;
+        }
     }
 
     private static class ProxyHSMPrivateKey
