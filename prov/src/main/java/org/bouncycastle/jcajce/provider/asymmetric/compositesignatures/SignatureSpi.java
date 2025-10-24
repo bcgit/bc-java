@@ -38,6 +38,7 @@ import org.bouncycastle.jcajce.spec.CompositeSignatureSpec;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
@@ -513,10 +514,48 @@ public class SignatureSpi
             {
                 this.preHashDigest = this.baseDigest;
             }
-            this.contextSpec = (ContextParameterSpec)compositeSignatureSpec.getSecondarySpec();
+            AlgorithmParameterSpec secondarySpec = compositeSignatureSpec.getSecondarySpec();
+
+            if (secondarySpec == null || secondarySpec instanceof ContextParameterSpec)
+            {
+                this.contextSpec = (ContextParameterSpec)compositeSignatureSpec.getSecondarySpec();
+            }
+            else
+            {
+                byte[] context = SpecUtil.getContextFrom(secondarySpec);
+                if (context != null)
+                {
+                    contextSpec = new ContextParameterSpec(context);
+                }
+                else
+                {
+                    throw new InvalidAlgorithmParameterException("unknown parameterSpec passed to composite signature");
+                }
+            }
         }
         else
         {
+            byte[] context = SpecUtil.getContextFrom(algorithmParameterSpec);
+            if (context != null)
+            {
+                contextSpec = new ContextParameterSpec(context);
+                try
+                {
+                    if (compositeKey instanceof PublicKey)
+                    {
+                        sigInitVerify();
+                    }
+                    else
+                    {
+                        sigInitSign();
+                    }
+                }
+                catch (InvalidKeyException e)
+                {
+                    throw new InvalidAlgorithmParameterException("keys invalid on reset: " + e.getMessage(), e);
+                }
+            }
+
             throw new InvalidAlgorithmParameterException("unknown parameterSpec passed to composite signature");
         }
     }
