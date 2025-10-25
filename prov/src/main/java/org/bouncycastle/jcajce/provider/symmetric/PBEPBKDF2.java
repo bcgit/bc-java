@@ -273,6 +273,24 @@ public class PBEPBKDF2
         }
     }
 
+    public static class PBKDF2withSHA512_224
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA512_224()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA512_224);
+        }
+    }
+
+    public static class PBKDF2withSHA512_256
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA512_256()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA512_256);
+        }
+    }
+
     public static class PBKDF2withGOST3411
         extends BasePBKDF2
     {
@@ -360,6 +378,8 @@ public class PBEPBKDF2
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA256", PREFIX + "$PBKDF2withSHA256");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA384", PREFIX + "$PBKDF2withSHA384");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA512", PREFIX + "$PBKDF2withSHA512");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA512-224", PREFIX + "$PBKDF2withSHA512_224");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA512-256", PREFIX + "$PBKDF2withSHA512_256");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-224", PREFIX + "$PBKDF2withSHA3_224");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-256", PREFIX + "$PBKDF2withSHA3_256");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-384", PREFIX + "$PBKDF2withSHA3_384");

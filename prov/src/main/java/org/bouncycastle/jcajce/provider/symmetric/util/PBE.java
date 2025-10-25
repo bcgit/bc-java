@@ -44,6 +44,8 @@ public interface PBE
     static final int        SHA3_384     = 12;
     static final int        SHA3_512     = 13;
     static final int        SM3          = 14;
+    static final int        SHA512_224   = 15;
+    static final int        SHA512_256   = 16;
 
     static final int        PKCS5S1      = 0;
     static final int        PKCS5S2      = 1;
