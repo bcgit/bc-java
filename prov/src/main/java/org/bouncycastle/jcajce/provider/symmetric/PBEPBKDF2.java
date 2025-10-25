@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.PasswordConverter;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.PBKDF2Key;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
@@ -44,10 +45,13 @@ public class PBEPBKDF2
         prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA224, Integers.valueOf(PBE.SHA224));
         prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA384, Integers.valueOf(PBE.SHA384));
         prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512, Integers.valueOf(PBE.SHA512));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512_224, Integers.valueOf(PBE.SHA512_224));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512_256, Integers.valueOf(PBE.SHA512_256));
         prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_256, Integers.valueOf(PBE.SHA3_256));
         prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_224, Integers.valueOf(PBE.SHA3_224));
         prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, Integers.valueOf(PBE.SHA3_384));
         prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, Integers.valueOf(PBE.SHA3_512));
+        prfCodes.put(IANAObjectIdentifiers.hmacRIPEMD160, Integers.valueOf(PBE.RIPEMD160));
         prfCodes.put(GMObjectIdentifiers.hmac_sm3, Integers.valueOf(PBE.SM3));
     }
 
