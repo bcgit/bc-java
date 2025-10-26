@@ -625,6 +625,12 @@ public final class Kangaroo
             int count = 0;
             while (count < len)
             {
+                if (bytesInQueue == theRateBytes)
+                {
+                    KangarooAbsorb(theQueue, 0);
+                    bytesInQueue = 0;
+                }
+
                 if (bytesInQueue == 0 && count <= (len - theRateBytes))
                 {
                     do
@@ -642,12 +648,6 @@ public final class Kangaroo
 
                     bytesInQueue += partialBlock;
                     count += partialBlock;
-
-                    if (bytesInQueue == theRateBytes)
-                    {
-                        KangarooAbsorb(theQueue, 0);
-                        bytesInQueue = 0;
-                    }
                 }
             }
         }
