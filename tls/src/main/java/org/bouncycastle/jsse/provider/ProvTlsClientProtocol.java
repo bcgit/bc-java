@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.tls.HandshakeMessageInput;
+import org.bouncycastle.tls.HandshakeType;
 import org.bouncycastle.tls.RenegotiationPolicy;
 import org.bouncycastle.tls.ServerHello;
 import org.bouncycastle.tls.TlsClientProtocol;
@@ -38,6 +40,18 @@ class ProvTlsClientProtocol extends TlsClientProtocol
     protected int getRenegotiationPolicy()
     {
         return provAcceptRenegotiation ? RenegotiationPolicy.ACCEPT : RenegotiationPolicy.DENY;
+    }
+
+    @Override
+    protected void handleHandshakeMessage(short type, HandshakeMessageInput buf) throws IOException
+    {
+        if (LOG.isLoggable(Level.FINEST))
+        {
+            int length = buf.available();
+            LOG.finest(getClientID() + " inbound handshake message: " + HandshakeType.getText(type) + "[" + length + "]");
+        }
+
+        super.handleHandshakeMessage(type, buf);
     }
 
     @Override
