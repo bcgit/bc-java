@@ -1,13 +1,17 @@
 package org.bouncycastle.openpgp.api;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.KeyIdentifier;
@@ -18,9 +22,15 @@ import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyValidationException;
+import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
@@ -208,6 +218,117 @@ public class OpenPGPKey
         getPGPSecretKeyRing().encode(pOut);
         pOut.close();
         return bOut.toByteArray();
+    }
+
+    /**
+     * Return a new instance of this key with the updated signatures or subkeys from the given
+     * ASCII armored stream merged into.
+     *
+     * @param armored ASCII armored key, certificate or key signatures
+     * @return key with merged material
+     * @throws IOException if the key material cannot be decoded
+     * @throws PGPException if the key material cannot be decoded
+     */
+    @Override
+    public OpenPGPKey join(String armored)
+            throws IOException, PGPException
+    {
+        ByteArrayInputStream bIn = new ByteArrayInputStream(armored.getBytes());
+        InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
+        BCPGInputStream wrapper = BCPGInputStream.wrap(decoderStream);
+        PGPObjectFactory objFac = implementation.pgpObjectFactory(wrapper);
+
+        OpenPGPCertificate otherCert;
+
+        Object next;
+        while ((next = objFac.nextObject()) != null)
+        {
+            if (next instanceof PGPPublicKeyRing)
+            {
+                PGPPublicKeyRing publicKeys = (PGPPublicKeyRing)next;
+                otherCert = new OpenPGPCertificate(publicKeys, implementation);
+                try
+                {
+                    return join(otherCert);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // skip over wrong certificate
+                }
+            }
+
+            else if (next instanceof PGPSecretKeyRing)
+            {
+                PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) next;
+                otherCert = new OpenPGPKey(secretKeys, implementation);
+                try
+                {
+                    return join(otherCert);
+                } catch (IllegalArgumentException e)
+                {
+                    // skip over wrong certificate
+                }
+            }
+
+            else if (next instanceof PGPSignatureList)
+            {
+                // parse and join delegations / revocations
+                // those are signatures of type DIRECT_KEY or KEY_REVOCATION issued either by the primary key itself
+                // (self-signatures) or by a 3rd party (delegations / delegation revocations)
+                PGPSignatureList signatures = (PGPSignatureList)next;
+
+                PGPPublicKeyRing publicKeys = getPGPPublicKeyRing();
+                PGPPublicKey primaryKey = publicKeys.getPublicKey();
+                for (Iterator<PGPSignature> it = signatures.iterator(); it.hasNext(); )
+                {
+                    primaryKey = PGPPublicKey.addCertification(primaryKey, it.next());
+                }
+                publicKeys = PGPPublicKeyRing.insertPublicKey(publicKeys, primaryKey);
+                PGPSecretKeyRing secretKeys = PGPSecretKeyRing.replacePublicKeys(getPGPKeyRing(), publicKeys);
+                return new OpenPGPKey(secretKeys, implementation);
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public OpenPGPKey join(OpenPGPCertificate keyOrCertificate)
+        throws PGPException
+    {
+        if (!getKeyIdentifier().matchesExplicit(keyOrCertificate.getKeyIdentifier()))
+        {
+            throw new IllegalArgumentException("Not the same OpenPGP key/certificate: Mismatched primary key.");
+        }
+
+        PGPSecretKeyRing secretKeys = getPGPSecretKeyRing();
+        if (keyOrCertificate.isSecretKey())
+        {
+            OpenPGPKey otherKey = (OpenPGPKey) keyOrCertificate;
+
+            // existing secret keys
+            List<PGPSecretKey> sks = new ArrayList<>();
+            for (PGPSecretKey sk : getPGPSecretKeyRing())
+            {
+                sks.add(sk);
+            }
+
+            // merge new secret keys
+            for (PGPSecretKey sk : otherKey.getPGPSecretKeyRing())
+            {
+                if (getPGPSecretKeyRing().getSecretKey(sk.getKeyIdentifier()) == null)
+                {
+                    sks.add(sk);
+                }
+            }
+
+            secretKeys = new PGPSecretKeyRing(sks);
+        }
+
+        // merge the public parts
+        OpenPGPCertificate joinedCertificate = toCertificate().join(keyOrCertificate);
+        // join secret and public parts
+        secretKeys = PGPSecretKeyRing.replacePublicKeys(secretKeys, joinedCertificate.getPGPPublicKeyRing());
+        return new OpenPGPKey(secretKeys, implementation);
     }
 
     /**

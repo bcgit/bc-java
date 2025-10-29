@@ -526,55 +526,14 @@ public class OpenPGPCertificate
      * @return merged certificate
      * @throws IOException  if the armored data cannot be processed
      * @throws PGPException if a protocol level error occurs
+     *
+     * @deprecated use non-static {@link #join(String)} instead.
      */
+    @Deprecated
     public static OpenPGPCertificate join(OpenPGPCertificate certificate, String armored)
         throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(armored.getBytes());
-        InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
-        BCPGInputStream wrapper = BCPGInputStream.wrap(decoderStream);
-        PGPObjectFactory objFac = certificate.implementation.pgpObjectFactory(wrapper);
-
-        Object next;
-        while ((next = objFac.nextObject()) != null)
-        {
-            if (next instanceof PGPPublicKeyRing)
-            {
-                PGPPublicKeyRing publicKeys = (PGPPublicKeyRing)next;
-                OpenPGPCertificate otherCert = new OpenPGPCertificate(publicKeys, certificate.implementation);
-                try
-                {
-                    return join(certificate, otherCert);
-                }
-                catch (IllegalArgumentException e)
-                {
-                    // skip over wrong certificate
-                }
-            }
-
-            else if (next instanceof PGPSecretKeyRing)
-            {
-                throw new IllegalArgumentException("Joining with a secret key is not supported.");
-            }
-
-            else if (next instanceof PGPSignatureList)
-            {
-                // parse and join delegations / revocations
-                // those are signatures of type DIRECT_KEY or KEY_REVOCATION issued either by the primary key itself
-                // (self-signatures) or by a 3rd party (delegations / delegation revocations)
-                PGPSignatureList signatures = (PGPSignatureList)next;
-
-                PGPPublicKeyRing publicKeys = certificate.getPGPPublicKeyRing();
-                PGPPublicKey primaryKey = publicKeys.getPublicKey();
-                for (Iterator<PGPSignature> it = signatures.iterator(); it.hasNext(); )
-                {
-                    primaryKey = PGPPublicKey.addCertification(primaryKey, it.next());
-                }
-                publicKeys = PGPPublicKeyRing.insertPublicKey(publicKeys, primaryKey);
-                return new OpenPGPCertificate(publicKeys, certificate.implementation);
-            }
-        }
-        return null;
+        return certificate.join(armored);
     }
 
     /**
@@ -585,13 +544,91 @@ public class OpenPGPCertificate
      * @param other       copy of the same certificate, potentially carrying a different set of components
      * @return merged certificate
      * @throws PGPException if a protocol level error occurs
+     * @deprecated use non-static {@link #join(OpenPGPCertificate)} instead.
      */
+    @Deprecated
     public static OpenPGPCertificate join(OpenPGPCertificate certificate, OpenPGPCertificate other)
         throws PGPException
     {
+        return certificate.join(other);
+    }
+
+    /**
+     * Join two copies of the same {@link OpenPGPCertificate}, merging its {@link OpenPGPCertificateComponent components}
+     * into a single instance.
+     * The ASCII armored {@link String} might contain more than one {@link OpenPGPCertificate}.
+     * Items that are not a copy of the base certificate are silently ignored.
+     *
+     * @param armored     ASCII armored {@link String} containing one or more copies of this certificate,
+     *                    possibly containing a different set of components
+     * @return merged certificate
+     * @throws IOException  if the armored data cannot be processed
+     * @throws PGPException if a protocol level error occurs
+     */
+    public OpenPGPCertificate join(String armored)
+        throws PGPException, IOException
+    {
+        ByteArrayInputStream bIn = new ByteArrayInputStream(armored.getBytes());
+        InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
+        BCPGInputStream wrapper = BCPGInputStream.wrap(decoderStream);
+        PGPObjectFactory objFac = implementation.pgpObjectFactory(wrapper);
+
+        Object next;
+        while ((next = objFac.nextObject()) != null)
+        {
+            if (next instanceof PGPPublicKeyRing)
+            {
+                OpenPGPCertificate otherCert = new OpenPGPCertificate((PGPPublicKeyRing) next, implementation);
+                try
+                {
+                    return join(otherCert);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // skip over wrong certificate
+                }
+            }
+
+            else if (next instanceof PGPSecretKeyRing)
+            {
+                throw new IllegalArgumentException("Joining certificate with a secret key is not supported." +
+                        " Try the other way round.");
+            }
+
+            else if (next instanceof PGPSignatureList)
+            {
+                // parse and join delegations / revocations
+                // those are signatures of type DIRECT_KEY or KEY_REVOCATION issued either by the primary key itself
+                // (self-signatures) or by a 3rd party (delegations / delegation revocations)
+                PGPSignatureList signatures = (PGPSignatureList)next;
+
+                PGPPublicKeyRing publicKeys = getPGPPublicKeyRing();
+                PGPPublicKey primaryKey = publicKeys.getPublicKey();
+                for (Iterator<PGPSignature> it = signatures.iterator(); it.hasNext(); )
+                {
+                    primaryKey = PGPPublicKey.addCertification(primaryKey, it.next());
+                }
+                publicKeys = PGPPublicKeyRing.insertPublicKey(publicKeys, primaryKey);
+                return new OpenPGPCertificate(publicKeys, implementation);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Join two copies of the same {@link OpenPGPCertificate}, merging its {@link OpenPGPCertificateComponent components}
+     * into a single instance.
+     *
+     * @param other       copy of this certificate, potentially carrying a different set of components
+     * @return merged certificate
+     * @throws PGPException if a protocol level error occurs
+     */
+    public OpenPGPCertificate join(OpenPGPCertificate other)
+        throws PGPException
+    {
         PGPPublicKeyRing joined = PGPPublicKeyRing.join(
-            certificate.getPGPPublicKeyRing(), other.getPGPPublicKeyRing());
-        return new OpenPGPCertificate(joined, certificate.implementation);
+                getPGPPublicKeyRing(), other.getPGPPublicKeyRing());
+        return new OpenPGPCertificate(joined, implementation);
     }
 
     /**
