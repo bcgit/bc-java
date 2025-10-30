@@ -52,13 +52,7 @@ public class SM2KeyExchange
         if (privParam instanceof ParametersWithID)
         {
             baseParam = (SM2KeyExchangePrivateParameters)((ParametersWithID)privParam).getParameters();
-            userID = ((ParametersWithID)privParam).getID();
-
-            if (userID.length >= 8192)
-            {
-                // The length in bits must be expressible in two bytes
-                throw new IllegalArgumentException("SM2 user ID must be less than 2^16 bits long");
-            }
+            userID = checkUserID(((ParametersWithID)privParam).getID());
         }
         else
         {
@@ -86,7 +80,7 @@ public class SM2KeyExchange
         if (pubParam instanceof ParametersWithID)
         {
             otherPub = (SM2KeyExchangePublicParameters)((ParametersWithID)pubParam).getParameters();
-            otherUserID = ((ParametersWithID)pubParam).getID();
+            otherUserID = checkUserID(((ParametersWithID)pubParam).getID());
         }
         else
         {
@@ -120,7 +114,7 @@ public class SM2KeyExchange
         if (pubParam instanceof ParametersWithID)
         {
             otherPub = (SM2KeyExchangePublicParameters)((ParametersWithID)pubParam).getParameters();
-            otherUserID = ((ParametersWithID)pubParam).getID();
+            otherUserID = checkUserID(((ParametersWithID)pubParam).getID());
         }
         else
         {
@@ -300,5 +294,16 @@ public class SM2KeyExchange
         byte[] result = new byte[digest.getDigestSize()];
         digest.doFinal(result, 0);
         return result;
+    }
+
+    private static byte[] checkUserID(byte[] userID)
+    {
+        // The length in bits must be expressible in two bytes
+        if (userID.length >= 8192)
+        {
+            throw new IllegalArgumentException("SM2 user ID must be less than 2^16 bits long");
+        }
+
+        return userID;
     }
 }

@@ -79,9 +79,9 @@ public class SM2Signer
             baseParam = ((ParametersWithID)param).getParameters();
             userID = ((ParametersWithID)param).getID();
 
+            // The length in bits must be expressible in two bytes
             if (userID.length >= 8192)
             {
-                // The length in bits must be expressible in two bytes
                 throw new IllegalArgumentException("SM2 user ID must be less than 2^16 bits long");
             }
         }
