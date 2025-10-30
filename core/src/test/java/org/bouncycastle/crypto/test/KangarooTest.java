@@ -8,7 +8,8 @@ import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * Test Cases for Kangaroo12. No TestVectors are available for MarsupilamiFourteen.
- * Test Vectors taken from https://tools.ietf.org/html/draft-viguier-kangarootwelve-04.
+ * Test Vectors taken from https://tools.ietf.org/html/draft-viguier-kangarootwelve-04,
+ * and generated using the reference implementation given in https://keccak.team/files/KangarooTwelve.pdf.
  */
 public class KangarooTest
     extends SimpleTest
@@ -147,7 +148,13 @@ public class KangarooTest
                  "FAB658DB63E94A246188BF7AF69A133045F46EE984C56E3C3328CAAF1AA1A583",
                  "D848C5068CED736F4462159B9867FD4C20B808ACC3D5BC48E0B06BA0A3762EC4",
                  "C389E5009AE57120854C2E8C64670AC01358CF4C1BAF89447A724234DC7CED74",
-                 "75D2F86A2E644566726B4FBCFC5657B9DBCF070C7B0DCA06450AB291D7443BCF"
+                 "75D2F86A2E644566726B4FBCFC5657B9DBCF070C7B0DCA06450AB291D7443BCF",
+                 "61F2AD5657F4F2632A0822138EFE20C6A68A1885E1C0643EBF5587103219301D",
+                 "CBBE9DD1E423F20003FBA7BB219491C8D1F445FA5C4199D6C6C70C9FDC101964",
+                 "77DF46FD2D22BCE26E636E02CE10F9A42AE925E071F9056A9236328DB01BA411",
+                 "711835517A182DD4BC0E816BF5C72A278B227AE0B3D68F82577F97AD3CBFCA6A",
+                 "640728E5B4BE29F04A4FFFA645CB308102170F4D2B69D61F030CDC569BC74BAC",
+                 "5D7D68B49A5D999B8699FC4EDBEF0F0B4E4E7E904FE4B2B6B10C7C922407CF66"
          };
 
          /**
@@ -170,6 +177,12 @@ public class KangarooTest
              pTest.testKangaroo(1, false, 41, EXPECTED[11]);
              pTest.testKangaroo(3, false, 41*41, EXPECTED[12]);
              pTest.testKangaroo(7, false, 41*41*41, EXPECTED[13]);
+             pTest.testKangaroo(165, true, 0, EXPECTED[14]);
+             pTest.testKangaroo(166, true, 0, EXPECTED[15]);
+             pTest.testKangaroo(167, true, 0, EXPECTED[16]);
+             pTest.testKangaroo(8192 + 165, false, 0, EXPECTED[17]);
+             pTest.testKangaroo(8192 + 166, false, 0, EXPECTED[18]);
+             pTest.testKangaroo(8192 + 167, false, 0, EXPECTED[19]);
          }
      }
 
