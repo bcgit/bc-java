@@ -53,6 +53,12 @@ public class SM2KeyExchange
         {
             baseParam = (SM2KeyExchangePrivateParameters)((ParametersWithID)privParam).getParameters();
             userID = ((ParametersWithID)privParam).getID();
+
+            if (userID.length >= 8192)
+            {
+                // The length in bits must be expressible in two bytes
+                throw new IllegalArgumentException("SM2 user ID must be less than 2^16 bits long");
+            }
         }
         else
         {
@@ -276,6 +282,7 @@ public class SM2KeyExchange
     private void addUserID(Digest digest, byte[] userID)
     {
         int len = userID.length * 8;
+//        assert len >>> 16 == 0;
 
         digest.update((byte)(len >>> 8));
         digest.update((byte)len);
