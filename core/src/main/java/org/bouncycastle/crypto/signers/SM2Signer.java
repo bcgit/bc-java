@@ -81,7 +81,8 @@ public class SM2Signer
 
             if (userID.length >= 8192)
             {
-                throw new IllegalArgumentException("SM2 user ID must be less than 2^13 bits long");
+                // The length in bits must be expressible in two bytes
+                throw new IllegalArgumentException("SM2 user ID must be less than 2^16 bits long");
             }
         }
         else
@@ -323,6 +324,8 @@ public class SM2Signer
     private void addUserID(Digest digest, byte[] userID)
     {
         int len = userID.length * 8;
+//        assert len >>> 16 == 0;
+
         digest.update((byte)(len >>> 8));
         digest.update((byte)len);
         digest.update(userID, 0, userID.length);
