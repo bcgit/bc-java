@@ -3,6 +3,8 @@ plugins {
 }
 
 dependencies {
+    implementation project(':core')
+    testImplementation project(':core')
     testImplementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
 }
 
@@ -15,6 +17,18 @@ sourceSets {
         }
         resources {
             srcDirs "${project(":core").projectDir}/src/main/resources"
+        }
+    }
+    main {
+        resources {
+            srcDirs += ["${project(':core').projectDir}/src/main/resources"]
+        }
+
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
         }
     }
 
@@ -36,6 +50,11 @@ sourceSets {
     java21 {
         java {
             srcDirs = ['src/main/jdk21']
+        }
+    }
+    java25 {
+        java {
+            srcDirs = ['src/main/jdk25']
         }
     }
 
@@ -67,6 +86,15 @@ dependencies {
             sourceSets.java15.output.classesDirs]) {
         builtBy compileJava15Java
     }
+
+    java25Implementation files([
+            sourceSets.main.output.classesDirs,
+            sourceSets.java9.output.classesDirs,
+            sourceSets.java11.output.classesDirs,
+            sourceSets.java15.output.classesDirs,
+            sourceSets.java21.output.classesDirs]) {
+        builtBy compileJava21Java
+    }
 }
 
 
@@ -94,6 +122,11 @@ compileJava21Java {
     options.sourcepath = files(['src/main/java', 'src/main/jdk21'])
 }
 
+compileJava25Java {
+    options.release = 25
+    options.sourcepath = files(['src/main/java', 'src/main/jdk25'])
+}
+
 
 task sourcesJar(type: Jar) {
     archiveBaseName="bcprov"
@@ -113,6 +146,9 @@ task sourcesJar(type: Jar) {
     into('META-INF/versions/21') {
         from sourceSets.java21.allSource
     }
+    into('META-INF/versions/25') {
+        from sourceSets.java25.allSource
+    }
 }
 
 jar {
@@ -131,6 +167,9 @@ jar {
     }
     into('META-INF/versions/21') {
         from sourceSets.java21.output
+    }
+    into('META-INF/versions/25') {
+        from sourceSets.java25.output
     }
     String v = "${rootProject.extensions.ext.bundle_version}"
     manifest.attributes('Multi-Release': 'true')
@@ -187,18 +226,40 @@ sourceSets {
             srcDir(files("src/test/jdk21"))
         }
     }
+
+    test25 {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += test.output
+            srcDir(files("src/test/jdk25"))
+        }
+    }
+}
+
+dependencies {
+    java9Implementation project(':core')
+    java11Implementation project(':core')
+    java15Implementation project(':core')
+    java21Implementation project(':core')
+    java25Implementation project(':core')
 }
 
 dependencies {
     test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test21Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test25Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test11Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
     test15Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
     test21Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
+    test25Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
     test11Implementation(project(":core"))
     test15Implementation(project(":core"))
     test21Implementation(project(":core"))
+    test25Implementation(project(":core"))
+    test25Implementation sourceSets.java25.output
+
+
 }
 
 
@@ -219,6 +280,11 @@ compileTest21Java {
     options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
 }
 
+compileTest25Java {
+    options.release = 25
+    options.sourcepath = files(['src/test/java', 'src/test/jdk25'])
+}
+
 publishing {
     publications {
         maven(MavenPublication) {
@@ -231,6 +297,13 @@ publishing {
         }
 
     }
+}
+
+configurations {
+    test11Implementation.extendsFrom testImplementation
+    test15Implementation.extendsFrom testImplementation
+    test21Implementation.extendsFrom testImplementation
+    test25Implementation.extendsFrom testImplementation
 }
 
 
@@ -367,6 +440,39 @@ task test21(type: Test) {
     }
 }
 
+task test25(type: Test) {
+
+    // This is testing the 25 code base
+    onlyIf {System.getenv("BC_JDK25") != null}
+    dependsOn jar
+
+    testClassesDirs = sourceSets.test25.output.classesDirs
+    classpath = sourceSets.test25.runtimeClasspath + files(jar.archiveFile)
+
+    forkEvery = 1;
+    maxParallelForks = 8;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = false
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+
+    jvmArgs = ['-Dtest.java.version.prefix=25']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+        includeTestsMatching "AllTest*"
+        if (project.hasProperty('excludeTests')) {
+            excludeTestsMatching "${excludeTests}"
+        }
+    }
+}
+
 if (System.getenv("BC_JDK8") != null) {
     System.out.println("${project.name}: Adding test8 as dependency for test task because BC_JDK8 is defined")
     test.dependsOn("test8")
@@ -386,7 +492,10 @@ if (System.getenv("BC_JDK21") != null) {
     System.out.println("${project.name}: Adding test21 as dependency for test task because BC_JDK21 is defined")
     test.dependsOn("test21")
 }
-
+if (System.getenv("BC_JDK25") != null) {
+    System.out.println("${project.name}: Adding test25 as dependency for test task because BC_JDK25 is defined")
+    test.dependsOn("test25")
+}
 
 
 
