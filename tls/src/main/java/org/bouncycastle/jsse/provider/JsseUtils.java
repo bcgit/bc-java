@@ -45,6 +45,7 @@ import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.CertificateStatus;
 import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.ClientCertificateType;
+import org.bouncycastle.tls.ExtensionType;
 import org.bouncycastle.tls.IdentifierType;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
@@ -156,6 +157,24 @@ abstract class JsseUtils
     static String[] getArray(Collection<String> c)
     {
         return c.toArray(new String[c.size()]);
+    }
+
+    static String getExtensionsReport(String title, Hashtable extensions)
+    {
+        StringBuilder sb = new StringBuilder(title);
+        sb.append(':');
+        if (extensions != null)
+        {
+            Enumeration e = extensions.keys();
+            while (e.hasMoreElements())
+            {
+                Integer extType = (Integer)e.nextElement();
+
+                sb.append(' ');
+                sb.append(ExtensionType.getText(extType.intValue()));
+            }
+        }
+        return sb.toString();
     }
 
     static String[] getKeysArray(Map<String, ?> m)
