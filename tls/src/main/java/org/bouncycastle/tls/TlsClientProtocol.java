@@ -1119,6 +1119,7 @@ public class TlsClientProtocol
     protected void processServerHello(ServerHello serverHello)
         throws IOException
     {
+        Hashtable clientHelloExtensions = clientHello.getExtensions();
         Hashtable serverHelloExtensions = serverHello.getExtensions();
 
         final ProtocolVersion legacy_version = serverHello.getVersion();
@@ -1257,7 +1258,7 @@ public class TlsClientProtocol
                  * associated ClientHello, it MUST abort the handshake with an unsupported_extension
                  * fatal alert.
                  */
-                if (null == TlsUtils.getExtensionData(this.clientExtensions, extType))
+                if (null == TlsUtils.getExtensionData(clientHelloExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension,
                         "Unrequested extension in ServerHello: " + ExtensionType.getText(extType.intValue()));
@@ -1359,7 +1360,7 @@ public class TlsClientProtocol
         {
             boolean negotiatedEMS = false;
 
-            if (TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions))
+            if (TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientHelloExtensions))
             {
                 negotiatedEMS = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverHelloExtensions);
 
@@ -1400,7 +1401,7 @@ public class TlsClientProtocol
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverHelloExtensions);
         securityParameters.applicationProtocolSet = true;
 
-        Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverHelloExtensions;
+        Hashtable sessionClientExtensions = clientHelloExtensions, sessionServerExtensions = serverHelloExtensions;
         if (securityParameters.isResumedSession())
         {
             sessionClientExtensions = null;
