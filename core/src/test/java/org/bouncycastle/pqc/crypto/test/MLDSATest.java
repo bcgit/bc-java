@@ -79,7 +79,7 @@ public class MLDSATest
                 {
                     AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
 
-                    Signer signer = parameters.isPreHash() ? new HashMLDSASigner() : new MLDSASigner();
+                    Signer signer = parameters.isPreHash() ? (Signer)new HashMLDSASigner() : (Signer)new MLDSASigner();
 
                     for (int j = 0; j < 2; ++j)
                     {

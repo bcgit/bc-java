@@ -35,7 +35,7 @@ class CompositeUtil
 
     static ASN1ObjectIdentifier getOid(String name)
     {
-        ASN1ObjectIdentifier oid = algorithmOids.get(Strings.toUpperCase(name));
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)algorithmOids.get(Strings.toUpperCase(name));
         if (oid == null)
         {
             throw new IllegalArgumentException("name " + name + " not recognized");
