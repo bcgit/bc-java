@@ -335,6 +335,10 @@ if (System.getenv("BC_JDK21") != null) {
     test.dependsOn("test21")
 }
 
+if (System.getenv("BC_JDK25") != null) {
+    System.out.println("${project.name}: Adding test25 as dependency for test task because BC_JDK25 is defined")
+    test.dependsOn("test25")
+}
 
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
