@@ -315,6 +315,40 @@ task test21(type: Test) {
     }
 }
 
+task test25(type: Test) {
+
+    // This is testing the 21 code base
+    onlyIf {System.getenv("BC_JDK25") != null}
+    dependsOn jar
+
+    testClassesDirs = sourceSets.test21.output.classesDirs
+    classpath = sourceSets.test21.runtimeClasspath + files(jar.archiveFile)
+
+    forkEvery = 1;
+    maxParallelForks = 8;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = false
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+
+    jvmArgs = ['-Dtest.java.version.prefix=25']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+        includeTestsMatching "AllTest*"
+        if (project.hasProperty('excludeTests')) {
+            excludeTestsMatching "${excludeTests}"
+        }
+    }
+}
+
+
 if (System.getenv("BC_JDK8") != null) {
     System.out.println("${project.name}: Adding test8 as dependency for test task because BC_JDK8 is defined")
     test.dependsOn("test8")
