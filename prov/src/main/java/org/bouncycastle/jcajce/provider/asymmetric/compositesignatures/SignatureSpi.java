@@ -439,15 +439,15 @@ public class SignatureSpi
         throws SignatureException
     {
         int mldsaSigLen = 0;
-        if (componentSignatures[0] instanceof org.bouncycastle.jcajce.provider.asymmetric.mldsa.SignatureSpi.MLDSA44)
+        if (algs[0].indexOf("44") > 0)
         {
             mldsaSigLen = 2420;
         }
-        else if (componentSignatures[0] instanceof org.bouncycastle.jcajce.provider.asymmetric.mldsa.SignatureSpi.MLDSA65)
+        else if (algs[0].indexOf("65") > 0)
         {
             mldsaSigLen = 3309;
         }
-        else if (componentSignatures[0] instanceof org.bouncycastle.jcajce.provider.asymmetric.mldsa.SignatureSpi.MLDSA87)
+        else if (algs[0].indexOf("87") > 0)
         {
             mldsaSigLen = 4627;
         }
