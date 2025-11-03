@@ -43,7 +43,7 @@ public class BasicOCSPRespBuilder
         ASN1GeneralizedTime   nextUpdate;
         Extensions        extensions;
 
-        public ResponseObject(
+        ResponseObject(
             CertificateID     certId,
             CertificateStatus certStatus,
             Date              thisUpdate,
@@ -90,7 +90,7 @@ public class BasicOCSPRespBuilder
             this.extensions = extensions;
         }
 
-        public SingleResponse toResponse()
+        SingleResponse toResponse()
             throws Exception
         {
             return new SingleResponse(certId.toASN1Primitive(), certStatus, thisUpdate, nextUpdate, extensions);
