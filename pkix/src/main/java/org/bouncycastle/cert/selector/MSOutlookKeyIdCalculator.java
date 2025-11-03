@@ -44,7 +44,7 @@ class MSOutlookKeyIdCalculator
         /**
          * Standard constructor
          */
-        protected GeneralDigest()
+        GeneralDigest()
         {
             xBuf = new byte[4];
             xBufOff = 0;
@@ -55,14 +55,14 @@ class MSOutlookKeyIdCalculator
          * of the Object.clone() interface as this interface is not
          * supported by J2ME.
          */
-        protected GeneralDigest(GeneralDigest t)
+        GeneralDigest(GeneralDigest t)
         {
             xBuf = new byte[t.xBuf.length];
 
             copyIn(t);
         }
 
-        protected void copyIn(GeneralDigest t)
+        void copyIn(GeneralDigest t)
         {
             System.arraycopy(t.xBuf, 0, xBuf, 0, t.xBuf.length);
 
@@ -70,7 +70,7 @@ class MSOutlookKeyIdCalculator
             byteCount = t.byteCount;
         }
 
-        public void update(
+        void update(
             byte in)
         {
             xBuf[xBufOff++] = in;
@@ -84,7 +84,7 @@ class MSOutlookKeyIdCalculator
             byteCount++;
         }
 
-        public void update(
+        void update(
             byte[]  in,
             int     inOff,
             int     len)
@@ -124,7 +124,7 @@ class MSOutlookKeyIdCalculator
             }
         }
 
-        public void finish()
+        void finish()
         {
             long    bitLength = (byteCount << 3);
 
@@ -143,7 +143,7 @@ class MSOutlookKeyIdCalculator
             processBlock();
         }
 
-        public void reset()
+        void reset()
         {
             byteCount = 0;
 
@@ -154,11 +154,11 @@ class MSOutlookKeyIdCalculator
             }
         }
 
-        protected abstract void processWord(byte[] in, int inOff);
+        abstract void processWord(byte[] in, int inOff);
 
-        protected abstract void processLength(long bitLength);
+        abstract void processLength(long bitLength);
 
-        protected abstract void processBlock();
+        abstract void processBlock();
     }
 
     private static class SHA1Digest
@@ -174,22 +174,22 @@ class MSOutlookKeyIdCalculator
         /**
          * Standard constructor
          */
-        public SHA1Digest()
+        SHA1Digest()
         {
             reset();
         }
 
-        public String getAlgorithmName()
+        String getAlgorithmName()
         {
             return "SHA-1";
         }
 
-        public int getDigestSize()
+        int getDigestSize()
         {
             return DIGEST_LENGTH;
         }
 
-        protected void processWord(
+        void processWord(
             byte[]  in,
             int     inOff)
         {
@@ -207,7 +207,7 @@ class MSOutlookKeyIdCalculator
             }
         }
 
-        protected void processLength(
+        void processLength(
             long    bitLength)
         {
             if (xOff > 14)
@@ -219,7 +219,7 @@ class MSOutlookKeyIdCalculator
             X[15] = (int)(bitLength & 0xffffffff);
         }
 
-        public int doFinal(
+        int doFinal(
             byte[]  out,
             int     outOff)
         {
@@ -239,7 +239,7 @@ class MSOutlookKeyIdCalculator
         /**
          * reset the chaining variables
          */
-        public void reset()
+        void reset()
         {
             super.reset();
 
@@ -288,7 +288,7 @@ class MSOutlookKeyIdCalculator
             return ((u & v) | (u & w) | (v & w));
         }
 
-        protected void processBlock()
+        void processBlock()
         {
             //
             // expand 16 word block into 80 word block.

@@ -31,7 +31,7 @@ public class OCSPReqBuilder
         CertificateID   certId;
         Extensions  extensions;
 
-        public RequestObject(
+        RequestObject(
             CertificateID   certId,
             Extensions  extensions)
         {
@@ -39,7 +39,7 @@ public class OCSPReqBuilder
             this.extensions = extensions;
         }
 
-        public Request toRequest()
+        Request toRequest()
             throws Exception
         {
             return new Request(certId.toASN1Primitive(), extensions);
