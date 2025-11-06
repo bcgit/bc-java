@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.symmetric.pbepbkdf2;
+package org.bouncycastle.jcajce.provider.kdf.pbepbkdf2;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;

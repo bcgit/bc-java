@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.symmetric.hkdf;
+package org.bouncycastle.jcajce.provider.kdf.hkdf;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;

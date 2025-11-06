@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.symmetric.scrypt;
+package org.bouncycastle.jcajce.provider.kdf.scrypt;
 
 import org.bouncycastle.crypto.PasswordConverter;
 import org.bouncycastle.crypto.generators.SCrypt;
@@ -12,7 +12,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidKeySpecException;
 
 /**
  * Example KDFSpi that delegates to Bouncy Castle’s SCrypt implementation.

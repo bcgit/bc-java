@@ -1,11 +1,11 @@
-package org.bouncycastle.jcajce.provider.symmetric;
+package org.bouncycastle.jcajce.provider.kdf;
 
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 class SCRYPT
 {
-    private static final String PREFIX = "org.bouncycastle.jcajce.provider.symmetric" + ".scrypt.";
+    private static final String PREFIX = "org.bouncycastle.jcajce.provider.kdf" + ".scrypt.";
 
     public static class Mappings
             extends AlgorithmProvider

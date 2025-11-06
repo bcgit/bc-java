@@ -1,10 +1,10 @@
-package org.bouncycastle.jcajce.provider.symmetric.test;
+package org.bouncycastle.jcajce.provider.kdf.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.jcajce.provider.symmetric.hkdf.HKDFParameterSpec;
+import org.bouncycastle.jcajce.provider.kdf.hkdf.HKDFParameterSpec;
 
 import javax.crypto.KDF;
 
