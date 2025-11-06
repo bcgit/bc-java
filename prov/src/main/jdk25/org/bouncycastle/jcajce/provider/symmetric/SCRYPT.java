@@ -3,7 +3,7 @@ package org.bouncycastle.jcajce.provider.symmetric;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
-public class SCRYPT
+class SCRYPT
 {
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.symmetric" + ".scrypt.";
 

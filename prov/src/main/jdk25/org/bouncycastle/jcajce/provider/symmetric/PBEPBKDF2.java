@@ -4,7 +4,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
-public class PBEPBKDF2
+class PBEPBKDF2
 {
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.symmetric" + ".pbepbkdf2.";
 
