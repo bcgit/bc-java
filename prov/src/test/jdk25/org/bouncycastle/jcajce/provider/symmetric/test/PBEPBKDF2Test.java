@@ -1,29 +1,11 @@
 package org.bouncycastle.jcajce.provider.symmetric.test;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
-import org.bouncycastle.asn1.pkcs.EncryptionScheme;
-import org.bouncycastle.asn1.pkcs.PBES2Parameters;
-import org.bouncycastle.asn1.pkcs.PBKDF2Params;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.jcajce.provider.symmetric.PBEPBKDF2;
-import org.bouncycastle.jcajce.provider.symmetric.hkdf.HKDFParameterSpec;
 import org.bouncycastle.jcajce.provider.symmetric.pbepbkdf2.PBEPBKDF2ParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 import javax.crypto.KDF;
-import javax.crypto.spec.PBEKeySpec;
-import java.io.ByteArrayInputStream;
 import java.security.Security;
 
 import static org.bouncycastle.util.Arrays.areEqual;

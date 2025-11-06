@@ -1,7 +1,6 @@
 package org.bouncycastle.jcajce.provider.symmetric.test;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;

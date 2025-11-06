@@ -17,7 +17,7 @@ import java.security.spec.InvalidKeySpecException;
 /**
  * Example KDFSpi that delegates to Bouncy Castle’s SCrypt implementation.
  */
-public class SCryptSpi
+class SCryptSpi
         extends KDFSpi
 {
     protected SCryptSpi(KDFParameters kdfParameters)

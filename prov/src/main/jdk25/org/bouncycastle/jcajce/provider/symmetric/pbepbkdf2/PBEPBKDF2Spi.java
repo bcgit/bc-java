@@ -24,7 +24,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import static org.bouncycastle.crypto.PBEParametersGenerator.PKCS5PasswordToUTF8Bytes;
 
-public class PBEPBKDF2Spi
+class PBEPBKDF2Spi
     extends KDFSpi
 {
 

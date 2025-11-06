@@ -15,7 +15,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 
-public class HKDFSpi
+class HKDFSpi
         extends KDFSpi
 {
     protected HKDFBytesGenerator hkdf;
