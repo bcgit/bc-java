@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.symmetric.hkdf;
+package org.bouncycastle.jcajce.provider.kdf.hkdf;
 
 import org.bouncycastle.crypto.params.HKDFParameters;
 

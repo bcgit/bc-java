@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.symmetric.test;
+package org.bouncycastle.jcajce.provider.kdf.test;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.symmetric.scrypt;
+package org.bouncycastle.jcajce.provider.kdf.scrypt;
 
 import org.bouncycastle.jcajce.spec.ScryptKeySpec;
 

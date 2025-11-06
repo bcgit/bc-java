@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.symmetric;
+package org.bouncycastle.jcajce.provider.kdf;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -6,7 +6,7 @@ import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 class PBEPBKDF2
 {
-    private static final String PREFIX = "org.bouncycastle.jcajce.provider.symmetric" + ".pbepbkdf2.";
+    private static final String PREFIX = "org.bouncycastle.jcajce.provider.kdf" + ".pbepbkdf2.";
 
     public static class Mappings
             extends AlgorithmProvider

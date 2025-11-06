@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.symmetric.pbepbkdf2;
+package org.bouncycastle.jcajce.provider.kdf.pbepbkdf2;
 
 import javax.crypto.spec.PBEKeySpec;
 import java.security.spec.AlgorithmParameterSpec;
