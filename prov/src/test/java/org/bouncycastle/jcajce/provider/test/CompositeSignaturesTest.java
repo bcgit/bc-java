@@ -726,7 +726,7 @@ public class CompositeSignaturesTest
             byte[] x5cpk = null;
             PublicKey pubKey = null, certPubKey = null;
             PrivateKey privKey = null;
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
             X509Certificate cert = null;
             try
             {

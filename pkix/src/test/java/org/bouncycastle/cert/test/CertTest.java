@@ -5741,8 +5741,7 @@ public class CertTest
         checkCRLCreation3();
         checkCRLCreation4();
         checkCRLCreation5();
-        //TODO: NOT WORKING CHECK WHY, PQCBC BEING USED RATHER THAN BC?
-//        checkCRLCompositeCreation();
+        checkCRLCompositeCreation();
         checkCrlECDSAwithDilithiumCreation();
 
         pemTest();
@@ -5759,8 +5758,7 @@ public class CertTest
 
         checkSerialisation();
 
-        //TODO: NOT WORKING CHECK WHY, PQCBC BEING USED RATHER THAN BC?
-//        checkCompositeSignatureCertificateCreation();
+        checkCompositeSignatureCertificateCreation();
         checkParseCompositePublicKey();
 //        checkParseCompositePrivateKey();
         checkParseAndVerifyCompositeCertificate();

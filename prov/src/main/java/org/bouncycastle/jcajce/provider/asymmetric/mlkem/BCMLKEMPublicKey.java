@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
@@ -16,7 +17,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class BCMLKEMPublicKey
-    implements MLKEMPublicKey
+    implements MLKEMPublicKey, BCKey
 {
     private static final long serialVersionUID = 1L;
 

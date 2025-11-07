@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPublicKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
@@ -16,7 +17,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class BCSLHDSAPublicKey
-    implements SLHDSAPublicKey
+    implements SLHDSAPublicKey, BCKey
 {
     private static final long serialVersionUID = 1L;
 
