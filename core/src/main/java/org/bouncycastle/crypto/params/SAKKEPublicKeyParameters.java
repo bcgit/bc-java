@@ -91,11 +91,11 @@ public class SAKKEPublicKeyParameters
      * Uses parameters from RFC 6509 Appendix A.
      */
     private static final ECCurve.Fp curve = new ECCurve.Fp(
-        p,                                   // Prime p
-        BigInteger.valueOf(-3).mod(p),             // a = -3
-        BigInteger.ZERO, // ,
-        g,                                  // Order of the subgroup (from RFC 6509)
-        BigInteger.ONE                      // Cofactor = 1
+        p,                                 // Prime p
+        p.subtract(BigInteger.valueOf(3)), // a = -3
+        BigInteger.ZERO,
+        q,                                 // Order of the subgroup (from RFC 6509)
+        BigInteger.valueOf(4)              // Cofactor = 1
     );
 
     /**
