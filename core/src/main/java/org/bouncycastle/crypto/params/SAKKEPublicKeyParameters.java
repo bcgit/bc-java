@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.WNafUtil;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -36,6 +37,13 @@ import org.bouncycastle.util.encoders.Hex;
 public class SAKKEPublicKeyParameters
     extends AsymmetricKeyParameter
 {
+    private static ECPoint configureBasepoint(ECCurve curve, BigInteger x, BigInteger y)
+    {
+        ECPoint G = curve.createPoint(x, y);
+        WNafUtil.configureBasepoint(G);
+        return G;
+    }
+    
     /**
      * Prime modulus p defining the finite field F_p (RFC 6508, Section 2.1).
      * Value from RFC 6509 Appendix A.
@@ -102,7 +110,7 @@ public class SAKKEPublicKeyParameters
      * Base point P on the elliptic curve E(F_p) (RFC 6508, Section 3.1).
      * Coordinates from RFC 6509 Appendix A.
      */
-    static final ECPoint P = curve.createPoint(Px, Py);
+    static final ECPoint P = configureBasepoint(curve, Px, Py);
     /** KMS Public Key Z_S = [z_S]P (RFC 6508, Section 2.2) */
     private final ECPoint Z;
     /** User's Identifier (RFC 6508, Section 2.2) */
