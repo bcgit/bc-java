@@ -138,6 +138,17 @@ public class ECAlgorithmParametersTest
         "X9.62 c2pnb368w1",
         "1.2.840.10045.3.0.19"};
 
+    public void testSupportAttributes()
+    {
+        Security.addProvider(new BouncyCastleProvider());
+        String target = Security.getProviders("AlgorithmParameters.EC")[1].getService("AlgorithmParameters",
+            "EC").getAttribute("SupportedCurves");
+        for (int i = 0; i != entries.length; i++)
+        {
+            TestCase.assertTrue(entries[i] + " should be in the list", target.contains(entries[i]));
+        }
+    }
+
     public void testRecogniseStandardCurveNames()
         throws Exception
     {
