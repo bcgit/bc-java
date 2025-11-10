@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.SAKKEPublicKeyParameters;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
@@ -85,51 +86,53 @@ public class SAKKEKEMSGenerator
 
 
         // 3. Compute R_(b,S) = [r]([b]P + Z_S)
-        ECPoint bP = P.multiply(b).normalize();
-        ECPoint R_bS = bP.add(Z).multiply(r).normalize();
+        ECPoint R_bS;
+
+        BigInteger order = curve.getOrder();
+        if (order == null)
+        {
+            R_bS = P.multiply(b).add(Z).multiply(r).normalize();
+        }
+        else
+        {
+            BigInteger a = b.multiply(r).mod(order);
+            R_bS = ECAlgorithms.sumOfTwoMultiplies(P, a, Z, r).normalize();
+        }
 
         // 4. Compute H = SSV XOR HashToIntegerRange( g^r, 2^n )
         BigInteger pointX = BigInteger.ONE;
         BigInteger pointY = g;
-        BigInteger[] v = new BigInteger[2];
 
         // Initialize result with the original point
-        BigInteger currentX = BigInteger.ONE;
-        BigInteger currentY = g;
-        ECPoint current = curve.createPoint(currentX, currentY);
+        BigInteger v0 = BigInteger.ONE;
+        BigInteger v1 = g;
+        ECPoint current = curve.createPoint(v0, v1);
 
-        int numBits = r.bitLength();
-        BigInteger[] rlt;
         // Process bits from MSB-1 down to 0
-        for (int i = numBits - 2; i >= 0; i--)
+        for (int i = r.bitLength() - 2; i >= 0; i--)
         {
             // Square the current point
-            rlt = SAKKEKEMExtractor.fp2PointSquare(currentX, currentY, p);
+            BigInteger[] rlt = SAKKEKEMExtractor.fp2PointSquare(v0, v1, p);
             current = current.timesPow2(2);
-            currentX = rlt[0];
-            currentY = rlt[1];
+            v0 = rlt[0];
+            v1 = rlt[1];
             // Multiply if bit is set
             if (r.testBit(i))
             {
-                rlt = SAKKEKEMExtractor.fp2Multiply(currentX, currentY, pointX, pointY, p);
+                rlt = SAKKEKEMExtractor.fp2Multiply(v0, v1, pointX, pointY, p);
 
-                currentX = rlt[0];
-                currentY = rlt[1];
+                v0 = rlt[0];
+                v1 = rlt[1];
             }
         }
 
-        v[0] = currentX;
-        v[1] = currentY;
-        BigInteger g_r = v[1].multiply(v[0].modInverse(p)).mod(p);
+        BigInteger v0Inv = BigIntegers.modOddInverse(p, v0);
+        BigInteger g_r = v1.multiply(v0Inv).mod(p);
 
         BigInteger mask = hashToIntegerRange(g_r.toByteArray(), BigInteger.ONE.shiftLeft(n), digest); // 2^n
 
         BigInteger H = ssv.xor(mask);
         // 5. Encode encapsulated data (R_bS, H)
-//        byte[] encapsulated = Arrays.concatenate(new byte[]{(byte)0x04},
-//            BigIntegers.asUnsignedByteArray(n, R_bS.getXCoord().toBigInteger()),
-//            BigIntegers.asUnsignedByteArray(n, R_bS.getYCoord().toBigInteger()),
-//            BigIntegers.asUnsignedByteArray(16, H));
         byte[] encapsulated = Arrays.concatenate(R_bS.getEncoded(false), BigIntegers.asUnsignedByteArray(16, H));
 
         return new SecretWithEncapsulationImpl(
@@ -141,20 +144,21 @@ public class SAKKEKEMSGenerator
     static BigInteger hashToIntegerRange(byte[] input, BigInteger q, Digest digest)
     {
         // RFC 6508 Section 5.1: Hashing to an Integer Range
-        byte[] hash = new byte[digest.getDigestSize()];
+        byte[] A = new byte[digest.getDigestSize()];
 
         // Step 1: Compute A = hashfn(s)
         digest.update(input, 0, input.length);
-        digest.doFinal(hash, 0);
-        byte[] A = Arrays.clone(hash);
+        digest.doFinal(A, 0);
 
         // Step 2: Initialize h_0 to all-zero bytes of hashlen size
         byte[] h = new byte[digest.getDigestSize()];
 
         // Step 3: Compute l = Ceiling(lg(n)/hashlen)
+        // FIXME Seems hardcoded to 256 bit digest?
         int l = q.bitLength() >> 8;
 
         BigInteger v = BigInteger.ZERO;
+        byte[] v_i = new byte[digest.getDigestSize()];
 
         // Step 4: Compute h_i and v_i
         for (int i = 0; i <= l; i++)
@@ -165,7 +169,6 @@ public class SAKKEKEMSGenerator
             // v_i = hashfn(h_i || A)
             digest.update(h, 0, h.length);
             digest.update(A, 0, A.length);
-            byte[] v_i = new byte[digest.getDigestSize()];
             digest.doFinal(v_i, 0);
             // Append v_i to v'
             v = v.shiftLeft(v_i.length * 8).add(new BigInteger(1, v_i));
