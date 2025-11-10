@@ -331,7 +331,7 @@ public class BaseBlockCipher
                     engineParams.init(pbeSpec);
                 }
                 catch (Exception e)
-                {
+                {              e.printStackTrace();
                     return null;
                 }
             }
@@ -696,6 +696,8 @@ public class BaseBlockCipher
                 throw new InvalidKeyException("Algorithm requires a PBE key");
             }
 
+            pbeAlgorithm = "PKCS12PBE";
+            
             if (key instanceof BCPBEKey)
             {
                 // PKCS#12 sets an IV, if we get a key that doesn't have ParametersWithIV we need to reject it. If the
