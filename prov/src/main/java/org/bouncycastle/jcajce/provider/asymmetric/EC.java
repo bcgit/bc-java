@@ -26,7 +26,7 @@ public class EC
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".ec.";
 
     private static final Map<String, String> generalEcAttributes = new HashMap<String, String>();
-    private static final Map<String, String> ecSupportCurves = new HashMap<>();
+    private static final Map<String, String> ecSupportCurves = new HashMap<String, String>();
 
     static
     {
