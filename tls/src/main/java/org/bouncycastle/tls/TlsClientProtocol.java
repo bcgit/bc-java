@@ -1142,6 +1142,11 @@ public class TlsClientProtocol
             server_version = supported_version;
         }
 
+        if (!ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), server_version))
+        {
+            throw new TlsFatalAlert(AlertDescription.protocol_version);
+        }
+
         final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
 
         if (securityParameters.isRenegotiating())
@@ -1154,11 +1159,6 @@ public class TlsClientProtocol
         }
         else
         {
-            if (!ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), server_version))
-            {
-                throw new TlsFatalAlert(AlertDescription.protocol_version);
-            }
-
             ProtocolVersion legacy_record_version = server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
                 ? ProtocolVersion.TLSv12
                 : server_version;
@@ -1764,21 +1764,10 @@ public class TlsClientProtocol
     {
         SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
 
-        ProtocolVersion[] supportedVersions;
-        ProtocolVersion earliestVersion, latestVersion;
+        ProtocolVersion[] supportedVersions = tlsClient.getProtocolVersions();
 
-        if (securityParameters.isRenegotiating())
+        if (!securityParameters.isRenegotiating())
         {
-            ProtocolVersion clientVersion = tlsClientContext.getClientVersion();
-
-            supportedVersions = clientVersion.only();
-            earliestVersion = clientVersion;
-            latestVersion = clientVersion;
-        }
-        else
-        {
-            supportedVersions = tlsClient.getProtocolVersions();
-
             if (ProtocolVersion.contains(supportedVersions, ProtocolVersion.SSLv3))
             {
                 // TODO[tls13] Prevent offering SSLv3 AND TLSv13?
@@ -1788,18 +1777,17 @@ public class TlsClientProtocol
             {
                 recordStream.setWriteVersion(ProtocolVersion.TLSv10);
             }
-
-            earliestVersion = ProtocolVersion.getEarliestTLS(supportedVersions);
-            latestVersion = ProtocolVersion.getLatestTLS(supportedVersions);
-
-            if (!ProtocolVersion.isSupportedTLSVersionClient(latestVersion))
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            tlsClientContext.setClientVersion(latestVersion);
         }
 
+        ProtocolVersion earliestVersion = ProtocolVersion.getEarliestTLS(supportedVersions);
+        ProtocolVersion latestVersion = ProtocolVersion.getLatestTLS(supportedVersions);
+
+        if (!ProtocolVersion.isSupportedTLSVersionClient(latestVersion))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+ 
+        tlsClientContext.setClientVersion(latestVersion);
         tlsClientContext.setClientSupportedVersions(supportedVersions);
 
         final boolean offeringTLSv12Minus = ProtocolVersion.TLSv12.isEqualOrLaterVersionOf(earliestVersion);
