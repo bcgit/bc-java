@@ -17,7 +17,7 @@ plugins {
 }
 
 println("Environment setup:")
-["BC_JDK8", "BC_JDK11", "BC_JDK17"].each({ it ->
+["BC_JDK8", "BC_JDK11", "BC_JDK17","BC_JDK21", "BC_JDK25"].each({ it ->
     println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}");
 //    if (System.getenv(it) == null) {
 //        throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
