@@ -13,10 +13,10 @@ evaluationDependsOn(":core")
 sourceSets {
     main {
         java {
-            srcDirs = ["${project(":core").projectDir}/src/main/java","src/main/java"]
+            srcDirs = ["${projectDir}/../core/src/main/java","src/main/java"]
         }
         resources {
-            srcDirs= ["${project(":core").projectDir}/src/main/resources","src/main/resources"]
+            srcDirs= ["${projectDir}/../core/src/main/resources","src/main/resources"]
         }
     }
 

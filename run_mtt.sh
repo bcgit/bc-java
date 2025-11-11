@@ -14,7 +14,7 @@ echo ""
 # are correctly exported by another module.
 #
 
-levels=( "9" "11" "17" "21" )
+levels=( "9" "11" "17" "21" "25" )
 
 for level in "${levels[@]}"
 do
