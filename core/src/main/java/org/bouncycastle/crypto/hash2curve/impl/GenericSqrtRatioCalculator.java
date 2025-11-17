@@ -9,7 +9,25 @@ import org.bouncycastle.math.ec.ECCurve;
 import java.math.BigInteger;
 
 /**
- * Generic implementation of the SqrtRatio calculator
+ * Generic implementation of the sqrt_ratio(u, v) operation defined in RFC 9380.
+ *
+ * <p>This computes a square root of u/v in the prime field Fp associated with an
+ * elliptic curve, when such a square root exists, and otherwise returns a valid
+ * square root of z·u/v for a fixed quadratic non-residue z.  This function is a
+ * required component of all map-to-curve constructions in RFC 9380, including
+ * the Simplified SWU and Elligator 2 maps.</p>
+ *
+ * <p>RFC 9380 defines optimized sqrt_ratio formulas for certain curves where
+ * the field prime p satisfies special congruences (e.g. p ≡ 3 mod 4 or p ≡ 5 mod 8).
+ * However, those optimizations are curve-specific and do not apply to all hash-to-curve
+ * suites.  This implementation instead follows the fully generic algorithm from
+ * Section 5.6.3 of RFC 9380, which is valid for any elliptic curve defined over a
+ * prime field Fp.</p>
+ *
+ * <p>This generic version supports all curves used in the RFC 9830 test vectors,
+ * including the NIST P-256 / P-384 / P-521 curves, Curve25519, Edwards25519
+ * (Ristretto255), Curve448, and Edwards448 (Decaf448).  It provides a single uniform
+ * implementation suitable for all supported hash-to-curve suites.</p>
  */
 public class GenericSqrtRatioCalculator implements SqrtRatioCalculator {
 

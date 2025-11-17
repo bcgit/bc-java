@@ -3,7 +3,7 @@ package org.bouncycastle.crypto.hash2curve.test;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.hash2curve.H2cUtils;
-import org.bouncycastle.crypto.hash2curve.impl.GenericOPRFHashToScalar;
+import org.bouncycastle.crypto.hash2curve.OPRFHashToScalar;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
@@ -18,7 +18,7 @@ import java.util.List;
 public class H2cUtilsTest extends TestCase {
 
   static ECCurve p256Curve = new SecP256R1Curve();
-  static GenericOPRFHashToScalar hashToScalar = new GenericOPRFHashToScalar(p256Curve, new SHA256Digest(), 48);
+  static OPRFHashToScalar hashToScalar = new OPRFHashToScalar(p256Curve, new SHA256Digest(), 48);
 
   public void testIsSquare() throws Exception {
 

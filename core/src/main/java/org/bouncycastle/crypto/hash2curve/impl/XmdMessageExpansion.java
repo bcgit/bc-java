@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.util.Arrays;
 
 /**
- * XmdMessageExpansion is an implementation of the XMD MessageExpansion interface, used to expand a given message to a
+ * XmdMessageExpansion is an implementation of the MessageExpansion interface, used to expand a given message to a
  * specified length in bytes while following cryptographic domain separation principles. The implementation uses a
  * selected hash function to achieve the expansion.
  */

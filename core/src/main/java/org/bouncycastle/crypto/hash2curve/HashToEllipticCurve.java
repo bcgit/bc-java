@@ -1,10 +1,20 @@
 package org.bouncycastle.crypto.hash2curve;
 
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.hash2curve.data.HashToCurveProfile;
-import org.bouncycastle.crypto.hash2curve.impl.GenericCurveProcessor;
+import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
+import org.bouncycastle.crypto.hash2curve.impl.ShallueVanDeWoestijneMapToCurve;
+import org.bouncycastle.crypto.hash2curve.impl.XmdMessageExpansion;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP384R1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Main class for implementing hash to elliptic curve according to RFC 9380
@@ -20,23 +30,36 @@ public class HashToEllipticCurve {
   protected final MapToCurve mapToCurve;
   protected final CurveProcessor curveProcessor;
 
-  public HashToEllipticCurve(final HashToField hashToField,
+  protected HashToEllipticCurve(final HashToField hashToField,
       final MapToCurve mapToCurve, final CurveProcessor curveProcessor) {
     this.curveProcessor = curveProcessor;
     this.hashToField = hashToField;
     this.mapToCurve = mapToCurve;
   }
 
-  public HashToEllipticCurve(final HashToField hashToField, final MapToCurve mapToCurve, BigInteger cofactor) {
-    this(hashToField, mapToCurve, new GenericCurveProcessor(cofactor));
+  private HashToEllipticCurve(final HashToField hashToField, final MapToCurve mapToCurve) {
+    this(hashToField, mapToCurve, new NistCurveProcessor());
   }
 
-  public HashToEllipticCurve(final HashToField hashToField, final MapToCurve mapToCurve) {
-    this(hashToField, mapToCurve, new GenericCurveProcessor());
-  }
-
-  public static HashToEllipticCurve getInstance(final HashToCurveProfile profile) {
-    return null;
+  public static HashToEllipticCurve getInstance(final HashToCurveProfile profile, String dst) {
+    byte[] dstBytes = dst.getBytes(StandardCharsets.UTF_8);
+    ECCurve curve;
+    switch (profile) {
+    case P256_XMD_SHA_256_SSWU_RO_:
+      curve = new SecP256R1Curve();
+      return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA256Digest(),
+          profile.getK()), profile.getL()), new ShallueVanDeWoestijneMapToCurve(curve, profile.getZ()));
+    case P384_XMD_SHA_384_SSWU_RO_:
+      curve = new SecP384R1Curve();
+      return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA384Digest(),
+          profile.getK()), profile.getL()), new ShallueVanDeWoestijneMapToCurve(curve, profile.getZ()));
+    case P521_XMD_SHA_512_SSWU_RO_:
+      curve = new SecP521R1Curve();
+      return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
+          profile.getK()), profile.getL()), new ShallueVanDeWoestijneMapToCurve(curve, profile.getZ()));
+    default:
+      throw new IllegalArgumentException("Unsupported profile: " + profile);
+    }
   }
 
   /**
