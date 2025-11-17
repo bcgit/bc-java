@@ -26,18 +26,9 @@ import java.math.BigInteger;
  *       group order.</li>
  * </ul>
  *
- * <p>At first glance these appear to be fundamentally different algorithms. However, RFC 9380
- * explicitly defines {@code hash_to_field} as a generic mechanism for producing field elements
- * modulo an arbitrary prime, not only the curve base field. When {@code hash_to_field} is invoked
- * with:</p>
- *
- * <pre>
- *   m     = 1
- *   count = 1
- *   p     = group order q     (not the curve field prime)
- * </pre>
- *
- * <p>the definition collapses to the simpler:</p>
+ * <p>At first glance these appear to be fundamentally different algorithms. However, the use
+ * of hash_to_field for NIST curves is 100% equivalent to doing the same message_expansion_xmd
+ * operation described for other curves. That is:</p>
  *
  * <pre>
  *   uniform_bytes = expand_message_xmd(msg, DST, L)
@@ -54,9 +45,7 @@ import java.math.BigInteger;
  * <ul>
  *   <li>It avoids duplicating two code paths that differ only superficially.</li>
  *   <li>It eliminates any ambiguity between curve field primes and group-order primes.</li>
- *   <li>It aligns with how real-world OPRF implementations are written (e.g., CIRCL/Go,
- *       Cloudflare VOPRF, Rust <code>voprf</code>, HACL*, etc.), which all use the
- *       "expand → integer → mod q" construction directly.</li>
+ *   <li>It has been verified through test vectors of OPRF to produce a 100% compliant result</li>
  *   <li>It provides a consistent and auditable design across all curves.</li>
  * </ul>
  *
