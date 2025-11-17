@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.hash2curve.data;
+package org.bouncycastle.crypto.hash2curve;
 
 import java.math.BigInteger;
 

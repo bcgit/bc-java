@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.hash2curve;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.hash2curve.data.HashToCurveProfile;
 import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
 import org.bouncycastle.crypto.hash2curve.impl.ShallueVanDeWoestijneMapToCurve;
 import org.bouncycastle.crypto.hash2curve.impl.XmdMessageExpansion;

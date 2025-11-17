@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.hash2curve.CurveProcessor;
 import org.bouncycastle.crypto.hash2curve.HashToEllipticCurve;
 import org.bouncycastle.crypto.hash2curve.HashToField;
 import org.bouncycastle.crypto.hash2curve.MapToCurve;
-import org.bouncycastle.crypto.hash2curve.data.HashToCurveProfile;
+import org.bouncycastle.crypto.hash2curve.HashToCurveProfile;
 import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
 import org.bouncycastle.crypto.hash2curve.impl.ShallueVanDeWoestijneMapToCurve;
 import org.bouncycastle.crypto.hash2curve.impl.XmdMessageExpansion;
