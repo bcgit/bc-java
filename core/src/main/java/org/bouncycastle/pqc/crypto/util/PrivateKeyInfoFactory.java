@@ -391,13 +391,7 @@ public class PrivateKeyInfoFactory
 
     private static ASN1Sequence getBasicPQCEncoding(byte[] seed, byte[] expanded)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(new DEROctetString(seed));
-
-        v.add(new DEROctetString(expanded));
-
-        return new DERSequence(v);
+        return new DERSequence(new DEROctetString(seed), new DEROctetString(expanded));
     }
 
     private static XMSSMTPrivateKey xmssmtCreateKeyStructure(XMSSMTPrivateKeyParameters keyParams)

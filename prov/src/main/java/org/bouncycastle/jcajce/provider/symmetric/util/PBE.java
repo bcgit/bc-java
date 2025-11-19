@@ -116,6 +116,12 @@ public interface PBE
                 case SHA512:
                     generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512PRF());
                     break;
+                case SHA512_224:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512_224PRF());
+                    break;
+                case SHA512_256:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512_256PRF());
+                    break;
                 case SHA3_224:
                     generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA3_224PRF());
                     break;
