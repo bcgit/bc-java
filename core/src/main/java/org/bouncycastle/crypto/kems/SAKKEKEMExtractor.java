@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.params.SAKKEPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SAKKEPublicKeyParameters;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
@@ -93,9 +94,22 @@ public class SAKKEKEMExtractor
         BigInteger r = SAKKEKEMSGenerator.hashToIntegerRange(Arrays.concatenate(ssv.toByteArray(), b.toByteArray()), q, digest);
 
         // Step 5: Validate R_bS
-        ECPoint bP = P.multiply(b).normalize();
-        ECPoint Test = bP.add(Z_S).multiply(r).normalize();
-        if (!R_bS.equals(Test))
+        ECPoint Test;
+
+        BigInteger order = curve.getOrder();
+        if (order == null)
+        {
+            Test = P.multiply(b).add(Z_S).multiply(r);
+        }
+        else
+        {
+            BigInteger a = b.multiply(r).mod(order);
+            Test = ECAlgorithms.sumOfTwoMultiplies(P, a, Z_S, r);
+        }
+
+        Test = Test.subtract(R_bS);
+
+        if (!Test.isInfinity())
         {
             throw new IllegalStateException("Validation of R_bS failed");
         }
@@ -122,7 +136,7 @@ public class SAKKEKEMExtractor
     static BigInteger computePairing(ECPoint R, ECPoint Q, BigInteger p, BigInteger q)
     {
         // v = (1,0) in F_p^2
-        BigInteger[] v = new BigInteger[]{BigInteger.ONE, BigInteger.ZERO};
+        BigInteger[] v = new BigInteger[]{ BigInteger.ONE, BigInteger.ZERO };
         ECPoint C = R;
 
         BigInteger qMinusOne = q.subtract(BigInteger.ONE);
@@ -131,23 +145,21 @@ public class SAKKEKEMExtractor
         BigInteger Qy = Q.getAffineYCoord().toBigInteger();
         BigInteger Rx = R.getAffineXCoord().toBigInteger();
         BigInteger Ry = R.getAffineYCoord().toBigInteger();
-        BigInteger l, Cx, Cy;
         final BigInteger three = BigInteger.valueOf(3);
-        final BigInteger two = BigInteger.valueOf(2);
 
         // Miller loop
         for (int i = numBits - 2; i >= 0; i--)
         {
-            Cx = C.getAffineXCoord().toBigInteger();
-            Cy = C.getAffineYCoord().toBigInteger();
+            BigInteger Cx = C.getAffineXCoord().toBigInteger();
+            BigInteger Cy = C.getAffineYCoord().toBigInteger();
 
             // Compute l = (3 * (Cx^2 - 1)) / (2 * Cy) mod p
-            l = three.multiply(Cx.multiply(Cx).subtract(BigInteger.ONE))
-                .multiply(Cy.multiply(two).modInverse(p)).mod(p);
+            BigInteger l = Cx.multiply(Cx).mod(p).subtract(BigInteger.ONE).multiply(three)
+                .multiply(BigIntegers.modOddInverse(p, Cy.shiftLeft(1))).mod(p);
 
             // Compute v = v^2 * ( l*( Q_x + C_x ) + ( i*Q_y - C_y ) )
             v = fp2PointSquare(v[0], v[1], p);
-            v = fp2Multiply(v[0], v[1], l.multiply(Qx.add(Cx)).subtract(Cy), Qy, p);
+            v = fp2Multiply(v[0], v[1], l.multiply(Qx.add(Cx)).subtract(Cy).mod(p), Qy, p);
 
             C = C.twice().normalize();  // C = [2]C
 
@@ -157,55 +169,56 @@ public class SAKKEKEMExtractor
                 Cy = C.getAffineYCoord().toBigInteger();
 
                 // Compute l = (Cy - Ry) / (Cx - Rx) mod p
-                l = Cy.subtract(Ry).multiply(Cx.subtract(Rx).modInverse(p)).mod(p);
+                l = Cy.subtract(Ry).multiply(BigIntegers.modOddInverse(p, Cx.subtract(Rx))).mod(p);
 
                 // Compute v = v * ( l*( Q_x + C_x ) + ( i*Q_y - C_y ) )
-                v = fp2Multiply(v[0], v[1], l.multiply(Qx.add(Cx)).subtract(Cy), Qy, p);
+                v = fp2Multiply(v[0], v[1], l.multiply(Qx.add(Cx)).subtract(Cy).mod(p), Qy, p);
 
-                C = C.add(R).normalize();
+                if (i > 0)
+                {
+                    C = C.add(R).normalize();
+                }
             }
         }
 
         // Final exponentiation: t = v^c
         v = fp2PointSquare(v[0], v[1], p);
         v = fp2PointSquare(v[0], v[1], p);
-        return v[1].multiply(v[0].modInverse(p)).mod(p);
+        BigInteger v0Inv = BigIntegers.modOddInverse(p, v[0]);
+        return v[1].multiply(v0Inv).mod(p);
     }
 
     /**
      * Performs multiplication in F_p^2 field.
      *
-     * @param x_real Real component of first operand
-     * @param x_imag Imaginary component of first operand
-     * @param y_real Real component of second operand
-     * @param y_imag Imaginary component of second operand
+     * @param a0 Real component of first operand
+     * @param b0 Imaginary component of first operand
+     * @param a1 Real component of second operand
+     * @param b1 Imaginary component of second operand
      * @param p      Prime field characteristic
      * @return Result of multiplication in F_p^2 as [real, imaginary] array
      */
-    static BigInteger[] fp2Multiply(BigInteger x_real, BigInteger x_imag, BigInteger y_real, BigInteger y_imag, BigInteger p)
+    static BigInteger[] fp2Multiply(BigInteger a0, BigInteger b0, BigInteger a1, BigInteger b1, BigInteger p)
     {
         return new BigInteger[]{
-            x_real.multiply(y_real).subtract(x_imag.multiply(y_imag)).mod(p),
-            x_real.multiply(y_imag).add(x_imag.multiply(y_real)).mod(p)
+            a0.multiply(a1).subtract(b0.multiply(b1)).mod(p),
+            a0.multiply(b1).add(b0.multiply(a1)).mod(p)
         };
     }
 
     /**
      * Computes squaring operation in F_p^2 field.
      *
-     * @param currentX Real component of input
-     * @param currentY Imaginary component of input
+     * @param a Real component of input
+     * @param b Imaginary component of input
      * @param p        Prime field characteristic
      * @return Squared result in F_p^2 as [newX, newY] array
      */
-    static BigInteger[] fp2PointSquare(BigInteger currentX, BigInteger currentY, BigInteger p)
+    static BigInteger[] fp2PointSquare(BigInteger a, BigInteger b, BigInteger p)
     {
-        BigInteger xPlusY = currentX.add(currentY).mod(p);
-        BigInteger xMinusY = currentX.subtract(currentY).mod(p);
-        BigInteger newX = xPlusY.multiply(xMinusY).mod(p);
-
-        // Compute newY = 2xy mod p
-        BigInteger newY = currentX.multiply(currentY).multiply(BigInteger.valueOf(2)).mod(p);
-        return new BigInteger[]{newX, newY};
+        return new BigInteger[]{
+            a.add(b).multiply(a.subtract(b)).mod(p),
+            a.multiply(b).shiftLeft(1).mod(p)
+        };
     }
 }

@@ -99,16 +99,8 @@ public class ECJPAKECurve
          */
 //        BigInteger totalPoints = n.multiply(h);
 
-        ECCurve.Fp curve = new ECCurve.Fp(q, a, b, n, h);
-        ECPoint g = curve.createPoint(g_x, g_y);
-
-        if (!g.isValid())
-        {
-            throw new IllegalArgumentException("The base point G does not lie on the curve.");
-        }
-
-        this.curve = curve;
-        this.g = g;
+        this.curve = new ECCurve.Fp(q, a, b, n, h);
+        this.g = curve.validatePoint(g_x, g_y);
     }
 
     /**
