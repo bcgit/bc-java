@@ -95,13 +95,13 @@ class MLKEMIndCpa
             //     System.out.print(secretKey.getVectorIndex(i).getCoeffIndex(j) + ", ");
             // }
             // System.out.println("]");
-            count = (byte)(count + (byte)1);
+            count++;
         }
 
         for (i = 0; i < kyberK; i++)
         {
             e.getVectorIndex(i).getEta1Noise(noiseSeed, count);
-            count = (byte)(count + (byte)1);
+            count++;
         }
 
         secretKey.polyVecNtt();
