@@ -283,22 +283,32 @@ class MLKEMEngine
 
         byte[] cmp = indCpa.encrypt(publicKey, Arrays.copyOfRange(buf, 0, KyberSymBytes), Arrays.copyOfRange(kr, KyberSymBytes, kr.length));
 
-        boolean fail = !(Arrays.constantTimeAreEqual(cipherText, cmp));
+        int fail = constantTimeZeroOnEqual(cipherText, cmp);
 
         cmov(kr, implicit_rejection, KyberSymBytes, fail);
 
         return Arrays.copyOfRange(kr, 0, sessionKeyLength);
     }
 
-    private void cmov(byte[] r, byte[] x, int xlen, boolean b)
+    private void cmov(byte[] r, byte[] x, int xlen, int fail)
     {
-        if (b)
+        int mask = (0 - fail) >> 24;
+
+        for (int i = 0; i != xlen; i++)
         {
-            System.arraycopy(x, 0, r, 0, xlen);
+            r[i] = (byte)((x[i] & mask) | (r[i] & ~mask));
         }
-        else
+    }
+
+    private int constantTimeZeroOnEqual(byte[] input, byte[] expected)
+    {
+        int result = expected.length ^ input.length;
+
+        for (int i = 0; i != expected.length; i++)
         {
-            System.arraycopy(r, 0, r, 0, xlen);
+            result |= input[i] ^ expected[i];
         }
+
+        return result & 0xff;
     }
 }
