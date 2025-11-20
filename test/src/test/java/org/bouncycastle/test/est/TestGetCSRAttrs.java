@@ -23,7 +23,7 @@ import org.junit.Test;
 
 
 public class TestGetCSRAttrs
-    extends SimpleTest
+//    extends SimpleTest
 {
 
     public String getName()
@@ -54,12 +54,11 @@ public class TestGetCSRAttrs
 
     }
 
-
-    public void performTest()
-        throws Exception
-    {
-        ESTTestUtils.runJUnit(TestGetCSRAttrs.class);
-    }
+//    public void performTest()
+//        throws Exception
+//    {
+//        ESTTestUtils.runJUnit(TestGetCSRAttrs.class);
+//    }
 
 
     /**
@@ -750,10 +749,10 @@ public class TestGetCSRAttrs
     }
 
 
-    public static void main(String[] args)
-        throws Exception
-    {
-        ESTTestUtils.ensureProvider();
-        runTest(new TestGetCSRAttrs());
-    }
+//    public static void main(String[] args)
+//        throws Exception
+//    {
+//        ESTTestUtils.ensureProvider();
+//        runTest(new TestGetCSRAttrs());
+//    }
 }
