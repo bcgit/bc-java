@@ -55,6 +55,8 @@ test-code:
 
 publish:
   stage: publish
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
   script:
     - "apply_overlay bc-java-pub ./"
     - "ecr_login"
@@ -63,5 +65,7 @@ publish:
 
 spongycastle:
   stage: "sync"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
   script:
     - "syncpongy.sh"  
