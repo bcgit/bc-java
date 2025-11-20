@@ -246,6 +246,13 @@ public class PrivateKeyFactory
 
                 // TODO This should only allow seed but is length-flexible
                 MLKEMPrivateKeyParameters mlkemPriv = new MLKEMPrivateKeyParameters(mlkemParams, seed, pubParams);
+
+                /*
+                 * RFC 9881 8.2. When receiving a private key that contains both the seed and the expandedKey, the
+                 * recipient SHOULD perform a seed consistency check to ensure that the sender properly generated
+                 * the private key. [..] If the check is done and the seed and the expandedKey are not consistent,
+                 * the recipient MUST reject the private key as malformed.
+                 */
                 if (!Arrays.constantTimeAreEqual(mlkemPriv.getEncoded(), encoding))
                 {
                     throw new IllegalArgumentException("inconsistent " + mlkemParams.getName() + " private key");
