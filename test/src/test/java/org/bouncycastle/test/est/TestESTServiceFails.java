@@ -25,18 +25,18 @@ import org.junit.Test;
  * Test illegal state exceptions are thrown when expected.
  */
 public class TestESTServiceFails
-    extends SimpleTest
+//    extends SimpleTest
 {
     public String getName()
     {
         return "ESTServiceFails";
     }
 
-    public void performTest()
-        throws Exception
-    {
-        ESTTestUtils.runJUnit(TestESTServiceFails.class);
-    }
+//    public void performTest()
+//        throws Exception
+//    {
+//        ESTTestUtils.runJUnit(TestESTServiceFails.class);
+//    }
 
 
     @Test(expected = NullPointerException.class)

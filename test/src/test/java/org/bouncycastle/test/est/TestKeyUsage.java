@@ -28,7 +28,7 @@ import org.junit.Test;
 
 
 public class TestKeyUsage
-    extends SimpleTest
+//    extends SimpleTest
 {
     private static int[] keyUsage = new int[]{
         KeyUsage.digitalSignature,
@@ -75,11 +75,11 @@ public class TestKeyUsage
         return "TestKeyUsage";
     }
 
-    public void performTest()
-        throws Exception
-    {
-        ESTTestUtils.runJUnit(TestKeyUsage.class);
-    }
+//    public void performTest()
+//        throws Exception
+//    {
+//        ESTTestUtils.runJUnit(TestKeyUsage.class);
+//    }
 
 
     public static void matrix()

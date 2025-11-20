@@ -21,12 +21,13 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
 public class TestServerKeyGeneration
-    extends SimpleTest
+//    extends SimpleTest
 {
 
 
@@ -41,11 +42,12 @@ public class TestServerKeyGeneration
         return "test against globalsign est server";
     }
 
-    public void performTest()
-        throws Exception
-    {
-        testServerGenWithoutEncryption();
-    }
+
+//    public void performTest()
+//        throws Exception
+//    {
+//        testServerGenWithoutEncryption();
+//    }
 
 
     @Test
@@ -103,13 +105,13 @@ public class TestServerKeyGeneration
             //
             if (pki == null)
             {
-                fail("expecting pki");
+                Assert.fail("expecting pki");
             }
 
             X509CertificateHolder enrolledAsHolder = ESTService.storeToArray(enr.getStore())[0];
             if (enrolledAsHolder == null)
             {
-                fail("expecting certificate");
+                Assert.fail("expecting certificate");
             }
         }
         catch (ESTException estException)
@@ -122,11 +124,11 @@ public class TestServerKeyGeneration
     }
 
 
-    public static void main(String[] args)
-        throws Exception
-    {
-        ESTTestUtils.ensureProvider();
-        runTest(new TestServerKeyGeneration());
-    }
+//    public static void main(String[] args)
+//        throws Exception
+//    {
+//        ESTTestUtils.ensureProvider();
+//        runTest(new TestServerKeyGeneration());
+//    }
 
 }
