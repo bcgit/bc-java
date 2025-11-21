@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -848,8 +849,8 @@ public class BcCertTest
          try
          {
              ContentSigner sigGen = new BcECContentSignerBuilder(
-                 new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1),
-                 new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)).build(privKey);
+                 new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256),
+                 new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)).build(privKey);
              BcX509v3CertificateBuilder certGen = new BcX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
 
              X509CertificateHolder cert = certGen.build(sigGen);

@@ -2,6 +2,7 @@ package org.bouncycastle.cert.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -46,6 +47,7 @@ import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
 
+import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -117,6 +119,7 @@ import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.BufferingContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
@@ -141,7 +144,10 @@ import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
+
+import static org.junit.Assert.assertTrue;
 
 public class CertTest
     extends SimpleTest
@@ -2941,6 +2947,8 @@ public class CertTest
 
         X509CRLHolder crlHolder = crlGen.build(sigGen);
 
+        isTrue(crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(compPub)));
+
         X509CRL crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
 
         // comp test
@@ -3139,6 +3147,44 @@ public class CertTest
         {
             fail("CRL entry reasonCode not found");
         }
+    }
+
+    public void checkMixedCompositionCreation()
+        throws Exception
+    {
+        if (Security.getProvider("SunEC") == null)
+        {
+            return;
+        }
+        KeyPairGenerator mldsaKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
+
+        mldsaKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
+
+        KeyPair mldsaKp = mldsaKpGen.generateKeyPair();
+
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "SunEC");
+
+        ecKpGen.initialize(new ECGenParameterSpec("secp256r1"));
+
+        KeyPair ecKp = ecKpGen.generateKeyPair();
+
+        CompositePublicKey compPublicKey = CompositePublicKey.builder(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+            .addPublicKey(mldsaKp.getPublic(), "BC")
+            .addPublicKey(ecKp.getPublic(), "BC")
+            .build();
+        CompositePrivateKey compPrivateKey = CompositePrivateKey.builder(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+            .addPrivateKey(mldsaKp.getPrivate(), "BC")
+            .addPrivateKey(ecKp.getPrivate(), "SunEC")
+            .build();
+
+        // First sign (and verify) a certificate
+        final ContentSigner certsigner = new BufferingContentSigner(new JcaContentSignerBuilder("MLDSA44-ECDSA-P256-SHA256").setProvider("BC").build(compPrivateKey), 4096);
+        final SubjectPublicKeyInfo pkinfo = SubjectPublicKeyInfo.getInstance(compPublicKey.getEncoded());
+        final X509v3CertificateBuilder certbuilder = new X509v3CertificateBuilder(new X500Name("CN=issuer"), new BigInteger("12345678"), new Date(), new Date(), new X500Name("CN=subject"), pkinfo);
+        final X509CertificateHolder certHolder = certbuilder.build(certsigner);
+        //Assert.assertNotNull("signing must have created a certificate", certHolder);
+        final ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder().setProvider("BC").build(compPublicKey);
+        assertTrue("Certificate signature must verify", certHolder.isSignatureValid(verifier));
     }
 
     /*
@@ -5465,25 +5511,25 @@ public class CertTest
 
     // TESTS REGARDING COMPOSITES https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
     private static String[] compositeSignaturesOIDs = {
-         "1.3.6.1.5.5.7.6.37", // id_MLDSA44_RSA2048_PSS_SHA256
-         "1.3.6.1.5.5.7.6.38", // id_MLDSA44_RSA2048_PKCS15_SHA256
-         "1.3.6.1.5.5.7.6.39", // id_MLDSA44_Ed25519_SHA512
-         "1.3.6.1.5.5.7.6.40", // id_MLDSA44_ECDSA_P256_SHA256
-         "1.3.6.1.5.5.7.6.41", // id_MLDSA65_RSA3072_PSS_SHA512
-         "1.3.6.1.5.5.7.6.42", // id_MLDSA65_RSA3072_PKCS15_SHA512
-         "1.3.6.1.5.5.7.6.43", // id_MLDSA65_RSA4096_PSS_SHA512
-         "1.3.6.1.5.5.7.6.44", // id_MLDSA65_RSA4096_PKCS15_SHA512
-         "1.3.6.1.5.5.7.6.45", // id_MLDSA65_ECDSA_P256_SHA512
-         "1.3.6.1.5.5.7.6.46", // id_MLDSA65_ECDSA_P384_SHA512
-         "1.3.6.1.5.5.7.6.47", // id_MLDSA65_ECDSA_brainpoolP256r1_SHA512
-         "1.3.6.1.5.5.7.6.48", // id_MLDSA65_Ed25519_SHA512
-         "1.3.6.1.5.5.7.6.49", // id_MLDSA87_ECDSA_P384_SHA512
-         "1.3.6.1.5.5.7.6.50", // id_MLDSA87_ECDSA_brainpoolP384r1_SHA512
-         "1.3.6.1.5.5.7.6.51", // id_MLDSA87_Ed448_SHAKE256
-         "1.3.6.1.5.5.7.6.52", // id_MLDSA87_RSA3072_PSS_SHA512
-         "1.3.6.1.5.5.7.6.53", // id_MLDSA87_RSA4096_PSS_SHA512
-         "1.3.6.1.5.5.7.6.54"  // id_MLDSA87_ECDSA_P521_SHA512
-     };
+        "1.3.6.1.5.5.7.6.37", // id_MLDSA44_RSA2048_PSS_SHA256
+        "1.3.6.1.5.5.7.6.38", // id_MLDSA44_RSA2048_PKCS15_SHA256
+        "1.3.6.1.5.5.7.6.39", // id_MLDSA44_Ed25519_SHA512
+        "1.3.6.1.5.5.7.6.40", // id_MLDSA44_ECDSA_P256_SHA256
+        "1.3.6.1.5.5.7.6.41", // id_MLDSA65_RSA3072_PSS_SHA512
+        "1.3.6.1.5.5.7.6.42", // id_MLDSA65_RSA3072_PKCS15_SHA512
+        "1.3.6.1.5.5.7.6.43", // id_MLDSA65_RSA4096_PSS_SHA512
+        "1.3.6.1.5.5.7.6.44", // id_MLDSA65_RSA4096_PKCS15_SHA512
+        "1.3.6.1.5.5.7.6.45", // id_MLDSA65_ECDSA_P256_SHA512
+        "1.3.6.1.5.5.7.6.46", // id_MLDSA65_ECDSA_P384_SHA512
+        "1.3.6.1.5.5.7.6.47", // id_MLDSA65_ECDSA_brainpoolP256r1_SHA512
+        "1.3.6.1.5.5.7.6.48", // id_MLDSA65_Ed25519_SHA512
+        "1.3.6.1.5.5.7.6.49", // id_MLDSA87_ECDSA_P384_SHA512
+        "1.3.6.1.5.5.7.6.50", // id_MLDSA87_ECDSA_brainpoolP384r1_SHA512
+        "1.3.6.1.5.5.7.6.51", // id_MLDSA87_Ed448_SHAKE256
+        "1.3.6.1.5.5.7.6.52", // id_MLDSA87_RSA3072_PSS_SHA512
+        "1.3.6.1.5.5.7.6.53", // id_MLDSA87_RSA4096_PSS_SHA512
+        "1.3.6.1.5.5.7.6.54"  // id_MLDSA87_ECDSA_P521_SHA512
+    };
 
     private static final String[] compositeSignaturesIDs = {
         "MLDSA44-RSA2048-PSS-SHA256",
@@ -5723,6 +5769,7 @@ public class CertTest
         checkCreationDilithiumSigWithECDSASig();
 
         checkCreationComposite();
+        checkMixedCompositionCreation();
         checkCompositeCertificateVerify();
 
         createECCert("SHA1withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA1);
@@ -5794,6 +5841,12 @@ public class CertTest
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        runTest(new CertTest());
+       // runTest(new CertTest());
+
+        X509CertificateHolder h = new X509CertificateHolder(Streams.readAll(new FileInputStream("/tmp/tmp/composite-cert.der")));
+
+        ContentVerifierProvider vp = new JcaContentVerifierProviderBuilder().setProvider("BC").build(h.getSubjectPublicKeyInfo());
+        assertTrue("Certificate signature must verify", h.isSignatureValid(vp));
+
     }
 }
