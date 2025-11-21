@@ -2911,8 +2911,14 @@ public class CertTest
         //
         // create the certificate - version 3
         //
-        CompositePublicKey compPub = new CompositePublicKey(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, mlDsaKp.getPublic(), ecPub);
-        CompositePrivateKey compPrivKey = new CompositePrivateKey(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, mlDsaKp.getPrivate(), ecPriv);
+        CompositePublicKey compPub = CompositePublicKey.builder(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512)
+            .addPublicKey(mlDsaKp.getPublic(),  "BC")
+            .addPublicKey(ecPub)
+            .build();
+        CompositePrivateKey compPrivKey = CompositePrivateKey.builder(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512)
+            .addPrivateKey(mlDsaKp.getPrivate(), "BC")
+            .addPrivateKey(ecPriv)
+            .build();
 
         ContentSigner sigGen = new JcaContentSignerBuilder("COMPOSITE").setProvider(BC).build(compPrivKey);
 
@@ -5578,7 +5584,7 @@ public class CertTest
 
             isEquals(subjectName, cert.getSubjectX500Principal().getName());
 
-            cert.verify(cert.getPublicKey());
+            cert.verify(cert.getPublicKey(), "BC");
             index++;
         }
     }
@@ -5841,12 +5847,6 @@ public class CertTest
     {
         Security.addProvider(new BouncyCastleProvider());
 
-       // runTest(new CertTest());
-
-        X509CertificateHolder h = new X509CertificateHolder(Streams.readAll(new FileInputStream("/tmp/tmp/composite-cert.der")));
-
-        ContentVerifierProvider vp = new JcaContentVerifierProviderBuilder().setProvider("BC").build(h.getSubjectPublicKeyInfo());
-        assertTrue("Certificate signature must verify", h.isSignatureValid(vp));
-
+        runTest(new CertTest());
     }
 }
