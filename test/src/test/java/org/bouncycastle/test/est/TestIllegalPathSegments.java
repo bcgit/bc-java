@@ -8,18 +8,18 @@ import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Test;
 
 public class TestIllegalPathSegments
-    extends SimpleTest
+//    extends SimpleTest
 {
     public String getName()
     {
         return "TestIllegalPathSegments";
     }
 
-    public void performTest()
-        throws Exception
-    {
-        ESTTestUtils.runJUnit(TestIllegalPathSegments.class);
-    }
+//    public void performTest()
+//        throws Exception
+//    {
+//        ESTTestUtils.runJUnit(TestIllegalPathSegments.class);
+//    }
 
     @Test(expected = IllegalArgumentException.class)
     public void testPathSegment_4800()
