@@ -726,7 +726,7 @@ public class CompositeSignaturesTest
             byte[] x5cpk = null;
             PublicKey pubKey = null, certPubKey = null;
             PrivateKey privKey = null;
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
             X509Certificate cert = null;
             try
             {
@@ -759,7 +759,7 @@ public class CompositeSignaturesTest
                 MLDSAPublicKeySpec pubSpec = new MLDSAPublicKeySpec(((MLDSAPrivateKey)privKey).getParameterSpec(),
                     ((MLDSAPrivateKey)privKey).getPublicKey().getPublicData());
                 pubKey = kFact.generatePublic(pubSpec);
-                x5cpk = ((BCMLDSAPublicKey)cert.getPublicKey()).getPublicData();
+                x5cpk = ((MLDSAPublicKey)cert.getPublicKey()).getPublicData();
                 certPubKey = kFact.generatePublic(new MLDSAPublicKeySpec(((MLDSAPrivateKey)privKey).getParameterSpec(),
                     x5cpk));
             }
