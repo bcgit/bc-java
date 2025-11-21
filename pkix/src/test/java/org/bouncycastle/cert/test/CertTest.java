@@ -2,7 +2,6 @@ package org.bouncycastle.cert.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -47,7 +46,6 @@ import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
 
-import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -118,8 +116,8 @@ import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.BufferingContentSigner;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
@@ -144,10 +142,7 @@ import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
-
-import static org.junit.Assert.assertTrue;
 
 public class CertTest
     extends SimpleTest
@@ -3190,7 +3185,7 @@ public class CertTest
         final X509CertificateHolder certHolder = certbuilder.build(certsigner);
         //Assert.assertNotNull("signing must have created a certificate", certHolder);
         final ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder().setProvider("BC").build(compPublicKey);
-        assertTrue("Certificate signature must verify", certHolder.isSignatureValid(verifier));
+        isTrue("Certificate signature must verify", certHolder.isSignatureValid(verifier));
     }
 
     /*
