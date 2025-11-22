@@ -163,6 +163,17 @@ public final class BouncyCastleProvider extends Provider
             "DRBG"
         };
 
+    /*
+     * Configurable kdfs
+     */
+    private static final String KDF_PACKAGE = "org.bouncycastle.jcajce.provider.kdf.";
+    private static final String[] KDFS =
+        {
+            "HKDF", "PBEPBKDF2", "SCRYPT"
+        };
+
+
+
     private Map<String, Service> serviceMap = new ConcurrentHashMap<String, Service>();
 
     /**
@@ -201,6 +212,8 @@ public final class BouncyCastleProvider extends Provider
         loadAlgorithms(KEYSTORE_PACKAGE, KEYSTORES);
 
         loadAlgorithms(SECURE_RANDOM_PACKAGE, SECURE_RANDOMS);
+
+        loadAlgorithms(KDF_PACKAGE, KDFS);
 
         loadPQCKeys();  // so we can handle certificates containing them.
 
