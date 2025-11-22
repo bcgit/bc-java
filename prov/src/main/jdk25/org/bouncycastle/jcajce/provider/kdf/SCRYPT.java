@@ -16,7 +16,7 @@ class SCRYPT
 
         public void configure(ConfigurableProvider provider)
         {
-            provider.addAlgorithm("KDF.SCRYPT", PREFIX + "SCryptSpi$ScryptWithUTF8");
+            provider.addAlgorithm("KDF.SCRYPT", PREFIX + "ScryptSpi$ScryptWithUTF8");
         }
     }
 }
