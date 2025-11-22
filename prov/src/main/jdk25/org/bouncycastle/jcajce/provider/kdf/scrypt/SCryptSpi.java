@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.kdf.scrypt;
 import org.bouncycastle.crypto.PasswordConverter;
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.jcajce.spec.ScryptKeySpec;
+import org.bouncycastle.jcajce.spec.ScryptParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 import javax.crypto.KDFParameters;
@@ -44,7 +45,7 @@ class SCryptSpi
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
             throws InvalidAlgorithmParameterException
     {
-        if (!(derivationSpec instanceof SCryptParameterSpec))
+        if (!(derivationSpec instanceof ScryptParameterSpec))
         {
             throw new InvalidAlgorithmParameterException(
                     "SCrypt requires an SCryptParameterSpec as derivation parameters");

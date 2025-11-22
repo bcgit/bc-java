@@ -11,22 +11,26 @@ import javax.crypto.KDFParameters;
 import javax.crypto.KDFSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.HKDFParameterSpec;
+
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.List;
 
 class HKDFSpi
-        extends KDFSpi
+    extends KDFSpi
 {
     protected HKDFBytesGenerator hkdf;
+
     public HKDFSpi(KDFParameters kdfParameters)
-            throws InvalidAlgorithmParameterException
+        throws InvalidAlgorithmParameterException
     {
         super(kdfParameters);
     }
 
     public HKDFSpi(KDFParameters kdfParameters, Digest digest)
-            throws InvalidAlgorithmParameterException
+        throws InvalidAlgorithmParameterException
     {
         super(kdfParameters);
         this.hkdf = new HKDFBytesGenerator(digest);
@@ -53,62 +57,101 @@ class HKDFSpi
 
     @Override
     protected SecretKey engineDeriveKey(String alg, AlgorithmParameterSpec derivationSpec)
-            throws InvalidAlgorithmParameterException, NoSuchAlgorithmException
+        throws InvalidAlgorithmParameterException, NoSuchAlgorithmException
     {
         byte[] derivedKey = engineDeriveData(derivationSpec);
 
         return new SecretKeySpec(derivedKey, alg);
     }
+
     @Override
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
-            throws InvalidAlgorithmParameterException
+        throws InvalidAlgorithmParameterException
     {
-        if (derivationSpec == null || !(derivationSpec instanceof HKDFParameters))
+        if (derivationSpec == null || !(derivationSpec instanceof HKDFParameterSpec))
         {
-            throw new InvalidAlgorithmParameterException("Invalid AlgorithmParameterSpec provided");
+            throw new InvalidAlgorithmParameterException("invalid AlgorithmParameterSpec provided");
         }
 
-        HKDFParameters hkdfParameters = (HKDFParameters) derivationSpec;
-        int derivedDataLength = hkdfParameters.getIKM().length;
+        // TODO: deal with the multi ikm/salt thing
+        HKDFParameters hkdfParameters = null;
+        int derivedDataLength = 0;
+        if (derivationSpec instanceof HKDFParameterSpec.ExtractThenExpand)
+        {
+            HKDFParameterSpec.ExtractThenExpand spec = (HKDFParameterSpec.ExtractThenExpand)derivationSpec;
 
-        hkdf.init(hkdfParameters);
+            List<SecretKey> ikms = spec.ikms();
+            List<SecretKey> salts = spec.salts();
 
-        byte[] derivedData = new byte[derivedDataLength];
-        hkdf.generateBytes(derivedData, 0, derivedDataLength);
+            hkdfParameters = new HKDFParameters(ikms.get(0).getEncoded(), salts.get(0).getEncoded(), spec.info());
+            derivedDataLength = spec.length();
 
-        return derivedData;
+            hkdf.init(hkdfParameters);
+
+            byte[] derivedData = new byte[derivedDataLength];
+            hkdf.generateBytes(derivedData, 0, derivedDataLength);
+
+            return derivedData;
+        }
+        else if (derivationSpec instanceof HKDFParameterSpec.Extract)
+        {
+            HKDFParameterSpec.Extract spec = (HKDFParameterSpec.Extract)derivationSpec;
+
+            List<SecretKey> ikms = spec.ikms();
+            List<SecretKey> salts = spec.salts();
+
+            return hkdf.extractPRK(salts.get(0).getEncoded(), ikms.get(0).getEncoded());
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("invalid HKDFParameterSpec provided");
+        }
     }
 
-    public static class HKDFwithSHA256 extends HKDFSpi
+    public static class HKDFwithSHA256
+        extends HKDFSpi
     {
-        public HKDFwithSHA256() throws InvalidAlgorithmParameterException
+        public HKDFwithSHA256()
+            throws InvalidAlgorithmParameterException
         {
             super(null, new SHA256Digest());
         }
-        public HKDFwithSHA256(KDFParameters kdfParameters) throws InvalidAlgorithmParameterException
+
+        public HKDFwithSHA256(KDFParameters kdfParameters)
+            throws InvalidAlgorithmParameterException
         {
             super(kdfParameters, new SHA256Digest());
         }
     }
-    public static class HKDFwithSHA384 extends HKDFSpi
+
+    public static class HKDFwithSHA384
+        extends HKDFSpi
     {
-        public HKDFwithSHA384() throws InvalidAlgorithmParameterException
+        public HKDFwithSHA384()
+            throws InvalidAlgorithmParameterException
         {
             super(null, new SHA384Digest());
         }
-        public HKDFwithSHA384(KDFParameters kdfParameters) throws InvalidAlgorithmParameterException
+
+        public HKDFwithSHA384(KDFParameters kdfParameters)
+            throws InvalidAlgorithmParameterException
         {
             super(kdfParameters, new SHA384Digest());
         }
     }
-    public static class HKDFwithSHA512 extends HKDFSpi
+
+    public static class HKDFwithSHA512
+        extends HKDFSpi
     {
 
-        public HKDFwithSHA512() throws InvalidAlgorithmParameterException
+        public HKDFwithSHA512()
+            throws InvalidAlgorithmParameterException
         {
             super(null, new SHA512Digest());
         }
-        public HKDFwithSHA512(KDFParameters kdfParameters) throws InvalidAlgorithmParameterException
+
+        public HKDFwithSHA512(KDFParameters kdfParameters)
+            throws InvalidAlgorithmParameterException
         {
             super(kdfParameters, new SHA512Digest());
         }
