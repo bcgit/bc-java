@@ -18,7 +18,7 @@ public class AllTests25
         TestSuite suite = new TestSuite("JDK25 Provider Tests");
         suite.addTestSuite(HKDFTest.class);
         suite.addTestSuite(PBEPBKDF2Test.class);
-        suite.addTestSuite(SCryptTest.class);
+        suite.addTestSuite(ScryptTest.class);
         return suite;
     }
 }

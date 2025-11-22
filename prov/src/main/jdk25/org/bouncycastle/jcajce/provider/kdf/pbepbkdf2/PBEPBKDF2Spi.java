@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.jcajce.spec.PBEPBKDF2ParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 import javax.crypto.KDFParameters;

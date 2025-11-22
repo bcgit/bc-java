@@ -1,7 +1,7 @@
 package org.bouncycastle.jcajce.provider.kdf.test;
 
 import junit.framework.TestCase;
-import org.bouncycastle.jcajce.provider.kdf.pbepbkdf2.PBEPBKDF2ParameterSpec;
+import org.bouncycastle.jcajce.spec.PBEPBKDF2ParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 
