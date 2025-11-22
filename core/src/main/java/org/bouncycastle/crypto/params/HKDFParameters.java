@@ -10,7 +10,7 @@ public class HKDFParameters
     implements DerivationParameters
 {
     private final byte[] ikm;
-    private final boolean skipExpand;
+    private final boolean skipExtract;
     private final byte[] salt;
     private final byte[] info;
 
@@ -25,7 +25,7 @@ public class HKDFParameters
 
         this.ikm = Arrays.clone(ikm);
 
-        this.skipExpand = skip;
+        this.skipExtract = skip;
 
         if (salt == null || salt.length == 0)
         {
@@ -91,13 +91,13 @@ public class HKDFParameters
     }
 
     /**
-     * Returns if step 1: extract has to be skipped or not
+     * Returns if step 1: expand has to be skipped or not
      *
      * @return true for skipping, false for no skipping of step 1
      */
     public boolean skipExtract()
     {
-        return skipExpand;
+        return skipExtract;
     }
 
     /**
