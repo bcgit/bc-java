@@ -17,10 +17,10 @@ import java.security.spec.AlgorithmParameterSpec;
 /**
  * Example KDFSpi that delegates to Bouncy Castle’s SCrypt implementation.
  */
-class SCryptSpi
+class ScryptSpi
         extends KDFSpi
 {
-    protected SCryptSpi(KDFParameters kdfParameters)
+    protected ScryptSpi(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException
     {
         super(kdfParameters);
@@ -85,7 +85,7 @@ class SCryptSpi
     }
 
     public static class ScryptWithUTF8
-            extends SCryptSpi
+            extends ScryptSpi
     {
         public ScryptWithUTF8() throws InvalidAlgorithmParameterException
         {
