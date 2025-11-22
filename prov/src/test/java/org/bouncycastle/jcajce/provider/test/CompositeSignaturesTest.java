@@ -759,7 +759,7 @@ public class CompositeSignaturesTest
                 MLDSAPublicKeySpec pubSpec = new MLDSAPublicKeySpec(((MLDSAPrivateKey)privKey).getParameterSpec(),
                     ((MLDSAPrivateKey)privKey).getPublicKey().getPublicData());
                 pubKey = kFact.generatePublic(pubSpec);
-                x5cpk = ((BCMLDSAPublicKey)cert.getPublicKey()).getPublicData();
+                x5cpk = ((MLDSAPublicKey)cert.getPublicKey()).getPublicData();
                 certPubKey = kFact.generatePublic(new MLDSAPublicKeySpec(((MLDSAPrivateKey)privKey).getParameterSpec(),
                     x5cpk));
             }
