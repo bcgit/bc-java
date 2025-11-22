@@ -282,27 +282,27 @@ class TestUtils
     }
 
     /**
-     * Create a random 1024 bit RSA key pair
+     * Create a random 2048 bit RSA key pair
      */
     public static KeyPair generateRSAKeyPair()
         throws Exception
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(1024, RANDOM);
+        kpGen.initialize(2048, RANDOM);
 
         return kpGen.generateKeyPair();
     }
 
     /**
-     * Create a random 1024 bit RSASSA-PSS key pair
+     * Create a random 2048 bit RSASSA-PSS key pair
      */
     public static KeyPair generatePSSKeyPair()
         throws Exception
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSASSA-PSS", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(1024, RANDOM);
+        kpGen.initialize(2048, RANDOM);
 
         return kpGen.generateKeyPair();
     }
