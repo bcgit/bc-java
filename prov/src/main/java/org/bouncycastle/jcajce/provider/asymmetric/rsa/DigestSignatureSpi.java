@@ -32,6 +32,7 @@ import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.jcajce.util.AnnotatedPrivateKey;
 import org.bouncycastle.util.Arrays;
 
 public class DigestSignatureSpi
@@ -81,6 +82,11 @@ public class DigestSignatureSpi
         PrivateKey privateKey)
         throws InvalidKeyException
     {
+        if (privateKey instanceof AnnotatedPrivateKey)
+        {
+            privateKey = ((AnnotatedPrivateKey)privateKey).getKey();
+        }
+
         if (!(privateKey instanceof RSAPrivateKey))
         {
             throw new InvalidKeyException("Supplied key (" + getType(privateKey) + ") is not a RSAPrivateKey instance");
