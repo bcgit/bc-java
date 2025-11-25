@@ -596,11 +596,12 @@ class SignatureSchemeInfo
         {
             int signatureScheme = values[i].signatureScheme;
 
-            /*
-             * SLH-DSA signing is quite slow; users will most likely be interested in it for the certificate
-             * chain, so we'll leave it to them to configure signature_algorithms_cert.
-             */
-            if (!SignatureScheme.isSLHDSA(signatureScheme))
+            if (SignatureScheme.isMLDSA(signatureScheme) ||
+                SignatureScheme.isSLHDSA(signatureScheme))
+            {
+                // For the time being, do not enable stand-alone PQ schemes by default
+            }
+            else
             {
                 result[pos++] = signatureScheme;
             }
