@@ -23,7 +23,7 @@ class ScryptSpi
     protected ScryptSpi(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException
     {
-        super(kdfParameters);
+        super(requireNull(kdfParameters, "Scrypt" + " does not support parameters"));
     }
 
     @Override
@@ -77,19 +77,29 @@ class ScryptSpi
 
         byte[] derived = SCrypt.generate(
                 PasswordConverter.UTF8.convert(password),
-                salt, cost, blockSize, p, keyLen);
+                salt, cost, blockSize, p, keyLen / 8);
 
         Arrays.clear(password);
      
         return derived;
     }
 
+    private static KDFParameters requireNull(KDFParameters kdfParameters,
+                                             String message) throws InvalidAlgorithmParameterException
+    {
+        if (kdfParameters != null)
+        {
+            throw new InvalidAlgorithmParameterException(message);
+        }
+        return null;
+    }
+
     public static class ScryptWithUTF8
             extends ScryptSpi
     {
-        public ScryptWithUTF8() throws InvalidAlgorithmParameterException
+        public ScryptWithUTF8(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
-            super(null);
+            super(parameters);
         }
     }
 }
