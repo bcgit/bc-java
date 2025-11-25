@@ -183,7 +183,7 @@ public class HKDFTest
 //        }
     }
 
-    private class InvalidKDFParameters
+    private static class InvalidKDFParameters
             implements KDFParameters
     {
 
