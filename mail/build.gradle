@@ -1,5 +1,5 @@
 plugins {
-  id "biz.aQute.bnd.builder" version "7.0.0"
+  id "biz.aQute.bnd.builder" version "7.1.0"
 }
 
 jar.archiveBaseName = "bcmail-$vmrange"
