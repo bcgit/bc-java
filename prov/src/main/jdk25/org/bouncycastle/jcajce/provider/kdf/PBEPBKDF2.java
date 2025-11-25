@@ -19,7 +19,7 @@ class PBEPBKDF2
         {
 //            provider.addAlgorithm("AlgorithmParameters.PBKDF2", PREFIX + "PBEPBKDF2Spi$AlgParams");
 //            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2");
-            provider.addAlgorithm("KDF.PBEPBKDF2", PREFIX + "PBEPBKDF2Spi$PBKDF2withUTF8");
+            provider.addAlgorithm("KDF.PBKDF2", PREFIX + "PBEPBKDF2Spi$PBKDF2withUTF8");
             provider.addAlgorithm("Alg.Alias.KDF.PBKDF2WITHHMACSHA1", "PBKDF2");
             provider.addAlgorithm("Alg.Alias.KDF.PBKDF2WITHHMACSHA1ANDUTF8", "PBKDF2");
             provider.addAlgorithm("Alg.Alias.KDF." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2");

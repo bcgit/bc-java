@@ -95,7 +95,7 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] SYMMETRIC_GENERIC =
         {
-            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT"
+            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT", "HKDF"
         };
 
     private static final String[] SYMMETRIC_MACS =

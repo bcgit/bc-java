@@ -3,21 +3,21 @@ package org.bouncycastle.jcajce.spec;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.spec.AlgorithmParameterSpec;
 
-public class PBEPBKDF2ParameterSpec
+public class PBKDF2ParameterSpec
     extends PBEKeySpec
     implements AlgorithmParameterSpec
 {
-    public PBEPBKDF2ParameterSpec(char[] password)
+    public PBKDF2ParameterSpec(char[] password)
     {
         super(password);
     }
 
-    public PBEPBKDF2ParameterSpec(char[] password, byte[] salt, int iterationCount, int keyLength)
+    public PBKDF2ParameterSpec(char[] password, byte[] salt, int iterationCount, int keyLength)
     {
         super(password, salt, iterationCount, keyLength);
     }
 
-    public PBEPBKDF2ParameterSpec(char[] password, byte[] salt, int iterationCount)
+    public PBKDF2ParameterSpec(char[] password, byte[] salt, int iterationCount)
     {
         super(password, salt, iterationCount);
     }

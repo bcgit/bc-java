@@ -2,11 +2,19 @@ package org.bouncycastle.jcajce.provider.kdf.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.jcajce.spec.ScryptParameterSpec;
+import org.bouncycastle.jcajce.spec.HKDFParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 import javax.crypto.KDF;
+import javax.crypto.KDFParameters;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.security.Security;
 
 import static org.bouncycastle.util.Arrays.areEqual;
@@ -35,7 +43,7 @@ public class ScryptTest
                 16,
                 1,
                 1,
-                64
+                64*8
         );
         if(!areEqual(kdf.deriveData(spec), expected))
         {
@@ -49,7 +57,7 @@ public class ScryptTest
                 1024,
                 8,
                 16,
-                64
+                64*8
         );
         if(!areEqual(kdf.deriveData(spec), expected))
         {
@@ -63,7 +71,7 @@ public class ScryptTest
                 16384,
                 8,
                 1,
-                64
+                64*8
         );
         if(!areEqual(kdf.deriveData(spec), expected))
         {
@@ -77,7 +85,7 @@ public class ScryptTest
                 1048576,
                 8,
                 1,
-                64
+                64*8
         );
         if(!areEqual(kdf.deriveData(spec), expected))
         {
@@ -86,5 +94,138 @@ public class ScryptTest
 
 
     }
+    
+        public void testSecretKeyFactoryComparison()
+            throws Exception
+    {
 
+        setUp();
+        KDF kdf = KDF.getInstance("Scrypt", "BC");
+        byte[] password = new byte[16];
+        byte[] salt = new byte[8];
+
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(password);
+        random.nextBytes(salt);
+
+        ScryptParameterSpec spec = new ScryptParameterSpec(
+                Hex.toHexString(password).toCharArray(),
+                salt,
+                1024,
+                8,
+                16,
+                64
+        );
+        byte[] kdfSecret = kdf.deriveData(spec);
+
+        SecretKeyFactory fact = SecretKeyFactory.getInstance("SCRYPT", "BC");
+
+        spec = new ScryptParameterSpec(
+                Hex.toHexString(password).toCharArray(),
+                salt,
+                1024,
+                8,
+                16,
+                64
+        );
+        SecretKey factSecret = fact.generateSecret(spec);
+        byte[] byteSecret = factSecret.getEncoded();
+
+        if(!areEqual(kdfSecret, byteSecret))
+        {
+            fail("failed to generate same secret using kdf and secret key factory for: " + "Scrypt");
+        }
+    }
+
+    public void testExceptionHandling()
+    {
+        setUp();
+        try
+        {
+            KDF kdf = KDF.getInstance("NonExistentAlgorithm", "BC");
+            fail("Exception was not thrown for nonexistent algorithm");
+        }
+        catch (Exception e)
+        {
+            assertTrue(e instanceof NoSuchAlgorithmException);
+        }
+        try
+        {
+            KDF kdf = KDF.getInstance("SCRYPT", "NonExistentProvider");
+            fail("Exception was not thrown for nonexistent provider");
+        }
+        catch (Exception e)
+        {
+            assertTrue(e instanceof NoSuchProviderException);
+        }
+        try
+        {
+            KDF kdf = KDF.getInstance(null, "BC");
+            fail("Exception was not thrown for null algorithm");
+        }
+        catch (Exception e)
+        {
+            assertTrue(e instanceof NullPointerException);
+        }
+        try
+        {
+            KDFParameters kdfParameters = new InvalidKDFParameters();
+            KDF kdf = KDF.getInstance("SCRYPT", kdfParameters, "BC");
+            fail("Exception was not thrown for valid algorithm, but invalid parameters");
+        }
+        catch (Exception e)
+        {
+            assertTrue(e instanceof InvalidAlgorithmParameterException);
+        }
+        try
+        {
+            KDF kdf = KDF.getInstance("SCRYPT", "BC");
+            HKDFParameterSpec hkdfParameterSpec = new HKDFParameterSpec(new byte[16], new byte[16], new byte[16], 16);
+            kdf.deriveData(hkdfParameterSpec);
+            fail("Exception was not thrown for invalid derivation spec");
+        }
+        catch (Exception e)
+        {
+            assertTrue(e instanceof InvalidAlgorithmParameterException);
+        }
+    }
+
+    private class InvalidKDFParameters
+            implements KDFParameters
+    {
+
+        public InvalidKDFParameters()
+        {
+            super();
+        }
+
+
+        @Override
+        public int hashCode()
+        {
+            return super.hashCode();
+        }
+
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            return super.equals(obj);
+        }
+
+
+        @Override
+        protected Object clone() throws CloneNotSupportedException
+        {
+            return super.clone();
+        }
+
+
+        @Override
+        public String toString()
+        {
+            return super.toString();
+        }
+
+    }
 }
