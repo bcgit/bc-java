@@ -1902,8 +1902,6 @@ public class TlsClientProtocol
             this.clientExtensions.remove(TlsExtensionsUtils.EXT_extended_master_secret);
         }
 
-        boolean hasRenegSCSV = Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
-
         if (securityParameters.isRenegotiating())
         {
             /*
@@ -1920,7 +1918,7 @@ public class TlsClientProtocol
              * The client MUST include the "renegotiation_info" extension in the ClientHello,
              * containing the saved client_verify_data. The SCSV MUST NOT be included.
              */
-            if (hasRenegSCSV)
+            if (Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error,
                     "Renegotiation cannot use TLS_EMPTY_RENEGOTIATION_INFO_SCSV");
@@ -1930,7 +1928,7 @@ public class TlsClientProtocol
 
             this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(saved.getLocalVerifyData()));
         }
-        else
+        else if (offeringTLSv12Minus)
         {
             /*
              * RFC 5746 3.4. Client Behavior: Initial Handshake (both full and session-resumption)
@@ -1942,11 +1940,10 @@ public class TlsClientProtocol
              * Including both is NOT RECOMMENDED.
              */
             boolean noRenegExt = (null == TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo));
-            boolean noRenegSCSV = !hasRenegSCSV;
+            boolean noRenegSCSV = !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
             if (noRenegExt && noRenegSCSV)
             {
-                // TODO[tls13] Probably want to not add this if no pre-TLSv13 versions offered?
                 offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
         }
