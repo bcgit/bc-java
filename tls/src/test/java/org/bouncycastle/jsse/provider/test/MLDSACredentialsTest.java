@@ -22,9 +22,23 @@ import junit.framework.TestCase;
 public class MLDSACredentialsTest
     extends TestCase
 {
+    private static final String PROPERTY_CLIENT_SIGNATURE_SCHEMES = "jdk.tls.client.SignatureSchemes";
+    private static final String PROPERTY_SERVER_SIGNATURE_SCHEMES = "jdk.tls.server.SignatureSchemes";
+
     protected void setUp()
     {
         ProviderUtils.setupLowPriority(false);
+
+        String signatureSchemes = "mldsa44, mldsa65, mldsa87";
+
+        System.setProperty(PROPERTY_CLIENT_SIGNATURE_SCHEMES, signatureSchemes);
+        System.setProperty(PROPERTY_SERVER_SIGNATURE_SCHEMES, signatureSchemes);
+    }
+
+    protected void tearDown()
+    {
+        System.clearProperty(PROPERTY_CLIENT_SIGNATURE_SCHEMES);
+        System.clearProperty(PROPERTY_SERVER_SIGNATURE_SCHEMES);
     }
 
     private static final String HOST = "localhost";
