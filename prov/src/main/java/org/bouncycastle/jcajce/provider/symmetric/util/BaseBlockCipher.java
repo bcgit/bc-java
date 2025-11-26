@@ -331,7 +331,7 @@ public class BaseBlockCipher
                     engineParams.init(pbeSpec);
                 }
                 catch (Exception e)
-                {              e.printStackTrace();
+                {          
                     return null;
                 }
             }
