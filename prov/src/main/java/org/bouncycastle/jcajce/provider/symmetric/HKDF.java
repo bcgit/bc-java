@@ -47,7 +47,12 @@ public class HKDF
         protected SecretKey engineGenerateSecret(KeySpec keySpec)
                 throws InvalidKeySpecException
         {
-            HKDFParameterSpec spec = (HKDFParameterSpec)keySpec;
+            if (!(keySpec instanceof HKDFParameterSpec))
+            {
+                throw new InvalidKeySpecException("invalid KeySpec: expected HKDFParameterSpec, but got " + keySpec.getClass().getName());
+            }
+
+            HKDFParameterSpec spec = (HKDFParameterSpec) keySpec;
             int derivedDataLength = spec.getOutputLength();
             hkdf.init(new HKDFParameters(spec.getIKM(), spec.getSalt(), spec.getInfo()));
 
