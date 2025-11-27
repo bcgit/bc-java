@@ -1413,6 +1413,8 @@
         <delete dir="${pg.target.src.dir}" />
         <zip basedir="${util.target.src.dir}" destfile="${util.target.src.zip}" />
         <delete dir="${util.target.src.dir}" />
+        <zip basedir="${tls.target.src.dir}" destfile="${tls.target.src.zip}" />
+        <delete dir="${tls.target.src.dir}" />
     </target>
 
 
