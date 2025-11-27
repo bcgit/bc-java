@@ -33,7 +33,7 @@ import org.bouncycastle.util.Pack;
 
 
 /**
- * Implementation of the cryptographic hash function Blakbe2b.
+ * Implementation of the cryptographic hash function Blake2b.
  * <p>
  * Blake2b offers a built-in keying mechanism to be used directly
  * for authentication ("Prefix-MAC") rather than a HMAC construction.
@@ -74,7 +74,7 @@ public class Blake2bDigest
             {14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3}
         };
 
-    private static int ROUNDS = 12; // to use for Catenas H'
+    private final static int ROUNDS = 12; // to use for Catenas H'
     private final static int BLOCK_LENGTH_BYTES = 128;// bytes
 
     // General parameters:
@@ -195,14 +195,13 @@ public class Blake2bDigest
         buffer = new byte[BLOCK_LENGTH_BYTES];
         if (key != null)
         {
-            this.key = new byte[key.length];
-            System.arraycopy(key, 0, this.key, 0, key.length);
-
             if (key.length > 64)
             {
                 throw new IllegalArgumentException(
                     "Keys > 64 are not supported");
             }
+            this.key = new byte[key.length];
+            System.arraycopy(key, 0, this.key, 0, key.length);
             keyLength = key.length;
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
@@ -264,14 +263,13 @@ public class Blake2bDigest
         }
         if (key != null)
         {
-            this.key = new byte[key.length];
-            System.arraycopy(key, 0, this.key, 0, key.length);
-
             if (key.length > 64)
             {
                 throw new IllegalArgumentException(
                     "Keys > 64 are not supported");
             }
+            this.key = new byte[key.length];
+            System.arraycopy(key, 0, this.key, 0, key.length);
             keyLength = key.length;
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
@@ -386,7 +384,6 @@ public class Blake2bDigest
         {
             buffer[bufferPos] = b;
             bufferPos++;
-            return;
         }
     }
 
@@ -471,7 +468,7 @@ public class Blake2bDigest
         f0 = 0xFFFFFFFFFFFFFFFFL;
         if(isLastNode)
         {
-            f1 = 0xFFFFFFFF;
+            f1 = 0xFFFFFFFFFFFFFFFFL;
         }
         t0 += bufferPos;
         if (bufferPos > 0 && t0 == 0)
@@ -479,19 +476,14 @@ public class Blake2bDigest
             t1++;
         }
         compress(buffer, 0);
-        Arrays.fill(buffer, (byte)0);// Holds eventually the key if input is null
         Arrays.fill(internalState, 0L);
 
         int full = digestLength >>> 3, partial = digestLength & 7;
         Pack.longToLittleEndian(chainValue, 0, full, out, outOffset);
         if (partial > 0)
         {
-            byte[] bytes = new byte[8];
-            Pack.longToLittleEndian(chainValue[full], bytes, 0);
-            System.arraycopy(bytes, 0, out, outOffset + digestLength - partial, partial);
+            Pack.longToLittleEndian(chainValue[full], out, outOffset + digestLength - partial, partial);
         }
-
-        Arrays.fill(chainValue, 0L);
 
         reset();
 
@@ -507,11 +499,15 @@ public class Blake2bDigest
     {
         bufferPos = 0;
         f0 = 0L;
-        f1 = 0;
+        f1 = 0L;
         t0 = 0L;
         t1 = 0L;
         isLastNode = false;
-        chainValue = null;
+        if (chainValue != null)
+        {
+            Arrays.fill(chainValue, 0L);
+            chainValue = null;
+        }
         Arrays.fill(buffer, (byte)0);
         if (key != null)
         {
