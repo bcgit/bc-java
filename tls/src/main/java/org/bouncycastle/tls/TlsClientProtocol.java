@@ -484,22 +484,34 @@ public class TlsClientProtocol
                 {
                     process13HelloRetryRequest(serverHello);
                     handshakeHash.notifyPRFDetermined();
-                    handshakeHash.sealHashAlgorithms();
+
                     TlsUtils.adjustTranscriptForRetry(handshakeHash);
+
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
 
                     send13ClientHelloRetry();
                     this.connection_state = CS_CLIENT_HELLO_RETRY;
+
+                    /*
+                     * PSK binders (if any) when retrying ClientHello currently require handshakeHash buffering
+                     */
+                    handshakeHash.sealHashAlgorithms();
                 }
                 else
                 {
                     processServerHello(serverHello);
                     handshakeHash.notifyPRFDetermined();
+
                     if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                     {
                         handshakeHash.sealHashAlgorithms();
                     }
+                    else
+                    {
+                        // For pre-1.3 wait until ServerHelloDone is received
+                    }
+
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO;
 
