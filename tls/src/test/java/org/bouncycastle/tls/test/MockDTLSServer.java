@@ -64,7 +64,7 @@ class MockDTLSServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("DTLS server negotiated " + serverVersion);
+        System.out.println("DTLS server negotiated version " + serverVersion);
 
         return serverVersion;
     }

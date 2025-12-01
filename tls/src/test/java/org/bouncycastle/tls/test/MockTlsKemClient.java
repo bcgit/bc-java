@@ -124,7 +124,7 @@ class MockTlsKemClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS KEM client negotiated " + serverVersion);
+        System.out.println("TLS KEM client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException

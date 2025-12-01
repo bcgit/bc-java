@@ -98,7 +98,7 @@ class MockTlsClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS client negotiated " + serverVersion);
+        System.out.println("TLS client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException

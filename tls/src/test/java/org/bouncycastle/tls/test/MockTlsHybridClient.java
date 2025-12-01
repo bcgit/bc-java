@@ -124,7 +124,7 @@ class MockTlsHybridClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS hybrid client negotiated " + serverVersion);
+        System.out.println("TLS hybrid client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException

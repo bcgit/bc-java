@@ -173,7 +173,7 @@ class TlsTestServerImpl
 
         if (TlsTestConfig.DEBUG)
         {
-            System.out.println("TLS server negotiated " + serverVersion);
+            System.out.println("TLS server negotiated version " + serverVersion);
         }
 
         return serverVersion;

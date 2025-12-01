@@ -100,7 +100,7 @@ class MockTlsKemServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS KEM server negotiated " + serverVersion);
+        System.out.println("TLS KEM server negotiated version " + serverVersion);
 
         return serverVersion;
     }
