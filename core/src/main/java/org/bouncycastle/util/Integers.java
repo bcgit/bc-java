@@ -13,6 +13,20 @@ public class Integers
         return Integer.bitCount(i);
     }
 
+    public static int compare(int x, int y)
+    {
+        // @since 1.7
+//        return Integer.compare(x, y);
+        return x < y ? -1 : x == y ? 0 : 1;
+    }
+
+    public static int compareUnsigned(int x, int y)
+    {
+        // @since 1.8
+//        return Integer.compareUnsigned(x, y);
+        return compare(x + Integer.MIN_VALUE, y + Integer.MIN_VALUE);
+    }
+
     public static int highestOneBit(int i)
     {
         return Integer.highestOneBit(i);

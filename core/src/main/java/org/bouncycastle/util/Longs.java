@@ -8,6 +8,20 @@ public class Longs
     public static final int BYTES = 8;
     public static final int SIZE = Long.SIZE;
 
+    public static int compare(long x, long y)
+    {
+        // @since 1.7
+//        return Long.compare(x, y);
+        return x < y ? -1 : x == y ? 0 : 1;
+    }
+
+    public static int compareUnsigned(long x, long y)
+    {
+        // @since 1.8
+//        return Long.compareUnsigned(x, y);
+        return compare(x + Long.MIN_VALUE, y + Long.MIN_VALUE);
+    }
+
     public static long highestOneBit(long i)
     {
         return Long.highestOneBit(i);
