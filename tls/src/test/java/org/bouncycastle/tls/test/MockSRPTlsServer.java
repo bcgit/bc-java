@@ -87,7 +87,7 @@ class MockSRPTlsServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS-SRP server negotiated " + serverVersion);
+        System.out.println("TLS-SRP server negotiated version " + serverVersion);
 
         return serverVersion;
     }

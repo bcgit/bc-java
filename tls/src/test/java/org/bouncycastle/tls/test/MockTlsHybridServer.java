@@ -100,7 +100,7 @@ class MockTlsHybridServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS hybrid server negotiated " + serverVersion);
+        System.out.println("TLS hybrid server negotiated version " + serverVersion);
 
         return serverVersion;
     }

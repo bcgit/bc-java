@@ -96,7 +96,7 @@ class MockSRPTlsClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS-SRP client negotiated " + serverVersion);
+        System.out.println("TLS-SRP client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException
