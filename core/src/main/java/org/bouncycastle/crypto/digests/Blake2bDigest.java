@@ -482,7 +482,7 @@ public class Blake2bDigest
         Pack.longToLittleEndian(chainValue, 0, full, out, outOffset);
         if (partial > 0)
         {
-            Pack.longToLittleEndian(chainValue[full], out, outOffset + digestLength - partial, partial);
+            Pack.longToLittleEndian_Low(chainValue[full], out, outOffset + digestLength - partial, partial);
         }
 
         reset();
