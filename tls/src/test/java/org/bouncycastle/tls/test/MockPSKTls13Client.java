@@ -109,7 +109,7 @@ class MockPSKTls13Client
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS 1.3 PSK client negotiated " + serverVersion);
+        System.out.println("TLS 1.3 PSK client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException

@@ -66,7 +66,7 @@ class MockPSKDTLSServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("DTLS-PSK server negotiated " + serverVersion);
+        System.out.println("DTLS-PSK server negotiated version " + serverVersion);
 
         return serverVersion;
     }
