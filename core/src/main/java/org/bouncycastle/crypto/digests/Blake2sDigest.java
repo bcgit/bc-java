@@ -502,9 +502,7 @@ public class Blake2sDigest
         Pack.intToLittleEndian(chainValue, 0, full, out, outOffset);
         if (partial > 0)
         {
-            byte[] bytes = new byte[4];
-            Pack.intToLittleEndian(chainValue[full], bytes, 0);
-            System.arraycopy(bytes, 0, out, outOffset + digestLength - partial, partial);
+            Pack.intToLittleEndian_Low(chainValue[full], out, outOffset + digestLength - partial, partial);
         }
 
         Arrays.fill(chainValue, 0);
