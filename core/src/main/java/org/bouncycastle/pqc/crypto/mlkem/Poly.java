@@ -180,9 +180,9 @@ class Poly
         return r;
     }
 
-    public void decompressPoly(byte[] compressedPolyCipherText)
+    public void decompressPoly(byte[] compressedPolyCipherText, int polyCipherOff)
     {
-        int i, count = 0;
+        int i, count = polyCipherOff;
 
         if (engine.getKyberPolyCompressedBytes() == 128)
         {
