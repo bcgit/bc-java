@@ -237,13 +237,14 @@ class Poly
         return r;
     }
 
-    public void fromBytes(byte[] inpBytes)
+    public void fromBytes(byte[] inpBytes, int inOff)
     {
         for (int i = 0; i < MLKEMEngine.KyberN / 2; ++i)
         {
-            int a0 = inpBytes[3 * i + 0] & 0xFF;
-            int a1 = inpBytes[3 * i + 1] & 0xFF;
-            int a2 = inpBytes[3 * i + 2] & 0xFF;
+            int index = inOff + (3 * i);
+            int a0 = inpBytes[index + 0] & 0xFF;
+            int a1 = inpBytes[index + 1] & 0xFF;
+            int a2 = inpBytes[index + 2] & 0xFF;
             coeffs[2 * i + 0] = (short)(((a0 >> 0) | (a1 << 8)) & 0xFFF);
             coeffs[2 * i + 1] = (short)(((a1 >> 4) | (a2 << 4)) & 0xFFF);
         }
