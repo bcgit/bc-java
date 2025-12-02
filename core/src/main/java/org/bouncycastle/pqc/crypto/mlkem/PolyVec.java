@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.mlkem;
 
-import org.bouncycastle.util.Arrays;
-
 class PolyVec
 {
     Poly[] vec;
@@ -242,7 +240,7 @@ class PolyVec
     {
         for (int i = 0; i < kyberK; i++)
         {
-            this.getVectorIndex(i).fromBytes(Arrays.copyOfRange(inputBytes, i * MLKEMEngine.KyberPolyBytes, (i + 1) * MLKEMEngine.KyberPolyBytes));
+            this.getVectorIndex(i).fromBytes(inputBytes, i * MLKEMEngine.KyberPolyBytes);
         }
     }
 
