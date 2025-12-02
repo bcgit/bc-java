@@ -277,11 +277,9 @@ class MLKEMIndCpa
 
     private void unpackCipherText(PolyVec b, Poly v, byte[] cipherText)
     {
-        byte[] compressedPolyVecCipherText = Arrays.copyOfRange(cipherText, 0, engine.getKyberPolyVecCompressedBytes());
-        b.decompressPolyVec(compressedPolyVecCipherText);
+        b.decompressPolyVec(cipherText);
 
-        byte[] compressedPolyCipherText = Arrays.copyOfRange(cipherText, engine.getKyberPolyVecCompressedBytes(), cipherText.length);
-        v.decompressPoly(compressedPolyCipherText);
+        v.decompressPoly(cipherText, engine.getKyberPolyVecCompressedBytes());
     }
 
     public byte[] packPublicKey(PolyVec publicKeyPolyVec, byte[] seed)
