@@ -449,17 +449,7 @@ public class CMSSignedDataParser
         AlgorithmIdentifier[] newDigestAlgIds = (AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]);
         sigGen.getRawOutputStream().write(new DLSet(newDigestAlgIds).getEncoded());
 
-        // encap content info
-        ContentInfoParser encapContentInfo = signedData.getEncapContentInfo();
-
-        BERSequenceGenerator eiGen = new BERSequenceGenerator(sigGen.getRawOutputStream());
-
-        eiGen.addObject(encapContentInfo.getContentType());
-
-        pipeEncapsulatedOctetString(encapContentInfo, eiGen.getRawOutputStream());
-
-        eiGen.close();
-
+        writeEncapContentInfoToGenerator(signedData, sigGen);
 
         writeSetToGeneratorTagged(sigGen, signedData.getCertificates(), 0);
         writeSetToGeneratorTagged(sigGen, signedData.getCrls(), 1);
@@ -520,16 +510,7 @@ public class CMSSignedDataParser
         // digests
         sigGen.getRawOutputStream().write(signedData.getDigestAlgorithms().toASN1Primitive().getEncoded());
 
-        // encap content info
-        ContentInfoParser encapContentInfo = signedData.getEncapContentInfo();
-
-        BERSequenceGenerator eiGen = new BERSequenceGenerator(sigGen.getRawOutputStream());
-
-        eiGen.addObject(encapContentInfo.getContentType());
-
-        pipeEncapsulatedOctetString(encapContentInfo, eiGen.getRawOutputStream());
-
-        eiGen.close();
+        writeEncapContentInfoToGenerator(signedData, sigGen);
 
         //
         // skip existing certs and CRLs
@@ -580,7 +561,7 @@ public class CMSSignedDataParser
         return out;
     }
 
-    private static void writeSetToGeneratorTagged(
+    static void writeSetToGeneratorTagged(
         ASN1Generator asn1Gen,
         ASN1SetParser asn1SetParser,
         int           tagNo)
@@ -662,4 +643,18 @@ public class CMSSignedDataParser
 //        ASN1OctetStringParser octs = (ASN1OctetStringParser)sp.readObject();
 //        Streams.drain(octs.getOctetStream());
 //    }
+
+    static void writeEncapContentInfoToGenerator(SignedDataParser signedData, BERSequenceGenerator sigGen)
+        throws IOException
+    {
+        // encap content info
+        ContentInfoParser encapContentInfo = signedData.getEncapContentInfo();
+
+        BERSequenceGenerator eiGen = new BERSequenceGenerator(sigGen.getRawOutputStream());
+        eiGen.addObject(encapContentInfo.getContentType());
+
+        pipeEncapsulatedOctetString(encapContentInfo, eiGen.getRawOutputStream());
+
+        eiGen.close();
+    }
 }
