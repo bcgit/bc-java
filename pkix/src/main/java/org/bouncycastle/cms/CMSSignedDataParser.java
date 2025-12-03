@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfoParser;
 import org.bouncycastle.asn1.cms.SignedDataParser;
@@ -438,15 +439,15 @@ public class CMSSignedDataParser
         // digests
         signedData.getDigestAlgorithms().toASN1Primitive();  // skip old ones
 
-        ASN1EncodableVector digestAlgs = new ASN1EncodableVector();
-
-        for (Iterator it = signerInformationStore.getSigners().iterator(); it.hasNext();)
+        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+        for (Iterator it = signerInformationStore.getSigners().iterator(); it.hasNext(); )
         {
             SignerInformation signer = (SignerInformation)it.next();
+            CMSUtils.addDigestAlgs(digestAlgs, signer, dgstAlgFinder);
             digestAlgs.add(HELPER.fixDigestAlgID(signer.getDigestAlgorithmID(), dgstAlgFinder));
         }
-
-        sigGen.getRawOutputStream().write(new DERSet(digestAlgs).getEncoded());
+        AlgorithmIdentifier[] newDigestAlgIds = (AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]);
+        sigGen.getRawOutputStream().write(new DLSet(newDigestAlgIds).getEncoded());
 
         // encap content info
         ContentInfoParser encapContentInfo = signedData.getEncapContentInfo();
