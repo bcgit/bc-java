@@ -10,9 +10,11 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.BasicTlsPSKExternal;
 import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsPSK;
@@ -121,10 +123,18 @@ class MockPSKTls13Client
     {
         super.notifyHandshakeComplete();
 
-        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        SecurityParameters securityParameters = context.getSecurityParametersConnection();
+
+        ProtocolName protocolName = securityParameters.getApplicationProtocol();
         if (protocolName != null)
         {
             System.out.println("Client ALPN: " + protocolName.getUtf8Decoding());
+        }
+
+        int negotiatedGroup = securityParameters.getNegotiatedGroup();
+        if (negotiatedGroup >= 0)
+        {
+            System.out.println("Client negotiated group: " + NamedGroup.getText(negotiatedGroup));
         }
     }
 
