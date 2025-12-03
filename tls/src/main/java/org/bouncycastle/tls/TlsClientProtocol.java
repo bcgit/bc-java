@@ -956,6 +956,8 @@ public class TlsClientProtocol
         TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
         tlsClient.notifySelectedCipherSuite(cipherSuite);
 
+        securityParameters.negotiatedGroup = selectedGroup;
+
         this.clientAgreements = null;
         this.retryCookie = cookie;
         this.retryGroup = selectedGroup;
@@ -1066,17 +1068,17 @@ public class TlsClientProtocol
             KeyShareEntry serverShare = TlsExtensionsUtils.getKeyShareServerHello(extensions);
             if (null == serverShare)
             {
-                if (afterHelloRetryRequest
-                    || null == pskEarlySecret
-                    || !Arrays.contains(clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_ke))
+                if (afterHelloRetryRequest ||
+                    pskEarlySecret == null ||
+                    !Arrays.contains(clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_ke))
                 {
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
             }
             else
             {
-                if (null != pskEarlySecret
-                    && !Arrays.contains(clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
+                if (pskEarlySecret != null &&
+                    !Arrays.contains(clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
                 {
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
@@ -1091,6 +1093,11 @@ public class TlsClientProtocol
 
                 agreement.receivePeerValue(serverShare.getKeyExchange());
                 sharedSecret = agreement.calculateSecret();
+
+                if (!afterHelloRetryRequest)
+                {
+                    securityParameters.negotiatedGroup = namedGroup;                    
+                }
             }
         }
 
