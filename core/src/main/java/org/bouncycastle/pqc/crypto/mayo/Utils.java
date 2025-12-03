@@ -26,7 +26,7 @@ class Utils
             {
                 out[outOff + j] = Pack.littleEndianToLong(in, inOff + (j << 3));
             }
-            out[outOff + j] = Pack.littleEndianToLong(in, inOff + (j << 3), lastblockLen);
+            out[outOff + j] = lastblockLen <= 0 ? 0L : Pack.littleEndianToLong_Low(in, inOff + (j << 3), lastblockLen);
         }
     }
 
@@ -52,7 +52,10 @@ class Utils
             {
                 Pack.longToLittleEndian(in[inOff + j], out, outOff + (j << 3));
             }
-            Pack.longToLittleEndian(in[inOff + j], out, outOff + (j << 3), lastBlockLen);
+            if (lastBlockLen > 0)
+            {
+                Pack.longToLittleEndian_Low(in[inOff + j], out, outOff + (j << 3), lastBlockLen);
+            }
         }
     }
 
