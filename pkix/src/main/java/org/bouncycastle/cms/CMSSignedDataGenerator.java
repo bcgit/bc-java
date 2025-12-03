@@ -138,7 +138,7 @@ public class CMSSignedDataGenerator
         ASN1EncodableVector signerInfos = new ASN1EncodableVector();
 
         digests.clear();  // clear the current preserved digest state
-
+        digestAlgs.addAll(extraDigestAlgorithms);
         //
         // add the precalculated SignerInfo objects.
         //
