@@ -201,6 +201,7 @@ public class CMSSignedDataStreamGenerator
         sigGen.addObject(calculateVersion(eContentType));
         
         Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+        digestAlgs.addAll(extraDigestAlgorithms);
 
         //
         // add the precalculated SignerInfo digest algorithms.
@@ -219,9 +220,9 @@ public class CMSSignedDataStreamGenerator
         for (Iterator it = signerGens.iterator(); it.hasNext();)
         {
             SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
-
-            digestAlgs.add(signerGen.getDigestAlgorithm());
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signerGen.getDigestAlgorithm(), digestAlgIdFinder));
         }
+
 
         sigGen.getRawOutputStream().write(CMSUtils.convertToDlSet(digestAlgs).getEncoded());
         
