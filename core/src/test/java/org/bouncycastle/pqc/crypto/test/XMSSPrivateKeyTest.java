@@ -31,7 +31,8 @@ public class XMSSPrivateKeyTest
     {
         XMSSParameters params = new XMSSParameters(10, digest);
         byte[] root = generateRoot(digest);
-        XMSSPrivateKeyParameters privateKey = new XMSSPrivateKeyParameters.Builder(params).withRoot(root).build();
+        XMSSPrivateKeyParameters privateKey = new XMSSPrivateKeyParameters.Builder(params).withRoot(root)
+            .withPublicSeed(new byte[digest.getDigestSize()]).withSecretKeySeed(new byte[digest.getDigestSize()]).build();
 
         byte[] export = privateKey.toByteArray();
 
