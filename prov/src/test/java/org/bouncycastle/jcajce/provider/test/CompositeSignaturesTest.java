@@ -40,7 +40,6 @@ import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
-import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPublicKey;
 import org.bouncycastle.jcajce.spec.CompositeSignatureSpec;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
@@ -771,7 +770,8 @@ public class CompositeSignaturesTest
                 privKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(new PrivateKeyInfo(
                     new AlgorithmIdentifier(new ASN1ObjectIdentifier(oidMap.get(tcId))), new DEROctetString(sk)).getEncoded()));
                 certPubKey = cert.getPublicKey();
-                x5cpk = certPubKey.getEncoded();
+                // TODO: the test vectors are out of date
+                // x5cpk = certPubKey.getEncoded();
                 byte[] pkEncoded = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
                 TestCase.assertTrue(Arrays.areEqual(pkEncoded, pk));
                 byte[] skEncoded = PrivateKeyInfo.getInstance(privKey.getEncoded()).getPrivateKey().getOctets();
