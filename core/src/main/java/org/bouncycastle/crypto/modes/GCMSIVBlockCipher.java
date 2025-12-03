@@ -257,8 +257,7 @@ public class GCMSIVBlockCipher
          }
 
          /* Make sure that we haven't breached AEAD data limit */
-         if (theAEADHasher.getBytesProcessed() + Long.MIN_VALUE
-              > (MAX_DATALEN - pLen) + Long.MIN_VALUE)
+         if (Longs.compareUnsigned(theAEADHasher.getBytesProcessed(), MAX_DATALEN - pLen) > 0)
          {
              throw new IllegalStateException("AEAD byte count exceeded");
          }
@@ -291,8 +290,7 @@ public class GCMSIVBlockCipher
              dataLimit += BUFLEN;
              currBytes = theEncData.size();
          }
-         if (currBytes + Long.MIN_VALUE
-               > (dataLimit - pLen) + Long.MIN_VALUE)
+         if (Longs.compareUnsigned(currBytes, dataLimit - pLen) > 0)
          {
              throw new IllegalStateException("byte count exceeded");
          }
