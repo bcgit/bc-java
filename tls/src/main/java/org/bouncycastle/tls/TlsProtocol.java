@@ -158,6 +158,7 @@ public abstract class TlsProtocol
     protected TlsSecret sessionMasterSecret = null;
 
     protected byte[] retryCookie = null;
+    // TODO[api] Remove and manage via SecurityParameters.negotiatedGroup    
     protected int retryGroup = -1;
     protected Hashtable clientExtensions = null;
     protected Hashtable serverExtensions = null;

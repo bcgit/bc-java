@@ -36,9 +36,9 @@ sourceSets {
             srcDirs = ['src/main/jdk1.15']
         }
     }
-    java21 {
+    java17 {
         java {
-            srcDirs = ['src/main/jdk21']
+            srcDirs = ['src/main/jdk17']
         }
     }
     java25 {
@@ -68,7 +68,7 @@ dependencies {
         builtBy compileJava11Java
     }
 
-    java21Implementation files([
+    java17Implementation files([
             sourceSets.main.output.classesDirs,
             sourceSets.java9.output.classesDirs,
             sourceSets.java11.output.classesDirs,
@@ -81,8 +81,8 @@ dependencies {
             sourceSets.java9.output.classesDirs,
             sourceSets.java11.output.classesDirs,
             sourceSets.java15.output.classesDirs,
-            sourceSets.java21.output.classesDirs]) {
-        builtBy compileJava21Java
+            sourceSets.java17.output.classesDirs]) {
+        builtBy compileJava17Java
     }
 }
 
@@ -106,9 +106,10 @@ compileJava15Java {
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.15'])
 }
 
-compileJava21Java {
-    options.release = 21
-    options.sourcepath = files(['src/main/java', 'src/main/jdk21'])
+compileJava17Java {
+    targetCompatibility = 17
+    sourceCompatibility = 17
+    options.sourcepath = files(['src/main/java', 'src/main/jdk17'])
 }
 
 compileJava25Java {
@@ -132,8 +133,8 @@ task sourcesJar(type: Jar) {
     into('META-INF/versions/15') {
         from sourceSets.java15.allSource
     }
-    into('META-INF/versions/21') {
-        from sourceSets.java21.allSource
+    into('META-INF/versions/17') {
+        from sourceSets.java17.allSource
     }
     into('META-INF/versions/25') {
         from sourceSets.java25.allSource
@@ -154,8 +155,8 @@ jar {
     into('META-INF/versions/15') {
         from sourceSets.java15.output
     }
-    into('META-INF/versions/21') {
-        from sourceSets.java21.output
+    into('META-INF/versions/17') {
+        from sourceSets.java17.output
     }
     into('META-INF/versions/25') {
         from sourceSets.java25.output
@@ -208,11 +209,11 @@ sourceSets {
         }
     }
 
-    test21 {
+    test17 {
         java {
             compileClasspath += main.output + test.output
             runtimeClasspath += test.output
-            srcDir(files("src/test/jdk21"))
+            srcDir(files("src/test/jdk17"))
         }
     }
 
@@ -229,22 +230,22 @@ dependencies {
     java9Implementation project(':core')
     java11Implementation project(':core')
     java15Implementation project(':core')
-    java21Implementation project(':core')
+    java17Implementation project(':core')
     java25Implementation project(':core')
 }
 
 dependencies {
     test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test21Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test17Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test25Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test11Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
     test15Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
-    test21Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
+    test17Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
     test25Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
     test11Implementation(project(":core"))
     test15Implementation(project(":core"))
-    test21Implementation(project(":core"))
+    test17Implementation(project(":core"))
     test25Implementation(project(":core"))
     test25Implementation sourceSets.java25.output
 
@@ -264,9 +265,10 @@ compileTest15Java {
     options.sourcepath = files(['src/test/java', 'src/test/jdk1.15'])
 }
 
-compileTest21Java {
-    options.release = 21
-    options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
+compileTest17Java {
+    targetCompatibility = 17
+    sourceCompatibility = 17
+    options.sourcepath = files(['src/test/java', 'src/test/jdk17'])
 }
 
 compileTest25Java {
@@ -291,7 +293,7 @@ publishing {
 configurations {
     test11Implementation.extendsFrom testImplementation
     test15Implementation.extendsFrom testImplementation
-    test21Implementation.extendsFrom testImplementation
+    test17Implementation.extendsFrom testImplementation
     test25Implementation.extendsFrom testImplementation
 }
 
@@ -396,14 +398,14 @@ task test15(type: Test) {
     }
 }
 
-task test21(type: Test) {
+task test17(type: Test) {
 
-    // This is testing the 21 code base
-    onlyIf {System.getenv("BC_JDK21") != null}
+    // This is testing the 17 code base
+    onlyIf {System.getenv("BC_JDK17") != null}
     dependsOn jar
 
-    testClassesDirs = sourceSets.test21.output.classesDirs
-    classpath = sourceSets.test21.runtimeClasspath + files(jar.archiveFile)
+    testClassesDirs = sourceSets.test17.output.classesDirs
+    classpath = sourceSets.test17.runtimeClasspath + files(jar.archiveFile)
 
     forkEvery = 1;
     maxParallelForks = 8;
@@ -413,10 +415,10 @@ task test21(type: Test) {
     testLogging.showStandardStreams = false
 
     javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 
-    jvmArgs = ['-Dtest.java.version.prefix=21']
+    jvmArgs = ['-Dtest.java.version.prefix=17']
 
 
     finalizedBy jacocoTestReport
@@ -477,9 +479,9 @@ if (System.getenv("BC_JDK17") != null) {
     test.dependsOn("test15")
 }
 
-if (System.getenv("BC_JDK21") != null) {
-    System.out.println("${project.name}: Adding test21 as dependency for test task because BC_JDK21 is defined")
-    test.dependsOn("test21")
+if (System.getenv("BC_JDK17") != null) {
+    System.out.println("${project.name}: Adding test17 as dependency for test task because BC_JDK17 is defined")
+    test.dependsOn("test17")
 }
 if (System.getenv("BC_JDK25") != null) {
     System.out.println("${project.name}: Adding test25 as dependency for test task because BC_JDK25 is defined")
