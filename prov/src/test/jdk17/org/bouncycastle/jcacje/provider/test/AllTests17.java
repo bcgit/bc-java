@@ -6,7 +6,7 @@ import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
 
 
-public class AllTests21
+public class AllTests17
     extends TestCase
 {
     public static void main(String[] args)
@@ -16,7 +16,7 @@ public class AllTests21
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("JDK21 Provider Tests");
+        TestSuite suite = new TestSuite("JDK17 Provider Tests");
         suite.addTestSuite(NTRUKEMTest.class);
         suite.addTestSuite(SNTRUPrimeKEMTest.class);
         suite.addTestSuite(MLKEMTest.class);
