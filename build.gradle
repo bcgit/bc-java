@@ -287,7 +287,7 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 }
 
 
-test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test17', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
 
 apply from: "publish.gradle"
 
