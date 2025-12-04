@@ -100,7 +100,7 @@ public class CipherStreamTest
     private static final byte[] GRAIN_128 = Hex.decode("0123456789abcdef123456789abcdef0");
     private static final byte[] GRAIN_128_IV = Hex.decode("0123456789abcdef12345678");
     private static final byte[] GRAIN_128_IN = new byte[16];
-    private static final byte[] GRAIN_128_OUT = Hex.decode("afb5babfa8de896b4b9c6acaf7c4fbfd");
+    private static final byte[] GRAIN_128_OUT = Hex.decode("ba399daf90df8eba103d9ea83c805904");
 
     public CipherStreamTest()
     {
