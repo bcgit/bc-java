@@ -58,9 +58,9 @@ public class KeyManagerFactoryTest
         throws Exception
     {
         // TLS_RSA is disabled in Java 25.
-        if (System.getProperty("java.version").startsWith("25") || System.getProperty("java.version").startsWith("1.8"))
+        if (System.getProperty("java.version").startsWith("25"))
         {
-             return;
+            return;
         }
         KeyStore ks = getRsaKeyStore(true);
 
@@ -77,7 +77,7 @@ public class KeyManagerFactoryTest
 
         trustManagerFactory.init(trustStore);
 
-        SSLContext context = SSLContext.getInstance("TLSv1.3", ProviderUtils.PROVIDER_NAME_BCJSSE);
+        SSLContext context = SSLContext.getInstance("TLSv1.2", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         context.init(null, trustManagerFactory.getTrustManagers(), null);
 
@@ -86,7 +86,7 @@ public class KeyManagerFactoryTest
         SSLSocket c = (SSLSocket)f.createSocket("localhost", 8886);
         c.setUseClientMode(true);
 
-        SSLUtils.restrictKeyExchange(c, "SM2_MLKEM_768");
+        SSLUtils.restrictKeyExchange(c, "RSA");
 
         c.getOutputStream().write('!');
 
@@ -100,7 +100,7 @@ public class KeyManagerFactoryTest
         // TLS_RSA is disabled in Java 25.
         if (System.getProperty("java.version").startsWith("25"))
         {
-             return;
+            return;
         }
         KeyStore ks = getRsaKeyStore(true);
 
@@ -113,7 +113,7 @@ public class KeyManagerFactoryTest
         /*
          * For this variation we add the server's certificate to the client's trust store directly,
          * instead of the root (TA).
-         * 
+         *
          * NOTE: For TLS 1.3 with certificate_authorities in ClientHello, or earlier versions with
          * trusted_ca_keys in ClientHello, this test only works when a) there are no actual CA
          * certificates in the client trust store, AND/OR b) the server is willing to (eventually)
@@ -150,7 +150,7 @@ public class KeyManagerFactoryTest
         // TLS_RSA is disabled in Java 25.
         if (System.getProperty("java.version").startsWith("25"))
         {
-             return;
+            return;
         }
         KeyStore clientKS = getRsaKeyStore(false);
         KeyStore serverKS = getRsaKeyStore(true);
