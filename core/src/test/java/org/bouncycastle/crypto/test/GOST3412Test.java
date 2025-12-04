@@ -97,7 +97,7 @@ public class GOST3412Test
     private void ctrTest()
         throws Exception
     {
-        StreamBlockCipher sb = new G3413CTRBlockCipher(new GOST3412_2015Engine(), 128);
+        StreamBlockCipher sb = new G3413CTRBlockCipher(new GOST3412_2015Engine(), 8);
 
         sb.init(true, new ParametersWithIV(new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
             Hex.decode("0001020304050607")));
@@ -123,7 +123,7 @@ public class GOST3412Test
             fail("cipher text repeats 2");
         }
 
-        sb = new G3413CTRBlockCipher(new GOST3412_2015Engine(), 128);
+        sb = new G3413CTRBlockCipher(new GOST3412_2015Engine(), 8);
 
         sb.init(true, new ParametersWithIV(new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
             Hex.decode("0001020304050607")));
