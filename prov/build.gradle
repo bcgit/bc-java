@@ -107,7 +107,8 @@ compileJava15Java {
 }
 
 compileJava17Java {
-    options.release = 17
+    targetCompatibility = 17
+    sourceCompatibility = 17
     options.sourcepath = files(['src/main/java', 'src/main/jdk17'])
 }
 
@@ -265,7 +266,8 @@ compileTest15Java {
 }
 
 compileTest17Java {
-    options.release = 17
+    targetCompatibility = 17
+    sourceCompatibility = 17
     options.sourcepath = files(['src/test/java', 'src/test/jdk17'])
 }
 
