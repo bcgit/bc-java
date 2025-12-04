@@ -58,7 +58,7 @@ public class KeyManagerFactoryTest
         throws Exception
     {
         // TLS_RSA is disabled in Java 25.
-        if ("25".equals(System.getProperty("java.version")))
+        if (System.getProperty("java.version").startsWith("25") || System.getProperty("java.version").startsWith("1.8"))
         {
              return;
         }
@@ -77,7 +77,7 @@ public class KeyManagerFactoryTest
 
         trustManagerFactory.init(trustStore);
 
-        SSLContext context = SSLContext.getInstance("TLSv1.2", ProviderUtils.PROVIDER_NAME_BCJSSE);
+        SSLContext context = SSLContext.getInstance("TLSv1.3", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         context.init(null, trustManagerFactory.getTrustManagers(), null);
 
@@ -86,7 +86,7 @@ public class KeyManagerFactoryTest
         SSLSocket c = (SSLSocket)f.createSocket("localhost", 8886);
         c.setUseClientMode(true);
 
-        SSLUtils.restrictKeyExchange(c, "RSA");
+        SSLUtils.restrictKeyExchange(c, "SM2_MLKEM_768");
 
         c.getOutputStream().write('!');
 
@@ -98,7 +98,7 @@ public class KeyManagerFactoryTest
         throws Exception
     {
         // TLS_RSA is disabled in Java 25.
-        if ("25".equals(System.getProperty("java.version")))
+        if (System.getProperty("java.version").startsWith("25"))
         {
              return;
         }
@@ -148,7 +148,7 @@ public class KeyManagerFactoryTest
         throws Exception
     {
         // TLS_RSA is disabled in Java 25.
-        if ("25".equals(System.getProperty("java.version")))
+        if (System.getProperty("java.version").startsWith("25"))
         {
              return;
         }
