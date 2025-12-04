@@ -149,11 +149,20 @@ public class DSTU4145Signer
     }
 
     /**
-     * Generates random integer such, than its bit length is less than that of n
+     * Generates random integer such that its value is less than that of n
      */
     private static BigInteger generateRandomInteger(BigInteger n, SecureRandom random)
     {
-        return BigIntegers.createRandomBigInteger(n.bitLength() - 1, random);
+        int nBitLength = n.bitLength();
+
+        BigInteger k;
+        do
+        {
+            k = BigIntegers.createRandomBigInteger(nBitLength, random);
+        }
+        while (k.equals(BigIntegers.ZERO) || k.compareTo(n) >= 0);
+
+        return k;
     }
 
     private static ECFieldElement hash2FieldElement(ECCurve curve, byte[] hash)
