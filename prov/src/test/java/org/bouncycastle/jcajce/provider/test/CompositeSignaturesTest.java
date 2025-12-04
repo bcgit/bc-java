@@ -770,8 +770,7 @@ public class CompositeSignaturesTest
                 privKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(new PrivateKeyInfo(
                     new AlgorithmIdentifier(new ASN1ObjectIdentifier(oidMap.get(tcId))), new DEROctetString(sk)).getEncoded()));
                 certPubKey = cert.getPublicKey();
-                // TODO: the test vectors are out of date
-                // x5cpk = certPubKey.getEncoded();
+                x5cpk = certPubKey.getEncoded();
                 byte[] pkEncoded = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
                 TestCase.assertTrue(Arrays.areEqual(pkEncoded, pk));
                 byte[] skEncoded = PrivateKeyInfo.getInstance(privKey.getEncoded()).getPrivateKey().getOctets();
