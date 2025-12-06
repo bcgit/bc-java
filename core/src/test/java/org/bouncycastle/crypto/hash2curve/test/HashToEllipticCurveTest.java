@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.hash2curve.HashToEllipticCurve;
 import org.bouncycastle.crypto.hash2curve.HashToField;
 import org.bouncycastle.crypto.hash2curve.MapToCurve;
 import org.bouncycastle.crypto.hash2curve.HashToCurveProfile;
-import org.bouncycastle.crypto.hash2curve.impl.Elligator2MapToCurveMtg;
+import org.bouncycastle.crypto.hash2curve.impl.Elligator2MapToCurve;
 import org.bouncycastle.crypto.hash2curve.impl.MontgomeryCurveProcessor;
 import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
 import org.bouncycastle.crypto.hash2curve.impl.SimplifiedShallueVanDeWoestijneMapToCurve;
@@ -160,7 +160,7 @@ public class HashToEllipticCurveTest extends TestCase {
       case curve25519_XMD_SHA_512_ELL2_RO_:
         curve = new Curve25519();
         return new TestHashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
-            profile.getK()), profile.getL()), new Elligator2MapToCurveMtg(curve, profile.getZ(), BigInteger.valueOf(
+            profile.getK()), profile.getL()), new Elligator2MapToCurve(curve, profile.getZ(), BigInteger.valueOf(
             profile.getmJ()), BigInteger.valueOf(profile.getmK())),
             new MontgomeryCurveProcessor(curve, profile.getmJ(), profile.getmK(), profile.getH()));
 
