@@ -8,6 +8,19 @@ import java.util.Objects;
 
 /**
  * Utility functions for hash 2 curve
+ * <p>
+ * This implementation follows the straight-line, branch-free algorithmic structure required by RFC 9380, ensuring that
+ * all code paths perform the same sequence of mathematical operations regardless of input values. However, it relies on
+ * Java’s BigInteger arithmetic and standard JVM execution characteristics, neither of which provide strict guarantees
+ * of constant-time behavior at the microarchitectural level. Operations such as modular exponentiation, multiplication,
+ * inversion, and even conditional value selection (cmov) may execute in variable time depending on internal
+ * optimizations, operand size, and JIT behavior.
+ * <p>
+ * For most applications, this is sufficient to avoid the major side-channel pitfalls associated with probabilistic or
+ * data-dependent loops (e.g., try-and-increment). But if your threat model requires strong, formally constant-time
+ * guarantees, such as protection against local timing attacks or hostile co-tenant environments, you should consider
+ * using a lower-level language with fixed-limb field arithmetic and verifiable constant-time primitives. Java cannot
+ * practically provide such guarantees with BigInteger-based implementations.
  */
 public class H2cUtils {
 
@@ -21,15 +34,14 @@ public class H2cUtils {
    * @return 'a' if condition is false, else 'b'
    */
   public static <T> T cmov(final T a, final T b, final boolean condition) {
-    // This selection method in Java is constant time, independent on the value of 'condition'
     return condition ? b : a;
   }
 
   /**
-   * Test if a value is square in a curve order
+   * Test if a value is square in a prime field order
    *
    * @param val value to test
-   * @param order curve order
+   * @param order prime field order
    * @return true if val is square
    */
   public static boolean isSquare(final BigInteger val, final BigInteger order) {
@@ -38,11 +50,11 @@ public class H2cUtils {
   }
 
   /**
-   * Calculate the square root of val in a curve order
+   * Calculate the square root of val in a prime field order
    *
    * @param val value
-   * @param order curve order
-   * @return square root of val in curve order
+   * @param order prime field order
+   * @return square root of val in field order
    */
   public static BigInteger sqrt(final BigInteger val, final BigInteger order) {
     // Get the largest integer c1 where 2^c1 divides order - 1

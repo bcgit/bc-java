@@ -3,11 +3,14 @@ package org.bouncycastle.crypto.hash2curve;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.hash2curve.impl.Elligator2MapToCurve;
+import org.bouncycastle.crypto.hash2curve.impl.MontgomeryCurveProcessor;
 import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
-import org.bouncycastle.crypto.hash2curve.impl.ShallueVanDeWoestijneMapToCurve;
+import org.bouncycastle.crypto.hash2curve.impl.SimplifiedShallueVanDeWoestijneMapToCurve;
 import org.bouncycastle.crypto.hash2curve.impl.XmdMessageExpansion;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.djb.Curve25519;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
@@ -47,15 +50,24 @@ public class HashToEllipticCurve {
     case P256_XMD_SHA_256_SSWU_RO_:
       curve = new SecP256R1Curve();
       return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA256Digest(),
-          profile.getK()), profile.getL()), new ShallueVanDeWoestijneMapToCurve(curve, profile.getZ()));
+          profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()),
+          new NistCurveProcessor());
     case P384_XMD_SHA_384_SSWU_RO_:
       curve = new SecP384R1Curve();
       return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA384Digest(),
-          profile.getK()), profile.getL()), new ShallueVanDeWoestijneMapToCurve(curve, profile.getZ()));
+          profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()),
+          new NistCurveProcessor());
     case P521_XMD_SHA_512_SSWU_RO_:
       curve = new SecP521R1Curve();
       return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
-          profile.getK()), profile.getL()), new ShallueVanDeWoestijneMapToCurve(curve, profile.getZ()));
+          profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()),
+          new NistCurveProcessor());
+    case curve25519_XMD_SHA_512_ELL2_RO_:
+      curve = new Curve25519();
+      return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
+          profile.getK()), profile.getL()), new Elligator2MapToCurve(curve, profile.getZ(), BigInteger.valueOf(
+          profile.getmJ()), BigInteger.valueOf(profile.getmK())),
+          new MontgomeryCurveProcessor(curve, profile.getmJ(), profile.getmK(), profile.getH()));
     default:
       throw new IllegalArgumentException("Unsupported profile: " + profile);
     }
@@ -71,7 +83,7 @@ public class HashToEllipticCurve {
     final BigInteger[][] u = this.hashToField.process(message);
     final ECPoint Q0 = this.mapToCurve.process(u[0][0]);
     final ECPoint Q1 = this.mapToCurve.process(u[1][0]);
-    final ECPoint R = Q0.add(Q1);
+    final ECPoint R = curveProcessor.add(Q0, Q1);
     return this.curveProcessor.clearCofactor(R);
   }
 

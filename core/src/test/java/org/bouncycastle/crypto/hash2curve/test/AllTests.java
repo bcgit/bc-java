@@ -5,7 +5,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.crypto.hash2curve.test.impl.GenericSqrtRatioCalculatorTest;
-import org.bouncycastle.crypto.hash2curve.test.impl.ShallueVanDeWoestijneMapToCurveTest;
+import org.bouncycastle.crypto.hash2curve.test.impl.SimplifiedShallueVanDeWoestijneMapToCurveTest;
 import org.bouncycastle.test.PrintTestResult;
 
 public class AllTests
@@ -24,7 +24,7 @@ public class AllTests
         suite.addTestSuite(OPRFHashToScalarTest.class);
         suite.addTestSuite(GenericSqrtRatioCalculatorTest.class);
 
-        suite.addTestSuite(ShallueVanDeWoestijneMapToCurveTest.class);
+        suite.addTestSuite(SimplifiedShallueVanDeWoestijneMapToCurveTest.class);
         suite.addTestSuite(H2cUtilsTest.class);
         suite.addTestSuite(HashToEllipticCurveTest.class);
 

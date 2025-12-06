@@ -8,6 +8,12 @@ import org.bouncycastle.math.ec.ECPoint;
 public interface CurveProcessor {
 
   /**
+   * Add two points in the curve group.
+   * Semantics are curve-model specific.
+   */
+  ECPoint add(ECPoint p, ECPoint q);
+
+  /**
    * Clears the cofactor from the given elliptic curve point.
    *
    * @param ecPoint the elliptic curve point to process

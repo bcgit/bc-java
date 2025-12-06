@@ -10,13 +10,13 @@ import java.math.BigInteger;
  */
 public enum HashToCurveProfile {
 
-  P256_XMD_SHA_256_SSWU_RO_("P256_XMD:SHA-256_SSWU_RO_", BigInteger.valueOf(-10), 48, 128),
+  P256_XMD_SHA_256_SSWU_RO_("P256_XMD:SHA-256_SSWU_RO_", BigInteger.valueOf(-10), 48, 128, 1, null, null),
   //  P256_XMD_SHA_256_SSWU_NU_("P256_XMD:SHA-256_SSWU_NU_", BigInteger.valueOf(-10), 128),
-  P384_XMD_SHA_384_SSWU_RO_("P384_XMD:SHA-384_SSWU_RO_", BigInteger.valueOf(-12), 72, 192),
+  P384_XMD_SHA_384_SSWU_RO_("P384_XMD:SHA-384_SSWU_RO_", BigInteger.valueOf(-12), 72, 192, 1, null, null),
   //  P384_XMD_SHA_384_SSWU_NU_("P384_XMD:SHA-384_SSWU_NU_", BigInteger.valueOf(-12), 192),
-  P521_XMD_SHA_512_SSWU_RO_("P521_XMD:SHA-512_SSWU_RO_", BigInteger.valueOf(-4), 98, 256),
+  P521_XMD_SHA_512_SSWU_RO_("P521_XMD:SHA-512_SSWU_RO_", BigInteger.valueOf(-4), 98, 256, 1, null, null),
   //  P521_XMD_SHA_512_SSWU_NU_("P521_XMD:SHA-512_SSWU_NU_", BigInteger.valueOf(-4), 256),
-  curve25519_XMD_SHA_512_ELL2_RO_("curve25519_XMD:SHA-512_ELL2_RO_", BigInteger.valueOf(2), 48, 128),
+  curve25519_XMD_SHA_512_ELL2_RO_("curve25519_XMD:SHA-512_ELL2_RO_", BigInteger.valueOf(2), 48, 128, 8, 486662, 1),
   //  curve25519_XMD_SHA_512_ELL2_NU_("curve25519_XMD:SHA-512_ELL2_NU_", BigInteger.valueOf(2), 128),
   ;
 
@@ -33,15 +33,25 @@ public enum HashToCurveProfile {
    * </ol>
    */
   private final BigInteger Z;
-  /** The target security level in bits for the curve */
+  /** Block length */
   private final int L;
+  /** The target security level in bits for the curve */
   private final int k;
+  /** Effective cofactor */
+  private final int h;
+  /** Montgomery A parameter */
+  private final Integer mJ;
+  /** Montgomery B parameter */
+  private final Integer mK;
 
-  HashToCurveProfile(final String cipherSuiteID, final BigInteger z, final int l, final int k) {
+  HashToCurveProfile(final String cipherSuiteID, final BigInteger z, final int l, final int k, int h, Integer mJ, Integer mK) {
     this.cipherSuiteID = cipherSuiteID;
-    Z = z;
-    L = l;
+    this.Z = z;
+    this.L = l;
     this.k = k;
+    this.h = h;
+    this.mJ = mJ;
+    this.mK = mK;
   }
 
   public String getCipherSuiteID() {
@@ -58,5 +68,17 @@ public enum HashToCurveProfile {
 
   public BigInteger getZ() {
     return Z;
+  }
+
+  public int getH() {
+    return h;
+  }
+
+  public Integer getmJ() {
+    return mJ;
+  }
+
+  public Integer getmK() {
+    return mK;
   }
 }

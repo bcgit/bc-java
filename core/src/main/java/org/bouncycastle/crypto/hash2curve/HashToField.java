@@ -7,10 +7,10 @@ import java.math.BigInteger;
 
 /**
  * Generic implementation of hash to field
- *
+ * <p>
  * This implementation is restricted to hashing to a field where the field
  * being hashed to is derived from an Elliptic curve
- *
+ * <p>
  * The HashToField function can be used to hash to any field such as a scalar field (group order)
  * This implementation is not suitable for such cases as described in more detail in the
  * GenericOPRFHashToScalar function. Instead, this class is strictly used to implement
@@ -30,7 +30,7 @@ public class HashToField {
 
   /**
    * Constructs a new instance of the HashToCurveField class.
-   *
+   * <p>
    * This implementation is intended for hashing to a field derived from an elliptic curve
    * and is specifically used in the context of HashToEllipticCurve operations.
    *
@@ -49,7 +49,7 @@ public class HashToField {
 
   /**
    * Constructs a new instance of the HashToCurveField class.
-   *
+   * <p>
    * This constructor allows the creation of a hash-to-field mechanism tied to an elliptic curve,
    * with parameters specifying domain separation, message expansion mechanics, security level,
    * and the count of resulting field elements.

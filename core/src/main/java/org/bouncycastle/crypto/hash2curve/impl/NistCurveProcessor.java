@@ -25,6 +25,11 @@ public class NistCurveProcessor implements CurveProcessor {
   public NistCurveProcessor() {
   }
 
+  @Override
+  public ECPoint add(final ECPoint p, final ECPoint q) {
+    return p.add(q);
+  }
+
   /**
    * Clears the cofactor of the given elliptic curve point. This operation
    * ensures the point is normalized to its canonical affine form, even

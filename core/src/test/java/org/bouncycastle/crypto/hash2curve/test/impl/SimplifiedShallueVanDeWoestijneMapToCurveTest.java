@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.hash2curve.test.impl;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.hash2curve.MapToCurve;
-import org.bouncycastle.crypto.hash2curve.impl.ShallueVanDeWoestijneMapToCurve;
+import org.bouncycastle.crypto.hash2curve.impl.SimplifiedShallueVanDeWoestijneMapToCurve;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
@@ -10,7 +10,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
-public class ShallueVanDeWoestijneMapToCurveTest extends TestCase {
+public class SimplifiedShallueVanDeWoestijneMapToCurveTest extends TestCase {
 
 
 
@@ -22,8 +22,8 @@ public class ShallueVanDeWoestijneMapToCurveTest extends TestCase {
     public void testMapToCurve() throws Exception {
         ECCurve p256Curve = new SecP256R1Curve();
 
-        ShallueVanDeWoestijneMapToCurve mapToCurve =
-                new ShallueVanDeWoestijneMapToCurve(p256Curve, BigInteger.valueOf(-10));
+        SimplifiedShallueVanDeWoestijneMapToCurve mapToCurve =
+                new SimplifiedShallueVanDeWoestijneMapToCurve(p256Curve, BigInteger.valueOf(-10));
 
         specificMappingTestcase(new BigInteger(1,
             Hex.decode("ad5342c66a6dd0ff080df1da0ea1c04b96e0330dd89406465eeba11582515009")),

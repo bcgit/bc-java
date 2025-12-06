@@ -10,17 +10,17 @@ import org.bouncycastle.math.ec.ECPoint;
 import java.math.BigInteger;
 
 /**
- * Implements the Shallue van de Woestijne Map to curve according to section 6.6.2 of RFC 9380 This is the straight-line
- * implementation optimized for Weierstrass curves as defined in section F.2.
+ * Implements the Simplified Shallue van de Woestijne Map to curve according to section 6.6.2 of RFC 9380 This is the
+ * straight-line implementation optimized for Weierstrass curves as defined in section F.2.
  */
-public class ShallueVanDeWoestijneMapToCurve implements MapToCurve {
+public class SimplifiedShallueVanDeWoestijneMapToCurve implements MapToCurve {
 
   private final ECCurve curve;
   private final BigInteger z;
 
   private final SqrtRatioCalculator sqrtRatioCalculator;
 
-  public ShallueVanDeWoestijneMapToCurve(final ECCurve curve, final BigInteger z) {
+  public SimplifiedShallueVanDeWoestijneMapToCurve(final ECCurve curve, final BigInteger z) {
     this.curve = curve;
     this.z = z;
     this.sqrtRatioCalculator = new GenericSqrtRatioCalculator(curve, z);
