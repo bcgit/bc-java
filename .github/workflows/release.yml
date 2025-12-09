@@ -1,0 +1,77 @@
+name: Java CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout bc-java
+        uses: actions/checkout@v4
+        with:
+          path: bc-java
+
+      - name: Checkout bc-test-data
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          repository: bcgit/bc-test-data
+          path: bc-test-data
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Get project version
+        id: get_version
+        run: echo "version=$(grep 'version=' gradle.properties | cut -d'=' -f2)" >> $GITHUB_ENV
+        working-directory: bc-java
+
+      - name: Build with Gradle (PR)
+        if: github.event_name == 'pull_request'
+        run: ./gradlew build -x :mls:build -x :prov:compileJava25Java -x :tls:compileJava25Java
+        working-directory: bc-java
+
+      - name: Build with Gradle (main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: ./gradlew build -x :mls:build -x :prov:compileJava25Java -x :tls:compileJava25Java -x test
+        working-directory: bc-java
+
+      - name: Process JARs
+        run: |
+          VERSION=${{ env.version }}
+
+          zip -d tls/build/libs/bctls-jdk18on-$VERSION.jar 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
+          zip -d prov/build/libs/bcprov-jdk18on-$VERSION.jar 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
+          zip -d pkix/build/libs/bcpkix-jdk18on-$VERSION.jar 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
+          zip -d util/build/libs/bcutil-jdk18on-$VERSION.jar 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
+
+          mkdir -p out
+          cp tls/build/libs/bctls-jdk18on-$VERSION.jar out/
+          cp prov/build/libs/bcprov-jdk18on-$VERSION.jar out/
+          cp pkix/build/libs/bcpkix-jdk18on-$VERSION.jar out/
+          cp util/build/libs/bcutil-jdk18on-$VERSION.jar out/
+        working-directory: bc-java
+
+      - name: Upload JARs for pull requests
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-jars
+          path: bc-java/out/*.jar
+
+      - name: Create Release and Upload Assets
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v${{ env.version }} \
+            --title "Release v${{ env.version }}" \
+            --notes "Release v${{ env.version }}" \
+            bc-java/out/*.jar
