@@ -1,0 +1,31 @@
+name: Sync with Upstream
+
+on:
+  schedule:
+    - cron: '0 1 * * 1'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+          fetch-depth: 0
+
+      - name: Sync with Upstream
+        run: |
+          git remote add upstream https://github.com/bcgit/bc-java.git
+          git fetch upstream
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          if ! git merge upstream/main; then
+            echo "Merge conflict detected. Please resolve conflicts manually."
+            git merge --abort
+            exit 1
+          fi
+          git push
