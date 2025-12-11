@@ -10,7 +10,7 @@ public class NTRUPlusEngine
     public short NTRUPLUS_Q;
     public short NTRUPLUS_QINV;
     public short NTRUPLUS_OMEGA;
-    public short NTRUPLUS_Rinv; // TODO: Set correct value
+    public short NTRUPLUS_Rinv;
     public short NTRUPLUS_POLYBYTES;
     public short NTRUPLUS_Rsq;
     public short[] zetas = new short[]{
@@ -425,8 +425,6 @@ public class NTRUPlusEngine
         r[3] = montgomery_reduce(temp);
 
         // Adjust scaling by multiplying by NTRUPLUS_Rsq (R^2 mod q)
-        // TODO: Add NTRUPLUS_Rsq to your constants
-        // r[0] = montgomery_reduce(r[0]*NTRUPLUS_Rsq)
         r[0] = montgomery_reduce((int)r[0] * NTRUPLUS_Rsq);
         r[1] = montgomery_reduce((int)r[1] * NTRUPLUS_Rsq);
         r[2] = montgomery_reduce((int)r[2] * NTRUPLUS_Rsq);
@@ -441,9 +439,6 @@ public class NTRUPlusEngine
      */
     public void poly_tobytes(byte[] r, int rOff, Poly a)
     {
-        // TODO: Define NTRUPLUS_POLYBYTES constant (typically 1152 for NTRU+768)
-        // int NTRUPLUS_POLYBYTES = 1152;
-
         int t0, t1;
 
         for (int i = 0; i < NTRUPLUS_N / 2; i++)
@@ -470,9 +465,6 @@ public class NTRUPlusEngine
      */
     public void hash_f(byte[] buf, int bufOff, byte[] msg)
     {
-        // TODO: Define NTRUPLUS_POLYBYTES constant
-        // int NTRUPLUS_POLYBYTES = 1152;
-
         byte[] data = new byte[1 + NTRUPLUS_POLYBYTES];
 
         data[0] = 0x00;
