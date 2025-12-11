@@ -36,6 +36,7 @@ class MockTlsHybridServer
         NamedGroup.X25519MLKEM768,
         NamedGroup.SecP384r1MLKEM1024,
         NamedGroup.x25519,
+        NamedGroup.curveSM2MLKEM768,
     };
 
     MockTlsHybridServer(TlsCrypto crypto)
