@@ -265,7 +265,7 @@ public class BCJSSEClientTest
         System.out.println(">>> " + line);
     }
 
-    private static KeyStore createKeyStore() throws Exception
+    static KeyStore createKeyStore() throws Exception
     {
 //        KeyStore keyStore = KeyStore.getInstance("PKCS12");
         KeyStore keyStore = KeyStore.getInstance("PKCS12", ProviderUtils.PROVIDER_NAME_BC);
@@ -273,14 +273,14 @@ public class BCJSSEClientTest
         return keyStore;
     }
 
-    private static X509Certificate loadCertificate(String certPath) throws Exception
+    static X509Certificate loadCertificate(String certPath) throws Exception
     {
         byte[] certEncoding = loadPEMContents(certPath, "CERTIFICATE");
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         return (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(certEncoding));
     }
 
-    private static PrivateKey loadKey(String keyPath) throws Exception
+    static PrivateKey loadKey(String keyPath) throws Exception
     {
         byte[] keyEncoding = loadPEMContents(keyPath, "PRIVATE KEY");
 
@@ -305,7 +305,7 @@ public class BCJSSEClientTest
 //        }
     }
 
-    private static KeyStore loadKeyStore(String alias, String certPath, String keyPath) throws Exception
+    static KeyStore loadKeyStore(String alias, String certPath, String keyPath) throws Exception
     {
         X509Certificate cert = loadCertificate(certPath);
         PrivateKey key = loadKey(keyPath);
@@ -315,7 +315,7 @@ public class BCJSSEClientTest
         return keyStore;
     }
 
-    private static KeyStore loadTrustStore(String caPath) throws Exception
+    static KeyStore loadTrustStore(String caPath) throws Exception
     {
         X509Certificate caCert = loadCertificate(caPath);
 
@@ -325,7 +325,7 @@ public class BCJSSEClientTest
         return trustStore;
     }
 
-    private static byte[] loadPEMContents(String path, String type) throws IOException
+    static byte[] loadPEMContents(String path, String type) throws IOException
     {
         InputStream s = new FileInputStream(path);
         PemReader p = new PemReader(new InputStreamReader(s));
