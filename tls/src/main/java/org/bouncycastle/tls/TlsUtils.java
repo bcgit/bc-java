@@ -6145,13 +6145,13 @@ public class TlsUtils
             }
 
             // TODO[tls13] Fetch these from 'server'
-            short[] serverSupportedModes = { PskKeyExchangeMode.psk_dhe_ke };
+            short[] serverSupportedModes = { PskKeyExchangeMode.psk_ke };
             boolean useServerOrder = false;
 
             short selectedMode = selectPreSharedKeyMode(pskKeyExchangeModes, serverSupportedModes, useServerOrder);
 
             // TODO[tls13] Add support for psk_ke?
-            if (PskKeyExchangeMode.psk_dhe_ke == selectedMode)
+            if (PskKeyExchangeMode.psk_ke == selectedMode)
             {
                 // TODO[tls13] Prefer to get the exact index from the server?
                 TlsPSKExternal psk = server.getExternalPSK(offeredPsks.getIdentities());
