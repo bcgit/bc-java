@@ -394,6 +394,18 @@ class ProvTlsClient
     }
 
     @Override
+    public Vector getEarlyKeyShareGroups()
+    {
+        Vector jsse = jsseSecurityParameters.namedGroups.getLocalEarly();
+        if (jsse != null)
+        {
+            return jsse;
+        }
+
+        return super.getEarlyKeyShareGroups();
+    }
+
+    @Override
     public int getMaxCertificateChainLength()
     {
         return JsseUtils.getMaxInboundCertChainLenClient();
