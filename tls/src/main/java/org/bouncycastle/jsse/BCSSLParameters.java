@@ -44,6 +44,7 @@ public final class BCSSLParameters
     private String[] signatureSchemes = null;
     private String[] signatureSchemesCert = null;
     private String[] namedGroups = null;
+    private String[] earlyNamedGroups = null;
 
     public BCSSLParameters()
     {
@@ -325,5 +326,35 @@ public final class BCSSLParameters
         }
 
         this.namedGroups = check;
+    }
+
+    public String[] getEarlyNamedGroups()
+    {
+        return TlsUtils.clone(earlyNamedGroups);
+    }
+
+    public void setEarlyNamedGroups(String[] earlyNamedGroups)
+    {
+        String[] check = null;
+
+        if (earlyNamedGroups != null)
+        {
+            check = TlsUtils.clone(earlyNamedGroups);
+            HashSet<String> seenEntries = new HashSet<String>();
+            for (String entry : check)
+            {
+                if (TlsUtils.isNullOrEmpty(entry))
+                {
+                    throw new IllegalArgumentException("'earlyNamedGroups' entries cannot be null or empty strings");
+                }
+
+                if (!seenEntries.add(entry))
+                {
+                    throw new IllegalArgumentException("'earlyNamedGroups' contains duplicate entry: " + entry);
+                }
+            }
+        }
+
+        this.earlyNamedGroups = check;
     }
 }
