@@ -15,6 +15,7 @@ import javax.crypto.spec.HKDFParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.ArrayList;
 import java.util.List;
 import org.bouncycastle.util.Arrays;
 
@@ -134,19 +135,28 @@ class HKDFSpi
 
     private byte[] flattenSecretKeys(List<SecretKey> keys)
     {
+        if (keys.size() == 1)
+        {
+            return keys.get(0).getEncoded();
+        }
         int len = 0;
         int off = 0;
-        for (SecretKey key: keys)
+
+        List<byte[]> encoding = new ArrayList<byte[]>();
+        for (int i = 0; i < keys.size(); i++)
         {
-            len += key.getEncoded().length;
+            encoding.add(keys.get(i).getEncoded());
+            len += encoding.get(i).length;
         }
         byte[] res = new byte[len];
-        for (SecretKey key: keys)
+        for (int i = 0; i < encoding.size(); i++)
         {
-            byte[] encoded = key.getEncoded();
-            System.arraycopy(encoded, 0, res, off, encoded.length);
-            off += encoded.length;
+            System.arraycopy(encoding.get(i), 0, res, off, encoding.get(i).length);
+            off += encoding.get(i).length;
         }
+
+        encoding.clear();
+
         return res;
     }
 
