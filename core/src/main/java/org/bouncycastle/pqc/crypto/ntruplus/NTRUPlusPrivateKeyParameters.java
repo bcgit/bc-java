@@ -17,4 +17,11 @@ public class NTRUPlusPrivateKeyParameters
     {
         return Arrays.clone(seed_sk);
     }
+
+
+    public byte[] getPublicKey()
+    {
+        //TODO
+        return null;
+    }
 }

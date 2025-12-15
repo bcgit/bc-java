@@ -733,4 +733,12 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier snova_75_33_2_esk = snova.branch("42");
     ASN1ObjectIdentifier snova_75_33_2_shake_ssk = snova.branch("43");
     ASN1ObjectIdentifier snova_75_33_2_shake_esk = snova.branch("44");
+
+    /**
+     * NTRU+
+     * */
+    ASN1ObjectIdentifier ntruPlus = bc_sig.branch("15");
+    ASN1ObjectIdentifier ntruPlus768 = ntruPlus.branch("1");
+    ASN1ObjectIdentifier ntruPlus864 = ntruPlus.branch("2");
+    ASN1ObjectIdentifier ntruPlus1152 = ntruPlus.branch("3");
 }

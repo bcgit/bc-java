@@ -7,6 +7,8 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusExtractor;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusGenerator;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
@@ -42,7 +44,7 @@ public class NTRUPlusTest
         throws Exception
     {
         long start = System.currentTimeMillis();
-        TestUtils.testTestVector(false, false, "pqc/crypto/ntruplus", files, new TestUtils.KeyEncapsulationOperation()
+        TestUtils.testTestVector(false, true, "pqc/crypto/ntruplus", files, new TestUtils.KeyEncapsulationOperation()
         {
             int sessionKeySize = 0;
 
@@ -56,7 +58,7 @@ public class NTRUPlusTest
             public AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random)
             {
                 NTRUPlusParameters parameters = PARAMETER_SETS[fileIndex];
-
+                sessionKeySize = parameters.getSsBytes() * 8;
                 NTRUPlusKeyPairGenerator kpGen = new NTRUPlusKeyPairGenerator();
                 kpGen.init(new NTRUPlusKeyGenerationParameters(random, parameters));
                 return kpGen;
@@ -77,13 +79,13 @@ public class NTRUPlusTest
             @Override
             public EncapsulatedSecretGenerator getKEMGenerator(SecureRandom random)
             {
-                return null;
+                return new NTRUPlusGenerator(random);
             }
 
             @Override
             public EncapsulatedSecretExtractor getKEMExtractor(AsymmetricKeyParameter privParams)
             {
-                return null;
+                return new NTRUPlusExtractor((NTRUPlusPrivateKeyParameters)privParams);
             }
 
             @Override
@@ -94,6 +96,6 @@ public class NTRUPlusTest
 
         });
         long end = System.currentTimeMillis();
-        System.out.println("time cost: " + (end - start) +"\n");
+        System.out.println("time cost: " + (end - start) + "\n");
     }
 }
