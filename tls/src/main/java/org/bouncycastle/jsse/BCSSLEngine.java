@@ -50,4 +50,10 @@ public interface BCSSLEngine
      *             if the cipherSuites or protocols properties contain unsupported values
      */
     void setParameters(BCSSLParameters parameters);
+
+    /**
+     * Returns the name of the negotiated group for a TLS 1.3 connection. Other TLS versions will always return "UNKNOWN".
+     * @return the name of the negotiated group
+     */
+    String getNegotiatedGroup();
 }
