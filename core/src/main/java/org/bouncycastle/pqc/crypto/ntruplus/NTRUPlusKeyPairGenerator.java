@@ -27,11 +27,12 @@ public class NTRUPlusKeyPairGenerator
         NTRUPlusEngine engine = new NTRUPlusEngine(params);
         byte[] coins = new byte[params.getSymBytes()]; // NTRUPLUS_SYMBYTES
 
+        int n = params.getN();
         // Create polynomial objects
-        NTRUPlusEngine.Poly f = new NTRUPlusEngine.Poly();
-        NTRUPlusEngine.Poly finv = new NTRUPlusEngine.Poly();
-        NTRUPlusEngine.Poly g = new NTRUPlusEngine.Poly();
-        NTRUPlusEngine.Poly ginv = new NTRUPlusEngine.Poly();
+        NTRUPlusEngine.Poly f = new NTRUPlusEngine.Poly(n);
+        NTRUPlusEngine.Poly finv = new NTRUPlusEngine.Poly(n);
+        NTRUPlusEngine.Poly g = new NTRUPlusEngine.Poly(n);
+        NTRUPlusEngine.Poly ginv = new NTRUPlusEngine.Poly(n);
 
         // Generate f and finv (retry if f is not invertible)
         boolean fInvertible;
