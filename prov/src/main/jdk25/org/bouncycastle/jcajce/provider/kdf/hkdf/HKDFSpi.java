@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.util.Arrays;
 
 import javax.crypto.KDFParameters;
 import javax.crypto.KDFSpi;
@@ -17,7 +18,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
-import org.bouncycastle.util.Arrays;
 
 class HKDFSpi
         extends KDFSpi
@@ -139,24 +139,25 @@ class HKDFSpi
         {
             return keys.get(0).getEncoded();
         }
+
         int len = 0;
         int off = 0;
 
-        List<byte[]> encoding = new ArrayList<byte[]>();
-        for (int i = 0; i < keys.size(); i++)
+        ArrayList<byte[]> encodings = new ArrayList<byte[]>(keys.size());
+        for (SecretKey key : keys)
         {
-            encoding.add(keys.get(i).getEncoded());
-            len += encoding.get(i).length;
+            byte[] encoding = key.getEncoded(); 
+            encodings.add(encoding);
+            len += encoding.length;
         }
+
         byte[] res = new byte[len];
-        for (int i = 0; i < encoding.size(); i++)
+        for (byte[] encoding : encodings)
         {
-            System.arraycopy(encoding.get(i), 0, res, off, encoding.get(i).length);
-            off += encoding.get(i).length;
+            System.arraycopy(encoding, 0, res, off, encoding.length);
+            off += encoding.length;
+            Arrays.clear(encoding);
         }
-
-        encoding.clear();
-
         return res;
     }
 
