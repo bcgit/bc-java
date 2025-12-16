@@ -38,23 +38,21 @@ public class DSTU4145Signer
     {
         if (forSigning)
         {
+            SecureRandom providedRandom = null;
             if (param instanceof ParametersWithRandom)
             {
                 ParametersWithRandom rParam = (ParametersWithRandom)param;
-
-                this.random = rParam.getRandom();
+                providedRandom = rParam.getRandom();
                 param = rParam.getParameters();
-            }
-            else
-            {
-                this.random = CryptoServicesRegistrar.getSecureRandom();
             }
 
             this.key = (ECPrivateKeyParameters)param;
+            this.random = CryptoServicesRegistrar.getSecureRandom(providedRandom);
         }
         else
         {
             this.key = (ECPublicKeyParameters)param;
+            this.random = null;
         }
 
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("DSTU4145", key, forSigning));

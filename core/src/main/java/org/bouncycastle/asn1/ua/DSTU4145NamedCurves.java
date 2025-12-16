@@ -12,13 +12,15 @@ public class DSTU4145NamedCurves
 {
     private static final BigInteger ZERO = BigInteger.valueOf(0);
     private static final BigInteger ONE = BigInteger.valueOf(1);
+    private static final BigInteger TWO = BigInteger.valueOf(2);
+    private static final BigInteger FOUR = BigInteger.valueOf(4);
 
-    static final ECDomainParameters[] params = new ECDomainParameters[10];
-    static final ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[10];
+    private static final ECDomainParameters[] DOMAIN_PARAMETERS = new ECDomainParameters[10];
+    private static final ASN1ObjectIdentifier[] OIDS = new ASN1ObjectIdentifier[10];
 
     //All named curves have the following oid format: 1.2.804.2.1.1.1.1.3.1.1.2.X
     //where X is the curve number 0-9
-    static final String oidBase = UAObjectIdentifiers.dstu4145le.getId() + ".2.";
+    private static final ASN1ObjectIdentifier OID_BASE = UAObjectIdentifiers.dstu4145le.branch("2");
 
     private static ECPoint configureBasepoint(ECCurve curve, BigInteger x, BigInteger y)
     {
@@ -42,16 +44,16 @@ public class DSTU4145NamedCurves
         n_s[9] = new BigInteger("3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBA3175458009A8C0A724F02F81AA8A1FCBAF80D90C7A95110504CF", 16);
 
         BigInteger[] h_s = new BigInteger[10];
-        h_s[0] = BigInteger.valueOf(2);
-        h_s[1] = BigInteger.valueOf(2);
-        h_s[2] = BigInteger.valueOf(4);
-        h_s[3] = BigInteger.valueOf(2);
-        h_s[4] = BigInteger.valueOf(2);
-        h_s[5] = BigInteger.valueOf(2);
-        h_s[6] = BigInteger.valueOf(4);
-        h_s[7] = BigInteger.valueOf(2);
-        h_s[8] = BigInteger.valueOf(2);
-        h_s[9] = BigInteger.valueOf(2);
+        h_s[0] = TWO;
+        h_s[1] = TWO;
+        h_s[2] = FOUR;
+        h_s[3] = TWO;
+        h_s[4] = TWO;
+        h_s[5] = TWO;
+        h_s[6] = FOUR;
+        h_s[7] = TWO;
+        h_s[8] = TWO;
+        h_s[9] = TWO;
 
         ECCurve.F2m[] curves = new ECCurve.F2m[10];
         curves[0] = new ECCurve.F2m(163, 3, 6, 7, ONE, new BigInteger("5FF6108462A2DC8210AB403925E638A19C1455D21", 16), n_s[0], h_s[0]);
@@ -77,14 +79,10 @@ public class DSTU4145NamedCurves
         points[8] = configureBasepoint(curves[8], new BigInteger("324A6EDDD512F08C49A99AE0D3F961197A76413E7BE81A400CA681E09639B5FE12E59A109F78BF4A373541B3B9A1", 16), new BigInteger("1AB597A5B4477F59E39539007C7F977D1A567B92B043A49C6B61984C3FE3481AAF454CD41BA1F051626442B3C10", 16));
         points[9] = configureBasepoint(curves[9], new BigInteger("1A62BA79D98133A16BBAE7ED9A8E03C32E0824D57AEF72F88986874E5AAE49C27BED49A2A95058068426C2171E99FD3B43C5947C857D", 16), new BigInteger("70B5E1E14031C1F70BBEFE96BDDE66F451754B4CA5F48DA241F331AA396B8D1839A855C1769B1EA14BA53308B5E2723724E090E02DB9", 16));
 
-        for (int i = 0; i < params.length; i++)
+        for (int i = 0; i < 10; i++)
         {
-            params[i] = new ECDomainParameters(curves[i], points[i], n_s[i], h_s[i]);
-        }
-
-        for (int i = 0; i < oids.length; i++)
-        {
-            oids[i] = new ASN1ObjectIdentifier(oidBase + i);
+            DOMAIN_PARAMETERS[i] = new ECDomainParameters(curves[i], points[i], n_s[i], h_s[i]);
+            OIDS[i] = OID_BASE.branch("" + i);
         }
     }
 
@@ -94,7 +92,9 @@ public class DSTU4145NamedCurves
      */
     public static ASN1ObjectIdentifier[] getOIDs()
     {
-        return oids;
+        ASN1ObjectIdentifier[] result = new ASN1ObjectIdentifier[OIDS.length];
+        System.arraycopy(OIDS, 0, result, 0, OIDS.length);
+        return result;
     }
 
     /**
@@ -103,11 +103,15 @@ public class DSTU4145NamedCurves
      */
     public static ECDomainParameters getByOID(ASN1ObjectIdentifier oid)
     {
-        String oidStr = oid.getId();
-        if (oidStr.startsWith(oidBase))
+        if (oid.on(OID_BASE))
         {
-            int index = Integer.parseInt(oidStr.substring(oidStr.lastIndexOf('.') + 1));
-            return (index >= 0 && index < params.length) ? params[index] : null;
+            for (int i = 0; i < 10; ++i)
+            {
+                if (OIDS[i].equals(oid))
+                {
+                    return DOMAIN_PARAMETERS[i];
+                }
+            }
         }
         return null;
     }
