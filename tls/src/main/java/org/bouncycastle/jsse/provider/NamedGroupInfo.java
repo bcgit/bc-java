@@ -29,7 +29,7 @@ class NamedGroupInfo
 
     private static final String PROPERTY_NAMED_GROUPS = "jdk.tls.namedGroups";
 
-    private static final String PROPERTY_BC_EARLY_NAMED_GROUPS = "org.bouncycastle.jsse.client.earlyNamedGroups";
+    private static final String PROPERTY_BC_EARLY_KEY_SHARES = "org.bouncycastle.jsse.client.earlyKeyShares";
 
     // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
     private enum All
@@ -289,17 +289,17 @@ class NamedGroupInfo
 
         Vector localEarly = null;
         {
-            String[] earlyNamedGroups = sslParameters.getEarlyNamedGroups();
+            String[] earlyKeyShares = sslParameters.getEarlyKeyShares();
 
             int[] earlyCandidates;
-            if (earlyNamedGroups == null)
+            if (earlyKeyShares == null)
             {
                 earlyCandidates = perContext.earlyCandidates;
             }
             else
             {
-                earlyCandidates = createEarlyCandidates(perContext.index, earlyNamedGroups,
-                    "BCSSLParameters.earlyNamedGroups");
+                earlyCandidates = createEarlyCandidates(perContext.index, earlyKeyShares,
+                    "BCSSLParameters.earlyKeyShares");
             }
 
             if (earlyCandidates != null)
@@ -313,7 +313,7 @@ class NamedGroupInfo
                     NamedGroupInfo earlyNamedGroupInfo = local.get(earlyCandidate);
                     if (earlyNamedGroupInfo == null || !earlyNamedGroupInfo.isEnabled())
                     {
-                        LOG.warning("Candidate early named group not an enabled named group: "
+                        LOG.warning("Candidate early key share not an enabled named group: "
                             + NamedGroup.getName(earlyCandidates[i]));
                         continue;
                     }
@@ -330,7 +330,7 @@ class NamedGroupInfo
     {
         Map<Integer, NamedGroupInfo> index = createIndex(isFipsContext, crypto);
         int[] candidates = createCandidatesFromProperty(index, PROPERTY_NAMED_GROUPS);
-        int[] earlyCandidates = createEarlyCandidatesFromProperty(index, PROPERTY_BC_EARLY_NAMED_GROUPS);
+        int[] earlyCandidates = createEarlyCandidatesFromProperty(index, PROPERTY_BC_EARLY_KEY_SHARES);
 
         return new PerContext(index, candidates, earlyCandidates);
     }

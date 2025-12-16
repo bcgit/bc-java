@@ -44,7 +44,7 @@ public final class BCSSLParameters
     private String[] signatureSchemes = null;
     private String[] signatureSchemesCert = null;
     private String[] namedGroups = null;
-    private String[] earlyNamedGroups = null;
+    private String[] earlyKeyShares = null;
 
     public BCSSLParameters()
     {
@@ -328,33 +328,33 @@ public final class BCSSLParameters
         this.namedGroups = check;
     }
 
-    public String[] getEarlyNamedGroups()
+    public String[] getEarlyKeyShares()
     {
-        return TlsUtils.clone(earlyNamedGroups);
+        return TlsUtils.clone(earlyKeyShares);
     }
 
-    public void setEarlyNamedGroups(String[] earlyNamedGroups)
+    public void setEarlyKeyShares(String[] earlyKeyShares)
     {
         String[] check = null;
 
-        if (earlyNamedGroups != null)
+        if (earlyKeyShares != null)
         {
-            check = TlsUtils.clone(earlyNamedGroups);
+            check = TlsUtils.clone(earlyKeyShares);
             HashSet<String> seenEntries = new HashSet<String>();
             for (String entry : check)
             {
                 if (TlsUtils.isNullOrEmpty(entry))
                 {
-                    throw new IllegalArgumentException("'earlyNamedGroups' entries cannot be null or empty strings");
+                    throw new IllegalArgumentException("'earlyKeyShares' entries cannot be null or empty strings");
                 }
 
                 if (!seenEntries.add(entry))
                 {
-                    throw new IllegalArgumentException("'earlyNamedGroups' contains duplicate entry: " + entry);
+                    throw new IllegalArgumentException("'earlyKeyShares' contains duplicate entry: " + entry);
                 }
             }
         }
 
-        this.earlyNamedGroups = check;
+        this.earlyKeyShares = check;
     }
 }
