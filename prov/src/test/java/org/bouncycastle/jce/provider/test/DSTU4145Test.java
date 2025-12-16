@@ -36,8 +36,7 @@ public class DSTU4145Test
     public void performTest()
         throws Exception
     {
-
-        DSTU4145Test();
+        implDSTU4145Test();
         generationTest();
         //parametersTest();
         generateFromCurveTest();
@@ -127,7 +126,7 @@ public class DSTU4145Test
         }
     }
 
-    private void DSTU4145Test()
+    private void implDSTU4145Test()
         throws Exception
     {
 
