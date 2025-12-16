@@ -7,8 +7,8 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusExtractor;
-import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusGenerator;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMExtractor;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
@@ -79,13 +79,13 @@ public class NTRUPlusTest
             @Override
             public EncapsulatedSecretGenerator getKEMGenerator(SecureRandom random)
             {
-                return new NTRUPlusGenerator(random);
+                return new NTRUPlusKEMGenerator(random);
             }
 
             @Override
             public EncapsulatedSecretExtractor getKEMExtractor(AsymmetricKeyParameter privParams)
             {
-                return new NTRUPlusExtractor((NTRUPlusPrivateKeyParameters)privParams);
+                return new NTRUPlusKEMExtractor((NTRUPlusPrivateKeyParameters)privParams);
             }
 
             @Override

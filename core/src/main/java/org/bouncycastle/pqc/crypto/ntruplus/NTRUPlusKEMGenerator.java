@@ -7,12 +7,12 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 
-public class NTRUPlusGenerator
+public class NTRUPlusKEMGenerator
     implements EncapsulatedSecretGenerator
 {
     private final SecureRandom sr;
 
-    public NTRUPlusGenerator(SecureRandom random)
+    public NTRUPlusKEMGenerator(SecureRandom random)
     {
         this.sr = random;
     }

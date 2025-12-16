@@ -2,13 +2,13 @@ package org.bouncycastle.pqc.crypto.ntruplus;
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 
-public class NTRUPlusExtractor
+public class NTRUPlusKEMExtractor
     implements EncapsulatedSecretExtractor
 {
     private final NTRUPlusPrivateKeyParameters privateKey;
     private final NTRUPlusEngine engine;
 
-    public NTRUPlusExtractor(NTRUPlusPrivateKeyParameters privateKey)
+    public NTRUPlusKEMExtractor(NTRUPlusPrivateKeyParameters privateKey)
     {
         if (privateKey == null)
         {
