@@ -3,29 +3,28 @@ package org.bouncycastle.pqc.jcajce.provider.ntruplus;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.PublicKey;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.NTRUPlusPublicKey;
-import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.pqc.jcajce.interfaces.NTRUPlusKey;
 import org.bouncycastle.pqc.jcajce.spec.NTRUPlusParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 public class BCNTRUPlusPublicKey
-    implements NTRUPlusPublicKey
+    implements PublicKey, NTRUPlusKey
 {
     private static final long serialVersionUID = 1L;
 
     private transient NTRUPlusPublicKeyParameters params;
-    private transient String algorithm;
-    private transient byte[] encoding;
 
     public BCNTRUPlusPublicKey(
         NTRUPlusPublicKeyParameters params)
     {
-        init(params);
+        this.params = params;
     }
 
     public BCNTRUPlusPublicKey(SubjectPublicKeyInfo keyInfo)
@@ -37,14 +36,8 @@ public class BCNTRUPlusPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        init((NTRUPlusPublicKeyParameters)PublicKeyFactory.createKey(keyInfo));
+        this.params = (NTRUPlusPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
     }
-    private void init(NTRUPlusPublicKeyParameters params)
-    {
-        this.params = params;
-        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
-    }
-
 
     /**
      * Compare this NTRUPlus public key with another object.
@@ -63,7 +56,7 @@ public class BCNTRUPlusPublicKey
         {
             BCNTRUPlusPublicKey otherKey = (BCNTRUPlusPublicKey)o;
 
-            return Arrays.areEqual(this.getEncoded(), otherKey.getEncoded());
+            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -71,25 +64,29 @@ public class BCNTRUPlusPublicKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(getEncoded());
+        return Arrays.hashCode(params.getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "FALCON-512 or FALCON-1024"
+     * @return name of the algorithm - "NTRUPlus"
      */
     public final String getAlgorithm()
     {
-        return algorithm;
+        return Strings.toUpperCase(params.getParameters().getName());
     }
 
     public byte[] getEncoded()
     {
-        if (encoding == null)
+        try
         {
-            encoding = KeyUtil.getEncodedSubjectPublicKeyInfo(params);
-        }
+            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
 
-        return Arrays.clone(encoding);
+            return pki.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
     }
 
     public String getFormat()
@@ -127,4 +124,3 @@ public class BCNTRUPlusPublicKey
         out.writeObject(this.getEncoded());
     }
 }
-

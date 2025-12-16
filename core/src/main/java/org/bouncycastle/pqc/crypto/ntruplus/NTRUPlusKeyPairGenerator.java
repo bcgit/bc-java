@@ -29,10 +29,10 @@ public class NTRUPlusKeyPairGenerator
 
         int n = params.getN();
         // Create polynomial objects
-        NTRUPlusEngine.Poly f = new NTRUPlusEngine.Poly(n);
-        NTRUPlusEngine.Poly finv = new NTRUPlusEngine.Poly(n);
-        NTRUPlusEngine.Poly g = new NTRUPlusEngine.Poly(n);
-        NTRUPlusEngine.Poly ginv = new NTRUPlusEngine.Poly(n);
+        short[] f = new short[n];
+        short[] finv = new short[n];
+        short[] g = new short[n];
+        short[] ginv = new short[n];
 
         // Generate f and finv (retry if f is not invertible)
         boolean fInvertible;

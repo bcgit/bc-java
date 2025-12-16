@@ -3,33 +3,30 @@ package org.bouncycastle.pqc.jcajce.provider.ntruplus;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.NTRUPlusPrivateKey;
-import org.bouncycastle.pqc.jcajce.interfaces.NTRUPlusPublicKey;
-import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.jcajce.interfaces.NTRUPlusKey;
 import org.bouncycastle.pqc.jcajce.spec.NTRUPlusParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 public class BCNTRUPlusPrivateKey
-    implements NTRUPlusPrivateKey
+    implements PrivateKey, NTRUPlusKey
 {
     private static final long serialVersionUID = 1L;
 
     private transient NTRUPlusPrivateKeyParameters params;
-    private transient String algorithm;
-    private transient byte[] encoding;
     private transient ASN1Set attributes;
 
     public BCNTRUPlusPrivateKey(
         NTRUPlusPrivateKeyParameters params)
     {
-        init(params, null);
+        this.params = params;
     }
 
     public BCNTRUPlusPrivateKey(PrivateKeyInfo keyInfo)
@@ -41,18 +38,12 @@ public class BCNTRUPlusPrivateKey
     private void init(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        init((NTRUPlusPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
-    }
-
-    private void init(NTRUPlusPrivateKeyParameters params, ASN1Set attributes)
-    {
-        this.attributes = attributes;
-        this.params = params;
-        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
+        this.attributes = keyInfo.getAttributes();
+        this.params = (NTRUPlusPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo);
     }
 
     /**
-     * Compare this NTRUPlus private key with another object.
+     * Compare this private key with another object.
      *
      * @param o the other object
      * @return the result of the comparison
@@ -68,7 +59,7 @@ public class BCNTRUPlusPrivateKey
         {
             BCNTRUPlusPrivateKey otherKey = (BCNTRUPlusPrivateKey)o;
 
-            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
+            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -76,25 +67,30 @@ public class BCNTRUPlusPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(getEncoded());
+        return Arrays.hashCode(params.getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "FALCON-512 or FALCON-1024"
+     * @return name of the algorithm - "NTRUPlus"
      */
     public final String getAlgorithm()
     {
-        return algorithm;
+        return Strings.toUpperCase(params.getParameters().getName());
     }
 
     public byte[] getEncoded()
     {
-        if (encoding == null)
-        {
-            encoding = KeyUtil.getEncodedPrivateKeyInfo(params, attributes);
-        }
 
-        return Arrays.clone(encoding);
+        try
+        {
+            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
+
+            return pki.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
     }
 
     public NTRUPlusParameterSpec getParameterSpec()
@@ -132,4 +128,3 @@ public class BCNTRUPlusPrivateKey
         out.writeObject(this.getEncoded());
     }
 }
-
