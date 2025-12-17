@@ -40,7 +40,7 @@ public class NTRUPlusKeyPairGeneratorSpi
 
     public NTRUPlusKeyPairGeneratorSpi()
     {
-        super("FALCON");
+        super("NTRUPLUS");
         this.ntruplusParameters = null;
     }
 
