@@ -131,7 +131,6 @@ public class NamedGroup
      */
     public static final int curveSM2MLKEM768 = 0x11EE;
 
-
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
     private static final String[] CURVE_NAMES = new String[]{ "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
@@ -466,12 +465,12 @@ public class NamedGroup
             return "MLKEM1024";
         case SecP256r1MLKEM768:
             return "SecP256r1MLKEM768";
-        case curveSM2MLKEM768:
-            return "curveSM2MLKEM768";
         case X25519MLKEM768:
             return "X25519MLKEM768";
         case SecP384r1MLKEM1024:
             return "SecP384r1MLKEM1024";
+        case curveSM2MLKEM768:
+            return "curveSM2MLKEM768";
         case arbitrary_explicit_prime_curves:
             return "arbitrary_explicit_prime_curves";
         case arbitrary_explicit_char2_curves:
