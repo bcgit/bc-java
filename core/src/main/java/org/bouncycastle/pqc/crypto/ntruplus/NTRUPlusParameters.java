@@ -79,6 +79,9 @@ public class NTRUPlusParameters
         1152,                // NTRUPLUS_PUBLICKEYBYTES
         (1152 << 1) + 32,    // NTRUPLUS_SECRETKEYBYTES: (POLYBYTES << 1) + SYMBYTES
         1152,                // NTRUPLUS_CIPHERTEXTBYTES
+        4,
+        64,
+        96,
         zetas768
     );
 
@@ -92,6 +95,9 @@ public class NTRUPlusParameters
         1296,                // NTRUPLUS_PUBLICKEYBYTES
         (1296 << 1) + 32,    // NTRUPLUS_SECRETKEYBYTES
         1296,                // NTRUPLUS_CIPHERTEXTBYTES
+        3,
+        24,
+        144,
         zetas864_1152
     );
 
@@ -105,6 +111,9 @@ public class NTRUPlusParameters
         1728,                // NTRUPLUS_PUBLICKEYBYTES
         (1728 << 1) + 32,    // NTRUPLUS_SECRETKEYBYTES
         1728,                // NTRUPLUS_CIPHERTEXTBYTES
+        4,
+        32,
+        144,
         zetas864_1152
     );
 
@@ -118,11 +127,15 @@ public class NTRUPlusParameters
     private final int publicKeyBytes;       // NTRUPLUS_PUBLICKEYBYTES
     private final int secretKeyBytes;       // NTRUPLUS_SECRETKEYBYTES
     private final int ciphertextBytes;      // NTRUPLUS_CIPHERTEXTBYTES
+    private final int minStep;
+    private final int baseStep;
+    private final int zetasOffset;
     private final short[] zetas;
+
 
     private NTRUPlusParameters(String name, int n, int q, int symBytes, int ssBytes,
                                int polyBytes, int publicKeyBytes, int secretKeyBytes,
-                               int ciphertextBytes, short[] zetas)
+                               int ciphertextBytes, int minStep, int baseStep, int zetasOffset, short[] zetas)
     {
         this.name = name;
         this.n = n;
@@ -133,6 +146,9 @@ public class NTRUPlusParameters
         this.publicKeyBytes = publicKeyBytes;
         this.secretKeyBytes = secretKeyBytes;
         this.ciphertextBytes = ciphertextBytes;
+        this.minStep = minStep;
+        this.baseStep = baseStep;
+        this.zetasOffset = zetasOffset;
         this.zetas = zetas;
     }
 
@@ -185,5 +201,20 @@ public class NTRUPlusParameters
     public short[] getZetas()
     {
         return zetas;
+    }
+
+    int getBaseStep()
+    {
+        return baseStep;
+    }
+
+    int getMinStep()
+    {
+        return minStep;
+    }
+
+    int getZetasOffset()
+    {
+        return zetasOffset;
     }
 }
