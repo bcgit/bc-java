@@ -178,6 +178,7 @@ abstract class FipsUtils
         case NamedGroup.MLKEM768:
         case NamedGroup.MLKEM1024:
         case NamedGroup.X25519MLKEM768:
+        case NamedGroup.curveSM2MLKEM768:
         default:
             return false;
         }

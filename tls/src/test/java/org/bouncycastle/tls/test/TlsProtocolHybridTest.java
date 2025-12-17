@@ -68,7 +68,6 @@ public abstract class TlsProtocolHybridTest
         implTestClientServer(NamedGroup.curveSM2MLKEM768);
     }
 
-
     public void testSecP256r1MLKEM768() throws Exception
     {
         implTestClientServer(NamedGroup.SecP256r1MLKEM768);

@@ -88,7 +88,8 @@ class NamedGroupInfo
 
         SecP256r1MLKEM768(NamedGroup.SecP256r1MLKEM768, "EC", "ML-KEM"),
         X25519MLKEM768(NamedGroup.X25519MLKEM768, "ML-KEM", "XDH"),
-        SecP384r1MLKEM1024(NamedGroup.SecP384r1MLKEM1024, "EC", "ML-KEM");
+        SecP384r1MLKEM1024(NamedGroup.SecP384r1MLKEM1024, "EC", "ML-KEM"),
+        curveMLKEM768(NamedGroup.curveSM2MLKEM768, "EC", "ML-KEM");
 
         private final int namedGroup;
         private final String name;
