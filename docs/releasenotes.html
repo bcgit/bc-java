@@ -19,10 +19,11 @@ to conform the algorithms to the JCE framework.
 <h2>2.0 Release History</h2>
 
 <a id="r1rv84"><h3>2.1.1 Version</h3></a>
-Release: 1.83<br/>
+Release: 1.84<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>Random numbers being generated for DSTU4145 signature calculations were 1 bit shorter than they could be. The code has been corrected to allow the generated numbers to occupy the full numeric range available.</li>
 </ul>
 
 <a id="r1rv83"><h3>2.2.1 Version</h3></a>
@@ -30,10 +31,10 @@ Release: 1.83<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2025, November 27th.
 <h3>2.2.2 Defects Fixed</h3>
 <ul>
-<li>Attempting to check a password on a stripped PGP would throw an exception. Checking the password on such a key will now always return false.</li>
+<li>Attempting to check a password on a stripped PGP key would throw an exception. Checking the password on such a key will now always return false.</li>
 <li>Fixed an issue in KangarooTwelve where premature absorption caused erroneous 168-byte padding; absorption is now delayed so correct final-byte padding is applied.</li>
 <li>BCJSSE: Fix supported_versions creation for renegotiation handshake.</li>
-<li>(D)TLS: Reneg info now oly offered with pre-1.3.</li>
+<li>(D)TLS: Reneg info now only offered with pre-1.3.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
