@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.ntruplus;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 
 public class NTRUPlusEngine
 {
@@ -116,124 +117,42 @@ public class NTRUPlusEngine
             r[i + n / 2] = (short)(a[i] + a[i + n / 2] - t1);
             r[i] = (short)(a[i] + t1);
         }
-
-        // Process based on N value
-        if (n == 768)
+        int baseStep = params.getBaseStep();
+        int minStep = params.getMinStep();
+        for (int step = n / 6; step >= baseStep * 2; step /= 3)
         {
-            // N=768: process 384-coefficient blocks
-            for (int start = 0; start < n; start += 384)
+            for (int start = 0; start < n; start += 3 * step)
             {
                 zeta1 = zetas[k++];
                 zeta2 = zetas[k++];
 
-                for (int i = start; i < start + 128; i++)
+                for (int i = start; i < start + step; i++)
                 {
-                    t1 = fqmul(zeta1, r[i + 128]);
-                    t2 = fqmul(zeta2, r[i + 256]);
+                    t1 = fqmul(zeta1, r[i + step]);
+                    t2 = fqmul(zeta2, r[i + 2 * step]);
                     t3 = fqmul(omega, (short)(t1 - t2));
 
-                    r[i + 256] = (short)(r[i] - t1 - t3);
-                    r[i + 128] = (short)(r[i] - t2 + t3);
+                    r[i + 2 * step] = (short)(r[i] - t1 - t3);
+                    r[i + step] = (short)(r[i] - t2 + t3);
                     r[i] = (short)(r[i] + t1 + t2);
                 }
             }
-
-            // Final butterflies: step from 64 down to 4
-            for (int step = 64; step >= 4; step >>= 1)
-            {
-                for (int start = 0; start < n; start += (step << 1))
-                {
-                    zeta1 = zetas[k++];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = fqmul(zeta1, r[i + step]);
-                        r[i + step] = barrett_reduce((short)(r[i] - t1));
-                        r[i] = barrett_reduce((short)(r[i] + t1));
-                    }
-                }
-            }
-
         }
-        else if (n == 864)
+
+        // Final butterflies: step from 24 down to 3
+        for (int step = baseStep; step >= minStep; step >>= 1)
         {
-            // N=864: process with 3-coefficient blocks
-            for (int step = n / 6; step >= 48; step /= 3)
+            for (int start = 0; start < n; start += (step << 1))
             {
-                for (int start = 0; start < n; start += 3 * step)
+                zeta1 = zetas[k++];
+
+                for (int i = start; i < start + step; i++)
                 {
-                    zeta1 = zetas[k++];
-                    zeta2 = zetas[k++];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = fqmul(zeta1, r[i + step]);
-                        t2 = fqmul(zeta2, r[i + 2 * step]);
-                        t3 = fqmul(omega, (short)(t1 - t2));
-
-                        r[i + 2 * step] = (short)(r[i] - t1 - t3);
-                        r[i + step] = (short)(r[i] - t2 + t3);
-                        r[i] = (short)(r[i] + t1 + t2);
-                    }
+                    t1 = fqmul(zeta1, r[i + step]);
+                    r[i + step] = barrett_reduce((short)(r[i] - t1));
+                    r[i] = barrett_reduce((short)(r[i] + t1));
                 }
             }
-
-            // Final butterflies: step from 24 down to 3
-            for (int step = 24; step >= 3; step >>= 1)
-            {
-                for (int start = 0; start < n; start += (step << 1))
-                {
-                    zeta1 = zetas[k++];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = fqmul(zeta1, r[i + step]);
-                        r[i + step] = barrett_reduce((short)(r[i] - t1));
-                        r[i] = barrett_reduce((short)(r[i] + t1));
-                    }
-                }
-            }
-
-        }
-        else if (n == 1152)
-        {
-            // N=1152: process with division by 3
-            for (int step = n / 6; step >= 64; step /= 3)
-            {
-                for (int start = 0; start < n; start += 3 * step)
-                {
-                    zeta1 = zetas[k++];
-                    zeta2 = zetas[k++];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = fqmul(zeta1, r[i + step]);
-                        t2 = fqmul(zeta2, r[i + 2 * step]);
-                        t3 = fqmul(omega, (short)(t1 - t2));
-
-                        r[i + 2 * step] = (short)(r[i] - t1 - t3);
-                        r[i + step] = (short)(r[i] - t2 + t3);
-                        r[i] = (short)(r[i] + t1 + t2);
-                    }
-                }
-            }
-
-            // Final butterflies: step from 32 down to 4
-            for (int step = 32; step >= 4; step >>= 1)
-            {
-                for (int start = 0; start < n; start += (step << 1))
-                {
-                    zeta1 = zetas[k++];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = fqmul(zeta1, r[i + step]);
-                        r[i + step] = barrett_reduce((short)(r[i] - t1));
-                        r[i] = barrett_reduce((short)(r[i] + t1));
-                    }
-                }
-            }
-
         }
     }
 
@@ -267,12 +186,7 @@ public class NTRUPlusEngine
      **************************************************/
     public short barrett_reduce(short a)
     {
-        short t;
-        final short v = (short)(((1 << 26) + Q / 2) / Q);
-
-        t = (short)(((int)v * a + (1 << 25)) >> 26);
-        t *= Q;
-        return (short)(a - t);
+        return (short)(a - (((((1 << 26) + Q / 2) / Q) * a + (1 << 25)) >> 26) * Q);
     }
 
     /*************************************************
@@ -281,7 +195,6 @@ public class NTRUPlusEngine
      **************************************************/
     private int poly_baseinv(short[] r, short[] a)
     {
-
         if (n == 864)
         {
             // Special handling for N=864 with 3-coefficient blocks
@@ -343,8 +256,6 @@ public class NTRUPlusEngine
      */
     private int baseinv3(short[] r, int rPos, short[] a, int aPos, short zeta)
     {
-        short t;
-
         // Extract coefficients from input array
         short a0 = a[aPos];
         short a1 = a[aPos + 1];
@@ -352,27 +263,27 @@ public class NTRUPlusEngine
 
         // Step 1: Compute initial values with Montgomery reduction
         // r[0] = montgomery_reduce(a[1]*a[2]);
-        r[rPos] = montgomery_reduce(a1 * a2);
+        short r0 = montgomery_reduce(a1 * a2);
 
         // r[1] = montgomery_reduce(a[2]*a[2]);
-        r[rPos + 1] = montgomery_reduce(a2 * a2);
+        short r1 = montgomery_reduce(a2 * a2);
 
         // r[2] = montgomery_reduce(a[1]*a[1] - a[0]*a[2]);
-        r[rPos + 2] = montgomery_reduce(a1 * a1 - a0 * a2);
+        short r2 = montgomery_reduce(a1 * a1 - a0 * a2);
 
         // Step 2: Apply zeta transformations
         // r[0] = montgomery_reduce(a[0]*a[0] - r[0]*zeta);
-        r[rPos] = montgomery_reduce(a0 * a0 - r[rPos] * zeta);
+        r0 = montgomery_reduce(a0 * a0 - r0 * zeta);
 
         // r[1] = montgomery_reduce(r[1]*zeta - a[0]*a[1]);
-        r[rPos + 1] = montgomery_reduce(r[rPos + 1] * zeta - a0 * a1);
+        r1 = montgomery_reduce(r1 * zeta - a0 * a1);
 
         // Step 3: Compute determinant (t)
         // t = montgomery_reduce(r[2]*a[1] + r[1]*a[2]);
-        t = montgomery_reduce(r[rPos + 2] * a1 + r[rPos + 1] * a2);
+        short t = montgomery_reduce(r2 * a1 + r1 * a2);
 
         // t = montgomery_reduce(t*zeta + r[0]*a[0]);
-        t = montgomery_reduce(t * zeta + r[rPos] * a0);
+        t = montgomery_reduce(t * zeta + r0 * a0);
 
         // Step 4: Check if invertible
         if (t == 0)
@@ -389,13 +300,13 @@ public class NTRUPlusEngine
 
         // Step 6: Apply final scaling
         // r[0] = montgomery_reduce(r[0] * t);
-        r[rPos] = montgomery_reduce(r[rPos] * t);
+        r[rPos] = montgomery_reduce(r0 * t);
 
         // r[1] = montgomery_reduce(r[1] * t);
-        r[rPos + 1] = montgomery_reduce(r[rPos + 1] * t);
+        r[rPos + 1] = montgomery_reduce(r1 * t);
 
         // r[2] = montgomery_reduce(r[2] * t);
-        r[rPos + 2] = montgomery_reduce(r[rPos + 2] * t);
+        r[rPos + 2] = montgomery_reduce(r2 * t);
 
         return 0; // Success
     }
@@ -499,57 +410,15 @@ public class NTRUPlusEngine
      */
     private void poly_basemul(short[] r, short[] a, short[] b)
     {
-        if (n == 768)
+        int doubleBlockSize = blockSize << 1;
+        int zetaOffset = params.getZetasOffset();
+        for (int i = 0; i < n / doubleBlockSize; ++i)
         {
-            // N=768: 8-coefficient blocks divided into two 4-coefficient parts
-            // Zeta offset: 96
-            for (int i = 0; i < n / 8; ++i)
-            {
-                // First half of block with positive zeta
-                basemul(r, 8 * i, a, 8 * i, b, 8 * i, zetas[96 + i]);
+            // First half of block with positive zeta
+            basemul(r, doubleBlockSize * i, a, doubleBlockSize * i, b, doubleBlockSize * i, zetas[zetaOffset + i]);
 
-                // Second half of block with negative zeta
-                basemul(r, 8 * i + 4, a, 8 * i + 4, b, 8 * i + 4, (short)-zetas[96 + i]);
-            }
-
-        }
-        else if (n == 864)
-        {
-            // N=864: 6-coefficient blocks divided into two 3-coefficient parts
-            // Zeta offset: 144
-            for (int i = 0; i < n / 6; ++i)
-            {
-                // First half of block with positive zeta
-                basemul(r, 6 * i, a, 6 * i, b, 6 * i, zetas[144 + i]);
-
-                // Second half of block with negative zeta
-                basemul(r, 6 * i + 3, a, 6 * i + 3, b, 6 * i + 3, (short)-zetas[144 + i]);
-            }
-
-        }
-        else if (n == 1152)
-        {
-            // N=1152: 8-coefficient blocks divided into two 4-coefficient parts
-            // Zeta offset: 144
-            for (int i = 0; i < n / 8; ++i)
-            {
-                // First half of block with positive zeta
-                basemul(r, 8 * i,
-                    a, 8 * i,
-                    b, 8 * i,
-                    zetas[144 + i]);
-
-                // Second half of block with negative zeta
-                basemul(r, 8 * i + 4,
-                    a, 8 * i + 4,
-                    b, 8 * i + 4,
-                    (short)-zetas[144 + i]);
-            }
-
-        }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported N value: " + n);
+            // Second half of block with negative zeta
+            basemul(r, doubleBlockSize * i + blockSize, a, doubleBlockSize * i + blockSize, b, doubleBlockSize * i + blockSize, (short)-zetas[zetaOffset + i]);
         }
     }
 
@@ -560,14 +429,16 @@ public class NTRUPlusEngine
                          short[] b, int bPos, short zeta)
     {
         int blockSize = (n == 864) ? 3 : 4;
-
+        short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2];
+        short b0 = b[bPos], b1 = b[bPos + 1], b2 = b[bPos + 2];
+        int temp;
         if (blockSize == 4)
         {
             // 4-coefficient multiplication
-            short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2], a3 = a[aPos + 3];
-            short b0 = b[bPos], b1 = b[bPos + 1], b2 = b[bPos + 2], b3 = b[bPos + 3];
+            short a3 = a[aPos + 3];
+            short b3 = b[bPos + 3];
 
-            int temp = (int)a1 * b3 + (int)a2 * b2 + (int)a3 * b1;
+            temp = (int)a1 * b3 + (int)a2 * b2 + (int)a3 * b1;
             r[rPos] = montgomery_reduce(temp);
 
             temp = (int)a2 * b3 + (int)a3 * b2;
@@ -576,48 +447,36 @@ public class NTRUPlusEngine
             temp = (int)a3 * b3;
             r[rPos + 2] = montgomery_reduce(temp);
 
-            temp = (int)r[rPos] * zeta + (int)a0 * b0;
-            r[rPos] = montgomery_reduce(temp);
-
-            temp = (int)r[rPos + 1] * zeta + (int)a0 * b1 + (int)a1 * b0;
-            r[rPos + 1] = montgomery_reduce(temp);
-
             temp = (int)r[rPos + 2] * zeta + (int)a0 * b2 + (int)a1 * b1 + (int)a2 * b0;
             r[rPos + 2] = montgomery_reduce(temp);
 
             temp = (int)a0 * b3 + (int)a1 * b2 + (int)a2 * b1 + (int)a3 * b0;
             r[rPos + 3] = montgomery_reduce(temp);
 
-            r[rPos] = montgomery_reduce((int)r[rPos] * Rsq);
-            r[rPos + 1] = montgomery_reduce((int)r[rPos + 1] * Rsq);
-            r[rPos + 2] = montgomery_reduce((int)r[rPos + 2] * Rsq);
             r[rPos + 3] = montgomery_reduce((int)r[rPos + 3] * Rsq);
         }
         else
         {
             // 3-coefficient multiplication for N=864
-            short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2];
-            short b0 = b[bPos], b1 = b[bPos + 1], b2 = b[bPos + 2];
-
-            int temp = (int)a2 * b1 + (int)a1 * b2;
+            temp = (int)a2 * b1 + (int)a1 * b2;
             r[rPos] = montgomery_reduce(temp);
 
             temp = (int)a2 * b2;
             r[rPos + 1] = montgomery_reduce(temp);
 
-            temp = (int)r[rPos] * zeta + (int)a0 * b0;
-            r[rPos] = montgomery_reduce(temp);
-
-            temp = (int)r[rPos + 1] * zeta + (int)a0 * b1 + (int)a1 * b0;
-            r[rPos + 1] = montgomery_reduce(temp);
-
             temp = (int)a2 * b0 + (int)a1 * b1 + (int)a0 * b2;
             r[rPos + 2] = montgomery_reduce(temp);
-
-            r[rPos] = montgomery_reduce((int)r[rPos] * Rsq);
-            r[rPos + 1] = montgomery_reduce((int)r[rPos + 1] * Rsq);
-            r[rPos + 2] = montgomery_reduce((int)r[rPos + 2] * Rsq);
         }
+
+        temp = (int)r[rPos] * zeta + (int)a0 * b0;
+        r[rPos] = montgomery_reduce(temp);
+
+        temp = (int)r[rPos + 1] * zeta + (int)a0 * b1 + (int)a1 * b0;
+        r[rPos + 1] = montgomery_reduce(temp);
+
+        r[rPos] = montgomery_reduce((int)r[rPos] * Rsq);
+        r[rPos + 1] = montgomery_reduce((int)r[rPos + 1] * Rsq);
+        r[rPos + 2] = montgomery_reduce((int)r[rPos + 2] * Rsq);
     }
 
     /**
@@ -654,12 +513,7 @@ public class NTRUPlusEngine
      */
     public void hash_f(byte[] buf, int bufOff, byte[] msg)
     {
-        byte[] data = new byte[1 + POLYBYTES];
-        //data[0] = 0x00;
-        System.arraycopy(msg, 0, data, 1, POLYBYTES);
-
-        // Use the shake256 implementation with Bouncy Castle
-        shake256(buf, bufOff, 32, data, POLYBYTES + 1);
+        shake256(buf, bufOff, 32, (byte)0x00, msg, 0, POLYBYTES);
     }
 
     /**
@@ -673,7 +527,6 @@ public class NTRUPlusEngine
      */
     public int geng_derand(short[] g, short[] ginv, byte[] coins)
     {
-
         // Allocate buffer for SHAKE256 output
         byte[] buf = new byte[n / 4]; // NTRUPLUS_N / 4
 
@@ -705,11 +558,8 @@ public class NTRUPlusEngine
      * @param g    Secret polynomial g (in NTT domain)
      * @param ginv Multiplicative inverse of g (in NTT domain)
      */
-    public void crypto_kem_keypair_derand(byte[] pk, byte[] sk,
-                                          short[] f, short[] finv,
-                                          short[] g, short[] ginv)
+    public void crypto_kem_keypair_derand(byte[] pk, byte[] sk, short[] f, short[] finv, short[] g, short[] ginv)
     {
-
         // Create temporary polynomials for computation
         short[] h = new short[n];
         short[] hinv = new short[n];
@@ -778,20 +628,9 @@ public class NTRUPlusEngine
      */
     private void poly_sotp_encode(short[] r, byte[] msg, byte[] buf)
     {
-
         int eighthN = n / 8;
-        int quarterN = n / 4;
-
-        byte[] tmp = new byte[quarterN];
-
-        for (int i = 0; i < eighthN; i++)
-        {
-            tmp[i] = (byte)(buf[i] ^ msg[i]);
-        }
-
-        System.arraycopy(buf, eighthN, tmp, eighthN, quarterN - eighthN);
-
-        poly_cbd1(r, tmp, 0);
+        Bytes.xorTo(eighthN, msg, buf);
+        poly_cbd1(r, buf, 0);
     }
 
     /**
@@ -799,7 +638,6 @@ public class NTRUPlusEngine
      */
     private void poly_frombytes(short[] r, byte[] a, int aPos)
     {
-
         for (int i = 0; i < n / 2; i++)
         {
             r[2 * i] = (short)(((a[aPos + 3 * i] & 0xFF) | ((a[aPos + 3 * i + 1] & 0xFF) << 8)) & 0xFFF);
@@ -823,76 +661,23 @@ public class NTRUPlusEngine
      */
     private void poly_basemul_add(short[] r, short[] a, short[] b, short[] c)
     {
-
-        if (n == 768)
+        int doubleBlockSize = blockSize << 1;
+        int zetasOffset = params.getZetasOffset();
+        for (int i = 0; i < n / doubleBlockSize; ++i)
         {
-            // N=768: 8-coefficient blocks divided into two 4-coefficient parts
-            // Zeta offset: 96
-            for (int i = 0; i < n / 8; ++i)
-            {
-                // First half of block with positive zeta
-                basemul_add(r, 8 * i,
-                    a, 8 * i,
-                    b, 8 * i,
-                    c, 8 * i,
-                    zetas[96 + i], 4);
+            // First half of block with positive zeta
+            basemul_add(r, doubleBlockSize * i,
+                a, doubleBlockSize * i,
+                b, doubleBlockSize * i,
+                c, doubleBlockSize * i,
+                zetas[zetasOffset + i], blockSize);
 
-                // Second half of block with negative zeta
-                basemul_add(r, 8 * i + 4,
-                    a, 8 * i + 4,
-                    b, 8 * i + 4,
-                    c, 8 * i + 4,
-                    (short)-zetas[96 + i], 4);
-            }
-
-        }
-        else if (n == 864)
-        {
-            // N=864: 6-coefficient blocks divided into two 3-coefficient parts
-            // Zeta offset: 144
-            for (int i = 0; i < n / 6; ++i)
-            {
-                // First half of block with positive zeta
-                basemul_add(r, 6 * i,
-                    a, 6 * i,
-                    b, 6 * i,
-                    c, 6 * i,
-                    zetas[144 + i], 3);
-
-                // Second half of block with negative zeta
-                basemul_add(r, 6 * i + 3,
-                    a, 6 * i + 3,
-                    b, 6 * i + 3,
-                    c, 6 * i + 3,
-                    (short)-zetas[144 + i], 3);
-            }
-
-        }
-        else if (n == 1152)
-        {
-            // N=1152: 8-coefficient blocks divided into two 4-coefficient parts
-            // Zeta offset: 144
-            for (int i = 0; i < n / 8; ++i)
-            {
-                // First half of block with positive zeta
-                basemul_add(r, 8 * i,
-                    a, 8 * i,
-                    b, 8 * i,
-                    c, 8 * i,
-                    zetas[144 + i], 4);
-
-                // Second half of block with negative zeta
-                basemul_add(r, 8 * i + 4,
-                    a, 8 * i + 4,
-                    b, 8 * i + 4,
-                    c, 8 * i + 4,
-                    (short)-zetas[144 + i], 4);
-            }
-
-        }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported N value: " + n);
+            // Second half of block with negative zeta
+            basemul_add(r, doubleBlockSize * i + blockSize,
+                a, doubleBlockSize * i + blockSize,
+                b, doubleBlockSize * i + blockSize,
+                c, doubleBlockSize * i + blockSize,
+                (short)-zetas[zetasOffset + i], blockSize);
         }
     }
 
@@ -913,7 +698,6 @@ public class NTRUPlusEngine
         if (blockSize == 4)
         {
             // 4-coefficient version for N=768 and N=1152
-
             // Extract coefficients
             short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2], a3 = a[aPos + 3];
             short b0 = b[bPos], b1 = b[bPos + 1], b2 = b[bPos + 2], b3 = b[bPos + 3];
@@ -1002,10 +786,6 @@ public class NTRUPlusEngine
             r[rPos + 2] = montgomery_reduce(temp);
 
         }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported block size: " + blockSize);
-        }
     }
 
     /**
@@ -1014,7 +794,6 @@ public class NTRUPlusEngine
     public void crypto_kem_enc_derand(byte[] ct, int ctPos, byte[] ss, int ssPos,
                                       byte[] pk, int pkPos, byte[] coins, int coinsPos)
     {
-
         int symBytes = params.getSymBytes();
         int ssBytes = params.getSsBytes();
         int polyBytes = params.getPolyBytes();
@@ -1059,7 +838,6 @@ public class NTRUPlusEngine
 
         // Copy first ssBytes of buf1 to ss
         System.arraycopy(buf1, 0, ss, ssPos, ssBytes);
-
     }
 
     /**
@@ -1081,14 +859,6 @@ public class NTRUPlusEngine
     }
 
     /**
-     * Computes inverse of number-theoretic transform (NTT)
-     */
-    private void poly_invntt(short[] r, short[] a)
-    {
-        invntt(r, a);
-    }
-
-    /**
      * Inverse number-theoretic transform (NTT) in R_q.
      * Transforms the NTT representation back to the coefficient representation in R_q.
      * <p>
@@ -1098,157 +868,68 @@ public class NTRUPlusEngine
      * - N=1152: 4-coefficient blocks, step 4-32, multiplication by 3 in second loop
      *
      * @param r Output vector (coefficient representation)
-     * @param a Input vector (NTT representation)
      */
-    private void invntt(short[] r, short[] a)
+    private void poly_invntt(short[] r)
     {
         short t1, t2, t3;
         short zeta1, zeta2;
-        int k = n == 768 ? 191 : 287;
-
-        // Copy input to output
-        System.arraycopy(a, 0, r, 0, n);
-
-        // First loop: butterfly operations with decreasing step sizes
+        short a1, a2;
+        int k;
         if (n == 768)
         {
-            // N=768: step = 4, 8, 16, 32, 64
-            for (int step = 4; step <= 64; step <<= 1)
-            {
-                for (int start = 0; start < n; start += (step << 1))
-                {
-                    zeta1 = zetas[k--];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = r[i + step];
-                        r[i + step] = fqmul(zeta1, (short)(t1 - r[i]));
-                        r[i] = barrett_reduce((short)(r[i] + t1));
-                    }
-                }
-            }
-        }
-        else if (n == 864)
-        {
-            // N=864: step = 3, 6, 12, 24
-            for (int step = 3; step <= 24; step <<= 1)
-            {
-                for (int start = 0; start < n; start += (step << 1))
-                {
-                    zeta1 = zetas[k--];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = r[i + step];
-                        r[i + step] = barrett_reduce(fqmul(zeta1, (short)(t1 - r[i])));
-                        r[i] = barrett_reduce((short)(r[i] + t1));
-                    }
-                }
-            }
+            a1 = (short)-811;
+            a2 = (short)-1622;
+            k = 191;
         }
         else
-        { // n == 1152
-            // N=1152: step = 4, 8, 16, 32
-            for (int step = 4; step <= 32; step <<= 1)
-            {
-                for (int start = 0; start < n; start += (step << 1))
-                {
-                    zeta1 = zetas[k--];
+        {
+            a1 = (short)-1693;
+            a2 = (short)71;
+            k = 287;
+        }
 
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = r[i + step];
-                        r[i + step] = fqmul(zeta1, (short)(t1 - r[i]));
-                        r[i] = barrett_reduce((short)(r[i] + t1));
-                    }
+        int minStep = params.getMinStep();
+        int baseStep = params.getBaseStep();
+        // N=768: step = 4, 8, 16, 32, 64
+        for (; minStep <= baseStep; minStep <<= 1)
+        {
+            for (int start = 0; start < n; start += (minStep << 1))
+            {
+                zeta1 = zetas[k--];
+                for (int i = start; i < start + minStep; i++)
+                {
+                    t1 = r[i + minStep];
+                    r[i + minStep] = fqmul(zeta1, (short)(t1 - r[i]));
+                    r[i] = barrett_reduce((short)(r[i] + t1));
                 }
             }
         }
-
-        // Second loop: larger block processing
-        if (n == 768)
+        for (int step = baseStep << 1; step <= n / 6; step *= 3)
         {
-            // N=768: process 384-coefficient blocks
-            for (int start = 0; start < n; start += 384)
+            for (int start = 0; start < n; start += 3 * step)
             {
                 zeta2 = zetas[k--];
                 zeta1 = zetas[k--];
 
-                for (int i = start; i < start + 128; i++)
+                for (int i = start; i < start + step; i++)
                 {
-                    t1 = fqmul(omega, (short)(r[i + 128] - r[i]));
-                    t2 = fqmul(zeta1, (short)(r[i + 256] - r[i] + t1));
-                    t3 = fqmul(zeta2, (short)(r[i + 256] - r[i + 128] - t1));
+                    t1 = fqmul(omega, (short)(r[i + step] - r[i]));
+                    t2 = fqmul(zeta1, (short)(r[i + 2 * step] - r[i] + t1));
+                    t3 = fqmul(zeta2, (short)(r[i + 2 * step] - r[i + step] - t1));
 
-                    r[i] = (short)(r[i] + r[i + 128] + r[i + 256]);
-                    r[i + 128] = t2;
-                    r[i + 256] = t3;
-                }
-            }
-        }
-        else if (n == 864)
-        {
-            // N=864: step = 48, 144, 432 (multiply by 3)
-            for (int step = 48; step <= n / 6; step *= 3)
-            {
-                for (int start = 0; start < n; start += 3 * step)
-                {
-                    zeta2 = zetas[k--];
-                    zeta1 = zetas[k--];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = fqmul(omega, (short)(r[i + step] - r[i]));
-                        t2 = fqmul(zeta1, (short)(r[i + 2 * step] - r[i] + t1));
-                        t3 = fqmul(zeta2, (short)(r[i + 2 * step] - r[i + step] - t1));
-
-                        r[i] = barrett_reduce((short)(r[i] + r[i + step] + r[i + 2 * step]));
-                        r[i + step] = t2;
-                        r[i + 2 * step] = t3;
-                    }
-                }
-            }
-        }
-        else
-        { // n == 1152
-            // N=1152: step = 64, 192, 576 (multiply by 3)
-            for (int step = 64; step <= n / 6; step *= 3)
-            {
-                for (int start = 0; start < n; start += 3 * step)
-                {
-                    zeta2 = zetas[k--];
-                    zeta1 = zetas[k--];
-
-                    for (int i = start; i < start + step; i++)
-                    {
-                        t1 = fqmul(omega, (short)(r[i + step] - r[i]));
-                        t2 = fqmul(zeta1, (short)(r[i + 2 * step] - r[i] + t1));
-                        t3 = fqmul(zeta2, (short)(r[i + 2 * step] - r[i + step] - t1));
-
-                        r[i] = barrett_reduce((short)(r[i] + r[i + step] + r[i + 2 * step]));
-                        r[i + step] = t2;
-                        r[i + 2 * step] = t3;
-                    }
+                    r[i] = barrett_reduce((short)(r[i] + r[i + step] + r[i + 2 * step]));
+                    r[i + step] = t2;
+                    r[i + 2 * step] = t3;
                 }
             }
         }
 
-        // Final step: combine halves with specific constants
         for (int i = 0; i < n / 2; i++)
         {
             t1 = (short)(r[i] + r[i + n / 2]);
             t2 = fqmul((short)-1665, (short)(r[i] - r[i + n / 2]));
-
-            if (n == 768)
-            {
-                r[i] = fqmul((short)-811, (short)(t1 - t2));
-                r[i + n / 2] = fqmul((short)-1622, t2);
-            }
-            else
-            { // n == 864 or n == 1152
-                r[i] = fqmul((short)-1693, (short)(t1 - t2));
-                r[i + n / 2] = fqmul((short)71, t2);
-            }
+            r[i] = fqmul(a1, (short)(t1 - t2));
+            r[i + n / 2] = fqmul(a2, t2);
         }
     }
 
@@ -1257,7 +938,6 @@ public class NTRUPlusEngine
      */
     private void poly_crepmod3(short[] r, short[] a)
     {
-
         for (int i = 0; i < n; i++)
         {
             r[i] = crepmod3(a[i]);
@@ -1274,13 +954,11 @@ public class NTRUPlusEngine
         final short v = (short)(((1 << 15) + 3 / 2) / 3);
 
         // Reduce a to range [0, q-1]
-        a += (short)((a >> 15) & q);
         // Center around 0: subtract (q+1)/2
-        a -= (short)((q + 1) / 2);
+        a += (short)(((a >> 15) & q) - ((q + 1) / 2));
         // If negative, add q back
-        a += (short)((a >> 15) & q);
         // Subtract (q-1)/2 to get centered around 0
-        a -= (short)((q - 1) / 2);
+        a += (short)(((a >> 15) & q) - ((q - 1) / 2));
 
         // Barrett reduction for mod 3
         t = (short)((v * a + (1 << 14)) >> 15);
@@ -1391,7 +1069,7 @@ public class NTRUPlusEngine
 
         // m1 = c * f
         poly_basemul(m1, c, f);
-        poly_invntt(m1, m1); // Convert from NTT domain
+        poly_invntt(m1); // Convert from NTT domain
         poly_crepmod3(m1, m1); // Reduce mod 3
 
         // m2 = NTT(m1)
