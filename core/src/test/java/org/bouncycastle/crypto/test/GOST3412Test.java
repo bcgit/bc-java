@@ -87,7 +87,7 @@ public class GOST3412Test
     public void performTest()
         throws Exception
     {
-        //super.performTest();
+        super.performTest();
 
         ctrTest();
 //        cfbTest();
