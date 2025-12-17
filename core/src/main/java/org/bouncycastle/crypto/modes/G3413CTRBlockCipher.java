@@ -73,7 +73,6 @@ public class G3413CTRBlockCipher
         CipherParameters params)
         throws IllegalArgumentException
     {
-
         if (params instanceof ParametersWithIV)
         {
             ParametersWithIV ivParam = (ParametersWithIV)params;
@@ -92,7 +91,7 @@ public class G3413CTRBlockCipher
             {
                 CTR[i] = 0;
             }
-
+    
             // if null it's an IV changed only.
             if (ivParam.getParameters() != null)
             {
@@ -198,7 +197,6 @@ public class G3413CTRBlockCipher
             {
                 throw new IllegalStateException("attempt to process too many blocks");
             }
-            CTR[start]++;
         }
     }
 
