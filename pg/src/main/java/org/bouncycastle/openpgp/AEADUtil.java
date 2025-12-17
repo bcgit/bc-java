@@ -22,8 +22,8 @@ class AEADUtil
      */
     static byte[] deriveMessageKeyAndIv(int aeadAlgo, int cipherAlgo, byte[] sessionKey, byte[] salt, byte[] hkdfInfo)
     {
-        // Is it okay to have this common logic be implemented using BCs lightweight API?
-        // Should we move it to BcAEADUtil instead and also provide a JCE implementation?
+        // Since JCAs HKDFSpi internally is based on the HDKFBytesGenerator, we don't need to create a dedicated
+        //  JCA/JCE implementation.
         HKDFParameters hkdfParameters = new HKDFParameters(sessionKey, salt, hkdfInfo);
         HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest());
 
