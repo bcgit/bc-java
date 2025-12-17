@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.hash2curve.HashToEllipticCurve;
 import org.bouncycastle.crypto.hash2curve.HashToField;
 import org.bouncycastle.crypto.hash2curve.MapToCurve;
 import org.bouncycastle.crypto.hash2curve.HashToCurveProfile;
+import org.bouncycastle.crypto.hash2curve.data.AffineXY;
 import org.bouncycastle.crypto.hash2curve.impl.Elligator2MapToCurve;
 import org.bouncycastle.crypto.hash2curve.impl.MontgomeryCurveProcessor;
 import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
@@ -87,14 +88,14 @@ public class HashToEllipticCurveTest extends TestCase {
 
       ECPoint point = executeAndLogResult("Results for msg: " + vector.getMsg(), vector.getMsg(), h2c,
         hexStrip(vector.getP().get("x")), hexStrip(vector.getP().get("y")));
-      compare(vector.getP().get("x"), vector.getP().get("y"), point);
+      compare(vector.getP().get("x"), vector.getP().get("y"), h2c.getAffineXY(point));
     }
 
   }
 
-  private void compare(String x, String y, ECPoint point) {
-    String resultX = point.getXCoord().toBigInteger().toString(16);
-    String resultY = point.getYCoord().toBigInteger().toString(16);
+  private void compare(String x, String y, AffineXY point) {
+    String resultX = point.getX().toString(16);
+    String resultY = point.getY().toString(16);
     hexCompare(hexStrip(x), resultX);
     hexCompare(hexStrip(y), resultY);
   }
@@ -104,14 +105,8 @@ public class HashToEllipticCurveTest extends TestCase {
     assertEquals(vectorVal.substring(startIndex), resultVal);
   }
 
-  public ECPoint executeAndLogResult(String description, String msg, HashToEllipticCurve h2c, String px, String py) throws Exception {
-    ECPoint ecPoint = h2c.hashToEllipticCurve(msg.getBytes(StandardCharsets.UTF_8));
-    // TODO Note that curve25519 creates correct test vector results, but invalid points for curve25519
-    // For debugging. To be deleted
-    final boolean valid = ecPoint.isValid();
-    String x = ecPoint.getXCoord().toString();
-    String y = ecPoint.getYCoord().toString();
-    return ecPoint;
+  public ECPoint executeAndLogResult(String description, String msg, TestHashToEllipticCurve h2c, String px, String py) throws Exception {
+    return h2c.hashToEllipticCurve(msg.getBytes(StandardCharsets.UTF_8));
   }
 
   BigInteger h2bi(String hexStr) {
@@ -136,8 +131,11 @@ public class HashToEllipticCurveTest extends TestCase {
 
   public static class TestHashToEllipticCurve extends HashToEllipticCurve {
 
-    private TestHashToEllipticCurve(HashToField hashToField, MapToCurve mapToCurve, CurveProcessor curveProcessor) {
+    private ECCurve curve;
+
+    private TestHashToEllipticCurve(ECCurve curve, HashToField hashToField, MapToCurve mapToCurve, CurveProcessor curveProcessor) {
       super(hashToField, mapToCurve, curveProcessor);
+      this.curve = curve;
     }
 
     public static TestHashToEllipticCurve getInstance(final HashToCurveProfile profile, String dst) {
@@ -147,19 +145,19 @@ public class HashToEllipticCurveTest extends TestCase {
       switch (profile) {
       case P256_XMD_SHA_256_SSWU_RO_:
         curve = new SecP256R1Curve();
-        return new TestHashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA256Digest(),
+        return new TestHashToEllipticCurve(curve, new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA256Digest(),
             profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()), noCofactorProcessor);
       case P384_XMD_SHA_384_SSWU_RO_:
         curve = new SecP384R1Curve();
-        return new TestHashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA384Digest(),
+        return new TestHashToEllipticCurve(curve, new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA384Digest(),
             profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()), noCofactorProcessor);
       case P521_XMD_SHA_512_SSWU_RO_:
         curve = new SecP521R1Curve();
-        return new TestHashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
+        return new TestHashToEllipticCurve(curve, new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
             profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()), noCofactorProcessor);
       case curve25519_XMD_SHA_512_ELL2_RO_:
         curve = new Curve25519();
-        return new TestHashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
+        return new TestHashToEllipticCurve(curve, new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
             profile.getK()), profile.getL()), new Elligator2MapToCurve(curve, profile.getZ(), BigInteger.valueOf(
             profile.getmJ()), BigInteger.valueOf(profile.getmK())),
             new MontgomeryCurveProcessor(curve, profile.getmJ(), profile.getmK(), profile.getH()));
@@ -188,6 +186,14 @@ public class HashToEllipticCurveTest extends TestCase {
 
     public void setNextU1(final BigInteger nextU1) {
       this.nextU1 = nextU1;
+    }
+
+    public CurveProcessor getCurveProcessor() {
+      return curveProcessor;
+    }
+
+    public ECCurve getCurve() {
+      return curve;
     }
 
     BigInteger getU0(BigInteger[][] u) {

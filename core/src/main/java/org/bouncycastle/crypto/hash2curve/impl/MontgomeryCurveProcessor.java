@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.hash2curve.impl;
 
 import org.bouncycastle.crypto.hash2curve.CurveProcessor;
+import org.bouncycastle.crypto.hash2curve.data.AffineXY;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -30,11 +31,15 @@ public class MontgomeryCurveProcessor implements CurveProcessor {
 
   // Effective cofactor h_eff (e.g. 8 for curve25519_XMD:SHA-512_ELL2_RO_)
   private final BigInteger hEff;
+  private final int J;
+  private final int K;
 
   public MontgomeryCurveProcessor(ECCurve curve,
       int J,
       int K,
       int hEff) {
+    this.J = J;
+    this.K = K;
     this.curve = curve;
     this.p = curve.getField().getCharacteristic();
     BigInteger Binv = BigInteger.valueOf(K).modInverse(p);
@@ -44,102 +49,137 @@ public class MontgomeryCurveProcessor implements CurveProcessor {
     this.hEff = BigInteger.valueOf(hEff);
   }
 
-
+  /**
+   * Adds two elliptic curve points on the Montgomery curve model and returns the resulting point.
+   * The method internally converts Montgomery coordinates to Weierstrass coordinates
+   * to perform the group law, then converts the result back to Montgomery coordinates.
+   *
+   * @param P the first elliptic curve point on the Montgomery curve model
+   * @param Q the second elliptic curve point on the Montgomery curve model
+   * @return the resulting elliptic curve point on the Montgomery curve model after addition
+   */
   @Override
   public ECPoint add(final ECPoint P, final ECPoint Q) {
-    return addInternal(P, Q);
+    // Convert Montgomery-coded inputs to real Weierstrass ECPoints
+    final ECPoint Pw = Fmtow(P).toPoint(curve);
+    final ECPoint Qw = Fmtow(Q).toPoint(curve);
+
+    // Do group law using BC's Weierstrass implementation
+    final ECPoint Rw = Pw.add(Qw).normalize();
+
+    // Convert back to Montgomery coordinates, then pack into an ECPoint carrier
+    return Fwtom(Rw).toPoint(curve);
   }
 
+  /**
+   * Clears the cofactor of the given elliptic curve point using the efficient cofactor value.
+   * If the input point is at infinity, the same point is returned. Otherwise, it transforms
+   * the point into the short-Weierstrass model, multiplies by the effective cofactor, and
+   * normalizes the resulting point.
+   *
+   * @param P the elliptic curve point on the Montgomery curve model
+   * @return the resulting elliptic curve point in the short-Weierstrass model with the cofactor cleared
+   */
   @Override
   public ECPoint clearCofactor(final ECPoint P) {
     if (P.isInfinity()) {
       return P;
     }
-    // Generic double-and-add on top of our explicit addInternal
-    return scalarMul(hEff, P);
+    final ECPoint Pw = Fmtow(P).toPoint(curve);
+    return Pw.multiply(hEff).normalize();
   }
 
-  // ---------- internal helpers ----------
-
-  private ECPoint addInternal(final ECPoint P, final ECPoint Q) {
-    if (P.isInfinity()) {
-      return Q;
-    }
-    if (Q.isInfinity()) {
-      return P;
-    }
-
-    // Work in affine coords
-    ECPoint Pn = P.normalize();
-    ECPoint Qn = Q.normalize();
-
-    BigInteger x1 = Pn.getAffineXCoord().toBigInteger();
-    BigInteger y1 = Pn.getAffineYCoord().toBigInteger();
-    BigInteger x2 = Qn.getAffineXCoord().toBigInteger();
-    BigInteger y2 = Qn.getAffineYCoord().toBigInteger();
-
-    // P + (-P) = O
-    if (x1.equals(x2) && y1.add(y2).mod(p).equals(BigInteger.ZERO)) {
-      return curve.getInfinity();
-    }
-
-    BigInteger lambda;
-    if (x1.equals(x2) && y1.equals(y2)) {
-      // Point doubling on y^2 = x^3 + a2 x^2 + a4 x + a6
-      // lambda = (3*x1^2 + 2*a2*x1 + a4) / (2*y1)
-      BigInteger x1Sq = x1.multiply(x1).mod(p);
-      BigInteger num = x1Sq.multiply(BigInteger.valueOf(3)).mod(p);
-      num = num.add(a2.multiply(x1).multiply(BigInteger.valueOf(2))).mod(p);
-      num = num.add(a4).mod(p);
-
-      BigInteger den = y1.multiply(BigInteger.valueOf(2)).mod(p);
-      lambda = num.multiply(inv(den)).mod(p);
-
-    } else {
-      // Point addition
-      // lambda = (y2 - y1) / (x2 - x1)
-      BigInteger num = y2.subtract(y1).mod(p);
-      BigInteger den = x2.subtract(x1).mod(p);
-      lambda = num.multiply(inv(den)).mod(p);
-    }
-
-    // x3 = lambda^2 - a2 - x1 - x2
-    BigInteger lambdaSq = lambda.multiply(lambda).mod(p);
-    BigInteger x3 = lambdaSq.subtract(a2).subtract(x1).subtract(x2).mod(p);
-
-    // y3 = -y1 - lambda*(x3 - x1)
-    BigInteger y3 = x3.subtract(x1).mod(p);
-    y3 = lambda.multiply(y3).mod(p);
-    y3 = y1.negate().subtract(y3).mod(p);
-
-    x3 = x3.mod(p);
-    y3 = y3.mod(p);
-
-    return curve.createPoint(x3, y3);
-
+  @Override
+  public AffineXY mapToAffineXY(final ECPoint p) {
+    return Fwtom(p.normalize());
   }
 
-  private ECPoint scalarMul(final BigInteger k, final ECPoint P) {
-    if (k.signum() == 0 || P.isInfinity()) {
-      return curve.getInfinity();
-    }
+  /**
+   * Convert Montgomery-model coordinates (xM, yM) to the corresponding
+   * short-Weierstrass coordinates (xW, yW) using the standard change of variables:
+   *
+   *   xW = xM + A/3
+   *   yW = yM / K
+   *
+   * where A = J/K (mod p) and B = 1/K^2 (so sqrt(B) = 1/K exists).
+   *
+   * IMPORTANT: This returns coordinates only. It does NOT create a BC ECPoint.
+   */
+  private AffineXY Fmtow(final BigInteger xM, final BigInteger yM) {
+    final BigInteger inv3 = BigInteger.valueOf(3).modInverse(p);
 
-    ECPoint R = curve.getInfinity();
-    ECPoint N = P;
+    // A = J/K
+    final BigInteger A = BigInteger.valueOf(J).mod(p)
+        .multiply(BigInteger.valueOf(K).mod(p).modInverse(p))
+        .mod(p);
 
-    for (int i = k.bitLength() - 1; i >= 0; i--) {
-      // R = 2R
-      R = addInternal(R, R);
-      if (k.testBit(i)) {
-        R = addInternal(R, N);
-      }
-    }
-    return R;
+    // xW = xM + A/3
+    final BigInteger xW = xM.mod(p).add(A.multiply(inv3).mod(p)).mod(p);
 
+    // yW = yM / K
+    final BigInteger invK = BigInteger.valueOf(K).mod(p).modInverse(p);
+    final BigInteger yW = yM.mod(p).multiply(invK).mod(p);
+
+    return new AffineXY(xW, yW);
   }
 
-  private BigInteger inv(final BigInteger x) {
-    // We rely on BigInteger.modInverse here; timing is not guaranteed constant.
-    return x.modInverse(p);
+  /**
+   * Convert short-Weierstrass coordinates (xW, yW) to Montgomery-model coordinates (xM, yM):
+   *
+   *   xM = xW - A/3
+   *   yM = yW * K
+   *
+   * IMPORTANT: This returns coordinates only. It does NOT create a BC ECPoint.
+   */
+  private AffineXY Fwtom(final BigInteger xW, final BigInteger yW) {
+    final BigInteger inv3 = BigInteger.valueOf(3).modInverse(p);
+
+    // A = J/K
+    final BigInteger A = BigInteger.valueOf(J).mod(p)
+        .multiply(BigInteger.valueOf(K).mod(p).modInverse(p))
+        .mod(p);
+
+    // xM = xW - A/3
+    final BigInteger xM = xW.mod(p).subtract(A.multiply(inv3).mod(p)).mod(p);
+
+    // yM = yW * K
+    final BigInteger yM = yW.mod(p).multiply(BigInteger.valueOf(K).mod(p)).mod(p);
+
+    return new AffineXY(xM, yM);
   }
+
+  /**
+   * Converts the given elliptic curve point from its Montgomery-model representation
+   * to the corresponding short-Weierstrass affine coordinates. If the input point is
+   * at infinity, it returns coordinates (0, 0). Otherwise, the point is normalized
+   * before extracting and transforming its affine coordinates.
+   *
+   * @param Pm the elliptic curve point on the Montgomery model to be converted
+   * @return the affine coordinates in the short-Weierstrass representation
+   */
+  private AffineXY Fmtow(final ECPoint Pm) {
+    if (Pm.isInfinity()) {
+      return new AffineXY(BigInteger.ZERO, BigInteger.ZERO);
+    }
+    final ECPoint Pn = Pm.normalize();
+    return Fmtow(Pn.getAffineXCoord().toBigInteger(), Pn.getAffineYCoord().toBigInteger());
+  }
+
+  /**
+   * Converts the given elliptic curve point from its short-Weierstrass affine coordinates
+   * to the corresponding Montgomery-model representation. If the point is at infinity,
+   * it returns coordinates (0, 0). Otherwise, the point is normalized before extracting
+   * and transforming its affine coordinates.
+   *
+   * @param Pw the elliptic curve point in the short-Weierstrass representation to be converted
+   * @return the affine coordinates in the Montgomery-model representation
+   */
+  private AffineXY Fwtom(final ECPoint Pw) {
+    if (Pw.isInfinity()) {
+      return new AffineXY(BigInteger.ZERO, BigInteger.ZERO);
+    }
+    final ECPoint Pn = Pw.normalize();
+    return Fwtom(Pn.getAffineXCoord().toBigInteger(), Pn.getAffineYCoord().toBigInteger());
+  }
+
 }

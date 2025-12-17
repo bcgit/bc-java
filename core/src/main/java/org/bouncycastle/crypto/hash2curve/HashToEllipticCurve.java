@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.hash2curve;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.hash2curve.data.AffineXY;
 import org.bouncycastle.crypto.hash2curve.impl.Elligator2MapToCurve;
 import org.bouncycastle.crypto.hash2curve.impl.MontgomeryCurveProcessor;
 import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
@@ -86,5 +87,29 @@ public class HashToEllipticCurve {
     final ECPoint R = curveProcessor.add(Q0, Q1);
     return this.curveProcessor.clearCofactor(R);
   }
+
+  /**
+   * Converts an elliptic-curve point into the affine (x, y) coordinate representation
+   * defined by the hash-to-curve suite.
+   *
+   * <p>The returned coordinates are intended for serialization, testing, and
+   * interoperability with the reference outputs defined in RFC 9380.
+   * For most Weierstrass curves, this is simply the affine (x, y) coordinates of
+   * the given point. For curves that use a different coordinate model in the
+   * specification (e.g. Montgomery curves such as curve25519), this method applies
+   * the appropriate coordinate transformation.</p>
+   *
+   * <p>This method does <em>not</em> change the underlying group element represented
+   * by the point. It only changes how that point is expressed as field elements.
+   * The input point is expected to be a valid point on the curve used by the
+   * implementation.</p>
+   * @param point point on the chosen ECCurve for the selected hash2Curve profile
+   * @return AffineXY coordinates for the point on the curve defined in RFC 9380 for the selected profile
+   */
+  public AffineXY getAffineXY(ECPoint point) {
+    return curveProcessor.mapToAffineXY(point);
+  }
+
+
 
 }

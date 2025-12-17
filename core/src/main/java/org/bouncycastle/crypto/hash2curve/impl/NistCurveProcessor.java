@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.hash2curve.impl;
 
 import org.bouncycastle.crypto.hash2curve.CurveProcessor;
+import org.bouncycastle.crypto.hash2curve.data.AffineXY;
 import org.bouncycastle.math.ec.ECPoint;
 
 import java.math.BigInteger;
@@ -41,5 +42,10 @@ public class NistCurveProcessor implements CurveProcessor {
   @Override
   public ECPoint clearCofactor(final ECPoint ecPoint) {
     return ecPoint.multiply(BigInteger.ONE);
+  }
+
+  @Override
+  public AffineXY mapToAffineXY(final ECPoint p) {
+    return new AffineXY(p);
   }
 }
