@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.util.Arrays;
 
 import javax.crypto.KDFParameters;
 import javax.crypto.KDFSpi;
@@ -15,6 +16,7 @@ import javax.crypto.spec.HKDFParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.ArrayList;
 import java.util.List;
 
 class HKDFSpi
@@ -67,7 +69,6 @@ class HKDFSpi
             throw new InvalidAlgorithmParameterException("Invalid AlgorithmParameterSpec provided");
         }
 
-        // TODO: deal with the multi ikm/salt thing
         HKDFParameters hkdfParameters = null;
         int derivedDataLength = 0;
         if (derivationSpec instanceof HKDFParameterSpec.ExtractThenExpand)
@@ -77,7 +78,10 @@ class HKDFSpi
             List<SecretKey> ikms = spec.ikms();
             List<SecretKey> salts = spec.salts();
 
-            hkdfParameters = new HKDFParameters(ikms.get(0).getEncoded(), salts.get(0).getEncoded(), spec.info());
+            byte[] salt = flattenSecretKeys(salts);
+            byte[] ikm = flattenSecretKeys(ikms);
+
+            hkdfParameters = new HKDFParameters(ikm, salt, spec.info());
             derivedDataLength = spec.length();
 
             hkdf.init(hkdfParameters);
@@ -94,7 +98,10 @@ class HKDFSpi
             List<SecretKey> ikms = spec.ikms();
             List<SecretKey> salts = spec.salts();
 
-            return hkdf.extractPRK(salts.get(0).getEncoded(), ikms.get(0).getEncoded());
+            byte[] salt = flattenSecretKeys(salts);
+            byte[] ikm = flattenSecretKeys(ikms);
+
+            return hkdf.extractPRK(salt, ikm);
         }
         else if (derivationSpec instanceof org.bouncycastle.jcajce.spec.HKDFParameterSpec)
         {
@@ -124,6 +131,34 @@ class HKDFSpi
             throw new InvalidAlgorithmParameterException(message);
         }
         return null;
+    }
+
+    private byte[] flattenSecretKeys(List<SecretKey> keys)
+    {
+        if (keys.size() == 1)
+        {
+            return keys.get(0).getEncoded();
+        }
+
+        int len = 0;
+        int off = 0;
+
+        ArrayList<byte[]> encodings = new ArrayList<byte[]>(keys.size());
+        for (SecretKey key : keys)
+        {
+            byte[] encoding = key.getEncoded(); 
+            encodings.add(encoding);
+            len += encoding.length;
+        }
+
+        byte[] res = new byte[len];
+        for (byte[] encoding : encodings)
+        {
+            System.arraycopy(encoding, 0, res, off, encoding.length);
+            off += encoding.length;
+            Arrays.clear(encoding);
+        }
+        return res;
     }
 
     public static class HKDFwithSHA256 extends HKDFSpi

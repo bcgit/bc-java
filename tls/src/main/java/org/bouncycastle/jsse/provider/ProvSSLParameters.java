@@ -47,6 +47,7 @@ final class ProvSSLParameters
     private String[] signatureSchemes = null;
     private String[] signatureSchemesCert = null;
     private String[] namedGroups = null;
+    private String[] earlyKeyShares = null;
 
     private BCApplicationProtocolSelector<SSLEngine> engineAPSelector;
     private BCApplicationProtocolSelector<SSLSocket> socketAPSelector;
@@ -77,6 +78,7 @@ final class ProvSSLParameters
         p.signatureSchemes = signatureSchemes;
         p.signatureSchemesCert = signatureSchemesCert;
         p.namedGroups = namedGroups;
+        p.earlyKeyShares = earlyKeyShares;
         p.engineAPSelector = engineAPSelector;
         p.socketAPSelector = socketAPSelector;
         p.sessionToResume = sessionToResume;
@@ -289,6 +291,16 @@ final class ProvSSLParameters
     public void setNamedGroups(String[] namedGroups)
     {
         this.namedGroups = TlsUtils.clone(namedGroups);
+    }
+
+    public String[] getEarlyKeyShares()
+    {
+        return TlsUtils.clone(earlyKeyShares);
+    }
+
+    public void setEarlyKeyShares(String[] earlyKeyShares)
+    {
+        this.earlyKeyShares = TlsUtils.clone(earlyKeyShares);
     }
 
     public BCApplicationProtocolSelector<SSLEngine> getEngineAPSelector()
