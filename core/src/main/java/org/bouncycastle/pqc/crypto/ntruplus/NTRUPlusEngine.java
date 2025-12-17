@@ -6,14 +6,17 @@ import org.bouncycastle.util.Bytes;
 
 public class NTRUPlusEngine
 {
-    private final int n;
-    private final short Q;
-    private final int blockSize;
     private static final short QINV = 12929;
     private static final short omega = -886;
     private static final short Rinv = -682;
-    public short POLYBYTES;
     private static final short Rsq = 867;
+
+    private final int n;
+    private final short Q;
+    private final int blockSize;
+    private final int doubleBlockSize;
+    private final int zetaOffset;
+    public short POLYBYTES;
     public short[] zetas;
     private final NTRUPlusParameters params;
     private final SHAKEDigest shakeDigest = new SHAKEDigest(256);
@@ -24,6 +27,8 @@ public class NTRUPlusEngine
         this.n = params.getN();
         this.Q = (short)params.getQ();
         this.blockSize = n == 864 ? 3 : 4;
+        this.doubleBlockSize = blockSize << 1;
+        this.zetaOffset = params.getZetasOffset();
         this.POLYBYTES = (short)params.getPolyBytes();
         this.zetas = params.getZetas();
     }
@@ -45,7 +50,7 @@ public class NTRUPlusEngine
         poly_triple(f, f);
         f[0] += 1;
 
-        poly_ntt(f, f);
+        poly_ntt(f);
 
         return poly_baseinv(finv, f);
     }
@@ -94,28 +99,21 @@ public class NTRUPlusEngine
      * N=864 (3-coefficient blocks), and N=1152 (4-coefficient blocks).
      *
      * @param r Output vector in NTT representation
-     * @param a Input vector of coefficients in R_q
      */
-    private void poly_ntt(short[] r, short[] a)
+    private void poly_ntt(short[] r)
     {
         short t1, t2, t3;
         short zeta1, zeta2;
         int k = 1;
-
-        // Copy input to output for all cases
-        if (a != r)
-        {
-            System.arraycopy(a, 0, r, 0, n);
-        }
 
         // Initial butterfly: all N values use this
         zeta1 = zetas[k++];
 
         for (int i = 0; i < n / 2; i++)
         {
-            t1 = fqmul(zeta1, a[i + n / 2]);
-            r[i + n / 2] = (short)(a[i] + a[i + n / 2] - t1);
-            r[i] = (short)(a[i] + t1);
+            t1 = fqmul(zeta1, r[i + n / 2]);
+            r[i + n / 2] = (short)(r[i] + r[i + n / 2] - t1);
+            r[i] = (short)(r[i] + t1);
         }
         int baseStep = params.getBaseStep();
         int minStep = params.getMinStep();
@@ -201,14 +199,14 @@ public class NTRUPlusEngine
             for (int i = 0; i < n / 6; ++i)
             {
                 // Use baseinv3 for 3-coefficient blocks
-                if (baseinv3(r, 6 * i, a, 6 * i, zetas[144 + i]) == 1)
+                if (baseinv3(r, 6 * i, a, 6 * i, zetas[zetaOffset + i]) == 1)
                 {
                     Arrays.fill(r, (short)0);
                     return 1;
                 }
 
                 if (baseinv3(r, 6 * i + 3, a, 6 * i + 3,
-                    (short)-zetas[144 + i]) == 1)
+                    (short)-zetas[zetaOffset + i]) == 1)
                 {
                     Arrays.fill(r, (short)0);
                     return 1;
@@ -219,19 +217,16 @@ public class NTRUPlusEngine
         {
             // Use existing logic for N=768 and N=1152
             int numBlocks = n / 8;
-            int zetaOffset = (n == 768) ? 96 : 144;
 
             for (int i = 0; i < numBlocks; ++i)
             {
-                if (baseinv(r, 8 * i, a, 8 * i,
-                    zetas[zetaOffset + i]) == 1)
+                if (baseinv(r, 8 * i, a, 8 * i, zetas[zetaOffset + i]) == 1)
                 {
                     Arrays.fill(r, (short)0);
                     return 1;
                 }
 
-                if (baseinv(r, 8 * i + 4, a, 8 * i + 4,
-                    (short)-zetas[zetaOffset + i]) == 1)
+                if (baseinv(r, 8 * i + 4, a, 8 * i + 4, (short)-zetas[zetaOffset + i]) == 1)
                 {
                     Arrays.fill(r, (short)0);
                     return 1;
@@ -262,27 +257,16 @@ public class NTRUPlusEngine
         short a2 = a[aPos + 2];
 
         // Step 1: Compute initial values with Montgomery reduction
-        // r[0] = montgomery_reduce(a[1]*a[2]);
         short r0 = montgomery_reduce(a1 * a2);
-
-        // r[1] = montgomery_reduce(a[2]*a[2]);
         short r1 = montgomery_reduce(a2 * a2);
-
-        // r[2] = montgomery_reduce(a[1]*a[1] - a[0]*a[2]);
         short r2 = montgomery_reduce(a1 * a1 - a0 * a2);
 
         // Step 2: Apply zeta transformations
-        // r[0] = montgomery_reduce(a[0]*a[0] - r[0]*zeta);
         r0 = montgomery_reduce(a0 * a0 - r0 * zeta);
-
-        // r[1] = montgomery_reduce(r[1]*zeta - a[0]*a[1]);
         r1 = montgomery_reduce(r1 * zeta - a0 * a1);
 
         // Step 3: Compute determinant (t)
-        // t = montgomery_reduce(r[2]*a[1] + r[1]*a[2]);
         short t = montgomery_reduce(r2 * a1 + r1 * a2);
-
-        // t = montgomery_reduce(t*zeta + r[0]*a[0]);
         t = montgomery_reduce(t * zeta + r0 * a0);
 
         // Step 4: Check if invertible
@@ -292,20 +276,12 @@ public class NTRUPlusEngine
         }
 
         // Step 5: Compute inverse scaling
-        // t = fqinv(t);
         t = fqinv(t);
-
-        // t = montgomery_reduce(t * NTRUPLUS_Rinv);
         t = montgomery_reduce(t * Rinv);
 
         // Step 6: Apply final scaling
-        // r[0] = montgomery_reduce(r[0] * t);
         r[rPos] = montgomery_reduce(r0 * t);
-
-        // r[1] = montgomery_reduce(r[1] * t);
         r[rPos + 1] = montgomery_reduce(r1 * t);
-
-        // r[2] = montgomery_reduce(r[2] * t);
         r[rPos + 2] = montgomery_reduce(r2 * t);
 
         return 0; // Success
@@ -318,12 +294,13 @@ public class NTRUPlusEngine
      **************************************************/
     public int baseinv(short[] r, int rOff, short[] a, int aOff, short zeta)
     {
+        short a0 = a[aOff], a1 = a[aOff + 1], a2 = a[aOff + 2], a3 = a[aOff + 3];
         short t0, t1, t2, t3;
 
-        t0 = montgomery_reduce(a[aOff + 2] * a[aOff + 2] - 2 * a[aOff + 1] * a[aOff + 3]);
-        t1 = montgomery_reduce(a[aOff + 3] * a[aOff + 3]);
-        t0 = montgomery_reduce(a[aOff] * a[aOff] + t0 * zeta);
-        t1 = montgomery_reduce(a[aOff + 1] * a[aOff + 1] + t1 * zeta - 2 * a[aOff] * a[aOff + 2]);
+        t0 = montgomery_reduce(a2 * a2 - 2 * a1 * a3);
+        t1 = montgomery_reduce(a3 * a3);
+        t0 = montgomery_reduce(a0 * a0 + t0 * zeta);
+        t1 = montgomery_reduce(a1 * a1 + t1 * zeta - 2 * a0 * a2);
         t2 = montgomery_reduce(t1 * zeta);
 
         t3 = montgomery_reduce(t0 * t0 - t1 * t2);
@@ -333,18 +310,18 @@ public class NTRUPlusEngine
             return 1;
         }
 
-        r[rOff] = montgomery_reduce(a[aOff] * t0 + a[aOff + 2] * t2);
-        r[rOff + 1] = montgomery_reduce(a[aOff + 3] * t2 + a[aOff + 1] * t0);
-        r[rOff + 2] = montgomery_reduce(a[aOff + 2] * t0 + a[aOff] * t1);
-        r[rOff + 3] = montgomery_reduce(a[aOff + 1] * t1 + a[aOff + 3] * t0);
+        short r0 = montgomery_reduce(a0 * t0 + a2 * t2);
+        short r1 = montgomery_reduce(a3 * t2 + a1 * t0);
+        short r2 = montgomery_reduce(a2 * t0 + a0 * t1);
+        short r3 = montgomery_reduce(a1 * t1 + a3 * t0);
 
         t3 = fqinv(t3);
         t3 = montgomery_reduce(t3 * Rinv);
 
-        r[rOff] = montgomery_reduce(r[rOff] * t3);
-        r[rOff + 1] = (short)-montgomery_reduce(r[rOff + 1] * t3);
-        r[rOff + 2] = montgomery_reduce(r[rOff + 2] * t3);
-        r[rOff + 3] = (short)-montgomery_reduce(r[rOff + 3] * t3);
+        r[rOff] = montgomery_reduce(r0 * t3);
+        r[rOff + 1] = (short)-montgomery_reduce(r1 * t3);
+        r[rOff + 2] = montgomery_reduce(r2 * t3);
+        r[rOff + 3] = (short)-montgomery_reduce(r3 * t3);
 
         return 0;
     }
@@ -410,8 +387,6 @@ public class NTRUPlusEngine
      */
     private void poly_basemul(short[] r, short[] a, short[] b)
     {
-        int doubleBlockSize = blockSize << 1;
-        int zetaOffset = params.getZetasOffset();
         for (int i = 0; i < n / doubleBlockSize; ++i)
         {
             // First half of block with positive zeta
@@ -422,62 +397,6 @@ public class NTRUPlusEngine
         }
     }
 
-    /**
-     * Multiplication of polynomials in Zq[X]/(X^d - zeta)
-     */
-    private void basemul(short[] r, int rPos, short[] a, int aPos,
-                         short[] b, int bPos, short zeta)
-    {
-        int blockSize = (n == 864) ? 3 : 4;
-        short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2];
-        short b0 = b[bPos], b1 = b[bPos + 1], b2 = b[bPos + 2];
-        int temp;
-        if (blockSize == 4)
-        {
-            // 4-coefficient multiplication
-            short a3 = a[aPos + 3];
-            short b3 = b[bPos + 3];
-
-            temp = (int)a1 * b3 + (int)a2 * b2 + (int)a3 * b1;
-            r[rPos] = montgomery_reduce(temp);
-
-            temp = (int)a2 * b3 + (int)a3 * b2;
-            r[rPos + 1] = montgomery_reduce(temp);
-
-            temp = (int)a3 * b3;
-            r[rPos + 2] = montgomery_reduce(temp);
-
-            temp = (int)r[rPos + 2] * zeta + (int)a0 * b2 + (int)a1 * b1 + (int)a2 * b0;
-            r[rPos + 2] = montgomery_reduce(temp);
-
-            temp = (int)a0 * b3 + (int)a1 * b2 + (int)a2 * b1 + (int)a3 * b0;
-            r[rPos + 3] = montgomery_reduce(temp);
-
-            r[rPos + 3] = montgomery_reduce((int)r[rPos + 3] * Rsq);
-        }
-        else
-        {
-            // 3-coefficient multiplication for N=864
-            temp = (int)a2 * b1 + (int)a1 * b2;
-            r[rPos] = montgomery_reduce(temp);
-
-            temp = (int)a2 * b2;
-            r[rPos + 1] = montgomery_reduce(temp);
-
-            temp = (int)a2 * b0 + (int)a1 * b1 + (int)a0 * b2;
-            r[rPos + 2] = montgomery_reduce(temp);
-        }
-
-        temp = (int)r[rPos] * zeta + (int)a0 * b0;
-        r[rPos] = montgomery_reduce(temp);
-
-        temp = (int)r[rPos + 1] * zeta + (int)a0 * b1 + (int)a1 * b0;
-        r[rPos + 1] = montgomery_reduce(temp);
-
-        r[rPos] = montgomery_reduce((int)r[rPos] * Rsq);
-        r[rPos + 1] = montgomery_reduce((int)r[rPos + 1] * Rsq);
-        r[rPos + 2] = montgomery_reduce((int)r[rPos + 2] * Rsq);
-    }
 
     /**
      * Serialization of a polynomial
@@ -540,7 +459,7 @@ public class NTRUPlusEngine
         poly_triple(g, g);
 
         // Convert g to NTT domain
-        poly_ntt(g, g);
+        poly_ntt(g);
 
         // Compute the inverse of g in NTT domain
         return poly_baseinv(ginv, g);
@@ -661,7 +580,6 @@ public class NTRUPlusEngine
      */
     private void poly_basemul_add(short[] r, short[] a, short[] b, short[] c)
     {
-        int doubleBlockSize = blockSize << 1;
         int zetasOffset = params.getZetasOffset();
         for (int i = 0; i < n / doubleBlockSize; ++i)
         {
@@ -693,98 +611,110 @@ public class NTRUPlusEngine
                              short[] b, int bPos, short[] c, int cPos,
                              short zeta, int blockSize)
     {
-        int rValue = 1 << 16; // NTRUPLUS_R = 2^16 = 65536
+        // Common multiplication core
+        multiplyCore(r, rPos, a, aPos, b, bPos, zeta, blockSize);
+
+        // Addition and final scaling
+        finalizeWithAddition(r, rPos, c, cPos, blockSize);
+    }
+
+    /**
+     * Multiplication of polynomials in Zq[X]/(X^d - zeta)
+     */
+    private void basemul(short[] r, int rPos, short[] a, int aPos,
+                         short[] b, int bPos, short zeta)
+    {
+        int blockSize = (n == 864) ? 3 : 4;
+
+        // Common multiplication core
+        multiplyCore(r, rPos, a, aPos, b, bPos, zeta, blockSize);
+
+        // Final scaling (multiplication only)
+        finalizeMultiplication(r, rPos, blockSize);
+    }
+
+    /**
+     * Core multiplication logic shared by both basemul and basemul_add
+     */
+    private void multiplyCore(short[] r, int rPos, short[] a, int aPos,
+                              short[] b, int bPos, short zeta, int blockSize)
+    {
+        // Extract common coefficients (a0, a1, a2, b0, b1, b2)
+        short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2];
+        short b0 = b[bPos], b1 = b[bPos + 1], b2 = b[bPos + 2];
+        int temp;
 
         if (blockSize == 4)
         {
-            // 4-coefficient version for N=768 and N=1152
-            // Extract coefficients
-            short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2], a3 = a[aPos + 3];
-            short b0 = b[bPos], b1 = b[bPos + 1], b2 = b[bPos + 2], b3 = b[bPos + 3];
-            short c0 = c[cPos], c1 = c[cPos + 1], c2 = c[cPos + 2], c3 = c[cPos + 3];
+            // 4-coefficient specific logic
+            short a3 = a[aPos + 3];
+            short b3 = b[bPos + 3];
 
-            // Step 1: Compute initial multiplication terms
-            int temp = (int)a1 * b3 + (int)a2 * b2 + (int)a3 * b1;
+            // High-degree terms
+            temp = (int)a1 * b3 + (int)a2 * b2 + (int)a3 * b1;
             r[rPos] = montgomery_reduce(temp);
 
             temp = (int)a2 * b3 + (int)a3 * b2;
             r[rPos + 1] = montgomery_reduce(temp);
 
             temp = (int)a3 * b3;
+            temp = montgomery_reduce(temp);
+
+            // Apply zeta to middle terms
+            temp = temp * zeta + (int)a0 * b2 + (int)a1 * b1 + (int)a2 * b0;
             r[rPos + 2] = montgomery_reduce(temp);
 
-            // Step 2: Apply zeta and add lower-degree terms
-            temp = (int)r[rPos] * zeta + (int)a0 * b0;
-            r[rPos] = montgomery_reduce(temp);
-
-            temp = (int)r[rPos + 1] * zeta + (int)a0 * b1 + (int)a1 * b0;
-            r[rPos + 1] = montgomery_reduce(temp);
-
-            temp = (int)r[rPos + 2] * zeta + (int)a0 * b2 + (int)a1 * b1 + (int)a2 * b0;
-            r[rPos + 2] = montgomery_reduce(temp);
-
+            // Compute r3 term
             temp = (int)a0 * b3 + (int)a1 * b2 + (int)a2 * b1 + (int)a3 * b0;
             r[rPos + 3] = montgomery_reduce(temp);
-
-            // Step 3: Add c and apply scaling
-
-            // r[0] = montgomery_reduce(c[0]*R + r[0]*R^2)
-            temp = c0 * rValue + (int)r[rPos] * Rsq;
-            r[rPos] = montgomery_reduce(temp);
-
-            // r[1] = montgomery_reduce(c[1]*R + r[1]*R^2)
-            temp = c1 * rValue + (int)r[rPos + 1] * Rsq;
-            r[rPos + 1] = montgomery_reduce(temp);
-
-            // r[2] = montgomery_reduce(c[2]*R + r[2]*R^2)
-            temp = c2 * rValue + (int)r[rPos + 2] * Rsq;
-            r[rPos + 2] = montgomery_reduce(temp);
-
-            // r[3] = montgomery_reduce(c[3]*R + r[3]*R^2)
-            temp = c3 * rValue + (int)r[rPos + 3] * Rsq;
-            r[rPos + 3] = montgomery_reduce(temp);
-
         }
-        else if (blockSize == 3)
+        else
         {
-            // 3-coefficient version for N=864
-
-            // Extract coefficients
-            short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2];
-            short b0 = b[bPos], b1 = b[bPos + 1], b2 = b[bPos + 2];
-            short c0 = c[cPos], c1 = c[cPos + 1], c2 = c[cPos + 2];
-
-            // Step 1: Compute initial multiplication terms
-            int temp = (int)a2 * b1 + (int)a1 * b2;
+            // 3-coefficient specific logic
+            // High-degree terms
+            temp = (int)a2 * b1 + (int)a1 * b2;
             r[rPos] = montgomery_reduce(temp);
 
             temp = (int)a2 * b2;
             r[rPos + 1] = montgomery_reduce(temp);
 
-            // Step 2: Apply zeta and add lower-degree terms
-            temp = (int)r[rPos] * zeta + (int)a0 * b0;
-            r[rPos] = montgomery_reduce(temp);
-
-            temp = (int)r[rPos + 1] * zeta + (int)a0 * b1 + (int)a1 * b0;
-            r[rPos + 1] = montgomery_reduce(temp);
-
+            // Compute r2 term
             temp = (int)a2 * b0 + (int)a1 * b1 + (int)a0 * b2;
             r[rPos + 2] = montgomery_reduce(temp);
+        }
 
-            // Step 3: Add c and apply scaling
+        // Common low-degree terms (apply zeta to r0 and r1)
+        temp = (int)r[rPos] * zeta + (int)a0 * b0;
+        r[rPos] = montgomery_reduce(temp);
 
-            // r[0] = montgomery_reduce(c[0]*R + r[0]*R^2)
-            temp = c0 * rValue + (int)r[rPos] * Rsq;
-            r[rPos] = montgomery_reduce(temp);
+        temp = (int)r[rPos + 1] * zeta + (int)a0 * b1 + (int)a1 * b0;
+        r[rPos + 1] = montgomery_reduce(temp);
+    }
 
-            // r[1] = montgomery_reduce(c[1]*R + r[1]*R^2)
-            temp = c1 * rValue + (int)r[rPos + 1] * Rsq;
-            r[rPos + 1] = montgomery_reduce(temp);
+    /**
+     * Final scaling for multiplication with addition (basemul_add)
+     */
+    private void finalizeWithAddition(short[] r, int rPos, short[] c, int cPos, int blockSize)
+    {
+        int rValue = 1 << 16; // NTRUPLUS_R = 2^16 = 65536
 
-            // r[2] = montgomery_reduce(c[2]*R + r[2]*R^2)
-            temp = c2 * rValue + (int)r[rPos + 2] * Rsq;
-            r[rPos + 2] = montgomery_reduce(temp);
+        // Handle all coefficients
+        for (int i = 0; i < blockSize; i++)
+        {
+            int temp = c[cPos + i] * rValue + (int)r[rPos + i] * Rsq;
+            r[rPos + i] = montgomery_reduce(temp);
+        }
+    }
 
+    /**
+     * Final scaling for multiplication only (basemul)
+     */
+    private void finalizeMultiplication(short[] r, int rPos, int blockSize)
+    {
+        // Scale all coefficients by R^2
+        for (int i = 0; i < blockSize; i++)
+        {
+            r[rPos + i] = montgomery_reduce((int)r[rPos + i] * Rsq);
         }
     }
 
@@ -817,7 +747,7 @@ public class NTRUPlusEngine
         hash_h(buf1, msg);
         // Generate r from second part of buf1
         poly_cbd1(r, buf1, symBytes);
-        poly_ntt(r, r);
+        poly_ntt(r);
 
         // Convert r to bytes and then hash_g
         poly_tobytes(buf2, 0, r);
@@ -825,7 +755,7 @@ public class NTRUPlusEngine
 
         // Generate m by encoding msg and buf2
         poly_sotp_encode(m, msg, buf2);
-        poly_ntt(m, m);
+        poly_ntt(m);
 
         // Convert pk to polynomial h
         poly_frombytes(h, pk, pkPos);
@@ -890,7 +820,6 @@ public class NTRUPlusEngine
 
         int minStep = params.getMinStep();
         int baseStep = params.getBaseStep();
-        // N=768: step = 4, 8, 16, 32, 64
         for (; minStep <= baseStep; minStep <<= 1)
         {
             for (int start = 0; start < n; start += (minStep << 1))
@@ -1073,7 +1002,8 @@ public class NTRUPlusEngine
         poly_crepmod3(m1, m1); // Reduce mod 3
 
         // m2 = NTT(m1)
-        poly_ntt(m2, m1);
+        System.arraycopy(m1, 0, m2, 0, n);
+        poly_ntt(m2);
 
         // c = c - m2
         poly_sub(c, c, m2);
@@ -1089,17 +1019,14 @@ public class NTRUPlusEngine
         fail = poly_sotp_decode(msg, m1, buf2);
 
         // Append hash of pk from secret key
-        for (int i = 0; i < symBytes; i++)
-        {
-            msg[n / 8 + i] = sk[skPos + 2 * polyBytes + i];
-        }
+        System.arraycopy(sk, skPos + 2 * polyBytes, msg, n / 8, symBytes);
 
         // Hash H
         hash_h(buf3, msg);
 
         // Generate r1 from second part of buf3
         poly_cbd1(r1, buf3, ssBytes);
-        poly_ntt(r1, r1);
+        poly_ntt(r1);
         poly_tobytes(buf2, 0, r1);
 
         // Verify that buf1 (from r2) equals buf2 (from r1)

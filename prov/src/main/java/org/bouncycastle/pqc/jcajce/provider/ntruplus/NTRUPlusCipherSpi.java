@@ -326,7 +326,7 @@ class NTRUPlusCipherSpi
         public Base()
             throws NoSuchAlgorithmException
         {
-            super("NTRUPlus");
+            super("NTRUPLUS");
         }
     }
 

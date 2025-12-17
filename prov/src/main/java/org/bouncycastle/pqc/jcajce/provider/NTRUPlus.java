@@ -31,20 +31,20 @@ public class NTRUPlus
             addKeyPairGeneratorAlgorithm(provider, "NTRUPLUS-864", PREFIX + "NTRUPlusKeyPairGeneratorSpi$NTRUPlus864", BCObjectIdentifiers.ntruPlus864);
             addKeyPairGeneratorAlgorithm(provider, "NTRUPLUS-1152", PREFIX + "NTRUPlusKeyPairGeneratorSpi$NTRUPlus1152", BCObjectIdentifiers.ntruPlus1152);
 
-            provider.addAlgorithm("KeyGenerator.NTRUPLUS", PREFIX + "NTRUPLUSKeyGeneratorSpi");
+            provider.addAlgorithm("KeyGenerator.NTRUPLUS", PREFIX + "NTRUPlusKeyGeneratorSpi");
             addKeyGeneratorAlgorithm(provider, "NTRUPLUS768", PREFIX + "NTRUPLUSKeyGeneratorSpi$NTRUPLUS768", BCObjectIdentifiers.ntruPlus768);
             addKeyGeneratorAlgorithm(provider, "NTRUPLUS864", PREFIX + "NTRUPLUSKeyGeneratorSpi$NTRUPLUS864", BCObjectIdentifiers.ntruPlus864);
-            addKeyGeneratorAlgorithm(provider, "NTRUPLUS256", PREFIX + "NTRUPLUSKeyGeneratorSpi$NTRUPLUS256", BCObjectIdentifiers.ntruPlus1152);
+            addKeyGeneratorAlgorithm(provider, "NTRUPLUS1152", PREFIX + "NTRUPLUSKeyGeneratorSpi$NTRUPLUS1152", BCObjectIdentifiers.ntruPlus1152);
 
             AsymmetricKeyInfoConverter keyFact = new NTRUPlusKeyFactorySpi();
 
-            provider.addAlgorithm("Cipher.NTRUPLUS", PREFIX + "NTRUPLUSCipherSpi$Base");
+            provider.addAlgorithm("Cipher.NTRUPLUS", PREFIX + "NTRUPlusCipherSpi$Base");
             provider.addAlgorithm("Alg.Alias.Cipher.NTRUPLUS", "NTRUPLUS");
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruPlus, "NTRUPLUS");
 
             addCipherAlgorithm(provider, "NTRUPLUS768", PREFIX + "NTRUPLUSCipherSpi$NTRUPLUS768", BCObjectIdentifiers.ntruPlus768);
             addCipherAlgorithm(provider, "NTRUPLUS864", PREFIX + "NTRUPLUSCipherSpi$NTRUPLUS864", BCObjectIdentifiers.ntruPlus864);
-            addCipherAlgorithm(provider, "NTRUPLUS256", PREFIX + "NTRUPLUSCipherSpi$NTRUPLUS256", BCObjectIdentifiers.ntruPlus1152);
+            addCipherAlgorithm(provider, "NTRUPLUS1152", PREFIX + "NTRUPLUSCipherSpi$NTRUPLUS1152", BCObjectIdentifiers.ntruPlus1152);
 
             registerOid(provider, BCObjectIdentifiers.ntruPlus, "NTRUPLUS", keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.ntruPlus768, keyFact);
