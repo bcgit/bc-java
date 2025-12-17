@@ -1,7 +1,6 @@
 package org.bouncycastle.mail.smime;
 
 import java.util.HashSet;
-import java.util.Set;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeBodyPart;
@@ -13,13 +12,13 @@ import org.bouncycastle.cms.RecipientInformationStore;
 
 public class SMIMEEnvelopedUtil
 {
-    private static Set<ASN1ObjectIdentifier> authOIDs = new HashSet<ASN1ObjectIdentifier>();
+    private static final HashSet<ASN1ObjectIdentifier> AUTH_OIDS = new HashSet<ASN1ObjectIdentifier>();
 
     static
     {
-        authOIDs.add(NISTObjectIdentifiers.id_aes128_GCM);
-        authOIDs.add(NISTObjectIdentifiers.id_aes128_GCM);
-        authOIDs.add(NISTObjectIdentifiers.id_aes128_GCM);
+        AUTH_OIDS.add(NISTObjectIdentifiers.id_aes128_GCM);
+        AUTH_OIDS.add(NISTObjectIdentifiers.id_aes192_GCM);
+        AUTH_OIDS.add(NISTObjectIdentifiers.id_aes256_GCM);
     }
 
     /**
@@ -32,7 +31,7 @@ public class SMIMEEnvelopedUtil
      */
     public static RecipientInformationStore getRecipientInfos(MimeBodyPart message) throws MessagingException, CMSException
     {
-        if(message.getContentType().equals(SMIMEAuthEnvelopedGenerator.AUTH_ENVELOPED_DATA_CONTENT_TYPE))
+        if (message.getContentType().equals(SMIMEAuthEnvelopedGenerator.AUTH_ENVELOPED_DATA_CONTENT_TYPE))
         {
             return new SMIMEAuthEnveloped(message).getRecipientInfos();
         }
@@ -48,7 +47,7 @@ public class SMIMEEnvelopedUtil
      */
     public static SMIMEEnvelopedGenerator createGenerator(ASN1ObjectIdentifier algorithm)
     {
-        if (authOIDs.contains(algorithm))
+        if (AUTH_OIDS.contains(algorithm))
         {
             return new SMIMEAuthEnvelopedGenerator();
         }
