@@ -5,23 +5,16 @@ import org.bouncycastle.util.Arrays;
 public class NTRUPlusPrivateKeyParameters
     extends NTRUPlusKeyParameters
 {
-    private final byte[] seed_sk;
+    private final byte[] sk;
 
-    public NTRUPlusPrivateKeyParameters(NTRUPlusParameters params, byte[] seed_sk)
+    public NTRUPlusPrivateKeyParameters(NTRUPlusParameters params, byte[] sk)
     {
         super(true, params);
-        this.seed_sk = Arrays.clone(seed_sk);
+        this.sk = Arrays.clone(sk);
     }
 
     public byte[] getEncoded()
     {
-        return Arrays.clone(seed_sk);
-    }
-
-
-    public byte[] getPublicKey()
-    {
-        //TODO
-        return null;
+        return Arrays.clone(sk);
     }
 }

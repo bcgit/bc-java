@@ -22,7 +22,7 @@ public class NTRUPlusKEMExtractor
     @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
-        byte[] ss = new byte[privateKey.getParameters().getSsBytes()];
+        byte[] ss = new byte[NTRUPlusEngine.SSBytes];
         engine.crypto_kem_dec(ss, 0, encapsulation, 0, privateKey.getEncoded(), 0);
         return ss;
     }
