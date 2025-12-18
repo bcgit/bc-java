@@ -72,13 +72,7 @@ public class NTRUPlusParameters
     public static final NTRUPlusParameters NTRUPLUS_768 = new NTRUPlusParameters(
         "NTRUPLUS_768",      // name
         768,                 // NTRUPLUS_N
-        3457,                // NTRUPLUS_Q
-        32,                  // NTRUPLUS_SYMBYTES
-        32,                  // NTRUPLUS_SSBYTES
-        1152,                // NTRUPLUS_POLYBYTES
         1152,                // NTRUPLUS_PUBLICKEYBYTES
-        (1152 << 1) + 32,    // NTRUPLUS_SECRETKEYBYTES: (POLYBYTES << 1) + SYMBYTES
-        1152,                // NTRUPLUS_CIPHERTEXTBYTES
         4,
         64,
         96,
@@ -88,13 +82,7 @@ public class NTRUPlusParameters
     public static final NTRUPlusParameters NTRUPLUS_864 = new NTRUPlusParameters(
         "NTRUPLUS_864",      // name
         864,                 // NTRUPLUS_N
-        3457,                // NTRUPLUS_Q
-        32,                  // NTRUPLUS_SYMBYTES
-        32,                  // NTRUPLUS_SSBYTES
-        1296,                // NTRUPLUS_POLYBYTES
         1296,                // NTRUPLUS_PUBLICKEYBYTES
-        (1296 << 1) + 32,    // NTRUPLUS_SECRETKEYBYTES
-        1296,                // NTRUPLUS_CIPHERTEXTBYTES
         3,
         24,
         144,
@@ -104,13 +92,7 @@ public class NTRUPlusParameters
     public static final NTRUPlusParameters NTRUPLUS_1152 = new NTRUPlusParameters(
         "NTRUPLUS_1152",     // name
         1152,                // NTRUPLUS_N
-        3457,                // NTRUPLUS_Q
-        32,                  // NTRUPLUS_SYMBYTES
-        32,                  // NTRUPLUS_SSBYTES
-        1728,                // NTRUPLUS_POLYBYTES
         1728,                // NTRUPLUS_PUBLICKEYBYTES
-        (1728 << 1) + 32,    // NTRUPLUS_SECRETKEYBYTES
-        1728,                // NTRUPLUS_CIPHERTEXTBYTES
         4,
         32,
         144,
@@ -120,32 +102,20 @@ public class NTRUPlusParameters
     // Instance fields
     private final String name;
     private final int n;                    // NTRUPLUS_N
-    private final int q;                    // NTRUPLUS_Q
-    private final int symBytes;             // NTRUPLUS_SYMBYTES
-    private final int ssBytes;              // NTRUPLUS_SSBYTES
-    private final int polyBytes;            // NTRUPLUS_POLYBYTES
     private final int publicKeyBytes;       // NTRUPLUS_PUBLICKEYBYTES
     private final int secretKeyBytes;       // NTRUPLUS_SECRETKEYBYTES
-    private final int ciphertextBytes;      // NTRUPLUS_CIPHERTEXTBYTES
     private final int minStep;
     private final int baseStep;
     private final int zetasOffset;
     private final short[] zetas;
 
 
-    private NTRUPlusParameters(String name, int n, int q, int symBytes, int ssBytes,
-                               int polyBytes, int publicKeyBytes, int secretKeyBytes,
-                               int ciphertextBytes, int minStep, int baseStep, int zetasOffset, short[] zetas)
+    private NTRUPlusParameters(String name, int n, int publicKeyBytes, int minStep, int baseStep, int zetasOffset, short[] zetas)
     {
         this.name = name;
         this.n = n;
-        this.q = q;
-        this.symBytes = symBytes;
-        this.ssBytes = ssBytes;
-        this.polyBytes = polyBytes;
         this.publicKeyBytes = publicKeyBytes;
-        this.secretKeyBytes = secretKeyBytes;
-        this.ciphertextBytes = ciphertextBytes;
+        this.secretKeyBytes = (publicKeyBytes << 1) + 32;
         this.minStep = minStep;
         this.baseStep = baseStep;
         this.zetasOffset = zetasOffset;
@@ -163,24 +133,9 @@ public class NTRUPlusParameters
         return n;
     }
 
-    public int getQ()
-    {
-        return q;
-    }
-
-    public int getSymBytes()
-    {
-        return symBytes;
-    }
-
     public int getSsBytes()
     {
-        return ssBytes;
-    }
-
-    public int getPolyBytes()
-    {
-        return polyBytes;
+        return 32;
     }
 
     public int getPublicKeyBytes()
@@ -195,7 +150,7 @@ public class NTRUPlusParameters
 
     public int getCiphertextBytes()
     {
-        return ciphertextBytes;
+        return publicKeyBytes;
     }
 
     public short[] getZetas()

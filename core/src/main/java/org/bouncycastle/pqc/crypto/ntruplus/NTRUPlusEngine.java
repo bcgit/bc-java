@@ -4,19 +4,24 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 
-public class NTRUPlusEngine
+class NTRUPlusEngine
 {
     private static final short QINV = 12929;
-    private static final short omega = -886;
-    private static final short Rinv = -682;
-    private static final short Rsq = 867;
+    private static final short OMEGA = -886;
+    private static final short RINV = -682;
+    private static final short RSQ = 867;
+    private static final short Q = 3457;
+    private static final short Q_HALF = Q >> 1;
+    static final int SSBytes = 32;
 
     private final int n;
-    private final short Q;
+    private final int halfN;
+    private final int quarterN;
+    private final int eighthN;
     private final int blockSize;
     private final int doubleBlockSize;
     private final int zetaOffset;
-    public short POLYBYTES;
+    public short polyBytes;
     public short[] zetas;
     private final NTRUPlusParameters params;
     private final SHAKEDigest shakeDigest = new SHAKEDigest(256);
@@ -25,11 +30,13 @@ public class NTRUPlusEngine
     {
         this.params = params;
         this.n = params.getN();
-        this.Q = (short)params.getQ();
+        this.halfN = this.n / 2;
+        this.quarterN = this.n >> 2;
+        this.eighthN = this.n >> 3;
         this.blockSize = n == 864 ? 3 : 4;
         this.doubleBlockSize = blockSize << 1;
         this.zetaOffset = params.getZetasOffset();
-        this.POLYBYTES = (short)params.getPolyBytes();
+        this.polyBytes = (short)params.getPublicKeyBytes();
         this.zetas = params.getZetas();
     }
 
@@ -42,11 +49,11 @@ public class NTRUPlusEngine
     public int genf_derand(short[] f, short[] finv, byte[] coins)
     {
         // coins should be 32 bytes
-        byte[] buf = new byte[n / 4];
+        byte[] buf = new byte[quarterN];
 
         shake256(buf, 0, buf.length, coins, 32);
 
-        poly_cbd1(f, buf);
+        poly_cbd1(f, buf, 0);
         poly_triple(f, f);
         f[0] += 1;
 
@@ -60,19 +67,16 @@ public class NTRUPlusEngine
      * Description: Sample a polynomial deterministically from a random,
      *              with output polynomial close to centered binomial distribution
      **************************************************/
-    public void poly_cbd1(short[] r, byte[] buf)
+    private void poly_cbd1(short[] r, byte[] buf, int bufPos)
     {
-        // buf should be of length NTRUPLUS_N/4 bytes
-        int t1, t2;
-
-        for (int i = 0; i < n / 8; i++)
+        for (int i = 0, pos = 0; i < eighthN; i++, pos += 8)
         {
-            t1 = buf[i] & 0xFF;  // Convert to unsigned
-            t2 = buf[i + n / 8] & 0xFF;
+            int t1 = buf[bufPos + i] & 0xFF; // Convert to unsigned
+            int t2 = buf[bufPos + i + eighthN] & 0xFF;
 
             for (int j = 0; j < 8; j++)
             {
-                r[8 * i + j] = (short)((t1 & 0x1) - (t2 & 0x1));
+                r[pos + j] = (short)((t1 & 0x1) - (t2 & 0x1));
                 t1 >>= 1;
                 t2 >>= 1;
             }
@@ -109,17 +113,19 @@ public class NTRUPlusEngine
         // Initial butterfly: all N values use this
         zeta1 = zetas[k++];
 
-        for (int i = 0; i < n / 2; i++)
+        for (int i = 0; i < halfN; i++)
         {
-            t1 = fqmul(zeta1, r[i + n / 2]);
-            r[i + n / 2] = (short)(r[i] + r[i + n / 2] - t1);
+            t1 = fqmul(zeta1, r[i + halfN]);
+            r[i + halfN] = (short)(r[i] + r[i + halfN] - t1);
             r[i] = (short)(r[i] + t1);
         }
         int baseStep = params.getBaseStep();
         int minStep = params.getMinStep();
-        for (int step = n / 6; step >= baseStep * 2; step /= 3)
+        for (int step = n / 6; step >= (baseStep << 1); step /= 3)
         {
-            for (int start = 0; start < n; start += 3 * step)
+            int twoSteps = step << 1;
+            int threeSteps = twoSteps + step;
+            for (int start = 0; start < n; start += threeSteps)
             {
                 zeta1 = zetas[k++];
                 zeta2 = zetas[k++];
@@ -127,10 +133,10 @@ public class NTRUPlusEngine
                 for (int i = start; i < start + step; i++)
                 {
                     t1 = fqmul(zeta1, r[i + step]);
-                    t2 = fqmul(zeta2, r[i + 2 * step]);
-                    t3 = fqmul(omega, (short)(t1 - t2));
+                    t2 = fqmul(zeta2, r[i + twoSteps]);
+                    t3 = fqmul(OMEGA, (short)(t1 - t2));
 
-                    r[i + 2 * step] = (short)(r[i] - t1 - t3);
+                    r[i + twoSteps] = (short)(r[i] - t1 - t3);
                     r[i + step] = (short)(r[i] - t2 + t3);
                     r[i] = (short)(r[i] + t1 + t2);
                 }
@@ -172,9 +178,7 @@ public class NTRUPlusEngine
      **************************************************/
     public short montgomery_reduce(int a)
     {
-        short t = (short)(a * QINV);
-        t = (short)((a - (int)t * Q) >> 16);
-        return t;
+        return (short)((a - (short)(a * QINV) * Q) >> 16);
     }
 
     /*************************************************
@@ -184,7 +188,7 @@ public class NTRUPlusEngine
      **************************************************/
     public short barrett_reduce(short a)
     {
-        return (short)(a - (((((1 << 26) + Q / 2) / Q) * a + (1 << 25)) >> 26) * Q);
+        return (short)(a - (((((1 << 26) + Q_HALF) / Q) * a + (1 << 25)) >> 26) * Q);
     }
 
     /*************************************************
@@ -196,16 +200,16 @@ public class NTRUPlusEngine
         if (n == 864)
         {
             // Special handling for N=864 with 3-coefficient blocks
-            for (int i = 0; i < n / 6; ++i)
+            for (int i = 0, pos = 0; i < n / 6; ++i, pos += 6)
             {
                 // Use baseinv3 for 3-coefficient blocks
-                if (baseinv3(r, 6 * i, a, 6 * i, zetas[zetaOffset + i]) == 1)
+                if (baseinv3(r, pos, a, pos, zetas[zetaOffset + i]) == 1)
                 {
                     Arrays.fill(r, (short)0);
                     return 1;
                 }
 
-                if (baseinv3(r, 6 * i + 3, a, 6 * i + 3,
+                if (baseinv3(r, pos + 3, a, pos + 3,
                     (short)-zetas[zetaOffset + i]) == 1)
                 {
                     Arrays.fill(r, (short)0);
@@ -216,17 +220,15 @@ public class NTRUPlusEngine
         else
         {
             // Use existing logic for N=768 and N=1152
-            int numBlocks = n / 8;
-
-            for (int i = 0; i < numBlocks; ++i)
+            for (int i = 0, pos = 0; i < eighthN; ++i, pos += 8)
             {
-                if (baseinv(r, 8 * i, a, 8 * i, zetas[zetaOffset + i]) == 1)
+                if (baseinv(r, pos, a, pos, zetas[zetaOffset + i]) == 1)
                 {
                     Arrays.fill(r, (short)0);
                     return 1;
                 }
 
-                if (baseinv(r, 8 * i + 4, a, 8 * i + 4, (short)-zetas[zetaOffset + i]) == 1)
+                if (baseinv(r, pos + 4, a, pos + 4, (short)-zetas[zetaOffset + i]) == 1)
                 {
                     Arrays.fill(r, (short)0);
                     return 1;
@@ -252,9 +254,7 @@ public class NTRUPlusEngine
     private int baseinv3(short[] r, int rPos, short[] a, int aPos, short zeta)
     {
         // Extract coefficients from input array
-        short a0 = a[aPos];
-        short a1 = a[aPos + 1];
-        short a2 = a[aPos + 2];
+        short a0 = a[aPos], a1 = a[aPos + 1], a2 = a[aPos + 2];
 
         // Step 1: Compute initial values with Montgomery reduction
         short r0 = montgomery_reduce(a1 * a2);
@@ -277,7 +277,7 @@ public class NTRUPlusEngine
 
         // Step 5: Compute inverse scaling
         t = fqinv(t);
-        t = montgomery_reduce(t * Rinv);
+        t = montgomery_reduce(t * RINV);
 
         // Step 6: Apply final scaling
         r[rPos] = montgomery_reduce(r0 * t);
@@ -316,7 +316,7 @@ public class NTRUPlusEngine
         short r3 = montgomery_reduce(a1 * t1 + a3 * t0);
 
         t3 = fqinv(t3);
-        t3 = montgomery_reduce(t3 * Rinv);
+        t3 = montgomery_reduce(t3 * RINV);
 
         r[rOff] = montgomery_reduce(r0 * t3);
         r[rOff + 1] = (short)-montgomery_reduce(r1 * t3);
@@ -408,7 +408,7 @@ public class NTRUPlusEngine
     {
         int t0, t1;
 
-        for (int i = 0; i < n / 2; i++)
+        for (int i = 0; i < halfN; i++)
         {
             // Handle negative coefficients by adding q if coefficient is negative
             t0 = a[2 * i];
@@ -432,7 +432,7 @@ public class NTRUPlusEngine
      */
     public void hash_f(byte[] buf, int bufOff, byte[] msg)
     {
-        shake256(buf, bufOff, 32, (byte)0x00, msg, 0, POLYBYTES);
+        shake256(buf, bufOff, 32, (byte)0x00, msg, 0, polyBytes);
     }
 
     /**
@@ -447,13 +447,13 @@ public class NTRUPlusEngine
     public int geng_derand(short[] g, short[] ginv, byte[] coins)
     {
         // Allocate buffer for SHAKE256 output
-        byte[] buf = new byte[n / 4]; // NTRUPLUS_N / 4
+        byte[] buf = new byte[quarterN]; // NTRUPLUS_N / 4
 
         // Generate random bytes using SHAKE256
         shake256(buf, 0, buf.length, coins, 32);
 
         // Generate polynomial g from the random bytes using centered binomial distribution
-        poly_cbd1(g, buf);
+        poly_cbd1(g, buf, 0);
 
         // Multiply polynomial g by 3 (no modular reduction)
         poly_triple(g, g);
@@ -496,50 +496,30 @@ public class NTRUPlusEngine
         poly_tobytes(sk, 0, f);
 
         // Serialize hinv to the second part of the secret key (offset by NTRUPLUS_POLYBYTES)
-        poly_tobytes(sk, POLYBYTES, hinv);
+        poly_tobytes(sk, polyBytes, hinv);
 
         // Compute hash of public key and store in the third part of secret key
         // Offset: 2 * NTRUPLUS_POLYBYTES
-        hash_f(sk, 2 * POLYBYTES, pk);
+        hash_f(sk, 2 * polyBytes, pk);
     }
 
     /**
      * Hash function H
      */
-    private void hash_h(byte[] buf, byte[] msg)
+    private void hash_h(byte[] buf, int bufOff, byte[] msg)
     {
-        int dataLen = n / 8 + params.getSymBytes();
-        int outLen = params.getSsBytes() + n / 4;
-        shake256(buf, 0, outLen, (byte)0x02, msg, 0, dataLen);
+        int dataLen = eighthN + SSBytes;
+        int outLen = SSBytes + quarterN;
+        shake256(buf, bufOff, outLen, (byte)0x02, msg, 0, dataLen);
     }
 
-    /**
-     * Centered Binomial Distribution sampling
-     */
-    private void poly_cbd1(short[] r, byte[] buf, int bufPos)
-    {
-        int quarterN = n / 8;
-
-        for (int i = 0; i < quarterN; i++)
-        {
-            int t1 = buf[bufPos + i] & 0xFF; // Convert to unsigned
-            int t2 = buf[bufPos + i + quarterN] & 0xFF;
-
-            for (int j = 0; j < 8; j++)
-            {
-                r[8 * i + j] = (short)((t1 & 0x1) - (t2 & 0x1));
-                t1 >>= 1;
-                t2 >>= 1;
-            }
-        }
-    }
 
     /**
      * Hash function G
      */
     private void hash_g(byte[] buf, byte[] msg)
     {
-        shake256(buf, 0, n / 4, (byte)0x01, msg, 0, params.getPolyBytes());
+        shake256(buf, 0, quarterN, (byte)0x01, msg, 0, polyBytes);
     }
 
     /**
@@ -547,7 +527,6 @@ public class NTRUPlusEngine
      */
     private void poly_sotp_encode(short[] r, byte[] msg, byte[] buf)
     {
-        int eighthN = n / 8;
         Bytes.xorTo(eighthN, msg, buf);
         poly_cbd1(r, buf, 0);
     }
@@ -557,10 +536,10 @@ public class NTRUPlusEngine
      */
     private void poly_frombytes(short[] r, byte[] a, int aPos)
     {
-        for (int i = 0; i < n / 2; i++)
+        for (int i = 0, inOff = aPos, outOff = 0; i < halfN; i++, inOff += 3)
         {
-            r[2 * i] = (short)(((a[aPos + 3 * i] & 0xFF) | ((a[aPos + 3 * i + 1] & 0xFF) << 8)) & 0xFFF);
-            r[2 * i + 1] = (short)(((a[aPos + 3 * i + 1] & 0xFF) >> 4 | ((a[aPos + 3 * i + 2] & 0xFF) << 4)) & 0xFFF);
+            r[outOff++] = (short)(((a[inOff] & 0xFF) | ((a[inOff + 1] & 0xFF) << 8)) & 0xFFF);
+            r[outOff++] = (short)(((a[inOff + 1] & 0xFF) >> 4 | ((a[inOff + 2] & 0xFF) << 4)) & 0xFFF);
         }
     }
 
@@ -581,21 +560,13 @@ public class NTRUPlusEngine
     private void poly_basemul_add(short[] r, short[] a, short[] b, short[] c)
     {
         int zetasOffset = params.getZetasOffset();
-        for (int i = 0; i < n / doubleBlockSize; ++i)
+        for (int i = 0, pos = 0; i < n / doubleBlockSize; ++i)
         {
             // First half of block with positive zeta
-            basemul_add(r, doubleBlockSize * i,
-                a, doubleBlockSize * i,
-                b, doubleBlockSize * i,
-                c, doubleBlockSize * i,
-                zetas[zetasOffset + i], blockSize);
-
-            // Second half of block with negative zeta
-            basemul_add(r, doubleBlockSize * i + blockSize,
-                a, doubleBlockSize * i + blockSize,
-                b, doubleBlockSize * i + blockSize,
-                c, doubleBlockSize * i + blockSize,
-                (short)-zetas[zetasOffset + i], blockSize);
+            basemul_add(r, pos, a, pos, b, pos, c, pos, zetas[zetasOffset + i], blockSize);
+            pos += blockSize;
+            basemul_add(r, pos, a, pos, b, pos, c, pos, (short)-zetas[zetasOffset + i], blockSize);
+            pos += blockSize;
         }
     }
 
@@ -701,7 +672,7 @@ public class NTRUPlusEngine
         // Handle all coefficients
         for (int i = 0; i < blockSize; i++)
         {
-            int temp = c[cPos + i] * rValue + (int)r[rPos + i] * Rsq;
+            int temp = c[cPos + i] * rValue + (int)r[rPos + i] * RSQ;
             r[rPos + i] = montgomery_reduce(temp);
         }
     }
@@ -714,7 +685,7 @@ public class NTRUPlusEngine
         // Scale all coefficients by R^2
         for (int i = 0; i < blockSize; i++)
         {
-            r[rPos + i] = montgomery_reduce((int)r[rPos + i] * Rsq);
+            r[rPos + i] = montgomery_reduce((int)r[rPos + i] * RSQ);
         }
     }
 
@@ -724,12 +695,8 @@ public class NTRUPlusEngine
     public void crypto_kem_enc_derand(byte[] ct, int ctPos, byte[] ss, int ssPos,
                                       byte[] pk, int pkPos, byte[] coins, int coinsPos)
     {
-        int symBytes = params.getSymBytes();
-        int ssBytes = params.getSsBytes();
-        int polyBytes = params.getPolyBytes();
-
-        byte[] msg = new byte[n / 8 + symBytes];
-        byte[] buf1 = new byte[symBytes + n / 4];
+        byte[] msg = new byte[eighthN + SSBytes];
+        byte[] buf1 = new byte[SSBytes + quarterN];
         byte[] buf2 = new byte[polyBytes];
 
         short[] c = new short[n];
@@ -738,15 +705,15 @@ public class NTRUPlusEngine
         short[] m = new short[n];
 
         // Copy first n/8 bytes of coins to msg
-        System.arraycopy(coins, coinsPos, msg, 0, n / 8);
+        System.arraycopy(coins, coinsPos, msg, 0, eighthN);
 
         // Compute hash_f of pk and store in remaining part of msg
-        hash_f(msg, n / 8, pk, pkPos);
+        hash_f(msg, eighthN, pk, pkPos);
 
         // Compute hash_h of msg, result in buf1
-        hash_h(buf1, msg);
+        hash_h(buf1, 0, msg);
         // Generate r from second part of buf1
-        poly_cbd1(r, buf1, symBytes);
+        poly_cbd1(r, buf1, SSBytes);
         poly_ntt(r);
 
         // Convert r to bytes and then hash_g
@@ -767,7 +734,7 @@ public class NTRUPlusEngine
         poly_tobytes(ct, ctPos, c);
 
         // Copy first ssBytes of buf1 to ss
-        System.arraycopy(buf1, 0, ss, ssPos, ssBytes);
+        System.arraycopy(buf1, 0, ss, ssPos, SSBytes);
     }
 
     /**
@@ -785,7 +752,7 @@ public class NTRUPlusEngine
      */
     private void hash_f(byte[] buf, int bufPos, byte[] msg, int msgPos)
     {
-        shake256(buf, bufPos, 32, (byte)0x00, msg, msgPos, params.getPolyBytes());
+        shake256(buf, bufPos, 32, (byte)0x00, msg, msgPos, polyBytes);
     }
 
     /**
@@ -835,6 +802,7 @@ public class NTRUPlusEngine
         }
         for (int step = baseStep << 1; step <= n / 6; step *= 3)
         {
+            int twoStep = step << 1;
             for (int start = 0; start < n; start += 3 * step)
             {
                 zeta2 = zetas[k--];
@@ -842,23 +810,23 @@ public class NTRUPlusEngine
 
                 for (int i = start; i < start + step; i++)
                 {
-                    t1 = fqmul(omega, (short)(r[i + step] - r[i]));
-                    t2 = fqmul(zeta1, (short)(r[i + 2 * step] - r[i] + t1));
-                    t3 = fqmul(zeta2, (short)(r[i + 2 * step] - r[i + step] - t1));
+                    t1 = fqmul(OMEGA, (short)(r[i + step] - r[i]));
+                    t2 = fqmul(zeta1, (short)(r[i + twoStep] - r[i] + t1));
+                    t3 = fqmul(zeta2, (short)(r[i + twoStep] - r[i + step] - t1));
 
-                    r[i] = barrett_reduce((short)(r[i] + r[i + step] + r[i + 2 * step]));
+                    r[i] = barrett_reduce((short)(r[i] + r[i + step] + r[i + twoStep]));
                     r[i + step] = t2;
-                    r[i + 2 * step] = t3;
+                    r[i + twoStep] = t3;
                 }
             }
         }
 
-        for (int i = 0; i < n / 2; i++)
+        for (int i = 0; i < halfN; i++)
         {
-            t1 = (short)(r[i] + r[i + n / 2]);
-            t2 = fqmul((short)-1665, (short)(r[i] - r[i + n / 2]));
+            t1 = (short)(r[i] + r[i + halfN]);
+            t2 = fqmul((short)-1665, (short)(r[i] - r[i + halfN]));
             r[i] = fqmul(a1, (short)(t1 - t2));
-            r[i + n / 2] = fqmul(a2, t2);
+            r[i + halfN] = fqmul(a2, t2);
         }
     }
 
@@ -878,16 +846,15 @@ public class NTRUPlusEngine
      */
     private short crepmod3(short a)
     {
-        int q = params.getQ();
         short t;
         final short v = (short)(((1 << 15) + 3 / 2) / 3);
 
         // Reduce a to range [0, q-1]
         // Center around 0: subtract (q+1)/2
-        a += (short)(((a >> 15) & q) - ((q + 1) / 2));
+        a += (short)(((a >> 15) & Q) - ((Q + 1) / 2));
         // If negative, add q back
         // Subtract (q-1)/2 to get centered around 0
-        a += (short)(((a >> 15) & q) - ((q - 1) / 2));
+        a += (short)(((a >> 15) & Q) - ((Q - 1) / 2));
 
         // Barrett reduction for mod 3
         t = (short)((v * a + (1 << 14)) >> 15);
@@ -911,8 +878,6 @@ public class NTRUPlusEngine
      */
     private int poly_sotp_decode(byte[] msg, short[] a, byte[] buf)
     {
-        int eighthN = n / 8;
-
         int r = 0;
         byte mask;
 
@@ -972,14 +937,10 @@ public class NTRUPlusEngine
      */
     public void crypto_kem_dec(byte[] ss, int ssPos, byte[] ct, int ctPos, byte[] sk, int skPos)
     {
-        int symBytes = params.getSymBytes();
-        int ssBytes = params.getSsBytes();
-        int polyBytes = params.getPolyBytes();
-
-        byte[] msg = new byte[n / 8 + symBytes];
+        byte[] msg = new byte[eighthN + SSBytes];
         byte[] buf1 = new byte[polyBytes];
         byte[] buf2 = new byte[polyBytes];
-        byte[] buf3 = new byte[polyBytes + symBytes];
+        byte[] buf3 = new byte[polyBytes + SSBytes];
 
         int fail;
 
@@ -1019,13 +980,13 @@ public class NTRUPlusEngine
         fail = poly_sotp_decode(msg, m1, buf2);
 
         // Append hash of pk from secret key
-        System.arraycopy(sk, skPos + 2 * polyBytes, msg, n / 8, symBytes);
+        System.arraycopy(sk, skPos + 2 * polyBytes, msg, eighthN, SSBytes);
 
         // Hash H
-        hash_h(buf3, msg);
+        hash_h(buf3, 0, msg);
 
         // Generate r1 from second part of buf3
-        poly_cbd1(r1, buf3, ssBytes);
+        poly_cbd1(r1, buf3, SSBytes);
         poly_ntt(r1);
         poly_tobytes(buf2, 0, r1);
 
@@ -1039,7 +1000,7 @@ public class NTRUPlusEngine
         }
         else
         {
-            System.arraycopy(buf3, 0, ss, ssPos, ssBytes);
+            System.arraycopy(buf3, 0, ss, ssPos, SSBytes);
         }
     }
 }

@@ -23,7 +23,7 @@ public class NTRUPlusKEMGenerator
         NTRUPlusPublicKeyParameters key = (NTRUPlusPublicKeyParameters)recipientKey;
         NTRUPlusParameters params = key.getParameters();
         byte[] ct = new byte[params.getCiphertextBytes()];
-        byte[] ss = new byte[params.getSsBytes()];
+        byte[] ss = new byte[NTRUPlusEngine.SSBytes];
         NTRUPlusEngine engine = new NTRUPlusEngine(params);
         byte[] coins = new byte[params.getN() >> 3];
         sr.nextBytes(coins);
