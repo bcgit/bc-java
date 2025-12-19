@@ -229,7 +229,7 @@ public class CMSEnvelopedDataStreamGenerator
             }
             _eiGen.close();
 
-            CMSUtils.addAttriSetToGenerator(_envGen, unprotectedAttributeGenerator, 1, Collections.EMPTY_MAP);
+            CMSUtils.addAttriSetToGenerator(_envGen, unprotectedAttributeGenerator, 1, CMSUtils.getEmptyParameters());
 
             _envGen.close();
             _cGen.close();
