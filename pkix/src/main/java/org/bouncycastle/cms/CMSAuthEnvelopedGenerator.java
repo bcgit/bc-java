@@ -43,14 +43,4 @@ public class CMSAuthEnvelopedGenerator
     {
         this.originatorInfo = originatorInfo.toASN1Structure();
     }
-
-    /**
-     * Add a generator to produce the recipient info required.
-     *
-     * @param recipientGenerator a generator of a recipient info object.
-     */
-    public void addRecipientInfoGenerator(RecipientInfoGenerator recipientGenerator)
-    {
-        recipientInfoGenerators.add(recipientGenerator);
-    }
 }
