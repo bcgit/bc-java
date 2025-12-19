@@ -122,29 +122,29 @@ public class NTRUPlusKeyGeneratorSpi
     }
 
     public static class NTRUPlus768
-        extends org.bouncycastle.pqc.jcajce.provider.ntruplus.NTRUPlusKeyGeneratorSpi
+        extends NTRUPlusKeyGeneratorSpi
     {
         public NTRUPlus768()
         {
-            super(NTRUPlusParameters.NTRUPLUS_768);
+            super(NTRUPlusParameters.ntruplus_kem_768);
         }
     }
 
     public static class NTRUPlus864
-        extends org.bouncycastle.pqc.jcajce.provider.ntruplus.NTRUPlusKeyGeneratorSpi
+        extends NTRUPlusKeyGeneratorSpi
     {
         public NTRUPlus864()
         {
-            super(NTRUPlusParameters.NTRUPLUS_864);
+            super(NTRUPlusParameters.ntruplus_kem_864);
         }
     }
 
     public static class NTRUPlus1152
-        extends org.bouncycastle.pqc.jcajce.provider.ntruplus.NTRUPlusKeyGeneratorSpi
+        extends NTRUPlusKeyGeneratorSpi
     {
         public NTRUPlus1152()
         {
-            super(NTRUPlusParameters.NTRUPLUS_1152);
+            super(NTRUPlusParameters.ntruplus_kem_1152);
         }
     }
 }

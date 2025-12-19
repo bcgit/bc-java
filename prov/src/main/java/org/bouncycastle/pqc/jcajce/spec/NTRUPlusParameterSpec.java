@@ -10,9 +10,9 @@ import org.bouncycastle.util.Strings;
 public class NTRUPlusParameterSpec
     implements AlgorithmParameterSpec
 {
-    public static final NTRUPlusParameterSpec ntruplus_768 = new NTRUPlusParameterSpec(NTRUPlusParameters.NTRUPLUS_768);
-    public static final NTRUPlusParameterSpec ntruplus_864 = new NTRUPlusParameterSpec(NTRUPlusParameters.NTRUPLUS_864);
-    public static final NTRUPlusParameterSpec ntruplus_1152 = new NTRUPlusParameterSpec(NTRUPlusParameters.NTRUPLUS_1152);
+    public static final NTRUPlusParameterSpec ntruplus_768 = new NTRUPlusParameterSpec(NTRUPlusParameters.ntruplus_kem_768);
+    public static final NTRUPlusParameterSpec ntruplus_864 = new NTRUPlusParameterSpec(NTRUPlusParameters.ntruplus_kem_864);
+    public static final NTRUPlusParameterSpec ntruplus_1152 = new NTRUPlusParameterSpec(NTRUPlusParameters.ntruplus_kem_1152);
 
     private static Map parameters = new HashMap();
 

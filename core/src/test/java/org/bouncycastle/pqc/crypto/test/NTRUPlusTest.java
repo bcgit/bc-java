@@ -28,9 +28,9 @@ public class NTRUPlusTest
 
     private static final NTRUPlusParameters[] PARAMETER_SETS = new NTRUPlusParameters[]
         {
-            NTRUPlusParameters.NTRUPLUS_768,
-            NTRUPlusParameters.NTRUPLUS_864,
-            NTRUPlusParameters.NTRUPLUS_1152,
+            NTRUPlusParameters.ntruplus_kem_768,
+            NTRUPlusParameters.ntruplus_kem_864,
+            NTRUPlusParameters.ntruplus_kem_1152,
         };
 
     private static final String[] files = new String[]{

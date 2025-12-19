@@ -326,7 +326,7 @@ class NTRUPlusCipherSpi
         public Base()
             throws NoSuchAlgorithmException
         {
-            super("NTRUPLUS");
+            super("NTRU+");
         }
     }
 
@@ -335,7 +335,7 @@ class NTRUPlusCipherSpi
     {
         public NTRUPlus768()
         {
-            super(NTRUPlusParameters.NTRUPLUS_864);
+            super(NTRUPlusParameters.ntruplus_kem_864);
         }
     }
 
@@ -344,7 +344,7 @@ class NTRUPlusCipherSpi
     {
         public NTRUPlus864()
         {
-            super(NTRUPlusParameters.NTRUPLUS_864);
+            super(NTRUPlusParameters.ntruplus_kem_864);
         }
     }
 
@@ -353,7 +353,7 @@ class NTRUPlusCipherSpi
     {
         public NTRUPlus1152()
         {
-            super(NTRUPlusParameters.NTRUPLUS_1152);
+            super(NTRUPlusParameters.ntruplus_kem_1152);
         }
     }
 }

@@ -25,9 +25,9 @@ public class NTRUPlusKeyPairGeneratorSpi
 
     static
     {
-        parameters.put(NTRUPlusParameterSpec.ntruplus_768.getName(), NTRUPlusParameters.NTRUPLUS_768);
-        parameters.put(NTRUPlusParameterSpec.ntruplus_864.getName(), NTRUPlusParameters.NTRUPLUS_864);
-        parameters.put(NTRUPlusParameterSpec.ntruplus_1152.getName(), NTRUPlusParameters.NTRUPLUS_1152);
+        parameters.put(NTRUPlusParameterSpec.ntruplus_768.getName(), NTRUPlusParameters.ntruplus_kem_768);
+        parameters.put(NTRUPlusParameterSpec.ntruplus_864.getName(), NTRUPlusParameters.ntruplus_kem_864);
+        parameters.put(NTRUPlusParameterSpec.ntruplus_1152.getName(), NTRUPlusParameters.ntruplus_kem_1152);
     }
 
     private final NTRUPlusParameters ntruplusParameters;
@@ -107,7 +107,7 @@ public class NTRUPlusKeyPairGeneratorSpi
             }
             else
             {
-                param = new NTRUPlusKeyGenerationParameters(random, NTRUPlusParameters.NTRUPLUS_768);
+                param = new NTRUPlusKeyGenerationParameters(random, NTRUPlusParameters.ntruplus_kem_768);
             }
 
             engine.init(param);
@@ -126,7 +126,7 @@ public class NTRUPlusKeyPairGeneratorSpi
     {
         public NTRUPlus768()
         {
-            super(NTRUPlusParameters.NTRUPLUS_768);
+            super(NTRUPlusParameters.ntruplus_kem_768);
         }
     }
 
@@ -135,7 +135,7 @@ public class NTRUPlusKeyPairGeneratorSpi
     {
         public NTRUPlus864()
         {
-            super(NTRUPlusParameters.NTRUPLUS_864);
+            super(NTRUPlusParameters.ntruplus_kem_864);
         }
     }
 
@@ -144,7 +144,7 @@ public class NTRUPlusKeyPairGeneratorSpi
     {
         public NTRUPlus1152()
         {
-            super(NTRUPlusParameters.NTRUPLUS_864);
+            super(NTRUPlusParameters.ntruplus_kem_864);
         }
     }
 }

@@ -69,8 +69,8 @@ public class NTRUPlusParameters
     };
 
     // Parameter sets for different security levels
-    public static final NTRUPlusParameters NTRUPLUS_768 = new NTRUPlusParameters(
-        "NTRUPLUS_768",      // name
+    public static final NTRUPlusParameters ntruplus_kem_768 = new NTRUPlusParameters(
+        "NTRU+KEM768",      // name
         768,                 // NTRUPLUS_N
         1152,                // NTRUPLUS_PUBLICKEYBYTES
         4,
@@ -79,8 +79,8 @@ public class NTRUPlusParameters
         zetas768
     );
 
-    public static final NTRUPlusParameters NTRUPLUS_864 = new NTRUPlusParameters(
-        "NTRUPLUS_864",      // name
+    public static final NTRUPlusParameters ntruplus_kem_864 = new NTRUPlusParameters(
+        "NTRU+KEM864",      // name
         864,                 // NTRUPLUS_N
         1296,                // NTRUPLUS_PUBLICKEYBYTES
         3,
@@ -89,8 +89,8 @@ public class NTRUPlusParameters
         zetas864_1152
     );
 
-    public static final NTRUPlusParameters NTRUPLUS_1152 = new NTRUPlusParameters(
-        "NTRUPLUS_1152",     // name
+    public static final NTRUPlusParameters ntruplus_kem_1152 = new NTRUPlusParameters(
+        "NTRU+KEM1152",     // name
         1152,                // NTRUPLUS_N
         1728,                // NTRUPLUS_PUBLICKEYBYTES
         4,
