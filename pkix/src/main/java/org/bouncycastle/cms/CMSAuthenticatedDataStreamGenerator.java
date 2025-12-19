@@ -47,7 +47,6 @@ public class CMSAuthenticatedDataStreamGenerator
 //    private Object              _unprotectedAttributes = null;
     private int bufferSize;
     private boolean berEncodeRecipientSet;
-    private MacCalculator macCalculator;
 
     /**
      * base constructor
@@ -133,8 +132,6 @@ public class CMSAuthenticatedDataStreamGenerator
         DigestCalculator     digestCalculator)
         throws CMSException
     {
-        this.macCalculator = macCalculator;
-
         try
         {
             ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(macCalculator.getKey(), recipientInfoGenerators);
@@ -254,7 +251,11 @@ public class CMSAuthenticatedDataStreamGenerator
 
             if (digestCalculator != null)
             {
-                parameters = Collections.unmodifiableMap(getBaseParameters(contentType, digestCalculator.getAlgorithmIdentifier(), macCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest()));
+                AlgorithmIdentifier digestAlgID = digestCalculator.getAlgorithmIdentifier();
+                AlgorithmIdentifier macAlgID = macCalculator.getAlgorithmIdentifier();
+
+                parameters = Collections.unmodifiableMap(
+                    getBaseParameters(contentType, digestAlgID, macAlgID, digestCalculator.getDigest()));
 
                 if (authGen == null)
                 {
