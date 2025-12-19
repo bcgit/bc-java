@@ -576,13 +576,13 @@ class Utils
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, SnovaParameters.SNOVA_75_33_2_SHAKE_SSK);
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, SnovaParameters.SNOVA_75_33_2_SHAKE_ESK);
 
-        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus768, NTRUPlusParameters.NTRUPLUS_768);
-        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus864, NTRUPlusParameters.NTRUPLUS_864);
-        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus1152, NTRUPlusParameters.NTRUPLUS_1152);
+        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus768, NTRUPlusParameters.ntruplus_kem_768);
+        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus864, NTRUPlusParameters.ntruplus_kem_864);
+        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus1152, NTRUPlusParameters.ntruplus_kem_1152);
 
-        ntruPlusOids.put(NTRUPlusParameters.NTRUPLUS_768, BCObjectIdentifiers.ntruPlus768);
-        ntruPlusOids.put(NTRUPlusParameters.NTRUPLUS_864, BCObjectIdentifiers.ntruPlus864);
-        ntruPlusOids.put(NTRUPlusParameters.NTRUPLUS_1152, BCObjectIdentifiers.ntruPlus1152);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_768, BCObjectIdentifiers.ntruPlus768);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruPlus864);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruPlus1152);
     }
 
     static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
