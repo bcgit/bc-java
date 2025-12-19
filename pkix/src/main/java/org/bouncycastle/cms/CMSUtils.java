@@ -492,7 +492,7 @@ class CMSUtils
         ASN1Set authenticatedAttrSet = null;
         if (authAttrsGenerator != null)
         {
-            AttributeTable attrTable = authAttrsGenerator.getAttributes(Collections.EMPTY_MAP);
+            AttributeTable attrTable = authAttrsGenerator.getAttributes(getEmptyParameters());
 
             authenticatedAttrSet = new DERSet(attrTable.toASN1EncodableVector());
             encryptor.getAADStream().write(authenticatedAttrSet.getEncoded(ASN1Encoding.DER));
@@ -521,12 +521,12 @@ class CMSUtils
 
     static ASN1Set getAttrDLSet(CMSAttributeTableGenerator gen)
     {
-        return (gen != null) ? new DLSet(gen.getAttributes(Collections.EMPTY_MAP).toASN1EncodableVector()) : null;
+        return (gen != null) ? new DLSet(gen.getAttributes(getEmptyParameters()).toASN1EncodableVector()) : null;
     }
 
     static ASN1Set getAttrBERSet(CMSAttributeTableGenerator gen)
     {
-        return (gen != null) ? new BERSet(gen.getAttributes(Collections.EMPTY_MAP).toASN1EncodableVector()) : null;
+        return (gen != null) ? new BERSet(gen.getAttributes(getEmptyParameters()).toASN1EncodableVector()) : null;
     }
 
     static byte[] encodeObj(
@@ -539,5 +539,10 @@ class CMSUtils
         }
 
         return null;
+    }
+
+    static Map getEmptyParameters()
+    {
+        return Collections.EMPTY_MAP;
     }
 }

@@ -2,7 +2,6 @@ package org.bouncycastle.cms;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -206,7 +205,7 @@ public class CMSAuthEnvelopedDataStreamGenerator
 
             _envGen.addObject(new DEROctetString(_encryptor.getMAC()));
 
-            CMSUtils.addAttriSetToGenerator(_envGen, unauthAttrsGenerator, 2, Collections.EMPTY_MAP);
+            CMSUtils.addAttriSetToGenerator(_envGen, unauthAttrsGenerator, 2, CMSUtils.getEmptyParameters());
 
             _envGen.close();
             _cGen.close();
