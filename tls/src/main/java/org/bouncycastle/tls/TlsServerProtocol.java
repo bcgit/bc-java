@@ -291,29 +291,27 @@ public class TlsServerProtocol
                 TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
             }
 
-            int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
-            int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
-            boolean useServerOrder = tlsServer.preferLocalSupportedGroups();
-
-            int selectedGroup = TlsUtils.selectKeyShareGroup(crypto, serverVersion, clientSupportedGroups,
-                serverSupportedGroups, useServerOrder);
-            if (selectedGroup < 0)
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
-
-            securityParameters.negotiatedGroup = selectedGroup;
-
-            clientShare = TlsUtils.findEarlyKeyShare(clientShares, selectedGroup);
-
-            if (null == clientShare)
-            {
-                this.retryGroup = selectedGroup;
-
-                this.retryCookie = tlsServerContext.getNonceGenerator().generateNonce(16);
-
-                return generate13HelloRetryRequest(clientHello);
-            }
+//            int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
+//            int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
+//            boolean useServerOrder = tlsServer.preferLocalSupportedGroups();
+//
+//            int selectedGroup = TlsUtils.selectKeyShareGroup(crypto, serverVersion, clientSupportedGroups,
+//                serverSupportedGroups, useServerOrder);
+//            if (selectedGroup < 0)
+//            {
+//                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+//            }
+//
+//            clientShare = TlsUtils.findEarlyKeyShare(clientShares, selectedGroup);
+//
+//            if (null == clientShare)
+//            {
+//                this.retryGroup = selectedGroup;
+//
+//                this.retryCookie = tlsServerContext.getNonceGenerator().generateNonce(16);
+//
+//                return generate13HelloRetryRequest(clientHello);
+//            }
         }
 
 
@@ -329,17 +327,17 @@ public class TlsServerProtocol
          * client's view of its preferences; this extension SHOULD contain all groups the server supports,
          * regardless of whether they are currently supported by the client.
          */
-        if (!afterHelloRetryRequest)
-        {
-            int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
-
-            if (!TlsUtils.isNullOrEmpty(serverSupportedGroups) &&
-                serverSupportedGroups[0] != securityParameters.getNegotiatedGroup() &&
-                !serverEncryptedExtensions.containsKey(TlsExtensionsUtils.EXT_supported_groups))
-            {
-                TlsExtensionsUtils.addSupportedGroupsExtension(serverEncryptedExtensions, serverSupportedGroups);
-            }
-        }
+//        if (!afterHelloRetryRequest)
+//        {
+//            int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
+//
+//            if (!TlsUtils.isNullOrEmpty(serverSupportedGroups) &&
+//                serverSupportedGroups[0] != securityParameters.getNegotiatedGroup() &&
+//                !serverEncryptedExtensions.containsKey(TlsExtensionsUtils.EXT_supported_groups))
+//            {
+//                TlsExtensionsUtils.addSupportedGroupsExtension(serverEncryptedExtensions, serverSupportedGroups);
+//            }
+//        }
 
         ProtocolVersion serverLegacyVersion = ProtocolVersion.TLSv12;
         TlsExtensionsUtils.addSupportedVersionsExtensionServer(serverHelloExtensions, serverVersion);
@@ -397,29 +395,29 @@ public class TlsServerProtocol
             TlsExtensionsUtils.addPreSharedKeyServerHello(serverHelloExtensions, selectedPSK.index);
         }
 
-        TlsSecret sharedSecret;
-        {
-            int negotiatedGroup = securityParameters.getNegotiatedGroup();
-
-            if (clientShare.getNamedGroup() != negotiatedGroup)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-
-            TlsAgreement agreement = TlsUtils.createKeyShare(crypto, negotiatedGroup, true);
-            if (agreement == null)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            agreement.receivePeerValue(clientShare.getKeyExchange());
-
-            byte[] key_exchange = agreement.generateEphemeral();
-            KeyShareEntry serverShare = new KeyShareEntry(negotiatedGroup, key_exchange);
-            TlsExtensionsUtils.addKeyShareServerHello(serverHelloExtensions, serverShare);
-
-            sharedSecret = agreement.calculateSecret();
-        }
+        TlsSecret sharedSecret = null;
+//        {
+//            int negotiatedGroup = securityParameters.getNegotiatedGroup();
+//
+//            if (clientShare.getNamedGroup() != negotiatedGroup)
+//            {
+//                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+//            }
+//
+//            TlsAgreement agreement = TlsUtils.createKeyShare(crypto, negotiatedGroup, true);
+//            if (agreement == null)
+//            {
+//                throw new TlsFatalAlert(AlertDescription.internal_error);
+//            }
+//
+//            agreement.receivePeerValue(clientShare.getKeyExchange());
+//
+//            byte[] key_exchange = agreement.generateEphemeral();
+//            KeyShareEntry serverShare = new KeyShareEntry(negotiatedGroup, key_exchange);
+//            TlsExtensionsUtils.addKeyShareServerHello(serverHelloExtensions, serverShare);
+//
+//            sharedSecret = agreement.calculateSecret();
+//        }
 
         TlsUtils.establish13PhaseSecrets(tlsServerContext, pskEarlySecret, sharedSecret);
 
