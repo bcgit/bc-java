@@ -56,17 +56,6 @@ public class CMSAuthEnvelopedDataStreamGenerator
         _berEncodeRecipientSet = berEncodeRecipientSet;
     }
 
-    private OutputStream doOpen(
-        ASN1ObjectIdentifier dataType,
-        OutputStream out,
-        OutputAEADEncryptor encryptor)
-        throws IOException, CMSException
-    {
-        ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(encryptor.getKey(), recipientInfoGenerators);
-
-        return open(dataType, out, recipientInfos, encryptor);
-    }
-
     protected OutputStream open(
         ASN1ObjectIdentifier dataType,
         OutputStream out,
@@ -123,22 +112,41 @@ public class CMSAuthEnvelopedDataStreamGenerator
     }
 
     /**
-     * generate an enveloped object that contains an CMS Enveloped Data object using the given encryptor.
+     * Generate authenticated-enveloped-data using the given encryptor, and marking the encapsulated
+     * bytes as being of type DATA.
      * <p>
-     * <b>Stream handling note:</b> Closing the returned stream finalizes the CMS structure but
-     * <b>does not close</b> the underlying output stream. The caller remains responsible for
-     * managing the lifecycle of {@code out}.
+     * <b>Stream handling note:</b> Closing the returned stream finalizes the CMS structure but <b>does
+     * not close</b> the underlying output stream. The caller remains responsible for managing the
+     * lifecycle of {@code out}.
      *
      * @param out the output stream to write the CMS structure to
      * @param encryptor the cipher to use for encryption
      * @return an output stream that writes encrypted and authenticated content
      */
-    public OutputStream open(
-        OutputStream out,
-        OutputAEADEncryptor encryptor)
+    public OutputStream open(OutputStream out, OutputAEADEncryptor encryptor) throws CMSException, IOException
+    {
+        return open(CMSObjectIdentifiers.data, out, encryptor);
+    }
+
+    /**
+     * Generate authenticated-enveloped-data using the given encryptor, and marking the encapsulated
+     * bytes as being of the passed in type.
+     * <p>
+     * <b>Stream handling note:</b> Closing the returned stream finalizes the CMS structure but
+     * <b>does not close</b> the underlying output stream. The caller remains responsible for
+     * managing the lifecycle of {@code out}.
+     *
+     * @param dataType the type of the data being written to the object.
+     * @param out the output stream to write the CMS structure to
+     * @param encryptor the cipher to use for encryption
+     * @return an output stream that writes encrypted and authenticated content
+     */
+    public OutputStream open(ASN1ObjectIdentifier dataType, OutputStream out, OutputAEADEncryptor encryptor)
         throws CMSException, IOException
     {
-        return doOpen(CMSObjectIdentifiers.data, out, encryptor);
+        ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(encryptor.getKey(), recipientInfoGenerators);
+
+        return open(dataType, out, recipientInfos, encryptor);
     }
 
     private class CMSAuthEnvelopedDataOutputStream
