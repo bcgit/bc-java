@@ -17,7 +17,7 @@ public class CMSAbsentContent
 
     public CMSAbsentContent()
     {
-        this(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()));
+        this(CMSObjectIdentifiers.data);
     }
 
     public CMSAbsentContent(

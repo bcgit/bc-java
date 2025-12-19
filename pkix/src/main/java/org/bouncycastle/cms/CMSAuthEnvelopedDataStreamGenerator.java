@@ -139,7 +139,7 @@ public class CMSAuthEnvelopedDataStreamGenerator
         OutputAEADEncryptor encryptor)
         throws CMSException, IOException
     {
-        return doOpen(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), out, encryptor);
+        return doOpen(CMSObjectIdentifiers.data, out, encryptor);
     }
 
     private class CMSAuthEnvelopedDataOutputStream
