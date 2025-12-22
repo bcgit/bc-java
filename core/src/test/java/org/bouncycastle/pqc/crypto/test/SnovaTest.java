@@ -126,7 +126,7 @@ public class SnovaTest
         throws Exception
     {
         long start = System.currentTimeMillis();
-        TestUtils.testTestVector(true, true, false, "pqc/crypto/snova", files, new TestUtils.KeyGenerationOperation()
+        TestUtils.testTestVector(true, true, false, "pqc/crypto/snova", files, new TestUtils.SingerOperation()
         {
             @Override
             public SecureRandom getSecureRandom(byte[] seed)

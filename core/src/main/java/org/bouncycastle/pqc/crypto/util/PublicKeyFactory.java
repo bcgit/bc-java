@@ -47,6 +47,8 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
@@ -302,6 +304,10 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.snova_75_33_2_ssk, new SnovaConverter());
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaConverter());
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaConverter());
+
+        converters.put(BCObjectIdentifiers.ntruPlus768, new NTRUPlusConverter());
+        converters.put(BCObjectIdentifiers.ntruPlus864, new NTRUPlusConverter());
+        converters.put(BCObjectIdentifiers.ntruPlus1152, new NTRUPlusConverter());
     }
 
     /**
@@ -890,6 +896,20 @@ public class PublicKeyFactory
             SnovaParameters snovaParams = Utils.snovaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new SnovaPublicKeyParameters(snovaParams, keyEnc);
+        }
+    }
+
+    private static class NTRUPlusConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            NTRUPlusParameters ntruPlusParams = Utils.ntruPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new NTRUPlusPublicKeyParameters(ntruPlusParams, keyEnc);
         }
     }
 }
