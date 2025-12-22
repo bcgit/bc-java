@@ -7,7 +7,6 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 
 import junit.framework.Assert;
-
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CipherParameters;
@@ -33,7 +32,7 @@ class TestUtils
         return "true".equalsIgnoreCase(value);
     }
 
-    public interface SingerOperation
+    public interface SignerOperation
     {
         SecureRandom getSecureRandom(byte[] seed);
 
@@ -65,7 +64,7 @@ class TestUtils
         int getSessionKeySize();
     }
 
-    public static void testTestVector(boolean sampleOnly, boolean enableFactory, boolean isSigner, String homeDir, String[] files, SingerOperation operation)
+    public static void testTestVector(boolean sampleOnly, boolean enableFactory, boolean isSigner, String homeDir, String[] files, SignerOperation operation)
         throws Exception
     {
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
