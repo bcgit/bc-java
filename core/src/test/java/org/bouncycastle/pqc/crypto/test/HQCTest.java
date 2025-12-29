@@ -45,7 +45,7 @@ public class HQCTest
             "PQCkemKAT_7333.rsp",
         };
 
-        HQCParameters[] listParams = new HQCParameters[]{
+        final HQCParameters[] listParams = new HQCParameters[]{
             HQCParameters.hqc128,
             HQCParameters.hqc192,
             HQCParameters.hqc256
