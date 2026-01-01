@@ -34,6 +34,7 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.x509.CertificatePair;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
+import org.bouncycastle.ldap.LDAPUtils;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -50,26 +51,6 @@ import org.bouncycastle.util.Strings;
 public class X509LDAPCertStoreSpi
     extends CertStoreSpi
 {
-    private static String[] FILTER_ESCAPE_TABLE = new String['\\' + 1];
-
-    static
-    {
-        // Filter encoding table -------------------------------------
-
-        // fill with char itself
-        for (char c = 0; c < FILTER_ESCAPE_TABLE.length; c++)
-        {
-            FILTER_ESCAPE_TABLE[c] = String.valueOf(c);
-        }
-
-        // escapes (RFC2254)
-        FILTER_ESCAPE_TABLE['*'] = "\\2a";
-        FILTER_ESCAPE_TABLE['('] = "\\28";
-        FILTER_ESCAPE_TABLE[')'] = "\\29";
-        FILTER_ESCAPE_TABLE['\\'] = "\\5c";
-        FILTER_ESCAPE_TABLE[0] = "\\00";
-    }
-
     /**
      * Initial Context Factory.
      */
@@ -122,42 +103,6 @@ public class X509LDAPCertStoreSpi
 
         DirContext ctx = new InitialDirContext(props);
         return ctx;
-    }
-
-    private String parseDN(String subject, String subjectAttributeName)
-    {
-        String temp = subject;
-        int begin = Strings.toLowerCase(temp).indexOf(Strings.toLowerCase(subjectAttributeName));
-        temp = temp.substring(begin + subjectAttributeName.length());
-        int end = temp.indexOf(',');
-        if (end == -1)
-        {
-            end = temp.length();
-        }
-        while (temp.charAt(end - 1) == '\\')
-        {
-            end = temp.indexOf(',', end + 1);
-            if (end == -1)
-            {
-                end = temp.length();
-            }
-        }
-        temp = temp.substring(0, end);
-        begin = temp.indexOf('=');
-        temp = temp.substring(begin + 1);
-        if (temp.charAt(0) == ' ')
-        {
-            temp = temp.substring(1);
-        }
-        if (temp.startsWith("\""))
-        {
-            temp = temp.substring(1);
-        }
-        if (temp.endsWith("\""))
-        {
-            temp = temp.substring(0, temp.length() - 1);
-        }
-        return filterEncode(temp);
     }
 
     public Collection engineGetCertificates(CertSelector selector)
@@ -277,7 +222,7 @@ public class X509LDAPCertStoreSpi
                         subject = xselector.getSubjectAsString();
                     }
                 }
-                String attrValue = parseDN(subject, subjectAttributeName);
+                String attrValue = LDAPUtils.parseDN(subject, subjectAttributeName);
                 set.addAll(search(attrName, "*" + attrValue + "*", attrs));
                 if (serial != null
                     && params.getSearchForSerialNumberIn() != null)
@@ -374,13 +319,13 @@ public class X509LDAPCertStoreSpi
                 {
                     String issuerAttributeName = params
                         .getCertificateRevocationListIssuerAttributeName();
-                    attrValue = parseDN((String)o, issuerAttributeName);
+                    attrValue = LDAPUtils.parseDN((String)o, issuerAttributeName);
                 }
                 else
                 {
                     String issuerAttributeName = params
                         .getCertificateRevocationListIssuerAttributeName();
-                    attrValue = parseDN(new X500Principal((byte[])o)
+                    attrValue = LDAPUtils.parseDN(new X500Principal((byte[])o)
                         .getName("RFC1779"), issuerAttributeName);
                 }
                 set.addAll(search(attrName, "*" + attrValue + "*", attrs));
@@ -415,43 +360,7 @@ public class X509LDAPCertStoreSpi
 
         return crlSet;
     }
-
-    /**
-     * Escape a value for use in a filter.
-     *
-     * @param value the value to escape.
-     * @return a properly escaped representation of the supplied value.
-     */
-    private String filterEncode(String value)
-    {
-        if (value == null)
-        {
-            return null;
-        }
-
-        // make buffer roomy
-        StringBuilder encodedValue = new StringBuilder(value.length() * 2);
-
-        int length = value.length();
-
-        for (int i = 0; i < length; i++)
-        {
-            char c = value.charAt(i);
-
-            if (c < FILTER_ESCAPE_TABLE.length)
-            {
-                encodedValue.append(FILTER_ESCAPE_TABLE[c]);
-            }
-            else
-            {
-                // default: add the char
-                encodedValue.append(c);
-            }
-        }
-
-        return encodedValue.toString();
-    }
-
+    
     /**
      * Returns a Set of byte arrays with the certificate or CRL encodings.
      *
