@@ -447,7 +447,7 @@ public class CMSSignedDataParser
             digestAlgs.add(HELPER.fixDigestAlgID(signer.getDigestAlgorithmID(), dgstAlgFinder));
         }
         AlgorithmIdentifier[] newDigestAlgIds = (AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]);
-        sigGen.getRawOutputStream().write(new DLSet(newDigestAlgIds).getEncoded());
+        sigGen.addObject(new DLSet(newDigestAlgIds));
 
         writeEncapContentInfoToGenerator(signedData, sigGen);
 
@@ -463,7 +463,7 @@ public class CMSSignedDataParser
             signerInfos.add(signer.toASN1Structure());
         }
 
-        sigGen.getRawOutputStream().write(new DERSet(signerInfos).getEncoded());
+        sigGen.addObject(new DERSet(signerInfos));
 
         sigGen.close();
 
@@ -508,7 +508,7 @@ public class CMSSignedDataParser
         sigGen.addObject(signedData.getVersion());
 
         // digests
-        sigGen.getRawOutputStream().write(signedData.getDigestAlgorithms().toASN1Primitive().getEncoded());
+        sigGen.addObject(signedData.getDigestAlgorithms());
 
         writeEncapContentInfoToGenerator(signedData, sigGen);
 
@@ -538,7 +538,7 @@ public class CMSSignedDataParser
 
             if (asn1Certs.size() > 0)
             {
-                sigGen.getRawOutputStream().write(new DERTaggedObject(false, 0, asn1Certs).getEncoded());
+                sigGen.addObject(new DERTaggedObject(false, 0, asn1Certs));
             }
         }
 
@@ -548,11 +548,11 @@ public class CMSSignedDataParser
 
             if (asn1Crls.size() > 0)
             {
-                sigGen.getRawOutputStream().write(new DERTaggedObject(false, 1, asn1Crls).getEncoded());
+                sigGen.addObject(new DERTaggedObject(false, 1, asn1Crls));
             }
         }
 
-        sigGen.getRawOutputStream().write(signedData.getSignerInfos().toASN1Primitive().getEncoded());
+        sigGen.addObject(signedData.getSignerInfos());
 
         sigGen.close();
 
@@ -573,11 +573,11 @@ public class CMSSignedDataParser
         {
             if (asn1SetParser instanceof BERSetParser)
             {
-                asn1Gen.getRawOutputStream().write(new BERTaggedObject(false, tagNo, asn1Set).getEncoded());
+                new BERTaggedObject(false, tagNo, asn1Set).encodeTo(asn1Gen.getRawOutputStream());
             }
             else
             {
-                asn1Gen.getRawOutputStream().write(new DERTaggedObject(false, tagNo, asn1Set).getEncoded());
+                new DERTaggedObject(false, tagNo, asn1Set).encodeTo(asn1Gen.getRawOutputStream());
             }
         }
     }

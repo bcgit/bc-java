@@ -154,9 +154,7 @@ public class CMSAuthenticatedDataStreamGenerator
 
             CMSUtils.addRecipientInfosToGenerator(recipientInfos, authGen, berEncodeRecipientSet);
 
-            AlgorithmIdentifier macAlgId = macCalculator.getAlgorithmIdentifier();
-
-            authGen.getRawOutputStream().write(macAlgId.getEncoded());
+            authGen.addObject(macCalculator.getAlgorithmIdentifier());
 
             if (digestCalculator != null)
             {

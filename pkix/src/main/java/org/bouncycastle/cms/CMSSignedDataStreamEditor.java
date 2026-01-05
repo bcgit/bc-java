@@ -81,13 +81,13 @@ public class CMSSignedDataStreamEditor
         {
             throw new CMSException("unable to find digest algorithm");
         }
-        sigGen.getRawOutputStream().write(new DERSet(digestAlgs).getEncoded());
+        sigGen.addObject(new DERSet(digestAlgs));
 
         CMSSignedDataParser.writeEncapContentInfoToGenerator(signedData, sigGen);
 
         CMSSignedDataParser.writeSetToGeneratorTagged(sigGen, signedData.getCertificates(), 0);
         CMSSignedDataParser.writeSetToGeneratorTagged(sigGen, signedData.getCrls(), 1);
-        sigGen.getRawOutputStream().write(signedData.getSignerInfos().toASN1Primitive().getEncoded());
+        sigGen.addObject(signedData.getSignerInfos());
 
         sigGen.close();
         sGen.close();

@@ -84,10 +84,7 @@ public class CMSAuthEnvelopedDataStreamGenerator
         BERSequenceGenerator eiGen = new BERSequenceGenerator(authEnvGen.getRawOutputStream());
 
         eiGen.addObject(dataType);
-
-        AlgorithmIdentifier encAlgId = encryptor.getAlgorithmIdentifier();
-
-        eiGen.getRawOutputStream().write(encAlgId.getEncoded());
+        eiGen.addObject(encryptor.getAlgorithmIdentifier());
 
         OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
             eiGen.getRawOutputStream(), 0, true, _bufferSize);
