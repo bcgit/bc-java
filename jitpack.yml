@@ -1,0 +1,4 @@
+jdk:
+  - openjdk17
+install:
+  - ./gradlew publishToMavenLocal -Pskip.signing -x test
