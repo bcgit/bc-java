@@ -460,11 +460,11 @@ class CMSUtils
     {
         if (berEncodeRecipientSet)
         {
-            authGen.getRawOutputStream().write(new BERSet(recipientInfos).getEncoded());
+            new BERSet(recipientInfos).encodeTo(authGen.getRawOutputStream());
         }
         else
         {
-            authGen.getRawOutputStream().write(new DERSet(recipientInfos).getEncoded());
+            new DERSet(recipientInfos).encodeTo(authGen.getRawOutputStream());
         }
     }
 

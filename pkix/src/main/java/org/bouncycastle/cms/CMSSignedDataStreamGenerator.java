@@ -224,8 +224,8 @@ public class CMSSignedDataStreamGenerator
         }
 
 
-        sigGen.getRawOutputStream().write(CMSUtils.convertToDlSet(digestAlgs).getEncoded());
-        
+        sigGen.addObject(CMSUtils.convertToDlSet(digestAlgs));
+
         BERSequenceGenerator eiGen = new BERSequenceGenerator(sigGen.getRawOutputStream());
         eiGen.addObject(eContentType);
 
@@ -456,14 +456,14 @@ public class CMSSignedDataStreamGenerator
             {
                 ASN1Set certSet = CMSUtils.createBerSetFromList(certs);
 
-                _sigGen.getRawOutputStream().write(new BERTaggedObject(false, 0, certSet).getEncoded());
+                _sigGen.addObject(new BERTaggedObject(false, 0, certSet));
             }
 
             if (crls.size() != 0)
             {
                 ASN1Set crlSet = CMSUtils.createBerSetFromList(crls);
 
-                _sigGen.getRawOutputStream().write(new BERTaggedObject(false, 1, crlSet).getEncoded());
+                _sigGen.addObject(new BERTaggedObject(false, 1, crlSet));
             }
 
             //
@@ -525,8 +525,8 @@ public class CMSSignedDataStreamGenerator
                     signerInfos.add(signer.toASN1Structure());
                 }
             }
-            
-            _sigGen.getRawOutputStream().write(new DERSet(signerInfos).getEncoded());
+
+            _sigGen.addObject(new DERSet(signerInfos));
 
             _sigGen.close();
             _sGen.close();
