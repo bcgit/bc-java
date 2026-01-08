@@ -339,12 +339,8 @@ public abstract class BaseAgreementSpi
                 {
                     throw new NoSuchAlgorithmException("algorithm OID is null");
                 }
-                ASN1ObjectIdentifier oid;
-                try
-                {
-                    oid = new ASN1ObjectIdentifier(oidAlgorithm);
-                }
-                catch (IllegalArgumentException e)
+                ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(oidAlgorithm);
+                if (oid == null)
                 {
                     throw new NoSuchAlgorithmException("no OID for algorithm: " + oidAlgorithm);
                 }
