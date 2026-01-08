@@ -77,7 +77,7 @@ public class HashToEllipticCurve {
    * @param message the message to be hashed
    * @return the resulting elliptic curve point P
    */
-  public ECPoint hashToEllipticCurve(final byte[] message) {
+  public ECPoint hashToCurve(final byte[] message) {
     final BigInteger[][] u = this.hashToField.process(message, 2);
     final ECPoint Q0 = this.mapToCurve.process(u[0][0]);
     final ECPoint Q1 = this.mapToCurve.process(u[1][0]);
@@ -93,7 +93,7 @@ public class HashToEllipticCurve {
    * @param message the message to be hashed
    * @return the resulting elliptic curve point P
    */
-  public ECPoint encodeToEllipticCurve(final byte[] message) {
+  public ECPoint encodeToCurve(final byte[] message) {
     final BigInteger[][] u = this.hashToField.process(message, 1);
     final ECPoint Q0 = this.mapToCurve.process(u[0][0]);
     return this.curveProcessor.clearCofactor(Q0);

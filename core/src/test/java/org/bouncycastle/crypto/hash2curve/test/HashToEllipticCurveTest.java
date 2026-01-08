@@ -90,8 +90,8 @@ public class HashToEllipticCurveTest extends TestCase {
 
   public ECPoint execute(String msg, HashToEllipticCurve h2c, String px, String py, boolean encodeToCurve) throws Exception {
     return encodeToCurve
-        ? h2c.encodeToEllipticCurve(msg.getBytes(StandardCharsets.UTF_8))
-        : h2c.hashToEllipticCurve(msg.getBytes(StandardCharsets.UTF_8));
+        ? h2c.encodeToCurve(msg.getBytes(StandardCharsets.UTF_8))
+        : h2c.hashToCurve(msg.getBytes(StandardCharsets.UTF_8));
   }
 
   BigInteger h2bi(String hexStr) {
