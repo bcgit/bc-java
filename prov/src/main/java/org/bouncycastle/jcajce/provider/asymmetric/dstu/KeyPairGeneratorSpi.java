@@ -117,8 +117,19 @@ public class KeyPairGeneratorSpi
                 curveName = ((ECNamedCurveGenParameterSpec)params).getName();
             }
 
-            //ECDomainParameters ecP = ECGOST3410NamedCurves.getByName(curveName);
-            ECDomainParameters ecP = DSTU4145NamedCurves.getByOID(new ASN1ObjectIdentifier(curveName));
+            ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(curveName);
+
+            ECDomainParameters ecP;
+            if (oid != null)
+            {
+                ecP = DSTU4145NamedCurves.getByOID(oid);
+            }
+            else
+            {
+                // TODO Add curve names to DSTU4145NamedCurves registry and support getByName 
+                throw new InvalidAlgorithmParameterException("non-OID curve name not supported: " + curveName);
+            }
+
             if (ecP == null)
             {
                 throw new InvalidAlgorithmParameterException("unknown curve name: " + curveName);
