@@ -13,14 +13,27 @@ import java.math.BigInteger;
  */
 public class Elligator2MapToCurve implements MapToCurve {
 
+  /** The elliptic curve for the instance  */
   private final ECCurve curve;
+  /** A non-square element of F */
   private final BigInteger z;
+  /** Montgomery equation A constant */
   private final BigInteger J;
+  /** Montgomery equation B constant */
   private final BigInteger K;
   private final BigInteger c1;  // J / K
   private final BigInteger c2;  // 1 / K^2
+  /** Curve field characteristic */
   private final BigInteger p;
 
+  /**
+   * Constructs an Elligator2MapToCurve instance using the provided elliptic curve parameters and constants.
+   *
+   * @param curve the elliptic curve (ECCurve) to which the input values will be mapped
+   * @param z a non-square element of the elliptic curve field
+   * @param J the Montgomery curve equation A value (Named J in RFC 9380)
+   * @param K the Montgomery curve equation B value (Named K in RFC 9380)
+   */
   public Elligator2MapToCurve(final ECCurve curve, final BigInteger z, final BigInteger J,
       final BigInteger K) {
     this.curve = curve;

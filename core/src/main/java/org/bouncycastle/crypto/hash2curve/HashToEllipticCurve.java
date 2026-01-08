@@ -40,30 +40,26 @@ public class HashToEllipticCurve {
     this.mapToCurve = mapToCurve;
   }
 
-  private HashToEllipticCurve(final HashToField hashToField, final MapToCurve mapToCurve) {
-    this(hashToField, mapToCurve, new NistCurveProcessor());
-  }
-
   public static HashToEllipticCurve getInstance(final HashToCurveProfile profile, String dst) {
     byte[] dstBytes = dst.getBytes(StandardCharsets.UTF_8);
     ECCurve curve;
     switch (profile) {
-    case P256_XMD_SHA_256_SSWU_RO_:
+    case P256_XMD_SHA_256:
       curve = new SecP256R1Curve();
       return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA256Digest(),
           profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()),
           new NistCurveProcessor());
-    case P384_XMD_SHA_384_SSWU_RO_:
+    case P384_XMD_SHA_384:
       curve = new SecP384R1Curve();
       return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA384Digest(),
           profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()),
           new NistCurveProcessor());
-    case P521_XMD_SHA_512_SSWU_RO_:
+    case P521_XMD_SHA_512:
       curve = new SecP521R1Curve();
       return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
           profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()),
           new NistCurveProcessor());
-    case curve25519_XMD_SHA_512_ELL2_RO_:
+    case CURVE25519W_XMD_SHA_512_ELL2:
       curve = new Curve25519();
       return new HashToEllipticCurve(new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
           profile.getK()), profile.getL()), new Elligator2MapToCurve(curve, profile.getZ(), BigInteger.valueOf(
@@ -75,17 +71,32 @@ public class HashToEllipticCurve {
   }
 
   /**
-   * Hashes a message to an elliptic curve point.
+   * Hashes a message to an elliptic curve point using the RFC 9380 hash_to_curve function.
+   * This function provides a uniform distribution of resulting points.
    *
    * @param message the message to be hashed
    * @return the resulting elliptic curve point P
    */
   public ECPoint hashToEllipticCurve(final byte[] message) {
-    final BigInteger[][] u = this.hashToField.process(message);
+    final BigInteger[][] u = this.hashToField.process(message, 2);
     final ECPoint Q0 = this.mapToCurve.process(u[0][0]);
     final ECPoint Q1 = this.mapToCurve.process(u[1][0]);
     final ECPoint R = curveProcessor.add(Q0, Q1);
     return this.curveProcessor.clearCofactor(R);
+  }
+
+  /**
+   * Encode a message to an elliptic curve point using the RFC 9380 encode_to_curve function.
+   * This function does not provide a uniform distribution of resulting points. This function MUST NOT
+   * be used when uniform distribution is a security requirement.
+   *
+   * @param message the message to be hashed
+   * @return the resulting elliptic curve point P
+   */
+  public ECPoint encodeToEllipticCurve(final byte[] message) {
+    final BigInteger[][] u = this.hashToField.process(message, 1);
+    final ECPoint Q0 = this.mapToCurve.process(u[0][0]);
+    return this.curveProcessor.clearCofactor(Q0);
   }
 
   /**

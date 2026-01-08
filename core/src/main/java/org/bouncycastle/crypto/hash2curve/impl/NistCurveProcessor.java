@@ -23,22 +23,23 @@ import java.math.BigInteger;
  */
 public class NistCurveProcessor implements CurveProcessor {
 
+  /**
+   * Constructs a new instance of NistCurveProcessor.
+   * This class processes elliptic curve operations for NIST curves (P-256, P-384, P-521)
+   * with a cofactor of 1. It ensures compliance with RFC 9380 by performing required normalization
+   * steps, such as the "clear_cofactor" operation, to align the elliptic curve points with their
+   * canonical affine form and match published test vectors.
+   */
   public NistCurveProcessor() {
   }
 
+  /** {@inheritDoc} */
   @Override
   public ECPoint add(final ECPoint p, final ECPoint q) {
     return p.add(q);
   }
 
-  /**
-   * Clears the cofactor of the given elliptic curve point. This operation
-   * ensures the point is normalized to its canonical affine form, even
-   * though the cofactor is 1 for NIST curves.
-   *
-   * @param ecPoint the elliptic curve point to process
-   * @return the normalized elliptic curve point in canonical affine form
-   */
+  /** {@inheritDoc} */
   @Override
   public ECPoint clearCofactor(final ECPoint ecPoint) {
     return ecPoint.multiply(BigInteger.ONE);

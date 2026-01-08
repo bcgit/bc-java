@@ -26,26 +26,6 @@ public class HashToField {
   protected int L;
   protected int m;
   protected BigInteger p;
-  protected final int count;
-
-  /**
-   * Constructs a new instance of the HashToCurveField class.
-   * <p>
-   * This implementation is intended for hashing to a field derived from an elliptic curve
-   * and is specifically used in the context of HashToEllipticCurve operations.
-   *
-   * @param dst The domain separation tag, used to separate different domains of usage to
-   *            ensure distinct use cases do not produce the same output for the same input.
-   * @param curve The elliptic curve from which the field to hash to is derived.
-   * @param messageExpansion The mechanism for expanding input messages, ensuring the
-   *                         required cryptographic properties for subsequent field hashing.
-   * @param L The security parameter for the suite, determining the byte length of
-   *          individual elements used in the computation.
-   */
-  public HashToField(final byte[] dst, final ECCurve curve,
-      final MessageExpansion messageExpansion, final int L) {
-    this(dst, curve, messageExpansion, L, 2);
-  }
 
   /**
    * Constructs a new instance of the HashToCurveField class.
@@ -61,13 +41,10 @@ public class HashToField {
    *                         required cryptographic properties for subsequent field hashing.
    * @param L The security parameter for the suite, determining the byte length of
    *          individual elements used in the computation.
-   * @param count The number of resulting field elements to be produced during the hashing process.
    */
-  public HashToField(final byte[] dst, final ECCurve curve, final MessageExpansion messageExpansion, final int L,
-      final int count) {
+  public HashToField(final byte[] dst, final ECCurve curve, final MessageExpansion messageExpansion, final int L) {
     this.dst = dst;
     this.curve = curve;
-    this.count = count;
     this.L = L;
     this.messageExpansion = messageExpansion;
     this.p = curve.getField().getCharacteristic();
@@ -80,15 +57,16 @@ public class HashToField {
    * message expansion and modular arithmetic to ensure cryptographic security.
    *
    * @param message The input message to be hashed into field elements.
+   * @param count The number of resulting field elements to be produced during the hashing process.
    * @return A two-dimensional array of BigInteger, where each entry represents a field
    *         element derived from the input message.
    */
-  public BigInteger[][] process(final byte[] message) {
+  public BigInteger[][] process(final byte[] message, final int count) {
 
-    final int byteLen = this.count * this.m * this.L;
+    final int byteLen = count * this.m * this.L;
     final byte[] uniformBytes = this.messageExpansion.expandMessage(message, this.dst, byteLen);
-    final BigInteger[][] u = new BigInteger[this.count][this.m];
-    for (int i = 0; i < this.count; i++) {
+    final BigInteger[][] u = new BigInteger[count][this.m];
+    for (int i = 0; i < count; i++) {
       final BigInteger[] e = new BigInteger[this.m];
       for (int j = 0; j < this.m; j++) {
         final int elmOffset = this.L * (j + i * this.m);

@@ -10,11 +10,23 @@ public final class AffineXY {
   private final BigInteger x;
   private final BigInteger y;
 
+  /**
+   * Constructs an {@code AffineXY} object representing the affine coordinates of an elliptic curve point.
+   *
+   * @param x the x-coordinate of the affine point
+   * @param y the y-coordinate of the affine point
+   */
   public AffineXY(BigInteger x, BigInteger y) {
     this.x = x;
     this.y = y;
   }
 
+  /**
+   * Constructs an {@code AffineXY} object representing the affine coordinates of the provided elliptic curve point.
+   *
+   * @param point the elliptic curve point from which the affine coordinates will be extracted
+   * @throws IllegalArgumentException if the provided point is at infinity
+   */
   public AffineXY(ECPoint point) {
     this(point, true);
   }
@@ -49,10 +61,20 @@ public final class AffineXY {
     return curve.createPoint(getX(), getY()).normalize();
   }
 
+  /**
+   * Retrieves the x-coordinate of the affine point.
+   *
+   * @return the x-coordinate as a {@code BigInteger}
+   */
   public BigInteger getX() {
     return x;
   }
 
+  /**
+   * Retrieves the y-coordinate of the affine point.
+   *
+   * @return the y-coordinate as a {@code BigInteger}
+   */
   public BigInteger getY() {
     return y;
   }

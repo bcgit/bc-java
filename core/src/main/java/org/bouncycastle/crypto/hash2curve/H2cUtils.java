@@ -11,7 +11,7 @@ import java.util.Objects;
  * <p>
  * This implementation follows the straight-line, branch-free algorithmic structure required by RFC 9380, ensuring that
  * all code paths perform the same sequence of mathematical operations regardless of input values. However, it relies on
- * Java’s BigInteger arithmetic and standard JVM execution characteristics, neither of which provide strict guarantees
+ * Java’s BigInteger arithmetic and standard JVM execution characteristics, neither of which provides strict guarantees
  * of constant-time behavior at the microarchitectural level. Operations such as modular exponentiation, multiplication,
  * inversion, and even conditional value selection (cmov) may execute in variable time depending on internal
  * optimizations, operand size, and JIT behavior.
@@ -97,8 +97,7 @@ public class H2cUtils {
     if (curve.getField().getDimension() == 1) {
       return val.mod(BigInteger.valueOf(2)).intValue();
     }
-    // TODO implement sign0 test for extension fields
-    throw new IllegalArgumentException("Extension fields != 1 is not implemented yet");
+    throw new IllegalArgumentException("Extension fields must be 1 for supported elliptic curves");
   }
 
   /**
@@ -190,21 +189,6 @@ public class H2cUtils {
       }
     }
     return nonSquare;
-  }
-
-  /**
-   * Calculates the size of the L parameter for an elliptic curve based on the given ECParameterSpec and
-   * targetSecurityLevelBits.
-   *
-   * @param curve the curve specifying the curve parameters
-   * @param targetSecurityLevelBits the target security level in bits
-   * @return the size of the L parameter in bytes
-   */
-  private int getCurveLsize(final ECCurve curve, final int targetSecurityLevelBits) {
-    return (int) Math.ceil(
-        ((double) curve.getOrder().subtract(BigInteger.ONE).bitLength() + targetSecurityLevelBits)
-            / 8
-    );
   }
 
 }

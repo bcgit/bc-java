@@ -21,7 +21,9 @@ import java.math.BigInteger;
  */
 public class MontgomeryCurveProcessor implements CurveProcessor {
 
+  /** The elliptic curve for the instance  */
   private final ECCurve curve;
+  /** The curve field characteristic */
   private final BigInteger p;
 
   // Weierstrass-style coefficients derived from Montgomery (A, B)
@@ -34,6 +36,16 @@ public class MontgomeryCurveProcessor implements CurveProcessor {
   private final int J;
   private final int K;
 
+  /**
+   * Constructs a MontgomeryCurveProcessor object for processing elliptic curves
+   * represented in the Montgomery model. Computes and initializes curve parameters
+   * for use in point operations and transformations.
+   *
+   * @param curve the elliptic curve to be processed, represented using the ECCurve class
+   * @param J parameter J of the Montgomery curve equation, used for internal calculations
+   * @param K parameter K of the Montgomery curve equation, used for internal calculations
+   * @param hEff the effective cofactor value for the curve, utilized in certain operations
+   */
   public MontgomeryCurveProcessor(ECCurve curve,
       int J,
       int K,

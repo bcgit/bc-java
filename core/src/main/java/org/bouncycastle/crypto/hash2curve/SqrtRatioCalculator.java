@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.hash2curve;
 
 
-import org.bouncycastle.crypto.hash2curve.data.SqrtRatio;
+import org.bouncycastle.crypto.hash2curve.impl.SqrtRatio;
 
 import java.math.BigInteger;
 

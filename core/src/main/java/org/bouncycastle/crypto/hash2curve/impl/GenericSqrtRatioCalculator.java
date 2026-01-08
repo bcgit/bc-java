@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.hash2curve.impl;
 
 import org.bouncycastle.crypto.hash2curve.H2cUtils;
 import org.bouncycastle.crypto.hash2curve.SqrtRatioCalculator;
-import org.bouncycastle.crypto.hash2curve.data.SqrtRatio;
 import org.bouncycastle.math.ec.ECCurve;
 
 import java.math.BigInteger;
@@ -31,7 +30,9 @@ import java.math.BigInteger;
  */
 public class GenericSqrtRatioCalculator implements SqrtRatioCalculator {
 
+  /** The elliptic curve for the instance  */
   private final ECCurve curve;
+  /** A non-square element of F */
   private final BigInteger z;
 
   private final BigInteger q;
@@ -39,6 +40,12 @@ public class GenericSqrtRatioCalculator implements SqrtRatioCalculator {
   private final int c1;
   private final BigInteger c2, c3, c4, c5, c6, c7;
 
+  /**
+   * Constructs a {@code GenericSqrtRatioCalculator} instance with the specified elliptic curve and a given value z.
+   *
+   * @param curve the elliptic curve over a finite field to be used for square root and ratio calculations
+   * @param z a non-square element of F
+   */
   public GenericSqrtRatioCalculator(final ECCurve curve, final BigInteger z) {
     this.curve = curve;
     this.q = curve.getField().getCharacteristic();
@@ -63,6 +70,7 @@ public class GenericSqrtRatioCalculator implements SqrtRatioCalculator {
     return c1;
   }
 
+  /** {@inheritDoc} */
   @Override
   public SqrtRatio sqrtRatio(final BigInteger u, final BigInteger v) {
 

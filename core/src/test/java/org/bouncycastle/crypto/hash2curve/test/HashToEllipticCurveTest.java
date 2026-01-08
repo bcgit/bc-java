@@ -1,26 +1,10 @@
 package org.bouncycastle.crypto.hash2curve.test;
 
 import junit.framework.TestCase;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.hash2curve.CurveProcessor;
-import org.bouncycastle.crypto.hash2curve.HashToEllipticCurve;
-import org.bouncycastle.crypto.hash2curve.HashToField;
-import org.bouncycastle.crypto.hash2curve.MapToCurve;
 import org.bouncycastle.crypto.hash2curve.HashToCurveProfile;
+import org.bouncycastle.crypto.hash2curve.HashToEllipticCurve;
 import org.bouncycastle.crypto.hash2curve.data.AffineXY;
-import org.bouncycastle.crypto.hash2curve.impl.Elligator2MapToCurve;
-import org.bouncycastle.crypto.hash2curve.impl.MontgomeryCurveProcessor;
-import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
-import org.bouncycastle.crypto.hash2curve.impl.SimplifiedShallueVanDeWoestijneMapToCurve;
-import org.bouncycastle.crypto.hash2curve.impl.XmdMessageExpansion;
-import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.djb.Curve25519;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
-import org.bouncycastle.math.ec.custom.sec.SecP384R1Curve;
-import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -37,59 +21,58 @@ public class HashToEllipticCurveTest extends TestCase {
   public void testTestVectors() throws Exception {
 
     List<HashToCurveProfile> profileList = new ArrayList<>();
-    profileList.add(HashToCurveProfile.P256_XMD_SHA_256_SSWU_RO_);
-    profileList.add(HashToCurveProfile.P384_XMD_SHA_384_SSWU_RO_);
-    profileList.add(HashToCurveProfile.P521_XMD_SHA_512_SSWU_RO_);
-    profileList.add(HashToCurveProfile.curve25519_XMD_SHA_512_ELL2_RO_);
+    profileList.add(HashToCurveProfile.P256_XMD_SHA_256);
+    profileList.add(HashToCurveProfile.P384_XMD_SHA_384);
+    profileList.add(HashToCurveProfile.P521_XMD_SHA_512);
+    profileList.add(HashToCurveProfile.CURVE25519W_XMD_SHA_512_ELL2);
 
     for (HashToCurveProfile profile : profileList) {
-      performTestOnSpecificCurveProfile(profile, false);
+      performTestOnSpecificCurveProfile(profile);
     }
   }
 
-  private void performTestOnSpecificCurveProfile(HashToCurveProfile profile, boolean useTestVectorU) throws Exception {
+  private void performTestOnSpecificCurveProfile(HashToCurveProfile profile) throws Exception {
 
-    TestVectorData tvd;
+    List<TestVectorData> testVectorList = new ArrayList<>();
     switch (profile) {
-    case P256_XMD_SHA_256_SSWU_RO_ :
-      tvd = TestVectors.P256_TEST_VECTOR_DATA;
+    case P256_XMD_SHA_256:
+      testVectorList.add(TestVectors.P256_HTC_TEST_VECTOR_DATA);
+      testVectorList.add(TestVectors.P256_ETC_TEST_VECTOR_DATA);
       break;
-    case P384_XMD_SHA_384_SSWU_RO_ :
-      tvd = TestVectors.P384_TEST_VECTOR_DATA;
+    case P384_XMD_SHA_384:
+      testVectorList.add(TestVectors.P384_HTC_TEST_VECTOR_DATA);
+      testVectorList.add(TestVectors.P384_ETC_TEST_VECTOR_DATA);
       break;
-    case P521_XMD_SHA_512_SSWU_RO_ :
-      tvd = TestVectors.P521_TEST_VECTOR_DATA;
+    case P521_XMD_SHA_512:
+      testVectorList.add(TestVectors.P521_HTC_TEST_VECTOR_DATA);
+      testVectorList.add(TestVectors.P521_ETC_TEST_VECTOR_DATA);
       break;
-    case curve25519_XMD_SHA_512_ELL2_RO_ :
-      tvd = TestVectors.curve25519_TEST_VECTOR_DATA;
+    case CURVE25519W_XMD_SHA_512_ELL2:
+      testVectorList.add(TestVectors.curve25519_HTC_TEST_VECTOR_DATA);
+      testVectorList.add(TestVectors.curve25519_ETC_TEST_VECTOR_DATA);
       break;
     default:
       throw new IllegalArgumentException("Unsupported profile: " + profile);
     }
 
-    BigInteger Z = h2bi(tvd.getZ(), tvd.getField().getP());
-    int L = h2bi(tvd.getL()).intValue();
+    for (TestVectorData tvd : testVectorList) {
+      BigInteger Z = h2bi(tvd.getZ(), tvd.getField().getP());
+      int L = h2bi(tvd.getL()).intValue();
 
-    assertEquals(Z, profile.getZ());
-    assertEquals(L, profile.getL());
+      assertEquals(Z, profile.getZ());
+      assertEquals(L, profile.getL());
 
-    TestHashToEllipticCurve h2c = TestHashToEllipticCurve.getInstance(profile, tvd.getDst());
+      HashToEllipticCurve h2c = HashToEllipticCurve.getInstance(profile, tvd.getDst());
 
-    // Run individual vectors
-    List<TestVectorData.Vector> vectors = tvd.getVectors();
-    for (TestVectorData.Vector vector : vectors) {
-      byte[] messageBytes = vector.getMsg().getBytes(StandardCharsets.UTF_8);
-
-      if (useTestVectorU) {
-        // Replace with test vector u values
-        h2c.setNextU0(h2bi(vector.getU().get(0)));
-        h2c.setNextU1(h2bi(vector.getU().get(1)));
+      // Run individual vectors
+      List<TestVectorData.Vector> vectors = tvd.getVectors();
+      for (TestVectorData.Vector vector : vectors) {
+        ECPoint point = execute(vector.getMsg(), h2c,
+            hexStrip(vector.getP().get("x")), hexStrip(vector.getP().get("y")), tvd.getCiphersuite().endsWith("NU_"));
+        compare(vector.getP().get("x"), vector.getP().get("y"), h2c.getAffineXY(point));
       }
-
-      ECPoint point = executeAndLogResult("Results for msg: " + vector.getMsg(), vector.getMsg(), h2c,
-        hexStrip(vector.getP().get("x")), hexStrip(vector.getP().get("y")));
-      compare(vector.getP().get("x"), vector.getP().get("y"), h2c.getAffineXY(point));
     }
+
 
   }
 
@@ -105,8 +88,10 @@ public class HashToEllipticCurveTest extends TestCase {
     assertEquals(vectorVal.substring(startIndex), resultVal);
   }
 
-  public ECPoint executeAndLogResult(String description, String msg, TestHashToEllipticCurve h2c, String px, String py) throws Exception {
-    return h2c.hashToEllipticCurve(msg.getBytes(StandardCharsets.UTF_8));
+  public ECPoint execute(String msg, HashToEllipticCurve h2c, String px, String py, boolean encodeToCurve) throws Exception {
+    return encodeToCurve
+        ? h2c.encodeToEllipticCurve(msg.getBytes(StandardCharsets.UTF_8))
+        : h2c.hashToEllipticCurve(msg.getBytes(StandardCharsets.UTF_8));
   }
 
   BigInteger h2bi(String hexStr) {
@@ -128,91 +113,4 @@ public class HashToEllipticCurveTest extends TestCase {
       ? hexStr.substring(2)
       : hexStr;
   }
-
-  public static class TestHashToEllipticCurve extends HashToEllipticCurve {
-
-    private ECCurve curve;
-
-    private TestHashToEllipticCurve(ECCurve curve, HashToField hashToField, MapToCurve mapToCurve, CurveProcessor curveProcessor) {
-      super(hashToField, mapToCurve, curveProcessor);
-      this.curve = curve;
-    }
-
-    public static TestHashToEllipticCurve getInstance(final HashToCurveProfile profile, String dst) {
-      byte[] dstBytes = dst.getBytes(StandardCharsets.UTF_8);
-      CurveProcessor noCofactorProcessor = new NistCurveProcessor();
-      ECCurve curve;
-      switch (profile) {
-      case P256_XMD_SHA_256_SSWU_RO_:
-        curve = new SecP256R1Curve();
-        return new TestHashToEllipticCurve(curve, new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA256Digest(),
-            profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()), noCofactorProcessor);
-      case P384_XMD_SHA_384_SSWU_RO_:
-        curve = new SecP384R1Curve();
-        return new TestHashToEllipticCurve(curve, new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA384Digest(),
-            profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()), noCofactorProcessor);
-      case P521_XMD_SHA_512_SSWU_RO_:
-        curve = new SecP521R1Curve();
-        return new TestHashToEllipticCurve(curve, new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
-            profile.getK()), profile.getL()), new SimplifiedShallueVanDeWoestijneMapToCurve(curve, profile.getZ()), noCofactorProcessor);
-      case curve25519_XMD_SHA_512_ELL2_RO_:
-        curve = new Curve25519();
-        return new TestHashToEllipticCurve(curve, new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA512Digest(),
-            profile.getK()), profile.getL()), new Elligator2MapToCurve(curve, profile.getZ(), BigInteger.valueOf(
-            profile.getmJ()), BigInteger.valueOf(profile.getmK())),
-            new MontgomeryCurveProcessor(curve, profile.getmJ(), profile.getmK(), profile.getH()));
-
-      default:
-        throw new IllegalArgumentException("Unsupported profile: " + profile);
-      }
-    }
-
-    BigInteger nextU0;
-    BigInteger nextU1;
-
-    @Override
-    public ECPoint hashToEllipticCurve(byte[] message) {
-      BigInteger[][] u = hashToField.process(message);
-      ECPoint Q0 = mapToCurve.process(getU0(u));
-      ECPoint Q1 = mapToCurve.process(getU1(u));
-      ECPoint R = curveProcessor.add(Q0, Q1);
-      ECPoint P = curveProcessor.clearCofactor(R);
-      return P;
-    }
-
-    public void setNextU0(final BigInteger nextU0) {
-      this.nextU0 = nextU0;
-    }
-
-    public void setNextU1(final BigInteger nextU1) {
-      this.nextU1 = nextU1;
-    }
-
-    public CurveProcessor getCurveProcessor() {
-      return curveProcessor;
-    }
-
-    public ECCurve getCurve() {
-      return curve;
-    }
-
-    BigInteger getU0(BigInteger[][] u) {
-      if (nextU0 != null) {
-        BigInteger result = new BigInteger(nextU0.toString());
-        nextU0 = null;
-        return result;
-      }
-      return u[0][0];
-    }
-
-    BigInteger getU1(BigInteger[][] u) {
-      if (nextU1 != null) {
-        BigInteger result = new BigInteger(nextU1.toString());
-        nextU1 = null;
-        return result;
-      }
-      return u[1][0];
-    }
-  }
-
 }

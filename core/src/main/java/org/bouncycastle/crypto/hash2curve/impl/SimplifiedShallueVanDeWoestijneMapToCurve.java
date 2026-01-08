@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.hash2curve.impl;
 import org.bouncycastle.crypto.hash2curve.H2cUtils;
 import org.bouncycastle.crypto.hash2curve.MapToCurve;
 import org.bouncycastle.crypto.hash2curve.SqrtRatioCalculator;
-import org.bouncycastle.crypto.hash2curve.data.SqrtRatio;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -20,6 +19,14 @@ public class SimplifiedShallueVanDeWoestijneMapToCurve implements MapToCurve {
 
   private final SqrtRatioCalculator sqrtRatioCalculator;
 
+  /**
+   * Constructs an instance of the SimplifiedShallueVanDeWoestijneMapToCurve mapping mechanism for mapping values
+   * onto a Weierstrass elliptic curve. This implementation is based on section 6.6.2 of RFC 9380 and optimizations
+   * defined in section F.2.
+   *
+   * @param curve the elliptic curve to which the mapping will be applied; must conform to the Weierstrass form
+   * @param z a non-zero constant value used as a parameter in the mapping algorithm
+   */
   public SimplifiedShallueVanDeWoestijneMapToCurve(final ECCurve curve, final BigInteger z) {
     this.curve = curve;
     this.z = z;

@@ -25,7 +25,7 @@ public class HashToFieldTest extends TestCase {
     byte[] message = new byte[] {};
     byte[] dst = "QUUX-V01-CS02-with-P256_XMD:SHA-256_SSWU_RO_".getBytes(StandardCharsets.UTF_8);
     HashToField testInstance = new HashToField(dst, curve, messageExpansion, 48);
-    BigInteger[][] result = testInstance.process(message);
+    BigInteger[][] result = testInstance.process(message, 2);
     assertEquals("78397231975818298121002851560982570386422970797899025056634496834376049971209", result[0][0].toString(10));
     assertEquals("63350503467990645741152390718511296452551165224812381424345334365447080831578", result[1][0].toString(10));
   }

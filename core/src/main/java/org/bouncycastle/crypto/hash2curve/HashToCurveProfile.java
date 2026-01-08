@@ -3,25 +3,22 @@ package org.bouncycastle.crypto.hash2curve;
 import java.math.BigInteger;
 
 /**
- * Supported profiles for hash to curve
+ * Supported profiles for instantiating an instance of HashToEllipticCurve.
+ * Each profile supports both hash_to_curve and encode_to_curve operations, according to RFC 9380
  * <p>
- * _NU_ is identical to _RO_, *    except that the encoding type is encode_to_curve. encode_to_curve is not yet
+ * _NU_ is identical to _RO_, except that the encoding type is encode_to_curve. encode_to_curve is not yet
  * implemented in this lib, thus these options are not yet included
  */
 public enum HashToCurveProfile {
 
-  P256_XMD_SHA_256_SSWU_RO_("P256_XMD:SHA-256_SSWU_RO_", BigInteger.valueOf(-10), 48, 128, 1, null, null),
-  //  P256_XMD_SHA_256_SSWU_NU_("P256_XMD:SHA-256_SSWU_NU_", BigInteger.valueOf(-10), 128),
-  P384_XMD_SHA_384_SSWU_RO_("P384_XMD:SHA-384_SSWU_RO_", BigInteger.valueOf(-12), 72, 192, 1, null, null),
-  //  P384_XMD_SHA_384_SSWU_NU_("P384_XMD:SHA-384_SSWU_NU_", BigInteger.valueOf(-12), 192),
-  P521_XMD_SHA_512_SSWU_RO_("P521_XMD:SHA-512_SSWU_RO_", BigInteger.valueOf(-4), 98, 256, 1, null, null),
-  //  P521_XMD_SHA_512_SSWU_NU_("P521_XMD:SHA-512_SSWU_NU_", BigInteger.valueOf(-4), 256),
-  curve25519_XMD_SHA_512_ELL2_RO_("curve25519_XMD:SHA-512_ELL2_RO_", BigInteger.valueOf(2), 48, 128, 8, 486662, 1),
-  //  curve25519_XMD_SHA_512_ELL2_NU_("curve25519_XMD:SHA-512_ELL2_NU_", BigInteger.valueOf(2), 128),
-  ;
-
-  /** The cipher suite ID */
-  private final String cipherSuiteID;
+  P256_XMD_SHA_256(BigInteger.valueOf(-10), 48, 128, 1, null, null),
+  P384_XMD_SHA_384(BigInteger.valueOf(-12), 72, 192, 1, null, null),
+  P521_XMD_SHA_512(BigInteger.valueOf(-4), 98, 256, 1, null, null),
+  CURVE25519W_XMD_SHA_512_ELL2(BigInteger.valueOf(2), 48, 128, 8, 486662, 1);
+  // For future considerations
+  //  curve448_XOF_SHAKE256_ELL2_RO_(BigInteger.valueOf(-1), 84, 224, 4, 156326, 1),
+  //  edwards25519_XMD_SHA_512_ELL2_RO_(BigInteger.valueOf(2), 48, 224, 8, 486662, 1),
+  //  edwards448_XOF_SHAKE256_ELL2_RO_(BigInteger.valueOf(-1), 84, 224, 4, 156326, 1),
 
   /**
    * The z value is a value of the curve field that satisfies the following criteria:
@@ -44,8 +41,7 @@ public enum HashToCurveProfile {
   /** Montgomery B parameter */
   private final Integer mK;
 
-  HashToCurveProfile(final String cipherSuiteID, final BigInteger z, final int l, final int k, int h, Integer mJ, Integer mK) {
-    this.cipherSuiteID = cipherSuiteID;
+  HashToCurveProfile(final BigInteger z, final int l, final int k, int h, Integer mJ, Integer mK) {
     this.Z = z;
     this.L = l;
     this.k = k;
@@ -54,30 +50,59 @@ public enum HashToCurveProfile {
     this.mK = mK;
   }
 
-  public String getCipherSuiteID() {
-    return cipherSuiteID;
-  }
 
+  /**
+   * Retrieves the security level in bits associated with this instance.
+   *
+   * @return the value of the field 'k' representing security level in bits
+   */
   public int getK() {
     return k;
   }
 
+  /**
+   * Retrieves the value of the field 'L' representing the internal block size in bytes associated with this instance.
+   *
+   * @return the value of the field 'L' representing the internal block size
+   */
   public int getL() {
     return L;
   }
 
+  /**
+   * Retrieves the value of the field 'Z'.
+   *
+   * @return the value of the field 'Z' as a BigInteger
+   */
   public BigInteger getZ() {
     return Z;
   }
 
+  /**
+   * Retrieves the value of the field 'h', representing the cofactor associated
+   * with this instance.
+   *
+   * @return the value of the field 'h' as an integer
+   */
   public int getH() {
     return h;
   }
 
+  /**
+   * Retrieves the value of the field 'mJ' representing the associated Montgomery equation parameter A
+   *
+   * @return the value of the field 'mJ' as an Integer
+   */
   public Integer getmJ() {
     return mJ;
   }
 
+  /**
+   * Retrieves the value of the field 'mK' representing the associated Montgomery equation parameter B
+   * specific to the hash-to-curve profile.
+   *
+   * @return the value of the field 'mK' as an Integer
+   */
   public Integer getmK() {
     return mK;
   }

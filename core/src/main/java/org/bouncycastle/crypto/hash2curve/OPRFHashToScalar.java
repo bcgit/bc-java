@@ -66,6 +66,14 @@ public class OPRFHashToScalar {
 
   private final int L;
 
+  /**
+   * Constructs an instance of the OPRFHashToScalar class, which handles the process of encoding
+   * a message into a scalar value based on the provided elliptic curve and digest algorithm.
+   *
+   * @param curve the elliptic curve (ECCurve) used for the hashing process
+   * @param digest the digest algorithm (Digest) used for message hashing and expansion
+   * @param k the security parameter affecting the size of hashed output
+   */
   public OPRFHashToScalar(final ECCurve curve, final Digest digest, final int k) {
     this.curve = curve;
     this.L =
@@ -73,6 +81,13 @@ public class OPRFHashToScalar {
     this.messageExpansion = new XmdMessageExpansion(digest, k);
   }
 
+  /**
+   * Hash the input message to a uniformly distributed scalar value on the elliptic curve.
+   *
+   * @param input the input message as a byte array
+   * @param dst the domain separation tag as a byte array
+   * @return a scalar value (BigInteger) derived from the input message
+   */
   public BigInteger process(final byte[] input, final byte[] dst) {
     final byte[] expandMessage = this.messageExpansion.expandMessage(input, dst, this.L);
     return new BigInteger(1, expandMessage).mod(this.curve.getOrder());

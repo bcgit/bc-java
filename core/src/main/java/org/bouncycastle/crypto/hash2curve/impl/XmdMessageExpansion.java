@@ -17,13 +17,26 @@ import org.bouncycastle.util.Arrays;
  */
 public class XmdMessageExpansion implements MessageExpansion {
 
+  /** The Digest function for this instance */
   private final Digest digest;
 
   /** The input block size of the selected hash algorithm */
   private final int s;
 
+  /** The size in bytes of hash outputs */
   private final int hashOutputBytes;
 
+  /**
+   * Constructs an XmdMessageExpansion instance capable of performing cryptographic
+   * message expansion using the specified digest algorithm, security parameter,
+   * and custom input block size parameter. The security of the curve's operations
+   * is validated against the output size of the digest algorithm.
+   *
+   * @param digest the cryptographic digest algorithm to be used
+   * @param k      the security parameter defining the required minimum security strength, in bits
+   * @param s      the input block size parameter for the cryptographic digest algorithm
+   * @throws IllegalArgumentException if the hash output size is too small for the specified security level
+   */
   public XmdMessageExpansion(final Digest digest, final int k, final int s) {
     this.digest = digest;
     this.s = s;
@@ -128,7 +141,7 @@ public class XmdMessageExpansion implements MessageExpansion {
    * @param message message
    * @return hash value
    */
-  public byte[] hash(final byte[] message) {
+  private byte[] hash(final byte[] message) {
     final Digest digestInstance = DigestFactory.cloneDigest(this.digest);
     digestInstance.update(message, 0, message.length);
     final byte[] hashResult = new byte[this.digest.getDigestSize()];

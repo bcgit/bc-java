@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.hash2curve.test.impl;
 
 import junit.framework.TestCase;
-import org.bouncycastle.crypto.hash2curve.data.SqrtRatio;
+import org.bouncycastle.crypto.hash2curve.impl.SqrtRatio;
 import org.bouncycastle.crypto.hash2curve.impl.GenericSqrtRatioCalculator;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
