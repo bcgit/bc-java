@@ -71,14 +71,14 @@ public class BEROctetStringGenerator
     {
         private byte[] _buf;
         private int    _off;
-        private DEROutputStream _derOut;
+        private ASN1OutputStream _asn1Out;
 
         BufferedBEROctetStream(
             byte[] buf)
         {
             _buf = buf;
             _off = 0;
-            _derOut = new DEROutputStream(_out);
+            _asn1Out = ASN1OutputStream.create(_out);
         }
 
         public void write(
@@ -89,7 +89,7 @@ public class BEROctetStringGenerator
 
             if (_off == _buf.length)
             {
-                DEROctetString.encode(_derOut, true, _buf, 0, _buf.length);
+                DEROctetString.encode(_asn1Out, true, _buf, 0, _buf.length);
                 _off = 0;
             }
         }
@@ -110,13 +110,13 @@ public class BEROctetStringGenerator
             {
                 System.arraycopy(b, off, _buf, _off, available);
                 count += available;
-                DEROctetString.encode(_derOut, true, _buf, 0, bufLen);
+                DEROctetString.encode(_asn1Out, true, _buf, 0, bufLen);
             }
 
             int remaining;
             while ((remaining = (len - count)) >= bufLen)
             {
-                DEROctetString.encode(_derOut, true, b, off + count, bufLen);
+                DEROctetString.encode(_asn1Out, true, b, off + count, bufLen);
                 count += bufLen;
             }
 
@@ -129,10 +129,10 @@ public class BEROctetStringGenerator
         {
             if (_off != 0)
             {
-                DEROctetString.encode(_derOut, true, _buf, 0, _off);
+                DEROctetString.encode(_asn1Out, true, _buf, 0, _off);
             }
 
-            _derOut.flushInternal();
+            _asn1Out.flushInternal();
 
              writeBEREnd();
         }
