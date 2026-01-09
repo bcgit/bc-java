@@ -87,7 +87,7 @@ public class CMSEnvelopedDataStreamGenerator
         BERSequenceGenerator cGen = new BERSequenceGenerator(out);
         cGen.addObject(CMSObjectIdentifiers.envelopedData);
 
-        // EncryptedData
+        // EnvelopedData
         BERSequenceGenerator envGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
         envGen.addObject(getVersion(recipientInfos));
         CMSUtils.addOriginatorInfoToGenerator(envGen, originatorInfo);
