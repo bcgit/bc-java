@@ -422,22 +422,11 @@ class CMSUtils
             s1, s2);
     }
 
-    static EncryptedContentInfo getEncryptedContentInfo(CMSTypedData content, OutputEncryptor contentEncryptor, byte[] encryptedContent)
+    static EncryptedContentInfo getEncryptedContentInfo(CMSTypedData content, OutputEncryptor contentEncryptor,
+        ASN1OctetString encryptedContent)
     {
-        return getEncryptedContentInfo(
-            content.getContentType(),
-            contentEncryptor.getAlgorithmIdentifier(),
+        return new EncryptedContentInfo(content.getContentType(), contentEncryptor.getAlgorithmIdentifier(),
             encryptedContent);
-    }
-
-    static EncryptedContentInfo getEncryptedContentInfo(ASN1ObjectIdentifier encryptedContentType, AlgorithmIdentifier encAlgId, byte[] encryptedContent)
-    {
-        ASN1OctetString encContent = new BEROctetString(encryptedContent);
-
-        return new EncryptedContentInfo(
-            encryptedContentType,
-            encAlgId,
-            encContent);
     }
 
     static ASN1EncodableVector getRecipentInfos(GenericKey encKey, List recipientInfoGenerators)
