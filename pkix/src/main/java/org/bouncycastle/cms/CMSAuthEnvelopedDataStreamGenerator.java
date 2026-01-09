@@ -87,7 +87,7 @@ public class CMSAuthEnvelopedDataStreamGenerator
         eiGen.addObject(encryptor.getAlgorithmIdentifier());
 
         OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
-            eiGen.getRawOutputStream(), 0, true, _bufferSize);
+            eiGen.getRawOutputStream(), 0, false, _bufferSize);
 
         return new CMSAuthEnvelopedDataOutputStream(encryptor, octetStream, cGen, authEnvGen, eiGen);
     }
