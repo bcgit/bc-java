@@ -151,22 +151,15 @@ public class ContentInfo
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector  v = new ASN1EncodableVector(2);
-
-        v.add(contentType);
-
-        if (content != null)
+        if (isDefiniteLength)
         {
-            if (isDefiniteLength)
-            {
-                v.add(new DLTaggedObject(0, content));
-            }
-            else
-            {
-                v.add(new BERTaggedObject(0, content));
-            }
+            return content == null
+                ? new DLSequence(contentType)
+                : new DLSequence(contentType, new DLTaggedObject(0, content));
         }
 
-        return isDefiniteLength ? (ASN1Primitive)new DLSequence(v) : (ASN1Primitive)new BERSequence(v);
+        return content == null
+            ? new BERSequence(contentType)
+            : new BERSequence(contentType, new BERTaggedObject(0, content));
     }
 }
