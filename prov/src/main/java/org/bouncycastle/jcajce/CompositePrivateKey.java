@@ -17,8 +17,6 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
@@ -274,7 +272,7 @@ public class CompositePrivateKey
             try
             {
                 byte[] mldsaKey = ((MLDSAPrivateKey)keys.get(0)).getSeed();
-                PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(keys.get(1).getEncoded()));
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(1).getEncoded());
                 byte[] tradKey = pki.getPrivateKey().getOctets();
                 if (keys.get(1).getAlgorithm().contains("Ed"))
                 {
