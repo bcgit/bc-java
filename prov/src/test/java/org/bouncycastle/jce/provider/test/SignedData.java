@@ -60,11 +60,6 @@ import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
 class SignedData
     extends ASN1Object
 {
-    private static final ASN1Integer VERSION_1 = new ASN1Integer(1);
-    private static final ASN1Integer VERSION_3 = new ASN1Integer(3);
-    private static final ASN1Integer VERSION_4 = new ASN1Integer(4);
-    private static final ASN1Integer VERSION_5 = new ASN1Integer(5);
-
     private ASN1Integer version;
     private ASN1Set     digestAlgorithms;
     private ContentInfo contentInfo;
@@ -159,7 +154,7 @@ class SignedData
 
         if (otherCert)
         {
-            return new ASN1Integer(5);
+            return ASN1Integer.FIVE;
         }
 
         if (crls != null)         // no need to check if otherCert is true
@@ -176,30 +171,30 @@ class SignedData
 
         if (otherCrl)
         {
-            return VERSION_5;
+            return ASN1Integer.FIVE;
         }
 
         if (attrCertV2Found)
         {
-            return VERSION_4;
+            return ASN1Integer.FOUR;
         }
 
         if (attrCertV1Found)
         {
-            return VERSION_3;
+            return ASN1Integer.THREE;
         }
 
         if (checkForVersion3(signerInfs))
         {
-            return VERSION_3;
+            return ASN1Integer.THREE;
         }
 
         if (!CMSObjectIdentifiers.data.equals(contentOid))
         {
-            return VERSION_3;
+            return ASN1Integer.THREE;
         }
 
-        return VERSION_1;
+        return ASN1Integer.ONE;
     }
 
     private boolean checkForVersion3(ASN1Set signerInfs)

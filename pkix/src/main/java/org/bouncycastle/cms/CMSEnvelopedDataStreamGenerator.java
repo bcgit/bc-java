@@ -71,9 +71,9 @@ public class CMSEnvelopedDataStreamGenerator
         if (unprotectedAttributeGenerator != null)
         {
             // mark unprotected attributes as non-null.
-            return new ASN1Integer(EnvelopedData.calculateVersion(originatorInfo, new DLSet(recipientInfos), new DLSet()));
+            return ASN1Integer.valueOf(EnvelopedData.calculateVersion(originatorInfo, new DLSet(recipientInfos), new DLSet()));
         }
-        return new ASN1Integer(EnvelopedData.calculateVersion(originatorInfo, new DLSet(recipientInfos), null));
+        return ASN1Integer.valueOf(EnvelopedData.calculateVersion(originatorInfo, new DLSet(recipientInfos), null));
     }
 
     protected OutputStream open(

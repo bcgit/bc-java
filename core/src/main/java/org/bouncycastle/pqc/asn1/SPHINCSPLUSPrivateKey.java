@@ -91,7 +91,7 @@ public class SPHINCSPLUSPrivateKey
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(version));
+        v.add(ASN1Integer.valueOf(version));
         v.add(new DEROctetString(skseed));
         v.add(new DEROctetString(skprf));
 

@@ -61,7 +61,7 @@ public class AttributeCertificateInfo
         }
         else
         {
-            this.version = new ASN1Integer(0);
+            this.version = ASN1Integer.ZERO;
             start = 0;
         }
 

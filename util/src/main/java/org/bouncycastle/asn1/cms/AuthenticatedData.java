@@ -67,7 +67,7 @@ public class AuthenticatedData
             }
         }
 
-        version = new ASN1Integer(calculateVersion(originatorInfo));
+        version = ASN1Integer.valueOf(calculateVersion(originatorInfo));
         
         this.originatorInfo = originatorInfo;
         this.macAlgorithm = macAlgorithm;

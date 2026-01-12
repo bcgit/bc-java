@@ -69,7 +69,7 @@ public class ECPrivateKey
     {
         byte[] bytes = BigIntegers.asUnsignedByteArray((orderBitLength + 7) / 8, key);
 
-        seq = new DERSequence(new ASN1Integer(1), new DEROctetString(bytes));
+        seq = new DERSequence(ASN1Integer.ONE, new DEROctetString(bytes));
     }
 
     /**
@@ -111,7 +111,7 @@ public class ECPrivateKey
 
         ASN1EncodableVector v = new ASN1EncodableVector(4);
 
-        v.add(new ASN1Integer(1));
+        v.add(ASN1Integer.ONE);
         v.add(new DEROctetString(bytes));
 
         if (parameters != null)

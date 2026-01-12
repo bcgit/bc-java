@@ -78,7 +78,7 @@ public class OpenSSHPrivateKeyUtil
             DSAParameters dsaParams = dsaPrivKey.getParameters();
 
             ASN1EncodableVector vec = new ASN1EncodableVector();
-            vec.add(new ASN1Integer(0));
+            vec.add(ASN1Integer.ZERO);
             vec.add(new ASN1Integer(dsaParams.getP()));
             vec.add(new ASN1Integer(dsaParams.getQ()));
             vec.add(new ASN1Integer(dsaParams.getG()));

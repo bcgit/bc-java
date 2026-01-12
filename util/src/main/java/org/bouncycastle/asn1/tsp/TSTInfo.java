@@ -107,7 +107,7 @@ public class TSTInfo
             Accuracy accuracy, ASN1Boolean ordering, ASN1Integer nonce,
             GeneralName tsa, Extensions extensions)
     {
-        version = new ASN1Integer(1);
+        version = ASN1Integer.ONE;
         this.tsaPolicyId = tsaPolicyId;
         this.messageImprint = messageImprint;
         this.serialNumber = serialNumber;

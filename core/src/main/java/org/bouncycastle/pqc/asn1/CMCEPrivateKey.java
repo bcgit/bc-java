@@ -120,7 +120,7 @@ public class CMCEPrivateKey
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(version));
+        v.add(ASN1Integer.valueOf(version));
         v.add(new DEROctetString(delta));
         v.add(new DEROctetString(C));
         v.add(new DEROctetString(g));

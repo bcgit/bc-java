@@ -68,7 +68,7 @@ public class CMSAuthEnvelopedDataStreamGenerator
 
         // AuthEnvelopedData
         BERSequenceGenerator aedGen = new BERSequenceGenerator(ciGen.getRawOutputStream(), 0, true);
-        aedGen.addObject(new ASN1Integer(0));
+        aedGen.addObject(ASN1Integer.ZERO);
         CMSUtils.addOriginatorInfoToGenerator(aedGen, originatorInfo);
         CMSUtils.addRecipientInfosToGenerator(recipientInfos, aedGen, _berEncodeRecipientSet);
 

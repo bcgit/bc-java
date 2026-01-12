@@ -22,10 +22,10 @@ import org.bouncycastle.asn1.x509.GeneralName;
 public class SinglePubInfo
     extends ASN1Object
 {
-    public static final ASN1Integer dontCare = new ASN1Integer(0);
-    public static final ASN1Integer x500 = new ASN1Integer(1);
-    public static final ASN1Integer web = new ASN1Integer(2);
-    public static final ASN1Integer ldap = new ASN1Integer(3);
+    public static final ASN1Integer dontCare = ASN1Integer.valueOf(0);
+    public static final ASN1Integer x500 = ASN1Integer.valueOf(1);
+    public static final ASN1Integer web = ASN1Integer.valueOf(2);
+    public static final ASN1Integer ldap = ASN1Integer.valueOf(3);
 
     private ASN1Integer pubMethod;
     private GeneralName pubLocation;

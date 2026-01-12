@@ -142,7 +142,7 @@ public class CMSAuthenticatedDataStreamGenerator
 
             // AuthenticatedData
             BERSequenceGenerator authGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
-            authGen.addObject(new ASN1Integer(AuthenticatedData.calculateVersion(originatorInfo)));
+            authGen.addObject(ASN1Integer.valueOf(AuthenticatedData.calculateVersion(originatorInfo)));
             CMSUtils.addOriginatorInfoToGenerator(authGen, originatorInfo);
             CMSUtils.addRecipientInfosToGenerator(recipientInfos, authGen, berEncodeRecipientSet);
             authGen.addObject(macCalculator.getAlgorithmIdentifier());

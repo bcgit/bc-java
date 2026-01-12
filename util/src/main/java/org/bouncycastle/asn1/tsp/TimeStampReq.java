@@ -110,7 +110,7 @@ public class TimeStampReq
         Extensions      extensions)
     {
         // default
-        version = new ASN1Integer(1);
+        version = ASN1Integer.ONE;
 
         this.messageImprint = messageImprint;
         this.tsaPolicy = tsaPolicy;

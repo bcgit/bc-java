@@ -27,8 +27,9 @@ public class PublishTrustAnchorsTest
         throws Exception
     {
         PublishTrustAnchors publishTrustAnchors = new PublishTrustAnchors(
-            new BigInteger("10"), new AlgorithmIdentifier(PKCSObjectIdentifiers.crlTypes,
-            new ASN1Integer(5L)), new byte[][]{"cats".getBytes()});
+            BigInteger.valueOf(10),
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.crlTypes, ASN1Integer.FIVE),
+            new byte[][]{"cats".getBytes()});
 
         byte[] b = publishTrustAnchors.getEncoded();
 

@@ -93,7 +93,7 @@ public class DERPrivateTest
             fail("wrong tag detected");
         }
 
-        ASN1Integer value = new ASN1Integer(9);
+        ASN1Integer value = ASN1Integer.valueOf(9);
 
         ASN1TaggedObject tagged = new DERTaggedObject(false, BERTags.PRIVATE, 3, value);
 

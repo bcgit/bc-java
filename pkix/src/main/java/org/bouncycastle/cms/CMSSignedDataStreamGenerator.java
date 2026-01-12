@@ -325,7 +325,7 @@ public class CMSSignedDataStreamGenerator
 
         if (otherCert)
         {
-            return new ASN1Integer(5);
+            return ASN1Integer.FIVE;
         }
 
         if (crls != null)         // no need to check if otherCert is true
@@ -342,30 +342,30 @@ public class CMSSignedDataStreamGenerator
 
         if (otherCrl)
         {
-            return new ASN1Integer(5);
+            return ASN1Integer.FIVE;
         }
 
         if (attrCertV2Found)
         {
-            return new ASN1Integer(4);
+            return ASN1Integer.FOUR;
         }
 
         if (attrCertV1Found)
         {
-            return new ASN1Integer(3);
+            return ASN1Integer.THREE;
         }
 
         if (checkForVersion3(_signers, signerGens))
         {
-            return new ASN1Integer(3);
+            return ASN1Integer.THREE;
         }
 
         if (!CMSObjectIdentifiers.data.equals(contentOid))
         {
-            return new ASN1Integer(3);
+            return ASN1Integer.THREE;
         }
 
-        return new ASN1Integer(1);
+        return ASN1Integer.ONE;
     }
 
     private static boolean checkForVersion3(List signerInfos, List signerInfoGens)

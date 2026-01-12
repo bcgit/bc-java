@@ -31,7 +31,7 @@ public class CompressedData
         AlgorithmIdentifier compressionAlgorithm,
         ContentInfo         encapContentInfo)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.compressionAlgorithm = compressionAlgorithm;
         this.encapContentInfo = encapContentInfo;
     }

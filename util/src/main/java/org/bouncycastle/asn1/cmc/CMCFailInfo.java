@@ -30,20 +30,20 @@ import org.bouncycastle.asn1.ASN1Primitive;
 public class CMCFailInfo
     extends ASN1Object
 {
-    public static final CMCFailInfo badAlg = new CMCFailInfo(new ASN1Integer(0));
-    public static final CMCFailInfo badMessageCheck = new CMCFailInfo(new ASN1Integer(1));
-    public static final CMCFailInfo badRequest = new CMCFailInfo(new ASN1Integer(2));
-    public static final CMCFailInfo badTime = new CMCFailInfo(new ASN1Integer(3));
-    public static final CMCFailInfo badCertId = new CMCFailInfo(new ASN1Integer(4));
-    public static final CMCFailInfo unsupportedExt = new CMCFailInfo(new ASN1Integer(5));
-    public static final CMCFailInfo mustArchiveKeys = new CMCFailInfo(new ASN1Integer(6));
-    public static final CMCFailInfo badIdentity = new CMCFailInfo(new ASN1Integer(7));
-    public static final CMCFailInfo popRequired = new CMCFailInfo(new ASN1Integer(8));
-    public static final CMCFailInfo popFailed = new CMCFailInfo(new ASN1Integer(9));
-    public static final CMCFailInfo noKeyReuse = new CMCFailInfo(new ASN1Integer(10));
-    public static final CMCFailInfo internalCAError = new CMCFailInfo(new ASN1Integer(11));
-    public static final CMCFailInfo tryLater = new CMCFailInfo(new ASN1Integer(12));
-    public static final CMCFailInfo authDataFail = new CMCFailInfo(new ASN1Integer(13));
+    public static final CMCFailInfo badAlg = new CMCFailInfo(ASN1Integer.valueOf(0));
+    public static final CMCFailInfo badMessageCheck = new CMCFailInfo(ASN1Integer.valueOf(1));
+    public static final CMCFailInfo badRequest = new CMCFailInfo(ASN1Integer.valueOf(2));
+    public static final CMCFailInfo badTime = new CMCFailInfo(ASN1Integer.valueOf(3));
+    public static final CMCFailInfo badCertId = new CMCFailInfo(ASN1Integer.valueOf(4));
+    public static final CMCFailInfo unsupportedExt = new CMCFailInfo(ASN1Integer.valueOf(5));
+    public static final CMCFailInfo mustArchiveKeys = new CMCFailInfo(ASN1Integer.valueOf(6));
+    public static final CMCFailInfo badIdentity = new CMCFailInfo(ASN1Integer.valueOf(7));
+    public static final CMCFailInfo popRequired = new CMCFailInfo(ASN1Integer.valueOf(8));
+    public static final CMCFailInfo popFailed = new CMCFailInfo(ASN1Integer.valueOf(9));
+    public static final CMCFailInfo noKeyReuse = new CMCFailInfo(ASN1Integer.valueOf(10));
+    public static final CMCFailInfo internalCAError = new CMCFailInfo(ASN1Integer.valueOf(11));
+    public static final CMCFailInfo tryLater = new CMCFailInfo(ASN1Integer.valueOf(12));
+    public static final CMCFailInfo authDataFail = new CMCFailInfo(ASN1Integer.valueOf(13));
 
     private static Map range = new HashMap();
 

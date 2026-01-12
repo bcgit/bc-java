@@ -83,7 +83,7 @@ public class GenerationTest
         Date startDate = new Date(1000);
         Date endDate = new Date(12000);
 
-        gen.setSerialNumber(new ASN1Integer(1));
+        gen.setSerialNumber(ASN1Integer.ONE);
 
         gen.setStartDate(new Time(startDate));
         gen.setEndDate(new Time(endDate));
@@ -139,7 +139,7 @@ public class GenerationTest
         Date startDate = new Date(1000);
         Date endDate = new Date(2000);
 
-        gen.setSerialNumber(new ASN1Integer(2));
+        gen.setSerialNumber(ASN1Integer.TWO);
 
         gen.setStartDate(new Time(startDate));
         gen.setEndDate(new Time(endDate));
@@ -149,7 +149,7 @@ public class GenerationTest
 
         gen.setSignature(new AlgorithmIdentifier(PKCSObjectIdentifiers.md5WithRSAEncryption, DERNull.INSTANCE));
 
-        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), ASN1Integer.THREE);
 
         gen.setSubjectPublicKeyInfo(info);
 
@@ -191,7 +191,7 @@ public class GenerationTest
         Date startDate = new Date(1000);
         Date endDate = new Date(2000);
 
-        gen.setSerialNumber(new ASN1Integer(2));
+        gen.setSerialNumber(ASN1Integer.TWO);
 
         gen.setStartDate(new Time(startDate));
         gen.setEndDate(new Time(endDate));
@@ -200,7 +200,7 @@ public class GenerationTest
 
         gen.setSignature(new AlgorithmIdentifier(PKCSObjectIdentifiers.md5WithRSAEncryption, DERNull.INSTANCE));
 
-        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), ASN1Integer.THREE);
 
         gen.setSubjectPublicKeyInfo(info);
 
@@ -253,7 +253,7 @@ public class GenerationTest
 
         gen.setIssuer(new X500Name("CN=AU,O=Bouncy Castle"));
 
-        gen.addCRLEntry(new ASN1Integer(1), new Time(new Date(1000)), CRLReason.aACompromise);
+        gen.addCRLEntry(ASN1Integer.ONE, new Time(new Date(1000)), CRLReason.aACompromise);
 
         gen.setNextUpdate(new Time(new Date(2000)));
 
@@ -264,19 +264,19 @@ public class GenerationTest
         //
         // extensions
         //
-        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), ASN1Integer.THREE);
 
         ExtensionsGenerator extGen = new ExtensionsGenerator();
 
         extGen.addExtension(Extension.authorityKeyIdentifier, true, createAuthorityKeyId(info, new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"), 2));
         extGen.addExtension(Extension.issuerAlternativeName, false, new GeneralNames(new GeneralName(new X500Name("CN=AU,O=Bouncy Castle,OU=Test 3"))));
-        extGen.addExtension(Extension.cRLNumber, false, new ASN1Integer(1));
+        extGen.addExtension(Extension.cRLNumber, false, ASN1Integer.ONE);
         extGen.addExtension(Extension.issuingDistributionPoint, true, IssuingDistributionPoint.getInstance(new DERSequence()));
 
         isTrue(extGen.hasExtension(Extension.cRLNumber));
         isTrue(!extGen.hasExtension(Extension.freshestCRL));
 
-        isEquals(new Extension(Extension.cRLNumber, false, new ASN1Integer(1).getEncoded()), extGen.getExtension(Extension.cRLNumber));
+        isEquals(new Extension(Extension.cRLNumber, false, ASN1Integer.ONE.getEncoded()), extGen.getExtension(Extension.cRLNumber));
 
         Extensions ex = extGen.generate();
 
@@ -292,9 +292,9 @@ public class GenerationTest
         }
 
         // extGen - check replacement.
-        extGen.replaceExtension(Extension.cRLNumber, false, new ASN1Integer(2));
+        extGen.replaceExtension(Extension.cRLNumber, false, ASN1Integer.TWO);
 
-        isEquals(new Extension(Extension.cRLNumber, false, new ASN1Integer(2).getEncoded()), extGen.getExtension(Extension.cRLNumber));
+        isEquals(new Extension(Extension.cRLNumber, false, ASN1Integer.TWO.getEncoded()), extGen.getExtension(Extension.cRLNumber));
 
         // extGen - check remove.
         extGen.removeExtension(Extension.cRLNumber);
@@ -318,11 +318,11 @@ public class GenerationTest
         //
         // check we can add a custom reason
         //
-        gen.addCRLEntry(new ASN1Integer(1), new Time(new Date(1000)), CRLReason.aACompromise);
+        gen.addCRLEntry(ASN1Integer.ONE, new Time(new Date(1000)), CRLReason.aACompromise);
 
         //
         // check invalidity date
-        gen.addCRLEntry(new ASN1Integer(2), new Time(new Date(1000)), CRLReason.affiliationChanged, new ASN1GeneralizedTime(new Date(2000)));
+        gen.addCRLEntry(ASN1Integer.TWO, new Time(new Date(1000)), CRLReason.affiliationChanged, new ASN1GeneralizedTime(new Date(2000)));
 
         TBSCertList crl = gen.generateTBSCertList();
 
@@ -331,7 +331,7 @@ public class GenerationTest
         {
             TBSCertList.CRLEntry entry = entries[i];
 
-            if (entry.getUserCertificate().equals(new ASN1Integer(1)))
+            if (entry.getUserCertificate().equals(ASN1Integer.ONE))
             {
                 Extensions extensions = entry.getExtensions();
                 Extension ext = extensions.getExtension(Extension.reasonCode);
@@ -343,7 +343,7 @@ public class GenerationTest
                     fail("reason code mismatch");
                 }
             }
-            else if (entry.getUserCertificate().equals(new ASN1Integer(2)))
+            else if (entry.getUserCertificate().equals(ASN1Integer.TWO))
             {
                 Extensions extensions = entry.getExtensions();
                 Extension ext = extensions.getExtension(Extension.reasonCode);

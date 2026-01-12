@@ -25,7 +25,7 @@ public class PBEParameter
             throw new IllegalArgumentException("salt length must be 8");
         }
         this.salt = new DEROctetString(salt);
-        this.iterations = new ASN1Integer(iterations);
+        this.iterations = ASN1Integer.valueOf(iterations);
     }
 
     private PBEParameter(

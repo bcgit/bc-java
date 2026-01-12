@@ -94,7 +94,7 @@ public class GCMParameters
 
         if (icvLen != 12)
         {
-            v.add(new ASN1Integer(icvLen));
+            v.add(ASN1Integer.valueOf(icvLen));
         }
 
         return new DERSequence(v);

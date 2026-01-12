@@ -38,7 +38,7 @@ public class EnvelopedData
         EncryptedContentInfo encryptedContentInfo,
         ASN1Set unprotectedAttrs)
     {
-        version = new ASN1Integer(calculateVersion(originatorInfo, recipientInfos, unprotectedAttrs));
+        version = ASN1Integer.valueOf(calculateVersion(originatorInfo, recipientInfos, unprotectedAttrs));
 
         this.originatorInfo = originatorInfo;
         this.recipientInfos = recipientInfos;
@@ -52,7 +52,7 @@ public class EnvelopedData
         EncryptedContentInfo encryptedContentInfo,
         Attributes unprotectedAttrs)
     {
-        version = new ASN1Integer(calculateVersion(originatorInfo, recipientInfos, ASN1Set.getInstance(unprotectedAttrs)));
+        version = ASN1Integer.valueOf(calculateVersion(originatorInfo, recipientInfos, ASN1Set.getInstance(unprotectedAttrs)));
 
         this.originatorInfo = originatorInfo;
         this.recipientInfos = recipientInfos;

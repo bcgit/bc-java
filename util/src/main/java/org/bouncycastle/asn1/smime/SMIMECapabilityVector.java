@@ -23,7 +23,7 @@ public class SMIMECapabilityVector
         ASN1ObjectIdentifier capability,
         int                 value)
     {
-        capabilities.add(new DERSequence(capability, new ASN1Integer(value)));
+        capabilities.add(new DERSequence(capability, ASN1Integer.valueOf(value)));
     }
 
     public void addCapability(

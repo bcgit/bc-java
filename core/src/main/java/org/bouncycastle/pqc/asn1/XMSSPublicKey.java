@@ -68,9 +68,9 @@ public class XMSSPublicKey
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
-        v.add(new ASN1Integer(0)); // version
+        v.add(ASN1Integer.ZERO); // version
 
         v.add(new DEROctetString(publicSeed));
         v.add(new DEROctetString(root));

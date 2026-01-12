@@ -400,8 +400,8 @@ public class JcaContentSignerBuilder
         return new RSASSAPSSparams(
             digId,
             new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, mgfDig),
-            new ASN1Integer(pssSpec.getSaltLength()),
-            new ASN1Integer(pssSpec.getTrailerField()));
+            ASN1Integer.valueOf(pssSpec.getSaltLength()),
+            ASN1Integer.valueOf(pssSpec.getTrailerField()));
     }
 
     private static ASN1Sequence createCompParams(CompositeAlgorithmSpec compSpec)

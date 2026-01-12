@@ -21,7 +21,7 @@ public class PKCS12PBEParams
         int         iterations)
     {
         this.iv = new DEROctetString(salt);
-        this.iterations = new ASN1Integer(iterations);
+        this.iterations = ASN1Integer.valueOf(iterations);
     }
 
     private PKCS12PBEParams(

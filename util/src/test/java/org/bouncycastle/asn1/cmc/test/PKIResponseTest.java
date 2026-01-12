@@ -33,7 +33,7 @@ public class PKIResponseTest
     {
         PKIResponse pkiResponse = PKIResponse.getInstance(new DERSequence(new ASN1Encodable[]{
             new DERSequence(new TaggedAttribute(new BodyPartID(10L), PKCSObjectIdentifiers.bagtypes, new DERSet())),
-            new DERSequence(new TaggedContentInfo(new BodyPartID(12L), new ContentInfo(PKCSObjectIdentifiers.id_aa, new ASN1Integer(10L)))),
+            new DERSequence(new TaggedContentInfo(new BodyPartID(12L), new ContentInfo(PKCSObjectIdentifiers.id_aa, ASN1Integer.valueOf(10)))),
             new DERSequence(new OtherMsg(new BodyPartID(12), PKCSObjectIdentifiers.id_aa_msgSigDigest, new DERUTF8String("foo")))
         }));
 

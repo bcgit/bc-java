@@ -29,7 +29,7 @@ public class XMSSMTKeyParams
 
     public XMSSMTKeyParams(int height, int layers, AlgorithmIdentifier treeDigest)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.height = height;
         this.layers = layers;
         this.treeDigest = treeDigest;
@@ -74,11 +74,11 @@ public class XMSSMTKeyParams
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(4);
 
         v.add(version);
-        v.add(new ASN1Integer(height));
-        v.add(new ASN1Integer(layers));
+        v.add(ASN1Integer.valueOf(height));
+        v.add(ASN1Integer.valueOf(layers));
         v.add(treeDigest);
 
         return new DERSequence(v);

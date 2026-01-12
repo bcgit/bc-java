@@ -1001,7 +1001,7 @@ public class BcSignedDataTest
     public void testEd448()
         throws Exception
     {
-        encapsulatedTest(_signEd448KP, _signEd448Cert, "ED448", new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512)));
+        encapsulatedTest(_signEd448KP, _signEd448Cert, "ED448", new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, ASN1Integer.valueOf(512)));
     }
 
     public void testSHA1WithRSAEncapsulatedSubjectKeyID()

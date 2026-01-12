@@ -39,7 +39,7 @@ public class ExtensionTest
     private void exerciseEtsiTs102941DeltaCtlRequestId()
         throws Exception
     {
-        ASN1Integer ctlSequence = new ASN1Integer(10);
+        ASN1Integer ctlSequence = ASN1Integer.valueOf(10);
 
         Extension extension = new Extension(
             Extension.etsiTs102941DeltaCtlRequestId,
