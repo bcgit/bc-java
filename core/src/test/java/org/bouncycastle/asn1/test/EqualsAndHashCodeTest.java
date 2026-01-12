@@ -62,7 +62,7 @@ public class EqualsAndHashCodeTest
                 new DERGeneralizedTime("20070315173729Z"),
                 new DERGeneralString("hello world"),
                 new DERIA5String("hello"),
-                new ASN1Integer(1000),
+                ASN1Integer.valueOf(1000),
                 DERNull.INSTANCE,
                 new DERNumericString("123456"),
                 new ASN1ObjectIdentifier("1.1.1.10000.1"),

@@ -1932,7 +1932,7 @@ public class NewSignedDataTest
          * We confirm here that our implementation defaults to id-shake256-len/512 for the digest algorithm.
          */
         AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len,
-            new ASN1Integer(512));
+            ASN1Integer.valueOf(512));
 
         detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
 

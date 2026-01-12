@@ -43,7 +43,7 @@ public class CertRequest
         CertTemplate certTemplate,
         Controls controls)
     {
-        this(new ASN1Integer(certReqId), certTemplate, controls);
+        this(ASN1Integer.valueOf(certReqId), certTemplate, controls);
     }
 
     public CertRequest(

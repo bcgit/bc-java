@@ -90,7 +90,7 @@ public class DVCSParseTest
 
         REQ_CCPD_TOMSK = new DVCSRequest(INFO_CCPD_TOMSK.build(), new Data(DIGEST_CCPD_TOMSK), ID_CCPD_TOMSK);
 
-        DVCSCertInfoBuilder certInfoBldr = new DVCSCertInfoBuilder(INFO_CCPD_TOMSK.build(), DIGEST_CCPD_TOMSK, new ASN1Integer(6256), new DVCSTime(new ASN1GeneralizedTime("20121204040643Z")));
+        DVCSCertInfoBuilder certInfoBldr = new DVCSCertInfoBuilder(INFO_CCPD_TOMSK.build(), DIGEST_CCPD_TOMSK, ASN1Integer.valueOf(6256), new DVCSTime(new ASN1GeneralizedTime("20121204040643Z")));
         certInfoBldr.setDvStatus(new PKIStatusInfo(PKIStatus.granted));
         RES_CCPD_TOMSK = new DVCSResponse(certInfoBldr.build());
 
@@ -107,7 +107,7 @@ public class DVCSParseTest
 
         REQ_CPD_TOMSK = new DVCSRequest(INFO_CPD_TOMSK.build(), new Data(Hex.decode(CPD_DATA_TOMSK)), ID_CPD_TOMSK);
 
-        certInfoBldr = new DVCSCertInfoBuilder(INFO_CPD_TOMSK2.build(), DIGEST_CPD_TOMSK, new ASN1Integer(6329), new DVCSTime(new ASN1GeneralizedTime("20121205065720Z")));
+        certInfoBldr = new DVCSCertInfoBuilder(INFO_CPD_TOMSK2.build(), DIGEST_CPD_TOMSK, ASN1Integer.valueOf(6329), new DVCSTime(new ASN1GeneralizedTime("20121205065720Z")));
         certInfoBldr.setDvStatus(new PKIStatusInfo(PKIStatus.granted));
         RES_CPD_TOMSK = new DVCSResponse(certInfoBldr.build());
 
@@ -126,7 +126,7 @@ public class DVCSParseTest
 
         REQ_VPKC_TOMSK = new DVCSRequest(INFO_VPKC_TOMSK.build(), new Data(REQ_CERTS), ID_VPKC_TOMSK);
 
-        certInfoBldr = new DVCSCertInfoBuilder(INFO_VPKC_TOMSK.build(), DIGEST_VPKC_TOMSK, new ASN1Integer(6257), new DVCSTime(new ASN1GeneralizedTime("20121204040753Z")));
+        certInfoBldr = new DVCSCertInfoBuilder(INFO_VPKC_TOMSK.build(), DIGEST_VPKC_TOMSK, ASN1Integer.valueOf(6257), new DVCSTime(new ASN1GeneralizedTime("20121204040753Z")));
 
         certInfoBldr.setDvStatus(new PKIStatusInfo(PKIStatus.granted));
         certInfoBldr.setCerts(RES_CERTS);

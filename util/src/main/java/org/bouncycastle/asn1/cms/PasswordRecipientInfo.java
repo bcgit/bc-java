@@ -35,7 +35,7 @@ public class PasswordRecipientInfo
         AlgorithmIdentifier     keyEncryptionAlgorithm,
         ASN1OctetString         encryptedKey)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.encryptedKey = encryptedKey;
     }
@@ -45,7 +45,7 @@ public class PasswordRecipientInfo
         AlgorithmIdentifier     keyEncryptionAlgorithm,
         ASN1OctetString         encryptedKey)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.keyDerivationAlgorithm = keyDerivationAlgorithm;
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.encryptedKey = encryptedKey;

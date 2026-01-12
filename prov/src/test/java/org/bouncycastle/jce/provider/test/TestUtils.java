@@ -93,7 +93,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
@@ -125,7 +125,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
@@ -157,7 +157,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(signerName);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));

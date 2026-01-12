@@ -31,7 +31,7 @@ public class LDSSecurityObject
 {
     public static final int ub_DataGroups = 16;
 
-    private ASN1Integer version = new ASN1Integer(0);
+    private ASN1Integer version = ASN1Integer.ZERO;
     private AlgorithmIdentifier digestAlgorithmIdentifier;
     private DataGroupHash[] datagroupHash;
     private LDSVersionInfo versionInfo;
@@ -86,7 +86,7 @@ public class LDSSecurityObject
         AlgorithmIdentifier digestAlgorithmIdentifier,
         DataGroupHash[] datagroupHash)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.digestAlgorithmIdentifier = digestAlgorithmIdentifier;
         this.datagroupHash = copy(datagroupHash);
 
@@ -98,7 +98,7 @@ public class LDSSecurityObject
         DataGroupHash[] datagroupHash,
         LDSVersionInfo versionInfo)
     {
-        this.version = new ASN1Integer(1);
+        this.version = ASN1Integer.ONE;
         this.digestAlgorithmIdentifier = digestAlgorithmIdentifier;
         this.datagroupHash = copy(datagroupHash);
         this.versionInfo = versionInfo;

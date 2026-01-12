@@ -25,13 +25,10 @@ public class ECGOST3410NamedCurveTable
         X9ECParameters  ecP = ECGOST3410NamedCurves.getByNameX9(name);
         if (ecP == null)
         {
-            try
+            ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(name);
+            if (oid != null)
             {
-                ecP = ECGOST3410NamedCurves.getByOIDX9(new ASN1ObjectIdentifier(name));
-            }
-            catch (IllegalArgumentException e)
-            {
-                return null; // not an oid.
+                ecP = ECGOST3410NamedCurves.getByOIDX9(oid);
             }
         }
         

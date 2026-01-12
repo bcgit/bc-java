@@ -37,11 +37,11 @@ public class KeyTransRecipientInfo
     {
         if (rid.toASN1Primitive() instanceof ASN1TaggedObject)
         {
-            this.version = new ASN1Integer(2);
+            this.version = ASN1Integer.TWO;
         }
         else
         {
-            this.version = new ASN1Integer(0);
+            this.version = ASN1Integer.ZERO;
         }
 
         this.rid = rid;

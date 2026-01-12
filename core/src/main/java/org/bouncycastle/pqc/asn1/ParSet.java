@@ -120,14 +120,14 @@ public class ParSet
 
         for (int i = 0; i < h.length; i++)
         {
-            seqOfPSh.add(new ASN1Integer(h[i]));
-            seqOfPSw.add(new ASN1Integer(w[i]));
-            seqOfPSK.add(new ASN1Integer(k[i]));
+            seqOfPSh.add(ASN1Integer.valueOf(h[i]));
+            seqOfPSw.add(ASN1Integer.valueOf(w[i]));
+            seqOfPSK.add(ASN1Integer.valueOf(k[i]));
         }
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(t));
+        v.add(ASN1Integer.valueOf(t));
         v.add(new DERSequence(seqOfPSh));
         v.add(new DERSequence(seqOfPSw));
         v.add(new DERSequence(seqOfPSK));

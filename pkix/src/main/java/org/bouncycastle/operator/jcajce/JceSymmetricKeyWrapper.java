@@ -90,8 +90,7 @@ public class JceSymmetricKeyWrapper
         }
         else if (algorithm.startsWith("RC2"))
         {
-            return new AlgorithmIdentifier(new ASN1ObjectIdentifier(
-                    "1.2.840.113549.1.9.16.3.7"), new ASN1Integer(58));
+            return new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.7"), ASN1Integer.valueOf(58));
         }
         else if (algorithm.startsWith("AES") || algorithm.startsWith(NISTObjectIdentifiers.aes.getId()))
         {

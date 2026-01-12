@@ -42,7 +42,7 @@ public class KeyAgreeRecipientInfo
         AlgorithmIdentifier         keyEncryptionAlgorithm,
         ASN1Sequence                recipientEncryptedKeys)
     {
-        this.version = new ASN1Integer(3);
+        this.version = ASN1Integer.THREE;
         this.originator = originator;
         this.ukm = ukm;
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;

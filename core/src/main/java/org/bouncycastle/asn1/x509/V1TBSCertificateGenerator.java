@@ -22,7 +22,7 @@ import org.bouncycastle.asn1.x500.X500Name;
  */
 public class V1TBSCertificateGenerator
 {
-    DERTaggedObject         version = new DERTaggedObject(true, 0, new ASN1Integer(0));
+    DERTaggedObject         version = new DERTaggedObject(true, 0, ASN1Integer.ZERO);
 
     ASN1Integer              serialNumber;
     AlgorithmIdentifier     signature;
@@ -122,7 +122,7 @@ public class V1TBSCertificateGenerator
             throw new IllegalStateException("not all mandatory fields set in V1 TBScertificate generator");
         }
 
-        return new TBSCertificate(new ASN1Integer(0), serialNumber, signature, issuer,
+        return new TBSCertificate(ASN1Integer.ZERO, serialNumber, signature, issuer,
             validity != null ? validity : new Validity(startDate, endDate), subject, subjectPublicKeyInfo, null,
             null, null);
     }

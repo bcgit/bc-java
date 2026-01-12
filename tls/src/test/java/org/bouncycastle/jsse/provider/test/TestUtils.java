@@ -107,7 +107,7 @@ class TestUtils
             new RSASSAPSSparams(
                 sha256Identifier,
                 new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256Identifier),
-                new ASN1Integer(sha256OutputSize),
+                ASN1Integer.valueOf(sha256OutputSize),
                 RSASSAPSSparams.DEFAULT_TRAILER_FIELD)));
         algIDs.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
         algIDs.put("SHA224withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA224));
@@ -204,7 +204,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
@@ -244,7 +244,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(signerName);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));

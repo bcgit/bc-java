@@ -73,7 +73,7 @@ public class CMCFailInfoTest
         for (Iterator typeKeys = typesMap.keySet().iterator(); typeKeys.hasNext(); )
         {
             Object j = typeKeys.next();
-            if (!range.containsKey(new ASN1Integer(((Long)j).longValue())))
+            if (!range.containsKey(ASN1Integer.valueOf(((Long)j).longValue())))
             {
                 fail("The 'typesMap' map in CMCFailInfoTest contains a value not in the CMCFailInfo ('range') map, value was: " + j.toString());
             }
