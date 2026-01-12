@@ -311,11 +311,8 @@ public class PKCS10CertificationRequest
 
         if (sigOID == null)
         {
-            try
-            {
-                sigOID = new ASN1ObjectIdentifier(algorithmName);
-            }
-            catch (Exception e)
+            sigOID = ASN1ObjectIdentifier.tryFromID(algorithmName);
+            if (sigOID == null)
             {
                 throw new IllegalArgumentException("Unknown signature type requested");
             }

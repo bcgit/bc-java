@@ -25,22 +25,22 @@ public class GOST3410ParameterSpec
         String  digestParamSetOID,
         String  encryptionParamSetOID)
     {
-        GOST3410ParamSetParameters  ecP = null;
-        
-        try
+        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(keyParamSetID);
+        if (oid == null)
         {
-            ecP = GOST3410NamedParameters.getByOID(new ASN1ObjectIdentifier(keyParamSetID));
-        }
-        catch (IllegalArgumentException e)
-        {
-            ASN1ObjectIdentifier oid = GOST3410NamedParameters.getOID(keyParamSetID);
+            oid = GOST3410NamedParameters.getOID(keyParamSetID);
             if (oid != null)
             {
                 keyParamSetID = oid.getId();
-                ecP = GOST3410NamedParameters.getByOID(oid);
             }
         }
-        
+
+        GOST3410ParamSetParameters ecP = null;
+        if (oid != null)
+        {
+            ecP = GOST3410NamedParameters.getByOID(oid);
+        }
+
         if (ecP == null)
         {
             throw new IllegalArgumentException("no key parameter set for passed in name/OID.");

@@ -330,7 +330,7 @@ public class ECUtil
             curveName = curveName.substring(spacePos + 1);
         }
 
-        ASN1ObjectIdentifier oid = getOID(curveName);
+        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(curveName);
         if (null != oid)
         {
             return oid;
@@ -436,21 +436,5 @@ public class ECUtil
     public static String getNameFrom(final AlgorithmParameterSpec paramSpec)
     {
         return SpecUtil.getNameFrom(paramSpec);
-    }
-
-    private static ASN1ObjectIdentifier getOID(String curveName)
-    {
-        char firstChar = curveName.charAt(0);
-        if (firstChar >= '0' && firstChar <= '2')
-        {
-            try
-            {
-                return new ASN1ObjectIdentifier(curveName);
-            }
-            catch (Exception e)
-            {
-            }
-        }
-        return null;
     }
 }

@@ -337,9 +337,10 @@ public class IETFUtils
         }
         else
         {
-            if (rdn.getFirst() != null)
+            AttributeTypeAndValue first = rdn.getFirst();
+            if (first != null)
             {
-                IETFUtils.appendTypeAndValue(buf, rdn.getFirst(), oidSymbols);
+                IETFUtils.appendTypeAndValue(buf, first, oidSymbols);
             }
         }
     }
@@ -370,9 +371,10 @@ public class IETFUtils
         }
         else
         {
-            if (rdn.getFirst() != null)
+            AttributeTypeAndValue first = rdn.getFirst();
+            if (first != null)
             {
-                IETFUtils.appendTypeAndValue(buf, rdn.getFirst(), oidSymbols);
+                IETFUtils.appendTypeAndValue(buf, first, oidSymbols);
             }
         }
     }
