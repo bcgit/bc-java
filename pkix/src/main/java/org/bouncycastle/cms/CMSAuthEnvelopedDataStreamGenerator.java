@@ -11,7 +11,6 @@ import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 
 /**
@@ -63,36 +62,25 @@ public class CMSAuthEnvelopedDataStreamGenerator
         OutputAEADEncryptor encryptor)
         throws IOException
     {
-        //
         // ContentInfo
-        //
-        BERSequenceGenerator cGen = new BERSequenceGenerator(out);
+        BERSequenceGenerator ciGen = new BERSequenceGenerator(out);
+        ciGen.addObject(CMSObjectIdentifiers.authEnvelopedData);
 
-        cGen.addObject(CMSObjectIdentifiers.authEnvelopedData);
+        // AuthEnvelopedData
+        BERSequenceGenerator aedGen = new BERSequenceGenerator(ciGen.getRawOutputStream(), 0, true);
+        aedGen.addObject(new ASN1Integer(0));
+        CMSUtils.addOriginatorInfoToGenerator(aedGen, originatorInfo);
+        CMSUtils.addRecipientInfosToGenerator(recipientInfos, aedGen, _berEncodeRecipientSet);
 
-        //
-        // Encrypted Data
-        //
-        BERSequenceGenerator authEnvGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
+        // EncryptedContentInfo
+        BERSequenceGenerator eciGen = new BERSequenceGenerator(aedGen.getRawOutputStream());
+        eciGen.addObject(dataType);
+        eciGen.addObject(encryptor.getAlgorithmIdentifier());
 
-        authEnvGen.addObject(new ASN1Integer(0));
+        // encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL (EncryptedContent ::= OCTET STRING)
+        OutputStream ecStream = CMSUtils.createBEROctetOutputStream(eciGen.getRawOutputStream(), 0, false, _bufferSize);
 
-        CMSUtils.addOriginatorInfoToGenerator(authEnvGen, originatorInfo);
-
-        CMSUtils.addRecipientInfosToGenerator(recipientInfos, authEnvGen, _berEncodeRecipientSet);
-
-        BERSequenceGenerator eiGen = new BERSequenceGenerator(authEnvGen.getRawOutputStream());
-
-        eiGen.addObject(dataType);
-
-        AlgorithmIdentifier encAlgId = encryptor.getAlgorithmIdentifier();
-
-        eiGen.getRawOutputStream().write(encAlgId.getEncoded());
-
-        OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
-            eiGen.getRawOutputStream(), 0, true, _bufferSize);
-
-        return new CMSAuthEnvelopedDataOutputStream(encryptor, octetStream, cGen, authEnvGen, eiGen);
+        return new CMSAuthEnvelopedDataOutputStream(encryptor, ecStream, ciGen, aedGen, eciGen);
     }
 
     protected OutputStream open(

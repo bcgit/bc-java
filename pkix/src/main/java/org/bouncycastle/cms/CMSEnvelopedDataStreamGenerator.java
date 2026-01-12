@@ -83,36 +83,25 @@ public class CMSEnvelopedDataStreamGenerator
         OutputEncryptor      encryptor)
         throws IOException
     {
-        //
         // ContentInfo
-        //
         BERSequenceGenerator cGen = new BERSequenceGenerator(out);
-
         cGen.addObject(CMSObjectIdentifiers.envelopedData);
 
-        //
-        // Encrypted Data
-        //
+        // EnvelopedData
         BERSequenceGenerator envGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
-
         envGen.addObject(getVersion(recipientInfos));
-
         CMSUtils.addOriginatorInfoToGenerator(envGen, originatorInfo);
-
         CMSUtils.addRecipientInfosToGenerator(recipientInfos, envGen, _berEncodeRecipientSet);
 
-        BERSequenceGenerator eiGen = new BERSequenceGenerator(envGen.getRawOutputStream());
+        // EncryptedContentInfo
+        BERSequenceGenerator eciGen = new BERSequenceGenerator(envGen.getRawOutputStream());
+        eciGen.addObject(dataType);
+        eciGen.addObject(encryptor.getAlgorithmIdentifier());
 
-        eiGen.addObject(dataType);
+        // encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL (EncryptedContent ::= OCTET STRING)
+        OutputStream ecStream = CMSUtils.createBEROctetOutputStream(eciGen.getRawOutputStream(), 0, false, _bufferSize);
 
-        AlgorithmIdentifier encAlgId = encryptor.getAlgorithmIdentifier();
-
-        eiGen.getRawOutputStream().write(encAlgId.getEncoded());
-
-        OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
-            eiGen.getRawOutputStream(), 0, false, _bufferSize);
-
-        return new CmsEnvelopedDataOutputStream(encryptor, octetStream, cGen, envGen, eiGen);
+        return new CmsEnvelopedDataOutputStream(encryptor, ecStream, cGen, envGen, eciGen);
     }
 
     protected OutputStream open(
