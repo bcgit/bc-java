@@ -37,7 +37,7 @@ import org.bouncycastle.asn1.x500.X500Name;
  */
 public class V2TBSCertListGenerator
 {
-    private ASN1Integer         version = new ASN1Integer(1);
+    private ASN1Integer         version = ASN1Integer.ONE;
     private AlgorithmIdentifier signature;
     private X500Name            issuer;
     private Time                thisUpdate, nextUpdate=null;

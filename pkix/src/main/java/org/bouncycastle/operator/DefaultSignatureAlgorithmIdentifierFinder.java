@@ -77,7 +77,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         return new RSASSAPSSparams(
             hashAlgId,
             new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
-            new ASN1Integer(saltSize),
+            ASN1Integer.valueOf(saltSize),
             RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
     }
 

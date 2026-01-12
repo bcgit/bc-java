@@ -36,7 +36,7 @@ public class KEKRecipientInfo
         AlgorithmIdentifier keyEncryptionAlgorithm,
         ASN1OctetString     encryptedKey)
     {
-        this.version = new ASN1Integer(4);
+        this.version = ASN1Integer.FOUR;
         this.kekid = kekid;
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.encryptedKey = encryptedKey;

@@ -85,7 +85,7 @@ public class CMSCompressedDataStreamGenerator
 
         // CompressedData
         BERSequenceGenerator cGen = new BERSequenceGenerator(sGen.getRawOutputStream(), 0, true);
-        cGen.addObject(new ASN1Integer(0));
+        cGen.addObject(ASN1Integer.ZERO);
         cGen.addObject(compressor.getAlgorithmIdentifier());
 
         // EncapsulatedContentInfo

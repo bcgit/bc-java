@@ -33,7 +33,7 @@ public class PKIHeaderBuilder
         GeneralName sender,
         GeneralName recipient)
     {
-        this(new ASN1Integer(pvno), sender, recipient);
+        this(ASN1Integer.valueOf(pvno), sender, recipient);
     }
 
     private PKIHeaderBuilder(

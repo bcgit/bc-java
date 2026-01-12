@@ -51,7 +51,7 @@ public class ECGOST3410ParamSetParameters
         this.b = new ASN1Integer(b);
         this.p = new ASN1Integer(p);
         this.q = new ASN1Integer(q);
-        this.x = new ASN1Integer(x);
+        this.x = ASN1Integer.valueOf(x);
         this.y = new ASN1Integer(y);
     }
 

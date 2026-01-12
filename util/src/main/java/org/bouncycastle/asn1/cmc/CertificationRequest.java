@@ -35,8 +35,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 public class CertificationRequest
     extends ASN1Object
 {
-    private static final ASN1Integer ZERO = new ASN1Integer(0);
-
     private final CertificationRequestInfo certificationRequestInfo;
     private final AlgorithmIdentifier signatureAlgorithm;
     private final ASN1BitString signature;
@@ -173,9 +171,9 @@ public class CertificationRequest
 
         private CertificationRequestInfo(X500Name subject, AlgorithmIdentifier algorithm, ASN1BitString subjectPublicKey, ASN1Set attributes)
         {
-            this.version = ZERO;
+            this.version = ASN1Integer.ZERO;
             this.subject = subject;
-            this.subjectPublicKeyInfo = new DERSequence(new ASN1Encodable[] { algorithm, subjectPublicKey });
+            this.subjectPublicKeyInfo = new DERSequence(algorithm, subjectPublicKey);
             this.attributes = attributes;
         }
 

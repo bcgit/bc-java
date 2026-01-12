@@ -24,8 +24,8 @@ import org.bouncycastle.asn1.DERSequence;
 public class PKIPublicationInfo
     extends ASN1Object
 {
-    public static final ASN1Integer dontPublish = new ASN1Integer(0);
-    public static final ASN1Integer pleasePublish = new ASN1Integer(1);
+    public static final ASN1Integer dontPublish = ASN1Integer.ZERO;
+    public static final ASN1Integer pleasePublish = ASN1Integer.ONE;
 
     private ASN1Integer action;
     private ASN1Sequence pubInfos;

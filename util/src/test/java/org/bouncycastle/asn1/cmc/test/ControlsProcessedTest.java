@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.cmc.test;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -38,9 +37,7 @@ public class ControlsProcessedTest
 
         try
         {
-            ControlsProcessed.getInstance(new DERSequence(
-                new ASN1Encodable[]{new ASN1Integer(12L), new DERUTF8String("Monkeys")
-                }));
+            ControlsProcessed.getInstance(new DERSequence(ASN1Integer.valueOf(12), new DERUTF8String("Monkeys")));
             fail("Must accept only sequence length of 1");
         }
         catch (Throwable t)

@@ -110,7 +110,7 @@ public class TagTest
             }
         }
 
-        tagged = new DERTaggedObject(false, 34, new DERTaggedObject(true, 1000, new ASN1Integer(1)));
+        tagged = new DERTaggedObject(false, 34, new DERTaggedObject(true, 1000, ASN1Integer.ONE));
         if (!areEqual(taggedInteger, tagged.getEncoded()))
         {
             fail("incorrect encoding for implicit explicit tagged integer");

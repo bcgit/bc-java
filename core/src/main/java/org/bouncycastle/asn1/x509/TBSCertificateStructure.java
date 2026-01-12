@@ -86,7 +86,7 @@ public class TBSCertificateStructure
         else
         {
             seqStart = -1;          // field 0 is missing!
-            version = new ASN1Integer(0);
+            version = ASN1Integer.ZERO;
         }
 
         serialNumber = ASN1Integer.getInstance(seq.getObjectAt(seqStart + 1));

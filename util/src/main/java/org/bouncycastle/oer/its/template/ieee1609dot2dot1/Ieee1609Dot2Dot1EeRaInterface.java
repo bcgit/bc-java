@@ -72,7 +72,7 @@ public class Ieee1609Dot2Dot1EeRaInterface
      * }
      */
     public static final OERDefinition.Builder EeRaCertRequest = OERDefinition.seq(
-        Ieee1609Dot2BaseTypes.UINT8.label("version").validSwitchValue(new ASN1Integer(2)),
+        Ieee1609Dot2BaseTypes.UINT8.label("version").validSwitchValue(ASN1Integer.TWO),
         Ieee1609Dot2BaseTypes.Time32.label("generationTime"),
         IEEE1609dot2.CertificateType.label("type"),
         IEEE1609dot2.ToBeSignedCertificate.label("tbsCert"),

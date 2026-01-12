@@ -687,7 +687,7 @@ public class OERExpander
 
                 if (def.getLowerBound() == null && def.getUpperBound() == null)
                 {
-                    script.add(new ASN1Integer(10)); // Unbounded so pick a value.
+                    script.add(ASN1Integer.valueOf(10)); // Unbounded so pick a value.
                 }
             }
 

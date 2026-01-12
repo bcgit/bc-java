@@ -55,7 +55,7 @@ public class TypeOfBiometricData
     {
         if (predefinedBiometricType == PICTURE || predefinedBiometricType == HANDWRITTEN_SIGNATURE)
         {
-                obj = new ASN1Integer(predefinedBiometricType);
+            obj = ASN1Integer.valueOf(predefinedBiometricType);
         }
         else
         {
