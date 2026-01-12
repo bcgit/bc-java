@@ -8,34 +8,29 @@ import org.bouncycastle.tsp.GenTimeAccuracy;
 public class GenTimeAccuracyUnitTest
     extends TestCase
 {
-    private static final ASN1Integer ZERO_VALUE = new ASN1Integer(0);
-    private static final ASN1Integer ONE_VALUE = new ASN1Integer(1);
-    private static final ASN1Integer TWO_VALUE = new ASN1Integer(2);
-    private static final ASN1Integer THREE_VALUE = new ASN1Integer(3);
-
     public void testOneTwoThree()
     {   
-        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ONE_VALUE, TWO_VALUE, THREE_VALUE));
+        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ASN1Integer.ONE, ASN1Integer.TWO, ASN1Integer.THREE));
         
-        checkValues(accuracy, ONE_VALUE, TWO_VALUE, THREE_VALUE);
+        checkValues(accuracy, ASN1Integer.ONE, ASN1Integer.TWO, ASN1Integer.THREE);
         
         checkToString(accuracy, "1.002003");
     }
 
     public void testThreeTwoOne()
     {   
-        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(THREE_VALUE, TWO_VALUE, ONE_VALUE));
+        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ASN1Integer.THREE, ASN1Integer.TWO, ASN1Integer.ONE));
         
-        checkValues(accuracy, THREE_VALUE, TWO_VALUE, ONE_VALUE);
+        checkValues(accuracy, ASN1Integer.THREE, ASN1Integer.TWO, ASN1Integer.ONE);
         
         checkToString(accuracy, "3.002001");
     }
     
     public void testTwoThreeTwo()
     {   
-        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(TWO_VALUE, THREE_VALUE, TWO_VALUE));
+        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ASN1Integer.TWO, ASN1Integer.THREE, ASN1Integer.TWO));
         
-        checkValues(accuracy, TWO_VALUE, THREE_VALUE, TWO_VALUE);
+        checkValues(accuracy, ASN1Integer.TWO, ASN1Integer.THREE, ASN1Integer.TWO);
         
         checkToString(accuracy, "2.003002");
     }
@@ -43,36 +38,36 @@ public class GenTimeAccuracyUnitTest
 
     public void testZeroTwoThree()
     {   
-        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ZERO_VALUE, TWO_VALUE, THREE_VALUE));
+        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ASN1Integer.ZERO, ASN1Integer.TWO, ASN1Integer.THREE));
         
-        checkValues(accuracy, ZERO_VALUE, TWO_VALUE, THREE_VALUE);
+        checkValues(accuracy, ASN1Integer.ZERO, ASN1Integer.TWO, ASN1Integer.THREE);
         
         checkToString(accuracy, "0.002003");
     }
 
     public void testThreeTwoNull()
     {   
-        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(THREE_VALUE, TWO_VALUE, null));
+        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ASN1Integer.THREE, ASN1Integer.TWO, null));
         
-        checkValues(accuracy, THREE_VALUE, TWO_VALUE, ZERO_VALUE);
+        checkValues(accuracy, ASN1Integer.THREE, ASN1Integer.TWO, ASN1Integer.ZERO);
         
         checkToString(accuracy, "3.002000");
     }
     
     public void testOneNullOne()
     {   
-        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ONE_VALUE, null, ONE_VALUE));
+        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ASN1Integer.ONE, null, ASN1Integer.ONE));
         
-        checkValues(accuracy, ONE_VALUE, ZERO_VALUE, ONE_VALUE);
+        checkValues(accuracy, ASN1Integer.ONE, ASN1Integer.ZERO, ASN1Integer.ONE);
         
         checkToString(accuracy, "1.000001");
     }
     
     public void testZeroNullNull()
     {   
-        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ZERO_VALUE, null, null));
+        GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(ASN1Integer.ZERO, null, null));
         
-        checkValues(accuracy, ZERO_VALUE, ZERO_VALUE, ZERO_VALUE);
+        checkValues(accuracy, ASN1Integer.ZERO, ASN1Integer.ZERO, ASN1Integer.ZERO);
         
         checkToString(accuracy, "0.000000");
     }
@@ -81,7 +76,7 @@ public class GenTimeAccuracyUnitTest
     {   
         GenTimeAccuracy accuracy = new GenTimeAccuracy(new Accuracy(null, null, null));
         
-        checkValues(accuracy, ZERO_VALUE, ZERO_VALUE, ZERO_VALUE);
+        checkValues(accuracy, ASN1Integer.ZERO, ASN1Integer.ZERO, ASN1Integer.ZERO);
         
         checkToString(accuracy, "0.000000");
     }

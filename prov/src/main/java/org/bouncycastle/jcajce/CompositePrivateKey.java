@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -16,9 +17,6 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
@@ -273,20 +271,38 @@ public class CompositePrivateKey
         {
             try
             {
-                byte[] mldsaKey = ((MLDSAPrivateKey)keys.get(0)).getSeed();
-                PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(keys.get(1).getEncoded()));
-                byte[] tradKey = pki.getPrivateKey().getOctets();
-                if (keys.get(1).getAlgorithm().contains("Ed"))
-                {
-                    tradKey = ASN1OctetString.getInstance(tradKey).getOctets();
-                }
-                else if (keys.get(1).getAlgorithm().contains("EC"))
-                {
-                    ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(tradKey);
+                PrivateKey key0 = keys.get(0);
+                PrivateKey key1 = keys.get(1);
 
-                    tradKey = new ECPrivateKey(ECNamedCurveTable.getByOID(
-                        ASN1ObjectIdentifier.getInstance(ecPrivateKey.getParametersObject())).getCurve().getFieldSize(), ecPrivateKey.getKey(), ecPrivateKey.getParametersObject()).getEncoded();
+                byte[] mldsaKey = ((MLDSAPrivateKey)key0).getSeed();
+
+                byte[] key1Encoded = key1.getEncoded();
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(key1Encoded);
+
+                byte[] tradKey;
+                String key1Algorithm = key1.getAlgorithm();
+                if (key1Algorithm.contains("Ed"))
+                {
+                    tradKey = ASN1OctetString.getInstance(pki.parsePrivateKey()).getOctets();
                 }
+                else if (key1Algorithm.contains("EC"))
+                {
+                    ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(pki.parsePrivateKey());
+
+                    // TODO Do we also want to remove any parameters from the ECPrivateKey? 
+                    ASN1BitString publicKey = ecPrivateKey.getPublicKey();
+                    if (publicKey != null)
+                    {
+                        ecPrivateKey = new ECPrivateKey(ecPrivateKey.getPrivateKey(), ecPrivateKey.getParametersObject(), null);
+                    }
+
+                    tradKey = ecPrivateKey.getEncoded();
+                }
+                else
+                {
+                    tradKey = pki.getPrivateKey().getOctets();
+                }
+
                 return new PrivateKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
             }
             catch (IOException e)

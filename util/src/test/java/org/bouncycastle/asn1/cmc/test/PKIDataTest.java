@@ -46,8 +46,8 @@ public class PKIDataTest
         PKIData pkiData = new PKIData(
             new TaggedAttribute[]{new TaggedAttribute(new BodyPartID(10L), PKCSObjectIdentifiers.id_aa, new DERSet())},
             new TaggedRequest[]{new TaggedRequest(new TaggedCertificationRequest(new BodyPartID(10L), CertificationRequest.getInstance(req1)))},
-            new TaggedContentInfo[]{new TaggedContentInfo(new BodyPartID(10L), new ContentInfo(PKCSObjectIdentifiers.id_aa_ets_commitmentType, new ASN1Integer(10L)))},
-            new OtherMsg[]{new OtherMsg(new BodyPartID(10L), PKCSObjectIdentifiers.pkcs_9, new ASN1Integer(10L))});
+            new TaggedContentInfo[]{new TaggedContentInfo(new BodyPartID(10L), new ContentInfo(PKCSObjectIdentifiers.id_aa_ets_commitmentType, ASN1Integer.valueOf(10)))},
+            new OtherMsg[]{new OtherMsg(new BodyPartID(10L), PKCSObjectIdentifiers.pkcs_9, ASN1Integer.valueOf(10))});
 
 
         byte[] b = pkiData.getEncoded();

@@ -27,7 +27,7 @@ public class ProcurationSyntaxUnitTest
         String country = "AU";
         DirectoryString  typeOfSubstitution = new DirectoryString("substitution");
         GeneralName thirdPerson = new GeneralName(new X500Name("CN=thirdPerson"));
-        IssuerSerial certRef = new IssuerSerial(new GeneralNames(new GeneralName(new X500Name("CN=test"))), new ASN1Integer(1));
+        IssuerSerial certRef = new IssuerSerial(new GeneralNames(new GeneralName(new X500Name("CN=test"))), ASN1Integer.ONE);
 
         ProcurationSyntax procuration = new ProcurationSyntax(country, typeOfSubstitution, thirdPerson);
 

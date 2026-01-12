@@ -59,7 +59,7 @@ public class Iso4217CurrencyCode
         {
             throw new IllegalArgumentException("wrong size in numeric code : not in (" +NUMERIC_MINSIZE +".."+ NUMERIC_MAXSIZE +")");
         }
-        obj = new ASN1Integer(numeric);
+        obj = ASN1Integer.valueOf(numeric);
     }
     
     public Iso4217CurrencyCode(

@@ -34,7 +34,7 @@ public class GetCertTest
 
         try
         {
-            GetCert.getInstance(new DERSequence(new ASN1Integer(1L)));
+            GetCert.getInstance(new DERSequence(ASN1Integer.ONE));
             fail("Sequence must be length of 2");
         }
         catch (Throwable t)

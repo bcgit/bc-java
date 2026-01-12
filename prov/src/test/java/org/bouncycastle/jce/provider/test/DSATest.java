@@ -274,7 +274,7 @@ public class DSATest
         throws Exception
     {
         KeyFactory f = KeyFactory.getInstance("DSA", "BC");
-        X509EncodedKeySpec x509s = new X509EncodedKeySpec(new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_dsa), new ASN1Integer(10001)).getEncoded());
+        X509EncodedKeySpec x509s = new X509EncodedKeySpec(new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_dsa), ASN1Integer.valueOf(10001)).getEncoded());
 
         DSAPublicKey key1 = (DSAPublicKey)f.generatePublic(x509s);
         DSAPublicKey key2 = (DSAPublicKey)f.generatePublic(x509s);

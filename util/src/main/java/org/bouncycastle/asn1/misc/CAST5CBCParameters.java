@@ -35,7 +35,7 @@ public class CAST5CBCParameters
         int     keyLength)
     {
         this.iv = new DEROctetString(Arrays.clone(iv));
-        this.keyLength = new ASN1Integer(keyLength);
+        this.keyLength = ASN1Integer.valueOf(keyLength);
     }
 
     private CAST5CBCParameters(

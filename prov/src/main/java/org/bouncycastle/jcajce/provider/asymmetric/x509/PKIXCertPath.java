@@ -290,7 +290,7 @@ public  class PKIXCertPath
             }
             
             SignedData sd = new SignedData(
-                                     new ASN1Integer(1),
+                                     ASN1Integer.ONE,
                                      new DERSet(),
                                      encInfo, 
                                      new DERSet(v),

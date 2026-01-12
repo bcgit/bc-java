@@ -36,7 +36,7 @@ public class OERExtensionTest
         Element ele = defBuilder.build();
 
         // Only has the non extension part populated
-        ASN1Encodable withOutExtension = new DERSequence(new ASN1Encodable[]{new ASN1Integer(1)});
+        ASN1Encodable withOutExtension = new DERSequence(ASN1Integer.ONE);
 
         byte[] raw = OEREncoder.toByteArray(withOutExtension, ele);
         TestCase.assertTrue((raw[0] & 0x80) == 0); // Extension present bit must be zero
@@ -53,7 +53,7 @@ public class OERExtensionTest
         Element ele = defBuilder.build();
         {
             // Only has the non extension part populated
-            ASN1Encodable withOutExtension = new DERSequence(new ASN1Encodable[]{new ASN1Integer(1), new DERUTF8String("cats")});
+            ASN1Encodable withOutExtension = new DERSequence(ASN1Integer.ONE, new DERUTF8String("cats"));
 
             byte[] raw = OEREncoder.toByteArray(withOutExtension, ele);
             TestCase.assertTrue((raw[0] & 0x80) != 0); // Extension present bit must be zero
@@ -66,7 +66,7 @@ public class OERExtensionTest
         //
 
         {
-            ASN1Encodable withOutExtension = new DERSequence(new ASN1Encodable[]{new ASN1Integer(1), OEROptional.ABSENT, new ASN1Integer(10)});
+            ASN1Encodable withOutExtension = new DERSequence(new ASN1Encodable[]{ASN1Integer.ONE, OEROptional.ABSENT, ASN1Integer.valueOf(10)});
 
             byte[] raw = OEREncoder.toByteArray(withOutExtension, ele);
             TestCase.assertTrue((raw[0] & 0x80) != 0); // Extension present bit must be zero
@@ -115,14 +115,13 @@ public class OERExtensionTest
         Element writeElement = writeBuilder.build();
 
 
-        ASN1Encodable enc = new DERSequence(new ASN1Encodable[]{
+        ASN1Encodable enc = new DERSequence(
             new DERSequence(new ASN1Encodable[]{
                 new DERUTF8String("cats"),
                 OEROptional.ABSENT, // this and the one below are actually extension values.
                 new DERUTF8String("other")
             }),
-            new ASN1Integer(10)
-        });
+            ASN1Integer.valueOf(10));
 
         byte[] value = OEREncoder.toByteArray(enc, writeElement);
 

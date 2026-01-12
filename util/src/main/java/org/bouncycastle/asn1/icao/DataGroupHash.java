@@ -71,7 +71,7 @@ public class DataGroupHash
         int dataGroupNumber,        
         ASN1OctetString     dataGroupHashValue)
     {
-        this.dataGroupNumber = new ASN1Integer(dataGroupNumber);
+        this.dataGroupNumber = ASN1Integer.valueOf(dataGroupNumber);
         this.dataGroupHashValue = dataGroupHashValue; 
     }    
 

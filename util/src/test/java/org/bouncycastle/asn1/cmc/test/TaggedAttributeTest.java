@@ -48,7 +48,7 @@ public class TaggedAttributeTest
         //
         try
         {
-            ASN1Sequence seq = new DERSequence(new ASN1Encodable[] { new BodyPartID(10) });
+            ASN1Sequence seq = new DERSequence(new BodyPartID(10));
 
             TaggedAttribute.getInstance(seq);
             fail("no exception");
@@ -63,7 +63,8 @@ public class TaggedAttributeTest
         //
         try
         {
-            ASN1Sequence seq = new DERSequence(new ASN1Encodable[] { ta.getBodyPartID(), ta.getAttrType(), ta.getAttrValues(), new ASN1Integer(0)});
+            ASN1Sequence seq = new DERSequence(new ASN1Encodable[]{
+                ta.getBodyPartID(), ta.getAttrType(), ta.getAttrValues(), ASN1Integer.ZERO });
 
             TaggedAttribute.getInstance(seq);
             fail("no exception");

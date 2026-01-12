@@ -27,7 +27,7 @@ public class XMSSKeyParams
 
     public XMSSKeyParams(int height, AlgorithmIdentifier treeDigest)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.height = height;
         this.treeDigest = treeDigest;
     }
@@ -68,7 +68,7 @@ public class XMSSKeyParams
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(version);
-        v.add(new ASN1Integer(height));
+        v.add(ASN1Integer.valueOf(height));
         v.add(treeDigest);
 
         return new DERSequence(v);

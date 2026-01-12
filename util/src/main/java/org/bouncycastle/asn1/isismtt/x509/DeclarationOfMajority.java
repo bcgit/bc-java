@@ -44,7 +44,7 @@ public class DeclarationOfMajority
 
     public DeclarationOfMajority(int notYoungerThan)
     {
-        declaration = new DERTaggedObject(false, 0, new ASN1Integer(notYoungerThan));
+        declaration = new DERTaggedObject(false, 0, ASN1Integer.valueOf(notYoungerThan));
     }
 
     public DeclarationOfMajority(boolean fullAge, String country)

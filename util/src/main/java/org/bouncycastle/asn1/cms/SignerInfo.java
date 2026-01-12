@@ -131,11 +131,11 @@ public class SignerInfo
     {
         if (sid.isTagged())
         {
-            this.version = new ASN1Integer(3);
+            this.version = ASN1Integer.THREE;
         }
         else
         {
-            this.version = new ASN1Integer(1);
+            this.version = ASN1Integer.ONE;
         }
 
         this.sid = sid;
@@ -165,11 +165,11 @@ public class SignerInfo
     {
         if (sid.isTagged())
         {
-            this.version = new ASN1Integer(3);
+            this.version = ASN1Integer.THREE;
         }
         else
         {
-            this.version = new ASN1Integer(1);
+            this.version = ASN1Integer.ONE;
         }
 
         this.sid = sid;

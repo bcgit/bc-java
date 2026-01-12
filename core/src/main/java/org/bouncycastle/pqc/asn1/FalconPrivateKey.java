@@ -96,7 +96,7 @@ public class FalconPrivateKey
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(version));
+        v.add(ASN1Integer.valueOf(version));
         v.add(new DEROctetString(f));
         v.add(new DEROctetString(g));
         v.add(new DEROctetString(F));

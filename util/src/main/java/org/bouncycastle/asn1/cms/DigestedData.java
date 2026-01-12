@@ -35,7 +35,7 @@ public class DigestedData
         ContentInfo encapContentInfo,
         byte[]      digest)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.digestAlgorithm = digestAlgorithm;
         this.encapContentInfo = encapContentInfo;
         this.digest = new DEROctetString(Arrays.clone(digest));

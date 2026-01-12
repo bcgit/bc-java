@@ -102,6 +102,6 @@ public class EncryptedData
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new BERSequence(new ASN1Integer(0), data);
+        return new BERSequence(ASN1Integer.ZERO, data);
     }
 }

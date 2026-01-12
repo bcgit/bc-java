@@ -27,4 +27,16 @@ public abstract class ASN1Generator
      * @return the stream that is directly encoded to.
      */
     public abstract OutputStream getRawOutputStream();
+
+    static int inheritConstructedFlag(int intoTag, int fromTag)
+    {
+        if ((fromTag & BERTags.CONSTRUCTED) != 0)
+        {
+            return intoTag | BERTags.CONSTRUCTED;
+        }
+        else
+        {
+            return intoTag & ~BERTags.CONSTRUCTED;
+        }
+    }
 }

@@ -41,30 +41,27 @@ public abstract class BERGenerator
 
     protected void writeBERHeader(int tag) throws IOException
     {
-        if (_tagged)
+        if (!_tagged)
         {
-            int tagNum = _tagNo | BERTags.CONTEXT_SPECIFIC;
-
-            if (_isExplicit)
-            {
-                writeHdr(tagNum | BERTags.CONSTRUCTED);
-                writeHdr(tag);
-            }
-            else
-            {
-                if ((tag & BERTags.CONSTRUCTED) != 0)
-                {
-                    writeHdr(tagNum | BERTags.CONSTRUCTED);
-                }
-                else
-                {
-                    writeHdr(tagNum);
-                }
-            }
+            writeHdr(tag);
+        }
+        else if (_isExplicit)
+        {
+            /*
+             * X.690-0207 8.14.2. If implicit tagging [..] was not used [..], the encoding shall be constructed
+             * and the contents octets shall be the complete base encoding.
+             */
+            writeHdr(_tagNo | BERTags.CONTEXT_SPECIFIC | BERTags.CONSTRUCTED);
+            writeHdr(tag);
         }
         else
         {
-            writeHdr(tag);
+            /*
+             * X.690-0207 8.14.3. If implicit tagging was used [..], then: a) the encoding shall be constructed
+             * if the base encoding is constructed, and shall be primitive otherwise; and b) the contents octets
+             * shall be [..] the contents octets of the base encoding.
+             */
+            writeHdr(inheritConstructedFlag(_tagNo | BERTags.CONTEXT_SPECIFIC, tag));
         }
     }
 

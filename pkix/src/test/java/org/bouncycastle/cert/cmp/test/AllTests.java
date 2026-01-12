@@ -295,7 +295,7 @@ public class AllTests
 
         CertRepMessage msg = new CertRepMessage(null, new CertResponse[] {
             new CertResponse(
-                new ASN1Integer(2),
+                ASN1Integer.TWO,
                 new PKIStatusInfo(PKIStatus.granted),
                 new CertifiedKeyPair(
                     new CertOrEncCert(CMPCertificate.getInstance(cert.getEncoded())),

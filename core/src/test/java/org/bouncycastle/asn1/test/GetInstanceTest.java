@@ -328,7 +328,7 @@ public class GetInstanceTest
         doFullGetInstanceTest(DERT61String.class, new DERT61String("hello world"));
         doFullGetInstanceTest(DERVisibleString.class, new DERVisibleString("hello world"));
 
-        doFullGetInstanceTest(ASN1Integer.class, new ASN1Integer(1));
+        doFullGetInstanceTest(ASN1Integer.class, ASN1Integer.ONE);
         doFullGetInstanceTest(ASN1GeneralizedTime.class, new ASN1GeneralizedTime(new Date()));
         doFullGetInstanceTest(ASN1UTCTime.class, new ASN1UTCTime(new Date()));
         doFullGetInstanceTest(ASN1Enumerated.class, new ASN1Enumerated(1));
@@ -362,7 +362,7 @@ public class GetInstanceTest
         BasicOCSPResponse.getInstance(null);
         BasicOCSPResponse.getInstance(null);
 
-        doFullGetInstanceTest(CertID.class, new CertID(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE), new DEROctetString(new byte[1]), new DEROctetString(new byte[1]), new ASN1Integer(1)));
+        doFullGetInstanceTest(CertID.class, new CertID(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE), new DEROctetString(new byte[1]), new DEROctetString(new byte[1]), ASN1Integer.ONE));
 
         CertStatus.getInstance(null);
         CertStatus.getInstance(null);

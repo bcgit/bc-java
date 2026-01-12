@@ -108,9 +108,9 @@ public class MiscPEMGenerator
                 type = "DSA PRIVATE KEY";
 
                 DSAParameter p = DSAParameter.getInstance(info.getPrivateKeyAlgorithm().getParameters());
-                ASN1EncodableVector v = new ASN1EncodableVector();
+                ASN1EncodableVector v = new ASN1EncodableVector(6);
 
-                v.add(new ASN1Integer(0));
+                v.add(ASN1Integer.ZERO);
                 v.add(new ASN1Integer(p.getP()));
                 v.add(new ASN1Integer(p.getQ()));
                 v.add(new ASN1Integer(p.getG()));

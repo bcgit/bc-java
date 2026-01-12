@@ -331,7 +331,7 @@ public class DefaultDigestAlgorithmIdentifierFinder
                 return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
             }
 
-            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512));
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, ASN1Integer.valueOf(512));
         }
 
         ASN1ObjectIdentifier digAlgOid;

@@ -27,7 +27,7 @@ public class OtherCertIDUnitTest
     {
         AlgorithmIdentifier algId = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.2.3"));
         byte[]              digest = new byte[20];
-        IssuerSerial        issuerSerial = new IssuerSerial(new GeneralNames(new GeneralName(new X500Name("CN=test"))), new ASN1Integer(1));
+        IssuerSerial        issuerSerial = new IssuerSerial(new GeneralNames(new GeneralName(new X500Name("CN=test"))), ASN1Integer.ONE);
 
         OtherCertID certID = new OtherCertID(algId, digest);
 
