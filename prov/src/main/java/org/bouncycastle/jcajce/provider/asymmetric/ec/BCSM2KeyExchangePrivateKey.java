@@ -7,21 +7,21 @@ import org.bouncycastle.util.Arrays;
 public class BCSM2KeyExchangePrivateKey
     implements PrivateKey
 {
-    private final PrivateKey staticPrivateKey;
-    private final PrivateKey ephemeralPrivateKey;
-    private final byte[] id;
+    private final boolean initiator;
+    private PrivateKey staticPrivateKey;
+    private PrivateKey ephemeralPrivateKey;
 
-    public BCSM2KeyExchangePrivateKey(PrivateKey staticPrivateKey, PrivateKey ephemeralPrivateKey, byte[] id)
+    public BCSM2KeyExchangePrivateKey(boolean initiator, PrivateKey staticPrivateKey, PrivateKey ephemeralPrivateKey)
     {
+        this.initiator = initiator;
         this.staticPrivateKey = staticPrivateKey;
         this.ephemeralPrivateKey = ephemeralPrivateKey;
-        this.id = Arrays.clone(id);
     }
 
     @Override
     public String getAlgorithm()
     {
-        return "SM2 KeyExchange Private";
+        return "SM2 Key Exchange";
     }
 
     @Override
@@ -36,28 +36,18 @@ public class BCSM2KeyExchangePrivateKey
         return new byte[0];
     }
 
+    public boolean isInitiator()
+    {
+        return initiator;
+    }
+
     public PrivateKey getStaticPrivateKey()
     {
         return staticPrivateKey;
     }
 
-//    public ECPoint getStaticPublicPoint()
-//    {
-//        return staticPublicPoint;
-//    }
-
     public PrivateKey getEphemeralPrivateKey()
     {
         return ephemeralPrivateKey;
     }
-
-    public byte[] getId()
-    {
-        return Arrays.clone(id);
-    }
-
-//    public ECPoint getEphemeralPublicPoint()
-//    {
-//        return ephemeralPublicPoint;
-//    }
 }
