@@ -19,6 +19,36 @@ public abstract class ASN1TaggedObject
     private static final int PARSED_EXPLICIT = 3;
     private static final int PARSED_IMPLICIT = 4;
 
+    public static ASN1TaggedObject getContextInstance(Object obj)
+    {
+        return ASN1Util.checkContextTagClass(checkInstance(obj));
+    }
+
+    public static ASN1TaggedObject getContextInstance(Object obj, int tagNo)
+    {
+        return ASN1Util.checkContextTag(checkInstance(obj), tagNo);
+    }
+
+    public static ASN1TaggedObject getContextOptional(ASN1Encodable element)
+    {
+        ASN1TaggedObject taggedObject = getOptional(element);
+        if (taggedObject != null && taggedObject.hasContextTag())
+        {
+            return taggedObject;
+        }
+        return null;
+    }
+
+    public static ASN1TaggedObject getContextOptional(ASN1Encodable element, int tagNo)
+    {
+        ASN1TaggedObject taggedObject = getOptional(element);
+        if (taggedObject != null && taggedObject.hasContextTag(tagNo))
+        {
+            return taggedObject;
+        }
+        return null;
+    }
+
     public static ASN1TaggedObject getInstance(Object obj)
     {
         if (obj == null || obj instanceof ASN1TaggedObject) 
