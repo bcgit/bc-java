@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -120,7 +119,7 @@ public class EtsiTs102941DataContent
 
         if (o != null)
         {
-            return new EtsiTs102941DataContent(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
+            return new EtsiTs102941DataContent(ASN1TaggedObject.getContextInstance(o));
         }
 
         return null;

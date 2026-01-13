@@ -87,7 +87,7 @@ public class OOBCert
 
         if (o instanceof ASN1TaggedObject)
         {
-            ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC);
+            ASN1TaggedObject taggedObject = ASN1TaggedObject.getContextInstance(o);
 
             return new OOBCert(taggedObject.getTagNo(), taggedObject.getExplicitBaseObject());
         }

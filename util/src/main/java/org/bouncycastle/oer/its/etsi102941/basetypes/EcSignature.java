@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncrypted;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataSignedExternalPayload;
@@ -59,7 +58,7 @@ public class EcSignature
         }
         if (o != null)
         {
-            return new EcSignature(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
+            return new EcSignature(ASN1TaggedObject.getContextInstance(o));
         }
 
         return null;

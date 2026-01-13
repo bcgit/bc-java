@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
@@ -74,7 +73,7 @@ public class VerificationKeyIndicator
 
         if (src != null)
         {
-            return new VerificationKeyIndicator(ASN1TaggedObject.getInstance(src, BERTags.CONTEXT_SPECIFIC));
+            return new VerificationKeyIndicator(ASN1TaggedObject.getContextInstance(src));
         }
 
         return null;

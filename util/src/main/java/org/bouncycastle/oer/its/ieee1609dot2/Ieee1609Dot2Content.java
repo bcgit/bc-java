@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.util.Arrays;
@@ -103,7 +102,7 @@ public class Ieee1609Dot2Content
 
         if (src != null)
         {
-            return new Ieee1609Dot2Content(ASN1TaggedObject.getInstance(src, BERTags.CONTEXT_SPECIFIC));
+            return new Ieee1609Dot2Content(ASN1TaggedObject.getContextInstance(src));
         }
         return null;
     }
