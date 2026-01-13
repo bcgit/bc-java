@@ -13,17 +13,16 @@ import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DerivationFunction;
-import org.bouncycastle.crypto.agreement.ECDHCUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.SM2KeyExchange;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.SM2KeyExchangePrivateParameters;
+import org.bouncycastle.crypto.params.SM2KeyExchangePublicParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
-import org.bouncycastle.jcajce.spec.SM2KeyExchangeParameterSpec;
+import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
-import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -55,19 +54,8 @@ public class GMKeyExchangeSpi
         this.agreement = agreement;
     }
 
-    protected GMKeyExchangeSpi(
-        String kaAlgorithm,
-        ECDHCUnifiedAgreement agreement,
-        DerivationFunction kdf)
-    {
-        super(kaAlgorithm, kdf);
-
-        this.kaAlgorithm = kaAlgorithm;
-        this.agreement = agreement;
-    }
-
     protected byte[] bigIntToBytes(
-        BigInteger r, BCECPrivateKey key)
+        BigInteger r, BCECPublicKey key)
     {
         return converter.integerToBytes(r, converter.getByteLength(key.engineGetSpec().getCurve()));
     }
@@ -87,38 +75,18 @@ public class GMKeyExchangeSpi
             throw new IllegalStateException(kaAlgorithm + " can only be between two parties.");
         }
 
-        CipherParameters pubKey;
-
-        if (!(key instanceof PublicKey))
+        if (!(key instanceof BCSM2KeyExchangePublicKey))
         {
             throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
-                + getSimpleName(ECPublicKey.class) + " for doPhase");
+                + getSimpleName(BCSM2KeyExchangePublicKey.class) + " for doPhase");
         }
+        BCSM2KeyExchangePublicKey k = (BCSM2KeyExchangePublicKey)key;
+        ECPublicKeyParameters staticPubKey = (ECPublicKeyParameters)ECUtils.generatePublicKeyParameter(k.getStaticPublicKey());
+        ECPublicKeyParameters ephemeralPubKey = (ECPublicKeyParameters)ECUtils.generatePublicKeyParameter(k.getEphemeralPublicKey());
 
-        pubKey = ECUtils.generatePublicKeyParameter((PublicKey)key);
+        ParametersWithID parameters = new ParametersWithID(new SM2KeyExchangePublicParameters(staticPubKey, ephemeralPubKey), k.getId());
 
-
-        try
-        {
-            if (agreement instanceof BasicAgreement)
-            {
-                result = bigIntToBytes(((BasicAgreement)agreement).calculateAgreement(pubKey), null);
-            }
-            else
-            {
-                result = ((ECDHCUnifiedAgreement)agreement).calculateAgreement(pubKey);
-            }
-        }
-        catch (final Exception e)
-        {
-            throw new InvalidKeyException("calculation failed: " + e.getMessage())
-            {
-                public Throwable getCause()
-                {
-                    return e;
-                }
-            };
-        }
+        result = bigIntToBytes(((BasicAgreement)agreement).calculateAgreement(parameters), (BCECPublicKey)k.getStaticPublicKey());
 
         return null;
     }
@@ -126,24 +94,22 @@ public class GMKeyExchangeSpi
     protected void doInitFromKey(Key key, AlgorithmParameterSpec parameterSpec, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (parameterSpec != null && !(parameterSpec instanceof SM2KeyExchangeParameterSpec))
+        if (parameterSpec != null && !(parameterSpec instanceof SM2ParameterSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
-
 
         if (!(key instanceof PrivateKey))
         {
             throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
                 + getSimpleName(ECPrivateKey.class) + " for initialisation");
         }
-        if (kdf == null && parameterSpec instanceof UserKeyingMaterialSpec)
-        {
-            throw new InvalidAlgorithmParameterException("no KDF specified for UserKeyingMaterialSpec");
-        }
+
+        byte[] id = ((SM2ParameterSpec)parameterSpec).getID();
+
         ECPrivateKeyParameters staticKey = (ECPrivateKeyParameters)ECUtils.generatePrivateKeyParameter(((BCSM2KeyExchangePrivateKey)key).getStaticPrivateKey());
         ECPrivateKeyParameters ephemeralKey = (ECPrivateKeyParameters)ECUtils.generatePrivateKeyParameter(((BCSM2KeyExchangePrivateKey)key).getEphemeralPrivateKey());
-        this.parameters = new ParametersWithID(new SM2KeyExchangePrivateParameters(true, staticKey, ephemeralKey), ((BCSM2KeyExchangePrivateKey)key).getId());
+        this.parameters = new ParametersWithID(new SM2KeyExchangePrivateParameters(((BCSM2KeyExchangePrivateKey)key).isInitiator(), staticKey, ephemeralKey), id);
         ((BasicAgreement)agreement).init(parameters);
     }
 
@@ -171,7 +137,7 @@ public class GMKeyExchangeSpi
     public static class SM2KeyAgreement
         implements BasicAgreement
     {
-        private SM2KeyExchange engine;
+        private final SM2KeyExchange engine;
 
         public SM2KeyAgreement()
         {
