@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1Util;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.EncryptedKey;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
@@ -78,7 +77,7 @@ public class CertOrEncCert
 
         if (o instanceof ASN1TaggedObject)
         {
-            return new CertOrEncCert(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
+            return new CertOrEncCert(ASN1TaggedObject.getContextInstance(o));
         }
 
         return null;
