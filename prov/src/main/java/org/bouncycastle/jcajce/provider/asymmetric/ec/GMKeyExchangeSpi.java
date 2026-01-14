@@ -20,27 +20,20 @@ import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.SM2KeyExchangePrivateParameters;
 import org.bouncycastle.crypto.params.SM2KeyExchangePublicParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
-import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
-import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
+import org.bouncycastle.jcajce.spec.SM2KeyExchangeSpec;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.util.Arrays;
 
-/**
- * Diffie-Hellman key agreement using elliptic curve keys, ala IEEE P1363
- * both the simple one, and the simple one with cofactors are supported.
- * <p>
- * Also, MQV key agreement per SEC-1
- */
+
 public class GMKeyExchangeSpi
     extends BaseAgreementSpi
 {
     private static final X9IntegerConverter converter = new X9IntegerConverter();
 
-    private String kaAlgorithm;
-
+    private final String kaAlgorithm;
     private ParametersWithID parameters;
-    private Object agreement;
-
+    private final BasicAgreement agreement;
+    private SM2KeyExchangeSpec  spec;
     private byte[] result;
 
     protected GMKeyExchangeSpi(
@@ -75,18 +68,21 @@ public class GMKeyExchangeSpi
             throw new IllegalStateException(kaAlgorithm + " can only be between two parties.");
         }
 
-        if (!(key instanceof BCSM2KeyExchangePublicKey))
+        if (!(key instanceof BCECPublicKey))
         {
             throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
-                + getSimpleName(BCSM2KeyExchangePublicKey.class) + " for doPhase");
+                + getSimpleName(BCECPublicKey.class) + " for doPhase");
         }
-        BCSM2KeyExchangePublicKey k = (BCSM2KeyExchangePublicKey)key;
-        ECPublicKeyParameters staticPubKey = (ECPublicKeyParameters)ECUtils.generatePublicKeyParameter(k.getStaticPublicKey());
-        ECPublicKeyParameters ephemeralPubKey = (ECPublicKeyParameters)ECUtils.generatePublicKeyParameter(k.getEphemeralPublicKey());
+        BCECPublicKey k = (BCECPublicKey)key;
+        ECPublicKeyParameters staticKey = (ECPublicKeyParameters)
+            ECUtils.generatePublicKeyParameter((PublicKey)key);
+        ECPublicKeyParameters ephemKey = (ECPublicKeyParameters)
+            ECUtils.generatePublicKeyParameter(spec.getOtherPartyEphemeralKey());
 
-        ParametersWithID parameters = new ParametersWithID(new SM2KeyExchangePublicParameters(staticPubKey, ephemeralPubKey), k.getId());
+        ParametersWithID parameters = new ParametersWithID(new SM2KeyExchangePublicParameters(staticKey, ephemKey),
+            spec.getOtherPartyId());
 
-        result = bigIntToBytes(((BasicAgreement)agreement).calculateAgreement(parameters), (BCECPublicKey)k.getStaticPublicKey());
+        result = bigIntToBytes(agreement.calculateAgreement(parameters), k);
 
         return null;
     }
@@ -94,7 +90,7 @@ public class GMKeyExchangeSpi
     protected void doInitFromKey(Key key, AlgorithmParameterSpec parameterSpec, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (parameterSpec != null && !(parameterSpec instanceof SM2ParameterSpec))
+        if (parameterSpec != null && !(parameterSpec instanceof SM2KeyExchangeSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
@@ -104,13 +100,13 @@ public class GMKeyExchangeSpi
             throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
                 + getSimpleName(ECPrivateKey.class) + " for initialisation");
         }
+        spec = (SM2KeyExchangeSpec)parameterSpec;
+        byte[] id = spec.getId();
 
-        byte[] id = ((SM2ParameterSpec)parameterSpec).getID();
-
-        ECPrivateKeyParameters staticKey = (ECPrivateKeyParameters)ECUtils.generatePrivateKeyParameter(((BCSM2KeyExchangePrivateKey)key).getStaticPrivateKey());
-        ECPrivateKeyParameters ephemeralKey = (ECPrivateKeyParameters)ECUtils.generatePrivateKeyParameter(((BCSM2KeyExchangePrivateKey)key).getEphemeralPrivateKey());
-        this.parameters = new ParametersWithID(new SM2KeyExchangePrivateParameters(((BCSM2KeyExchangePrivateKey)key).isInitiator(), staticKey, ephemeralKey), id);
-        ((BasicAgreement)agreement).init(parameters);
+        ECPrivateKeyParameters staticKey = (ECPrivateKeyParameters)ECUtils.generatePrivateKeyParameter((PrivateKey)key);
+        ECPrivateKeyParameters ephemeralKey = (ECPrivateKeyParameters)ECUtils.generatePrivateKeyParameter(spec.getEphemeralPrivateKey());
+        this.parameters = new ParametersWithID(new SM2KeyExchangePrivateParameters(spec.isInitiator(), staticKey, ephemeralKey), id);
+        agreement.init(parameters);
     }
 
     private static String getSimpleName(Class clazz)
@@ -134,11 +130,11 @@ public class GMKeyExchangeSpi
         }
     }
 
-    public static class SM2KeyAgreement
+    private static class SM2KeyAgreement
         implements BasicAgreement
     {
         private final SM2KeyExchange engine;
-
+        private int fieldSize;
         public SM2KeyAgreement()
         {
             engine = new SM2KeyExchange();
@@ -148,12 +144,14 @@ public class GMKeyExchangeSpi
         public void init(CipherParameters param)
         {
             engine.init(param);
+            fieldSize = ((SM2KeyExchangePrivateParameters)((ParametersWithID)param).getParameters()).getStaticPrivateKey()
+                .getParameters().getCurve().getFieldElementEncodingLength();
         }
 
         @Override
         public int getFieldSize()
         {
-            return 0;
+            return fieldSize;
         }
 
         @Override
