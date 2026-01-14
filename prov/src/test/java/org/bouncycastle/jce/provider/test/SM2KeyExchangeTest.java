@@ -4,13 +4,10 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.KeyAgreement;
 
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCSM2KeyExchangePrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCSM2KeyExchangePublicKey;
-import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
+import org.bouncycastle.jcajce.spec.SM2KeyExchangeSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
@@ -43,14 +40,14 @@ public class SM2KeyExchangeTest
         KeyPair kp3 = kpGen.generateKeyPair();
         KeyPair kp4 = kpGen.generateKeyPair();
 
-        keyAgreement.init(new BCSM2KeyExchangePrivateKey(true, kp1.getPrivate(), kp2.getPrivate()), new SM2ParameterSpec(Strings.toByteArray("ALICE123@YAHOO.COM")));
-        keyAgreement.doPhase(new BCSM2KeyExchangePublicKey(kp3.getPublic(), kp4.getPublic(), Strings.toByteArray("BILL456@YAHOO.COM")), true);
+        keyAgreement.init(kp1.getPrivate(), new SM2KeyExchangeSpec(true, kp2.getPublic(), kp2.getPrivate(), kp4.getPublic(), Strings.toByteArray("ALICE123@YAHOO.COM"), Strings.toByteArray("BILL456@YAHOO.COM")));
+        keyAgreement.doPhase(kp3.getPublic(), true);
 
         byte[] sec1 = keyAgreement.generateSecret();
 
-        keyAgreement.init(new BCSM2KeyExchangePrivateKey(false, kp3.getPrivate(), kp4.getPrivate()), new SM2ParameterSpec(Strings.toByteArray("BILL456@YAHOO.COM")));
+        keyAgreement.init(kp3.getPrivate(), new SM2KeyExchangeSpec(false, kp4.getPublic(), kp4.getPrivate(), kp2.getPublic(), Strings.toByteArray("BILL456@YAHOO.COM"), Strings.toByteArray("ALICE123@YAHOO.COM")));
 
-        keyAgreement.doPhase(new BCSM2KeyExchangePublicKey(kp1.getPublic(), kp2.getPublic(), Strings.toByteArray("ALICE123@YAHOO.COM")), true);
+        keyAgreement.doPhase(kp1.getPublic(), true);
 
         byte[] sec2 = keyAgreement.generateSecret();
 
@@ -60,18 +57,15 @@ public class SM2KeyExchangeTest
         SecureRandom random = new SecureRandom();
         random.nextBytes(id1);
         random.nextBytes(id2);
-        AlgorithmParameterSpec spec1 = new SM2ParameterSpec(id1);
-        AlgorithmParameterSpec spec2 = new SM2ParameterSpec(id2);
 
-        keyAgreement.init(new BCSM2KeyExchangePrivateKey(true, kp1.getPrivate(), kp2.getPrivate()),spec1);
-
-        keyAgreement.doPhase(new BCSM2KeyExchangePublicKey(kp3.getPublic(), kp4.getPublic(), id2), true);
+        keyAgreement.init(kp1.getPrivate(), new SM2KeyExchangeSpec(true, kp2.getPublic(), kp2.getPrivate(), kp4.getPublic(), id1, id2));
+        keyAgreement.doPhase(kp3.getPublic(), true);
 
         byte[] sec3 = keyAgreement.generateSecret();
 
-        keyAgreement.init(new BCSM2KeyExchangePrivateKey(false, kp3.getPrivate(), kp4.getPrivate()), spec2);
+        keyAgreement.init(kp3.getPrivate(), new SM2KeyExchangeSpec(false, kp4.getPublic(), kp4.getPrivate(), kp2.getPublic(), id2, id1));
 
-        keyAgreement.doPhase(new BCSM2KeyExchangePublicKey(kp1.getPublic(), kp2.getPublic(), id1), true);
+        keyAgreement.doPhase(kp1.getPublic(), true);
 
         byte[] sec4 = keyAgreement.generateSecret();
 
