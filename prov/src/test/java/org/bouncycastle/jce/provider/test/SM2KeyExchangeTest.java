@@ -3,26 +3,16 @@ package org.bouncycastle.jce.provider.test;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
-import java.security.Security;
 
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.jcajce.spec.SM2KeyExchangeSpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class SM2KeyExchangeTest
     extends SimpleTest
 {
-    public static void main(String[] args)
-        throws Exception
-    {
-        SM2KeyExchangeTest test = new SM2KeyExchangeTest();
-        Security.addProvider(new BouncyCastleProvider());
-        test.performTest();
-    }
-
     @Override
     public String getName()
     {
