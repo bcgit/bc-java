@@ -140,7 +140,7 @@ public class ECPrivateKey
         for (int i = 0, count = seq.size(); i < count; ++i)
         {
             ASN1Encodable element = seq.getObjectAt(i);
-            ASN1TaggedObject taggedObject = ASN1TaggedObject.getOptional(element, BERTags.CONTEXT_SPECIFIC, tagNo);
+            ASN1TaggedObject taggedObject = ASN1TaggedObject.getContextOptional(element, tagNo);
             if (taggedObject != null)
             {
                 return baseTagNo < 0
