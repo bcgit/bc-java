@@ -12,18 +12,7 @@ import org.bouncycastle.asn1.DERSequence;
 public class AlgorithmIdentifier
     extends ASN1Object
 {
-    private ASN1ObjectIdentifier algorithm;
-    private ASN1Encodable       parameters;
-
-    public static AlgorithmIdentifier getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
-    {
-        return getInstance(ASN1Sequence.getInstance(obj, explicit));
-    }
-    
-    public static AlgorithmIdentifier getInstance(
-        Object  obj)
+    public static AlgorithmIdentifier getInstance(Object obj)
     {
         if (obj instanceof AlgorithmIdentifier)
         {
@@ -36,6 +25,19 @@ public class AlgorithmIdentifier
 
         return null;
     }
+
+    public static AlgorithmIdentifier getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return new AlgorithmIdentifier(ASN1Sequence.getInstance(taggedObject, declaredExplicit));
+    }
+
+    public static AlgorithmIdentifier getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return new AlgorithmIdentifier(ASN1Sequence.getTagged(taggedObject, declaredExplicit));
+    }
+
+    private ASN1ObjectIdentifier algorithm;
+    private ASN1Encodable       parameters;
 
     public AlgorithmIdentifier(
         ASN1ObjectIdentifier algorithm)

@@ -131,32 +131,30 @@ public class IETFUtils
 
     public static RDN[] rDNsFromString(String name, X500NameStyle x500Style)
     {
-        X500NameTokenizer tokenizer = new X500NameTokenizer(name);
         X500NameBuilder builder = new X500NameBuilder(x500Style);
 
-        addRDNs(x500Style, builder, tokenizer);
+        addRDNs(builder, new X500NameTokenizer(name));
 
-        // TODO There's an unnecessary clone of the RDNs array happening here
-        return builder.build().getRDNs();
+        return builder.buildRDNs();
     }
 
-    private static void addRDNs(X500NameStyle style, X500NameBuilder builder, X500NameTokenizer tokenizer)
+    private static void addRDNs(X500NameBuilder builder, X500NameTokenizer tokenizer)
     {
         String token;
         while ((token = tokenizer.nextToken()) != null)
         {
             if (token.indexOf('+') >= 0)
             {
-                addMultiValuedRDN(style, builder, new X500NameTokenizer(token, '+'));
+                addMultiValuedRDN(builder, new X500NameTokenizer(token, '+'));
             }
             else
             {
-                addRDN(style, builder, token);
+                addRDN(builder, token);
             }
         }
     }
 
-    private static void addMultiValuedRDN(X500NameStyle style, X500NameBuilder builder, X500NameTokenizer tokenizer)
+    private static void addMultiValuedRDN(X500NameBuilder builder, X500NameTokenizer tokenizer)
     {
         String token = tokenizer.nextToken();
         if (token == null)
@@ -166,13 +164,14 @@ public class IETFUtils
 
         if (!tokenizer.hasMoreTokens())
         {
-            addRDN(style, builder, token);
+            addRDN(builder, token);
             return;
         }
 
         Vector oids = new Vector();
         Vector values = new Vector();
 
+        X500NameStyle style = builder.getStyle();
         do
         {
             collectAttributeTypeAndValue(style, oids, values, token);
@@ -183,14 +182,14 @@ public class IETFUtils
         builder.addMultiValuedRDN(toOIDArray(oids), toValueArray(values));
     }
 
-    private static void addRDN(X500NameStyle style, X500NameBuilder builder, String token)
+    private static void addRDN(X500NameBuilder builder, String token)
     {
         X500NameTokenizer tokenizer = new X500NameTokenizer(token, '=');
 
         String typeToken = nextToken(tokenizer, true);
         String valueToken = nextToken(tokenizer, false);
 
-        ASN1ObjectIdentifier oid = style.attrNameToOID(typeToken.trim());
+        ASN1ObjectIdentifier oid = builder.getStyle().attrNameToOID(typeToken.trim());
         String value = unescape(valueToken);
 
         builder.addRDN(oid, value);

@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -76,7 +75,7 @@ public class EccP384CurvePoint
 
         if (object != null)
         {
-            return new EccP384CurvePoint(ASN1TaggedObject.getInstance(object, BERTags.CONTEXT_SPECIFIC));
+            return new EccP384CurvePoint(ASN1TaggedObject.getContextInstance(object));
         }
 
         return null;

@@ -13,6 +13,18 @@ import java.io.IOException;
 public class BERSequence
     extends ASN1Sequence
 {
+    public static final BERSequence EMPTY = new BERSequence();
+
+    public static BERSequence fromElementsOptional(ASN1Encodable[] elements)
+    {
+        if (elements == null)
+        {
+            return null;
+        }
+
+        return elements.length < 1 ? EMPTY : new BERSequence(elements);
+    }
+
     /**
      * Create an empty sequence.
      */
