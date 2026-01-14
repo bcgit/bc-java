@@ -40,12 +40,12 @@ public class SM2KeyExchangeTest
         KeyPair kp3 = kpGen.generateKeyPair();
         KeyPair kp4 = kpGen.generateKeyPair();
 
-        keyAgreement.init(kp1.getPrivate(), new SM2KeyExchangeSpec(true, kp2.getPublic(), kp2.getPrivate(), kp4.getPublic(), Strings.toByteArray("ALICE123@YAHOO.COM"), Strings.toByteArray("BILL456@YAHOO.COM")));
+        keyAgreement.init(kp1.getPrivate(), new SM2KeyExchangeSpec(true, kp2.getPrivate(), kp4.getPublic(), Strings.toByteArray("ALICE123@YAHOO.COM"), Strings.toByteArray("BILL456@YAHOO.COM")));
         keyAgreement.doPhase(kp3.getPublic(), true);
 
         byte[] sec1 = keyAgreement.generateSecret();
 
-        keyAgreement.init(kp3.getPrivate(), new SM2KeyExchangeSpec(false, kp4.getPublic(), kp4.getPrivate(), kp2.getPublic(), Strings.toByteArray("BILL456@YAHOO.COM"), Strings.toByteArray("ALICE123@YAHOO.COM")));
+        keyAgreement.init(kp3.getPrivate(), new SM2KeyExchangeSpec(false, kp4.getPrivate(), kp2.getPublic(), Strings.toByteArray("BILL456@YAHOO.COM"), Strings.toByteArray("ALICE123@YAHOO.COM")));
 
         keyAgreement.doPhase(kp1.getPublic(), true);
 
@@ -58,12 +58,12 @@ public class SM2KeyExchangeTest
         random.nextBytes(id1);
         random.nextBytes(id2);
 
-        keyAgreement.init(kp1.getPrivate(), new SM2KeyExchangeSpec(true, kp2.getPublic(), kp2.getPrivate(), kp4.getPublic(), id1, id2));
+        keyAgreement.init(kp1.getPrivate(), new SM2KeyExchangeSpec(true, kp2.getPrivate(), kp4.getPublic(), id1, id2));
         keyAgreement.doPhase(kp3.getPublic(), true);
 
         byte[] sec3 = keyAgreement.generateSecret();
 
-        keyAgreement.init(kp3.getPrivate(), new SM2KeyExchangeSpec(false, kp4.getPublic(), kp4.getPrivate(), kp2.getPublic(), id2, id1));
+        keyAgreement.init(kp3.getPrivate(), new SM2KeyExchangeSpec(false, kp4.getPrivate(), kp2.getPublic(), id2, id1));
 
         keyAgreement.doPhase(kp1.getPublic(), true);
 
