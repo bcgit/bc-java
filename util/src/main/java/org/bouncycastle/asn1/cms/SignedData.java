@@ -29,9 +29,9 @@ import org.bouncycastle.asn1.DLSequence;
  *     crls [1] IMPLICIT CertificateRevocationLists OPTIONAL,
  *     signerInfos SignerInfos
  *   }
- * 
+ *
  * DigestAlgorithmIdentifiers ::= SET OF DigestAlgorithmIdentifier
- * 
+ *
  * SignerInfos ::= SET OF SignerInfo
  * </pre>
  * <p>
@@ -339,7 +339,7 @@ public class SignedData
         }
 
         v.add(signerInfos);
-        
+
         if (!contentInfo.isDefiniteLength() || digsBer || sigsBer || crlsBer || certsBer)
         {
             return new BERSequence(v);

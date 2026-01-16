@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.DERSequence;
  * KEKIdentifier ::= SEQUENCE {
  *     keyIdentifier OCTET STRING,
  *     date GeneralizedTime OPTIONAL,
- *     other OtherKeyAttribute OPTIONAL 
+ *     other OtherKeyAttribute OPTIONAL
  * }
  * </pre>
  */
@@ -28,7 +28,7 @@ public class KEKIdentifier
     private ASN1OctetString    keyIdentifier;
     private ASN1GeneralizedTime date;
     private OtherKeyAttribute  other;
-    
+
     public KEKIdentifier(
         byte[]              keyIdentifier,
         ASN1GeneralizedTime  date,
@@ -38,12 +38,12 @@ public class KEKIdentifier
         this.date = date;
         this.other = other;
     }
-    
+
     private KEKIdentifier(
         ASN1Sequence seq)
     {
         keyIdentifier = (ASN1OctetString)seq.getObjectAt(0);
-        
+
         switch (seq.size())
         {
         case 1:
@@ -51,7 +51,7 @@ public class KEKIdentifier
         case 2:
             if (seq.getObjectAt(1) instanceof ASN1GeneralizedTime)
             {
-                date = (ASN1GeneralizedTime)seq.getObjectAt(1); 
+                date = (ASN1GeneralizedTime)seq.getObjectAt(1);
             }
             else
             {
@@ -82,7 +82,7 @@ public class KEKIdentifier
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a KEKIdentifier object from the given object.
      * <p>
@@ -103,12 +103,12 @@ public class KEKIdentifier
         {
             return (KEKIdentifier)obj;
         }
-        
+
         if (obj instanceof ASN1Sequence)
         {
             return new KEKIdentifier((ASN1Sequence)obj);
         }
-        
+
         throw new IllegalArgumentException("Invalid KEKIdentifier: " + obj.getClass().getName());
     }
 
@@ -127,7 +127,7 @@ public class KEKIdentifier
         return other;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
@@ -135,7 +135,7 @@ public class KEKIdentifier
         ASN1EncodableVector  v = new ASN1EncodableVector(3);
 
         v.add(keyIdentifier);
-        
+
         if (date != null)
         {
             v.add(date);
@@ -145,7 +145,7 @@ public class KEKIdentifier
         {
             v.add(other);
         }
-        
+
         return new DERSequence(v);
     }
 }

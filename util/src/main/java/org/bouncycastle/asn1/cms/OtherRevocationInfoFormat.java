@@ -53,7 +53,7 @@ public class OtherRevocationInfoFormat
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a OtherRevocationInfoFormat object from the given object.
      * <p>
@@ -74,12 +74,12 @@ public class OtherRevocationInfoFormat
         {
             return (OtherRevocationInfoFormat)obj;
         }
-        
+
         if (obj != null)
         {
             return new OtherRevocationInfoFormat(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
     }
 
@@ -93,7 +93,7 @@ public class OtherRevocationInfoFormat
         return otherRevInfo;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

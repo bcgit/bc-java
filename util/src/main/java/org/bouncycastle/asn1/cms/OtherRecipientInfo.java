@@ -30,7 +30,7 @@ public class OtherRecipientInfo
         this.oriType = oriType;
         this.oriValue = oriValue;
     }
-    
+
     private OtherRecipientInfo(
         ASN1Sequence seq)
     {
@@ -53,7 +53,7 @@ public class OtherRecipientInfo
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a OtherRecipientInfo object from the given object.
      * <p>
@@ -74,12 +74,12 @@ public class OtherRecipientInfo
         {
             return (OtherRecipientInfo)obj;
         }
-        
+
         if (obj != null)
         {
             return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
     }
 
@@ -93,7 +93,7 @@ public class OtherRecipientInfo
         return oriValue;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

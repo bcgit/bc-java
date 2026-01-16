@@ -26,14 +26,14 @@ public class IdentityProofV2
     private final AlgorithmIdentifier proofAlgID;
     private final AlgorithmIdentifier macAlgId;
     private final byte[] witness;
-    
+
     public IdentityProofV2(AlgorithmIdentifier proofAlgID, AlgorithmIdentifier macAlgId, byte[] witness)
     {
         this.proofAlgID = proofAlgID;
         this.macAlgId = macAlgId;
         this.witness = Arrays.clone(witness);
     }
-        
+
     private IdentityProofV2(ASN1Sequence seq)
     {
         if (seq.size() != 3)
@@ -59,7 +59,7 @@ public class IdentityProofV2
 
         return null;
     }
-    
+
     public AlgorithmIdentifier getProofAlgID()
     {
         return proofAlgID;
@@ -74,15 +74,15 @@ public class IdentityProofV2
     {
         return Arrays.clone(witness);
     }
-    
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(3);
-        
+
         v.add(proofAlgID);
         v.add(macAlgId);
         v.add(new DEROctetString(getWitness()));
-        
+
         return new DERSequence(v);
     }
 }

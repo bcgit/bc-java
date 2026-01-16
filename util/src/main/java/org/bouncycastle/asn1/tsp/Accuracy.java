@@ -144,17 +144,17 @@ public class Accuracy
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(3);
-        
+
         if (seconds != null)
         {
             v.add(seconds);
         }
-        
+
         if (millis != null)
         {
             v.add(new DERTaggedObject(false, 0, millis));
         }
-        
+
         if (micros != null)
         {
             v.add(new DERTaggedObject(false, 1, micros));

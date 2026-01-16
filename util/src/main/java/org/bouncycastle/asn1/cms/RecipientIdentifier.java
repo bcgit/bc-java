@@ -14,7 +14,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
  * <pre>
  * RecipientIdentifier ::= CHOICE {
  *     issuerAndSerialNumber IssuerAndSerialNumber,
- *     subjectKeyIdentifier [0] SubjectKeyIdentifier 
+ *     subjectKeyIdentifier [0] SubjectKeyIdentifier
  * }
  *
  * SubjectKeyIdentifier ::= OCTET STRING
@@ -25,25 +25,25 @@ public class RecipientIdentifier
     implements ASN1Choice
 {
     private ASN1Encodable id;
-    
+
     public RecipientIdentifier(
         IssuerAndSerialNumber id)
     {
         this.id = id;
     }
-    
+
     public RecipientIdentifier(
         ASN1OctetString id)
     {
         this.id = new DERTaggedObject(false, 0, id);
     }
-    
+
     public RecipientIdentifier(
         ASN1Primitive id)
     {
         this.id = id;
     }
-    
+
     /**
      * Return a RecipientIdentifier object from the given object.
      * <p>
@@ -66,25 +66,25 @@ public class RecipientIdentifier
         {
             return (RecipientIdentifier)o;
         }
-        
+
         if (o instanceof IssuerAndSerialNumber)
         {
             return new RecipientIdentifier((IssuerAndSerialNumber)o);
         }
-        
+
         if (o instanceof ASN1OctetString)
         {
             return new RecipientIdentifier((ASN1OctetString)o);
         }
-        
+
         if (o instanceof ASN1Primitive)
         {
             return new RecipientIdentifier((ASN1Primitive)o);
         }
-        
+
         throw new IllegalArgumentException(
           "Illegal object in RecipientIdentifier: " + o.getClass().getName());
-    } 
+    }
 
     public boolean isTagged()
     {
@@ -101,7 +101,7 @@ public class RecipientIdentifier
         return IssuerAndSerialNumber.getInstance(id);
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

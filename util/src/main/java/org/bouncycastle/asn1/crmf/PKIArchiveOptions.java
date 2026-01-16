@@ -85,7 +85,7 @@ public class PKIArchiveOptions
     {
         return value;
     }
-    
+
     /**
      * <pre>
      *  PKIArchiveOptions ::= CHOICE {

@@ -103,7 +103,7 @@ public interface ISISMTTObjectIdentifiers
      * </pre>
      * <p>
      * OID: 1.3.36.8.3.8
-     * 
+     *
      * @see org.bouncycastle.asn1.isismtt.x509.Restriction
      */
     static final ASN1ObjectIdentifier id_isismtt_at_restriction = id_isismtt_at.branch("8");
@@ -129,7 +129,7 @@ public interface ISISMTTObjectIdentifiers
      * returned in this extension.
      * <p>
      * OID: 1.3.36.8.3.10
-     * 
+     *
      * @see org.bouncycastle.asn1.isismtt.ocsp.RequestedCertificate
      */
     static final ASN1ObjectIdentifier id_isismtt_at_requestedCertificate = id_isismtt_at.branch("10");
@@ -146,7 +146,7 @@ public interface ISISMTTObjectIdentifiers
      * in the directory and status information has become available. Currently,
      * accrediting authorities enforce that SigG-conforming OCSP servers include
      * this extension in the responses.
-     * 
+     *
      * <pre>
      *    CertInDirSince ::= GeneralizedTime
      * </pre>
@@ -159,7 +159,7 @@ public interface ISISMTTObjectIdentifiers
      * Hash of a certificate in OCSP.
      * <p>
      * OID: 1.3.36.8.3.13
-     * 
+     *
      * @see org.bouncycastle.asn1.isismtt.ocsp.CertHash
      */
     static final ASN1ObjectIdentifier id_isismtt_at_certHash = id_isismtt_at.branch("13");
@@ -168,7 +168,7 @@ public interface ISISMTTObjectIdentifiers
      * <pre>
      *    NameAtBirth ::= DirectoryString(SIZE(1..64)
      * </pre>
-     * 
+     *
      * Used in
      * {@link org.bouncycastle.asn1.x509.SubjectDirectoryAttributes SubjectDirectoryAttributes}
      * <p>
@@ -180,13 +180,13 @@ public interface ISISMTTObjectIdentifiers
      * Some other information of non-restrictive nature regarding the usage of
      * this certificate. May be used as attribute in atribute certificate or as
      * extension in a certificate.
-     * 
+     *
      * <pre>
      *    AdditionalInformationSyntax ::= DirectoryString (SIZE(1..2048))
      * </pre>
      * <p>
      * OID: 1.3.36.8.3.15
-     * 
+     *
      * @see org.bouncycastle.asn1.isismtt.x509.AdditionalInformationSyntax
      */
     static final ASN1ObjectIdentifier id_isismtt_at_additionalInformation = id_isismtt_at.branch("15");
