@@ -111,7 +111,7 @@ public class MetaData
         {
             v.add(otherMetaData);
         }
-        
+
         return new DERSequence(v);
     }
 

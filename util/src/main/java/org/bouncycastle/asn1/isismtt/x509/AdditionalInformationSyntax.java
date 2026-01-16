@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.x500.DirectoryString;
 /**
  * Some other information of non-restrictive nature regarding the usage of this
  * certificate.
- * 
+ *
  * <pre>
  *    AdditionalInformationSyntax ::= DirectoryString (SIZE(1..2048))
  * </pre>

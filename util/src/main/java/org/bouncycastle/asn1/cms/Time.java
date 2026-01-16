@@ -59,7 +59,7 @@ public class Time
             throw new IllegalArgumentException("unknown object passed to Time");
         }
 
-        this.time = time; 
+        this.time = time;
     }
 
     /**

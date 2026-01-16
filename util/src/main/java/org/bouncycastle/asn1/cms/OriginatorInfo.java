@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
  *
  * OriginatorInfo ::= SEQUENCE {
  *     certs [0] IMPLICIT CertificateSet OPTIONAL,
- *     crls  [1] IMPLICIT CertificateRevocationLists OPTIONAL 
+ *     crls  [1] IMPLICIT CertificateRevocationLists OPTIONAL
  * }
  * CertificateRevocationLists ::= SET OF CertificateList (from X.509)
  *
@@ -44,7 +44,7 @@ public class OriginatorInfo
 {
     private ASN1Set certs;
     private ASN1Set crls;
-    
+
     public OriginatorInfo(
         ASN1Set certs,
         ASN1Set crls)
@@ -52,7 +52,7 @@ public class OriginatorInfo
         this.certs = certs;
         this.crls = crls;
     }
-    
+
     private OriginatorInfo(
         ASN1Sequence seq)
     {
@@ -82,7 +82,7 @@ public class OriginatorInfo
             throw new IllegalArgumentException("OriginatorInfo too big");
         }
     }
-    
+
     /**
      * Return an OriginatorInfo object from a tagged object.
      *
@@ -98,7 +98,7 @@ public class OriginatorInfo
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return an OriginatorInfo object from the given object.
      * <p>
@@ -126,7 +126,7 @@ public class OriginatorInfo
 
         return null;
     }
-    
+
     public ASN1Set getCertificates()
     {
         return certs;
@@ -137,7 +137,7 @@ public class OriginatorInfo
         return crls;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
@@ -148,12 +148,12 @@ public class OriginatorInfo
         {
             v.add(new DERTaggedObject(false, 0, certs));
         }
-        
+
         if (crls != null)
         {
             v.add(new DERTaggedObject(false, 1, crls));
         }
-        
+
         return new DERSequence(v);
     }
 }

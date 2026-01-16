@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * EncryptedContentInfo ::= SEQUENCE {
  *     contentType ContentType,
  *     contentEncryptionAlgorithm ContentEncryptionAlgorithmIdentifier,
- *     encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL 
+ *     encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL
  * }
  * </pre>
  */
@@ -28,9 +28,9 @@ public class EncryptedContentInfo
     private ASN1ObjectIdentifier contentType;
     private AlgorithmIdentifier contentEncryptionAlgorithm;
     private ASN1OctetString     encryptedContent;
-    
+
     public EncryptedContentInfo(
-        ASN1ObjectIdentifier contentType, 
+        ASN1ObjectIdentifier contentType,
         AlgorithmIdentifier contentEncryptionAlgorithm,
         ASN1OctetString     encryptedContent)
     {
@@ -38,7 +38,7 @@ public class EncryptedContentInfo
         this.contentEncryptionAlgorithm = contentEncryptionAlgorithm;
         this.encryptedContent = encryptedContent;
     }
-    
+
     private EncryptedContentInfo(
         ASN1Sequence seq)
     {
@@ -81,7 +81,7 @@ public class EncryptedContentInfo
         {
             return new EncryptedContentInfo(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
     }
 
@@ -100,13 +100,13 @@ public class EncryptedContentInfo
         return encryptedContent;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector  v = new ASN1EncodableVector(3);
-        
+
         v.add(contentType);
         v.add(contentEncryptionAlgorithm);
 
@@ -114,7 +114,7 @@ public class EncryptedContentInfo
         {
             v.add(new BERTaggedObject(false, 0, encryptedContent));
         }
-        
+
         return new BERSequence(v);
     }
 }

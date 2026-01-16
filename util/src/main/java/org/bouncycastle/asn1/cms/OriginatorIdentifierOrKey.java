@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
  * OriginatorIdentifierOrKey ::= CHOICE {
  *     issuerAndSerialNumber IssuerAndSerialNumber,
  *     subjectKeyIdentifier [0] SubjectKeyIdentifier,
- *     originatorKey [1] OriginatorPublicKey 
+ *     originatorKey [1] OriginatorPublicKey
  * }
  *
  * SubjectKeyIdentifier ::= OCTET STRING
@@ -87,7 +87,7 @@ public class OriginatorIdentifierOrKey
 
         return getInstance(o.getExplicitBaseObject());
     }
-    
+
     /**
      * Return an OriginatorIdentifierOrKey object from the given object.
      * <p>

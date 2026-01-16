@@ -17,7 +17,7 @@ import org.bouncycastle.asn1.DERSequence;
  *     attrType OBJECT IDENTIFIER,
  *     attrValues SET OF AttributeValue
  * }
- * 
+ *
  * AttributeValue ::= ANY
  * </pre>
  * <p>
@@ -55,7 +55,7 @@ public class Attribute
         {
             return (Attribute)o;
         }
-        
+
         if (o != null)
         {
             return new Attribute(ASN1Sequence.getInstance(o));
@@ -63,7 +63,7 @@ public class Attribute
 
         return null;
     }
-    
+
     private Attribute(
         ASN1Sequence seq)
     {
@@ -83,7 +83,7 @@ public class Attribute
     {
         return attrType;
     }
-    
+
     public ASN1Set getAttrValues()
     {
         return attrValues;
@@ -94,7 +94,7 @@ public class Attribute
         return attrValues.toArray();
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
