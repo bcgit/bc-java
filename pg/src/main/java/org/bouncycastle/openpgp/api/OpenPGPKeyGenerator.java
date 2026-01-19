@@ -10,7 +10,6 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.S2K;
-import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -235,7 +234,6 @@ public class OpenPGPKeyGenerator
                 @Override
                 public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
                 {
-                    subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
                     subpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER | KeyFlags.SIGN_DATA);
                     return subpackets;
                 }
