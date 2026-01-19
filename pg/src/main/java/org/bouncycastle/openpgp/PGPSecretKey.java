@@ -221,8 +221,11 @@ public class PGPSecretKey
 
     /**
      * Construct a PGPSecretKey using the passed in private/public key pair and binding it to the passed in id
-     * using a generated certification of certificationLevel.The secret key checksum is calculated using the original
+     * using a generated certification of certificationLevel. The secret key checksum is calculated using the original
      * non-digest based checksum.
+     * <p>
+     * Note: In case of a version 6 OpenPGP key, you need to manually add a direct-key self-signature on the primary
+     * key in order for it to be considered valid.
      *
      * @param certificationLevel         the type of certification to be added.
      * @param keyPair                    the public/private keys to use.
@@ -345,6 +348,9 @@ public class PGPSecretKey
     /**
      * Construct a PGPSecretKey using the passed in private/public key pair and binding it to the passed in id
      * using a generated certification of certificationLevel.
+     * <p>
+     * Note: In case of a version 6 OpenPGP key, you need to manually add a direct-key self-signature on the primary
+     * key in order for it to be considered valid.
      *
      * @param certificationLevel         the type of certification to be added.
      * @param keyPair                    the public/private keys to use.
