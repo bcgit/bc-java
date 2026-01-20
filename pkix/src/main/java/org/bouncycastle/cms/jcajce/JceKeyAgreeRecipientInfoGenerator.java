@@ -269,18 +269,14 @@ public class JceKeyAgreeRecipientInfoGenerator
 
         if (ephemeralKP != null)
         {
-            OriginatorPublicKey originatorPublicKey = createOriginatorPublicKey(SubjectPublicKeyInfo.getInstance(ephemeralKP.getPublic().getEncoded()));
+            OriginatorPublicKey originatorPublicKey = createOriginatorPublicKey(
+                SubjectPublicKeyInfo.getInstance(ephemeralKP.getPublic().getEncoded()));
 
             try
             {
-                if (userKeyingMaterial != null)
-                {
-                    return new MQVuserKeyingMaterial(originatorPublicKey, new DEROctetString(userKeyingMaterial)).getEncoded();
-                }
-                else
-                {
-                    return new MQVuserKeyingMaterial(originatorPublicKey, null).getEncoded();
-                }
+                ASN1OctetString addedukm = DEROctetString.withContentsOptional(userKeyingMaterial);
+
+                return new MQVuserKeyingMaterial(originatorPublicKey, addedukm).getEncoded();
             }
             catch (IOException e)
             {
