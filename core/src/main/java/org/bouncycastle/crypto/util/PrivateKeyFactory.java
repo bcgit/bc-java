@@ -152,8 +152,16 @@ public class PrivateKeyFactory
 
             return new DSAPrivateKeyParameters(derX.getValue(), parameters);
         }
+        /*
+         * TODO id-ecDH (SECObjectIdentifiers.ecdh) and/or id-ecMQV (SECObjectIdentifiers.ecmqv) could be supported if
+         * we could properly restrict usage of the resulting key.
+         */
         else if (algOID.equals(X9ObjectIdentifiers.id_ecPublicKey))
         {
+            /*
+             * TODO Consistency checks in case parameters and/or public key are specified at both the
+             * PrivateKeyInfo and ECPrivateKey levels?
+             */
             ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(keyInfo.parsePrivateKey());
 
             X962Parameters parameters = X962Parameters.getInstance(algId.getParameters().toASN1Primitive());
