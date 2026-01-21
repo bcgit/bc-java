@@ -219,9 +219,9 @@ public class OpenPGPCertificate
      * <pre>
      * keys = getComponentKeysWithFlag(date, KeyFlags.ENCRYPT_COMMS, KeyFlags.ENCRYPT_STORAGE);
      * </pre>
-     * If you instead want to access all keys, that have BOTH flags, you need to <pre>&amp;</pre> both flags:
+     * If you instead want to access all keys, that have BOTH flags, you need to <pre>|</pre> both flags:
      * <pre>
-     * keys = getComponentKeysWithFlag(date, KeyFlags.ENCRYPT_COMMS &amp; KeyFlags.ENCRYPT_STORAGE);
+     * keys = getComponentKeysWithFlag(date, KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE);
      * </pre>
      *
      * @param evaluationTime reference time
@@ -915,7 +915,7 @@ public class OpenPGPCertificate
      * key flags.
      * <b>
      * Note: To get all keys that have EITHER flag A or B, call <pre>getEncryptionKeys(evalTime, A, B)</pre>.
-     * To instead get all keys that have BOTH flags A AND B, call <pre>getEncryptionKeys(evalTime, A &amp; B)</pre>.
+     * To instead get all keys that have BOTH flags A AND B, call <pre>getEncryptionKeys(evalTime, A | B)</pre>.
      *
      * @see KeyFlags
      *
@@ -1353,7 +1353,7 @@ public class OpenPGPCertificate
          * Return <pre>true</pre>, if the key has any of the given key flags.
          * <p>
          * Note: To check if the key has EITHER flag A or B, call <pre>hasKeyFlags(evalTime, A, B)</pre>.
-         * To instead check, if the key has BOTH flags A AND B, call <pre>hasKeyFlags(evalTime, A &amp; B)</pre>.
+         * To instead check, if the key has BOTH flags A AND B, call <pre>hasKeyFlags(evalTime, A | B)</pre>.
          *
          * @param evaluationTime evaluation time
          * @param flags          key flags (see {@link KeyFlags} for possible values)
@@ -2166,7 +2166,7 @@ public class OpenPGPCertificate
          * key flags.
          * <b>
          * Note: To check if the key has EITHER flag A or B, call <pre>isEncryptionKey(evalTime, A, B)</pre>.
-         * To instead check, if the key has BOTH flags A AND B, call <pre>isEncryptionKey(evalTime, A &amp; B)</pre>.
+         * To instead check, if the key has BOTH flags A AND B, call <pre>isEncryptionKey(evalTime, A | B)</pre>.
          *
          * @param evaluationTime evaluation time
          * @param keyFlags key flags
