@@ -907,14 +907,33 @@ public class OpenPGPCertificate
      */
     public List<OpenPGPComponentKey> getEncryptionKeys(Date evaluationTime)
     {
+        return getEncryptionKeys(evaluationTime, KeyFlags.ENCRYPT_COMMS, KeyFlags.ENCRYPT_STORAGE);
+    }
+
+    /**
+     * Return a list of all keys that are - at evaluation time - valid encryption keys and carry any of the given
+     * key flags.
+     * <b>
+     * Note: To get all keys that have EITHER flag A or B, call <pre>getEncryptionKeys(evalTime, A, B)</pre>.
+     * To instead get all keys that have BOTH flags A AND B, call <pre>getEncryptionKeys(evalTime, A &amp; B)</pre>.
+     *
+     * @see KeyFlags
+     *
+     * @param evaluationTime evaluation time
+     * @param keyFlags key flags
+     * @return keys with the given flags
+     */
+    public List<OpenPGPComponentKey> getEncryptionKeys(Date evaluationTime, final int... keyFlags)
+    {
         return filterKeys(evaluationTime, new KeyFilter()
         {
             @Override
             public boolean test(OpenPGPComponentKey key, Date time)
             {
-                return key.isEncryptionKey(time);
+                return key.isEncryptionKey(time, keyFlags);
             }
         });
+
     }
 
     /**
@@ -2132,12 +2151,28 @@ public class OpenPGPCertificate
         }
 
         /**
-         * Return true, if the is - at evaluation time - marked as an encryption key.
+         * Return true, if the key is - at evaluation time - marked as an encryption key.
          *
          * @param evaluationTime evaluation time
          * @return true if key is an encryption key at evaluation time, false otherwise
          */
         public boolean isEncryptionKey(Date evaluationTime)
+        {
+            return isEncryptionKey(evaluationTime, KeyFlags.ENCRYPT_COMMS, KeyFlags.ENCRYPT_STORAGE);
+        }
+
+        /**
+         * Return true, if the key is - at evaluation time - marked as an encryption key and carries any of the given
+         * key flags.
+         * <b>
+         * Note: To check if the key has EITHER flag A or B, call <pre>isEncryptionKey(evalTime, A, B)</pre>.
+         * To instead check, if the key has BOTH flags A AND B, call <pre>isEncryptionKey(evalTime, A &amp; B)</pre>.
+         *
+         * @param evaluationTime evaluation time
+         * @param keyFlags key flags
+         * @return true if the key is an encryption key for any of the given key flags
+         */
+        public boolean isEncryptionKey(Date evaluationTime, int... keyFlags)
         {
             if (!rawPubkey.isEncryptionKey())
             {
@@ -2145,8 +2180,7 @@ public class OpenPGPCertificate
                 return false;
             }
 
-            return hasKeyFlags(evaluationTime, KeyFlags.ENCRYPT_STORAGE) ||
-                hasKeyFlags(evaluationTime, KeyFlags.ENCRYPT_COMMS);
+            return hasKeyFlags(evaluationTime, keyFlags);
         }
 
         /**
