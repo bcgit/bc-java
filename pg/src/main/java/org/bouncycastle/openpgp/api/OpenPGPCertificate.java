@@ -1534,7 +1534,9 @@ public class OpenPGPCertificate
          */
         protected OpenPGPSignature.OpenPGPSignatureSubpacket getApplyingSubpacket(Date evaluationTime, int subpacketType)
         {
-            OpenPGPSignatureChain binding = getSignatureChains().getCertificationAt(evaluationTime);
+            OpenPGPSignatureChain binding = getSignatureChains()
+                    .fromOrigin(getCertificate().getPrimaryKey())
+                    .getCertificationAt(evaluationTime);
             if (binding == null)
             {
                 // is not bound
