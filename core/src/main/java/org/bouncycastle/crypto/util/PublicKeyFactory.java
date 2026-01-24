@@ -81,6 +81,10 @@ public class PublicKeyFactory
         converters.put(X9ObjectIdentifiers.id_dsa, new DSAConverter());
         converters.put(OIWObjectIdentifiers.dsaWithSHA1, new DSAConverter());
         converters.put(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalConverter());
+        /*
+         * TODO id-ecDH (SECObjectIdentifiers.ecdh) and/or id-ecMQV (SECObjectIdentifiers.ecmqv) could be supported if
+         * we could properly restrict usage of the resulting key.
+         */
         converters.put(X9ObjectIdentifiers.id_ecPublicKey, new ECConverter());
         converters.put(CryptoProObjectIdentifiers.gostR3410_2001, new GOST3410_2001Converter());
         converters.put(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256, new GOST3410_2012Converter());

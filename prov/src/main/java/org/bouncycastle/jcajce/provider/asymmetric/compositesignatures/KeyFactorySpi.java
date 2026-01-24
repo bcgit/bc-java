@@ -25,7 +25,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -56,20 +55,24 @@ public class KeyFactorySpi
     extends BaseKeyFactorySpi
     implements AsymmetricKeyInfoConverter
 {
+    private static AlgorithmIdentifier createECAlgID(ASN1ObjectIdentifier curveOid)
+    {
+        return new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(curveOid));
+    }
 
     //Specific algorithm identifiers of all component signature algorithms for SubjectPublicKeyInfo. These do not need to be all initialized here but makes the code more readable IMHO.
     private static final AlgorithmIdentifier mlDsa44 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_44);
     private static final AlgorithmIdentifier mlDsa65 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_65);
     private static final AlgorithmIdentifier mlDsa87 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_87);
-    private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
+//    private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
     private static final AlgorithmIdentifier ed25519 = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519);
-    private static final AlgorithmIdentifier ecDsaP256 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp256r1));
-    private static final AlgorithmIdentifier ecDsaBrainpoolP256r1 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(TeleTrusTObjectIdentifiers.brainpoolP256r1));
-    private static final AlgorithmIdentifier rsa = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption);
     private static final AlgorithmIdentifier ed448 = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448);
-    private static final AlgorithmIdentifier ecDsaP384 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp384r1));
-    private static final AlgorithmIdentifier ecDsaP521 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp521r1));
-    private static final AlgorithmIdentifier ecDsaBrainpoolP384r1 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(TeleTrusTObjectIdentifiers.brainpoolP384r1));
+    private static final AlgorithmIdentifier ecDsaP256 = createECAlgID(SECObjectIdentifiers.secp256r1);
+    private static final AlgorithmIdentifier ecDsaP384 = createECAlgID(SECObjectIdentifiers.secp384r1);
+    private static final AlgorithmIdentifier ecDsaP521 = createECAlgID(SECObjectIdentifiers.secp521r1);
+    private static final AlgorithmIdentifier ecDsaBrainpoolP256r1 = createECAlgID(TeleTrusTObjectIdentifiers.brainpoolP256r1);
+    private static final AlgorithmIdentifier ecDsaBrainpoolP384r1 = createECAlgID(TeleTrusTObjectIdentifiers.brainpoolP384r1);
+    private static final AlgorithmIdentifier rsa = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption);
 
     private static Map<ASN1ObjectIdentifier, AlgorithmIdentifier[]> pairings = new HashMap<ASN1ObjectIdentifier, AlgorithmIdentifier[]>();
     private static Map<ASN1ObjectIdentifier, int[]> componentKeySizes = new HashMap<ASN1ObjectIdentifier, int[]>();
@@ -289,7 +292,7 @@ public class KeyFactorySpi
 
         try
         {
-            seq = DERSequence.getInstance(keyInfo.getPublicKeyData().getBytes());
+            seq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
         }
         catch (Exception e)
         {
@@ -299,7 +302,8 @@ public class KeyFactorySpi
         if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
             || MiscObjectIdentifiers.id_composite_key.equals(keyIdentifier))
         {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getBytes());
+            // TODO This is redundant with 'seq' calculation above 
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
             PublicKey[] pubKeys = new PublicKey[keySeq.size()];
 
             for (int i = 0; i != keySeq.size(); i++)

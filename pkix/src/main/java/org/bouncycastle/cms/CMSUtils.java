@@ -61,18 +61,16 @@ import org.bouncycastle.util.io.TeeOutputStream;
 
 class CMSUtils
 {
-    private static final Set<String> des = new HashSet<String>();
+    private static final Set desAlgs = new HashSet();
     private static final Set mqvAlgs = new HashSet();
     private static final Set ecAlgs = new HashSet();
     private static final Set gostAlgs = new HashSet();
 
     static
     {
-        des.add("DES");
-        des.add("DESEDE");
-        des.add(OIWObjectIdentifiers.desCBC.getId());
-        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
-        des.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
+        desAlgs.add(OIWObjectIdentifiers.desCBC);
+        desAlgs.add(PKCSObjectIdentifiers.des_EDE3_CBC);
+        desAlgs.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap);
 
         mqvAlgs.add(X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme);
@@ -113,14 +111,13 @@ class CMSUtils
 
     static boolean isRFC2631(ASN1ObjectIdentifier algorithm)
     {
-        return algorithm.equals(PKCSObjectIdentifiers.id_alg_ESDH) || algorithm.equals(PKCSObjectIdentifiers.id_alg_SSDH);
+        return PKCSObjectIdentifiers.id_alg_ESDH.equals(algorithm)
+            || PKCSObjectIdentifiers.id_alg_SSDH.equals(algorithm);
     }
 
-    static boolean isDES(String algorithmID)
+    static boolean isDES(ASN1ObjectIdentifier algorithm)
     {
-        String name = Strings.toUpperCase(algorithmID);
-
-        return des.contains(name);
+        return desAlgs.contains(algorithm);
     }
 
     static boolean isEquivalent(AlgorithmIdentifier algId1, AlgorithmIdentifier algId2)
