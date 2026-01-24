@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.io.DigestOutputStream;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -58,61 +59,54 @@ public class DHKEKGenerator
 
         digest.reset();
 
-        long oBytes = len;
-        int outLen = digest.getDigestSize();
+        int outputLength = len;
+        int digestSize = digest.getDigestSize();
 
         // NOTE: This limit isn't reachable for current array lengths
-        if (oBytes > ((1L << 32) - 1) * outLen)
+        if (outputLength > ((1L << 32) - 1) * digestSize)
         {
             throw new IllegalArgumentException("Output length too large");
         }
 
-        int cThreshold = (int)((oBytes + outLen - 1) / outLen);
+        int counter32 = 0;
+        byte[] counterOctets = new byte[4];
 
-        byte[] dig = new byte[digest.getDigestSize()];
+        ASN1OctetString counter = DEROctetString.withContents(counterOctets);
+        KeySpecificInfo keyInfo = new KeySpecificInfo(algorithm, counter);
+        ASN1OctetString partyAInfo = DEROctetString.withContentsOptional(extraInfo);
+        ASN1OctetString suppPubInfo = DEROctetString.withContents(Pack.intToBigEndian(keySize));
+        OtherInfo otherInfo = new OtherInfo(keyInfo, partyAInfo, suppPubInfo);
 
-        int counter32 = 1;
+        DigestOutputStream digestSink = new DigestOutputStream(digest);
 
-        for (int i = 0; i < cThreshold; i++)
+        while (len > 0)
         {
             digest.update(z, 0, z.length);
 
-            // KeySpecificInfo
-            ASN1OctetString counter = DEROctetString.withContents(Pack.intToBigEndian(counter32));
-            KeySpecificInfo keyInfo = new KeySpecificInfo(algorithm, counter);
-
-            // OtherInfo
-            ASN1OctetString partyAInfo = DEROctetString.withContentsOptional(extraInfo);
-            ASN1OctetString suppPubInfo = DEROctetString.withContents(Pack.intToBigEndian(keySize));
-            OtherInfo otherInfo = new OtherInfo(keyInfo, partyAInfo, suppPubInfo);
-
             try
             {
-                byte[] other = otherInfo.getEncoded(ASN1Encoding.DER);
-
-                digest.update(other, 0, other.length);
+                // NOTE: Modify counterOctets in-situ since counter is private to this method
+                Pack.intToBigEndian(++counter32, counterOctets);
+                otherInfo.encodeTo(digestSink, ASN1Encoding.DER);
             }
             catch (IOException e)
             {
                 throw new IllegalArgumentException("unable to encode parameter info: " + e.getMessage());
             }
 
-            digest.doFinal(dig, 0);
-
-            if (len > outLen)
+            if (len < digestSize)
             {
-                System.arraycopy(dig, 0, out, outOff, outLen);
-                outOff += outLen;
-                len -= outLen;
-            }
-            else
-            {
-                System.arraycopy(dig, 0, out, outOff, len);
+                byte[] tmp = new byte[digestSize];
+                digest.doFinal(tmp, 0);
+                System.arraycopy(tmp, 0, out, outOff, len);
+                break;
             }
 
-            counter32++;
+            digest.doFinal(out, outOff);
+            outOff += digestSize;
+            len -= digestSize;
         }
 
-        return (int)oBytes;
+        return outputLength;
     }
 }

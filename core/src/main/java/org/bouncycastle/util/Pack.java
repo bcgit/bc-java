@@ -64,6 +64,14 @@ public abstract class Pack
         return bs;
     }
 
+    public static void intToBigEndian(int n, byte[] bs)
+    {
+        bs[0] = (byte)(n >>> 24);
+        bs[1] = (byte)(n >>> 16);
+        bs[2] = (byte)(n >>> 8);
+        bs[3] = (byte)(n);
+    }
+
     public static void intToBigEndian(int n, byte[] bs, int off)
     {
         bs[off] = (byte)(n >>> 24);
