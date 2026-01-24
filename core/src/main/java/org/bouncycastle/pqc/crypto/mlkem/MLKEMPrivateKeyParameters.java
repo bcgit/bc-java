@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.mlkem;
 
+import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.util.Arrays;
 
 public class MLKEMPrivateKeyParameters
@@ -34,6 +36,8 @@ public class MLKEMPrivateKeyParameters
         this.rho = Arrays.clone(rho);
         this.seed = Arrays.clone(seed);
         this.prefFormat = BOTH;
+
+        validate(params);
     }
 
     public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] encoding)
@@ -73,6 +77,8 @@ public class MLKEMPrivateKeyParameters
             this.seed = null;
         }
 
+        validate(params);
+
         if (pubKey != null)
         {
             if (!Arrays.constantTimeAreEqual(this.t, pubKey.t) || !Arrays.constantTimeAreEqual(this.rho, pubKey.rho))
@@ -95,6 +101,38 @@ public class MLKEMPrivateKeyParameters
         this.nonce = params.nonce;
         this.seed = params.seed;
         this.prefFormat = preferredFormat;
+
+        validate(params.getParameters());
+    }
+
+    private void validate(MLKEMParameters params)
+    {
+        MLKEMEngine engine = params.getEngine();
+        int k768 = engine.getKyberK() * 768;
+        byte[] encoding = this.getEncoded();
+        if ((k768 + 96) != encoding.length)
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
+        int k384 = engine.getKyberK() * 384;
+        byte[] kH = H(encoding, k384, k768 + 32 - k384);
+        if (!Arrays.constantTimeAreEqual(kH, Arrays.copyOfRange(encoding, k768 + 32, k768 + 64)))
+        {
+            throw new IllegalArgumentException("'encoding' fails hash check");
+        }
+    }
+
+    private byte[] H(byte[] input, int offset, int len)
+    {
+        ExtendedDigest dig = new SHA3Digest(256);
+
+        dig.update(input, offset, len);
+
+        byte[] rv = new byte[dig.getDigestSize()];
+
+        dig.doFinal(rv, 0);
+
+        return rv;
     }
 
     public MLKEMPrivateKeyParameters getParametersWithFormat(int format)
@@ -131,7 +169,7 @@ public class MLKEMPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(new byte[][]{ s, t, rho, hpk, nonce });
+        return Arrays.concatenate(new byte[][]{s, t, rho, hpk, nonce});
     }
 
     public byte[] getHPK()
