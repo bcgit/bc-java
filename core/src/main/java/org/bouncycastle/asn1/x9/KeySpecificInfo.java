@@ -1,12 +1,11 @@
 package org.bouncycastle.asn1.x9;
 
-import java.util.Enumeration;
-
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
@@ -22,23 +21,6 @@ import org.bouncycastle.asn1.DERSequence;
 public class KeySpecificInfo
     extends ASN1Object
 {
-    private ASN1ObjectIdentifier algorithm;
-    private ASN1OctetString      counter;
-
-    /**
-     * Base constructor.
-     *
-     * @param algorithm  algorithm identifier for the CEK.
-     * @param counter initial counter value for key derivation.
-     */
-    public KeySpecificInfo(
-        ASN1ObjectIdentifier algorithm,
-        ASN1OctetString      counter)
-    {
-        this.algorithm = algorithm;
-        this.counter = counter;
-    }
-
     /**
      * Return a KeySpecificInfo object from the passed in object.
      *
@@ -59,13 +41,50 @@ public class KeySpecificInfo
         return null;
     }
 
-    private KeySpecificInfo(
-        ASN1Sequence  seq)
+    public static KeySpecificInfo getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        Enumeration e = seq.getObjects();
+        return new KeySpecificInfo(ASN1Sequence.getInstance(taggedObject, declaredExplicit));
+    }
 
-        algorithm = (ASN1ObjectIdentifier)e.nextElement();
-        counter = (ASN1OctetString)e.nextElement();
+    public static KeySpecificInfo getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return new KeySpecificInfo(ASN1Sequence.getTagged(taggedObject, declaredExplicit));
+    }
+
+    private final ASN1ObjectIdentifier algorithm;
+    private final ASN1OctetString counter;
+
+    private KeySpecificInfo(ASN1Sequence  seq)
+    {
+        int count = seq.size();
+        if (count != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
+
+        this.algorithm = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        this.counter = ASN1OctetString.getInstance(seq.getObjectAt(1));
+    }
+
+    /**
+     * Base constructor.
+     *
+     * @param algorithm  algorithm identifier for the CEK.
+     * @param counter initial counter value for key derivation.
+     */
+    public KeySpecificInfo(ASN1ObjectIdentifier algorithm, ASN1OctetString counter)
+    {
+        if (algorithm == null)
+        {
+            throw new NullPointerException("'algorithm' cannot be null");
+        }
+        if (counter == null)
+        {
+            throw new NullPointerException("'counter' cannot be null");
+        }
+
+        this.algorithm = algorithm;
+        this.counter = counter;
     }
 
     /**

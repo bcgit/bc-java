@@ -2,12 +2,12 @@ package org.bouncycastle.crypto.agreement.kdf;
 
 import java.io.IOException;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.x9.KeySpecificInfo;
+import org.bouncycastle.asn1.x9.OtherInfo;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.DerivationParameters;
@@ -26,10 +26,9 @@ public class DHKEKGenerator
     private ASN1ObjectIdentifier algorithm;
     private int                 keySize;
     private byte[]              z;
-    private byte[]              partyAInfo;
+    private byte[]              extraInfo;
 
-    public DHKEKGenerator(
-        Digest digest)
+    public DHKEKGenerator(Digest digest)
     {
         this.digest = digest;
     }
@@ -41,7 +40,7 @@ public class DHKEKGenerator
         this.algorithm = params.getAlgorithm();
         this.keySize = params.getKeySize();
         this.z = params.getZ();
-        this.partyAInfo = params.getExtraInfo();
+        this.extraInfo = params.getExtraInfo();
     }
 
     public Digest getDigest()
@@ -57,8 +56,10 @@ public class DHKEKGenerator
             throw new OutputLengthException("output buffer too small");
         }
 
-        long    oBytes = len;
-        int     outLen = digest.getDigestSize();
+        digest.reset();
+
+        long oBytes = len;
+        int outLen = digest.getDigestSize();
 
         //
         // this is at odds with the standard implementation, the
@@ -75,32 +76,24 @@ public class DHKEKGenerator
 
         byte[] dig = new byte[digest.getDigestSize()];
 
-        int counter = 1;
+        int counter32 = 1;
 
         for (int i = 0; i < cThreshold; i++)
         {
             digest.update(z, 0, z.length);
 
-            // OtherInfo
-            ASN1EncodableVector v1 = new ASN1EncodableVector();
             // KeySpecificInfo
-            ASN1EncodableVector v2 = new ASN1EncodableVector();
+            ASN1OctetString counter = DEROctetString.withContents(Pack.intToBigEndian(counter32));
+            KeySpecificInfo keyInfo = new KeySpecificInfo(algorithm, counter);
 
-            v2.add(algorithm);
-            v2.add(new DEROctetString(Pack.intToBigEndian(counter)));
-
-            v1.add(new DERSequence(v2));
-
-            if (partyAInfo != null)
-            {
-                v1.add(new DERTaggedObject(true, 0, new DEROctetString(partyAInfo)));
-            }
-
-            v1.add(new DERTaggedObject(true, 2, new DEROctetString(Pack.intToBigEndian(keySize))));
+            // OtherInfo
+            ASN1OctetString partyAInfo = DEROctetString.withContentsOptional(extraInfo);
+            ASN1OctetString suppPubInfo = DEROctetString.withContents(Pack.intToBigEndian(keySize));
+            OtherInfo otherInfo = new OtherInfo(keyInfo, partyAInfo, suppPubInfo);
 
             try
             {
-                byte[] other = new DERSequence(v1).getEncoded(ASN1Encoding.DER);
+                byte[] other = otherInfo.getEncoded(ASN1Encoding.DER);
 
                 digest.update(other, 0, other.length);
             }
@@ -122,10 +115,8 @@ public class DHKEKGenerator
                 System.arraycopy(dig, 0, out, outOff, len);
             }
 
-            counter++;
+            counter32++;
         }
-
-        digest.reset();
 
         return (int)oBytes;
     }
