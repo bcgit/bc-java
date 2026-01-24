@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -17,6 +19,8 @@ import org.bouncycastle.util.test.SimpleTest;
 public class ECDHKEKGeneratorTest
     extends SimpleTest
 {
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private byte[] seed1 = Hex.decode("db4a8daba1f98791d54e940175dd1a5f3a0826a1066aa9b668d4dc1e1e0790158dcad1533c03b44214d1b61fefa8b579");
     private ASN1ObjectIdentifier alg1 = NISTObjectIdentifiers.id_aes256_wrap;
     private byte[] result1 = Hex.decode("8ecc6d85caf25eaba823a7d620d4ab0d33e4c645f2");
@@ -46,7 +50,8 @@ public class ECDHKEKGeneratorTest
         DerivationParameters params,
         byte[]             result)
     {
-        byte[]             data = new byte[result.length];
+        byte[] data = new byte[result.length];
+        RANDOM.nextBytes(data);
 
         kdf.init(params);
 
