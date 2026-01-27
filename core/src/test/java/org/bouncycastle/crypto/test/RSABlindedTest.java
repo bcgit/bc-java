@@ -435,6 +435,20 @@ public class RSABlindedTest
         bEng.init(true, privParameters);
 
         bEng.processBlock(new byte[]{ 1 }, 0, 1);
+
+        privParameters = new RSAPrivateCrtKeyParameters(mod, null, null, p, q, pExp, qExp, crtCoef);
+        
+        bEng.init(true, privParameters);
+
+        try
+        {
+            bEng.processBlock(new byte[]{1}, 0, 1);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            // ignore - expected.
+        }
     }
 
 
