@@ -28,7 +28,7 @@ class DerUtil
         }
         catch (final IOException e)
         {
-            throw Exceptions.illegalStateException("Cannot get encoding: " + e.getMessage(), e)
+            throw Exceptions.illegalStateException("Cannot get encoding: " + e.getMessage(), e);
         }
     }
 }
