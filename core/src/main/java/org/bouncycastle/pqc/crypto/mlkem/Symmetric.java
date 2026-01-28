@@ -5,12 +5,11 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 abstract class Symmetric
 {
-
     final int xofBlockBytes;
 
-    abstract void hash_h(byte[] out, byte[] in, int outOffset);
+    abstract void hash_g(byte[] in, byte[] out);
 
-    abstract void hash_g(byte[] out, byte[] in);
+    abstract void hash_h(byte[] in, int inOff, int inLen, byte[] out, int outOff);
 
     abstract void xofAbsorb(byte[] seed, byte x, byte y);
 
@@ -18,13 +17,12 @@ abstract class Symmetric
 
     abstract void prf(byte[] out, byte[] key, byte nonce);
 
-    abstract void kdf(byte[] out, byte[] in);
+    abstract void kdf(byte[] in, byte[] out, int outLen);
 
     Symmetric(int blockBytes)
     {
         this.xofBlockBytes = blockBytes;
     }
-
 
     static class ShakeSymmetric
         extends Symmetric
@@ -44,17 +42,17 @@ abstract class Symmetric
         }
 
         @Override
-        void hash_h(byte[] out, byte[] in, int outOffset)
-        {
-            sha3Digest256.update(in, 0, in.length);
-            sha3Digest256.doFinal(out, outOffset);
-        }
-
-        @Override
-        void hash_g(byte[] out, byte[] in)
+        void hash_g(byte[] in, byte[] out)
         {
             sha3Digest512.update(in, 0, in.length);
             sha3Digest512.doFinal(out, 0);
+        }
+
+        @Override
+        void hash_h(byte[] in, int inOff, int inLen, byte[] out, int outOff)
+        {
+            sha3Digest256.update(in, inOff, inLen);
+            sha3Digest256.doFinal(out, outOff);
         }
 
         @Override
@@ -85,10 +83,10 @@ abstract class Symmetric
         }
 
         @Override
-        void kdf(byte[] out, byte[] in)
+        void kdf(byte[] in, byte[] out, int outLen)
         {
             shakeDigest.update(in, 0, in.length);
-            shakeDigest.doFinal(out, 0, out.length);
+            shakeDigest.doFinal(out, 0, outLen);
         }
     }
 }

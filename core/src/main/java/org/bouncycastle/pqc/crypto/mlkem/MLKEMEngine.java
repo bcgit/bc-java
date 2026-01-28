@@ -42,7 +42,6 @@ class MLKEMEngine
     private final int CryptoPublicKeyBytes;
     private final int CryptoCipherTextBytes;
 
-    private final int sessionKeyLength;
     private final Symmetric symmetric;
 
     public Symmetric getSymmetric()
@@ -144,19 +143,16 @@ class MLKEMEngine
             KyberEta1 = 3;
             KyberPolyCompressedBytes = 128;
             KyberPolyVecCompressedBytes = k * 320;
-            sessionKeyLength = 32;
             break;
         case 3:
             KyberEta1 = 2;
             KyberPolyCompressedBytes = 128;
             KyberPolyVecCompressedBytes = k * 320;
-            sessionKeyLength = 32;
             break;
         case 4:
             KyberEta1 = 2;
             KyberPolyCompressedBytes = 160;
             KyberPolyVecCompressedBytes = k * 352;
-            sessionKeyLength = 32;
             break;
         default:
             throw new IllegalArgumentException("K: " + k + " is not supported for Crystals Kyber");
@@ -186,6 +182,20 @@ class MLKEMEngine
         return PolyVec.checkModulus(this, t) < 0;
     }
 
+    boolean checkPrivateKey(byte[] encoding)
+    {
+        int k = getKyberK(), k384 = k * 384, k768 = k * 768;
+
+        if ((k768 + 96) != encoding.length)
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
+
+        byte[] kH = new byte[KyberSymBytes];
+        symmetric.hash_h(encoding, k384, k384 + 32, kH, 0);
+        return Arrays.constantTimeAreEqual(KyberSymBytes, kH, 0, encoding, k768 + 32);
+    }
+
     public byte[][] generateKemKeyPair(SecureRandom random)
     {
         byte[] d = new byte[KyberSymBytes];
@@ -207,7 +217,7 @@ class MLKEMEngine
 
         byte[] hashedPublicKey = new byte[32];
 
-        symmetric.hash_h(hashedPublicKey, indCpaKeyPair[0], 0);
+        symmetric.hash_h(indCpaKeyPair[0], 0, indCpaKeyPair[0].length, hashedPublicKey, 0);
 
         byte[] outputPublicKey = new byte[KyberIndCpaPublicKeyBytes];
         System.arraycopy(indCpaKeyPair[0], 0, outputPublicKey, 0, KyberIndCpaPublicKeyBytes);
@@ -232,16 +242,16 @@ class MLKEMEngine
         System.arraycopy(randBytes, 0, buf, 0, KyberSymBytes);
 
         // SHA3-256 Public Key
-        symmetric.hash_h(buf, publicKeyInput, KyberSymBytes);
+        symmetric.hash_h(publicKeyInput, 0, publicKeyInput.length, buf, KyberSymBytes);
 
         // SHA3-512( SHA3-256(RandBytes) || SHA3-256(PublicKey) )
-        symmetric.hash_g(kr, buf);
+        symmetric.hash_g(buf, kr);
 
         // IndCpa Encryption
         byte[] outputCipherText = indCpa.encrypt(publicKeyInput, Arrays.copyOfRange(buf, 0, KyberSymBytes),
             Arrays.copyOfRange(kr, 32, kr.length));
 
-        byte[] outputSharedSecret = new byte[sessionKeyLength];
+        byte[] outputSharedSecret = new byte[KyberSharedSecretBytes];
 
         System.arraycopy(kr, 0, outputSharedSecret, 0, outputSharedSecret.length);
 
@@ -264,7 +274,7 @@ class MLKEMEngine
 
         System.arraycopy(secretKey, KyberSecretKeyBytes - 2 * KyberSymBytes, buf, KyberSymBytes, KyberSymBytes);
 
-        symmetric.hash_g(kr, buf);
+        symmetric.hash_g(buf, kr);
 
         byte[] implicit_rejection = new byte[KyberSymBytes + KyberCipherTextBytes];
 
@@ -272,15 +282,15 @@ class MLKEMEngine
 
         System.arraycopy(cipherText, 0, implicit_rejection, KyberSymBytes, KyberCipherTextBytes);
 
-        symmetric.kdf(implicit_rejection, implicit_rejection ); // J(z||c)
+        symmetric.kdf(implicit_rejection, implicit_rejection, KyberSharedSecretBytes); // J(z||c)
 
         byte[] cmp = indCpa.encrypt(publicKey, Arrays.copyOfRange(buf, 0, KyberSymBytes), Arrays.copyOfRange(kr, KyberSymBytes, kr.length));
 
         int fail = constantTimeZeroOnEqual(cipherText, cmp);
 
-        cmov(kr, implicit_rejection, KyberSymBytes, fail);
+        cmov(kr, implicit_rejection, KyberSharedSecretBytes, fail);
 
-        return Arrays.copyOfRange(kr, 0, sessionKeyLength);
+        return Arrays.copyOfRange(kr, 0, KyberSharedSecretBytes);
     }
 
     private void cmov(byte[] r, byte[] x, int xlen, int fail)
