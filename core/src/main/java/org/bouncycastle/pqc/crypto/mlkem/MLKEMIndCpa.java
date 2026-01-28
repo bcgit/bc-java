@@ -51,7 +51,7 @@ class MLKEMIndCpa
         // (p, sigma) <- G(d || k)
 
         byte[] buf = new byte[64];
-        symmetric.hash_g(buf, Arrays.append(d, (byte)kyberK));
+        symmetric.hash_g(Arrays.append(d, (byte)kyberK), buf);
 
         byte[] publicSeed = new byte[32]; // p in docs
         byte[] noiseSeed = new byte[32]; // sigma in docs

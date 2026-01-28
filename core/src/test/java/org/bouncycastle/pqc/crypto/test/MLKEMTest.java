@@ -55,7 +55,7 @@ public class MLKEMTest
         try
         {
             new MLKEMPublicKeyParameters(MLKEMParameters.ml_kem_512, tooLargeKey);
-            fail("no exception");
+            fail("no exception for invalid public key");
         }
         catch (IllegalArgumentException e)
         {
@@ -64,7 +64,8 @@ public class MLKEMTest
 
         try
         {
-            new MLKEMPrivateKeyParameters(MLKEMParameters.ml_kem_512, faultyPrivateKey, null);
+            new MLKEMPrivateKeyParameters(MLKEMParameters.ml_kem_512, faultyPrivateKey);
+            fail("no exception for invalid private key");
         }
         catch (IllegalArgumentException e)
         {
