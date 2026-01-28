@@ -6,8 +6,6 @@ import org.bouncycastle.util.Arrays;
 
 class MLKEMEngine
 {
-    private SecureRandom random;
-
     private final MLKEMIndCpa indCpa;
 
     // constant parameters
@@ -183,17 +181,12 @@ class MLKEMEngine
         this.indCpa = new MLKEMIndCpa(this);
     }
 
-    public void init(SecureRandom random)
-    {
-        this.random = random;
-    }
-
     boolean checkModulus(byte[] t)
     {
         return PolyVec.checkModulus(this, t) < 0;
     }
 
-    public byte[][] generateKemKeyPair()
+    public byte[][] generateKemKeyPair(SecureRandom random)
     {
         byte[] d = new byte[KyberSymBytes];
         byte[] z = new byte[KyberSymBytes];
