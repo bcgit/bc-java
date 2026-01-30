@@ -333,7 +333,7 @@ public final class Strings
         while (moreTokens)
         {
             int tokenLocation = input.indexOf(delimiter);
-            if (tokenLocation > 0)
+            if (tokenLocation >= 0)
             {
                 subString = input.substring(0, tokenLocation);
                 v.addElement(subString);
