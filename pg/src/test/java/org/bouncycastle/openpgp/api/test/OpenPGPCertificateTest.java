@@ -49,6 +49,7 @@ public class OpenPGPCertificateTest
         testSKSignsPKRevokedNoSubpacket(api);
         testPKSignsPKRevocationSuperseded(api);
         testGetPrimaryUserId(api);
+        testGetEncryptionKeysForPurpose(api);
     }
 
     private void testOpenPGPv6Key(OpenPGPApi api)
@@ -824,6 +825,49 @@ public class OpenPGPCertificateTest
         isEquals("Explicit primary UserID is not yet valid, so return implicit UID",
                 key.getUserId("Old non-primary <non-primary@user.id>"),
                 key.getPrimaryUserId(oneHourAgo));
+    }
+
+    private void testGetEncryptionKeysForPurpose(OpenPGPApi api)
+            throws IOException {
+
+        // This cert has two separate encryption subkeys:
+        //  7415331173EF1FEA7AB2AFC0E40DE83A8CBBE4BC is for storage
+        //  95EFDD6BD87C62F0FC109C2964F5A6B5F40F379D is for comms
+        String CERT = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
+                "Comment: 88BF 5516 C226 5B7D 1817  03E6 1FF0 DE1E AF8B 379F\n" +
+                "\n" +
+                "mCYEaVxG2BvmBuO3v5cDQQCuGnAIuaeP0frpw7mutcMQwPkGuuAKUMKSBB8bCgA+\n" +
+                "FqEEiL9VFsImW30YFwPmH/DeHq+LN58FgmlcRtgCngkFlQoJCAsFlgIDAQAEiwkI\n" +
+                "BwknCQEJAgkDCAECmwEACgkQH/DeHq+LN5/NVHbqH098dr34p9KVQQNLXr8CITqP\n" +
+                "vLTkijVXyfZg6Lz1krs3EgEvc8nz3evyYj5xJI+Hg1kHb+ctB5myyTyEtge4JgRp\n" +
+                "XEbYG52SLEi5Biq9vn1pFgrozM2QuCqkwXtOr/0ASs0b3t20wsAnBBgbCgCTFqEE\n" +
+                "iL9VFsImW30YFwPmH/DeHq+LN58FgmlcRtgCmwJyoAQZGwoAHRahBGp6EAtdr26T\n" +
+                "x4sGLa+TQ+g71BlpBYJpXEbYAAoJEK+TQ+g71BlpkJ4VPAQeTXN88wXzLloW2WYP\n" +
+                "5w3w7Js4csGE5OynUupCNwUBcIfC+FBMuUdgqjczw4xKRLbZMgp5YLr8Ve3pG48L\n" +
+                "AAoJEB/w3h6vizefXrbECKbGBPh+c3+fFG3Au0gzkRMCsZsMaQaRWlQ1E2P/VWlo\n" +
+                "xy4JF5nCA6bSC+sFl+DTbwpgvdQlIILR9O386EcHuCYEaVxG2Blrm96fHzaN1JmO\n" +
+                "uhU0OMbiDMBYKOL3Iup+TQWzx897CMJ0BBgbCgAgFqEEiL9VFsImW30YFwPmH/De\n" +
+                "Hq+LN58FgmlcRtgCmwQACgkQH/DeHq+LN5/wOkjl+MJktOsh+COv4tAhSu2kR0iw\n" +
+                "rdY4IAEp7jlnZfx0BVMnVURSrZSge3Zw2vbQQe864GA3Y4le4CWFKm2QAwG4JgRp\n" +
+                "XEbYGUzlbIju0H0KDcLmLXsXp7CCLmkcnSjNAj9WTRW7GCJownQEGBsKACAWoQSI\n" +
+                "v1UWwiZbfRgXA+Yf8N4er4s3nwWCaVxG2AKbCAAKCRAf8N4er4s3n4+EpHlXYNzD\n" +
+                "I2OT9NpobaalDbmDMuvIu/81Uoxv+pJLkrMV+WW5be27HrH6w7YTH1TngILr4V2e\n" +
+                "jSB2HhjClk4YBw==\n" +
+                "=3S3M\n" +
+                "-----END PGP PUBLIC KEY BLOCK-----";
+
+        OpenPGPCertificate cert = api.readKeyOrCertificate().parseCertificate(CERT);
+
+        List<OpenPGPCertificate.OpenPGPComponentKey> allEncryptionKeys = cert.getEncryptionKeys();
+        isEquals(2, allEncryptionKeys.size());
+
+        List<OpenPGPCertificate.OpenPGPComponentKey> storageEncKeys = cert.getEncryptionKeys(new Date(), KeyFlags.ENCRYPT_STORAGE);
+        isEquals(1, storageEncKeys.size());
+        isEquals(new KeyIdentifier("7415331173EF1FEA7AB2AFC0E40DE83A8CBBE4BC"), storageEncKeys.get(0).getKeyIdentifier());
+
+        List<OpenPGPCertificate.OpenPGPComponentKey> commEncKeys = cert.getEncryptionKeys(new Date(), KeyFlags.ENCRYPT_COMMS);
+        isEquals(1, commEncKeys.size());
+        isEquals(new KeyIdentifier("95EFDD6BD87C62F0FC109C2964F5A6B5F40F379D"), commEncKeys.get(0).getKeyIdentifier());
     }
 
     public static class TestSignature
