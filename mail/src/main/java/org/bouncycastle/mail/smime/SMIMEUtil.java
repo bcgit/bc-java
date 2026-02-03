@@ -22,6 +22,7 @@ import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
@@ -649,6 +650,48 @@ public class SMIMEUtil
 
         outputPreamble(lOut, bodyPart, boundary);
         return lOut;
+    }
+
+    static void closeStreamSafely(InputStream sigStream) {
+        try {
+            if (sigStream != null) {
+                sigStream.close();
+            }
+        } catch (IOException ioEx) {
+            // Ignore secondary exception during cleanup
+        }
+    }
+
+    /**
+     * Interface to obfuscate the repetitive constructors so that we could have only one createSafe
+     */
+    public interface SafeCreator {
+        Object create() throws Exception;
+    }
+
+    /**
+     * If getInputStreamNoMultipartSigned returns PipedInputStream it will lead to
+     * resource leak as it will not be closed if not handled safely. This method will initiate
+     * SMIMESigned but if it fails, it will close PipedInputStream
+     * 
+     * @throws MessagingException an error extracting the signature or
+     * otherwise processing the message.
+     * @throws CMSException if some other problem occurs.
+     */
+    public static Object createSafe(InputStream sigStream, SafeCreator creator)
+        throws MessagingException, CMSException 
+    {
+        try {
+            return creator.create();
+        } catch (Exception e) {
+            closeStreamSafely(sigStream);
+            
+            // Handle re-throwing consistently
+            if (e instanceof MessagingException) throw (MessagingException)e;
+            if (e instanceof CMSException) throw (CMSException)e;
+            if (e instanceof RuntimeException) throw (RuntimeException)e;
+            throw new CMSException("Exception creating safe instance: " + e.getMessage(), e);
+        }
     }
 
     static InputStream getInputStreamNoMultipartSigned(
