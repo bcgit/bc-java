@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -72,6 +73,41 @@ public class MLKEMTest
         catch (IllegalArgumentException e)
         {
             assertEquals("'encoding' fails hash check", e.getMessage());
+        }
+    }
+
+    public void testInputs()
+        throws Exception
+    {
+        MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
+        MLKEMKeyGenerationParameters genParam = new MLKEMKeyGenerationParameters(new SecureRandom(), MLKEMParameters.ml_kem_512);
+
+        //
+        // Generate keys and test.
+        //
+        kpGen.init(genParam);
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        MLKEMExtractor kEx = new MLKEMExtractor((MLKEMPrivateKeyParameters)kp.getPrivate());
+        
+        try
+        {
+            kEx.extractSecret(new byte[2000]);
+            Assert.fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("encapsulation wrong length", e.getMessage());
+        }
+
+        try
+        {
+            kEx.extractSecret(new byte[600]);
+            Assert.fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("encapsulation wrong length", e.getMessage());
         }
     }
 
