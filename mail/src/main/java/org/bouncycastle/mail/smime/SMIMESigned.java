@@ -3,6 +3,7 @@ package org.bouncycastle.mail.smime;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -96,8 +97,119 @@ public class SMIMESigned
     {
         super(new CMSProcessableBodyPartInbound(message.getBodyPart(0)), SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1)));
 
-        this.message = message;
-        this.content = (MimeBodyPart)message.getBodyPart(0);
+        fillMessageAndContent(message);
+    }
+
+    /**
+     * Internal constructor used by getSafeInstance. 
+     * Handles signature extraction for multipart messages.
+     */
+    SMIMESigned(MimeMultipart message, InputStream sigStream) 
+        throws MessagingException, CMSException 
+    {
+        super(new CMSProcessableBodyPartInbound(message.getBodyPart(0)), sigStream);
+        fillMessageAndContent(message);
+    }
+
+    /**
+     * Internal constructor used by getSafeInstance.
+     * Allows specifying a default content transfer encoding.
+     */
+    SMIMESigned(MimeMultipart message, String defaultEncoding, InputStream sigStream) 
+        throws MessagingException, CMSException 
+    {
+        super(new CMSProcessableBodyPartInbound(message.getBodyPart(0), defaultEncoding), sigStream);
+        fillMessageAndContent(message);
+    }
+
+    /**
+     * Internal constructor used by getSafeInstance for Part-based (encapsulated) messages.
+     */
+    SMIMESigned(Part message, InputStream sigStream) 
+        throws MessagingException, CMSException, SMIMEException
+    {
+        super(sigStream);
+        fillMessageAndContent(message);
+    }
+
+    /**
+     * Create a new SMIMESigned object from a MimeMultipart.
+     * <p>
+     * Note: This method ensures that if the input stream is a PipedInputStream (e.g. from JavaMail),
+     * it will be closed immediately if construction fails, preventing a thread hang.
+     * </p>
+     * @param message the multipart message containing the content and the signature.
+     * @throws MessagingException on an error extracting the signature or otherwise processing the message.
+     * @throws CMSException if some other problem occurs.
+     */
+    public static SMIMESigned getSafeInstance(final MimeMultipart message) 
+        throws MessagingException, CMSException 
+    {
+        final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1));
+        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
+            public SMIMESigned create() throws Exception {
+                return new SMIMESigned(message, sigStream);
+            }
+        });
+    }
+
+    /**
+     * Create a new SMIMESigned object from a MimeMultipart with a default content transfer encoding.
+     * <p>
+     * Note: This method ensures that if the input stream is a PipedInputStream,
+     * it will be closed immediately if construction fails.
+     * </p>
+     * @param message the multipart message containing the content and the signature.
+     * @param defaultEncoding the default encoding to use for the message content.
+     * @throws MessagingException on an error extracting the signature or otherwise processing the message.
+     * @throws CMSException if some other problem occurs.
+     */
+    public static SMIMESigned getSafeInstance(final MimeMultipart message, final String defaultEncoding) 
+        throws MessagingException, CMSException 
+    {
+        final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1));
+        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
+            public SMIMESigned create() throws Exception {
+                return new SMIMESigned(message, defaultEncoding, sigStream);
+            }
+        });
+    }
+
+    /**
+     * Create a new SMIMESigned object from a Part.
+     * <p>
+     * Note: This method ensures that if the input stream is a PipedInputStream,
+     * it will be closed immediately if construction fails.
+     * </p>
+     * @param message the message part containing the signed data.
+     * @throws MessagingException on an error extracting the signature or otherwise processing the message.
+     * @throws CMSException if some other problem occurs.
+     */
+    public static SMIMESigned getSafeInstance(final Part message) 
+        throws MessagingException, CMSException 
+    {
+        final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message);
+        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
+            public Object create() throws Exception {
+                return new SMIMESigned(message, sigStream);
+            }
+        });
+    }
+
+    private void fillMessageAndContent(Part pMessage) throws SMIMEException {
+        this.message = pMessage;
+        CMSProcessable  cont = this.getSignedContent();
+        if (cont != null)
+        {
+            byte[]  contBytes = (byte[])cont.getContent();
+            
+            this.content = SMIMEUtil.toMimeBodyPart(contBytes);
+        }
+    }
+
+    private void fillMessageAndContent(MimeMultipart pMessage) throws MessagingException {
+        this.message = pMessage;
+        this.content = (MimeBodyPart) pMessage.getBodyPart(0);
     }
 
     /**
@@ -116,8 +228,7 @@ public class SMIMESigned
     {
         super(new CMSProcessableBodyPartInbound(message.getBodyPart(0), defaultContentTransferEncoding), SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1)));
 
-        this.message = message;
-        this.content = (MimeBodyPart)message.getBodyPart(0);
+        fillMessageAndContent(message);
     }
     
     /**
@@ -134,16 +245,7 @@ public class SMIMESigned
     {
         super(SMIMEUtil.getInputStreamNoMultipartSigned(message));
 
-        this.message = message;
-
-        CMSProcessable  cont = this.getSignedContent();
-
-        if (cont != null)
-        {
-            byte[]  contBytes = (byte[])cont.getContent();
-    
-            this.content = SMIMEUtil.toMimeBodyPart(contBytes);
-        }
+        fillMessageAndContent(message);
     }
 
     /**
