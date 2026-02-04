@@ -193,7 +193,7 @@ public class Group
     public static final short RESTART_COMMIT_PARAMS = 2;
     public static final short REINIT_COMMIT_PARAMS = 3;
 
-    static public class CommitParameters
+    public static class CommitParameters
     {
         short paramID;
         // External

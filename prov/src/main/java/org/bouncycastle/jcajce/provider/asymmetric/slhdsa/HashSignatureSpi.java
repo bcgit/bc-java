@@ -118,7 +118,7 @@ public class HashSignatureSpi
          signer.init(forSigning, params);
      }
 
-     static public class Direct
+     public static class Direct
          extends HashSignatureSpi
      {
          public Direct()
