@@ -15,7 +15,7 @@ import org.bouncycastle.asn1.x500.DirectoryString;
 
 /**
  * Signer-Location attribute (RFC3126).
- * 
+ *
  * <pre>
  *   SignerLocation ::= SEQUENCE {
  *       countryName        [0] DirectoryString OPTIONAL,
@@ -31,7 +31,7 @@ public class SignerLocation
     private DirectoryString   countryName;
     private DirectoryString   localityName;
     private ASN1Sequence      postalAddress;
-    
+
     private SignerLocation(
         ASN1Sequence seq)
     {
@@ -189,7 +189,7 @@ public class SignerLocation
      *       postalAddress      [2] PostalAddress OPTIONAL }
      *
      *   PostalAddress ::= SEQUENCE SIZE(1..6) OF DirectoryString
-     *   
+     *
      *   DirectoryString ::= CHOICE {
      *         teletexString           TeletexString (SIZE (1..MAX)),
      *         printableString         PrintableString (SIZE (1..MAX)),

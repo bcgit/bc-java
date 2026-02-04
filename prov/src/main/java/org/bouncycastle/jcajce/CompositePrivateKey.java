@@ -267,57 +267,67 @@ public class CompositePrivateKey
      */
     public byte[] getEncoded()
     {
-        if (this.algorithmIdentifier.getAlgorithm().on(IANAObjectIdentifiers.id_alg))
+        ASN1ObjectIdentifier algOid = algorithmIdentifier.getAlgorithm();
+
+        if (algOid.on(IANAObjectIdentifiers.id_alg))
         {
             try
             {
                 PrivateKey key0 = keys.get(0);
                 PrivateKey key1 = keys.get(1);
 
-                byte[] mldsaKey = ((MLDSAPrivateKey)key0).getSeed();
+                byte[] mldsaSeed = ((MLDSAPrivateKey)key0).getSeed();
 
-                byte[] key1Encoded = key1.getEncoded();
-                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(key1Encoded);
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(key1.getEncoded());
 
-                byte[] tradKey;
+                byte[] tradSK;
                 String key1Algorithm = key1.getAlgorithm();
                 if (key1Algorithm.contains("Ed"))
                 {
-                    tradKey = ASN1OctetString.getInstance(pki.parsePrivateKey()).getOctets();
+                    tradSK = ASN1OctetString.getInstance(pki.parsePrivateKey()).getOctets();
                 }
                 else if (key1Algorithm.contains("EC"))
                 {
                     ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(pki.parsePrivateKey());
 
-                    // TODO Do we also want to remove any parameters from the ECPrivateKey? 
+                    /*
+                     * TODO
+                     * - Confirm pki.privateKeyAlgorithm is id_ecPublicKey with X9.62 Parameters namedCurve OID.
+                     * - If ecPrivateKey.parameters are present, must match pki.privateKeyAlgorithm
+                     * The private key MUST be encoded as ECPrivateKey specified in [RFC5915] with the 'NamedCurve'
+                     * parameter set to the OID of the curve, but without the 'publicKey' field.
+                     */
+                    // TODO Also need to ensure that ECPrivateKey.parameters are present
                     ASN1BitString publicKey = ecPrivateKey.getPublicKey();
                     if (publicKey != null)
                     {
                         ecPrivateKey = new ECPrivateKey(ecPrivateKey.getPrivateKey(), ecPrivateKey.getParametersObject(), null);
                     }
 
-                    tradKey = ecPrivateKey.getEncoded();
+                    tradSK = ecPrivateKey.getEncoded(ASN1Encoding.DER);
                 }
                 else
                 {
-                    tradKey = pki.getPrivateKey().getOctets();
+                    tradSK = pki.getPrivateKey().getOctets();
                 }
 
-                return new PrivateKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
+                return new PrivateKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaSeed, tradSK)).getEncoded();
             }
             catch (IOException e)
             {
                 throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
             }
         }
+
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        if (algorithmIdentifier.getAlgorithm().equals(MiscObjectIdentifiers.id_composite_key))
+        if (MiscObjectIdentifiers.id_composite_key.equals(algOid))
         {
             for (int i = 0; i < keys.size(); i++)
             {
-                PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
-                v.add(info);
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+
+                v.add(pki);
             }
 
             try
@@ -334,8 +344,9 @@ public class CompositePrivateKey
             byte[] keyEncoding = null;
             for (int i = 0; i < keys.size(); i++)
             {
-                PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
-                keyEncoding = Arrays.concatenate(keyEncoding, info.getPrivateKey().getOctets());
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+
+                keyEncoding = Arrays.concatenate(keyEncoding, pki.getPrivateKey().getOctets());
             }
 
             try

@@ -152,7 +152,7 @@ public class RequestedCertificate
         }
         return Arrays.clone(attributeCert);
     }
-    
+
     /**
      * Produce an object suitable for an ASN1OutputStream.
      * <p>

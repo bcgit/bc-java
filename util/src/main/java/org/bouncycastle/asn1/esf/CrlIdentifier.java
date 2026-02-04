@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 
 /**
  * <pre>
- *  CrlIdentifier ::= SEQUENCE 
+ *  CrlIdentifier ::= SEQUENCE
  * {
  *   crlissuer    Name,
  *   crlIssuedTime  UTCTime,

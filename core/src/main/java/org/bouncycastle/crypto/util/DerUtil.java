@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 class DerUtil
 {
@@ -27,13 +28,7 @@ class DerUtil
         }
         catch (final IOException e)
         {
-            throw new IllegalStateException("Cannot get encoding: " + e.getMessage())
-            {
-                public Throwable getCause()
-                {
-                    return e;
-                }
-            };
+            throw Exceptions.illegalStateException("Cannot get encoding: " + e.getMessage(), e);
         }
     }
 }

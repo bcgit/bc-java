@@ -86,7 +86,7 @@ public class Attributes
         return rv;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

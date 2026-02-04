@@ -33,21 +33,21 @@ import org.bouncycastle.asn1.x509.IssuerSerial;
  * stateOrProvincename, localityName, postalAddress) and - SubjectDirectoryName
  * attributes (title, dateOfBirth, placeOfBirth, gender, countryOfCitizenship,
  * countryOfResidence and NameAtBirth).
- * 
+ *
  * <pre>
  *               ProcurationSyntax ::= SEQUENCE {
  *                 country [1] EXPLICIT PrintableString(SIZE(2)) OPTIONAL,
  *                 typeOfSubstitution [2] EXPLICIT DirectoryString (SIZE(1..128)) OPTIONAL,
- *                 signingFor [3] EXPLICIT SigningFor 
+ *                 signingFor [3] EXPLICIT SigningFor
  *               }
- *               
- *               SigningFor ::= CHOICE 
- *               { 
+ *
+ *               SigningFor ::= CHOICE
+ *               {
  *                 thirdPerson GeneralName,
- *                 certRef IssuerSerial 
+ *                 certRef IssuerSerial
  *               }
  * </pre>
- * 
+ *
  */
 public class ProcurationSyntax
     extends ASN1Object

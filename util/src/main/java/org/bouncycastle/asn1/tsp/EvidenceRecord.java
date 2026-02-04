@@ -123,7 +123,7 @@ public class EvidenceRecord
     /**
      * Build a basic evidence record from an initial
      * ArchiveTimeStamp.
-     * 
+     *
      * @param cryptoInfos
      * @param encryptionInfo
      * @param archiveTimeStamp
@@ -226,7 +226,7 @@ public class EvidenceRecord
         if (newChain)
         {
             ArchiveTimeStampChain chain = new ArchiveTimeStampChain(ats);
-            
+
             return new EvidenceRecord(this, archiveTimeStampSequence.append(chain), ats);
         }
         else
