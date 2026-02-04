@@ -19,14 +19,14 @@ public class DESParameters
     /*
      * DES Key length in bytes.
      */
-    static public final int DES_KEY_LENGTH = 8;
+    public static final int DES_KEY_LENGTH = 8;
 
     /*
      * Table of weak and semi-weak keys taken from Schneier pp281
      */
-    static private final int N_DES_WEAK_KEYS = 16;
+    private static final int N_DES_WEAK_KEYS = 16;
 
-    static private byte[] DES_weak_keys =
+    private static byte[] DES_weak_keys =
     {
         /* weak keys */
         (byte)0x01,(byte)0x01,(byte)0x01,(byte)0x01, (byte)0x01,(byte)0x01,(byte)0x01,(byte)0x01,

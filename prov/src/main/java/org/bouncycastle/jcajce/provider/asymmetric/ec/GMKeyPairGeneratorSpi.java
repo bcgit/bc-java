@@ -48,7 +48,7 @@ public abstract class GMKeyPairGeneratorSpi
         String                      algorithm;
         ProviderConfiguration       configuration;
 
-        static private Hashtable    ecParameters;
+        private static final Hashtable ecParameters;
 
         static
         {
