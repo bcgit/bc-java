@@ -1,4 +1,4 @@
-package org.bouncycastle.jcacje.provider.test;
+package org.bouncycastle.jcajce.provider.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
