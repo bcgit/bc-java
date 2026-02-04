@@ -76,7 +76,7 @@ public class SCVPReqRes
             if (tag0 != null)
             {
                 pos++;
-                request = ContentInfo.getTagged(tag0, true); 
+                request = ContentInfo.getTagged(tag0, true);
             }
         }
         this.request = request;

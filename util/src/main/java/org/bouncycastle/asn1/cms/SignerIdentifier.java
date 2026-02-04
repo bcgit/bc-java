@@ -17,7 +17,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
  * <pre>
  * SignerIdentifier ::= CHOICE {
  *     issuerAndSerialNumber IssuerAndSerialNumber,
- *     subjectKeyIdentifier [0] SubjectKeyIdentifier 
+ *     subjectKeyIdentifier [0] SubjectKeyIdentifier
  * }
  *
  * SubjectKeyIdentifier ::= OCTET STRING
@@ -28,25 +28,25 @@ public class SignerIdentifier
     implements ASN1Choice
 {
     private ASN1Encodable id;
-    
+
     public SignerIdentifier(
         IssuerAndSerialNumber id)
     {
         this.id = id;
     }
-    
+
     public SignerIdentifier(
         ASN1OctetString id)
     {
         this.id = new DERTaggedObject(false, 0, id);
     }
-    
+
     public SignerIdentifier(
         ASN1Primitive id)
     {
         this.id = id;
     }
-    
+
     /**
      * Return a SignerIdentifier object from the given object.
      * <p>
@@ -69,25 +69,25 @@ public class SignerIdentifier
         {
             return (SignerIdentifier)o;
         }
-        
+
         if (o instanceof IssuerAndSerialNumber)
         {
             return new SignerIdentifier((IssuerAndSerialNumber)o);
         }
-        
+
         if (o instanceof ASN1OctetString)
         {
             return new SignerIdentifier((ASN1OctetString)o);
         }
-        
+
         if (o instanceof ASN1Primitive)
         {
             return new SignerIdentifier((ASN1Primitive)o);
         }
-        
+
         throw new IllegalArgumentException(
              "Illegal object in SignerIdentifier: " + o.getClass().getName());
-    } 
+    }
 
     public boolean isTagged()
     {
@@ -104,7 +104,7 @@ public class SignerIdentifier
         return id;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

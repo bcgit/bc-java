@@ -169,7 +169,7 @@ public class KEMRecipientInfo
         }
         v.add(wrap);
         v.add(encryptedKey);
-        
+
         return new DERSequence(v);
     }
 }

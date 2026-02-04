@@ -7,7 +7,7 @@ public class SubsequentMessage
 {
     public static final SubsequentMessage encrCert = new SubsequentMessage(0);
     public static final SubsequentMessage challengeResp = new SubsequentMessage(1);
-    
+
     private SubsequentMessage(int value)
     {
         super(value);

@@ -117,7 +117,7 @@ public class ArchiveTimeStamp
             if (tag0 != null)
             {
                 pos++;
-                digestAlgorithm = AlgorithmIdentifier.getTagged(tag0, false); 
+                digestAlgorithm = AlgorithmIdentifier.getTagged(tag0, false);
             }
         }
         this.digestAlgorithm = digestAlgorithm;
@@ -130,7 +130,7 @@ public class ArchiveTimeStamp
             if (tag1 != null)
             {
                 pos++;
-                attributes = Attributes.getTagged(tag1, false); 
+                attributes = Attributes.getTagged(tag1, false);
             }
         }
         this.attributes = attributes;
@@ -143,7 +143,7 @@ public class ArchiveTimeStamp
             if (tag2 != null)
             {
                 pos++;
-                reducedHashTree = ASN1Sequence.getInstance(tag2, false); 
+                reducedHashTree = ASN1Sequence.getInstance(tag2, false);
             }
         }
         this.reducedHashTree = reducedHashTree;

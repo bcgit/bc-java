@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.DERSequence;
 
 /**
  * Commitment type qualifiers, used in the Commitment-Type-Indication attribute (RFC3126).
- * 
+ *
  * <pre>
  *   CommitmentTypeQualifier ::= SEQUENCE {
  *       commitmentTypeIdentifier  CommitmentTypeIdentifier,
@@ -33,7 +33,7 @@ public class CommitmentTypeQualifier
     {
         this(commitmentTypeIdentifier, null);
     }
-    
+
    /**
     * Creates a new <code>CommitmentTypeQualifier</code> instance.
     *
@@ -52,13 +52,13 @@ public class CommitmentTypeQualifier
      * Creates a new <code>CommitmentTypeQualifier</code> instance.
      *
      * @param as <code>CommitmentTypeQualifier</code> structure
-     * encoded as an ASN1Sequence. 
+     * encoded as an ASN1Sequence.
      */
     private CommitmentTypeQualifier(
         ASN1Sequence as)
     {
         commitmentTypeIdentifier = (ASN1ObjectIdentifier)as.getObjectAt(0);
-        
+
         if (as.size() > 1)
         {
             qualifier = as.getObjectAt(1);
@@ -83,14 +83,14 @@ public class CommitmentTypeQualifier
     {
         return commitmentTypeIdentifier;
     }
-    
+
     public ASN1Encodable getQualifier()
     {
         return qualifier;
     }
 
    /**
-    * Returns a DER-encodable representation of this instance. 
+    * Returns a DER-encodable representation of this instance.
     *
     * @return a <code>ASN1Primitive</code> value
     */

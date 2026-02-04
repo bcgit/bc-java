@@ -9,9 +9,9 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
-/** 
+/**
  * <a href="https://tools.ietf.org/html/rfc3274">RFC 3274</a>: CMS Compressed Data.
- * 
+ *
  * <pre>
  * CompressedData ::= SEQUENCE {
  *     version CMSVersion,
@@ -35,7 +35,7 @@ public class CompressedData
         this.compressionAlgorithm = compressionAlgorithm;
         this.encapContentInfo = encapContentInfo;
     }
-    
+
     private CompressedData(
         ASN1Sequence seq)
     {
@@ -59,7 +59,7 @@ public class CompressedData
     {
         return getInstance(ASN1Sequence.getInstance(ato, isExplicit));
     }
-    
+
     /**
      * Return a CompressedData object from the given object.
      * <p>

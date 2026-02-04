@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  *     version CMSVersion,  -- always set to 0 or 2
  *     rid RecipientIdentifier,
  *     keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
- *     encryptedKey EncryptedKey 
+ *     encryptedKey EncryptedKey
  * }
  * </pre>
  */
@@ -78,14 +78,14 @@ public class KeyTransRecipientInfo
         {
             return (KeyTransRecipientInfo)obj;
         }
-        
+
         if(obj != null)
         {
             return new KeyTransRecipientInfo(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
-    } 
+    }
 
     public ASN1Integer getVersion()
     {
@@ -107,7 +107,7 @@ public class KeyTransRecipientInfo
         return encryptedKey;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

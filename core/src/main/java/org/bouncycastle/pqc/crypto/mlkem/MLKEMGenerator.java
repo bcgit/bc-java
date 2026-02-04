@@ -30,7 +30,6 @@ public class MLKEMGenerator
     {
         MLKEMPublicKeyParameters key = (MLKEMPublicKeyParameters)recipientKey;
         MLKEMEngine engine = key.getParameters().getEngine();
-        engine.init(sr);
 
         byte[][] kemEncrypt = engine.kemEncrypt(key, randBytes);
         return new SecretWithEncapsulationImpl(kemEncrypt[0], kemEncrypt[1]);

@@ -27,7 +27,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * @see org.bouncycastle.asn1.isismtt.x509.ProfessionInfo
  * @see org.bouncycastle.asn1.isismtt.x509.NamingAuthority
  */
-public class Admissions 
+public class Admissions
     extends ASN1Object
 {
 
@@ -168,7 +168,7 @@ public class Admissions
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector vec = new ASN1EncodableVector(3);
-        
+
         if (admissionAuthority != null)
         {
             vec.add(new DERTaggedObject(true, 0, admissionAuthority));

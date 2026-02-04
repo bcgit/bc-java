@@ -19,7 +19,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  *     version CMSVersion,  -- always set to 4
  *     kekid KEKIdentifier,
  *     keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
- *     encryptedKey EncryptedKey 
+ *     encryptedKey EncryptedKey
  * }
  * </pre>
  */
@@ -41,7 +41,7 @@ public class KEKRecipientInfo
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.encryptedKey = encryptedKey;
     }
-    
+
     public KEKRecipientInfo(
         ASN1Sequence seq)
     {
@@ -66,7 +66,7 @@ public class KEKRecipientInfo
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a KEKRecipientInfo object from the given object.
      * <p>
@@ -87,12 +87,12 @@ public class KEKRecipientInfo
         {
             return (KEKRecipientInfo)obj;
         }
-        
+
         if (obj != null)
         {
             return new KEKRecipientInfo(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
     }
 
@@ -100,7 +100,7 @@ public class KEKRecipientInfo
     {
         return version;
     }
-    
+
     public KEKIdentifier getKekid()
     {
         return kekid;
@@ -116,7 +116,7 @@ public class KEKRecipientInfo
         return encryptedKey;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
