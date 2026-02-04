@@ -1,4 +1,4 @@
-package org.bouncycastle.jcacje.provider.test;
+package org.bouncycastle.jcajce.provider.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
