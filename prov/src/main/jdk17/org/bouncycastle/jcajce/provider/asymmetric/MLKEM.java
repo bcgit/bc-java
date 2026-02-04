@@ -12,7 +12,7 @@ public class MLKEM
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".mlkem.";
 
     public static class Mappings
-            extends AsymmetricAlgorithmProvider
+        extends AsymmetricAlgorithmProvider
     {
         public Mappings()
         {

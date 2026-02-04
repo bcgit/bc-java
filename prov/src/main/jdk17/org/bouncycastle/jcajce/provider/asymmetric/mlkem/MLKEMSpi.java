@@ -1,16 +1,15 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
-import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-
-import javax.crypto.KEMSpi;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+
+import javax.crypto.KEMSpi;
+
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 
 public class MLKEMSpi
     implements KEMSpi

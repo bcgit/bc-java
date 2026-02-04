@@ -32,46 +32,46 @@ import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
-class MLKEMCipherSpi
+public class MLKEMCipherSpi
     extends CipherSpi
 {
+    private final MLKEMParameters mlkemParameters;
     private final String algorithmName;
+
     private MLKEMGenerator kemGen;
     private KTSParameterSpec kemParameterSpec;
     private BCMLKEMPublicKey wrapKey;
     private BCMLKEMPrivateKey unwrapKey;
 
     private AlgorithmParameters engineParams;
-    private MLKEMParameters mlkemParamters;
 
-    MLKEMCipherSpi(String algorithmName)
+    public MLKEMCipherSpi(String algorithmName)
     {
+        this.mlkemParameters = null;
         this.algorithmName = algorithmName;
-        this.mlkemParamters = null;
     }
 
-    MLKEMCipherSpi(MLKEMParameters kyberParameters)
+    public MLKEMCipherSpi(MLKEMParameters mlkemParameters)
     {
-        this.mlkemParamters = kyberParameters;
-        this.algorithmName = kyberParameters.getName();
+        this.mlkemParameters = mlkemParameters;
+        this.algorithmName = mlkemParameters.getName();
     }
 
     @Override
     protected void engineSetMode(String mode)
-            throws NoSuchAlgorithmException
+        throws NoSuchAlgorithmException
     {
         throw new NoSuchAlgorithmException("Cannot support mode " + mode);
     }
 
     @Override
     protected void engineSetPadding(String padding)
-            throws NoSuchPaddingException
+        throws NoSuchPaddingException
     {
         throw new NoSuchPaddingException("Padding " + padding + " unknown");
     }
 
-    protected int engineGetKeySize(
-            Key key)
+    protected int engineGetKeySize(Key key)
     {
         return 2048; // TODO
         //throw new IllegalArgumentException("not an valid key!");
@@ -176,9 +176,9 @@ class MLKEMCipherSpi
             throw new InvalidParameterException("Cipher only valid for wrapping/unwrapping");
         }
 
-        if (mlkemParamters != null)
+        if (mlkemParameters != null)
         {
-            String canonicalAlgName = MLKEMParameterSpec.fromName(mlkemParamters.getName()).getName();
+            String canonicalAlgName = MLKEMParameterSpec.fromName(mlkemParameters.getName()).getName();
             if (!canonicalAlgName.equals(key.getAlgorithm()))
             {
                 throw new InvalidKeyException("cipher locked to " + canonicalAlgName);
@@ -255,11 +255,14 @@ class MLKEMCipherSpi
 
             byte[] keyToWrap = key.getEncoded();
 
-            byte[] rv = Arrays.concatenate(encapsulation, kWrap.wrap(keyToWrap, 0, keyToWrap.length));
-
-            Arrays.clear(keyToWrap);
-
-            return rv;
+            try
+            {
+                return Arrays.concatenate(encapsulation, kWrap.wrap(keyToWrap, 0, keyToWrap.length));
+            }
+            finally
+            {
+                Arrays.clear(keyToWrap);
+            }
         }
         catch (IllegalArgumentException e)
         {
@@ -276,7 +279,7 @@ class MLKEMCipherSpi
             }
             catch (Exception e)
             {
-                throw new IllegalBlockSizeException("unable to destroy interim values: " + e.getMessage());
+                // ignore
             }
         }
     }
@@ -292,6 +295,7 @@ class MLKEMCipherSpi
         {
             throw new InvalidKeyException("only SECRET_KEY supported");
         }
+
         byte[] secret = null;
         try
         {
@@ -317,18 +321,14 @@ class MLKEMCipherSpi
         }
         finally
         {
-            if (secret != null)
-            {
-                Arrays.clear(secret);
-            }
+            Arrays.clear(secret);
         }
     }
 
     public static class Base
-            extends MLKEMCipherSpi
+        extends MLKEMCipherSpi
     {
         public Base()
-                throws NoSuchAlgorithmException
         {
             super("MLKEM");
         }
