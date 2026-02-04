@@ -5,15 +5,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.security.Key;
+import java.security.SecureRandom;
 import java.security.Security;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.TestFailedException;
 
 /**
  * basic test class for SM4
@@ -134,6 +137,10 @@ public class SM4Test
     public void performTest()
         throws Exception
     {
+        wrapTest(1, "SM4WRAP", Hex.decode("0123456789abcdeffedcba9876543210"), null,
+            null, Hex.decode("0123456789abcdeffedcba9876543210"), Hex.decode("5d9c31d2f37a186c13943c7e650fbcf895a91f670b7b92bd"));
+        wrapTest(2, "SM4WRAPPAD", Hex.decode("0123456789abcdeffedcba9876543210"), null,
+            null, Hex.decode("0123456789abcdeffedcba9876543210"), Hex.decode("7d7110bfbdad2f7b453499338fd40f27014be97c0c69867a"));
         for (int i = 0; i != cipherTests.length; i += 4)
         {
             test(Integer.parseInt(cipherTests[i]),
