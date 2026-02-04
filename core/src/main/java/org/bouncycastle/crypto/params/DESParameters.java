@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.params;
 
+import org.bouncycastle.util.Arrays;
+
 public class DESParameters
     extends KeyParameter
 {
@@ -58,27 +60,21 @@ public class DESParameters
      * @return true if the given DES key material is weak or semi-weak,
      *     false otherwise.
      */
-    public static boolean isWeakKey(
-        byte[] key,
-        int offset)
+    public static boolean isWeakKey(byte[] key, int offset)
     {
-        if (key.length - offset < DES_KEY_LENGTH)
+        if (offset > (key.length - DES_KEY_LENGTH))
         {
             throw new IllegalArgumentException("key material too short.");
         }
 
-        nextkey: for (int i = 0; i < N_DES_WEAK_KEYS; i++)
+        for (int i = 0; i < N_DES_WEAK_KEYS; i++)
         {
-            for (int j = 0; j < DES_KEY_LENGTH; j++)
+            if (Arrays.constantTimeAreEqual(DES_KEY_LENGTH, key, offset, DES_weak_keys, i * DES_KEY_LENGTH))
             {
-                if (key[j + offset] != DES_weak_keys[i * DES_KEY_LENGTH + j])
-                {
-                    continue nextkey;
-                }
+                return true;
             }
-
-            return true;
         }
+
         return false;
     }
 
