@@ -1,17 +1,16 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
-import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import java.util.Objects;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidKeyException;
-import java.util.Arrays;
-import java.util.Objects;
+
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import org.bouncycastle.util.Arrays;
 
 public class MLKEMDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
@@ -40,28 +39,32 @@ public class MLKEMDecapsulatorSpi
             throw new DecapsulateException("incorrect encapsulation size");
         }
 
-        // if algorithm is Generic then use parameterSpec to wrap key
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-                algorithm.equals("Generic"))
+        String keyAlgName = parameterSpec.getKeyAlgorithmName();
+        if (!"Generic".equals(keyAlgName))
         {
-            algorithm = parameterSpec.getKeyAlgorithmName();
+            // if algorithm is Generic then use parameterSpec to wrap key
+            if ("Generic".equals(algorithm))
+            {
+                algorithm = keyAlgName;
+            }
+            // check spec algorithm mismatch provided algorithm
+            else if (!algorithm.equals(keyAlgName))
+            {
+                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
+            }
         }
 
-        // check spec algorithm mismatch provided algorithm
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-                !parameterSpec.getKeyAlgorithmName().equals(algorithm))
+        byte[] kemSecret = kemExt.extractSecret(encapsulation);
+        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
+
+        try
         {
-            throw new UnsupportedOperationException(parameterSpec.getKeyAlgorithmName() + " does not match " + algorithm);
+            return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
         }
-
-        // Only use KDF when ktsParameterSpec is provided
-        // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
-        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
-
-        byte[] secret = kemExt.extractSecret(encapsulation);
-        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
-
-        return new SecretKeySpec(secretKey, algorithm);
+        finally
+        {
+            Arrays.clear(kdfSecret);
+        }
     }
 
     @Override

@@ -7,6 +7,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.KeyGeneratorSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
@@ -20,21 +21,22 @@ import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 import org.bouncycastle.util.Arrays;
 
 public class MLKEMKeyGeneratorSpi
-        extends KeyGeneratorSpi
+    extends KeyGeneratorSpi
 {
+    private final MLKEMParameters mlkemParameters;
+
     private KEMGenerateSpec genSpec;
     private SecureRandom random;
     private KEMExtractSpec extSpec;
-    private MLKEMParameters kyberParameters;
 
     public MLKEMKeyGeneratorSpi()
     {
         this(null);
     }
 
-    protected MLKEMKeyGeneratorSpi(MLKEMParameters kyberParameters)
+    protected MLKEMKeyGeneratorSpi(MLKEMParameters mlkemParameters)
     {
-        this.kyberParameters = kyberParameters;
+        this.mlkemParameters = mlkemParameters;
     }
 
     protected void engineInit(SecureRandom secureRandom)
@@ -50,9 +52,9 @@ public class MLKEMKeyGeneratorSpi
         {
             this.genSpec = (KEMGenerateSpec)algorithmParameterSpec;
             this.extSpec = null;
-            if (kyberParameters != null)
+            if (mlkemParameters != null)
             {
-                String canonicalAlgName = MLKEMParameterSpec.fromName(kyberParameters.getName()).getName();
+                String canonicalAlgName = MLKEMParameterSpec.fromName(mlkemParameters.getName()).getName();
                 if (!canonicalAlgName.equals(genSpec.getPublicKey().getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
@@ -63,9 +65,9 @@ public class MLKEMKeyGeneratorSpi
         {
             this.genSpec = null;
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
-            if (kyberParameters != null)
+            if (mlkemParameters != null)
             {
-                String canonicalAlgName = MLKEMParameterSpec.fromName(kyberParameters.getName()).getName();
+                String canonicalAlgName = MLKEMParameterSpec.fromName(mlkemParameters.getName()).getName();
                 if (!canonicalAlgName.equals(extSpec.getPrivateKey().getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
@@ -92,24 +94,26 @@ public class MLKEMKeyGeneratorSpi
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            byte[] sharedSecret = secEnc.getSecret();
-
-            byte[] secret = KdfUtil.makeKeyBytes(genSpec, sharedSecret);
-
-            Arrays.clear(sharedSecret);
-
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            byte[] kemSecret = secEnc.getSecret();
+            byte[] kdfSecret = KdfUtil.makeKeyBytes(genSpec, kemSecret);
 
             try
             {
-                secEnc.destroy();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("key cleanup failed");
-            }
+                SecretKeySpec secretKey = new SecretKeySpec(kdfSecret, genSpec.getKeyAlgorithmName());
 
-            return rv;
+                return new SecretKeyWithEncapsulation(secretKey, secEnc.getEncapsulation());
+            }
+            finally
+            {
+                try
+                {
+                    secEnc.destroy();
+                }
+                catch (DestroyFailedException e)
+                {
+                    // ignore
+                }
+            }
         }
         else
         {
@@ -117,16 +121,21 @@ public class MLKEMKeyGeneratorSpi
             MLKEMExtractor kemExt = new MLKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();
-            byte[] sharedSecret = kemExt.extractSecret(encapsulation);
-            byte[] secret = KdfUtil.makeKeyBytes(extSpec, sharedSecret);
 
-            Arrays.clear(sharedSecret);
+            byte[] kemSecret = kemExt.extractSecret(encapsulation);
+            byte[] kdfSecret = KdfUtil.makeKeyBytes(extSpec, kemSecret);
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
+            try
+            {
+                SecretKeySpec secretKey = new SecretKeySpec(kdfSecret, extSpec.getKeyAlgorithmName());
 
-            Arrays.clear(secret);
-
-            return rv;
+                // TODO Why do we return ...WithEncapsulation?? 
+                return new SecretKeyWithEncapsulation(secretKey, encapsulation);
+            }
+            finally
+            {
+                Arrays.clear(kdfSecret);
+            }
         }
     }
 
