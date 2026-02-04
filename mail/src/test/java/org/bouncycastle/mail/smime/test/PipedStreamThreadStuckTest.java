@@ -6,11 +6,13 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.activation.DataHandler;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
 
 import org.bouncycastle.mail.smime.SMIMESigned;
 import org.junit.Assert;
@@ -60,18 +62,30 @@ public class PipedStreamThreadStuckTest {
     public MimeMessage createFakeMimeMessage() throws MessagingException {
         Session session = Session.getDefaultInstance(new Properties());
         MimeMessage message = new MimeMessage(session);
-        
-        // This is "fake" because SMIMESigned expects a multipart/signed, 
-        // but we are giving it a multipart/mixed.
+        message.setSubject("Complex Piped Multipart");
+
         MimeMultipart rootMultipart = new MimeMultipart("mixed");
 
-        MimeBodyPart part1 = new MimeBodyPart();
-        part1.setText("Content Part");
-        rootMultipart.addBodyPart(part1);
+        MimeMultipart innerAlternative = new MimeMultipart("alternative");
 
-        MimeBodyPart part2 = new MimeBodyPart();
-        part2.setText("Not a signature part");
-        rootMultipart.addBodyPart(part2);
+        MimeBodyPart textPart = new MimeBodyPart();
+        textPart.setText("Standard text content for the pipe.");
+        innerAlternative.addBodyPart(textPart);
+
+        MimeBodyPart htmlPart = new MimeBodyPart();
+        htmlPart.setContent("<html><body><h1>Piped Content</h1></body></html>", "text/html");
+        innerAlternative.addBodyPart(htmlPart);
+
+        MimeBodyPart nestedWrapper = new MimeBodyPart();
+        nestedWrapper.setContent(innerAlternative);
+
+        rootMultipart.addBodyPart(nestedWrapper);
+
+        MimeBodyPart binaryPart = new MimeBodyPart();
+        byte[] complexData = new byte[2048];
+        binaryPart.setDataHandler(new DataHandler(new ByteArrayDataSource(complexData, "application/pdf")));
+        binaryPart.setFileName("document.pdf");
+        rootMultipart.addBodyPart(binaryPart);
 
         message.setContent(rootMultipart);
         message.saveChanges();
