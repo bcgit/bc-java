@@ -57,7 +57,7 @@ public class TestCertificateGen
         algIds.put("Ed448", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448));
     }
 
-    private synchronized static long getSerialNumber()
+    private static synchronized long getSerialNumber()
     {
         return serialNumber++;
     }

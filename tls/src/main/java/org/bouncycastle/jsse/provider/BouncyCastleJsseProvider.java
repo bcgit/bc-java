@@ -362,7 +362,7 @@ public class BouncyCastleJsseProvider
         return service;
     }
 
-    public synchronized final Set<Provider.Service> getServices()
+    public final synchronized Set<Provider.Service> getServices()
     {
         Set<Provider.Service> serviceSet = super.getServices();
         Set<Provider.Service> bcServiceSet = new HashSet<Provider.Service>();

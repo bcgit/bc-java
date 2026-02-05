@@ -6,7 +6,7 @@ public class DESedeParameters
     /*
      * DES-EDE Key length in bytes.
      */
-    static public final int DES_EDE_KEY_LENGTH = 24;
+    public static final int DES_EDE_KEY_LENGTH = 24;
 
     public DESedeParameters(
         byte[]  key)

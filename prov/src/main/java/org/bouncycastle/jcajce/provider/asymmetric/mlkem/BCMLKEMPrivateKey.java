@@ -130,11 +130,11 @@ public class BCMLKEMPrivateKey
             byte[] seed = params.getSeed();
             if (seed != null)
             {
-                return new BCMLKEMPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
+                return new BCMLKEMPrivateKey(this.params.withPreferredFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
             }
         }
 
-        return new BCMLKEMPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
+        return new BCMLKEMPrivateKey(this.params.withPreferredFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
     }
 
     public MLKEMParameterSpec getParameterSpec()
