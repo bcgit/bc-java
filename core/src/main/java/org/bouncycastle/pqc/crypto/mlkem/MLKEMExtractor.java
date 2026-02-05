@@ -21,6 +21,10 @@ public class MLKEMExtractor
 
     public byte[] extractSecret(byte[] encapsulation)
     {
+        if (encapsulation.length != this.getEncapsulationLength())
+        {
+            throw new IllegalArgumentException("encapsulation wrong length");
+        }
         return engine.kemDecrypt(privateKey, encapsulation);
     }
 

@@ -112,7 +112,13 @@ public class MLKEMPrivateKeyParameters
         }
     }
 
+    /** @deprecated Use {@link #withPreferredFormat(int)} instead. */
     public MLKEMPrivateKeyParameters getParametersWithFormat(int format)
+    {
+        return withPreferredFormat(format); 
+    }
+
+    public MLKEMPrivateKeyParameters withPreferredFormat(int format)
     {
         if (this.prefFormat == format)
         {

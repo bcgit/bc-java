@@ -26,12 +26,12 @@ public class ProposalOrRef
     }
 
 
-    static public ProposalOrRef forRef(byte[] ref)
+    public static ProposalOrRef forRef(byte[] ref)
     {
         return new ProposalOrRef(ProposalOrRefType.REFERENCE, null, ref);
     }
 
-    static public ProposalOrRef forProposal(Proposal proposal)
+    public static ProposalOrRef forProposal(Proposal proposal)
     {
         return new ProposalOrRef(ProposalOrRefType.PROPOSAL, proposal, null);
     }
