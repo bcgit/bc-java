@@ -154,7 +154,7 @@ class KyberCipherSpi
             if (key instanceof BCKyberPublicKey)
             {
                 wrapKey = (BCKyberPublicKey)key;
-                kemGen = new MLKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
+                kemGen = new MLKEMGenerator(random);
             }
             else
             {

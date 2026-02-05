@@ -153,7 +153,7 @@ public class MLKEMCipherSpi
             if (key instanceof BCMLKEMPublicKey)
             {
                 wrapKey = (BCMLKEMPublicKey)key;
-                kemGen = new MLKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
+                kemGen = new MLKEMGenerator(random);
             }
             else
             {
