@@ -238,6 +238,14 @@ public abstract class Pack
         }
     }
 
+    public static int littleEndianToInt24(byte[] bs, int off)
+    {
+        int n = bs[off] & 0xff;
+        n |= (bs[++off] & 0xff) << 8;
+        n |= (bs[++off] & 0xff) << 16;
+        return n;
+    }
+
     public static int littleEndianToInt(byte[] bs, int off)
     {
         int n = bs[off] & 0xff;
