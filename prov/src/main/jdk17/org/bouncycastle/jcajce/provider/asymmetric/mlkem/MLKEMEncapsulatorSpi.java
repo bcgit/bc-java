@@ -14,14 +14,19 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
 import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 import org.bouncycastle.util.Arrays;
 
-public class MLKEMEncapsulatorSpi
+/*
+ *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
+ *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
+ *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
+ */
+class MLKEMEncapsulatorSpi
     implements KEMSpi.EncapsulatorSpi
 {
     private final BCMLKEMPublicKey publicKey;
     private final KTSParameterSpec parameterSpec;
     private final MLKEMGenerator kemGen;
 
-    public MLKEMEncapsulatorSpi(BCMLKEMPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
+    MLKEMEncapsulatorSpi(BCMLKEMPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
     {
         this.publicKey = publicKey;
         this.parameterSpec = parameterSpec;
@@ -59,7 +64,7 @@ public class MLKEMEncapsulatorSpi
         try
         {
             SecretKey secretKey = new SecretKeySpec(kdfSecret, from, to - from, algorithm);
-            return new KEM.Encapsulated(secretKey, encapsulation, null); //TODO: DER encoding for params
+            return new KEM.Encapsulated(secretKey, encapsulation, null);
         }
         finally
         {
@@ -76,17 +81,6 @@ public class MLKEMEncapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        //TODO: Maybe make parameterSet public or add getEncapsulationSize() in KEMGenerator.java
-        switch (publicKey.getKeyParams().getParameters().getName())
-        {
-            case "ML-KEM-512":
-                return 768;
-            case "ML-KEM-768":
-                return 1088;
-            case "ML-KEM-1024":
-                return 1568;
-            default:
-                return -1;
-        }
+        return publicKey.getKeyParams().getParameters().getEncapsulationLength();
     }
 }

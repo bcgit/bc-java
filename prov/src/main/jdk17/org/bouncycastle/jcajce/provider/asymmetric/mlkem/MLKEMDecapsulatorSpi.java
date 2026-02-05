@@ -12,18 +12,22 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 import org.bouncycastle.util.Arrays;
 
-public class MLKEMDecapsulatorSpi
+/*
+ *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
+ *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
+ *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
+ */
+class MLKEMDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
-    BCMLKEMPrivateKey privateKey;
-    KTSParameterSpec parameterSpec;
-    MLKEMExtractor kemExt;
+//    private final BCMLKEMPrivateKey privateKey;
+    private final KTSParameterSpec parameterSpec;
+    private final MLKEMExtractor kemExt;
 
-    public MLKEMDecapsulatorSpi(BCMLKEMPrivateKey privateKey, KTSParameterSpec parameterSpec)
+    MLKEMDecapsulatorSpi(BCMLKEMPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
-        this.privateKey = privateKey;
+//        this.privateKey = privateKey;
         this.parameterSpec = parameterSpec;
-
         this.kemExt = new MLKEMExtractor(privateKey.getKeyParams());
     }
 
