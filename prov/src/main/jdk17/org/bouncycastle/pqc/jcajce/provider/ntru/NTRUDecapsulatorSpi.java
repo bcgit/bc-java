@@ -1,36 +1,39 @@
 package org.bouncycastle.pqc.jcajce.provider.ntru;
 
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import java.util.Objects;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidKeyException;
-import java.util.Arrays;
-import java.util.Objects;
 
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import org.bouncycastle.util.Arrays;
+
+/*
+ *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
+ *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
+ *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
+ */
 public class NTRUDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
-    BCNTRUPrivateKey privateKey;
-    KTSParameterSpec parameterSpec;
-    NTRUKEMExtractor kemExt;
+//    private final BCNTRUPrivateKey privateKey;
+    private final KTSParameterSpec parameterSpec;
+    private final NTRUKEMExtractor kemExt;
 
-    public NTRUDecapsulatorSpi(BCNTRUPrivateKey privateKey, KTSParameterSpec parameterSpec)
+    NTRUDecapsulatorSpi(BCNTRUPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
-        this.privateKey = privateKey;
+//        this.privateKey = privateKey;
         this.parameterSpec = parameterSpec;
-
         this.kemExt = new NTRUKEMExtractor(privateKey.getKeyParams());
     }
 
     @Override
-    public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm) throws DecapsulateException
+    public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
+        throws DecapsulateException
     {
         Objects.checkFromToIndex(from, to, engineSecretSize());
         Objects.requireNonNull(algorithm, "null algorithm");
@@ -41,28 +44,32 @@ public class NTRUDecapsulatorSpi
             throw new DecapsulateException("incorrect encapsulation size");
         }
 
-        // if algorithm is Generic then use parameterSpec to wrap key
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-                algorithm.equals("Generic"))
+        String keyAlgName = parameterSpec.getKeyAlgorithmName();
+        if (!"Generic".equals(keyAlgName))
         {
-            algorithm = parameterSpec.getKeyAlgorithmName();
+            // if algorithm is Generic then use parameterSpec to wrap key
+            if ("Generic".equals(algorithm))
+            {
+                algorithm = keyAlgName;
+            }
+            // check spec algorithm mismatch provided algorithm
+            else if (!algorithm.equals(keyAlgName))
+            {
+                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
+            }
         }
 
-        // check spec algorithm mismatch provided algorithm
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-                !parameterSpec.getKeyAlgorithmName().equals(algorithm))
+        byte[] kemSecret = kemExt.extractSecret(encapsulation);
+        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
+
+        try
         {
-            throw new UnsupportedOperationException(parameterSpec.getKeyAlgorithmName() + " does not match " + algorithm);
+            return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
         }
-
-        // Only use KDF when ktsParameterSpec is provided
-        // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
-        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
-
-        byte[] secret = kemExt.extractSecret(encapsulation);
-        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
-
-        return new SecretKeySpec(secretKey, algorithm);
+        finally
+        {
+            Arrays.clear(kdfSecret);
+        }
     }
 
     @Override
