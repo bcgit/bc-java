@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.ntruprime;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -15,7 +16,7 @@ public class SNTRUPrimeKEMGenerator
 
     public SNTRUPrimeKEMGenerator(SecureRandom random)
     {
-        this.random = random;
+        this.random = CryptoServicesRegistrar.getSecureRandom(random);
     }
 
     @Override
