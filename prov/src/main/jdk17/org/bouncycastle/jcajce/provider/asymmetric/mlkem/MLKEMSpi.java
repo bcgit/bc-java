@@ -27,12 +27,11 @@ public class MLKEMSpi
     public EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey, AlgorithmParameterSpec spec,
         SecureRandom secureRandom) throws InvalidAlgorithmParameterException, InvalidKeyException
     {
-        if (!(publicKey instanceof BCMLKEMPublicKey))
+        if (!(publicKey instanceof BCMLKEMPublicKey bcPublicKey))
         {
             throw new InvalidKeyException("unsupported key type");
         }
 
-        BCMLKEMPublicKey bcPublicKey = (BCMLKEMPublicKey)publicKey;
         checkKeyParameters(bcPublicKey.getKeyParams());
 
         if (spec == null)
@@ -42,7 +41,7 @@ public class MLKEMSpi
         }
         else if (!(spec instanceof KTSParameterSpec))
         {
-            throw new InvalidAlgorithmParameterException("MLKEM can only accept KTSParameterSpec");
+            throw new InvalidAlgorithmParameterException("ML-KEM can only accept KTSParameterSpec");
         }
 
         return new MLKEMEncapsulatorSpi(bcPublicKey, (KTSParameterSpec)spec, secureRandom);
@@ -52,12 +51,11 @@ public class MLKEMSpi
     public DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey, AlgorithmParameterSpec spec)
         throws InvalidAlgorithmParameterException, InvalidKeyException
     {
-        if (!(privateKey instanceof BCMLKEMPrivateKey))
+        if (!(privateKey instanceof BCMLKEMPrivateKey bcPrivateKey))
         {
-            throw new InvalidKeyException("unsupported key");
+            throw new InvalidKeyException("unsupported key type");
         }
 
-        BCMLKEMPrivateKey bcPrivateKey = (BCMLKEMPrivateKey)privateKey;
         checkKeyParameters(bcPrivateKey.getKeyParams());
 
         if (spec == null)
@@ -67,7 +65,7 @@ public class MLKEMSpi
         }
         else if (!(spec instanceof KTSParameterSpec))
         {
-            throw new InvalidAlgorithmParameterException("MLKEM can only accept KTSParameterSpec");
+            throw new InvalidAlgorithmParameterException("ML-KEM can only accept KTSParameterSpec");
         }
 
         return new MLKEMDecapsulatorSpi(bcPrivateKey, (KTSParameterSpec)spec);
