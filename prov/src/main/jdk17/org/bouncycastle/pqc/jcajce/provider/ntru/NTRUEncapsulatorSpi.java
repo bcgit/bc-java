@@ -19,7 +19,7 @@ import org.bouncycastle.util.Arrays;
  *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
  *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
  */
-public class NTRUEncapsulatorSpi
+class NTRUEncapsulatorSpi
     implements KEMSpi.EncapsulatorSpi
 {
     private final BCNTRUPublicKey publicKey;
