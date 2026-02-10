@@ -32,7 +32,8 @@ class MLKEMDecapsulatorSpi
     }
 
     @Override
-    public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm) throws DecapsulateException
+    public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
+        throws DecapsulateException
     {
         Objects.checkFromToIndex(from, to, engineSecretSize());
         Objects.requireNonNull(algorithm, "null algorithm");
