@@ -52,6 +52,11 @@ public class NTRUParameters
         this.parameterSet = parameterSet;
     }
 
+    public int getEncapsulationLength()
+    {
+        return getParameterSet().ntruCiphertextBytes();
+    }
+
     public String getName()
     {
         return name;
