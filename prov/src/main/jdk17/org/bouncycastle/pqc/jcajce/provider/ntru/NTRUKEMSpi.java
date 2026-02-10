@@ -13,7 +13,7 @@ import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 
-public class NTRUKEMSpi
+public abstract class NTRUKEMSpi
     implements KEMSpi
 {
     private final NTRUParameters ntruParameters;

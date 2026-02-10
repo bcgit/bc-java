@@ -13,7 +13,7 @@ import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 
-public class HQCKEMSpi
+public abstract class HQCKEMSpi
     implements KEMSpi
 {
     private final HQCParameters hqcParameters;

@@ -13,7 +13,7 @@ import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 
-public class MLKEMSpi
+public abstract class MLKEMSpi
     implements KEMSpi
 {
     private final MLKEMParameters mlkemParameters;
