@@ -33,10 +33,6 @@ public class HQCKEMSpi
         {
             throw new InvalidAlgorithmParameterException("HQC can only accept KTSParameterSpec");
         }
-        if (secureRandom == null)
-        {
-            secureRandom = new SecureRandom();
-        }
         return new HQCEncapsulatorSpi((BCHQCPublicKey)publicKey, (KTSParameterSpec)spec, secureRandom);
     }
 

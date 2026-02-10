@@ -33,10 +33,6 @@ public class NTRUKEMSpi
         {
             throw new InvalidAlgorithmParameterException("NTRU can only accept KTSParameterSpec");
         }
-        if (secureRandom == null)
-        {
-            secureRandom = new SecureRandom();
-        }
         return new NTRUEncapsulatorSpi((BCNTRUPublicKey) publicKey, (KTSParameterSpec) spec, secureRandom);
     }
 

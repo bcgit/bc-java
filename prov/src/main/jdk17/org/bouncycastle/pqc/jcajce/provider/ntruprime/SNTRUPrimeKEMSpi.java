@@ -30,10 +30,6 @@ public class SNTRUPrimeKEMSpi
         {
             throw new InvalidAlgorithmParameterException("SNTRUPrime can only accept KTSParameterSpec");
         }
-        if (secureRandom == null)
-        {
-            secureRandom = new SecureRandom();
-        }
         return new SNTRUPrimeEncapsulatorSpi((BCSNTRUPrimePublicKey) publicKey,(KTSParameterSpec) spec, secureRandom);
     }
 

@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.hqc;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -11,11 +12,11 @@ import org.bouncycastle.util.Arrays;
 public class HQCKEMGenerator
     implements EncapsulatedSecretGenerator
 {
-    private final SecureRandom sr;
+    private final SecureRandom random;
 
     public HQCKEMGenerator(SecureRandom random)
     {
-        this.sr = random;
+        this.random = CryptoServicesRegistrar.getSecureRandom(random);
     }
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
@@ -29,7 +30,7 @@ public class HQCKEMGenerator
         byte[] salt = new byte[key.getParameters().getSALT_SIZE_BYTES()];
         byte[] pk = key.getPublicKey();
 
-        engine.encaps(u, v, K, pk, salt, sr);
+        engine.encaps(u, v, K, pk, salt, random);
 
         byte[] cipherText = Arrays.concatenate(u, v, salt);
 
