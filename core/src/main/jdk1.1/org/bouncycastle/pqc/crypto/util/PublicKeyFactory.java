@@ -108,12 +108,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.picnicl5full, new PicnicConverter());
         converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
         converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new KyberConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new KyberConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber512_aes, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber768_aes, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber1024_aes, new KyberConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber512_aes, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber768_aes, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber1024_aes, new MLKEMConverter());
         converters.put(NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAConverter());
         converters.put(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAConverter());
         converters.put(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAConverter());
@@ -351,16 +351,16 @@ public class PublicKeyFactory
         }
     }
 
-    private static class KyberConverter
+    private static class MLKEMConverter
         extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            MLKEMParameters kyberParameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            MLKEMParameters mlkemParameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             // we're a raw encoding
-            return new MLKEMPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
+            return new MLKEMPublicKeyParameters(mlkemParameters, keyInfo.getPublicKeyData().getOctets());
         }
     }
 

@@ -1,30 +1,35 @@
 package org.bouncycastle.pqc.jcajce.provider.ntru;
 
+import java.security.SecureRandom;
+import java.util.Objects;
+
+import javax.crypto.KEM;
+import javax.crypto.KEMSpi;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import org.bouncycastle.util.Arrays;
 
-import javax.crypto.KEM;
-import javax.crypto.KEMSpi;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidKeyException;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Objects;
-
-public class NTRUEncapsulatorSpi
+/*
+ *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
+ *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
+ *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
+ */
+class NTRUEncapsulatorSpi
     implements KEMSpi.EncapsulatorSpi
 {
     private final BCNTRUPublicKey publicKey;
     private final KTSParameterSpec parameterSpec;
     private final NTRUKEMGenerator kemGen;
 
-    public NTRUEncapsulatorSpi(BCNTRUPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
+    NTRUEncapsulatorSpi(BCNTRUPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
     {
         this.publicKey = publicKey;
         this.parameterSpec = parameterSpec;
-
         this.kemGen = new NTRUKEMGenerator(random);
     }
 
@@ -34,31 +39,37 @@ public class NTRUEncapsulatorSpi
         Objects.checkFromToIndex(from, to, engineSecretSize());
         Objects.requireNonNull(algorithm, "null algorithm");
 
-        // if algorithm is Generic then use parameterSpec to wrap key
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-                algorithm.equals("Generic"))
+        String keyAlgName = parameterSpec.getKeyAlgorithmName();
+        if (!"Generic".equals(keyAlgName))
         {
-            algorithm = parameterSpec.getKeyAlgorithmName();
+            // if algorithm is Generic then use parameterSpec to wrap key
+            if ("Generic".equals(algorithm))
+            {
+                algorithm = keyAlgName;
+            }
+            // check spec algorithm mismatch provided algorithm
+            else if (!algorithm.equals(keyAlgName))
+            {
+                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
+            }
         }
-
-        // check spec algorithm mismatch provided algorithm
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-                !parameterSpec.getKeyAlgorithmName().equals(algorithm))
-        {
-            throw new UnsupportedOperationException(parameterSpec.getKeyAlgorithmName() + " does not match " + algorithm);
-        }
-
-        // Only use KDF when ktsParameterSpec is provided
-        // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
-        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
 
         SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParams());
 
         byte[] encapsulation = secEnc.getEncapsulation();
-        byte[] secret = secEnc.getSecret();
-        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
 
-        return new KEM.Encapsulated(new SecretKeySpec(secretKey, algorithm), encapsulation, null); //TODO: DER encoding for params
+        byte[] kemSecret = secEnc.getSecret();
+        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
+
+        try
+        {
+            SecretKey secretKey = new SecretKeySpec(kdfSecret, from, to - from, algorithm);
+            return new KEM.Encapsulated(secretKey, encapsulation, null);
+        }
+        finally
+        {
+            Arrays.clear(kdfSecret);
+        }
     }
 
     @Override
@@ -70,23 +81,6 @@ public class NTRUEncapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        //TODO: Maybe make parameterSet public or add getEncapsulationSize() in NTRUKEMGenerator.java
-        switch (publicKey.getKeyParams().getParameters().getName())
-        {
-            case "ntruhps2048509":
-                return 699;
-            case "ntruhps2048677":
-                return 930;
-            case "ntruhps4096821":
-                return 1230;
-            case "ntruhps40961229":
-                return 1843;
-            case "ntruhrss701":
-                return 1138;
-            case "ntruhrss1373":
-                return 2401;
-            default:
-                return -1;
-        }
+        return publicKey.getKeyParams().getParameters().getEncapsulationLength();
     }
 }

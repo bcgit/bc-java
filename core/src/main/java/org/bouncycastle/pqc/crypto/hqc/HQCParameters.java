@@ -31,10 +31,10 @@ public class HQCParameters
     final static int PARAM_M = 8;
     final static int GF_MUL_ORDER = 255;
 
-    private final HQCEngine hqcEngine;
+    private final HQCEngine engine;
 
-    private HQCParameters(String name, int n, int n1, int n2, int k, int g, int delta, int w, int wr,
-                          int fft, int nMu, int pkSize, int skSize, int[] generatorPoly)
+    private HQCParameters(String name, int n, int n1, int n2, int k, int g, int delta, int w, int wr, int fft, int nMu,
+        int pkSize, int skSize, int[] generatorPoly)
     {
         this.name = name;
         this.n = n;
@@ -42,7 +42,7 @@ public class HQCParameters
         this.n2 = n2;
         this.publicKeyBytes = pkSize;
         this.secretKeyBytes = skSize;
-        hqcEngine = new HQCEngine(n, n1, n2, k, g, delta, w, wr, fft, nMu, pkSize, generatorPoly);
+        this.engine = new HQCEngine(n, n1, n2, k, g, delta, w, wr, fft, nMu, pkSize, generatorPoly);
     }
 
     int getSHA512_BYTES()
@@ -67,7 +67,12 @@ public class HQCParameters
 
     HQCEngine getEngine()
     {
-        return hqcEngine;
+        return engine;
+    }
+
+    public int getEncapsulationLength()
+    {
+        return engine.getCipherTextBytes();
     }
 
     public int getSessionKeySize()

@@ -10,6 +10,11 @@ public class SNTRUPrimeKEMExtractor
 
     public SNTRUPrimeKEMExtractor(SNTRUPrimePrivateKeyParameters privateKey)
     {
+        if (privateKey == null)
+        {
+            throw new NullPointerException("'privateKey' cannot be null");
+        }
+
         this.privateKey = privateKey;
     }
 

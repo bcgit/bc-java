@@ -30,6 +30,6 @@ public class MLKEMExtractor
 
     public int getEncapsulationLength()
     {
-        return engine.getCryptoCipherTextBytes();
+        return engine.getCipherTextBytes();
     }
 }

@@ -42,7 +42,7 @@ public class TranscriptHash
         this.interim = interim;
     }
 
-    static public TranscriptHash fromConfirmationTag(MlsCipherSuite suite, byte[] confirmed, byte[] confirmationTag)
+    public static TranscriptHash fromConfirmationTag(MlsCipherSuite suite, byte[] confirmed, byte[] confirmationTag)
         throws IOException
     {
         TranscriptHash out = new TranscriptHash(suite, confirmed.clone(), new byte[0]);

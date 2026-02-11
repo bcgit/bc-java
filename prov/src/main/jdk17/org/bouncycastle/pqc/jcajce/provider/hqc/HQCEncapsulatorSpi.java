@@ -1,31 +1,35 @@
 package org.bouncycastle.pqc.jcajce.provider.hqc;
 
-import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.jcajce.provider.hqc.BCHQCPublicKey;
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import java.security.SecureRandom;
+import java.util.Objects;
 
 import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Objects;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import org.bouncycastle.util.Arrays;
 
-public class HQCEncapsulatorSpi
+/*
+ *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
+ *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
+ *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
+ */
+class HQCEncapsulatorSpi
     implements KEMSpi.EncapsulatorSpi
 {
     private final BCHQCPublicKey publicKey;
     private final KTSParameterSpec parameterSpec;
     private final HQCKEMGenerator kemGen;
 
-    public HQCEncapsulatorSpi(BCHQCPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
+    HQCEncapsulatorSpi(BCHQCPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
     {
         this.publicKey = publicKey;
         this.parameterSpec = parameterSpec;
-
         this.kemGen = new HQCKEMGenerator(random);
     }
 
@@ -35,31 +39,37 @@ public class HQCEncapsulatorSpi
         Objects.checkFromToIndex(from, to, engineSecretSize());
         Objects.requireNonNull(algorithm, "null algorithm");
 
-        // if algorithm is Generic then use parameterSpec to wrap key
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-            algorithm.equals("Generic"))
+        String keyAlgName = parameterSpec.getKeyAlgorithmName();
+        if (!"Generic".equals(keyAlgName))
         {
-            algorithm = parameterSpec.getKeyAlgorithmName();
+            // if algorithm is Generic then use parameterSpec to wrap key
+            if ("Generic".equals(algorithm))
+            {
+                algorithm = keyAlgName;
+            }
+            // check spec algorithm mismatch provided algorithm
+            else if (!algorithm.equals(keyAlgName))
+            {
+                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
+            }
         }
-
-        // check spec algorithm mismatch provided algorithm
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-            !parameterSpec.getKeyAlgorithmName().equals(algorithm))
-        {
-            throw new UnsupportedOperationException(parameterSpec.getKeyAlgorithmName() + " does not match " + algorithm);
-        }
-
-        // Only use KDF when ktsParameterSpec is provided
-        // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
-        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
 
         SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParams());
 
         byte[] encapsulation = secEnc.getEncapsulation();
-        byte[] secret = secEnc.getSecret();
-        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
 
-        return new KEM.Encapsulated(new SecretKeySpec(secretKey, algorithm), encapsulation, null); //TODO: DER encoding for params
+        byte[] kemSecret = secEnc.getSecret();
+        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
+
+        try
+        {
+            SecretKey secretKey = new SecretKeySpec(kdfSecret, from, to - from, algorithm);
+            return new KEM.Encapsulated(secretKey, encapsulation, null);
+        }
+        finally
+        {
+            Arrays.clear(kdfSecret);
+        }
     }
 
     @Override
@@ -71,17 +81,6 @@ public class HQCEncapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        //TODO: Maybe make parameterSet public or add getEncapsulationSize() in HQCKEMGenerator.java
-        switch (publicKey.getKeyParams().getParameters().getName())
-        {
-        case "HQC-128":
-            return 128;
-        case "HQC-192":
-            return 192;
-        case "HQC-256":
-            return 256;
-        default:
-            return -1;
-        }
+        return publicKey.getKeyParams().getParameters().getEncapsulationLength();
     }
 }

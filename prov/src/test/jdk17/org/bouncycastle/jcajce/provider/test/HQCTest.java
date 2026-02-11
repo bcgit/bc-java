@@ -1,4 +1,4 @@
-package org.bouncycastle.jcacje.provider.test;
+package org.bouncycastle.jcajce.provider.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -53,7 +53,7 @@ public class HQCTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("HQC");
+        KEM kemS = KEM.getInstance("HQC", "BCPQC");
         KTSParameterSpec ktsSpec = null;
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
@@ -62,7 +62,7 @@ public class HQCTest
         byte[] params = enc.params();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("HQC");
+        KEM kemR = KEM.getInstance("HQC", "BCPQC");
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsSpec);
         SecretKey secR = d.decapsulate(em);
 
@@ -134,14 +134,14 @@ public class HQCTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("HQC");
+        KEM kemS = KEM.getInstance("HQC", "BCPQC");
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsParameterSpec, null);
         KEM.Encapsulated enc = e.encapsulate(from, to, algorithm);
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("HQC");
+        KEM kemR = KEM.getInstance("HQC", "BCPQC");
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsParameterSpec);
         SecretKey secR = d.decapsulate(em, from, to, algorithm);
 
@@ -156,14 +156,14 @@ public class HQCTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("HQC");
+        KEM kemS = KEM.getInstance("HQC", "BCPQC");
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsParameterSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("HQC");
+        KEM kemR = KEM.getInstance("HQC", "BCPQC");
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsParameterSpec);
         SecretKey secR = d.decapsulate(em);
 

@@ -59,9 +59,7 @@ public interface PBE
      */
     static class Util
     {
-        static private PBEParametersGenerator makePBEGenerator(
-            int                     type,
-            int                     hash)
+        private static PBEParametersGenerator makePBEGenerator(int type, int hash)
         {
             PBEParametersGenerator  generator;
     

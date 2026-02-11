@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.ntru;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.digests.SHA3Digest;
@@ -22,19 +23,9 @@ public class NTRUKEMGenerator
 {
     private final SecureRandom random;
 
-    /**
-     * Constructor
-     *
-     * @param random a secure random number generator
-     */
     public NTRUKEMGenerator(SecureRandom random)
     {
-        if (random == null)
-        {
-            throw new NullPointerException("'random' cannot be null");
-        }
-
-        this.random = random;
+        this.random = CryptoServicesRegistrar.getSecureRandom(random);
     }
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)

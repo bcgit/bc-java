@@ -1,6 +1,14 @@
-package org.bouncycastle.jcacje.provider.test;
+package org.bouncycastle.jcajce.provider.test;
 
-import junit.framework.TestCase;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Security;
+
+import javax.crypto.KEM;
+import javax.crypto.SecretKey;
+
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
@@ -8,14 +16,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Arrays;
 
-import javax.crypto.KEM;
-import javax.crypto.SecretKey;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Security;
-
+import junit.framework.TestCase;
 
 public class MLKEMTest
     extends TestCase
@@ -40,7 +41,7 @@ public class MLKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("ML-KEM");
+        KEM kemS = KEM.getInstance("ML-KEM", "BC");
         KTSParameterSpec ktsSpec = null;
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
@@ -49,7 +50,7 @@ public class MLKEMTest
         byte[] params = enc.params();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("ML-KEM");
+        KEM kemR = KEM.getInstance("ML-KEM", "BC");
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsSpec);
         SecretKey secR = d.decapsulate(em);
 
@@ -123,14 +124,14 @@ public class MLKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("ML-KEM");
+        KEM kemS = KEM.getInstance("ML-KEM", "BC");
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsParameterSpec, null);
         KEM.Encapsulated enc = e.encapsulate(from, to, algorithm);
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("ML-KEM");
+        KEM kemR = KEM.getInstance("ML-KEM", "BC");
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsParameterSpec);
         SecretKey secR = d.decapsulate(em, from, to, algorithm);
 
@@ -145,14 +146,14 @@ public class MLKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("ML-KEM");
+        KEM kemS = KEM.getInstance("ML-KEM", "BC");
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsParameterSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("ML-KEM");
+        KEM kemR = KEM.getInstance("ML-KEM", "BC");
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsParameterSpec);
         SecretKey secR = d.decapsulate(em);
 

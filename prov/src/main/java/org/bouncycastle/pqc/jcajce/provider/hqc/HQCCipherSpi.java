@@ -19,7 +19,6 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
@@ -154,7 +153,7 @@ class HQCCipherSpi
             if (key instanceof BCHQCPublicKey)
             {
                 wrapKey = (BCHQCPublicKey)key;
-                kemGen = new HQCKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
+                kemGen = new HQCKEMGenerator(random);
             }
             else
             {

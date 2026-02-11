@@ -107,7 +107,7 @@ public class MlsCipherSuite
         this.hpke = hpke;
     }
 
-    static public MlsCipherSuite getSuite(short id)
+    public static MlsCipherSuite getSuite(short id)
         throws Exception
     {
         switch (id)

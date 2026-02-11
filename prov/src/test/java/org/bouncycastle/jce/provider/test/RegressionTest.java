@@ -90,6 +90,7 @@ public class RegressionTest
         new SkeinTest(),
         new SlotTwoTest(),
         new SM2CipherTest(),
+        new SM2KeyExchangeTest(),
         new SM2SignatureTest(),
         new SM4Test(),
         new ThreefishTest(),
