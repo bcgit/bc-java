@@ -33,7 +33,7 @@ class SecurityUtil
      *
      * @return null if no algorithm found, an Implementation if it is.
      */
-    static private Implementation getImplementation(
+    private static Implementation getImplementation(
         String      baseName,
         String      algorithm,
         Provider    prov)

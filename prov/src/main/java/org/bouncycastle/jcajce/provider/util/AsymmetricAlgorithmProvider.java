@@ -147,6 +147,20 @@ public abstract class AsymmetricAlgorithmProvider
         }
     }
 
+    protected void addKEMAlgorithm(
+        ConfigurableProvider provider,
+        String algorithm,
+        String className,
+        ASN1ObjectIdentifier oid)
+    {
+        provider.addAlgorithm("KEM." + algorithm, className);
+        if (oid != null)
+        {
+            provider.addAlgorithm("Alg.Alias.KEM." + oid, algorithm);
+            provider.addAlgorithm("Alg.Alias.KEM.OID." + oid, algorithm);
+        }
+    }
+
     protected void registerKeyFactoryOid(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name, AsymmetricKeyInfoConverter keyFactory)
     {
         provider.addAlgorithm("Alg.Alias.KeyFactory." + oid, name);

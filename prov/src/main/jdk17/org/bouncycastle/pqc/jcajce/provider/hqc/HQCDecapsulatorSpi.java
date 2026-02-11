@@ -1,31 +1,33 @@
 package org.bouncycastle.pqc.jcajce.provider.hqc;
 
-import org.bouncycastle.pqc.jcajce.provider.hqc.BCHQCPrivateKey;
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-
-import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import java.util.Objects;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import java.util.Arrays;
-import java.util.Objects;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import org.bouncycastle.util.Arrays;
 
-public class HQCDecapsulatorSpi
+/*
+ *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
+ *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
+ *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
+ */
+class HQCDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
-    BCHQCPrivateKey privateKey;
-    KTSParameterSpec parameterSpec;
-    HQCKEMExtractor kemExt;
+//    private final BCHQCPrivateKey privateKey;
+    private final KTSParameterSpec parameterSpec;
+    private final HQCKEMExtractor kemExt;
 
-    public HQCDecapsulatorSpi(BCHQCPrivateKey privateKey, KTSParameterSpec parameterSpec)
+    HQCDecapsulatorSpi(BCHQCPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
-        this.privateKey = privateKey;
+//        this.privateKey = privateKey;
         this.parameterSpec = parameterSpec;
-
         this.kemExt = new HQCKEMExtractor(privateKey.getKeyParams());
     }
 
@@ -42,28 +44,32 @@ public class HQCDecapsulatorSpi
             throw new DecapsulateException("incorrect encapsulation size");
         }
 
-        // if algorithm is Generic then use parameterSpec to wrap key
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-            algorithm.equals("Generic"))
+        String keyAlgName = parameterSpec.getKeyAlgorithmName();
+        if (!"Generic".equals(keyAlgName))
         {
-            algorithm = parameterSpec.getKeyAlgorithmName();
+            // if algorithm is Generic then use parameterSpec to wrap key
+            if ("Generic".equals(algorithm))
+            {
+                algorithm = keyAlgName;
+            }
+            // check spec algorithm mismatch provided algorithm
+            else if (!algorithm.equals(keyAlgName))
+            {
+                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
+            }
         }
 
-        // check spec algorithm mismatch provided algorithm
-        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
-            !parameterSpec.getKeyAlgorithmName().equals(algorithm))
+        byte[] kemSecret = kemExt.extractSecret(encapsulation);
+        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
+
+        try
         {
-            throw new UnsupportedOperationException(parameterSpec.getKeyAlgorithmName() + " does not match " + algorithm);
+            return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
         }
-
-        // Only use KDF when ktsParameterSpec is provided
-        // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
-        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
-
-        byte[] secret = kemExt.extractSecret(encapsulation);
-        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
-
-        return new SecretKeySpec(secretKey, algorithm);
+        finally
+        {
+            Arrays.clear(kdfSecret);
+        }
     }
 
     @Override

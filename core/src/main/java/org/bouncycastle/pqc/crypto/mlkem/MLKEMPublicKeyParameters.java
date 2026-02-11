@@ -19,11 +19,11 @@ public class MLKEMPublicKeyParameters
 
         MLKEMEngine engine = params.getEngine();
 
-        if (t.length != engine.getKyberPolyVecBytes())
+        if (t.length != engine.getPolyVecBytes())
         {
             throw new IllegalArgumentException("'t' has invalid length");
         }
-        if (rho.length != MLKEMEngine.KyberSymBytes)
+        if (rho.length != MLKEMEngine.SymBytes)
         {
             throw new IllegalArgumentException("'rho' has invalid length");
         }
@@ -43,13 +43,13 @@ public class MLKEMPublicKeyParameters
 
         MLKEMEngine engine = params.getEngine();
 
-        if (encoding.length != engine.getKyberIndCpaPublicKeyBytes())
+        if (encoding.length != engine.getIndCpaPublicKeyBytes())
         {
             throw new IllegalArgumentException("'encoding' has invalid length");
         }
 
-        this.t = Arrays.copyOfRange(encoding, 0, encoding.length - MLKEMEngine.KyberSymBytes);
-        this.rho = Arrays.copyOfRange(encoding, encoding.length - MLKEMEngine.KyberSymBytes, encoding.length);
+        this.t = Arrays.copyOfRange(encoding, 0, encoding.length - MLKEMEngine.SymBytes);
+        this.rho = Arrays.copyOfRange(encoding, encoding.length - MLKEMEngine.SymBytes, encoding.length);
 
         if (!engine.checkModulus(this.t))
         {

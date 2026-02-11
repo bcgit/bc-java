@@ -30,9 +30,10 @@ class HQCEngine
     private final int pkSize;
     private final GF2PolynomialCalculator gf;
     private final long rejectionThreshold;
+    private final int cipherTextBytes;
 
-    public HQCEngine(int n, int n1, int n2, int k, int g, int delta, int w, int wr,
-                     int fft, int nmu, int pkSize, int[] generatorPoly)
+    HQCEngine(int n, int n1, int n2, int k, int g, int delta, int w, int wr, int fft, int nmu, int pkSize,
+        int[] generatorPoly)
     {
         this.n = n;
         this.k = k;
@@ -54,6 +55,12 @@ class HQCEngine
         long RED_MASK = ((1L << (n & 63)) - 1);
         this.gf = new GF2PolynomialCalculator(N_BYTE_64, n, RED_MASK);
         this.rejectionThreshold = ((1L << 24) / n) * n;
+        this.cipherTextBytes = N_BYTE + N1N2_BYTE + 16;
+    }
+
+    int getCipherTextBytes()
+    {
+        return cipherTextBytes;
     }
 
     /**

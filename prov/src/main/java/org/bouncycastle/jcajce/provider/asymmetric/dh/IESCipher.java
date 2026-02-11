@@ -496,7 +496,7 @@ public class IESCipher
      * Classes that inherit from us
      */
 
-    static public class IES
+    public static class IES
         extends IESCipher
     {
         public IES()
@@ -507,7 +507,7 @@ public class IESCipher
         }
     }
 
-    static public class IESwithDESedeCBC
+    public static class IESwithDESedeCBC
         extends IESCipher
     {
         public IESwithDESedeCBC()
@@ -519,7 +519,7 @@ public class IESCipher
         }
     }
 
-    static public class IESwithAESCBC
+    public static class IESwithAESCBC
         extends IESCipher
     {
         public IESwithAESCBC()

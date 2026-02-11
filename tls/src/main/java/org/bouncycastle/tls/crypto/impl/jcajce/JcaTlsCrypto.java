@@ -458,7 +458,7 @@ public class JcaTlsCrypto
              */
             return null;
         }
-        else if (NamedGroup.refersToAnECDSACurve(namedGroup))
+        else if (NamedGroup.refersToASpecificCurve(namedGroup))
         {
             return ECUtil.getAlgorithmParameters(this, NamedGroup.getCurveName(namedGroup));
         }
@@ -1238,17 +1238,17 @@ public class JcaTlsCrypto
                 }
                 }
             }
-            else if (NamedGroup.refersToASpecificKem(namedGroup))
-            {
-                return Boolean.valueOf(KemUtil.isKemSupported(this, NamedGroup.getKemName(namedGroup)));
-            }
-            else if (NamedGroup.refersToAnECDSACurve(namedGroup))
+            else if (NamedGroup.refersToASpecificCurve(namedGroup))
             {
                 return Boolean.valueOf(ECUtil.isCurveSupported(this, NamedGroup.getCurveName(namedGroup)));
             }
             else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
             {
                 return Boolean.valueOf(DHUtil.isGroupSupported(this, TlsDHUtils.getNamedDHGroup(namedGroup)));
+            }
+            else if (NamedGroup.refersToASpecificKem(namedGroup))
+            {
+                return Boolean.valueOf(KemUtil.isKemSupported(this, NamedGroup.getKemName(namedGroup)));
             }
         }
         catch (GeneralSecurityException e)

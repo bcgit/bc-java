@@ -1,4 +1,4 @@
-package org.bouncycastle.jcacje.provider.test;
+package org.bouncycastle.jcajce.provider.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -48,13 +48,13 @@ public class SNTRUPrimeKEMTest
         FixedSecureRandom fixedRandom = new FixedSecureRandom(fixedRandomBytes);
 
         // Receiver side
-        KeyPairGenerator g = KeyPairGenerator.getInstance("SNTRUPrime");
+        KeyPairGenerator g = KeyPairGenerator.getInstance("SNTRUPrime", "BCPQC");
         g.initialize(SNTRUPrimeParameterSpec.sntrup653, fixedRandom);
         KeyPair kp = g.generateKeyPair();
         SNTRUPrimeKey pkR = (SNTRUPrimeKey)kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("SNTRUPrime"); //Should the name be "SNTRUPrime-KEM" ?
+        KEM kemS = KEM.getInstance("SNTRUPrime", "BCPQC"); //Should the name be "SNTRUPrime-KEM" ?
         KTSParameterSpec ktsSpec = null;
         KEM.Encapsulator e = kemS.newEncapsulator((PublicKey)pkR, ktsSpec, fixedRandom);
         KEM.Encapsulated enc = e.encapsulate();
@@ -66,7 +66,7 @@ public class SNTRUPrimeKEMTest
         assertTrue(Arrays.areEqual(enc.key().getEncoded(), ss));
 
         // Receiver side
-        KEM kemR = KEM.getInstance("SNTRUPrime");
+        KEM kemR = KEM.getInstance("SNTRUPrime", "BCPQC");
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsSpec);
         SecretKey secR = d.decapsulate(em);
 
@@ -79,7 +79,7 @@ public class SNTRUPrimeKEMTest
             throws Exception
     {
         // Receiver side
-        KeyPairGenerator g = KeyPairGenerator.getInstance("SNTRUPrime");
+        KeyPairGenerator g = KeyPairGenerator.getInstance("SNTRUPrime", "BCPQC");
 
         g.initialize(SNTRUPrimeParameterSpec.sntrup653, new SecureRandom());
 
@@ -87,7 +87,7 @@ public class SNTRUPrimeKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("SNTRUPrime"); //Should the name be "SNTRUPrime-KEM" ?
+        KEM kemS = KEM.getInstance("SNTRUPrime", "BCPQC"); //Should the name be "SNTRUPrime-KEM" ?
         KTSParameterSpec ktsSpec = null;
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
@@ -96,8 +96,8 @@ public class SNTRUPrimeKEMTest
         byte[] params = enc.params();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("SNTRUPrime");
-//        AlgorithmParameters algParams = AlgorithmParameters.getInstance("SNTRUPrime");
+        KEM kemR = KEM.getInstance("SNTRUPrime", "BCPQC");
+//        AlgorithmParameters algParams = AlgorithmParameters.getInstance("SNTRUPrime", "BCPQC");
 //        algParams.init(params);
 //        SNTRUPrimeParameterSpec specR = algParams.getParameterSpec(SNTRUPrimeParameterSpec.class);
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsSpec);
@@ -173,14 +173,14 @@ public class SNTRUPrimeKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("SNTRUPrime");
+        KEM kemS = KEM.getInstance("SNTRUPrime", "BCPQC");
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsParameterSpec, null);
         KEM.Encapsulated enc = e.encapsulate(from, to, algorithm);
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("SNTRUPrime");
+        KEM kemR = KEM.getInstance("SNTRUPrime", "BCPQC");
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsParameterSpec);
         SecretKey secR = d.decapsulate(em, from, to, algorithm);
 
@@ -195,14 +195,14 @@ public class SNTRUPrimeKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("SNTRUPrime");
+        KEM kemS = KEM.getInstance("SNTRUPrime", "BCPQC");
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsParameterSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("SNTRUPrime");
+        KEM kemR = KEM.getInstance("SNTRUPrime", "BCPQC");
 //        KTSParameterSpec RktsParameterSpec = new KTSParameterSpec.Builder(
 //                ktsParameterSpec.getKeyAlgorithmName(),
 //                enc.key().getEncoded().length

@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.mlkem;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -10,18 +11,17 @@ import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 public class MLKEMGenerator
     implements EncapsulatedSecretGenerator
 {
-    // the source of randomness
-    private final SecureRandom sr;
+    private final SecureRandom random;
 
     public MLKEMGenerator(SecureRandom random)
     {
-        this.sr = random;
+        this.random = CryptoServicesRegistrar.getSecureRandom(random);
     }
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
         byte[] randBytes = new byte[32];
-        sr.nextBytes(randBytes);
+        random.nextBytes(randBytes);
 
         return internalGenerateEncapsulated(recipientKey, randBytes);
     }
