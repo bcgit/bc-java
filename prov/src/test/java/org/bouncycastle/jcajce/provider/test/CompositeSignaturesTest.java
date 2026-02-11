@@ -55,16 +55,6 @@ import org.bouncycastle.util.encoders.Hex;
 public class CompositeSignaturesTest
     extends TestCase
 {
-    public static void main(String[] args)
-        throws Exception
-    {
-        CompositeSignaturesTest test = new CompositeSignaturesTest();
-        test.setUp();
-        List<Map<String, Object>> testVectors = test.readTestVectorsFromJson("pqc/crypto/composite", "testvectors.json");
-        test.compositeSignaturesTest(testVectors);
-        test.testSigningAndVerificationInternal();
-    }
-
     private static String[] compositeSignaturesOIDs = {
         "1.3.6.1.5.5.7.6.37", // id_MLDSA44_RSA2048_PSS_SHA256
         "1.3.6.1.5.5.7.6.38", // id_MLDSA44_RSA2048_PKCS15_SHA256 
@@ -243,6 +233,43 @@ public class CompositeSignaturesTest
         TestCase.assertEquals("EC", compPub.getPublicKeys().get(1).getAlgorithm());
         TestCase.assertEquals(firstAlg, compPriv.getPrivateKeys().get(0).getAlgorithm());
         TestCase.assertEquals("EC", compPriv.getPrivateKeys().get(1).getAlgorithm());
+    }
+
+    public void testKeyBuilders()
+        throws Exception
+    {
+        String[] algorithms = new String[]{
+            "MLDSA44-RSA2048-PSS-SHA256",
+            "MLDSA44-RSA2048-PKCS15-SHA256",
+            "MLDSA44-Ed25519-SHA512",
+            "MLDSA44-ECDSA-P256-SHA256",
+            "MLDSA65-RSA3072-PSS-SHA512",
+            "MLDSA65-RSA3072-PKCS15-SHA512",
+            "MLDSA65-RSA4096-PSS-SHA512",
+            "MLDSA65-RSA4096-PKCS15-SHA512",
+            "MLDSA65-ECDSA-P256-SHA512",
+            "MLDSA65-ECDSA-P384-SHA512",
+            "MLDSA65-ECDSA-brainpoolP256r1-SHA512",
+            "MLDSA65-Ed25519-SHA512",
+            "MLDSA87-ECDSA-P384-SHA512",
+            "MLDSA87-ECDSA-brainpoolP384R1-SHA512",
+            "MLDSA87-Ed448-SHAKE256",
+            "MLDSA87-RSA4096-PSS-SHA512",
+            "MLDSA87-ECDSA-P521-SHA512",
+            "MLDSA87-RSA3072-PSS-SHA512"
+        };
+
+        CompositePublicKey.Builder pubBuilder = null;
+        CompositePrivateKey.Builder privBuilder = null;
+
+        for (int i = 0; i != algorithms.length; i++)
+        {
+            pubBuilder = CompositePublicKey.builder(algorithms[i]);
+            privBuilder = CompositePrivateKey.builder(algorithms[i]);
+        }
+
+        assertNotNull(pubBuilder);
+        assertNotNull(privBuilder);
     }
 
     public void testSelfComposition()
