@@ -196,7 +196,7 @@ public class SymmetricKeyEncSessionPacket
      * @param encAlgorithm symmetric encryption algorithm
      * @param s2k          s2k
      * @param secKeyData   encrypted session key
-     * @deprecated use createVersion4Packet()
+     * @deprecated use {@link #createV4Packet(int, S2K, byte[])} instead
      */
     public SymmetricKeyEncSessionPacket(
         int encAlgorithm,
