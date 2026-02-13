@@ -56,7 +56,7 @@ public class ASN1Boolean
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct boolean from byte[]: " + e.getMessage());
+                throw new IllegalArgumentException("failed to construct boolean from byte[]", e);
             }
         }
 
