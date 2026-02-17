@@ -692,10 +692,11 @@ public class DTLSServerProtocol
                     securityParameters.statusRequestVersion = 1;
                 }
 
+                TlsCrypto crypto = serverContext.getCrypto();
                 securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension(
-                    clientHelloExtensions, state.serverExtensions, AlertDescription.internal_error);
+                    crypto, clientHelloExtensions, state.serverExtensions, AlertDescription.internal_error);
                 securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension(
-                    clientHelloExtensions, state.serverExtensions, AlertDescription.internal_error);
+                    crypto, clientHelloExtensions, state.serverExtensions, AlertDescription.internal_error);
 
                 state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
                     TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
