@@ -26,26 +26,20 @@ class MLKEMIndCpa
     {
         int K = engine.getK();
 
-        PolyVec secretKey = new PolyVec(K), publicKey = new PolyVec(K), e = new PolyVec(K);
+        PolyVec secretKey = new PolyVec(K);
+        PolyVec e = new PolyVec(K);
 
         // (p, sigma) <- G(d || k)
 
-        byte[] buf = new byte[64];
+        byte[] buf = new byte[2 * MLKEMEngine.SymBytes];
         MLKEMEngine.hash_G(Arrays.append(d, (byte)K), buf);
 
-        byte[] publicSeed = new byte[32]; // p in docs
-        byte[] noiseSeed = new byte[32]; // sigma in docs
-        System.arraycopy(buf, 0, publicSeed, 0, 32);
-        System.arraycopy(buf, 32, noiseSeed, 0, 32);
-
         PolyVec[] matrixA = new PolyVec[K];
-
         for (int i = 0; i < K; i++)
         {
             matrixA[i] = new PolyVec(K);
         }
-
-        generateMatrixA(matrixA, publicSeed, false);
+        generateMatrixA(matrixA, buf, false);
 
         SHAKEDigest xof = new SHAKEDigest(256);
 
@@ -54,24 +48,24 @@ class MLKEMIndCpa
         {
             for (int i = 0; i < K; i++)
             {
-                secretKey.getVectorIndex(i).getNoiseEta2(xof, noiseSeed, nonce++);
+                secretKey.getVectorIndex(i).getNoiseEta2(xof, buf, MLKEMEngine.SymBytes, nonce++);
             }
 
             for (int i = 0; i < K; i++)
             {
-                e.getVectorIndex(i).getNoiseEta2(xof, noiseSeed, nonce++);
+                e.getVectorIndex(i).getNoiseEta2(xof, buf, MLKEMEngine.SymBytes, nonce++);
             }
         }
         else
         {
             for (int i = 0; i < K; i++)
             {
-                secretKey.getVectorIndex(i).getNoiseEta3(xof, noiseSeed, nonce++);
+                secretKey.getVectorIndex(i).getNoiseEta3(xof, buf, MLKEMEngine.SymBytes, nonce++);
             }
 
             for (int i = 0; i < K; i++)
             {
-                e.getVectorIndex(i).getNoiseEta3(xof, noiseSeed, nonce++);
+                e.getVectorIndex(i).getNoiseEta3(xof, buf, MLKEMEngine.SymBytes, nonce++);
             }
         }
 
@@ -79,16 +73,16 @@ class MLKEMIndCpa
 
         e.polyVecNtt();
 
+        PolyVec publicKey = new PolyVec(K);
         for (int i = 0; i < K; i++)
         {
             PolyVec.pointwiseAccountMontgomery(publicKey.getVectorIndex(i), matrixA[i], secretKey, engine);
             publicKey.getVectorIndex(i).convertToMont();
         }
-
         publicKey.addPoly(e);
         publicKey.reducePoly();
 
-        return new byte[][]{ packPublicKey(publicKey, publicSeed), packSecretKey(secretKey) };
+        return new byte[][]{ packPublicKey(publicKey, buf), packSecretKey(secretKey) };
     }
 
     void decrypt(byte[] secretKey, byte[] cipherText, byte[] m)
@@ -111,24 +105,23 @@ class MLKEMIndCpa
         mp.toMsg(m);
     }
 
-    byte[] encrypt(byte[] publicKeyInput, byte[] msg, byte[] coins)
+    byte[] encrypt(byte[] pk, int pkOff, byte[] msg, int msgOff, byte[] coins, int coinsOff)
     {
         int K = engine.getK();
 
         byte nonce = (byte)0;
         PolyVec sp = new PolyVec(K), pkpv = new PolyVec(K), ep = new PolyVec(K), bp = new PolyVec(K);
-        PolyVec[] matrixATransposed = new PolyVec[engine.getK()];
         Poly errorPoly = new Poly(), v = new Poly(), k = new Poly();
 
-        byte[] seed = unpackPublicKey(pkpv, publicKeyInput);
+        byte[] seed = unpackPublicKey(pkpv, pk, pkOff);
 
-        k.fromMsg(msg);
+        k.fromMsg(msg, msgOff);
 
+        PolyVec[] matrixATransposed = new PolyVec[engine.getK()];
         for (int i = 0; i < K; i++)
         {
             matrixATransposed[i] = new PolyVec(K);
         }
-
         generateMatrixA(matrixATransposed, seed, true);
 
         SHAKEDigest xof = new SHAKEDigest(256);
@@ -137,22 +130,22 @@ class MLKEMIndCpa
         {
             for (int i = 0; i < K; i++)
             {
-                sp.getVectorIndex(i).getNoiseEta2(xof, coins, nonce++);
+                sp.getVectorIndex(i).getNoiseEta2(xof, coins, coinsOff, nonce++);
             }
         }
         else
         {
             for (int i = 0; i < K; i++)
             {
-                sp.getVectorIndex(i).getNoiseEta3(xof, coins, nonce++);
+                sp.getVectorIndex(i).getNoiseEta3(xof, coins, coinsOff, nonce++);
             }
         }
 
         for (int i = 0; i < K; i++)
         {
-            ep.getVectorIndex(i).getNoiseEta2(xof, coins, nonce++);
+            ep.getVectorIndex(i).getNoiseEta2(xof, coins, coinsOff, nonce++);
         }
-        errorPoly.getNoiseEta2(xof, coins, nonce);
+        errorPoly.getNoiseEta2(xof, coins, coinsOff, nonce);
 
         sp.polyVecNtt();
 
@@ -225,13 +218,13 @@ class MLKEMIndCpa
         return buf;
     }
 
-    byte[] unpackPublicKey(PolyVec publicKeyPolyVec, byte[] publicKey)
+    byte[] unpackPublicKey(PolyVec publicKeyPolyVec, byte[] pk, int pkOff)
     {
         int polyVecBytes = engine.getPolyVecBytes();
 
         byte[] outputSeed = new byte[MLKEMEngine.SymBytes];
-        publicKeyPolyVec.fromBytes(publicKey);
-        System.arraycopy(publicKey, polyVecBytes, outputSeed, 0, MLKEMEngine.SymBytes);
+        publicKeyPolyVec.fromBytes(pk, pkOff);
+        System.arraycopy(pk, pkOff + polyVecBytes, outputSeed, 0, MLKEMEngine.SymBytes);
         return outputSeed;
     }
 
@@ -244,7 +237,7 @@ class MLKEMIndCpa
 
     void unpackSecretKey(PolyVec secretKeyPolyVec, byte[] secretKey)
     {
-        secretKeyPolyVec.fromBytes(secretKey);
+        secretKeyPolyVec.fromBytes(secretKey, 0);
     }
 
     void generateMatrixA(PolyVec[] aMatrix, byte[] seed, boolean transpose)
@@ -259,7 +252,7 @@ class MLKEMIndCpa
             {
                 xof.reset();
 
-                xof.update(seed, 0, seed.length);
+                xof.update(seed, 0, MLKEMEngine.SymBytes);
 
                 if (transpose)
                 {

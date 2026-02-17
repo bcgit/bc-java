@@ -190,7 +190,7 @@ class MLKEMEngine
 
     byte[][] kemEncrypt(MLKEMPublicKeyParameters publicKey, byte[] randBytes)
     {
-        byte[] publicKeyInput = publicKey.getEncoded();
+        byte[] encapKey = publicKey.getEncoded();
 
         byte[] buf = new byte[2 * SymBytes];
         byte[] kr = new byte[2 * SymBytes];
@@ -198,14 +198,13 @@ class MLKEMEngine
         System.arraycopy(randBytes, 0, buf, 0, SymBytes);
 
         // SHA3-256 Public Key
-        hash_H(publicKeyInput, 0, publicKeyInput.length, buf, SymBytes);
+        hash_H(encapKey, 0, encapKey.length, buf, SymBytes);
 
         // SHA3-512( SHA3-256(RandBytes) || SHA3-256(PublicKey) )
         hash_G(buf, kr);
 
         // IndCpa Encryption
-        byte[] outputCipherText = indCpa.encrypt(publicKeyInput, Arrays.copyOfRange(buf, 0, SymBytes),
-            Arrays.copyOfRange(kr, 32, kr.length));
+        byte[] outputCipherText = indCpa.encrypt(encapKey, 0, buf, 0, kr, SymBytes);
 
         byte[] outputSharedSecret = new byte[SharedSecretBytes];
 
@@ -219,19 +218,17 @@ class MLKEMEngine
 
     byte[] kemDecrypt(MLKEMPrivateKeyParameters privateKey, byte[] cipherText)
     {
-        byte[] secretKey = privateKey.getEncoded();
+        byte[] decapKey = privateKey.getEncoded();
 
         byte[] buf = new byte[2 * SymBytes];
-        indCpa.decrypt(secretKey, cipherText, buf);
-        System.arraycopy(secretKey, SecretKeyBytes - 2 * SymBytes, buf, SymBytes, SymBytes);
+        indCpa.decrypt(decapKey, cipherText, buf);
+        System.arraycopy(decapKey, SecretKeyBytes - 2 * SymBytes, buf, SymBytes, SymBytes);
 
         byte[] kr = new byte[2 * SymBytes];
         hash_G(buf, kr);
 
-        byte[] publicKey = Arrays.copyOfRange(secretKey, IndCpaSecretKeyBytes, secretKey.length);
-
-        byte[] cmp = indCpa.encrypt(publicKey, Arrays.copyOfRange(buf, 0, SymBytes),
-            Arrays.copyOfRange(kr, SymBytes, kr.length));
+        int pkOff = IndCpaSecretKeyBytes;
+        byte[] cmp = indCpa.encrypt(decapKey, pkOff, buf, 0, kr, SymBytes);
 
         int fail = constantTimeZeroOnEqual(cipherText, cmp);
 
@@ -241,7 +238,7 @@ class MLKEMEngine
 
             // J(z||c)
             SHAKEDigest xof = new SHAKEDigest(256);
-            xof.update(secretKey, SecretKeyBytes - SymBytes, SymBytes);
+            xof.update(decapKey, SecretKeyBytes - SymBytes, SymBytes);
             xof.update(cipherText, 0, CipherTextBytes);
             xof.doFinal(implicit_rejection, 0, SharedSecretBytes);
 
