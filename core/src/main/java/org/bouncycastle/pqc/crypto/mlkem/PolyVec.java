@@ -203,19 +203,19 @@ class PolyVec
         }
     }
 
-    void toBytes(byte[] r, int rOff)
+    void toBytes(byte[] buf, int off)
     {
         for (int i = 0; i < vec.length; i++)
         {
-            vec[i].toBytes(r, rOff + i * MLKEMEngine.PolyBytes);
+            vec[i].toBytes(buf, off + i * MLKEMEngine.PolyBytes);
         }
     }
 
-    void fromBytes(byte[] inputBytes)
+    void fromBytes(byte[] buf, int off)
     {
         for (int i = 0; i < vec.length; i++)
         {
-            vec[i].fromBytes(inputBytes, i * MLKEMEngine.PolyBytes);
+            vec[i].fromBytes(buf, off + i * MLKEMEngine.PolyBytes);
         }
     }
 

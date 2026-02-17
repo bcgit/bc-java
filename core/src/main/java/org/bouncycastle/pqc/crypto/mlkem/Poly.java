@@ -235,13 +235,14 @@ class Poly
         }
     }
 
-    void fromMsg(byte[] msg)
+    void fromMsg(byte[] msg, int msgOff)
     {
         for (int i = 0; i < MLKEMEngine.N / 8; i++)
         {
+            int msg_i = msg[msgOff + i] & 0xFF;
             for (int j = 0; j < 8; j++)
             {
-                short mask = (short)((-1) * (short)(((msg[i] & 0xFF) >> j) & 1));
+                short mask = (short)-((msg_i >> j) & 1);
                 this.setCoeffIndex(8 * i + j, (short)(mask & (short)((MLKEMEngine.Q + 1) / 2)));
             }
         }
@@ -255,23 +256,23 @@ class Poly
         }
     }
 
-    void getNoiseEta2(Xof xof, byte[] seed, byte nonce)
+    void getNoiseEta2(Xof xof, byte[] seed, int seedOff, byte nonce)
     {
         byte[] buf = new byte[2 * MLKEMEngine.N / 4];
-        prf(xof, seed, nonce, buf);
+        prf(xof, seed, seedOff, nonce, buf);
         CBD.eta2(this, buf);
     }
 
-    void getNoiseEta3(Xof xof, byte[] seed, byte nonce)
+    void getNoiseEta3(Xof xof, byte[] seed, int seedOff, byte nonce)
     {
         byte[] buf = new byte[3 * MLKEMEngine.N / 4];
-        prf(xof, seed, nonce, buf);
+        prf(xof, seed, seedOff, nonce, buf);
         CBD.eta3(this, buf);
     }
 
-    private static void prf(Xof xof, byte[] seed, byte nonce, byte[] output)
+    private static void prf(Xof xof, byte[] seed, int seedOff, byte nonce, byte[] output)
     {
-        xof.update(seed, 0, seed.length);
+        xof.update(seed, seedOff, MLKEMEngine.SymBytes);
         xof.update(nonce);
         xof.doFinal(output, 0, output.length);
     }
