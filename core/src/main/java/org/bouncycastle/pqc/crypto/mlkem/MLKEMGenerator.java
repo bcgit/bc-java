@@ -20,18 +20,28 @@ public class MLKEMGenerator
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
-        byte[] randBytes = new byte[32];
+        byte[] randBytes = new byte[MLKEMEngine.SymBytes];
         random.nextBytes(randBytes);
 
-        return internalGenerateEncapsulated(recipientKey, randBytes);
+        return internalGenerateEncapsulated((MLKEMPublicKeyParameters)recipientKey, randBytes);
     }
 
+    /** @deprecated Use {@link #internalGenerateEncapsulated(MLKEMPublicKeyParameters, byte[])} instead. */
     public SecretWithEncapsulation internalGenerateEncapsulated(AsymmetricKeyParameter recipientKey, byte[] randBytes)
     {
-        MLKEMPublicKeyParameters key = (MLKEMPublicKeyParameters)recipientKey;
-        MLKEMEngine engine = key.getParameters().getEngine();
+        return internalGenerateEncapsulated((MLKEMPublicKeyParameters)recipientKey, randBytes);
+    }
 
-        byte[][] kemEncrypt = engine.kemEncrypt(key, randBytes);
+    public static SecretWithEncapsulation internalGenerateEncapsulated(MLKEMPublicKeyParameters recipientKey,
+        byte[] randBytes)
+    {
+        if (randBytes.length != MLKEMEngine.SymBytes)
+        {
+            throw new IllegalArgumentException("'randBytes' has invalid length");
+        }
+
+        MLKEMEngine engine = recipientKey.getParameters().getEngine();
+        byte[][] kemEncrypt = engine.kemEncrypt(recipientKey, randBytes);
         return new SecretWithEncapsulationImpl(kemEncrypt[0], kemEncrypt[1]);
     }
 }
