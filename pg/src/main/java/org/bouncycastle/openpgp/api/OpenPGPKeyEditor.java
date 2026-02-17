@@ -49,7 +49,15 @@ public class OpenPGPKeyEditor
         throws PGPException
     {
         this.key = key;
-        this.primaryKey = key.getPrimarySecretKey().unlock(passphraseProvider);
+        OpenPGPKey.OpenPGPSecretKey primarySecretKey = key.getPrimarySecretKey();
+        if (primarySecretKey.isLocked())
+        {
+            this.primaryKey = primarySecretKey.unlock(passphraseProvider);
+        }
+        else
+        {
+            this.primaryKey = primarySecretKey.unlock();
+        }
         this.implementation = implementation;
         this.policy = policy;
     }
