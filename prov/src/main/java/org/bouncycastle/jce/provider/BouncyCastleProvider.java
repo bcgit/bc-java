@@ -78,7 +78,7 @@ public final class BouncyCastleProvider extends Provider
 {
     private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
 
-    private static String info = "BouncyCastle Security Provider v1.82";
+    private static String info = "BouncyCastle Security Provider v1.83";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -95,7 +95,7 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] SYMMETRIC_GENERIC =
         {
-            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT"
+            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT", "HKDF"
         };
 
     private static final String[] SYMMETRIC_MACS =
@@ -163,6 +163,17 @@ public final class BouncyCastleProvider extends Provider
             "DRBG"
         };
 
+    /*
+     * Configurable kdfs
+     */
+    private static final String KDF_PACKAGE = "org.bouncycastle.jcajce.provider.kdf.";
+    private static final String[] KDFS =
+        {
+            "HKDF", "PBEPBKDF2", "SCRYPT"
+        };
+
+
+
     private Map<String, Service> serviceMap = new ConcurrentHashMap<String, Service>();
 
     /**
@@ -172,7 +183,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.82, info);
+        super(PROVIDER_NAME, 1.8300, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
@@ -201,6 +212,8 @@ public final class BouncyCastleProvider extends Provider
         loadAlgorithms(KEYSTORE_PACKAGE, KEYSTORES);
 
         loadAlgorithms(SECURE_RANDOM_PACKAGE, SECURE_RANDOMS);
+
+        loadAlgorithms(KDF_PACKAGE, KDFS);
 
         loadPQCKeys();  // so we can handle certificates containing them.
 

@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -44,7 +43,7 @@ public class DeclarationOfMajority
 
     public DeclarationOfMajority(int notYoungerThan)
     {
-        declaration = new DERTaggedObject(false, 0, new ASN1Integer(notYoungerThan));
+        declaration = new DERTaggedObject(false, 0, ASN1Integer.valueOf(notYoungerThan));
     }
 
     public DeclarationOfMajority(boolean fullAge, String country)
@@ -80,7 +79,7 @@ public class DeclarationOfMajority
 
         if (obj instanceof ASN1TaggedObject)
         {
-            return new DeclarationOfMajority(ASN1TaggedObject.getInstance(obj, BERTags.CONTEXT_SPECIFIC));
+            return new DeclarationOfMajority(ASN1TaggedObject.getContextInstance(obj));
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: "

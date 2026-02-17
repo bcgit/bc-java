@@ -2,12 +2,56 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * Carrier class for a DER encoding OCTET STRING
  */
 public class DEROctetString
     extends ASN1OctetString
 {
+    public static final DEROctetString EMPTY = new DEROctetString(EMPTY_OCTETS);
+
+    public static DEROctetString fromContents(byte[] contents)
+    {
+        if (contents == null)
+        {
+            throw new NullPointerException("'contents' cannot be null");
+        }
+
+        return internalFromContents(contents);
+    }
+
+    public static DEROctetString fromContentsOptional(byte[] contents)
+    {
+        return contents == null ? null : internalFromContents(contents);
+    }
+
+    public static DEROctetString withContents(byte[] contents)
+    {
+        if (contents == null)
+        {
+            throw new NullPointerException("'contents' cannot be null");
+        }
+
+        return internalWithContents(contents);
+    }
+
+    public static DEROctetString withContentsOptional(byte[] contents)
+    {
+        return contents == null ? null : internalWithContents(contents);
+    }
+
+    static DEROctetString internalFromContents(byte[] contents)
+    {
+        return contents.length < 1 ? EMPTY : new DEROctetString(Arrays.clone(contents));
+    }
+
+    static DEROctetString internalWithContents(byte[] contents)
+    {
+        return contents.length < 1 ? EMPTY : new DEROctetString(contents);
+    }
+
     /**
      * Base constructor.
      *

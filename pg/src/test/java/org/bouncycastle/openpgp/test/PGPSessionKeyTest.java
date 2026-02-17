@@ -88,9 +88,9 @@ public class PGPSessionKeyTest
     public static void main(String[] args)
         throws Exception
     {
-        PGPSessionKeyTest test = new PGPSessionKeyTest();
         Security.addProvider(new BouncyCastleProvider());
-        test.performTest();
+
+        runTest(new PGPSessionKeyTest());
     }
 
     public String getName()

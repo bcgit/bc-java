@@ -201,6 +201,21 @@ public abstract class TlsCryptoTest
         case SignatureScheme.ecdsa_secp384r1_sha384:
         case SignatureScheme.ecdsa_secp521r1_sha512:
         case SignatureScheme.sm2sig_sm3:
+            return null;
+
+        // TODO[tls-slhdsa] Add test resources for these
+        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
+        case SignatureScheme.DRAFT_slhdsa_shake_128s:
+        case SignatureScheme.DRAFT_slhdsa_shake_128f:
+        case SignatureScheme.DRAFT_slhdsa_shake_192s:
+        case SignatureScheme.DRAFT_slhdsa_shake_192f:
+        case SignatureScheme.DRAFT_slhdsa_shake_256s:
+        case SignatureScheme.DRAFT_slhdsa_shake_256f:
 
         default:
             return null;
@@ -608,8 +623,14 @@ public abstract class TlsCryptoTest
             SignatureScheme.ecdsa_secp521r1_sha512, SignatureScheme.ed25519, SignatureScheme.ed448,
             SignatureScheme.rsa_pss_pss_sha256, SignatureScheme.rsa_pss_pss_sha384, SignatureScheme.rsa_pss_pss_sha512,
             SignatureScheme.rsa_pss_rsae_sha256, SignatureScheme.rsa_pss_rsae_sha384,
-            SignatureScheme.rsa_pss_rsae_sha512, SignatureScheme.sm2sig_sm3, SignatureScheme.mldsa44,
-            SignatureScheme.mldsa65, SignatureScheme.mldsa87,
+            SignatureScheme.rsa_pss_rsae_sha512, SignatureScheme.sm2sig_sm3,
+            SignatureScheme.mldsa44, SignatureScheme.mldsa65, SignatureScheme.mldsa87,
+            SignatureScheme.DRAFT_slhdsa_sha2_128s, SignatureScheme.DRAFT_slhdsa_sha2_128f,
+            SignatureScheme.DRAFT_slhdsa_sha2_192s, SignatureScheme.DRAFT_slhdsa_sha2_192f,
+            SignatureScheme.DRAFT_slhdsa_sha2_256s, SignatureScheme.DRAFT_slhdsa_sha2_256f,
+            SignatureScheme.DRAFT_slhdsa_shake_128s, SignatureScheme.DRAFT_slhdsa_shake_128f,
+            SignatureScheme.DRAFT_slhdsa_shake_192s, SignatureScheme.DRAFT_slhdsa_shake_192f,
+            SignatureScheme.DRAFT_slhdsa_shake_256s, SignatureScheme.DRAFT_slhdsa_shake_256f,
             // These are only used for certs in 1.3 (cert verification is not done by TlsCrypto)
 //            SignatureScheme.ecdsa_sha1, SignatureScheme.rsa_pkcs1_sha1, SignatureScheme.rsa_pkcs1_sha256,
 //            SignatureScheme.rsa_pkcs1_sha384, SignatureScheme.rsa_pkcs1_sha512,

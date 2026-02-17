@@ -47,7 +47,6 @@ public class CMSAuthenticatedDataStreamGenerator
 //    private Object              _unprotectedAttributes = null;
     private int bufferSize;
     private boolean berEncodeRecipientSet;
-    private MacCalculator macCalculator;
 
     /**
      * base constructor
@@ -133,58 +132,44 @@ public class CMSAuthenticatedDataStreamGenerator
         DigestCalculator     digestCalculator)
         throws CMSException
     {
-        this.macCalculator = macCalculator;
-
         try
         {
             ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(macCalculator.getKey(), recipientInfoGenerators);
 
-            //
             // ContentInfo
-            //
             BERSequenceGenerator cGen = new BERSequenceGenerator(out);
-
             cGen.addObject(CMSObjectIdentifiers.authenticatedData);
 
-            //
-            // Authenticated Data
-            //
+            // AuthenticatedData
             BERSequenceGenerator authGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
-
-            authGen.addObject(new ASN1Integer(AuthenticatedData.calculateVersion(originatorInfo)));
-
+            authGen.addObject(ASN1Integer.valueOf(AuthenticatedData.calculateVersion(originatorInfo)));
             CMSUtils.addOriginatorInfoToGenerator(authGen, originatorInfo);
-
             CMSUtils.addRecipientInfosToGenerator(recipientInfos, authGen, berEncodeRecipientSet);
-
-            AlgorithmIdentifier macAlgId = macCalculator.getAlgorithmIdentifier();
-
-            authGen.getRawOutputStream().write(macAlgId.getEncoded());
+            authGen.addObject(macCalculator.getAlgorithmIdentifier());
 
             if (digestCalculator != null)
             {
                 authGen.addObject(new DERTaggedObject(false, 1, digestCalculator.getAlgorithmIdentifier()));
             }
-            
-            BERSequenceGenerator eiGen = new BERSequenceGenerator(authGen.getRawOutputStream());
 
-            eiGen.addObject(dataType);
+            // EncapsulatedContentInfo
+            BERSequenceGenerator eciGen = new BERSequenceGenerator(authGen.getRawOutputStream());
+            eciGen.addObject(dataType);
 
-            OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
-                    eiGen.getRawOutputStream(), 0, true, bufferSize);
+            // eContent [0] EXPLICIT OCTET STRING OPTIONAL
+            OutputStream ecStream = CMSUtils.createBEROctetOutputStream(eciGen.getRawOutputStream(), 0, true, bufferSize);
 
             OutputStream mOut;
-
             if (digestCalculator != null)
             {
-                mOut = new TeeOutputStream(octetStream, digestCalculator.getOutputStream());
+                mOut = new TeeOutputStream(ecStream, digestCalculator.getOutputStream());
             }
             else
             {
-                mOut = new TeeOutputStream(octetStream, macCalculator.getOutputStream());
+                mOut = new TeeOutputStream(ecStream, macCalculator.getOutputStream());
             }
 
-            return new CmsAuthenticatedDataOutputStream(macCalculator, digestCalculator, dataType, mOut, cGen, authGen, eiGen);
+            return new CmsAuthenticatedDataOutputStream(macCalculator, digestCalculator, dataType, mOut, cGen, authGen, eciGen);
         }
         catch (IOException e)
         {
@@ -254,7 +239,11 @@ public class CMSAuthenticatedDataStreamGenerator
 
             if (digestCalculator != null)
             {
-                parameters = Collections.unmodifiableMap(getBaseParameters(contentType, digestCalculator.getAlgorithmIdentifier(), macCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest()));
+                AlgorithmIdentifier digestAlgID = digestCalculator.getAlgorithmIdentifier();
+                AlgorithmIdentifier macAlgID = macCalculator.getAlgorithmIdentifier();
+
+                parameters = Collections.unmodifiableMap(
+                    getBaseParameters(contentType, digestAlgID, macAlgID, digestCalculator.getDigest()));
 
                 if (authGen == null)
                 {
@@ -273,7 +262,7 @@ public class CMSAuthenticatedDataStreamGenerator
             }
             else
             {
-                parameters = Collections.EMPTY_MAP;
+                parameters = CMSUtils.getEmptyParameters();
             }
 
             envGen.addObject(new DEROctetString(macCalculator.getMac()));

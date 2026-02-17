@@ -8,19 +8,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
-import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -83,6 +84,11 @@ public class CompositePrivateKey
         return new Builder(new AlgorithmIdentifier(compAlgOid));
     }
 
+    public static Builder builder(String algorithmName)
+    {
+        return builder(CompositeUtil.getOid(algorithmName));
+    }
+
     private final List<PrivateKey> keys;
     private final List<Provider> providers;
 
@@ -136,7 +142,14 @@ public class CompositePrivateKey
         if (key instanceof MLDSAPrivateKey)
         {
             // TODO: we don't insist on seed but we try to accommodate it - the debate continues
-            return ((MLDSAPrivateKey)key).getPrivateKey(true);
+            try
+            {
+                return ((MLDSAPrivateKey)key).getPrivateKey(true);
+            }
+            catch (Exception e)
+            {
+                return key;
+            }
         }
         else
         {
@@ -254,28 +267,67 @@ public class CompositePrivateKey
      */
     public byte[] getEncoded()
     {
-        if (this.algorithmIdentifier.getAlgorithm().on(MiscObjectIdentifiers.id_MLDSA_COMPSIG))
+        ASN1ObjectIdentifier algOid = algorithmIdentifier.getAlgorithm();
+
+        if (algOid.on(IANAObjectIdentifiers.id_alg))
         {
             try
             {
-                byte[] mldsaKey = ((BCMLDSAPrivateKey)keys.get(0)).getSeed();
-                PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(keys.get(1).getEncoded()));
-                byte[] tradKey = pki.getPrivateKey().getOctets();
-                return new PrivateKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaKey, tradKey)).getEncoded();
+                PrivateKey key0 = keys.get(0);
+                PrivateKey key1 = keys.get(1);
+
+                byte[] mldsaSeed = ((MLDSAPrivateKey)key0).getSeed();
+
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(key1.getEncoded());
+
+                byte[] tradSK;
+                String key1Algorithm = key1.getAlgorithm();
+                if (key1Algorithm.contains("Ed"))
+                {
+                    tradSK = ASN1OctetString.getInstance(pki.parsePrivateKey()).getOctets();
+                }
+                else if (key1Algorithm.contains("EC"))
+                {
+                    ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(pki.parsePrivateKey());
+
+                    /*
+                     * TODO
+                     * - Confirm pki.privateKeyAlgorithm is id_ecPublicKey with X9.62 Parameters namedCurve OID.
+                     * - If ecPrivateKey.parameters are present, must match pki.privateKeyAlgorithm
+                     * The private key MUST be encoded as ECPrivateKey specified in [RFC5915] with the 'NamedCurve'
+                     * parameter set to the OID of the curve, but without the 'publicKey' field.
+                     */
+                    // TODO Also need to ensure that ECPrivateKey.parameters are present
+                    ASN1BitString publicKey = ecPrivateKey.getPublicKey();
+                    if (publicKey != null)
+                    {
+                        ecPrivateKey = new ECPrivateKey(ecPrivateKey.getPrivateKey(), ecPrivateKey.getParametersObject(), null);
+                    }
+
+                    tradSK = ecPrivateKey.getEncoded(ASN1Encoding.DER);
+                }
+                else
+                {
+                    tradSK = pki.getPrivateKey().getOctets();
+                }
+
+                return new PrivateKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaSeed, tradSK)).getEncoded();
             }
             catch (IOException e)
             {
                 throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
             }
         }
+
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        if (algorithmIdentifier.getAlgorithm().equals(MiscObjectIdentifiers.id_composite_key))
+        if (MiscObjectIdentifiers.id_composite_key.equals(algOid))
         {
             for (int i = 0; i < keys.size(); i++)
             {
-                PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
-                v.add(info);
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+
+                v.add(pki);
             }
 
             try
@@ -292,8 +344,9 @@ public class CompositePrivateKey
             byte[] keyEncoding = null;
             for (int i = 0; i < keys.size(); i++)
             {
-                PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
-                keyEncoding = Arrays.concatenate(keyEncoding, info.getPrivateKey().getOctets());
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+
+                keyEncoding = Arrays.concatenate(keyEncoding, pki.getPrivateKey().getOctets());
             }
 
             try

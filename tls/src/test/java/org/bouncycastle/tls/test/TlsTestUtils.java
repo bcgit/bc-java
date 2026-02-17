@@ -156,30 +156,85 @@ public class TlsTestUtils
         {
             return getCACertResource13(SignatureScheme.ed25519);
         }
-
         if ("ed448".equalsIgnoreCase(eeCertResource))
         {
             return getCACertResource13(SignatureScheme.ed448);
         }
 
-        if ("ml_dsa_44".equalsIgnoreCase(eeCertResource))
+        if (eeCertResource.startsWith("ml_dsa_"))
         {
-            return getCACertResource13(SignatureScheme.mldsa44);
+            if ("ml_dsa_44".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.mldsa44);
+            }
+            if ("ml_dsa_65".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.mldsa65);
+            }
+            if ("ml_dsa_87".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.mldsa87);
+            }
         }
 
-        if ("ml_dsa_65".equalsIgnoreCase(eeCertResource))
+        if (eeCertResource.startsWith("slh_dsa_sha2_"))
         {
-            return getCACertResource13(SignatureScheme.mldsa65);
+            if ("slh_dsa_sha2_128s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_128s);
+            }
+            if ("slh_dsa_sha2_128f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_128f);
+            }
+            if ("slh_dsa_sha2_192s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_192s);
+            }
+            if ("slh_dsa_sha2_192f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_192f);
+            }
+            if ("slh_dsa_sha2_256s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_256s);
+            }
+            if ("slh_dsa_sha2_256f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_256f);
+            }
+        }
+        if (eeCertResource.startsWith("slh_dsa_shake_"))
+        {
+            if ("slh_dsa_shake_128s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_128s);
+            }
+            if ("slh_dsa_shake_128f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_128f);
+            }
+            if ("slh_dsa_shake_192s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_192s);
+            }
+            if ("slh_dsa_shake_192f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_192f);
+            }
+            if ("slh_dsa_shake_256s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_256s);
+            }
+            if ("slh_dsa_shake_256f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_256f);
+            }
         }
 
-        if ("ml_dsa_87".equalsIgnoreCase(eeCertResource))
-        {
-            return getCACertResource13(SignatureScheme.mldsa87);
-        }
-
-        if ("rsa".equalsIgnoreCase(eeCertResource)
-            || "rsa-enc".equalsIgnoreCase(eeCertResource)
-            || "rsa-sign".equalsIgnoreCase(eeCertResource))
+        if ("rsa".equalsIgnoreCase(eeCertResource) ||
+            "rsa-enc".equalsIgnoreCase(eeCertResource) ||
+            "rsa-sign".equalsIgnoreCase(eeCertResource))
         {
             return getCACertResource(SignatureAlgorithm.rsa);
         }
@@ -262,7 +317,30 @@ public class TlsTestUtils
             return "ml_dsa_65";
         case SignatureScheme.mldsa87:
             return "ml_dsa_87";
-
+        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
+            return "slh_dsa_sha2_128s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
+            return "slh_dsa_sha2_128f";
+        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
+            return "slh_dsa_sha2_192s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
+            return "slh_dsa_sha2_192f";
+        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
+            return "slh_dsa_sha2_256s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
+            return "slh_dsa_sha2_256f";
+        case SignatureScheme.DRAFT_slhdsa_shake_128s:
+            return "slh_dsa_shake_128s";
+        case SignatureScheme.DRAFT_slhdsa_shake_128f:
+            return "slh_dsa_shake_128f";
+        case SignatureScheme.DRAFT_slhdsa_shake_192s:
+            return "slh_dsa_shake_192s";
+        case SignatureScheme.DRAFT_slhdsa_shake_192f:
+            return "slh_dsa_shake_192f";
+        case SignatureScheme.DRAFT_slhdsa_shake_256s:
+            return "slh_dsa_shake_256s";
+        case SignatureScheme.DRAFT_slhdsa_shake_256f:
+            return "slh_dsa_shake_256f";
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

@@ -7,8 +7,8 @@ import java.security.PrivateKey;
 import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Signature;
 import java.security.SignatureException;
+import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
@@ -18,10 +18,11 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Exceptions;
 
 public abstract class BaseDeterministicOrRandomSignature
-    extends Signature
+    extends SignatureSpi
 {
     private final JcaJceHelper helper = new BCJcaJceHelper();
     private final AlgorithmParameterSpec originalSpec;
@@ -34,7 +35,6 @@ public abstract class BaseDeterministicOrRandomSignature
 
     protected BaseDeterministicOrRandomSignature(String name)
     {
-        super(name);
         this.originalSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
     }
 
@@ -123,7 +123,16 @@ public abstract class BaseDeterministicOrRandomSignature
         }
         else
         {
-            throw new InvalidAlgorithmParameterException("unknown AlgorithmParameterSpec in signature");
+            byte[] context = SpecUtil.getContextFrom(params);
+            if (context != null)
+            {                   
+                this.paramSpec = new ContextParameterSpec(context);
+                reInit();
+            }
+            else
+            {
+                throw new InvalidAlgorithmParameterException("unknown AlgorithmParameterSpec in signature");
+            }
         }
     }
 

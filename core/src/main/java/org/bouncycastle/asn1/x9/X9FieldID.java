@@ -65,7 +65,7 @@ public class X9FieldID
     {
         this.id = characteristic_two_field;
         ASN1EncodableVector fieldIdParams = new ASN1EncodableVector(3);
-        fieldIdParams.add(new ASN1Integer(m));
+        fieldIdParams.add(ASN1Integer.valueOf(m));
         
         if (k2 == 0) 
         {
@@ -75,7 +75,7 @@ public class X9FieldID
             }
 
             fieldIdParams.add(tpBasis);
-            fieldIdParams.add(new ASN1Integer(k1));
+            fieldIdParams.add(ASN1Integer.valueOf(k1));
         } 
         else 
         {
@@ -86,9 +86,9 @@ public class X9FieldID
 
             fieldIdParams.add(ppBasis);
             ASN1EncodableVector pentanomialParams = new ASN1EncodableVector(3);
-            pentanomialParams.add(new ASN1Integer(k1));
-            pentanomialParams.add(new ASN1Integer(k2));
-            pentanomialParams.add(new ASN1Integer(k3));
+            pentanomialParams.add(ASN1Integer.valueOf(k1));
+            pentanomialParams.add(ASN1Integer.valueOf(k2));
+            pentanomialParams.add(ASN1Integer.valueOf(k3));
             fieldIdParams.add(new DERSequence(pentanomialParams));
         }
         

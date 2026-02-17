@@ -10,12 +10,12 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.util.Strings;
 
 public class MLDSAKeyPairGeneratorSpi

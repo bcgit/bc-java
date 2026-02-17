@@ -11,7 +11,7 @@ source ci/common.sh
 
 
 
-export JAVA_HOME=`openjdk_21`
+export JAVA_HOME=`openjdk_25`
 export PATH=$JAVA_HOME/bin:$PATH
 
 ./gradlew clean build -x test

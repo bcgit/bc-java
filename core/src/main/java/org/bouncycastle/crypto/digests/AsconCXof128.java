@@ -58,7 +58,7 @@ public class AsconCXof128
 
     protected long loadBytes(final byte[] bytes, int inOff, int n)
     {
-        return Pack.littleEndianToLong(bytes, inOff, n);
+        return n <= 0 ? 0L : Pack.littleEndianToLong_Low(bytes, inOff, n);
     }
 
     protected void setBytes(long w, byte[] bytes, int inOff)
@@ -68,7 +68,10 @@ public class AsconCXof128
 
     protected void setBytes(long w, byte[] bytes, int inOff, int n)
     {
-        Pack.longToLittleEndian(w, bytes, inOff, n);
+        if (n > 0)
+        {
+            Pack.longToLittleEndian_Low(w, bytes, inOff, n);
+        }
     }
 
     @Override

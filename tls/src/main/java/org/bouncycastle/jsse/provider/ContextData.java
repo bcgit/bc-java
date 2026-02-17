@@ -36,6 +36,7 @@ final class ContextData
     private final ProvSSLSessionContext serverSessionContext;
     private final NamedGroupInfo.PerContext namedGroups;
     private final SignatureSchemeInfo.PerContext signatureSchemes;
+    private final int maxHandshakeMessageSize;
 
     ContextData(boolean fipsMode, JcaTlsCrypto crypto, BCX509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager, Map<String, CipherSuiteInfo> supportedCipherSuites,
@@ -56,6 +57,8 @@ final class ContextData
         this.serverSessionContext = new ProvSSLSessionContext(this);
         this.namedGroups = NamedGroupInfo.createPerContext(fipsMode, crypto);
         this.signatureSchemes = SignatureSchemeInfo.createPerContext(fipsMode, crypto, namedGroups);
+        this.maxHandshakeMessageSize = PropertyUtils.getIntegerSystemProperty(
+            "jdk.tls.maxHandshakeMessageSize", 32768, 1024, Integer.MAX_VALUE);
     }
 
     int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,
@@ -191,9 +194,9 @@ final class ContextData
         return new ProvSSLParameters(this, implGetDefaultCipherSuites(isClient), implGetDefaultProtocols(isClient));
     }
 
-    ProvSSLParameters getSupportedSSLParameters(boolean isClient)
+    int getMaxHandshakeMessageSize()
     {
-        return new ProvSSLParameters(this, getSupportedCipherSuites(), getSupportedProtocols());
+        return maxHandshakeMessageSize;
     }
 
     NamedGroupInfo.PerConnection getNamedGroupsClient(ProvSSLParameters sslParameters,
@@ -213,6 +216,11 @@ final class ContextData
         return serverSessionContext;
     }
 
+    List<SignatureSchemeInfo> getSignatureSchemes(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
+    {
+        return SignatureSchemeInfo.getSignatureSchemes(signatureSchemes, sigAndHashAlgs);
+    }
+
     SignatureSchemeInfo.PerConnection getSignatureSchemesClient(ProvSSLParameters sslParameters,
         ProtocolVersion[] activeProtocolVersions, NamedGroupInfo.PerConnection namedGroups)
     {
@@ -225,11 +233,6 @@ final class ContextData
     {
         return SignatureSchemeInfo.createPerConnectionServer(signatureSchemes, sslParameters, negotiatedVersion,
             namedGroups);
-    }
-
-    List<SignatureSchemeInfo> getSignatureSchemes(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
-    {
-        return SignatureSchemeInfo.getSignatureSchemes(signatureSchemes, sigAndHashAlgs);
     }
 
     String[] getSupportedCipherSuites()
@@ -265,6 +268,11 @@ final class ContextData
     String[] getSupportedProtocols()
     {
         return JsseUtils.getKeysArray(supportedProtocols);
+    }
+
+    ProvSSLParameters getSupportedSSLParameters(boolean isClient)
+    {
+        return new ProvSSLParameters(this, getSupportedCipherSuites(), getSupportedProtocols());
     }
 
     BCX509ExtendedKeyManager getX509KeyManager()

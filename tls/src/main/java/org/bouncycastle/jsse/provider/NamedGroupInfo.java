@@ -29,6 +29,8 @@ class NamedGroupInfo
 
     private static final String PROPERTY_NAMED_GROUPS = "jdk.tls.namedGroups";
 
+    private static final String PROPERTY_BC_EARLY_KEY_SHARES = "org.bouncycastle.jsse.client.earlyKeyShares";
+
     // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
     private enum All
     {
@@ -86,7 +88,8 @@ class NamedGroupInfo
 
         SecP256r1MLKEM768(NamedGroup.SecP256r1MLKEM768, "EC", "ML-KEM"),
         X25519MLKEM768(NamedGroup.X25519MLKEM768, "ML-KEM", "XDH"),
-        SecP384r1MLKEM1024(NamedGroup.SecP384r1MLKEM1024, "EC", "ML-KEM");
+        SecP384r1MLKEM1024(NamedGroup.SecP384r1MLKEM1024, "EC", "ML-KEM"),
+        curveMLKEM768(NamedGroup.curveSM2MLKEM768, "EC", "ML-KEM");
 
         private final int namedGroup;
         private final String name;
@@ -162,10 +165,11 @@ class NamedGroupInfo
     static class PerConnection
     {
         private final Map<Integer, NamedGroupInfo> local;
+        private final Vector localEarly;
         private final boolean localECDSA;
         private final AtomicReference<List<NamedGroupInfo>> peer;
 
-        PerConnection(Map<Integer, NamedGroupInfo> local, boolean localECDSA)
+        PerConnection(Map<Integer, NamedGroupInfo> local, Vector localEarly, boolean localECDSA)
         {
             if (local == null)
             {
@@ -173,8 +177,14 @@ class NamedGroupInfo
             }
 
             this.local = local;
+            this.localEarly = localEarly;
             this.localECDSA = localECDSA;
             this.peer = new AtomicReference<List<NamedGroupInfo>>();
+        }
+
+        Vector getLocalEarly()
+        {
+            return localEarly;
         }
 
         List<NamedGroupInfo> getPeer()
@@ -195,11 +205,13 @@ class NamedGroupInfo
     {
         private final Map<Integer, NamedGroupInfo> index;
         private final int[] candidates;
+        private final int[] earlyCandidates;
 
-        PerContext(Map<Integer, NamedGroupInfo> index, int[] candidates)
+        PerContext(Map<Integer, NamedGroupInfo> index, int[] candidates, int[] earlyCandidates)
         {
             this.index = index;
             this.candidates = candidates;
+            this.earlyCandidates = earlyCandidates;
         }
     }
 
@@ -276,15 +288,52 @@ class NamedGroupInfo
 
         boolean localECDSA = hasAnyECDSA(local);
 
-        return new PerConnection(local, localECDSA);
+        Vector localEarly = null;
+        {
+            String[] earlyKeyShares = sslParameters.getEarlyKeyShares();
+
+            int[] earlyCandidates;
+            if (earlyKeyShares == null)
+            {
+                earlyCandidates = perContext.earlyCandidates;
+            }
+            else
+            {
+                earlyCandidates = createEarlyCandidates(perContext.index, earlyKeyShares,
+                    "BCSSLParameters.earlyKeyShares");
+            }
+
+            if (earlyCandidates != null)
+            {
+                int earlyCount = earlyCandidates.length;
+                localEarly = new Vector(earlyCount);
+                for (int i = 0; i < earlyCount; ++i)
+                {
+                    Integer earlyCandidate = Integers.valueOf(earlyCandidates[i]);
+
+                    NamedGroupInfo earlyNamedGroupInfo = local.get(earlyCandidate);
+                    if (earlyNamedGroupInfo == null || !earlyNamedGroupInfo.isEnabled())
+                    {
+                        LOG.warning("Candidate early key share not an enabled named group: "
+                            + NamedGroup.getName(earlyCandidates[i]));
+                        continue;
+                    }
+
+                    localEarly.add(earlyCandidate);
+                }
+            }
+        }
+
+        return new PerConnection(local, localEarly, localECDSA);
     }
 
     static PerContext createPerContext(boolean isFipsContext, JcaTlsCrypto crypto)
     {
         Map<Integer, NamedGroupInfo> index = createIndex(isFipsContext, crypto);
         int[] candidates = createCandidatesFromProperty(index, PROPERTY_NAMED_GROUPS);
+        int[] earlyCandidates = createEarlyCandidatesFromProperty(index, PROPERTY_BC_EARLY_KEY_SHARES);
 
-        return new PerContext(index, candidates);
+        return new PerContext(index, candidates, earlyCandidates);
     }
 
     static DefaultedResult getMaximumBitsServerECDH(PerConnection perConnection)
@@ -537,7 +586,7 @@ class NamedGroupInfo
                 continue;
             }
 
-            NamedGroupInfo namedGroupInfo = index.get(namedGroup);
+            NamedGroupInfo namedGroupInfo = index.get(Integers.valueOf(namedGroup));
             if (null == namedGroupInfo)
             {
                 LOG.warning("'" + description + "' contains unsupported NamedGroup: " + name);
@@ -559,6 +608,52 @@ class NamedGroupInfo
         if (result.length < 1)
         {
             LOG.severe("'" + description + "' contained no usable NamedGroup values");
+        }
+        return result;
+    }
+
+    private static int[] createEarlyCandidatesFromProperty(Map<Integer, NamedGroupInfo> index, String propertyName)
+    {
+        String[] names = PropertyUtils.getStringArraySystemProperty(propertyName);
+        if (null == names)
+        {
+            return null;
+        }
+
+        return createEarlyCandidates(index, names, propertyName);
+    }
+
+    private static int[] createEarlyCandidates(Map<Integer, NamedGroupInfo> index, String[] names, String description)
+    {
+        int[] result = new int[names.length];
+        int count = 0;
+        for (String name : names)
+        {
+            int namedGroup = getNamedGroupByName(name);
+            if (namedGroup < 0)
+            {
+                LOG.warning("'" + description + "' contains unrecognised NamedGroup: " + name);
+                continue;
+            }
+
+            NamedGroupInfo namedGroupInfo = index.get(Integers.valueOf(namedGroup));
+            if (null == namedGroupInfo)
+            {
+                LOG.warning("'" + description + "' contains unsupported NamedGroup: " + name);
+                continue;
+            }
+
+            if (!namedGroupInfo.isEnabled())
+            {
+                LOG.warning("'" + description + "' contains disabled NamedGroup: " + name);
+                continue;
+            }
+
+            result[count++] = namedGroup;
+        }
+        if (count < result.length)
+        {
+            result = Arrays.copyOf(result, count);
         }
         return result;
     }
@@ -618,7 +713,7 @@ class NamedGroupInfo
         {
             int namedGroup = namedGroups[i];
 
-            NamedGroupInfo namedGroupInfo = namedGroupInfos.get(namedGroup);
+            NamedGroupInfo namedGroupInfo = namedGroupInfos.get(Integers.valueOf(namedGroup));
             if (null != namedGroupInfo)
             {
                 result.add(namedGroupInfo);

@@ -25,7 +25,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -36,6 +35,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
@@ -55,73 +55,67 @@ public class KeyFactorySpi
     extends BaseKeyFactorySpi
     implements AsymmetricKeyInfoConverter
 {
+    private static AlgorithmIdentifier createECAlgID(ASN1ObjectIdentifier curveOid)
+    {
+        return new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(curveOid));
+    }
 
     //Specific algorithm identifiers of all component signature algorithms for SubjectPublicKeyInfo. These do not need to be all initialized here but makes the code more readable IMHO.
     private static final AlgorithmIdentifier mlDsa44 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_44);
     private static final AlgorithmIdentifier mlDsa65 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_65);
     private static final AlgorithmIdentifier mlDsa87 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_87);
-    private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
+//    private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
     private static final AlgorithmIdentifier ed25519 = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519);
-    private static final AlgorithmIdentifier ecDsaP256 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp256r1));
-    private static final AlgorithmIdentifier ecDsaBrainpoolP256r1 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(TeleTrusTObjectIdentifiers.brainpoolP256r1));
-    private static final AlgorithmIdentifier rsa = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption);
     private static final AlgorithmIdentifier ed448 = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448);
-    private static final AlgorithmIdentifier ecDsaP384 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp384r1));
-    private static final AlgorithmIdentifier ecDsaP521 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp521r1));
-    private static final AlgorithmIdentifier ecDsaBrainpoolP384r1 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(TeleTrusTObjectIdentifiers.brainpoolP384r1));
+    private static final AlgorithmIdentifier ecDsaP256 = createECAlgID(SECObjectIdentifiers.secp256r1);
+    private static final AlgorithmIdentifier ecDsaP384 = createECAlgID(SECObjectIdentifiers.secp384r1);
+    private static final AlgorithmIdentifier ecDsaP521 = createECAlgID(SECObjectIdentifiers.secp521r1);
+    private static final AlgorithmIdentifier ecDsaBrainpoolP256r1 = createECAlgID(TeleTrusTObjectIdentifiers.brainpoolP256r1);
+    private static final AlgorithmIdentifier ecDsaBrainpoolP384r1 = createECAlgID(TeleTrusTObjectIdentifiers.brainpoolP384r1);
+    private static final AlgorithmIdentifier rsa = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption);
 
     private static Map<ASN1ObjectIdentifier, AlgorithmIdentifier[]> pairings = new HashMap<ASN1ObjectIdentifier, AlgorithmIdentifier[]>();
     private static Map<ASN1ObjectIdentifier, int[]> componentKeySizes = new HashMap<ASN1ObjectIdentifier, int[]>();
 
     static
     {
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, new AlgorithmIdentifier[]{mlDsa65, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, new AlgorithmIdentifier[]{mlDsa65, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA256, new AlgorithmIdentifier[]{mlDsa65, ecDsaBrainpoolP256r1});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, new AlgorithmIdentifier[]{mlDsa87, ed448});
-
-        pairings.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new AlgorithmIdentifier[]{mlDsa44, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new AlgorithmIdentifier[]{mlDsa44, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new AlgorithmIdentifier[]{mlDsa44, ed25519});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new AlgorithmIdentifier[]{mlDsa44, ecDsaP256});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaP256});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaP384});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaBrainpoolP256r1});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new AlgorithmIdentifier[]{mlDsa65, ed25519});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaP384});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaBrainpoolP384r1});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new AlgorithmIdentifier[]{mlDsa87, ed448});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa87, rsa});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaP521});
-        pairings.put(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa87, rsa});
-
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, new int[]{1952, 256});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, new int[]{1952, 256});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA256, new int[]{1952, 76});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, new int[]{2592, Ed448.PUBLIC_KEY_SIZE});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new AlgorithmIdentifier[]{mlDsa44, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new AlgorithmIdentifier[]{mlDsa44, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new AlgorithmIdentifier[]{mlDsa44, ed25519});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new AlgorithmIdentifier[]{mlDsa44, ecDsaP256});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaP256});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaP384});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaBrainpoolP256r1});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new AlgorithmIdentifier[]{mlDsa65, ed25519});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaP384});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaBrainpoolP384r1});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new AlgorithmIdentifier[]{mlDsa87, ed448});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa87, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaP521});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa87, rsa});
         
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new int[]{1312, 268});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new int[]{1312, 284});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new int[]{1312, Ed25519.PUBLIC_KEY_SIZE});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new int[]{1312, 76});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new int[]{1952, 256});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new int[]{1952, 256});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new int[]{1952, 542});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new int[]{1952, 542});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new int[]{1952, 76});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new int[]{1952, 87});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new int[]{1952, 76});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new int[]{1952, Ed25519.PUBLIC_KEY_SIZE});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new int[]{2592, 87});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new int[]{2592, 87});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new int[]{2592, Ed448.PUBLIC_KEY_SIZE});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new int[]{2592, 542});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new int[]{2592, 256});
-        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new int[]{2592, 93});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new int[]{1312, 268});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new int[]{1312, 284});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new int[]{1312, Ed25519.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new int[]{1312, 76});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new int[]{1952, 256});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new int[]{1952, 256});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new int[]{1952, 542});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new int[]{1952, 542});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new int[]{1952, 76});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new int[]{1952, 87});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new int[]{1952, 76});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new int[]{1952, Ed25519.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new int[]{2592, 87});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new int[]{2592, 87});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new int[]{2592, Ed448.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new int[]{2592, 542});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new int[]{2592, 256});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new int[]{2592, 93});
     }
 
     private JcaJceHelper helper;
@@ -224,19 +218,19 @@ public class KeyFactorySpi
                 data = keyInfo.getPrivateKey().getOctets();
             }
             v.add(new DEROctetString(Arrays.copyOfRange(data, 0, 32)));
-//            String traditionAlg = factories.get(1).getAlgorithm();
-//            if (traditionAlg.equals("Ed25519"))
-//            {
-//                v.add(new DEROctetString(Arrays.concatenate(new byte[]{0x04, 0x20}, Arrays.copyOfRange(data, 32, data.length))));
-//            }
-//            else if (traditionAlg.equals("Ed448"))
-//            {
-//                v.add(new DEROctetString(Arrays.concatenate(new byte[]{0x04, 0x39}, Arrays.copyOfRange(data, 32, data.length))));
-//            }
-//            else
-//            {
-            v.add(new DEROctetString(Arrays.copyOfRange(data, 32, data.length)));
-//            }
+            String traditionAlg = factories.get(1).getAlgorithm();
+            if (traditionAlg.equals("Ed25519"))
+            {
+                v.add(new DEROctetString(Arrays.concatenate(new byte[]{0x04, 0x20}, Arrays.copyOfRange(data, 32, data.length))));
+            }
+            else if (traditionAlg.equals("Ed448"))
+            {
+                v.add(new DEROctetString(Arrays.concatenate(new byte[]{0x04, 0x39}, Arrays.copyOfRange(data, 32, data.length))));
+            }
+            else
+            {
+                v.add(new DEROctetString(Arrays.copyOfRange(data, 32, data.length)));
+            }
             seq = new DERSequence(v);
 
             PrivateKey[] privateKeys = new PrivateKey[seq.size()];
@@ -298,7 +292,7 @@ public class KeyFactorySpi
 
         try
         {
-            seq = DERSequence.getInstance(keyInfo.getPublicKeyData().getBytes());
+            seq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
         }
         catch (Exception e)
         {
@@ -308,7 +302,8 @@ public class KeyFactorySpi
         if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
             || MiscObjectIdentifiers.id_composite_key.equals(keyIdentifier))
         {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getBytes());
+            // TODO This is redundant with 'seq' calculation above 
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
             PublicKey[] pubKeys = new PublicKey[keySeq.size()];
 
             for (int i = 0; i != keySeq.size(); i++)

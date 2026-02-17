@@ -5,6 +5,10 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.spec.AlgorithmParameterSpec;
 
+/**
+ * @deprecated use org.bouncycastle.jcajce.util.SpecUtil
+ */
+@Deprecated
 public class SpecUtil
 {
     private static Class[] NO_PARAMS = new Class[0];

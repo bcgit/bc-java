@@ -22,9 +22,23 @@ import junit.framework.TestCase;
 public class MLDSACredentialsTest
     extends TestCase
 {
+    private static final String PROPERTY_CLIENT_SIGNATURE_SCHEMES = "jdk.tls.client.SignatureSchemes";
+    private static final String PROPERTY_SERVER_SIGNATURE_SCHEMES = "jdk.tls.server.SignatureSchemes";
+
     protected void setUp()
     {
         ProviderUtils.setupLowPriority(false);
+
+        String signatureSchemes = "mldsa44, mldsa65, mldsa87";
+
+        System.setProperty(PROPERTY_CLIENT_SIGNATURE_SCHEMES, signatureSchemes);
+        System.setProperty(PROPERTY_SERVER_SIGNATURE_SCHEMES, signatureSchemes);
+    }
+
+    protected void tearDown()
+    {
+        System.clearProperty(PROPERTY_CLIENT_SIGNATURE_SCHEMES);
+        System.clearProperty(PROPERTY_SERVER_SIGNATURE_SCHEMES);
     }
 
     private static final String HOST = "localhost";
@@ -177,17 +191,17 @@ public class MLDSACredentialsTest
 
     public void test13_MLDSA44() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA44, "TLSv1.3", TestUtils.generateMLDSA44KeyPair());
+        implTestMLDSACredentials(PORT_NO_13_MLDSA44, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-44"));
     }
 
     public void test13_MLDSA65() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA65, "TLSv1.3", TestUtils.generateMLDSA65KeyPair());
+        implTestMLDSACredentials(PORT_NO_13_MLDSA65, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-65"));
     }
 
     public void test13_MLDSA87() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA87, "TLSv1.3", TestUtils.generateMLDSA87KeyPair());
+        implTestMLDSACredentials(PORT_NO_13_MLDSA87, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-87"));
     }
 
     private void implTestMLDSACredentials(int port, String protocol, KeyPair caKeyPair) throws Exception

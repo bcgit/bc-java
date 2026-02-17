@@ -73,7 +73,7 @@ public final class IDEA
     {
         public PBEWithSHAAndIDEA()
         {
-            super(CBCBlockCipher.newInstance(new IDEAEngine()));
+            super(CBCBlockCipher.newInstance(new IDEAEngine()), PKCS12, SHA1, 128, 8);
         }
     }
 

@@ -21,7 +21,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  *     originator [0] EXPLICIT OriginatorIdentifierOrKey,
  *     ukm [1] EXPLICIT UserKeyingMaterial OPTIONAL,
  *     keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
- *     recipientEncryptedKeys RecipientEncryptedKeys 
+ *     recipientEncryptedKeys RecipientEncryptedKeys
  * }
  *
  * UserKeyingMaterial ::= OCTET STRING
@@ -35,14 +35,14 @@ public class KeyAgreeRecipientInfo
     private ASN1OctetString             ukm;
     private AlgorithmIdentifier         keyEncryptionAlgorithm;
     private ASN1Sequence                recipientEncryptedKeys;
-    
+
     public KeyAgreeRecipientInfo(
         OriginatorIdentifierOrKey   originator,
         ASN1OctetString             ukm,
         AlgorithmIdentifier         keyEncryptionAlgorithm,
         ASN1Sequence                recipientEncryptedKeys)
     {
-        this.version = new ASN1Integer(3);
+        this.version = ASN1Integer.THREE;
         this.originator = originator;
         this.ukm = ukm;
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
@@ -53,7 +53,7 @@ public class KeyAgreeRecipientInfo
         ASN1Sequence seq)
     {
         int index = 0;
-        
+
         version = (ASN1Integer)seq.getObjectAt(index++);
         originator = OriginatorIdentifierOrKey.getInstance(
                             (ASN1TaggedObject)seq.getObjectAt(index++), true);
@@ -69,7 +69,7 @@ public class KeyAgreeRecipientInfo
 
         recipientEncryptedKeys = (ASN1Sequence)seq.getObjectAt(index++);
     }
-    
+
     /**
      * Return a KeyAgreeRecipientInfo object from a tagged object.
      *
@@ -85,7 +85,7 @@ public class KeyAgreeRecipientInfo
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a KeyAgreeRecipientInfo object from the given object.
      * <p>
@@ -106,14 +106,14 @@ public class KeyAgreeRecipientInfo
         {
             return (KeyAgreeRecipientInfo)obj;
         }
-        
+
         if (obj != null)
         {
             return new KeyAgreeRecipientInfo(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
-    } 
+    }
 
     public ASN1Integer getVersion()
     {
@@ -140,7 +140,7 @@ public class KeyAgreeRecipientInfo
         return recipientEncryptedKeys;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
@@ -149,12 +149,12 @@ public class KeyAgreeRecipientInfo
 
         v.add(version);
         v.add(new DERTaggedObject(true, 0, originator));
-        
+
         if (ukm != null)
         {
             v.add(new DERTaggedObject(true, 1, ukm));
         }
-        
+
         v.add(keyEncryptionAlgorithm);
         v.add(recipientEncryptedKeys);
 

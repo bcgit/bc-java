@@ -65,7 +65,7 @@ public class KemOtherInfo
         AlgorithmIdentifier mac,
         ASN1OctetString ct)
     {
-        this(transactionID, senderNonce, recipNonce, new ASN1Integer(len), mac, ct);
+        this(transactionID, senderNonce, recipNonce, ASN1Integer.valueOf(len), mac, ct);
     }
 
     private KemOtherInfo(ASN1Sequence seq)

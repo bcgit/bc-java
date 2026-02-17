@@ -17,6 +17,7 @@ import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.NamedGroupRole;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
@@ -41,6 +42,7 @@ class MockTlsHybridClient
         NamedGroup.SecP256r1MLKEM768,
         NamedGroup.X25519MLKEM768,
         NamedGroup.SecP384r1MLKEM1024,
+        NamedGroup.curveSM2MLKEM768,
     };
 
     MockTlsHybridClient(TlsCrypto crypto,  TlsSession session)
@@ -124,7 +126,7 @@ class MockTlsHybridClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS hybrid client negotiated " + serverVersion);
+        System.out.println("TLS hybrid client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException
@@ -187,10 +189,18 @@ class MockTlsHybridClient
     {
         super.notifyHandshakeComplete();
 
-        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        SecurityParameters securityParameters = context.getSecurityParametersConnection();
+
+        ProtocolName protocolName = securityParameters.getApplicationProtocol();
         if (protocolName != null)
         {
             System.out.println("Client ALPN: " + protocolName.getUtf8Decoding());
+        }
+
+        int negotiatedGroup = securityParameters.getNegotiatedGroup();
+        if (negotiatedGroup >= 0)
+        {
+            System.out.println("Client negotiated group: " + NamedGroup.getText(negotiatedGroup));
         }
 
         TlsSession newSession = context.getSession();

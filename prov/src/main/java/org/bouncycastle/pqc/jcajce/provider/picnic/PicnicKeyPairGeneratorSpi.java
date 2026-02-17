@@ -9,12 +9,12 @@ import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.pqc.crypto.picnic.PicnicKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec;
 import org.bouncycastle.util.Strings;
 

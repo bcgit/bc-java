@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -161,13 +162,32 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestOids.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, NISTObjectIdentifiers.id_shake256);
         digestOids.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, NISTObjectIdentifiers.id_shake256);
 
-        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_44, NISTObjectIdentifiers.id_shake256);
-        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_65, NISTObjectIdentifiers.id_shake256);
-        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_87, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_44, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_65, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_87, NISTObjectIdentifiers.id_sha512);
         digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, NISTObjectIdentifiers.id_sha512);
         digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, NISTObjectIdentifiers.id_sha512);
         digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, NISTObjectIdentifiers.id_sha512);
 
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, NISTObjectIdentifiers.id_sha512);
+        
         digestOids.put(BCObjectIdentifiers.falcon, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.falcon_512, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.falcon_1024, NISTObjectIdentifiers.id_shake256);
@@ -311,7 +331,7 @@ public class DefaultDigestAlgorithmIdentifierFinder
                 return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
             }
 
-            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512));
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, ASN1Integer.valueOf(512));
         }
 
         ASN1ObjectIdentifier digAlgOid;

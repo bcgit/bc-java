@@ -86,6 +86,7 @@ abstract class SSLParametersUtil
         ssl.setSignatureSchemes(prov.getSignatureSchemes());
         ssl.setSignatureSchemesCert(prov.getSignatureSchemesCert());
         ssl.setNamedGroups(prov.getNamedGroups());
+        ssl.setEarlyKeyShares(prov.getEarlyKeyShares());
 
         return ssl;
     }
@@ -180,6 +181,11 @@ abstract class SSLParametersUtil
         }
 
         // Unsupported as of JDK 21
+
+//        if (null != setEarlyKeyShares)
+//        {
+//            set(ssl, setEarlyKeyShares, prov.getEarlyKeyShares());
+//        }
 
 //        if (null != setUseNamedGroupsOrder)
 //        {
@@ -292,6 +298,11 @@ abstract class SSLParametersUtil
 
         // Unsupported as of JDK 21
 
+//        if (null != getEarlyKeyShares)
+//        {
+//            bc.setEarlyKeyShares((String[])get(ssl, getEarlyKeyShares));
+//        }
+
 //        if (null != getUseNamedGroupsOrder)
 //        {
 //            bc.setUseNamedGroupsOrder((Boolean)get(ssl, getUseNamedGroupsOrder));
@@ -370,6 +381,8 @@ abstract class SSLParametersUtil
         prov.setSignatureSchemes(ssl.getSignatureSchemes());
 
         prov.setNamedGroups(ssl.getNamedGroups());
+
+        prov.setEarlyKeyShares(ssl.getEarlyKeyShares());
 
         prov.setSignatureSchemesCert(ssl.getSignatureSchemesCert());
     }
@@ -481,6 +494,11 @@ abstract class SSLParametersUtil
         }
 
         // Unsupported as of JDK 21
+
+//        if (null != getEarlyKeyShares)
+//        {
+//            prov.setEarlyKeyShares((String[])get(ssl, getEarlyKeyShares));
+//        }
 
 //        if (null != getUseNamedGroupsOrder)
 //        {

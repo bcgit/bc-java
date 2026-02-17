@@ -186,21 +186,16 @@ public class CMSSignedDataStreamGenerator
 //            // TODO signedAttrs must be present for all signers
 //        }
 
-        //
         // ContentInfo
-        //
         BERSequenceGenerator sGen = new BERSequenceGenerator(out);
-        
         sGen.addObject(CMSObjectIdentifiers.signedData);
         
-        //
-        // Signed Data
-        //
+        // SignedData
         BERSequenceGenerator sigGen = new BERSequenceGenerator(sGen.getRawOutputStream(), 0, true);
-        
         sigGen.addObject(calculateVersion(eContentType));
         
         Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+        digestAlgs.addAll(extraDigestAlgorithms);
 
         //
         // add the precalculated SignerInfo digest algorithms.
@@ -219,27 +214,28 @@ public class CMSSignedDataStreamGenerator
         for (Iterator it = signerGens.iterator(); it.hasNext();)
         {
             SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
-
-            digestAlgs.add(signerGen.getDigestAlgorithm());
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signerGen.getDigestAlgorithm(), digestAlgIdFinder));
         }
 
-        sigGen.getRawOutputStream().write(CMSUtils.convertToDlSet(digestAlgs).getEncoded());
-        
-        BERSequenceGenerator eiGen = new BERSequenceGenerator(sigGen.getRawOutputStream());
-        eiGen.addObject(eContentType);
 
-        // If encapsulating, add the data as an octet string in the sequence
-        OutputStream encapStream = encapsulate
-            ? CMSUtils.createBEROctetOutputStream(eiGen.getRawOutputStream(), 0, true, _bufferSize)
+        sigGen.addObject(CMSUtils.convertToDlSet(digestAlgs));
+
+        // EncapsulatedContentInfo
+        BERSequenceGenerator eciGen = new BERSequenceGenerator(sigGen.getRawOutputStream());
+        eciGen.addObject(eContentType);
+
+        // eContent [0] EXPLICIT OCTET STRING OPTIONAL
+        OutputStream ecStream = encapsulate
+            ? CMSUtils.createBEROctetOutputStream(eciGen.getRawOutputStream(), 0, true, _bufferSize)
             : null;
 
         // Also send the data to 'dataOutputStream' if necessary
-        OutputStream contentStream = CMSUtils.getSafeTeeOutputStream(dataOutputStream, encapStream);
+        OutputStream contentStream = CMSUtils.getSafeTeeOutputStream(dataOutputStream, ecStream);
 
         // Let all the signers see the data as it is written
         OutputStream sigStream = CMSUtils.attachSignersToOutputStream(signerGens, contentStream);
 
-        return new CmsSignedDataOutputStream(sigStream, eContentType, sGen, sigGen, eiGen);
+        return new CmsSignedDataOutputStream(sigStream, eContentType, sGen, sigGen, eciGen);
     }
 
     /**
@@ -329,7 +325,7 @@ public class CMSSignedDataStreamGenerator
 
         if (otherCert)
         {
-            return new ASN1Integer(5);
+            return ASN1Integer.FIVE;
         }
 
         if (crls != null)         // no need to check if otherCert is true
@@ -346,30 +342,30 @@ public class CMSSignedDataStreamGenerator
 
         if (otherCrl)
         {
-            return new ASN1Integer(5);
+            return ASN1Integer.FIVE;
         }
 
         if (attrCertV2Found)
         {
-            return new ASN1Integer(4);
+            return ASN1Integer.FOUR;
         }
 
         if (attrCertV1Found)
         {
-            return new ASN1Integer(3);
+            return ASN1Integer.THREE;
         }
 
         if (checkForVersion3(_signers, signerGens))
         {
-            return new ASN1Integer(3);
+            return ASN1Integer.THREE;
         }
 
         if (!CMSObjectIdentifiers.data.equals(contentOid))
         {
-            return new ASN1Integer(3);
+            return ASN1Integer.THREE;
         }
 
-        return new ASN1Integer(1);
+        return ASN1Integer.ONE;
     }
 
     private static boolean checkForVersion3(List signerInfos, List signerInfoGens)
@@ -455,14 +451,14 @@ public class CMSSignedDataStreamGenerator
             {
                 ASN1Set certSet = CMSUtils.createBerSetFromList(certs);
 
-                _sigGen.getRawOutputStream().write(new BERTaggedObject(false, 0, certSet).getEncoded());
+                _sigGen.addObject(new BERTaggedObject(false, 0, certSet));
             }
 
             if (crls.size() != 0)
             {
                 ASN1Set crlSet = CMSUtils.createBerSetFromList(crls);
 
-                _sigGen.getRawOutputStream().write(new BERTaggedObject(false, 1, crlSet).getEncoded());
+                _sigGen.addObject(new BERTaggedObject(false, 1, crlSet));
             }
 
             //
@@ -524,8 +520,8 @@ public class CMSSignedDataStreamGenerator
                     signerInfos.add(signer.toASN1Structure());
                 }
             }
-            
-            _sigGen.getRawOutputStream().write(new DERSet(signerInfos).getEncoded());
+
+            _sigGen.addObject(new DERSet(signerInfos));
 
             _sigGen.close();
             _sGen.close();

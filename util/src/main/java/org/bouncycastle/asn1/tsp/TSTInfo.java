@@ -65,7 +65,7 @@ public class TSTInfo
 
         // default for ordering
         ordering = ASN1Boolean.getInstance(false);
-        
+
         while (e.hasMoreElements())
         {
             ASN1Object o = (ASN1Object) e.nextElement();
@@ -107,7 +107,7 @@ public class TSTInfo
             Accuracy accuracy, ASN1Boolean ordering, ASN1Integer nonce,
             GeneralName tsa, Extensions extensions)
     {
-        version = new ASN1Integer(1);
+        version = ASN1Integer.ONE;
         this.tsaPolicyId = tsaPolicyId;
         this.messageImprint = messageImprint;
         this.serialNumber = serialNumber;
@@ -172,7 +172,7 @@ public class TSTInfo
 
     /**
      * <pre>
-     * 
+     *
      *     TSTInfo ::= SEQUENCE  {
      *        version                      INTEGER  { v1(1) },
      *        policy                       TSAPolicyId,
@@ -190,7 +190,7 @@ public class TSTInfo
      *          -- in TimeStampReq.  In that case it MUST have the same value.
      *        tsa                          [0] GeneralName          OPTIONAL,
      *        extensions                   [1] IMPLICIT Extensions   OPTIONAL  }
-     * 
+     *
      * </pre>
      */
     public ASN1Primitive toASN1Primitive()
@@ -207,22 +207,22 @@ public class TSTInfo
         {
             seq.add(accuracy);
         }
-        
+
         if (ordering != null && ordering.isTrue())
         {
             seq.add(ordering);
         }
-        
+
         if (nonce != null)
         {
             seq.add(nonce);
         }
-        
+
         if (tsa != null)
         {
             seq.add(new DERTaggedObject(true, 0, tsa));
         }
-        
+
         if (extensions != null)
         {
             seq.add(new DERTaggedObject(false, 1, extensions));

@@ -35,7 +35,7 @@ public class TimeStampedData
 
     public TimeStampedData(ASN1IA5String dataUri, MetaData metaData, ASN1OctetString content, Evidence temporalEvidence)
     {
-        this.version = new ASN1Integer(1);
+        this.version = ASN1Integer.ONE;
         this.dataUri = dataUri;
         this.metaData = metaData;
         this.content = content;

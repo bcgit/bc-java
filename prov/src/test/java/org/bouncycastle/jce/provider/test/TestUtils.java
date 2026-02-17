@@ -93,7 +93,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
@@ -125,12 +125,12 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE));
+        certGen.setSignature(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_unsigned));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
         TBSCertificate tbsCert = certGen.generateTBSCertificate();
@@ -138,7 +138,7 @@ class TestUtils
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE));
+        v.add(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_unsigned));
         v.add(new DERBitString(new byte[0]));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
@@ -157,7 +157,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(signerName);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));

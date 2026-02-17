@@ -13,6 +13,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
@@ -2361,6 +2362,26 @@ public class PKCS12StoreTest
         }
     }
 
+    public void testPKCS12StoreWrongPassword()
+        throws Exception
+    {
+        KeyStore store = KeyStore.getInstance("PKCS12", BC);
+        ByteArrayInputStream stream = new ByteArrayInputStream(pkcs12);
+
+        try
+        {
+            store.load(stream, "Goodbye World!".toCharArray());
+            fail("no exception");
+        }
+        catch (IOException e)
+        {            
+            if (!(e.getCause() instanceof UnrecoverableKeyException))
+            {
+                fail("no exception cause found for wrong password");
+            }
+        }
+    }
+
     private void testChainCycle()
         throws Exception
     {
@@ -2551,7 +2572,7 @@ public class PKCS12StoreTest
             }
             catch (IOException e)
             {
-                isTrue(e.getMessage().contains("PKCS12 key store mac invalid - wrong password or corrupted file."));
+                isTrue(e.getMessage().contains("PKCS12 key store mac invalid - wrong password or corrupted file"));
             }
         }
         // invalid test vector that throws exception
@@ -2764,6 +2785,7 @@ public class PKCS12StoreTest
         testRawKeyBagStore();
         testAES256_AES128();
         testAES256GCM_AES128_GCM();
+        testPKCS12StoreWrongPassword();
 
         // converter tests
 

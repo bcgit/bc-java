@@ -302,6 +302,8 @@ public class TlsServerProtocol
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
 
+            securityParameters.negotiatedGroup = selectedGroup;
+
             clientShare = TlsUtils.findEarlyKeyShare(clientShares, selectedGroup);
 
             if (null == clientShare)
@@ -332,7 +334,7 @@ public class TlsServerProtocol
             int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
 
             if (!TlsUtils.isNullOrEmpty(serverSupportedGroups) &&
-                clientShare.getNamedGroup() != serverSupportedGroups[0] &&
+                serverSupportedGroups[0] != securityParameters.getNegotiatedGroup() &&
                 !serverEncryptedExtensions.containsKey(TlsExtensionsUtils.EXT_supported_groups))
             {
                 TlsExtensionsUtils.addSupportedGroupsExtension(serverEncryptedExtensions, serverSupportedGroups);
@@ -397,9 +399,14 @@ public class TlsServerProtocol
 
         TlsSecret sharedSecret;
         {
-            int namedGroup = clientShare.getNamedGroup();
+            int negotiatedGroup = securityParameters.getNegotiatedGroup();
 
-            TlsAgreement agreement = TlsUtils.createKeyShare(crypto, namedGroup, true);
+            if (clientShare.getNamedGroup() != negotiatedGroup)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            TlsAgreement agreement = TlsUtils.createKeyShare(crypto, negotiatedGroup, true);
             if (agreement == null)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -408,7 +415,7 @@ public class TlsServerProtocol
             agreement.receivePeerValue(clientShare.getKeyExchange());
 
             byte[] key_exchange = agreement.generateEphemeral();
-            KeyShareEntry serverShare = new KeyShareEntry(namedGroup, key_exchange);
+            KeyShareEntry serverShare = new KeyShareEntry(negotiatedGroup, key_exchange);
             TlsExtensionsUtils.addKeyShareServerHello(serverHelloExtensions, serverShare);
 
             sharedSecret = agreement.calculateSecret();
@@ -1122,11 +1129,11 @@ public class TlsServerProtocol
                     ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
                     if (null == serverCredentials)
                     {
-                        this.keyExchange.skipServerCredentials();
+                        keyExchange.skipServerCredentials();
                     }
                     else
                     {
-                        this.keyExchange.processServerCredentials(serverCredentials);
+                        keyExchange.processServerCredentials(serverCredentials);
 
                         serverCertificate = serverCredentials.getCertificate();
                         sendCertificateMessage(serverCertificate, endPointHash);
@@ -1152,7 +1159,7 @@ public class TlsServerProtocol
                     }
                 }
 
-                byte[] serverKeyExchange = this.keyExchange.generateServerKeyExchange();
+                byte[] serverKeyExchange = keyExchange.generateServerKeyExchange();
                 if (serverKeyExchange != null)
                 {
                     sendServerKeyExchangeMessage(serverKeyExchange);
@@ -1182,7 +1189,7 @@ public class TlsServerProtocol
                             throw new TlsFatalAlert(AlertDescription.internal_error);
                         }
 
-                        this.certificateRequest = TlsUtils.validateCertificateRequest(this.certificateRequest, this.keyExchange);
+                        this.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, keyExchange);
 
                         TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
 
@@ -1271,7 +1278,7 @@ public class TlsServerProtocol
             {
                 if (null == certificateRequest)
                 {
-                    this.keyExchange.skipClientCredentials();
+                    keyExchange.skipClientCredentials();
                 }
                 else if (TlsUtils.isTLSv12(tlsServerContext))
                 {
@@ -1536,6 +1543,8 @@ public class TlsServerProtocol
             // NOTE: For (D)TLS, session hash potentially needed for extended_master_secret
             establishMasterSecret(tlsServerContext, keyExchange);
         }
+
+        this.keyExchange = null;
 
         recordStream.setPendingCipher(TlsUtils.initCipher(tlsServerContext));
 

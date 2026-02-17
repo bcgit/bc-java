@@ -43,7 +43,7 @@ public class ScryptParams
     {
         this(salt, BigInteger.valueOf(costParameter), BigInteger.valueOf(blockSize), BigInteger.valueOf(parallelizationParameter), BigInteger.valueOf(keyLength));
     }
-    
+
     /**
      * Base constructor.
      *

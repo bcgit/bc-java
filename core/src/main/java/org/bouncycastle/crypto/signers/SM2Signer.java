@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.signers;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
@@ -30,6 +32,8 @@ import org.bouncycastle.util.encoders.Hex;
 public class SM2Signer
     implements Signer, ECConstants
 {
+    private static final Logger LOG = Logger.getLogger(SM2Signer.class.getName());
+
     private static final class State
     {
         static final int UNINITIALIZED  = 0;
@@ -79,9 +83,10 @@ public class SM2Signer
             baseParam = ((ParametersWithID)param).getParameters();
             userID = ((ParametersWithID)param).getID();
 
+            // The length in bits must be expressible in two bytes
             if (userID.length >= 8192)
             {
-                throw new IllegalArgumentException("SM2 user ID must be less than 2^13 bits long");
+                throw new IllegalArgumentException("SM2 user ID must be less than 2^16 bits long");
             }
         }
         else
@@ -159,6 +164,10 @@ public class SM2Signer
         }
         catch (Exception e)
         {
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.log(Level.FINE, "SM2 signature verification failed due to exception", e);
+            }
         }
         finally
         {
@@ -247,12 +256,20 @@ public class SM2Signer
         // B1
         if (r.compareTo(ONE) < 0 || r.compareTo(n) >= 0)
         {
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("SM2 signature verification failed: r out of range");
+            }
             return false;
         }
 
         // B2
         if (s.compareTo(ONE) < 0 || s.compareTo(n) >= 0)
         {
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("SM2 signature verification failed: s out of range");
+            }
             return false;
         }
 
@@ -266,6 +283,10 @@ public class SM2Signer
         BigInteger t = r.add(s).mod(n);
         if (t.equals(ZERO))
         {
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("SM2 signature verification failed: t equals zero");
+            }
             return false;
         }
 
@@ -274,6 +295,10 @@ public class SM2Signer
         ECPoint x1y1 = ECAlgorithms.sumOfTwoMultiplies(ecParams.getG(), s, q, t).normalize();
         if (x1y1.isInfinity())
         {
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("SM2 signature verification failed: calculated point at infinity");
+            }
             return false;
         }
 
@@ -323,6 +348,8 @@ public class SM2Signer
     private void addUserID(Digest digest, byte[] userID)
     {
         int len = userID.length * 8;
+//        assert len >>> 16 == 0;
+
         digest.update((byte)(len >>> 8));
         digest.update((byte)len);
         digest.update(userID, 0, userID.length);

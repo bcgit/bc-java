@@ -65,7 +65,7 @@ class MockPSKTlsServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS-PSK server negotiated " + serverVersion);
+        System.out.println("TLS-PSK server negotiated version " + serverVersion);
 
         return serverVersion;
     }

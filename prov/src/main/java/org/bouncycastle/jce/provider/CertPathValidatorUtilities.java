@@ -1232,7 +1232,7 @@ class CertPathValidatorUtilities
                 "Subject criteria for certificate selector to find issuer certificate could not be set.", e);
         }
 
-        // RFC 3.5.12: explicitly disallows this - subject key identifier may be calculated differently
+        // RFC 4158: 3.5.12: explicitly disallows this - subject key identifier may be calculated differently
 //        try
 //        {
 //            byte[] akiExtValue = cert.getExtensionValue(AUTHORITY_KEY_IDENTIFIER);

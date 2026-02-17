@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
  * OriginatorIdentifierOrKey ::= CHOICE {
  *     issuerAndSerialNumber IssuerAndSerialNumber,
  *     subjectKeyIdentifier [0] SubjectKeyIdentifier,
- *     originatorKey [1] OriginatorPublicKey 
+ *     originatorKey [1] OriginatorPublicKey
  * }
  *
  * SubjectKeyIdentifier ::= OCTET STRING
@@ -87,7 +87,7 @@ public class OriginatorIdentifierOrKey
 
         return getInstance(o.getExplicitBaseObject());
     }
-    
+
     /**
      * Return an OriginatorIdentifierOrKey object from the given object.
      * <p>
@@ -154,30 +154,16 @@ public class OriginatorIdentifierOrKey
 
     public SubjectKeyIdentifier getSubjectKeyIdentifier()
     {
-        if (id instanceof ASN1TaggedObject)
-        {
-            ASN1TaggedObject taggedObject = (ASN1TaggedObject)id;
-            if (taggedObject.hasContextTag(0))
-            {
-                return SubjectKeyIdentifier.getInstance(taggedObject, false);
-            }
-        }
+        ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(id, 0);
 
-        return null;
+        return tag0 == null ? null : SubjectKeyIdentifier.getInstance(tag0, false);
     }
 
     public OriginatorPublicKey getOriginatorKey()
     {
-        if (id instanceof ASN1TaggedObject)
-        {
-            ASN1TaggedObject taggedObject = (ASN1TaggedObject)id;
-            if (taggedObject.hasContextTag(1))
-            {
-                return OriginatorPublicKey.getInstance(taggedObject, false);
-            }
-        }
+        ASN1TaggedObject tag1 = ASN1TaggedObject.getContextOptional(id, 1);
 
-        return null;
+        return tag1 == null ? null : OriginatorPublicKey.getInstance(tag1, false);
     }
 
     /**

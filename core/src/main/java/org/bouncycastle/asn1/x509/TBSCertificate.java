@@ -87,7 +87,7 @@ public class TBSCertificate
         else
         {
             seqStart = -1;          // field 0 is missing!
-            version = new ASN1Integer(0);
+            version = ASN1Integer.ZERO;
         }
 
         boolean isV1 = false;
@@ -175,7 +175,7 @@ public class TBSCertificate
             throw new NullPointerException("'subjectPublicKeyInfo' cannot be null");
         }
 
-        this.version = version != null ? version : new ASN1Integer(0);
+        this.version = version != null ? version : ASN1Integer.ZERO;
         this.serialNumber = serialNumber;
         this.signature = signature;
         this.issuer = issuer;

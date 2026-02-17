@@ -3,6 +3,7 @@ package org.bouncycastle.cms.test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -10,6 +11,7 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -585,6 +587,11 @@ public class PQCSignedDataTest
         gen.addCertificates(certs);
 
         CMSSignedData s = gen.generate(msg, true);
+
+        AlgorithmIdentifier digestAlgorithmID = s.getSignerInfos().getSigners().iterator().next().getDigestAlgorithmID();
+        // CNSA compliance requires SHA-384 or SHA-512. We now default to SHA-512
+        assertEquals(NISTObjectIdentifiers.id_sha512, digestAlgorithmID.getAlgorithm());
+        assertNull(digestAlgorithmID.getParameters());
 
         checkSignature(s, gen);
     }

@@ -158,6 +158,7 @@ public abstract class TlsProtocol
     protected TlsSecret sessionMasterSecret = null;
 
     protected byte[] retryCookie = null;
+    // TODO[api] Remove and manage via SecurityParameters.negotiatedGroup    
     protected int retryGroup = -1;
     protected Hashtable clientExtensions = null;
     protected Hashtable serverExtensions = null;
@@ -943,7 +944,7 @@ public abstract class TlsProtocol
     {
         try
         {
-            recordStream.writeRecord(type, buf, offset, len);
+            writeRecord(type, buf, offset, len);
         }
         catch (TlsFatalAlert e)
         {
@@ -960,6 +961,12 @@ public abstract class TlsProtocol
             handleException(AlertDescription.internal_error, "Failed to write record", e);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+    }
+
+    protected void writeRecord(short type, byte[] buf, int off, int len)
+        throws IOException
+    {
+        recordStream.writeRecord(type, buf, off, len);
     }
 
     /**
@@ -1699,7 +1706,7 @@ public abstract class TlsProtocol
 
         try
         {
-            recordStream.writeRecord(ContentType.alert, alert, 0, 2);
+            writeRecord(ContentType.alert, alert, 0, 2);
         }
         catch (Exception e)
         {

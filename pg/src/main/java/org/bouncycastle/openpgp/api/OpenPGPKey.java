@@ -3,8 +3,8 @@ package org.bouncycastle.openpgp.api;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,7 +74,7 @@ public class OpenPGPKey
         super(keyRing, implementation, policy);
 
         // Process and map secret keys
-        this.secretKeys = new HashMap<KeyIdentifier, OpenPGPSecretKey>();
+        this.secretKeys = new LinkedHashMap<KeyIdentifier, OpenPGPSecretKey>();
         for (Iterator it = getKeys().iterator(); it.hasNext(); )
         {
             OpenPGPComponentKey key = (OpenPGPComponentKey)it.next();
@@ -147,7 +147,7 @@ public class OpenPGPKey
      */
     public Map<KeyIdentifier, OpenPGPSecretKey> getSecretKeys()
     {
-        return new HashMap<KeyIdentifier, OpenPGPSecretKey>(secretKeys);
+        return new LinkedHashMap<KeyIdentifier, OpenPGPSecretKey>(secretKeys);
     }
 
     /**
@@ -404,6 +404,7 @@ public class OpenPGPKey
 
         /**
          * Return true if the provided passphrase is correct.
+         * Note: This method will always return false for stripped secret keys.
          *
          * @param passphrase passphrase
          * @return true if the passphrase is correct
@@ -418,7 +419,7 @@ public class OpenPGPKey
             try
             {
                 OpenPGPPrivateKey privateKey = unlock(passphrase);
-                return privateKey.unlockedKey != null;
+                return privateKey != null && privateKey.unlockedKey != null;
             }
             catch (PGPException e)
             {

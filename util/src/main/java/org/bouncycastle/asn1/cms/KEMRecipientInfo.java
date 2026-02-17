@@ -56,7 +56,7 @@ public class KEMRecipientInfo
         {
             throw new IllegalArgumentException("kekLength must be <= 65535");
         }
-        this.cmsVersion = new ASN1Integer(0);
+        this.cmsVersion = ASN1Integer.ZERO;
         this.rid = rid;
         this.kem = kem;
         this.kemct = kemct;
@@ -169,7 +169,7 @@ public class KEMRecipientInfo
         }
         v.add(wrap);
         v.add(encryptedKey);
-        
+
         return new DERSequence(v);
     }
 }

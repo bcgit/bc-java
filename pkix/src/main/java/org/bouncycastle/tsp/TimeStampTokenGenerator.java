@@ -383,19 +383,19 @@ public class TimeStampTokenGenerator
             ASN1Integer seconds = null;
             if (accuracySeconds > 0)
             {
-                seconds = new ASN1Integer(accuracySeconds);
+                seconds = ASN1Integer.valueOf(accuracySeconds);
             }
 
             ASN1Integer millis = null;
             if (accuracyMillis > 0)
             {
-                millis = new ASN1Integer(accuracyMillis);
+                millis = ASN1Integer.valueOf(accuracyMillis);
             }
 
             ASN1Integer micros = null;
             if (accuracyMicros > 0)
             {
-                micros = new ASN1Integer(accuracyMicros);
+                micros = ASN1Integer.valueOf(accuracyMicros);
             }
 
             accuracy = new Accuracy(seconds, millis, micros);

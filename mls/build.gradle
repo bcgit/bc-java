@@ -1,7 +1,7 @@
 
 plugins {
 // OSGI
-    id "biz.aQute.bnd.builder" version "7.0.0"
+    id "biz.aQute.bnd.builder" version "7.1.0"
 //     Provide convenience executables for trying out the examples.
     id 'application'
     id 'com.google.protobuf' version '0.9.4'
@@ -79,9 +79,9 @@ checkstyleMain {
 compileJava {
     options.release = 8
 
-    options.errorprone.disableWarningsInGeneratedCode = true
-    options.errorprone.errorproneArgs = ["-Xep:IgnoredPureGetter:OFF"]
-    options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/build/generated/.*")
+//    options.errorprone.disableWarningsInGeneratedCode = true
+//    options.errorprone.errorproneArgs = ["-Xep:IgnoredPureGetter:OFF"]
+//    options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/build/generated/.*")
 }
 
 compileJava9Java {
@@ -133,7 +133,21 @@ def createStartScripts(String mainClassName) {
     application {
         applicationDistribution.into('bin') {
             from(newTask)
-            fileMode = 0755
+            filePermissions {
+                user {
+                    read = true
+                    write = true
+                    execute = true
+                }
+                group {
+                    read = true
+                    execute = true
+                }
+                other {
+                    read = true
+                    execute = true
+                }
+            }
         }
     }
 }

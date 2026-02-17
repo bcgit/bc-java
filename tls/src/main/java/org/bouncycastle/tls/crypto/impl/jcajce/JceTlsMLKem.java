@@ -35,7 +35,7 @@ public class JceTlsMLKem implements TlsAgreement
         {
             KeyPair kp = domain.generateKeyPair();
             this.privateKey = kp.getPrivate();
-            return KemUtil.encodePublicKey(kp.getPublic());
+            return domain.encodePublicKey(kp.getPublic());
         }
     }
 

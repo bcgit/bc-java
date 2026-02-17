@@ -39,7 +39,7 @@ public class SigningCertificate
                     + seq.size());
         }
         this.certs = ASN1Sequence.getInstance(seq.getObjectAt(0));
-        
+
         if (seq.size() > 1)
         {
             this.policies = ASN1Sequence.getInstance(seq.getObjectAt(1));
@@ -55,32 +55,32 @@ public class SigningCertificate
     public ESSCertID[] getCerts()
     {
         ESSCertID[] cs = new ESSCertID[certs.size()];
-        
+
         for (int i = 0; i != certs.size(); i++)
         {
             cs[i] = ESSCertID.getInstance(certs.getObjectAt(i));
         }
-        
+
         return cs;
     }
-    
+
     public PolicyInformation[] getPolicies()
     {
         if (policies == null)
         {
             return null;
         }
-        
+
         PolicyInformation[] ps = new PolicyInformation[policies.size()];
-        
+
         for (int i = 0; i != policies.size(); i++)
         {
             ps[i] = PolicyInformation.getInstance(policies.getObjectAt(i));
         }
-        
+
         return ps;
     }
-    
+
     /**
      * The definition of SigningCertificate is
      * <pre>
@@ -98,12 +98,12 @@ public class SigningCertificate
         ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         v.add(certs);
-        
+
         if (policies != null)
         {
             v.add(policies);
         }
-        
+
         return new DERSequence(v);
     }
 }

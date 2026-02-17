@@ -48,6 +48,14 @@ public class ASN1EncodableVector
         this.elementCount = minCapacity;
     }
 
+    public void addOptional(ASN1Encodable element)
+    {
+        if (element != null)
+        {
+            this.add(element);
+        }
+    }
+
     public void addAll(ASN1Encodable[] others)
     {
         if (null == others)

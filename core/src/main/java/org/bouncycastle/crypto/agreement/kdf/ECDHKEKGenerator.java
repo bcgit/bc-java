@@ -2,9 +2,10 @@ package org.bouncycastle.crypto.agreement.kdf;
 
 import java.io.IOException;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -58,16 +59,18 @@ public class ECDHKEKGenerator
             throw new DataLengthException("output buffer too small");
         }
 
-        // TODO Create an ASN.1 class for this (RFC3278)
-        // ECC-CMS-SharedInfo
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        AlgorithmIdentifier keyInfo = new AlgorithmIdentifier(algorithm, DERNull.INSTANCE);
+        ASN1OctetString suppPubInfo = DEROctetString.withContents(Pack.intToBigEndian(keySize));
 
-        v.add(new AlgorithmIdentifier(algorithm, DERNull.INSTANCE));
-        v.add(new DERTaggedObject(true, 2, new DEROctetString(Pack.intToBigEndian(keySize))));
+        // TODO org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo exists, but is located in the 'util' jar.
+        // TODO Should the optional DHKDFParameters.getExtraInfo be used for ECCCMSSharedInfo.entityUInfo?
+        ASN1Sequence eccCMSSharedInfo = new DERSequence(keyInfo, new DERTaggedObject(2, suppPubInfo));
 
         try
         {
-            kdf.init(new KDFParameters(z, new DERSequence(v).getEncoded(ASN1Encoding.DER)));
+            byte[] iv = eccCMSSharedInfo.getEncoded(ASN1Encoding.DER);
+
+            kdf.init(new KDFParameters(z, iv));
         }
         catch (IOException e)
         {

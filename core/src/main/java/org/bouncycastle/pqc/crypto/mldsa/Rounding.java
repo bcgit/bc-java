@@ -2,15 +2,23 @@ package org.bouncycastle.pqc.crypto.mldsa;
 
 class Rounding
 {
-    public static int[] power2Round(int a)
+    static void power2RoundAll(int[] c0, int[] c1)
     {
-        int[] out = new int[2];
+        int d = MLDSAEngine.DilithiumD, n = MLDSAEngine.DilithiumN;
+        int u = (1 << (d - 1)) - 1, v = -1 << d;
 
-        out[0] = (a + (1 << (MLDSAEngine.DilithiumD - 1)) - 1) >> MLDSAEngine.DilithiumD;
-        out[1] = a - (out[0] << MLDSAEngine.DilithiumD);
-        return out;
+        for (int i = 0; i < n; ++i)
+        {
+            int a = c0[i];
+
+            int t = a + u;
+            int r1 = a - (t & v);
+
+            c0[i] = t >> d;
+            c1[i] = r1;
+        }
     }
-
+    
     public static int[] decompose(int a, int gamma2)
     {
         int a1, a0;

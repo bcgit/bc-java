@@ -11,12 +11,12 @@ import java.util.Map;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.util.Strings;
 
 public class SLHDSAKeyPairGeneratorSpi

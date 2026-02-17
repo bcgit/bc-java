@@ -64,8 +64,8 @@ public class GetCRLTest
 
             try
             {
-                GetCRL.getInstance(new DERSequence(new ASN1Encodable[]
-                    { new ASN1Integer(1), new ASN1Integer(2), new ASN1Integer(3), new ASN1Integer(4), new ASN1Integer(5)}));
+                GetCRL.getInstance(new DERSequence(new ASN1Encodable[]{
+                    ASN1Integer.ONE, ASN1Integer.TWO, ASN1Integer.THREE, ASN1Integer.FOUR, ASN1Integer.FIVE}));
                 fail("Must not accept sequence larger than 5");
             }
             catch (Throwable t)

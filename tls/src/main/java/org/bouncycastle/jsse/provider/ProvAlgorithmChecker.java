@@ -68,6 +68,24 @@ class ProvAlgorithmChecker
 
         names.put(EdECObjectIdentifiers.id_Ed25519.getId(), "Ed25519");
         names.put(EdECObjectIdentifiers.id_Ed448.getId(), "Ed448");
+
+        names.put(NISTObjectIdentifiers.id_ml_dsa_44.getId(), "ML-DSA-44");
+        names.put(NISTObjectIdentifiers.id_ml_dsa_65.getId(), "ML-DSA-65");
+        names.put(NISTObjectIdentifiers.id_ml_dsa_87.getId(), "ML-DSA-87");
+
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s.getId(), "SLH-DSA-SHA2-128S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f.getId(), "SLH-DSA-SHA2-128F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s.getId(), "SLH-DSA-SHA2-192S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f.getId(), "SLH-DSA-SHA2-192F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s.getId(), "SLH-DSA-SHA2-256S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f.getId(), "SLH-DSA-SHA2-256F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s.getId(), "SLH-DSA-SHAKE-128S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f.getId(), "SLH-DSA-SHAKE-128F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s.getId(), "SLH-DSA-SHAKE-192S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f.getId(), "SLH-DSA-SHAKE-192F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s.getId(), "SLH-DSA-SHAKE-256S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f.getId(), "SLH-DSA-SHAKE-256F");
+
         names.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "SHA1withDSA");
         names.put(X9ObjectIdentifiers.id_dsa_with_sha1.getId(), "SHA1withDSA");
 

@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.cmp;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 
 /**
  * POPODecKeyChallContent ::= SEQUENCE OF Challenge
@@ -32,6 +33,11 @@ public class POPODecKeyChallContent
         }
 
         return null;
+    }
+
+    public POPODecKeyChallContent(Challenge... challenges)
+    {
+        content = new DERSequence(challenges);
     }
 
     public Challenge[] toChallengeArray()

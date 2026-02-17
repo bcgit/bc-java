@@ -488,7 +488,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(new XMSSParameterSpec(3, XMSSParameterSpec.SHA256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -496,11 +496,11 @@ public class XMSSTest
 
         assertTrue(sig instanceof StateAwareSignature);
 
-        PrivateKey pKey1 = ((XMSSPrivateKey)kp.getPrivate()).extractKeyShard(5);
+        PrivateKey pKey1 = ((XMSSPrivateKey)kp.getPrivate()).extractKeyShard(7);
 
         sig.initSign(pKey1);
 
-        for (int i = 0; i != 5; i++)
+        for (int i = 0; i != 7; i++)
         {
             sig.update(msg, 0, msg.length);
 

@@ -53,6 +53,8 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
@@ -246,6 +248,13 @@ public class PrivateKeyFactory
 
                 // TODO This should only allow seed but is length-flexible
                 MLKEMPrivateKeyParameters mlkemPriv = new MLKEMPrivateKeyParameters(mlkemParams, seed, pubParams);
+
+                /*
+                 * RFC 9881 8.2. When receiving a private key that contains both the seed and the expandedKey, the
+                 * recipient SHOULD perform a seed consistency check to ensure that the sender properly generated
+                 * the private key. [..] If the check is done and the seed and the expandedKey are not consistent,
+                 * the recipient MUST reject the private key as malformed.
+                 */
                 if (!Arrays.constantTimeAreEqual(mlkemPriv.getEncoded(), encoding))
                 {
                     throw new IllegalArgumentException("inconsistent " + mlkemParams.getName() + " private key");
@@ -490,6 +499,12 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             SnovaParameters snovaParams = Utils.snovaParamsLookup(algOID);
             return new SnovaPrivateKeyParameters(snovaParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.ntruPlus))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            NTRUPlusParameters ntruPlusParams = Utils.ntruPlusParamsLookup(algOID);
+            return new NTRUPlusPrivateKeyParameters(ntruPlusParams, keyEnc);
         }
         else
         {

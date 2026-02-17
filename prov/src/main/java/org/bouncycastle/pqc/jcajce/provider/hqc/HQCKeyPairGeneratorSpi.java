@@ -10,12 +10,12 @@ import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
 import org.bouncycastle.util.Strings;
 

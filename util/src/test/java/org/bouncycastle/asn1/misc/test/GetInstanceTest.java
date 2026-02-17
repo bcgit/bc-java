@@ -492,7 +492,7 @@ public class GetInstanceTest
         doFullGetInstanceTest(DERT61String.class, new DERT61String("hello world"));
         doFullGetInstanceTest(DERVisibleString.class, new DERVisibleString("hello world"));
 
-        doFullGetInstanceTest(ASN1Integer.class, new ASN1Integer(1));
+        doFullGetInstanceTest(ASN1Integer.class, ASN1Integer.ONE);
         doFullGetInstanceTest(ASN1GeneralizedTime.class, new ASN1GeneralizedTime(new Date()));
         doFullGetInstanceTest(ASN1UTCTime.class, new ASN1UTCTime(new Date()));
         doFullGetInstanceTest(ASN1Enumerated.class, new ASN1Enumerated(1));
@@ -507,13 +507,13 @@ public class GetInstanceTest
         CertifiedKeyPair.getInstance(null);
         CertOrEncCert.getInstance(null);
         CertRepMessage.getInstance(null);
-        doFullGetInstanceTest(CertResponse.class, new CertResponse(new ASN1Integer(1), new PKIStatusInfo(PKIStatus.granted)));
+        doFullGetInstanceTest(CertResponse.class, new CertResponse(ASN1Integer.ONE, new PKIStatusInfo(PKIStatus.granted)));
         doFullGetInstanceTest(org.bouncycastle.asn1.cmp.CertStatus.class, new org.bouncycastle.asn1.cmp.CertStatus(new byte[10], BigInteger.valueOf(1), new PKIStatusInfo(PKIStatus.granted), new AlgorithmIdentifier(new ASN1ObjectIdentifier("0.0"))));
         doFullGetInstanceTest(Challenge.class, new Challenge(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE), new byte[10], new byte[10]));
 
         doFullGetInstanceTest(CMPCertificate.class, cmpCert);
         doFullGetInstanceTest(CRLAnnContent.class, new CRLAnnContent(crl));
-        doFullGetInstanceTest(ErrorMsgContent.class, new ErrorMsgContent(new PKIStatusInfo(PKIStatus.granted), new ASN1Integer(1), new PKIFreeText("fred")));
+        doFullGetInstanceTest(ErrorMsgContent.class, new ErrorMsgContent(new PKIStatusInfo(PKIStatus.granted), ASN1Integer.ONE, new PKIFreeText("fred")));
         GenMsgContent.getInstance(null);
         GenRepContent.getInstance(null);
         InfoTypeAndValue.getInstance(null);
@@ -695,7 +695,7 @@ public class GetInstanceTest
         BasicOCSPResponse.getInstance(null);
         BasicOCSPResponse.getInstance(null);
 
-        doFullGetInstanceTest(CertID.class, new CertID(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE), new DEROctetString(new byte[1]), new DEROctetString(new byte[1]), new ASN1Integer(1)));
+        doFullGetInstanceTest(CertID.class, new CertID(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE), new DEROctetString(new byte[1]), new DEROctetString(new byte[1]), ASN1Integer.ONE));
 
         CertStatus.getInstance(null);
         CertStatus.getInstance(null);
@@ -895,14 +895,11 @@ public class GetInstanceTest
         PersonalData.getInstance(null);
 
         doFullGetInstanceTest(CertReqTemplateContent.class, new DERSequence(
-            new ASN1Encodable[]{
-                CertTemplate.getInstance(new DLSequence(new DERTaggedObject(false, 1, new ASN1Integer(34L)))),
-                new DERSequence(new ASN1Encodable[]{new AttributeTypeAndValue(CMPObjectIdentifiers.id_regCtrl_algId, new DERUTF8String("test"))})
-            }));
+            CertTemplate.getInstance(new DLSequence(new DERTaggedObject(false, 1, ASN1Integer.valueOf(34)))),
+            new DERSequence(new AttributeTypeAndValue(CMPObjectIdentifiers.id_regCtrl_algId, new DERUTF8String("test")))));
 
         doFullGetInstanceTest(CertReqTemplateContent.class, new DERSequence(
-            new ASN1Encodable[]{
-                CertTemplate.getInstance(new DLSequence(new DERTaggedObject(false, 1, new ASN1Integer(34L))))}));
+            CertTemplate.getInstance(new DLSequence(new DERTaggedObject(false, 1, ASN1Integer.valueOf(34))))));
 
         doFullGetInstanceTest(CRLSource.class,
             new DERTaggedObject(true, 0, new DistributionPointName(new GeneralNames(new GeneralName(GeneralName.dNSName, new DERIA5String("cats"))))));

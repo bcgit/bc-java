@@ -44,7 +44,7 @@ public class OtherKeyAttribute
         {
             return (OtherKeyAttribute)o;
         }
-        
+
         if (o != null)
         {
             return new OtherKeyAttribute(ASN1Sequence.getInstance(o));
@@ -76,13 +76,13 @@ public class OtherKeyAttribute
     {
         return keyAttrId;
     }
-    
+
     public ASN1Encodable getKeyAttr()
     {
         return keyAttr;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

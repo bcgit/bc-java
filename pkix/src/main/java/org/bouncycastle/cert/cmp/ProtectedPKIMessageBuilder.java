@@ -212,6 +212,20 @@ public class ProtectedPKIMessageBuilder
         return this;
     }
 
+    public ProtectedPKIMessageBuilder setBody(POPODecryptionKeyChallengeContent popoDecKeyChallContent)
+    {
+        this.body = new PKIBody(PKIBody.TYPE_POPO_CHALL, popoDecKeyChallContent.toASN1Structure());
+
+        return this;
+    }
+
+    public ProtectedPKIMessageBuilder setBody(POPODecryptionKeyResponseContent popoDecKeyRespContent)
+    {
+        this.body = new PKIBody(PKIBody.TYPE_POPO_REP, popoDecKeyRespContent.toASN1Structure());
+
+        return this;
+    }
+
     /**
      * Add an "extra certificate" to the message.
      *

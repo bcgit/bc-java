@@ -73,7 +73,7 @@ public class DVCSRequestInformationBuilder
 
         if (version != DEFAULT_VERSION)
         {
-            v.add(new ASN1Integer(version));
+            v.add(ASN1Integer.valueOf(version));
         }
         v.add(service);
         if (nonce != null)

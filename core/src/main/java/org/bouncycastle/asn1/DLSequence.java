@@ -8,6 +8,23 @@ import java.io.IOException;
 public class DLSequence
     extends ASN1Sequence
 {
+    public static final DLSequence EMPTY = new DLSequence();
+
+    public static DLSequence convert(ASN1Sequence seq)
+    {
+        return (DLSequence)seq.toDLObject();
+    }
+
+    public static DLSequence fromElementsOptional(ASN1Encodable[] elements)
+    {
+        if (elements == null)
+        {
+            return null;
+        }
+
+        return elements.length < 1 ? EMPTY : new DLSequence(elements);
+    }
+
     private int contentsLength = -1;
 
     /**

@@ -13,7 +13,9 @@ import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
  *       signer  IssuerAndSerialNumber,
  *       cert    Certificate OPTIONAL }
  * </pre>
+ * @deprecated use PrivateKeyPossessionStatement
  */
+@Deprecated
 public class PrivateKeyStatement
     extends ASN1Object
 {
