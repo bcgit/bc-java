@@ -292,7 +292,7 @@ public abstract class Ed25519
     {
         int x_0 = (p[POINT_BYTES - 1] & 0x80) >>> 7;
 
-        F.decode(p, r.y);
+        F.decode255(p, r.y);
 
         int[] u = F.create();
         int[] v = F.create();

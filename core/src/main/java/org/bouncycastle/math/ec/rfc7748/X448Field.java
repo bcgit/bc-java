@@ -150,46 +150,28 @@ public abstract class X448Field
         }
     }
 
-    public static void decode(int[] x, int xOff, int[] z)
-    {
-        decode224(x, xOff, z, 0);
-        decode224(x, xOff + 7, z, 8);
-    }
-
+    /** @deprecated Use {@link #decode448(byte[], int[])} instead. */
     public static void decode(byte[] x, int[] z)
     {
-        decode56(x, 0, z, 0);
-        decode56(x, 7, z, 2);
-        decode56(x, 14, z, 4);
-        decode56(x, 21, z, 6);
-        decode56(x, 28, z, 8);
-        decode56(x, 35, z, 10);
-        decode56(x, 42, z, 12);
-        decode56(x, 49, z, 14);
+        decode448(x, 0, z, 0);
     }
 
+    /** @deprecated Use {@link #decode448(byte[], int, int[], int)} instead. */
     public static void decode(byte[] x, int xOff, int[] z)
     {
-        decode56(x, xOff, z, 0);
-        decode56(x, xOff + 7, z, 2);
-        decode56(x, xOff + 14, z, 4);
-        decode56(x, xOff + 21, z, 6);
-        decode56(x, xOff + 28, z, 8);
-        decode56(x, xOff + 35, z, 10);
-        decode56(x, xOff + 42, z, 12);
-        decode56(x, xOff + 49, z, 14);
+        decode448(x, xOff, z, 0);
     }
 
+    /** @deprecated Use {@link #decode448(byte[], int, int[], int)} instead. */
     public static void decode(byte[] x, int xOff, int[] z, int zOff)
     {
-        decode56(x, xOff, z, zOff);
-        decode56(x, xOff + 7, z, zOff + 2);
-        decode56(x, xOff + 14, z, zOff + 4);
-        decode56(x, xOff + 21, z, zOff + 6);
-        decode56(x, xOff + 28, z, zOff + 8);
-        decode56(x, xOff + 35, z, zOff + 10);
-        decode56(x, xOff + 42, z, zOff + 12);
-        decode56(x, xOff + 49, z, zOff + 14);
+        decode448(x, xOff, z, zOff);
+    }
+
+    /** @deprecated Use {@link #decode448(int[], int, int[], int)} instead. */
+    public static void decode(int[] x, int xOff, int[] z)
+    {
+        decode448(x, xOff, z, 0);
     }
 
     private static void decode224(int[] x, int xOff, int[] z, int zOff)
@@ -215,13 +197,41 @@ public abstract class X448Field
         return n;
     }
 
-    private static int decode32(byte[] bs, int off)
+    static int decode32(byte[] bs, int off)
     {
         int n = bs[  off] & 0xFF;
         n |= (bs[++off] & 0xFF) << 8;
         n |= (bs[++off] & 0xFF) << 16;
         n |= bs[++off] << 24;
         return n;
+    }
+
+    public static void decode448(byte[] x, int[] z)
+    {
+        decode448(x, 0, z, 0);
+    }
+
+    public static void decode448(byte[] x, int xOff, int[] z, int zOff)
+    {
+        decode56(x, xOff, z, zOff);
+        decode56(x, xOff + 7, z, zOff + 2);
+        decode56(x, xOff + 14, z, zOff + 4);
+        decode56(x, xOff + 21, z, zOff + 6);
+        decode56(x, xOff + 28, z, zOff + 8);
+        decode56(x, xOff + 35, z, zOff + 10);
+        decode56(x, xOff + 42, z, zOff + 12);
+        decode56(x, xOff + 49, z, zOff + 14);
+    }
+
+    public static void decode448(int[] x, int[] z)
+    {
+        decode448(x, 0, z, 0);
+    }
+
+    public static void decode448(int[] x, int xOff, int[] z, int zOff)
+    {
+        decode224(x, xOff, z, zOff);
+        decode224(x, xOff + 7, z, zOff + 8);
     }
 
     private static void decode56(byte[] bs, int off, int[] z, int zOff)
@@ -326,7 +336,7 @@ public abstract class X448Field
 
         Mod.modOddInverse(P32, u, u);
 
-        decode(u, 0, z);
+        decode448(u, z);
     }
 
     public static void invVar(int[] x, int[] z)
@@ -340,7 +350,7 @@ public abstract class X448Field
 
         Mod.modOddInverseVar(P32, u, u);
 
-        decode(u, 0, z);
+        decode448(u, z);
     }
 
     public static int isOne(int[] x)

@@ -42,20 +42,11 @@ public abstract class X25519
         k[SCALAR_SIZE - 1] |= 0x40;
     }
 
-    private static int decode32(byte[] bs, int off)
-    {
-        int n = bs[off] & 0xFF;
-        n |= (bs[++off] & 0xFF) << 8;
-        n |= (bs[++off] & 0xFF) << 16;
-        n |=  bs[++off]         << 24;
-        return n;
-    }
-
     private static void decodeScalar(byte[] k, int kOff, int[] n)
     {
         for (int i = 0; i < 8; ++i)
         {
-            n[i] = decode32(k, kOff + i * 4);
+            n[i] = F.decode32(k, kOff + i * 4);
         }
 
         n[0] &= 0xFFFFFFF8;
@@ -104,7 +95,7 @@ public abstract class X25519
     {
         int[] n = new int[8];       decodeScalar(k, kOff, n);
 
-        int[] x1 = F.create();      F.decode(u, uOff, x1);
+        int[] x1 = F.create();      F.decode255(u, uOff, x1, 0);
         int[] x2 = F.create();      F.copy(x1, 0, x2, 0);
         int[] z2 = F.create();      z2[0] = 1;
         int[] x3 = F.create();      x3[0] = 1;
