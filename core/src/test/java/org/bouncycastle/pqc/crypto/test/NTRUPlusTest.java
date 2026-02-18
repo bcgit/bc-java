@@ -44,7 +44,7 @@ public class NTRUPlusTest
         throws Exception
     {
         long start = System.currentTimeMillis();
-        TestUtils.testTestVector(false, true, "pqc/crypto/ntruplus", files, new TestUtils.KeyEncapsulationOperation()
+        TestUtils.testTestVector(true, true, "pqc/crypto/ntruplus", files, new TestUtils.KeyEncapsulationOperation()
         {
             int sessionKeySize = 0;
 

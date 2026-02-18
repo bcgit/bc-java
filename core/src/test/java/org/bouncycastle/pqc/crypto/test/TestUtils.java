@@ -173,7 +173,7 @@ class TestUtils
         }
     }
 
-    public static void testTestVector(boolean sampleOnly, boolean enableFactory, String homeDir, String[] files, KeyEncapsulationOperation operation)
+    public static void testTestVector(boolean alwaysFull, boolean enableFactory, String homeDir, String[] files, KeyEncapsulationOperation operation)
         throws Exception
     {
         for (int fileIndex = 0; fileIndex < files.length; fileIndex++)
@@ -185,7 +185,7 @@ class TestUtils
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
-            TestSampler sampler = sampleOnly ? new TestSampler() : null;
+            TestSampler sampler = alwaysFull ? null : new TestSampler();
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();

@@ -21,6 +21,7 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -39,7 +40,7 @@ public class PicnicVectorTest
     public void testVectors()
         throws Exception
     {
-        boolean full = System.getProperty("test.full", "false").equals("true");
+        boolean full = Properties.isOverrideSet("test.full");
         String[] files;
         PicnicParameters[] params;
         if (full)

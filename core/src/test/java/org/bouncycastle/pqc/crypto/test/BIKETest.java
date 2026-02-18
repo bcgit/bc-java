@@ -36,8 +36,6 @@ public class BIKETest
     public void testVectors()
         throws Exception
     {
-//        boolean full = System.getProperty("test.full", "false").equals("true");
-
         String[] files;
         files = new String[]{
             "PQCkemKAT_BIKE_3114.rsp",

@@ -35,8 +35,6 @@ public class HQCTest
     public void testVectors()
         throws Exception
     {
-        boolean full = System.getProperty("test.full", "false").equals("true");
-
         String[] files;
         // test cases
         files = new String[]{
@@ -51,7 +49,7 @@ public class HQCTest
             HQCParameters.hqc256
         };
 
-        TestUtils.testTestVector(true, true, "pqc/crypto/hqc", files, new TestUtils.KeyEncapsulationOperation()
+        TestUtils.testTestVector(false, true, "pqc/crypto/hqc", files, new TestUtils.KeyEncapsulationOperation()
         {
             int sessionKeySize = 0;
 
