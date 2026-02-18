@@ -11,7 +11,7 @@ abstract class SecretKeyUtil
         {
             try
             {
-                ((Destroyable)secretKey).destroy();
+                secretKey.destroy();
             }
             catch (Exception e)
             {
