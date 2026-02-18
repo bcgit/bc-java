@@ -1,26 +1,59 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 class GF2PolynomialCalculator
 {
-    private final int VEC_N_SIZE_64;
-    private final int PARAM_N;
-    private final long RED_MASK;
+    private final int bits;
+    private final int size;
+    private final int sizeExt;
 
-    GF2PolynomialCalculator(int vec_n_size_64, int param_n, long red_mask)
+    GF2PolynomialCalculator(int n)
     {
-        VEC_N_SIZE_64 = vec_n_size_64;
-        PARAM_N = param_n;
-        RED_MASK = red_mask;
+        if ((n & 0xFFFF0001) != 1)
+            throw new IllegalArgumentException();
+
+        bits = n;
+        size = Utils.getByte64SizeFromBitSize(n);
+        sizeExt = size * 2;
     }
 
-    public void vectMul(long[] o, long[] a1, long[] a2)
+    void addTo(long[] x, long[] z)
     {
-        long[] unreduced = new long[VEC_N_SIZE_64 << 1];
-        long[] tmpBuffer = new long[VEC_N_SIZE_64 << 4];
-        karatsuba(unreduced, 0, a1, 0, a2, 0, VEC_N_SIZE_64, tmpBuffer, 0);
-        reduce(o, unreduced);
+        Nat.xorTo64(size, x, z);
+    }
+
+    long[] create()
+    {
+        return new long[size];
+    }
+
+    long[] createExt()
+    {
+        return new long[sizeExt];
+    }
+
+    long equalTo(long[] x, long[] y)
+    {
+        return Nat.equalTo64(size, x, y);
+    }
+
+    void mul(long[] o, long[] a1, long[] a2)
+    {
+        long[] zz = createExt();
+        long[] tmp = new long[size << 4];
+        karatsuba(zz, 0, a1, 0, a2, 0, size, tmp, 0);
+        reduce(o, zz);
+    }
+
+    void random(Shake256RandomGenerator generator, long[] z)
+    {
+        byte[] tmp = new byte[size << 3];
+        generator.xofGetBytes(tmp, Utils.getByteSizeFromBitSize(bits));
+        Pack.littleEndianToLong(tmp, 0, z);
+        z[size - 1] &= (1L << (bits & 63)) - 1L;
     }
 
     /**
@@ -30,32 +63,54 @@ class GF2PolynomialCalculator
      * polynomials over GF(2), each represented as {@code n} 64-bit words. The result
      * is stored in {@code r} as {@code 2 * n} 64-bit words.</p>
      */
-    private void schoolbookMul(long[] r, int rOff, long[] a, int aOff, long[] b, int bOff, int n)
+    private void baseMul(long[] r, int rOff, long[] a, int aOff, long[] b, int bOff, int n)
     {
         Arrays.fill(r, rOff, rOff + (n << 1), 0L);
 
-        for (int i = 0; i < n; i++, rOff++)
+        long[] u = new long[16];
+
+        // Schoolbook
+
+//        for (int i = 0; i < n; ++i)
+//        {
+//            long x_i = a[aOff + i];
+//
+//            for (int j = 0; j < n; ++j)
+//            {
+//                long y_j = b[bOff + j];
+//
+//                implMulwAcc(u, x_i, y_j, r, rOff + i + j);
+//            }
+//        }
+
+        // Arbitrary-degree Karatsuba
+
+        for (int i = 0; i < n; ++i)
         {
-            long ai = a[i + aOff];
-            for (int bit = 0; bit < 64; bit++)
+            implMulwAcc(u, a[aOff + i], b[bOff + i], r, rOff + (i << 1));
+        }
+
+        long v0 = r[rOff], v1 = r[rOff + 1];
+        for (int i = 1; i < n; ++i)
+        {
+            v0 ^= r[rOff + (i << 1)]; r[rOff + i] = v0 ^ v1; v1 ^= r[rOff + (i << 1) + 1];
+        }
+
+        long w = v0 ^ v1;
+        Nat.xor64(n, r, rOff, w, r, rOff + n);
+
+        int last = n - 1;
+        for (int zPos = 1; zPos < (last * 2); ++zPos)
+        {
+            int hi = Math.min(last, zPos);
+            int lo = zPos - hi;
+
+            while (lo < hi)
             {
-                long mask = -((ai >> bit) & 1L);
-                if (bit == 0)
-                {
-                    for (int j = 0, rOff1 = rOff, bOff1 = bOff; j < n; j++, rOff1++, bOff1++)
-                    {
-                        r[rOff1] ^= b[bOff1] & mask;
-                    }
-                }
-                else
-                {
-                    int inv = 64 - bit;
-                    for (int j = 0, rOff1 = rOff, bOff1 = bOff; j < n; j++, bOff1++)
-                    {
-                        r[rOff1++] ^= (b[bOff1] << bit) & mask;
-                        r[rOff1] ^= (b[bOff1] >>> inv) & mask;
-                    }
-                }
+                implMulwAcc(u, a[aOff + lo] ^ a[aOff + hi], b[bOff + lo] ^ b[bOff + hi], r, rOff + zPos);
+
+                ++lo;
+                --hi;
             }
         }
     }
@@ -64,18 +119,21 @@ class GF2PolynomialCalculator
      * Performs Karatsuba multiplication over GF(2) using a caller-supplied temporary buffer.
      *
      * <p>If {@code n <= 16}, this method falls back to
-     * {@link #schoolbookMul(long[], int, long[], int, long[], int, int)}.
+     * {@link #baseMul(long[], int, long[], int, long[], int, int)}.
      * Otherwise, the operands are split in half and the algorithm is applied recursively.</p>
      *
      */
-    private void karatsuba(long[] r, int rOffset, long[] a, int aOffset,
-                           long[] b, int bOffset, int n, long[] tmpBuffer, int tmpOffset)
+    private void karatsuba(long[] r, int rOffset, long[] a, int aOffset, long[] b, int bOffset, int n, long[] tmpBuffer,
+        int tmpOffset)
     {
-        if (n <= 16)
+        if (n < 8)
         {
-            schoolbookMul(r, rOffset, a, aOffset, b, bOffset, n);
+            baseMul(r, rOffset, a, aOffset, b, bOffset, n);
             return;
         }
+
+        // NB: This only works for n > 4
+//        assert n > 4;
 
         int m = n >> 1;
         int n1 = n - m;
@@ -127,10 +185,53 @@ class GF2PolynomialCalculator
      */
     private void reduce(long[] o, long[] a)
     {
-        for (int i = 0; i < VEC_N_SIZE_64; i++)
+        int partialBits = bits & 63;
+        int excessBits = 64 - partialBits;
+        long partialMask = -1L >>> excessBits;
+
+//        long c =
+        Nat.shiftUpBits64(size, a, size, excessBits, a[size - 1], o, 0);
+//        assert c == 0L;
+        addTo(a, o);
+        o[size - 1] &= partialMask;
+    }
+
+    /**
+     * Carryless multiply of x and y, accumulating the result at z[zOff..zOff + 1], using u as a temporary buffer.
+     */
+    private static void implMulwAcc(long[] u, long x, long y, long[] z, int zOff)
+    {
+//      u[0] = 0;
+        u[1] = y;
+        for (int i = 2; i < 16; i += 2)
         {
-            o[i] = a[i] ^ (a[i + VEC_N_SIZE_64 - 1] >>> (PARAM_N & 0x3F)) ^ ((a[i + VEC_N_SIZE_64] << (64 - (PARAM_N & 0x3FL))));
+            u[i    ] = u[i >>> 1] << 1;
+            u[i + 1] = u[i      ] ^  y;
         }
-        o[VEC_N_SIZE_64 - 1] &= RED_MASK;
+
+        int j = (int)x;
+        long g, h = 0, l = u[j & 15]
+                         ^ u[(j >>> 4) & 15] << 4;
+        int k = 56;
+        do
+        {
+            j  = (int)(x >>> k);
+            g  = u[j & 15]
+               ^ u[(j >>> 4) & 15] << 4;
+            l ^= (g << k);
+            h ^= (g >>> -k);
+        }
+        while ((k -= 8) > 0);
+
+        for (int p = 0; p < 7; ++p)
+        {
+            x = (x & 0xFEFEFEFEFEFEFEFEL) >>> 1;
+            h ^= x & ((y << p) >> 63);
+        }
+
+//        assert h >>> 63 == 0;
+
+        z[zOff    ] ^= l;
+        z[zOff + 1] ^= h;
     }
 }
