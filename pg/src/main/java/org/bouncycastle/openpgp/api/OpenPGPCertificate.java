@@ -1014,7 +1014,7 @@ public class OpenPGPCertificate
         {
             OpenPGPSignatureChain binding = it.next();
             PGPSignature sig = binding.getSignature().getSignature();
-            if (sig.getHashedSubPackets().isPrimaryUserID())
+            if (sig.getHashedSubPackets() != null && sig.getHashedSubPackets().isPrimaryUserID())
             {
                 return binding;
             }
@@ -1829,6 +1829,11 @@ public class OpenPGPCertificate
                                                      OpenPGPPolicy policy, Date signatureCreationTime)
             throws PGPSignatureException
         {
+            if (signature.getHashedSubPackets() == null)
+            {
+                return;
+            }
+
             int keyFlags = signature.getHashedSubPackets().getKeyFlags();
             if ((keyFlags & KeyFlags.SIGN_DATA) != KeyFlags.SIGN_DATA)
             {
