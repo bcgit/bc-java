@@ -4,64 +4,27 @@ import org.bouncycastle.util.Pack;
 
 class Utils
 {
-    static void fromLongArrayToByteArray(byte[] out, long[] in)
-    {
-        int max = out.length / 8;
-        for (int i = 0; i != max; i++)
-        {
-            Pack.longToLittleEndian(in[i], out, i * 8);
-        }
-
-        if (out.length % 8 != 0)
-        {
-            int off = max * 8;
-            int count = 0;
-            while (off < out.length)
-            {
-                out[off++] = (byte)(in[max] >>> (count++ * 8));
-            }
-        }
-    }
-
     static void fromLongArrayToByteArray(byte[] out, int outOff, int outLen, long[] in)
     {
-        int max = outLen >> 3;
-        for (int i = 0; i != max; i++)
-        {
-            Pack.longToLittleEndian(in[i], out, outOff);
-            outOff += 8;
-        }
+        int nsLen = outLen >> 3;
+        Pack.longToLittleEndian(in, 0, nsLen, out, outOff);
 
-        if ((outLen & 7) != 0)
+        int partial = outLen & 7;
+        if (partial != 0)
         {
-            int count = 0;
-            while (outOff < out.length)
-            {
-                out[outOff++] = (byte)(in[max] >>> (count++ * 8));
-            }
+            Pack.longToLittleEndian_Low(in[nsLen], out, outOff + outLen - partial, partial);
         }
     }
 
-    static long bitMask(long a, long b)
+    static void fromByteArrayToLongArray(long[] out, byte[] in, int inOff, int inLen)
     {
-        return ((1L << (a % b)) - 1);
-    }
+        int nsLen = inLen >> 3;
+        Pack.littleEndianToLong(in, inOff, out, 0, nsLen);
 
-    static void fromByteArrayToLongArray(long[] out, byte[] in, int off, int inLen)
-    {
-        byte[] tmp = in;
-        if (inLen % 8 != 0)
+        int partial = inLen & 7;
+        if (partial != 0)
         {
-            tmp = new byte[((inLen + 7) / 8) * 8];
-            System.arraycopy(in, off, tmp, 0, inLen);
-            off = 0;
-        }
-
-        int len = Math.min(out.length, (inLen + 7) >>> 3);
-        for (int i = 0; i < len; i++)
-        {
-            out[i] = Pack.littleEndianToLong(tmp, off);
-            off += 8;
+            out[nsLen] = Pack.littleEndianToLong_Low(in, inOff + inLen - partial, partial);
         }
     }
 
@@ -81,11 +44,6 @@ class Utils
             out[2 * i] = (int)in[i];
             out[2 * i + 1] = (int)(in[i] >> 32);
         }
-    }
-
-    static void copyBytes(int[] src, int offsetSrc, int[] dst, int offsetDst, int lengthBytes)
-    {
-        System.arraycopy(src, offsetSrc, dst, offsetDst, lengthBytes / 2);
     }
 
     static int getByteSizeFromBitSize(int size)

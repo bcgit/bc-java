@@ -140,23 +140,24 @@ class FastFourierTransform
         int[] R0 = new int[fftSize];
         int[] R1 = new int[fftSize];
 
-        Utils.copyBytes(f, 3 * n, Q, 0, 2 * n);
-        Utils.copyBytes(f, 3 * n, Q, n, 2 * n);
-        Utils.copyBytes(f, 0, R, 0, 4 * n);
+        System.arraycopy(f, 3 * n, Q, 0, n);
+        System.arraycopy(f, 3 * n, Q, n, n);
+        System.arraycopy(f, 0, R, 0, 2 * n);
 
         for (int i = 0; i < n; ++i)
         {
-            Q[i] ^= f[2 * n + i];
-            R[n + i] ^= Q[i];
+            int qi = Q[i] ^ f[2 * n + i];
+            Q[i] = qi;
+            R[n + i] ^= qi;
         }
 
         computeRadix(Q0, Q1, Q, mf - 1, fft);
         computeRadix(R0, R1, R, mf - 1, fft);
 
-        Utils.copyBytes(R0, 0, f0, 0, 2 * n);
-        Utils.copyBytes(Q0, 0, f0, n, 2 * n);
-        Utils.copyBytes(R1, 0, f1, 0, 2 * n);
-        Utils.copyBytes(Q1, 0, f1, n, 2 * n);
+        System.arraycopy(R0, 0, f0, 0, n);
+        System.arraycopy(Q0, 0, f0, n, n);
+        System.arraycopy(R1, 0, f1, 0, n);
+        System.arraycopy(Q1, 0, f1, n, n);
     }
 
     static void computeFFTRec(int[] output, int[] func, int noCoeffs, int noOfBetas, int noCoeffsPlus, int[] betaSet, int fft, int m)
