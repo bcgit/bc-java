@@ -5,9 +5,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
+import org.bouncycastle.openpgp.PGPEncryptedData;
+import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
@@ -206,6 +212,19 @@ public class OpenPGPMessageGeneratorTest
         encOut.close();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+        ArmoredInputStream aIn = ArmoredInputStream.builder()
+                .build(bIn);
+        BCPGInputStream pIn = BCPGInputStream.wrap(aIn);
+        PGPObjectFactory objFac = api.getImplementation().pgpObjectFactory(pIn);
+        PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
+        for (PGPEncryptedData encData : encList)
+        {
+            isTrue(encData instanceof PGPPublicKeyEncryptedData);
+            PGPPublicKeyEncryptedData pkesk = (PGPPublicKeyEncryptedData) encData;
+            isTrue(pkesk.getKeyIdentifier().isWildcard());
+        }
+
+        bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage()
                 .addDecryptionKey(key);
 
