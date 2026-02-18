@@ -2,10 +2,46 @@ package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.crypto.CharToByteConverter;
 import org.bouncycastle.crypto.PasswordConverter;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator.Block;
 import org.bouncycastle.util.Arrays;
+
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Argon2Parameters
 {
+    public static interface BlockPool {
+        Block allocate();
+        void deallocate(Block block);
+    }
+
+    public static class FixedBlockPool implements BlockPool {
+
+        private LinkedBlockingQueue<Block> blocks;
+
+        public FixedBlockPool(int maxBlocks) {
+            this.blocks = new LinkedBlockingQueue<>(maxBlocks);
+        }
+
+        @Override
+        public Block allocate() {
+            Block block = blocks.poll();
+            if (block == null) {
+                return new Block();
+            }
+            // since we're not tracking which thread deallocated
+            // we don't know if the clearing is visible in this one
+            block.clear();
+            return block;
+        }
+
+        @Override
+        public void deallocate(Block block) {
+            block.clear();
+            blocks.offer(block);
+        }
+
+    }
+
     public static final int ARGON2_d = 0x00;
     public static final int ARGON2_i = 0x01;
     public static final int ARGON2_id = 0x02;
@@ -31,8 +67,10 @@ public class Argon2Parameters
 
         private int version;
         private final int type;
-        
+
         private CharToByteConverter converter = PasswordConverter.UTF8;
+
+        private BlockPool blockPool;
 
         public Builder()
         {
@@ -97,16 +135,22 @@ public class Argon2Parameters
             this.version = version;
             return this;
         }
-        
+
         public Builder withCharToByteConverter(CharToByteConverter converter)
         {
             this.converter = converter;
             return this;
         }
 
+        public Builder withBlockPool(BlockPool blockPool)
+        {
+            this.blockPool = blockPool;
+            return this;
+        }
+
         public Argon2Parameters build()
         {
-            return new Argon2Parameters(type, salt, secret, additional, iterations, memory, lanes, version, converter);
+            return new Argon2Parameters(type, salt, secret, additional, iterations, memory, lanes, version, converter, blockPool);
         }
 
         public void clear()
@@ -129,6 +173,8 @@ public class Argon2Parameters
     private final int type;
     private final CharToByteConverter converter;
 
+    private final BlockPool blockPool;
+
     private Argon2Parameters(
         int type,
         byte[] salt,
@@ -138,7 +184,8 @@ public class Argon2Parameters
         int memory,
         int lanes,
         int version,
-        CharToByteConverter converter)
+        CharToByteConverter converter,
+        BlockPool blockPool)
     {
 
         this.salt = Arrays.clone(salt);
@@ -150,6 +197,7 @@ public class Argon2Parameters
         this.version = version;
         this.type = type;
         this.converter = converter;
+        this.blockPool = blockPool;
     }
 
     public byte[] getSalt()
@@ -195,6 +243,10 @@ public class Argon2Parameters
     public CharToByteConverter getCharToByteConverter()
     {
         return converter;
+    }
+
+    public BlockPool getBlockPool() {
+        return blockPool;
     }
 
     public void clear()
