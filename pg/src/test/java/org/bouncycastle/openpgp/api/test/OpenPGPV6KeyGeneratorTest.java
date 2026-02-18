@@ -60,6 +60,9 @@ public class OpenPGPV6KeyGeneratorTest
         testGenerateEd25519x25519Key(api);
         testGenerateEd448x448Key(api);
 
+        testGenerateSingletonRSAKey(api);
+        testGenerateCompositeRSAKey(api);
+
         testEnforcesPrimaryOrSubkeyType(api);
         testGenerateKeyWithoutSignatures(api);
     }
@@ -318,6 +321,59 @@ public class OpenPGPV6KeyGeneratorTest
         isEquals(PGPSignature.SUBKEY_BINDING, encryptionSubkeySig.getSignatureType());
         hashedSubpackets = encryptionSubkeySig.getHashedSubPackets();
         isEquals(KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE, hashedSubpackets.getKeyFlags());
+    }
+
+    private void testGenerateSingletonRSAKey(OpenPGPApi api)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        OpenPGPKeyGenerator generator = api.generateKey(creationTime, false);
+
+        OpenPGPKey key = generator.singletonRSAKey(4096, "Alice <alice@example.com>")
+                .build();
+
+        isEquals("Singleton RSA key MUST consist of only a single primary key.", 1, key.getKeys().size());
+        OpenPGPCertificate.OpenPGPComponentKey primaryKey = key.getPrimaryKey();
+        isEquals("Primary key MUST be an RSA key", PublicKeyAlgorithmTags.RSA_GENERAL, primaryKey.getAlgorithm());
+        isEquals("Primary key MUST have a strength of 4096 bits.", 4096, primaryKey.getPGPPublicKey().getBitStrength());
+
+        isEquals("The primary key MUST be the certification key", primaryKey, key.getCertificationKeys().get(0));
+        isEquals("The primary key MUST be the encryption key", primaryKey, key.getEncryptionKeys().get(0));
+        isEquals("The primary key MUST be the signing key", primaryKey, key.getSigningKeys().get(0));
+
+        isNotNull(key.getUserId("Alice <alice@example.com>"));
+    }
+
+    private void testGenerateCompositeRSAKey(OpenPGPApi api)
+        throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        OpenPGPKeyGenerator generator = api.generateKey(creationTime, false);
+
+        OpenPGPKey key = generator.compositeRSAKey(4096, "Alice <alice@example.com>")
+                .build();
+
+        isEquals("The composite RSA key MUST consist of 3 component keys", 3, key.getKeys().size());
+
+        OpenPGPCertificate.OpenPGPComponentKey primaryKey = key.getPrimaryKey();
+        isEquals("Primary key MUST be an RSA key", PublicKeyAlgorithmTags.RSA_GENERAL, primaryKey.getAlgorithm());
+        isEquals("Primary key MUST have a strength of 4096 bits.", 4096, primaryKey.getPGPPublicKey().getBitStrength());
+        isEquals("There MUST be only one certification key", 1, key.getCertificationKeys().size());
+        isEquals("The primary key MUST be the certification key", primaryKey, key.getCertificationKeys().get(0));
+
+        isEquals("There MUST be only one signing key", 1, key.getSigningKeys().size());
+        OpenPGPCertificate.OpenPGPComponentKey signingKey = key.getSigningKeys().get(0);
+        isEquals("Signing key MUST be an RSA key", PublicKeyAlgorithmTags.RSA_GENERAL, signingKey.getAlgorithm());
+        isEquals("Signing key MUST have a strength of 4096 bits.", 4096, signingKey.getPGPPublicKey().getBitStrength());
+        isFalse("The signing key MUST NOT be the primary key", primaryKey.equals(signingKey));
+
+        isEquals("There MUST be only one encryption key", 1, key.getEncryptionKeys().size());
+        OpenPGPCertificate.OpenPGPComponentKey encryptionKey = key.getEncryptionKeys().get(0);
+        isEquals("Primary key MUST be an RSA key", PublicKeyAlgorithmTags.RSA_GENERAL, encryptionKey.getAlgorithm());
+        isEquals("Encryption key MUST have a strength of 4096 bits.", 4096, encryptionKey.getPGPPublicKey().getBitStrength());
+        isFalse("The encryption key MUST NOT be the primary key", primaryKey.equals(encryptionKey));
+
+        isFalse("The signing key MUST NOT be the encryption key", signingKey.equals(encryptionKey));
     }
 
     private void testGenerateCustomKey(OpenPGPApi api)
