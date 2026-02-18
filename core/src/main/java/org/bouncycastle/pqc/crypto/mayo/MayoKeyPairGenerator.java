@@ -6,9 +6,9 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.GF16;
-import org.bouncycastle.util.Longs;
 
 /**
  * Implementation of the MAYO asymmetric key pair generator following the MAYO signature scheme specifications.
@@ -130,7 +130,7 @@ public class MayoKeyPairGenerator
                 // If off-diagonal, add (XOR) the vector at (c, r) into the same output vector.
                 if (r != c)
                 {
-                    Longs.xorTo(mVecLimbs, P3, comVecLimbs + rmVecLimbs, P3_upper, mVecsStored);
+                    Nat.xorTo64(mVecLimbs, P3, comVecLimbs + rmVecLimbs, P3_upper, mVecsStored);
                 }
                 mVecsStored += mVecLimbs;
             }

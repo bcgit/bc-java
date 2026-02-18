@@ -6,12 +6,11 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.GF16;
-import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -887,7 +886,7 @@ public class MayoSigner
             {
                 for (int col = 0, ncol = 0; col < k; col++, ncol += n)
                 {
-                    Longs.xorTo(mVecLimbs, P1, pUsed, accumulator, (((krow + col) << 4) + (S[ncol + j] & 0xFF)) * mVecLimbs);
+                    Nat.xorTo64(mVecLimbs, P1, pUsed, accumulator, (((krow + col) << 4) + (S[ncol + j] & 0xFF)) * mVecLimbs);
                 }
                 pUsed += mVecLimbs;
             }
@@ -896,7 +895,7 @@ public class MayoSigner
             {
                 for (int col = 0, ncol = 0; col < k; col++, ncol += n)
                 {
-                    Longs.xorTo(mVecLimbs, P1, p2 + orow_j_mVecLimbs, accumulator, (((krow + col) << 4) + (S[ncol + j + v] & 0xFF)) * mVecLimbs);
+                    Nat.xorTo64(mVecLimbs, P1, p2 + orow_j_mVecLimbs, accumulator, (((krow + col) << 4) + (S[ncol + j + v] & 0xFF)) * mVecLimbs);
                 }
             }
         }
@@ -908,7 +907,7 @@ public class MayoSigner
             {
                 for (int col = 0, ncol = 0; col < k; col++, ncol += n)
                 {
-                    Longs.xorTo(mVecLimbs, P1, p3 + pUsed, accumulator, (((krow + col) << 4) + (S[ncol + j] & 0xFF)) * mVecLimbs);
+                    Nat.xorTo64(mVecLimbs, P1, p3 + pUsed, accumulator, (((krow + col) << 4) + (S[ncol + j] & 0xFF)) * mVecLimbs);
                 }
                 pUsed += mVecLimbs;
             }
@@ -932,7 +931,7 @@ public class MayoSigner
                 final int sValmVecLimbs = (S[nrow + j] & 0xFF) * mVecLimbs + krowmVecLimbs16; // Unsigned byte value
                 for (int col = 0, colmVecLimbs = 0; col < k; col++, colmVecLimbs += mVecLimbs)
                 {
-                    Longs.xorTo(mVecLimbs, PS, jkmVecLimbs + colmVecLimbs, accumulator, sValmVecLimbs + (colmVecLimbs << 4));
+                    Nat.xorTo64(mVecLimbs, PS, jkmVecLimbs + colmVecLimbs, accumulator, sValmVecLimbs + (colmVecLimbs << 4));
                 }
             }
         }
