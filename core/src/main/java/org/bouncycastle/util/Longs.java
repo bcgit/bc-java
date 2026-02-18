@@ -1,5 +1,7 @@
 package org.bouncycastle.util;
 
+import org.bouncycastle.math.raw.Nat;
+
 /**
  * Utility methods and constants for longs.
  */
@@ -67,11 +69,9 @@ public class Longs
         return Long.valueOf(value);
     }
 
+    /** @deprecated Use {@link Nat#xorTo64(int, long[], int, long[], int)} instead. */
     public static void xorTo(int len, long[] x, int xOff, long[] z, int zOff)
     {
-        for (int i = 0; i < len; ++i)
-        {
-            z[zOff + i] ^= x[xOff + i];
-        }
+        Nat.xorTo64(len, x, xOff, z, zOff);
     }
 }
