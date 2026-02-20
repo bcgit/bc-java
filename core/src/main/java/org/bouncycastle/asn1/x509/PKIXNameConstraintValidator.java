@@ -1453,6 +1453,10 @@ public class PKIXNameConstraintValidator
                     {
                         intersect.add(dns);
                     }
+                    else if (_permitted.equals(dns))
+                    {
+                        intersect.add(dns);
+                    }
                 }
             }
         }
