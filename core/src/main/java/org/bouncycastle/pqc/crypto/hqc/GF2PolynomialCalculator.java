@@ -40,12 +40,12 @@ class GF2PolynomialCalculator
         return Nat.equalTo64(size, x, y);
     }
 
-    void mul(long[] o, long[] a1, long[] a2)
+    void mul(long[] x, long[] y, long[] z)
     {
-        long[] zz = createExt();
+        long[] tt = createExt();
         long[] tmp = new long[size << 4];
-        karatsuba(zz, 0, a1, 0, a2, 0, size, tmp, 0);
-        reduce(o, zz);
+        karatsuba(size, x, 0, y, 0, tt, 0, tmp, 0);
+        reduce(tt, z);
     }
 
     void random(Shake256RandomGenerator generator, long[] z)
@@ -57,49 +57,36 @@ class GF2PolynomialCalculator
     }
 
     /**
-     * Performs schoolbook multiplication over GF(2).
+     * The base multiplication used by {@link #karatsuba(int, long[], int, long[], int, long[], int, long[], int)} once
+     * the lengths become small.
      *
-     * <p>This method computes {@code r = a * b}, where {@code a} and {@code b} are
-     * polynomials over GF(2), each represented as {@code n} 64-bit words. The result
-     * is stored in {@code r} as {@code 2 * n} 64-bit words.</p>
+     * <p>This method computes {@code zz = x * y}, where {@code x} and {@code y} are
+     * polynomials over GF(2), each represented as {@code len} 64-bit words. The result
+     * is stored in {@code zz} as {@code 2 * len} 64-bit words.</p>
      */
-    private void baseMul(long[] r, int rOff, long[] a, int aOff, long[] b, int bOff, int n)
+    private static void baseMul(int len, long[] x, int xOff, long[] y, int yOff, long[] zz, int zzOff)
     {
-        Arrays.fill(r, rOff, rOff + (n << 1), 0L);
-
-        long[] u = new long[16];
-
-        // Schoolbook
-
-//        for (int i = 0; i < n; ++i)
-//        {
-//            long x_i = a[aOff + i];
-//
-//            for (int j = 0; j < n; ++j)
-//            {
-//                long y_j = b[bOff + j];
-//
-//                implMulwAcc(u, x_i, y_j, r, rOff + i + j);
-//            }
-//        }
+        int lenExt = len * 2;
+        Arrays.fill(zz, zzOff, zzOff + lenExt, 0L);
 
         // Arbitrary-degree Karatsuba
 
-        for (int i = 0; i < n; ++i)
+        long[] u = new long[16];
+
+        for (int i = 0; i < len; ++i)
         {
-            implMulwAcc(u, a[aOff + i], b[bOff + i], r, rOff + (i << 1));
+            implMulwAcc(u, x[xOff + i], y[yOff + i], zz, zzOff + (i << 1));
         }
 
-        long v0 = r[rOff], v1 = r[rOff + 1];
-        for (int i = 1; i < n; ++i)
+        long v0 = zz[zzOff], v1 = zz[zzOff + 1];
+        for (int i = 1; i < len; ++i)
         {
-            v0 ^= r[rOff + (i << 1)]; r[rOff + i] = v0 ^ v1; v1 ^= r[rOff + (i << 1) + 1];
+            v0 ^= zz[zzOff + (i << 1)]; zz[zzOff + i] = v0 ^ v1; v1 ^= zz[zzOff + (i << 1) + 1];
         }
 
-        long w = v0 ^ v1;
-        Nat.xor64(n, r, rOff, w, r, rOff + n);
+        Nat.xor64(len, zz, zzOff, v0 ^ v1, zz, zzOff + len);
 
-        int last = n - 1;
+        int last = len - 1;
         for (int zPos = 1; zPos < (last * 2); ++zPos)
         {
             int hi = Math.min(last, zPos);
@@ -107,7 +94,7 @@ class GF2PolynomialCalculator
 
             while (lo < hi)
             {
-                implMulwAcc(u, a[aOff + lo] ^ a[aOff + hi], b[bOff + lo] ^ b[bOff + hi], r, rOff + zPos);
+                implMulwAcc(u, x[xOff + lo] ^ x[xOff + hi], y[yOff + lo] ^ y[yOff + hi], zz, zzOff + zPos);
 
                 ++lo;
                 --hi;
@@ -118,82 +105,76 @@ class GF2PolynomialCalculator
     /**
      * Performs Karatsuba multiplication over GF(2) using a caller-supplied temporary buffer.
      *
-     * <p>If {@code n <= 16}, this method falls back to
-     * {@link #baseMul(long[], int, long[], int, long[], int, int)}.
-     * Otherwise, the operands are split in half and the algorithm is applied recursively.</p>
-     *
+     * <p>
+     * If {@code len < 12}, this method falls back to
+     * {@link #baseMul(int, long[], int, long[], int, long[], int)}. Otherwise, the operands are split
+     * (approximately) in half and the algorithm is applied recursively.
+     * </p>
      */
-    private void karatsuba(long[] r, int rOffset, long[] a, int aOffset, long[] b, int bOffset, int n, long[] tmpBuffer,
-        int tmpOffset)
+    private void karatsuba(int len, long[] x, int xOff, long[] y, int yOff, long[] zz, int zzOff, long[] tmp,
+        int tmpOff)
     {
-        if (n < 8)
+        int cutoff = 12;
+
+        if (len < cutoff)
         {
-            baseMul(r, rOffset, a, aOffset, b, bOffset, n);
+            baseMul(len, x, xOff, y, yOff, zz, zzOff);
             return;
         }
 
         // NB: This only works for n > 4
-//        assert n > 4;
+//        assert len > 4;
 
-        int m = n >> 1;
-        int n1 = n - m;
-        int nx2 = n << 1;
+        int m = len >> 1;
+        int n1 = len - m;
+        int nx2 = len << 1;
         int mx2 = m << 1;
         int n1x2 = n1 << 1;
 
-        int z2Offset = tmpOffset + nx2;
+        int z2Offset = tmpOff + nx2;
         int zMidOffset = z2Offset + nx2;
         int taOffset = zMidOffset + nx2;
-        int tbOffset = taOffset + n;
-        int childBufferOffset = tmpOffset + (n << 3);
+        int tbOffset = taOffset + len;
+        int childBufferOffset = tmpOff + (len << 3);
 
-        karatsuba(tmpBuffer, tmpOffset, a, aOffset, b, bOffset, m, tmpBuffer, childBufferOffset);
-        karatsuba(tmpBuffer, z2Offset, a, aOffset + m, b, bOffset + m, n1, tmpBuffer, childBufferOffset);
+        karatsuba(m, x, xOff, y, yOff, tmp, tmpOff, tmp, childBufferOffset);
+        karatsuba(n1, x, xOff + m, y, yOff + m, tmp, z2Offset, tmp, childBufferOffset);
 
         for (int i = 0; i < n1; i++)
         {
-            long loa = (i < m) ? a[aOffset + i] : 0;
-            long lob = (i < m) ? b[bOffset + i] : 0;
-            tmpBuffer[taOffset + i] = loa ^ a[aOffset + m + i];
-            tmpBuffer[tbOffset + i] = lob ^ b[bOffset + m + i];
+            long loa = (i < m) ? x[xOff + i] : 0;
+            long lob = (i < m) ? y[yOff + i] : 0;
+            tmp[taOffset + i] = loa ^ x[xOff + m + i];
+            tmp[tbOffset + i] = lob ^ y[yOff + m + i];
         }
 
-        karatsuba(tmpBuffer, zMidOffset, tmpBuffer, taOffset, tmpBuffer, tbOffset, n1, tmpBuffer, childBufferOffset);
+        karatsuba(n1, tmp, taOffset, tmp, tbOffset, tmp, zMidOffset, tmp, childBufferOffset);
 
-        System.arraycopy(tmpBuffer, tmpOffset, r, rOffset, mx2);
-        System.arraycopy(tmpBuffer, z2Offset, r, rOffset + mx2, n1x2);
+        System.arraycopy(tmp, tmpOff, zz, zzOff, mx2);
+        System.arraycopy(tmp, z2Offset, zz, zzOff + mx2, n1x2);
 
         for (int i = 0; i < 2 * n1; i++)
         {
-            long z0i = (i < mx2) ? tmpBuffer[tmpOffset + i] : 0;
-            long z2i = (i < n1x2) ? tmpBuffer[z2Offset + i] : 0;
-            r[rOffset + m + i] ^= tmpBuffer[zMidOffset + i] ^ z0i ^ z2i;
+            long z0i = (i < mx2) ? tmp[tmpOff + i] : 0;
+            long z2i = (i < n1x2) ? tmp[z2Offset + i] : 0;
+            zz[zzOff + m + i] ^= tmp[zMidOffset + i] ^ z0i ^ z2i;
         }
     }
 
     /**
      * Reduces a polynomial modulo {@code X^n - 1}.
-     *
-     * <p>This computes {@code o(x) = a(x) mod (X^n - 1)}, where
-     * {@code a(x)} may have degree up to {@code 2n - 2}. The result
-     * is a polynomial of degree less than {@code n}, represented as
-     * {@code n} 64-bit words.</p>
-     *
-     * @param o  the result buffer of length {@code n} words,
-     *           where the reduced polynomial is stored
-     * @param a  the input polynomial to be reduced
      */
-    private void reduce(long[] o, long[] a)
+    private void reduce(long[] tt, long[] z)
     {
         int partialBits = bits & 63;
         int excessBits = 64 - partialBits;
         long partialMask = -1L >>> excessBits;
 
 //        long c =
-        Nat.shiftUpBits64(size, a, size, excessBits, a[size - 1], o, 0);
+        Nat.shiftUpBits64(size, tt, size, excessBits, tt[size - 1], z, 0);
 //        assert c == 0L;
-        addTo(a, o);
-        o[size - 1] &= partialMask;
+        addTo(tt, z);
+        z[size - 1] &= partialMask;
     }
 
     /**
@@ -201,17 +182,24 @@ class GF2PolynomialCalculator
      */
     private static void implMulwAcc(long[] u, long x, long y, long[] z, int zOff)
     {
+        long h = 0, m = x, n = y;
+        
 //      u[0] = 0;
         u[1] = y;
         for (int i = 2; i < 16; i += 2)
         {
             u[i    ] = u[i >>> 1] << 1;
             u[i + 1] = u[i      ] ^  y;
+
+            // Interleave "repair" steps here for performance
+            m = (m & 0xFEFEFEFEFEFEFEFEL) >>> 1;
+            h ^= m & (n >> 63);
+            n <<= 1;
         }
 
         int j = (int)x;
-        long g, h = 0, l = u[j & 15]
-                         ^ u[(j >>> 4) & 15] << 4;
+        long g, l = u[j & 15]
+                  ^ u[(j >>> 4) & 15] << 4;
         int k = 56;
         do
         {
@@ -222,12 +210,6 @@ class GF2PolynomialCalculator
             h ^= (g >>> -k);
         }
         while ((k -= 8) > 0);
-
-        for (int p = 0; p < 7; ++p)
-        {
-            x = (x & 0xFEFEFEFEFEFEFEFEL) >>> 1;
-            h ^= x & ((y << p) >> 63);
-        }
 
 //        assert h >>> 63 == 0;
 
