@@ -180,7 +180,7 @@ public class SecT571Field
         int len = 9 << 4;
         long[] t = new long[len << 1];
         System.arraycopy(x, 0, t, 9, 9);
-//        reduce5(T0, 9);
+//        reduce5(t, 9);
         int tOff = 0;
         for (int i = 7; i > 0; --i)
         {
@@ -410,17 +410,24 @@ public class SecT571Field
 
     protected static void implMulwAcc(long[] u, long x, long y, long[] z, int zOff)
     {
+        long h = 0, m = x, n = y;
+        
 //      u[0] = 0;
         u[1] = y;
         for (int i = 2; i < 16; i += 2)
         {
             u[i    ] = u[i >>> 1] << 1;
             u[i + 1] = u[i      ] ^  y;
+
+            // Interleave "repair" steps here for performance
+            m = (m & 0xFEFEFEFEFEFEFEFEL) >>> 1;
+            h ^= m & (n >> 63);
+            n <<= 1;
         }
 
         int j = (int)x;
-        long g, h = 0, l = u[j & 15]
-                         ^ u[(j >>> 4) & 15] << 4;
+        long g, l = u[j & 15]
+                  ^ u[(j >>> 4) & 15] << 4;
         int k = 56;
         do
         {
@@ -431,12 +438,6 @@ public class SecT571Field
             h ^= (g >>> -k);
         }
         while ((k -= 8) > 0);
-
-        for (int p = 0; p < 7; ++p)
-        {
-            x = (x & 0xFEFEFEFEFEFEFEFEL) >>> 1;
-            h ^= x & ((y << p) >> 63);
-        }
 
 //        assert h >>> 63 == 0;
 

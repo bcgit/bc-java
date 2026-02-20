@@ -195,53 +195,42 @@ class BIKERing
 
     protected void implMultiplyAcc(long[] x, long[] y, long[] zz)
     {
-        long[] u = new long[16];
-
-        // Schoolbook
-
-//        for (int i = 0; i < size; ++i)
-//        {
-//            long x_i = x[i];
-//
-//            for (int j = 0; j < size; ++j)
-//            {
-//                long y_j = y[j];
-//
-//                implMulwAcc(u, x_i, y_j, zz, i + j);
-//            }
-//        }
+        // TODO Karatsuba/Toom-Cook at larger sizes
 
         // Arbitrary-degree Karatsuba
-
-        for (int i = 0; i < size; ++i)
         {
-            implMulwAcc(u, x[i], y[i], zz, i << 1);
-        }
+            long[] u = new long[16];
 
-        long v0 = zz[0], v1 = zz[1];
-        for (int i = 1; i < size; ++i)
-        {
-            v0 ^= zz[i << 1]; zz[i] = v0 ^ v1; v1 ^= zz[(i << 1) + 1];
-        }
-
-        long w = v0 ^ v1;
-        for (int i = 0; i < size; ++i)
-        {
-            zz[size + i] = zz[i] ^ w;
-        }
-
-        int last = size - 1;
-        for (int zPos = 1; zPos < (last * 2); ++zPos)
-        {
-            int hi = Math.min(last, zPos);
-            int lo = zPos - hi;
-
-            while (lo < hi)
+            for (int i = 0; i < size; ++i)
             {
-                implMulwAcc(u, x[lo] ^ x[hi], y[lo] ^ y[hi], zz, zPos);
-
-                ++lo;
-                --hi;
+                implMulwAcc(u, x[i], y[i], zz, i << 1);
+            }
+    
+            long v0 = zz[0], v1 = zz[1];
+            for (int i = 1; i < size; ++i)
+            {
+                v0 ^= zz[i << 1]; zz[i] = v0 ^ v1; v1 ^= zz[(i << 1) + 1];
+            }
+    
+            long w = v0 ^ v1;
+            for (int i = 0; i < size; ++i)
+            {
+                zz[size + i] = zz[i] ^ w;
+            }
+    
+            int last = size - 1;
+            for (int zPos = 1; zPos < (last * 2); ++zPos)
+            {
+                int hi = Math.min(last, zPos);
+                int lo = zPos - hi;
+    
+                while (lo < hi)
+                {
+                    implMulwAcc(u, x[lo] ^ x[hi], y[lo] ^ y[hi], zz, zPos);
+    
+                    ++lo;
+                    --hi;
+                }
             }
         }
     }
@@ -347,17 +336,24 @@ class BIKERing
 
     private static void implMulwAcc(long[] u, long x, long y, long[] z, int zOff)
     {
+        long h = 0, m = x, n = y;
+
 //      u[0] = 0;
         u[1] = y;
         for (int i = 2; i < 16; i += 2)
         {
             u[i    ] = u[i >>> 1] << 1;
             u[i + 1] = u[i      ] ^  y;
+
+            // Interleave "repair" steps here for performance
+            m = (m & 0xFEFEFEFEFEFEFEFEL) >>> 1;
+            h ^= m & (n >> 63);
+            n <<= 1;
         }
 
         int j = (int)x;
-        long g, h = 0, l = u[j & 15]
-                         ^ u[(j >>> 4) & 15] << 4;
+        long g, l = u[j & 15]
+                  ^ u[(j >>> 4) & 15] << 4;
         int k = 56;
         do
         {
@@ -368,12 +364,6 @@ class BIKERing
             h ^= (g >>> -k);
         }
         while ((k -= 8) > 0);
-
-        for (int p = 0; p < 7; ++p)
-        {
-            x = (x & 0xFEFEFEFEFEFEFEFEL) >>> 1;
-            h ^= x & ((y << p) >> 63);
-        }
 
 //        assert h >>> 63 == 0;
 

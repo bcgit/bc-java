@@ -160,7 +160,7 @@ class HQCEngine
         Utils.fromByteArrayToLongArray(v64, ct, N_BYTE, N1N2_BYTE);
 
         // cKemPrimeU64 is tmpLong
-        gf.mul(cKemPrimeU64, cKemPrimeV64, u64);
+        gf.mul(cKemPrimeV64, u64, cKemPrimeU64);
         vectTruncate(cKemPrimeU64);
         gf.addTo(v64, cKemPrimeU64);
 
@@ -208,7 +208,7 @@ class HQCEngine
 
         randomGenerator.init(theta, thetaOff, SEED_BYTES, (byte)1);
         vectSampleFixedWeights2(randomGenerator, e, wr); // e is r2
-        gf.mul(u, e, tmp); // e is r2
+        gf.mul(tmp, e, u); // e is r2
         Utils.fromByteArrayToLongArray(tmp, ekPke, SEED_BYTES, pkSize - SEED_BYTES);
         gf.mul(tmp, e, tmp);
         vectSampleFixedWeights2(randomGenerator, e, wr);
