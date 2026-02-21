@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -39,6 +40,7 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
 import org.bouncycastle.tls.crypto.impl.PQCUtil;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
+import org.bouncycastle.util.Strings;
 
 /**
  * Implementation class for a single X.509 certificate based on the JCA.
@@ -272,8 +274,13 @@ public class JcaTlsCertificate
             return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
         }
 
-        // TODO[RFC 8998]
-//        case SignatureScheme.sm2sig_sm3:
+        // [RFC 8998]
+        case SignatureScheme.sm2sig_sm3:
+        {
+            byte[] identifier = Strings.toByteArray("TLSv1.3+GM+Cipher+Suite");
+            AlgorithmParameterSpec paramSpec = new SM2ParameterSpec(identifier);
+            return crypto.createTls13Verifier("SM3withSM2", paramSpec, getPubKeyEC());
+        }
 
         case SignatureScheme.mldsa44:
         case SignatureScheme.mldsa65:

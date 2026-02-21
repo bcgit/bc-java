@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.impl.bc;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -59,6 +60,17 @@ public class BcTlsECDomain implements TlsECDomain
         if (!NamedGroup.refersToASpecificCurve(namedGroup))
         {
             return null;
+        }
+
+        // Special handling for SM2 curve (RFC 8998)
+        if (namedGroup == NamedGroup.curveSM2)
+        {
+            X9ECParameters ecP = GMNamedCurves.getByName("sm2p256v1");
+            if (ecP == null)
+            {
+                return null;
+            }
+            return new ECDomainParameters(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
         }
 
         // Parameters are lazily created the first time a particular curve is accessed

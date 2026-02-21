@@ -50,6 +50,10 @@ public class JcaDefaultTlsCredentialedSigner
             if (signatureAndHashAlgorithm != null)
             {
                 int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+                if (signatureScheme == SignatureScheme.sm2sig_sm3)
+                {
+                    return new JcaTlsSM2Signer(crypto, privateKey, signatureScheme);
+                }
                 if (SignatureScheme.isECDSA(signatureScheme))
                 {
                     return new JcaTlsECDSA13Signer(crypto, privateKey, signatureScheme);
