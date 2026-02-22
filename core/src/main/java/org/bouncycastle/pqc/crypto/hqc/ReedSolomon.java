@@ -111,7 +111,6 @@ class ReedSolomon
         int degSigmaP = 0;
         int[] sigmaDup = new int[delta + 1];
         int[] sigmaP = new int[delta + 1];
-        int degSigmaDup;
         int pp = Utils.toUnsigned16Bits(-1);
         int dp = 1;
         int d = syndromes[0];
@@ -121,7 +120,7 @@ class ReedSolomon
         for (int i = 0; i < 2 * delta; i++)
         {
             System.arraycopy(sigma, 0, sigmaDup, 0, delta + 1);
-            degSigmaDup = degSigma;
+            int degSigmaDup = degSigma;
             int dd = GFCalculator.div(d, dp);
 
             for (int j = 1; j <= i + 1 && j <= delta; j++)
@@ -190,20 +189,19 @@ class ReedSolomon
         int[] betaSet = new int[delta];
         int[] eSet = new int[delta];
 
-        int deltaCount = 0, deltaVal, mask1;
+        int deltaCount1 = 0;
         for (int i = 0; i < n1; i++)
         {
             int mark = 0;
             int mask = errorCompactSet[i] != 0 ? 0xffff : 0;
             for (int j = 0; j < delta; j++)
             {
-                int iMask = j == deltaCount ? 0xffff : 0;
+                int iMask = j == deltaCount1 ? 0xffff : 0;
                 betaSet[j] += iMask & mask & expArrays[i];
                 mark += iMask & mask & 1;
             }
-            deltaCount += mark;
+            deltaCount1 += mark;
         }
-        deltaVal = deltaCount;
 
         for (int i = 0; i < delta; i++)
         {
@@ -223,11 +221,11 @@ class ReedSolomon
                 temp2 = GFCalculator.mul(temp2, 1 ^ GFCalculator.mul(inv, betaSet[(i + j) % delta]));
             }
 
-            mask1 = i < deltaVal ? 0xffff : 0;
+            int mask1 = i < deltaCount1 ? 0xffff : 0;
             eSet[i] = mask1 & GFCalculator.div(temp1, temp2);
         }
 
-        deltaCount = 0;
+        int deltaCount2 = 0;
         for (int i = 0; i < n1; i++)
         {
             int mark = 0;
@@ -235,11 +233,11 @@ class ReedSolomon
 
             for (int j = 0; j < delta; j++)
             {
-                int iMask = j == deltaCount ? 0xffff : 0;
+                int iMask = j == deltaCount2 ? 0xffff : 0;
                 res[i] += iMask & mask & eSet[j];
                 mark += iMask & mask & 1;
             }
-            deltaCount += mark;
+            deltaCount2 += mark;
         }
     }
 }
