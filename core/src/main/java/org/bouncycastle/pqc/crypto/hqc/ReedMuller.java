@@ -62,16 +62,15 @@ class ReedMuller
 
         for (int i = 1; i < mulParam; i++)
         {
+            int[] type32 = srcCode[off + i].type32;
             for (int j = 0; j < 4; j++)
             {
                 for (int k = 0; k < 32; k++)
                 {
-                    desCode[j * 32 + k] += srcCode[i + off].type32[j] >> k & 1;
-
+                    desCode[j * 32 + k] += type32[j] >> k & 1;
                 }
             }
         }
-
     }
 
     private static int findPeaks(int[] input)
@@ -95,10 +94,9 @@ class ReedMuller
         return peakPos;
     }
 
-
     private static int Bit0Mask(int b)
     {
-        return (-(b & 1));
+        return -(b & 1);
     }
 
     public static void encode(long[] codeword, byte[] m, int n1, int mulParam)

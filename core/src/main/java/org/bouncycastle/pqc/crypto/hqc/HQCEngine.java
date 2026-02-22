@@ -22,17 +22,16 @@ class HQCEngine
     private final int fft;
     private final int mulParam;
     private final int N_BYTE;
-    private final int K_BYTE;
     private final int N1N2_BYTE_64;
     private final int N1N2_BYTE;
     private final int[] generatorPoly;
-    private final int N_MU;
+    private final int nMu;
     private final int pkSize;
     private final GF2PolynomialCalculator gf;
     private final int rejectionThreshold;
     private final int cipherTextBytes;
 
-    HQCEngine(int n, int n1, int n2, int k, int g, int delta, int w, int wr, int fft, int nmu, int pkSize,
+    HQCEngine(int n, int n1, int n2, int k, int g, int delta, int w, int wr, int fft, int nMu, int pkSize,
         int[] generatorPoly)
     {
         this.n = n;
@@ -44,11 +43,10 @@ class HQCEngine
         this.generatorPoly = generatorPoly;
         this.g = g;
         this.fft = fft;
-        this.N_MU = nmu;
+        this.nMu = nMu;
         this.pkSize = pkSize;
         this.mulParam = n2 >> 7;
         this.N_BYTE = Utils.getByteSizeFromBitSize(n);
-        this.K_BYTE = k;
         this.N1N2_BYTE_64 = Utils.getByte64SizeFromBitSize(n1 * n2);
         this.N1N2_BYTE = Utils.getByteSizeFromBitSize(n1 * n2);
         this.gf = new GF2PolynomialCalculator(n);
@@ -77,10 +75,10 @@ class HQCEngine
 
         secureRandom.nextBytes(seedKem);
         Shake256RandomGenerator ctxKem = new Shake256RandomGenerator(seedKem, (byte)1);
-        System.arraycopy(seedKem, 0, sk, pkSize + SEED_BYTES + K_BYTE, SEED_BYTES);
+        System.arraycopy(seedKem, 0, sk, pkSize + SEED_BYTES + k, SEED_BYTES);
 
         ctxKem.nextBytes(seedKem);
-        ctxKem.nextBytes(sk, pkSize + SEED_BYTES, K_BYTE);
+        ctxKem.nextBytes(sk, pkSize + SEED_BYTES, k);
 
         hashHI(keypairSeed, 512, seedKem, seedKem.length, (byte)2);
         ctxKem.init(keypairSeed, 0, SEED_BYTES, (byte)1);
@@ -96,9 +94,9 @@ class HQCEngine
         System.arraycopy(keypairSeed, 0, sk, pkSize, SEED_BYTES);
         System.arraycopy(pk, 0, sk, 0, pkSize);
         Arrays.clear(keypairSeed);
-        Arrays.clear(xLongBytes);
-        Arrays.clear(yLongBytes);
-        Arrays.clear(h);
+        gf.clear(xLongBytes);
+        gf.clear(yLongBytes);
+        gf.clear(h);
     }
 
     /**
@@ -112,7 +110,7 @@ class HQCEngine
     void encaps(byte[] u, byte[] v, byte[] kTheta, byte[] pk, byte[] salt, SecureRandom secureRandom)
     {
         // 1. Randomly generate m
-        byte[] m = new byte[K_BYTE];
+        byte[] m = new byte[k];
         byte[] hashEkKem = new byte[SEED_BYTES];
         long[] u64 = gf.create();
         long[] v64 = new long[N1N2_BYTE_64];
@@ -125,7 +123,7 @@ class HQCEngine
         pkeEncrypt(u64, v64, pk, m, kTheta, SEED_BYTES);
         Utils.fromLongArrayToByteArray(u, 0, u.length, u64);
         Utils.fromLongArrayToByteArray(v, 0, v.length, v64);
-        Arrays.clear(u64);
+        gf.clear(u64);
         Arrays.clear(v64);
         Arrays.clear(m);
         Arrays.clear(hashEkKem);
@@ -173,19 +171,19 @@ class HQCEngine
         System.arraycopy(kThetaPrime, 0, ss, 0, 32);
         Arrays.fill(cKemPrimeV64, 0L);
         pkeEncrypt(cKemPrimeU64, cKemPrimeV64, sk, mPrime, kThetaPrime, 32);
-        hashGJ(kBar, 256, hashEkKem, sk, pkSize + SEED_BYTES, K_BYTE, ct, 0, ct.length, (byte)3);
+        hashGJ(kBar, 256, hashEkKem, sk, pkSize + SEED_BYTES, k, ct, 0, ct.length, (byte)3);
 
         int result = (int)(gf.equalTo(u64, cKemPrimeU64) & gf.equalTo(v64, cKemPrimeV64));
 
-        for (int i = 0; i < K_BYTE; i++)
+        for (int i = 0; i < k; i++)
         {
             ss[i] = (byte)(((ss[i] & result) ^ (kBar[i] & ~result)) & 0xff);
         }
 
-        Arrays.clear(u64);
-        Arrays.clear(v64);
-        Arrays.clear(cKemPrimeU64);
-        Arrays.clear(cKemPrimeV64);
+        gf.clear(u64);
+        gf.clear(v64);
+        gf.clear(cKemPrimeU64);
+        gf.clear(cKemPrimeV64);
         Arrays.clear(hashEkKem);
         Arrays.clear(kThetaPrime);
         Arrays.clear(mPrime);
@@ -218,17 +216,16 @@ class HQCEngine
 
         vectSampleFixedWeights2(randomGenerator, tmp, wr);// tmp is r1
         gf.addTo(tmp, u);
-        Arrays.clear(e);
-        Arrays.clear(tmp);
+        gf.clear(e);
+        gf.clear(tmp);
         Arrays.clear(res);
     }
 
     private int barrettReduce(int x)
     {
-        long q = ((long) x * N_MU) >>> 32;
-        int r = x - (int) (q * n);
-        r -= (-(((r - n) >>> 31) ^ 1)) & n;
-        return r;
+        int q = (int)(((long)x * nMu) >>> 32);
+        int r = x - n - q * n;
+        return r + ((r >> 31) & n);
     }
 
     private void generateRandomSupport(int[] support, int weight, Shake256RandomGenerator random)
@@ -250,9 +247,9 @@ class HQCEngine
             {
                 continue;
             }
+
             candidate = barrettReduce(candidate);
             boolean duplicate = false;
-
             for (int k = 0; k < count; k++)
             {
                 if (support[k] == candidate)
@@ -261,11 +258,12 @@ class HQCEngine
                     break;
                 }
             }
-
-            if (!duplicate)
+            if (duplicate)
             {
-                support[count++] = candidate;
+                continue;
             }
+
+            support[count++] = candidate;
         }
     }
 
@@ -284,28 +282,53 @@ class HQCEngine
             for (int j = 0; j < weight; j++)
             {
                 int tmp = i - indexTab[j];
-                val |= (bitTab[j] & -(1 ^ ((tmp | -tmp) >>> 31)));
+                val |= bitTab[j] & ~((tmp | -tmp) >> 31);
             }
             v[i] = val;
         }
     }
 
-    public void vectSampleFixedWeight1(long[] output, Shake256RandomGenerator random, int weight)
+    private void vectSampleFixedWeight1(long[] output, Shake256RandomGenerator random, int weight)
     {
         int[] support = new int[wr];
         generateRandomSupport(support, weight, random);
         writeSupportToVector(output, support, weight);
     }
 
-    private static void hashHI(byte[] output, int bitLength, byte[] in, int inLen, byte domain)
+    private void vectSampleFixedWeights2(Shake256RandomGenerator generator, long[] v, int weight)
     {
-        SHA3Digest digest = new SHA3Digest(bitLength);
-        digest.update(in, 0, inLen);
-        digest.update(domain);
-        digest.doFinal(output, 0);
+        byte[] rand = new byte[wr << 2];
+        generator.xofGetBytes(rand, rand.length);
+
+        int[] support = new int[wr];
+        Pack.littleEndianToInt(rand, 0, support);
+
+        int i = weight;
+        while (--i >= 0)
+        {
+            int support_i = i + (int)(((support[i] & 0xFFFFFFFFL) * (n - i)) >> 32);
+            int notFound = -1;
+            for (int j = i + 1; j < weight; ++j)
+            {
+                notFound &= cdiff(support_i, support[j]);
+            }
+            support[i] = (~notFound & i) ^ (notFound & support_i);
+        }
+
+        writeSupportToVector(v, support, weight);
     }
 
-    private void hashGJ(byte[] output, int bitLength, byte[] hashEkKem, byte[] mOrSigma, int mOrSigmaOff,
+    private void vectTruncate(long[] v)
+    {
+        Arrays.fill(v, N1N2_BYTE_64, (n + 63) >> 6, 0L);
+    }
+
+    private static int cdiff(int v1, int v2)
+    {
+        return ((v1 - v2) | (v2 - v1)) >> 31;
+    }
+
+    private static void hashGJ(byte[] output, int bitLength, byte[] hashEkKem, byte[] mOrSigma, int mOrSigmaOff,
         int mOrSigmaLen, byte[] saltOrCt, int saltOrCtOff, int saltOrCtOffLen, byte domain)
     {
         SHA3Digest digest = new SHA3Digest(bitLength);
@@ -316,37 +339,11 @@ class HQCEngine
         digest.doFinal(output, 0);
     }
 
-    private void vectSampleFixedWeights2(Shake256RandomGenerator generator, long[] v, int weight)
+    private static void hashHI(byte[] output, int bitLength, byte[] in, int inLen, byte domain)
     {
-        int[] support = new int[wr];
-        byte[] rand = new byte[wr << 2];
-        generator.xofGetBytes(rand, rand.length);
-        Pack.littleEndianToInt(rand, 0, support);
-        for (int i = 0; i < weight; ++i)
-        {
-            support[i] = i + (int) (((support[i] & 0xFFFFFFFFL) * (n - i)) >> 32);
-        }
-
-        for (int i = weight - 1; i-- > 0;)
-        {
-            int found = 0;
-            for (int j = i + 1; j < weight; ++j)
-            {
-                found |= compareU32(support[j], support[i]);
-            }
-            found = -found;
-            support[i] = (found & i) ^ (~found & support[i]);
-        }
-        writeSupportToVector(v, support, weight);
-    }
-
-    private static int compareU32(int v1, int v2)
-    {
-        return 1 ^ (((v1 - v2) | (v2 - v1)) >>> 31);
-    }
-
-    private void vectTruncate(long[] v)
-    {
-        Arrays.fill(v, N1N2_BYTE_64, (n + 63) >> 6, 0L);
+        SHA3Digest digest = new SHA3Digest(bitLength);
+        digest.update(in, 0, inLen);
+        digest.update(domain);
+        digest.doFinal(output, 0);
     }
 }

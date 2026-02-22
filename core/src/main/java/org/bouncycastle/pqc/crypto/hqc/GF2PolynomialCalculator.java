@@ -25,6 +25,11 @@ class GF2PolynomialCalculator
         Nat.xorTo64(size, x, z);
     }
 
+    void clear(long[] z)
+    {
+        Nat.zero64(size, z);
+    }
+
     long[] create()
     {
         return new long[size];
