@@ -9,36 +9,26 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 public class HQCKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
-
-    private HQCKeyGenerationParameters hqcKeyGenerationParameters;
-
     private SecureRandom random;
+    private HQCParameters parameters;
 
     @Override
     public void init(KeyGenerationParameters params)
     {
-        this.hqcKeyGenerationParameters = (HQCKeyGenerationParameters)params;
         this.random = params.getRandom();
-    }
-
-    private AsymmetricCipherKeyPair genKeyPair()
-    {
-        HQCEngine engine = hqcKeyGenerationParameters.getParameters().getEngine();
-        byte[] pk = new byte[hqcKeyGenerationParameters.getParameters().getPublicKeyBytes()];
-        byte[] sk = new byte[hqcKeyGenerationParameters.getParameters().getSecretKeyBytes()];
-
-        engine.genKeyPair(pk, sk, random);
-
-        // form keys
-        HQCPublicKeyParameters publicKey = new HQCPublicKeyParameters(hqcKeyGenerationParameters.getParameters(), pk);
-        HQCPrivateKeyParameters privateKey = new HQCPrivateKeyParameters(hqcKeyGenerationParameters.getParameters(), sk);
-
-        return new AsymmetricCipherKeyPair(publicKey, privateKey);
+        this.parameters = ((HQCKeyGenerationParameters)params).getParameters();
     }
 
     @Override
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        return genKeyPair();
+        byte[] pk = new byte[parameters.getPublicKeyBytes()];
+        byte[] sk = new byte[parameters.getSecretKeyBytes()];
+
+        parameters.getEngine().genKeyPair(pk, sk, random);
+
+        HQCPublicKeyParameters publicKey = new HQCPublicKeyParameters(parameters, pk);
+        HQCPrivateKeyParameters privateKey = new HQCPrivateKeyParameters(parameters, sk);
+        return new AsymmetricCipherKeyPair(publicKey, privateKey);
     }
 }
