@@ -179,7 +179,6 @@ class TestUtils
         for (int fileIndex = 0; fileIndex < files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            //System.out.println(files[fileIndex]);
             InputStream src = TestResourceFinder.findTestResource(homeDir, name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -219,19 +218,14 @@ class TestUtils
                         // Generate keys and test.
                         //
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-                        AsymmetricKeyParameter pubParams;
-                        AsymmetricKeyParameter privParams;
+                        AsymmetricKeyParameter pubParams = kp.getPublic();;
+                        AsymmetricKeyParameter privParams = kp.getPrivate();
                         if (enableFactory)
                         {
                             pubParams = PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
+                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams));
                             privParams = PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
-                        }
-                        else
-                        {
-                            pubParams = kp.getPublic();
-                            privParams = kp.getPrivate();
+                                PrivateKeyInfoFactory.createPrivateKeyInfo(privParams));
                         }
 
                         Assert.assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, operation.getPublicKeyEncoded(pubParams)));
@@ -240,18 +234,20 @@ class TestUtils
                         // KEM Encapsulation
                         EncapsulatedSecretGenerator kemGenerator = operation.getKEMGenerator(random);
                         SecretWithEncapsulation secretWithEnc = kemGenerator.generateEncapsulated(pubParams);
-                        byte[] secret = secretWithEnc.getSecret();
-                        byte[] c = secretWithEnc.getEncapsulation();
 
-                        Assert.assertTrue(name + " " + count + ": ciphertext", Arrays.areEqual(c, ct));
-                        Assert.assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(secret, 0, secret.length, ss, 0, secret.length));
+                        byte[] cipherText = secretWithEnc.getEncapsulation();
+                        Assert.assertTrue(name + " " + count + ": cipherText", Arrays.areEqual(ct, cipherText));
+
+                        byte[] encapSecret = secretWithEnc.getSecret();
+                        Assert.assertTrue(name + " " + count + ": encapSecret", Arrays.areEqual(ss, encapSecret));
 
                         // KEM Decapsulation
                         EncapsulatedSecretExtractor kemExtractor = operation.getKEMExtractor(privParams);
-                        byte[] dec_key = kemExtractor.extractSecret(c);
+
+                        byte[] decapSecret = kemExtractor.extractSecret(cipherText);
+                        Assert.assertTrue(name + " " + count + ": decapSecret", Arrays.areEqual(ss, decapSecret));
 
                         //Assert.assertTrue(operation.getSessionKeySize() == secret.length * 8);
-                        Assert.assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
                     }
                     buf.clear();
                     continue;
