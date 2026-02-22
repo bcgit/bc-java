@@ -2,10 +2,11 @@ package org.bouncycastle.pqc.crypto.test;
 
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
@@ -15,21 +16,29 @@ import org.bouncycastle.pqc.crypto.hqc.HQCKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
+import org.bouncycastle.util.Arrays;
+import org.junit.Assert;
+
+import junit.framework.TestCase;
 
 public class HQCTest
     extends TestCase
 {
-    public static void main(String[] args)
-        throws Exception
+    private final SecureRandom RANDOM = new SecureRandom();
+
+    public void testConsistencyHQC128()
     {
-        HQCTest test = new HQCTest();
-        test.testVectors();
+        implTestConsistency(HQCParameters.hqc128);
     }
 
-    @Override
-    public String getName()
+    public void testConsistencyHQC192()
     {
-        return "HQC Test";
+        implTestConsistency(HQCParameters.hqc192);
+    }
+
+    public void testConsistencyHQC256()
+    {
+        implTestConsistency(HQCParameters.hqc256);
     }
 
     public void testVectors()
@@ -49,7 +58,7 @@ public class HQCTest
             HQCParameters.hqc256
         };
 
-        TestUtils.testTestVector(false, true, "pqc/crypto/hqc", files, new TestUtils.KeyEncapsulationOperation()
+        TestUtils.testTestVector(true, true, "pqc/crypto/hqc", files, new TestUtils.KeyEncapsulationOperation()
         {
             int sessionKeySize = 0;
 
@@ -102,20 +111,48 @@ public class HQCTest
         });
     }
 
+    private void implTestConsistency(HQCParameters parameters)
+    {
+        HQCKeyPairGenerator kpg = new HQCKeyPairGenerator();
+        kpg.init(new HQCKeyGenerationParameters(RANDOM, parameters));
+
+        for (int i = 0; i < 10; ++i)
+        {
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            for (int j = 0; j < 10; ++j)
+            {
+                HQCKEMGenerator generator = new HQCKEMGenerator(RANDOM);
+                SecretWithEncapsulation encapsulated = generator.generateEncapsulated(kp.getPublic());
+                byte[] encapSecret = encapsulated.getSecret();
+                byte[] encapsulation = encapsulated.getEncapsulation();
+                Assert.assertEquals(parameters.getSessionKeySize() / 8, encapSecret.length);
+                Assert.assertEquals(parameters.getEncapsulationLength(), encapsulation.length);
+
+                HQCKEMExtractor extractor = new HQCKEMExtractor((HQCPrivateKeyParameters)kp.getPrivate());
+                byte[] decapSecret = extractor.extractSecret(encapsulation);
+                if (!Arrays.areEqual(encapSecret, decapSecret))
+                {
+                    Assert.fail("Consistency " + parameters.getName() + " #" + i + "[" + j + "]");
+                }
+            }
+        }
+    }
+    
     private static class Shake256SecureRandom
         extends SecureRandom
     {
-        private final SHAKEDigest digest = new SHAKEDigest(256);
+        private final SHAKEDigest xof = new SHAKEDigest(256);
 
         Shake256SecureRandom(byte[] seed)
         {
-            digest.update(seed, 0, seed.length);
-            digest.update((byte) 0);
+            xof.update(seed, 0, seed.length);
+            xof.update((byte) 0);
         }
 
         public void nextBytes(byte[] bytes)
         {
-            digest.doOutput(bytes, 0, bytes.length);
+            xof.doOutput(bytes, 0, bytes.length);
         }
     }
 }
