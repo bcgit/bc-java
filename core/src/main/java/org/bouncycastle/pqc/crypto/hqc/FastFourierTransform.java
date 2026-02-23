@@ -29,7 +29,7 @@ class FastFourierTransform
         for (int i = 0; i < m - 1; i++)
         {
             int beta_i = betas[i];
-            deltas[i] = GFCalculator.sqr(beta_i) ^ beta_i;
+            deltas[i] = GF.sqr(beta_i) ^ beta_i;
         }
 
         // Step 5:
@@ -47,7 +47,7 @@ class FastFourierTransform
 
         for (int i = 1; i < k; i++)
         {
-            int ti = u[i] ^ GFCalculator.mul(betaSum[i], v[i]);
+            int ti = u[i] ^ GF.mul(betaSum[i], v[i]);
             output[i] = ti;
             output[k + i] ^= ti;
         }
@@ -178,7 +178,7 @@ class FastFourierTransform
         {
             for (int i = 0; i < noOfBetas; i++)
             {
-                tempSet[i] = GFCalculator.mul(betaSet[i], func[1]);
+                tempSet[i] = GF.mul(betaSet[i], func[1]);
             }
 
             output[0] = func[0];
@@ -200,8 +200,8 @@ class FastFourierTransform
             int x = 1 << noCoeffsPlus;
             for (int i = 1; i < x; i++)
             {
-                betaMPow = GFCalculator.mul(betaMPow, betaSet[noOfBetas - 1]);
-                func[i] = GFCalculator.mul(betaMPow, func[i]);
+                betaMPow = GF.mul(betaMPow, betaSet[noOfBetas - 1]);
+                func[i] = GF.mul(betaMPow, func[i]);
             }
         }
 
@@ -209,9 +209,9 @@ class FastFourierTransform
 
         for (int i = 0; i < noOfBetas - 1; i++)
         {
-            int gamma_i = GFCalculator.div(betaSet[i], betaSet[noOfBetas - 1]);
+            int gamma_i = GF.div(betaSet[i], betaSet[noOfBetas - 1]);
             gammaSet[i] = gamma_i;
-            deltaSet[i] = GFCalculator.sqr(gamma_i) ^ gamma_i;
+            deltaSet[i] = GF.sqr(gamma_i) ^ gamma_i;
         }
 
         computeSubsetSum(gammaSumSet, gammaSet, noOfBetas - 1);
@@ -225,7 +225,7 @@ class FastFourierTransform
             output[k] = uSet[0] ^ fx1[0];
             for (int i = 1; i < k; i++)
             {
-                int ti = uSet[i] ^ GFCalculator.mul(gammaSumSet[i], fx1[0]);
+                int ti = uSet[i] ^ GF.mul(gammaSumSet[i], fx1[0]);
                 output[i] = ti;
                 output[k + i] = ti ^ fx1[0];
             }
@@ -240,7 +240,7 @@ class FastFourierTransform
             output[k] ^= uSet[0];
             for (int i = 1; i < k; i++)
             {
-                int ti = uSet[i] ^ GFCalculator.mul(gammaSumSet[i], vSet[i]);
+                int ti = uSet[i] ^ GF.mul(gammaSumSet[i], vSet[i]);
                 output[i] = ti;
                 output[k + i] ^= ti;
             }
