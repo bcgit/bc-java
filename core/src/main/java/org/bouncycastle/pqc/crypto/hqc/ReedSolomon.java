@@ -96,11 +96,12 @@ class ReedSolomon
     {
         for (int i = 0; i < 2 * delta; i++)
         {
+            int syndromes_i = syndromes[i] ^ Utils.toUnsigned8bits(codeWord[0]);
             for (int j = 1; j < n1; j++)
             {
-                syndromes[i] ^= GF.mul(Utils.toUnsigned8bits(codeWord[j]), alpha[i][j - 1]);
+                syndromes_i ^= GF.mul(Utils.toUnsigned8bits(codeWord[j]), alpha[i][j - 1]);
             }
-            syndromes[i] ^= Utils.toUnsigned8bits(codeWord[0]);
+            syndromes[i] = syndromes_i;
         }
     }
 
@@ -131,10 +132,7 @@ class ReedSolomon
             int degX = Utils.toUnsigned16Bits(i - pp);
             int degXSigmaP = Utils.toUnsigned16Bits(degX + degSigmaP);
 
-            int firstMask = d != 0 ? 0xffff : 0;
-            int secondMask = degXSigmaP > degSigma ? 0xffff : 0;
-
-            int mask = firstMask & secondMask;
+            int mask = ((d | -d) & (degSigma - degXSigmaP)) >> 31;
             degSigma ^= mask & (degXSigmaP ^ degSigma);
 
             if (i == (2 * delta - 1))
@@ -164,78 +162,81 @@ class ReedSolomon
     private static void computeZx(int[] output, int[] sigma, int deg, int[] syndromes, int delta)
     {
         output[0] = 1;
-
-        for (int i = 1; i < delta + 1; i++)
+        output[1] = syndromes[0];
         {
-            int mask = i - deg < 1 ? 0xffff : 0;
-            output[i] = mask & sigma[i];
+            int mask = ~(deg - 1) >> 31;
+            output[1] ^= mask & sigma[1];
         }
-
-        output[1] ^= syndromes[0];
-
         for (int i = 2; i <= delta; i++)
         {
-            int mask = i - deg < 1 ? 0xffff : 0;
-            output[i] ^= (mask) & syndromes[i - 1];
+            int out_i = sigma[i] ^ syndromes[i - 1];
             for (int j = 1; j < i; j++)
             {
-                output[i] ^= (mask) & GF.mul(sigma[j], syndromes[i - j - 1]);
+                out_i ^= GF.mul(sigma[j], syndromes[i - j - 1]);
             }
+
+            int mask = ~(deg - i) >> 31;
+            output[i] = mask & out_i;
         }
     }
 
     private static void computeErrors(int[] res, int[] zx, byte[] errorCompactSet, int delta, int n1)
     {
         int[] betaSet = new int[delta];
-        int[] eSet = new int[delta];
 
         int deltaCount1 = 0;
         for (int i = 0; i < n1; i++)
         {
+            int ecs_i = errorCompactSet[i] & 0xFF;
+            int mask = (ecs_i | -ecs_i) >> 31;
+
             int mark = 0;
-            int mask = errorCompactSet[i] != 0 ? 0xffff : 0;
             for (int j = 0; j < delta; j++)
             {
-                int iMask = j == deltaCount1 ? 0xffff : 0;
-                betaSet[j] += iMask & mask & expArrays[i];
-                mark += iMask & mask & 1;
+                int iMask = (((j ^ deltaCount1) - 1) >> 31) & mask;
+                betaSet[j] += iMask & expArrays[i];
+                mark -= iMask; // conditional +1
             }
             deltaCount1 += mark;
         }
 
+        int[] eSet = new int[delta];
         for (int i = 0; i < delta; i++)
         {
-            int temp1 = 1;
-            int temp2 = 1;
             int inv = GF.inv(betaSet[i]);
-            int invPow = 1;
 
-            for (int j = 1; j <= delta; j++)
+            int temp1 = 0;
+            for (int j = delta; j > 0; --j)
             {
-                invPow = GF.mul(invPow, inv);
-                temp1 ^= GF.mul(invPow, zx[j]);
+                temp1 = GF.mul(temp1 ^ zx[j], inv);
+            }
+            temp1 ^= 1;
+
+            int temp2 = 1;
+            for (int j = 0; j < delta; ++j)
+            {
+                if (i != j)
+                {
+                    temp2 ^= GF.mul3(temp2, inv, betaSet[j]);
+                }
             }
 
-            for (int j = 1; j < delta; j++)
-            {
-                temp2 = GF.mul(temp2, 1 ^ GF.mul(inv, betaSet[(i + j) % delta]));
-            }
-
-            int mask1 = i < deltaCount1 ? 0xffff : 0;
+            int mask1 = (i - deltaCount1) >> 31;
             eSet[i] = mask1 & GF.div(temp1, temp2);
         }
 
         int deltaCount2 = 0;
         for (int i = 0; i < n1; i++)
         {
-            int mark = 0;
-            int mask = errorCompactSet[i] != 0 ? 0xffff : 0;
+            int ecs_i = errorCompactSet[i] & 0xFF;
+            int mask = (ecs_i | -ecs_i) >> 31;
 
+            int mark = 0;
             for (int j = 0; j < delta; j++)
             {
-                int iMask = j == deltaCount2 ? 0xffff : 0;
-                res[i] += iMask & mask & eSet[j];
-                mark += iMask & mask & 1;
+                int iMask = (((j ^ deltaCount2) - 1) >> 31) & mask;
+                res[i] += iMask & eSet[j];
+                mark -= iMask; // conditional +1
             }
             deltaCount2 += mark;
         }
