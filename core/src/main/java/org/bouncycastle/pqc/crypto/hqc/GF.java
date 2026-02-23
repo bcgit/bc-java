@@ -18,18 +18,31 @@ class GF
         return _INV[a];
     }
 
-    static int mod(int a)
+    private static int mod1(int a)
     {
-        int t = a - HQCParameters.GF_MUL_ORDER;
-//        return t + ((t >> 31) & HQCParameters.GF_MUL_ORDER);
-        return t + (t >>> 24);
+        return a + (a >>> 24);
+    }
+
+    private static int mod2(int a)
+    {
+        return mod1(a - HQCParameters.GF_MUL_ORDER);
+    }
+
+    private static int mod(int a)
+    {
+        return mod2((a & 0xFF) + (a >>> 8));
     }
 
     static int mul(int a, int b)
     {
-        int ma = -a >> 31; // a != 0
-        int mb = -b >> 31; // b != 0
-        return ma & mb & _EXP[mod(_LOG[a] + _LOG[b])];
+        int m = (-a & -b) >> 31; // { a, b } != 0
+        return m & _EXP[mod2(_LOG[a] + _LOG[b])];
+    }
+
+    static int mul3(int a, int b, int c)
+    {
+        int m = (-a & -b & -c) >> 31; // { a, b, c } != 0
+        return m & _EXP[mod(_LOG[a] + _LOG[b] + _LOG[c])];
     }
 
     static int sqr(int a)
