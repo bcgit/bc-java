@@ -22,7 +22,7 @@ class ReedSolomon
 
             for (int j = 0; j < paramG; j++)
             {
-                tmp[j] = GFCalculator.mul(gateValue, rsPoly[j]);
+                tmp[j] = GF.mul(gateValue, rsPoly[j]);
             }
 
             for (int j = n1 - paramK - 1; j > 0; j--)
@@ -98,7 +98,7 @@ class ReedSolomon
         {
             for (int j = 1; j < n1; j++)
             {
-                syndromes[i] ^= GFCalculator.mul(Utils.toUnsigned8bits(codeWord[j]), alpha[i][j - 1]);
+                syndromes[i] ^= GF.mul(Utils.toUnsigned8bits(codeWord[j]), alpha[i][j - 1]);
             }
             syndromes[i] ^= Utils.toUnsigned8bits(codeWord[0]);
         }
@@ -121,11 +121,11 @@ class ReedSolomon
         {
             System.arraycopy(sigma, 0, sigmaDup, 0, delta + 1);
             int degSigmaDup = degSigma;
-            int dd = GFCalculator.div(d, dp);
+            int dd = GF.div(d, dp);
 
             for (int j = 1; j <= i + 1 && j <= delta; j++)
             {
-                sigma[j] ^= GFCalculator.mul(dd, sigmaP[j]);
+                sigma[j] ^= GF.mul(dd, sigmaP[j]);
             }
 
             int degX = Utils.toUnsigned16Bits(i - pp);
@@ -155,7 +155,7 @@ class ReedSolomon
 
             for (int k = 1; k <= i + 1 && k <= delta; k++)
             {
-                d ^= GFCalculator.mul(sigma[k], syndromes[i + 1 - k]);
+                d ^= GF.mul(sigma[k], syndromes[i + 1 - k]);
             }
         }
         return degSigma;
@@ -179,7 +179,7 @@ class ReedSolomon
             output[i] ^= (mask) & syndromes[i - 1];
             for (int j = 1; j < i; j++)
             {
-                output[i] ^= (mask) & GFCalculator.mul(sigma[j], syndromes[i - j - 1]);
+                output[i] ^= (mask) & GF.mul(sigma[j], syndromes[i - j - 1]);
             }
         }
     }
@@ -207,22 +207,22 @@ class ReedSolomon
         {
             int temp1 = 1;
             int temp2 = 1;
-            int inv = GFCalculator.inv(betaSet[i]);
+            int inv = GF.inv(betaSet[i]);
             int invPow = 1;
 
             for (int j = 1; j <= delta; j++)
             {
-                invPow = GFCalculator.mul(invPow, inv);
-                temp1 ^= GFCalculator.mul(invPow, zx[j]);
+                invPow = GF.mul(invPow, inv);
+                temp1 ^= GF.mul(invPow, zx[j]);
             }
 
             for (int j = 1; j < delta; j++)
             {
-                temp2 = GFCalculator.mul(temp2, 1 ^ GFCalculator.mul(inv, betaSet[(i + j) % delta]));
+                temp2 = GF.mul(temp2, 1 ^ GF.mul(inv, betaSet[(i + j) % delta]));
             }
 
             int mask1 = i < deltaCount1 ? 0xffff : 0;
-            eSet[i] = mask1 & GFCalculator.div(temp1, temp2);
+            eSet[i] = mask1 & GF.div(temp1, temp2);
         }
 
         int deltaCount2 = 0;

@@ -4,13 +4,13 @@ import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
-class GF2PolynomialCalculator
+class GF2x
 {
     private final int bits;
     private final int size;
     private final int sizeExt;
 
-    GF2PolynomialCalculator(int n)
+    GF2x(int n)
     {
         if ((n & 0xFFFF0001) != 1)
             throw new IllegalArgumentException();
