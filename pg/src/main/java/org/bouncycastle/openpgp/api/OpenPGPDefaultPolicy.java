@@ -19,6 +19,7 @@ public class OpenPGPDefaultPolicy
     private int defaultDocumentSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
     private int defaultCertificationSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
     private int defaultSymmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
+    private OpenPGPCertificate.ComponentSignatureEvaluator componentSignatureEvaluator;
 
     public OpenPGPDefaultPolicy()
     {
@@ -80,6 +81,13 @@ public class OpenPGPDefaultPolicy
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.X448);
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.Ed25519);
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.Ed448);
+
+        /*
+         * Certificate component signature evaluation
+         */
+        // Evaluate the complete temporal history of certificate components.
+        // This is consistent with legacy OpenPGP implementations.
+        evaluateCompleteComponentSignatureHistory();
     }
 
     public OpenPGPDefaultPolicy rejectHashAlgorithm(int hashAlgorithmId)
@@ -210,6 +218,28 @@ public class OpenPGPDefaultPolicy
     public boolean isAcceptablePublicKeyStrength(int publicKeyAlgorithmId, int bitStrength)
     {
         return isAcceptable(publicKeyAlgorithmId, bitStrength, publicKeyMinimalBitStrengths);
+    }
+
+    @Override
+    public OpenPGPCertificate.ComponentSignatureEvaluator getComponentSignatureEvaluator() {
+        return componentSignatureEvaluator;
+    }
+
+    public OpenPGPDefaultPolicy setComponentSignatureEvaluator(
+            OpenPGPCertificate.ComponentSignatureEvaluator componentSignatureEvaluator)
+    {
+        this.componentSignatureEvaluator = componentSignatureEvaluator;
+        return this;
+    }
+
+    public OpenPGPDefaultPolicy evaluateCompleteComponentSignatureHistory()
+    {
+        return setComponentSignatureEvaluator(OpenPGPCertificate.completeComponentSignatureHistoryEvaluator());
+    }
+
+    public OpenPGPDefaultPolicy evaluateSimplifiedSignatureHistory()
+    {
+        return setComponentSignatureEvaluator(OpenPGPCertificate.simplifiedComponentSignatureHistoryEvaluator());
     }
 
     @Override

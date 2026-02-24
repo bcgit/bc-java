@@ -321,4 +321,11 @@ public interface OpenPGPPolicy
             this.knownNotations.add(notationName);
         }
     }
+
+    /**
+     * The {@link OpenPGPCertificate.ComponentSignatureEvaluator} delegate defines, how component signatures on
+     * {@link OpenPGPCertificate OpenPGPCertificates} are being evaluated.
+     * @return delegate for component signature evaluation
+     */
+    OpenPGPCertificate.ComponentSignatureEvaluator getComponentSignatureEvaluator();
 }

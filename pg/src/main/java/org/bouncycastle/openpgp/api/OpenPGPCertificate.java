@@ -2870,21 +2870,24 @@ public class OpenPGPCertificate
         implements Comparable<OpenPGPSignatureChain>, Iterable<OpenPGPSignatureChain.Link>
     {
         private final List<Link> chainLinks = new ArrayList<Link>();
+        private final ComponentSignatureEvaluator componentSignatureEvaluator;
 
-        private OpenPGPSignatureChain(Link rootLink)
+        private OpenPGPSignatureChain(Link rootLink, ComponentSignatureEvaluator componentSignatureEvaluator)
         {
             this.chainLinks.add(rootLink);
+            this.componentSignatureEvaluator = componentSignatureEvaluator;
         }
 
-        private OpenPGPSignatureChain(List<Link> links)
+        private OpenPGPSignatureChain(List<Link> links, ComponentSignatureEvaluator componentSignatureEvaluator)
         {
             this.chainLinks.addAll(links);
+            this.componentSignatureEvaluator = componentSignatureEvaluator;
         }
 
         // copy constructor
         private OpenPGPSignatureChain(OpenPGPSignatureChain copy)
         {
-            this(copy.chainLinks);
+            this(copy.chainLinks, copy.componentSignatureEvaluator);
         }
 
         /**
@@ -2958,7 +2961,7 @@ public class OpenPGPCertificate
          */
         public static OpenPGPSignatureChain direct(OpenPGPComponentSignature sig)
         {
-            return new OpenPGPSignatureChain(Link.create(sig));
+            return new OpenPGPSignatureChain(Link.create(sig), sig.target.certificate.policy.getComponentSignatureEvaluator());
         }
 
         /**
@@ -3063,6 +3066,11 @@ public class OpenPGPCertificate
          */
         public Date getSince()
         {
+            return componentSignatureEvaluator.getSignatureChainValidityPeriodBeginning(this);
+        }
+
+        public Date getMostRecentLinkCreationTime()
+        {
             Date latestDate = null;
             for (Iterator it = chainLinks.iterator(); it.hasNext(); )
             {
@@ -3076,6 +3084,12 @@ public class OpenPGPCertificate
             }
             return latestDate;
         }
+
+        public Date getIssuerKeyCreationTime()
+        {
+            return getLeafLinkTargetKey().getCertificate().getPrimaryKey().getCreationTime();
+        }
+
 //        public Date getSince()
 //        {
 //            // Find most recent chain link
@@ -3645,5 +3659,82 @@ public class OpenPGPCertificate
         {
             chains.add(OpenPGPSignatureChain.direct(it.next()));
         }
+    }
+
+    /**
+     * Delegate for component signature evaluation.
+     * The introduction of PQC in OpenPGP makes it desirable to allow for cleanup of historic binding signatures,
+     * since PQC signatures are rather large, so accumulating them can lead to very large certificates.
+     * The classic model of component signature evaluation evaluates the complete history of component binding
+     * signatures when evaluating the validity of a certificate component
+     * (see {@link #completeComponentSignatureHistoryEvaluator()}).
+     * Removing old signatures with the classic evaluation model can lead to historic document- or certification
+     * signatures to suddenly become invalid.
+     * Therefore, we need a way to swap out the evaluation method by introducing this delegate, which can have
+     * different concrete implementations.
+     */
+    public interface ComponentSignatureEvaluator {
+        Date getSignatureChainValidityPeriodBeginning(OpenPGPSignatureChain chain);
+    }
+
+    /**
+     * This {@link ComponentSignatureEvaluator} performs an evaluation of the complete history of the components
+     * signatures.
+     * This behavior is consistent with most OpenPGP implementations, but might lead to "temporal holes".
+     * When evaluating the validity of a component at evaluation time N, we ignore all binding signatures
+     * made after N and check if the latest binding before N is not yet expired at N.
+     * Hard revocations at any time invalidate the component.
+     * Soft revocations only invalidate the component if they are made before N, not yet expired at N and not yet
+     * overwritten by a valid binding newer than the revocation.
+     * <p>
+     * The problem with this method of evaluation is, that it can lead to temporal holes when historic self signatures
+     * are removed from the certificate (e.g. in order to reduce its size).
+     * Removing all but the latest bindings will render the key invalid for document signatures made before the latest
+     * bindings.
+     * @return component signature evaluator consistent with legacy implementations
+     *
+     * @see <a href="https://sequoia-pgp.gitlab.io/openpgp-interoperability-test-suite/results.html#Temporary_validity">
+     *     OpenPGP Interoperability Test Suite - Temporary validity</a>
+
+     */
+    public static ComponentSignatureEvaluator completeComponentSignatureHistoryEvaluator() {
+        return new ComponentSignatureEvaluator() {
+            @Override
+            public Date getSignatureChainValidityPeriodBeginning(OpenPGPSignatureChain chain) {
+                return chain.getMostRecentLinkCreationTime();
+            }
+        };
+    }
+
+    /**
+     * This {@link ComponentSignatureEvaluator} performs a simplified evaluation of the components binding signatures.
+     * Compared to the implementation in {@link #completeComponentSignatureHistoryEvaluator()}, this implementation prevents the
+     * issue of "temporal holes" and is therefore better suited for modern OpenPGP implementations where signatures
+     * are frequently cleaned up (e.g. PQC keys with large signatures).
+     * <p>
+     * This evaluator considers a component valid at time N iff
+     * <ul>
+     *     <li>the latest binding signature exists and does not predate the component key itself</li>
+     *     <li>the latest binding signature is not yet expired at N</li>
+     *     <li>the component key was created before or at N</li>
+     *     <li>if there is a soft-revocation created after the latest binding; the revocation is expired at N</li>
+     *     <li>the component is not hard-revoked</li>
+     * </ul>
+     * This implementation ensures that when superseded binding signatures are removed from a certificate,
+     * historic document signatures remain valid.
+     * Note though, that this method may render the certificate valid for historic periods where the certificate
+     * was purposefully temporarily invalidated by expiring self-signatures.
+     *
+     * @return component signature history evaluator which performs a simplified evaluation, fixing temporal holes
+     * @see <a href="https://mailarchive.ietf.org/arch/msg/openpgp/kA4YtiP3j8LJUift1_D0mWIHVV0/">
+     *     OpenPGP Mailing List - PQC requires urgent semantic cleanup</a>
+     */
+    public static ComponentSignatureEvaluator simplifiedComponentSignatureHistoryEvaluator() {
+        return new ComponentSignatureEvaluator() {
+            @Override
+            public Date getSignatureChainValidityPeriodBeginning(OpenPGPSignatureChain chain) {
+                return chain.getIssuerKeyCreationTime();
+            }
+        };
     }
 }
