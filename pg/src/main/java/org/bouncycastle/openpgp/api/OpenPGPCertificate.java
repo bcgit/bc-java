@@ -804,16 +804,16 @@ public class OpenPGPCertificate
             }
 
             OpenPGPSignatureChains issuerChains = getAllSignatureChainsFor(issuer);
-            if (!issuerChains.chains.isEmpty())
+            if (issuerChains.chains.isEmpty())
+            {
+                subkeyChains.add(OpenPGPSignatureChain.direct(sig));
+            }
+            else
             {
                 for (Iterator<OpenPGPSignatureChain> it2 = issuerChains.chains.iterator(); it2.hasNext(); )
                 {
                     subkeyChains.add(it2.next().plus(sig));
                 }
-            }
-            else
-            {
-                subkeyChains.add(new OpenPGPSignatureChain(OpenPGPSignatureChain.Link.create(sig)));
             }
         }
         this.componentSignatureChains.put(subkey, subkeyChains);
