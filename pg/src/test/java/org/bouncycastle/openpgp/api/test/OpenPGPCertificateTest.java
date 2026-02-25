@@ -960,7 +960,7 @@ public class OpenPGPCertificateTest
 
         // Check that with complete history evaluation, historic signature is now no longer valid
         OpenPGPDefaultPolicy fullHistoryEvaluation = new OpenPGPDefaultPolicy()
-                .evaluateCompleteComponentSignatureHistory();
+                .applyStrictTemporalComponentSignatureValidityConstraints();
         OpenPGPCertificate updatedCert = new OpenPGPCertificate(
                 updatedKeyRing, api.getImplementation(), fullHistoryEvaluation);
         isFalse("With full history eval, primary key MUST NOT be bound at t1",
@@ -978,7 +978,7 @@ public class OpenPGPCertificateTest
 
         // Check that with simplified history evaluation, historic signatures remain valid
         OpenPGPDefaultPolicy simplifiedHistoryEvaluation = new OpenPGPDefaultPolicy()
-                .evaluateSimplifiedSignatureHistory();
+                .allowRetroactiveComponentSignatureValidation();
         updatedCert = new OpenPGPCertificate(
                 updatedKeyRing, api.getImplementation(), simplifiedHistoryEvaluation);
         isTrue("With simplified history eval, primary key MUST be bound at t1",
