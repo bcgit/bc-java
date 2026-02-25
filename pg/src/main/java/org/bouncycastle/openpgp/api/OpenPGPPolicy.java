@@ -327,5 +327,5 @@ public interface OpenPGPPolicy
      * {@link OpenPGPCertificate OpenPGPCertificates} are being evaluated.
      * @return delegate for component signature evaluation
      */
-    OpenPGPCertificate.ComponentSignatureEvaluator getComponentSignatureEvaluator();
+    OpenPGPCertificate.ComponentSignatureEvaluator getComponentSignatureEffectivenessEvaluator();
 }
