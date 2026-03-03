@@ -231,6 +231,7 @@ abstract class FipsUtils
         case SignatureScheme.DRAFT_slhdsa_shake_192f:
         case SignatureScheme.DRAFT_slhdsa_shake_256s:
         case SignatureScheme.DRAFT_slhdsa_shake_256f:
+        case SignatureScheme.sm2sig_sm3:
         default:
             return false;
         }

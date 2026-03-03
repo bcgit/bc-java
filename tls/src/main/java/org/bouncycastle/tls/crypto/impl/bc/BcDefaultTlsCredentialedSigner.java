@@ -49,15 +49,14 @@ public class BcDefaultTlsCredentialedSigner
 
             if (signatureAndHashAlgorithm != null)
             {
+                int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+
                 // TODO[RFC 8998]
-//                short signatureAlgorithm = signatureAndHashAlgorithm.getSignature();
-//                switch (signatureAlgorithm)
+//                if (SignatureScheme.sm2sig_sm3 == signatureScheme)
 //                {
-//                case SignatureAlgorithm.sm2:
 //                    return new BcTlsSM2Signer(crypto, privKeyEC, Strings.toByteArray("TLSv1.3+GM+Cipher+Suite"));
 //                }
 
-                int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
                 if (SignatureScheme.isECDSA(signatureScheme))
                 {
                     return new BcTlsECDSA13Signer(crypto, privKeyEC, signatureScheme);
