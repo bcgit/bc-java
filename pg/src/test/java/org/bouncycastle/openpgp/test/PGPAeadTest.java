@@ -183,7 +183,7 @@ public class PGPAeadTest
     private void knownV6TestVectorDecryptionTests()
         throws IOException, PGPException
     {
-        // Test known-good V6 test vectors    TODO: decryption tests
+        // Test known-good V6 test vectors
         testBcDecryption(V6_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testBcDecryption(V6_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testBcDecryption(V6_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
