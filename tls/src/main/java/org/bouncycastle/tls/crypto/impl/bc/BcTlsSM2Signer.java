@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 
@@ -22,11 +23,7 @@ public class BcTlsSM2Signer
 
     public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
     {
-        if (algorithm == null
-            // TODO[RFC 8998] 
-//            || algorithm.getSignature() != SignatureAlgorithm.sm2
-//            || algorithm.getHash() != HashAlgorithm.sm3
-            )
+        if (algorithm == null || SignatureScheme.from(algorithm) != SignatureScheme.sm2sig_sm3)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }

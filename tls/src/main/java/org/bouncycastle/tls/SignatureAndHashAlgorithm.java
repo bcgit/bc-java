@@ -48,6 +48,7 @@ public class SignatureAndHashAlgorithm
     public static final SignatureAndHashAlgorithm slhdsa_shake_192f = create(SignatureScheme.DRAFT_slhdsa_shake_192f);
     public static final SignatureAndHashAlgorithm slhdsa_shake_256s = create(SignatureScheme.DRAFT_slhdsa_shake_256s);
     public static final SignatureAndHashAlgorithm slhdsa_shake_256f = create(SignatureScheme.DRAFT_slhdsa_shake_256f);
+    public static final SignatureAndHashAlgorithm sm2sig_sm3 = create(SignatureScheme.sm2sig_sm3);
 
     public static SignatureAndHashAlgorithm getInstance(short hashAlgorithm, short signatureAlgorithm)
     {

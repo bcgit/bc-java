@@ -280,7 +280,6 @@ public class SignatureScheme
 
     public static short getSignatureAlgorithm(int signatureScheme)
     {
-        // TODO[RFC 8998] sm2sig_sm3
         return (short)(signatureScheme & 0xFF);
     }
 
@@ -322,6 +321,8 @@ public class SignatureScheme
             return SignatureAndHashAlgorithm.slhdsa_shake_256s;
         case DRAFT_slhdsa_shake_256f:
             return SignatureAndHashAlgorithm.slhdsa_shake_256f;
+        case sm2sig_sm3:
+            return SignatureAndHashAlgorithm.sm2sig_sm3;
         default:
             return SignatureAndHashAlgorithm.getInstance(
                 getHashAlgorithm(signatureScheme),

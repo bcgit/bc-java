@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -138,8 +139,7 @@ public class TlsUtils
         addCertSigAlgOID(h, RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512,
             SignatureAndHashAlgorithm.gostr34102012_512);
 
-        // TODO[RFC 8998]
-//        addCertSigAlgOID(h, GMObjectIdentifiers.sm2sign_with_sm3, HashAlgorithm.sm3, SignatureAlgorithm.sm2);
+        addCertSigAlgOID(h, GMObjectIdentifiers.sm2sign_with_sm3, SignatureAndHashAlgorithm.sm2sig_sm3);
 
         return h;
     }
@@ -2022,9 +2022,6 @@ public class TlsUtils
             return NISTObjectIdentifiers.id_sha384;
         case HashAlgorithm.sha512:
             return NISTObjectIdentifiers.id_sha512;
-        // TODO[RFC 8998]
-//        case HashAlgorithm.sm3:
-//            return GMObjectIdentifiers.sm3;
         default:
             throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
