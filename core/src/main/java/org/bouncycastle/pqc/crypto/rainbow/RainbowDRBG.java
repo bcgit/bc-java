@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.rainbow;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -82,7 +83,7 @@ class RainbowDRBG
     {
         try
         {
-            AESEngine cipher = new AESEngine();
+            BlockCipher cipher = AESEngine.newInstance();
 
             cipher.init(true, new KeyParameter(key));
 
