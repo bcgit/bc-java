@@ -49,7 +49,7 @@ public abstract class ASN1BitString
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct BIT STRING from byte[]: " + e.getMessage());
+                throw new IllegalArgumentException("failed to construct BIT STRING from byte[]", e);
             }
         }
 
@@ -249,7 +249,7 @@ public abstract class ASN1BitString
         }
         catch (IOException e)
         {
-            throw new ASN1ParsingException("Internal error encoding BitString: " + e.getMessage(), e);
+            throw new ASN1ParsingException("Internal error encoding BitString", e);
         }
 
         StringBuilder buf = new StringBuilder(1 + string.length * 2);
