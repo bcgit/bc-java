@@ -366,6 +366,16 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int czero(int x)
+    {
+        return ((x - 1) & ~x) >> 31;
+    }
+
+    public static long czero64(long x)
+    {
+        return ((x - 1) & ~x) >> 63;
+    }
+
     public static int dec(int len, int[] z)
     {
         for (int i = 0; i < len; ++i)
@@ -458,8 +468,7 @@ public abstract class Nat
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static int equalTo(int len, int[] x, int xOff, int y)
@@ -469,8 +478,7 @@ public abstract class Nat
         {
             d |= x[xOff + i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static int equalTo(int len, int[] x, int[] y)
@@ -480,8 +488,7 @@ public abstract class Nat
         {
             d |= x[i] ^ y[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static int equalTo(int len, int[] x, int xOff, int[] y, int yOff)
@@ -491,8 +498,7 @@ public abstract class Nat
         {
             d |= x[xOff + i] ^ y[yOff + i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static long equalTo64(int len, long[] x, long y)
@@ -502,8 +508,7 @@ public abstract class Nat
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static long equalTo64(int len, long[] x, int xOff, long y)
@@ -513,8 +518,7 @@ public abstract class Nat
         {
             d |= x[xOff + i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static long equalTo64(int len, long[] x, long[] y)
@@ -524,8 +528,7 @@ public abstract class Nat
         {
             d |= x[i] ^ y[i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static long equalTo64(int len, long[] x, int xOff, long[] y, int yOff)
@@ -535,8 +538,7 @@ public abstract class Nat
         {
             d |= x[xOff + i] ^ y[yOff + i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static int equalToZero(int len, int[] x)
@@ -546,8 +548,7 @@ public abstract class Nat
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static int equalToZero(int len, int[] x, int xOff)
@@ -557,8 +558,7 @@ public abstract class Nat
         {
             d |= x[xOff + i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static long equalToZero64(int len, long[] x)
@@ -568,8 +568,7 @@ public abstract class Nat
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static long equalToZero64(int len, long[] x, int xOff)
@@ -579,8 +578,7 @@ public abstract class Nat
         {
             d |= x[xOff + i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static int[] fromBigInteger(int bits, BigInteger x)
