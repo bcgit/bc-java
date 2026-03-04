@@ -47,6 +47,11 @@ export BC_JDK17=/path/to/java17
 
 ## Building
 
+To run the tests of the project as part of the build test data is needed.
+Our test data can be found at the https://github.com/bcgit/bc-test-data.git repository.
+Best approach to provide the data for the tests is to check out the repository and define the `BC_TEST_DATA_DIR` env variable pointing to that folder.
+If the env variable is not present the test data will be assumed in a `bc-test-data` folder in your user root dir.
+
 The project now uses ```gradlew``` which can be invoked for example:
 
 ```
