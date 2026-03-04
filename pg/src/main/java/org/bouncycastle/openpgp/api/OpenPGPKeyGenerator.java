@@ -235,11 +235,97 @@ public class OpenPGPKeyGenerator
                 @Override
                 public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
                 {
-                    subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
                     subpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER | KeyFlags.SIGN_DATA);
                     return subpackets;
                 }
             }));
+    }
+
+    /**
+     * Generate an OpenPGP key based on a single, multipurpose RSA key of the given strength.
+     * The key will carry a direct-key signature containing default preferences and flags.
+     * If the passed in userId is non-null, it will be added to the key.
+     *
+     * @param bitStrength strength of the RSA key in bits (recommended values: 3072 and above).
+     * @param userId optional user-id
+     * @return builder
+     * @throws PGPException if the key cannot be generated.
+     */
+    public WithPrimaryKey singletonRSAKey(int bitStrength, String userId)
+            throws PGPException
+    {
+        WithPrimaryKey builder = withPrimaryKey(
+                new KeyPairGeneratorCallback()
+                {
+                    @Override
+                    public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                            throws PGPException
+                    {
+                        return generator.generateRsaKeyPair(bitStrength);
+                    }
+                },
+                SignatureParameters.Callback.Util.modifyHashedSubpackets(
+                        new SignatureSubpacketsFunction()
+                        {
+                            @Override
+                            public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                            {
+                                subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
+                                subpackets.setKeyFlags(KeyFlags.CERTIFY_OTHER
+                                        | KeyFlags.SIGN_DATA
+                                        | KeyFlags.ENCRYPT_STORAGE
+                                        | KeyFlags.ENCRYPT_COMMS);
+                                return subpackets;
+                            }
+                        }
+                )
+        );
+
+        if (userId != null)
+        {
+            builder.addUserId(userId);
+        }
+
+        return builder;
+    }
+
+    /**
+     * Generate an OpenPGP key composed of 3 individual component keys based on RSA of the given strength in bits.
+     * The primary key will be used to certify third-party keys.
+     * A subkey is used for signing and a third subkey is used for encryption of messages both for storage and
+     * communications.
+     * The primary key will carry a direct-key signature containing default preferences and flags.
+     * The subkeys will be bound with subkey binding signatures.
+     * If the passed in userId is non-null, it will be added to the key.
+     *
+     * @param bitStrength strength of the keys in bits (recommended values: 3072 and above)
+     * @param userId optional user-id
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
+    public WithPrimaryKey compositeRSAKey(int bitStrength, String userId)
+        throws PGPException
+    {
+        KeyPairGeneratorCallback generatorCallback = new KeyPairGeneratorCallback()
+        {
+            @Override
+            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+            {
+                return generator.generateRsaKeyPair(bitStrength);
+            }
+        };
+
+        WithPrimaryKey builder = withPrimaryKey(generatorCallback)
+                .addSigningSubkey(generatorCallback)
+                .addEncryptionSubkey(generatorCallback);
+
+        if (userId != null)
+        {
+            builder.addUserId(userId);
+        }
+
+        return builder;
     }
 
     /**
