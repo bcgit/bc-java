@@ -47,13 +47,33 @@ public class AEADEncDataPacket
         aeadAlgorithm = (byte)in.read();
         chunkSize = (byte)in.read();
 
-        iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+        // RFC 9580 - 5.13.2
+        if (chunkSize < 0 || chunkSize > 16)
+        {
+            throw new MalformedPacketException("chunkSize out of range");
+        }
+
+        try
+        {
+            int ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+            iv = new byte[ivLen];
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new MalformedPacketException("Unknown AEAD algorithm ID: " + aeadAlgorithm, e);
+        }
         in.readFully(iv);
     }
 
     public AEADEncDataPacket(int algorithm, int aeadAlgorithm, int chunkSize, byte[] iv)
     {
         super(null, AEAD_ENC_DATA);
+
+        // RFC 9580 - 5.13.2
+        if (chunkSize < 0 || chunkSize > 16)
+        {
+            throw new IllegalArgumentException("chunkSize out of range");
+        }
 
         this.version = VERSION_1;
         this.algorithm = (byte)algorithm;
