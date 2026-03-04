@@ -161,6 +161,18 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int addTo(int len, int[] x, int[] z, int cIn)
+    {
+        long c = cIn & M;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (x[i] & M) + (z[i] & M);
+            z[i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
     public static int addTo(int len, int[] x, int xOff, int[] z, int zOff, int cIn)
     {
         long c = cIn & M;
@@ -168,6 +180,19 @@ public abstract class Nat
         {
             c += (x[xOff + i] & M) + (z[zOff + i] & M);
             z[zOff + i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
+    public static int addToEachOther(int len, int[] u, int[] v)
+    {
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (u[i] & M) + (v[i] & M);
+            u[i] = (int)c;
+            v[i] = (int)c;
             c >>>= 32;
         }
         return (int)c;
@@ -1591,6 +1616,46 @@ public abstract class Nat
         for (int i = 0; i < len; ++i)
         {
             z[zOff + i] ^= x[xOff + i];
+        }
+    }
+
+    public static void xorToEachOther(int len, int[] u, int[] v)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            int t = u[i] ^ v[i];
+            u[i] = t;
+            v[i] = t;
+        }
+    }
+
+    public static void xorToEachOther(int len, int[] u, int uOff, int[] v, int vOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            int t = u[uOff + i] ^ v[vOff + i];
+            u[uOff + i] = t;
+            v[vOff + i] = t;
+        }
+    }
+
+    public static void xorToEachOther64(int len, long[] u, long[] v)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            long t = u[i] ^ v[i];
+            u[i] = t;
+            v[i] = t;
+        }
+    }
+
+    public static void xorToEachOther64(int len, long[] u, int uOff, long[] v, int vOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            long t = u[uOff + i] ^ v[vOff + i];
+            u[uOff + i] = t;
+            v[vOff + i] = t;
         }
     }
 
