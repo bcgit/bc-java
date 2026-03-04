@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.test;
 
 import java.security.SecureRandom;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
@@ -17,9 +18,6 @@ import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
-import org.junit.Assert;
-
-import junit.framework.TestCase;
 
 public class HQCTest
     extends TestCase
@@ -126,14 +124,14 @@ public class HQCTest
                 SecretWithEncapsulation encapsulated = generator.generateEncapsulated(kp.getPublic());
                 byte[] encapSecret = encapsulated.getSecret();
                 byte[] encapsulation = encapsulated.getEncapsulation();
-                Assert.assertEquals(parameters.getSessionKeySize() / 8, encapSecret.length);
-                Assert.assertEquals(parameters.getEncapsulationLength(), encapsulation.length);
+                assertEquals(parameters.getSessionKeySize() / 8, encapSecret.length);
+                assertEquals(parameters.getEncapsulationLength(), encapsulation.length);
 
                 HQCKEMExtractor extractor = new HQCKEMExtractor((HQCPrivateKeyParameters)kp.getPrivate());
                 byte[] decapSecret = extractor.extractSecret(encapsulation);
                 if (!Arrays.areEqual(encapSecret, decapSecret))
                 {
-                    Assert.fail("Consistency " + parameters.getName() + " #" + i + "[" + j + "]");
+                    fail("Consistency " + parameters.getName() + " #" + i + "[" + j + "]");
                 }
             }
         }
