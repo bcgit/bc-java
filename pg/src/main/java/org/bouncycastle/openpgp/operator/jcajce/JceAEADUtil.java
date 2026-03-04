@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.PGPAEADUtil;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.util.Arrays;
@@ -29,59 +30,13 @@ import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
 
 class JceAEADUtil
+    extends PGPAEADUtil
 {
     private final OperatorHelper helper;
 
     public JceAEADUtil(OperatorHelper helper)
     {
         this.helper = helper;
-    }
-
-    /**
-     * Generate a nonce by xor-ing the given iv with the chunk index.
-     *
-     * @param iv         initialization vector
-     * @param chunkIndex chunk index
-     * @return nonce
-     */
-    protected static byte[] getNonce(byte[] iv, long chunkIndex)
-    {
-        byte[] nonce = Arrays.clone(iv);
-
-        xorChunkId(nonce, chunkIndex);
-
-        return nonce;
-    }
-
-    /**
-     * XOR the byte array with the chunk index in-place.
-     *
-     * @param nonce      byte array
-     * @param chunkIndex chunk index
-     */
-    protected static void xorChunkId(byte[] nonce, long chunkIndex)
-    {
-        int index = nonce.length - 8;
-
-        nonce[index++] ^= (byte)(chunkIndex >> 56);
-        nonce[index++] ^= (byte)(chunkIndex >> 48);
-        nonce[index++] ^= (byte)(chunkIndex >> 40);
-        nonce[index++] ^= (byte)(chunkIndex >> 32);
-        nonce[index++] ^= (byte)(chunkIndex >> 24);
-        nonce[index++] ^= (byte)(chunkIndex >> 16);
-        nonce[index++] ^= (byte)(chunkIndex >> 8);
-        nonce[index] ^= (byte)(chunkIndex);
-    }
-
-    /**
-     * Calculate an actual chunk length from the encoded chunk size.
-     *
-     * @param chunkSize encoded chunk size
-     * @return decoded length
-     */
-    protected static long getChunkLength(int chunkSize)
-    {
-        return 1L << (chunkSize + 6);
     }
 
     /**
