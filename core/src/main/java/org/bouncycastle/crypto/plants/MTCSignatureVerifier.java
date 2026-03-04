@@ -53,6 +53,7 @@ public class MTCSignatureVerifier
         byte[] signature,
         AsymmetricKeyParameter publicKey,
         String algorithm)
+        throws IOException
     {
         // Build the signed data
         byte[] signedData = buildSignatureInput(logId, start, end, subtreeHash, cosignerId);
@@ -80,38 +81,18 @@ public class MTCSignatureVerifier
      * @param cosignerId  DER-encoded RELATIVE-OID of the cosigner (without length prefix)
      * @return the byte array to be signed
      */
-    private static byte[] buildSignatureInput(
-        byte[] logId,
-        long start,
-        long end,
-        byte[] subtreeHash,
-        byte[] cosignerId)
+    private static byte[] buildSignatureInput(byte[] logId, long start, long end, byte[] subtreeHash, byte[] cosignerId) throws IOException
     {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
-        {
-            // 1. Fixed label
-            baos.write(SUBTREE_LABEL);
-
-            // 2. cosigner_id (variable-length, length prefixed)
-            writeOpaque(baos, cosignerId);
-
-            // 3. MTCSubtree structure
-            //    log_id (variable-length, length prefixed)
-            writeOpaque(baos, logId);
-            //    start (uint64, big-endian)
-            writeUint64(baos, start);
-            //    end (uint64, big-endian)
-            writeUint64(baos, end);
-            //    hash (fixed-length, no length prefix)
-            baos.write(subtreeHash);
-
-            return baos.toByteArray();
-        }
-        catch (IOException e)
-        {
-            // ByteArrayOutputStream does not throw IOException, but we satisfy the try-with-resources
-            throw new RuntimeException("Unexpected IO error", e);
-        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(SUBTREE_LABEL);                    // fixed 16-byte label
+        baos.write((byte) cosignerId.length);         // cosigner_id length
+        baos.write(cosignerId);                        // cosigner_id value
+        baos.write((byte) logId.length);               // log_id length
+        baos.write(logId);                              // log_id value
+        writeUint64(baos, start);                       // start
+        writeUint64(baos, end);                         // end
+        baos.write(subtreeHash);                         // subtree hash (fixed size)
+        return baos.toByteArray();
     }
 
     /**

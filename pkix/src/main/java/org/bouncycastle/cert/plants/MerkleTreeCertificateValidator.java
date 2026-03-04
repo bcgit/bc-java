@@ -1,20 +1,21 @@
 package org.bouncycastle.cert.plants;
 
 import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.PublicKey;
 import java.util.*;
 
 /**
@@ -25,7 +26,7 @@ import java.util.*;
 public class MerkleTreeCertificateValidator
 {
     // OID for the MTC proof signature algorithm (temporary value, will be assigned by IANA)
-    static final String ID_ALG_MTC_PROOF = "1.3.6.1.4.1.44363.47.0";
+    public static final String ID_ALG_MTC_PROOF = "1.3.6.1.4.1.44363.47.0";
 
     /**
      * Parameters for MTC validation, provided by the relying party.
@@ -33,7 +34,7 @@ public class MerkleTreeCertificateValidator
     public static class ValidationParams
     {
         // Map of cosigner ID (DER-encoded RELATIVE-OID) to its public key (as a Bouncy Castle AsymmetricKeyParameter)
-        private final Map<ByteArrayKey, org.bouncycastle.crypto.params.AsymmetricKeyParameter> cosignerPublicKeys;
+        private final Map<ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys;
 
         // List of trusted subtrees (pre‑distributed landmarks) for this log
         private final List<TrustedSubtree> trustedSubtrees;
@@ -55,7 +56,7 @@ public class MerkleTreeCertificateValidator
          * @param hashFunction       hash function used by the log (e.g., new Sha256MerkleTreeHash())
          */
         public ValidationParams(
-            Map<ByteArrayKey, org.bouncycastle.crypto.params.AsymmetricKeyParameter> cosignerPublicKeys,
+            Map<ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys,
             List<TrustedSubtree> trustedSubtrees,
             Set<Long> revokedIndices,
             int minCosignatures,
@@ -68,7 +69,7 @@ public class MerkleTreeCertificateValidator
             this.hashFunction = hashFunction;
         }
 
-        public Map<ByteArrayKey, org.bouncycastle.crypto.params.AsymmetricKeyParameter> getCosignerPublicKeys()
+        public Map<ByteArrayKey, AsymmetricKeyParameter> getCosignerPublicKeys()
         {
             return cosignerPublicKeys;
         }
@@ -222,7 +223,7 @@ public class MerkleTreeCertificateValidator
         for (MTCSignature sig : proof.signatures)
         {
             boolean valid = verifyCosignature(
-                certHolder.getIssuer().getEncoded(), // log ID (DER-encoded RELATIVE-OID)
+                extractLogIdFromIssuer(certHolder.getIssuer()), // log ID (DER-encoded RELATIVE-OID)
                 proof.start,
                 proof.end,
                 expectedSubtreeHash,
@@ -257,6 +258,7 @@ public class MerkleTreeCertificateValidator
         byte[] cosignerId,
         byte[] signature,
         ValidationParams params)
+        throws IOException
     {
         org.bouncycastle.crypto.params.AsymmetricKeyParameter pubKey =
             params.cosignerPublicKeys.get(new ByteArrayKey(cosignerId));
@@ -416,6 +418,23 @@ public class MerkleTreeCertificateValidator
         }
     }
 
+
+    public static byte[] extractLogIdFromIssuer(X500Name issuer) throws IOException
+    {
+        RDN[] rdns = issuer.getRDNs();
+        if (rdns.length != 1)
+            throw new IOException("Issuer must have exactly one RDN");
+        AttributeTypeAndValue[] atav = rdns[0].getTypesAndValues();
+        if (atav.length != 1)
+            throw new IOException("RDN must have exactly one attribute");
+        AttributeTypeAndValue at = atav[0];
+        if (!at.getType().equals(X509Extension.id_rdna_trustAnchorID))
+            throw new IOException("Attribute type must be id-rdna-trustAnchorID");
+        ASN1Encodable value = at.getValue();
+        return ((DEROctetString)value).getOctets();
+    }
+
+
     /**
      * In-memory representation of an MTCProof parsed from TLS encoding.
      */
@@ -569,31 +588,6 @@ public class MerkleTreeCertificateValidator
                 throw new IllegalArgumentException("Inclusion proof length not a multiple of hash size");
             }
             return list;
-        }
-    }
-
-    /**
-     * In-memory representation of an MTCSignature.
-     */
-    public static class MTCSignature
-    {
-        final byte[] cosignerId;
-        final byte[] signature;
-
-        public MTCSignature(byte[] cosignerId, byte[] signature)
-        {
-            this.cosignerId = cosignerId;
-            this.signature = signature;
-        }
-
-        public byte[] getCosignerId()
-        {
-            return cosignerId;
-        }
-
-        public byte[] getSignature()
-        {
-            return signature;
         }
     }
 
