@@ -21,6 +21,7 @@ public class OCBEncryptedDataPacketTest
     {
         parseTestVector();
         parseUnsupportedPacketVersion();
+        testUnsupportedChunkSize();
     }
 
     private void parseTestVector()
@@ -69,6 +70,41 @@ public class OCBEncryptedDataPacketTest
         catch (UnsupportedPacketVersionException e)
         {
             // expected
+        }
+    }
+
+    private void testUnsupportedChunkSize()
+            throws IOException
+    {
+        try
+        {
+            new AEADEncDataPacket(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB, 20, new byte[16]);
+            fail("Expected IllegalArgument - chunkSize out of range");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("chunkSize out of range", e.getMessage());
+        }
+        // Test vector with modified chunk size 18
+        String testVector = "" +
+        "d45301090212c265ff63a61ed8af00fa" +
+        "43866be8eb9eef77241518a3d60e387b" +
+        "1e283bdd90e2233d17a937a595686024" +
+        "1d13ddfaccd2b724a491167631d1cd3e" +
+        "a74fe5d9e617f1f267d891fd338fddb2" +
+        "c66c025cde";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Hex.decode(testVector));
+        BCPGInputStream pIn = new BCPGInputStream(bIn);
+
+        try
+        {
+            pIn.readPacket();
+            fail("Expected chunkSize out of range");
+        }
+        catch (MalformedPacketException e)
+        {
+            isEquals("chunkSize out of range", e.getMessage());
         }
     }
 
