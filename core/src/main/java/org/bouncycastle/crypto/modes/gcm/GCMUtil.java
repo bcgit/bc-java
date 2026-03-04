@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.modes.gcm;
 
 import org.bouncycastle.math.raw.Interleave;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
@@ -41,8 +42,7 @@ public abstract class GCMUtil
         {
             d |= x[i] ^ y[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (byte)((d - 1) >> 31);
+        return (byte)Nat.czero(d);
     }
 
     public static int areEqual(int[] x, int[] y)
@@ -52,8 +52,7 @@ public abstract class GCMUtil
         d |= x[1] ^ y[1];
         d |= x[2] ^ y[2];
         d |= x[3] ^ y[3];
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return Nat.czero(d);
     }
 
     public static long areEqual(long[] x, long[] y)
@@ -61,8 +60,7 @@ public abstract class GCMUtil
         long d = 0L;
         d |= x[0] ^ y[0];
         d |= x[1] ^ y[1];
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return Nat.czero64(d);
     }
 
     public static byte[] asBytes(int[] x)

@@ -481,8 +481,7 @@ public abstract class Mod
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return Nat.czero(d);
     }
 
     private static boolean equalToVar(int len, int[] x, int y)
