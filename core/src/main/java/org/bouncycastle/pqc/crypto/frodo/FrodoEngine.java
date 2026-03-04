@@ -3,7 +3,9 @@ package org.bouncycastle.pqc.crypto.frodo;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Pack;
 
 class FrodoEngine
@@ -110,14 +112,17 @@ class FrodoEngine
     private short[] matrix_transpose(short[] X, int n1, int n2)
     {
         short[] res = new short[n1 * n2];
-
         for (int i = 0; i < n2; i++)
+        {
             for (int j = 0; j < n1; j++)
-                res[i*n1 +j] = X[j*n2+ i];
+            {
+                res[i * n1 + j] = X[j * n2 + i];
+            }
+        }
         return res;
     }
 
-    private short[] matrix_mul(short[] X, int Xrow, int Xcol, short[] Y, int Yrow, int Ycol)
+    private short[] matrix_mul(short[] X, int Xrow, int Xcol, short[] Y, int Ycol)
     {
         int qMask = q - 1;
         short[] res = new short[Xrow * Ycol];
@@ -139,11 +144,14 @@ class FrodoEngine
     private short[] matrix_add(short[] X, short[] Y, int n1, int m1)
     {
         int qMask = q - 1;
-        short[] res = new short[n1*m1];
+        short[] res = new short[n1 * m1];
         for (int i = 0; i < n1; i++)
+        {
             for (int j = 0; j < m1; j++)
-                res[i*m1+j] = (short)((X[i*m1+j] + Y[i*m1+j]) & qMask);
-
+            {
+                res[i * m1 + j] = (short)((X[i * m1 + j] + Y[i * m1 + j]) & qMask);
+            }
+        }
         return res;
     }
 
@@ -159,33 +167,31 @@ class FrodoEngine
 
         while (i < out.length && (j < n || ((j == n) && (bits > 0))))
         {
-
             byte b = 0;  // bits in out[i] already filled in
             while (b < 8)
             {
                 int nbits = Math.min(8 - b, bits);
-                short mask = (short) ((1 << nbits) - 1);
-                byte t = (byte) ((w >> (bits - nbits)) & mask);  // the bits to copy from w to out
-                out[i] = (byte) (out[i] + (t << (8 - b - nbits)));
+                short mask = (short)((1 << nbits) - 1);
+                byte t = (byte)((w >> (bits - nbits)) & mask); // the bits to copy from w to out
+                out[i] = (byte)(out[i] + (t << (8 - b - nbits)));
                 b += nbits;
                 bits -= nbits;
 
                 if (bits == 0)
                 {
-                    if (j < n)
+                    if (j >= n)
                     {
-                        w = C[j];
-                        bits = (byte) D;
-                        j++;
+                        break; // the input vector is exhausted
                     }
-                    else
-                    {
-                        break;  // the input vector is exhausted
-                    }
+
+                    w = C[j];
+                    bits = (byte)D;
+                    j++;
                 }
             }
             if (b == 8)
-            {  // out[i] is filled in
+            {
+                // out[i] is filled in
                 i++;
             }
         }
@@ -202,24 +208,21 @@ class FrodoEngine
         byte[] seedSE = Arrays.copyOfRange(s_seedSE_z, len_s_bytes, len_s_bytes + len_seedSE_bytes);
         byte[] z = Arrays.copyOfRange(s_seedSE_z, len_s_bytes + len_seedSE_bytes, len_s_bytes + len_seedSE_bytes + len_z_bytes);
 
-        // 2. Generate pseudorandom seed seedA = SHAKE(z, len_seedA) (length in bits)
+        // 2. Generate pseudo-random seed seedA = SHAKE(z, len_seedA) (length in bits)
         byte[] seedA = new byte[len_seedA_bytes];
         digest.update(z, 0, z.length);
         digest.doFinal(seedA, 0, seedA.length);
 
         // 3. A = Frodo.Gen(seedA)
-        short[] A = gen.genMatrix(seedA);
+        short[] A = gen.genMatrix(seedA, 0, seedA.length);
 
         // 4. r = SHAKE(0x5F || seedSE, 2*n*nbar*len_chi) (length in bits), parsed as 2*n*nbar len_chi-bit integers in little-endian byte order
         byte[] rbytes = new byte[2 * n * nbar * len_chi_bytes];
-
         digest.update((byte)0x5f);
         digest.update(seedSE, 0, seedSE.length);
         digest.doFinal(rbytes, 0, rbytes.length);
 
-        short[] r = new short[2 * n * nbar];
-        for (int i = 0; i < r.length; i++)
-            r[i] = Pack.littleEndianToShort(rbytes, i * 2);
+        short[] r = Pack.littleEndianToShort(rbytes, 0, rbytes.length / 2);
 
         // 5. S^T = Frodo.SampleMatrix(r[0 .. n*nbar-1], nbar, n)
         short[] S_T = sample_matrix(r, 0, nbar, n);
@@ -229,28 +232,24 @@ class FrodoEngine
         short[] E = sample_matrix(r, n * nbar, n, nbar);
 
         // 7. B = A * S + E
-        short[] B = matrix_add(matrix_mul(A, n, n, S, n, nbar), E, n, nbar);
+        short[] B = matrix_add(matrix_mul(A, n, n, S, nbar), E, n, nbar);
 
         // 8. b = Pack(B)
         byte[] b = pack(B);
 
         // 9. pkh = SHAKE(seedA || b, len_pkh) (length in bits)
         // 10. pk = seedA || b
-        System.arraycopy(Arrays.concatenate(seedA, b), 0, pk, 0, len_pk_bytes);
+        System.arraycopy(seedA, 0, pk, 0, len_seedA_bytes);
+        System.arraycopy(b, 0, pk, len_seedA_bytes, len_pk_bytes - len_seedA_bytes);
 
         byte[] pkh = new byte[len_pkh_bytes];
         digest.update(pk, 0, pk.length);
         digest.doFinal(pkh, 0, pkh.length);
 
         //10. sk = (s || seedA || b, S^T, pkh)
-        System.arraycopy(Arrays.concatenate(s, pk), 0,
-                sk, 0, len_s_bytes + len_pk_bytes);
-
-        for (int i = 0; i < nbar; i++)
-            for (int j = 0; j < n; j++)
-                System.arraycopy(Pack.shortToLittleEndian(S_T[i*n+j]), 0,
-                        sk, len_s_bytes + len_pk_bytes + i * n * 2 + j * 2, 2);
-
+        System.arraycopy(s, 0, sk, 0, len_s_bytes);
+        System.arraycopy(pk, 0, sk, len_s_bytes, len_pk_bytes);
+        Pack.shortToLittleEndian(S_T, sk, len_s_bytes + len_pk_bytes);
         System.arraycopy(pkh, 0, sk, len_sk_bytes - len_pkh_bytes, len_pkh_bytes);
     }
 
@@ -269,29 +268,28 @@ class FrodoEngine
             while (b < D)
             {
                 int nbits = Math.min(D - b, bits);
-                short mask = (short) (((1 << nbits) - 1) & 0xffff);
-                byte t = (byte) ((((w & 0xff) >>> ((bits & 0xff) - nbits)) & (mask & 0xffff)) & 0xff);  // the bits to copy from w to out
-                out[i] = (short) ((out[i] & 0xffff) + (((t & 0xff) << (D - (b & 0xff) - nbits))) & 0xffff);
+                short mask = (short)(((1 << nbits) - 1) & 0xffff);
+                byte t = (byte)((((w & 0xff) >>> ((bits & 0xff) - nbits)) & (mask & 0xffff)) & 0xff); // the bits to copy from w to out
+                out[i] = (short)((out[i] & 0xffff) + (((t & 0xff) << (D - (b & 0xff) - nbits))) & 0xffff);
                 b += nbits;
                 bits -= nbits;
                 w &= ~(mask << bits);
 
                 if (bits == 0)
                 {
-                    if (j < in.length)
+                    if (j >= in.length)
                     {
-                        w = in[j];
-                        bits = 8;
-                        j++;
+                        break; // the input vector is exhausted
                     }
-                    else
-                    {
-                        break;  // the input vector is exhausted
-                    }
+
+                    w = in[j];
+                    bits = 8;
+                    j++;
                 }
             }
             if (b == D)
-            {  // out[i] is filled in
+            {
+                // out[i] is filled in
                 i++;
             }
         }
@@ -300,10 +298,10 @@ class FrodoEngine
 
     private short[] encode(byte[] k)
     {
-        int l, byte_index = 0;
+        int byte_index = 0;
         int bit = 0;
         short[] K = new short[mbar*nbar];
-        int temp;
+
         // 1. for i = 0; i < mbar; i += 1
         for (int i = 0; i < mbar; i++)
         {
@@ -311,8 +309,8 @@ class FrodoEngine
             for (int j = 0; j < nbar; j++)
             {
                 // 3. tmp = sum_{l=0}^{B-1} k_{(i*nbar+j)*B+l} 2^l
-                temp = 0;
-                for (l = 0; l < B; l++)
+                int temp = 0;
+                for (int l = 0; l < B; l++)
                 {
                     temp += ((k[byte_index] >>> bit) & 1) << l;
 
@@ -322,7 +320,7 @@ class FrodoEngine
                 }
 
                 // 4. K[i][j] = ec(tmp) = tmp * q/2^B
-                K[i*nbar+j] = (short) (temp * (q / (1 << B)));
+                K[i * nbar + j] = (short)(temp * (q / (1 << B)));
             }
         }
         return K;
@@ -331,7 +329,7 @@ class FrodoEngine
     public void kem_enc(byte[] ct, byte[] ss, byte[] pk, SecureRandom random)
     {
         // Parse pk = seedA || b
-        byte[] seedA = Arrays.copyOfRange(pk, 0, len_seedA_bytes);
+//        byte[] seedA = Arrays.copyOfRange(pk, 0, len_seedA_bytes);
         byte[] b = Arrays.copyOfRange(pk, len_seedA_bytes, len_pk_bytes);
 
         // 1. Choose a uniformly random key mu in {0,1}^len_mu (length in bits)
@@ -358,9 +356,7 @@ class FrodoEngine
         digest.update(seedSE, 0, seedSE.length);
         digest.doFinal(rbytes, 0, rbytes.length);
 
-        short[] r = new short[rbytes.length / 2];
-        for (int i = 0; i < r.length; i++)
-            r[i] = Pack.littleEndianToShort(rbytes, i * 2);
+        short[] r = Pack.littleEndianToShort(rbytes, 0, rbytes.length / 2);
 
         // 5. S' = Frodo.SampleMatrix(r[0 .. mbar*n-1], mbar, n)
         short[] Sprime = sample_matrix(r, 0, mbar, n);
@@ -369,10 +365,10 @@ class FrodoEngine
         short[] Eprime = sample_matrix(r, mbar * n, mbar, n);
 
         // 7. A = Frodo.Gen(seedA)
-        short[] A = gen.genMatrix(seedA);
+        short[] A = gen.genMatrix(pk, 0, len_seedA_bytes);
 
         // 8. B' = S' A + E'
-        short[] Bprime = matrix_add(matrix_mul(Sprime, mbar, n, A, n, n), Eprime, mbar, n);
+        short[] Bprime = matrix_add(matrix_mul(Sprime, mbar, n, A, n), Eprime, mbar, n);
 
         // 9. c1 = Frodo.Pack(B')
         byte[] c1 = pack(Bprime);
@@ -383,9 +379,8 @@ class FrodoEngine
         // 11. B = Frodo.Unpack(b, n, nbar)
         short[] B = unpack(b, n, nbar);
 
-
         // 12. V = S' B + E''
-        short[] V = matrix_add(matrix_mul(Sprime, mbar, n, B, n, nbar), Eprimeprime, mbar, nbar);
+        short[] V = matrix_add(matrix_mul(Sprime, mbar, n, B, nbar), Eprimeprime, mbar, nbar);
 
         // 13. C = V + Frodo.Encode(mu)
         short[] EncodedMU = encode(mu);
@@ -395,10 +390,11 @@ class FrodoEngine
         byte[] c2 = pack(C);
 
         // 15. ss = SHAKE(c1 || c2 || k, len_ss)
-        // ct = c1 + c2
-        System.arraycopy(Arrays.concatenate(c1, c2), 0, ct, 0, len_ct_bytes);
-        digest.update(c1, 0, c1.length);
-        digest.update(c2, 0, c2.length);
+        // ct = c1 || c2
+        System.arraycopy(c1, 0, ct, 0, c1.length);
+        System.arraycopy(c2, 0, ct, c1.length, len_ct_bytes - c1.length);
+
+        digest.update(ct, 0, len_ct_bytes);
         digest.update(k, 0, len_k_bytes);
         digest.doFinal(ss, 0, len_s_bytes);
     }
@@ -406,67 +402,41 @@ class FrodoEngine
     private short[] matrix_sub(short[] X, short[] Y, int n1, int n2)
     {
         int qMask = q - 1;
-        short[] res = new short[n1*n2];
+        short[] res = new short[n1 * n2];
         for (int i = 0; i < n1; i++)
+        {
             for (int j = 0; j < n2; j++)
-                res[i*n2+j] = (short)((X[i*n2+j] - Y[i*n2+j]) & qMask);
-
+            {
+                res[i * n2 + j] = (short)((X[i * n2 + j] - Y[i * n2 + j]) & qMask);
+            }
+        }
         return res;
     }
 
     private byte[] decode(short[] in)
     {
-        int i, j, index = 0, npieces_word = 8;
+        int index = 0, npieces_word = 8;
         int nwords = (nbar * nbar) / 8;
-        short temp;
-        short maskex = (short) ((1 << B) - 1);
-        short maskq = (short) ((1 << D) - 1);
+        short maskex = (short)((1 << B) - 1);
+        short maskq = (short)((1 << D) - 1);
         byte[] out = new byte[npieces_word * B];
-        long templong;
 
-        for (i = 0; i < nwords; i++)
+        for (int i = 0; i < nwords; i++)
         {
-            templong = 0;
-            for (j = 0; j < npieces_word; j++)
-            {  // temp = floor(in*2^{-11}+0.5)
-                temp = (short) (((in[index] & maskq) + (1 << (D - B - 1))) >> (D - B));
-                templong |= ((long) (temp & maskex)) << (B * j);
+            long templong = 0;
+            for (int j = 0; j < npieces_word; j++)
+            {
+                // temp = floor(in*2^{-11}+0.5)
+                short temp = (short)(((in[index] & maskq) + (1 << (D - B - 1))) >> (D - B));
+                templong |= ((long)(temp & maskex)) << (B * j);
                 index++;
             }
-            for (j = 0; j < B; j++)
-                out[i * B + j] = (byte) ((templong >> (8 * j)) & 0xFF);
+            for (int j = 0; j < B; j++)
+            {
+                out[i * B + j] = (byte)((templong >> (8 * j)) & 0xFF);
+            }
         }
         return out;
-    }
-
-
-    private short ctverify(short[] a1, short[] a2, short[] b1, short[] b2)
-    {
-        // Compare two arrays in constant time.
-        // Returns 0 if the byte arrays are equal, -1 otherwise.
-        short r = 0;
-
-        for (short i = 0; i < a1.length; i++)
-            r |= a1[i] ^ b1[i];
-
-        for (short i = 0; i < a2.length; i++)
-            r |= a2[i] ^ b2[i];
-
-//        r = (short) ((-(short)(r >> 1) | -(short)(r & 1)) >> (8*2-1));
-        if (r == 0)
-            return 0;
-        return -1;
-    }
-
-    private byte[] ctselect(byte[] a, byte[] b, short selector)
-    {
-        // Select one of the two input arrays to be moved to r
-        // If (selector == 0) then load r with a, else if (selector == -1) load r with b
-        byte[] r = new byte[a.length];
-        for (int i = 0; i < a.length; i++)
-            r[i] = (byte) (((~selector & a[i]) & 0xff) | ((selector & b[i]) & 0xff));
-
-        return r;
     }
 
     public void kem_dec(byte[] ss, byte[] ct, byte[] sk)
@@ -481,15 +451,10 @@ class FrodoEngine
         byte[] c2 = Arrays.copyOfRange(ct, offset, offset + length);
 
         // Parse sk = (s || seedA || b, S^T, pkh)
-        offset = 0;
-        length = len_s_bytes;
-        byte[] s = Arrays.copyOfRange(sk, offset, offset + length);
+//        byte[] s = Arrays.copyOfRange(sk, 0, len_s_bytes);
+//        byte[] seedA = Arrays.copyOfRange(sk, len_s_bytes, len_s_bytes + len_seedA_bytes);
 
-        offset += length;
-        length = len_seedA_bytes;
-        byte[] seedA = Arrays.copyOfRange(sk, offset, offset + length);
-
-        offset += length;
+        offset = len_s_bytes + len_seedA_bytes;
         length = (D * n * nbar) / 8;
         byte[] b = Arrays.copyOfRange(sk, offset, offset + length);
 
@@ -500,8 +465,12 @@ class FrodoEngine
         short[] Stransposed = new short[nbar * n];
 
         for (int i = 0; i < nbar; i++)
+        {
             for (int j = 0; j < n; j++)
+            {
                 Stransposed[i*n+j] = Pack.littleEndianToShort(Sbytes, i * n * 2 + j * 2);
+            }
+        }
 
         short[] S = matrix_transpose(Stransposed, nbar, n);
 
@@ -516,7 +485,7 @@ class FrodoEngine
         short[] C = unpack(c2, mbar, nbar);
 
         // 3. M = C - B' S
-        short[] BprimeS = matrix_mul(Bprime, mbar, n, S, n, nbar);
+        short[] BprimeS = matrix_mul(Bprime, mbar, n, S, nbar);
         short[] M = matrix_sub(C, BprimeS, mbar, nbar);
 
         // 4. mu' = Frodo.Decode(M)
@@ -530,7 +499,7 @@ class FrodoEngine
         digest.update(muprime, 0, len_mu_bytes);
         digest.doFinal(seedSEprime_kprime, 0, len_seedSE_bytes + len_k_bytes);
 
-        byte[] kprime = Arrays.copyOfRange(seedSEprime_kprime, len_seedSE_bytes, len_seedSE_bytes + len_k_bytes);
+        byte[] K = Arrays.copyOfRange(seedSEprime_kprime, len_seedSE_bytes, len_seedSE_bytes + len_k_bytes);
 
         // 7. r = SHAKE(0x96 || seedSE', 2*mbar*n + mbar*nbar*len_chi) (length in bits)
         byte[] rbytes = new byte[(2 * mbar * n + mbar * mbar) * len_chi_bytes];
@@ -538,11 +507,7 @@ class FrodoEngine
         digest.update(seedSEprime_kprime, 0, len_seedSE_bytes);
         digest.doFinal(rbytes, 0, rbytes.length);
 
-        short[] r = new short[2 * mbar * n + mbar * nbar];
-        for (int i = 0; i < r.length; i++)
-        {
-            r[i] = Pack.littleEndianToShort(rbytes, i * 2);
-        }
+        short[] r = Pack.littleEndianToShort(rbytes, 0, rbytes.length / 2);
 
         // 8. S' = Frodo.SampleMatrix(r[0 .. mbar*n-1], mbar, n)
         short[] Sprime = sample_matrix(r, 0, mbar, n);
@@ -551,10 +516,10 @@ class FrodoEngine
         short[] Eprime = sample_matrix(r, mbar * n, mbar, n);
 
         // 10. A = Frodo.Gen(seedA)
-        short[] A = gen.genMatrix(seedA);
+        short[] A = gen.genMatrix(sk, len_s_bytes, len_seedA_bytes);
 
         // 11. B'' = S' A + E'
-        short[] Bprimeprime = matrix_add(matrix_mul(Sprime, mbar, n, A, n, n), Eprime, mbar, n);
+        short[] Bprimeprime = matrix_add(matrix_mul(Sprime, mbar, n, A, n), Eprime, mbar, n);
 
         // 12. E'' = Frodo.SampleMatrix(r[2*mbar*n .. 2*mbar*n + mbar*nbar-1], mbar, n)
         short[] Eprimeprime = sample_matrix(r, 2 * mbar * n, mbar, nbar);
@@ -563,7 +528,7 @@ class FrodoEngine
         short[] B = unpack(b, n, nbar);
 
         // 14. V = S' B + E''
-        short[] V = matrix_add(matrix_mul(Sprime, mbar, n, B, n, nbar), Eprimeprime, mbar, nbar);
+        short[] V = matrix_add(matrix_mul(Sprime, mbar, n, B, nbar), Eprimeprime, mbar, nbar);
 
         // 15. C' = V + Frodo.Encode(muprime)
         short[] Cprime = matrix_add(V, encode(muprime), mbar, nbar);
@@ -573,14 +538,27 @@ class FrodoEngine
         // Qian Guo, Thomas Johansson, Alexander Nilsson. A key-recovery timing attack on post-quantum
         // primitives using the Fujisaki-Okamoto transformation and its application on FrodoKEM. In CRYPTO 2020.
         //TODO change it so Bprime and C are in the same array same with B'' and C'
-        short use_kprime = ctverify(Bprime, C, Bprimeprime, Cprime);
-        byte[] kbar = ctselect(kprime, s, use_kprime);
+        int use_kprime = ctverify(Bprime, C, Bprimeprime, Cprime);
+        Bytes.cmov(K.length, ~use_kprime, sk, K);
 
         // 17. ss = SHAKE(c1 || c2 || kbar, len_ss) (length in bits)
         digest.update(c1, 0, c1.length);
         digest.update(c2, 0, c2.length);
-        digest.update(kbar, 0, kbar.length);
+        digest.update(K, 0, K.length);
         digest.doFinal(ss, 0, len_ss_bytes);
     }
 
+    private static int ctverify(short[] a1, short[] a2, short[] b1, short[] b2)
+    {
+        int r = 0;
+        for (int i = 0; i < a1.length; i++)
+        {
+            r |= a1[i] ^ b1[i];
+        }
+        for (int i = 0; i < a2.length; i++)
+        {
+            r |= a2[i] ^ b2[i];
+        }
+        return Nat.czero(r);
+    }
 }
