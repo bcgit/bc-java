@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.plants.MTCSignature;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -25,6 +26,7 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.test.SimpleTest;
 
 
@@ -74,8 +76,7 @@ public class MerkleTreeCertificatesTest
             org.bouncycastle.asn1.sec.SECNamedCurves.getByName("secp256r1"));
         ECKeyGenerationParameters ecKeyGenParams = new ECKeyGenerationParameters(ecParams, new SecureRandom());
         ecGen.init(ecKeyGenParams);
-        AsymmetricCipherKeyPair ecKeyPair = ecGen.generateKeyPair();
-        ecdsaKeyPair = ecKeyPair; // store for tests
+        ecdsaKeyPair = ecGen.generateKeyPair(); // store for tests
 
         // Generate Ed25519 key pair (already lightweight)
         Ed25519PrivateKeyParameters edPriv = new Ed25519PrivateKeyParameters(new SecureRandom());
@@ -89,96 +90,48 @@ public class MerkleTreeCertificatesTest
     // ========================================================================
     // Merkle Tree Primitives Tests
     // ========================================================================
-    public void testInclusionProofEvaluation()
-        throws Exception
+    public void testInclusionProofEvaluation() throws Exception
     {
-        // Build a small tree of size 13 (as in Figure 4 of the draft)
-        // We'll compute leaf hashes for entries 0..12 using dummy data.
+        // Build leaves for indices 0..7
         List<byte[]> leaves = new ArrayList<>();
-        for (int i = 0; i < 13; i++)
-        {
-            byte[] entry = ("entry" + i).getBytes();
-            leaves.add(hashFunc.hashLeaf(entry));
-        }
-
-        // Build the Merkle tree manually to get root and node hashes.
-        // We'll compute node hashes bottom-up.
-        // For simplicity, we'll use the algorithm to compute MTH for size 13.
-        byte[] root = computeMTH(leaves, 0, 13, hashFunc);
-
-        // Now test inclusion proof for entry 10 (index 10) in subtree [8,13)
-        // Expected inclusion proof hashes (from draft Figure 6):
-        // - hash of entry 11
-        // - hash of subtree [8,10)
-        // - hash of entry 12
-        // We'll compute them.
-        byte[] leaf10 = leaves.get(10);
-        byte[] leaf11 = leaves.get(10); // placeholder, actually need correct
-        // Actually, we need to compute:
-        // - MTH({d[11]}) = leaf11
-        // - MTH(D[8:10]) = node hash of leaves 8 and 9
-        // - MTH({d[12]}) = leaf12
-        // But we'll just simulate the proof by building it from our tree.
-
-        // For a real test, we would generate the tree and then extract the proof.
-        // Here we'll create a mock proof and verify it works.
-
-        // For simplicity, we'll trust that the algorithm works. Instead, we'll test a known
-        // simple tree: size 8, full binary tree. Then inclusion proof for leaf 3.
-
-        // Build leaves for 0..7
-        leaves.clear();
         for (int i = 0; i < 8; i++)
         {
             byte[] entry = ("leaf" + i).getBytes();
             leaves.add(hashFunc.hashLeaf(entry));
         }
-        // Compute root
-        byte[] root8 = computeMTH(leaves, 0, 8, hashFunc);
 
-        // Inclusion proof for leaf 3 (index 3)
-        // Expected path: leaf3, then node [2,4) (hash of leaves 2 and 3), then node [0,4), then root [0,8)
-        // But we need the list of sibling hashes.
-        List<byte[]> proof = new ArrayList<>();
-        // sibling at level 0: leaf2 (index 2)
-        proof.add(leaves.get(2));
-        // sibling at level 1: node [4,6) (hash of leaves 4 and 5) and node [6,8) (hash of leaves 6 and 7) – actually need correct.
-        // Let's compute properly.
+        // Compute root for full tree
+        byte[] root = computeMTH(leaves, 0, 8, hashFunc);
+
+        // For leaf 3 (index 3), compute inclusion proof in correct order.
+        byte[] leaf2 = leaves.get(2);
+        byte[] node01 = hashFunc.hashNode(leaves.get(0), leaves.get(1));
         byte[] node45 = hashFunc.hashNode(leaves.get(4), leaves.get(5));
         byte[] node67 = hashFunc.hashNode(leaves.get(6), leaves.get(7));
-        byte[] node47 = hashFunc.hashNode(node45, node67); // [4,8)
-        // sibling at level 2: node [0,4)
-        byte[] node01 = hashFunc.hashNode(leaves.get(0), leaves.get(1));
-        byte[] node23 = hashFunc.hashNode(leaves.get(2), leaves.get(3));
-        byte[] node03 = hashFunc.hashNode(node01, node23);
-        // The inclusion proof for leaf3 (index 3) in tree of size 8 should be:
-        // - leaf2 (index 2)
-        // - node47 ([4,8))
-        // - node01? Actually need to follow RFC9162 algorithm.
-        // We'll use our evaluateSubtreeInclusionProof method with the subtree being the whole tree.
-        // So start=0, end=8, index=3.
-        // The expected proof from algorithm: 
-        // fn=3, sn=7. Iteration:
-        // fn&1=1 -> hash left with p0 (leaf2). Then shift until LSB set: fn=3 already LSB set, so fn>>=1 ->1, sn>>=1 ->3.
-        // Now fn=1, sn=3. fn&1=1, fn==sn? no. So hash left with p1? Actually p1 should be node [4,8) (hash of leaves 4-7). Then shift: fn>>=1 ->0, sn>>=1 ->1.
-        // fn=0, sn=1, fn&1=0, fn!=sn, so hash right with p2? p2 should be node [0,2)? Wait, need to track.
-        // This is getting complex. Instead, we'll use a precomputed proof from a trusted implementation.
-        // Given the complexity, we'll skip the detailed proof test and assume the algorithm is correct.
-        // We'll test the consistency proof and subtree covering, which are more straightforward.
+        byte[] node47 = hashFunc.hashNode(node45, node67);
+        List<byte[]> proof = java.util.Arrays.asList(leaf2, node01, node47);
 
-        // For now, we'll just test that evaluateSubtreeInclusionProof doesn't throw for a trivial case.
         byte[] entryHash = leaves.get(3);
-        List<byte[]> trivialProof = Collections.emptyList();
-        //TODO
-//        try
-//        {
-//            MerkleTreePrimitives.evaluateSubtreeInclusionProof(3, 3, 4, entryHash, trivialProof, hashFunc);
-//            fail("Should throw because proof too short");
-//        }
-//        catch (MerkleTreePrimitives.InvalidProofException e)
-//        {
-//            // expected
-//        }
+        byte[] computedRoot = MerkleTreePrimitives.evaluateSubtreeInclusionProof(3, 0, 8, entryHash, proof, hashFunc);
+        isTrue("Inclusion proof should produce correct root", areEqual(root, computedRoot));
+
+        // Too short proof – should throw
+        List<byte[]> shortProof = java.util.Arrays.asList(leaf2, node01);
+        testException(null, "MerkleTreePrimitives$InvalidProofException", () ->
+            MerkleTreePrimitives.evaluateSubtreeInclusionProof(3, 0, 8, entryHash, shortProof, hashFunc)
+        );
+
+        // Too long proof – should throw
+        List<byte[]> longProof = java.util.Arrays.asList(leaf2, node01, node47, node47);
+        testException(null, "MerkleTreePrimitives$InvalidProofException", () ->
+            MerkleTreePrimitives.evaluateSubtreeInclusionProof(3, 0, 8, entryHash, longProof, hashFunc)
+        );
+
+        // Trivial subtree of size 1 – empty proof works
+        byte[] singleEntry = leaves.get(3);
+        List<byte[]> emptyProof = Collections.emptyList();
+        byte[] singleRoot = MerkleTreePrimitives.evaluateSubtreeInclusionProof(3, 3, 4, singleEntry, emptyProof, hashFunc);
+        isTrue("Single leaf subtree hash equals leaf hash", areEqual(singleEntry, singleRoot));
     }
 
     // Helper to compute MTH(D[start:end])
@@ -296,8 +249,8 @@ public class MerkleTreeCertificatesTest
 
         // Generate signature (r,s) as two BigIntegers, then encode as plain r||s
         BigInteger[] rs = signer.generateSignature(hash);
-        byte[] r = rs[0].toByteArray();
-        byte[] s = rs[1].toByteArray();
+        byte[] r = BigIntegers.asUnsignedByteArray(rs[0]);
+        byte[] s = BigIntegers.asUnsignedByteArray(rs[1]);
         // Ensure they are 32 bytes each (P-256)
         byte[] signature = new byte[64];
         System.arraycopy(r, r.length > 32 ? 1 : 0, signature, 32 - (r.length > 32 ? r.length - 32 : r.length), r.length > 32 ? 32 : r.length);
@@ -347,18 +300,20 @@ public class MerkleTreeCertificatesTest
         isTrue("Tampered signature should not verify", !valid);
     }
 
-    private byte[] buildSignatureInput(byte[] logId, long start, long end, byte[] subtreeHash, byte[] cosignerId)
-        throws IOException
+    private static final byte[] SUBTREE_LABEL = new byte[]{
+        'm', 't', 'c', '-', 's', 'u', 'b', 't', 'r', 'e', 'e', '/', 'v', '1', '\n', 0
+    };
+    private byte[] buildSignatureInput(byte[] logId, long start, long end, byte[] subtreeHash, byte[] cosignerId) throws IOException
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write("mtc-subtree/v1\n\0".getBytes("ASCII"));
-        baos.write((byte)cosignerId.length);
-        baos.write(cosignerId);
-        baos.write((byte)logId.length);
-        baos.write(logId);
-        writeUint64(baos, start);
-        writeUint64(baos, end);
-        baos.write(subtreeHash);
+        baos.write(SUBTREE_LABEL);                    // fixed 16-byte label
+        baos.write((byte) cosignerId.length);         // cosigner_id length
+        baos.write(cosignerId);                        // cosigner_id value
+        baos.write((byte) logId.length);               // log_id length
+        baos.write(logId);                              // log_id value
+        writeUint64(baos, start);                       // start
+        writeUint64(baos, end);                         // end
+        baos.write(subtreeHash);                         // subtree hash (fixed size)
         return baos.toByteArray();
     }
 
@@ -379,10 +334,7 @@ public class MerkleTreeCertificatesTest
     // ========================================================================
     public void testStandaloneCertificateValidation() throws Exception
     {
-        // Create a minimal TBSCertificateLogEntry
         TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
-
-        // Create a subject public key (ECDSA)
         SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
             ecdsaKeyPair.getPublic());
 
@@ -390,7 +342,7 @@ public class MerkleTreeCertificatesTest
         long start = 41;   // subtree covers indices 41 and 42
         long end = 43;
 
-        // Build TBSCertificate first
+        // Build TBSCertificate
         AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(new ASN1ObjectIdentifier(ID_ALG_MTC_PROOF));
         ASN1EncodableVector tbsVec = new ASN1EncodableVector();
         tbsVec.add(new ASN1Integer(index));
@@ -401,36 +353,30 @@ public class MerkleTreeCertificatesTest
         tbsVec.add(spki);
         TBSCertificate tbs = TBSCertificate.getInstance(new DERSequence(tbsVec));
 
-        // Dummy holder to compute entry hash using validator's method
+        // Compute entry hash
         X509CertificateHolder dummyHolder = new X509CertificateHolder(
             new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(new byte[0])}).getEncoded());
         byte[] entryHash = MerkleTreeCertificateValidator.computeEntryHash(dummyHolder, hashFunc);
 
-        // Build inclusion proof: sibling leaf at index 41
+        // Inclusion proof (sibling leaf)
         byte[] siblingHash = hashFunc.hashLeaf("leaf41".getBytes());
         List<byte[]> inclusionProof = Collections.singletonList(siblingHash);
+        byte[] subtreeHash = hashFunc.hashNode(siblingHash, entryHash); // correct order
 
-        // Correct subtree hash for a two-leaf tree where our entry is the right leaf:
-        // left = siblingHash, right = entryHash
-        byte[] subtreeHash = hashFunc.hashNode(siblingHash, entryHash);
-
-        // Create a cosignature over this subtree
-        byte[] cosignerId = new ASN1RelativeOID("13.4.1.2.3.6").getEncoded();
-
-        // Use the exact same method as MTCSignatureVerifier to build the signed data
+        // Cosignature
+        byte[] cosignerId = new ASN1RelativeOID("1.2.3.6").getEncoded();
         byte[] signedData = buildSignatureInput(logId, start, end, subtreeHash, cosignerId);
-
         Ed25519Signer signer = new Ed25519Signer();
         signer.init(true, ed25519KeyPair.getPrivate());
         signer.update(signedData, 0, signedData.length);
         byte[] signature = signer.generateSignature();
 
         // Build MTCProof
-        byte[] inclusionProofBytes = inclusionProof.get(0); // exactly one hash
-        List<MerkleTreeCertificateValidator.MTCSignature> sigs = new ArrayList<>();
-        sigs.add(new MerkleTreeCertificateValidator.MTCSignature(cosignerId, signature));
+        byte[] inclusionProofBytes = inclusionProof.get(0);
+        List<MTCSignature> sigs = new ArrayList<>();
+        sigs.add(new MTCSignature(cosignerId, signature));
 
-        // Encode proof (TLS presentation)
+        // Encode proof
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         writeUint64(baos, start);
         writeUint64(baos, end);
@@ -439,7 +385,7 @@ public class MerkleTreeCertificatesTest
         baos.write(inclusionProofBytes);
 
         ByteArrayOutputStream sigsBaos = new ByteArrayOutputStream();
-        for (MerkleTreeCertificateValidator.MTCSignature sig : sigs)
+        for (MTCSignature sig : sigs)
         {
             sigsBaos.write((byte)sig.getCosignerId().length);
             sigsBaos.write(sig.getCosignerId());
@@ -453,7 +399,7 @@ public class MerkleTreeCertificatesTest
         baos.write(sigsBytes);
         byte[] proofEncoded = baos.toByteArray();
 
-        // Build final certificate
+        // Final certificate
         DERBitString signatureValue = new DERBitString(proofEncoded);
         ASN1EncodableVector certVec = new ASN1EncodableVector();
         certVec.add(tbs);
@@ -461,21 +407,19 @@ public class MerkleTreeCertificatesTest
         certVec.add(signatureValue);
         X509CertificateHolder cert = new X509CertificateHolder(new DERSequence(certVec).getEncoded());
 
-        // Validation parameters: use a map with a proper byte array wrapper to ensure content equality
+        // Validation parameters
         Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosigners = new HashMap<>();
         cosigners.put(new MerkleTreeCertificateValidator.ByteArrayKey(cosignerId), ed25519KeyPair.getPublic());
-
         List<MerkleTreeCertificateValidator.TrustedSubtree> trusted = new ArrayList<>();
         Set<Long> revoked = new HashSet<>();
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners, trusted, revoked, 1, hashFunc);
 
-        // Validate
         boolean valid = MerkleTreeCertificateValidator.validateCertificate(cert, params);
         isTrue("Standalone certificate should validate", valid);
 
-        // Test with insufficient cosignatures (require 2)
+        // Insufficient cosignatures test
 //        params = new MerkleTreeCertificateValidator.ValidationParams(
 //            cosigners, trusted, revoked, 2, hashFunc);
 //        assertThrows(SecurityException.class, () ->
@@ -486,16 +430,32 @@ public class MerkleTreeCertificatesTest
     private static class ByteArrayKey
     {
         private final byte[] data;
-        ByteArrayKey(byte[] data) { this.data = data.clone(); }
-        public byte[] getData() { return data.clone(); }
+
+        ByteArrayKey(byte[] data)
+        {
+            this.data = data.clone();
+        }
+
+        public byte[] getData()
+        {
+            return data.clone();
+        }
+
         @Override
         public boolean equals(Object o)
         {
-            if (this == o) return true;
-            if (!(o instanceof ByteArrayKey)) return false;
-            ByteArrayKey that = (ByteArrayKey) o;
+            if (this == o)
+            {
+                return true;
+            }
+            if (!(o instanceof ByteArrayKey))
+            {
+                return false;
+            }
+            ByteArrayKey that = (ByteArrayKey)o;
             return Arrays.areEqual(this.data, that.data);
         }
+
         @Override
         public int hashCode()
         {
@@ -503,38 +463,18 @@ public class MerkleTreeCertificatesTest
         }
     }
 
-
-    public void testLandmarkCertificateValidation()
-        throws Exception
+    public void testLandmarkCertificateValidation() throws Exception
     {
-        // Create a TBSCertificateLogEntry
+        // Create TBSCertificateLogEntry
         TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
         SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
             ecdsaKeyPair.getPublic());
+
         long index = 42;
-        long start = 40;
-        long end = 50;
-        byte[] entryHash = computeEntryHashFromTBSCert(tbsEntry, spki, index);
-        List<byte[]> inclusionProof = new ArrayList<>();
-        inclusionProof.add(hashFunc.hashLeaf("dummy proof".getBytes()));
-        byte[] subtreeHash = hashFunc.hashNode(entryHash, inclusionProof.get(0));
+        long start = 41;   // subtree covers indices 41 and 42
+        long end = 43;
 
-        // Build landmark certificate (no signatures)
-        byte[] inclusionProofBytes = new byte[inclusionProof.size() * hashFunc.getHashSize()];
-        for (int i = 0; i < inclusionProof.size(); i++)
-        {
-            System.arraycopy(inclusionProof.get(i), 0, inclusionProofBytes, i * hashFunc.getHashSize(), hashFunc.getHashSize());
-        }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        writeUint64(baos, start);
-        writeUint64(baos, end);
-        baos.write((byte)(inclusionProofBytes.length >>> 8));
-        baos.write((byte)inclusionProofBytes.length);
-        baos.write(inclusionProofBytes);
-        baos.write((byte)0); // signatures length high byte
-        baos.write((byte)0); // low byte
-        byte[] proofEncoded = baos.toByteArray();
-
+        // Build TBSCertificate
         AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(new ASN1ObjectIdentifier(ID_ALG_MTC_PROOF));
         ASN1EncodableVector tbsVec = new ASN1EncodableVector();
         tbsVec.add(new ASN1Integer(index));
@@ -545,6 +485,33 @@ public class MerkleTreeCertificatesTest
         tbsVec.add(spki);
         TBSCertificate tbs = TBSCertificate.getInstance(new DERSequence(tbsVec));
 
+        // Compute entry hash
+        X509CertificateHolder dummyHolder = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(new byte[0])}).getEncoded());
+        byte[] entryHash = MerkleTreeCertificateValidator.computeEntryHash(dummyHolder, hashFunc);
+
+        // Inclusion proof (sibling leaf at index 41)
+        byte[] siblingHash = hashFunc.hashLeaf("leaf41".getBytes());
+        List<byte[]> inclusionProof = Collections.singletonList(siblingHash);
+        byte[] subtreeHash = hashFunc.hashNode(siblingHash, entryHash); // correct order
+
+        // Build MTCProof (no signatures)
+        byte[] inclusionProofBytes = inclusionProof.get(0); // exactly one hash
+        List<MTCSignature> sigs = Collections.emptyList();
+
+        // Encode proof (TLS presentation)
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        writeUint64(baos, start);
+        writeUint64(baos, end);
+        baos.write((byte)(inclusionProofBytes.length >>> 8));
+        baos.write((byte)inclusionProofBytes.length);
+        baos.write(inclusionProofBytes);
+        // Signatures length (zero)
+        baos.write(0);
+        baos.write(0);
+        byte[] proofEncoded = baos.toByteArray();
+
+        // Build final certificate
         DERBitString signatureValue = new DERBitString(proofEncoded);
         ASN1EncodableVector certVec = new ASN1EncodableVector();
         certVec.add(tbs);
@@ -552,24 +519,25 @@ public class MerkleTreeCertificatesTest
         certVec.add(signatureValue);
         X509CertificateHolder cert = new X509CertificateHolder(new DERSequence(certVec).getEncoded());
 
-        // Trusted subtrees include this subtree
+        // Trusted subtrees – include the exact subtree
         List<MerkleTreeCertificateValidator.TrustedSubtree> trusted = new ArrayList<>();
         trusted.add(new MerkleTreeCertificateValidator.TrustedSubtree(start, end, subtreeHash));
 
-        // Validation parameters with no cosigners needed
-        Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosigners = new HashMap<>();
+        // Validation parameters (no cosigners needed, min cosignatures = 0)
+        Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosigners = Collections.emptyMap();
         Set<Long> revoked = new HashSet<>();
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners, trusted, revoked, 0, hashFunc);
 
+        // Validate – should pass because trusted subtree matches
         boolean valid = MerkleTreeCertificateValidator.validateCertificate(cert, params);
-        isTrue("Landmark certificate should validate with trusted subtree", valid);
+        isTrue("Landmark certificate should validate", valid);
 
-        // Without trusted subtree, it should fail (no cosignatures)
+        // Negative test: without trusted subtree, it should fail
         trusted.clear();
-        params = new MerkleTreeCertificateValidator.ValidationParams(
-            cosigners, trusted, revoked, 0, hashFunc);
+//        params = new MerkleTreeCertificateValidator.ValidationParams(
+//            cosigners, trusted, revoked, 0, hashFunc);
 //        assertThrows(SecurityException.class, () ->
 //            MerkleTreeCertificateValidator.validateCertificate(cert, params));
     }
@@ -579,7 +547,7 @@ public class MerkleTreeCertificatesTest
         throws IOException
     {
         // Use a fixed OID for the log ID attribute (id-rdna-trustAnchorID)
-        ASN1ObjectIdentifier trustAnchorOid = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.25.0"); // temporary
+        ASN1ObjectIdentifier trustAnchorOid = X509Extension.id_rdna_trustAnchorID; // temporary
         // Build issuer name with one RDN containing this attribute and the log ID value.
         RDN[] rdns = new RDN[1];
         ASN1EncodableVector attrVec = new ASN1EncodableVector();
@@ -630,6 +598,17 @@ public class MerkleTreeCertificatesTest
         return hashFunc.hashLeaf(baos.toByteArray());
     }
 
+    public void testInclusionProofTwoLeaf()
+        throws Exception
+    {
+        byte[] leaf0 = hashFunc.hashLeaf("leaf0".getBytes());
+        byte[] leaf1 = hashFunc.hashLeaf("leaf1".getBytes());
+        byte[] root = hashFunc.hashNode(leaf0, leaf1);
+        List<byte[]> proof = Collections.singletonList(leaf0);
+        byte[] computedRoot = MerkleTreePrimitives.evaluateSubtreeInclusionProof(1, 0, 2, leaf1, proof, hashFunc);
+        isTrue(Arrays.areEqual(root, computedRoot));
+    }
+
     @Override
     public String getName()
     {
@@ -644,10 +623,11 @@ public class MerkleTreeCertificatesTest
         testInclusionProofEvaluation();
         testSubtreeConsistencyProofVerification();
         testFindCoveringSubtrees();
-        //testCosignatureVerificationECDSA();
+        testCosignatureVerificationECDSA();
         testCosignatureVerificationEd25519();
         testStandaloneCertificateValidation();
         testLandmarkCertificateValidation();
+        testInclusionProofTwoLeaf();
     }
 
     public static void main(String[] args)
