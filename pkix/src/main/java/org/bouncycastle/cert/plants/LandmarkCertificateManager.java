@@ -1,19 +1,17 @@
 package org.bouncycastle.cert.plants;
 
 import org.bouncycastle.asn1.*;
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.*;
 
 /**
@@ -217,7 +215,7 @@ public class LandmarkCertificateManager
     {
         private final byte[] logId;
         private final MerkleTreePrimitives.MerkleTreeHash hashFunc;
-        private final Map<byte[], org.bouncycastle.crypto.params.AsymmetricKeyParameter> cosignerPublicKeys;
+        private final Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys;
         private final int minCosignaturesForCheckpoint;
 
         // Current trusted subtrees (landmarks)
@@ -232,7 +230,7 @@ public class LandmarkCertificateManager
         public TrustedSubtreeManager(
             byte[] logId,
             MerkleTreePrimitives.MerkleTreeHash hashFunc,
-            Map<byte[], org.bouncycastle.crypto.params.AsymmetricKeyParameter> cosignerPublicKeys,
+            Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys,
             int minCosignaturesForCheckpoint)
         {
             this.logId = logId.clone();
@@ -267,6 +265,7 @@ public class LandmarkCertificateManager
             Checkpoint referenceCheckpoint,
             List<byte[]> consistencyProof,
             List<MTCSignature> checkpointSignatures)
+            throws IOException
         {
             // 1. Verify the checkpoint is signed by enough trusted cosigners
             if (!verifyCheckpointSignatures(referenceCheckpoint, checkpointSignatures))
@@ -300,12 +299,12 @@ public class LandmarkCertificateManager
         private boolean verifyCheckpointSignatures(
             Checkpoint checkpoint,
             List<MTCSignature> signatures)
+            throws IOException
         {
             int valid = 0;
             for (MTCSignature sig : signatures)
             {
-                org.bouncycastle.crypto.params.AsymmetricKeyParameter pubKey =
-                    cosignerPublicKeys.get(sig.cosignerId);
+                AsymmetricKeyParameter pubKey = cosignerPublicKeys.get(new MerkleTreeCertificateValidator.ByteArrayKey(sig.cosignerId));
                 if (pubKey == null)
                 {
                     continue;
@@ -394,11 +393,11 @@ public class LandmarkCertificateManager
             baos.write((byte)v);
         }
 
-        private String getAlgorithmFromKey(org.bouncycastle.crypto.params.AsymmetricKeyParameter key)
+        private String getAlgorithmFromKey(AsymmetricKeyParameter key)
         {
-            if (key instanceof org.bouncycastle.crypto.params.ECPublicKeyParameters)
+            if (key instanceof ECPublicKeyParameters)
             {
-                org.bouncycastle.crypto.params.ECPublicKeyParameters ec = (org.bouncycastle.crypto.params.ECPublicKeyParameters)key;
+                ECPublicKeyParameters ec = (ECPublicKeyParameters)key;
                 int fieldSize = ec.getParameters().getCurve().getFieldSize();
                 if (fieldSize == 256)
                 {
@@ -409,7 +408,7 @@ public class LandmarkCertificateManager
                     return "ECDSA-P384-SHA384";
                 }
             }
-            else if (key instanceof org.bouncycastle.crypto.params.Ed25519PublicKeyParameters)
+            else if (key instanceof Ed25519PublicKeyParameters)
             {
                 return "Ed25519";
             }
@@ -501,18 +500,6 @@ public class LandmarkCertificateManager
             baos.write((byte)(v >>> 16));
             baos.write((byte)(v >>> 8));
             baos.write((byte)v);
-        }
-    }
-
-    private static class MTCSignature
-    {
-        final byte[] cosignerId;
-        final byte[] signature;
-
-        MTCSignature(byte[] cosignerId, byte[] signature)
-        {
-            this.cosignerId = cosignerId;
-            this.signature = signature;
         }
     }
 }
