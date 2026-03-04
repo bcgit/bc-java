@@ -74,7 +74,7 @@ public class WrapUtil
         }
         else if (keyAlgorithmName.equalsIgnoreCase("AES-KWP"))
         {
-            kWrap = new RFC5649WrapEngine(new AESEngine());
+            kWrap = new RFC5649WrapEngine(AESEngine.newInstance());
         }
         else if (keyAlgorithmName.equalsIgnoreCase("Camellia-KWP"))
         {
