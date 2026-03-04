@@ -84,6 +84,8 @@ public class
 
         PrivateKey key = kpGen.generateKeyPair().getPrivate();
 
+        encryptedTestNew(key, PKCS8Generator.AES_128_CBC);
+        encryptedTestNew(key, PKCS8Generator.AES_192_CBC);
         encryptedTestNew(key, PKCS8Generator.AES_256_CBC);
         encryptedTestNew(key, PKCS8Generator.DES3_CBC);
         encryptedTestNew(key, PKCS8Generator.PBE_SHA1_3DES);
