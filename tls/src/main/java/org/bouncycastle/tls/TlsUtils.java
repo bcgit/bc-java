@@ -6328,7 +6328,7 @@ public class TlsUtils
             return CertificateType.X509;
         }
 
-        if (!tlsCrypto.isCertificateTypeValid(serverValue))
+        if (!tlsCrypto.hasCertificateType(serverValue))
         {
             throw new TlsFatalAlert(alertDescription, "Unknown value for client_certificate_type");
         }
@@ -6362,7 +6362,7 @@ public class TlsUtils
             return CertificateType.X509;
         }
 
-        if (!tlsCrypto.isCertificateTypeValid(serverValue))
+        if (!tlsCrypto.hasCertificateType(serverValue))
         {
             throw new TlsFatalAlert(alertDescription, "Unknown value for server_certificate_type");
         }
