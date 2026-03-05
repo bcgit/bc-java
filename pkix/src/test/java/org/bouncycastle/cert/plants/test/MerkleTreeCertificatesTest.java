@@ -1,12 +1,12 @@
 package org.bouncycastle.cert.plants.test;
 
 import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.plants.MTCSignature;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.plants.MTCSignature;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -389,11 +389,13 @@ public class MerkleTreeCertificatesTest
         ByteArrayOutputStream sigsBaos = new ByteArrayOutputStream();
         for (MTCSignature sig : sigs)
         {
-            sigsBaos.write((byte)sig.getCosignerId().length);
-            sigsBaos.write(sig.getCosignerId());
-            sigsBaos.write((byte)(sig.getSignature().length >>> 8));
-            sigsBaos.write((byte)sig.getSignature().length);
-            sigsBaos.write(sig.getSignature());
+            byte[] cosignerIdValue = sig.getCosignerIdValue();
+            byte[] signatureValue = sig.getSignatureValue();
+            sigsBaos.write((byte)cosignerIdValue.length);
+            sigsBaos.write(cosignerIdValue);
+            sigsBaos.write((byte)(signatureValue.length >>> 8));
+            sigsBaos.write((byte)signatureValue.length);
+            sigsBaos.write(signatureValue);
         }
         byte[] sigsBytes = sigsBaos.toByteArray();
         baos.write((byte)(sigsBytes.length >>> 8));
