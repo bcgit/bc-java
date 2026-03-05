@@ -12,6 +12,7 @@ import org.bouncycastle.util.Arrays;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -23,12 +24,9 @@ public class LandmarkCertificateManager
     /**
      * Builds a landmark certificate for a given log entry and landmark.
      *
-     * @param logId                the log ID (DER-encoded RELATIVE-OID)
      * @param index                the index of the entry in the log
      * @param tbsCertEntry         the TBSCertificateLogEntry (ASN.1 structure)
      * @param subjectPublicKeyInfo the actual SubjectPublicKeyInfo (DER-encoded)
-     * @param landmarkNumber       the landmark number (L)
-     * @param baseId               base OID for the landmark sequence
      * @param landmarkSubtree      the chosen landmark subtree that contains the entry
      * @param inclusionProof       list of node hashes forming the inclusion proof
      * @param hashFunc             the hash function used by the log
@@ -36,12 +34,9 @@ public class LandmarkCertificateManager
      * @throws IOException if encoding fails
      */
     public static X509CertificateHolder buildLandmarkCertificate(
-        byte[] logId,
         long index,
         TBSCertificateLogEntry tbsCertEntry,
         SubjectPublicKeyInfo subjectPublicKeyInfo,
-        long landmarkNumber,
-        ASN1ObjectIdentifier baseId,
         MerkleTreePrimitives.SubtreeInfo landmarkSubtree,
         List<byte[]> inclusionProof,
         MerkleTreePrimitives.MerkleTreeHash hashFunc)
@@ -53,7 +48,7 @@ public class LandmarkCertificateManager
         //    - subjectPublicKeyInfo = provided
         //    - signature algorithm = id-alg-mtcProof
 
-        TBSCertificateStructure tbs = buildTBSCertificate(
+        TBSCertificate tbs = buildTBSCertificate(
             tbsCertEntry, index, subjectPublicKeyInfo);
 
         // 2. Construct the MTCProof for a landmark certificate (no signatures)
@@ -82,21 +77,18 @@ public class LandmarkCertificateManager
 
         DERBitString signature = new DERBitString(proofEncoded);
 
-        X509CertificateHolder cert = new X509CertificateHolder(
+        return new X509CertificateHolder(
             new DERSequence(new ASN1Encodable[]{
                 tbs.toASN1Primitive(),
                 sigAlg,
                 signature
             }).getEncoded());
-
-        return cert;
     }
 
-    private static TBSCertificateStructure buildTBSCertificate(
+    private static TBSCertificate buildTBSCertificate(
         TBSCertificateLogEntry tbsEntry,
         long index,
         SubjectPublicKeyInfo subjectPublicKeyInfo)
-        throws IOException
     {
         // Construct TBSCertificate according to Section 6.1
         // Fields from tbsEntry: version, issuer, validity, subject, extensions, uniqueIDs
@@ -136,7 +128,7 @@ public class LandmarkCertificateManager
             v.add(new DERTaggedObject(true, 3, tbsEntry.getExtensions()));
         }
 
-        return TBSCertificateStructure.getInstance(new DERSequence(v));
+        return TBSCertificate.getInstance(new DERSequence(v));
     }
 
     private static byte[] concatenateHashes(List<byte[]> hashes, int hashSize)
@@ -356,7 +348,7 @@ public class LandmarkCertificateManager
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
             {
                 // Fixed label (same as subtree, but domain separation is via the label itself)
-                baos.write("mtc-subtree/v1\n\0".getBytes("ASCII")); // 16 bytes
+                baos.write("mtc-subtree/v1\n\0".getBytes(StandardCharsets.US_ASCII)); // 16 bytes
 
                 // cosigner_id
                 baos.write((byte)cosignerId.length);

@@ -9,6 +9,8 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.util.Arrays;
@@ -260,8 +262,7 @@ public class MerkleTreeCertificateValidator
         ValidationParams params)
         throws IOException
     {
-        org.bouncycastle.crypto.params.AsymmetricKeyParameter pubKey =
-            params.cosignerPublicKeys.get(new ByteArrayKey(cosignerId));
+        AsymmetricKeyParameter pubKey = params.cosignerPublicKeys.get(new ByteArrayKey(cosignerId));
         if (pubKey == null)
         {
             return false; // cosigner not trusted
@@ -286,11 +287,11 @@ public class MerkleTreeCertificateValidator
     /**
      * Maps a Bouncy Castle AsymmetricKeyParameter to the algorithm string used by MTCSignatureVerifier.
      */
-    private static String getAlgorithmFromKey(org.bouncycastle.crypto.params.AsymmetricKeyParameter key)
+    private static String getAlgorithmFromKey(AsymmetricKeyParameter key)
     {
-        if (key instanceof org.bouncycastle.crypto.params.ECPublicKeyParameters)
+        if (key instanceof ECPublicKeyParameters)
         {
-            org.bouncycastle.crypto.params.ECPublicKeyParameters ec = (org.bouncycastle.crypto.params.ECPublicKeyParameters)key;
+            ECPublicKeyParameters ec = (ECPublicKeyParameters)key;
             int fieldSize = ec.getParameters().getCurve().getFieldSize();
             if (fieldSize == 256)
             {
@@ -305,7 +306,7 @@ public class MerkleTreeCertificateValidator
                 throw new IllegalArgumentException("Unsupported EC field size: " + fieldSize);
             }
         }
-        else if (key instanceof org.bouncycastle.crypto.params.Ed25519PublicKeyParameters)
+        else if (key instanceof Ed25519PublicKeyParameters)
         {
             return "Ed25519";
         }
@@ -362,7 +363,6 @@ public class MerkleTreeCertificateValidator
                         // Success – this is the SPKI
                         foundSpki = true;
                         spkiBytes.write(enc, 0, enc.length);
-                        continue;
                     }
                     catch (Exception e)
                     {
