@@ -14,8 +14,6 @@ import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
@@ -90,7 +88,8 @@ public class MerkleTreeCertificatesTest
     // ========================================================================
     // Merkle Tree Primitives Tests
     // ========================================================================
-    public void testInclusionProofEvaluation() throws Exception
+    public void testInclusionProofEvaluation()
+        throws Exception
     {
         // Build leaves for indices 0..7
         List<byte[]> leaves = new ArrayList<>();
@@ -303,13 +302,15 @@ public class MerkleTreeCertificatesTest
     private static final byte[] SUBTREE_LABEL = new byte[]{
         'm', 't', 'c', '-', 's', 'u', 'b', 't', 'r', 'e', 'e', '/', 'v', '1', '\n', 0
     };
-    private byte[] buildSignatureInput(byte[] logId, long start, long end, byte[] subtreeHash, byte[] cosignerId) throws IOException
+
+    private byte[] buildSignatureInput(byte[] logId, long start, long end, byte[] subtreeHash, byte[] cosignerId)
+        throws IOException
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         baos.write(SUBTREE_LABEL);                    // fixed 16-byte label
-        baos.write((byte) cosignerId.length);         // cosigner_id length
+        baos.write((byte)cosignerId.length);         // cosigner_id length
         baos.write(cosignerId);                        // cosigner_id value
-        baos.write((byte) logId.length);               // log_id length
+        baos.write((byte)logId.length);               // log_id length
         baos.write(logId);                              // log_id value
         writeUint64(baos, start);                       // start
         writeUint64(baos, end);                         // end
@@ -332,7 +333,8 @@ public class MerkleTreeCertificatesTest
     // ========================================================================
     // Certificate Validation Tests
     // ========================================================================
-    public void testStandaloneCertificateValidation() throws Exception
+    public void testStandaloneCertificateValidation()
+        throws Exception
     {
         TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
         SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
@@ -420,47 +422,17 @@ public class MerkleTreeCertificatesTest
         isTrue("Standalone certificate should validate", valid);
 
         // Insufficient cosignatures test
-//        params = new MerkleTreeCertificateValidator.ValidationParams(
-//            cosigners, trusted, revoked, 2, hashFunc);
-//        assertThrows(SecurityException.class, () ->
-//            MerkleTreeCertificateValidator.validateCertificate(cert, params));
-    }
-
-    // Wrapper class for byte array keys
-    private static class ByteArrayKey
-    {
-        private final byte[] data;
-
-        ByteArrayKey(byte[] data)
+        final MerkleTreeCertificateValidator.ValidationParams params1 = new MerkleTreeCertificateValidator.ValidationParams(
+            cosigners, trusted, revoked, 2, hashFunc);
+        testException("Insufficient valid cosignature", "SecurityException", new TestExceptionOperation()
         {
-            this.data = data.clone();
-        }
-
-        public byte[] getData()
-        {
-            return data.clone();
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o)
+            @Override
+            public void operation()
+                throws Exception
             {
-                return true;
+                MerkleTreeCertificateValidator.validateCertificate(cert, params1);
             }
-            if (!(o instanceof ByteArrayKey))
-            {
-                return false;
-            }
-            ByteArrayKey that = (ByteArrayKey)o;
-            return Arrays.areEqual(this.data, that.data);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Arrays.hashCode(data);
-        }
+        });
     }
 
     public void testLandmarkCertificateValidation() throws Exception
@@ -523,12 +495,12 @@ public class MerkleTreeCertificatesTest
         List<MerkleTreeCertificateValidator.TrustedSubtree> trusted = new ArrayList<>();
         trusted.add(new MerkleTreeCertificateValidator.TrustedSubtree(start, end, subtreeHash));
 
-        // Validation parameters (no cosigners needed, min cosignatures = 0)
+        // Validation parameters (min cosignatures = 1)
         Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosigners = Collections.emptyMap();
         Set<Long> revoked = new HashSet<>();
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
-                cosigners, trusted, revoked, 0, hashFunc);
+                cosigners, trusted, revoked, 1, hashFunc);
 
         // Validate – should pass because trusted subtree matches
         boolean valid = MerkleTreeCertificateValidator.validateCertificate(cert, params);
@@ -536,10 +508,16 @@ public class MerkleTreeCertificatesTest
 
         // Negative test: without trusted subtree, it should fail
         trusted.clear();
-//        params = new MerkleTreeCertificateValidator.ValidationParams(
-//            cosigners, trusted, revoked, 0, hashFunc);
-//        assertThrows(SecurityException.class, () ->
-//            MerkleTreeCertificateValidator.validateCertificate(cert, params));
+        final MerkleTreeCertificateValidator.ValidationParams params1 = new MerkleTreeCertificateValidator.ValidationParams(
+            cosigners, trusted, revoked, 1, hashFunc);
+        testException("Insufficient valid cosignatures", "SecurityException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation() throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(cert, params1);
+            }
+        });
     }
 
     // Helper to create a dummy TBSCertificateLogEntry

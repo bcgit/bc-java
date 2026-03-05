@@ -38,7 +38,6 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class LandmarkCertificateManagerTest extends SimpleTest
@@ -108,7 +107,7 @@ public class LandmarkCertificateManagerTest extends SimpleTest
 
         // Build landmark certificate
         X509CertificateHolder cert = LandmarkCertificateManager.buildLandmarkCertificate(
-            logId, index, tbsEntry, spki, 1L, baseId, landmarkSubtree, inclusionProof, hashFunc
+            index, tbsEntry, spki, landmarkSubtree, inclusionProof, hashFunc
         );
 
         // Verify it's a valid X.509 structure with our OID
