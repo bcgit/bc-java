@@ -1,6 +1,7 @@
 package org.bouncycastle.cert.plants;
 
 import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.plants.MTCSignature;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -224,16 +225,17 @@ public class MerkleTreeCertificateValidator
         List<CosignatureResult> cosignatureResults = new ArrayList<>();
         for (MTCSignature sig : proof.signatures)
         {
+            byte[] cosignerId = sig.getCosignerIdValue();
             boolean valid = verifyCosignature(
                 extractLogIdFromIssuer(certHolder.getIssuer()), // log ID (DER-encoded RELATIVE-OID)
                 proof.start,
                 proof.end,
                 expectedSubtreeHash,
-                sig.cosignerId,
-                sig.signature,
+                cosignerId,
+                sig.getSignatureValue(),
                 params
             );
-            cosignatureResults.add(new CosignatureResult(sig.cosignerId, valid));
+            cosignatureResults.add(new CosignatureResult(cosignerId, valid));
         }
 
         // Apply policy: count valid cosignatures
