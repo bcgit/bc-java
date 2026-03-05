@@ -15,8 +15,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 @SuppressWarnings("serial")
 public class BouncyCastleJsseProvider
@@ -184,77 +190,98 @@ public class BouncyCastleJsseProvider
         }
     }
 
+    @SuppressWarnings("Convert2Lambda")
     private void configure()
     {
         final boolean fipsMode = configFipsMode;
         final JcaTlsCryptoProvider cryptoProvider = configCryptoProvider;
 
         // TODO[jsse]: should X.509 be an alias.
-        addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", new EngineCreator()
-        {
-            public Object createInstance(Object constructorParameter)
+        addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", 
+            new EngineCreator()
             {
-                return new ProvKeyManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
-            }
-        });
+                @Override
+                public Object createInstance(Object constructorParameter)
+                {
+                    return new ProvKeyManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
+                }
+            });
         addAlias("Alg.Alias.KeyManagerFactory.X509", "X.509");
         addAlias("Alg.Alias.KeyManagerFactory.PKIX", "X.509");
 
-        addAlgorithmImplementation("TrustManagerFactory.PKIX", "org.bouncycastle.jsse.provider.TrustManagerFactory", new EngineCreator()
-        {
-            public Object createInstance(Object constructorParameter)
+        addAlgorithmImplementation("TrustManagerFactory.PKIX", "org.bouncycastle.jsse.provider.TrustManagerFactory", 
+            new EngineCreator()
             {
-                return new ProvTrustManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
-            }
-        });
+                @Override
+                public Object createInstance(Object constructorParameter)
+                {
+                    return new ProvTrustManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
+                }
+            });
         addAlias("Alg.Alias.TrustManagerFactory.X.509", "PKIX");
         addAlias("Alg.Alias.TrustManagerFactory.X509", "PKIX");
 
         addAlgorithmImplementation("SSLContext.TLS", "org.bouncycastle.jsse.provider.SSLContext.TLS",
             new EngineCreator()
             {
+                @Override
                 public Object createInstance(Object constructorParameter)
                 {
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider, null);
                 }
             });
+
+
         addAlgorithmImplementation("SSLContext.TLSV1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1",
             new EngineCreator()
             {
+                @Override
                 public Object createInstance(Object constructorParameter)
                 {
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider, specifyClientProtocols("TLSv1"));
                 }
             });
+
+
         addAlgorithmImplementation("SSLContext.TLSV1.1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_1",
             new EngineCreator()
             {
+                @Override
                 public Object createInstance(Object constructorParameter)
                 {
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider, specifyClientProtocols("TLSv1.1", "TLSv1"));
                 }
             });
+
+
         addAlgorithmImplementation("SSLContext.TLSV1.2", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_2",
             new EngineCreator()
             {
+                @Override
                 public Object createInstance(Object constructorParameter)
                 {
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider,
                         specifyClientProtocols("TLSv1.2", "TLSv1.1", "TLSv1"));
                 }
             });
+
+
         addAlgorithmImplementation("SSLContext.TLSV1.3", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_3",
             new EngineCreator()
             {
+                @Override
                 public Object createInstance(Object constructorParameter)
                 {
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider,
                         specifyClientProtocols("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1"));
                 }
             });
+
+
         addAlgorithmImplementation("SSLContext.DEFAULT", "org.bouncycastle.jsse.provider.SSLContext.Default",
             new EngineCreator()
             {
+                @Override
                 public Object createInstance(Object constructorParameter)
                     throws GeneralSecurityException
                 {
@@ -263,6 +290,25 @@ public class BouncyCastleJsseProvider
             });
         addAlias("Alg.Alias.SSLContext.SSL", "TLS");
         addAlias("Alg.Alias.SSLContext.SSLV3", "TLSV1");
+
+
+        addAlgorithmImplementation("KeyStore.PKCS12-PBM", "org.bouncycastle.jsse.provider.KeyStore.PKCS12_PBMSha256",
+                new EngineCreator()
+                {
+                    @Override
+                    public Object createInstance(Object constructorParameter)
+                            throws GeneralSecurityException
+                    {
+                    /* default parameters are:
+                            new BCJcaJceHelper(),
+                            NISTObjectIdentifiers.id_aes256_CBC,
+                            NISTObjectIdentifiers.id_aes128_CBC
+                     */
+                        return new PKCS12KeyStoreSpi.BCPKCS12KeyStore();
+                    }
+                });
+
+        //addAlias("Alg.Alias.KeyStore.PKCS12-PBM","PKCS12-PBMSha256");
     }
 
     void addAttribute(String key, String attributeName, String attributeValue)
@@ -299,6 +345,7 @@ public class BouncyCastleJsseProvider
         doPut(key, value);
     }
 
+    @Override
     public final Provider.Service getService(String type, String algorithm)
     {
         String upperCaseAlgName = Strings.toUpperCase(algorithm);
@@ -362,6 +409,7 @@ public class BouncyCastleJsseProvider
         return service;
     }
 
+    @Override
     public final synchronized Set<Provider.Service> getServices()
     {
         Set<Provider.Service> serviceSet = super.getServices();

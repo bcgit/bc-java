@@ -96,6 +96,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.keystore.bc;
     exports org.bouncycastle.jcajce.provider.keystore.bcfks;
     exports org.bouncycastle.jcajce.provider.keystore.pkcs12;
+    exports org.bouncycastle.jcajce.provider.keystore.util;
     exports org.bouncycastle.jcajce.provider.symmetric;
     exports org.bouncycastle.jcajce.provider.symmetric.util;
     exports org.bouncycastle.jcajce.provider.util;
