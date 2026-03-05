@@ -1,6 +1,7 @@
 package org.bouncycastle.cert.plants;
 
 import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.plants.MTCSignature;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -146,7 +147,6 @@ public class LandmarkCertificateManager
     // ----------------------------------------------------------------------
     // Trusted Subtree Management (Section 7.4)
     // ----------------------------------------------------------------------
-
     /**
      * Represents a trusted subtree (landmark) along with the checkpoint that proves its consistency.
      */
@@ -296,7 +296,7 @@ public class LandmarkCertificateManager
             int valid = 0;
             for (MTCSignature sig : signatures)
             {
-                AsymmetricKeyParameter pubKey = cosignerPublicKeys.get(new MerkleTreeCertificateValidator.ByteArrayKey(sig.cosignerId));
+                AsymmetricKeyParameter pubKey = cosignerPublicKeys.get(new MerkleTreeCertificateValidator.ByteArrayKey(sig.getCosignerIdValue()));
                 if (pubKey == null)
                 {
                     continue;
@@ -311,7 +311,7 @@ public class LandmarkCertificateManager
                     0,
                     checkpoint.treeSize,
                     checkpoint.rootHash,
-                    sig.cosignerId
+                    sig.getCosignerIdValue()
                 );
 
                 // Determine algorithm from key type
@@ -322,8 +322,8 @@ public class LandmarkCertificateManager
                     0,
                     checkpoint.treeSize,
                     checkpoint.rootHash,
-                    sig.cosignerId,
-                    sig.signature,
+                    sig.getCosignerIdValue(),
+                    sig.getSignatureValue(),
                     pubKey,
                     algorithm
                 );
@@ -467,13 +467,15 @@ public class LandmarkCertificateManager
             ByteArrayOutputStream sigsBaos = new ByteArrayOutputStream();
             for (MTCSignature sig : signatures)
             {
+                byte[] cosignerId = sig.getCosignerIdValue();
+                byte[] signature = sig.getSignatureValue();
                 // cosigner_id length
-                sigsBaos.write((byte)sig.cosignerId.length);
-                sigsBaos.write(sig.cosignerId);
+                sigsBaos.write((byte)cosignerId.length);
+                sigsBaos.write(cosignerId);
                 // signature length
-                sigsBaos.write((byte)(sig.signature.length >>> 8));
-                sigsBaos.write((byte)sig.signature.length);
-                sigsBaos.write(sig.signature);
+                sigsBaos.write((byte)(signature.length >>> 8));
+                sigsBaos.write((byte)signature.length);
+                sigsBaos.write(signature);
             }
             byte[] sigsBytes = sigsBaos.toByteArray();
             baos.write((byte)(sigsBytes.length >>> 8));
