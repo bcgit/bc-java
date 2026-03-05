@@ -79,13 +79,17 @@ public class PKCS12StoreParameter
 
         public AlgorithmIdentifier build()
         {
-            if (salt != null)
+            if (salt == null)
             {
                 throw new IllegalStateException("salt must be non-null");
             }
 
-            return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBMAC1, new PBMAC1Params(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, iterationCount, keySizeinBits, new AlgorithmIdentifier(prf))),
-                                                        new AlgorithmIdentifier(mac)));
+            PBKDF2Params pbkdf2Params = new PBKDF2Params(salt, iterationCount, keySizeinBits, new AlgorithmIdentifier(prf));
+            AlgorithmIdentifier keyDevFunc = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, pbkdf2Params);
+            AlgorithmIdentifier authScheme = new AlgorithmIdentifier(mac);           
+            PBMAC1Params pbmac1Params = new PBMAC1Params(keyDevFunc, authScheme);
+
+            return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBMAC1,  pbmac1Params);
         }
     }
 
