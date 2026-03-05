@@ -23,7 +23,7 @@ public abstract class AbstractTlsCrypto
         throw new IllegalArgumentException("unrecognized TlsSecret - cannot copy data: " + secret.getClass().getName());
     }
 
-    public boolean isCertificateTypeValid(short certificateType)
+    public boolean hasCertificateType(short certificateType)
     {
         return CertificateType.isValid(certificateType);
     }

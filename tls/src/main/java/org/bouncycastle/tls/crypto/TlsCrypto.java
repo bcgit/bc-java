@@ -18,15 +18,6 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
  */
 public interface TlsCrypto
 {
-
-    /**
-     * Return true if this TlsCrypto can support the passed in certificate type.
-     *
-     * @param certificateType the certificate type of interest.
-     * @return true if certificateType is supported, false otherwise.
-     */
-    boolean isCertificateTypeValid(short certificateType);
-
     /**
      * Return true if this TlsCrypto would use a stream verifier for any of the passed in algorithms. This
      * method is only relevant to handshakes negotiating (D)TLS 1.2.
@@ -46,6 +37,14 @@ public interface TlsCrypto
      *         otherwise false.
      */
     boolean hasAnyStreamVerifiersLegacy(short[] clientCertificateTypes);
+
+    /**
+     * Return true if this TlsCrypto can support the passed in certificate type.
+     *
+     * @param certificateType the certificate type of interest.
+     * @return true if certificateType is supported, false otherwise.
+     */
+    boolean hasCertificateType(short certificateType);
 
     /**
      * Return true if this TlsCrypto can support the passed in hash algorithm.
