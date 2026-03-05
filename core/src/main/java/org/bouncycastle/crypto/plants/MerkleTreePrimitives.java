@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -113,7 +114,7 @@ public class MerkleTreePrimitives
         throws InvalidProofException
     {
         // Validate subtree interval and index
-        if (start < 0 || end <= start || index < start || index >= end)
+        if (start < 0 || index < start || index >= end)
         {
             throw new InvalidProofException("Invalid subtree interval or index");
         }
@@ -183,7 +184,7 @@ public class MerkleTreePrimitives
         try
         {
             byte[] computed = evaluateSubtreeInclusionProof(index, start, end, entryHash, proof, hash);
-            return java.util.Arrays.equals(computed, subtreeHash);
+            return Arrays.equals(computed, subtreeHash);
         }
         catch (InvalidProofException e)
         {
@@ -306,18 +307,9 @@ public class MerkleTreePrimitives
         {
             return false; // proof too short
         }
-        return java.util.Arrays.equals(fr, subtreeHash) && java.util.Arrays.equals(sr, rootHash);
+        return Arrays.equals(fr, subtreeHash) && Arrays.equals(sr, rootHash);
     }
 
-    /**
-     * Finds the minimal set of subtrees that efficiently cover the interval [start, end).
-     * Returns a list of one or two (start, end) pairs.
-     *
-     * @param start start index of the interval (inclusive)
-     * @param end   end index of the interval (exclusive)
-     * @return list of one or two subtrees covering the interval (as long arrays of length 2)
-     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/#section-4.5">Section 4.5</a>
-     */
     /**
      * Finds the minimal set of subtrees that efficiently cover the interval [start, end).
      * Returns a list of one or two (start, end) pairs.
@@ -363,7 +355,7 @@ public class MerkleTreePrimitives
             leftSplit = Long.SIZE - Long.numberOfLeadingZeros(temp);
         }
 
-        long leftStart = start & ~((1L << leftSplit) - 1);
+        long leftStart = start & -(1L << leftSplit);
 
         result.add(new long[]{leftStart, mid});
         result.add(new long[]{mid, end});
