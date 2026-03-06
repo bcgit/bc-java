@@ -359,9 +359,9 @@ public class LandmarkCertificateManager
                 baos.write(logId);
 
                 // start (uint64)
-                writeUint64(baos, start);
+                Utils.writeUint64(baos, start);
                 // end (uint64)
-                writeUint64(baos, end);
+                Utils.writeUint64(baos, end);
                 // rootHash
                 baos.write(rootHash);
 
@@ -371,18 +371,6 @@ public class LandmarkCertificateManager
             {
                 throw new RuntimeException(e);
             }
-        }
-
-        private void writeUint64(ByteArrayOutputStream baos, long v)
-        {
-            baos.write((byte)(v >>> 56));
-            baos.write((byte)(v >>> 48));
-            baos.write((byte)(v >>> 40));
-            baos.write((byte)(v >>> 32));
-            baos.write((byte)(v >>> 24));
-            baos.write((byte)(v >>> 16));
-            baos.write((byte)(v >>> 8));
-            baos.write((byte)v);
         }
 
         private String getAlgorithmFromKey(AsymmetricKeyParameter key)
@@ -432,68 +420,6 @@ public class LandmarkCertificateManager
                 this.treeSize = treeSize;
                 this.rootHash = rootHash.clone();
             }
-        }
-    }
-
-    // ----------------------------------------------------------------------
-    // Helper: MTCProof encoding (simplified)
-    // ----------------------------------------------------------------------
-    private static class MTCProof
-    {
-        final long start;
-        final long end;
-        final byte[] inclusionProof;
-        final List<MTCSignature> signatures;
-
-        MTCProof(long start, long end, byte[] inclusionProof, List<MTCSignature> signatures)
-        {
-            this.start = start;
-            this.end = end;
-            this.inclusionProof = inclusionProof;
-            this.signatures = signatures;
-        }
-
-        byte[] encode()
-            throws IOException
-        {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            writeUint64(baos, start);
-            writeUint64(baos, end);
-            // inclusion_proof length (2 bytes)
-            baos.write((byte)(inclusionProof.length >>> 8));
-            baos.write((byte)inclusionProof.length);
-            baos.write(inclusionProof);
-            // signatures length (2 bytes)
-            ByteArrayOutputStream sigsBaos = new ByteArrayOutputStream();
-            for (MTCSignature sig : signatures)
-            {
-                byte[] cosignerId = sig.getCosignerIdValue();
-                byte[] signature = sig.getSignatureValue();
-                // cosigner_id length
-                sigsBaos.write((byte)cosignerId.length);
-                sigsBaos.write(cosignerId);
-                // signature length
-                sigsBaos.write((byte)(signature.length >>> 8));
-                sigsBaos.write((byte)signature.length);
-                sigsBaos.write(signature);
-            }
-            byte[] sigsBytes = sigsBaos.toByteArray();
-            baos.write((byte)(sigsBytes.length >>> 8));
-            baos.write((byte)sigsBytes.length);
-            baos.write(sigsBytes);
-            return baos.toByteArray();
-        }
-
-        private void writeUint64(ByteArrayOutputStream baos, long v)
-        {
-            baos.write((byte)(v >>> 56));
-            baos.write((byte)(v >>> 48));
-            baos.write((byte)(v >>> 40));
-            baos.write((byte)(v >>> 32));
-            baos.write((byte)(v >>> 24));
-            baos.write((byte)(v >>> 16));
-            baos.write((byte)(v >>> 8));
-            baos.write((byte)v);
         }
     }
 }
