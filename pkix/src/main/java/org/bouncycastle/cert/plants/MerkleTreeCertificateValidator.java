@@ -174,7 +174,7 @@ public class MerkleTreeCertificateValidator
         byte[] signatureValue = certHolder.getSignature();
         // The signature value is a BIT STRING containing the raw MTCProof (TLS encoding)
         // We need to parse it according to TLS presentation.
-        MTCProof proof = MTCProof.parse(signatureValue, params.hashFunction.getHashSize());
+        MTCProof proof = MTCProof.parse(signatureValue);
 
         // 3. Extract the log entry index from the serial number
         BigInteger serialBig = certHolder.getSerialNumber();
@@ -466,7 +466,7 @@ public class MerkleTreeCertificateValidator
          * opaque cosigner_id<1..2^8-1>;   // 1-byte length + data
          * opaque signature<0..2^16-1>;    // 2-byte length + data
          */
-        static MTCProof parse(byte[] data, int hashSize)
+        static MTCProof parse(byte[] data)
             throws IOException
         {
             int pos = 0;
@@ -476,11 +476,11 @@ public class MerkleTreeCertificateValidator
             {
                 throw new IOException("Truncated MTCProof");
             }
-            long start = readUint64(data, pos);
+            long start = Utils.readUint64(data, pos);
             pos += 8;
 
             // end (8 bytes)
-            long end = readUint64(data, pos);
+            long end = Utils.readUint64(data, pos);
             pos += 8;
 
             // inclusion_proof length (2 bytes)
@@ -548,18 +548,6 @@ public class MerkleTreeCertificateValidator
             }
 
             return new MTCProof(start, end, inclusionProof, signatures);
-        }
-
-        private static long readUint64(byte[] data, int off)
-        {
-            return ((data[off] & 0xFFL) << 56) |
-                ((data[off + 1] & 0xFFL) << 48) |
-                ((data[off + 2] & 0xFFL) << 40) |
-                ((data[off + 3] & 0xFFL) << 32) |
-                ((data[off + 4] & 0xFFL) << 24) |
-                ((data[off + 5] & 0xFFL) << 16) |
-                ((data[off + 6] & 0xFFL) << 8) |
-                (data[off + 7] & 0xFFL);
         }
 
         /**
