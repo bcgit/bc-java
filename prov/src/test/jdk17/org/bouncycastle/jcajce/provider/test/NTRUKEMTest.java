@@ -11,22 +11,22 @@ import javax.crypto.SecretKey;
 
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
-
 public class NTRUKEMTest
     extends TestCase
 {
+    private static final String NTRU_PROV_NAME = BouncyCastlePQCProvider.PROVIDER_NAME;
+
     public void setUp()
     {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastleProvider());
+            Security.addProvider(new BouncyCastlePQCProvider());
         }
     }
 
@@ -47,13 +47,13 @@ public class NTRUKEMTest
 //        FixedSecureRandom fixedRandom = new FixedSecureRandom(fixedRandomBytes);
 //
 //        // Receiver side
-//        KeyPairGenerator g = KeyPairGenerator.getInstance("NTRU", "BCPQC");
+//        KeyPairGenerator g = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
 //        g.initialize(NTRUParameterSpec.sntrup653, fixedRandom);
 //        KeyPair kp = g.generateKeyPair();
 //        NTRUKey pkR = (NTRUKey)kp.getPublic();
 //
 //        // Sender side
-//        KEM kemS = KEM.getInstance("NTRU", "BCPQC");
+//        KEM kemS = KEM.getInstance("NTRU", NTRU_PROV_NAME);
 //        KTSParameterSpec ktsSpec = null;
 //        KEM.Encapsulator e = kemS.newEncapsulator((PublicKey)pkR, ktsSpec, fixedRandom);
 //        KEM.Encapsulated enc = e.encapsulate();
@@ -65,7 +65,7 @@ public class NTRUKEMTest
 //        assertTrue(Arrays.areEqual(enc.key().getEncoded(), ss));
 //
 //        // Receiver side
-//        KEM kemR = KEM.getInstance("NTRU", "BCPQC");
+//        KEM kemR = KEM.getInstance("NTRU", NTRU_PROV_NAME);
 //        KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsSpec);
 //        SecretKey secR = d.decapsulate(em);
 //
@@ -78,7 +78,7 @@ public class NTRUKEMTest
             throws Exception
     {
         // Receiver side
-        KeyPairGenerator g = KeyPairGenerator.getInstance("NTRU", "BCPQC");
+        KeyPairGenerator g = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
 
         g.initialize(NTRUParameterSpec.ntruhrss701, new SecureRandom());
 
@@ -86,7 +86,7 @@ public class NTRUKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("NTRU", "BCPQC");
+        KEM kemS = KEM.getInstance("NTRU", NTRU_PROV_NAME);
         KTSParameterSpec ktsSpec = null;
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
@@ -95,8 +95,8 @@ public class NTRUKEMTest
         byte[] params = enc.params();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("NTRU", "BCPQC");
-//        AlgorithmParameters algParams = AlgorithmParameters.getInstance("NTRU", "BCPQC");
+        KEM kemR = KEM.getInstance("NTRU", NTRU_PROV_NAME);
+//        AlgorithmParameters algParams = AlgorithmParameters.getInstance("NTRU", NTRU_PROV_NAME);
 //        algParams.init(params);
 //        NTRUParameterSpec specR = algParams.getParameterSpec(NTRUParameterSpec.class);
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsSpec);
@@ -114,7 +114,7 @@ public class NTRUKEMTest
         {
             Security.addProvider(new BouncyCastlePQCProvider());
         }
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
 
         performKEM(kpg.generateKeyPair(), new KEMParameterSpec("AES"));
@@ -140,7 +140,7 @@ public class NTRUKEMTest
     public void testBasicKEMCamellia()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
 
         performKEM(kpg.generateKeyPair(), new KTSParameterSpec.Builder("Camellia", 256).build());
@@ -150,7 +150,7 @@ public class NTRUKEMTest
     public void testBasicKEMSEED()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
 
         performKEM(kpg.generateKeyPair(), new KTSParameterSpec.Builder("SEED", 128).build());
@@ -159,7 +159,7 @@ public class NTRUKEMTest
     public void testBasicKEMARIA()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048677, new SecureRandom());
 
         performKEM(kpg.generateKeyPair(), new KEMParameterSpec("ARIA"));
@@ -172,14 +172,14 @@ public class NTRUKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("NTRU", "BCPQC");
+        KEM kemS = KEM.getInstance("NTRU", NTRU_PROV_NAME);
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsParameterSpec, null);
         KEM.Encapsulated enc = e.encapsulate(from, to, algorithm);
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("NTRU", "BCPQC");
+        KEM kemR = KEM.getInstance("NTRU", NTRU_PROV_NAME);
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsParameterSpec);
         SecretKey secR = d.decapsulate(em, from, to, algorithm);
 
@@ -194,14 +194,14 @@ public class NTRUKEMTest
         PublicKey pkR = kp.getPublic();
 
         // Sender side
-        KEM kemS = KEM.getInstance("NTRU", "BCPQC");
+        KEM kemS = KEM.getInstance("NTRU", NTRU_PROV_NAME);
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsParameterSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
 
         // Receiver side
-        KEM kemR = KEM.getInstance("NTRU", "BCPQC");
+        KEM kemR = KEM.getInstance("NTRU", NTRU_PROV_NAME);
 //        KTSParameterSpec RktsParameterSpec = new KTSParameterSpec.Builder(
 //                ktsParameterSpec.getKeyAlgorithmName(),
 //                enc.key().getEncoded().length

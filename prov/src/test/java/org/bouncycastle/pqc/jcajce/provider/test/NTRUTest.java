@@ -11,15 +11,16 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import junit.framework.TestCase;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.TestCase;
 
 /**
  * KEM tests for NTRU with the BC provider.
@@ -27,18 +28,20 @@ import org.bouncycastle.util.encoders.Hex;
 public class NTRUTest
     extends TestCase
 {
+    private static final String NTRU_PROV_NAME = BouncyCastlePQCProvider.PROVIDER_NAME;
+
     public void setUp()
     {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastleProvider());
+            Security.addProvider(new BouncyCastlePQCProvider());
         }
     }
 
     public void testBasicKEMAES()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
 
         performKEMScipher(kpg.generateKeyPair(), "NTRU", new KEMParameterSpec("AES"));
@@ -52,7 +55,7 @@ public class NTRUTest
     public void testBasicKEMCamellia()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
 
         performKEMScipher(kpg.generateKeyPair(), "NTRU", new KEMParameterSpec("Camellia"));
@@ -62,7 +65,7 @@ public class NTRUTest
     public void testBasicKEMSEED()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
 
         performKEMScipher(kpg.generateKeyPair(), "NTRU", new KEMParameterSpec("SEED", 128));
@@ -71,7 +74,7 @@ public class NTRUTest
     public void testBasicKEMARIA()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048677, new SecureRandom());
 
         performKEMScipher(kpg.generateKeyPair(), "NTRU", new KEMParameterSpec("ARIA"));
@@ -81,7 +84,7 @@ public class NTRUTest
     private void performKEMScipher(KeyPair kp, String algorithm, KEMParameterSpec ktsParameterSpec)
             throws Exception
     {
-        Cipher w1 = Cipher.getInstance(algorithm, "BC");
+        Cipher w1 = Cipher.getInstance(algorithm, NTRU_PROV_NAME);
 
         byte[] keyBytes;
         if (algorithm.endsWith("KWP"))
@@ -98,7 +101,7 @@ public class NTRUTest
 
         byte[] data = w1.wrap(key);
 
-        Cipher w2 = Cipher.getInstance(algorithm, "BC");
+        Cipher w2 = Cipher.getInstance(algorithm, NTRU_PROV_NAME);
 
         w2.init(Cipher.UNWRAP_MODE, kp.getPrivate(), ktsParameterSpec);
 
@@ -110,12 +113,12 @@ public class NTRUTest
     public void testGenerateAES()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyGenerator keyGen = KeyGenerator.getInstance("NTRU", "BC");
+        KeyGenerator keyGen = KeyGenerator.getInstance("NTRU", NTRU_PROV_NAME);
 
         keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES", 128), new SecureRandom());
 
@@ -136,12 +139,12 @@ public class NTRUTest
     public void testGenerateAES256()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
         kpg.initialize(NTRUParameterSpec.ntruhps4096821, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyGenerator keyGen = KeyGenerator.getInstance("NTRU", "BC");
+        KeyGenerator keyGen = KeyGenerator.getInstance("NTRU", NTRU_PROV_NAME);
 
         keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
 
