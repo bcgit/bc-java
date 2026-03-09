@@ -109,6 +109,7 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.jcajce.JcaAlgorithmParametersConverter;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -118,6 +119,7 @@ public class NewEnvelopedDataTest
     extends TestCase
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
+    private static final String BCPQC = BouncyCastlePQCProvider.PROVIDER_NAME;
 
     private static String _signDN;
     private static KeyPair _signKP;
@@ -902,7 +904,8 @@ public class NewEnvelopedDataTest
 
             assertEquals(BCObjectIdentifiers.ntruhps2048509.getId(), recipient.getKeyEncryptionAlgOID());
 
-            CMSTypedStream contentStream = recipient.getContentStream(new JceKEMEnvelopedRecipient(_reciNtruKP.getPrivate()).setProvider(BC));
+            CMSTypedStream contentStream = recipient.getContentStream(
+                new JceKEMEnvelopedRecipient(_reciNtruKP.getPrivate()).setProvider(BCPQC).setContentProvider(BC));
 
             assertEquals(PKCSObjectIdentifiers.data, contentStream.getContentType());
             assertEquals(true, Arrays.equals(data, Streams.readAll(contentStream.getContentStream())));
