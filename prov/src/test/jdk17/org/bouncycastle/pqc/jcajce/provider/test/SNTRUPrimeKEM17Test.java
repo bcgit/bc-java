@@ -19,7 +19,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
-public class SNTRUPrimeKEMTest
+public class SNTRUPrimeKEM17Test
     extends TestCase
 {
     public void setUp()

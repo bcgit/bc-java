@@ -17,7 +17,7 @@ import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
-public class NTRUKEMTest
+public class NTRUKEM17Test
     extends TestCase
 {
     private static final String NTRU_PROV_NAME = BouncyCastlePQCProvider.PROVIDER_NAME;

@@ -18,7 +18,7 @@ import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
-public class MLKEMTest
+public class MLKEM17Test
     extends TestCase
 {
     public void setUp()
