@@ -57,11 +57,6 @@ public class KeyManagerFactoryTest
     public void testRSAServer()
         throws Exception
     {
-        // TLS_RSA is disabled in Java 25.
-        if (System.getProperty("java.version").startsWith("25"))
-        {
-            return;
-        }
         KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -97,11 +92,6 @@ public class KeyManagerFactoryTest
     public void testRSAServerTrustEE()
         throws Exception
     {
-        // TLS_RSA is disabled in Java 25.
-        if (System.getProperty("java.version").startsWith("25"))
-        {
-            return;
-        }
         KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -147,11 +137,6 @@ public class KeyManagerFactoryTest
     public void testRSAServerWithClientAuth()
         throws Exception
     {
-        // TLS_RSA is disabled in Java 25.
-        if (System.getProperty("java.version").startsWith("25"))
-        {
-            return;
-        }
         KeyStore clientKS = getRsaKeyStore(false);
         KeyStore serverKS = getRsaKeyStore(true);
 
