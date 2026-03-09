@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
 
-public class All17Tests
+public class AllTests17
     extends TestCase
 {
     public static void main(String[] args)
