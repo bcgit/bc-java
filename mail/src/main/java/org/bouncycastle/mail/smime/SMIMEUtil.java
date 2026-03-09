@@ -652,12 +652,17 @@ public class SMIMEUtil
         return lOut;
     }
 
-    static void closeStreamSafely(InputStream sigStream) {
-        try {
-            if (sigStream != null) {
+    static void closeStreamSafely(InputStream sigStream)
+    {
+        try
+        {
+            if (sigStream != null)
+            {
                 sigStream.close();
             }
-        } catch (IOException ioEx) {
+        }
+        catch (IOException ioEx)
+        {
             // Ignore secondary exception during cleanup
         }
     }
@@ -665,7 +670,8 @@ public class SMIMEUtil
     /**
      * Interface to obfuscate the repetitive constructors so that we could have only one createSafe
      */
-    public interface SafeCreator {
+    public interface SafeCreator
+    {
         Object create() throws Exception;
     }
 
@@ -681,9 +687,12 @@ public class SMIMEUtil
     public static Object createSafe(InputStream sigStream, SafeCreator creator)
         throws MessagingException, CMSException 
     {
-        try {
+        try
+        {
             return creator.create();
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             closeStreamSafely(sigStream);
             
             // Handle re-throwing consistently
