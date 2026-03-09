@@ -117,7 +117,8 @@ public class PipedStreamThreadStuckTest extends TestCase
         assertNoJavaMailDataHandlerThreads("post failure");
     }
 
-    public MimeMessage createFakeMimeMessage() throws MessagingException {
+    public MimeMessage createFakeMimeMessage() throws MessagingException
+    {
 		Session session = Session.getDefaultInstance(new Properties());
         MimeMessage message = new MimeMessage(session);
         message.setSubject("Complex Piped Multipart");

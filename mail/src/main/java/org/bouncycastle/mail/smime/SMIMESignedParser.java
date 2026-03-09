@@ -299,7 +299,8 @@ public class SMIMESignedParser
         super(digCalcProvider, sigStream);
         this.message = message;
         CMSTypedStream cont = this.getSignedContent();
-        if (cont != null) {
+        if (cont != null)
+        {
             this.content = SMIMEUtil.toWriteOnceBodyPart(cont);
         }
     }
@@ -317,7 +318,8 @@ public class SMIMESignedParser
         super(digCalcProvider, sigStream);
         this.message = message;
         CMSTypedStream cont = this.getSignedContent();
-        if (cont != null) {
+        if (cont != null)
+        {
             this.content = SMIMEUtil.toMimeBodyPart(cont, file);
         }
     }
@@ -343,8 +345,10 @@ public class SMIMESignedParser
         throws MessagingException, CMSException 
     {
         final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1));
-        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
-            public Object create() throws Exception {
+        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public Object create() throws Exception
+            {
                 return new SMIMESignedParser(digCalcProvider, message, defaultEncoding, backingFile, sigStream);
             }
         });
@@ -367,8 +371,10 @@ public class SMIMESignedParser
         throws MessagingException, CMSException 
     {
         final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message);
-        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
-            public Object create() throws Exception {
+        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public Object create() throws Exception
+            {
                 return new SMIMESignedParser(digCalcProvider, message, sigStream);
             }
         });
@@ -393,8 +399,10 @@ public class SMIMESignedParser
         throws MessagingException, CMSException 
     {
         final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message);
-        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
-            public Object create() throws Exception {
+        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public Object create() throws Exception
+            {
                 return new SMIMESignedParser(digCalcProvider, message, file, sigStream);
             }
         });

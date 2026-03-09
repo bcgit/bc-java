@@ -146,8 +146,10 @@ public class SMIMESigned
         throws MessagingException, CMSException 
     {
         final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1));
-        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
-            public SMIMESigned create() throws Exception {
+        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public SMIMESigned create() throws Exception
+            {
                 return new SMIMESigned(message, sigStream);
             }
         });
@@ -168,8 +170,10 @@ public class SMIMESigned
         throws MessagingException, CMSException 
     {
         final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1));
-        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
-            public SMIMESigned create() throws Exception {
+        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public SMIMESigned create() throws Exception
+            {
                 return new SMIMESigned(message, defaultEncoding, sigStream);
             }
         });
@@ -189,14 +193,17 @@ public class SMIMESigned
         throws MessagingException, CMSException 
     {
         final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message);
-        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator() {
-            public Object create() throws Exception {
+        return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public Object create() throws Exception
+            {
                 return new SMIMESigned(message, sigStream);
             }
         });
     }
 
-    private void fillMessageAndContent(Part pMessage) throws SMIMEException {
+    private void fillMessageAndContent(Part pMessage) throws SMIMEException
+    {
         this.message = pMessage;
         CMSProcessable  cont = this.getSignedContent();
         if (cont != null)
@@ -207,7 +214,8 @@ public class SMIMESigned
         }
     }
 
-    private void fillMessageAndContent(MimeMultipart pMessage) throws MessagingException {
+    private void fillMessageAndContent(MimeMultipart pMessage) throws MessagingException
+    {
         this.message = pMessage;
         this.content = (MimeBodyPart) pMessage.getBodyPart(0);
     }
