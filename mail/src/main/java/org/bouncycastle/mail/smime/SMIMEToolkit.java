@@ -195,14 +195,27 @@ public class SMIMEToolkit
 
             if (message instanceof MimeMessage && message.isMimeType("multipart/signed"))
             {
-                s = new SMIMESignedParser(digestCalculatorProvider, (MimeMultipart)message.getContent());
+                s = SMIMESignedParser.getSafeInstance(digestCalculatorProvider, (MimeMultipart)message.getContent());
             }
             else
             {
-                s = new SMIMESignedParser(digestCalculatorProvider, message);
+                s = SMIMESignedParser.getSafeInstance(digestCalculatorProvider, message);
             }
 
-            return getX509CertificateHolder(s, signerInformation);
+            // Read all certificates and CRLs (if any)
+            s.getCertificates().getMatches(null);
+            s.getCRLs().getMatches(null);
+
+            // Extract the certificate that matches the given signer
+            X509CertificateHolder result = getX509CertificateHolder(s, signerInformation);
+
+            // **Critical:** Consume the rest of the signature stream by iterating over all signer infos.
+            // This unblocks the DataHandler feeder thread.
+            for (Object ignored : s.getSignerInfos().getSigners()) {
+                // just iterate
+            }
+
+            return result;
         }
         catch (CMSException e)
         {

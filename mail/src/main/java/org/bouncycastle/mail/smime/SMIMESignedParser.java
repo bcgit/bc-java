@@ -263,6 +263,31 @@ public class SMIMESignedParser
     }
 
     /**
+     * Factory method for creating a safe SMIMESignedParser instance from a MimeMultipart.
+     * Uses "7bit" as the default content transfer encoding and automatically creates
+     * a temporary file to back the signed content.
+     *
+     * @param digCalcProvider provider for digest calculators.
+     * @param message the multipart message.
+     * @return a safely constructed SMIMESignedParser instance.
+     * @throws MessagingException if there's an error accessing the message or creating the temp file.
+     * @throws CMSException if the CMS structure is malformed or cannot be parsed.
+     */
+    public static SMIMESignedParser getSafeInstance(DigestCalculatorProvider digCalcProvider, MimeMultipart message)
+    throws MessagingException, CMSException
+    {
+        try
+        {
+            File tmpFile = File.createTempFile("bcSigned", ".tmp");
+            return getSafeInstance(digCalcProvider, message, "7bit", tmpFile);
+        }
+        catch (IOException e)
+        {
+            throw new MessagingException("cannot create temp file: " + e, e);
+        }
+    }
+
+    /**
      * Internal constructor used by getSafeInstance for Part-based (encapsulated) messages.
      * * @param digCalcProvider provider for digest calculators.
      * @param message the message part.
