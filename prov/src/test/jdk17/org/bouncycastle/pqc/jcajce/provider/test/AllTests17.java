@@ -1,10 +1,9 @@
-package org.bouncycastle.jcajce.provider.test;
+package org.bouncycastle.pqc.jcajce.provider.test;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
-
 
 public class AllTests17
     extends TestCase
