@@ -203,7 +203,7 @@ public class OpenSSHPublicKeyUtil
 
             result = new Ed25519PublicKeyParameters(pubKeyBytes, 0);
         }
-        else if (FIDO2_EC_P256.equals(magic))
+        else if (FIDO_ED_25519.equals(magic))
         {
             byte[] pubKeyBytes = buffer.readBlock();
             if (pubKeyBytes.length != Ed25519PublicKeyParameters.KEY_SIZE)
