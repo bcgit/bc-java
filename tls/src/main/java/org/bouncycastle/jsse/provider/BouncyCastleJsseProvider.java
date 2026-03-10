@@ -442,12 +442,13 @@ public class BouncyCastleJsseProvider
          * @throws NullPointerException if provider, type, algorithm, or
          *                              className is null
          */
-        public BcJsseService(Provider provider, String type, String algorithm, String className, List<String> aliases, Map<String, String> attributes, EngineCreator creator)
+        BcJsseService(Provider provider, String type, String algorithm, String className, List<String> aliases, Map<String, String> attributes, EngineCreator creator)
         {
             super(provider, type, algorithm, className, aliases, attributes);
             this.creator = creator;
         }
 
+        @Override
         public Object newInstance(Object constructorParameter)
             throws NoSuchAlgorithmException
         {
