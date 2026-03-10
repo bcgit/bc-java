@@ -31,7 +31,8 @@ class Timeout
         // Once timeout reached, lock it in
         if (remaining <= 0)
         {
-            return durationMillis = 0L;
+            durationMillis = 0L;
+            return 0L;
         }
 
         return remaining;
