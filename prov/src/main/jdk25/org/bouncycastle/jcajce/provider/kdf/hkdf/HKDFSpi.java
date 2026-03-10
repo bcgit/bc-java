@@ -70,15 +70,13 @@ public class HKDFSpi extends KDFSpi
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
             throws InvalidAlgorithmParameterException
     {
-        if (derivationSpec instanceof org.bouncycastle.jcajce.spec.HKDFParameterSpec)
+        if (derivationSpec instanceof org.bouncycastle.jcajce.spec.HKDFParameterSpec bcSpec)
         {
-            org.bouncycastle.jcajce.spec.HKDFParameterSpec spec = (org.bouncycastle.jcajce.spec.HKDFParameterSpec)derivationSpec;
+            byte[] ikm = bcSpec.getIKM();
+            byte[] salt = bcSpec.getSalt();
+            byte[] info = bcSpec.getInfo();
 
-            byte[] ikm = spec.getIKM();
-            byte[] salt = spec.getSalt();
-            byte[] info = spec.getInfo();
-
-            return expand(spec.getOutputLength(), new HKDFParameters(ikm, salt, info));
+            return expand(bcSpec.getOutputLength(), new HKDFParameters(ikm, salt, info));
         }
 
         if (!(derivationSpec instanceof HKDFParameterSpec))
@@ -86,43 +84,27 @@ public class HKDFSpi extends KDFSpi
             throw new InvalidAlgorithmParameterException("Invalid AlgorithmParameterSpec provided");
         }
 
-        if (derivationSpec instanceof HKDFParameterSpec.Expand)
+        if (derivationSpec instanceof HKDFParameterSpec.Expand expandSpec)
         {
-            HKDFParameterSpec.Expand spec = (HKDFParameterSpec.Expand)derivationSpec;
+            byte[] ikm = expandSpec.prk().getEncoded();
+            byte[] info = expandSpec.info();
 
-            byte[] ikm = spec.prk().getEncoded();
-            byte[] info = spec.info();
-
-            return expand(spec.length(), HKDFParameters.skipExtractParameters(ikm, info));
+            return expand(expandSpec.length(), HKDFParameters.skipExtractParameters(ikm, info));
         }
-        else if (derivationSpec instanceof HKDFParameterSpec.Extract)
+        else if (derivationSpec instanceof HKDFParameterSpec.Extract extractSpec)
         {
-            HKDFParameterSpec.Extract spec = (HKDFParameterSpec.Extract)derivationSpec;
-
-            byte[] ikm = flattenSecretKeys(spec.ikms());
-            byte[] salt = flattenSecretKeys(spec.salts());
+            byte[] ikm = flattenSecretKeys(extractSpec.ikms());
+            byte[] salt = flattenSecretKeys(extractSpec.salts());
 
             return hkdf.extractPRK(salt, ikm);
         }
-        else if (derivationSpec instanceof HKDFParameterSpec.ExtractThenExpand)
+        else if (derivationSpec instanceof HKDFParameterSpec.ExtractThenExpand extractExpandSpec)
         {
-            HKDFParameterSpec.ExtractThenExpand spec = (HKDFParameterSpec.ExtractThenExpand)derivationSpec;
+            byte[] ikm = flattenSecretKeys(extractExpandSpec.ikms());
+            byte[] salt = flattenSecretKeys(extractExpandSpec.salts());
+            byte[] info = extractExpandSpec.info();
 
-            byte[] ikm = flattenSecretKeys(spec.ikms());
-            byte[] salt = flattenSecretKeys(spec.salts());
-            byte[] info = spec.info();
-
-            return expand(spec.length(), new HKDFParameters(ikm, salt, info));
-        }
-        else if (derivationSpec instanceof org.bouncycastle.jcajce.spec.HKDFParameterSpec)
-        {
-            org.bouncycastle.jcajce.spec.HKDFParameterSpec spec = (org.bouncycastle.jcajce.spec.HKDFParameterSpec)derivationSpec;
-
-            byte[] ikm = spec.getIKM();
-            byte[] salt = spec.getSalt();
-            byte[] info = spec.getInfo();
-
-            return expand(spec.getOutputLength(), new HKDFParameters(ikm, salt, info));
+            return expand(extractExpandSpec.length(), new HKDFParameters(ikm, salt, info));
         }
         else
         {

@@ -68,12 +68,10 @@ class PBEPBKDF2Spi
     @Override
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec) throws InvalidAlgorithmParameterException
     {
-        if (!(derivationSpec instanceof PBEKeySpec))
+        if (!(derivationSpec instanceof PBEKeySpec spec))
         {
             throw new InvalidAlgorithmParameterException("Invalid AlgorithmParameterSpec provided");
         }
-
-        PBEKeySpec spec = (PBEKeySpec) derivationSpec;
 
         char[] password = spec.getPassword();
         byte[] salt = spec.getSalt();
