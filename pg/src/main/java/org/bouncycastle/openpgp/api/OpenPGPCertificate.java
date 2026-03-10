@@ -713,7 +713,8 @@ public class OpenPGPCertificate
                                                        Date evaluationDate)
     {
         // Check if there are signatures at all for the component
-        OpenPGPSignatureChains chainsForComponent = getAllSignatureChainsFor(component);
+        OpenPGPSignatureChains chainsForComponent = getAllSignatureChainsFor(component)
+                .fromOrigin(origin);
         boolean isPrimaryKey = component == getPrimaryKey();
         if (isPrimaryKey && chainsForComponent.getCertificationAt(evaluationDate) == null)
         {
@@ -721,19 +722,17 @@ public class OpenPGPCertificate
             OpenPGPUserId primaryUserId = getPrimaryUserId(evaluationDate);
             if (primaryUserId != null)
             {
-                chainsForComponent.addAll(getAllSignatureChainsFor(primaryUserId));
+                chainsForComponent.addAll(getAllSignatureChainsFor(primaryUserId).fromOrigin(origin));
             }
         }
 
-        // Isolate chains which originate from the passed origin key component
-        OpenPGPSignatureChains fromOrigin = chainsForComponent.fromOrigin(origin);
-        if (fromOrigin == null)
+        if (chainsForComponent == null)
         {
             return null;
         }
 
         // Return chain that currently takes precedence
-        return fromOrigin.getChainAt(evaluationDate);
+        return chainsForComponent.getChainAt(evaluationDate);
     }
 
     private OpenPGPSignatureChains getSelfSignatureChainsFor(OpenPGPCertificateComponent component)
