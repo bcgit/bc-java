@@ -3,6 +3,7 @@ package org.bouncycastle.jce.provider.test;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
 
@@ -109,6 +110,7 @@ public class RegressionTest
         System.setProperty("org.bouncycastle.bks.enable_v1", "true");
 
         Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(new BouncyCastlePQCProvider());
 
         System.out.println("Testing " + Security.getProvider("BC").getInfo() + " version: " + Security.getProvider("BC").getVersion());
 
