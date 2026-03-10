@@ -736,6 +736,11 @@ public class OpenPGPCertificate
         return fromOrigin.getChainAt(evaluationDate);
     }
 
+    private OpenPGPSignatureChains getSelfSignatureChainsFor(OpenPGPCertificateComponent component)
+    {
+        return getAllSignatureChainsFor(component).fromOrigin(getPrimaryKey());
+    }
+
     /**
      * Return all {@link OpenPGPSignatureChain OpenPGPSignatureChains} binding the given
      * {@link OpenPGPCertificateComponent}.
@@ -979,8 +984,7 @@ public class OpenPGPCertificate
      */
     private OpenPGPSignatureChain getPreferenceSignature(Date evaluationTime)
     {
-        OpenPGPSignatureChain directKeyBinding = getPrimaryKey().getSignatureChains()
-            .fromOrigin(getPrimaryKey())
+        OpenPGPSignatureChain directKeyBinding = getPrimaryKey().getSelfSignatureChains()
             .getCertificationAt(evaluationTime);
 
         if (directKeyBinding != null)
@@ -991,8 +995,8 @@ public class OpenPGPCertificate
         List<OpenPGPSignatureChain> uidBindings = new ArrayList<OpenPGPSignatureChain>();
         for (Iterator<OpenPGPUserId> it = getPrimaryKey().getUserIDs().iterator(); it.hasNext(); )
         {
-            OpenPGPSignatureChain uidBinding = getAllSignatureChainsFor(it.next())
-                .fromOrigin(getPrimaryKey()).getCertificationAt(evaluationTime);
+            OpenPGPSignatureChain uidBinding = getSelfSignatureChainsFor(it.next())
+                    .getCertificationAt(evaluationTime);
 
             if (uidBinding != null)
             {
@@ -1226,6 +1230,16 @@ public class OpenPGPCertificate
         }
 
         /**
+         * Return all self-signature chains on components of this certificate.
+         *
+         * @return self-signature chains
+         */
+        protected OpenPGPSignatureChains getSelfSignatureChains()
+        {
+            return getSignatureChains().fromOrigin(getCertificate().getPrimaryKey());
+        }
+
+        /**
          * Return the (at evaluation time) latest self certification signature binding this component.
          *
          * @param evaluationTime reference time
@@ -1233,8 +1247,7 @@ public class OpenPGPCertificate
          */
         public OpenPGPComponentSignature getCertification(Date evaluationTime)
         {
-            OpenPGPSignatureChain certification = getSignatureChains()
-                    .fromOrigin(getCertificate().getPrimaryKey())
+            OpenPGPSignatureChain certification = getSelfSignatureChains()
                     .getCertificationAt(evaluationTime);
             if (certification != null)
             {
@@ -1251,8 +1264,7 @@ public class OpenPGPCertificate
          */
         public OpenPGPComponentSignature getRevocation(Date evaluationTime)
         {
-            OpenPGPSignatureChain revocation = getSignatureChains()
-                    .fromOrigin(getCertificate().getPrimaryKey())
+            OpenPGPSignatureChain revocation = getSelfSignatureChains()
                     .getRevocationAt(evaluationTime);
             if (revocation != null)
             {
@@ -1533,8 +1545,7 @@ public class OpenPGPCertificate
          */
         protected OpenPGPSignature.OpenPGPSignatureSubpacket getApplyingSubpacket(Date evaluationTime, int subpacketType)
         {
-            OpenPGPSignatureChain binding = getSignatureChains()
-                    .fromOrigin(getCertificate().getPrimaryKey())
+            OpenPGPSignatureChain binding = getSelfSignatureChains()
                     .getCertificationAt(evaluationTime);
             if (binding == null)
             {
@@ -2149,8 +2160,7 @@ public class OpenPGPCertificate
         @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
-            OpenPGPSignatureChain currentDKChain = getSignatureChains()
-                .fromOrigin(getCertificate().getPrimaryKey())
+            OpenPGPSignatureChain currentDKChain = getSelfSignatureChains()
                 .getChainAt(evaluationTime);
             if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
             {
@@ -2338,8 +2348,7 @@ public class OpenPGPCertificate
         public OpenPGPComponentSignature getLatestDirectKeySelfSignature(Date evaluationTime)
         {
             OpenPGPSignatureChain currentDKChain = getCertificate()
-                .getAllSignatureChainsFor(this)
-                .fromOrigin(this)
+                .getSelfSignatureChainsFor(this)
                 .getCertificationAt(evaluationTime);
             if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
             {
@@ -2368,8 +2377,7 @@ public class OpenPGPCertificate
         public OpenPGPComponentSignature getLatestKeyRevocationSelfSignature(Date evaluationTime)
         {
             OpenPGPSignatureChain currentRevocationChain = getCertificate()
-                .getAllSignatureChainsFor(this)
-                .fromOrigin(this)
+                .getSelfSignatureChainsFor(this)
                 .getRevocationAt(evaluationTime);
             if (currentRevocationChain != null && !currentRevocationChain.chainLinks.isEmpty())
             {
@@ -2718,8 +2726,7 @@ public class OpenPGPCertificate
         @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
-            OpenPGPSignatureChain currentChain = getSignatureChains()
-                    .fromOrigin(getPrimaryKey())
+            OpenPGPSignatureChain currentChain = getSelfSignatureChains()
                     .getChainAt(evaluationTime);
             if (currentChain != null && !currentChain.chainLinks.isEmpty())
             {
