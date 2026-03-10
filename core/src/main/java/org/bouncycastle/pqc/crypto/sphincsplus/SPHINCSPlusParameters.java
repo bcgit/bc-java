@@ -216,7 +216,7 @@ public class SPHINCSPlusParameters
         private final int k;
         private final int h;
 
-        public Sha2EngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
+        Sha2EngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
         {
             this.robust = robust;
             this.n = n;
@@ -249,7 +249,7 @@ public class SPHINCSPlusParameters
         private final int k;
         private final int h;
 
-        public Shake256EngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
+        Shake256EngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
         {
             this.robust = robust;
             this.n = n;
@@ -282,7 +282,7 @@ public class SPHINCSPlusParameters
         private final int k;
         private final int h;
 
-        public HarakaSEngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
+        HarakaSEngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
         {
             this.robust = robust;
             this.n = n;

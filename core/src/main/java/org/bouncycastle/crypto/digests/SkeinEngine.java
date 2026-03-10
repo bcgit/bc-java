@@ -66,7 +66,7 @@ public class SkeinEngine
     {
         private byte[] bytes = new byte[32];
 
-        public Configuration(long outputSizeBits)
+        Configuration(long outputSizeBits)
         {
             // 0..3 = ASCII SHA3
             bytes[0] = (byte)'S';
@@ -82,7 +82,7 @@ public class SkeinEngine
             Pack.longToLittleEndian(outputSizeBits, bytes, 8);
         }
 
-        public byte[] getBytes()
+        byte[] getBytes()
         {
             return bytes;
         }
@@ -251,18 +251,18 @@ public class SkeinEngine
          */
         private boolean extendedPosition;
 
-        public UbiTweak()
+        UbiTweak()
         {
             reset();
         }
 
-        public void reset(UbiTweak tweak)
+        void reset(UbiTweak tweak)
         {
             this.tweak = Arrays.clone(tweak.tweak, this.tweak);
             this.extendedPosition = tweak.extendedPosition;
         }
 
-        public void reset()
+        void reset()
         {
             tweak[0] = 0;
             tweak[1] = 0;
@@ -270,18 +270,18 @@ public class SkeinEngine
             setFirst(true);
         }
 
-        public void setType(int type)
+        void setType(int type)
         {
             // Bits 120..125 = type
             tweak[1] = (tweak[1] & 0xFFFFFFC000000000L) | ((type & 0x3FL) << 56);
         }
 
-        public int getType()
+        int getType()
         {
             return (int)((tweak[1] >>> 56) & 0x3FL);
         }
 
-        public void setFirst(boolean first)
+        void setFirst(boolean first)
         {
             if (first)
             {
@@ -293,12 +293,12 @@ public class SkeinEngine
             }
         }
 
-        public boolean isFirst()
+        boolean isFirst()
         {
             return ((tweak[1] & T1_FIRST) != 0);
         }
 
-        public void setFinal(boolean last)
+        void setFinal(boolean last)
         {
             if (last)
             {
@@ -310,7 +310,7 @@ public class SkeinEngine
             }
         }
 
-        public boolean isFinal()
+        boolean isFinal()
         {
             return ((tweak[1] & T1_FINAL) != 0);
         }
@@ -318,7 +318,7 @@ public class SkeinEngine
         /**
          * Advances the position in the tweak by the specified value.
          */
-        public void advancePosition(int advance)
+        void advancePosition(int advance)
         {
             // Bits 0..95 = position
             if (extendedPosition)
@@ -350,7 +350,7 @@ public class SkeinEngine
             }
         }
 
-        public long[] getWords()
+        long[] getWords()
         {
             return tweak;
         }
@@ -384,13 +384,13 @@ public class SkeinEngine
          */
         private long[] message;
 
-        public UBI(int blockSize)
+        UBI(int blockSize)
         {
             currentBlock = new byte[blockSize];
             message = new long[currentBlock.length / 8];
         }
 
-        public void reset(UBI ubi)
+        void reset(UBI ubi)
         {
             currentBlock = Arrays.clone(ubi.currentBlock, currentBlock);
             currentOffset = ubi.currentOffset;
@@ -398,14 +398,14 @@ public class SkeinEngine
             tweak.reset(ubi.tweak);
         }
 
-        public void reset(int type)
+        void reset(int type)
         {
             tweak.reset();
             tweak.setType(type);
             currentOffset = 0;
         }
 
-        public void update(byte[] value, int offset, int len, long[] output)
+        void update(byte[] value, int offset, int len, long[] output)
         {
             /*
              * Buffer complete blocks for the underlying Threefish cipher, only flushing when there
@@ -442,7 +442,7 @@ public class SkeinEngine
             }
         }
 
-        public void doFinal(long[] output)
+        void doFinal(long[] output)
         {
             // Pad remainder of current block with zeroes
             for (int i = currentOffset; i < currentBlock.length; i++)
@@ -453,7 +453,6 @@ public class SkeinEngine
             tweak.setFinal(true);
             processBlock(output);
         }
-
     }
 
     /**

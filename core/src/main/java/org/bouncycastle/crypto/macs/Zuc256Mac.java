@@ -261,7 +261,7 @@ public final class Zuc256Mac
     private static class InternalZuc256Engine
         extends Zuc256CoreEngine
     {
-        public InternalZuc256Engine(int pLength)
+        InternalZuc256Engine(int pLength)
         {
             super(pLength);
         }

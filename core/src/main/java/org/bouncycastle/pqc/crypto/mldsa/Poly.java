@@ -579,7 +579,7 @@ class Poly
         shake256Digest.update(seed, seedOff, seedLen);
         shake256Digest.doOutput(buf, 0, symmetric.stream256BlockBytes);
 
-        signs = (long)0;
+        signs = 0L;
         for (i = 0; i < 8; ++i)
         {
             signs |= (long)(buf[i] & 0xFF) << 8 * i;
