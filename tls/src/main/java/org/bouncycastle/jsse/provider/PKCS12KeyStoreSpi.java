@@ -2172,7 +2172,7 @@ class PKCS12KeyStoreSpi
         private Hashtable orig = new Hashtable();
         private Hashtable keys = new Hashtable();
 
-        public void put(String key, Object value)
+        void put(String key, Object value)
         {
             String lower = (key == null) ? null : Strings.toLowerCase(key);
             String k = (String)keys.get(lower);
@@ -2185,12 +2185,12 @@ class PKCS12KeyStoreSpi
             orig.put(key, value);
         }
 
-        public Enumeration keys()
+        Enumeration keys()
         {
             return new Hashtable(orig).keys();
         }
 
-        public Object remove(String alias)
+        Object remove(String alias)
         {
             String k = (String)keys.remove(alias == null ? null : Strings.toLowerCase(alias));
             if (k == null)
@@ -2201,7 +2201,7 @@ class PKCS12KeyStoreSpi
             return orig.remove(k);
         }
 
-        public Object get(String alias)
+        Object get(String alias)
         {
             String k = (String)keys.get(alias == null ? null : Strings.toLowerCase(alias));
             if (k == null)
@@ -2212,12 +2212,12 @@ class PKCS12KeyStoreSpi
             return orig.get(k);
         }
 
-        public Enumeration elements()
+        Enumeration elements()
         {
             return orig.elements();
         }
 
-        public int size()
+        int size()
         {
             return orig.size();
         }
@@ -2251,7 +2251,7 @@ class PKCS12KeyStoreSpi
             KEY_SIZES = Collections.unmodifiableMap(keySizes);
         }
 
-        public int getKeySize(AlgorithmIdentifier algorithmIdentifier)
+        int getKeySize(AlgorithmIdentifier algorithmIdentifier)
         {
             // TODO: not all ciphers/oid relationships are this simple.
             Integer keySize = (Integer)KEY_SIZES.get(algorithmIdentifier.getAlgorithm());
