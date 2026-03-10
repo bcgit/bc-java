@@ -1744,6 +1744,17 @@ public class OpenPGPCertificate
         /**
          * Verify this signature.
          *
+         * @throws PGPSignatureException if the signature cannot be verified successfully
+         */
+        public void verify()
+            throws PGPSignatureException
+        {
+            verify(getIssuerCertificate().implementation);
+        }
+
+        /**
+         * Verify this signature.
+         *
          * @param implementation OpenPGP implementation
          * @throws PGPSignatureException if the signature cannot be verified successfully
          */
