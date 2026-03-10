@@ -153,7 +153,7 @@ public class JournalingSecureRandom
     private static class TranscriptStream
         extends ByteArrayOutputStream
     {
-        public void clear()
+        void clear()
         {
             Arrays.fill(buf, (byte)0);
         }

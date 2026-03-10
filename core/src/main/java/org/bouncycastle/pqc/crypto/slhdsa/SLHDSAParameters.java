@@ -121,7 +121,7 @@ public class SLHDSAParameters
         private final int k;
         private final int h;
 
-        public Sha2EngineProvider(int n, int w, int d, int a, int k, int h)
+        Sha2EngineProvider(int n, int w, int d, int a, int k, int h)
         {
             this.n = n;
             this.w = w;
@@ -152,7 +152,7 @@ public class SLHDSAParameters
         private final int k;
         private final int h;
 
-        public Shake256EngineProvider(int n, int w, int d, int a, int k, int h)
+        Shake256EngineProvider(int n, int w, int d, int a, int k, int h)
         {
             this.n = n;
             this.w = w;
