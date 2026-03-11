@@ -3117,7 +3117,8 @@ public class OpenPGPCertificate
      * <p>
      * Example:
      * <pre>
-     *           [PRIMARY KEY 0xAAAA]<--------_
+     *                           v-----------\
+     *           [PRIMARY KEY 0xAAAA]         \
      *            /         \       \         |
      *           /           \       \__(DIRECT KEY SIG #0)
      *   (USERID BINDING #1) |
