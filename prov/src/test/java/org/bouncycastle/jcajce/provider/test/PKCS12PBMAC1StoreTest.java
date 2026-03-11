@@ -14,14 +14,11 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.io.Streams;
 
 public class PKCS12PBMAC1StoreTest
     extends TestCase
@@ -56,10 +53,6 @@ public class PKCS12PBMAC1StoreTest
         throws Exception
     {
         InputStream inS = this.getClass().getResourceAsStream("sample_cacerts.p12");
-        byte[] input = Streams.readAll(inS);
-        inS = this.getClass().getResourceAsStream("sample_cacerts.p12");
-        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(input)));
-
         KeyStore ks = KeyStore.getInstance("PKCS12-PBMAC1", "BC");
 
         ks.load(inS, null);
@@ -88,7 +81,6 @@ public class PKCS12PBMAC1StoreTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ks2.store(bOut, null);
 
-        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(bOut.toByteArray())));
         assertEquals(0, expected.size());
     }
 
