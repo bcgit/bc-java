@@ -377,12 +377,12 @@ class ProvSSLSessionContext
             this.peerKey = makePeerKey(session);
         }
 
-        public String getPeerKey()
+        String getPeerKey()
         {
             return peerKey;
         }
 
-        public SessionID getSessionID()
+        SessionID getSessionID()
         {
             return sessionID;
         }

@@ -109,22 +109,22 @@ class DTLSReassembler
             this.end = end;
         }
 
-        public int getStart()
+        int getStart()
         {
             return start;
         }
 
-        public void setStart(int start)
+        void setStart(int start)
         {
             this.start = start;
         }
 
-        public int getEnd()
+        int getEnd()
         {
             return end;
         }
 
-        public void setEnd(int end)
+        void setEnd(int end)
         {
             this.end = end;
         }

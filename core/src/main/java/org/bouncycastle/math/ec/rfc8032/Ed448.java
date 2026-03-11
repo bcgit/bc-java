@@ -985,7 +985,7 @@ public abstract class Ed448
 
             for (int block = 0; block < PRECOMP_BLOCKS; ++block)
             {
-                PointProjective sum = points[pointsIndex++] = new PointProjective();
+                PointProjective sum = new PointProjective();
 
                 for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
                 {
@@ -1012,6 +1012,8 @@ public abstract class Ed448
 
                 F.negate(sum.x, sum.x);
 
+                points[pointsIndex++] = sum;
+
                 for (int tooth = 0; tooth < (PRECOMP_TEETH - 1); ++tooth)
                 {
                     int size = 1 << tooth;
@@ -1031,20 +1033,24 @@ public abstract class Ed448
             for (int i = 0; i < wnafPoints; ++i)
             {
                 PointProjective q = points[i];
-                PointAffine r = PRECOMP_BASE_WNAF[i] = new PointAffine();
+                PointAffine r = new PointAffine();
 
                 F.mul(q.x, q.z, r.x);       F.normalize(r.x);
                 F.mul(q.y, q.z, r.y);       F.normalize(r.y);
+
+                PRECOMP_BASE_WNAF[i] = r;
             }
 
             PRECOMP_BASE225_WNAF = new PointAffine[wnafPoints];
             for (int i = 0; i < wnafPoints; ++i)
             {
                 PointProjective q = points[wnafPoints + i];
-                PointAffine r = PRECOMP_BASE225_WNAF[i] = new PointAffine();
+                PointAffine r = new PointAffine();
 
                 F.mul(q.x, q.z, r.x);       F.normalize(r.x);
                 F.mul(q.y, q.z, r.y);       F.normalize(r.y);
+
+                PRECOMP_BASE225_WNAF[i] = r;
             }
 
             PRECOMP_BASE_COMB = F.createTable(combPoints * 2);

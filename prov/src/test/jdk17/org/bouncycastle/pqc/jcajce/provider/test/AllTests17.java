@@ -1,10 +1,9 @@
-package org.bouncycastle.jcajce.provider.test;
+package org.bouncycastle.pqc.jcajce.provider.test;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
-
 
 public class AllTests17
     extends TestCase
@@ -16,11 +15,11 @@ public class AllTests17
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("JDK17 Provider Tests");
-        suite.addTestSuite(NTRUKEMTest.class);
-        suite.addTestSuite(SNTRUPrimeKEMTest.class);
-        suite.addTestSuite(MLKEMTest.class);
-        suite.addTestSuite(HQCTest.class);
+        TestSuite suite = new TestSuite("PQC JCE Tests (JDK 17)");
+        suite.addTestSuite(HQC17Test.class);
+        suite.addTestSuite(MLKEM17Test.class);
+        suite.addTestSuite(NTRUKEM17Test.class);
+        suite.addTestSuite(SNTRUPrimeKEM17Test.class);
         return suite;
     }
 }

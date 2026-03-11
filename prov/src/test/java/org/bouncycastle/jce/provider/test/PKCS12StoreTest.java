@@ -52,6 +52,7 @@ import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.JDKPKCS12StoreParameter;
 import org.bouncycastle.jce.provider.X509CertificateObject;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
@@ -1494,13 +1495,13 @@ public class PKCS12StoreTest
     private void testNTRUStore()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
 
         kpg.initialize(FalconParameterSpec.falcon_512);
 
         KeyPair skp = kpg.generateKeyPair();
 
-        kpg = KeyPairGenerator.getInstance("NTRU", "BC");
+        kpg = KeyPairGenerator.getInstance("NTRU", "BCPQC");
 
         kpg.initialize(NTRUParameterSpec.ntruhrss701);
 
@@ -2825,6 +2826,7 @@ public class PKCS12StoreTest
         String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(new BouncyCastlePQCProvider());
 
         runTest(new PKCS12StoreTest());
     }

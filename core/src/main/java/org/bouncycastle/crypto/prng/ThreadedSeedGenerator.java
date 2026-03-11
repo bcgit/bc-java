@@ -20,12 +20,9 @@ public class ThreadedSeedGenerator
             {
                 this.counter++;
             }
-
         }
 
-        public byte[] generateSeed(
-            int numbytes,
-            boolean fast)
+        byte[] generateSeed(int numbytes, boolean fast)
         {
             Thread t = new Thread(this);
             byte[] result = new byte[numbytes];

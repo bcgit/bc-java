@@ -45,13 +45,11 @@ class ScryptSpi
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
             throws InvalidAlgorithmParameterException
     {
-        if (!(derivationSpec instanceof ScryptParameterSpec))
+        if (!(derivationSpec instanceof ScryptParameterSpec spec))
         {
             throw new InvalidAlgorithmParameterException(
                     "SCrypt requires an SCryptParameterSpec as derivation parameters");
         }
-
-        ScryptKeySpec spec = (ScryptKeySpec) derivationSpec;
 
         char[] password = spec.getPassword();
         byte[] salt = spec.getSalt();

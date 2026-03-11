@@ -17,18 +17,13 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addAlgorithm("Signature." + algorithm, className);
         if (oid != null)
         {
-            provider.addAlgorithm("Alg.Alias.Signature." + oid, algorithm);
-            provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, algorithm);
+            registerSignatureOid(provider, oid, algorithm);
         }
     }
 
-    protected void addSignatureAlias(
-        ConfigurableProvider provider,
-        String algorithm,
-        ASN1ObjectIdentifier oid)
+    protected void addSignatureAlias(ConfigurableProvider provider, String algorithm, ASN1ObjectIdentifier oid)
     {
-        provider.addAlgorithm("Alg.Alias.Signature." + oid, algorithm);
-        provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, algorithm);
+        registerSignatureOid(provider, oid, algorithm);
     }
 
     protected void addSignatureAlgorithm(
@@ -58,8 +53,7 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addAlgorithm("Alg.Alias.Signature." + alias, mainName);
         if (oid != null)
         {
-            provider.addAlgorithm("Alg.Alias.Signature." + oid, mainName);
-            provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, mainName);
+            registerSignatureOid(provider, oid, mainName);
         }
     }
 
@@ -82,8 +76,7 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addAlgorithm("Alg.Alias.Signature." + alias, mainName);
         if (oid != null)
         {
-            provider.addAlgorithm("Alg.Alias.Signature." + oid, mainName);
-            provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, mainName);
+            registerSignatureOid(provider, oid, mainName);
         }
         provider.addAttributes("Signature." + mainName, attributes);
     }
@@ -97,8 +90,7 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addAlgorithm("KeyPairGenerator." + algorithm, className);
         if (oid != null)
         {
-            provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + oid, algorithm);
-            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID." + oid, algorithm);
+            registerKeyPairGeneratorOid(provider, oid, algorithm);
         }
     }
 
@@ -112,10 +104,7 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addAlgorithm("KeyFactory." + algorithm, className);
         if (oid != null)
         {
-            provider.addAlgorithm("Alg.Alias.KeyFactory." + oid, algorithm);
-            provider.addAlgorithm("Alg.Alias.KeyFactory.OID." + oid, algorithm);
-
-            provider.addKeyInfoConverter(oid, keyInfoConverter);
+            registerKeyFactoryOid(provider, oid, algorithm, keyInfoConverter);
         }
     }
 
@@ -169,12 +158,16 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addKeyInfoConverter(oid, keyFactory);
     }
 
+    protected void registerKeyPairGeneratorOid(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name)
+    {
+        provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + oid, name);
+        provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID." + oid, name);
+    }
+
     protected void registerOid(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name, AsymmetricKeyInfoConverter keyFactory)
     {
-        provider.addAlgorithm("Alg.Alias.KeyFactory." + oid, name);
-        provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + oid, name);
-
-        provider.addKeyInfoConverter(oid, keyFactory);
+        registerKeyFactoryOid(provider, oid, name, keyFactory);
+        registerKeyPairGeneratorOid(provider, oid, name);
     }
 
     protected void registerOidAlgorithmParameters(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name)
@@ -186,5 +179,11 @@ public abstract class AsymmetricAlgorithmProvider
     {
         provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + oid, name);
         provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + oid, name);
+    }
+
+    protected void registerSignatureOid(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name)
+    {
+        provider.addAlgorithm("Alg.Alias.Signature." + oid, name);
+        provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, name);
     }
 }

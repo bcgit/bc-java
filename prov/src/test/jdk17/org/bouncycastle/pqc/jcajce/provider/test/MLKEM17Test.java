@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.test;
+package org.bouncycastle.pqc.jcajce.provider.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -18,7 +18,7 @@ import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
-public class MLKEMTest
+public class MLKEM17Test
     extends TestCase
 {
     public void setUp()

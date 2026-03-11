@@ -9,9 +9,9 @@ abstract class SSLSessionUtil
 {
     static SSLSession exportSSLSession(BCExtendedSSLSession sslSession)
     {
-        if (sslSession instanceof ImportSSLSession)
+        if (sslSession instanceof ImportSSLSession importSSLSession)
         {
-            return ((ImportSSLSession)sslSession).unwrap();
+            return importSSLSession.unwrap();
         }
 
         return new ExportSSLSession_25(sslSession);
@@ -19,19 +19,19 @@ abstract class SSLSessionUtil
 
     static BCExtendedSSLSession importSSLSession(SSLSession sslSession)
     {
-        if (sslSession instanceof BCExtendedSSLSession)
+        if (sslSession instanceof BCExtendedSSLSession bcExtendedSSLSession)
         {
-            return (BCExtendedSSLSession)sslSession;
+            return bcExtendedSSLSession;
         }
 
-        if (sslSession instanceof ExportSSLSession)
+        if (sslSession instanceof ExportSSLSession exportSSLSession)
         {
-            return ((ExportSSLSession)sslSession).unwrap();
+            return exportSSLSession.unwrap();
         }
 
-        if (sslSession instanceof ExtendedSSLSession)
+        if (sslSession instanceof ExtendedSSLSession extendedSSLSession)
         {
-            return new ImportSSLSession_25((ExtendedSSLSession)sslSession);
+            return new ImportSSLSession_25(extendedSSLSession);
         }
 
         return new ImportSSLSession_5(sslSession);

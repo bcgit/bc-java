@@ -807,21 +807,16 @@ public final class AES
 
         protected AlgorithmParameters engineGenerateParameters()
         {
-            byte[] iv = new byte[12];
+            random = CryptoServicesRegistrar.getSecureRandom(random);
 
-            if (random == null)
-            {
-                random = new SecureRandom();
-            }
-
-            random.nextBytes(iv);
+            byte[] nonce = new byte[12];
+            random.nextBytes(nonce);
 
             AlgorithmParameters params;
-
             try
             {
                 params = createParametersInstance("CCM");
-                params.init(new CCMParameters(iv, 12).getEncoded());
+                params.init(new CCMParameters(nonce, 12).getEncoded());
             }
             catch (Exception e)
             {
@@ -846,17 +841,12 @@ public final class AES
 
         protected AlgorithmParameters engineGenerateParameters()
         {
+            random = CryptoServicesRegistrar.getSecureRandom(random);
+
             byte[] nonce = new byte[12];
-
-            if (random == null)
-            {
-                random = new SecureRandom();
-            }
-
             random.nextBytes(nonce);
 
             AlgorithmParameters params;
-
             try
             {
                 params = createParametersInstance("GCM");

@@ -424,12 +424,10 @@ public class MultipartParserTest
             }
         });
 
+        String nl = Strings.lineSeparator();
 
         String[] expected = new String[]{
-            "The cat sat on the mat\n" +
-                "\n" +
-                "Boo!\n" +
-                "\n",
+            "The cat sat on the mat" + nl + nl + "Boo!" + nl + nl,
             "<html><head><meta http-equiv=\"Content-Type\" object=\"text/html; charset=us-ascii\"></head><object style=\"word-wrap: break-word; -webkit-nbsp-mode: space; line-break: after-white-space;\" class=\"\"><meta http-equiv=\"Content-Type\" object=\"text/html; charset=us-ascii\" class=\"\"><div style=\"word-wrap: break-word; -webkit-nbsp-mode: space; line-break: after-white-space;\" class=\"\">The cat sat on the mat<div class=\"\"><br class=\"\"></div><div class=\"\"><font size=\"7\" class=\"\">Boo!</font></div><div class=\"\"><font size=\"7\" class=\"\"><br class=\"\"></font></div><div class=\"\"><img src=\"http://img2.thejournal.ie/inline/1162441/original/?width=630&amp;version=1162441\" alt=\"Image result for cows\" class=\"\"></div></div></object></html>"
         };
 
@@ -439,9 +437,5 @@ public class MultipartParserTest
         {
             TestCase.assertEquals("Part: " + t, expected[t], results.get(t));
         }
-
     }
-
-
-
 }
