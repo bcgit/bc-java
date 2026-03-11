@@ -1155,7 +1155,7 @@ public class NewSignedDataTest
 
         gen.addCertificates(certs);
 
-        gen.setDefiniteLengthEncoding(true);
+        gen.setEncoding(ASN1Encoding.DL);
 
         CMSSignedData s = gen.generate(msg, false);
 
