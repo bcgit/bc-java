@@ -3051,6 +3051,53 @@ public class OpenPGPCertificate
      * An {@link OpenPGPSignatureChain} can either be a certification
      * ({@link #isCertification()}), e.g. it represents a positive binding,
      * or it can be a revocation ({@link #isRevocation()}) which invalidates a positive binding.
+     * <p>
+     * Example:
+     * <pre>
+     *           [PRIMARY KEY 0xAAAA]<--------_
+     *            /         \       \         |
+     *           /           \       \__(DIRECT KEY SIG #0)
+     *   (USERID BINDING #1) |
+     *          |    (SUBKEY BINDING #2)
+     *          v           |
+     *  [USERID Alice]      v
+     *                  [SUBKEY 0xAABB]
+     * </pre>
+     * Here, the certificates components are bound like follows:
+     * <ul>
+     *     <li>Primary Key {@code 0xAAAA}: {@code [0xAAAA->#0->0xAAAA]}</li>
+     *     <li>UserID {@code Alice}: {@code [0xAAAA->#0->#1->Alice]}</li>
+     *     <li>Subkey {@code 0xAABB}: {@code [0xAAAA->#0->#2->0xAABB]}</li>
+     * </ul>
+     * Note: If the certificate does not carry a direct-key self-signature, the primary user-id
+     * binding would be used as root link in its place.
+     * A binding can also be a revocation. In such case, the whole chain represents a revocation.
+     * <p>
+     * In Web-of-Trust scenarios, signature chains can span multiple certificates.
+     * <p>
+     * Example:
+     * <pre>
+     *                               ________________
+     *                              v               |
+     *               [PRIMARY KEY 0xAAAA]---(DIRECT KEY SIG #0)
+     *               /         |     \
+     *  (USERID BINDING #1)    |      \
+     *        |                |  (DELEGATION #2)-->[PRIMARY KEY 0xBBBB]
+     *        |                \                            |
+     *        v                 \                  (USERID BINDING #3)
+     * [USERID Alice]      (CERTIFICATION #4)               |
+     *                             \                        v
+     *                              \________________>[USERID Bob]
+     * </pre>
+     * Here, Alice delegated trust to Bob by issuing a direct key delegation signature ({@code #0})
+     * over Bobs primary key, as well as a 3rd-party certification signature for UserID Bob.
+     * Now there are the following paths of trust from Alice's certificate down to Bobs certificate:
+     * <ul>
+     *     <li>Bobs Certificate (primary key {@code 0xBBBB}): {@code [0xAAAA->#0->#2->0xBBBB}</li>
+     *     <li>Bobs UserID {@code Bob}: {@code [0xAAAA->#0->#4->Bob}</li>
+     * </ul>
+     * Note, that certificate {@code 0xAAAA} holds signatures {@code #0,#1}, while
+     * certificate {@code 0xBBBB} holds signatures {@code #2,#3,#4}.
      */
     public static class OpenPGPSignatureChain
         implements Comparable<OpenPGPSignatureChain>, Iterable<OpenPGPSignatureChain.Link>
