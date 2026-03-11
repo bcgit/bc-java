@@ -27,8 +27,8 @@ public class NTRUKeyPairGeneratorTest
     public void testKeyFactory()
         throws Exception
     {
-        kf = KeyFactory.getInstance("NTRU", "BC");
-        kf = KeyFactory.getInstance(BCObjectIdentifiers.pqc_kem_ntru.getId(), "BC");
+        kf = KeyFactory.getInstance("NTRU", "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.pqc_kem_ntru.getId(), "BCPQC");
     }
 
     public void testKeyPairEncoding()
@@ -44,9 +44,9 @@ public class NTRUKeyPairGeneratorTest
                     NTRUParameterSpec.ntruhrss701,
                     NTRUParameterSpec.ntruhrss1373
                 };
-        kf = KeyFactory.getInstance("NTRU", "BC");
+        kf = KeyFactory.getInstance("NTRU", "BCPQC");
 
-        kpg = KeyPairGenerator.getInstance("NTRU", "BC");
+        kpg = KeyPairGenerator.getInstance("NTRU", "BCPQC");
 
         for (int i = 0; i != specs.length; i++)
         {

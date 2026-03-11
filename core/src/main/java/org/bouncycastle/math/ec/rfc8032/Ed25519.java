@@ -938,14 +938,18 @@ public abstract class Ed25519
     {
 //        assert pointsLen > 0;
 
-        pointCopy(p, points[pointsOff] = new PointExtended());
+        PointExtended q = new PointExtended();
+        pointCopy(p, q);
+        points[pointsOff] = q;
 
         PointExtended d = new PointExtended();
-        pointAdd(points[pointsOff], points[pointsOff], d, t);
+        pointAdd(q, q, d, t);
 
         for (int i = 1; i < pointsLen; ++i)
         {
-            pointAdd(points[pointsOff + i - 1], d, points[pointsOff + i] = new PointExtended(), t);
+            PointExtended r = new PointExtended();
+            pointAdd(points[pointsOff + i - 1], d, r, t);
+            points[pointsOff + i] = r;
         }
     }
 
@@ -997,8 +1001,9 @@ public abstract class Ed25519
         int i = 0;
         for (;;)
         {
-            PointPrecompZ r = points[i] = new PointPrecompZ();
+            PointPrecompZ r = new PointPrecompZ();
             pointCopy(q, r);
+            points[i] = r;
 
             if (++i == count)
             {
@@ -1063,7 +1068,7 @@ public abstract class Ed25519
             PointExtended u = new PointExtended();
             for (int block = 0; block < PRECOMP_BLOCKS; ++block)
             {
-                PointExtended sum = points[pointsIndex++] = new PointExtended();
+                PointExtended sum = new PointExtended();
 
                 for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
                 {
@@ -1092,6 +1097,8 @@ public abstract class Ed25519
                 F.negate(sum.x, sum.x);
                 F.negate(sum.t, sum.t);
 
+                points[pointsIndex++] = sum;
+                
                 for (int tooth = 0; tooth < (PRECOMP_TEETH - 1); ++tooth)
                 {
                     int size = 1 << tooth;
@@ -1111,7 +1118,7 @@ public abstract class Ed25519
             for (int i = 0; i < wnafPoints; ++i)
             {
                 PointExtended q = points[i];
-                PointPrecomp r = PRECOMP_BASE_WNAF[i] = new PointPrecomp();
+                PointPrecomp r = new PointPrecomp();
 
                 // Calculate x/2 and y/2 (because the z value holds half the inverse; see above).
                 F.mul(q.x, q.z, q.x);
@@ -1127,13 +1134,15 @@ public abstract class Ed25519
                 F.normalize(r.ymx_h);
                 F.normalize(r.ypx_h);
                 F.normalize(r.xyd);
+
+                PRECOMP_BASE_WNAF[i] = r;
             }
 
             PRECOMP_BASE128_WNAF = new PointPrecomp[wnafPoints];
             for (int i = 0; i < wnafPoints; ++i)
             {
                 PointExtended q = points[wnafPoints + i];
-                PointPrecomp r = PRECOMP_BASE128_WNAF[i] = new PointPrecomp();
+                PointPrecomp r = new PointPrecomp();
 
                 // Calculate x/2 and y/2 (because the z value holds half the inverse; see above).
                 F.mul(q.x, q.z, q.x);
@@ -1149,6 +1158,8 @@ public abstract class Ed25519
                 F.normalize(r.ymx_h);
                 F.normalize(r.ypx_h);
                 F.normalize(r.xyd);
+
+                PRECOMP_BASE128_WNAF[i] = r;
             }
 
             PRECOMP_BASE_COMB = F.createTable(combPoints * 3);

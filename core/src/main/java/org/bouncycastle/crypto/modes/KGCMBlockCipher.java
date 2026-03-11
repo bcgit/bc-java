@@ -360,11 +360,11 @@ public class KGCMBlockCipher
     private static class ExposedByteArrayOutputStream
         extends ByteArrayOutputStream
     {
-        public ExposedByteArrayOutputStream()
+        ExposedByteArrayOutputStream()
         {
         }
 
-        public byte[] getBuffer()
+        byte[] getBuffer()
         {
             return this.buf;
         }

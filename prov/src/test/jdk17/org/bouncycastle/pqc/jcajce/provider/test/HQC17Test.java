@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.test;
+package org.bouncycastle.pqc.jcajce.provider.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -18,13 +18,13 @@ import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
-public class HQCTest
+public class HQC17Test
     extends TestCase
 {
     public static void main(String[] args)
         throws Exception
     {
-        HQCTest test = new HQCTest();
+        HQC17Test test = new HQC17Test();
         test.setUp();
         test.testKEM();
     }

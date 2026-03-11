@@ -85,7 +85,7 @@ public class ISAPEngine
         AsconPermutationFriend.AsconPermutation p;
         AsconPermutationFriend.AsconPermutation mac;
 
-        public ISAPAEAD_A()
+        ISAPAEAD_A()
         {
             ISAP_rH = 64;
             BlockSize = (ISAP_rH + 7) >> 3;
@@ -101,9 +101,9 @@ public class ISAPEngine
             Pack.bigEndianToLong(k, 0, k64);
         }
 
-        protected abstract void PX1(AsconPermutationFriend.AsconPermutation p);
+        abstract void PX1(AsconPermutationFriend.AsconPermutation p);
 
-        protected abstract void PX2(AsconPermutationFriend.AsconPermutation p);
+        abstract void PX2(AsconPermutationFriend.AsconPermutation p);
 
         public void absorbMacBlock(byte[] input, int inOff)
         {
@@ -193,19 +193,19 @@ public class ISAPEngine
     private class ISAPAEAD_A_128A
         extends ISAPAEAD_A
     {
-        public ISAPAEAD_A_128A()
+        ISAPAEAD_A_128A()
         {
             ISAP_IV1_64 = 108156764297430540L;
             ISAP_IV2_64 = 180214358335358476L;
             ISAP_IV3_64 = 252271952373286412L;
         }
 
-        protected void PX1(AsconPermutationFriend.AsconPermutation p)
+        void PX1(AsconPermutationFriend.AsconPermutation p)
         {
             p.p(6);
         }
 
-        protected void PX2(AsconPermutationFriend.AsconPermutation p)
+        void PX2(AsconPermutationFriend.AsconPermutation p)
         {
             p.round(0x4bL);
         }
@@ -214,19 +214,19 @@ public class ISAPEngine
     private class ISAPAEAD_A_128
         extends ISAPAEAD_A
     {
-        public ISAPAEAD_A_128()
+        ISAPAEAD_A_128()
         {
             ISAP_IV1_64 = 108156764298152972L;
             ISAP_IV2_64 = 180214358336080908L;
             ISAP_IV3_64 = 252271952374008844L;
         }
 
-        protected void PX1(AsconPermutationFriend.AsconPermutation p)
+        void PX1(AsconPermutationFriend.AsconPermutation p)
         {
             p.p(12);
         }
 
-        protected void PX2(AsconPermutationFriend.AsconPermutation p)
+        void PX2(AsconPermutationFriend.AsconPermutation p)
         {
             p.p(12);
         }
@@ -235,7 +235,8 @@ public class ISAPEngine
     private abstract class ISAPAEAD_K
         implements ISAP_AEAD
     {
-        protected final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - IV_SIZE;
+        final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - IV_SIZE;
+
         protected short[] ISAP_IV1_16;
         protected short[] ISAP_IV2_16;
         protected short[] ISAP_IV3_16;
@@ -250,7 +251,7 @@ public class ISAPEngine
         protected short[] macE = new short[25];
         protected short[] macC = new short[5];
 
-        public ISAPAEAD_K()
+        ISAPAEAD_K()
         {
             ISAP_rH = 144;
             BlockSize = (ISAP_rH + 7) >> 3;
@@ -278,11 +279,11 @@ public class ISAPEngine
             PermuteRoundsHX(macSX, macE, macC);
         }
 
-        protected abstract void PermuteRoundsHX(short[] SX, short[] E, short[] C);
+        abstract void PermuteRoundsHX(short[] SX, short[] E, short[] C);
 
-        protected abstract void PermuteRoundsKX(short[] SX, short[] E, short[] C);
+        abstract void PermuteRoundsKX(short[] SX, short[] E, short[] C);
 
-        protected abstract void PermuteRoundsBX(short[] SX, short[] E, short[] C);
+        abstract void PermuteRoundsBX(short[] SX, short[] E, short[] C);
 
         public void absorbMacBlock(byte[] input, int inOff)
         {
@@ -303,7 +304,7 @@ public class ISAPEngine
             macSX[24] ^= 0x0100;
         }
 
-        public void isap_rk(short[] iv16, byte[] y, int ylen, short[] out16, int outlen, short[] C)
+        void isap_rk(short[] iv16, byte[] y, int ylen, short[] out16, int outlen, short[] C)
         {
             // Init state
             short[] SX = new short[25];
@@ -367,13 +368,13 @@ public class ISAPEngine
             }
         }
 
-        protected void rounds12X(short[] SX, short[] E, short[] C)
+        void rounds12X(short[] SX, short[] E, short[] C)
         {
             prepareThetaX(SX, C);
             rounds_8_18(SX, E, C);
         }
 
-        protected void rounds_4_18(short[] SX, short[] E, short[] C)
+        void rounds_4_18(short[] SX, short[] E, short[] C)
         {
             thetaRhoPiChiIotaPrepareTheta(4, SX, E, C);
             thetaRhoPiChiIotaPrepareTheta(5, E, SX, C);
@@ -382,7 +383,7 @@ public class ISAPEngine
             rounds_8_18(SX, E, C);
         }
 
-        protected void rounds_8_18(short[] SX, short[] E, short[] C)
+        void rounds_8_18(short[] SX, short[] E, short[] C)
         {
             thetaRhoPiChiIotaPrepareTheta(8, SX, E, C);
             thetaRhoPiChiIotaPrepareTheta(9, E, SX, C);
@@ -391,7 +392,7 @@ public class ISAPEngine
             rounds_12_18(SX, E, C);
         }
 
-        protected void rounds_12_18(short[] SX, short[] E, short[] C)
+        void rounds_12_18(short[] SX, short[] E, short[] C)
         {
             thetaRhoPiChiIotaPrepareTheta(12, SX, E, C);
             thetaRhoPiChiIotaPrepareTheta(13, E, SX, C);
@@ -403,7 +404,7 @@ public class ISAPEngine
             thetaRhoPiChiIota(E, SX, C);
         }
 
-        protected void prepareThetaX(short[] SX, short[] C)
+        void prepareThetaX(short[] SX, short[] C)
         {
             C[0] = (short)(SX[0] ^ SX[5] ^ SX[10] ^ SX[15] ^ SX[20]);
             C[1] = (short)(SX[1] ^ SX[6] ^ SX[11] ^ SX[16] ^ SX[21]);
@@ -417,7 +418,7 @@ public class ISAPEngine
             return (short)(((a & 0xFFFF) << offset) ^ ((a & 0xFFFF) >>> (16 - offset)));
         }
 
-        protected void thetaRhoPiChiIotaPrepareTheta(int i, short[] A, short[] E, short[] C)
+        void thetaRhoPiChiIotaPrepareTheta(int i, short[] A, short[] E, short[] C)
         {
             short Da = (short)(C[4] ^ ROL16(C[1], 1));
             short De = (short)(C[0] ^ ROL16(C[2], 1));
@@ -525,7 +526,7 @@ public class ISAPEngine
             C[4] ^= E[24];
         }
 
-        protected void thetaRhoPiChiIota(short[] A, short[] E, short[] C)
+        void thetaRhoPiChiIota(short[] A, short[] E, short[] C)
         {
             short Da = (short)(C[4] ^ ROL16(C[1], 1));
             short De = (short)(C[0] ^ ROL16(C[2], 1));
@@ -617,26 +618,26 @@ public class ISAPEngine
     private class ISAPAEAD_K_128A
         extends ISAPAEAD_K
     {
-        public ISAPAEAD_K_128A()
+        ISAPAEAD_K_128A()
         {
             ISAP_IV1_16 = new short[]{-32767, 400, 272, 2056};
             ISAP_IV2_16 = new short[]{-32766, 400, 272, 2056};
             ISAP_IV3_16 = new short[]{-32765, 400, 272, 2056};
         }
 
-        protected void PermuteRoundsHX(short[] SX, short[] E, short[] C)
+        void PermuteRoundsHX(short[] SX, short[] E, short[] C)
         {
             prepareThetaX(SX, C);
             rounds_4_18(SX, E, C);
         }
 
-        protected void PermuteRoundsKX(short[] SX, short[] E, short[] C)
+        void PermuteRoundsKX(short[] SX, short[] E, short[] C)
         {
             prepareThetaX(SX, C);
             rounds_12_18(SX, E, C);
         }
 
-        protected void PermuteRoundsBX(short[] SX, short[] E, short[] C)
+        void PermuteRoundsBX(short[] SX, short[] E, short[] C)
         {
             prepareThetaX(SX, C);
             thetaRhoPiChiIotaPrepareTheta(19, SX, E, C);
@@ -647,14 +648,14 @@ public class ISAPEngine
     private class ISAPAEAD_K_128
         extends ISAPAEAD_K
     {
-        public ISAPAEAD_K_128()
+        ISAPAEAD_K_128()
         {
             ISAP_IV1_16 = new short[]{-32767, 400, 3092, 3084};
             ISAP_IV2_16 = new short[]{-32766, 400, 3092, 3084};
             ISAP_IV3_16 = new short[]{-32765, 400, 3092, 3084};
         }
 
-        protected void PermuteRoundsHX(short[] SX, short[] E, short[] C)
+        void PermuteRoundsHX(short[] SX, short[] E, short[] C)
         {
             prepareThetaX(SX, C);
             thetaRhoPiChiIotaPrepareTheta(0, SX, E, C);
@@ -664,12 +665,12 @@ public class ISAPEngine
             rounds_4_18(SX, E, C);
         }
 
-        protected void PermuteRoundsKX(short[] SX, short[] E, short[] C)
+        void PermuteRoundsKX(short[] SX, short[] E, short[] C)
         {
             rounds12X(SX, E, C);
         }
 
-        protected void PermuteRoundsBX(short[] SX, short[] E, short[] C)
+        void PermuteRoundsBX(short[] SX, short[] E, short[] C)
         {
             rounds12X(SX, E, C);
         }

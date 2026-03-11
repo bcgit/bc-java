@@ -84,12 +84,13 @@ public class PKCS12StoreParameter
                 throw new IllegalStateException("salt must be non-null");
             }
 
-            PBKDF2Params pbkdf2Params = new PBKDF2Params(salt, iterationCount, keySizeinBits, new AlgorithmIdentifier(prf));
+            PBKDF2Params pbkdf2Params = new PBKDF2Params(salt, iterationCount, keySizeinBits,
+                new AlgorithmIdentifier(prf));
             AlgorithmIdentifier keyDevFunc = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, pbkdf2Params);
-            AlgorithmIdentifier authScheme = new AlgorithmIdentifier(mac);           
+            AlgorithmIdentifier authScheme = new AlgorithmIdentifier(mac);
             PBMAC1Params pbmac1Params = new PBMAC1Params(keyDevFunc, authScheme);
 
-            return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBMAC1,  pbmac1Params);
+            return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBMAC1, pbmac1Params);
         }
     }
 

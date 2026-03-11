@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.test;
+package org.bouncycastle.pqc.jcajce.provider.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -19,8 +19,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
-
-public class SNTRUPrimeKEMTest
+public class SNTRUPrimeKEM17Test
     extends TestCase
 {
     public void setUp()
