@@ -1098,7 +1098,14 @@ public class OpenPGPCertificate
         return getPrimaryKey().getKeyExpirationDateAt(evaluationTime);
     }
 
-    public List<OpenPGPComponentSignature> getAllThirdPartySignatures()
+    /**
+     * Return a list containing all third-party issued key signatures on the primary key (delegations
+     * and revocations).
+     * Note: This list DOES NOT contain third-party certifications over user-ids.
+     *
+     * @return third-party key signatures
+     */
+    public List<OpenPGPComponentSignature> getAllThirdPartyKeySignatures()
     {
         List<OpenPGPComponentSignature> signatures = new ArrayList<>();
         signatures.addAll(getPrimaryKey().getThirdPartyCertifications());
@@ -1111,9 +1118,13 @@ public class OpenPGPCertificate
      * third-party {@link OpenPGPCertificate} on this certificates primary key.
      * A delegation is a signature of type {@link PGPSignature#DIRECT_KEY}, which represents a
      * delegation of trust and can be used to mark the certificate as a trusted introducer.
+     * Each delegation is returned as an {@link OpenPGPSignatureChain} where the delegation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at delegation signature creation time.
      *
      * @param thirdPartyCertificate third-party certificate which issued the delegation signatures
-     * @return all delegations by the third-party certificate over this certificate
+     * @return full signature chains of all delegations by the third-party certificate over this
+     *         certificate
      */
     public OpenPGPSignatureChains getDelegationsBy(OpenPGPCertificate thirdPartyCertificate)
     {
@@ -1124,10 +1135,13 @@ public class OpenPGPCertificate
     /**
      * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
      * which represents a delegation of trust.
+     * The delegation is returned as an {@link OpenPGPSignatureChain} where the delegation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at delegation signature creation time.
      * If no delegation signature is found, return null.
      *
      * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
-     * @return chain containing the latest delegation issued by the 3rd-party certificate
+     * @return full signature chain of the latest delegation issued by the 3rd-party certificate
      */
     public OpenPGPSignatureChain getDelegationBy(OpenPGPCertificate thirdPartyCertificate)
     {
@@ -1137,11 +1151,15 @@ public class OpenPGPCertificate
     /**
      * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
      * which represents a delegation of trust at evaluation time.
+     * The delegation is returned as an {@link OpenPGPSignatureChain} where the delegation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at delegation signature creation time.
      * If no delegation signature is found, return null.
      *
      * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
      * @param evaluationTime        reference time
-     * @return chain containing the (at evaluation time) latest delegation issued by the 3rd-party certificate
+     * @return full signature chain of the (at evaluation time) latest delegation issued by the
+     *         3rd-party certificate
      */
     public OpenPGPSignatureChain getDelegationBy(
         OpenPGPCertificate thirdPartyCertificate,
@@ -1155,9 +1173,13 @@ public class OpenPGPCertificate
      * third-party {@link OpenPGPCertificate} on this certificates primary key.
      * A delegation revocation is a signature of type {@link PGPSignature#KEY_REVOCATION}, which revokes an earlier
      * delegation of trust.
+     * Each revocation is returned as an {@link OpenPGPSignatureChain} where the revocation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at revocation signature creation time.
      *
      * @param thirdPartyCertificate third-party certificate which issued the revocation signatures
-     * @return all revocations by the third-party certificate over this certificate
+     * @return full signature chains for all revocations by the third-party certificate over this
+     *         certificate
      */
     public OpenPGPSignatureChains getRevocationsBy(OpenPGPCertificate thirdPartyCertificate)
     {
@@ -1167,9 +1189,13 @@ public class OpenPGPCertificate
     /**
      * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
      * which represents a revocation of trust.
+     * The revocation is returned as an {@link OpenPGPSignatureChain} where the revocation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at revocation signature creation time.
      *
      * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
-     * @return chain containing the latest revocation issued by the 3rd party certificate
+     * @return full signature chain containing the latest revocation issued by the 3rd party
+     *         certificate
      */
     public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
     {
@@ -1179,10 +1205,14 @@ public class OpenPGPCertificate
     /**
      * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
      * which (at evaluation time) represents a revocation of trust.
+     * The revocation is returned as an {@link OpenPGPSignatureChain} where the revocation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at revocation signature creation time.
      *
      * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
      * @param evaluationTime        reference time
-     * @return chain containing the (at evaluation time) latest revocation issued by the 3rd party certificate
+     * @return full signature chain containing the (at evaluation time) latest revocation issued
+     *         by the 3rd party certificate
      */
     public OpenPGPSignatureChain getRevocationBy(
         OpenPGPCertificate thirdPartyCertificate,
@@ -2845,17 +2875,31 @@ public class OpenPGPCertificate
             return primaryKey;
         }
 
+        /**
+         * Return all third-party certification signatures issued by the third-party certificate over
+         * this component.
+         * Each certification is returned as an {@link OpenPGPSignatureChain} where the certification
+         * is the leaf link prepended by the binding signature chain of the issuing third-party
+         * certificate component at certification signature creation time.
+         *
+         * @param thirdPartyCertificate third-party certificate
+         * @return all certifications by the third-party cert as full signature chains
+         */
         public OpenPGPSignatureChains getCertificationsBy(OpenPGPCertificate thirdPartyCertificate)
         {
             return getThirdPartySignatureChainsBy(thirdPartyCertificate)
                     .getCertifications();
         }
+
         /**
-         * Return the latest {@link OpenPGPSignatureChain} containing a certification issued by the given
-         * 3rd-party certificate over this identity component.
+         * Return the latest third-party certification signature issued by the third-party certificate
+         * over this component.
+         * The certification is returned as an {@link OpenPGPSignatureChain} where the certification
+         * is the leaf link prepended by the binding signature chain of the issuing third-party
+         * certificate component at certification signature creation time.
          *
-         * @param thirdPartyCertificate certificate of a 3rd party
-         * @return 3rd party certification
+         * @param thirdPartyCertificate third-party certificate
+         * @return latest certification by the third-party cert as full signature chain
          */
         public OpenPGPSignatureChain getCertificationBy(OpenPGPCertificate thirdPartyCertificate)
         {
@@ -2863,12 +2907,15 @@ public class OpenPGPCertificate
         }
 
         /**
-         * Return the latest (at evaluation time) {@link OpenPGPSignatureChain} containing a certification
-         * issued by the given 3rd-party certificate over this identity component.
+         * Return the - at evaluation time - latest third-party certification signature issued by the
+         * third-party certificate over this component.
+         * The certification is returned as an {@link OpenPGPSignatureChain} where the certification
+         * is the leaf link prepended by the binding signature chain of the issuing third-party
+         * certificate component at certification signature creation time.
          *
-         * @param evaluationTime        reference time
-         * @param thirdPartyCertificate certificate of a 3rd party
-         * @return 3rd party certification
+         * @param thirdPartyCertificate third-party certificate
+         * @param evaluationTime reference time
+         * @return at reference time latest certification by the third-party cert as full signature chain
          */
         public OpenPGPSignatureChain getCertificationBy(
             OpenPGPCertificate thirdPartyCertificate,
@@ -2877,6 +2924,16 @@ public class OpenPGPCertificate
             return getCertificationsBy(thirdPartyCertificate).getCertificationAt(evaluationTime);
         }
 
+        /**
+         * Return all third-party revocation signatures issued by the third-party certificate over
+         * this component.
+         * Each revocation is returned as an {@link OpenPGPSignatureChain} where the revocation is the
+         * leaf link prepended by the binding signature chain of the issuing third-party certificate
+         * component at revocation signature creation time.
+         *
+         * @param thirdPartyCertificate third-party certificate
+         * @return all revocations by the third-party cert as full signature chains
+         */
         public OpenPGPSignatureChains getRevocationsBy(OpenPGPCertificate thirdPartyCertificate)
         {
             return getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate)
@@ -2884,11 +2941,14 @@ public class OpenPGPCertificate
         }
 
         /**
-         * Return the latest {@link OpenPGPSignatureChain} containing a revocation issued by the given
-         * 3rd-party certificate over this identity component.
+         * Return the latest third-party revocation signature issued by the third-party certificate
+         * over this component.
+         * The revocation is returned as an {@link OpenPGPSignatureChain} where the revocation is the
+         * leaf link prepended by the binding signature chain of the issuing third-party certificate
+         * component at revocation signature creation time.
          *
-         * @param thirdPartyCertificate certificate of a 3rd party
-         * @return 3rd party revocation signature
+         * @param thirdPartyCertificate third-party certificate
+         * @return latest revocation by the third-party cert as full signature chain
          */
         public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
         {
@@ -2896,12 +2956,15 @@ public class OpenPGPCertificate
         }
 
         /**
-         * Return the latest (at evaluation time) {@link OpenPGPSignatureChain} containing a revocation issued by the given
-         * 3rd-party certificate over this identity component.
+         * Return the - at evaluation time - latest third-party revocation signature issued by the
+         * third-party certificate over this component.
+         * The revocation is returned as an {@link OpenPGPSignatureChain} where the revocation is the
+         * leaf link prepended by the binding signature chain of the issuing third-party certificate
+         * component at revocation signature creation time.
          *
-         * @param thirdPartyCertificate certificate of a 3rd party
-         * @param evaluationTime        reference time
-         * @return 3rd party revocation signature
+         * @param thirdPartyCertificate third-party certificate
+         * @param evaluationTime reference time
+         * @return at reference time latest revocation by the third-party cert as full signature chain
          */
         public OpenPGPSignatureChain getRevocationBy(
             OpenPGPCertificate thirdPartyCertificate,
