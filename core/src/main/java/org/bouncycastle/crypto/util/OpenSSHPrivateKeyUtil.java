@@ -29,7 +29,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
-
 /**
  * A collection of utility methods for parsing OpenSSH private keys.
  */
@@ -37,13 +36,12 @@ public class OpenSSHPrivateKeyUtil
 {
     private OpenSSHPrivateKeyUtil()
     {
-
     }
 
     /**
      * Magic value for proprietary OpenSSH private key.
      **/
-    static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
+    private static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
 
     /**
      * Encode a cipher parameters into an OpenSSH private key.
@@ -74,20 +72,19 @@ public class OpenSSHPrivateKeyUtil
         }
         else if (params instanceof DSAPrivateKeyParameters)
         {
-            DSAPrivateKeyParameters dsaPrivKey = (DSAPrivateKeyParameters)params;
-            DSAParameters dsaParams = dsaPrivKey.getParameters();
+            DSAPrivateKeyParameters privateKey = (DSAPrivateKeyParameters)params;
+            DSAParameters dsa = privateKey.getParameters();
+
+            // public key y = g.modPow(x, p);
+            BigInteger y = dsa.getG().modPow(privateKey.getX(), dsa.getP());
 
             ASN1EncodableVector vec = new ASN1EncodableVector();
             vec.add(ASN1Integer.ZERO);
-            vec.add(new ASN1Integer(dsaParams.getP()));
-            vec.add(new ASN1Integer(dsaParams.getQ()));
-            vec.add(new ASN1Integer(dsaParams.getG()));
-
-            // public key = g.modPow(x, p);
-            BigInteger pubKey = dsaParams.getG().modPow(dsaPrivKey.getX(), dsaParams.getP());
-            vec.add(new ASN1Integer(pubKey));
-
-            vec.add(new ASN1Integer(dsaPrivKey.getX()));
+            vec.add(new ASN1Integer(dsa.getP()));
+            vec.add(new ASN1Integer(dsa.getQ()));
+            vec.add(new ASN1Integer(dsa.getG()));
+            vec.add(new ASN1Integer(y));
+            vec.add(new ASN1Integer(privateKey.getX()));
             try
             {
                 return new DERSequence(vec).getEncoded();
@@ -99,7 +96,8 @@ public class OpenSSHPrivateKeyUtil
         }
         else if (params instanceof Ed25519PrivateKeyParameters)
         {
-            Ed25519PublicKeyParameters publicKeyParameters = ((Ed25519PrivateKeyParameters)params).generatePublicKey();
+            Ed25519PrivateKeyParameters privateKey = (Ed25519PrivateKeyParameters)params;
+            Ed25519PublicKeyParameters publicKey = privateKey.generatePublicKey();
 
             SSHBuilder builder = new SSHBuilder();
             builder.writeBytes(AUTH_MAGIC);
@@ -110,7 +108,7 @@ public class OpenSSHPrivateKeyUtil
             builder.u32(1); // Number of keys
 
             {
-                byte[] pkEncoded = OpenSSHPublicKeyUtil.encodePublicKey(publicKeyParameters);
+                byte[] pkEncoded = OpenSSHPublicKeyUtil.encodePublicKey(publicKey);
                 builder.writeBlock(pkEncoded);
             }
 
@@ -124,11 +122,11 @@ public class OpenSSHPrivateKeyUtil
                 pkBuild.writeString("ssh-ed25519");
 
                 // Public key (as part of private key pair)
-                byte[] pubKeyEncoded = publicKeyParameters.getEncoded();
+                byte[] pubKeyEncoded = publicKey.getEncoded();
                 pkBuild.writeBlock(pubKeyEncoded);
 
                 // The private key in SSH is 64 bytes long and is the concatenation of the private and the public keys
-                pkBuild.writeBlock(Arrays.concatenate(((Ed25519PrivateKeyParameters)params).getEncoded(), pubKeyEncoded));
+                pkBuild.writeBlock(Arrays.concatenate(privateKey.getEncoded(), pubKeyEncoded));
 
                 pkBuild.writeString("");    // Comment for this private key (empty)
 
@@ -139,7 +137,6 @@ public class OpenSSHPrivateKeyUtil
         }
 
         throw new IllegalArgumentException("unable to convert " + params.getClass().getName() + " to openssh private key");
-
     }
 
     /**
