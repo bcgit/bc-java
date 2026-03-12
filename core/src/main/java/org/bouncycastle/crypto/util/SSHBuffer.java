@@ -13,7 +13,7 @@ class SSHBuffer
     private final byte[] buffer;
     private int pos = 0;
 
-    public SSHBuffer(byte[] magic, byte[] buffer)
+    SSHBuffer(byte[] magic, byte[] buffer)
     {
         this.buffer = buffer;
         for (int i = 0; i != magic.length; i++)
@@ -27,40 +27,36 @@ class SSHBuffer
         pos += magic.length;
     }
 
-    public SSHBuffer(byte[] buffer)
+    SSHBuffer(byte[] buffer)
     {
         this.buffer = buffer;
     }
 
-    public int readU32()
+    int readU32()
     {
         if (pos > (buffer.length - 4))
         {
             throw new IllegalArgumentException("4 bytes for U32 exceeds buffer.");
         }
 
-        int i = (buffer[pos++] & 0xFF) << 24;
-        i |= (buffer[pos++] & 0xFF) << 16;
-        i |= (buffer[pos++] & 0xFF) << 8;
-        i |= (buffer[pos++] & 0xFF);
-
-        return i;
+        int result = org.bouncycastle.util.Pack.bigEndianToInt(buffer, pos);
+        pos += 4;
+        return result;
     }
 
-    public String readString()
+    String readString()
     {
         return Strings.fromByteArray(readBlock());
     }
 
-    public byte[] readBlock()
+    byte[] readBlock()
     {
         int len = readU32();
         if (len == 0)
         {
             return new byte[0];
         }
-
-        if (pos > (buffer.length - len))
+        if (len > buffer.length - pos)
         {
             throw new IllegalArgumentException("not enough data for block");
         }
@@ -69,10 +65,10 @@ class SSHBuffer
         return Arrays.copyOfRange(buffer, start, pos);
     }
 
-    public void skipBlock()
+    void skipBlock()
     {
         int len = readU32();
-        if (pos > (buffer.length - len))
+        if (len > buffer.length - pos)
         {
             throw new IllegalArgumentException("not enough data for block");
         }
@@ -80,20 +76,19 @@ class SSHBuffer
         pos += len;
     }
 
-    public byte[] readPaddedBlock()
+    byte[] readPaddedBlock()
     {
         return readPaddedBlock(8);
     }
 
-    public byte[] readPaddedBlock(int blockSize)
+    byte[] readPaddedBlock(int blockSize)
     {
         int len = readU32();
         if (len == 0)
         {
             return new byte[0];
         }
-
-        if (pos > (buffer.length - len))
+        if (len > buffer.length - pos)
         {
             throw new IllegalArgumentException("not enough data for block");
         }
@@ -129,10 +124,10 @@ class SSHBuffer
         return Arrays.copyOfRange(buffer, start, end);
     }
 
-    public BigInteger readBigNumPositive()
+    BigInteger readBigNumPositive()
     {
         int len = readU32();
-        if (pos + len > buffer.length)
+        if (len > buffer.length - pos)
         {
             throw new IllegalArgumentException("not enough data for big num");
         }
@@ -142,12 +137,12 @@ class SSHBuffer
         return new BigInteger(1, d);
     }
 
-    public byte[] getBuffer()
+    byte[] getBuffer()
     {
         return Arrays.clone(buffer);
     }
 
-    public boolean hasRemaining()
+    boolean hasRemaining()
     {
         return pos < buffer.length;
     }

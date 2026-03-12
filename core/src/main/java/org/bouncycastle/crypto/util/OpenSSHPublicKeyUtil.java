@@ -8,12 +8,12 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
-
 
 /**
  * OpenSSHPublicKeyUtil utility classes for parsing OpenSSH public keys.
@@ -22,7 +22,6 @@ public class OpenSSHPublicKeyUtil
 {
     private OpenSSHPublicKeyUtil()
     {
-
     }
 
     private static final String RSA = "ssh-rsa";
@@ -81,43 +80,46 @@ public class OpenSSHPublicKeyUtil
         }
         else if (cipherParameters instanceof ECPublicKeyParameters)
         {
+            ECPublicKeyParameters publicKey = (ECPublicKeyParameters)cipherParameters;
+            ECDomainParameters ec = publicKey.getParameters();
+
             SSHBuilder builder = new SSHBuilder();
 
             //
             // checked for named curve parameters..
             //
 
-
-            String name = SSHNamedCurves.getNameForParameters(((ECPublicKeyParameters)cipherParameters).getParameters());
-
+            String name = SSHNamedCurves.getNameForParameters(ec);
             if (name == null)
             {
-                throw new IllegalArgumentException("unable to derive ssh curve name for " + ((ECPublicKeyParameters)cipherParameters).getParameters().getCurve().getClass().getName());
+                throw new IllegalArgumentException("unable to derive ssh curve name for " + ec.getCurve().getClass().getName());
             }
 
             builder.writeString(ECDSA + "-sha2-" + name); // Magic
             builder.writeString(name);
-            builder.writeBlock(((ECPublicKeyParameters)cipherParameters).getQ().getEncoded(false)); //Uncompressed
+            builder.writeBlock(publicKey.getQ().getEncoded(false)); //Uncompressed
             return builder.getBytes();
         }
         else if (cipherParameters instanceof DSAPublicKeyParameters)
         {
-            DSAPublicKeyParameters dsaPubKey = (DSAPublicKeyParameters)cipherParameters;
-            DSAParameters dsaParams = dsaPubKey.getParameters();
+            DSAPublicKeyParameters publicKey = (DSAPublicKeyParameters)cipherParameters;
+            DSAParameters dsa = publicKey.getParameters();
 
             SSHBuilder builder = new SSHBuilder();
             builder.writeString(DSS);
-            builder.writeBigNum(dsaParams.getP());
-            builder.writeBigNum(dsaParams.getQ());
-            builder.writeBigNum(dsaParams.getG());
-            builder.writeBigNum(dsaPubKey.getY());
+            builder.writeBigNum(dsa.getP());
+            builder.writeBigNum(dsa.getQ());
+            builder.writeBigNum(dsa.getG());
+            builder.writeBigNum(publicKey.getY());
             return builder.getBytes();
         }
         else if (cipherParameters instanceof Ed25519PublicKeyParameters)
         {
+            Ed25519PublicKeyParameters publicKey = (Ed25519PublicKeyParameters)cipherParameters;
+
             SSHBuilder builder = new SSHBuilder();
             builder.writeString(ED_25519);
-            builder.writeBlock(((Ed25519PublicKeyParameters)cipherParameters).getEncoded());
+            builder.writeBlock(publicKey.getEncoded());
             return builder.getBytes();
         }
 
