@@ -13,6 +13,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
@@ -30,6 +32,7 @@ import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
@@ -474,6 +477,50 @@ public class MLDSATest
                 buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
+    }
+
+    public void testQuickBrownFox()
+        throws Exception
+    {
+        MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+
+        kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(), MLDSAParameters.ml_dsa_44));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+        MLDSAPublicKeyParameters pubKey = (MLDSAPublicKeyParameters)kp.getPublic();
+        MLDSAPrivateKeyParameters privKey = (MLDSAPrivateKeyParameters)kp.getPrivate();
+
+        byte[] msg = Strings.toByteArray("The quick brown fox");
+        
+        MLDSASigner signer = new MLDSASigner();
+
+        // a "deterministic non-deterministic" signature initialisation.
+        signer.init(true, new ParametersWithRandom(privKey, new FixedSecureRandom(Hex.decode("000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f"))));
+
+        signer.update(msg, 0, msg.length);
+
+        byte[] sig = signer.generateSignature();
+
+        signer.init(false, pubKey);
+
+        signer.update(msg, 0, msg.length);
+        
+        assertTrue("ML-DSA pubKey verification fails", signer.verifySignature(sig));
+
+        PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privKey);
+        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubKey);
+
+        signer.init(true, PrivateKeyFactory.createKey(privInfo.getEncoded()));
+
+        signer.update(msg, 0, msg.length);
+
+        sig = signer.generateSignature();
+
+        signer.init(false, PublicKeyFactory.createKey(pubInfo.getEncoded()));
+
+        signer.update(msg, 0, msg.length);
+
+        assertTrue("ML-DSA pubInfo verification fails", signer.verifySignature(sig));
     }
 
     public void testMLDSARejection()
