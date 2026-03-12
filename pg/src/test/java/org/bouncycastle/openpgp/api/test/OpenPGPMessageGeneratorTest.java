@@ -1,17 +1,26 @@
 package org.bouncycastle.openpgp.api.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
+import org.bouncycastle.openpgp.PGPEncryptedData;
+import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
+import org.bouncycastle.openpgp.api.OpenPGPMessageInputStream;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
+import org.bouncycastle.openpgp.api.OpenPGPMessageProcessor;
 import org.bouncycastle.openpgp.api.OpenPGPPolicy;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -38,6 +47,7 @@ public class OpenPGPMessageGeneratorTest
         seipd2EncryptedMessage(api);
 
         seipd2EncryptedSignedMessage(api);
+        encryptWithWildcardKeyIdentifier(api);
     }
 
     private void armoredLiteralDataPacket(OpenPGPApi api)
@@ -184,6 +194,45 @@ public class OpenPGPMessageGeneratorTest
         encOut.close();
 
         System.out.println(bOut);
+    }
+
+    public void encryptWithWildcardKeyIdentifier(OpenPGPApi api)
+            throws IOException, PGPException {
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
+
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
+                .setAllowPadding(true)
+                .setArmored(true)
+                .addSigningKey(key)
+                .addEncryptionCertificate(key, true);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OutputStream encOut = gen.open(bOut);
+        encOut.write("Hello, World!\n".getBytes());
+        encOut.close();
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+        ArmoredInputStream aIn = ArmoredInputStream.builder()
+                .build(bIn);
+        BCPGInputStream pIn = BCPGInputStream.wrap(aIn);
+        PGPObjectFactory objFac = api.getImplementation().pgpObjectFactory(pIn);
+        PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
+        for (PGPEncryptedData encData : encList)
+        {
+            isTrue(encData instanceof PGPPublicKeyEncryptedData);
+            PGPPublicKeyEncryptedData pkesk = (PGPPublicKeyEncryptedData) encData;
+            isTrue(pkesk.getKeyIdentifier().isWildcard());
+        }
+
+        bIn = new ByteArrayInputStream(bOut.toByteArray());
+        OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage()
+                .addDecryptionKey(key);
+
+        OpenPGPMessageInputStream mIn = processor.process(bIn);
+        bOut = new ByteArrayOutputStream();
+        org.bouncycastle.util.io.Streams.pipeAll(mIn, bOut);
+        mIn.close();
+        isEncodingEqual("Hello, World!\n".getBytes(), bOut.toByteArray());
     }
 
     public static void main(String[] args)

@@ -294,6 +294,7 @@ public class OpenPGPMessageProcessor
 
         List<PGPPBEEncryptedData> skesks = skesks(encDataList);
         List<PGPPublicKeyEncryptedData> pkesks = pkesks(encDataList);
+        List<PGPPublicKeyEncryptedData> anonPkesks = anonPkesks(pkesks);
 
         PGPException exception = null;
 
@@ -384,6 +385,57 @@ public class OpenPGPMessageProcessor
             }
         }
 
+        // Edge-case: There are anonymous (wildcard) key identifiers
+        if (!anonPkesks.isEmpty())
+        {
+            for (PGPPublicKeyEncryptedData pkesk : anonPkesks)
+            {
+                for (OpenPGPKey key : configuration.keyPool.getAllItems())
+                {
+                    for (OpenPGPCertificate.OpenPGPComponentKey encryptionKey : key.getEncryptionKeys())
+                    {
+                        OpenPGPKey.OpenPGPSecretKey decryptionKey = key.getSecretKey(encryptionKey);
+                        if (decryptionKey == null)
+                        {
+                            // Missing (potentially stripped) secret key
+                            continue;
+                        }
+
+                        try
+                        {
+                            char[] keyPassphrase = configuration.keyPassphraseProvider.getKeyPassword(decryptionKey);
+                            PGPKeyPair unlockedKey = decryptionKey.unlock(keyPassphrase).getKeyPair();
+                            if (unlockedKey == null)
+                            {
+                                throw new KeyPassphraseException(decryptionKey, new PGPException("Cannot unlock secret key."));
+                            }
+
+                            // Decrypt the message session key using the private key
+                            PublicKeyDataDecryptorFactory pkDecryptorFactory =
+                                    implementation.publicKeyDataDecryptorFactory(unlockedKey.getPrivateKey());
+                            PGPSessionKey decryptedSessionKey = pkesk.getSessionKey(pkDecryptorFactory);
+
+                            // Decrypt the message using the decrypted session key
+                            SessionKeyDataDecryptorFactory skDecryptorFactory =
+                                    implementation.sessionKeyDataDecryptorFactory(decryptedSessionKey);
+                            PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData();
+                            InputStream decryptedIn = encData.getDataStream(skDecryptorFactory);
+                            IntegrityProtectedInputStream verifyingIn = new IntegrityProtectedInputStream(decryptedIn, encData);
+                            Decrypted decrypted = new Decrypted(encData, decryptedSessionKey, verifyingIn);
+                            decrypted.decryptionKey = decryptionKey;
+                            return decrypted;
+                        }
+                        catch (PGPException e)
+                        {
+                            onException(e);
+                            // cache first exception, then continue to try next skesk if present
+                            exception = exception != null ? exception : e;
+                        }
+                    }
+                }
+            }
+        }
+
         // And lastly, we'll prompt the user dynamically for a message passphrase
         if (!skesks.isEmpty() && configuration.missingMessagePassphraseCallback != null)
         {
@@ -458,6 +510,19 @@ public class OpenPGPMessageProcessor
             if (encData instanceof PGPPublicKeyEncryptedData)
             {
                 list.add((PGPPublicKeyEncryptedData) encData);
+            }
+        }
+        return list;
+    }
+
+    private List<PGPPublicKeyEncryptedData> anonPkesks(List<PGPPublicKeyEncryptedData> pkesks)
+    {
+        List<PGPPublicKeyEncryptedData> list = new ArrayList<PGPPublicKeyEncryptedData>();
+        for (PGPPublicKeyEncryptedData pkesk : pkesks)
+        {
+            if (pkesk.getKeyIdentifier().isWildcard())
+            {
+                list.add(pkesk);
             }
         }
         return list;
