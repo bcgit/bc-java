@@ -1199,7 +1199,7 @@ public class PKIXNameConstraintValidator
         {
             if (email2.indexOf('@') != -1)
             {
-                String _sub = email2.substring(email1.indexOf('@') + 1);
+                String _sub = email2.substring(email2.indexOf('@') + 1);
                 if (withinDomain(_sub, email1))
                 {
                     union.add(email1);
@@ -1246,7 +1246,7 @@ public class PKIXNameConstraintValidator
         {
             if (email2.indexOf('@') != -1)
             {
-                String _sub = email2.substring(email1.indexOf('@') + 1);
+                String _sub = email2.substring(email2.indexOf('@') + 1);
                 if (_sub.equalsIgnoreCase(email1))
                 {
                     union.add(email1);
@@ -1337,7 +1337,7 @@ public class PKIXNameConstraintValidator
         {
             if (email2.indexOf('@') != -1)
             {
-                String _sub = email2.substring(email1.indexOf('@') + 1);
+                String _sub = email2.substring(email2.indexOf('@') + 1);
                 if (withinDomain(_sub, email1))
                 {
                     union.add(email1);
@@ -1384,7 +1384,7 @@ public class PKIXNameConstraintValidator
         {
             if (email2.indexOf('@') != -1)
             {
-                String _sub = email2.substring(email1.indexOf('@') + 1);
+                String _sub = email2.substring(email2.indexOf('@') + 1);
                 if (_sub.equalsIgnoreCase(email1))
                 {
                     union.add(email1);
@@ -1544,7 +1544,7 @@ public class PKIXNameConstraintValidator
         {
             if (email2.indexOf('@') != -1)
             {
-                String _sub = email2.substring(email1.indexOf('@') + 1);
+                String _sub = email2.substring(email2.indexOf('@') + 1);
                 if (withinDomain(_sub, email1))
                 {
                     intersect.add(email2);
@@ -1714,7 +1714,7 @@ public class PKIXNameConstraintValidator
         {
             if (email2.indexOf('@') != -1)
             {
-                String _sub = email2.substring(email1.indexOf('@') + 1);
+                String _sub = email2.substring(email2.indexOf('@') + 1);
                 if (withinDomain(_sub, email1))
                 {
                     intersect.add(email2);
