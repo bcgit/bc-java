@@ -7,6 +7,7 @@ import javax.crypto.KeyAgreement;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
+import java.security.spec.ECGenParameterSpec;
 
 public class ECKeyAgreementDomainValidationTest extends TestCase {
     protected void setUp() {
@@ -24,7 +25,7 @@ public class ECKeyAgreementDomainValidationTest extends TestCase {
             throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
 
-        kpg.initialize(256);
+        kpg.initialize(new ECGenParameterSpec("secp256r1"));
 
         KeyPair kp1 = kpg.generateKeyPair();
         KeyPair kp2 = kpg.generateKeyPair();
@@ -51,10 +52,10 @@ public class ECKeyAgreementDomainValidationTest extends TestCase {
             throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
 
-        kpg.initialize(256);
+        kpg.initialize(new ECGenParameterSpec("secp256r1"));
         KeyPair kp256 = kpg.generateKeyPair();
 
-        kpg.initialize(384);
+        kpg.initialize(new ECGenParameterSpec("secp384r1"));
         KeyPair kp384 = kpg.generateKeyPair();
 
         KeyAgreement ka = KeyAgreement.getInstance("ECDH", "BC");
