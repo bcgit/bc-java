@@ -227,7 +227,12 @@ public class KeyAgreementSpi
             MQVPrivateParameters localParams = new MQVPrivateParameters(staticPrivKey, ephemPrivKey, ephemPubKey);
             this.parameters = staticPrivKey.getParameters();
 
-            // TODO Validate that all the keys are using the same parameters?
+            validateSameDomainParameters(staticPrivKey.getParameters(), ephemPrivKey.getParameters());
+
+            if (ephemPubKey != null)
+            {
+                validateSameDomainParameters(staticPrivKey.getParameters(), ephemPubKey.getParameters());
+            }
 
             ((ECMQVBasicAgreement)agreement).init(localParams);
         }
@@ -285,6 +290,20 @@ public class KeyAgreementSpi
         String fullName = clazz.getName();
 
         return fullName.substring(fullName.lastIndexOf('.') + 1);
+    }
+
+    private static void validateSameDomainParameters(ECDomainParameters a, ECDomainParameters b)
+            throws InvalidKeyException
+    {
+        if (a == b)
+        {
+            return;
+        }
+
+        if (a == null || !a.equals(b))
+        {
+            throw new InvalidKeyException("EC domain parameters do not match");
+        }
     }
     
     protected byte[] doCalcSecret()
