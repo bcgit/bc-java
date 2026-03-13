@@ -28,6 +28,7 @@ public class PKCS12StoreParameter
     private final boolean forDEREncoding;
     private final boolean overwriteFriendlyName;
     private final AlgorithmIdentifier macAlgorithm;
+    private final boolean useISO8859d1ForDecryption;
 
     public static class PBMAC1WithPBKDF2Builder
     {
@@ -96,7 +97,7 @@ public class PKCS12StoreParameter
 
     public static PBMAC1WithPBKDF2Builder pbmac1WithPBKDF2Builder()
     {
-         return new PBMAC1WithPBKDF2Builder();
+        return new PBMAC1WithPBKDF2Builder();
     }
 
     public static class Builder
@@ -105,6 +106,7 @@ public class PKCS12StoreParameter
         private final ProtectionParameter protectionParameter;
         private boolean forDEREncoding = true;
         private boolean overwriteFriendlyName = true;
+        private boolean useISO8859d1ForDecryption = false;
         private AlgorithmIdentifier macAlgorithm = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
 
         private Builder(OutputStream out, ProtectionParameter protectionParameter)
@@ -127,16 +129,23 @@ public class PKCS12StoreParameter
             return this;
         }
 
+        public Builder setUseISO8859d1ForDecryption(boolean enable)
+        {
+            this.useISO8859d1ForDecryption = enable;
+
+            return this;
+        }
+
         public Builder setMacAlgorithm(AlgorithmIdentifier macAlgorithm)
         {
             this.macAlgorithm = macAlgorithm;
 
             return this;
         }
-        
+
         public PKCS12StoreParameter build()
         {
-            return new PKCS12StoreParameter(out, protectionParameter, forDEREncoding, overwriteFriendlyName, macAlgorithm);
+            return new PKCS12StoreParameter(out, protectionParameter, forDEREncoding, overwriteFriendlyName, macAlgorithm, useISO8859d1ForDecryption);
         }
     }
 
@@ -177,16 +186,17 @@ public class PKCS12StoreParameter
 
     public PKCS12StoreParameter(OutputStream out, ProtectionParameter protectionParameter, boolean forDEREncoding, boolean overwriteFriendlyName)
     {
-        this(out, protectionParameter, forDEREncoding, overwriteFriendlyName, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE));
+        this(out, protectionParameter, forDEREncoding, overwriteFriendlyName, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE), false);
     }
 
-    private PKCS12StoreParameter(OutputStream out, ProtectionParameter protectionParameter, boolean forDEREncoding, boolean overwriteFriendlyName, AlgorithmIdentifier macAlgorithm)
+    private PKCS12StoreParameter(OutputStream out, ProtectionParameter protectionParameter, boolean forDEREncoding, boolean overwriteFriendlyName, AlgorithmIdentifier macAlgorithm, boolean useISO8859d1ForDecryption)
     {
         this.out = out;
         this.protectionParameter = protectionParameter;
         this.forDEREncoding = forDEREncoding;
         this.overwriteFriendlyName = overwriteFriendlyName;
         this.macAlgorithm = macAlgorithm;
+        this.useISO8859d1ForDecryption = useISO8859d1ForDecryption;
     }
 
     public OutputStream getOutputStream()
@@ -223,5 +233,10 @@ public class PKCS12StoreParameter
     public AlgorithmIdentifier getMacAlgorithm()
     {
         return macAlgorithm;
+    }
+
+    public boolean useISO8859d1ForDecryption()
+    {
+        return useISO8859d1ForDecryption;
     }
 }

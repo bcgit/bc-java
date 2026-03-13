@@ -17,6 +17,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.BCLoadStoreParameter;
+import org.bouncycastle.jcajce.PKCS12LoadStoreParameter;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -129,6 +131,37 @@ public class PKCS12PBMAC1StoreTest
         PKCS12StoreParameter storeParam = builder.build();
         pkcs12.store(storeParam);
         _currentPKCS12Object = outStream.toByteArray();
+    }
+
+    public void testJSafeInternationalIssue()
+        throws Exception
+    {
+        InputStream inS = this.getClass().getResourceAsStream("empty.p12");
+        KeyStore ks = KeyStore.getInstance("PKCS12-PBMAC1", "BC");
+
+        BCLoadStoreParameter p12Param = new PKCS12LoadStoreParameter.Builder(inS, new KeyStore.PasswordProtection("Mötley Crüe".toCharArray())).setUseISO8859d1ForDecryption(true).build();
+
+        ks.load(p12Param);
+
+        inS = this.getClass().getResourceAsStream("with-key-entry.p12");
+        ks = KeyStore.getInstance("PKCS12-PBMAC1", "BC");
+
+        p12Param = new PKCS12LoadStoreParameter.Builder(inS, new KeyStore.PasswordProtection("Mötley Crüe".toCharArray())).setUseISO8859d1ForDecryption(true).build();
+        
+        ks.load(p12Param);
+
+        Set<String> expected = new HashSet<String>();
+
+        expected.add("cn=issuer");
+        expected.add("alias");
+
+        for (Enumeration en = ks.aliases(); en.hasMoreElements(); )
+        {
+            String alias = (String)en.nextElement();
+            expected.remove(alias);
+        }
+
+        assertEquals(0, expected.size());
     }
 
     public void testPBMac1PBKdf2()
