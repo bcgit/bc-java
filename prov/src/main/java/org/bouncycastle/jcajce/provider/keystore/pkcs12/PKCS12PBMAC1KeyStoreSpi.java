@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -47,6 +48,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -98,16 +100,19 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.jcajce.BCLoadStoreParameter;
 import org.bouncycastle.jcajce.PKCS12Key;
+import org.bouncycastle.jcajce.PKCS12LoadStoreParameter;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jcajce.provider.keystore.util.AdaptingKeyStoreSpi;
 import org.bouncycastle.jcajce.provider.keystore.util.ParameterUtil;
@@ -175,6 +180,8 @@ public class PKCS12PBMAC1KeyStoreSpi
     private int itCount = 2 * MIN_ITERATIONS;
     private int saltLength = 20;
 
+    private boolean useISO8859d1ForDecryption = false;
+    
     private class CertId
     {
         byte[] id;
@@ -811,9 +818,23 @@ public class PKCS12PBMAC1KeyStoreSpi
         SecretKeyFactory keyFact = helper.createSecretKeyFactory(alg.getKeyDerivationFunc().getAlgorithm().getId());
         SecretKey key;
 
+
         if (func.isDefaultPrf())
         {
-            key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), validateIterationCount(func.getIterationCount()), keySizeProvider.getKeySize(encScheme)));
+            if ((mode == Cipher.DECRYPT_MODE || mode == Cipher.UNWRAP_MODE) && useISO8859d1ForDecryption)
+            {
+                PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA1Digest());
+
+                pGen.init(new String(password).getBytes(StandardCharsets.ISO_8859_1), func.getSalt(), func.getIterationCount().intValueExact());
+
+                KeyParameter kParam = (KeyParameter)pGen.generateDerivedParameters(keySizeProvider.getKeySize(encScheme));
+
+                key = new SecretKeySpec(kParam.getKey(), "AES");
+            }
+            else
+            {
+                key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), validateIterationCount(func.getIterationCount()), keySizeProvider.getKeySize(encScheme)));
+            }
         }
         else
         {
@@ -859,6 +880,8 @@ public class PKCS12PBMAC1KeyStoreSpi
     public void engineLoad(LoadStoreParameter loadStoreParameter)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
+        useISO8859d1ForDecryption = false;
+
         if (loadStoreParameter == null)
         {
             engineLoad(null, null);
@@ -866,6 +889,11 @@ public class PKCS12PBMAC1KeyStoreSpi
         else if (loadStoreParameter instanceof BCLoadStoreParameter)
         {
             BCLoadStoreParameter bcParam = (BCLoadStoreParameter)loadStoreParameter;
+
+            if (bcParam instanceof PKCS12LoadStoreParameter)
+            {
+                useISO8859d1ForDecryption = ((PKCS12LoadStoreParameter)bcParam).useISO8859d1ForDecryption();
+            }
 
             engineLoad(bcParam.getInputStream(), ParameterUtil.extractPassword(loadStoreParameter));
         }
