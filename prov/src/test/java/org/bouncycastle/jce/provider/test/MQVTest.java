@@ -1,6 +1,7 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -12,8 +13,10 @@ import java.security.spec.EllipticCurve;
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -29,6 +32,7 @@ public class MQVTest
         throws Exception
     {
         testECMQV();
+        testDifferentCurveAgreement();
     }
 
     private void testECMQV()
@@ -37,19 +41,19 @@ public class MQVTest
         KeyPairGenerator g = KeyPairGenerator.getInstance("ECMQV", "BC");
 
         EllipticCurve curve = new EllipticCurve(
-                new ECFieldFp(new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839")), // q
-                new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-                new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+            new ECFieldFp(new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839")), // q
+            new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
+            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
 
         ECParameterSpec ecSpec = new ECParameterSpec(
-                curve,
-                ECPointUtil.decodePoint(curve, Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-                new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307"), // n
-                1); // h
+            curve,
+            ECPointUtil.decodePoint(curve, Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
+            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307"), // n
+            1); // h
 
         g.initialize(ecSpec, new SecureRandom());
 
-         //
+        //
         // U side
         //
         KeyPair U1 = g.generateKeyPair();
@@ -79,6 +83,67 @@ public class MQVTest
         if (!ux.equals(vx))
         {
             fail("Agreement failed");
+        }
+    }
+
+    /**
+     * Different curves should fail due to domain parameter mismatch.
+     */
+    private void testDifferentCurveAgreement()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        ECNamedCurveParameterSpec spec256 = ECNamedCurveTable.getParameterSpec("secp256r1");
+        kpg.initialize(spec256);
+        KeyPair U1 = kpg.generateKeyPair();
+        KeyPair U2 = kpg.generateKeyPair();
+
+        ECNamedCurveParameterSpec spec384 = ECNamedCurveTable.getParameterSpec("secp384r1");
+        kpg.initialize(spec384);
+        KeyPair V1 = kpg.generateKeyPair();
+        KeyPair V2 = kpg.generateKeyPair();
+
+        try
+        {
+            KeyAgreement uAgree = KeyAgreement.getInstance("ECMQV", "BC");
+            uAgree.init(U1.getPrivate(), new MQVParameterSpec(U2, V2.getPublic()));
+
+            KeyAgreement vAgree = KeyAgreement.getInstance("ECMQV", "BC");
+            vAgree.init(V1.getPrivate(), new MQVParameterSpec(V2, U2.getPublic()));
+
+            //
+            // agreement
+            //
+            uAgree.doPhase(V1.getPublic(), true);
+            vAgree.doPhase(U1.getPublic(), true);
+
+            fail("Expected InvalidKeyException for mismatched EC domain parameters");
+        }
+        catch (java.security.InvalidKeyException e)
+        {
+            isEquals(e.getMessage(), "calculation failed: ECMQV public key components have wrong domain parameters");
+        }
+
+        try
+        {
+            KeyAgreement uAgree = KeyAgreement.getInstance("ECMQV", "BC");
+            uAgree.init(U1.getPrivate(), new MQVParameterSpec(V2, U2.getPublic()));
+
+            KeyAgreement vAgree = KeyAgreement.getInstance("ECMQV", "BC");
+            vAgree.init(V1.getPrivate(), new MQVParameterSpec(U2, V2.getPublic()));
+
+            //
+            // agreement
+            //
+            uAgree.doPhase(V1.getPublic(), true);
+            vAgree.doPhase(U1.getPublic(), true);
+
+            fail("Expected InvalidKeyException for mismatched EC domain parameters");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isEquals(e.getMessage(), "Static and ephemeral private keys have different domain parameters");
         }
     }
 
