@@ -284,7 +284,7 @@ public class DHTest
         }
 
         KeyAgreement noKdf = KeyAgreement.getInstance("DH", "BC");
-        
+
 
         try
         {
@@ -885,7 +885,7 @@ public class DHTest
         ECParameterSpec ecSpec = new ECParameterSpec(ecCurve,
             new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
             namedSpec.getN(), namedSpec.getH().intValue());
-        
+
         KeyPair U1 = new KeyPair(
             ecKeyFact.generatePublic(new ECPublicKeySpec(
                 ECPointUtil.decodePoint(ecCurve, Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")), ecSpec)),
@@ -1312,7 +1312,7 @@ public class DHTest
         }
 
         prov.setParameter(ConfigurableProvider.DH_DEFAULT_PARAMS, null);
-        
+
         if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(640) != null)
         {
             fail("config found for 640 when none expected");
@@ -1550,6 +1550,37 @@ public class DHTest
         }
     }
 
+    /**
+     * Different curves should fail due to domain parameter mismatch.
+     */
+    private void testDifferentCurveAgreement()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        ECNamedCurveParameterSpec spec256 = ECNamedCurveTable.getParameterSpec("secp256r1");
+        kpg.initialize(spec256);
+        KeyPair kp256 = kpg.generateKeyPair();
+
+        ECNamedCurveParameterSpec spec384 = ECNamedCurveTable.getParameterSpec("secp384r1");
+        kpg.initialize(spec384);
+        KeyPair kp384 = kpg.generateKeyPair();
+
+        KeyAgreement ka = KeyAgreement.getInstance("ECDH", "BC");
+
+        try
+        {
+            ka.init(kp256.getPrivate());
+            ka.doPhase(kp384.getPublic(), true);
+
+            fail("Expected InvalidKeyException for mismatched EC domain parameters");
+        }
+        catch (java.security.InvalidKeyException e)
+        {
+            isEquals(e.getMessage(), "calculation failed: ECDH public key has wrong domain parameters");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -1581,8 +1612,8 @@ public class DHTest
         testECDH("ECKAEGWITHSHA1KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA1, "DESEDE", 192);
         testECDH("ECKAEGWITHSHA224KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA224, "DESEDE", 192);
         testECDH("ECKAEGWITHSHA256KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA256, "DESEDE", 192);
-        testECDH("ECKAEGWITHSHA384KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384,"AES", 256);
-        testECDH("ECKAEGWITHSHA512KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512,"DESEDE", 192);
+        testECDH("ECKAEGWITHSHA384KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384, "AES", 256);
+        testECDH("ECKAEGWITHSHA512KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512, "DESEDE", 192);
         testECDH("ECKAEGWITHRIPEMD160KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_RIPEMD160, "AES", 256);
 
         testExceptions();
@@ -1591,6 +1622,7 @@ public class DHTest
         testSmallSecret();
         testConfig();
         testSubgroupConfinement();
+        testDifferentCurveAgreement();
 
         testECUnifiedTestVector1();
         testECUnifiedTestVector2();
