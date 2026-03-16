@@ -224,12 +224,16 @@ public class KeyAgreementSpi
                 ukmParameters = mqvParameterSpec.getUserKeyingMaterial();
             }
 
-            MQVPrivateParameters localParams = new MQVPrivateParameters(staticPrivKey, ephemPrivKey, ephemPubKey);
-            this.parameters = staticPrivKey.getParameters();
-
-            // TODO Validate that all the keys are using the same parameters?
-
-            ((ECMQVBasicAgreement)agreement).init(localParams);
+            try
+            {
+                MQVPrivateParameters localParams = new MQVPrivateParameters(staticPrivKey, ephemPrivKey, ephemPubKey);
+                this.parameters = staticPrivKey.getParameters();
+                ((ECMQVBasicAgreement)agreement).init(localParams);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new InvalidAlgorithmParameterException(e.getMessage(), e);
+            }
         }
         else if (parameterSpec instanceof DHUParameterSpec)
         {

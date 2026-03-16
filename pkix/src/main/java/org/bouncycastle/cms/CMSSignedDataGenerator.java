@@ -82,12 +82,17 @@ public class CMSSignedDataGenerator
     }
 
     /**
-     * Specify use of definite-length/DER rather than indefinite length encoding.
+     * Specify use of definite-length/DER rather than indefinite length encoding ("BER").
      *
      * @param encoding one of "DER", "DL", "BER".
      */
     public void setEncoding(String encoding)
     {
+        if (!(ASN1Encoding.BER.equals(encoding) || ASN1Encoding.DL.equals(encoding) || ASN1Encoding.DER.equals(encoding)))
+        {
+            throw new IllegalArgumentException("encoding must be one of BER, DER, or DL");
+        }
+
         this.encoding = encoding;
     }
 
