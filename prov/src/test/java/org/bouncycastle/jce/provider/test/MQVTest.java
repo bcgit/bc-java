@@ -109,14 +109,10 @@ public class MQVTest
             KeyAgreement uAgree = KeyAgreement.getInstance("ECMQV", "BC");
             uAgree.init(U1.getPrivate(), new MQVParameterSpec(U2, V2.getPublic()));
 
-            KeyAgreement vAgree = KeyAgreement.getInstance("ECMQV", "BC");
-            vAgree.init(V1.getPrivate(), new MQVParameterSpec(V2, U2.getPublic()));
-
             //
             // agreement
             //
             uAgree.doPhase(V1.getPublic(), true);
-            vAgree.doPhase(U1.getPublic(), true);
 
             fail("Expected InvalidKeyException for mismatched EC domain parameters");
         }
@@ -130,16 +126,7 @@ public class MQVTest
             KeyAgreement uAgree = KeyAgreement.getInstance("ECMQV", "BC");
             uAgree.init(U1.getPrivate(), new MQVParameterSpec(V2, U2.getPublic()));
 
-            KeyAgreement vAgree = KeyAgreement.getInstance("ECMQV", "BC");
-            vAgree.init(V1.getPrivate(), new MQVParameterSpec(U2, V2.getPublic()));
-
-            //
-            // agreement
-            //
-            uAgree.doPhase(V1.getPublic(), true);
-            vAgree.doPhase(U1.getPublic(), true);
-
-            fail("Expected InvalidKeyException for mismatched EC domain parameters");
+            fail("Expected InvalidAlgorithmParameterException for mismatched EC domain parameters");
         }
         catch (InvalidAlgorithmParameterException e)
         {
