@@ -117,7 +117,7 @@ public class PKIXNameConstraintsTest
     { "test.de", "www.test.de", "www.test.de" };
 
     private final static String dnsintersect[] =
-    { "www.test.de", null, null };
+    { "www.test.de", null, "www.test.de" };
 
     private final static String dnsunion[][] =
     {
