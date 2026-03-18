@@ -232,14 +232,7 @@ public class PKCS12PBMAC1KeyStoreSpi
 
     private static int getKeyLength(ASN1ObjectIdentifier oid)
     {
-        if (oid.equals(NISTObjectIdentifiers.id_aes256_CBC) || oid.equals(NISTObjectIdentifiers.id_aes256_GCM))
-        {
-            return 32;
-        }
-        else
-        {
-            return 16;
-        }
+        return keySizeProvider.getKeySize(new AlgorithmIdentifier(oid)) / 8;
     }
 
     public PKCS12PBMAC1KeyStoreSpi(
@@ -721,27 +714,16 @@ public class PKCS12PBMAC1KeyStoreSpi
     }
 
     protected byte[] wrapKey(
-        EncryptionScheme encAlgId,
+        AlgorithmIdentifier encAlgId,
         Key key,
-        PBKDF2Params pbeParams,
         char[] password)
         throws IOException
     {
-        PBEKeySpec pbeSpec = new PBEKeySpec(password, pbeParams.getSalt(),
-            BigIntegers.intValueExact(pbeParams.getIterationCount()),
-            BigIntegers.intValueExact(pbeParams.getKeyLength()) * 8);
         byte[] out;
 
         try
         {
-            SecretKeyFactory keyFact = helper.createSecretKeyFactory("PBKDF2withHMacSHA256");
-
-            Cipher cipher = helper.createCipher(encAlgId.getAlgorithm().getId());
-
-            AlgorithmParameters algParams = AlgorithmParameters.getInstance(encAlgId.getAlgorithm().getId());
-            algParams.init(encAlgId.getParameters().toASN1Primitive().getEncoded());
-
-            cipher.init(Cipher.WRAP_MODE, keyFact.generateSecret(pbeSpec), algParams);
+            Cipher cipher = createCipher(Cipher.WRAP_MODE, password, encAlgId);
 
             out = cipher.wrap(key);
         }
@@ -1647,12 +1629,11 @@ public class PKCS12PBMAC1KeyStoreSpi
             byte[] kBytes;
             if (isPBKDF2(keyAlgorithm))
             {
-                // TODO: keySize hard coded to 256 bits
                 PBKDF2Params kParams = new PBKDF2Params(kSalt, MIN_ITERATIONS, getKeyLength(keyAlgorithm), new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256, DERNull.INSTANCE));
                 EncryptionScheme encScheme = new EncryptionScheme(keyAlgorithm, getAlgParams(keyAlgorithm));
                 kAlgId = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBES2, new PBES2Parameters(
                     new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, kParams), encScheme));
-                kBytes = wrapKey(encScheme, privKey, kParams, password);
+                kBytes = wrapKey(kAlgId, privKey, password);
             }
             else
             {
