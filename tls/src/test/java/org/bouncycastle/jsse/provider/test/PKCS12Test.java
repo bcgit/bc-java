@@ -90,7 +90,7 @@ public class PKCS12Test
     public void importPBMAC1KeyStore()
         throws Exception
     {
-        KeyStore pkcs12 = KeyStore.getInstance("PKCS12-PBM", ProviderUtils.PROVIDER_NAME_BCJSSE);
+        KeyStore pkcs12 = KeyStore.getInstance("PKCS12-PBMAC1", ProviderUtils.PROVIDER_NAME_BCJSSE);
         ByteArrayInputStream inStream = new ByteArrayInputStream(PKCS12TestData._importPBMAC1);
         pkcs12.load(inStream, PASSWORD.toCharArray());
         Enumeration<String> en = pkcs12.aliases();
