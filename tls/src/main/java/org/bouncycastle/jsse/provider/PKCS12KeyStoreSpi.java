@@ -126,6 +126,7 @@ import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
+
 class PKCS12KeyStoreSpi
     extends KeyStoreSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers, BCKeyStore
@@ -601,7 +602,6 @@ class PKCS12KeyStoreSpi
         if (chain != null)
         {
             certs.put(alias, chain[0]);
-
             for (int i = 0; i != chain.length; i++)
             {
                 chainCerts.put(new CertId(chain[i].getPublicKey()), chain[i]);
