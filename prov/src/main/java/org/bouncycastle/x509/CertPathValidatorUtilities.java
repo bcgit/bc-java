@@ -75,6 +75,7 @@ class CertPathValidatorUtilities
 //    protected static final String CRL_DISTRIBUTION_POINTS = Extension.cRLDistributionPoints.getId();
 //    protected static final String AUTHORITY_KEY_IDENTIFIER = Extension.authorityKeyIdentifier.getId();
     protected static final String CRL_NUMBER = Extension.cRLNumber.getId();
+    protected static final String REASON_CODE = Extension.reasonCode.getId();
 
     protected static final String ANY_POLICY = "2.5.29.32.0";
 
@@ -709,10 +710,7 @@ class CertPathValidatorUtilities
         {
             try
             {
-                reasonCode = ASN1Enumerated
-                    .getInstance(CertPathValidatorUtilities
-                        .getExtensionValue(crl_entry,
-                            X509Extension.reasonCode.getId()));
+                reasonCode = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, REASON_CODE));
             }
             catch (Exception e)
             {

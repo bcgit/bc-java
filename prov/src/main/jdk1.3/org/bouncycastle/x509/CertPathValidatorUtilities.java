@@ -101,6 +101,7 @@ class CertPathValidatorUtilities
     protected static final String ANY_POLICY = "2.5.29.32.0";
 
     protected static final String CRL_NUMBER = Extension.cRLNumber.getId();
+    protected static final String REASON_CODE = Extension.reasonCode.getId();
 
     /*
     * key usage bits
@@ -937,10 +938,7 @@ class CertPathValidatorUtilities
         {
             try
             {
-                reasonCode = ASN1Enumerated
-                    .getInstance(CertPathValidatorUtilities
-                        .getExtensionValue(crl_entry,
-                            Extension.reasonCode.getId()));
+                reasonCode = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, REASON_CODE));
             }
             catch (Exception e)
             {
@@ -1001,8 +999,7 @@ class CertPathValidatorUtilities
         BigInteger completeCRLNumber = null;
         try
         {
-            ASN1Primitive derObject = CertPathValidatorUtilities.getExtensionValue(completeCRL,
-                CRL_NUMBER);
+            ASN1Primitive derObject = getExtensionValue(completeCRL, CRL_NUMBER);
             if (derObject != null)
             {
                 completeCRLNumber = ASN1Integer.getInstance(derObject).getPositiveValue();
@@ -1097,7 +1094,7 @@ class CertPathValidatorUtilities
 
             issuers.add(PrincipalUtils.getEncodedIssuerPrincipal(cert));
 
-            CertPathValidatorUtilities.getCRLIssuersFromDistributionPoint(dp, issuers, baseCrlSelect);
+            getCRLIssuersFromDistributionPoint(dp, issuers, baseCrlSelect);
         }
         catch (AnnotatedException e)
         {
@@ -1292,8 +1289,8 @@ class CertPathValidatorUtilities
         {
             List matches = new ArrayList();
 
-            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, certStores));
-            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, pkixCertStores));
+            matches.addAll(findCertificates(certSelect, certStores));
+            matches.addAll(findCertificates(certSelect, pkixCertStores));
 
             iter = matches.iterator();
         }
