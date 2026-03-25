@@ -623,9 +623,11 @@ class RFC3281CertPathUtilities
             {
                 X509CRL crl = (X509CRL) crl_iter.next();
 
+                CertPathValidatorUtilities.checkCRLCriticalExtensions(crl,
+                    "CRL contains unsupported critical extensions.");
+
                 // (d)
-                ReasonsMask interimReasonsMask = RFC3280CertPathUtilities
-                    .processCRLD(crl, dp);
+                ReasonsMask interimReasonsMask = RFC3280CertPathUtilities.processCRLD(crl, dp);
 
                 // (e)
                 /*
@@ -642,18 +644,6 @@ class RFC3281CertPathUtilities
                 Set keys = RFC3280CertPathUtilities.processCRLF(crl, attrCert, null, null, paramsPKIX, certPathCerts, helper);
                 // (g)
                 PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
-
-                X509CRL deltaCRL = null;
-
-                if (paramsPKIX.isUseDeltasEnabled())
-                {
-                    // get delta CRLs
-                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(currentDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores(), helper);
-                    // we only want one valid delta CRL
-                    // (h)
-                    deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs,
-                        key);
-                }
 
                 /*
                  * CRL must be be valid at the current time, not the validation
@@ -675,11 +665,9 @@ class RFC3281CertPathUtilities
                      * more in the CRL, so it would be regarded as valid if the
                      * first check is not done
                      */
-                    if (attrCert.getNotAfter().getTime() < crl.getThisUpdate()
-                        .getTime())
+                    if (attrCert.getNotAfter().getTime() < crl.getThisUpdate().getTime())
                     {
-                        throw new AnnotatedException(
-                            "No valid CRL for current time found.");
+                        throw new AnnotatedException("No valid CRL for current time found.");
                     }
                 }
 
@@ -688,11 +676,27 @@ class RFC3281CertPathUtilities
                 // (b) (2)
                 RFC3280CertPathUtilities.processCRLB2(dp, attrCert, crl);
 
-                // (c)
-                RFC3280CertPathUtilities.processCRLC(deltaCRL, crl, paramsPKIX);
+                if (paramsPKIX.isUseDeltasEnabled())
+                {
+                    // get delta CRLs
+                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(currentDate, crl,
+                        paramsPKIX.getCertStores(), paramsPKIX.getCRLStores(), helper);
 
-                // (i)
-                RFC3280CertPathUtilities.processCRLI(validityDate, deltaCRL, attrCert, certStatus, paramsPKIX);
+                    // we only want one valid delta CRL
+                    // (h)
+                    X509CRL deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs, key);
+                    if (deltaCRL != null)
+                    {
+                        CertPathValidatorUtilities.checkCRLCriticalExtensions(deltaCRL,
+                            "Delta CRL contains unsupported critical extensions.");
+
+                        // (c)
+                        RFC3280CertPathUtilities.processCRLC(deltaCRL, crl);
+
+                        // (i)
+                        RFC3280CertPathUtilities.processCRLI(validityDate, deltaCRL, attrCert, certStatus);
+                    }
+                }
 
                 // (j)
                 RFC3280CertPathUtilities.processCRLJ(validityDate, crl, attrCert, certStatus);
@@ -705,6 +709,7 @@ class RFC3281CertPathUtilities
 
                 // update reasons mask
                 reasonMask.addReasons(interimReasonsMask);
+
                 validCrlFound = true;
             }
             catch (AnnotatedException e)

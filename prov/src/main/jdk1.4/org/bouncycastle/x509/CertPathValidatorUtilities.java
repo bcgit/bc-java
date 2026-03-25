@@ -88,7 +88,8 @@ class CertPathValidatorUtilities
     protected static final int KEY_CERT_SIGN = 5;
     protected static final int CRL_SIGN = 6;
 
-    protected static final String[] crlReasons = new String[]{
+    static final String[] crlReasons = new String[]
+    {
         "unspecified",
         "keyCompromise",
         "cACompromise",
@@ -99,7 +100,8 @@ class CertPathValidatorUtilities
         "unknown",
         "removeFromCRL",
         "privilegeWithdrawn",
-        "aACompromise"};
+        "aACompromise",
+    };
 
     /**
      * Returns the issuer of an attribute certificate or certificate.
@@ -723,15 +725,18 @@ class CertPathValidatorUtilities
         ASN1Enumerated reasonCode = null;
         if (crl_entry.hasExtensions())
         {
+            if (crl_entry.hasUnsupportedCriticalExtension())
+            {
+                throw new AnnotatedException("CRL entry has unsupported critical extensions.");
+            }
+
             try
             {
                 reasonCode = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, REASON_CODE));
             }
             catch (Exception e)
             {
-                throw new AnnotatedException(
-                    "Reason code CRL entry extension could not be decoded.",
-                    e);
+                throw new AnnotatedException("Reason code CRL entry extension could not be decoded.", e);
             }
         }
 
@@ -836,7 +841,7 @@ class CertPathValidatorUtilities
     {
         try
         {
-            byte[] idp = crl.getExtensionValue(Extension.issuingDistributionPoint.getId());
+            byte[] idp = crl.getExtensionValue(ISSUING_DISTRIBUTION_POINT);
             return idp != null
                 && IssuingDistributionPoint.getInstance(ASN1OctetString.getInstance(idp).getOctets()).isIndirectCRL();
         }
