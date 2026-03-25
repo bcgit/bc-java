@@ -629,7 +629,8 @@ public class NistCertPathTest2
      * 4.4.12 Invalid pre2000 CRL nextUpdate Test12
      * <p>
      * In this test the intermediate CA's CRL has a nextUpdate time that is in 1999 indicating that the
-     * CA has already issued updated revocation information. Since the information in the CRL is outof-date and a more up-to-date CRL (that should have already been issued) can not be obtained, the
+     * CA has already issued updated revocation information. Since the information in the CRL is out-of-date
+     * and a more up-to-date CRL (that should have already been issued) can not be obtained, the
      * certification path should be treated as if the status of the end entity certificate can not be
      * determined.
      */
@@ -1434,14 +1435,13 @@ public class NistCertPathTest2
     public void test4_8_1()
         throws Exception
     {
-
         // 1
         new PKITSTest()
             .withEndEntity("Valid Certificate Path Test1 EE")
             .withCrls("Good CA CRL")
             .withCACert("Good CA Cert")
-            .withExplicitPolicyRequired(true).doTest();
-
+            .withExplicitPolicyRequired(true)
+            .doTest();
 
         // 2
         new PKITSTest()
@@ -1461,7 +1461,6 @@ public class NistCertPathTest2
             .withPolicyByName("NIST-test-policy-2")
             .doExceptionTest(-1, "Path processing failed on policy.");
 
-
         // 4
         new PKITSTest()
             .withEndEntity("Valid Certificate Path Test1 EE")
@@ -1470,8 +1469,6 @@ public class NistCertPathTest2
             .withExplicitPolicyRequired(true)
             .withPolicyByName("NIST-test-policy-1", "NIST-test-policy-2")
             .doTest();
-
-
     }
 
     /**
@@ -1703,7 +1700,8 @@ public class NistCertPathTest2
     /**
      * 4.8.10 All Certificates Same Policies Test10
      * <p>
-     * In this test, every certificate in the path asserts the same policies, NIST-test-policy-1 and NISTtest-policy-2. If possible, it is recommended that the certification path in this test be validated
+     * In this test, every certificate in the path asserts the same policies, NIST-test-policy-1 and NIST-test-policy-2.
+     * If possible, it is recommended that the certification path in this test be validated
      * using the following inputs:
      * 1. default settings. The path should validate successfully.
      * 2. default settings, but with initial-policy-set = {NIST-test-policy-1}. The path
@@ -1749,7 +1747,7 @@ public class NistCertPathTest2
     public void test4_8_11()
         throws Exception
     {
-        // 2
+        // 1
         new PKITSTest()
             .withEndEntity("All Certificates anyPolicy Test11 EE")
             .withCrls("anyPolicy CA CRL")
@@ -1783,7 +1781,8 @@ public class NistCertPathTest2
     /**
      * 4.8.13 All Certificates Same Policies Test13
      * <p>
-     * In this test, every certificate in the path asserts the same policies, NIST-test-policy-1, NIST-testpolicy-2, and NIST-test-policy-3. If possible, it is recommended that the certification path in this
+     * In this test, every certificate in the path asserts the same policies, NIST-test-policy-1, NIST-testpolicy-2,
+     * and NIST-test-policy-3. If possible, it is recommended that the certification path in this
      * test be validated using the following inputs:
      * 1. default settings, but with initial-policy-set = {NIST-test-policy-1}. The path
      * should validate successfully.
@@ -1853,7 +1852,8 @@ public class NistCertPathTest2
     /**
      * 4.8.15 User Notice Qualifier Test15
      * <p>
-     * In this test, the path consists of a single certificate. The certificate asserts the policy NIST-testpolicy-1 and includes a user notice policy qualifier.
+     * In this test, the path consists of a single certificate. The certificate asserts the policy NIST-testpolicy-1
+     * and includes a user notice policy qualifier.
      * <p>
      * Display of user notice beyond CertPath API at the moment.
      * </p>
@@ -1866,9 +1866,9 @@ public class NistCertPathTest2
             .doTest();
 
         new PKITSTest()
-               .withPolicyByName("NIST-test-policy-2")
-               .withEndEntity("User Notice Qualifier Test15 EE")
-               .doExceptionTest(-1, "Path processing failed on policy.");
+           .withPolicyByName("NIST-test-policy-2")
+           .withEndEntity("User Notice Qualifier Test15 EE")
+           .doExceptionTest(-1, "Path processing failed on policy.");
     }
 
     /**
@@ -1954,7 +1954,8 @@ public class NistCertPathTest2
     /**
      * 4.8.19 User Notice Qualifier Test19
      * <p>
-     * In this test, the path consists of a single certificate. The certificate asserts the policy NIST-testpolicy-1 and includes a user notice policy qualifier. The user notice qualifier contains explicit text
+     * In this test, the path consists of a single certificate. The certificate asserts the policy NIST-testpolicy-1
+     * and includes a user notice policy qualifier. The user notice qualifier contains explicit text
      * that is longer than 200 bytes.
      * [RFC 3280 4.2.1.5] Note: While the explicitText has a maximum size of 200 characters,
      * some non-conforming CAs exceed this limit. Therefore, certificate users SHOULD
@@ -2126,7 +2127,8 @@ public class NistCertPathTest2
      * 4.9.7 Invalid Self-Issued requireExplicitPolicy Test7
      * <p>
      * In this test, the first certificate in the path includes a policyConstraints extension with
-     * requireExplicitPolicy set to 2. This is followed by a self-issued intermediate certificate, a nonself-issued intermediate certificate, and an end entity certificate. The end entity certificate does not
+     * requireExplicitPolicy set to 2. This is followed by a self-issued intermediate certificate, a non-self-issued
+     * intermediate certificate, and an end entity certificate. The end entity certificate does not
      * include a certificatePolicies extension.
      */
     public void test4_9_7()
@@ -2146,7 +2148,8 @@ public class NistCertPathTest2
      * 4.9.8 Invalid Self-Issued requireExplicitPolicy Test8
      * <p>
      * In this test, the first certificate in the path includes a policyConstraints extension with
-     * requireExplicitPolicy set to 2. This is followed by a self-issued intermediate certificate, a nonself-issued intermediate certificate, a self-issued intermediate certificate, and an end entity
+     * requireExplicitPolicy set to 2. This is followed by a self-issued intermediate certificate, a non-self-issued
+     * intermediate certificate, a self-issued intermediate certificate, and an end entity
      * certificate. The end entity certificate does not include a certificatePolicies extension.
      * 50
      */
@@ -2393,7 +2396,8 @@ public class NistCertPathTest2
     /**
      * 4.10.9 Valid Policy Mapping Test9
      * <p>
-     * In this test, the intermediate certificate asserts anyPolicy and maps NIST-test-policy-1 to NISTtest-policy-2. The end entity certificate asserts NIST-test-policy-1.
+     * In this test, the intermediate certificate asserts anyPolicy and maps NIST-test-policy-1 to NIST-test-policy-2.
+     * The end entity certificate asserts NIST-test-policy-1.
      * 55
      */
     public void test4_10_9()
@@ -2482,9 +2486,9 @@ public class NistCertPathTest2
     /**
      * 4.10.13 Valid Policy Mapping Test13
      * <p>
-     * In this test, the intermediate certificate asserts NIST-test-policy-1 and anyPolicy and maps NISTtest-policy-1 to NIST-test-policy-2. There is a user notice policy qualifier associated with each of
-     * 57
-     * the policies. The end entity certificate asserts NIST-test-policy-2.
+     * In this test, the intermediate certificate asserts NIST-test-policy-1 and anyPolicy and maps NIST-test-policy-1
+     * to NIST-test-policy-2. There is a user notice policy qualifier associated with each of the policies.
+     * The end entity certificate asserts NIST-test-policy-2.
      */
     public void test4_10_13()
         throws Exception
@@ -2499,8 +2503,9 @@ public class NistCertPathTest2
     /**
      * 4.10.14 Valid Policy Mapping Test14
      * <p>
-     * In this test, the intermediate certificate asserts NIST-test-policy-1 and anyPolicy and maps NISTtest-policy-1 to NIST-test-policy-2. There is a user notice policy qualifier associated with each of
-     * the policies. The end entity certificate asserts NIST-test-policy-1.
+     * In this test, the intermediate certificate asserts NIST-test-policy-1 and anyPolicy and maps NIST-test-policy-1
+     * to NIST-test-policy-2. There is a user notice policy qualifier associated with each of the policies.
+     * The end entity certificate asserts NIST-test-policy-1.
      */
     public void test4_10_14()
         throws Exception
@@ -2536,9 +2541,9 @@ public class NistCertPathTest2
      * 4.11.2 Valid inhibitPolicyMapping Test2
      * <p>
      * In this test, the first intermediate certificate asserts NIST-test-policy-1 and NIST-test-policy-2 and
-     * includes a policyConstraints extension with inhibitPolicyMapping set to 1. The second
-     * intermediate certificate asserts NIST-test-policy-1 and NIST-test-policy-2 and maps NIST-testpolicy-1 to NIST-test-policy-3 and NIST-test-policy-2 to NIST-test-policy-4. The end entity
-     * certificate asserts NIST-test-policy-3.
+     * includes a policyConstraints extension with inhibitPolicyMapping set to 1. The second intermediate certificate
+     * asserts NIST-test-policy-1 and NIST-test-policy-2 and maps NIST-testpolicy-1 to NIST-test-policy-3 and
+     * NIST-test-policy-2 to NIST-test-policy-4. The end entity certificate asserts NIST-test-policy-3.
      * 59
      */
     public void test4_11_2()
@@ -2558,8 +2563,10 @@ public class NistCertPathTest2
      * <p>
      * In this test, the first intermediate certificate asserts NIST-test-policy-1 and NIST-test-policy-2 and
      * includes a policyConstraints extension with inhibitPolicyMapping set to 1. The second
-     * intermediate certificate asserts NIST-test-policy-1 and NIST-test-policy-2 and maps NIST-testpolicy-1 to NIST-test-policy-3 and NIST-test-policy-2 to NIST-test-policy-4. The third
-     * intermediate certificate asserts NIST-test-policy-3 and NIST-test-policy-4 and maps NIST-testpolicy-3 to NIST-test-policy-5. The end entity certificate asserts NIST-test-policy-5.
+     * intermediate certificate asserts NIST-test-policy-1 and NIST-test-policy-2 and maps NIST-testpolicy-1 to
+     * NIST-test-policy-3 and NIST-test-policy-2 to NIST-test-policy-4. The third intermediate certificate asserts
+     * NIST-test-policy-3 and NIST-test-policy-4 and maps NIST-testpolicy-3 to NIST-test-policy-5.
+     * The end entity certificate asserts NIST-test-policy-5.
      */
     public void test4_11_3()
         throws Exception
@@ -2580,8 +2587,10 @@ public class NistCertPathTest2
      * <p>
      * In this test, the first intermediate certificate asserts NIST-test-policy-1 and NIST-test-policy-2 and
      * includes a policyConstraints extension with inhibitPolicyMapping set to 1. The second
-     * intermediate certificate asserts NIST-test-policy-1 and NIST-test-policy-2 and maps NIST-testpolicy-1 to NIST-test-policy-3 and NIST-test-policy-2 to NIST-test-policy-4. The third
-     * intermediate certificate asserts NIST-test-policy-3 and NIST-test-policy-4 and maps NIST-testpolicy-3 to NIST-test-policy-5. The end entity certificate asserts NIST-test-policy-4.
+     * intermediate certificate asserts NIST-test-policy-1 and NIST-test-policy-2 and maps NIST-testpolicy-1 to
+     * NIST-test-policy-3 and NIST-test-policy-2 to NIST-test-policy-4. The third intermediate certificate asserts
+     * NIST-test-policy-3 and NIST-test-policy-4 and maps NIST-testpolicy-3 to NIST-test-policy-5.
+     * The end entity certificate asserts NIST-test-policy-4.
      * 60
      */
     public void test4_11_4()
@@ -2605,7 +2614,8 @@ public class NistCertPathTest2
      * policyConstraints extension with inhibitPolicyMapping set to 5. The second intermediate
      * certificate asserts NIST-test-policy-1 and includes a policyConstraints extension with
      * inhibitPolicyMapping set to 1. The third intermediate certificate asserts NIST-test-policy-1. The
-     * fourth intermediate certificate asserts NIST-test-policy-1 and maps NIST-test-policy-1 to NISTtest-policy-2. The end entity certificate asserts NIST-test-policy-2.
+     * fourth intermediate certificate asserts NIST-test-policy-1 and maps NIST-test-policy-1 to NIST-test-policy-2.
+     * The end entity certificate asserts NIST-test-policy-2.
      */
     public void test4_11_5()
         throws Exception
@@ -2677,7 +2687,8 @@ public class NistCertPathTest2
      * policyConstraints extension with inhibitPolicyMapping set to 1. The second intermediate
      * certificate is a self-issued certificate that asserts NIST-test-policy-1. The third intermediate
      * certificate asserts NIST-test-policy-1 and maps NIST-test-policy-1 to NIST-test-policy-2. The
-     * fourth intermediate certificate asserts NIST-test-policy-2 and maps NIST-test-policy-2 to NISTtest-policy-3. The end entity certificate asserts NIST-test-policy-3.
+     * fourth intermediate certificate asserts NIST-test-policy-2 and maps NIST-test-policy-2 to NIST-test-policy-3.
+     * The end entity certificate asserts NIST-test-policy-3.
      * 62
      */
     public void test4_11_8()
@@ -2702,7 +2713,8 @@ public class NistCertPathTest2
      * policyConstraints extension with inhibitPolicyMapping set to 1. The second intermediate
      * certificate is a self-issued certificate that asserts NIST-test-policy-1. The third intermediate
      * certificate asserts NIST-test-policy-1 and maps NIST-test-policy-1 to NIST-test-policy-2. The
-     * fourth intermediate certificate asserts NIST-test-policy-2 and maps NIST-test-policy-2 to NISTtest-policy-3. The end entity certificate asserts NIST-test-policy-2.
+     * fourth intermediate certificate asserts NIST-test-policy-2 and maps NIST-test-policy-2 to NIST-test-policy-3.
+     * The end entity certificate asserts NIST-test-policy-2.
      */
     public void test4_11_9()
         throws Exception
@@ -2857,7 +2869,8 @@ public class NistCertPathTest2
      * 4.12.5 Invalid inhibitAnyPolicy Test5
      * <p>
      * In this test, the first intermediate certificate asserts NIST-test-policy-1 and includes an
-     * inhibitAnyPolicy extension set to 5. The second intermediate certificate asserts NIST-test-policy1 and includes an inhibitAnyPolicy extension set to 1. The third intermediate certificate asserts
+     * inhibitAnyPolicy extension set to 5. The second intermediate certificate asserts NIST-test-policy1 and
+     * includes an inhibitAnyPolicy extension set to 1. The third intermediate certificate asserts
      * NIST-test-policy-1 and the end entity certificate asserts anyPolicy.
      */
     public void test4_12_5()
@@ -2878,8 +2891,8 @@ public class NistCertPathTest2
      * 4.12.6 Invalid inhibitAnyPolicy Test6
      * <p>
      * In this test, the first intermediate certificate asserts NIST-test-policy-1 and includes an
-     * inhibitAnyPolicy extension set to 1. The second intermediate certificate asserts NIST-test-policy1 and includes an inhibitAnyPolicy extension set to 5. The end entity certificate asserts
-     * anyPolicy.
+     * inhibitAnyPolicy extension set to 1. The second intermediate certificate asserts NIST-test-policy1 and
+     * includes an inhibitAnyPolicy extension set to 5. The end entity certificate asserts anyPolicy.
      */
     public void test4_12_6()
         throws Exception
@@ -3371,7 +3384,6 @@ public class NistCertPathTest2
     /**
      * 4.13.21 Valid RFC822 nameConstraints Test21
      * <p>
-     * �
      * In this test, the intermediate certificate includes a nameConstraints extension that specifies a
      * single permitted subtree. The end entity certificate includes a subjectAltName extension with an
      * e-mail address that falls within that subtree.
@@ -3423,7 +3435,6 @@ public class NistCertPathTest2
     /**
      * 4.13.24 Invalid RFC822 nameConstraints Test24
      * <p>
-     * �
      * In this test, the intermediate certificate includes a nameConstraints extension that specifies a
      * single permitted subtree. The end entity certificate includes a subjectAltName extension with an
      * e-mail address that falls outside that subtree.
@@ -3644,7 +3655,6 @@ public class NistCertPathTest2
     /**
      * 4.13.36 Valid URI nameConstraints Test36
      * <p>
-     * �
      * In this test, the intermediate certificate includes a nameConstraints extension that specifies a
      * single excluded subtree. The end entity certificate includes a subjectAltName extension with a
      * uniformResourceIdentifier that falls outside that subtree.
@@ -3853,7 +3863,7 @@ public class NistCertPathTest2
      * <p>
      * In this test, the CRL that covers the end entity certificate includes an issuingDistributionPoint
      * extension with a distributionPoint. The distributionPoint does not match the CRL issuer's
-     * name. The end entity certificate does not include a cRLDistributionPoints extension
+     * name. The end entity certificate does not include a cRLDistributionPoints extension.
      */
     public void test4_14_9()
         throws Exception
@@ -4146,6 +4156,7 @@ public class NistCertPathTest2
      * extension, indicating that the revoked certificate was one issued by the CRL issuer.
      * 92
      */
+    // CHECK.
     public void xtest4_14_25()
         throws Exception
     {
@@ -4201,12 +4212,12 @@ public class NistCertPathTest2
      * 4.14.28 Valid cRLIssuer Test28
      * <p>
      * In this test, the end entity certificate includes a cRLDistributionPoints extension with a
-     * <p>
      * cRLIssuer field indicating that the CRL is issued by an entity other than the certificate issuer.
      * The indirect CRL issuer has been issued a certificate by the issuer of the end entity certificate. The
      * certificate issued to the CRL issuer is covered by a CRL issued by the issuer of the end entity
      * certificate.
      */
+    // CHECK.
     public void xtest4_14_28()
         throws Exception
     {
@@ -4229,6 +4240,7 @@ public class NistCertPathTest2
      * certificate issued to the CRL issuer is covered by a CRL issued by the issuer of the end entity
      * certificate.
      */
+    // CHECK.
     public void xtest4_14_29()
         throws Exception
     {
@@ -4250,6 +4262,7 @@ public class NistCertPathTest2
      * Both the end entity certificate and the certificate issued to the CRL issuer are covered by the
      * indirect CRL issued by the CRL issuer.
      */
+    // CHECK.
     public void xtest4_14_30()
         throws Exception
     {
@@ -4313,6 +4326,7 @@ public class NistCertPathTest2
      * most recent CRL entry to include a certificateIssuer extension specified a different certificate
      * issuer.
      */
+    // CHECK.
     public void xtest4_14_33()
         throws Exception
     {
@@ -4570,6 +4584,4 @@ public class NistCertPathTest2
             .withEndEntity("Invalid Unknown Critical Certificate Extension Test2 EE")
             .doExceptionTest(0, "Certificate has unsupported critical extension: [2.16.840.1.101.2.1.12.2]");
     }
-
-
 }
