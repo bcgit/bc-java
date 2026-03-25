@@ -1146,11 +1146,11 @@ class RFC3280CertPathUtilities
             {
                 // TODO: this should take into account multi-valued RDNs
                 String email = ((ASN1String)emails[eI].getFirst().getValue()).getString();
-                GeneralName emailAsGeneralName = new GeneralName(GeneralName.rfc822Name, email);
+
                 try
                 {
-                    nameConstraintValidator.checkPermitted(emailAsGeneralName);
-                    nameConstraintValidator.checkExcluded(emailAsGeneralName);
+                    nameConstraintValidator.checkPermittedEmail(email);
+                    nameConstraintValidator.checkExcludedEmail(email);
                 }
                 catch (PKIXNameConstraintValidatorException ex)
                 {
