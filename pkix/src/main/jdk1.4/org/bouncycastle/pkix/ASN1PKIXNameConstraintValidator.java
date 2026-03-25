@@ -2,13 +2,13 @@ package org.bouncycastle.pkix;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -66,25 +66,27 @@ class ASN1PKIXNameConstraintValidator
     public void checkPermitted(GeneralName name)
         throws NameConstraintValidatorException
     {
+        ASN1Encodable nameValue = name.getName();
+
         switch (name.getTagNo())
         {
         case GeneralName.otherName:
-            checkPermittedOtherName(permittedSubtreesOtherName, OtherName.getInstance(name.getName()));
+            checkPermittedOtherName(permittedSubtreesOtherName, OtherName.getInstance(nameValue));
             break;
         case GeneralName.rfc822Name:
-            checkPermittedEmail(permittedSubtreesEmail, extractNameAsString(name));
+            checkPermittedEmail(extractNameAsString(nameValue));
             break;
         case GeneralName.dNSName:
-            checkPermittedDNS(permittedSubtreesDNS, extractNameAsString(name));
+            checkPermittedDNS(permittedSubtreesDNS, extractNameAsString(nameValue));
             break;
         case GeneralName.directoryName:
-            checkPermittedDN(X500Name.getInstance(name.getName()));
+            checkPermittedDN(X500Name.getInstance(nameValue));
             break;
         case GeneralName.uniformResourceIdentifier:
-            checkPermittedURI(permittedSubtreesURI, extractNameAsString(name));
+            checkPermittedURI(permittedSubtreesURI, extractNameAsString(nameValue));
             break;
         case GeneralName.iPAddress:
-            checkPermittedIP(permittedSubtreesIP, ASN1OctetString.getInstance(name.getName()).getOctets());
+            checkPermittedIP(permittedSubtreesIP, ASN1OctetString.getInstance(nameValue).getOctets());
             break;
         default:
             // other tags to be ignored.
@@ -101,25 +103,27 @@ class ASN1PKIXNameConstraintValidator
     public void checkExcluded(GeneralName name)
         throws NameConstraintValidatorException
     {
+        ASN1Encodable nameValue = name.getName();
+
         switch (name.getTagNo())
         {
         case GeneralName.otherName:
-            checkExcludedOtherName(excludedSubtreesOtherName, OtherName.getInstance(name.getName()));
+            checkExcludedOtherName(excludedSubtreesOtherName, OtherName.getInstance(nameValue));
             break;
         case GeneralName.rfc822Name:
-            checkExcludedEmail(excludedSubtreesEmail, extractNameAsString(name));
+            checkExcludedEmail(extractNameAsString(nameValue));
             break;
         case GeneralName.dNSName:
-            checkExcludedDNS(excludedSubtreesDNS, extractNameAsString(name));
+            checkExcludedDNS(excludedSubtreesDNS, extractNameAsString(nameValue));
             break;
         case GeneralName.directoryName:
-            checkExcludedDN(X500Name.getInstance(name.getName()));
+            checkExcludedDN(X500Name.getInstance(nameValue));
             break;
         case GeneralName.uniformResourceIdentifier:
-            checkExcludedURI(excludedSubtreesURI, extractNameAsString(name));
+            checkExcludedURI(excludedSubtreesURI, extractNameAsString(nameValue));
             break;
         case GeneralName.iPAddress:
-            checkExcludedIP(excludedSubtreesIP, ASN1OctetString.getInstance(name.getName()).getOctets());
+            checkExcludedIP(excludedSubtreesIP, ASN1OctetString.getInstance(nameValue).getOctets());
             break;
         default:
             // other tags to be ignored.
@@ -146,11 +150,15 @@ class ASN1PKIXNameConstraintValidator
         {
             GeneralSubtree subtree = permitted[i];
             Integer tagNo = Integers.valueOf(subtree.getBase().getTagNo());
-            if (subtreesMap.get(tagNo) == null)
+
+            Set subtrees = (Set)subtreesMap.get(tagNo);
+            if (subtrees == null)
             {
-                subtreesMap.put(tagNo, new HashSet());
+                subtrees = new HashSet();
+                subtreesMap.put(tagNo, subtrees);
             }
-            ((Set)subtreesMap.get(tagNo)).add(subtree);
+
+            subtrees.add(subtree);
         }
 
         for (Iterator it = subtreesMap.entrySet().iterator(); it.hasNext();)
@@ -159,31 +167,27 @@ class ASN1PKIXNameConstraintValidator
 
             // go through all subtree groups
             int nameType = ((Integer)entry.getKey()).intValue();
+            Set subtrees = (Set)entry.getValue();
+
             switch (nameType)
             {
             case GeneralName.otherName:
-                permittedSubtreesOtherName = intersectOtherName(permittedSubtreesOtherName,
-                    (Set)entry.getValue());
+                permittedSubtreesOtherName = intersectOtherName(permittedSubtreesOtherName, subtrees);
                 break;
             case GeneralName.rfc822Name:
-                permittedSubtreesEmail = intersectEmail(permittedSubtreesEmail,
-                    (Set)entry.getValue());
+                permittedSubtreesEmail = intersectEmail(permittedSubtreesEmail, subtrees);
                 break;
             case GeneralName.dNSName:
-                permittedSubtreesDNS = intersectDNS(permittedSubtreesDNS,
-                    (Set)entry.getValue());
+                permittedSubtreesDNS = intersectDNS(permittedSubtreesDNS, subtrees);
                 break;
             case GeneralName.directoryName:
-                permittedSubtreesDN = intersectDN(permittedSubtreesDN,
-                    (Set)entry.getValue());
+                permittedSubtreesDN = intersectDN(permittedSubtreesDN, subtrees);
                 break;
             case GeneralName.uniformResourceIdentifier:
-                permittedSubtreesURI = intersectURI(permittedSubtreesURI,
-                    (Set)entry.getValue());
+                permittedSubtreesURI = intersectURI(permittedSubtreesURI, subtrees);
                 break;
             case GeneralName.iPAddress:
-                permittedSubtreesIP = intersectIP(permittedSubtreesIP,
-                    (Set)entry.getValue());
+                permittedSubtreesIP = intersectIP(permittedSubtreesIP, subtrees);
                 break;
             default:
                 throw new IllegalStateException("Unknown tag encountered: " + nameType);
@@ -225,36 +229,31 @@ class ASN1PKIXNameConstraintValidator
      */
     public void addExcludedSubtree(GeneralSubtree subtree)
     {
-        GeneralName base = subtree.getBase();
+        GeneralName subtreeBase = subtree.getBase();
+        ASN1Encodable nameValue = subtreeBase.getName();
 
-        switch (base.getTagNo())
+        switch (subtreeBase.getTagNo())
         {
         case GeneralName.otherName:
-            excludedSubtreesOtherName = unionOtherName(excludedSubtreesOtherName,
-                OtherName.getInstance(base.getName()));
+            excludedSubtreesOtherName = unionOtherName(excludedSubtreesOtherName, OtherName.getInstance(nameValue));
             break;
         case GeneralName.rfc822Name:
-            excludedSubtreesEmail = unionEmail(excludedSubtreesEmail,
-                extractNameAsString(base));
+            excludedSubtreesEmail = unionEmail(excludedSubtreesEmail, extractNameAsString(nameValue));
             break;
         case GeneralName.dNSName:
-            excludedSubtreesDNS = unionDNS(excludedSubtreesDNS,
-                extractNameAsString(base));
+            excludedSubtreesDNS = unionDNS(excludedSubtreesDNS, extractNameAsString(nameValue));
             break;
         case GeneralName.directoryName:
-            excludedSubtreesDN = unionDN(excludedSubtreesDN,
-                (ASN1Sequence)base.getName().toASN1Primitive());
+            excludedSubtreesDN = unionDN(excludedSubtreesDN, ASN1Sequence.getInstance(nameValue));
             break;
         case GeneralName.uniformResourceIdentifier:
-            excludedSubtreesURI = unionURI(excludedSubtreesURI,
-                extractNameAsString(base));
+            excludedSubtreesURI = unionURI(excludedSubtreesURI, extractNameAsString(nameValue));
             break;
         case GeneralName.iPAddress:
-            excludedSubtreesIP = unionIP(excludedSubtreesIP,
-                ASN1OctetString.getInstance(base.getName()).getOctets());
+            excludedSubtreesIP = unionIP(excludedSubtreesIP, ASN1OctetString.getInstance(nameValue).getOctets());
             break;
         default:
-            throw new IllegalStateException("Unknown tag encountered: " + base.getTagNo());
+            throw new IllegalStateException("Unknown tag encountered: " + subtreeBase.getTagNo());
         }
     }
 
@@ -298,7 +297,7 @@ class ASN1PKIXNameConstraintValidator
     public void checkPermittedDN(X500Name dns)
         throws NameConstraintValidatorException
     {
-        checkPermittedDN(permittedSubtreesDN, ASN1Sequence.getInstance(dns.toASN1Primitive()));
+        checkPermittedDN(permittedSubtreesDN, ASN1Sequence.getInstance(dns));
     }
 
     public void checkExcludedDN(X500Name dns)
@@ -307,16 +306,21 @@ class ASN1PKIXNameConstraintValidator
         checkExcludedDN(excludedSubtreesDN, ASN1Sequence.getInstance(dns));
     }
 
-    private static boolean withinDNSubtree(
-        ASN1Sequence dns,
-        ASN1Sequence subtree)
+    public void checkPermittedEmail(String email)
+        throws NameConstraintValidatorException
     {
-        if (subtree.size() < 1)
-        {
-            return false;
-        }
+        checkPermittedEmail(permittedSubtreesEmail, email);
+    }
 
-        if (subtree.size() > dns.size())
+    public void checkExcludedEmail(String email)
+        throws NameConstraintValidatorException
+    {
+        checkExcludedEmail(excludedSubtreesEmail, email);
+    }
+
+    private static boolean withinDNSubtree(ASN1Sequence dns, ASN1Sequence subtree)
+    {
+        if (subtree.size() < 1 || subtree.size() > dns.size())
         {
             return false;
         }
@@ -350,7 +354,7 @@ class ASN1PKIXNameConstraintValidator
                 // Two relative distinguished names
                 //   RDN1 and RDN2 match if they have the same number of naming attributes
                 //   and for each naming attribute in RDN1 there is a matching naming attribute in RDN2.
-                //   NOTE: this is checking the attributes in the same order, which might be not necessary, if this is a problem also IETFUtils.rDNAreEqual mus tbe changed.
+                //   NOTE: this is checking the attributes in the same order, which might be not necessary, if this is a problem also IETFUtils.rDNAreEqual must be changed.
                 // use new RFC 5280 comparison, NOTE: this is now different from with RFC 3280, where only binary comparison is used
                 // obey RFC 5280 7.1
                 // special treatment of serialNumber for GSMA SGP.22 RSP specification
@@ -379,68 +383,53 @@ class ASN1PKIXNameConstraintValidator
         return true;
     }
 
-    private void checkPermittedDN(Set permitted, ASN1Sequence dns)
+    private static void checkPermittedDN(Set permitted, ASN1Sequence dns)
         throws NameConstraintValidatorException
     {
-        if (permitted == null)
+        if (permitted != null
+            && !(permitted.isEmpty() && dns.size() == 0)
+            && !isDNConstrained(permitted, dns))
         {
-            return;
-        }
-
-        if (permitted.isEmpty() && dns.size() == 0)
-        {
-            return;
-        }
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
-        {
-            ASN1Sequence subtree = (ASN1Sequence)it.next();
-
-            if (withinDNSubtree(dns, subtree))
-            {
-                return;
-            }
-        }
-
-        throw new NameConstraintValidatorException(
-            "Subject distinguished name is not from a permitted subtree");
-    }
-
-    private void checkExcludedDN(Set excluded, ASN1Sequence dns)
-        throws NameConstraintValidatorException
-    {
-        if (excluded.isEmpty())
-        {
-            return;
-        }
-
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
-        {
-            ASN1Sequence subtree = (ASN1Sequence)it.next();
-
-            if (withinDNSubtree(dns, subtree))
-            {
-                throw new NameConstraintValidatorException(
-                    "Subject distinguished name is from an excluded subtree");
-            }
+            throw new NameConstraintValidatorException("Subject distinguished name is not from a permitted subtree");
         }
     }
 
-    private Set intersectDN(Set permitted, Set dns)
+    private static void checkExcludedDN(Set excluded, ASN1Sequence dns)
+        throws NameConstraintValidatorException
+    {
+        if (isDNConstrained(excluded, dns))
+        {
+            throw new NameConstraintValidatorException("Subject distinguished name is from an excluded subtree");
+        }
+    }
+
+    private static boolean isDNConstrained(Set constraints, ASN1Sequence dns)
+    {
+        Iterator it = constraints.iterator();
+        while (it.hasNext())
+        {
+            ASN1Sequence subtree = (ASN1Sequence)it.next();
+            if (withinDNSubtree(dns, subtree))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Set intersectDN(Set permitted, Set dns)
     {
         Set intersect = new HashSet();
         for (Iterator it = dns.iterator(); it.hasNext();)
         {
-            ASN1Sequence dn = ASN1Sequence.getInstance(((GeneralSubtree)it
-                .next()).getBase().getName().toASN1Primitive());
+            GeneralSubtree subtree = (GeneralSubtree)it.next();
+            ASN1Sequence dn1 = ASN1Sequence.getInstance(subtree.getBase().getName());
             if (permitted == null)
             {
-                if (dn != null)
+                if (dn1 != null)
                 {
-                    intersect.add(dn);
+                    intersect.add(dn1);
                 }
             }
             else
@@ -448,15 +437,15 @@ class ASN1PKIXNameConstraintValidator
                 Iterator _iter = permitted.iterator();
                 while (_iter.hasNext())
                 {
-                    ASN1Sequence subtree = (ASN1Sequence)_iter.next();
+                    ASN1Sequence dn2 = (ASN1Sequence)_iter.next();
 
-                    if (withinDNSubtree(dn, subtree))
+                    if (withinDNSubtree(dn1, dn2))
                     {
-                        intersect.add(dn);
+                        intersect.add(dn1);
                     }
-                    else if (withinDNSubtree(subtree, dn))
+                    else if (withinDNSubtree(dn2, dn1))
                     {
-                        intersect.add(subtree);
+                        intersect.add(dn2);
                     }
                 }
             }
@@ -464,16 +453,14 @@ class ASN1PKIXNameConstraintValidator
         return intersect;
     }
 
-    private Set unionDN(Set excluded, ASN1Sequence dn)
+    private static Set unionDN(Set excluded, ASN1Sequence dn)
     {
         if (excluded.isEmpty())
         {
-            if (dn == null)
+            if (dn != null)
             {
-                return excluded;
+                excluded.add(dn);
             }
-            excluded.add(dn);
-
             return excluded;
         }
         else
@@ -504,35 +491,37 @@ class ASN1PKIXNameConstraintValidator
         }
     }
 
-    private Set intersectOtherName(Set permitted, Set otherNames)
+    private static Set intersectOtherName(Set permitted, Set otherNames)
     {
         Set intersect = new HashSet();
         for (Iterator it = otherNames.iterator(); it.hasNext();)
         {
-            OtherName otName1 = OtherName.getInstance(((GeneralSubtree)it.next()).getBase().getName());
+            GeneralSubtree subtree = (GeneralSubtree)it.next();
+            OtherName otherName1 = OtherName.getInstance(subtree.getBase().getName());
+            if (otherName1 == null)
+            {
+                continue;
+            }
 
             if (permitted == null)
             {
-                if (otName1 != null)
-                {
-                    intersect.add(otName1);
-                }
+                intersect.add(otherName1);
             }
             else
             {
                 Iterator it2 = permitted.iterator();
                 while (it2.hasNext())
                 {
-                    OtherName otName2 = OtherName.getInstance(it2.next());
+                    OtherName otherName2 = OtherName.getInstance(it2.next());
 
-                    intersectOtherName(otName1, otName2, intersect);
+                    intersectOtherName(otherName1, otherName2, intersect);
                 }
             }
         }
         return intersect;
     }
 
-    private void intersectOtherName(OtherName otName1, OtherName otName2, Set intersect)
+    private static void intersectOtherName(OtherName otName1, OtherName otName2, Set intersect)
     {
         if (otName1.equals(otName2))
         {
@@ -540,7 +529,7 @@ class ASN1PKIXNameConstraintValidator
         }
     }
 
-    private Set unionOtherName(Set permitted, OtherName otherName)
+    private static Set unionOtherName(Set permitted, OtherName otherName)
     {
         Set union = permitted != null ? new HashSet(permitted) : new HashSet();
 
@@ -549,20 +538,16 @@ class ASN1PKIXNameConstraintValidator
         return union;
     }
 
-    private Set intersectEmail(Set permitted, Set emails)
+    private static Set intersectEmail(Set permitted, Set emails)
     {
         Set intersect = new HashSet();
         for (Iterator it = emails.iterator(); it.hasNext();)
         {
-            String email = extractNameAsString(((GeneralSubtree)it.next())
-                .getBase());
+            String email = extractNameAsString((GeneralSubtree)it.next());
 
             if (permitted == null)
             {
-                if (email != null)
-                {
-                    intersect.add(email);
-                }
+                intersect.add(email);
             }
             else
             {
@@ -578,56 +563,46 @@ class ASN1PKIXNameConstraintValidator
         return intersect;
     }
 
-    private Set unionEmail(Set excluded, String email)
+    private static Set unionEmail(Set excluded, String email)
     {
         if (excluded.isEmpty())
         {
-            if (email == null)
-            {
-                return excluded;
-            }
             excluded.add(email);
             return excluded;
         }
-        else
+
+        Set union = new HashSet();
+
+        Iterator it = excluded.iterator();
+        while (it.hasNext())
         {
-            Set union = new HashSet();
+            String _excluded = (String)it.next();
 
-            Iterator it = excluded.iterator();
-            while (it.hasNext())
-            {
-                String _excluded = (String)it.next();
-
-                unionEmail(_excluded, email, union);
-            }
-
-            return union;
+            unionEmail(_excluded, email, union);
         }
+
+        return union;
     }
 
     /**
-     * Returns the intersection of the permitted IP ranges in
-     * <code>permitted</code> with <code>ip</code>.
+     * Returns the intersection of the permitted IP ranges in <code>permitted</code> with
+     * <code>ips</code>.
      *
-     * @param permitted A <code>Set</code> of permitted IP addresses with
-     *                  their subnet mask as byte arrays.
-     * @param ips       The IP address with its subnet mask.
-     * @return The <code>Set</code> of permitted IP ranges intersected with
-     * <code>ip</code>.
+     * @param permitted A <code>Set</code> of permitted IP addresses with their subnet mask as byte
+     * arrays.
+     * @param ips The IP address with its subnet mask.
+     * @return The <code>Set</code> of permitted IP ranges intersected with <code>ips</code>.
      */
-    private Set intersectIP(Set permitted, Set ips)
+    private static Set intersectIP(Set permitted, Set ips)
     {
         Set intersect = new HashSet();
         for (Iterator it = ips.iterator(); it.hasNext();)
         {
-            byte[] ip = ASN1OctetString.getInstance(
-                ((GeneralSubtree)it.next()).getBase().getName()).getOctets();
+            GeneralSubtree subtree = (GeneralSubtree)it.next();
+            byte[] ip = ASN1OctetString.getInstance(subtree.getBase().getName()).getOctets();
             if (permitted == null)
             {
-                if (ip != null)
-                {
-                    intersect.add(ip);
-                }
+                intersect.add(ip);
             }
             else
             {
@@ -635,7 +610,12 @@ class ASN1PKIXNameConstraintValidator
                 while (it2.hasNext())
                 {
                     byte[] _permitted = (byte[])it2.next();
-                    intersect.addAll(intersectIPRange(_permitted, ip));
+
+                    byte[] intersection = intersectIPRange(_permitted, ip);
+                    if (intersection != null)
+                    {
+                        intersect.add(intersection);
+                    }
                 }
             }
         }
@@ -652,16 +632,14 @@ class ASN1PKIXNameConstraintValidator
      * @return The <code>Set</code> of excluded IP ranges unified with
      * <code>ip</code> as byte arrays.
      */
-    private Set unionIP(Set excluded, byte[] ip)
+    private static Set unionIP(Set excluded, byte[] ip)
     {
         if (excluded.isEmpty())
         {
-            if (ip == null)
+            if (ip != null)
             {
-                return excluded;
+                excluded.add(ip);
             }
-            excluded.add(ip);
-
             return excluded;
         }
         else
@@ -686,7 +664,7 @@ class ASN1PKIXNameConstraintValidator
      * @param ipWithSubmask2 The second IP address with its subnet mask.
      * @return A <code>Set</code> with the union of both addresses.
      */
-    private Set unionIPRange(byte[] ipWithSubmask1, byte[] ipWithSubmask2)
+    private static Set unionIPRange(byte[] ipWithSubmask1, byte[] ipWithSubmask2)
     {
         Set set = new HashSet();
 
@@ -708,15 +686,16 @@ class ASN1PKIXNameConstraintValidator
      *
      * @param ipWithSubmask1 The first IP address with its subnet mask.
      * @param ipWithSubmask2 The second IP address with its subnet mask.
-     * @return A <code>Set</code> with the single IP address with its subnet
-     * mask as a byte array or an empty <code>Set</code>.
+     * @return A single IP address with its subnet mask as a byte array, or null.
      */
-    private Set intersectIPRange(byte[] ipWithSubmask1, byte[] ipWithSubmask2)
+    private static byte[] intersectIPRange(byte[] ipWithSubmask1, byte[] ipWithSubmask2)
     {
+        // i.e. no intersection between IPv4 and IPv6 ranges
         if (ipWithSubmask1.length != ipWithSubmask2.length)
         {
-            return Collections.EMPTY_SET;
+            return null;
         }
+
         byte[][] temp = extractIPsAndSubnetMasks(ipWithSubmask1, ipWithSubmask2);
         byte ip1[] = temp[0];
         byte subnetmask1[] = temp[1];
@@ -724,20 +703,24 @@ class ASN1PKIXNameConstraintValidator
         byte subnetmask2[] = temp[3];
 
         byte minMax[][] = minMaxIPs(ip1, subnetmask1, ip2, subnetmask2);
-        byte[] min;
-        byte[] max;
-        max = min(minMax[1], minMax[3]);
-        min = max(minMax[0], minMax[2]);
+        byte[] min1 = minMax[0];
+        byte[] max1 = minMax[1];
+        byte[] min2 = minMax[2];
+        byte[] max2 = minMax[3];
 
-        // minimum IP address must be bigger than max
+        byte[] max = min(max1, max2);
+        byte[] min = max(min1, min2);
+
+        // minimum IP address can't be bigger than max
         if (compareTo(min, max) == 1)
         {
-            return Collections.EMPTY_SET;
+            return null;
         }
+
         // OR keeps all significant bits
-        byte[] ip = or(minMax[0], minMax[2]);
+        byte[] ip = or(min1, min2);
         byte[] subnetmask = or(subnetmask1, subnetmask2);
-        return Collections.singleton(ipWithSubnetMask(ip, subnetmask));
+        return ipWithSubnetMask(ip, subnetmask);
     }
 
     /**
@@ -747,13 +730,9 @@ class ASN1PKIXNameConstraintValidator
      * @param subnetMask Its subnet mask.
      * @return The concatenated IP address with its subnet mask.
      */
-    private byte[] ipWithSubnetMask(byte[] ip, byte[] subnetMask)
+    private static byte[] ipWithSubnetMask(byte[] ip, byte[] subnetMask)
     {
-        int ipLength = ip.length;
-        byte[] temp = new byte[ipLength * 2];
-        System.arraycopy(ip, 0, temp, 0, ipLength);
-        System.arraycopy(subnetMask, 0, temp, ipLength, ipLength);
-        return temp;
+        return Arrays.concatenate(ip, subnetMask);
     }
 
     /**
@@ -764,9 +743,7 @@ class ASN1PKIXNameConstraintValidator
      * @return An array with two elements. Each element contains the IP address
      * and the subnet mask in this order.
      */
-    private byte[][] extractIPsAndSubnetMasks(
-        byte[] ipWithSubmask1,
-        byte[] ipWithSubmask2)
+    private static byte[][] extractIPsAndSubnetMasks(byte[] ipWithSubmask1, byte[] ipWithSubmask2)
     {
         int ipLength = ipWithSubmask1.length / 2;
         byte ip1[] = new byte[ipLength];
@@ -778,8 +755,7 @@ class ASN1PKIXNameConstraintValidator
         byte subnetmask2[] = new byte[ipLength];
         System.arraycopy(ipWithSubmask2, 0, ip2, 0, ipLength);
         System.arraycopy(ipWithSubmask2, ipLength, subnetmask2, 0, ipLength);
-        return new byte[][]
-            {ip1, subnetmask1, ip2, subnetmask2};
+        return new byte[][]{ ip1, subnetmask1, ip2, subnetmask2 };
     }
 
     /**
@@ -795,11 +771,7 @@ class ASN1PKIXNameConstraintValidator
      * min and max IP address of the first/second IP address and its
      * subnet mask.
      */
-    private byte[][] minMaxIPs(
-        byte[] ip1,
-        byte[] subnetmask1,
-        byte[] ip2,
-        byte[] subnetmask2)
+    private static byte[][] minMaxIPs(byte[] ip1, byte[] subnetmask1, byte[] ip2, byte[] subnetmask2)
     {
         int ipLength = ip1.length;
         byte[] min1 = new byte[ipLength];
@@ -817,103 +789,44 @@ class ASN1PKIXNameConstraintValidator
             max2[i] = (byte)(ip2[i] & subnetmask2[i] | ~subnetmask2[i]);
         }
 
-        return new byte[][]{min1, max1, min2, max2};
+        return new byte[][]{ min1, max1, min2, max2 };
     }
 
-    private void checkPermittedEmail(Set permitted, String email)
+    private static void checkPermittedEmail(Set permitted, String email)
         throws NameConstraintValidatorException
     {
-        if (permitted == null)
+        if (permitted != null
+            && !(email.length() == 0 && permitted.size() == 0)
+            && !isEmailConstrained(permitted, email))
         {
-            return;
-        }
-
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
-        {
-            String str = ((String)it.next());
-
-            if (emailIsConstrained(email, str))
-            {
-                return;
-            }
-        }
-
-        if (email.length() == 0 && permitted.size() == 0)
-        {
-            return;
-        }
-
-        throw new NameConstraintValidatorException(
-            "Subject email address is not from a permitted subtree.");
-    }
-
-    private void checkPermittedOtherName(Set permitted, OtherName name)
-        throws NameConstraintValidatorException
-    {
-        if (permitted == null)
-        {
-            return;
-        }
-
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
-        {
-            OtherName str = OtherName.getInstance(it.next());
-
-            if (otherNameIsConstrained(name, str))
-            {
-                return;
-            }
-        }
-
-        throw new NameConstraintValidatorException(
-            "Subject OtherName is not from a permitted subtree.");
-    }
-
-    private void checkExcludedOtherName(Set excluded, OtherName name)
-        throws NameConstraintValidatorException
-    {
-        if (excluded.isEmpty())
-        {
-            return;
-        }
-
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
-        {
-            OtherName str = OtherName.getInstance(it.next());
-
-            if (otherNameIsConstrained(name, str))
-            {
-                throw new NameConstraintValidatorException(
-                    "OtherName is from an excluded subtree.");
-            }
+            throw new NameConstraintValidatorException("Subject email address is not from a permitted subtree.");
         }
     }
 
-    private void checkExcludedEmail(Set excluded, String email)
+    private static void checkExcludedEmail(Set excluded, String email)
         throws NameConstraintValidatorException
     {
-        if (excluded.isEmpty())
+        if (isEmailConstrained(excluded, email))
         {
-            return;
+            throw new NameConstraintValidatorException("Email address is from an excluded subtree.");
         }
+    }
 
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
+    private static void checkPermittedOtherName(Set permitted, OtherName otherName)
+        throws NameConstraintValidatorException
+    {
+        if (permitted != null && !isOtherNameConstrained(permitted, otherName))
         {
-            String str = (String)it.next();
+            throw new NameConstraintValidatorException("Subject OtherName is not from a permitted subtree.");
+        }
+    }
 
-            if (emailIsConstrained(email, str))
-            {
-                throw new NameConstraintValidatorException(
-                    "Email address is from an excluded subtree.");
-            }
+    private static void checkExcludedOtherName(Set excluded, OtherName otherName)
+        throws NameConstraintValidatorException
+    {
+        if (isOtherNameConstrained(excluded, otherName))
+        {
+            throw new NameConstraintValidatorException("OtherName is from an excluded subtree.");
         }
     }
 
@@ -926,31 +839,15 @@ class ASN1PKIXNameConstraintValidator
      * @param ip        The IP address.
      * @throws NameConstraintValidatorException if the IP is not permitted.
      */
-    private void checkPermittedIP(Set permitted, byte[] ip)
+    private static void checkPermittedIP(Set permitted, byte[] ip)
         throws NameConstraintValidatorException
     {
-        if (permitted == null)
+        if (permitted != null
+            && !(ip.length == 0 && permitted.size() == 0)
+            && !isIPConstrained(permitted, ip))
         {
-            return;
+            throw new NameConstraintValidatorException("IP is not from a permitted subtree.");
         }
-
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
-        {
-            byte[] ipWithSubnet = (byte[])it.next();
-
-            if (isIPConstrained(ip, ipWithSubnet))
-            {
-                return;
-            }
-        }
-        if (ip.length == 0 && permitted.size() == 0)
-        {
-            return;
-        }
-        throw new NameConstraintValidatorException(
-            "IP is not from a permitted subtree.");
     }
 
     /**
@@ -962,26 +859,28 @@ class ASN1PKIXNameConstraintValidator
      * @param ip       The IP address.
      * @throws NameConstraintValidatorException if the IP is excluded.
      */
-    private void checkExcludedIP(Set excluded, byte[] ip)
+    private static void checkExcludedIP(Set excluded, byte[] ip)
         throws NameConstraintValidatorException
     {
-        if (excluded.isEmpty())
+        if (isIPConstrained(excluded, ip))
         {
-            return;
+            throw new NameConstraintValidatorException("IP is from an excluded subtree.");
         }
+    }
 
-        Iterator it = excluded.iterator();
-
+    private static boolean isIPConstrained(Set constraints, byte[] ip)
+    {
+        Iterator it = constraints.iterator();
         while (it.hasNext())
         {
-            byte[] ipWithSubnet = (byte[])it.next();
-
-            if (isIPConstrained(ip, ipWithSubnet))
+            byte[] constraint = (byte[])it.next();
+            if (isIPConstrained(constraint, ip))
             {
-                throw new NameConstraintValidatorException(
-                    "IP is from an excluded subtree.");
+                return true;
             }
         }
+
+        return false;
     }
 
     /**
@@ -994,7 +893,7 @@ class ASN1PKIXNameConstraintValidator
      * @return <code>true</code> if constrained, <code>false</code>
      * otherwise.
      */
-    private boolean isIPConstrained(byte ip[], byte[] constraint)
+    private static boolean isIPConstrained(byte[] constraint, byte[] ip)
     {
         int ipLength = ip.length;
 
@@ -1020,72 +919,94 @@ class ASN1PKIXNameConstraintValidator
         return Arrays.areEqual(permittedSubnetAddress, ipSubnetAddress);
     }
 
-    private boolean otherNameIsConstrained(OtherName name, OtherName constraint)
+    private static boolean isOtherNameConstrained(Set constraints, OtherName otherName)
     {
-        if (constraint.equals(name))
+        Iterator it = constraints.iterator();
+        while (it.hasNext())
         {
-            return true;
+            OtherName constraint = OtherName.getInstance(it.next());
+            if (isOtherNameConstrained(constraint, otherName))
+            {
+                return true;
+            }
         }
 
         return false;
     }
 
-    private boolean emailIsConstrained(String email, String constraint)
+    private static boolean isOtherNameConstrained(OtherName constraint, OtherName otherName)
     {
-        String sub = email.substring(email.indexOf('@') + 1);
+        return constraint.equals(otherName);
+    }
+
+    private static boolean isEmailConstrained(Set constraints, String email)
+    {
+        Iterator it = constraints.iterator();
+        while (it.hasNext())
+        {
+            String constraint = (String)it.next();
+            if (isEmailConstrained(constraint, email))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean isEmailConstrained(String constraint, String email)
+    {
+        int atPos = constraint.indexOf('@');
+
         // a particular mailbox
-        if (constraint.indexOf('@') != -1)
+        if (atPos > 0)
         {
-            if (email.equalsIgnoreCase(constraint))
-            {
-                return true;
-            }
-            if (sub.equalsIgnoreCase(constraint.substring(1)))
-            {
-                return true;
-            }
+            return email.equalsIgnoreCase(constraint);
         }
-        // on particular host
-        else if (!(constraint.charAt(0) == '.'))
+
+        String sub = email.substring(email.indexOf('@') + 1);
+
+        // "@domain" style
+        if (atPos == 0)
         {
-            if (sub.equalsIgnoreCase(constraint))
-            {
-                return true;
-            }
+            return sub.equalsIgnoreCase(constraint.substring(1));
         }
+
         // address in sub domain
-        else if (withinDomain(sub, constraint))
+        if (constraint.startsWith("."))
         {
-            return true;
+            return withinDomain(sub, constraint);
         }
-        return false;
+
+        // on particular host
+        return sub.equalsIgnoreCase(constraint);
     }
 
-    private boolean withinDomain(String testDomain, String domain)
+    private static boolean withinDomain(String testDomain, String domain)
     {
-        String tempDomain = domain;
-        if (tempDomain.startsWith("."))
+        if (domain.startsWith("."))
         {
-            tempDomain = tempDomain.substring(1);
+            domain = domain.substring(1);
         }
-        String[] domainParts = Strings.split(tempDomain, '.');
+
+        String[] domainParts = Strings.split(domain, '.');
         String[] testDomainParts = Strings.split(testDomain, '.');
+
         // must have at least one subdomain
         if (testDomainParts.length <= domainParts.length)
         {
             return false;
         }
+
         int d = testDomainParts.length - domainParts.length;
-        for (int i = -1; i < domainParts.length; i++)
+        if (testDomainParts[d - 1].equals(""))
         {
-            if (i == -1)
-            {
-                if (testDomainParts[i + d].equals(""))
-                {
-                    return false;
-                }
-            }
-            else if (!domainParts[i].equalsIgnoreCase(testDomainParts[i + d]))
+            return false;
+        }
+
+        for (int i = 0; i < domainParts.length; i++)
+        {
+            if (!domainParts[i].equalsIgnoreCase(testDomainParts[d + i]))
             {
                 return false;
             }
@@ -1093,55 +1014,44 @@ class ASN1PKIXNameConstraintValidator
         return true;
     }
 
-    private void checkPermittedDNS(Set permitted, String dns)
+    private static void checkExcludedDNS(Set excluded, String dns)
         throws NameConstraintValidatorException
     {
-        if (permitted == null)
+        if (isDNSConstrained(excluded, dns))
         {
-            return;
+            throw new NameConstraintValidatorException("DNS is from an excluded subtree.");
         }
-
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
-        {
-            String str = ((String)it.next());
-
-            // is sub domain
-            if (withinDomain(dns, str) || dns.equalsIgnoreCase(str))
-            {
-                return;
-            }
-        }
-        if (dns.length() == 0 && permitted.size() == 0)
-        {
-            return;
-        }
-        throw new NameConstraintValidatorException(
-            "DNS is not from a permitted subtree.");
     }
 
-    private void checkExcludedDNS(Set excluded, String dns)
+    private static void checkPermittedDNS(Set permitted, String dns)
         throws NameConstraintValidatorException
     {
-        if (excluded.isEmpty())
+        if (permitted != null
+            && !(dns.length() == 0 && permitted.size() == 0)
+            && !isDNSConstrained(permitted, dns))
         {
-            return;
+            throw new NameConstraintValidatorException("DNS is not from a permitted subtree.");
         }
+    }
 
-        Iterator it = excluded.iterator();
-
+    private static boolean isDNSConstrained(Set constraints, String dns)
+    {
+        Iterator it = constraints.iterator();
         while (it.hasNext())
         {
-            String str = ((String)it.next());
-
-            // is sub domain or the same
-            if (withinDomain(dns, str) || dns.equalsIgnoreCase(str))
+            String constraint = (String)it.next();
+            if (isDNSConstrained(constraint, dns))
             {
-                throw new NameConstraintValidatorException(
-                    "DNS is from an excluded subtree.");
+                return true;
             }
         }
+
+        return false;
+    }
+
+    private static boolean isDNSConstrained(String constraint, String dns)
+    {
+        return dns.equalsIgnoreCase(constraint) || withinDomain(dns, constraint);
     }
 
     /**
@@ -1153,7 +1063,7 @@ class ASN1PKIXNameConstraintValidator
      * @param email2 Email address constraint 2.
      * @param union  The union.
      */
-    private void unionEmail(String email1, String email2, Set union)
+    private static void unionEmail(String email1, String email2, Set union)
     {
         // email1 is a particular address
         if (email1.indexOf('@') != -1)
@@ -1218,8 +1128,7 @@ class ASN1PKIXNameConstraintValidator
             // email2 specifies a domain
             else if (email2.startsWith("."))
             {
-                if (withinDomain(email1, email2)
-                    || email1.equalsIgnoreCase(email2))
+                if (isDNSConstrained(email2, email1))
                 {
                     union.add(email2);
                 }
@@ -1291,7 +1200,7 @@ class ASN1PKIXNameConstraintValidator
         }
     }
 
-    private void unionURI(String email1, String email2, Set union)
+    private static void unionURI(String email1, String email2, Set union)
     {
         // email1 is a particular address
         if (email1.indexOf('@') != -1)
@@ -1356,8 +1265,7 @@ class ASN1PKIXNameConstraintValidator
             // email2 specifies a domain
             else if (email2.startsWith("."))
             {
-                if (withinDomain(email1, email2)
-                    || email1.equalsIgnoreCase(email2))
+                if (isDNSConstrained(email2, email1))
                 {
                     union.add(email2);
                 }
@@ -1429,19 +1337,16 @@ class ASN1PKIXNameConstraintValidator
         }
     }
 
-    private Set intersectDNS(Set permitted, Set dnss)
+    private static Set intersectDNS(Set permitted, Set dnss)
     {
         Set intersect = new HashSet();
         for (Iterator it = dnss.iterator(); it.hasNext();)
         {
-            String dns = extractNameAsString(((GeneralSubtree)it.next())
-                .getBase());
+            String dns = extractNameAsString((GeneralSubtree)it.next());
+
             if (permitted == null)
             {
-                if (dns != null)
-                {
-                    intersect.add(dns);
-                }
+                intersect.add(dns);
             }
             else
             {
@@ -1450,7 +1355,7 @@ class ASN1PKIXNameConstraintValidator
                 {
                     String _permitted = (String)_iter.next();
 
-                    if (withinDomain(_permitted, dns))
+                    if (isDNSConstrained(dns, _permitted))
                     {
                         intersect.add(_permitted);
                     }
@@ -1458,9 +1363,9 @@ class ASN1PKIXNameConstraintValidator
                     {
                         intersect.add(dns);
                     }
-                    else if (_permitted.equals(dns))
+                    else
                     {
-                        intersect.add(dns);
+                        // No intersection
                     }
                 }
             }
@@ -1469,44 +1374,37 @@ class ASN1PKIXNameConstraintValidator
         return intersect;
     }
 
-    private Set unionDNS(Set excluded, String dns)
+    private static Set unionDNS(Set excluded, String dns)
     {
         if (excluded.isEmpty())
         {
-            if (dns == null)
-            {
-                return excluded;
-            }
             excluded.add(dns);
-
             return excluded;
         }
-        else
+
+        Set union = new HashSet();
+
+        Iterator _iter = excluded.iterator();
+        while (_iter.hasNext())
         {
-            Set union = new HashSet();
+            String _permitted = (String)_iter.next();
 
-            Iterator _iter = excluded.iterator();
-            while (_iter.hasNext())
+            if (isDNSConstrained(dns, _permitted))
             {
-                String _permitted = (String)_iter.next();
-
-                if (withinDomain(_permitted, dns))
-                {
-                    union.add(dns);
-                }
-                else if (withinDomain(dns, _permitted))
-                {
-                    union.add(_permitted);
-                }
-                else
-                {
-                    union.add(_permitted);
-                    union.add(dns);
-                }
+                union.add(dns);
             }
-
-            return union;
+            else if (withinDomain(dns, _permitted))
+            {
+                union.add(_permitted);
+            }
+            else
+            {
+                union.add(_permitted);
+                union.add(dns);
+            }
         }
+
+        return union;
     }
 
     /**
@@ -1517,7 +1415,7 @@ class ASN1PKIXNameConstraintValidator
      * @param email2    Email address constraint 2.
      * @param intersect The intersection.
      */
-    private void intersectEmail(String email1, String email2, Set intersect)
+    private static void intersectEmail(String email1, String email2, Set intersect)
     {
         // email1 is a particular address
         if (email1.indexOf('@') != -1)
@@ -1562,14 +1460,17 @@ class ASN1PKIXNameConstraintValidator
             // email2 specifies a domain
             else if (email2.startsWith("."))
             {
-                if (withinDomain(email1, email2)
-                    || email1.equalsIgnoreCase(email2))
+                if (isDNSConstrained(email2, email1))
                 {
                     intersect.add(email1);
                 }
                 else if (withinDomain(email2, email1))
                 {
                     intersect.add(email2);
+                }
+                else
+                {
+                    // No intersection
                 }
             }
             else
@@ -1610,41 +1511,25 @@ class ASN1PKIXNameConstraintValidator
         }
     }
 
-    private void checkExcludedURI(Set excluded, String uri)
+    private static void checkExcludedURI(Set excluded, String uri)
         throws NameConstraintValidatorException
     {
-        if (excluded.isEmpty())
+        if (isURIConstrained(excluded, uri))
         {
-            return;
-        }
-
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
-        {
-            String str = ((String)it.next());
-
-            if (isUriConstrained(uri, str))
-            {
-                throw new NameConstraintValidatorException(
-                    "URI is from an excluded subtree.");
-            }
+            throw new NameConstraintValidatorException("URI is from an excluded subtree.");
         }
     }
 
-    private Set intersectURI(Set permitted, Set uris)
+    private static Set intersectURI(Set permitted, Set uris)
     {
         Set intersect = new HashSet();
         for (Iterator it = uris.iterator(); it.hasNext();)
         {
-            String uri = extractNameAsString(((GeneralSubtree)it.next())
-                .getBase());
+            String uri = extractNameAsString((GeneralSubtree)it.next());
+
             if (permitted == null)
             {
-                if (uri != null)
-                {
-                    intersect.add(uri);
-                }
+                intersect.add(uri);
             }
             else
             {
@@ -1659,35 +1544,28 @@ class ASN1PKIXNameConstraintValidator
         return intersect;
     }
 
-    private Set unionURI(Set excluded, String uri)
+    private static Set unionURI(Set excluded, String uri)
     {
         if (excluded.isEmpty())
         {
-            if (uri == null)
-            {
-                return excluded;
-            }
             excluded.add(uri);
-
             return excluded;
         }
-        else
+
+        Set union = new HashSet();
+
+        Iterator _iter = excluded.iterator();
+        while (_iter.hasNext())
         {
-            Set union = new HashSet();
+            String _excluded = (String)_iter.next();
 
-            Iterator _iter = excluded.iterator();
-            while (_iter.hasNext())
-            {
-                String _excluded = (String)_iter.next();
-
-                unionURI(_excluded, uri, union);
-            }
-
-            return union;
+            unionURI(_excluded, uri, union);
         }
+
+        return union;
     }
 
-    private void intersectURI(String email1, String email2, Set intersect)
+    private static void intersectURI(String email1, String email2, Set intersect)
     {
         // email1 is a particular address
         if (email1.indexOf('@') != -1)
@@ -1732,14 +1610,17 @@ class ASN1PKIXNameConstraintValidator
             // email2 specifies a domain
             else if (email2.startsWith("."))
             {
-                if (withinDomain(email1, email2)
-                    || email1.equalsIgnoreCase(email2))
+                if (isDNSConstrained(email2, email1))
                 {
                     intersect.add(email1);
                 }
                 else if (withinDomain(email2, email1))
                 {
                     intersect.add(email2);
+                }
+                else
+                {
+                    // No intersection
                 }
             }
             else
@@ -1780,52 +1661,44 @@ class ASN1PKIXNameConstraintValidator
         }
     }
 
-    private void checkPermittedURI(Set permitted, String uri)
+    private static void checkPermittedURI(Set permitted, String uri)
         throws NameConstraintValidatorException
     {
-        if (permitted == null)
+        if (permitted != null
+            && !(uri.length() == 0 && permitted.size() == 0)
+            && !isURIConstrained(permitted, uri))
         {
-            return;
+            throw new NameConstraintValidatorException("URI is not from a permitted subtree.");
         }
-
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
-        {
-            String str = ((String)it.next());
-
-            if (isUriConstrained(uri, str))
-            {
-                return;
-            }
-        }
-        if (uri.length() == 0 && permitted.size() == 0)
-        {
-            return;
-        }
-        throw new NameConstraintValidatorException(
-            "URI is not from a permitted subtree.");
     }
 
-    private boolean isUriConstrained(String uri, String constraint)
+    private static boolean isURIConstrained(Set constraints, String uri)
     {
-        String host = extractHostFromURL(uri);
-        // a host
-        if (!constraint.startsWith("."))
+        Iterator it = constraints.iterator();
+        while (it.hasNext())
         {
-            if (host.equalsIgnoreCase(constraint))
+            String constraint = ((String)it.next());
+            if (isURIConstrained(constraint, uri))
             {
                 return true;
             }
         }
 
+        return false;
+    }
+
+    private static boolean isURIConstrained(String constraint, String uri)
+    {
+        String host = extractHostFromURL(uri);
+
         // in sub domain or domain
-        else if (withinDomain(host, constraint))
+        if (constraint.startsWith("."))
         {
-            return true;
+            return withinDomain(host, constraint);
         }
 
-        return false;
+        // a host
+        return host.equalsIgnoreCase(constraint);
     }
 
     private static String extractHostFromURL(String url)
@@ -1834,29 +1707,27 @@ class ASN1PKIXNameConstraintValidator
         // remove ':' after protocol, e.g. https:
         String sub = url.substring(url.indexOf(':') + 1);
         // extract host from Common Internet Scheme Syntax, e.g. https://
-        if (sub.indexOf("//") != -1)
+        int slashesPos = sub.indexOf("//");
+        if (slashesPos != -1)
         {
-            sub = sub.substring(sub.indexOf("//") + 2);
+            sub = sub.substring(slashesPos + 2);
         }
         // first remove port, e.g. https://test.com:21
-        if (sub.lastIndexOf(':') != -1)
+        int portColonPos = sub.lastIndexOf(':');
+        if (portColonPos != -1)
         {
-            sub = sub.substring(0, sub.lastIndexOf(':'));
+            sub = sub.substring(0, portColonPos);
         }
         // remove user and password, e.g. https://john:password@test.com
         sub = sub.substring(sub.indexOf(':') + 1);
         sub = sub.substring(sub.indexOf('@') + 1);
         // remove local parts, e.g. https://test.com/bla
-        if (sub.indexOf('/') != -1)
+        int slashPos = sub.indexOf('/');
+        if (slashPos != -1)
         {
-            sub = sub.substring(0, sub.indexOf('/'));
+            sub = sub.substring(0, slashPos);
         }
         return sub;
-    }
-
-    private String extractNameAsString(GeneralName name)
-    {
-        return ASN1IA5String.getInstance(name.getName()).getString();
     }
 
     /**
@@ -1868,14 +1739,7 @@ class ASN1PKIXNameConstraintValidator
      */
     private static byte[] max(byte[] ip1, byte[] ip2)
     {
-        for (int i = 0; i < ip1.length; i++)
-        {
-            if ((ip1[i] & 0xFFFF) > (ip2[i] & 0xFFFF))
-            {
-                return ip1;
-            }
-        }
-        return ip2;
+        return compareTo(ip1, ip2) > 0 ? ip1 : ip2;
     }
 
     /**
@@ -1887,14 +1751,7 @@ class ASN1PKIXNameConstraintValidator
      */
     private static byte[] min(byte[] ip1, byte[] ip2)
     {
-        for (int i = 0; i < ip1.length; i++)
-        {
-            if ((ip1[i] & 0xFFFF) < (ip2[i] & 0xFFFF))
-            {
-                return ip1;
-            }
-        }
-        return ip2;
+        return compareTo(ip1, ip2) < 0 ? ip1 : ip2;
     }
 
     /**
@@ -1908,15 +1765,19 @@ class ASN1PKIXNameConstraintValidator
      */
     private static int compareTo(byte[] ip1, byte[] ip2)
     {
-        if (Arrays.areEqual(ip1, ip2))
+        for (int i = 0; i < ip1.length; i++)
         {
-            return 0;
+            int t1 = ip1[i] & 0xFF, t2 = ip2[i] & 0xFF;
+            if (t1 < t2)
+            {
+                return -1;
+            }
+            if (t1 > t2)
+            {
+                return 1;
+            }
         }
-        if (Arrays.areEqual(max(ip1, ip2), ip1))
-        {
-            return 1;
-        }
-        return -1;
+        return 0;
     }
 
     /**
@@ -1937,7 +1798,7 @@ class ASN1PKIXNameConstraintValidator
         return temp;
     }
 
-    private int hashCollection(Collection coll)
+    private static int hashCollection(Collection coll)
     {
         if (coll == null)
         {
@@ -1960,7 +1821,7 @@ class ASN1PKIXNameConstraintValidator
         return hash;
     }
 
-    private boolean collectionsAreEqual(Collection coll1, Collection coll2)
+    private static boolean collectionsAreEqual(Collection coll1, Collection coll2)
     {
         if (coll1 == coll2)
         {
@@ -1998,7 +1859,7 @@ class ASN1PKIXNameConstraintValidator
         return true;
     }
 
-    private boolean equals(Object o1, Object o2)
+    private static boolean equals(Object o1, Object o2)
     {
         if (o1 == o2)
         {
@@ -2024,7 +1885,7 @@ class ASN1PKIXNameConstraintValidator
      * @param ip The IP with subnet mask.
      * @return The stringified IP address.
      */
-    private String stringifyIP(byte[] ip)
+    private static String stringifyIP(byte[] ip)
     {
         StringBuffer temp = new StringBuffer();
         for (int i = 0; i < ip.length / 2; i++)
@@ -2054,7 +1915,7 @@ class ASN1PKIXNameConstraintValidator
         return temp.toString();
     }
 
-    private String stringifyIPCollection(Set ips)
+    private static String stringifyIPCollection(Set ips)
     {
         StringBuffer temp = new StringBuffer();
         temp.append("[");
@@ -2070,7 +1931,7 @@ class ASN1PKIXNameConstraintValidator
         return temp.toString();
     }
 
-    private String stringifyOtherNameCollection(Set otherNames)
+    private static String stringifyOtherNameCollection(Set otherNames)
     {
         StringBuffer temp = new StringBuffer();
         temp.append("[");
@@ -2080,13 +1941,13 @@ class ASN1PKIXNameConstraintValidator
             {
                 temp.append(",");
             }
-            OtherName name = OtherName.getInstance(it.next());
-            temp.append(name.getTypeID().getId());
+            OtherName otherName = OtherName.getInstance(it.next());
+            temp.append(otherName.getTypeID().getId());
             temp.append(":");
             try
             {
                 // -DM Hex.toHexString
-                temp.append(Hex.toHexString(name.getValue().toASN1Primitive().getEncoded()));
+                temp.append(Hex.toHexString(otherName.getValue().toASN1Primitive().getEncoded()));
             }
             catch (IOException e)
             {
@@ -2095,11 +1956,6 @@ class ASN1PKIXNameConstraintValidator
         }
         temp.append("]");
         return temp.toString();
-    }
-
-    private final void addLine(StringBuffer sb, String str)
-    {
-         sb.append(str).append(Strings.lineSeparator());
     }
 
     public String toString()
@@ -2169,5 +2025,20 @@ class ASN1PKIXNameConstraintValidator
             addLine(temp, stringifyOtherNameCollection(excludedSubtreesOtherName));
         }
         return temp.toString();
+    }
+
+    private static void addLine(StringBuffer sb, String str)
+    {
+         sb.append(str).append(Strings.lineSeparator());
+    }
+
+    private static String extractNameAsString(GeneralSubtree subtree)
+    {
+        return extractNameAsString(subtree.getBase().getName());
+    }
+
+    private static String extractNameAsString(ASN1Encodable nameValue)
+    {
+        return ASN1IA5String.getInstance(nameValue).getString();
     }
 }

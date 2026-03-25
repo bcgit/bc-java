@@ -55,6 +55,32 @@ public class PKIXNameConstraintValidator
         }
     }
 
+    public void checkPermittedEmail(String email)
+        throws PKIXNameConstraintValidatorException
+    {
+        try
+        {
+            this.validator.checkPermittedEmail(email);
+        }
+        catch (NameConstraintValidatorException e)
+        {
+            throw new PKIXNameConstraintValidatorException(e.getMessage(), e);
+        }
+    }
+
+    public void checkExcludedEmail(String email)
+        throws PKIXNameConstraintValidatorException
+    {
+        try
+        {
+            this.validator.checkExcludedEmail(email);
+        }
+        catch (NameConstraintValidatorException e)
+        {
+            throw new PKIXNameConstraintValidatorException(e.getMessage(), e);
+        }
+    }
+
     /**
      * Checks if the given GeneralName is in the permitted set.
      *
