@@ -74,6 +74,7 @@ class CertPathValidatorUtilities
     protected static final String ANY_POLICY = "2.5.29.32.0";
 
     protected static final String CRL_NUMBER = Extension.cRLNumber.getId();
+    protected static final String REASON_CODE = Extension.reasonCode.getId();
 
     /*
     * key usage bits
@@ -81,7 +82,8 @@ class CertPathValidatorUtilities
     protected static final int KEY_CERT_SIGN = 5;
     protected static final int CRL_SIGN = 6;
 
-    protected static final String[] crlReasons = new String[]{
+    static final String[] crlReasons = new String[]
+    {
         "unspecified",
         "keyCompromise",
         "cACompromise",
@@ -92,10 +94,8 @@ class CertPathValidatorUtilities
         "unknown",
         "removeFromCRL",
         "privilegeWithdrawn",
-        "aACompromise"};
-
-
-
+        "aACompromise",
+    };
 
     /**
      * Returns the issuer of an attribute certificate or certificate.
@@ -117,21 +117,16 @@ class CertPathValidatorUtilities
 //        }
     }
 
-    protected static Date getValidDate(PKIXParameters paramsPKIX)
-    {
-        Date validDate = paramsPKIX.getDate();
-
-        if (validDate == null)
-        {
-            validDate = new Date();
-        }
-
-        return validDate;
-    }
-
     protected static X500Principal getSubjectPrincipal(X509Certificate cert)
     {
         return cert.getSubjectX500Principal();
+    }
+
+    static Date getValidityDate(PKIXParameters paramsPKIX, Date currentDate)
+    {
+        Date validityDate = paramsPKIX.getDate();
+
+        return null == validityDate ? currentDate : validityDate;
     }
 
     protected static boolean isSelfIssued(X509Certificate cert)
@@ -147,18 +142,12 @@ class CertPathValidatorUtilities
      * @param oid The object identifier to obtain.
      * @throws AnnotatedException if the extension cannot be read.
      */
-    protected static ASN1Primitive getExtensionValue(
-        java.security.cert.X509Extension ext,
-        String oid)
+    protected static ASN1Primitive getExtensionValue(java.security.cert.X509Extension ext, String oid)
         throws AnnotatedException
     {
         byte[] bytes = ext.getExtensionValue(oid);
-        if (bytes == null)
-        {
-            return null;
-        }
 
-        return getObject(oid, bytes);
+        return null == bytes ? null : getObject(oid, bytes);
     }
 
     private static ASN1Primitive getObject(
@@ -686,24 +675,24 @@ class CertPathValidatorUtilities
         ASN1Enumerated reasonCode = null;
         if (crl_entry.hasExtensions())
         {
+            if (crl_entry.hasUnsupportedCriticalExtension())
+            {
+                throw new AnnotatedException("CRL entry has unsupported critical extensions.");
+            }
+
             try
             {
-                reasonCode = ASN1Enumerated
-                    .getInstance(CertPathValidatorUtilities
-                        .getExtensionValue(crl_entry,
-                            Extension.reasonCode.getId()));
+                reasonCode = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, REASON_CODE));
             }
             catch (Exception e)
             {
-                throw new AnnotatedException(
-                    "Reason code CRL entry extension could not be decoded.",
-                    e);
+                throw new AnnotatedException("Reason code CRL entry extension could not be decoded.", e);
             }
         }
 
         int reasonCodeValue = (null == reasonCode)
             ?   CRLReason.unspecified
-            :   reasonCode.getValue().intValue();
+            :   reasonCode.intValueExact();
 
         // for reason keyCompromise, caCompromise, aACompromise or unspecified
         if (!(validDate.getTime() < crl_entry.getRevocationDate().getTime())
@@ -802,7 +791,7 @@ class CertPathValidatorUtilities
     {
         try
         {
-            byte[] idp = crl.getExtensionValue(Extension.issuingDistributionPoint.getId());
+            byte[] idp = crl.getExtensionValue(ISSUING_DISTRIBUTION_POINT);
             return idp != null
                 && IssuingDistributionPoint.getInstance(ASN1OctetString.getInstance(idp).getOctets()).isIndirectCRL();
         }
@@ -813,10 +802,34 @@ class CertPathValidatorUtilities
         }
     }
 
-    protected static Date getValidityDate(PKIXParameters paramsPKIX, Date currentDate)
+    static void checkCRLCriticalExtensions(X509CRL crl, String exceptionMessage)
+        throws AnnotatedException
     {
-        Date validityDate = paramsPKIX.getDate();
+        if (crl.hasUnsupportedCriticalExtension())
+        {
+            throw new AnnotatedException(exceptionMessage);
+        }
 
-        return null == validityDate ? currentDate : validityDate;
+        Set criticalExtensions = crl.getCriticalExtensionOIDs();
+        if (criticalExtensions != null)
+        {
+            int count = criticalExtensions.size();
+            if (count > 0)
+            {
+                if (criticalExtensions.contains(ISSUING_DISTRIBUTION_POINT))
+                {
+                    --count;
+                }
+                if (criticalExtensions.contains(DELTA_CRL_INDICATOR))
+                {
+                    --count;
+                }
+
+                if (count > 0)
+                {
+                    throw new AnnotatedException(exceptionMessage);
+                }
+            }
+        }
     }
 }
