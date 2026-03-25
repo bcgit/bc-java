@@ -468,7 +468,7 @@ public class NistCertPathTest
     public void testInvalidInhibitPolicyMappingTest1()
         throws Exception
     {
-        String[] certList = new String[] { "inhibitPolicyMapping0CACert", "inhibitPolicyMapping0subCACert", "InvalidInhibitPolicyMappingTest1EE" };
+        String[] certList = new String[] { "inhibitPolicyMapping0CACert", "inhibitPolicyMapping0subCACert", "InvalidinhibitPolicyMappingTest1EE" };
         String[] crlList = new String[] { TRUST_ANCHOR_ROOT_CRL, "inhibitPolicyMapping0CACRL", "inhibitPolicyMapping0subCACRL" };
 
         doExceptionTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, null,
@@ -479,7 +479,7 @@ public class NistCertPathTest
     public void testValidInhibitPolicyMappingTest2()
         throws Exception
     {
-        String[] certList = new String[] { "inhibitPolicyMapping1P12CACert", "inhibitPolicyMapping1P12subCACert", "ValidInhibitPolicyMappingTest2EE" };
+        String[] certList = new String[] { "inhibitPolicyMapping1P12CACert", "inhibitPolicyMapping1P12subCACert", "ValidinhibitPolicyMappingTest2EE" };
         String[] crlList = new String[] { TRUST_ANCHOR_ROOT_CRL, "inhibitPolicyMapping1P12CACRL", "inhibitPolicyMapping1P12subCACRL" };
 
         doTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, nistTestPolicy1);
@@ -489,7 +489,7 @@ public class NistCertPathTest
     public void testValidSelfIssuedInhibitAnyPolicyTest7()
         throws Exception
     {
-        String[] certList = new String[] { "inhibitAnyPolicy1CACert", "inhibitAnyPolicy1SelfIssuedCACert", "inhibitAnyPolicy1subCA2Cert", "ValidSelfIssuedInhibitAnyPolicyTest7EE" };
+        String[] certList = new String[] { "inhibitAnyPolicy1CACert", "inhibitAnyPolicy1SelfIssuedCACert", "inhibitAnyPolicy1subCA2Cert", "ValidSelfIssuedinhibitAnyPolicyTest7EE" };
         String[] crlList = new String[] { TRUST_ANCHOR_ROOT_CRL, "inhibitAnyPolicy1CACRL", "inhibitAnyPolicy1subCA2CRL" };
 
         doBuilderTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, null, false, false);
