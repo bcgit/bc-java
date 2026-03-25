@@ -67,24 +67,19 @@ public class PKIXNameConstraintValidator
             checkPermittedOtherName(permittedSubtreesOtherName, OtherName.getInstance(name.getName()));
             break;
         case GeneralName.rfc822Name:
-            checkPermittedEmail(permittedSubtreesEmail,
-                extractNameAsString(name));
+            checkPermittedEmail(permittedSubtreesEmail, extractNameAsString(name));
             break;
         case GeneralName.dNSName:
-            checkPermittedDNS(permittedSubtreesDNS, ASN1IA5String.getInstance(
-                name.getName()).getString());
+            checkPermittedDNS(permittedSubtreesDNS, extractNameAsString(name));
             break;
         case GeneralName.directoryName:
             checkPermittedDN(X500Name.getInstance(name.getName()));
             break;
         case GeneralName.uniformResourceIdentifier:
-            checkPermittedURI(permittedSubtreesURI, ASN1IA5String.getInstance(
-                name.getName()).getString());
+            checkPermittedURI(permittedSubtreesURI, extractNameAsString(name));
             break;
         case GeneralName.iPAddress:
-            byte[] ip = ASN1OctetString.getInstance(name.getName()).getOctets();
-
-            checkPermittedIP(permittedSubtreesIP, ip);
+            checkPermittedIP(permittedSubtreesIP, ASN1OctetString.getInstance(name.getName()).getOctets());
             break;
         default:
             // other tags to be ignored.
@@ -110,20 +105,16 @@ public class PKIXNameConstraintValidator
             checkExcludedEmail(excludedSubtreesEmail, extractNameAsString(name));
             break;
         case GeneralName.dNSName:
-            checkExcludedDNS(excludedSubtreesDNS, ASN1IA5String.getInstance(
-                name.getName()).getString());
+            checkExcludedDNS(excludedSubtreesDNS, extractNameAsString(name));
             break;
         case GeneralName.directoryName:
             checkExcludedDN(X500Name.getInstance(name.getName()));
             break;
         case GeneralName.uniformResourceIdentifier:
-            checkExcludedURI(excludedSubtreesURI, ASN1IA5String.getInstance(
-                name.getName()).getString());
+            checkExcludedURI(excludedSubtreesURI, extractNameAsString(name));
             break;
         case GeneralName.iPAddress:
-            byte[] ip = ASN1OctetString.getInstance(name.getName()).getOctets();
-
-            checkExcludedIP(excludedSubtreesIP, ip);
+            checkExcludedIP(excludedSubtreesIP, ASN1OctetString.getInstance(name.getName()).getOctets());
             break;
         default:
             // other tags to be ignored.
@@ -254,8 +245,8 @@ public class PKIXNameConstraintValidator
                 extractNameAsString(base));
             break;
         case GeneralName.iPAddress:
-            excludedSubtreesIP = unionIP(excludedSubtreesIP, ASN1OctetString
-                .getInstance(base.getName()).getOctets());
+            excludedSubtreesIP = unionIP(excludedSubtreesIP,
+                ASN1OctetString.getInstance(base.getName()).getOctets());
             break;
         default:
             throw new IllegalStateException("Unknown tag encountered: " + base.getTagNo());
@@ -331,7 +322,7 @@ public class PKIXNameConstraintValidator
         {
             start = j;
             RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
-            if (dnsRdn.equals(subtreeRdnStart))
+            if (IETFUtils.rDNAreEqual(subtreeRdnStart, dnsRdn))
             {
                 break;
             }
@@ -487,7 +478,7 @@ public class PKIXNameConstraintValidator
             Iterator it = excluded.iterator();
             while (it.hasNext())
             {
-                ASN1Sequence subtree = (ASN1Sequence)it.next();
+                ASN1Sequence subtree = ASN1Sequence.getInstance(it.next());
 
                 if (withinDNSubtree(dn, subtree))
                 {
@@ -510,17 +501,43 @@ public class PKIXNameConstraintValidator
 
     private Set intersectOtherName(Set permitted, Set otherNames)
     {
-        Set intersect = new HashSet(permitted);
+        Set intersect = new HashSet();
+        for (Iterator it = otherNames.iterator(); it.hasNext();)
+        {
+            OtherName otName1 = OtherName.getInstance(((GeneralSubtree)it.next()).getBase().getName());
 
-        intersect.retainAll(otherNames);
+            if (permitted == null)
+            {
+                if (otName1 != null)
+                {
+                    intersect.add(otName1);
+                }
+            }
+            else
+            {
+                Iterator it2 = permitted.iterator();
+                while (it2.hasNext())
+                {
+                    OtherName otName2 = OtherName.getInstance(it2.next());
 
+                    intersectOtherName(otName1, otName2, intersect);
+                }
+            }
+        }
         return intersect;
     }
 
+    private void intersectOtherName(OtherName otName1, OtherName otName2, Set intersect)
+    {
+        if (otName1.equals(otName2))
+        {
+            intersect.add(otName1);
+        }
+    }
 
     private Set unionOtherName(Set permitted, OtherName otherName)
     {
-        Set union = new HashSet(permitted);
+        Set union = permitted != null ? new HashSet(permitted) : new HashSet();
 
         union.add(otherName);
 
@@ -839,7 +856,7 @@ public class PKIXNameConstraintValidator
 
         while (it.hasNext())
         {
-            OtherName str = ((OtherName)it.next());
+            OtherName str = OtherName.getInstance(it.next());
 
             if (otherNameIsConstrained(name, str))
             {
@@ -2063,6 +2080,7 @@ public class PKIXNameConstraintValidator
             temp.append(":");
             try
             {
+                // -DM Hex.toHexString
                 temp.append(Hex.toHexString(name.getValue().toASN1Primitive().getEncoded()));
             }
             catch (IOException e)
