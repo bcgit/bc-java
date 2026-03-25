@@ -896,7 +896,7 @@ class RFC3280CertPathUtilities
                 X509CRL crl = (X509CRL)crl_iter.next();
 
                 // (d)
-                ReasonsMask interimReasonsMask = RFC3280CertPathUtilities.processCRLD(crl, dp);
+                ReasonsMask interimReasonsMask = processCRLD(crl, dp);
 
                 // (e)
                 /*
@@ -910,10 +910,9 @@ class RFC3280CertPathUtilities
                 }
 
                 // (f)
-                Set keys = RFC3280CertPathUtilities.processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey,
-                    paramsPKIX, certPathCerts, helper);
+                Set keys = processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey, paramsPKIX, certPathCerts, helper);
                 // (g)
-                PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
+                PublicKey key = processCRLG(crl, keys);
 
                 X509CRL deltaCRL = null;
 
@@ -923,7 +922,7 @@ class RFC3280CertPathUtilities
                     Set deltaCRLs = RevocationUtilities.getDeltaCRLs(validityDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
                     // we only want one valid delta CRL
                     // (h)
-                    deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs, key);
+                    deltaCRL = processCRLH(deltaCRLs, key);
                 }
 
                 /*
@@ -952,19 +951,19 @@ class RFC3280CertPathUtilities
                     }
                 }
 
-                RFC3280CertPathUtilities.processCRLB1(dp, cert, crl);
+                processCRLB1(dp, cert, crl);
 
                 // (b) (2)
-                RFC3280CertPathUtilities.processCRLB2(dp, cert, crl);
+                processCRLB2(dp, cert, crl);
 
                 // (c)
-                RFC3280CertPathUtilities.processCRLC(deltaCRL, crl, paramsPKIX);
+                processCRLC(deltaCRL, crl, paramsPKIX);
 
                 // (i)
-                RFC3280CertPathUtilities.processCRLI(validityDate, deltaCRL, cert, certStatus, paramsPKIX);
+                processCRLI(validityDate, deltaCRL, cert, certStatus, paramsPKIX);
 
                 // (j)
-                RFC3280CertPathUtilities.processCRLJ(validityDate, crl, cert, certStatus);
+                processCRLJ(validityDate, crl, cert, certStatus);
 
                 // (k)
                 if (certStatus.getCertStatus() == CRLReason.removeFromCRL)
