@@ -2176,8 +2176,8 @@ class RFC3280CertPathUtilities
         }
         if (!criticalExtensions.isEmpty())
         {
-            throw new ExtCertPathValidatorException("Certificate has unsupported critical extension: " + criticalExtensions, null, certPath,
-                index);
+            throw new ExtCertPathValidatorException(getUnsupportedCriticalExtensionMessage(criticalExtensions), null,
+                certPath, index);
         }
     }
 
@@ -2360,8 +2360,8 @@ class RFC3280CertPathUtilities
 
         if (!criticalExtensions.isEmpty())
         {
-            throw new ExtCertPathValidatorException("Certificate has unsupported critical extension: " + criticalExtensions, null, certPath,
-                index);
+            throw new ExtCertPathValidatorException(getUnsupportedCriticalExtensionMessage(criticalExtensions), null,
+                certPath, index);
         }
     }
 
@@ -2542,4 +2542,26 @@ class RFC3280CertPathUtilities
         return intersection;
     }
 
+
+    private static String getUnsupportedCriticalExtensionMessage(Set criticalExtensions)
+    {
+        // TODO Still susceptible to sort order for stable error messages
+        StringBuffer sb = new StringBuffer("Certificate has unsupported critical extension: [");
+        Iterator it = criticalExtensions.iterator();
+        if (it.hasNext())
+        {
+            for (;;)
+            {
+                String oid = (String)it.next();
+                sb.append(oid);
+                if (!it.hasNext())
+                {
+                    break;
+                }
+                sb.append(", ");
+            }
+        }
+        sb.append(']');
+        return sb.toString();
+    }
 }
