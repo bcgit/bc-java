@@ -372,7 +372,7 @@ public class TimeStampResponseGenerator
     {
         FailInfo(int failInfoValue)
         {
-            super(getBytes(failInfoValue), getPadBits(failInfoValue));
+            super(failInfoValue);
         }
     }
 }

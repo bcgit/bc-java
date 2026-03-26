@@ -72,14 +72,12 @@ public class ReasonFlags
      * @param reasons - the bitwise OR of the Key Reason flags giving the
      * allowed uses for the key.
      */
-    public ReasonFlags(
-        int reasons)
+    public ReasonFlags(int reasons)
     {
-        super(getBytes(reasons), getPadBits(reasons));
+        super(reasons);
     }
 
-    public ReasonFlags(
-        ASN1BitString reasons)
+    public ReasonFlags(ASN1BitString reasons)
     {
         super(reasons.getBytes(), reasons.getPadBits());
     }
