@@ -20,7 +20,7 @@ public class BERBitString
         {
         case 0:
             // No bits
-            return new byte[]{ 0 };
+            return EMPTY_OCTETS_CONTENTS;
         case 1:
             return bitStrings[0].contents;
         default:
@@ -82,6 +82,13 @@ public class BERBitString
         super(data, padBits);
         this.elements = null;
         this.segmentLimit = segmentLimit;
+    }
+
+    public BERBitString(int namedBits)
+    {
+        super(namedBits);
+        this.elements = null;
+        this.segmentLimit = DEFAULT_SEGMENT_LIMIT;
     }
 
     public BERBitString(ASN1Encodable obj) throws IOException
