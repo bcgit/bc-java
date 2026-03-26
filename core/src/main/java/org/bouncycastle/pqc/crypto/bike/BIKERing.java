@@ -105,7 +105,7 @@ class BIKERing
         copy(a, t);
 
         int rSub2 = bits - 2;
-        int bits = 32 - Integers.numberOfLeadingZeros(rSub2);
+        int bits = Integers.bitLength(rSub2);
 
         for (int i = 1; i < bits; ++i)
         {
@@ -312,7 +312,7 @@ class BIKERing
     private static void generateHalfPowersInv(Map<Integer, Integer> halfPowers, int r)
     {
         int rSub2 = r - 2;
-        int bits = 32 - Integers.numberOfLeadingZeros(rSub2);
+        int bits = Integers.bitLength(rSub2);
 
         int r32 = Mod.inverse32(-r);
         for (int i = 1; i < bits; ++i)
