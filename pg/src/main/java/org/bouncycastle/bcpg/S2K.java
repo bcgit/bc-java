@@ -550,7 +550,7 @@ public class S2K
              * Memory size (i.e. 1 << memorySizeExponent) MUST be an integer number of kibibytes from 8*p to 2^32-1.
              * Max here is 30 because we are treating memory size as a signed 32-bit value.
              */
-            int minExp = 35 - Integers.numberOfLeadingZeros(parallelism - 1);
+            int minExp = 3 + Integers.bitLength(parallelism - 1);
             int maxExp = 30;
             if (memSizeExp < minExp || memSizeExp > maxExp)
             {
