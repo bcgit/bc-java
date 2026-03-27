@@ -2,6 +2,8 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * ASN.1 OctetStrings, with indefinite length rules, and <i>constructed form</i> support.
  * <p>
@@ -19,10 +21,37 @@ import java.io.IOException;
 public class BEROctetString
     extends ASN1OctetString
 {
-    private static final int DEFAULT_SEGMENT_LIMIT = 1000;
+    public static final BEROctetString EMPTY = new BEROctetString(EMPTY_OCTETS);
 
-    private final int segmentLimit;
-    private final ASN1OctetString[] elements;
+    public static BEROctetString fromContents(byte[] contents)
+    {
+        if (contents == null)
+        {
+            throw new NullPointerException("'contents' cannot be null");
+        }
+
+        return internalFromContents(contents);
+    }
+
+    public static BEROctetString fromContentsOptional(byte[] contents)
+    {
+        return contents == null ? null : internalFromContents(contents);
+    }
+
+    public static BEROctetString withContents(byte[] contents)
+    {
+        if (contents == null)
+        {
+            throw new NullPointerException("'contents' cannot be null");
+        }
+
+        return internalWithContents(contents);
+    }
+
+    public static BEROctetString withContentsOptional(byte[] contents)
+    {
+        return contents == null ? null : internalWithContents(contents);
+    }
 
     /**
      * Convert a vector of octet strings into a single byte string
@@ -57,6 +86,21 @@ public class BEROctetString
         }
         }
     }
+
+    static BEROctetString internalFromContents(byte[] contents)
+    {
+        return contents.length < 1 ? EMPTY : new BEROctetString(Arrays.clone(contents));
+    }
+
+    static BEROctetString internalWithContents(byte[] contents)
+    {
+        return contents.length < 1 ? EMPTY : new BEROctetString(contents);
+    }
+
+    private static final int DEFAULT_SEGMENT_LIMIT = 1000;
+
+    private final int segmentLimit;
+    private final ASN1OctetString[] elements;
 
     /**
      * Create an OCTET-STRING object from a byte[]

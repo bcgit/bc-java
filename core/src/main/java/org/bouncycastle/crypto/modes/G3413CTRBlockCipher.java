@@ -13,8 +13,6 @@ import org.bouncycastle.util.Arrays;
 public class G3413CTRBlockCipher
     extends StreamBlockCipher
 {
-
-
     private final int s;
     private byte[] CTR;
     private byte[] IV;
@@ -23,7 +21,6 @@ public class G3413CTRBlockCipher
     private final BlockCipher cipher;
     private int byteCount = 0;
     private boolean initialized;
-
 
     /**
      * Basic constructor.
@@ -76,7 +73,6 @@ public class G3413CTRBlockCipher
         CipherParameters params)
         throws IllegalArgumentException
     {
-
         if (params instanceof ParametersWithIV)
         {
             ParametersWithIV ivParam = (ParametersWithIV)params;
@@ -95,7 +91,7 @@ public class G3413CTRBlockCipher
             {
                 CTR[i] = 0;
             }
-
+    
             // if null it's an IV changed only.
             if (ivParam.getParameters() != null)
             {
@@ -184,27 +180,33 @@ public class G3413CTRBlockCipher
         if (byteCount == s)
         {
             byteCount = 0;
-            generateCRT();
+            generateCTR();
         }
 
         return rv;
 
     }
 
-    private void generateCRT()
+    private void generateCTR()
     {
-        CTR[CTR.length - 1]++;
+        int start = CTR.length - 1;
+        while (++CTR[start] == 0)
+        {
+            start--;
+            if (start == IV.length - 1)
+            {
+                throw new IllegalStateException("attempt to process too many blocks");
+            }
+        }
     }
 
 
     private byte[] generateBuf()
     {
-
         byte[] encryptedCTR = new byte[CTR.length];
         cipher.processBlock(CTR, 0, encryptedCTR, 0);
 
         return GOST3413CipherUtil.MSB(encryptedCTR, s);
-
     }
 
 

@@ -16,7 +16,7 @@ abstract class AbstractTlsContext
 {
     private static long counter = Times.nanoTime();
 
-    private synchronized static long nextCounterValue()
+    private static synchronized long nextCounterValue()
     {
         return ++counter;
     }

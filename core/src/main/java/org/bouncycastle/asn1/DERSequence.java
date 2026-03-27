@@ -11,9 +11,21 @@ import java.io.IOException;
 public class DERSequence
     extends ASN1Sequence
 {
+    public static final DERSequence EMPTY = new DERSequence();
+
     public static DERSequence convert(ASN1Sequence seq)
     {
         return (DERSequence)seq.toDERObject();
+    }
+
+    public static DERSequence fromElementsOptional(ASN1Encodable[] elements)
+    {
+        if (elements == null)
+        {
+            return null;
+        }
+
+        return elements.length < 1 ? EMPTY : new DERSequence(elements);
     }
 
     private int contentsLength = -1;

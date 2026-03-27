@@ -61,18 +61,16 @@ import org.bouncycastle.util.io.TeeOutputStream;
 
 class CMSUtils
 {
-    private static final Set<String> des = new HashSet<String>();
+    private static final Set desAlgs = new HashSet();
     private static final Set mqvAlgs = new HashSet();
     private static final Set ecAlgs = new HashSet();
     private static final Set gostAlgs = new HashSet();
 
     static
     {
-        des.add("DES");
-        des.add("DESEDE");
-        des.add(OIWObjectIdentifiers.desCBC.getId());
-        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
-        des.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
+        desAlgs.add(OIWObjectIdentifiers.desCBC);
+        desAlgs.add(PKCSObjectIdentifiers.des_EDE3_CBC);
+        desAlgs.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap);
 
         mqvAlgs.add(X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme);
@@ -113,14 +111,13 @@ class CMSUtils
 
     static boolean isRFC2631(ASN1ObjectIdentifier algorithm)
     {
-        return algorithm.equals(PKCSObjectIdentifiers.id_alg_ESDH) || algorithm.equals(PKCSObjectIdentifiers.id_alg_SSDH);
+        return PKCSObjectIdentifiers.id_alg_ESDH.equals(algorithm)
+            || PKCSObjectIdentifiers.id_alg_SSDH.equals(algorithm);
     }
 
-    static boolean isDES(String algorithmID)
+    static boolean isDES(ASN1ObjectIdentifier algorithm)
     {
-        String name = Strings.toUpperCase(algorithmID);
-
-        return des.contains(name);
+        return desAlgs.contains(algorithm);
     }
 
     static boolean isEquivalent(AlgorithmIdentifier algId1, AlgorithmIdentifier algId2)
@@ -422,22 +419,11 @@ class CMSUtils
             s1, s2);
     }
 
-    static EncryptedContentInfo getEncryptedContentInfo(CMSTypedData content, OutputEncryptor contentEncryptor, byte[] encryptedContent)
+    static EncryptedContentInfo getEncryptedContentInfo(CMSTypedData content, OutputEncryptor contentEncryptor,
+        ASN1OctetString encryptedContent)
     {
-        return getEncryptedContentInfo(
-            content.getContentType(),
-            contentEncryptor.getAlgorithmIdentifier(),
+        return new EncryptedContentInfo(content.getContentType(), contentEncryptor.getAlgorithmIdentifier(),
             encryptedContent);
-    }
-
-    static EncryptedContentInfo getEncryptedContentInfo(ASN1ObjectIdentifier encryptedContentType, AlgorithmIdentifier encAlgId, byte[] encryptedContent)
-    {
-        ASN1OctetString encContent = new BEROctetString(encryptedContent);
-
-        return new EncryptedContentInfo(
-            encryptedContentType,
-            encAlgId,
-            encContent);
     }
 
     static ASN1EncodableVector getRecipentInfos(GenericKey encKey, List recipientInfoGenerators)
@@ -460,11 +446,11 @@ class CMSUtils
     {
         if (berEncodeRecipientSet)
         {
-            authGen.getRawOutputStream().write(new BERSet(recipientInfos).getEncoded());
+            new BERSet(recipientInfos).encodeTo(authGen.getRawOutputStream());
         }
         else
         {
-            authGen.getRawOutputStream().write(new DERSet(recipientInfos).getEncoded());
+            new DERSet(recipientInfos).encodeTo(authGen.getRawOutputStream());
         }
     }
 
@@ -492,7 +478,7 @@ class CMSUtils
         ASN1Set authenticatedAttrSet = null;
         if (authAttrsGenerator != null)
         {
-            AttributeTable attrTable = authAttrsGenerator.getAttributes(Collections.EMPTY_MAP);
+            AttributeTable attrTable = authAttrsGenerator.getAttributes(getEmptyParameters());
 
             authenticatedAttrSet = new DERSet(attrTable.toASN1EncodableVector());
             encryptor.getAADStream().write(authenticatedAttrSet.getEncoded(ASN1Encoding.DER));
@@ -521,12 +507,12 @@ class CMSUtils
 
     static ASN1Set getAttrDLSet(CMSAttributeTableGenerator gen)
     {
-        return (gen != null) ? new DLSet(gen.getAttributes(Collections.EMPTY_MAP).toASN1EncodableVector()) : null;
+        return (gen != null) ? new DLSet(gen.getAttributes(getEmptyParameters()).toASN1EncodableVector()) : null;
     }
 
     static ASN1Set getAttrBERSet(CMSAttributeTableGenerator gen)
     {
-        return (gen != null) ? new BERSet(gen.getAttributes(Collections.EMPTY_MAP).toASN1EncodableVector()) : null;
+        return (gen != null) ? new BERSet(gen.getAttributes(getEmptyParameters()).toASN1EncodableVector()) : null;
     }
 
     static byte[] encodeObj(
@@ -539,5 +525,10 @@ class CMSUtils
         }
 
         return null;
+    }
+
+    static Map getEmptyParameters()
+    {
+        return Collections.EMPTY_MAP;
     }
 }

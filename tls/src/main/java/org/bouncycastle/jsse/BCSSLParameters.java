@@ -44,6 +44,7 @@ public final class BCSSLParameters
     private String[] signatureSchemes = null;
     private String[] signatureSchemesCert = null;
     private String[] namedGroups = null;
+    private String[] earlyKeyShares = null;
 
     public BCSSLParameters()
     {
@@ -325,5 +326,35 @@ public final class BCSSLParameters
         }
 
         this.namedGroups = check;
+    }
+
+    public String[] getEarlyKeyShares()
+    {
+        return TlsUtils.clone(earlyKeyShares);
+    }
+
+    public void setEarlyKeyShares(String[] earlyKeyShares)
+    {
+        String[] check = null;
+
+        if (earlyKeyShares != null)
+        {
+            check = TlsUtils.clone(earlyKeyShares);
+            HashSet<String> seenEntries = new HashSet<String>();
+            for (String entry : check)
+            {
+                if (TlsUtils.isNullOrEmpty(entry))
+                {
+                    throw new IllegalArgumentException("'earlyKeyShares' entries cannot be null or empty strings");
+                }
+
+                if (!seenEntries.add(entry))
+                {
+                    throw new IllegalArgumentException("'earlyKeyShares' contains duplicate entry: " + entry);
+                }
+            }
+        }
+
+        this.earlyKeyShares = check;
     }
 }

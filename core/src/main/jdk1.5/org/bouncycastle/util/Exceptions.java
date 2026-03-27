@@ -14,9 +14,14 @@ public class Exceptions
         return new IllegalStateException(message, cause);
     }
 
-    public static IOException ioException(String message, Throwable cause)
+    public static IOException ioException(String message, final Throwable cause)
     {
-        return new IOException(message + "-" + cause.getMessage());
+        return new IOException(message + "-" + cause.getMessage())
+        {
+            public synchronized Throwable getCause()
+            {
+                return cause;
+            }
+        };
     }
-
 }

@@ -7,10 +7,12 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 
 import junit.framework.Assert;
-
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
+import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -30,7 +32,7 @@ class TestUtils
         return "true".equalsIgnoreCase(value);
     }
 
-    public interface KeyGenerationOperation
+    public interface SignerOperation
     {
         SecureRandom getSecureRandom(byte[] seed);
 
@@ -45,7 +47,24 @@ class TestUtils
         MessageSigner getMessageSigner();
     }
 
-    public static void testTestVector(boolean sampleOnly, boolean enableFactory, boolean isSigner, String homeDir, String[] files, KeyGenerationOperation operation)
+    public interface KeyEncapsulationOperation
+    {
+        SecureRandom getSecureRandom(byte[] seed);
+
+        AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random);
+
+        byte[] getPublicKeyEncoded(AsymmetricKeyParameter pubParams);
+
+        byte[] getPrivateKeyEncoded(AsymmetricKeyParameter privParams);
+
+        EncapsulatedSecretGenerator getKEMGenerator(SecureRandom random);
+
+        EncapsulatedSecretExtractor getKEMExtractor(AsymmetricKeyParameter privParams);
+
+        int getSessionKeySize();
+    }
+
+    public static void testTestVector(boolean sampleOnly, boolean enableFactory, boolean isSigner, String homeDir, String[] files, SignerOperation operation)
         throws Exception
     {
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
@@ -151,6 +170,95 @@ class TestUtils
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
+        }
+    }
+
+    public static void testTestVector(boolean alwaysFull, boolean enableFactory, String homeDir, String[] files, KeyEncapsulationOperation operation)
+        throws Exception
+    {
+        for (int fileIndex = 0; fileIndex < files.length; fileIndex++)
+        {
+            String name = files[fileIndex];
+            InputStream src = TestResourceFinder.findTestResource(homeDir, name);
+            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+
+            String line = null;
+            HashMap<String, String> buf = new HashMap<String, String>();
+            TestSampler sampler = alwaysFull ? null : new TestSampler();
+            while ((line = bin.readLine()) != null)
+            {
+                line = line.trim();
+
+                if (line.startsWith("#"))
+                {
+                    continue;
+                }
+                if (line.isEmpty())
+                {
+                    if (!buf.isEmpty())
+                    {
+                        String count = (String)buf.get("count");
+                        if (sampler != null && sampler.skipTest(count))
+                        {
+                            continue;
+                        }
+                         System.out.println("test case: " + count);
+
+                        byte[] seed = Hex.decode((String)buf.get("seed")); // seed for bike secure random
+                        byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
+                        byte[] sk = Hex.decode((String)buf.get("sk"));     // private key
+                        byte[] ct = Hex.decode((String)buf.get("ct"));     // ciphertext
+                        byte[] ss = Hex.decode((String)buf.get("ss"));     // session key
+
+                        SecureRandom random = operation.getSecureRandom(seed);
+
+                        AsymmetricCipherKeyPairGenerator kpGen = operation.getAsymmetricCipherKeyPairGenerator(fileIndex, random);
+
+                        //
+                        // Generate keys and test.
+                        //
+                        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+                        AsymmetricKeyParameter pubParams = kp.getPublic();;
+                        AsymmetricKeyParameter privParams = kp.getPrivate();
+                        if (enableFactory)
+                        {
+                            pubParams = PublicKeyFactory.createKey(
+                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams));
+                            privParams = PrivateKeyFactory.createKey(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo(privParams));
+                        }
+
+                        Assert.assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, operation.getPublicKeyEncoded(pubParams)));
+                        Assert.assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, operation.getPrivateKeyEncoded(privParams)));
+
+                        // KEM Encapsulation
+                        EncapsulatedSecretGenerator kemGenerator = operation.getKEMGenerator(random);
+                        SecretWithEncapsulation secretWithEnc = kemGenerator.generateEncapsulated(pubParams);
+
+                        byte[] cipherText = secretWithEnc.getEncapsulation();
+                        Assert.assertTrue(name + " " + count + ": cipherText", Arrays.areEqual(ct, cipherText));
+
+                        byte[] encapSecret = secretWithEnc.getSecret();
+                        Assert.assertTrue(name + " " + count + ": encapSecret", Arrays.areEqual(ss, encapSecret));
+
+                        // KEM Decapsulation
+                        EncapsulatedSecretExtractor kemExtractor = operation.getKEMExtractor(privParams);
+
+                        byte[] decapSecret = kemExtractor.extractSecret(cipherText);
+                        Assert.assertTrue(name + " " + count + ": decapSecret", Arrays.areEqual(ss, decapSecret));
+
+                        //Assert.assertTrue(operation.getSessionKeySize() == secret.length * 8);
+                    }
+                    buf.clear();
+                    continue;
+                }
+                int a = line.indexOf("=");
+                if (a > -1)
+                {
+                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                }
+            }
+            // System.out.println("Testing successful!");
         }
     }
 }

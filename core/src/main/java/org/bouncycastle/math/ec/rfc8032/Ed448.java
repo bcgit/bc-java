@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
 import org.bouncycastle.math.raw.Nat;
+import org.bouncycastle.util.Integers;
 
 /**
  * A low-level implementation of the Ed448 and Ed448ph instantiations of the Edwards-Curve Digital Signature
@@ -191,7 +192,7 @@ public abstract class Ed448
             int yi = Codec.decode32(p, i * 4);
 
             // Reject non-canonical encodings (i.e. >= P)
-            if (t1 == 0 && (yi + Integer.MIN_VALUE) > (P[i] + Integer.MIN_VALUE))
+            if (t1 == 0 && Integers.compareUnsigned(yi, P[i]) > 0)
                 return false;
 
             t0 |= yi;
@@ -201,11 +202,11 @@ public abstract class Ed448
         int y0 = Codec.decode32(p, 0);
 
         // Reject 0 and 1
-        if (t0 == 0 && (y0 + Integer.MIN_VALUE) <= (1 + Integer.MIN_VALUE))
+        if (t0 == 0 && Integers.compareUnsigned(y0, 1) <= 0)
             return false;
 
         // Reject P - 1 and non-canonical encodings (i.e. >= P)
-        if (t1 == 0 && (y0 + Integer.MIN_VALUE) >= (P[0] - 1 + Integer.MIN_VALUE))
+        if (t1 == 0 && Integers.compareUnsigned(y0, P[0] - 1) >= 0)
             return false;
 
         return true;
@@ -255,7 +256,7 @@ public abstract class Ed448
     {
         int x_0 = (p[POINT_BYTES - 1] & 0x80) >>> 7;
 
-        F.decode(p, r.y);
+        F.decode448(p, r.y);
 
         int[] u = F.create();
         int[] v = F.create();

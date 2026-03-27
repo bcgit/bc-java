@@ -42,7 +42,7 @@ public class PrivateMessage
         ciphertext = stream.readOpaque();
     }
 
-    static public PrivateMessage protect(AuthenticatedContent auth, MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes, int paddingSize)
+    public static PrivateMessage protect(AuthenticatedContent auth, MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes, int paddingSize)
         throws IOException, IllegalAccessException, InvalidCipherTextException
     {
         // Get KeyGeneration from the secret tree
@@ -203,7 +203,7 @@ public class PrivateMessage
         //TODO: read padding?
     }
 
-    static private byte[] serializeContentPt(FramedContent content, FramedContentAuthData auth, int paddingSize)
+    private static byte[] serializeContentPt(FramedContent content, FramedContentAuthData auth, int paddingSize)
         throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();

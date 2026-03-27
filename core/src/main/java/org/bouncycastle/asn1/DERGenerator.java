@@ -83,35 +83,28 @@ public abstract class DERGenerator
         byte[]    bytes)
         throws IOException
     {
-        if (_tagged)
+        if (!_tagged)
         {
-            int tagNum = _tagNo | BERTags.CONTEXT_SPECIFIC;
-
-            if (_isExplicit)
-            {
-                int newTag = _tagNo | BERTags.CONSTRUCTED | BERTags.CONTEXT_SPECIFIC;
-
-                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-                writeDEREncoded(bOut, tag, bytes);
-
-                writeDEREncoded(_out, newTag, bOut.toByteArray());
-            }
-            else
-            {
-                if ((tag & BERTags.CONSTRUCTED) != 0)
-                {
-                    writeDEREncoded(_out, tagNum | BERTags.CONSTRUCTED, bytes);
-                }
-                else
-                {
-                    writeDEREncoded(_out, tagNum, bytes);
-                }
-            }
+            writeDEREncoded(_out, tag, bytes);
+        }
+        else if (_isExplicit)
+        {
+            /*
+             * X.690-0207 8.14.2. If implicit tagging [..] was not used [..], the encoding shall be constructed
+             * and the contents octets shall be the complete base encoding.
+             */
+            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            writeDEREncoded(bOut, tag, bytes);
+            writeDEREncoded(_out, _tagNo | BERTags.CONTEXT_SPECIFIC | BERTags.CONSTRUCTED, bOut.toByteArray());
         }
         else
         {
-            writeDEREncoded(_out, tag, bytes);
+            /*
+             * X.690-0207 8.14.3. If implicit tagging was used [..], then: a) the encoding shall be constructed
+             * if the base encoding is constructed, and shall be primitive otherwise; and b) the contents octets
+             * shall be [..] the contents octets of the base encoding.
+             */
+            writeDEREncoded(_out, inheritConstructedFlag(_tagNo | BERTags.CONTEXT_SPECIFIC, tag), bytes);
         }
     }
 }

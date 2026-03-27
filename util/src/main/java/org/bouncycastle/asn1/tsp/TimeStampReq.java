@@ -110,7 +110,7 @@ public class TimeStampReq
         Extensions      extensions)
     {
         // default
-        version = new ASN1Integer(1);
+        version = ASN1Integer.ONE;
 
         this.messageImprint = messageImprint;
         this.tsaPolicy = tsaPolicy;
@@ -170,25 +170,25 @@ public class TimeStampReq
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(6);
-        
+
         v.add(version);
         v.add(messageImprint);
-        
+
         if (tsaPolicy != null)
         {
             v.add(tsaPolicy);
         }
-        
+
         if (nonce != null)
         {
             v.add(nonce);
         }
-        
+
         if (certReq != null && certReq.isTrue())
         {
             v.add(certReq);
         }
-        
+
         if (extensions != null)
         {
             v.add(new DERTaggedObject(false, 0, extensions));

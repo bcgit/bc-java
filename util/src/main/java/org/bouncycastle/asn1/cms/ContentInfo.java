@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -9,7 +8,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DLSequence;
@@ -52,8 +50,7 @@ public class ContentInfo
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
-    public static ContentInfo getInstance(
-        Object  obj)
+    public static ContentInfo getInstance(Object obj)
     {
         if (obj instanceof ContentInfo)
         {
@@ -67,25 +64,30 @@ public class ContentInfo
         return null;
     }
 
-    public static ContentInfo getInstance(
-        ASN1TaggedObject obj,
-        boolean explicit)
+    public static ContentInfo getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return new ContentInfo(ASN1Sequence.getInstance(obj, explicit));
+        return new ContentInfo(ASN1Sequence.getInstance(taggedObject, declaredExplicit));
     }
 
-    private ContentInfo(
-        ASN1Sequence  seq)
+    public static ContentInfo getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        if (seq.size() < 1 || seq.size() > 2)
-        {
-            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
-        }
-        contentType = (ASN1ObjectIdentifier)seq.getObjectAt(0);
+        return new ContentInfo(ASN1Sequence.getTagged(taggedObject, declaredExplicit));
+    }
 
-        if (seq.size() > 1)
+    private ContentInfo(ASN1Sequence seq)
+    {
+        int count = seq.size();
+        if (count < 1 || count > 2)
         {
-            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(seq.getObjectAt(1), BERTags.CONTEXT_SPECIFIC);
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
+
+        this.contentType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+
+        ASN1Encodable content = null;
+        if (count > 1)
+        {
+            ASN1TaggedObject tagged = ASN1TaggedObject.getContextInstance(seq.getObjectAt(1));
             if (!tagged.isExplicit() || tagged.getTagNo() != 0)
             {
                 throw new IllegalArgumentException("Bad tag for 'content'");
@@ -93,10 +95,8 @@ public class ContentInfo
 
             content = tagged.getExplicitBaseObject();
         }
-        else
-        {
-            content = null;
-        }
+        this.content = content;
+
         isDefiniteLength = !(seq instanceof BERSequence);
     }
 
@@ -151,22 +151,15 @@ public class ContentInfo
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector  v = new ASN1EncodableVector(2);
-
-        v.add(contentType);
-
-        if (content != null)
+        if (isDefiniteLength)
         {
-            if (isDefiniteLength)
-            {
-                v.add(new DLTaggedObject(0, content));
-            }
-            else
-            {
-                v.add(new BERTaggedObject(0, content));
-            }
+            return content == null
+                ? new DLSequence(contentType)
+                : new DLSequence(contentType, new DLTaggedObject(0, content));
         }
 
-        return isDefiniteLength ? (ASN1Primitive)new DLSequence(v) : (ASN1Primitive)new BERSequence(v);
+        return content == null
+            ? new BERSequence(contentType)
+            : new BERSequence(contentType, new BERTaggedObject(0, content));
     }
 }

@@ -25,18 +25,6 @@ import org.bouncycastle.asn1.DLSet;
 public class Attributes
     extends ASN1Object
 {
-    private ASN1Set attributes;
-
-    private Attributes(ASN1Set set)
-    {
-        attributes = set;
-    }
-
-    public Attributes(ASN1EncodableVector v)
-    {
-        attributes = new DLSet(v);
-    }
-
     /**
      * Return an Attribute set object from the given object.
      * <p>
@@ -64,11 +52,26 @@ public class Attributes
         return null;
     }
 
-    public static Attributes getInstance(
-        ASN1TaggedObject obj,
-        boolean explicit)
+    public static Attributes getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return getInstance(ASN1Set.getInstance(obj, explicit));
+        return new Attributes(ASN1Set.getInstance(taggedObject, declaredExplicit));
+    }
+
+    public static Attributes getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return new Attributes(ASN1Set.getTagged(taggedObject, declaredExplicit));
+    }
+
+    private ASN1Set attributes;
+
+    private Attributes(ASN1Set set)
+    {
+        attributes = set;
+    }
+
+    public Attributes(ASN1EncodableVector v)
+    {
+        attributes = new DLSet(v);
     }
 
     public Attribute[] getAttributes()
@@ -83,7 +86,7 @@ public class Attributes
         return rv;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

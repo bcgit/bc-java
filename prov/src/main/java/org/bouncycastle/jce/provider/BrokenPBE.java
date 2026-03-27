@@ -267,8 +267,7 @@ public interface BrokenPBE
          *
          * @param bytes the byte array to set the parity on.
          */
-        static private void setOddParity(
-            byte[] bytes)
+        private static void setOddParity(byte[] bytes)
         {
             for (int i = 0; i < bytes.length; i++)
             {
@@ -284,9 +283,7 @@ public interface BrokenPBE
             }
         }
 
-        static private PBEParametersGenerator makePBEGenerator(
-            int                     type,
-            int                     hash)
+        private static PBEParametersGenerator makePBEGenerator(int type, int hash)
         {
             PBEParametersGenerator  generator;
     

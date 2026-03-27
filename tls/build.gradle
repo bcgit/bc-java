@@ -1,6 +1,6 @@
 
 plugins {
-  id "biz.aQute.bnd.builder" version "7.0.0"
+  id "biz.aQute.bnd.builder" version "7.1.0"
 }
 
 jar.archiveBaseName = "bctls-$vmrange"
@@ -48,6 +48,13 @@ sourceSets {
         }
     }
 
+    test25 {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += test.output
+            srcDir(files("src/test/jdk25"))
+        }
+    }
 }
 
 dependencies {
@@ -63,10 +70,17 @@ dependencies {
         builtBy compileJava
     }
 
+    java25Implementation project(':prov')
+    java25Implementation project(':util')
+    java25Implementation project(':pkix')
+    java25Implementation files([sourceSets.main.output.classesDirs, sourceSets.java9.output]) {
+        builtBy compileJava
+    }
+
     test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test21Implementation group: 'junit', name: 'junit', version: '4.13.2'
-
+    test25Implementation group: 'junit', name: 'junit', version: '4.13.2'
 
     test11Implementation project(':prov')
     test11Implementation project(':util')
@@ -80,6 +94,9 @@ dependencies {
     test21Implementation project(':util')
     test21Implementation project(':pkix')
 
+    test25Implementation project(':prov')
+    test25Implementation project(':util')
+    test25Implementation project(':pkix')
 }
 
 
@@ -124,6 +141,21 @@ compileTest21Java {
     options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
 }
 
+compileJava25Java {
+
+    options.release = 25
+
+    def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
+    def util_jar="${project(":util").jar.outputs.files.getFiles().getAt(0)}"
+    def pkix_jar="${project(":pkix").jar.outputs.files.getFiles().getAt(0)}"
+
+
+    options.compilerArgs += [
+            '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}${File.pathSeparator}${pkix_jar}"
+    ]
+
+    options.sourcepath = files(['src/main/java', 'src/main/jdk25'])
+}
 
 
 task sourcesJar(type: Jar) {
@@ -143,6 +175,9 @@ jar {
     from sourceSets.main.output
     into('META-INF/versions/9') {
         from sourceSets.java9.output
+    }
+    into('META-INF/versions/25') {
+        from sourceSets.java25.output
     }
     String v = "${rootProject.extensions.ext.bundle_version}"
     manifest.attributes('Multi-Release': 'true')
@@ -315,6 +350,40 @@ task test21(type: Test) {
     }
 }
 
+task test25(type: Test) {
+
+    // This is testing the 21 code base
+    onlyIf {System.getenv("BC_JDK25") != null}
+    dependsOn jar
+
+    testClassesDirs = sourceSets.test25.output.classesDirs
+    classpath = sourceSets.test25.runtimeClasspath + files(jar.archiveFile)
+
+    forkEvery = 1;
+    maxParallelForks = 8;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = false
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+
+    jvmArgs = ['-Dtest.java.version.prefix=25']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+        includeTestsMatching "AllTest*"
+        if (project.hasProperty('excludeTests')) {
+            excludeTestsMatching "${excludeTests}"
+        }
+    }
+}
+
+
 if (System.getenv("BC_JDK8") != null) {
     System.out.println("${project.name}: Adding test8 as dependency for test task because BC_JDK8 is defined")
     test.dependsOn("test8")
@@ -335,6 +404,10 @@ if (System.getenv("BC_JDK21") != null) {
     test.dependsOn("test21")
 }
 
+if (System.getenv("BC_JDK25") != null) {
+    System.out.println("${project.name}: Adding test25 as dependency for test task because BC_JDK25 is defined")
+    test.dependsOn("test25")
+}
 
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])

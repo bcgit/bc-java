@@ -32,7 +32,7 @@ public class Extension
         this.extension_data = extension_data;
     }
 
-    static public Extension externalSender(List<ExternalSender> list)
+    public static Extension externalSender(List<ExternalSender> list)
         throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();

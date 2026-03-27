@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -82,7 +81,7 @@ public class SspRange
 
         if (src != null)
         {
-            return new SspRange(ASN1TaggedObject.getInstance(src, BERTags.CONTEXT_SPECIFIC));
+            return new SspRange(ASN1TaggedObject.getContextInstance(src));
         }
 
         return null;

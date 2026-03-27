@@ -62,13 +62,13 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  *
  * SignedAttributes   ::= SET SIZE (1..MAX) OF Attribute
  * UnsignedAttributes ::= SET SIZE (1..MAX) OF Attribute
- * 
+ *
  * {@link Attribute} ::= SEQUENCE {
  *     attrType   OBJECT IDENTIFIER,
  *     attrValues SET OF AttributeValue }
  *
  * AttributeValue ::= ANY
- * 
+ *
  * SignatureValue ::= OCTET STRING
  * </pre>
  */
@@ -131,11 +131,11 @@ public class SignerInfo
     {
         if (sid.isTagged())
         {
-            this.version = new ASN1Integer(3);
+            this.version = ASN1Integer.THREE;
         }
         else
         {
-            this.version = new ASN1Integer(1);
+            this.version = ASN1Integer.ONE;
         }
 
         this.sid = sid;
@@ -165,11 +165,11 @@ public class SignerInfo
     {
         if (sid.isTagged())
         {
-            this.version = new ASN1Integer(3);
+            this.version = ASN1Integer.THREE;
         }
         else
         {
-            this.version = new ASN1Integer(1);
+            this.version = ASN1Integer.ONE;
         }
 
         this.sid = sid;

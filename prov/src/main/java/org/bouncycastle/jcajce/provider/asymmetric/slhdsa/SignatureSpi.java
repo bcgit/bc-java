@@ -123,8 +123,8 @@ public class SignatureSpi
 
         bOut.reset();
     }
-    
-    static public class Direct
+
+    public static class Direct
         extends SignatureSpi
     {
         public Direct()

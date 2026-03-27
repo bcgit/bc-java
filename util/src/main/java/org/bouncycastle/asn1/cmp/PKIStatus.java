@@ -54,7 +54,7 @@ public class PKIStatus
 
     private PKIStatus(int value)
     {
-        this(new ASN1Integer(value));
+        this(ASN1Integer.valueOf(value));
     }
 
     private PKIStatus(ASN1Integer value)

@@ -92,7 +92,7 @@ public class AesCcmCiphertext
         {
             return setNonce(new DEROctetString(Arrays.clone(nonce)));
         }
-        
+
         public Builder setCcmCiphertext(Opaque opaque)
         {
             this.opaque = opaque;

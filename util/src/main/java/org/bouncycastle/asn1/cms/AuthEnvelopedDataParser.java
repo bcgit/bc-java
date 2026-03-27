@@ -14,7 +14,7 @@ import org.bouncycastle.asn1.BERTags;
 
 /**
  * Parse {@link AuthEnvelopedData} input stream.
- * 
+ *
  * <pre>
  * AuthEnvelopedData ::= SEQUENCE {
  *   version CMSVersion,

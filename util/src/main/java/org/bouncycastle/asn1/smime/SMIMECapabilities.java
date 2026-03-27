@@ -35,7 +35,7 @@ public class SMIMECapabilities
     public static final ASN1ObjectIdentifier dES_CBC = new ASN1ObjectIdentifier("1.3.14.3.2.7");
     public static final ASN1ObjectIdentifier dES_EDE3_CBC = PKCSObjectIdentifiers.des_EDE3_CBC;
     public static final ASN1ObjectIdentifier rC2_CBC = PKCSObjectIdentifiers.RC2_CBC;
-    
+
     private ASN1Sequence         capabilities;
 
     /**
@@ -51,7 +51,7 @@ public class SMIMECapabilities
         {
             return (SMIMECapabilities)o;
         }
-        
+
         if (o instanceof ASN1Sequence)
         {
             return new SMIMECapabilities((ASN1Sequence)o);
@@ -65,7 +65,7 @@ public class SMIMECapabilities
 
         throw new IllegalArgumentException("unknown object in factory: " + o.getClass().getName());
     }
-    
+
     public SMIMECapabilities(
         ASN1Sequence seq)
     {
@@ -108,7 +108,7 @@ public class SMIMECapabilities
         return list;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      * <pre>
      * SMIMECapabilities ::= SEQUENCE OF SMIMECapability

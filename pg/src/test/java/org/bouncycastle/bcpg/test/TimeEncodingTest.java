@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.Date;
 
 public class TimeEncodingTest
-        extends SimpleTest
+        extends AbstractPacketTest
 {
     @Override
     public String getName()

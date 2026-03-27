@@ -34,7 +34,7 @@ public class EncryptedPOPTest
     {
         // All Object Identifiers are not real!
         TaggedRequest taggedRequest = new TaggedRequest(new TaggedCertificationRequest(new BodyPartID(10L), CertificationRequest.getInstance(req1)));
-        ContentInfo cms = new ContentInfo(new ASN1ObjectIdentifier("1.2.3"), new ASN1Integer(12L));
+        ContentInfo cms = new ContentInfo(new ASN1ObjectIdentifier("1.2.3"), ASN1Integer.valueOf(12));
         AlgorithmIdentifier thePopID = new AlgorithmIdentifier(new ASN1ObjectIdentifier("2.2.5.2"));
         AlgorithmIdentifier whitenessID = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.5.2.5"));
         byte[] whiteness = "Fish and Chips".getBytes();
@@ -53,7 +53,7 @@ public class EncryptedPOPTest
 
         try
         {
-            EncryptedPOP.getInstance(new DERSequence(new ASN1Integer(1L)));
+            EncryptedPOP.getInstance(new DERSequence(ASN1Integer.ONE));
             fail("Sequence must be 5 items long.");
         }
         catch (Throwable t)

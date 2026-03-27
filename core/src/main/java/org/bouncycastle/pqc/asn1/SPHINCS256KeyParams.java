@@ -16,7 +16,7 @@ public class SPHINCS256KeyParams
 
     public SPHINCS256KeyParams(AlgorithmIdentifier treeDigest)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.treeDigest = treeDigest;
     }
 

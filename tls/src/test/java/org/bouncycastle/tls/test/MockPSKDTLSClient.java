@@ -88,7 +88,7 @@ class MockPSKDTLSClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("DTLS-PSK client negotiated " + serverVersion);
+        System.out.println("DTLS-PSK client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException

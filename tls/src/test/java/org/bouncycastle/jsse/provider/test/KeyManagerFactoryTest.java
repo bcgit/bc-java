@@ -16,11 +16,10 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.x500.X500Principal;
 
+import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509Key;
-
-import junit.framework.TestCase;
 
 public class KeyManagerFactoryTest
     extends TestCase
@@ -58,6 +57,11 @@ public class KeyManagerFactoryTest
     public void testRSAServer()
         throws Exception
     {
+        // TLS_RSA is disabled in Java 25.
+        if (System.getProperty("java.version").startsWith("25"))
+        {
+            return;
+        }
         KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -93,6 +97,11 @@ public class KeyManagerFactoryTest
     public void testRSAServerTrustEE()
         throws Exception
     {
+        // TLS_RSA is disabled in Java 25.
+        if (System.getProperty("java.version").startsWith("25"))
+        {
+            return;
+        }
         KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -104,7 +113,7 @@ public class KeyManagerFactoryTest
         /*
          * For this variation we add the server's certificate to the client's trust store directly,
          * instead of the root (TA).
-         * 
+         *
          * NOTE: For TLS 1.3 with certificate_authorities in ClientHello, or earlier versions with
          * trusted_ca_keys in ClientHello, this test only works when a) there are no actual CA
          * certificates in the client trust store, AND/OR b) the server is willing to (eventually)
@@ -138,6 +147,11 @@ public class KeyManagerFactoryTest
     public void testRSAServerWithClientAuth()
         throws Exception
     {
+        // TLS_RSA is disabled in Java 25.
+        if (System.getProperty("java.version").startsWith("25"))
+        {
+            return;
+        }
         KeyStore clientKS = getRsaKeyStore(false);
         KeyStore serverKS = getRsaKeyStore(true);
 

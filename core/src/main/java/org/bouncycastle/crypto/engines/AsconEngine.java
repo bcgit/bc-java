@@ -126,11 +126,11 @@ public class AsconEngine
             outOff += 8;
             inLen -= 8;
             p.x1 ^= pad(inLen);
-            if (inLen != 0)
+            if (inLen > 0)
             {
-                long c1 = Pack.littleEndianToLong_High(input, 8, inLen);
+                long c1 = Pack.bigEndianToLong_High(input, 8, inLen);
                 p.x1 ^= c1;
-                Pack.longToLittleEndian_High(p.x1, output, outOff, inLen);
+                Pack.longToBigEndian_High(p.x1, output, outOff, inLen);
                 p.x1 &= -1L >>> (inLen << 3);
                 p.x1 ^= c1;
             }
@@ -138,11 +138,11 @@ public class AsconEngine
         else
         {
             p.x0 ^= pad(inLen);
-            if (inLen != 0)
+            if (inLen > 0)
             {
-                long c0 = Pack.littleEndianToLong_High(input, 0, inLen);
+                long c0 = Pack.bigEndianToLong_High(input, 0, inLen);
                 p.x0 ^= c0;
-                Pack.longToLittleEndian_High(p.x0, output, outOff, inLen);
+                Pack.longToBigEndian_High(p.x0, output, outOff, inLen);
                 p.x0 &= -1L >>> (inLen << 3);
                 p.x0 ^= c0;
             }
@@ -160,19 +160,19 @@ public class AsconEngine
             outOff += 8;
             inLen -= 8;
             p.x1 ^= pad(inLen);
-            if (inLen != 0)
+            if (inLen > 0)
             {
-                p.x1 ^= Pack.littleEndianToLong_High(input, 8, inLen);
-                Pack.longToLittleEndian_High(p.x1, output, outOff, inLen);
+                p.x1 ^= Pack.bigEndianToLong_High(input, 8, inLen);
+                Pack.longToBigEndian_High(p.x1, output, outOff, inLen);
             }
         }
         else
         {
             p.x0 ^= pad(inLen);
-            if (inLen != 0)
+            if (inLen > 0)
             {
-                p.x0 ^= Pack.littleEndianToLong_High(input, 0, inLen);
-                Pack.longToLittleEndian_High(p.x0, output, outOff, inLen);
+                p.x0 ^= Pack.bigEndianToLong_High(input, 0, inLen);
+                Pack.longToBigEndian_High(p.x0, output, outOff, inLen);
             }
         }
         finishData(State.EncFinal);

@@ -229,7 +229,14 @@ public class PGPEncryptedDataGenerator
         for (int i = 0; i < methods.size(); i++)
         {
             PGPKeyEncryptionMethodGenerator method = (PGPKeyEncryptionMethodGenerator)methods.get(i);
-            pOut.writePacket(method.generate(dataEncryptorBuilder, sessionKey));
+            if (directS2K)
+            {
+                pOut.writePacket(method.generate(dataEncryptorBuilder, null));
+            }
+            else
+            {
+                pOut.writePacket(method.generate(dataEncryptorBuilder, sessionKey));
+            }
         }
         try
         {

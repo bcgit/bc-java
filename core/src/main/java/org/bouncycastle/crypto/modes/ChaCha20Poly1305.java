@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 public class ChaCha20Poly1305
@@ -530,7 +531,7 @@ public class ChaCha20Poly1305
 
     private long incrementCount(long count, int increment, long limit)
     {
-        if (count + Long.MIN_VALUE > (limit - increment) + Long.MIN_VALUE)
+        if (Longs.compareUnsigned(count, limit - increment) > 0)
         {
             throw new IllegalStateException("Limit exceeded");
         }

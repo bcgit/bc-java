@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
@@ -19,7 +20,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class BCMLKEMPrivateKey
-    implements MLKEMPrivateKey
+    implements MLKEMPrivateKey, BCKey
 {
     private static final long serialVersionUID = 1L;
 
@@ -129,11 +130,11 @@ public class BCMLKEMPrivateKey
             byte[] seed = params.getSeed();
             if (seed != null)
             {
-                return new BCMLKEMPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
+                return new BCMLKEMPrivateKey(this.params.withPreferredFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
             }
         }
 
-        return new BCMLKEMPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
+        return new BCMLKEMPrivateKey(this.params.withPreferredFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
     }
 
     public MLKEMParameterSpec getParameterSpec()

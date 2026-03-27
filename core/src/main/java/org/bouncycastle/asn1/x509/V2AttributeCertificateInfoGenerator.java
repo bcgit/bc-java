@@ -43,8 +43,8 @@ public class V2AttributeCertificateInfoGenerator
 
     public V2AttributeCertificateInfoGenerator()
     {
-        this.version = new ASN1Integer(1);
-        attributes = new ASN1EncodableVector();
+        this.version = ASN1Integer.ONE;
+        this.attributes = new ASN1EncodableVector();
     }
     
     public void setHolder(Holder holder)

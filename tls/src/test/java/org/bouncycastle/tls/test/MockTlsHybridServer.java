@@ -16,6 +16,7 @@ import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
@@ -34,6 +35,7 @@ class MockTlsHybridServer
         NamedGroup.SecP256r1MLKEM768,
         NamedGroup.X25519MLKEM768,
         NamedGroup.SecP384r1MLKEM1024,
+        NamedGroup.curveSM2MLKEM768,
         NamedGroup.x25519,
     };
 
@@ -100,7 +102,7 @@ class MockTlsHybridServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS hybrid server negotiated " + serverVersion);
+        System.out.println("TLS hybrid server negotiated version " + serverVersion);
 
         return serverVersion;
     }
@@ -181,10 +183,18 @@ class MockTlsHybridServer
     {
         super.notifyHandshakeComplete();
 
-        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        SecurityParameters securityParameters = context.getSecurityParametersConnection();
+
+        ProtocolName protocolName = securityParameters.getApplicationProtocol();
         if (protocolName != null)
         {
             System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
+        }
+
+        int negotiatedGroup = securityParameters.getNegotiatedGroup();
+        if (negotiatedGroup >= 0)
+        {
+            System.out.println("Server negotiated group: " + NamedGroup.getText(negotiatedGroup));
         }
 
         byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);

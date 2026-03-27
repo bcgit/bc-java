@@ -331,7 +331,7 @@ public class BaseBlockCipher
                     engineParams.init(pbeSpec);
                 }
                 catch (Exception e)
-                {
+                {          
                     return null;
                 }
             }
@@ -696,6 +696,8 @@ public class BaseBlockCipher
                 throw new InvalidKeyException("Algorithm requires a PBE key");
             }
 
+            pbeAlgorithm = "PKCS12PBE";
+            
             if (key instanceof BCPBEKey)
             {
                 // PKCS#12 sets an IV, if we get a key that doesn't have ParametersWithIV we need to reject it. If the
@@ -1326,7 +1328,7 @@ public class BaseBlockCipher
      * The ciphers that inherit from us.
      */
 
-    static private interface GenericBlockCipher
+    private static interface GenericBlockCipher
     {
         public void init(boolean forEncryption, CipherParameters params)
             throws IllegalArgumentException;

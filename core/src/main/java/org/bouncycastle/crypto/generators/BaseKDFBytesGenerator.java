@@ -84,61 +84,47 @@ public class BaseKDFBytesGenerator
             throw new OutputLengthException("output buffer too small");
         }
 
-        long oBytes = len;
-        int outLen = digest.getDigestSize();
+        digest.reset();
 
-        //
-        // this is at odds with the standard implementation, the
-        // maximum value should be hBits * (2^32 - 1) where hBits
-        // is the digest output size in bits. We can't have an
-        // array with a long index at the moment...
-        //
-        if (oBytes > ((2L << 32) - 1))
+        int outputLength = len;
+        int digestSize = digest.getDigestSize();
+
+        // NOTE: This limit isn't reachable for current array lengths
+        if (outputLength > ((1L << 32) - 1) * digestSize)
         {
             throw new IllegalArgumentException("Output length too large");
         }
 
-        int cThreshold = (int)((oBytes + outLen - 1) / outLen);
-
-        byte[] dig = new byte[digest.getDigestSize()];
-
+        int counter32 = counterStart;
         byte[] C = new byte[4];
-        Pack.intToBigEndian(counterStart, C, 0);
 
-        int counterBase = counterStart & ~0xFF;
-
-        for (int i = 0; i < cThreshold; i++)
+        while (len > 0)
         {
+            Pack.intToBigEndian(counter32, C);
+
             digest.update(shared, 0, shared.length);
-            digest.update(C, 0, C.length);
+            digest.update(C, 0, 4);
 
             if (iv != null)
             {
                 digest.update(iv, 0, iv.length);
             }
 
-            digest.doFinal(dig, 0);
-
-            if (len > outLen)
+            if (len < digestSize)
             {
-                System.arraycopy(dig, 0, out, outOff, outLen);
-                outOff += outLen;
-                len -= outLen;
-            }
-            else
-            {
-                System.arraycopy(dig, 0, out, outOff, len);
+                byte[] tmp = new byte[digestSize];
+                digest.doFinal(tmp, 0);
+                System.arraycopy(tmp, 0, out, outOff, len);
+                break;
             }
 
-            if (++C[3] == 0)
-            {
-                counterBase += 0x100;
-                Pack.intToBigEndian(counterBase, C, 0);
-            }
+            digest.doFinal(out, outOff);
+            outOff += digestSize;
+            len -= digestSize;
+
+            ++counter32;
         }
 
-        digest.reset();
-
-        return (int)oBytes;
+        return outputLength;
     }
 }

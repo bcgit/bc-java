@@ -28,7 +28,7 @@ public class CertTemplateBuilder
     /** Sets the X.509 version. Note: for X509v3, use 2 here. */
     public CertTemplateBuilder setVersion(int ver)
     {
-        version = new ASN1Integer(ver);
+        version = ASN1Integer.valueOf(ver);
 
         return this;
     }

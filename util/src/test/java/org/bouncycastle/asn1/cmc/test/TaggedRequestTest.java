@@ -67,12 +67,11 @@ public class TaggedRequestTest
 
             POPOSigningKeyInput pski = new POPOSigningKeyInput(
                 new GeneralName(GeneralName.rfc822Name, "fish"),
-                new SubjectPublicKeyInfo(new AlgorithmIdentifier(
-                    PKCSObjectIdentifiers.certBag,
-                    new ASN1Integer(5L)), new ASN1Integer(4L)
-                ));
+                new SubjectPublicKeyInfo(
+                    new AlgorithmIdentifier(PKCSObjectIdentifiers.certBag, ASN1Integer.FIVE),
+                    ASN1Integer.FOUR));
 
-            AlgorithmIdentifier aid = new AlgorithmIdentifier(PKCSObjectIdentifiers.crlTypes, new ASN1Integer(1L));
+            AlgorithmIdentifier aid = new AlgorithmIdentifier(PKCSObjectIdentifiers.crlTypes, ASN1Integer.ONE);
             DERBitString dbi = new DERBitString(2);
 
             POPOSigningKey popoSigningKey = new POPOSigningKey(pski, aid, dbi);
@@ -80,12 +79,11 @@ public class TaggedRequestTest
 
             TaggedRequest tr = new TaggedRequest(
                 new CertReqMsg(new CertRequest(
-                    new ASN1Integer(1L),
-                    CertTemplate.getInstance(new DERSequence(new DERTaggedObject(false, 0, new ASN1Integer(3L)))),
-                    new Controls(new AttributeTypeAndValue(PKCSObjectIdentifiers.pkcs_9,new ASN1Integer(3)))),
+                    ASN1Integer.ONE,
+                    CertTemplate.getInstance(new DERSequence(new DERTaggedObject(false, 0, ASN1Integer.THREE))),
+                    new Controls(new AttributeTypeAndValue(PKCSObjectIdentifiers.pkcs_9, ASN1Integer.THREE))),
                     proofOfPossession,
-                    new AttributeTypeAndValue[0])
-            );
+                    new AttributeTypeAndValue[0]));
             byte[] b = tr.getEncoded();
             TaggedRequest trResult = TaggedRequest.getInstance(b);
             isEquals("Tag", tr.getTagNo(), trResult.getTagNo());
@@ -95,11 +93,8 @@ public class TaggedRequestTest
 
 
         { // ORM
-            TaggedRequest tr = TaggedRequest.getInstance( new DERTaggedObject(false, TaggedRequest.ORM, new DERSequence(new ASN1Encodable[]{
-                new BodyPartID(1L),
-                PKCSObjectIdentifiers.data,
-                new DERSet(new ASN1Encodable[]{new ASN1Integer(5L)})
-            })));
+            TaggedRequest tr = TaggedRequest.getInstance(new DERTaggedObject(false, TaggedRequest.ORM,
+                new DERSequence(new ASN1Encodable[]{new BodyPartID(1L), PKCSObjectIdentifiers.data, new DERSet(ASN1Integer.FIVE)})));
             byte[] b = tr.getEncoded();
             TaggedRequest trResult = TaggedRequest.getInstance(b);
             isEquals("Tag", tr.getTagNo(), trResult.getTagNo());

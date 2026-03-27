@@ -11,10 +11,10 @@ public interface BSIObjectIdentifiers
 
     /* 0.4.0.127.0.7.1.1 */
     static final ASN1ObjectIdentifier id_ecc = bsi_de.branch("1.1");
-    
+
     /* 0.4.0.127.0.7.1.1.4.1 */
     static final ASN1ObjectIdentifier ecdsa_plain_signatures = id_ecc.branch("4.1");
-    
+
     /* 0.4.0.127.0.7.1.1.4.1.1 */
     static final ASN1ObjectIdentifier ecdsa_plain_SHA1 = ecdsa_plain_signatures.branch("1");
 

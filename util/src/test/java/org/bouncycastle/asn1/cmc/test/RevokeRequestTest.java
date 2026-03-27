@@ -63,7 +63,7 @@ public class RevokeRequestTest
 
             RevokeRequest rr = new RevokeRequest(
                 name,
-                new ASN1Integer(12L),
+                ASN1Integer.valueOf(12),
                 CRLReason.getInstance(new ASN1Enumerated(CRLReason.certificateHold)),
                 invalidityDate,
                 passphrase,

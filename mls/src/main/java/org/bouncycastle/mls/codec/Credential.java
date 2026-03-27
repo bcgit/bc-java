@@ -22,7 +22,7 @@ public class Credential
         return identity;
     }
 
-    static public Credential forBasic(byte[] identity)
+    public static Credential forBasic(byte[] identity)
     {
         return new Credential(CredentialType.basic, identity, new ArrayList<Certificate>());
     }

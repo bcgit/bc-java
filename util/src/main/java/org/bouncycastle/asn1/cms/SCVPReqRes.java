@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.cms;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -37,8 +36,7 @@ public class SCVPReqRes
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
-    public static SCVPReqRes getInstance(
-        Object  obj)
+    public static SCVPReqRes getInstance(Object obj)
     {
         if (obj instanceof SCVPReqRes)
         {
@@ -52,29 +50,57 @@ public class SCVPReqRes
         return null;
     }
 
-    private SCVPReqRes(
-        ASN1Sequence seq)
+    public static SCVPReqRes getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        if (seq.getObjectAt(0) instanceof ASN1TaggedObject)
+        return new SCVPReqRes(ASN1Sequence.getInstance(taggedObject, declaredExplicit));
+    }
+
+    public static SCVPReqRes getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return new SCVPReqRes(ASN1Sequence.getTagged(taggedObject, declaredExplicit));
+    }
+
+    private SCVPReqRes(ASN1Sequence seq)
+    {
+        int count = seq.size(), pos = 0;
+        if (count < 1 || count > 2)
         {
-            this.request = ContentInfo.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(0)), true);
-            this.response = ContentInfo.getInstance(seq.getObjectAt(1));
+            throw new IllegalArgumentException("Bad sequence size: " + count);
         }
-        else
+
+        // request [0] EXPLICIT ContentInfo OPTIONAL
+        ContentInfo request = null;
+        if (pos < count)
         {
-            this.request = null;
-            this.response = ContentInfo.getInstance(seq.getObjectAt(0));
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
+            {
+                pos++;
+                request = ContentInfo.getTagged(tag0, true);
+            }
+        }
+        this.request = request;
+
+        this.response = ContentInfo.getInstance(seq.getObjectAt(pos++));
+
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("Unexpected elements in sequence");
         }
     }
 
     public SCVPReqRes(ContentInfo response)
     {
-        this.request = null;       // use of this confuses earlier JDKs
-        this.response = response;
+        this(null, response);
     }
 
     public SCVPReqRes(ContentInfo request, ContentInfo response)
     {
+        if (response == null)
+        {
+            throw new NullPointerException("'response' cannot be null");
+        }
+
         this.request = request;
         this.response = response;
     }
@@ -94,15 +120,11 @@ public class SCVPReqRes
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        if (request != null)
+        if (request == null)
         {
-            v.add(new DERTaggedObject(true, 0, request));
+            return new DERSequence(response);
         }
 
-        v.add(response);
-
-        return new DERSequence(v);
+        return new DERSequence(new DERTaggedObject(true, 0, request), response);
     }
 }

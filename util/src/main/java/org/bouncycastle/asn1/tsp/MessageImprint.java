@@ -14,10 +14,10 @@ public class MessageImprint
 {
     AlgorithmIdentifier hashAlgorithm;
     byte[]              hashedMessage;
-    
+
     /**
      * Return an instance of MessageImprint, or null, based on o.
-     * 
+     *
      * @param o the object to be converted.
      * @return a MessageImprint object.
      */
@@ -35,7 +35,7 @@ public class MessageImprint
 
         return null;
     }
-    
+
     private MessageImprint(
         ASN1Sequence seq)
     {
@@ -49,7 +49,7 @@ public class MessageImprint
             throw new IllegalArgumentException("sequence has wrong number of elements");
         }
     }
-    
+
     public MessageImprint(
         AlgorithmIdentifier hashAlgorithm,
         byte[]              hashedMessage)
@@ -57,7 +57,7 @@ public class MessageImprint
         this.hashAlgorithm = hashAlgorithm;
         this.hashedMessage = Arrays.clone(hashedMessage);
     }
-    
+
     public AlgorithmIdentifier getHashAlgorithm()
     {
         return hashAlgorithm;

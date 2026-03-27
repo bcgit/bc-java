@@ -11,14 +11,14 @@ public interface CMCObjectIdentifiers
     //   id_pkix OBJECT IDENTIFIER  ::= { iso(1) identified_organization(3)
     //       dod(6) internet(1) security(5) mechanisms(5) pkix(7) }
    ASN1ObjectIdentifier id_pkix = new ASN1ObjectIdentifier("1.3.6.1.5.5.7");
-        
+
    ASN1ObjectIdentifier id_cmc =  id_pkix.branch("7");   // CMC controls
    ASN1ObjectIdentifier id_cct =  id_pkix.branch("12");  // CMC content types
    ASN1ObjectIdentifier id_kp = id_pkix.branch("3"); // KP
 
 
    // The following controls have the type OCTET STRING
-  
+
    ASN1ObjectIdentifier id_cmc_identityProof =  id_cmc.branch("3");
    ASN1ObjectIdentifier id_cmc_dataReturn =  id_cmc.branch("4");
    ASN1ObjectIdentifier id_cmc_regInfo =  id_cmc.branch("18");
@@ -26,22 +26,22 @@ public interface CMCObjectIdentifiers
    ASN1ObjectIdentifier id_cmc_queryPending =  id_cmc.branch("21");
    ASN1ObjectIdentifier id_cmc_popLinkRandom =  id_cmc.branch("22");
    ASN1ObjectIdentifier id_cmc_popLinkWitness =  id_cmc.branch("23");
-  
+
    // The following controls have the type UTF8String
-  
+
    ASN1ObjectIdentifier id_cmc_identification =  id_cmc.branch("2");
-  
+
    // The following controls have the type INTEGER
-  
+
    ASN1ObjectIdentifier id_cmc_transactionId =  id_cmc.branch("5");
-  
+
    // The following controls have the type OCTET STRING
-  
+
    ASN1ObjectIdentifier id_cmc_senderNonce =  id_cmc.branch("6");
    ASN1ObjectIdentifier id_cmc_recipientNonce =  id_cmc.branch("7");
-  
+
     // This is the content type used for a request message in the protocol
-  
+
    ASN1ObjectIdentifier id_cct_PKIData =  id_cct.branch("2");
 
     //  This defines the response message in the protocol
@@ -99,7 +99,7 @@ public interface CMCObjectIdentifiers
     //  Identity Proof control w/ algorithm agility
 
     ASN1ObjectIdentifier id_cmc_identityProofV2 = id_cmc.branch("34");
-    
+
     ASN1ObjectIdentifier id_cmc_popLinkWitnessV2 = id_cmc.branch("33");
 
     // Extended key usage

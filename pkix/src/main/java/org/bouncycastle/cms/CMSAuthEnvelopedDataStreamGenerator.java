@@ -2,7 +2,6 @@ package org.bouncycastle.cms;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -12,7 +11,6 @@ import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 
 /**
@@ -57,17 +55,6 @@ public class CMSAuthEnvelopedDataStreamGenerator
         _berEncodeRecipientSet = berEncodeRecipientSet;
     }
 
-    private OutputStream doOpen(
-        ASN1ObjectIdentifier dataType,
-        OutputStream out,
-        OutputAEADEncryptor encryptor)
-        throws IOException, CMSException
-    {
-        ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(encryptor.getKey(), recipientInfoGenerators);
-
-        return open(dataType, out, recipientInfos, encryptor);
-    }
-
     protected OutputStream open(
         ASN1ObjectIdentifier dataType,
         OutputStream out,
@@ -75,36 +62,25 @@ public class CMSAuthEnvelopedDataStreamGenerator
         OutputAEADEncryptor encryptor)
         throws IOException
     {
-        //
         // ContentInfo
-        //
-        BERSequenceGenerator cGen = new BERSequenceGenerator(out);
+        BERSequenceGenerator ciGen = new BERSequenceGenerator(out);
+        ciGen.addObject(CMSObjectIdentifiers.authEnvelopedData);
 
-        cGen.addObject(CMSObjectIdentifiers.authEnvelopedData);
+        // AuthEnvelopedData
+        BERSequenceGenerator aedGen = new BERSequenceGenerator(ciGen.getRawOutputStream(), 0, true);
+        aedGen.addObject(ASN1Integer.ZERO);
+        CMSUtils.addOriginatorInfoToGenerator(aedGen, originatorInfo);
+        CMSUtils.addRecipientInfosToGenerator(recipientInfos, aedGen, _berEncodeRecipientSet);
 
-        //
-        // Encrypted Data
-        //
-        BERSequenceGenerator authEnvGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
+        // EncryptedContentInfo
+        BERSequenceGenerator eciGen = new BERSequenceGenerator(aedGen.getRawOutputStream());
+        eciGen.addObject(dataType);
+        eciGen.addObject(encryptor.getAlgorithmIdentifier());
 
-        authEnvGen.addObject(new ASN1Integer(0));
+        // encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL (EncryptedContent ::= OCTET STRING)
+        OutputStream ecStream = CMSUtils.createBEROctetOutputStream(eciGen.getRawOutputStream(), 0, false, _bufferSize);
 
-        CMSUtils.addOriginatorInfoToGenerator(authEnvGen, originatorInfo);
-
-        CMSUtils.addRecipientInfosToGenerator(recipientInfos, authEnvGen, _berEncodeRecipientSet);
-
-        BERSequenceGenerator eiGen = new BERSequenceGenerator(authEnvGen.getRawOutputStream());
-
-        eiGen.addObject(dataType);
-
-        AlgorithmIdentifier encAlgId = encryptor.getAlgorithmIdentifier();
-
-        eiGen.getRawOutputStream().write(encAlgId.getEncoded());
-
-        OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
-            eiGen.getRawOutputStream(), 0, true, _bufferSize);
-
-        return new CMSAuthEnvelopedDataOutputStream(encryptor, octetStream, cGen, authEnvGen, eiGen);
+        return new CMSAuthEnvelopedDataOutputStream(encryptor, ecStream, ciGen, aedGen, eciGen);
     }
 
     protected OutputStream open(
@@ -124,22 +100,41 @@ public class CMSAuthEnvelopedDataStreamGenerator
     }
 
     /**
-     * generate an enveloped object that contains an CMS Enveloped Data object using the given encryptor.
+     * Generate authenticated-enveloped-data using the given encryptor, and marking the encapsulated
+     * bytes as being of type DATA.
      * <p>
-     * <b>Stream handling note:</b> Closing the returned stream finalizes the CMS structure but
-     * <b>does not close</b> the underlying output stream. The caller remains responsible for
-     * managing the lifecycle of {@code out}.
+     * <b>Stream handling note:</b> Closing the returned stream finalizes the CMS structure but <b>does
+     * not close</b> the underlying output stream. The caller remains responsible for managing the
+     * lifecycle of {@code out}.
      *
      * @param out the output stream to write the CMS structure to
      * @param encryptor the cipher to use for encryption
      * @return an output stream that writes encrypted and authenticated content
      */
-    public OutputStream open(
-        OutputStream out,
-        OutputAEADEncryptor encryptor)
+    public OutputStream open(OutputStream out, OutputAEADEncryptor encryptor) throws CMSException, IOException
+    {
+        return open(CMSObjectIdentifiers.data, out, encryptor);
+    }
+
+    /**
+     * Generate authenticated-enveloped-data using the given encryptor, and marking the encapsulated
+     * bytes as being of the passed in type.
+     * <p>
+     * <b>Stream handling note:</b> Closing the returned stream finalizes the CMS structure but
+     * <b>does not close</b> the underlying output stream. The caller remains responsible for
+     * managing the lifecycle of {@code out}.
+     *
+     * @param dataType the type of the data being written to the object.
+     * @param out the output stream to write the CMS structure to
+     * @param encryptor the cipher to use for encryption
+     * @return an output stream that writes encrypted and authenticated content
+     */
+    public OutputStream open(ASN1ObjectIdentifier dataType, OutputStream out, OutputAEADEncryptor encryptor)
         throws CMSException, IOException
     {
-        return doOpen(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), out, encryptor);
+        ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(encryptor.getKey(), recipientInfoGenerators);
+
+        return open(dataType, out, recipientInfos, encryptor);
     }
 
     private class CMSAuthEnvelopedDataOutputStream
@@ -206,7 +201,7 @@ public class CMSAuthEnvelopedDataStreamGenerator
 
             _envGen.addObject(new DEROctetString(_encryptor.getMAC()));
 
-            CMSUtils.addAttriSetToGenerator(_envGen, unauthAttrsGenerator, 2, Collections.EMPTY_MAP);
+            CMSUtils.addAttriSetToGenerator(_envGen, unauthAttrsGenerator, 2, CMSUtils.getEmptyParameters());
 
             _envGen.close();
             _cGen.close();

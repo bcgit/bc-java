@@ -53,6 +53,6 @@ public class CertificateFormat
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new ASN1Integer(format);
+        return ASN1Integer.valueOf(format);
     }
 }

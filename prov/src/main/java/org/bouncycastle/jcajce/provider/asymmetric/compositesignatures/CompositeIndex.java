@@ -25,14 +25,14 @@ public class CompositeIndex
     static
     {
         pairings.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new String[]{"ML-DSA-44", "RSASSA-PSS"});
-        pairings.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new String[]{"ML-DSA-44", "sha256WithRSAEncryption"});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new String[]{"ML-DSA-44", "SHA256withRSA"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new String[]{"ML-DSA-44", "Ed25519"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new String[]{"ML-DSA-44", "SHA256withECDSA"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new String[]{"ML-DSA-65", "RSASSA-PSS"});
-        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new String[]{"ML-DSA-65", "sha256WithRSAEncryption"});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new String[]{"ML-DSA-65", "SHA256withRSA"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new String[]{"ML-DSA-65", "RSASSA-PSS"});
         // id_MLDSA65_RSA4096_PKCS15_SHA512
-        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new String[]{"ML-DSA-65", "sha384WithRSAEncryption"});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new String[]{"ML-DSA-65", "SHA384withRSA"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new String[]{"ML-DSA-65", "SHA256withECDSA"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new String[]{"ML-DSA-65", "SHA384withECDSA"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new String[]{"ML-DSA-65", "SHA256withECDSA"});

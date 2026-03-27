@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
  */
 public class X500NameBuilder
 {
-    private X500NameStyle template;
+    private X500NameStyle style;
     private Vector rdns = new Vector();
 
     /**
@@ -25,13 +25,18 @@ public class X500NameBuilder
     /**
      * Constructor using a specified style.
      *
-     * @param template the style template for string to DN conversion.
+     * @param style the X500NameStyle for string to DN conversion.
      */
-    public X500NameBuilder(X500NameStyle template)
+    public X500NameBuilder(X500NameStyle style)
     {
-        this.template = template;
+        this.style = style;
     }
 
+    public X500NameStyle getStyle()
+    {
+        return style;
+    }
+    
     /**
      * Add an RDN based on a single OID and a string representation of its value.
      *
@@ -41,7 +46,7 @@ public class X500NameBuilder
      */
     public X500NameBuilder addRDN(ASN1ObjectIdentifier oid, String value)
     {
-        this.addRDN(oid, template.stringToValue(oid, value));
+        this.addRDN(oid, style.stringToValue(oid, value));
 
         return this;
     }
@@ -86,7 +91,7 @@ public class X500NameBuilder
 
         for (int i = 0; i != vals.length; i++)
         {
-            vals[i] = template.stringToValue(oids[i], values[i]);
+            vals[i] = style.stringToValue(oids[i], values[i]);
         }
 
         return addMultiValuedRDN(oids, vals);
@@ -131,6 +136,11 @@ public class X500NameBuilder
      */
     public X500Name build()
     {
+        return new X500Name(style, buildRDNs());
+    }
+
+    public RDN[] buildRDNs()
+    {
         RDN[] vals = new RDN[rdns.size()];
 
         for (int i = 0; i != vals.length; i++)
@@ -138,6 +148,6 @@ public class X500NameBuilder
             vals[i] = (RDN)rdns.elementAt(i);
         }
 
-        return new X500Name(template, vals);
+        return vals;
     }
 }

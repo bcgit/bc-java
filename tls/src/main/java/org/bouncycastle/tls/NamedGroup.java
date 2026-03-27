@@ -126,6 +126,11 @@ public class NamedGroup
     public static final int X25519MLKEM768 = 0x11EC;
     public static final int SecP384r1MLKEM1024 = 0x11ED;
 
+    /*
+     * draft-yang-tls-hybrid-sm2-mlkem-03
+     */
+    public static final int curveSM2MLKEM768 = 0x11EE;
+
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
     private static final String[] CURVE_NAMES = new String[]{ "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
@@ -317,6 +322,8 @@ public class NamedGroup
             return MLKEM768;
         case SecP384r1MLKEM1024:
             return secp384r1;
+        case curveSM2MLKEM768:
+            return curveSM2;
         default:
             return -1;
         }
@@ -332,6 +339,8 @@ public class NamedGroup
             return x25519;
         case SecP384r1MLKEM1024:
             return MLKEM1024;
+        case curveSM2MLKEM768:
+            return MLKEM768;
         default:
             return -1;
         }
@@ -342,6 +351,7 @@ public class NamedGroup
     {
         switch (namedGroup)
         {
+        case curveSM2:
         case secp256r1:
             return 65;
         case secp384r1:
@@ -357,6 +367,7 @@ public class NamedGroup
     {
         switch (namedGroup)
         {
+        case curveSM2:
         case secp256r1:
             return 65;
         case secp384r1:
@@ -458,6 +469,8 @@ public class NamedGroup
             return "X25519MLKEM768";
         case SecP384r1MLKEM1024:
             return "SecP384r1MLKEM1024";
+        case curveSM2MLKEM768:
+            return "curveSM2MLKEM768";
         case arbitrary_explicit_prime_curves:
             return "arbitrary_explicit_prime_curves";
         case arbitrary_explicit_char2_curves:
@@ -576,6 +589,7 @@ public class NamedGroup
         case SecP256r1MLKEM768:
         case X25519MLKEM768:
         case SecP384r1MLKEM1024:
+        case curveSM2MLKEM768:
             return true;
         default:
             return false;

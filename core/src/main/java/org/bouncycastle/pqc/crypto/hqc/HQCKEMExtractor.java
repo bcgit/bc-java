@@ -6,26 +6,24 @@ import org.bouncycastle.util.Arrays;
 public class HQCKEMExtractor
     implements EncapsulatedSecretExtractor
 {
-    private HQCEngine engine;
+    private final HQCPrivateKeyParameters privateKey;
+    private final HQCEngine engine;
 
-    private final HQCKeyParameters key;
-
-    public HQCKEMExtractor(HQCPrivateKeyParameters privParams)
+    public HQCKEMExtractor(HQCPrivateKeyParameters privateKey)
     {
-        this.key = privParams;
-        initCipher(key.getParameters());
-    }
+        if (privateKey == null)
+        {
+            throw new NullPointerException("'privateKey' cannot be null");
+        }
 
-    private void initCipher(HQCParameters param)
-    {
-        engine = param.getEngine();
+        this.privateKey = privateKey;
+        this.engine = privateKey.getParameters().getEngine();
     }
 
     public byte[] extractSecret(byte[] encapsulation)
     {
         byte[] session_key = new byte[64];
-        HQCPrivateKeyParameters secretKey = (HQCPrivateKeyParameters)key;
-        byte[] sk = secretKey.getPrivateKey();
+        byte[] sk = privateKey.getPrivateKey();
 
         engine.decaps(session_key, encapsulation, sk);
 
@@ -33,7 +31,7 @@ public class HQCKEMExtractor
     }
 
     public int getEncapsulationLength()
-    {         // Hash + salt
-        return key.getParameters().getN_BYTES() + key.getParameters().getN1N2_BYTES() + 16;
+    {
+        return engine.getCipherTextBytes();
     }
 }

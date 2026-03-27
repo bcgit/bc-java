@@ -105,7 +105,7 @@ public class PackedDate
         return Arrays.areEqual(time, other.time);
     }
 
-    public String toString() 
+    public String toString()
     {
         char[]  dateC = new char[time.length];
 

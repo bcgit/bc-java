@@ -29,9 +29,9 @@ import org.bouncycastle.asn1.DLSequence;
  *     crls [1] IMPLICIT CertificateRevocationLists OPTIONAL,
  *     signerInfos SignerInfos
  *   }
- * 
+ *
  * DigestAlgorithmIdentifiers ::= SET OF DigestAlgorithmIdentifier
- * 
+ *
  * SignerInfos ::= SET OF SignerInfo
  * </pre>
  * <p>
@@ -59,11 +59,6 @@ import org.bouncycastle.asn1.DLSequence;
 public class SignedData
     extends ASN1Object
 {
-    private static final ASN1Integer VERSION_1 = new ASN1Integer(1);
-    private static final ASN1Integer VERSION_3 = new ASN1Integer(3);
-    private static final ASN1Integer VERSION_4 = new ASN1Integer(4);
-    private static final ASN1Integer VERSION_5 = new ASN1Integer(5);
-
     private final ASN1Integer version;
     private final ASN1Set     digestAlgorithms;
     private final ContentInfo contentInfo;
@@ -163,7 +158,7 @@ public class SignedData
 
         if (otherCert)
         {
-            return new ASN1Integer(5);
+            return ASN1Integer.FIVE;
         }
 
         if (crls != null)         // no need to check if otherCert is true
@@ -180,30 +175,30 @@ public class SignedData
 
         if (otherCrl)
         {
-            return VERSION_5;
+            return ASN1Integer.FIVE;
         }
 
         if (attrCertV2Found)
         {
-            return VERSION_4;
+            return ASN1Integer.FOUR;
         }
 
         if (attrCertV1Found)
         {
-            return VERSION_3;
+            return ASN1Integer.THREE;
         }
 
         if (checkForVersion3(signerInfs))
         {
-            return VERSION_3;
+            return ASN1Integer.THREE;
         }
 
         if (!CMSObjectIdentifiers.data.equals(contentOid))
         {
-            return VERSION_3;
+            return ASN1Integer.THREE;
         }
 
-        return VERSION_1;
+        return ASN1Integer.ONE;
     }
 
     private boolean checkForVersion3(ASN1Set signerInfs)
@@ -344,7 +339,7 @@ public class SignedData
         }
 
         v.add(signerInfos);
-        
+
         if (!contentInfo.isDefiniteLength() || digsBer || sigsBer || crlsBer || certsBer)
         {
             return new BERSequence(v);

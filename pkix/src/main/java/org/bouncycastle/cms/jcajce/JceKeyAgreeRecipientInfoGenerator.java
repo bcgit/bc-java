@@ -146,19 +146,19 @@ public class JceKeyAgreeRecipientInfoGenerator
         return this;
     }
 
-    public ASN1Sequence generateRecipientEncryptedKeys(AlgorithmIdentifier keyAgreeAlgorithm, AlgorithmIdentifier keyEncryptionAlgorithm, GenericKey contentEncryptionKey)
-        throws CMSException
+    public ASN1Sequence generateRecipientEncryptedKeys(AlgorithmIdentifier keyAgreeAlgorithm,
+        AlgorithmIdentifier keyEncryptionAlgorithm, GenericKey contentEncryptionKey) throws CMSException
     {
         if (recipientIDs.isEmpty())
         {
             throw new CMSException("No recipients associated with generator - use addRecipient()");
         }
 
-        init(keyAgreeAlgorithm.getAlgorithm());
+        ASN1ObjectIdentifier keyAgreementOID = keyAgreeAlgorithm.getAlgorithm();
+
+        init(keyAgreementOID);
 
         PrivateKey senderPrivateKey = this.senderPrivateKey;
-
-        ASN1ObjectIdentifier keyAgreementOID = keyAgreeAlgorithm.getAlgorithm();
 
         ASN1EncodableVector recipientEncryptedKeys = new ASN1EncodableVector();
         for (int i = 0; i != recipientIDs.size(); i++)
@@ -169,7 +169,7 @@ public class JceKeyAgreeRecipientInfoGenerator
             try
             {
                 AlgorithmParameterSpec agreementParamSpec;
-                ASN1ObjectIdentifier keyEncAlg = keyEncryptionAlgorithm.getAlgorithm();
+                ASN1ObjectIdentifier keyEncryptionOID = keyEncryptionAlgorithm.getAlgorithm();
 
                 if (CMSUtils.isMQV(keyAgreementOID))
                 {
@@ -177,7 +177,8 @@ public class JceKeyAgreeRecipientInfoGenerator
                 }
                 else if (CMSUtils.isEC(keyAgreementOID))
                 {
-                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm, keySizeProvider.getKeySize(keyEncAlg), userKeyingMaterial);
+                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm,
+                        keySizeProvider.getKeySize(keyEncryptionOID), userKeyingMaterial);
 
                     agreementParamSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
@@ -217,18 +218,19 @@ public class JceKeyAgreeRecipientInfoGenerator
                 keyAgreement.init(senderPrivateKey, agreementParamSpec, random);
                 keyAgreement.doPhase(recipientPublicKey, true);
 
-                SecretKey keyEncryptionKey = keyAgreement.generateSecret(keyEncAlg.getId());
+                SecretKey keyEncryptionKey = keyAgreement.generateSecret(keyEncryptionOID.getId());
 
                 EnvelopedDataHelper keyWrapHelper = (wrappingHelper != null) ? wrappingHelper : helper;
 
                 // Wrap the content encryption key with the agreement key
-                Cipher keyEncryptionCipher = keyWrapHelper.createCipher(keyEncAlg);
-                ASN1OctetString encryptedKey;
+                Cipher keyEncryptionCipher = keyWrapHelper.createCipher(keyEncryptionOID);
 
-                if (keyEncAlg.equals(CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap)
-                    || keyEncAlg.equals(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap))
+                byte[] encryptedKeyOctets;
+                if (CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap.equals(keyEncryptionOID) ||
+                    CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap.equals(keyEncryptionOID))
                 {
-                    keyEncryptionCipher.init(Cipher.WRAP_MODE, keyEncryptionKey, new GOST28147WrapParameterSpec(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet, userKeyingMaterial));
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, keyEncryptionKey,
+                        new GOST28147WrapParameterSpec(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet, userKeyingMaterial));
 
                     byte[] encKeyBytes = keyEncryptionCipher.wrap(keyWrapHelper.getJceKey(contentEncryptionKey));
 
@@ -236,18 +238,16 @@ public class JceKeyAgreeRecipientInfoGenerator
                         Arrays.copyOfRange(encKeyBytes, 0, encKeyBytes.length - 4),
                         Arrays.copyOfRange(encKeyBytes, encKeyBytes.length - 4, encKeyBytes.length));
 
-                    encryptedKey = new DEROctetString(encKey.getEncoded(ASN1Encoding.DER));
+                    encryptedKeyOctets = encKey.getEncoded(ASN1Encoding.DER);
                 }
                 else
                 {
                     keyEncryptionCipher.init(Cipher.WRAP_MODE, keyEncryptionKey, random);
 
-                    byte[] encryptedKeyBytes = keyEncryptionCipher.wrap(keyWrapHelper.getJceKey(contentEncryptionKey));
-
-                    encryptedKey = new DEROctetString(encryptedKeyBytes);
+                    encryptedKeyOctets = keyEncryptionCipher.wrap(keyWrapHelper.getJceKey(contentEncryptionKey));
                 }
 
-                recipientEncryptedKeys.add(new RecipientEncryptedKey(karId, encryptedKey));
+                recipientEncryptedKeys.add(new RecipientEncryptedKey(karId, new DEROctetString(encryptedKeyOctets)));
             }
             catch (GeneralSecurityException e)
             {
@@ -269,18 +269,14 @@ public class JceKeyAgreeRecipientInfoGenerator
 
         if (ephemeralKP != null)
         {
-            OriginatorPublicKey originatorPublicKey = createOriginatorPublicKey(SubjectPublicKeyInfo.getInstance(ephemeralKP.getPublic().getEncoded()));
+            OriginatorPublicKey originatorPublicKey = createOriginatorPublicKey(
+                SubjectPublicKeyInfo.getInstance(ephemeralKP.getPublic().getEncoded()));
 
             try
             {
-                if (userKeyingMaterial != null)
-                {
-                    return new MQVuserKeyingMaterial(originatorPublicKey, new DEROctetString(userKeyingMaterial)).getEncoded();
-                }
-                else
-                {
-                    return new MQVuserKeyingMaterial(originatorPublicKey, null).getEncoded();
-                }
+                ASN1OctetString addedukm = DEROctetString.fromContentsOptional(userKeyingMaterial);
+
+                return new MQVuserKeyingMaterial(originatorPublicKey, addedukm).getEncoded();
             }
             catch (IOException e)
             {

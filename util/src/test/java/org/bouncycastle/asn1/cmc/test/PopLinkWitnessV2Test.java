@@ -26,8 +26,8 @@ public class PopLinkWitnessV2Test
     {
         // Object identifiers real but not correct in this context.
         PopLinkWitnessV2 popLinkWitnessV2 = new PopLinkWitnessV2(
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.bagtypes, new ASN1Integer(10L)),
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.crlTypes, new ASN1Integer(12L)),
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.bagtypes, ASN1Integer.valueOf(10)),
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.crlTypes, ASN1Integer.valueOf(12)),
             "cats".getBytes()
         );
 

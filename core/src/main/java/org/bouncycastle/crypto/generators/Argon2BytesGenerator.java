@@ -675,7 +675,7 @@ public class Argon2BytesGenerator
             }
         }
 
-        public Block clear()
+        private Block clear()
         {
             Arrays.fill(v, 0);
             return this;

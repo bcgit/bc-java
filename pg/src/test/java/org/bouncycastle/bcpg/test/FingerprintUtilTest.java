@@ -6,7 +6,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class FingerprintUtilTest
-    extends SimpleTest
+    extends AbstractPacketTest
 {
     private void testKeyIdFromTooShortFails()
     {

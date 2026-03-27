@@ -15,8 +15,9 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
  */
 public interface SECObjectIdentifiers
 {
-    /** Base OID: 1.3.132.0 */
-    static final ASN1ObjectIdentifier ellipticCurve = new ASN1ObjectIdentifier("1.3.132.0");
+    static final ASN1ObjectIdentifier certicom = new ASN1ObjectIdentifier("1.3.132");
+
+    static final ASN1ObjectIdentifier ellipticCurve = certicom.branch("0");
 
     /**  sect163k1 OID: 1.3.132.0.1 */
     static final ASN1ObjectIdentifier sect163k1 = ellipticCurve.branch("1");
@@ -86,25 +87,52 @@ public interface SECObjectIdentifiers
     /**  secp256r1 OID: 1.3.132.0.prime256v1 */
     static final ASN1ObjectIdentifier secp256r1 = X9ObjectIdentifiers.prime256v1;
 
-    static final ASN1ObjectIdentifier secg_scheme = new ASN1ObjectIdentifier("1.3.132.1");
+    static final ASN1ObjectIdentifier secg_scheme = certicom.branch("1");
 
-    static final ASN1ObjectIdentifier dhSinglePass_stdDH_sha224kdf_scheme = secg_scheme.branch("11.0");
-    static final ASN1ObjectIdentifier dhSinglePass_stdDH_sha256kdf_scheme = secg_scheme.branch("11.1");
-    static final ASN1ObjectIdentifier dhSinglePass_stdDH_sha384kdf_scheme = secg_scheme.branch("11.2");
-    static final ASN1ObjectIdentifier dhSinglePass_stdDH_sha512kdf_scheme = secg_scheme.branch("11.3");
+    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_recommendedKDF = secg_scheme.branch("1");
+    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_specifiedKDF = secg_scheme.branch("2");
+    static final ASN1ObjectIdentifier mqvSinglePass_recommendedKDF = secg_scheme.branch("3");
+    static final ASN1ObjectIdentifier mqvSinglePass_specifiedKDF = secg_scheme.branch("4");
+    static final ASN1ObjectIdentifier mqvFull_recommendedKDF = secg_scheme.branch("5");
+    static final ASN1ObjectIdentifier mqvFull_specifiedKDF = secg_scheme.branch("6");
+    static final ASN1ObjectIdentifier ecies_recommendedParameters = secg_scheme.branch("7");
+    static final ASN1ObjectIdentifier ecies_specifiedParameters = secg_scheme.branch("8");
 
-    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_sha224kdf_scheme = secg_scheme.branch("14.0");
-    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_sha256kdf_scheme = secg_scheme.branch("14.1");
-    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_sha384kdf_scheme = secg_scheme.branch("14.2");
-    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_sha512kdf_scheme = secg_scheme.branch("14.3");
+    static final ASN1ObjectIdentifier dhSinglePass_stdDH_kdf_schemes = secg_scheme.branch("11");
 
-    static final ASN1ObjectIdentifier mqvSinglePass_sha224kdf_scheme = secg_scheme.branch("15.0");
-    static final ASN1ObjectIdentifier mqvSinglePass_sha256kdf_scheme = secg_scheme.branch("15.1");
-    static final ASN1ObjectIdentifier mqvSinglePass_sha384kdf_scheme = secg_scheme.branch("15.2");
-    static final ASN1ObjectIdentifier mqvSinglePass_sha512kdf_scheme = secg_scheme.branch("15.3");
+    static final ASN1ObjectIdentifier dhSinglePass_stdDH_sha224kdf_scheme = dhSinglePass_stdDH_kdf_schemes.branch("0");
+    static final ASN1ObjectIdentifier dhSinglePass_stdDH_sha256kdf_scheme = dhSinglePass_stdDH_kdf_schemes.branch("1");
+    static final ASN1ObjectIdentifier dhSinglePass_stdDH_sha384kdf_scheme = dhSinglePass_stdDH_kdf_schemes.branch("2");
+    static final ASN1ObjectIdentifier dhSinglePass_stdDH_sha512kdf_scheme = dhSinglePass_stdDH_kdf_schemes.branch("3");
 
-    static final ASN1ObjectIdentifier mqvFull_sha224kdf_scheme = secg_scheme.branch("16.0");
-    static final ASN1ObjectIdentifier mqvFull_sha256kdf_scheme = secg_scheme.branch("16.1");
-    static final ASN1ObjectIdentifier mqvFull_sha384kdf_scheme = secg_scheme.branch("16.2");
-    static final ASN1ObjectIdentifier mqvFull_sha512kdf_scheme = secg_scheme.branch("16.3");
+    static final ASN1ObjectIdentifier ecdh = secg_scheme.branch("12");
+    static final ASN1ObjectIdentifier ecmqv = secg_scheme.branch("13");
+
+    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_kdf_schemes = secg_scheme.branch("14");
+
+    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_sha224kdf_scheme = dhSinglePass_cofactorDH_kdf_schemes.branch("0");
+    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_sha256kdf_scheme = dhSinglePass_cofactorDH_kdf_schemes.branch("1");
+    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_sha384kdf_scheme = dhSinglePass_cofactorDH_kdf_schemes.branch("2");
+    static final ASN1ObjectIdentifier dhSinglePass_cofactorDH_sha512kdf_scheme = dhSinglePass_cofactorDH_kdf_schemes.branch("3");
+
+    static final ASN1ObjectIdentifier mqvSinglePass_kdf_schemes = secg_scheme.branch("15");
+
+    static final ASN1ObjectIdentifier mqvSinglePass_sha224kdf_scheme = mqvSinglePass_kdf_schemes.branch("0");
+    static final ASN1ObjectIdentifier mqvSinglePass_sha256kdf_scheme = mqvSinglePass_kdf_schemes.branch("1");
+    static final ASN1ObjectIdentifier mqvSinglePass_sha384kdf_scheme = mqvSinglePass_kdf_schemes.branch("2");
+    static final ASN1ObjectIdentifier mqvSinglePass_sha512kdf_scheme = mqvSinglePass_kdf_schemes.branch("3");
+
+    static final ASN1ObjectIdentifier mqvFull_kdf_schemes = secg_scheme.branch("16");
+
+    static final ASN1ObjectIdentifier mqvFull_sha224kdf_scheme = mqvFull_kdf_schemes.branch("0");
+    static final ASN1ObjectIdentifier mqvFull_sha256kdf_scheme = mqvFull_kdf_schemes.branch("1");
+    static final ASN1ObjectIdentifier mqvFull_sha384kdf_scheme = mqvFull_kdf_schemes.branch("2");
+    static final ASN1ObjectIdentifier mqvFull_sha512kdf_scheme = mqvFull_kdf_schemes.branch("3");
+
+    static final ASN1ObjectIdentifier kdf_algorithms = secg_scheme.branch("17");
+
+    static final ASN1ObjectIdentifier x9_63_kdf = kdf_algorithms.branch("0");
+    static final ASN1ObjectIdentifier nist_concatenation_kdf = kdf_algorithms.branch("1");
+    static final ASN1ObjectIdentifier tls_kdf = kdf_algorithms.branch("2");
+    static final ASN1ObjectIdentifier ikev2_kdf = kdf_algorithms.branch("3");
 }

@@ -23,7 +23,7 @@ public class MLSMessage
         this.wireFormat = wireFormat;
     }
 
-    static public MLSMessage externalProposal(MlsCipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk)
+    public static MLSMessage externalProposal(MlsCipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk)
         throws Exception
     {
         switch (proposal.getProposalType())
@@ -59,7 +59,7 @@ public class MLSMessage
         return message;
     }
 
-    static public MLSMessage keyPackage(KeyPackage keyPackage)
+    public static MLSMessage keyPackage(KeyPackage keyPackage)
     {
         MLSMessage message = new MLSMessage(WireFormat.mls_key_package);
         message.version = ProtocolVersion.mls10;

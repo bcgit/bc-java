@@ -30,6 +30,7 @@ import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
+import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
@@ -50,7 +51,7 @@ class Utils
     static final AlgorithmIdentifier XMSS_SHA512 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
     static final AlgorithmIdentifier XMSS_SHAKE128 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
     static final AlgorithmIdentifier XMSS_SHAKE256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
-    
+
     static final Map picnicOids = new HashMap();
     static final Map picnicParams = new HashMap();
 
@@ -107,6 +108,9 @@ class Utils
 
     static final Map snovaOids = new HashMap<ASN1ObjectIdentifier, SnovaParameters>();
     static final Map snovaParams = new HashMap<SnovaParameters, ASN1ObjectIdentifier>();
+
+    static final Map ntruPlusOids = new HashMap<ASN1ObjectIdentifier, NTRUPlusParameters>();
+    static final Map ntruPlusParams = new HashMap<NTRUPlusParameters, ASN1ObjectIdentifier>();
 
     static
     {
@@ -571,6 +575,14 @@ class Utils
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_esk, SnovaParameters.SNOVA_75_33_2_ESK);
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, SnovaParameters.SNOVA_75_33_2_SHAKE_SSK);
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, SnovaParameters.SNOVA_75_33_2_SHAKE_ESK);
+
+        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus768, NTRUPlusParameters.ntruplus_kem_768);
+        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus864, NTRUPlusParameters.ntruplus_kem_864);
+        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus1152, NTRUPlusParameters.ntruplus_kem_1152);
+
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_768, BCObjectIdentifiers.ntruPlus768);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruPlus864);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruPlus1152);
     }
 
     static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
@@ -883,6 +895,16 @@ class Utils
     static SnovaParameters snovaParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SnovaParameters)snovaParams.get(oid);
+    }
+
+    static NTRUPlusParameters ntruPlusParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (NTRUPlusParameters)ntruPlusParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier ntruPlusOidLookup(NTRUPlusParameters params)
+    {
+        return (ASN1ObjectIdentifier)ntruPlusOids.get(params);
     }
 
     private static boolean isRaw(byte[] data)

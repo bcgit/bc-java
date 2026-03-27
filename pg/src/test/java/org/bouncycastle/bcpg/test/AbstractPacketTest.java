@@ -8,9 +8,8 @@ import org.bouncycastle.util.test.SimpleTest;
 import java.io.IOException;
 
 public abstract class AbstractPacketTest
-        extends SimpleTest
+    extends SimpleTest
 {
-
     /**
      * Test, whether the first byte array and the second byte array are identical.
      * If a mismatch is detected, a formatted hex dump of both arrays is printed to stdout.
@@ -31,15 +30,17 @@ public abstract class AbstractPacketTest
      */
     public void isEncodingEqual(String message, byte[] first, byte[] second)
     {
-        StringBuilder sb = new StringBuilder();
-        if (message != null)
+        if (!Arrays.areEqual(first, second))
         {
-            sb.append(message).append("\n");
+            StringBuilder sb = new StringBuilder();
+            if (message != null)
+            {
+                sb.append(message).append("\n");
+            }
+            sb.append("Expected: \n").append(DumpUtil.hexdump(first)).append("\n");
+            sb.append("Got: \n").append(DumpUtil.hexdump(second));
+            fail(sb.toString());
         }
-        sb.append("Expected: \n").append(DumpUtil.hexdump(first)).append("\n");
-        sb.append("Got: \n").append(DumpUtil.hexdump(second));
-
-        isTrue(sb.toString(), first == second || Arrays.areEqual(first, second));
     }
 
     /**
@@ -48,8 +49,7 @@ public abstract class AbstractPacketTest
      * @param first first packet
      * @param second second packet
      */
-    public void isEncodingEqual(ContainedPacket first, ContainedPacket second)
-            throws IOException
+    public void isEncodingEqual(ContainedPacket first, ContainedPacket second) throws IOException
     {
         isEncodingEqual(null, first, second);
     }
@@ -61,17 +61,12 @@ public abstract class AbstractPacketTest
      * @param first first packet
      * @param second second packet
      */
-    public void isEncodingEqual(String message, ContainedPacket first, ContainedPacket second)
-            throws IOException
+    public void isEncodingEqual(String message, ContainedPacket first, ContainedPacket second) throws IOException
     {
-        StringBuilder sb = new StringBuilder();
-        if (message != null)
+        if (first != second)
         {
-            sb.append(message).append("\n");
+            isEncodingEqual(message, first.getEncoded(), second.getEncoded());
         }
-        sb.append("Expected: \n").append(PacketDumpUtil.hexdump(first)).append("\n");
-        sb.append("Got: \n").append(PacketDumpUtil.hexdump(second));
-        isTrue(sb.toString(), first == second || Arrays.areEqual(first.getEncoded(), second.getEncoded()));
     }
 
     /**

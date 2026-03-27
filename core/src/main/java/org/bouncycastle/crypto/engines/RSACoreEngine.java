@@ -221,6 +221,13 @@ class RSACoreEngine
 
                 return m;
             }
+            else
+            {
+                if (key.getExponent() == null)
+                {
+                    throw new IllegalStateException("null exponent, should \"org.bouncycastle.rsa.no_lenstra_check\" be enabled?");
+                }
+            }
         }
 
         return input.modPow(key.getExponent(), key.getModulus());

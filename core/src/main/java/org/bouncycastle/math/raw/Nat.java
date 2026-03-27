@@ -272,8 +272,8 @@ public abstract class Nat
     {
         for (int i = len - 1; i >= 0; --i)
         {
-            int x_i = x[i] ^ Integer.MIN_VALUE;
-            int y_i = y[i] ^ Integer.MIN_VALUE;
+            int x_i = x[i] + Integer.MIN_VALUE;
+            int y_i = y[i] + Integer.MIN_VALUE;
             if (x_i < y_i)
                 return -1;
             if (x_i > y_i)
@@ -286,8 +286,8 @@ public abstract class Nat
     {
         for (int i = len - 1; i >= 0; --i)
         {
-            int x_i = x[xOff + i] ^ Integer.MIN_VALUE;
-            int y_i = y[yOff + i] ^ Integer.MIN_VALUE;
+            int x_i = x[xOff + i] + Integer.MIN_VALUE;
+            int y_i = y[yOff + i] + Integer.MIN_VALUE;
             if (x_i < y_i)
                 return -1;
             if (x_i > y_i)
@@ -495,6 +495,50 @@ public abstract class Nat
         return (d - 1) >> 31;
     }
 
+    public static long equalTo64(int len, long[] x, long y)
+    {
+        long d = x[0] ^ y;
+        for (int i = 1; i < len; ++i)
+        {
+            d |= x[i];
+        }
+        d = (d >>> 1) | (d & 1L);
+        return (d - 1L) >> 63;
+    }
+
+    public static long equalTo64(int len, long[] x, int xOff, long y)
+    {
+        long d = x[xOff] ^ y;
+        for (int i = 1; i < len; ++i)
+        {
+            d |= x[xOff + i];
+        }
+        d = (d >>> 1) | (d & 1L);
+        return (d - 1L) >> 63;
+    }
+
+    public static long equalTo64(int len, long[] x, long[] y)
+    {
+        long d = 0L;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= x[i] ^ y[i];
+        }
+        d = (d >>> 1) | (d & 1L);
+        return (d - 1L) >> 63;
+    }
+
+    public static long equalTo64(int len, long[] x, int xOff, long[] y, int yOff)
+    {
+        long d = 0L;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= x[xOff + i] ^ y[yOff + i];
+        }
+        d = (d >>> 1) | (d & 1L);
+        return (d - 1L) >> 63;
+    }
+
     public static int equalToZero(int len, int[] x)
     {
         int d = 0;
@@ -515,6 +559,28 @@ public abstract class Nat
         }
         d = (d >>> 1) | (d & 1);
         return (d - 1) >> 31;
+    }
+
+    public static long equalToZero64(int len, long[] x)
+    {
+        long d = 0L;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= x[i];
+        }
+        d = (d >>> 1) | (d & 1L);
+        return (d - 1L) >> 63;
+    }
+
+    public static long equalToZero64(int len, long[] x, int xOff)
+    {
+        long d = 0L;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= x[xOff + i];
+        }
+        d = (d >>> 1) | (d & 1L);
+        return (d - 1L) >> 63;
     }
 
     public static int[] fromBigInteger(int bits, BigInteger x)
@@ -596,8 +662,8 @@ public abstract class Nat
     {
         for (int i = len - 1; i >= 0; --i)
         {
-            int x_i = x[i] ^ Integer.MIN_VALUE;
-            int y_i = y[i] ^ Integer.MIN_VALUE;
+            int x_i = x[i] + Integer.MIN_VALUE;
+            int y_i = y[i] + Integer.MIN_VALUE;
             if (x_i < y_i)
                 return false;
             if (x_i > y_i)
@@ -610,8 +676,8 @@ public abstract class Nat
     {
         for (int i = len - 1; i >= 0; --i)
         {
-            int x_i = x[xOff + i] ^ Integer.MIN_VALUE;
-            int y_i = y[yOff + i] ^ Integer.MIN_VALUE;
+            int x_i = x[xOff + i] + Integer.MIN_VALUE;
+            int y_i = y[yOff + i] + Integer.MIN_VALUE;
             if (x_i < y_i)
                 return false;
             if (x_i > y_i)
@@ -1402,6 +1468,134 @@ public abstract class Nat
         return new BigInteger(1, bs);
     }
 
+    public static void xor(int len, int[] x, int y, int[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] = x[i] ^ y;
+        }
+    }
+
+    public static void xor(int len, int[] x, int xOff, int y, int[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] = x[xOff + i] ^ y;
+        }
+    }
+
+    public static void xor(int len, int[] x, int[] y, int[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] = x[i] ^ y[i];
+        }
+    }
+
+    public static void xor(int len, int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] = x[xOff + i] ^ y[yOff + i];
+        }
+    }
+
+    public static void xor64(int len, long[] x, long y, long[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] = x[i] ^ y;
+        }
+    }
+
+    public static void xor64(int len, long[] x, int xOff, long y, long[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] = x[xOff + i] ^ y;
+        }
+    }
+
+    public static void xor64(int len, long[] x, long[] y, long[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] = x[i] ^ y[i];
+        }
+    }
+
+    public static void xor64(int len, long[] x, int xOff, long[] y, int yOff, long[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] = x[xOff + i] ^ y[yOff + i];
+        }
+    }
+
+    public static void xorBothTo(int len, int[] x, int[] y, int[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] ^= x[i] ^ y[i];
+        }
+    }
+
+    public static void xorBothTo(int len, int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] ^= x[xOff + i] ^ y[yOff + i];
+        }
+    }
+
+    public static void xorBothTo64(int len, long[] x, long[] y, long[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] ^= x[i] ^ y[i];
+        }
+    }
+
+    public static void xorBothTo64(int len, long[] x, int xOff, long[] y, int yOff, long[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] ^= x[xOff + i] ^ y[yOff + i];
+        }
+    }
+
+    public static void xorTo(int len, int[] x, int[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] ^= x[i];
+        }
+    }
+
+    public static void xorTo(int len, int[] x, int xOff, int[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] ^= x[xOff + i];
+        }
+    }
+
+    public static void xorTo64(int len, long[] x, long[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] ^= x[i];
+        }
+    }
+
+    public static void xorTo64(int len, long[] x, int xOff, long[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] ^= x[xOff + i];
+        }
+    }
+
     public static void zero(int len, int[] z)
     {
         for (int i = 0; i < len; ++i)
@@ -1423,6 +1617,14 @@ public abstract class Nat
         for (int i = 0; i < len; ++i)
         {
             z[i] = 0L;
+        }
+    }
+
+    public static void zero64(int len, long[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] = 0L;
         }
     }
 }

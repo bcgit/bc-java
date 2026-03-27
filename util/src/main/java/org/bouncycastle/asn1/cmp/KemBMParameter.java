@@ -51,7 +51,7 @@ public class KemBMParameter
         long len,
         AlgorithmIdentifier mac)
     {
-        this(kdf, new ASN1Integer(len), mac);
+        this(kdf, ASN1Integer.valueOf(len), mac);
     }
 
     public static KemBMParameter getInstance(Object o)

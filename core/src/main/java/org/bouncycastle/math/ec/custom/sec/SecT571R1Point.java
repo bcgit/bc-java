@@ -8,6 +8,7 @@ import org.bouncycastle.math.ec.ECPoint.AbstractF2m;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat576;
 
+@SuppressWarnings("AssignmentExpression")
 public class SecT571R1Point extends AbstractF2m
 {
     SecT571R1Point(ECCurve curve, ECFieldElement x, ECFieldElement y)

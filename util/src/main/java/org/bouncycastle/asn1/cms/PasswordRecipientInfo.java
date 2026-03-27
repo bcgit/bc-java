@@ -35,17 +35,17 @@ public class PasswordRecipientInfo
         AlgorithmIdentifier     keyEncryptionAlgorithm,
         ASN1OctetString         encryptedKey)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.encryptedKey = encryptedKey;
     }
-    
+
     public PasswordRecipientInfo(
         AlgorithmIdentifier     keyDerivationAlgorithm,
         AlgorithmIdentifier     keyEncryptionAlgorithm,
         ASN1OctetString         encryptedKey)
     {
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
         this.keyDerivationAlgorithm = keyDerivationAlgorithm;
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.encryptedKey = encryptedKey;
@@ -83,7 +83,7 @@ public class PasswordRecipientInfo
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a PasswordRecipientInfo object from the given object.
      * <p>
@@ -104,12 +104,12 @@ public class PasswordRecipientInfo
         {
             return (PasswordRecipientInfo)obj;
         }
-        
+
         if (obj != null)
         {
             return new PasswordRecipientInfo(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
     }
 
@@ -133,7 +133,7 @@ public class PasswordRecipientInfo
         return encryptedKey;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
@@ -141,7 +141,7 @@ public class PasswordRecipientInfo
         ASN1EncodableVector v = new ASN1EncodableVector(4);
 
         v.add(version);
-        
+
         if (keyDerivationAlgorithm != null)
         {
             v.add(new DERTaggedObject(false, 0, keyDerivationAlgorithm));

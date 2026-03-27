@@ -134,6 +134,10 @@ public class SM4Test
     public void performTest()
         throws Exception
     {
+        wrapTest(1, "SM4WRAP", Hex.decode("0123456789abcdeffedcba9876543210"), null,
+            null, Hex.decode("0123456789abcdeffedcba9876543210"), Hex.decode("5d9c31d2f37a186c13943c7e650fbcf895a91f670b7b92bd"));
+        wrapTest(2, "SM4WRAPPAD", Hex.decode("0123456789abcdeffedcba9876543210"), null,
+            null, Hex.decode("0123456789abcdeffedcba9876543210"), Hex.decode("7d7110bfbdad2f7b453499338fd40f27014be97c0c69867a"));
         for (int i = 0; i != cipherTests.length; i += 4)
         {
             test(Integer.parseInt(cipherTests[i]),

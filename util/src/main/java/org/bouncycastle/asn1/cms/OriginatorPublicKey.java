@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * <pre>
  * OriginatorPublicKey ::= SEQUENCE {
  *     algorithm AlgorithmIdentifier,
- *     publicKey BIT STRING 
+ *     publicKey BIT STRING
  * }
  * </pre>
  */
@@ -48,7 +48,7 @@ public class OriginatorPublicKey
         algorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         publicKey = (DERBitString)seq.getObjectAt(1);
     }
-    
+
     /**
      * Return an OriginatorPublicKey object from a tagged object.
      *
@@ -64,7 +64,7 @@ public class OriginatorPublicKey
     {
         return new OriginatorPublicKey(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return an OriginatorPublicKey object from the given object.
      * <p>
@@ -85,14 +85,14 @@ public class OriginatorPublicKey
         {
             return (OriginatorPublicKey)obj;
         }
-        
+
         if (obj != null)
         {
             return new OriginatorPublicKey(ASN1Sequence.getInstance(obj));
         }
 
         return null;
-    } 
+    }
 
     public AlgorithmIdentifier getAlgorithm()
     {
@@ -112,7 +112,7 @@ public class OriginatorPublicKey
         return publicKey;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

@@ -5,6 +5,7 @@ import java.util.Stack;
 import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 
 public class BigInteger
 {
@@ -978,9 +979,10 @@ public class BigInteger
             int v1 = x[xIndx++];
             int v2 = y[yIndx++];
 
-            if (v1 != v2)
+            int c = Integers.compareUnsigned(v1, v2);
+            if (c != 0)
             {
-                return (v1 ^ Integer.MIN_VALUE) < (v2 ^ Integer.MIN_VALUE) ? -1 : 1;
+                return c;
             }
         }
 

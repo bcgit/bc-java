@@ -66,6 +66,6 @@ public class BodyPartID
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new ASN1Integer(id);
+        return ASN1Integer.valueOf(id);
     }
 }

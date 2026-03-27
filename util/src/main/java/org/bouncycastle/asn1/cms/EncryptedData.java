@@ -62,7 +62,7 @@ public class EncryptedData
 
     public EncryptedData(EncryptedContentInfo encInfo, ASN1Set unprotectedAttrs)
     {
-        this.version = new ASN1Integer((unprotectedAttrs == null) ? 0 : 2);
+        this.version = unprotectedAttrs == null ? ASN1Integer.ZERO : ASN1Integer.TWO;
         this.encryptedContentInfo = encInfo;
         this.unprotectedAttrs = unprotectedAttrs;
     }

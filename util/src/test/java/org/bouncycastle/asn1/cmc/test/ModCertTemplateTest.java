@@ -33,7 +33,7 @@ public class ModCertTemplateTest
         BodyPartPath pkiDataReference = new BodyPartPath(new BodyPartID(10L));
         BodyPartList certReferences = new BodyPartList(new BodyPartID(12L));
         boolean replace = false;
-        CertTemplate certTemplate = CertTemplate.getInstance(new DLSequence(new DERTaggedObject(false, 1, new ASN1Integer(34L))));
+        CertTemplate certTemplate = CertTemplate.getInstance(new DLSequence(new DERTaggedObject(false, 1, ASN1Integer.valueOf(34))));
         {
             ModCertTemplate modCertTemplate = new ModCertTemplate(
                 pkiDataReference,

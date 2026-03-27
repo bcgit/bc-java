@@ -179,7 +179,7 @@ abstract class ScalarUtil
         return i * 32 + 32 - Integers.numberOfLeadingZeros(x[i]);
     }
 
-    static boolean lessThan(int last, int[] x, int[] y)
+    static boolean lessThanUnsigned(int last, int[] x, int[] y)
     {
         int i = last;
         do

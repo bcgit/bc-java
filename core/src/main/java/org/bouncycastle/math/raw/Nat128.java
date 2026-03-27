@@ -243,8 +243,8 @@ public abstract class Nat128
     {
         for (int i = 3; i >= 0; --i)
         {
-            int x_i = x[i] ^ Integer.MIN_VALUE;
-            int y_i = y[i] ^ Integer.MIN_VALUE;
+            int x_i = x[i] + Integer.MIN_VALUE;
+            int y_i = y[i] + Integer.MIN_VALUE;
             if (x_i < y_i)
                 return false;
             if (x_i > y_i)
@@ -257,8 +257,8 @@ public abstract class Nat128
     {
         for (int i = 3; i >= 0; --i)
         {
-            int x_i = x[xOff + i] ^ Integer.MIN_VALUE;
-            int y_i = y[yOff + i] ^ Integer.MIN_VALUE;
+            int x_i = x[xOff + i] + Integer.MIN_VALUE;
+            int y_i = y[yOff + i] + Integer.MIN_VALUE;
             if (x_i < y_i)
                 return false;
             if (x_i > y_i)

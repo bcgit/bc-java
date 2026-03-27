@@ -34,6 +34,8 @@ public class MLKEMPrivateKeyParameters
         this.rho = Arrays.clone(rho);
         this.seed = Arrays.clone(seed);
         this.prefFormat = BOTH;
+
+        validate();
     }
 
     public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] encoding)
@@ -46,11 +48,11 @@ public class MLKEMPrivateKeyParameters
         super(true, params);
 
         MLKEMEngine eng = params.getEngine();
-        if (encoding.length == MLKEMEngine.KyberSymBytes * 2)
+        if (encoding.length == MLKEMEngine.SeedBytes)
         {
             byte[][] keyData = eng.generateKemKeyPairInternal(
-                Arrays.copyOfRange(encoding, 0, MLKEMEngine.KyberSymBytes),
-                Arrays.copyOfRange(encoding, MLKEMEngine.KyberSymBytes, encoding.length));
+                Arrays.copyOfRange(encoding, 0, MLKEMEngine.SymBytes),
+                Arrays.copyOfRange(encoding, MLKEMEngine.SymBytes, encoding.length));
             this.s = keyData[2];
             this.hpk = keyData[3];
             this.nonce = keyData[4];
@@ -61,17 +63,19 @@ public class MLKEMPrivateKeyParameters
         else
         {
             int index = 0;
-            this.s = Arrays.copyOfRange(encoding, 0, eng.getKyberIndCpaSecretKeyBytes());
-            index += eng.getKyberIndCpaSecretKeyBytes();
-            this.t = Arrays.copyOfRange(encoding, index, index + eng.getKyberIndCpaPublicKeyBytes() - MLKEMEngine.KyberSymBytes);
-            index += eng.getKyberIndCpaPublicKeyBytes() - MLKEMEngine.KyberSymBytes;
+            this.s = Arrays.copyOfRange(encoding, 0, eng.getIndCpaSecretKeyBytes());
+            index += eng.getIndCpaSecretKeyBytes();
+            this.t = Arrays.copyOfRange(encoding, index, index + eng.getIndCpaPublicKeyBytes() - MLKEMEngine.SymBytes);
+            index += eng.getIndCpaPublicKeyBytes() - MLKEMEngine.SymBytes;
             this.rho = Arrays.copyOfRange(encoding, index, index + 32);
             index += 32;
             this.hpk = Arrays.copyOfRange(encoding, index, index + 32);
             index += 32;
-            this.nonce = Arrays.copyOfRange(encoding, index, index + MLKEMEngine.KyberSymBytes);
+            this.nonce = Arrays.copyOfRange(encoding, index, index + MLKEMEngine.SymBytes);
             this.seed = null;
         }
+
+        validate();
 
         if (pubKey != null)
         {
@@ -95,9 +99,26 @@ public class MLKEMPrivateKeyParameters
         this.nonce = params.nonce;
         this.seed = params.seed;
         this.prefFormat = preferredFormat;
+
+        validate();
     }
 
+    private void validate()
+    {
+        MLKEMEngine engine = getParameters().getEngine();
+        if (!engine.checkPrivateKey(getEncoded()))
+        {
+            throw new IllegalArgumentException("'encoding' fails hash check");
+        }
+    }
+
+    /** @deprecated Use {@link #withPreferredFormat(int)} instead. */
     public MLKEMPrivateKeyParameters getParametersWithFormat(int format)
+    {
+        return withPreferredFormat(format); 
+    }
+
+    public MLKEMPrivateKeyParameters withPreferredFormat(int format)
     {
         if (this.prefFormat == format)
         {
@@ -131,7 +152,7 @@ public class MLKEMPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(new byte[][]{ s, t, rho, hpk, nonce });
+        return Arrays.concatenate(new byte[][]{s, t, rho, hpk, nonce});
     }
 
     public byte[] getHPK()

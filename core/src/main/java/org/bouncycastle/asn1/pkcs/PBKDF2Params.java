@@ -102,11 +102,11 @@ public class PBKDF2Params
         AlgorithmIdentifier prf)
     {
         this.octStr = new DEROctetString(Arrays.clone(salt));
-        this.iterationCount = new ASN1Integer(iterationCount);
+        this.iterationCount = ASN1Integer.valueOf(iterationCount);
 
         if (keyLength > 0)
         {
-            this.keyLength = new ASN1Integer(keyLength);
+            this.keyLength = ASN1Integer.valueOf(keyLength);
         }
         else
         {

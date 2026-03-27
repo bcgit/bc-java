@@ -41,7 +41,7 @@ public class CMCUnsignedDataTest
 
         try
         {
-            CMCUnsignedData.getInstance(new DERSequence(new ASN1Integer(10)));
+            CMCUnsignedData.getInstance(new DERSequence(ASN1Integer.valueOf(10)));
             fail("Must fail, sequence must be 3");
         }
         catch (Exception ex)
@@ -51,7 +51,7 @@ public class CMCUnsignedDataTest
 
         try
         {
-            CMCUnsignedData.getInstance(new DERSequence(new ASN1Encodable[]{new ASN1Integer(10), new ASN1Integer(10), new ASN1Integer(10), new ASN1Integer(10)}));
+            CMCUnsignedData.getInstance(new DERSequence(new ASN1Encodable[]{ASN1Integer.valueOf(10), ASN1Integer.valueOf(10), ASN1Integer.valueOf(10), ASN1Integer.valueOf(10)}));
             fail("Must fail, sequence must be 3");
         }
         catch (Exception ex)

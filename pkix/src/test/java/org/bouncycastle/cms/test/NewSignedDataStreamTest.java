@@ -32,6 +32,8 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCRLStore;
@@ -209,8 +211,45 @@ public class NewSignedDataStreamTest
         assertEquals(certStore.getMatches(null).size(), sp.getCertificates().getMatches(null).size());
         assertEquals(crlStore.getMatches(null).size(), sp.getCRLs().getMatches(null).size());
     }
-    
-    private void verifySignatures(CMSSignedDataParser sp) 
+
+    private void verifySignatures(CMSSignedDataParser sp, byte[] contentDigest, boolean ignoreCounterSig)
+        throws Exception
+    {
+        Store certStore = sp.getCertificates();
+        Store crlStore = sp.getCRLs();
+        SignerInformationStore signers = sp.getSignerInfos();
+
+        Set digestIDs = new HashSet(sp.getDigestAlgorithmIDs());
+
+        assertTrue(digestIDs.size() > 0);
+
+        Collection c = signers.getSigners();
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certStore.getMatches(signer.getSID());
+
+            Iterator certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+
+            digestIDs.remove(signer.getDigestAlgorithmID());
+
+            if (contentDigest != null)
+            {
+                assertTrue(MessageDigest.isEqual(contentDigest, signer.getContentDigest()));
+            }
+        }
+
+        assertTrue(digestIDs.size() > 0);
+        assertEquals(certStore.getMatches(null).size(), sp.getCertificates().getMatches(null).size());
+        assertEquals(crlStore.getMatches(null).size(), sp.getCRLs().getMatches(null).size());
+    }
+
+    private void verifySignatures(CMSSignedDataParser sp)
         throws Exception
     {
         verifySignatures(sp, null);
@@ -364,7 +403,126 @@ public class NewSignedDataStreamTest
         
         verifySignatures(sp, md.digest(TEST_MESSAGE.getBytes()));
     }
-    
+
+    public void testAddDigestAlgorithm()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        List crlList = new ArrayList();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        crlList.add(_signCrl);
+        crlList.add(_origCrl);
+
+        Store certs = new JcaCertStore(certList);
+        Store crls = new JcaCRLStore(crlList);
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha1Signer, _origCert));
+        gen.addCertificates(certs);
+
+        gen.addCRLs(crls);
+
+        Set<AlgorithmIdentifier> oids = new HashSet<AlgorithmIdentifier>();
+        oids.add(new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption));
+        gen.addDigestAlgorithms(oids);
+
+        OutputStream sigOut = gen.open(bOut);
+
+        sigOut.write(TEST_MESSAGE.getBytes());
+
+        sigOut.close();
+
+        checkSigParseable(bOut.toByteArray());
+
+        CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(),
+            new CMSTypedStream(new ByteArrayInputStream(TEST_MESSAGE.getBytes())), bOut.toByteArray());
+
+        sp.getSignedContent().drain();
+
+        //
+        // compute expected content digest
+        //
+        MessageDigest md1 = MessageDigest.getInstance("SHA1", BC);
+        verifySignatures(sp, md1.digest(TEST_MESSAGE.getBytes()), true);
+
+
+        //
+        // try using existing signer
+        //
+        gen = new CMSSignedDataStreamGenerator();
+
+        gen.addSigners(sp.getSignerInfos());
+
+        gen.addCertificates(sp.getCertificates());
+        gen.addCRLs(sp.getCRLs());
+
+        bOut.reset();
+
+        sigOut = gen.open(bOut, true);
+
+        sigOut.write(TEST_MESSAGE.getBytes());
+
+        sigOut.close();
+
+        verifyEncodedData(bOut);
+        sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(),
+            new CMSTypedStream(new ByteArrayInputStream(TEST_MESSAGE.getBytes())), bOut.toByteArray());
+
+        sp.getSignedContent().drain();
+
+        //
+        // look for the CRLs
+        //
+        Collection col = sp.getCRLs().getMatches(null);
+
+        assertEquals(2, col.size());
+        assertTrue(col.contains(new JcaX509CRLHolder(_signCrl)));
+        assertTrue(col.contains(new JcaX509CRLHolder(_origCrl)));
+    }
+
+    private void verifySignatures2(CMSSignedDataParser sp, byte[] contentDigest1, byte[] contentDigest2)
+        throws Exception
+    {
+        Store certStore = sp.getCertificates();
+        Store crlStore = sp.getCRLs();
+        SignerInformationStore signers = sp.getSignerInfos();
+
+        Set digestIDs = new HashSet(sp.getDigestAlgorithmIDs());
+
+        assertTrue(digestIDs.size() > 0);
+
+        Collection c = signers.getSigners();
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certStore.getMatches(signer.getSID());
+
+            Iterator certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+
+            digestIDs.remove(signer.getDigestAlgorithmID());
+
+            assertTrue(MessageDigest.isEqual(contentDigest1, signer.getContentDigest()) ||
+                MessageDigest.isEqual(contentDigest2, signer.getContentDigest()));
+
+        }
+
+        assertTrue(digestIDs.size() == 0);
+        assertEquals(certStore.getMatches(null).size(), sp.getCertificates().getMatches(null).size());
+        assertEquals(crlStore.getMatches(null).size(), sp.getCRLs().getMatches(null).size());
+    }
+
     public void testSHA1WithRSA()
         throws Exception
     {

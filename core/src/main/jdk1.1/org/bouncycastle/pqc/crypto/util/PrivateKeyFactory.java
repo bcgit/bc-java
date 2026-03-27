@@ -157,10 +157,10 @@ public class PrivateKeyFactory
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
-            ASN1OctetString kyberKey = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
-            MLKEMParameters kyberParams = Utils.mlkemParamsLookup(algOID);
+            ASN1OctetString mlkemKey = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
+            MLKEMParameters mlkemParams = Utils.mlkemParamsLookup(algOID);
 
-            return new MLKEMPrivateKeyParameters(kyberParams, kyberKey.getOctets());
+            return new MLKEMPrivateKeyParameters(mlkemParams, mlkemKey.getOctets());
         }
         else if (Utils.mldsaParams.containsKey(algOID))
         {

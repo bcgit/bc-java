@@ -54,7 +54,7 @@ public class OtherStatusInfoTest
 
         {
             OtherStatusInfo ose = OtherStatusInfo.getInstance(
-                new ExtendedFailInfo(PKCSObjectIdentifiers.canNotDecryptAny, new ASN1Integer(10L)));
+                new ExtendedFailInfo(PKCSObjectIdentifiers.canNotDecryptAny, ASN1Integer.valueOf(10)));
             byte[] b = ose.getEncoded();
             OtherStatusInfo oseResult = OtherStatusInfo.getInstance(b);
 

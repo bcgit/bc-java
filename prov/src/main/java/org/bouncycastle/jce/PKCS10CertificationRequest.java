@@ -199,7 +199,7 @@ public class PKCS10CertificationRequest
         return new RSASSAPSSparams(
             hashAlgId,
             new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
-            new ASN1Integer(saltSize),
+            ASN1Integer.valueOf(saltSize),
             RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
     }
 
@@ -311,11 +311,8 @@ public class PKCS10CertificationRequest
 
         if (sigOID == null)
         {
-            try
-            {
-                sigOID = new ASN1ObjectIdentifier(algorithmName);
-            }
-            catch (Exception e)
+            sigOID = ASN1ObjectIdentifier.tryFromID(algorithmName);
+            if (sigOID == null)
             {
                 throw new IllegalArgumentException("Unknown signature type requested");
             }

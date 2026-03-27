@@ -53,7 +53,7 @@ public class ValidationParams
         }
 
         this.seed = new DERBitString(seed);
-        this.pgenCounter = new ASN1Integer(pgenCounter);
+        this.pgenCounter = ASN1Integer.valueOf(pgenCounter);
     }
 
     public ValidationParams(DERBitString seed, ASN1Integer pgenCounter)

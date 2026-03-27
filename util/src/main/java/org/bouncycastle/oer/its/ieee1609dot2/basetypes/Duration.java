@@ -4,7 +4,6 @@ import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -76,7 +75,7 @@ public class Duration
 
         if (o != null)
         {
-            return new Duration(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
+            return new Duration(ASN1TaggedObject.getContextInstance(o));
         }
 
         return null;

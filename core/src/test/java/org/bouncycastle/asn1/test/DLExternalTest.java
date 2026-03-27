@@ -64,7 +64,7 @@ public class DLExternalTest
         {
             isEquals("check message", "too few objects in input sequence", iae.getMessage());
         }
-        vec.add(new DLTaggedObject(true, 0, new ASN1Integer(1234567890L)));
+        vec.add(new DLTaggedObject(true, 0, ASN1Integer.valueOf(1234567890)));
 
         DLExternal dle = new DLExternal(new DLSequence(vec));
 
@@ -81,9 +81,9 @@ public class DLExternalTest
         isEquals("check value of external content", "1234567890", ((ASN1Integer)dle.getExternalContent()).getValue().toString());
 
         vec = new ASN1EncodableVector();
-        vec.add(new ASN1Integer(9L));
+        vec.add(ASN1Integer.valueOf(9));
         vec.add(new DERUTF8String("something completely different"));
-        vec.add(new DLTaggedObject(true, 0, new ASN1Integer(1234567890L)));
+        vec.add(new DLTaggedObject(true, 0, ASN1Integer.valueOf(1234567890)));
         dle = new DLExternal(vec);
 
         isEquals("check direct reference", null, dle.getDirectReference());
@@ -210,7 +210,7 @@ public class DLExternalTest
         ASN1EncodableVector vec = new ASN1EncodableVector();
 
         vec.add(new ASN1ObjectIdentifier("2.1.1"));
-        vec.add(new ASN1Integer(9));
+        vec.add(ASN1Integer.valueOf(9));
         vec.add(new DERUTF8String("example data representing the User Data of an OSI.6 ConnectP containing an MSBind with username and password"));
 
         ASN1EncodableVector objectNameVec = new ASN1EncodableVector();

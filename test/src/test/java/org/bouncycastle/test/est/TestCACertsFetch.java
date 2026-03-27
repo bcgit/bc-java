@@ -52,7 +52,7 @@ import org.junit.Test;
 
 
 public class TestCACertsFetch
-    extends SimpleTest
+//    extends SimpleTest
 {
 
     public String getName()
@@ -60,11 +60,11 @@ public class TestCACertsFetch
         return "TestCACertsFetch";
     }
 
-    public void performTest()
-        throws Exception
-    {
-        ESTTestUtils.runJUnit(TestCACertsFetch.class);
-    }
+//    public void performTest()
+//        throws Exception
+//    {
+//        ESTTestUtils.runJUnit(TestCACertsFetch.class);
+//    }
 
     private ESTServerUtils.ServerInstance startDefaultServer()
         throws Exception
@@ -1778,12 +1778,12 @@ public class TestCACertsFetch
         res.getFinished().await(5, TimeUnit.SECONDS);
 
     }
-
-
-    public static void main(String[] args)
-        throws Exception
-    {
-        ESTTestUtils.ensureProvider();
-        runTest(new TestCACertsFetch());
-    }
+//
+//
+//    public static void main(String[] args)
+//        throws Exception
+//    {
+//        ESTTestUtils.ensureProvider();
+//        runTest(new TestCACertsFetch());
+//    }
 }

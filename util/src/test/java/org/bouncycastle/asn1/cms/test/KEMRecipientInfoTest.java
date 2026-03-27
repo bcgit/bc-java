@@ -28,7 +28,7 @@ public class KEMRecipientInfoTest
                 new AlgorithmIdentifier(NISTObjectIdentifiers.id_alg_ml_kem_512),
                 new DEROctetString(new byte[0]),
                 new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3),
-                new ASN1Integer(700000), new DEROctetString(new byte[0]),
+                ASN1Integer.valueOf(700000), new DEROctetString(new byte[0]),
                 new AlgorithmIdentifier(NISTObjectIdentifiers.id_aes256_wrap_pad),
                 new DEROctetString(new byte[0]));
             fail("no exception");
@@ -59,7 +59,7 @@ public class KEMRecipientInfoTest
                 new AlgorithmIdentifier(NISTObjectIdentifiers.id_alg_ml_kem_512),
                 new DEROctetString(new byte[0]),
                 new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3),
-                new ASN1Integer(7000), new DEROctetString(new byte[0]),
+                ASN1Integer.valueOf(7000), new DEROctetString(new byte[0]),
                 null,
                 new DEROctetString(new byte[0]));
             fail("no exception");
@@ -80,7 +80,7 @@ public class KEMRecipientInfoTest
                 null,
                 new DEROctetString(new byte[0]),
                 new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3),
-                new ASN1Integer(7000), new DEROctetString(new byte[0]),
+                ASN1Integer.valueOf(7000), new DEROctetString(new byte[0]),
                 new AlgorithmIdentifier(NISTObjectIdentifiers.id_aes256_wrap_pad),
                 new DEROctetString(new byte[0]));
             fail("no exception");
@@ -109,7 +109,7 @@ public class KEMRecipientInfoTest
             ASN1Encodable[] elements = new ASN1Encodable[10];
             for (int i = 0; i != elements.length; i++)
             {
-                elements[i] = new ASN1Integer(1);
+                elements[i] = ASN1Integer.ONE;
             }
             KEMRecipientInfo.getInstance(new DERSequence(elements));
             fail("no exception");

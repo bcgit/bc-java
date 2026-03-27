@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.DERSequence;
  * RecipientKeyIdentifier ::= SEQUENCE {
  *     subjectKeyIdentifier SubjectKeyIdentifier,
  *     date GeneralizedTime OPTIONAL,
- *     other OtherKeyAttribute OPTIONAL 
+ *     other OtherKeyAttribute OPTIONAL
  * }
  *
  * SubjectKeyIdentifier ::= OCTET STRING
@@ -62,7 +62,7 @@ public class RecipientKeyIdentifier
     {
         subjectKeyIdentifier = ASN1OctetString.getInstance(
                                                     seq.getObjectAt(0));
-        
+
         switch(seq.size())
         {
         case 1:
@@ -99,7 +99,7 @@ public class RecipientKeyIdentifier
     {
         return getInstance(ASN1Sequence.getInstance(ato, isExplicit));
     }
-    
+
     /**
      * Return a RecipientKeyIdentifier object from the given object.
      * <p>
@@ -119,14 +119,14 @@ public class RecipientKeyIdentifier
         {
             return (RecipientKeyIdentifier)obj;
         }
-        
+
         if(obj != null)
         {
             return new RecipientKeyIdentifier(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
-    } 
+    }
 
     public ASN1OctetString getSubjectKeyIdentifier()
     {
@@ -144,7 +144,7 @@ public class RecipientKeyIdentifier
     }
 
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
@@ -152,7 +152,7 @@ public class RecipientKeyIdentifier
         ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(subjectKeyIdentifier);
-        
+
         if (date != null)
         {
             v.add(date);
@@ -162,7 +162,7 @@ public class RecipientKeyIdentifier
         {
             v.add(other);
         }
-        
+
         return new DERSequence(v);
     }
 }

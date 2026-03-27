@@ -22,6 +22,16 @@ public class Integers
         return i;
     }
 
+    public static int compare(int x, int y)
+    {
+        return x < y ? -1 : x == y ? 0 : 1;
+    }
+
+    public static int compareUnsigned(int x, int y)
+    {
+        return compare(x + Integer.MIN_VALUE, y + Integer.MIN_VALUE);
+    }
+
     public static int highestOneBit(int i)
     {
         i |= (i >>  1);

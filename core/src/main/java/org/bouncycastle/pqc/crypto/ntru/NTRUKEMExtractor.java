@@ -81,6 +81,6 @@ public class NTRUKEMExtractor
 
     public int getEncapsulationLength()
     {
-        return ntruPrivateKey.getParameters().getParameterSet().ntruCiphertextBytes();
+        return ntruPrivateKey.getParameters().getEncapsulationLength();
     }
 }

@@ -208,7 +208,7 @@ public class JceOpenSSLPKCS8EncryptorBuilder
             random.nextBytes(salt);
 
             v.add(new DEROctetString(salt));
-            v.add(new ASN1Integer(iterationCount));
+            v.add(ASN1Integer.valueOf(iterationCount));
 
             algID = new AlgorithmIdentifier(algOID, PKCS12PBEParams.getInstance(new DERSequence(v)));
 

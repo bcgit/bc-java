@@ -534,19 +534,27 @@ public class DTLSClientProtocol
             state.clientExtensions.remove(TlsExtensionsUtils.EXT_extended_master_secret);
         }
 
-        // Cipher Suites (and SCSV)
+        // NOT renegotiating
+        if (offeringDTLSv12Minus)
         {
             /*
-             * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
-             * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
-             * ClientHello. Including both is NOT RECOMMENDED.
+             * RFC 5746 3.4. Client Behavior: Initial Handshake (both full and session-resumption)
              */
-            boolean noRenegExt = (null == TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo));
-            boolean noRenegSCSV = !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+
+            /*
+             * The client MUST include either an empty "renegotiation_info" extension, or the
+             * TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the ClientHello.
+             * Including both is NOT RECOMMENDED.
+             */
+            boolean noRenegExt = (null == TlsUtils.getExtensionData(state.clientExtensions,
+                TlsProtocol.EXT_RenegotiationInfo));
+            boolean noRenegSCSV = !Arrays.contains(state.offeredCipherSuites,
+                CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
             if (noRenegExt && noRenegSCSV)
             {
-                state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+                state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites,
+                    CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
         }
 

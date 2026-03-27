@@ -19,7 +19,6 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
@@ -145,7 +144,7 @@ class NTRUCipherSpi
             if (key instanceof BCNTRUPublicKey)
             {
                 wrapKey = (BCNTRUPublicKey)key;
-                kemGen = new NTRUKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
+                kemGen = new NTRUKEMGenerator(random);
             }
             else
             {

@@ -81,7 +81,7 @@ class MockTlsServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS server negotiated " + serverVersion);
+        System.out.println("TLS server negotiated version " + serverVersion);
 
         return serverVersion;
     }

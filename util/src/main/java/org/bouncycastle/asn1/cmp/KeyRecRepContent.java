@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -38,7 +37,7 @@ public class KeyRecRepContent
 
         while (en.hasMoreElements())
         {
-            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement(), BERTags.CONTEXT_SPECIFIC);
+            ASN1TaggedObject tObj = ASN1TaggedObject.getContextInstance(en.nextElement());
 
             switch (tObj.getTagNo())
             {

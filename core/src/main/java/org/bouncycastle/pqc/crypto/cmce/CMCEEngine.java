@@ -1049,7 +1049,7 @@ class CMCEEngine
     }
 
     /* Used in mov columns*/
-    static private long same_mask64(short x, short y)
+    private static long same_mask64(short x, short y)
     {
         long mask;
 

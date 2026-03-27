@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.test;
 
 import java.security.AlgorithmParameters;
+import java.security.Provider;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
@@ -137,6 +138,22 @@ public class ECAlgorithmParametersTest
         "1.2.840.10045.3.0.17",
         "X9.62 c2pnb368w1",
         "1.2.840.10045.3.0.19"};
+
+    public static void main(String[] args)
+    {
+        ECAlgorithmParametersTest test = new ECAlgorithmParametersTest();
+        test.testSupportAttributes();
+    }
+
+    public void testSupportAttributes()
+    {
+        Provider prov = new BouncyCastleProvider();
+        String target = prov.getService("AlgorithmParameters", "EC").getAttribute("SupportedCurves");
+        for (int i = 0; i != entries.length; i++)
+        {
+            TestCase.assertTrue(entries[i] + " should be in the list", target.contains(entries[i]));
+        }
+    }
 
     public void testRecogniseStandardCurveNames()
         throws Exception

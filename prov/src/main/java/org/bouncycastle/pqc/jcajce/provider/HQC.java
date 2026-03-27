@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.util.SpiUtil;
 import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 
 public class HQC
@@ -38,10 +39,7 @@ public class HQC
 
             AsymmetricKeyInfoConverter keyFact = new HQCKeyFactorySpi();
 
-            provider.addAlgorithm("Cipher.HQC", PREFIX + "HQCCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Cipher.HQC", "HQC");
-            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_hqc, "HQC");
-
+            addCipherAlgorithm(provider, "HQC", PREFIX + "HQCCipherSpi$Base", BCObjectIdentifiers.pqc_kem_hqc);
             addCipherAlgorithm(provider, "HQC128", PREFIX + "HQCCipherSpi$HQC128", BCObjectIdentifiers.hqc128);
             addCipherAlgorithm(provider, "HQC192", PREFIX + "HQCCipherSpi$HQC192", BCObjectIdentifiers.hqc192);
             addCipherAlgorithm(provider, "HQC256", PREFIX + "HQCCipherSpi$HQC256", BCObjectIdentifiers.hqc256);
@@ -50,7 +48,15 @@ public class HQC
             provider.addKeyInfoConverter(BCObjectIdentifiers.hqc128, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.hqc192, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.hqc256, keyFact);
+
+            if (SpiUtil.hasKEM())
+            {
+                provider.addAlgorithm("KEM.HQC", PREFIX + "HQCKEMSpi$HQC");
+
+                addKEMAlgorithm(provider, "HQC-128", PREFIX + "HQCKEMSpi$HQC128", BCObjectIdentifiers.hqc128);
+                addKEMAlgorithm(provider, "HQC-192", PREFIX + "HQCKEMSpi$HQC192", BCObjectIdentifiers.hqc192);
+                addKEMAlgorithm(provider, "HQC-256", PREFIX + "HQCKEMSpi$HQC256", BCObjectIdentifiers.hqc256);
+            }
         }
     }
 }
-

@@ -45,10 +45,10 @@ public class CMSORIforKEMOtherInfo
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(wrap);
-        v.add(new ASN1Integer(kekLength));
+        v.add(ASN1Integer.valueOf(kekLength));
 
         if (ukm != null)
         {

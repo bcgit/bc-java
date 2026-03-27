@@ -85,20 +85,24 @@ public class AsconAEAD128
         {
             long c0 = Pack.littleEndianToLong(input, 0);
             inLen -= 8;
-            long c1 = Pack.littleEndianToLong(input, 8, inLen);
             Pack.longToLittleEndian(p.x0 ^ c0, output, outOff);
-            Pack.longToLittleEndian(p.x1 ^ c1, output, outOff + 8, inLen);
             p.x0 = c0;
-            p.x1 &= -(1L << (inLen << 3));
-            p.x1 |= c1;
+
+            if (inLen > 0)
+            {
+                long c1 = Pack.littleEndianToLong_Low(input, 8, inLen);
+                Pack.longToLittleEndian_Low(p.x1 ^ c1, output, outOff + 8, inLen);
+                p.x1 &= -(1L << (inLen << 3));
+                p.x1 |= c1;
+            }
             p.x1 ^= pad(inLen);
         }
         else
         {
-            if (inLen != 0)
+            if (inLen > 0)
             {
-                long c0 = Pack.littleEndianToLong(input, 0, inLen);
-                Pack.longToLittleEndian(p.x0 ^ c0, output, outOff, inLen);
+                long c0 = Pack.littleEndianToLong_Low(input, 0, inLen);
+                Pack.longToLittleEndian_Low(p.x0 ^ c0, output, outOff, inLen);
                 p.x0 &= -(1L << (inLen << 3));
                 p.x0 |= c0;
             }
@@ -113,17 +117,21 @@ public class AsconAEAD128
         {
             p.x0 ^= Pack.littleEndianToLong(input, 0);
             inLen -= 8;
-            p.x1 ^= Pack.littleEndianToLong(input, 8, inLen);
             Pack.longToLittleEndian(p.x0, output, outOff);
-            Pack.longToLittleEndian(p.x1, output, outOff + 8);
+
+            if (inLen > 0)
+            {
+                p.x1 ^= Pack.littleEndianToLong_Low(input, 8, inLen);
+                Pack.longToLittleEndian_Low(p.x1, output, outOff + 8, inLen);
+            }
             p.x1 ^= pad(inLen);
         }
         else
         {
-            if (inLen != 0)
+            if (inLen > 0)
             {
-                p.x0 ^= Pack.littleEndianToLong(input, 0, inLen);
-                Pack.longToLittleEndian(p.x0, output, outOff, inLen);
+                p.x0 ^= Pack.littleEndianToLong_Low(input, 0, inLen);
+                Pack.longToLittleEndian_Low(p.x0, output, outOff, inLen);
             }
             p.x0 ^= pad(inLen);
         }

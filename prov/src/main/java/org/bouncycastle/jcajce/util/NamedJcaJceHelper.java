@@ -40,6 +40,11 @@ public class NamedJcaJceHelper
         this.providerName = providerName;
     }
 
+    public String getProviderName()
+    {
+        return providerName;
+    }
+
     public Cipher createCipher(
         String algorithm)
         throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException

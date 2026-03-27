@@ -7,6 +7,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.ECPoint.AbstractF2m;
 import org.bouncycastle.math.raw.Nat576;
 
+@SuppressWarnings("AssignmentExpression")
 public class SecT571K1Point extends AbstractF2m
 {
     SecT571K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y)
@@ -58,7 +59,7 @@ public class SecT571K1Point extends AbstractF2m
         // Y is actually Lambda (X + Y/X) here
         return Y.testBitZero() != X.testBitZero();
     }
-
+    
     public ECPoint add(ECPoint b)
     {
         if (this.isInfinity())

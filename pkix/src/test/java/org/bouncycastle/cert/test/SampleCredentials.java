@@ -27,6 +27,10 @@ public class SampleCredentials
     public static final SampleCredentials ML_DSA_65 = load("ML-DSA-65", "pkix/cert/mldsa", "ML-DSA-65.pem");
     public static final SampleCredentials ML_DSA_87 = load("ML-DSA-87", "pkix/cert/mldsa", "ML-DSA-87.pem");
 
+    public static final SampleCredentials ML_KEM_512 = load("ML-KEM-512", "pkix/cert/mlkem", "ML-KEM-512.pem");
+    public static final SampleCredentials ML_KEM_768 = load("ML-KEM-768", "pkix/cert/mlkem", "ML-KEM-768.pem");
+    public static final SampleCredentials ML_KEM_1024 = load("ML-KEM-1024", "pkix/cert/mlkem", "ML-KEM-1024.pem");
+
     public static final SampleCredentials SLH_DSA_SHA2_128S = load("SLH-DSA-SHA2-128S", "pkix/cert/slhdsa",
         "SLH-DSA-SHA2-128S.pem");
 

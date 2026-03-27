@@ -21,15 +21,7 @@ public class ECNamedCurveTable
     public static ECNamedCurveParameterSpec getParameterSpec(
         String  name)
     {
-        ASN1ObjectIdentifier oid;
-        try
-        {
-            oid = possibleOID(name) ? new ASN1ObjectIdentifier(name) : null;
-        }
-        catch (IllegalArgumentException e)
-        {
-            oid = null;
-        }
+        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(name);
 
         X9ECParameters ecP;
         if (oid != null)
@@ -75,22 +67,5 @@ public class ECNamedCurveTable
     public static Enumeration getNames()
     {
         return org.bouncycastle.asn1.x9.ECNamedCurveTable.getNames();
-    }
-
-    private static boolean possibleOID(
-        String identifier)
-    {
-        if (identifier.length() < 3 || identifier.charAt(1) != '.')
-        {
-            return false;
-        }
-
-        char first = identifier.charAt(0);
-        if (first < '0' || first > '2')
-        {
-            return false;
-        }
-
-        return true;
     }
 }

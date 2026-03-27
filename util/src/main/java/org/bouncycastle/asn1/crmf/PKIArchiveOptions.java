@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 public class PKIArchiveOptions
@@ -28,7 +27,7 @@ public class PKIArchiveOptions
         }
         else if (o instanceof ASN1TaggedObject)
         {
-            return new PKIArchiveOptions(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
+            return new PKIArchiveOptions(ASN1TaggedObject.getContextInstance(o));
         }
 
         throw new IllegalArgumentException("unknown object: " + o);
@@ -86,7 +85,7 @@ public class PKIArchiveOptions
     {
         return value;
     }
-    
+
     /**
      * <pre>
      *  PKIArchiveOptions ::= CHOICE {

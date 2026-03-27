@@ -54,7 +54,7 @@ public class AsconXof
 
     protected long loadBytes(final byte[] bytes, int inOff, int n)
     {
-        return Pack.bigEndianToLong(bytes, inOff, n);
+        return n <= 0 ? 0L : Pack.bigEndianToLong_High(bytes, inOff, n);
     }
 
     protected void setBytes(long w, byte[] bytes, int inOff)
@@ -64,7 +64,10 @@ public class AsconXof
 
     protected void setBytes(long w, byte[] bytes, int inOff, int n)
     {
-        Pack.longToBigEndian(w, bytes, inOff, n);
+        if (n > 0)
+        {
+            Pack.longToBigEndian_High(w, bytes, inOff, n);
+        }
     }
 
     @Override

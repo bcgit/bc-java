@@ -16,17 +16,9 @@ public class StandardDSAEncoding
 {
     public static final StandardDSAEncoding INSTANCE = new StandardDSAEncoding();
 
-    public byte[] encode(BigInteger n, BigInteger r, BigInteger s) throws IOException
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        encodeValue(n, v, r);
-        encodeValue(n, v, s);
-        return new DERSequence(v).getEncoded(ASN1Encoding.DER);
-    }
-
     public BigInteger[] decode(BigInteger n, byte[] encoding) throws IOException
     {
-        ASN1Sequence seq = (ASN1Sequence)ASN1Primitive.fromByteArray(encoding);
+        ASN1Sequence seq = ASN1Sequence.getInstance(encoding);
         if (seq.size() == 2)
         {
             BigInteger r = decodeValue(n, seq, 0);
@@ -40,6 +32,14 @@ public class StandardDSAEncoding
         }
 
         throw new IllegalArgumentException("Malformed signature");
+    }
+
+    public byte[] encode(BigInteger n, BigInteger r, BigInteger s) throws IOException
+    {
+        return new DERSequence(
+            encodeValue(n, r),
+            encodeValue(n, s)
+        ).getEncoded(ASN1Encoding.DER);
     }
 
     protected BigInteger checkValue(BigInteger n, BigInteger x)
@@ -57,8 +57,8 @@ public class StandardDSAEncoding
         return checkValue(n, ((ASN1Integer)s.getObjectAt(pos)).getValue());
     }
 
-    protected void encodeValue(BigInteger n, ASN1EncodableVector v, BigInteger x)
+    protected ASN1Integer encodeValue(BigInteger n, BigInteger x)
     {
-        v.add(new ASN1Integer(checkValue(n, x)));
+        return new ASN1Integer(checkValue(n, x));
     }
 }

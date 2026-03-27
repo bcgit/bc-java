@@ -23,10 +23,18 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jcajce.PKCS12Key;
@@ -49,17 +57,17 @@ public class PBETest
     private static class OpenSSLTest
         extends SimpleTest
     {
-        char[]    password;
-        String    baseAlgorithm;
-        String    algorithm;
-        int       keySize;
-        int       ivSize;
-        
+        char[] password;
+        String baseAlgorithm;
+        String algorithm;
+        int keySize;
+        int ivSize;
+
         OpenSSLTest(
-            String    baseAlgorithm,
-            String    algorithm,
-            int       keySize,
-            int       ivSize)
+            String baseAlgorithm,
+            String algorithm,
+            int keySize,
+            int ivSize)
         {
             this.password = algorithm.toCharArray();
             this.baseAlgorithm = baseAlgorithm;
@@ -67,35 +75,35 @@ public class PBETest
             this.keySize = keySize;
             this.ivSize = ivSize;
         }
-        
+
         public String getName()
         {
             return "OpenSSLPBE";
         }
-    
+
         public void performTest()
             throws Exception
         {
             byte[] salt = new byte[16];
-            int    iCount = 100;
-            
+            int iCount = 100;
+
             for (int i = 0; i != salt.length; i++)
             {
                 salt[i] = (byte)i;
             }
 
-            OpenSSLPBEParametersGenerator   pGen = new OpenSSLPBEParametersGenerator();
+            OpenSSLPBEParametersGenerator pGen = new OpenSSLPBEParametersGenerator();
 
             pGen.init(
-                    PBEParametersGenerator.PKCS5PasswordToBytes(password),
-                    salt,
-                    iCount);
+                PBEParametersGenerator.PKCS5PasswordToBytes(password),
+                salt,
+                iCount);
 
             ParametersWithIV params = (ParametersWithIV)pGen.generateDerivedParameters(keySize, ivSize);
 
-            SecretKeySpec   encKey = new SecretKeySpec(((KeyParameter)params.getParameters()).getKey(), baseAlgorithm);
+            SecretKeySpec encKey = new SecretKeySpec(((KeyParameter)params.getParameters()).getKey(), baseAlgorithm);
 
-            Cipher          c;
+            Cipher c;
 
             if (baseAlgorithm.equals("RC4"))
             {
@@ -110,16 +118,16 @@ public class PBETest
                 c.init(Cipher.ENCRYPT_MODE, encKey, new IvParameterSpec(params.getIV()));
             }
 
-            byte[]          enc = c.doFinal(salt);
+            byte[] enc = c.doFinal(salt);
 
             c = Cipher.getInstance(algorithm, "BC");
 
-            PBEKeySpec          keySpec = new PBEKeySpec(password, salt, iCount);
-            SecretKeyFactory    fact = SecretKeyFactory.getInstance(algorithm, "BC");
+            PBEKeySpec keySpec = new PBEKeySpec(password, salt, iCount);
+            SecretKeyFactory fact = SecretKeyFactory.getInstance(algorithm, "BC");
 
             c.init(Cipher.DECRYPT_MODE, fact.generateSecret(keySpec));
 
-            byte[]          dec = c.doFinal(enc);
+            byte[] dec = c.doFinal(enc);
 
             if (!Arrays.areEqual(salt, dec))
             {
@@ -127,23 +135,23 @@ public class PBETest
             }
         }
     }
-    
+
     private static class PKCS12Test
         extends SimpleTest
     {
-        char[]    password;
-        String    baseAlgorithm;
-        String    algorithm;
-        Digest    digest;
-        int       keySize;
-        int       ivSize;
-        
+        char[] password;
+        String baseAlgorithm;
+        String algorithm;
+        Digest digest;
+        int keySize;
+        int ivSize;
+
         PKCS12Test(
-            String    baseAlgorithm,
-            String    algorithm,
-            Digest    digest,
-            int       keySize,
-            int       ivSize)
+            String baseAlgorithm,
+            String algorithm,
+            Digest digest,
+            int keySize,
+            int ivSize)
         {
             this.password = algorithm.toCharArray();
             this.baseAlgorithm = baseAlgorithm;
@@ -152,32 +160,32 @@ public class PBETest
             this.keySize = keySize;
             this.ivSize = ivSize;
         }
-        
+
         public String getName()
         {
             return "PKCS12PBE";
         }
-    
+
         public void performTest()
             throws Exception
         {
             byte[] salt = new byte[digest.getDigestSize()];
-            int    iCount = 100;
-            
+            int iCount = 100;
+
             digest.doFinal(salt, 0);
 
-            PKCS12ParametersGenerator   pGen = new PKCS12ParametersGenerator(digest);
+            PKCS12ParametersGenerator pGen = new PKCS12ParametersGenerator(digest);
 
             pGen.init(
-                    PBEParametersGenerator.PKCS12PasswordToBytes(password),
-                    salt,
-                    iCount);
+                PBEParametersGenerator.PKCS12PasswordToBytes(password),
+                salt,
+                iCount);
 
             ParametersWithIV params = (ParametersWithIV)pGen.generateDerivedParameters(keySize, ivSize);
 
-            SecretKeySpec   encKey = new SecretKeySpec(((KeyParameter)params.getParameters()).getKey(), baseAlgorithm);
+            SecretKeySpec encKey = new SecretKeySpec(((KeyParameter)params.getParameters()).getKey(), baseAlgorithm);
 
-            Cipher          c;
+            Cipher c;
 
             if (baseAlgorithm.equals("RC4"))
             {
@@ -192,26 +200,26 @@ public class PBETest
                 c.init(Cipher.ENCRYPT_MODE, encKey, new IvParameterSpec(params.getIV()));
             }
 
-            byte[]          enc = c.doFinal(salt);
+            byte[] enc = c.doFinal(salt);
 
             c = Cipher.getInstance(algorithm, "BC");
 
-            PBEKeySpec          keySpec = new PBEKeySpec(password, salt, iCount);
-            SecretKeyFactory    fact = SecretKeyFactory.getInstance(algorithm, "BC");
+            PBEKeySpec keySpec = new PBEKeySpec(password, salt, iCount);
+            SecretKeyFactory fact = SecretKeyFactory.getInstance(algorithm, "BC");
 
             c.init(Cipher.DECRYPT_MODE, fact.generateSecret(keySpec));
 
-            byte[]          dec = c.doFinal(enc);
+            byte[] dec = c.doFinal(enc);
 
             if (!Arrays.areEqual(salt, dec))
             {
                 fail("" + algorithm + "failed encryption/decryption test");
             }
-
+    
             //
             // get the parameters
             //
-            AlgorithmParameters param = checkParameters(c, salt, iCount);
+            AlgorithmParameters param = checkParameters(c, algorithm, salt, iCount);
 
             //
             // try using parameters
@@ -222,7 +230,7 @@ public class PBETest
 
             c.init(Cipher.DECRYPT_MODE, fact.generateSecret(keySpec), param);
 
-            checkParameters(c, salt, iCount);
+            checkParameters(c, algorithm, salt, iCount);
 
             dec = c.doFinal(enc);
 
@@ -240,7 +248,7 @@ public class PBETest
 
             c.init(Cipher.DECRYPT_MODE, fact.generateSecret(keySpec), param.getParameterSpec(PBEParameterSpec.class));
 
-            checkParameters(c, salt, iCount);
+            checkParameters(c, algorithm, salt, iCount);
 
             dec = c.doFinal(enc);
 
@@ -250,7 +258,7 @@ public class PBETest
             }
         }
 
-        private AlgorithmParameters checkParameters(Cipher c, byte[] salt, int iCount)
+        private AlgorithmParameters checkParameters(Cipher c, String algorithm, byte[] salt, int iCount)
             throws InvalidParameterSpecException
         {
             AlgorithmParameters param = c.getParameters();
@@ -268,54 +276,175 @@ public class PBETest
             return param;
         }
     }
+
+    private static class PBKDF2Test
+        extends SimpleTest
+    {
+        char[] password;
+        String baseAlgorithm;
+        String algorithm;
+        Digest digest;
+        int keySize;
+
+        PBKDF2Test(
+            String baseAlgorithm,
+            String algorithm,
+            Digest digest,
+            int keySize)
+        {
+            this.password = algorithm.toCharArray();
+            this.baseAlgorithm = baseAlgorithm;
+            this.algorithm = algorithm;
+            this.digest = digest;
+            this.keySize = keySize;
+        }
+
+        public String getName()
+        {
+            return "PBKDF2PBE";
+        }
+
+        public void performTest()
+            throws Exception
+        {
+            byte[] salt = new byte[digest.getDigestSize()];
+            int iCount = 100;
+
+            digest.doFinal(salt, 0);
+
+            PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(digest);
+
+            pGen.init(
+                PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password),
+                salt,
+                iCount);
+
+            ParametersWithIV params = (ParametersWithIV)pGen.generateDerivedParameters(keySize, 128);
+
+            SecretKeySpec encKey = new SecretKeySpec(((KeyParameter)params.getParameters()).getKey(), baseAlgorithm);
+
+            String cipherAlgorithm = baseAlgorithm + "/CBC/PKCS7Padding";
+            Cipher c = Cipher.getInstance(cipherAlgorithm, "BC");
+
+            c.init(Cipher.ENCRYPT_MODE, encKey, new IvParameterSpec(params.getIV()));
+
+            byte[] enc = c.doFinal(salt);
+
+            c = Cipher.getInstance(cipherAlgorithm, "BC");
+
+            PBEKeySpec keySpec = new PBEKeySpec(password, salt, iCount, keySize);
+            SecretKeyFactory fact = SecretKeyFactory.getInstance(algorithm, "BC");
+
+            c.init(Cipher.DECRYPT_MODE, fact.generateSecret(keySpec), new IvParameterSpec(params.getIV()));
+
+            byte[] dec = c.doFinal(enc);
+
+            if (!Arrays.areEqual(salt, dec))
+            {
+                fail("" + algorithm + "failed encryption/decryption test");
+            }
     
+            //
+            // get the parameters
+            //
+            AlgorithmParameters param = c.getParameters();
+
+            //
+            // try using parameters
+            //
+            c = Cipher.getInstance(cipherAlgorithm, "BC");
+            
+            c.init(Cipher.DECRYPT_MODE, fact.generateSecret(keySpec), param);
+
+            dec = c.doFinal(enc);
+
+            if (!Arrays.areEqual(salt, dec))
+            {
+                fail("" + algorithm + "failed encryption/decryption test");
+            }
+        }
+
+        private AlgorithmParameters checkParameters(Cipher c, String algorithm, byte[] salt, int iCount)
+            throws InvalidParameterSpecException
+        {
+            AlgorithmParameters param = c.getParameters();
+            PBEParameterSpec spec = (PBEParameterSpec)param.getParameterSpec(PBEParameterSpec.class);
+
+            if (!Arrays.areEqual(salt, spec.getSalt()))
+            {
+                fail("" + algorithm + "failed salt test");
+            }
+
+            if (iCount != spec.getIterationCount())
+            {
+                fail("" + algorithm + "failed count test");
+            }
+            return param;
+        }
+    }
+
     private PKCS12Test[] pkcs12Tests = {
-        new PKCS12Test("DESede", "PBEWITHSHAAND3-KEYTRIPLEDES-CBC",  new SHA1Digest(),   192,  64),
-        new PKCS12Test("DESede", "PBEWITHSHAAND2-KEYTRIPLEDES-CBC",  new SHA1Digest(),   128,  64),
-        new PKCS12Test("RC4",    "PBEWITHSHAAND128BITRC4",           new SHA1Digest(),   128,   0),
-        new PKCS12Test("RC4",    "PBEWITHSHAAND40BITRC4",            new SHA1Digest(),    40,   0),
-        new PKCS12Test("RC2",    "PBEWITHSHAAND128BITRC2-CBC",       new SHA1Digest(),   128,  64),
-        new PKCS12Test("RC2",    "PBEWITHSHAAND40BITRC2-CBC",        new SHA1Digest(),    40,  64),
-        new PKCS12Test("AES",    "PBEWithSHA1And128BitAES-CBC-BC",   new SHA1Digest(),   128, 128),
-        new PKCS12Test("AES",    "PBEWithSHA1And192BitAES-CBC-BC",   new SHA1Digest(),   192, 128),
-        new PKCS12Test("AES",    "PBEWithSHA1And256BitAES-CBC-BC",   new SHA1Digest(),   256, 128),
-        new PKCS12Test("AES",    "PBEWithSHA256And128BitAES-CBC-BC", new SHA256Digest(), 128, 128),
-        new PKCS12Test("AES",    "PBEWithSHA256And192BitAES-CBC-BC", new SHA256Digest(), 192, 128),   
-        new PKCS12Test("AES",    "PBEWithSHA256And256BitAES-CBC-BC", new SHA256Digest(), 256, 128),
-        new PKCS12Test("Twofish","PBEWithSHAAndTwofish-CBC",         new SHA1Digest(),   256, 128),
-        new PKCS12Test("IDEA",   "PBEWithSHAAndIDEA-CBC",            new SHA1Digest(),   128,  64),
-        new PKCS12Test("AES",    BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes128_cbc.getId(),   new SHA1Digest(),   128, 128),
-        new PKCS12Test("AES",    BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes192_cbc.getId(),   new SHA1Digest(),   192, 128),
-        new PKCS12Test("AES",    BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes256_cbc.getId(),   new SHA1Digest(),   256, 128),
-        new PKCS12Test("AES",    BCObjectIdentifiers.bc_pbe_sha256_pkcs12_aes128_cbc.getId(), new SHA256Digest(), 128, 128),
-        new PKCS12Test("AES",    BCObjectIdentifiers.bc_pbe_sha256_pkcs12_aes192_cbc.getId(), new SHA256Digest(), 192, 128),
-        new PKCS12Test("AES",    BCObjectIdentifiers.bc_pbe_sha256_pkcs12_aes256_cbc.getId(), new SHA256Digest(), 256, 128),
+        new PKCS12Test("DESede", "PBEWITHSHAAND3-KEYTRIPLEDES-CBC", new SHA1Digest(), 192, 64),
+        new PKCS12Test("DESede", "PBEWITHSHAAND2-KEYTRIPLEDES-CBC", new SHA1Digest(), 128, 64),
+        new PKCS12Test("RC4", "PBEWITHSHAAND128BITRC4", new SHA1Digest(), 128, 0),
+        new PKCS12Test("RC4", "PBEWITHSHAAND40BITRC4", new SHA1Digest(), 40, 0),
+        new PKCS12Test("RC2", "PBEWITHSHAAND128BITRC2-CBC", new SHA1Digest(), 128, 64),
+        new PKCS12Test("RC2", "PBEWITHSHAAND40BITRC2-CBC", new SHA1Digest(), 40, 64),
+        new PKCS12Test("AES", "PBEWithSHA1And128BitAES-CBC-BC", new SHA1Digest(), 128, 128),
+        new PKCS12Test("AES", "PBEWithSHA1And192BitAES-CBC-BC", new SHA1Digest(), 192, 128),
+        new PKCS12Test("AES", "PBEWithSHA1And256BitAES-CBC-BC", new SHA1Digest(), 256, 128),
+        new PKCS12Test("AES", "PBEWithSHA256And128BitAES-CBC-BC", new SHA256Digest(), 128, 128),
+        new PKCS12Test("AES", "PBEWithSHA256And192BitAES-CBC-BC", new SHA256Digest(), 192, 128),
+        new PKCS12Test("AES", "PBEWithSHA256And256BitAES-CBC-BC", new SHA256Digest(), 256, 128),
+        new PKCS12Test("Twofish", "PBEWithSHAAndTwofish-CBC", new SHA1Digest(), 256, 128),
+        new PKCS12Test("IDEA", "PBEWithSHAAndIDEA-CBC", new SHA1Digest(), 128, 64),
+        new PKCS12Test("AES", BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes128_cbc.getId(), new SHA1Digest(), 128, 128),
+        new PKCS12Test("AES", BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes192_cbc.getId(), new SHA1Digest(), 192, 128),
+        new PKCS12Test("AES", BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes256_cbc.getId(), new SHA1Digest(), 256, 128),
+        new PKCS12Test("AES", BCObjectIdentifiers.bc_pbe_sha256_pkcs12_aes128_cbc.getId(), new SHA256Digest(), 128, 128),
+        new PKCS12Test("AES", BCObjectIdentifiers.bc_pbe_sha256_pkcs12_aes192_cbc.getId(), new SHA256Digest(), 192, 128),
+        new PKCS12Test("AES", BCObjectIdentifiers.bc_pbe_sha256_pkcs12_aes256_cbc.getId(), new SHA256Digest(), 256, 128),
     };
-    
+
+    private PBKDF2Test[] pbkdf2Tests = {
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA224", new SHA224Digest(), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA256", new SHA256Digest(), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA384", new SHA384Digest(), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA512", new SHA512Digest(), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA512-224", new SHA512tDigest(224), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA512-256", new SHA512tDigest(256), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA3-224", new SHA3Digest(224), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA3-256", new SHA3Digest(256), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA3-384", new SHA3Digest(384), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSHA3-512", new SHA3Digest(512), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACGOST3411", new GOST3411Digest(), 256),
+        new PBKDF2Test("AES", "PBKDF2WITHHMACSM3", new SM3Digest(), 256)
+    };
+
     private OpenSSLTest openSSLTests[] = {
         new OpenSSLTest("AES", "PBEWITHMD5AND128BITAES-CBC-OPENSSL", 128, 128),
         new OpenSSLTest("AES", "PBEWITHMD5AND192BITAES-CBC-OPENSSL", 192, 128),
         new OpenSSLTest("AES", "PBEWITHMD5AND256BITAES-CBC-OPENSSL", 256, 128)
     };
-    
-    static byte[]   message = Hex.decode("4869205468657265");
-    
+
+    static byte[] message = Hex.decode("4869205468657265");
+
     private byte[] hMac1 = Hex.decode("bcc42174ccb04f425d9a5c8c4a95d6fd7c372911");
     private byte[] hMac2 = Hex.decode("cb1d8bdb6aca9e3fa8980d6eb41ab28a7eb2cfd6");
     private byte[] hMac3 = Hex.decode("514aa173a302c770689269aac08eb8698e5879ac");
     private byte[] hMac4 = Hex.decode("d24b4eb0e5bd611d4ca88bd6428d14ee2e004c7e");
 
     private Cipher makePBECipherUsingParam(
-        String  algorithm,
-        int     mode,
-        char[]  password,
-        byte[]  salt,
-        int     iterationCount)
+        String algorithm,
+        int mode,
+        char[] password,
+        byte[] salt,
+        int iterationCount)
         throws Exception
     {
-        PBEKeySpec          pbeSpec = new PBEKeySpec(password);
-        SecretKeyFactory    keyFact = SecretKeyFactory.getInstance(algorithm, "BC");
-        PBEParameterSpec    defParams = new PBEParameterSpec(salt, iterationCount);
+        PBEKeySpec pbeSpec = new PBEKeySpec(password);
+        SecretKeyFactory keyFact = SecretKeyFactory.getInstance(algorithm, "BC");
+        PBEParameterSpec defParams = new PBEParameterSpec(salt, iterationCount);
 
         Cipher cipher = Cipher.getInstance(algorithm, "BC");
 
@@ -325,15 +454,15 @@ public class PBETest
     }
 
     private Cipher makePBECipherWithoutParam(
-        String  algorithm,
-        int     mode,
-        char[]  password,
-        byte[]  salt,
-        int     iterationCount)
+        String algorithm,
+        int mode,
+        char[] password,
+        byte[] salt,
+        int iterationCount)
         throws Exception
     {
-        PBEKeySpec          pbeSpec = new PBEKeySpec(password, salt, iterationCount);
-        SecretKeyFactory    keyFact = SecretKeyFactory.getInstance(algorithm, "BC");
+        PBEKeySpec pbeSpec = new PBEKeySpec(password, salt, iterationCount);
+        SecretKeyFactory keyFact = SecretKeyFactory.getInstance(algorithm, "BC");
 
         Cipher cipher = Cipher.getInstance(algorithm, "BC");
 
@@ -343,19 +472,19 @@ public class PBETest
     }
 
     public void testPBEHMac(
-        String  hmacName,
-        byte[]  output)
+        String hmacName,
+        byte[] output)
     {
-        SecretKey           key;
-        byte[]              out;
-        Mac                 mac;
+        SecretKey key;
+        byte[] out;
+        Mac mac;
 
         try
         {
-            SecretKeyFactory    fact = SecretKeyFactory.getInstance(hmacName, "BC");
+            SecretKeyFactory fact = SecretKeyFactory.getInstance(hmacName, "BC");
 
             key = fact.generateSecret(new PBEKeySpec("hello".toCharArray()));
-            
+
             mac = Mac.getInstance(hmacName, "BC");
         }
         catch (Exception e)
@@ -375,7 +504,7 @@ public class PBETest
         }
 
         mac.reset();
-        
+
         mac.update(message, 0, message.length);
 
         out = mac.doFinal();
@@ -387,12 +516,12 @@ public class PBETest
     }
 
     public void testPKCS12HMac(
-        String  hmacName,
-        byte[]  output)
+        String hmacName,
+        byte[] output)
     {
-        SecretKey           key;
-        byte[]              out;
-        Mac                 mac;
+        SecretKey key;
+        byte[] out;
+        Mac mac;
 
         try
         {
@@ -427,16 +556,16 @@ public class PBETest
     }
 
     public void testPBEonSecretKeyHmac(
-        String  hmacName,
-        byte[]  output)
+        String hmacName,
+        byte[] output)
     {
-        SecretKey           key;
-        byte[]              out;
-        Mac                 mac;
+        SecretKey key;
+        byte[] out;
+        Mac mac;
 
         try
         {
-            SecretKeyFactory    fact = SecretKeyFactory.getInstance(hmacName, "BC");
+            SecretKeyFactory fact = SecretKeyFactory.getInstance(hmacName, "BC");
 
             key = fact.generateSecret(new PBEKeySpec("hello".toCharArray(), new byte[20], 100, 160));
         }
@@ -478,15 +607,15 @@ public class PBETest
         SecretKey key = kg.generateKey();
 
         byte[] salt = {
-                        (byte)0xc7, (byte)0x73, (byte)0x21, (byte)0x8c,
-                        (byte)0x7e, (byte)0xc8, (byte)0xee, (byte)0x99
-                        };
-        char[] password = { 'p','a','s','s','w','o','r','d' };
+            (byte)0xc7, (byte)0x73, (byte)0x21, (byte)0x8c,
+            (byte)0x7e, (byte)0xc8, (byte)0xee, (byte)0x99
+        };
+        char[] password = {'p', 'a', 's', 's', 'w', 'o', 'r', 'd'};
 
         PBEParameterSpec pbeParamSpec = new PBEParameterSpec(salt, 20);
         PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
         SecretKeyFactory keyFac =
-        SecretKeyFactory.getInstance(name);
+            SecretKeyFactory.getInstance(name);
         SecretKey pbeKey = keyFac.generateSecret(pbeKeySpec);
         Cipher pbeEncryptCipher = Cipher.getInstance(name, "BC");
 
@@ -533,7 +662,7 @@ public class PBETest
 
         SecureRandom random = new FixedSecureRandom(Hex.decode(
             "000102030405060708090a0b0c0d0e0f"
-            + "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf"));
+                + "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf"));
 
         char[] password = "abcdefghijklmnop".toCharArray();
         PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
@@ -601,7 +730,7 @@ public class PBETest
 
         isTrue(Arrays.areEqual(input, decryptedBytes));
     }
-    
+
     public void performTest()
         throws Exception
     {
@@ -610,24 +739,24 @@ public class PBETest
         //
         // DES
         //
-        Cipher  cEnc = Cipher.getInstance("DES/CBC/PKCS7Padding", "BC");
+        Cipher cEnc = Cipher.getInstance("DES/CBC/PKCS7Padding", "BC");
 
         cEnc.init(Cipher.ENCRYPT_MODE,
             new SecretKeySpec(Hex.decode("30e69252758e5346"), "DES"),
             new IvParameterSpec(Hex.decode("7c1c1ab9c454a688")));
 
-        byte[]  out = cEnc.doFinal(input);
+        byte[] out = cEnc.doFinal(input);
 
-        char[]  password = { 'p', 'a', 's', 's', 'w', 'o', 'r', 'd' };
+        char[] password = {'p', 'a', 's', 's', 'w', 'o', 'r', 'd'};
 
-        Cipher  cDec = makePBECipherUsingParam(
-                            "PBEWithSHA1AndDES",
-                            Cipher.DECRYPT_MODE,
-                            password,
-                            Hex.decode("7d60435f02e9e0ae"),
-                            2048);
+        Cipher cDec = makePBECipherUsingParam(
+            "PBEWithSHA1AndDES",
+            Cipher.DECRYPT_MODE,
+            password,
+            Hex.decode("7d60435f02e9e0ae"),
+            2048);
 
-        byte[]  in = cDec.doFinal(out);
+        byte[] in = cDec.doFinal(out);
 
         if (!Arrays.areEqual(input, in))
         {
@@ -635,19 +764,19 @@ public class PBETest
         }
 
         cDec = makePBECipherWithoutParam(
-                "PBEWithSHA1AndDES",
-                Cipher.DECRYPT_MODE,
-                password,
-                Hex.decode("7d60435f02e9e0ae"),
-                2048);
+            "PBEWithSHA1AndDES",
+            Cipher.DECRYPT_MODE,
+            password,
+            Hex.decode("7d60435f02e9e0ae"),
+            2048);
 
         in = cDec.doFinal(out);
-        
+
         if (!Arrays.areEqual(input, in))
         {
             fail("DES failed without param");
         }
-        
+
         //
         // DESede
         //
@@ -660,11 +789,11 @@ public class PBETest
         out = cEnc.doFinal(input);
 
         cDec = makePBECipherUsingParam(
-                            "PBEWithSHAAnd3-KeyTripleDES-CBC",
-                            Cipher.DECRYPT_MODE,
-                            password,
-                            Hex.decode("7d60435f02e9e0ae"),
-                            2048);
+            "PBEWithSHAAnd3-KeyTripleDES-CBC",
+            Cipher.DECRYPT_MODE,
+            password,
+            Hex.decode("7d60435f02e9e0ae"),
+            2048);
 
         in = cDec.doFinal(out);
 
@@ -685,11 +814,11 @@ public class PBETest
         out = cEnc.doFinal(input);
 
         cDec = makePBECipherUsingParam(
-                            "PBEWithSHAAnd40BitRC2-CBC",
-                            Cipher.DECRYPT_MODE,
-                            password,
-                            Hex.decode("7d60435f02e9e0ae"),
-                            2048);
+            "PBEWithSHAAnd40BitRC2-CBC",
+            Cipher.DECRYPT_MODE,
+            password,
+            Hex.decode("7d60435f02e9e0ae"),
+            2048);
 
         in = cDec.doFinal(out);
 
@@ -709,11 +838,11 @@ public class PBETest
         out = cEnc.doFinal(input);
 
         cDec = makePBECipherUsingParam(
-                            "PBEWithSHAAnd128BitRC4",
-                            Cipher.DECRYPT_MODE,
-                            password,
-                            Hex.decode("7d60435f02e9e0ae"),
-                            2048);
+            "PBEWithSHAAnd128BitRC4",
+            Cipher.DECRYPT_MODE,
+            password,
+            Hex.decode("7d60435f02e9e0ae"),
+            2048);
 
         in = cDec.doFinal(out);
 
@@ -723,14 +852,14 @@ public class PBETest
         }
 
         cDec = makePBECipherWithoutParam(
-                "PBEWithSHAAnd128BitRC4",
-                Cipher.DECRYPT_MODE,
-                password,
-                Hex.decode("7d60435f02e9e0ae"),
-                2048);
+            "PBEWithSHAAnd128BitRC4",
+            Cipher.DECRYPT_MODE,
+            password,
+            Hex.decode("7d60435f02e9e0ae"),
+            2048);
 
         in = cDec.doFinal(out);
-        
+
         if (!Arrays.areEqual(input, in))
         {
             fail("RC4 failed without param");
@@ -738,12 +867,17 @@ public class PBETest
 
         for (int i = 0; i != pkcs12Tests.length; i++)
         {
-            pkcs12Tests[i].perform();
+            pkcs12Tests[i].performTest();
         }
-        
+
+        for (int i = 0; i != pbkdf2Tests.length; i++)
+        {
+            pbkdf2Tests[i].performTest();
+        }
+
         for (int i = 0; i != openSSLTests.length; i++)
         {
-            openSSLTests[i].perform();
+            openSSLTests[i].performTest();
         }
 
         testExtendedPBEParameterSpec();
@@ -893,7 +1027,7 @@ public class PBETest
 
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
 
