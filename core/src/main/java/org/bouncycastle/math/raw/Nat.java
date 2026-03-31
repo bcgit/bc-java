@@ -665,7 +665,7 @@ public abstract class Nat
         {
             int x_i = x[i];
             if (x_i != 0)
-                return i * 32 + 32 - Integers.numberOfLeadingZeros(x_i);
+                return i * Integers.SIZE + Integers.bitLength(x_i);
         }
         return 0;
     }
@@ -676,7 +676,7 @@ public abstract class Nat
         {
             int x_i = x[xOff + i];
             if (x_i != 0)
-                return i * 32 + 32 - Integers.numberOfLeadingZeros(x_i);
+                return i * Integers.SIZE + Integers.bitLength(x_i);
         }
         return 0;
     }

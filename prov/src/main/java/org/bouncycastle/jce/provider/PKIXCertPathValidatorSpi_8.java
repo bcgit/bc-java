@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
+import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
@@ -305,11 +306,11 @@ public class PKIXCertPathValidatorSpi_8
         // 6.1.3
         //
 
-        if (paramsPKIX.getTargetConstraints() != null
-                && !paramsPKIX.getTargetConstraints().match((X509Certificate) certs.get(0)))
+        PKIXCertStoreSelector targetConstraints = paramsPKIX.getTargetConstraints();
+        if (targetConstraints != null && !targetConstraints.match((X509Certificate)certs.get(0)))
         {
             throw new ExtCertPathValidatorException(
-                    "Target certificate in certification path does not match targetConstraints.", null, certPath, 0);
+                "Target certificate in certification path does not match targetConstraints.", null, certPath, 0);
         }
 
         // 

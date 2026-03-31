@@ -48,5 +48,4 @@ module org.bouncycastle.util
     exports org.bouncycastle.oer.its.template.ieee1609dot2;
     exports org.bouncycastle.oer.its.template.ieee1609dot2.basetypes;
     exports org.bouncycastle.oer.its.template.ieee1609dot2dot1;
-    exports org.bouncycastle.misc;
 }

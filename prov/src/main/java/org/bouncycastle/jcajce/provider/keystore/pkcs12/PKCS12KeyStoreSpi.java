@@ -733,7 +733,7 @@ public class PKCS12KeyStoreSpi
 
             Cipher cipher = helper.createCipher(encAlgId.getAlgorithm().getId());
 
-            AlgorithmParameters algParams = AlgorithmParameters.getInstance(encAlgId.getAlgorithm().getId());
+            AlgorithmParameters algParams = helper.createAlgorithmParameters(encAlgId.getAlgorithm().getId());
             algParams.init(encAlgId.getParameters().toASN1Primitive().getEncoded());
 
             cipher.init(Cipher.WRAP_MODE, keyFact.generateSecret(pbeSpec), algParams);
@@ -841,7 +841,7 @@ public class PKCS12KeyStoreSpi
             }
             else
             {
-                AlgorithmParameters algParams = AlgorithmParameters.getInstance(encScheme.getAlgorithm().getId(), "BC");
+                AlgorithmParameters algParams = helper.createAlgorithmParameters(encScheme.getAlgorithm().getId());
 
                 try
                 {

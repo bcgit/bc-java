@@ -52,7 +52,7 @@ public abstract class Mod
 //        assert (m[0] & 1) != 0;
 //        assert m[len32 - 1] != 0;
 
-        int bits = (len32 << 5) - Integers.numberOfLeadingZeros(m[len32 - 1]);
+        int bits = (len32 * Integers.SIZE) - Integers.numberOfLeadingZeros(m[len32 - 1]);
         int len30 = (bits + 29) / 30;
 
         int[] t = new int[4];
@@ -102,7 +102,7 @@ public abstract class Mod
 //        assert (m[0] & 1) != 0;
 //        assert m[len32 - 1] != 0;
 
-        int bits = (len32 << 5) - Integers.numberOfLeadingZeros(m[len32 - 1]);
+        int bits = (len32 * Integers.SIZE) - Integers.numberOfLeadingZeros(m[len32 - 1]);
         int len30 = (bits + 29) / 30;
 
         int clz = bits - Nat.getBitLength(len32, x);
@@ -186,7 +186,7 @@ public abstract class Mod
 //        assert (m[0] & 1) != 0;
 //        assert m[len32 - 1] != 0;
 
-        int bits = (len32 << 5) - Integers.numberOfLeadingZeros(m[len32 - 1]);
+        int bits = (len32 * Integers.SIZE) - Integers.numberOfLeadingZeros(m[len32 - 1]);
         int len30 = (bits + 29) / 30;
 
         int[] t = new int[4];
@@ -221,7 +221,7 @@ public abstract class Mod
 //        assert (m[0] & 1) != 0;
 //        assert m[len32 - 1] != 0;
 
-        int bits = (len32 << 5) - Integers.numberOfLeadingZeros(m[len32 - 1]);
+        int bits = (len32 * Integers.SIZE) - Integers.numberOfLeadingZeros(m[len32 - 1]);
         int len30 = (bits + 29) / 30;
 
         int clz = bits - Nat.getBitLength(len32, x);

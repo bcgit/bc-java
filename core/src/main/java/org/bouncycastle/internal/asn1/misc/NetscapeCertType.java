@@ -36,14 +36,12 @@ public class NetscapeCertType
      * allowed uses for the key.
      * e.g. (X509NetscapeCertType.sslCA | X509NetscapeCertType.smimeCA)
      */
-    public NetscapeCertType(
-        int usage)
+    public NetscapeCertType(int usage)
     {
-        super(getBytes(usage), getPadBits(usage));
+        super(usage);
     }
 
-    public NetscapeCertType(
-        ASN1BitString usage)
+    public NetscapeCertType(ASN1BitString usage)
     {
         super(usage.getBytes(), usage.getPadBits());
     }

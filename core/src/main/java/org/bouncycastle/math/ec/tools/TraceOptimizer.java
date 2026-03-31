@@ -138,7 +138,7 @@ public class TraceOptimizer
 //        }
 
         int m = fe.getFieldSize();
-        int k = 31 - Integers.numberOfLeadingZeros(m);
+        int k = Integers.bitLength(m) - 1;
         int mk = 1;
 
         ECFieldElement tr = fe;

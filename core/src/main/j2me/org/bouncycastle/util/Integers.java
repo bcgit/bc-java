@@ -23,6 +23,11 @@ public class Integers
         return i;
     }
 
+    public static int bitLength(int i)
+    {
+        return SIZE - numberOfLeadingZeros(i);
+    }
+
     public static int compare(int x, int y)
     {
         return x < y ? -1 : x == y ? 0 : 1;
