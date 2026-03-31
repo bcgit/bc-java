@@ -57,6 +57,11 @@ class PrincipalUtils
         }
     }
 
+    static X500Name getIssuerPrincipal(X509AttributeCertificate attrCert)
+    {
+        return X500Name.getInstance(((X509Principal)attrCert.getIssuer().getPrincipals()[0]).getEncoded());
+    }
+
     static X500Name getCA(TrustAnchor trustAnchor)
     {
         return new X500Name(trustAnchor.getCAName());
@@ -68,16 +73,13 @@ class PrincipalUtils
      * @param cert The attribute certificate or certificate.
      * @return The issuer as <code>X500Principal</code>.
      */
-    static X500Name getEncodedIssuerPrincipal(
-        Object cert)
+    static X500Name getEncodedIssuerPrincipal(Object cert)
     {
         if (cert instanceof X509Certificate)
         {
             return getIssuerPrincipal((X509Certificate)cert);
         }
-        else
-        {
-            return X500Name.getInstance(((X509Principal)((X509AttributeCertificate)cert).getIssuer().getPrincipals()[0]).getEncoded());
-        }
+
+        return getIssuerPrincipal((X509AttributeCertificate)cert);
     }
 }
