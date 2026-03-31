@@ -1174,7 +1174,7 @@ class RFC3280CertPathUtilities
                     }
                     catch (CertPathValidatorException ex)
                     {
-                        throw new ExtCertPathValidatorException("Policy qualifier info set could not be build.", ex,
+                        throw new ExtCertPathValidatorException("Policy qualifier info set could not be built.", ex,
                             certPath, index);
                     }
 
