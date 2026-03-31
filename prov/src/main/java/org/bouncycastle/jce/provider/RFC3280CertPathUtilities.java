@@ -1740,8 +1740,7 @@ class RFC3280CertPathUtilities
         JcaJceHelper helper)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
-        AnnotatedException lastException = null;
-        CRLDistPoint crldp = null;
+        CRLDistPoint crldp;
         try
         {
             crldp = CRLDistPoint.getInstance(getExtensionValue(cert, CRL_DISTRIBUTION_POINTS));
@@ -1751,30 +1750,35 @@ class RFC3280CertPathUtilities
             throw new AnnotatedException("CRL distribution point extension could not be read.", e);
         }
 
-        PKIXExtendedParameters.Builder paramsBldr = new PKIXExtendedParameters.Builder(paramsPKIX);
+        List additionalCRLStores;
         try
         {
-            List extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
-                paramsPKIX.getNamedCRLStoreMap(), validityDate, helper);
-            for (Iterator it = extras.iterator(); it.hasNext();)
-            {
-                paramsBldr.addCRLStore((PKIXCRLStore)it.next());
-            }
+            additionalCRLStores = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
+                paramsPKIX, validityDate, helper);
         }
         catch (AnnotatedException e)
         {
             throw new AnnotatedException(
                 "No additional CRL locations could be decoded from CRL distribution point extension.", e);
         }
+
+        // NOTE: Always create paramsPKIX_crldp as a copy of paramsPKIX, even if there are no additional stores
+        PKIXExtendedParameters.Builder builder = new PKIXExtendedParameters.Builder(paramsPKIX);
+        for (Iterator it = additionalCRLStores.iterator(); it.hasNext();)
+        {
+            builder.addCRLStore((PKIXCRLStore)it.next());
+        }
+        PKIXExtendedParameters paramsPKIX_crldp = builder.build();
+
         CertStatus certStatus = new CertStatus();
         ReasonsMask reasonsMask = new ReasonsMask();
-        PKIXExtendedParameters finalParams = paramsBldr.build();
 
+        AnnotatedException lastException = null;
         boolean validCrlFound = false;
         // for each distribution point
         if (crldp != null)
         {
-            DistributionPoint dps[] = null;
+            DistributionPoint[] dps;
             try
             {
                 dps = crldp.getDistributionPoints();
@@ -1789,8 +1793,8 @@ class RFC3280CertPathUtilities
                 {
                     try
                     {
-                        checkCRL(params, dps[i], finalParams, currentDate, validityDate, cert, sign, workingPublicKey,
-                            certStatus, reasonsMask, certPathCerts, helper);
+                        checkCRL(params, dps[i], paramsPKIX_crldp, currentDate, validityDate, cert, sign,
+                            workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)

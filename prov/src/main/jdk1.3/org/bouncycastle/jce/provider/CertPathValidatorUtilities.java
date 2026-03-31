@@ -741,8 +741,8 @@ class CertPathValidatorUtilities
         }
     }
 
-    static List<PKIXCRLStore> getAdditionalStoresFromCRLDistributionPoint(
-        CRLDistPoint crldp, Map<GeneralName, PKIXCRLStore> namedCRLStoreMap, Date validDate, JcaJceHelper helper)
+    static List<PKIXCRLStore> getAdditionalStoresFromCRLDistributionPoint(CRLDistPoint crldp,
+        PKIXExtendedParameters paramsPKIX, Date validDate, JcaJceHelper helper)
         throws AnnotatedException
     {
         if (null == crldp)
@@ -762,20 +762,24 @@ class CertPathValidatorUtilities
 
         List stores = new ArrayList();
 
-        for (int i = 0; i < dps.length; i++)
+        Map namedCRLStoreMap = paramsPKIX.getNamedCRLStoreMap();
+        if (!namedCRLStoreMap.isEmpty())
         {
-            DistributionPointName dpn = dps[i].getDistributionPoint();
-            // look for URLs in fullName
-            if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
+            for (int i = 0; i < dps.length; i++)
             {
-                GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
-
-                for (int j = 0; j < genNames.length; j++)
+                DistributionPointName dpn = dps[i].getDistributionPoint();
+                // look for URLs in fullName
+                if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
                 {
-                    PKIXCRLStore store = (PKIXCRLStore)namedCRLStoreMap.get(genNames[j]);
-                    if (store != null)
+                    GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
+
+                    for (int j = 0; j < genNames.length; j++)
                     {
-                        stores.add(store);
+                        PKIXCRLStore store = (PKIXCRLStore)namedCRLStoreMap.get(genNames[j]);
+                        if (store != null)
+                        {
+                            stores.add(store);
+                        }
                     }
                 }
             }
