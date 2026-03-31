@@ -253,8 +253,6 @@ public class PKIXCertPathValidatorSpi
             throw new ExtCertPathValidatorException(
                     "Algorithm identifier of public key of trust anchor could not be read.", e, certPath, -1);
         }
-        ASN1ObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-        ASN1Encodable workingPublicKeyParameters = workingAlgId.getParameters();
 
         //
         // (k)
@@ -419,11 +417,8 @@ public class PKIXCertPathValidatorSpi
                     throw new CertPathValidatorException("Next working key could not be retrieved.", e, certPath, index);
                 }
 
+                // (e), (f)
                 workingAlgId = CertPathValidatorUtilities.getAlgorithmIdentifier(workingPublicKey);
-                // (f)
-                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-                // (e)
-                workingPublicKeyParameters = workingAlgId.getParameters();
             }
         }
 
