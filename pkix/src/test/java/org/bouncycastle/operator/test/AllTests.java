@@ -46,6 +46,11 @@ import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
 import org.bouncycastle.operator.DefaultSignatureNameFinder;
 import org.bouncycastle.operator.KemEncapsulationLengthProvider;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
+import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
+import org.bouncycastle.pqc.crypto.hqc.HQCKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.hqc.HQCKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
+import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
@@ -532,6 +537,33 @@ public class AllTests
             NTRUKEMExtractor ext = new NTRUKEMExtractor((NTRUPrivateKeyParameters)kp.getPrivate());
 
             assertEquals(ext.getEncapsulationLength(), lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(ntruOids[i])));
+        }
+
+        ASN1ObjectIdentifier[] hqcOids = new ASN1ObjectIdentifier[]
+            {
+                BCObjectIdentifiers.hqc128,
+                BCObjectIdentifiers.hqc192,
+                BCObjectIdentifiers.hqc256
+            };
+
+        HQCParameters[] hqcParams = new HQCParameters[]
+            {
+                HQCParameters.hqc128,
+                HQCParameters.hqc192,
+                HQCParameters.hqc256
+            };
+
+        for (int i = 0; i != hqcOids.length; i++)
+        {
+            HQCKeyPairGenerator kpg = new HQCKeyPairGenerator();
+
+            kpg.init(new HQCKeyGenerationParameters(random, hqcParams[i]));
+
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            HQCKEMExtractor ext = new HQCKEMExtractor((HQCPrivateKeyParameters)kp.getPrivate());
+
+            assertEquals(ext.getEncapsulationLength(), lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(hqcOids[i])));
         }
     }
 }
