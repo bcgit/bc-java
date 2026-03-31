@@ -108,5 +108,10 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  SHAKE256_LEN = NISTObjectIdentifiers.id_shake256_len.intern();
     public static final ASN1ObjectIdentifier  ChaCha20Poly1305 = PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.intern();
 
+    public static final AlgorithmIdentifier   SHAKE128_XOF = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
+    public static final AlgorithmIdentifier   SHAKE256_XOF = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+
     public static final AlgorithmIdentifier   SHA256_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256);
+    public static final AlgorithmIdentifier   SHA384_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha384);
+    public static final AlgorithmIdentifier   SHA512_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha512);
 }
