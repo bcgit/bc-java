@@ -512,7 +512,7 @@ class RFC3281CertPathUtilities
             catch (CertPathBuilderException e)
             {
                 lastException = new ExtCertPathValidatorException(
-                    "Certification path for public key certificate of attribute certificate could not be build.",
+                    "Certification path for public key certificate of attribute certificate could not be built.",
                     e);
             }
             catch (InvalidAlgorithmParameterException e)
