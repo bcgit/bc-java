@@ -131,20 +131,24 @@ class RFC3280CertPathUtilities
                 }
                 if (dpName.getType() == DistributionPointName.NAME_RELATIVE_TO_CRL_ISSUER)
                 {
-                    ASN1EncodableVector vec = new ASN1EncodableVector();
+                    ASN1Sequence seq;
                     try
                     {
-                        Enumeration e = ASN1Sequence.getInstance(PrincipalUtils.getIssuerPrincipal(crl)).getObjects();
-                        while (e.hasMoreElements())
-                        {
-                            vec.add((ASN1Encodable)e.nextElement());
-                        }
+                        seq = ASN1Sequence.getInstance(PrincipalUtils.getIssuerPrincipal(crl));
                     }
                     catch (Exception e)
                     {
                         throw new AnnotatedException("Could not read CRL issuer.", e);
                     }
+
+                    int count = seq.size();
+                    ASN1EncodableVector vec = new ASN1EncodableVector(count + 1);
+                    for (int i = 0; i < count; ++i)
+                    {
+                        vec.add(seq.getObjectAt(i));
+                    }
                     vec.add(dpName.getName());
+
                     names.add(new GeneralName(X500Name.getInstance(new DERSequence(vec))));
                 }
                 boolean matches = false;
@@ -1015,84 +1019,86 @@ class RFC3280CertPathUtilities
         // as we use the validator for path CRL checking, we need to flag when the
         // certificate is self issued, but not really the last one in the path we are actually
         // checking.
-        if (!((i < n || isForCRLCheck) && CertPathValidatorUtilities.isSelfIssued(cert)))
+        if ((i < n || isForCRLCheck) && CertPathValidatorUtilities.isSelfIssued(cert))
         {
-            X500Name principal = PrincipalUtils.getSubjectPrincipal(cert);
-            ASN1Sequence dns;
+            return;
+        }
+
+        X500Name principal = PrincipalUtils.getSubjectPrincipal(cert);
+        ASN1Sequence dns;
+
+        try
+        {
+            dns = ASN1Sequence.getInstance(principal);
+        }
+        catch (Exception e)
+        {
+            throw new CertPathValidatorException("Exception extracting subject name when checking subtrees.", e,
+                certPath, index);
+        }
+
+        try
+        {
+            nameConstraintValidator.checkPermittedDN(dns);
+            nameConstraintValidator.checkExcludedDN(dns);
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            throw new CertPathValidatorException("Subtree check for certificate subject failed.", e, certPath,
+                index);
+        }
+
+        GeneralNames altName = null;
+        try
+        {
+            altName = GeneralNames.getInstance(getExtensionValue(cert, SUBJECT_ALTERNATIVE_NAME));
+        }
+        catch (Exception e)
+        {
+            throw new CertPathValidatorException("Subject alternative name extension could not be decoded.", e,
+                certPath, index);
+        }
+        RDN[] emails = X500Name.getInstance(dns).getRDNs(BCStyle.EmailAddress);
+        for (int eI = 0; eI != emails.length; eI++)
+        {
+            // TODO: this should take into account multi-valued RDNs
+            String email = ((ASN1String)emails[eI].getFirst().getValue()).getString();
 
             try
             {
-                dns = ASN1Sequence.getInstance(principal);
+                nameConstraintValidator.checkPermittedEmail(email);
+                nameConstraintValidator.checkExcludedEmail(email);
+            }
+            catch (PKIXNameConstraintValidatorException ex)
+            {
+                throw new CertPathValidatorException(
+                    "Subtree check for certificate subject alternative email failed.", ex, certPath, index);
+            }
+        }
+        if (altName != null)
+        {
+            GeneralName[] genNames = null;
+            try
+            {
+                genNames = altName.getNames();
             }
             catch (Exception e)
             {
-                throw new CertPathValidatorException("Exception extracting subject name when checking subtrees.", e,
+                throw new CertPathValidatorException("Subject alternative name contents could not be decoded.", e,
                     certPath, index);
             }
-
-            try
+            for (int j = 0; j < genNames.length; j++)
             {
-                nameConstraintValidator.checkPermittedDN(dns);
-                nameConstraintValidator.checkExcludedDN(dns);
-            }
-            catch (PKIXNameConstraintValidatorException e)
-            {
-                throw new CertPathValidatorException("Subtree check for certificate subject failed.", e, certPath,
-                    index);
-            }
-
-            GeneralNames altName = null;
-            try
-            {
-                altName = GeneralNames.getInstance(getExtensionValue(cert, SUBJECT_ALTERNATIVE_NAME));
-            }
-            catch (Exception e)
-            {
-                throw new CertPathValidatorException("Subject alternative name extension could not be decoded.", e,
-                    certPath, index);
-            }
-            RDN[] emails = X500Name.getInstance(dns).getRDNs(BCStyle.EmailAddress);
-            for (int eI = 0; eI != emails.length; eI++)
-            {
-                // TODO: this should take into account multi-valued RDNs
-                String email = ((ASN1String)emails[eI].getFirst().getValue()).getString();
 
                 try
                 {
-                    nameConstraintValidator.checkPermittedEmail(email);
-                    nameConstraintValidator.checkExcludedEmail(email);
+                    nameConstraintValidator.checkPermitted(genNames[j]);
+                    nameConstraintValidator.checkExcluded(genNames[j]);
                 }
-                catch (PKIXNameConstraintValidatorException ex)
+                catch (PKIXNameConstraintValidatorException e)
                 {
                     throw new CertPathValidatorException(
-                        "Subtree check for certificate subject alternative email failed.", ex, certPath, index);
-                }
-            }
-            if (altName != null)
-            {
-                GeneralName[] genNames = null;
-                try
-                {
-                    genNames = altName.getNames();
-                }
-                catch (Exception e)
-                {
-                    throw new CertPathValidatorException("Subject alternative name contents could not be decoded.", e,
-                        certPath, index);
-                }
-                for (int j = 0; j < genNames.length; j++)
-                {
-
-                    try
-                    {
-                        nameConstraintValidator.checkPermitted(genNames[j]);
-                        nameConstraintValidator.checkExcluded(genNames[j]);
-                    }
-                    catch (PKIXNameConstraintValidatorException e)
-                    {
-                        throw new CertPathValidatorException(
-                            "Subtree check for certificate subject alternative name failed.", e, certPath, index);
-                    }
+                        "Subtree check for certificate subject alternative name failed.", e, certPath, index);
                 }
             }
         }
@@ -1506,42 +1512,46 @@ class RFC3280CertPathUtilities
             throw new ExtCertPathValidatorException("Name constraints extension could not be decoded.", e, certPath,
                 index);
         }
-        if (nc != null)
+
+        if (nc == null)
         {
+            return;
+        }
 
-            //
-            // (g) (1) permitted subtrees
-            //
-            GeneralSubtree[] permitted = nc.getPermittedSubtrees();
-            if (permitted != null)
+        //
+        // (g) (1) permitted subtrees
+        //
+        GeneralSubtree[] permitted = nc.getPermittedSubtrees();
+        if (permitted != null)
+        {
+            try
             {
-                try
-                {
-                    nameConstraintValidator.intersectPermittedSubtree(permitted);
-                }
-                catch (Exception ex)
-                {
-                    throw new ExtCertPathValidatorException(
-                        "Permitted subtrees cannot be build from name constraints extension.", ex, certPath, index);
-                }
+                nameConstraintValidator.intersectPermittedSubtree(permitted);
             }
+            catch (Exception ex)
+            {
+                throw new ExtCertPathValidatorException(
+                    "Permitted subtrees could not be built from name constraints extension.", ex, certPath, index);
+            }
+        }
 
-            //
-            // (g) (2) excluded subtrees
-            //
-            GeneralSubtree[] excluded = nc.getExcludedSubtrees();
-            if (excluded != null)
+        //
+        // (g) (2) excluded subtrees
+        //
+        GeneralSubtree[] excluded = nc.getExcludedSubtrees();
+        if (excluded != null)
+        {
+            try
             {
                 for (int i = 0; i != excluded.length; i++)
-                try
                 {
-                        nameConstraintValidator.addExcludedSubtree(excluded[i]);
+                    nameConstraintValidator.addExcludedSubtree(excluded[i]);
                 }
-                catch (Exception ex)
-                {
-                    throw new ExtCertPathValidatorException(
-                        "Excluded subtrees cannot be build from name constraints extension.", ex, certPath, index);
-                }
+            }
+            catch (Exception ex)
+            {
+                throw new ExtCertPathValidatorException(
+                    "Excluded subtrees could not be built from name constraints extension.", ex, certPath, index);
             }
         }
     }
