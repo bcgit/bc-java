@@ -157,7 +157,7 @@ public class PQCTest
 
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
             new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.AES256_WRAP).setKDF(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256)));
+            CMSAlgorithm.SHA256_HKDF));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
             new CMSProcessableCMPCertificate(cert),
@@ -319,7 +319,7 @@ public class PQCTest
         DigestCalculator owfCalc = new JcaDigestCalculatorProviderBuilder().build().get(DigestCalculator.SHA_256);
         JceKEMRecipientInfoGenerator recipientGenerator = new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
             new JcaPEMKeyConverter().setProvider("BC").getPublicKey(certTemplate.getPublicKey()), CMSAlgorithm.AES256_WRAP).setKDF(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256));
+            CMSAlgorithm.SHA256_HKDF);
 
         byte[] A = new byte[32];
         rand.nextBytes(A);
