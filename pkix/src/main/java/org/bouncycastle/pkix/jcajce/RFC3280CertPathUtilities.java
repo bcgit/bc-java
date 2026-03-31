@@ -211,7 +211,7 @@ class RFC3280CertPathUtilities
                     }
                 }
             }
-            BasicConstraints bc = null;
+            BasicConstraints bc;
             try
             {
                 bc = BasicConstraints.getInstance(RevocationUtilities.getExtensionValue((X509Extension)cert,
@@ -597,7 +597,7 @@ class RFC3280CertPathUtilities
 
     protected static Set processCRLA1i(
         PKIXExtendedParameters paramsPKIX,
-        Date currentDate,
+        Date validityDate,
         X509Certificate cert,
         X509CRL crl)
         throws AnnotatedException
@@ -608,8 +608,7 @@ class RFC3280CertPathUtilities
             CRLDistPoint freshestCRL = null;
             try
             {
-                freshestCRL = CRLDistPoint
-                    .getInstance(RevocationUtilities.getExtensionValue(cert, Extension.freshestCRL));
+                freshestCRL = CRLDistPoint.getInstance(RevocationUtilities.getExtensionValue(cert, Extension.freshestCRL));
             }
             catch (AnnotatedException e)
             {
@@ -619,8 +618,7 @@ class RFC3280CertPathUtilities
             {
                 try
                 {
-                    freshestCRL = CRLDistPoint.getInstance(RevocationUtilities.getExtensionValue(crl,
-                        Extension.freshestCRL));
+                    freshestCRL = CRLDistPoint.getInstance(RevocationUtilities.getExtensionValue(crl, Extension.freshestCRL));
                 }
                 catch (AnnotatedException e)
                 {
@@ -646,7 +644,7 @@ class RFC3280CertPathUtilities
                 // get delta CRL(s)
                 try
                 {
-                    set.addAll(RevocationUtilities.getDeltaCRLs(currentDate, crl, paramsPKIX.getCertStores(), crlStores));
+                    set.addAll(RevocationUtilities.getDeltaCRLs(validityDate, crl, paramsPKIX.getCertStores(), crlStores));
                 }
                 catch (AnnotatedException e)
                 {
@@ -659,7 +657,6 @@ class RFC3280CertPathUtilities
 
     protected static Set[] processCRLA1ii(
         PKIXExtendedParameters paramsPKIX,
-        Date currentDate,
         Date validityDate,
         X509Certificate cert,
         X509CRL crl)
@@ -703,20 +700,12 @@ class RFC3280CertPathUtilities
      *
      * @param deltaCRL    The delta CRL.
      * @param completeCRL The complete CRL.
-     * @param pkixParams  The PKIX paramaters.
      * @throws AnnotatedException if an exception occurs.
      */
-    protected static void processCRLC(
-        X509CRL deltaCRL,
-        X509CRL completeCRL,
-        PKIXExtendedParameters pkixParams)
+    static void processCRLC(X509CRL deltaCRL, X509CRL completeCRL)
         throws AnnotatedException
     {
-        if (deltaCRL == null)
-        {
-            return;
-        }
-        IssuingDistributionPoint completeidp = null;
+        IssuingDistributionPoint completeidp;
         try
         {
             completeidp = IssuingDistributionPoint.getInstance(RevocationUtilities.getExtensionValue(
@@ -727,110 +716,95 @@ class RFC3280CertPathUtilities
             throw new AnnotatedException("issuing distribution point extension could not be decoded.", e);
         }
 
-        if (pkixParams.isUseDeltasEnabled())
+        // (c) (1)
+        if (!deltaCRL.getIssuerX500Principal().equals(completeCRL.getIssuerX500Principal()))
         {
-            // (c) (1)
-            if (!deltaCRL.getIssuerX500Principal().equals(completeCRL.getIssuerX500Principal()))
-            {
-                throw new AnnotatedException("complete CRL issuer does not match delta CRL issuer");
-            }
+            throw new AnnotatedException("complete CRL issuer does not match delta CRL issuer");
+        }
 
-            // (c) (2)
-            IssuingDistributionPoint deltaidp = null;
-            try
-            {
-                deltaidp = IssuingDistributionPoint.getInstance(RevocationUtilities.getExtensionValue(
-                    deltaCRL, Extension.issuingDistributionPoint));
-            }
-            catch (Exception e)
-            {
-                throw new AnnotatedException(
-                    "Issuing distribution point extension from delta CRL could not be decoded.", e);
-            }
+        // (c) (2)
+        IssuingDistributionPoint deltaidp;
+        try
+        {
+            deltaidp = IssuingDistributionPoint.getInstance(RevocationUtilities.getExtensionValue(
+                deltaCRL, Extension.issuingDistributionPoint));
+        }
+        catch (Exception e)
+        {
+            throw new AnnotatedException(
+                "Issuing distribution point extension from delta CRL could not be decoded.", e);
+        }
 
-            boolean match = false;
-            if (completeidp == null)
+        boolean match = false;
+        if (completeidp == null)
+        {
+            if (deltaidp == null)
             {
-                if (deltaidp == null)
-                {
-                    match = true;
-                }
+                match = true;
             }
-            else
+        }
+        else
+        {
+            if (completeidp.equals(deltaidp))
             {
-                if (completeidp.equals(deltaidp))
-                {
-                    match = true;
-                }
+                match = true;
             }
-            if (!match)
-            {
-                throw new AnnotatedException(
-                    "Issuing distribution point extension from delta CRL and complete CRL does not match.");
-            }
+        }
+        if (!match)
+        {
+            throw new AnnotatedException(
+                "Issuing distribution point extension from delta CRL and complete CRL does not match.");
+        }
 
-            // (c) (3)
-            ASN1Primitive completeKeyIdentifier = null;
-            try
-            {
-                completeKeyIdentifier = RevocationUtilities.getExtensionValue(
-                    completeCRL, Extension.authorityKeyIdentifier);
-            }
-            catch (AnnotatedException e)
-            {
-                throw new AnnotatedException(
-                    "Authority key identifier extension could not be extracted from complete CRL.", e);
-            }
+        // (c) (3)
+        ASN1Primitive completeKeyIdentifier;
+        try
+        {
+            completeKeyIdentifier = RevocationUtilities.getExtensionValue(
+                completeCRL, Extension.authorityKeyIdentifier);
+        }
+        catch (AnnotatedException e)
+        {
+            throw new AnnotatedException(
+                "Authority key identifier extension could not be extracted from complete CRL.", e);
+        }
 
-            ASN1Primitive deltaKeyIdentifier = null;
-            try
-            {
-                deltaKeyIdentifier = RevocationUtilities.getExtensionValue(
-                    deltaCRL, Extension.authorityKeyIdentifier);
-            }
-            catch (AnnotatedException e)
-            {
-                throw new AnnotatedException(
-                    "Authority key identifier extension could not be extracted from delta CRL.", e);
-            }
+        ASN1Primitive deltaKeyIdentifier;
+        try
+        {
+            deltaKeyIdentifier = RevocationUtilities.getExtensionValue(
+                deltaCRL, Extension.authorityKeyIdentifier);
+        }
+        catch (AnnotatedException e)
+        {
+            throw new AnnotatedException(
+                "Authority key identifier extension could not be extracted from delta CRL.", e);
+        }
 
-            if (completeKeyIdentifier == null)
-            {
-                throw new AnnotatedException("CRL authority key identifier is null.");
-            }
+        if (completeKeyIdentifier == null)
+        {
+            throw new AnnotatedException("CRL authority key identifier is null.");
+        }
 
-            if (deltaKeyIdentifier == null)
-            {
-                throw new AnnotatedException("Delta CRL authority key identifier is null.");
-            }
+        if (deltaKeyIdentifier == null)
+        {
+            throw new AnnotatedException("Delta CRL authority key identifier is null.");
+        }
 
-            if (!completeKeyIdentifier.equals(deltaKeyIdentifier))
-            {
-                throw new AnnotatedException(
-                    "Delta CRL authority key identifier does not match complete CRL authority key identifier.");
-            }
+        if (!completeKeyIdentifier.equals(deltaKeyIdentifier))
+        {
+            throw new AnnotatedException(
+                "Delta CRL authority key identifier does not match complete CRL authority key identifier.");
         }
     }
 
-    protected static void processCRLI(
-        Date validDate,
-        X509CRL deltacrl,
-        Object cert,
-        CertStatus certStatus,
-        PKIXExtendedParameters pkixParams)
+    static void processCRLI(Date validDate, X509CRL deltacrl, Object cert, CertStatus certStatus)
         throws AnnotatedException
     {
-        if (pkixParams.isUseDeltasEnabled() && deltacrl != null)
-        {
-            RevocationUtilities.getCertStatus(validDate, deltacrl, cert, certStatus);
-        }
+        RevocationUtilities.getCertStatus(validDate, deltacrl, cert, certStatus);
     }
 
-    protected static void processCRLJ(
-        Date validDate,
-        X509CRL completecrl,
-        Object cert,
-        CertStatus certStatus)
+    static void processCRLJ(Date validDate, X509CRL completecrl, Object cert, CertStatus certStatus)
         throws AnnotatedException
     {
         if (certStatus.getCertStatus() == CertStatus.UNREVOKED)
@@ -895,8 +869,11 @@ class RFC3280CertPathUtilities
             {
                 X509CRL crl = (X509CRL)crl_iter.next();
 
+                CertPathValidatorUtilities.checkCRLCriticalExtensions(crl,
+                    "CRL contains unsupported critical extensions.");
+
                 // (d)
-                ReasonsMask interimReasonsMask = RFC3280CertPathUtilities.processCRLD(crl, dp);
+                ReasonsMask interimReasonsMask = processCRLD(crl, dp);
 
                 // (e)
                 /*
@@ -910,21 +887,9 @@ class RFC3280CertPathUtilities
                 }
 
                 // (f)
-                Set keys = RFC3280CertPathUtilities.processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey,
-                    paramsPKIX, certPathCerts, helper);
+                Set keys = processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey, paramsPKIX, certPathCerts, helper);
                 // (g)
-                PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
-
-                X509CRL deltaCRL = null;
-
-                if (paramsPKIX.isUseDeltasEnabled())
-                {
-                    // get delta CRLs
-                    Set deltaCRLs = RevocationUtilities.getDeltaCRLs(validityDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
-                    // we only want one valid delta CRL
-                    // (h)
-                    deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs, key);
-                }
+                PublicKey key = processCRLG(crl, keys);
 
                 /*
                  * CRL must be be valid at the current time, not the validation
@@ -952,19 +917,35 @@ class RFC3280CertPathUtilities
                     }
                 }
 
-                RFC3280CertPathUtilities.processCRLB1(dp, cert, crl);
+                processCRLB1(dp, cert, crl);
 
                 // (b) (2)
-                RFC3280CertPathUtilities.processCRLB2(dp, cert, crl);
+                processCRLB2(dp, cert, crl);
 
-                // (c)
-                RFC3280CertPathUtilities.processCRLC(deltaCRL, crl, paramsPKIX);
+                if (paramsPKIX.isUseDeltasEnabled())
+                {
+                    // get delta CRLs
+                    Set deltaCRLs = RevocationUtilities.getDeltaCRLs(validityDate, crl, paramsPKIX.getCertStores(),
+                        paramsPKIX.getCRLStores());
 
-                // (i)
-                RFC3280CertPathUtilities.processCRLI(validityDate, deltaCRL, cert, certStatus, paramsPKIX);
+                    // we only want one valid delta CRL
+                    // (h)
+                    X509CRL deltaCRL = processCRLH(deltaCRLs, key);
+                    if (deltaCRL != null)
+                    {
+                        CertPathValidatorUtilities.checkCRLCriticalExtensions(deltaCRL,
+                            "Delta CRL contains unsupported critical extensions.");
+
+                        // (c)
+                        processCRLC(deltaCRL, crl);
+
+                        // (i)
+                        processCRLI(validityDate, deltaCRL, cert, certStatus);
+                    }
+                }
 
                 // (j)
-                RFC3280CertPathUtilities.processCRLJ(validityDate, crl, cert, certStatus);
+                processCRLJ(validityDate, crl, cert, certStatus);
 
                 // (k)
                 if (certStatus.getCertStatus() == CRLReason.removeFromCRL)
@@ -974,34 +955,6 @@ class RFC3280CertPathUtilities
 
                 // update reasons mask
                 reasonMask.addReasons(interimReasonsMask);
-
-                Set criticalExtensions = crl.getCriticalExtensionOIDs();
-                if (criticalExtensions != null)
-                {
-                    criticalExtensions = new HashSet(criticalExtensions);
-                    criticalExtensions.remove(Extension.issuingDistributionPoint.getId());
-                    criticalExtensions.remove(Extension.deltaCRLIndicator.getId());
-
-                    if (!criticalExtensions.isEmpty())
-                    {
-                        throw new AnnotatedException("CRL contains unsupported critical extensions.");
-                    }
-                }
-
-                if (deltaCRL != null)
-                {
-                    criticalExtensions = deltaCRL.getCriticalExtensionOIDs();
-                    if (criticalExtensions != null)
-                    {
-                        criticalExtensions = new HashSet(criticalExtensions);
-                        criticalExtensions.remove(Extension.issuingDistributionPoint.getId());
-                        criticalExtensions.remove(Extension.deltaCRLIndicator.getId());
-                        if (!criticalExtensions.isEmpty())
-                        {
-                            throw new AnnotatedException("Delta CRL contains unsupported critical extension.");
-                        }
-                    }
-                }
 
                 validCrlFound = true;
             }

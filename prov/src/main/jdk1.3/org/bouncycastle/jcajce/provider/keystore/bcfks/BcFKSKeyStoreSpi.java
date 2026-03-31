@@ -52,9 +52,7 @@ import org.bouncycastle.asn1.bc.ObjectStoreData;
 import org.bouncycastle.asn1.bc.ObjectStoreIntegrityCheck;
 import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.bc.SecretKeyData;
-import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
@@ -69,6 +67,11 @@ import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
+import org.bouncycastle.internal.asn1.kisa.KISAObjectIdentifiers;
+import org.bouncycastle.internal.asn1.nsri.NSRIObjectIdentifiers;
+import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -90,6 +93,25 @@ class BcFKSKeyStoreSpi
         oidMap.put("HMACSHA256", PKCSObjectIdentifiers.id_hmacWithSHA256);
         oidMap.put("HMACSHA384", PKCSObjectIdentifiers.id_hmacWithSHA384);
         oidMap.put("HMACSHA512", PKCSObjectIdentifiers.id_hmacWithSHA512);
+        oidMap.put("HMACSHA512/224", PKCSObjectIdentifiers.id_hmacWithSHA512_224);
+        oidMap.put("HMACSHA512/256", PKCSObjectIdentifiers.id_hmacWithSHA512_256);
+        oidMap.put("HMACSHA512(224)", PKCSObjectIdentifiers.id_hmacWithSHA512_224);
+        oidMap.put("HMACSHA512(256)", PKCSObjectIdentifiers.id_hmacWithSHA512_256);
+        oidMap.put("HMACSHA3-224", NISTObjectIdentifiers.id_hmacWithSHA3_224);
+        oidMap.put("HMACSHA3-256", NISTObjectIdentifiers.id_hmacWithSHA3_256);
+        oidMap.put("HMACSHA3-384", NISTObjectIdentifiers.id_hmacWithSHA3_384);
+        oidMap.put("HMACSHA3-512", NISTObjectIdentifiers.id_hmacWithSHA3_512);
+        oidMap.put("KMAC128", NISTObjectIdentifiers.id_Kmac128);
+        oidMap.put("KMAC256", NISTObjectIdentifiers.id_Kmac256);
+        oidMap.put("SEED", KISAObjectIdentifiers.id_seedCBC);
+
+        oidMap.put("CAMELLIA.128", NTTObjectIdentifiers.id_camellia128_cbc);
+        oidMap.put("CAMELLIA.192", NTTObjectIdentifiers.id_camellia192_cbc);
+        oidMap.put("CAMELLIA.256", NTTObjectIdentifiers.id_camellia256_cbc);
+
+        oidMap.put("ARIA.128", NSRIObjectIdentifiers.id_aria128_cbc);
+        oidMap.put("ARIA.192", NSRIObjectIdentifiers.id_aria192_cbc);
+        oidMap.put("ARIA.256", NSRIObjectIdentifiers.id_aria256_cbc);
 
         publicAlgMap.put(PKCSObjectIdentifiers.rsaEncryption, "RSA");
         publicAlgMap.put(X9ObjectIdentifiers.id_ecPublicKey, "EC");

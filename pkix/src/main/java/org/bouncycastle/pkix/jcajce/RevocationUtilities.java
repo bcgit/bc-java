@@ -614,7 +614,7 @@ class RevocationUtilities
     {
         try
         {
-            byte[] idp = crl.getExtensionValue(Extension.issuingDistributionPoint.getId());
+            byte[] idp = crl.getExtensionValue(ISSUING_DISTRIBUTION_POINT);
             return idp != null
                 && IssuingDistributionPoint.getInstance(ASN1OctetString.getInstance(idp).getOctets()).isIndirectCRL();
         }

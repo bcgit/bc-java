@@ -101,6 +101,7 @@ class CertPathValidatorUtilities
     protected static final String ANY_POLICY = "2.5.29.32.0";
 
     protected static final String CRL_NUMBER = Extension.cRLNumber.getId();
+    protected static final String REASON_CODE = Extension.reasonCode.getId();
 
     /*
     * key usage bits
@@ -108,7 +109,8 @@ class CertPathValidatorUtilities
     protected static final int KEY_CERT_SIGN = 5;
     protected static final int CRL_SIGN = 6;
 
-    protected static final String[] crlReasons = new String[]{
+    static final String[] crlReasons = new String[]
+    {
         "unspecified",
         "keyCompromise",
         "cACompromise",
@@ -119,7 +121,8 @@ class CertPathValidatorUtilities
         "unknown",
         "removeFromCRL",
         "privilegeWithdrawn",
-        "aACompromise"};
+        "aACompromise",
+    };
 
     /**
      * Search the given Set of TrustAnchor's for one that is the
@@ -935,18 +938,18 @@ class CertPathValidatorUtilities
         ASN1Enumerated reasonCode = null;
         if (crl_entry.hasExtensions())
         {
+            if (crl_entry.hasUnsupportedCriticalExtension())
+            {
+                throw new AnnotatedException("CRL entry has unsupported critical extensions.");
+            }
+
             try
             {
-                reasonCode = ASN1Enumerated
-                    .getInstance(CertPathValidatorUtilities
-                        .getExtensionValue(crl_entry,
-                            Extension.reasonCode.getId()));
+                reasonCode = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, REASON_CODE));
             }
             catch (Exception e)
             {
-                throw new AnnotatedException(
-                    "Reason code CRL entry extension could not be decoded.",
-                    e);
+                throw new AnnotatedException("Reason code CRL entry extension could not be decoded.", e);
             }
         }
 
@@ -1001,8 +1004,7 @@ class CertPathValidatorUtilities
         BigInteger completeCRLNumber = null;
         try
         {
-            ASN1Primitive derObject = CertPathValidatorUtilities.getExtensionValue(completeCRL,
-                CRL_NUMBER);
+            ASN1Primitive derObject = getExtensionValue(completeCRL, CRL_NUMBER);
             if (derObject != null)
             {
                 completeCRLNumber = ASN1Integer.getInstance(derObject).getPositiveValue();
@@ -1097,7 +1099,7 @@ class CertPathValidatorUtilities
 
             issuers.add(PrincipalUtils.getEncodedIssuerPrincipal(cert));
 
-            CertPathValidatorUtilities.getCRLIssuersFromDistributionPoint(dp, issuers, baseCrlSelect);
+            getCRLIssuersFromDistributionPoint(dp, issuers, baseCrlSelect);
         }
         catch (AnnotatedException e)
         {
@@ -1143,8 +1145,7 @@ class CertPathValidatorUtilities
             ASN1GeneralizedTime dateOfCertgen = null;
             try
             {
-                byte[] extBytes = ((X509Certificate)certPath.getCertificates().get(index - 1))
-                    .getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
+                byte[] extBytes = issuedCert.getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
                 if (extBytes != null)
                 {
                     dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
@@ -1292,8 +1293,8 @@ class CertPathValidatorUtilities
         {
             List matches = new ArrayList();
 
-            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, certStores));
-            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, pkixCertStores));
+            matches.addAll(findCertificates(certSelect, certStores));
+            matches.addAll(findCertificates(certSelect, pkixCertStores));
 
             iter = matches.iterator();
         }

@@ -1,6 +1,8 @@
 package org.bouncycastle.math.ec;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Longs;
 
 import java.math.BigInteger;
 
@@ -272,26 +274,6 @@ class LongArray implements Cloneable
     // For toString(); must have length 64
     private static final String ZEROES = "0000000000000000000000000000000000000000000000000000000000000000";
 
-    final static byte[] bitLengths =
-    {
-        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
-    };
-
     // TODO make m fixed for the LongArray, and hence compute T once and for all
 
     private long[] m_ints;
@@ -458,7 +440,7 @@ class LongArray implements Cloneable
         }
         while (w == 0);
 
-        return (i << 6) + bitLength(w);
+        return i * Longs.SIZE + Longs.bitLength(w);
     }
 
     private int degreeFrom(int limit)
@@ -475,7 +457,7 @@ class LongArray implements Cloneable
         }
         while (w == 0);
 
-        return (i << 6) + bitLength(w);
+        return i * Longs.SIZE + Longs.bitLength(w);
     }
 
 //    private int lowestCoefficient()
@@ -501,34 +483,6 @@ class LongArray implements Cloneable
 //        }
 //        return -1;
 //    }
-
-    private static int bitLength(long w)
-    {
-        int u = (int)(w >>> 32), b;
-        if (u == 0)
-        {
-            u = (int)w;
-            b = 0;
-        }
-        else
-        {
-            b = 32;
-        }
-
-        int t = u >>> 16, k;
-        if (t == 0)
-        {
-            t = u >>> 8;
-            k = (t == 0) ? bitLengths[u] : 8 + bitLengths[t];
-        }
-        else
-        {
-            int v = t >>> 8;
-            k = (v == 0) ? 16 + bitLengths[t] : 24 + bitLengths[v];
-        }
-
-        return b + k;
-    }
 
     private long[] resizedInts(int newLen)
     {
@@ -1751,7 +1705,7 @@ class LongArray implements Cloneable
             interleave7(x, xOff, z, zOff, count);
             break;
         default:
-            interleave2_n(x, xOff, z, zOff, count, bitLengths[width] - 1);
+            interleave2_n(x, xOff, z, zOff, count, Integers.bitLength(width) - 1);
             break;
         }
     }

@@ -166,7 +166,7 @@ abstract class ScalarUtil
         {
             --i;
         }
-        return i * 32 + 32 - Integers.numberOfLeadingZeros(x[i] ^ sign);
+        return i * Integers.SIZE + Integers.bitLength(x[i] ^ sign);
     }
 
     static int getBitLengthPositive(int last, int[] x)
@@ -176,7 +176,7 @@ abstract class ScalarUtil
         {
             --i;
         }
-        return i * 32 + 32 - Integers.numberOfLeadingZeros(x[i]);
+        return i * Integers.SIZE + Integers.bitLength(x[i]);
     }
 
     static boolean lessThanUnsigned(int last, int[] x, int[] y)

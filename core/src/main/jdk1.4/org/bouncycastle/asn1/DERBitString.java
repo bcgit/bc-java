@@ -28,10 +28,9 @@ public class DERBitString
         super(data, padBits);
     }
 
-    public DERBitString(int value)
+    public DERBitString(int namedBits)
     {
-        // TODO[asn1] Unify in single allocation of 'contents'
-        super(getBytes(value), getPadBits(value));
+        super(namedBits);
     }
 
     public DERBitString(ASN1Encodable obj) throws IOException

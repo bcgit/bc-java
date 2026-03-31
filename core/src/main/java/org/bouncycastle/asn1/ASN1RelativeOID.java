@@ -378,54 +378,61 @@ public class ASN1RelativeOID
 
     static byte[] parseIdentifier(String identifier)
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        OIDTokenizer tok = new OIDTokenizer(identifier);
-        while (tok.hasMoreTokens())
+        int contentsLimit = (identifier.length() + 1) / 2;
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(contentsLimit);
+
+        int i = 0, j = 0;
+        while (++j < identifier.length())
         {
-            String token = tok.nextToken();
-            if (token.length() <= 18)
+            if (identifier.charAt(j) == '.')
             {
-                writeField(bOut, Long.parseLong(token));
-            }
-            else
-            {
-                writeField(bOut, new BigInteger(token));
+                writeField(buf, identifier, i, j);
+                i = j + 1;
+                j = i;
             }
         }
-        return bOut.toByteArray();
+        writeField(buf, identifier, i, j);
+
+        return buf.toByteArray();
     }
 
-    static void writeField(ByteArrayOutputStream out, long fieldValue)
+    static void writeField(ByteArrayOutputStream buf, String identifier, int from, int to)
+    {
+        String token = identifier.substring(from, to);
+        if (token.length() <= 18)
+        {
+            writeField(buf, Long.parseLong(token));
+        }
+        else
+        {
+            writeField(buf, new BigInteger(token));
+        }
+    }
+
+    static void writeField(ByteArrayOutputStream buf, long fieldValue)
     {
         byte[] result = new byte[9];
-        int pos = 8;
+        int pos = result.length - 1;
         result[pos] = (byte)((int)fieldValue & 0x7F);
         while (fieldValue >= (1L << 7))
         {
             fieldValue >>= 7;
             result[--pos] = (byte)((int)fieldValue | 0x80);
         }
-        out.write(result, pos, 9 - pos);
+        buf.write(result, pos, result.length - pos);
     }
 
-    static void writeField(ByteArrayOutputStream out, BigInteger fieldValue)
+    static void writeField(ByteArrayOutputStream buf, BigInteger fieldValue)
     {
+//        assert fieldValue.signum() > 0;
         int byteCount = (fieldValue.bitLength() + 6) / 7;
-        if (byteCount == 0)
+        byte[] tmp = new byte[byteCount];
+        for (int i = byteCount - 1; i >= 0; i--)
         {
-            out.write(0);
+            tmp[i] = (byte)(fieldValue.intValue() | 0x80);
+            fieldValue = fieldValue.shiftRight(7);
         }
-        else
-        {
-            BigInteger tmpValue = fieldValue;
-            byte[] tmp = new byte[byteCount];
-            for (int i = byteCount - 1; i >= 0; i--)
-            {
-                tmp[i] = (byte)(tmpValue.intValue() | 0x80);
-                tmpValue = tmpValue.shiftRight(7);
-            }
-            tmp[byteCount - 1] &= 0x7F;
-            out.write(tmp, 0, tmp.length);
-        }
+        tmp[byteCount - 1] &= 0x7F;
+        buf.write(tmp, 0, tmp.length);
     }
 }

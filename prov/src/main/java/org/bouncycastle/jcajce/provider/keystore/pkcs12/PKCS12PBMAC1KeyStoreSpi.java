@@ -842,7 +842,7 @@ public class PKCS12PBMAC1KeyStoreSpi
             }
             else
             {
-                AlgorithmParameters algParams = AlgorithmParameters.getInstance(encScheme.getAlgorithm().getId(), "BC");
+                AlgorithmParameters algParams = helper.createAlgorithmParameters(encScheme.getAlgorithm().getId());
 
                 try
                 {
