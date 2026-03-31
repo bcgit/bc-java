@@ -30,10 +30,13 @@ class PrincipalUtils
         {
             return getIssuerPrincipal((X509Certificate)cert);
         }
-        else
-        {
-            return getX500Name((X500Principal)((X509AttributeCertificate)cert).getIssuer().getPrincipals()[0]);
-        }
+
+        return getIssuerPrincipal((X509AttributeCertificate)cert);
+    }
+
+    static X500Name getIssuerPrincipal(X509AttributeCertificate attrCert)
+    {
+        return getX500Name((X500Principal)notNull(attrCert).getIssuer().getPrincipals()[0]);
     }
 
     static X500Name getIssuerPrincipal(X509Certificate certificate)
@@ -93,6 +96,15 @@ class PrincipalUtils
             throw new IllegalStateException();
         }
         return trustAnchor;
+    }
+
+    private static X509AttributeCertificate notNull(X509AttributeCertificate attrCert)
+    {
+        if (null == attrCert)
+        {
+            throw new IllegalStateException();
+        }
+        return attrCert;
     }
 
     private static X509Certificate notNull(X509Certificate certificate)
