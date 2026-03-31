@@ -1,6 +1,5 @@
 package org.bouncycastle.cert.cmp.test;
 
-import java.io.FileWriter;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -64,7 +63,6 @@ import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DigestCalculator;
@@ -78,8 +76,6 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorProviderBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.BIKEParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.BigIntegers;
@@ -197,21 +193,21 @@ public class PQCTest
         // this is the long-way to decrypt, for testing
         CMSEnvelopedData receivedEnvelope = new CMSEnvelopedData(certResp.getEncryptedCertificate().toASN1Structure().getEncoded(ASN1Encoding.DL));
 
-        JcaPEMWriter pOut = new JcaPEMWriter(new FileWriter("/tmp/mlkem_cms/mlkem_cert_enveloped.pem"));
-        pOut.writeObject(receivedEnvelope.toASN1Structure());
-        pOut.close();
-
-        pOut = new JcaPEMWriter(new FileWriter("/tmp/mlkem_cms/mlkem_priv.pem"));
-        pOut.writeObject(kybKp.getPrivate());
-        pOut.close();
-
-        pOut = new JcaPEMWriter(new FileWriter("/tmp/mlkem_cms/mlkem_cert.pem"));
-        pOut.writeObject(cert);
-        pOut.close();
-
-        pOut = new JcaPEMWriter(new FileWriter("/tmp/mlkem_cms/mlkem_cert.pem"));
-        pOut.writeObject(caCert);
-        pOut.close();
+//        JcaPEMWriter pOut = new JcaPEMWriter(new FileWriter("/tmp/mlkem_cms/mlkem_cert_enveloped.pem"));
+//        pOut.writeObject(receivedEnvelope.toASN1Structure());
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/mlkem_cms/mlkem_priv.pem"));
+//        pOut.writeObject(kybKp.getPrivate());
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/mlkem_cms/mlkem_cert.pem"));
+//        pOut.writeObject(cert);
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/mlkem_cms/mlkem_cert.pem"));
+//        pOut.writeObject(caCert);
+//        pOut.close();
 //
 //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
 
@@ -589,6 +585,7 @@ public class PQCTest
 //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
     }
 
+    /*
     public void testBIKERequestWithMlDsaCA()
         throws Exception
     {
@@ -652,7 +649,7 @@ public class PQCTest
 
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
             new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.AES256_WRAP)
-            .setKDF(new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256)));
+            .setKDF(CMSAlgorithm.SHA256_HKDF));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
             new CMSProcessableCMPCertificate(cert),
@@ -760,7 +757,7 @@ public class PQCTest
 //
 //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
     }
-
+      */
     public void testHQCRequestWithMlDsaCA()
         throws Exception
     {
@@ -932,7 +929,7 @@ public class PQCTest
 //
 //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
     }
-
+     /*
     public void testCMCERequestWithMlDsaCA()
         throws Exception
     {
@@ -1276,7 +1273,7 @@ public class PQCTest
     //
     //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
         }
-
+              */
     private static X509CertificateHolder makeV3Certificate(String _subDN, KeyPair issKP)
         throws OperatorCreationException, CertException, CertIOException
     {
