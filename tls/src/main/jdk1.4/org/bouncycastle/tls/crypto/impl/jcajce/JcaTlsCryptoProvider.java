@@ -12,7 +12,6 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.tls.crypto.TlsCryptoProvider;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 
 /**
  * Basic builder class for constructing standard JcaTlsCrypto classes.
@@ -58,10 +57,12 @@ public class JcaTlsCryptoProvider
      * @param random SecureRandom for generating key material and seeds for nonce generation.
      * @return a new JcaTlsCrypto.
      */
-    public TlsCrypto create(SecureRandom random)
+    public JcaTlsCrypto create(SecureRandom random)
     {
         try
         {
+            JcaJceHelper helper = getHelper();
+
             if (random == null)
             {
                 if (helper instanceof DefaultJcaJceHelper)
@@ -89,9 +90,9 @@ public class JcaTlsCryptoProvider
      * @param nonceRandom SecureRandom for generating nonces.
      * @return a new JcaTlsCrypto.
      */
-    public TlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
+    public JcaTlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
-        return new JcaTlsCrypto(helper, keyRandom, nonceRandom);
+        return new JcaTlsCrypto(getHelper(), keyRandom, nonceRandom);
     }
 
     public JcaJceHelper getHelper()

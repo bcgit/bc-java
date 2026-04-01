@@ -1,20 +1,43 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
-import java.security.PrivateKey;
+import java.math.BigInteger;
 import java.security.AlgorithmParameters;
-import java.security.KeyPairGenerator;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.spec.AlgorithmParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
-import org.bouncycastle.jce.spec.ECParameterSpec;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldF2m;
+import java.security.spec.ECFieldFp;
+import java.security.spec.EllipticCurve;
 
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
-
-import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
+import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.math.ec.ECCurve;
 
 class ECUtil
 {
+    static ECCurve convertCurve(EllipticCurve ec, BigInteger order, int cofactor)
+    {
+        ECField field = ec.getField();
+        BigInteger a = ec.getA();
+        BigInteger b = ec.getB();
+
+        if (field instanceof ECFieldFp)
+        {
+            return new ECCurve.Fp(((ECFieldFp)field).getP(), a, b, order, BigInteger.valueOf(cofactor));
+        }
+        else
+        {
+            ECFieldF2m fieldF2m = (ECFieldF2m)field;
+            int m = fieldF2m.getM();
+            int ks[] = convertMidTerms(fieldF2m.getMidTermsOfReductionPolynomial());
+            return new ECCurve.F2m(m, ks[0], ks[1], ks[2], a, b, order, BigInteger.valueOf(cofactor));
+        }
+    }
+
     static int[] convertMidTerms(int[] k)
     {
         int[] res = new int[3];
@@ -100,6 +123,9 @@ class ECUtil
                 return ecAlgParams;
             }
         }
+        catch (AssertionError e)
+        {
+        }
         catch (Exception e)
         {
         }
@@ -114,6 +140,21 @@ class ECUtil
 
     static ECParameterSpec getECParameterSpec(JcaTlsCrypto crypto, AlgorithmParameterSpec initSpec)
     {
+        KeyPairGenerator kpGen;
+        try
+        {
+            kpGen = crypto.getHelper().createKeyPairGenerator("EC");
+            kpGen.initialize(initSpec, crypto.getSecureRandom());
+        }
+        catch (AssertionError e)
+        {
+            return null;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+
         // Try the "modern" way
         try
         {
@@ -125,6 +166,9 @@ class ECUtil
             {
                 return ecSpec;
             }
+        }
+        catch (AssertionError e)
+        {
         }
         catch (Exception e)
         {
@@ -138,10 +182,11 @@ class ECUtil
          */
         try
         {
-            KeyPairGenerator kpGen = crypto.getHelper().createKeyPairGenerator("EC");
-            kpGen.initialize(initSpec, crypto.getSecureRandom());
             KeyPair kp = kpGen.generateKeyPair();
             return ((ECKey)kp.getPrivate()).getParams();
+        }
+        catch (AssertionError e)
+        {
         }
         catch (Exception e)
         {
@@ -157,7 +202,7 @@ class ECUtil
 
     static boolean isCurveSupported(JcaTlsCrypto crypto, String curveName)
     {
-        return isCurveSupported(crypto, new ECNamedCurveGenParameterSpec(curveName));
+        return null != curveName && isCurveSupported(crypto, new ECNamedCurveGenParameterSpec(curveName));
     }
 
     static boolean isCurveSupported(JcaTlsCrypto crypto, ECNamedCurveGenParameterSpec initSpec)
