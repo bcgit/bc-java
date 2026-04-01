@@ -279,6 +279,20 @@ public class JcaTlsCertificate
         case SignatureScheme.mldsa87:
             return crypto.createTls13Verifier("ML-DSA", null, getPubKeyMLDSA());
 
+        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
+        case SignatureScheme.DRAFT_slhdsa_shake_128s:
+        case SignatureScheme.DRAFT_slhdsa_shake_128f:
+        case SignatureScheme.DRAFT_slhdsa_shake_192s:
+        case SignatureScheme.DRAFT_slhdsa_shake_192f:
+        case SignatureScheme.DRAFT_slhdsa_shake_256s:
+        case SignatureScheme.DRAFT_slhdsa_shake_256f:
+            return crypto.createTls13Verifier("SLH-DSA", null, getPubKeySLHDSA());
+
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -398,6 +412,11 @@ public class JcaTlsCertificate
     }
 
     PublicKey getPubKeyMLDSA() throws IOException
+    {
+        return getPublicKey();
+    }
+
+    PublicKey getPubKeySLHDSA() throws IOException
     {
         return getPublicKey();
     }
