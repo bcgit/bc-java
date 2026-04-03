@@ -18,7 +18,6 @@ class HQCEngine
     private final int delta;
     private final int w;
     private final int wr;
-    private final int g;
     private final int fft;
     private final int mulParam;
     private final int N_BYTE;
@@ -31,7 +30,7 @@ class HQCEngine
     private final int rejectionThreshold;
     private final int cipherTextBytes;
 
-    HQCEngine(int n, int n1, int n2, int k, int g, int delta, int w, int wr, int fft, int nMu, int pkSize,
+    HQCEngine(int n, int n1, int n2, int k, int delta, int w, int wr, int fft, int nMu, int pkSize,
         int[] generatorPoly)
     {
         this.n = n;
@@ -41,7 +40,6 @@ class HQCEngine
         this.wr = wr;
         this.n1 = n1;
         this.generatorPoly = generatorPoly;
-        this.g = g;
         this.fft = fft;
         this.nMu = nMu;
         this.pkSize = pkSize;
@@ -163,7 +161,7 @@ class HQCEngine
         gf2x.addTo(v64, cKemPrimeU64);
 
         ReedMuller.decode(tmp, cKemPrimeU64, n1, mulParam);
-        ReedSolomon.decode(mPrime, tmp, n1, fft, delta, k, g);
+        ReedSolomon.decode(mPrime, tmp, n1, fft, delta, k, generatorPoly.length);
 
         // Compute shared key K_prime and ciphertext cKemPrime
         hashHI(hashEkKem, 256, sk, pkSize, (byte)1);
@@ -198,7 +196,7 @@ class HQCEngine
         long[] tmp = gf2x.create(); // s, h1, h
         byte[] res = new byte[n1];
 
-        ReedSolomon.encode(res, m, n1, k, g, generatorPoly);
+        ReedSolomon.encode(res, m, n1, k, generatorPoly);
         ReedMuller.encode(v, res, n1, mulParam);
 
         Shake256RandomGenerator randomGenerator = new Shake256RandomGenerator(ekPke, 0, SEED_BYTES, (byte)1);
