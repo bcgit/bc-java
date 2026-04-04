@@ -28,6 +28,11 @@ class PrincipalUtils
         return X500Name.getInstance(cert.getIssuerX500Principal().getEncoded());
     }
 
+    static X500Name getIssuerPrincipal(X509AttributeCertificate attrCert)
+    {
+        return getX500Name((X500Principal)notNull(attrCert).getIssuer().getPrincipals()[0]);
+    }
+
     static X500Name getCA(TrustAnchor trustAnchor)
     {
         return new X500Name(RFC4519Style.INSTANCE, trustAnchor.getCAName());
@@ -45,17 +50,14 @@ class PrincipalUtils
      * @param cert The attribute certificate or certificate.
      * @return The issuer as <code>X500Principal</code>.
      */
-    static X500Name getEncodedIssuerPrincipal(
-        Object cert)
+    static X500Name getEncodedIssuerPrincipal(Object cert)
     {
         if (cert instanceof X509Certificate)
         {
             return getIssuerPrincipal((X509Certificate)cert);
         }
-        else
-        {
-            return X500Name.getInstance(((X500Principal)((X509AttributeCertificate)cert).getIssuer().getPrincipals()[0]).getEncoded());
-        }
+
+        return getIssuerPrincipal((X509AttributeCertificate)cert);
     }
 
     private static byte[] getEncoded(X500Principal principal)
@@ -80,6 +82,15 @@ class PrincipalUtils
              throw new IllegalStateException();
          }
          return trustAnchor;
+     }
+
+     private static X509AttributeCertificate notNull(X509AttributeCertificate attrCert)
+     {
+         if (null == attrCert)
+         {
+             throw new IllegalStateException();
+         }
+         return attrCert;
      }
 
      private static X509Certificate notNull(X509Certificate certificate)

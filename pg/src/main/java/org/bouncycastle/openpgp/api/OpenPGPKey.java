@@ -2,6 +2,8 @@ package org.bouncycastle.openpgp.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -59,6 +61,27 @@ public class OpenPGPKey
     public OpenPGPKey(PGPSecretKeyRing keyRing, OpenPGPImplementation implementation)
     {
         this(keyRing, implementation, implementation.policy());
+    }
+
+    public OpenPGPKey(Collection<OpenPGPSecretKey> secretKeys, OpenPGPImplementation implementation)
+    {
+        this(secretKeys, implementation, implementation.policy());
+    }
+
+    public OpenPGPKey(Collection<OpenPGPSecretKey> secretKeys, OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
+        this(fromSecretKeys(secretKeys), implementation, policy);
+    }
+
+    private static PGPSecretKeyRing fromSecretKeys(Collection<OpenPGPSecretKey> secretKeys)
+    {
+        List pgpSecretKeys = new ArrayList();
+        for (Iterator it = secretKeys.iterator(); it.hasNext(); )
+        {
+            OpenPGPSecretKey secretKey = (OpenPGPSecretKey)it.next();
+            pgpSecretKeys.add(secretKey.getPGPSecretKey());
+        }
+        return new PGPSecretKeyRing(pgpSecretKeys);
     }
 
     /**
