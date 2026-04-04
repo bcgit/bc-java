@@ -49,7 +49,15 @@ public class OpenPGPKeyEditor
         throws PGPException
     {
         this.key = key;
-        this.primaryKey = key.getPrimarySecretKey().unlock(passphraseProvider);
+        OpenPGPKey.OpenPGPSecretKey primarySecretKey = key.getPrimarySecretKey();
+        if (primarySecretKey.isLocked())
+        {
+            this.primaryKey = primarySecretKey.unlock(passphraseProvider);
+        }
+        else
+        {
+            this.primaryKey = primarySecretKey.unlock();
+        }
         this.implementation = implementation;
         this.policy = policy;
     }
@@ -427,6 +435,37 @@ public class OpenPGPKeyEditor
 
         key.replaceSecretKey(secretKey);
         return this;
+    }
+
+    /**
+     * Change the passphrase of the given component key.
+     *
+     * @param componentKeyIdentifier identifier of the component key, whose passphrase shall be changed
+     * @param passphraseProvider     provider for the old key passphrase
+     * @param newPassphrase          new passphrase (or null)
+     * @param useAEAD                whether to use AEAD
+     * @return this
+     * @throws OpenPGPKeyException if the secret component of the component key is missing
+     * @throws PGPException        if the key passphrase cannot be changed
+     */
+    public OpenPGPKeyEditor changePassphrase(KeyIdentifier componentKeyIdentifier,
+                                             KeyPassphraseProvider passphraseProvider,
+                                             char[] newPassphrase,
+                                             boolean useAEAD)
+        throws OpenPGPKeyException, PGPException
+    {
+        OpenPGPKey.OpenPGPSecretKey secretKey = key.getSecretKey(componentKeyIdentifier);
+        if (secretKey == null)
+        {
+            throw new OpenPGPKeyException(key, "Secret component key " + componentKeyIdentifier +
+                    " is missing from the key.");
+        }
+
+        return changePassphrase(
+                componentKeyIdentifier,
+                passphraseProvider.getKeyPassword(secretKey),
+                newPassphrase,
+                useAEAD);
     }
 
     /**
