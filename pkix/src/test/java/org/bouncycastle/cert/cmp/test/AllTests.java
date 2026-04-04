@@ -7,6 +7,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -16,6 +17,8 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.CertConfirmContent;
@@ -24,6 +27,7 @@ import org.bouncycastle.asn1.cmp.CertRepMessage;
 import org.bouncycastle.asn1.cmp.CertResponse;
 import org.bouncycastle.asn1.cmp.CertifiedKeyPair;
 import org.bouncycastle.asn1.cmp.PKIBody;
+import org.bouncycastle.asn1.cmp.PKIHeaderBuilder;
 import org.bouncycastle.asn1.cmp.PKIMessage;
 import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
@@ -33,9 +37,13 @@ import org.bouncycastle.asn1.crmf.EncryptedKey;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
 import org.bouncycastle.asn1.crmf.ProofOfPossession;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -95,7 +103,7 @@ public class AllTests
 
     public static void main(String args[])
     {
-       junit.textui.TestRunner.run(AllTests.class);
+        junit.textui.TestRunner.run(AllTests.class);
     }
 
     public static Test suite()
@@ -128,9 +136,9 @@ public class AllTests
 
         ContentSigner signer = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(kp.getPrivate());
         ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
-                                                  .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, CertRepMessage.getInstance(new DERSequence(new DERSequence()))))
-                                                  .addCMPCertificate(cert)
-                                                  .build(signer);
+            .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, CertRepMessage.getInstance(new DERSequence(new DERSequence()))))
+            .addCMPCertificate(cert)
+            .build(signer);
 
         X509Certificate jcaCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(message.getCertificates()[0]);
         ContentVerifierProvider verifierProvider = new JcaContentVerifierProviderBuilder().setProvider(BC).build(jcaCert.getPublicKey());
@@ -155,9 +163,9 @@ public class AllTests
         GeneralName recipient = new GeneralName(new X500Name("CN=Recip"));
 
         ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
-                                                  .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, CertRepMessage.getInstance(new DERSequence(new DERSequence()))))
-                                                  .addCMPCertificate(cert)
-                                                  .build(new PKMACBuilder(new JcePKMACValuesCalculator().setProvider(BC)).build("secret".toCharArray()));
+            .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, CertRepMessage.getInstance(new DERSequence(new DERSequence()))))
+            .addCMPCertificate(cert)
+            .build(new PKMACBuilder(new JcePKMACValuesCalculator().setProvider(BC)).build("secret".toCharArray()));
 
         PKMACBuilder pkMacBuilder = new PKMACBuilder(new JcePKMACValuesCalculator().setProvider(BC));
 
@@ -183,9 +191,9 @@ public class AllTests
         MacCalculator pbCalculator = new JcePBMac1CalculatorBuilder("HmacSHA256", 256).setProvider("BC").build("secret".toCharArray());
 
         ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
-                                                  .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, CertRepMessage.getInstance(new DERSequence(new DERSequence()))))
-                                                  .addCMPCertificate(cert)
-                                                  .build(pbCalculator);
+            .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, CertRepMessage.getInstance(new DERSequence(new DERSequence()))))
+            .addCMPCertificate(cert)
+            .build(pbCalculator);
 
         PBEMacCalculatorProvider macProvider = new JcePBMac1CalculatorProviderBuilder().setProvider("BC").build();
 
@@ -194,7 +202,7 @@ public class AllTests
         assertEquals(sender, message.getHeader().getSender());
         assertEquals(recipient, message.getHeader().getRecipient());
     }
-    
+
     public void testConfirmationMessage()
         throws Exception
     {
@@ -209,14 +217,14 @@ public class AllTests
         GeneralName recipient = new GeneralName(new X500Name("CN=Recip"));
 
         CertificateConfirmationContent content = new CertificateConfirmationContentBuilder()
-                             .addAcceptedCertificate(cert, BigInteger.valueOf(1))
-                             .build(new JcaDigestCalculatorProviderBuilder().build());
+            .addAcceptedCertificate(cert, BigInteger.valueOf(1))
+            .build(new JcaDigestCalculatorProviderBuilder().build());
 
         ContentSigner signer = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(kp.getPrivate());
         ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
-                                                  .setBody(new PKIBody(PKIBody.TYPE_CERT_CONFIRM, content.toASN1Structure()))
-                                                  .addCMPCertificate(cert)
-                                                  .build(signer);
+            .setBody(new PKIBody(PKIBody.TYPE_CERT_CONFIRM, content.toASN1Structure()))
+            .addCMPCertificate(cert)
+            .build(signer);
 
         X509Certificate jcaCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(message.getCertificates()[0]);
         ContentVerifierProvider verifierProvider = new JcaContentVerifierProviderBuilder().setProvider(BC).build(jcaCert.getPublicKey());
@@ -254,18 +262,18 @@ public class AllTests
         X509CertificateHolder cert = makeV3Certificate(kp, "CN=Test", kp, "CN=Test");
 
         ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(
-                    kp.getPrivate());
+            kp.getPrivate());
 
         GeneralName user = new GeneralName(new X500Name("CN=Test"));
 
         CertificateRequestMessageBuilder builder = new JcaCertificateRequestMessageBuilder(
-                    BigInteger.valueOf(1)).setPublicKey(kp.getPublic()).setProofOfPossessionSubsequentMessage(
-                    SubsequentMessage.encrCert);
+            BigInteger.valueOf(1)).setPublicKey(kp.getPublic()).setProofOfPossessionSubsequentMessage(
+            SubsequentMessage.encrCert);
 
-                ProtectedPKIMessage certRequestMsg = new ProtectedPKIMessageBuilder(user,
-                    user).setTransactionID(new byte[] { 1, 2, 3, 4, 5 }).setBody(
-                    new PKIBody(PKIBody.TYPE_KEY_UPDATE_REQ, new CertReqMessages(builder.build().toASN1Structure()))).addCMPCertificate(
-                    cert).build(signer);
+        ProtectedPKIMessage certRequestMsg = new ProtectedPKIMessageBuilder(user,
+            user).setTransactionID(new byte[]{1, 2, 3, 4, 5}).setBody(
+            new PKIBody(PKIBody.TYPE_KEY_UPDATE_REQ, new CertReqMessages(builder.build().toASN1Structure()))).addCMPCertificate(
+            cert).build(signer);
 
         ProtectedPKIMessage msg = new ProtectedPKIMessage(new GeneralPKIMessage(certRequestMsg.toASN1Structure().getEncoded()));
 
@@ -293,20 +301,20 @@ public class AllTests
         GeneralName sender = new GeneralName(new X500Name("CN=Sender"));
         GeneralName recipient = new GeneralName(new X500Name("CN=Recip"));
 
-        CertRepMessage msg = new CertRepMessage(null, new CertResponse[] {
+        CertRepMessage msg = new CertRepMessage(null, new CertResponse[]{
             new CertResponse(
                 ASN1Integer.TWO,
                 new PKIStatusInfo(PKIStatus.granted),
                 new CertifiedKeyPair(
                     new CertOrEncCert(CMPCertificate.getInstance(cert.getEncoded())),
                     encBldr.build(kp.getPrivate()),
-                    null), null) });
+                    null), null)});
 
         ContentSigner signer = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(kp.getPrivate());
         ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
-                                                  .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, msg))
-                                                  .addCMPCertificate(cert)
-                                                  .build(signer);
+            .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, msg))
+            .addCMPCertificate(cert)
+            .build(signer);
 
         X509Certificate jcaCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(message.getCertificates()[0]);
         ContentVerifierProvider verifierProvider = new JcaContentVerifierProviderBuilder().setProvider(BC).build(jcaCert.getPublicKey());
@@ -333,7 +341,7 @@ public class AllTests
         EncryptedValue encValue = EncryptedValue.getInstance(encKey.getValue());
         // recover symmetric key
         AsymmetricKeyUnwrapper unwrapper = new JceAsymmetricKeyUnwrapper(encValue.getKeyAlg(), kp.getPrivate());
-        
+
         byte[] secKeyBytes = (byte[])unwrapper.generateUnwrappedKey(encValue.getKeyAlg(), encValue.getEncSymmKey().getBytes()).getRepresentation();
 
         // recover private key
@@ -365,8 +373,8 @@ public class AllTests
         throws Exception
     {
         CertificateRequestMessageBuilder builder = new JcaCertificateRequestMessageBuilder(
-                    BigInteger.valueOf(1)).setPublicKey(kp.getPublic()).setProofOfPossessionSubsequentMessage(
-                    SubsequentMessage.encrCert);
+            BigInteger.valueOf(1)).setPublicKey(kp.getPublic()).setProofOfPossessionSubsequentMessage(
+            SubsequentMessage.encrCert);
 
         builder.setValidity(notBefore, notAfter);
 
@@ -395,9 +403,9 @@ public class AllTests
         throws GeneralSecurityException, IOException, OperatorCreationException, CertException
     {
 
-        PublicKey subPub  = subKP.getPublic();
+        PublicKey subPub = subKP.getPublic();
         PrivateKey issPriv = issKP.getPrivate();
-        PublicKey  issPub  = issKP.getPublic();
+        PublicKey issPub = issKP.getPublic();
 
         X509v3CertificateBuilder v1CertGen = new JcaX509v3CertificateBuilder(
             new X500Name(_issDN),
@@ -428,5 +436,107 @@ public class AllTests
         {
             throw new RuntimeException(e.toString());
         }
+    }
+
+    public void testComposite()
+        throws Exception
+    {
+        // ── setup: a trusted RSA keypair (stand-in for a CA / server key) ──
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("MLDSA44-RSA2048-PKCS15-SHA256", "BC");
+        kpg.initialize(null, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+        PublicKey trustedKey = kp.getPublic();
+
+        ContentVerifierProvider verifier =
+            new JcaContentVerifierProviderBuilder().build(trustedKey);
+
+        GeneralName sender = new GeneralName(new X500Name("CN=attacker"));
+        GeneralName recip = new GeneralName(new X500Name("CN=victim"));
+        PKIBody body = new PKIBody(PKIBody.TYPE_CONFIRM, DERNull.INSTANCE);
+
+        // ── NORMAL: legitimately signed with the private key ────────────────
+        ContentSigner signer =
+            new JcaContentSignerBuilder("COMPOSITE").build(kp.getPrivate());
+        ProtectedPKIMessage legit = new ProtectedPKIMessageBuilder(sender, recip)
+            .setMessageTime(new Date())
+            .setBody(body)
+            .build(signer);
+
+        assertTrue(legit.verify(verifier));
+
+        // this is using the experimental composite construction.
+        // protectionAlg.algorithm  = 1.3.6.1.4.1.18227.2.1 (id_alg_composite)
+        // protectionAlg.parameters = SEQUENCE { AlgId(sha256WithRSA, NULL) }
+        //   → createCompositeVerifier builds sigs[] = { one real Signature }
+        //     so the "no matching signature found" guard passes
+        // protection               = BIT STRING wrapping 30 00 (empty SEQ)
+        //   → sigSeq.size()==0 → loop body never runs → verify() returns true
+        //
+        AlgorithmIdentifier innerAlg1 = new AlgorithmIdentifier(
+              NISTObjectIdentifiers.id_ml_dsa_44, DERNull.INSTANCE);
+        AlgorithmIdentifier innerAlg2 = new AlgorithmIdentifier(
+            PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE);
+        AlgorithmIdentifier compositeAlg = new AlgorithmIdentifier(
+            MiscObjectIdentifiers.id_alg_composite,
+            new DERSequence(innerAlg1, innerAlg2));
+
+        PKIHeaderBuilder fh = new PKIHeaderBuilder(2, sender, recip);
+        fh.setProtectionAlg(compositeAlg);
+        // Signature bytes: an empty DER SEQUENCE. Two bytes. No key needed.
+        DERBitString emptySigSeq = new DERBitString(
+            new DERSequence().getEncoded());
+
+        PKIMessage forged = new PKIMessage(fh.build(), body, emptySigSeq);
+        ProtectedPKIMessage forgedPM = new ProtectedPKIMessage(new GeneralPKIMessage(forged));
+        assertFalse(forgedPM.verify(verifier));
+    }
+
+    public void testForgedComposite()
+        throws Exception
+    {
+        // ── setup: a trusted RSA keypair (stand-in for a CA / server key) ──
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BC);
+        kpg.initialize(2048);
+        KeyPair kp = kpg.generateKeyPair();
+        PublicKey trustedKey = kp.getPublic();
+
+        ContentVerifierProvider verifier =
+            new JcaContentVerifierProviderBuilder().build(trustedKey);
+
+        GeneralName sender = new GeneralName(new X500Name("CN=attacker"));
+        GeneralName recip = new GeneralName(new X500Name("CN=victim"));
+        PKIBody body = new PKIBody(PKIBody.TYPE_CONFIRM, DERNull.INSTANCE);
+
+        // ── NORMAL: legitimately signed with the private key ────────────────
+        ContentSigner signer =
+            new JcaContentSignerBuilder("SHA256withRSA").build(kp.getPrivate());
+        ProtectedPKIMessage legit = new ProtectedPKIMessageBuilder(sender, recip)
+            .setMessageTime(new Date())
+            .setBody(body)
+            .build(signer);
+
+        // protectionAlg.algorithm  = 1.3.6.1.4.1.18227.2.1 (id_alg_composite)
+        // protectionAlg.parameters = SEQUENCE { AlgId(sha256WithRSA, NULL) }
+        //   → createCompositeVerifier builds sigs[] = { one real Signature }
+        //     so the "no matching signature found" guard passes
+        // protection               = BIT STRING wrapping 30 00 (empty SEQ)
+        //   → sigSeq.size()==0 → loop body never runs → verify() returns true
+        //
+        AlgorithmIdentifier innerAlg = new AlgorithmIdentifier(
+            PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE);
+        AlgorithmIdentifier compositeAlg = new AlgorithmIdentifier(
+            MiscObjectIdentifiers.id_alg_composite,
+            new DERSequence(innerAlg));
+
+        PKIHeaderBuilder fh = new PKIHeaderBuilder(2, sender, recip);
+        fh.setProtectionAlg(compositeAlg);
+        // Signature bytes: an empty DER SEQUENCE. Two bytes. No key needed.
+        DERBitString emptySigSeq = new DERBitString(
+            new DERSequence().getEncoded());
+
+        PKIMessage forged = new PKIMessage(fh.build(), body, emptySigSeq);
+        ProtectedPKIMessage forgedPM = new ProtectedPKIMessage(new GeneralPKIMessage(forged));
+
+        assertFalse(forgedPM.verify(verifier));
     }
 }
