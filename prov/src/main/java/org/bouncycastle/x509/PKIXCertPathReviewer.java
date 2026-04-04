@@ -768,8 +768,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         X509Certificate sign = null;
 
         AlgorithmIdentifier workingAlgId = null;
-        ASN1ObjectIdentifier workingPublicKeyAlgorithm = null;
-        ASN1Encodable workingPublicKeyParameters = null;
 
         if (trust != null)
         {
@@ -787,8 +785,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             try
             {
                 workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-                workingPublicKeyParameters = workingAlgId.getParameters();
             }
             catch (CertPathValidatorException ex)
             {
@@ -1034,16 +1030,12 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             {
                 workingPublicKey = getNextWorkingKey(certs, index);
                 workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-                workingPublicKeyParameters = workingAlgId.getParameters();
             }
             catch (CertPathValidatorException ex)
             {
                 ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.pubKeyError");
                 addError(msg,index);
                 workingAlgId = null;
-                workingPublicKeyAlgorithm = null;
-                workingPublicKeyParameters = null;
             }
 
         } // for

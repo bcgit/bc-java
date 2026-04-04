@@ -51,7 +51,7 @@ public class JceAEADCipherImpl
     {
         try
         {
-            String algName = cipherName.contains("CCM") ? "CCM" : "GCM";
+            String algName = cipherName.indexOf("CCM") >= 0 ? "CCM" : "GCM";
             helper.createAlgorithmParameters(algName);
             return algName;
         }

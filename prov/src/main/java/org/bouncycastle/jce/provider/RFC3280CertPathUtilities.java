@@ -133,20 +133,24 @@ class RFC3280CertPathUtilities
                 }
                 if (dpName.getType() == DistributionPointName.NAME_RELATIVE_TO_CRL_ISSUER)
                 {
-                    ASN1EncodableVector vec = new ASN1EncodableVector();
+                    ASN1Sequence seq;
                     try
                     {
-                        Enumeration e = ASN1Sequence.getInstance(PrincipalUtils.getIssuerPrincipal(crl)).getObjects();
-                        while (e.hasMoreElements())
-                        {
-                            vec.add((ASN1Encodable)e.nextElement());
-                        }
+                        seq = ASN1Sequence.getInstance(PrincipalUtils.getIssuerPrincipal(crl));
                     }
                     catch (Exception e)
                     {
                         throw new AnnotatedException("Could not read CRL issuer.", e);
                     }
+
+                    int count = seq.size();
+                    ASN1EncodableVector vec = new ASN1EncodableVector(count + 1);
+                    for (int i = 0; i < count; ++i)
+                    {
+                        vec.add(seq.getObjectAt(i));
+                    }
                     vec.add(dpName.getName());
+
                     names.add(new GeneralName(X500Name.getInstance(new DERSequence(vec))));
                 }
                 boolean matches = false;
@@ -1033,89 +1037,91 @@ class RFC3280CertPathUtilities
         // as we use the validator for path CRL checking, we need to flag when the
         // certificate is self issued, but not really the last one in the path we are actually
         // checking.
-        if (!((i < n || isForCRLCheck) && CertPathValidatorUtilities.isSelfIssued(cert)))
+        if ((i < n || isForCRLCheck) && CertPathValidatorUtilities.isSelfIssued(cert))
         {
-            X500Name principal = PrincipalUtils.getSubjectPrincipal(cert);
-            ASN1Sequence dns;
+            return;
+        }
+
+        X500Name principal = PrincipalUtils.getSubjectPrincipal(cert);
+        ASN1Sequence dns;
+
+        try
+        {
+            dns = ASN1Sequence.getInstance(principal);
+        }
+        catch (Exception e)
+        {
+            throw new CertPathValidatorException("Exception extracting subject name when checking subtrees.", e,
+                certPath, index);
+        }
+
+        try
+        {
+            nameConstraintValidator.checkPermittedDN(dns);
+            nameConstraintValidator.checkExcludedDN(dns);
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            throw new CertPathValidatorException("Subtree check for certificate subject failed.", e, certPath,
+                index);
+        }
+
+        GeneralNames altName = null;
+        try
+        {
+            altName = GeneralNames.getInstance(getExtensionValue(cert, SUBJECT_ALTERNATIVE_NAME));
+        }
+        catch (Exception e)
+        {
+            throw new CertPathValidatorException("Subject alternative name extension could not be decoded.", e,
+                certPath, index);
+        }
+        RDN[] emails = X500Name.getInstance(dns).getRDNs(BCStyle.EmailAddress);
+        for (int eI = 0; eI != emails.length; eI++)
+        {
+            // TODO: this should take into account multi-valued RDNs
+            String email = ((ASN1String)emails[eI].getFirst().getValue()).getString();
 
             try
             {
-                dns = ASN1Sequence.getInstance(principal);
+                nameConstraintValidator.checkPermittedEmail(email);
+                nameConstraintValidator.checkExcludedEmail(email);
+            }
+            catch (PKIXNameConstraintValidatorException ex)
+            {
+                throw new CertPathValidatorException(
+                    "Subtree check for certificate subject alternative email failed.", ex, certPath, index);
+            }
+        }
+        if (altName != null)
+        {
+            /*
+             * NOTE: PKIXCertPathReviewer limits the number of alternative names, to avoid a denial-of-service
+             * attack. That does not appear to be an issue for validation, so no limit is applied.
+             */
+
+            GeneralName[] genNames = null;
+            try
+            {
+                genNames = altName.getNames();
             }
             catch (Exception e)
             {
-                throw new CertPathValidatorException("Exception extracting subject name when checking subtrees.", e,
+                throw new CertPathValidatorException("Subject alternative name contents could not be decoded.", e,
                     certPath, index);
             }
-
-            try
+            for (int j = 0; j < genNames.length; j++)
             {
-                nameConstraintValidator.checkPermittedDN(dns);
-                nameConstraintValidator.checkExcludedDN(dns);
-            }
-            catch (PKIXNameConstraintValidatorException e)
-            {
-                throw new CertPathValidatorException("Subtree check for certificate subject failed.", e, certPath,
-                    index);
-            }
-
-            GeneralNames altName = null;
-            try
-            {
-                altName = GeneralNames.getInstance(getExtensionValue(cert, SUBJECT_ALTERNATIVE_NAME));
-            }
-            catch (Exception e)
-            {
-                throw new CertPathValidatorException("Subject alternative name extension could not be decoded.", e,
-                    certPath, index);
-            }
-            RDN[] emails = X500Name.getInstance(dns).getRDNs(BCStyle.EmailAddress);
-            for (int eI = 0; eI != emails.length; eI++)
-            {
-                // TODO: this should take into account multi-valued RDNs
-                String email = ((ASN1String)emails[eI].getFirst().getValue()).getString();
 
                 try
                 {
-                    nameConstraintValidator.checkPermittedEmail(email);
-                    nameConstraintValidator.checkExcludedEmail(email);
+                    nameConstraintValidator.checkPermitted(genNames[j]);
+                    nameConstraintValidator.checkExcluded(genNames[j]);
                 }
-                catch (PKIXNameConstraintValidatorException ex)
+                catch (PKIXNameConstraintValidatorException e)
                 {
                     throw new CertPathValidatorException(
-                        "Subtree check for certificate subject alternative email failed.", ex, certPath, index);
-                }
-            }
-            if (altName != null)
-            {
-                /*
-                 * NOTE: PKIXCertPathReviewer limits the number of alternative names, to avoid a denial-of-service
-                 * attack. That does not appear to be an issue for validation, so no limit is applied.
-                 */
-
-                GeneralName[] genNames = null;
-                try
-                {
-                    genNames = altName.getNames();
-                }
-                catch (Exception e)
-                {
-                    throw new CertPathValidatorException("Subject alternative name contents could not be decoded.", e,
-                        certPath, index);
-                }
-                for (int j = 0; j < genNames.length; j++)
-                {
-
-                    try
-                    {
-                        nameConstraintValidator.checkPermitted(genNames[j]);
-                        nameConstraintValidator.checkExcluded(genNames[j]);
-                    }
-                    catch (PKIXNameConstraintValidatorException e)
-                    {
-                        throw new CertPathValidatorException(
-                            "Subtree check for certificate subject alternative name failed.", e, certPath, index);
-                    }
+                        "Subtree check for certificate subject alternative name failed.", e, certPath, index);
                 }
             }
         }
@@ -1174,7 +1180,7 @@ class RFC3280CertPathUtilities
                     }
                     catch (CertPathValidatorException ex)
                     {
-                        throw new ExtCertPathValidatorException("Policy qualifier info set could not be build.", ex,
+                        throw new ExtCertPathValidatorException("Policy qualifier info set could not be built.", ex,
                             certPath, index);
                     }
 
@@ -1501,42 +1507,46 @@ class RFC3280CertPathUtilities
             throw new ExtCertPathValidatorException("Name constraints extension could not be decoded.", e, certPath,
                 index);
         }
-        if (nc != null)
+
+        if (nc == null)
         {
+            return;
+        }
 
-            //
-            // (g) (1) permitted subtrees
-            //
-            GeneralSubtree[] permitted = nc.getPermittedSubtrees();
-            if (permitted != null)
+        //
+        // (g) (1) permitted subtrees
+        //
+        GeneralSubtree[] permitted = nc.getPermittedSubtrees();
+        if (permitted != null)
+        {
+            try
             {
-                try
-                {
-                    nameConstraintValidator.intersectPermittedSubtree(permitted);
-                }
-                catch (Exception ex)
-                {
-                    throw new ExtCertPathValidatorException(
-                        "Permitted subtrees cannot be build from name constraints extension.", ex, certPath, index);
-                }
+                nameConstraintValidator.intersectPermittedSubtree(permitted);
             }
+            catch (Exception ex)
+            {
+                throw new ExtCertPathValidatorException(
+                    "Permitted subtrees could not be built from name constraints extension.", ex, certPath, index);
+            }
+        }
 
-            //
-            // (g) (2) excluded subtrees
-            //
-            GeneralSubtree[] excluded = nc.getExcludedSubtrees();
-            if (excluded != null)
+        //
+        // (g) (2) excluded subtrees
+        //
+        GeneralSubtree[] excluded = nc.getExcludedSubtrees();
+        if (excluded != null)
+        {
+            try
             {
                 for (int i = 0; i != excluded.length; i++)
-                try
                 {
-                        nameConstraintValidator.addExcludedSubtree(excluded[i]);
+                    nameConstraintValidator.addExcludedSubtree(excluded[i]);
                 }
-                catch (Exception ex)
-                {
-                    throw new ExtCertPathValidatorException(
-                        "Excluded subtrees cannot be build from name constraints extension.", ex, certPath, index);
-                }
+            }
+            catch (Exception ex)
+            {
+                throw new ExtCertPathValidatorException(
+                    "Excluded subtrees could not be built from name constraints extension.", ex, certPath, index);
             }
         }
     }
@@ -1740,8 +1750,7 @@ class RFC3280CertPathUtilities
         JcaJceHelper helper)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
-        AnnotatedException lastException = null;
-        CRLDistPoint crldp = null;
+        CRLDistPoint crldp;
         try
         {
             crldp = CRLDistPoint.getInstance(getExtensionValue(cert, CRL_DISTRIBUTION_POINTS));
@@ -1751,30 +1760,35 @@ class RFC3280CertPathUtilities
             throw new AnnotatedException("CRL distribution point extension could not be read.", e);
         }
 
-        PKIXExtendedParameters.Builder paramsBldr = new PKIXExtendedParameters.Builder(paramsPKIX);
+        List additionalCRLStores;
         try
         {
-            List extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
-                paramsPKIX.getNamedCRLStoreMap(), validityDate, helper);
-            for (Iterator it = extras.iterator(); it.hasNext();)
-            {
-                paramsBldr.addCRLStore((PKIXCRLStore)it.next());
-            }
+            additionalCRLStores = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
+                paramsPKIX, validityDate, helper);
         }
         catch (AnnotatedException e)
         {
             throw new AnnotatedException(
                 "No additional CRL locations could be decoded from CRL distribution point extension.", e);
         }
+
+        // NOTE: Always create paramsPKIX_crldp as a copy of paramsPKIX, even if there are no additional stores
+        PKIXExtendedParameters.Builder builder = new PKIXExtendedParameters.Builder(paramsPKIX);
+        for (Iterator it = additionalCRLStores.iterator(); it.hasNext();)
+        {
+            builder.addCRLStore((PKIXCRLStore)it.next());
+        }
+        PKIXExtendedParameters paramsPKIX_crldp = builder.build();
+
         CertStatus certStatus = new CertStatus();
         ReasonsMask reasonsMask = new ReasonsMask();
-        PKIXExtendedParameters finalParams = paramsBldr.build();
 
+        AnnotatedException lastException = null;
         boolean validCrlFound = false;
         // for each distribution point
         if (crldp != null)
         {
-            DistributionPoint dps[] = null;
+            DistributionPoint[] dps;
             try
             {
                 dps = crldp.getDistributionPoints();
@@ -1789,8 +1803,8 @@ class RFC3280CertPathUtilities
                 {
                     try
                     {
-                        checkCRL(params, dps[i], finalParams, currentDate, validityDate, cert, sign, workingPublicKey,
-                            certStatus, reasonsMask, certPathCerts, helper);
+                        checkCRL(params, dps[i], paramsPKIX_crldp, currentDate, validityDate, cert, sign,
+                            workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
