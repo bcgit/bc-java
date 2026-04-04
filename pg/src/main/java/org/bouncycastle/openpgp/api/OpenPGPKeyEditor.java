@@ -270,7 +270,7 @@ public class OpenPGPKeyEditor
 
         PGPPublicKey publicPrimaryKey = key.getPrimaryKey().getPGPPublicKey();
 
-        final PGPSignature backSig = Utils.getBackSignature(signingSubkey, backSigParameters, publicPrimaryKey, implementation, null);
+        final PGPSignature backSig = Utils.getBackSignature(signingSubkey, backSigParameters, publicPrimaryKey, implementation, backSigParameters.getSignatureCreationTime());
 
         updateKey(signingSubkey, bindingSigCallback, publicPrimaryKey, new Utils.HashedSubpacketsOperation()
         {
