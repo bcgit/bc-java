@@ -639,10 +639,14 @@ public class ParserTest
         throws Exception
     {
         // EC private key extremely dodgy attributes.
+        System.setProperty("org.bouncycastle.asn1.max_cons_depth", "45");
+
         PEMParser pemRd = openPEMResource("ec_attr_key.pem");
 
         PEMKeyPair kp = (PEMKeyPair)pemRd.readObject();
 
+        System.clearProperty("org.bouncycastle.asn1.max_cons_depth");
+        
         isTrue(kp.getPublicKeyInfo() == null);
     }
 
