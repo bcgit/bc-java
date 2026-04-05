@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.util.Properties;
+
 /**
  * A parser for ASN.1 streams which also returns, where possible, parsers for the objects it encounters.
  */
@@ -12,6 +14,8 @@ public class ASN1StreamParser
     private final InputStream _in;
     private final int _limit;
     private final byte[][] tmpBuffers;
+    private final int level;
+    private final int maxLevel;
 
     public ASN1StreamParser(InputStream in)
     {
@@ -33,6 +37,17 @@ public class ASN1StreamParser
         this._in = in;
         this._limit = limit;
         this.tmpBuffers = tmpBuffers;
+        this.level = 0;
+        this.maxLevel = Properties.asInteger(ASN1InputStream.MAX_CONS_DEPTH, 32);
+    }
+
+    private ASN1StreamParser(InputStream in, int limit, byte[][] tmpBuffers, int level, int maxLevel)
+    {
+        this._in = in;
+        this._limit = limit;
+        this.tmpBuffers = tmpBuffers;
+        this.level = level;
+        this.maxLevel = maxLevel;
     }
 
     public ASN1Encodable readObject() throws IOException
@@ -48,6 +63,11 @@ public class ASN1StreamParser
 
     ASN1Encodable implParseObject(int tagHdr) throws IOException
     {
+        if (this.level == this.maxLevel)
+        {
+            throw new IOException("maximum nested construction level reached - increase " + ASN1InputStream.MAX_CONS_DEPTH + " (currently " + maxLevel + ")");
+        }
+
         //
         // turn off looking for "00" while we resolve the tag
         //
@@ -73,7 +93,7 @@ public class ASN1StreamParser
             }
 
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
-            ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit, tmpBuffers);
+            ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit, tmpBuffers, level + 1, maxLevel);
 
             int tagClass = tagHdr & BERTags.PRIVATE;
             if (0 != tagClass)
@@ -92,7 +112,7 @@ public class ASN1StreamParser
                 return parseImplicitPrimitive(tagNo, defIn);
             }
 
-            ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
+            ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers, level + 1, maxLevel);
 
             int tagClass = tagHdr & BERTags.PRIVATE;
             if (0 != tagClass)
