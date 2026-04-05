@@ -125,7 +125,7 @@ public class SNTRUPrimeKEMExtractor
          * Match Ciphertext ct with input encapsulation
          * Update encR accordingly
          */
-        int mask = (Arrays.areEqual(encapsulation, ct)) ? 0 : -1;
+        int mask = (Arrays.constantTimeAreEqual(encapsulation, ct)) ? 0 : -1;
 
         /*
          * Update encR with Ciphertext diff mask

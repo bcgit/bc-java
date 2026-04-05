@@ -212,7 +212,7 @@ class BIKEEngine
 
         // 3. Compute K
         byte[] wlist = functionH(mPrime);
-        if (Arrays.areEqual(ePrimeBytes, 0, R2_BYTE, wlist, 0, R2_BYTE))
+        if (Arrays.constantTimeAreEqual(R2_BYTE, ePrimeBytes, 0, wlist, 0))
         {
             functionK(mPrime, c0, c1, k);
         }
