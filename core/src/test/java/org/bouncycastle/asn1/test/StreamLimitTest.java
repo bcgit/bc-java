@@ -14,29 +14,31 @@ public class StreamLimitTest
     public void performTest()
         throws Exception
     {
-        System.setProperty("org.bouncycastle.asn1.max_limit", "1024");
+        System.setProperty(MAX_LIMIT, "1024");
 
         MyASN1InputStream asn1In = new MyASN1InputStream();
 
         isEquals(1024, asn1In.getLimit());
         
-        System.setProperty("org.bouncycastle.asn1.max_limit", "1024k");
+        System.setProperty(MAX_LIMIT, "1024k");
 
         asn1In = new MyASN1InputStream();
 
         isEquals(1048576, asn1In.getLimit());
 
-        System.setProperty("org.bouncycastle.asn1.max_limit", "1024m");
+        System.setProperty(MAX_LIMIT, "1024m");
 
         asn1In = new MyASN1InputStream();
 
         isEquals(1073741824, asn1In.getLimit());
 
-        System.setProperty("org.bouncycastle.asn1.max_limit", "1g");
+        System.setProperty(MAX_LIMIT, "1g");
 
         asn1In = new MyASN1InputStream();
 
         isEquals(1073741824, asn1In.getLimit());
+
+        System.clearProperty(MAX_LIMIT)
     }
 
     public String getName()
