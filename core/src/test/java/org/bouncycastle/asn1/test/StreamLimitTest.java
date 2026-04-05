@@ -38,7 +38,7 @@ public class StreamLimitTest
 
         isEquals(1073741824, asn1In.getLimit());
 
-        System.clearProperty(MAX_LIMIT)
+        System.clearProperty(MAX_LIMIT);
     }
 
     public String getName()
