@@ -6,8 +6,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
 
+import org.bouncycastle.util.Properties;
+
 class StreamUtil
 {
+    static final String MAX_LIMIT = "org.bouncycastle.asn1.max_limit";
+
     /**
      * Find out possible longest length, capped by available memory.
      *
@@ -46,12 +50,32 @@ class StreamUtil
             }
         }
 
+        String limit = Properties.getPropertyValue(MAX_LIMIT);
+        if (limit != null)
+        {
+            switch (limit.charAt(limit.length() - 1))
+            {
+            case 'k':
+                return Integer.parseInt(limit.substring(0, limit.length() - 1)) * 1024;
+            case 'm':
+                return Integer.parseInt(limit.substring(0, limit.length() - 1)) * 1024 * 1024;
+            case 'g':
+                return Integer.parseInt(limit.substring(0, limit.length() - 1)) * 1024 * 1024 * 1024;
+            default:
+                return Integer.parseInt(limit);
+            }
+        }
+
+        return getMaxMemory();
+    }
+
+    private static int getMaxMemory()
+    {
         long maxMemory = Runtime.getRuntime().maxMemory();
         if (maxMemory > Integer.MAX_VALUE)
         {
             return Integer.MAX_VALUE;
         }
-
         return (int)maxMemory;
     }
 }

@@ -6,6 +6,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -18,9 +19,13 @@ public class ASN1InputStream
     extends FilterInputStream
     implements BERTags
 {
+    static final String MAX_CONS_DEPTH = "org.bouncycastle.asn1.max_cons_depth";
+
     private final int limit;
     private final boolean lazyEvaluate;
     private final byte[][] tmpBuffers;
+    private final int level;
+    private final int maxLevel;
 
     public ASN1InputStream(InputStream is)
     {
@@ -92,9 +97,21 @@ public class ASN1InputStream
         this.limit = limit;
         this.lazyEvaluate = lazyEvaluate;
         this.tmpBuffers = tmpBuffers;
+        this.level = 0;
+        this.maxLevel = Properties.asInteger(MAX_CONS_DEPTH, 32);
     }
 
-    int getLimit()
+    private ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate, byte[][] tmpBuffers, int level, int maxLevel)
+    {
+        super(input);
+        this.limit = limit;
+        this.lazyEvaluate = lazyEvaluate;
+        this.tmpBuffers = tmpBuffers;
+        this.level = level;
+        this.maxLevel = maxLevel;
+    }
+
+    protected int getLimit()
     {
         return limit;
     }
@@ -329,7 +346,12 @@ public class ASN1InputStream
             return new ASN1EncodableVector(0);
         }
 
-        return new ASN1InputStream(defIn, remaining, lazyEvaluate, tmpBuffers).readVector();
+        if (this.level == this.maxLevel)
+        {
+            throw new IOException("maximum nested construction level reached - increase " + MAX_CONS_DEPTH + " (currently " + maxLevel + ")");
+        }
+        
+        return new ASN1InputStream(defIn, remaining, lazyEvaluate, tmpBuffers, level + 1, maxLevel).readVector();
     }
 
     static int readTagNumber(InputStream s, int tag) 
