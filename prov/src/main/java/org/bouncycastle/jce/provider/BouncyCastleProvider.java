@@ -78,7 +78,7 @@ public final class BouncyCastleProvider extends Provider
 {
     private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
 
-    private static String info = "BouncyCastle Security Provider v1.83";
+    private static String info = "BouncyCastle Security Provider v1.84";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -169,7 +169,7 @@ public final class BouncyCastleProvider extends Provider
     private static final String KDF_PACKAGE = "org.bouncycastle.jcajce.provider.kdf.";
     private static final String[] KDFS =
         {
-            "HKDF", "PBEPBKDF2", "SCRYPT"
+            "HKDF", "PBKDF2", "SCRYPT"
         };
 
 
@@ -183,7 +183,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.8300, info);
+        super(PROVIDER_NAME, 1.8400, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
