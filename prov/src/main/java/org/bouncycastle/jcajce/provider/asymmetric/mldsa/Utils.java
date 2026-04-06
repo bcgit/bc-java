@@ -3,8 +3,8 @@ package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 
 class Utils
 {
