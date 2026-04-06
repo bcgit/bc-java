@@ -1,11 +1,8 @@
-package org.bouncycastle.pqc.crypto.mldsa;
+package org.bouncycastle.crypto.params;
 
+import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
 import org.bouncycastle.util.Arrays;
 
-/**
- * @deprecated use org.bouncycastle.crypto.params.MLDSAPublicKeyParameters
- */
-@Deprecated
 public class MLDSAPublicKeyParameters
     extends MLDSAKeyParameters
 {

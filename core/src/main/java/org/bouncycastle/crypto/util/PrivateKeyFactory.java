@@ -39,6 +39,9 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
@@ -209,6 +212,40 @@ public class PrivateKeyFactory
         {
             return new Ed448PrivateKeyParameters(getRawKey(keyInfo));
         }
+        else if (Utils.mldsaParams.containsKey(algOID))
+        {
+            ASN1Encodable mldsaKey = parsePrimitiveString(keyInfo.getPrivateKey(), 32);
+            MLDSAParameters mldsaParams = Utils.mldsaParamsLookup(algOID);
+
+            MLDSAPublicKeyParameters pubParams = null;
+            if (keyInfo.getPublicKeyData() != null)
+            {
+                pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(mldsaParams, keyInfo.getPublicKeyData());
+            }
+
+            if (mldsaKey instanceof ASN1OctetString)
+            {
+                // TODO This should be explicitly EXPANDED_KEY or SEED (tag already removed) but is length-flexible
+                return new MLDSAPrivateKeyParameters(mldsaParams, ((ASN1OctetString)mldsaKey).getOctets(), pubParams);
+            }
+            else if (mldsaKey instanceof ASN1Sequence)
+            {
+                ASN1Sequence keySeq = (ASN1Sequence)mldsaKey;
+                byte[] seed = ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets();
+                byte[] encoding = ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets();
+
+                // TODO This should only allow seed but is length-flexible
+                MLDSAPrivateKeyParameters mldsaPriv = new MLDSAPrivateKeyParameters(mldsaParams, seed, pubParams);
+                if (!Arrays.constantTimeAreEqual(mldsaPriv.getEncoded(), encoding))
+                {
+                    throw new IllegalArgumentException("inconsistent " + mldsaParams.getName() + " private key");
+                }
+
+                return mldsaPriv;
+            }
+
+            throw new IllegalArgumentException("invalid " + mldsaParams.getName() + " private key");
+        }
         else if (
             algOID.equals(CryptoProObjectIdentifiers.gostR3410_2001) ||
                 algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) ||
@@ -306,7 +343,41 @@ public class PrivateKeyFactory
         }
     }
 
-    private static byte[] getRawKey(PrivateKeyInfo keyInfo) throws IOException
+    /**
+     * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
+     * and in this case there may also be SEQUENCE.
+     */
+    private static ASN1Primitive parsePrimitiveString(ASN1OctetString octStr, int expectedLength)
+        throws IOException
+    {
+        byte[] data = octStr.getOctets();
+        //
+        // it's the right length for a RAW encoding, just return it.
+        //
+        if (data.length == expectedLength)
+        {
+            return octStr;
+        }
+
+        //
+        // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
+        // or possible SEQUENCE
+        ASN1Encodable obj = Utils.parseData(data);
+
+        if (obj instanceof ASN1OctetString)
+        {
+            return ASN1OctetString.getInstance(obj);
+        }
+        if (obj instanceof ASN1Sequence)
+        {
+            return ASN1Sequence.getInstance(obj);
+        }
+
+        return octStr;
+    }
+
+    private static byte[] getRawKey(PrivateKeyInfo keyInfo)
+        throws IOException
     {
         return ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
     }

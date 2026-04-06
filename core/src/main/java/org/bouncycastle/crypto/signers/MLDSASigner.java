@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.mldsa;
+package org.bouncycastle.crypto.signers;
 
 import java.security.SecureRandom;
 
@@ -7,13 +7,13 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
 
-/**
- * @deprecated use org.bouncycastle.crypto.signers.MLDSASigner
- */
-@Deprecated
 public class MLDSASigner
     implements Signer
 {
@@ -24,6 +24,8 @@ public class MLDSASigner
     private MLDSAEngine engine;
     private SHAKEDigest msgDigest;
 
+    private byte[] rho, k, t0, t1, s1, s2;
+    
     public MLDSASigner()
     {
     }
@@ -31,6 +33,9 @@ public class MLDSASigner
     public void init(boolean forSigning, CipherParameters param)
     {
         byte[] ctx = EMPTY_CONTEXT;
+
+        this.rho = this.k = this.t0 = this.t1 = this.s1 = this.s2 = null;
+
         if (param instanceof ParametersWithContext)
         {
             ParametersWithContext withContext = (ParametersWithContext)param;
@@ -61,9 +66,15 @@ public class MLDSASigner
             }
 
             parameters = privKey.getParameters();
-            engine = parameters.getEngine(random);
+            engine = new MLDSAEngine(parameters.getK(), random);
 
-            engine.initSign(privKey.tr, false, ctx);
+            this.rho = privKey.getRho();
+            this.t0 = privKey.getT0();
+            this.k = privKey.getK();
+            this.s1 = privKey.getS1();
+            this.s2 = privKey.getS2();
+
+            engine.initSign(privKey.getTr(), false, ctx);
         }
         else
         {
@@ -72,9 +83,12 @@ public class MLDSASigner
             random = null;
 
             parameters = pubKey.getParameters();
-            engine = parameters.getEngine(null);
+            engine = new MLDSAEngine(parameters.getK(), null);
 
-            engine.initVerify(pubKey.rho, pubKey.t1, false, ctx);
+            this.t1 = pubKey.getT1();
+            this.rho = pubKey.getRho();
+
+            engine.initVerify(rho, t1, false, ctx);
         }
 
         if (parameters.isPreHash())
@@ -120,7 +134,7 @@ public class MLDSASigner
 
         msgDigest.reset();
 
-        byte[] sig = engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        byte[] sig = engine.generateSignature(mu, msgDigest, rho, k, t0, s1, s2, rnd);
 
         reset();
 
@@ -137,7 +151,7 @@ public class MLDSASigner
         }
 
         byte[] mu = engine.generateMu(msgDigest);
-        byte[] sig = engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        byte[] sig = engine.generateSignature(mu, msgDigest, rho, k, t0, s1, s2, rnd);
 
         reset();
 
@@ -160,7 +174,7 @@ public class MLDSASigner
 
     public boolean verifySignature(byte[] signature)
     {
-        boolean isTrue = engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
+        boolean isTrue = engine.verifyInternal(signature, signature.length, msgDigest, rho, t1);
 
         reset();
 
@@ -176,7 +190,7 @@ public class MLDSASigner
 
         msgDigest.reset();
 
-        boolean isTrue = engine.verifyInternalMuSignature(mu, signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
+        boolean isTrue = engine.verifyInternalMuSignature(mu, signature, signature.length, msgDigest, rho, t1);
 
         reset();
 
@@ -188,25 +202,27 @@ public class MLDSASigner
         msgDigest = engine.getShake256Digest();
     }
 
+    // only used for validation testing
     protected byte[] internalGenerateSignature(byte[] message, byte[] random)
     {
-        MLDSAEngine engine = privKey.getParameters().getEngine(this.random);
+        MLDSAEngine engine = new MLDSAEngine(privKey.getParameters().getK(), this.random);
 
-        engine.initSign(privKey.tr, false, null);
+        engine.initSign(privKey.getTr(), false, null);
 
-        return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, random);
+        return engine.signInternal(message, message.length, rho, k, t0, s1, s2, random);
     }
 
+    // only used for validation testing
     protected boolean internalVerifySignature(byte[] message, byte[] signature)
     {
-        MLDSAEngine engine = pubKey.getParameters().getEngine(random);
+        MLDSAEngine engine = new MLDSAEngine(pubKey.getParameters().getK(), random);
 
-        engine.initVerify(pubKey.rho, pubKey.t1, false, null);
+        engine.initVerify(rho, t1, false, null);
 
         SHAKEDigest msgDigest = engine.getShake256Digest();
 
         msgDigest.update(message, 0, message.length);
 
-        return engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
+        return engine.verifyInternal(signature, signature.length, msgDigest, rho, t1);
     }
 }

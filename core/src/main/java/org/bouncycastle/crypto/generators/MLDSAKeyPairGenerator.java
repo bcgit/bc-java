@@ -1,15 +1,16 @@
-package org.bouncycastle.pqc.crypto.mldsa;
+package org.bouncycastle.crypto.generators;
 
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
 
-/**
- * @deprecated use org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator
- */
-@Deprecated
 public class MLDSAKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
@@ -24,7 +25,7 @@ public class MLDSAKeyPairGenerator
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        MLDSAEngine engine = parameters.getEngine(random);
+        MLDSAEngine engine = new MLDSAEngine(parameters.getK(), random);
 
         byte[][] keyPair = engine.generateKeyPair();
         MLDSAPublicKeyParameters pubKey = new MLDSAPublicKeyParameters(parameters, keyPair[0], keyPair[6]);
