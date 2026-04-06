@@ -92,6 +92,10 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.config;
     exports org.bouncycastle.jcajce.provider.digest;
     exports org.bouncycastle.jcajce.provider.drbg;
+    exports org.bouncycastle.jcajce.provider.kdf;
+    exports org.bouncycastle.jcajce.provider.kdf.hkdf;
+    exports org.bouncycastle.jcajce.provider.kdf.pbkdf2;
+    exports org.bouncycastle.jcajce.provider.kdf.scrypt;
     exports org.bouncycastle.jcajce.provider.keystore;
     exports org.bouncycastle.jcajce.provider.keystore.bc;
     exports org.bouncycastle.jcajce.provider.keystore.bcfks;
