@@ -66,7 +66,7 @@ public class MLDSASigner
             }
 
             parameters = privKey.getParameters();
-            engine = new MLDSAEngine(parameters.getK(), random);
+            engine = MLDSAEngine.getInstance(parameters, random);
 
             this.rho = privKey.getRho();
             this.t0 = privKey.getT0();
@@ -83,7 +83,7 @@ public class MLDSASigner
             random = null;
 
             parameters = pubKey.getParameters();
-            engine = new MLDSAEngine(parameters.getK(), null);
+            engine = MLDSAEngine.getInstance(parameters, null);
 
             this.t1 = pubKey.getT1();
             this.rho = pubKey.getRho();
@@ -205,7 +205,7 @@ public class MLDSASigner
     // only used for validation testing
     protected byte[] internalGenerateSignature(byte[] message, byte[] random)
     {
-        MLDSAEngine engine = new MLDSAEngine(privKey.getParameters().getK(), this.random);
+        MLDSAEngine engine = MLDSAEngine.getInstance(privKey.getParameters(), this.random);
 
         engine.initSign(privKey.getTr(), false, null);
 
@@ -215,7 +215,7 @@ public class MLDSASigner
     // only used for validation testing
     protected boolean internalVerifySignature(byte[] message, byte[] signature)
     {
-        MLDSAEngine engine = new MLDSAEngine(pubKey.getParameters().getK(), random);
+        MLDSAEngine engine = MLDSAEngine.getInstance(pubKey.getParameters(), random);
 
         engine.initVerify(rho, t1, false, null);
 

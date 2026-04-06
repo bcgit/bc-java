@@ -75,7 +75,7 @@ public class HashMLDSASigner
             }
 
             parameters = privKey.getParameters();
-            engine = new MLDSAEngine(parameters.getK(), random);
+            engine = MLDSAEngine.getInstance(parameters, random);
 
             this.rho = privKey.getRho();
             this.t0 = privKey.getT0();
@@ -92,7 +92,7 @@ public class HashMLDSASigner
             random = null;
 
             parameters = pubKey.getParameters();
-            engine = new MLDSAEngine(parameters.getK(), null);
+            engine = MLDSAEngine.getInstance(parameters, null);
 
             this.rho = pubKey.getRho();
             this.t1 = pubKey.getT1();

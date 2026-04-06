@@ -50,7 +50,7 @@ public class MLDSAPrivateKeyParameters
     {
         super(true, params);
 
-        MLDSAEngine eng = new MLDSAEngine(params.getK(), null);
+        MLDSAEngine eng = MLDSAEngine.getInstance(params, null);
         if (encoding.length == MLDSAEngine.SeedBytes)
         {
             byte[][] keyDetails = eng.generateKeyPairInternal(encoding);
