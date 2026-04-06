@@ -1,8 +1,8 @@
 package org.bouncycastle.pqc.crypto.xwing;
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
+import org.bouncycastle.crypto.kems.MLKEMExtractor;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.util.Arrays;
 
 /**

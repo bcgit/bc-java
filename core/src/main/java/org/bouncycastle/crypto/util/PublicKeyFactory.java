@@ -56,6 +56,8 @@ import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.MLKEMParameters;
+import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
@@ -99,13 +101,17 @@ public class PublicKeyFactory
         converters.put(EdECObjectIdentifiers.id_X448, new X448Converter());
         converters.put(EdECObjectIdentifiers.id_Ed25519, new Ed25519Converter());
         converters.put(EdECObjectIdentifiers.id_Ed448, new Ed448Converter());
-        
+
         converters.put(NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAConverter());
         converters.put(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAConverter());
         converters.put(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAConverter());
         converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, new MLDSAConverter());
         converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, new MLDSAConverter());
         converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, new MLDSAConverter());
+
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMConverter());
     }
 
     /**
@@ -554,7 +560,7 @@ public class PublicKeyFactory
             return new Ed448PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
-    
+
     static class MLDSAConverter
         extends SubjectPublicKeyInfoConverter
     {
@@ -590,6 +596,46 @@ public class PublicKeyFactory
             {
                 // we're a raw encoding
                 return new MLDSAPublicKeyParameters(mlDsaParams, publicKeyData.getOctets());
+            }
+        }
+    }
+
+    static class MLKEMConverter
+        extends PublicKeyFactory.SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            MLKEMParameters parameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            // we're a raw encoding
+            return new MLKEMPublicKeyParameters(parameters, keyInfo.getPublicKeyData().getOctets());
+        }
+
+        static MLKEMPublicKeyParameters getPublicKeyParams(MLKEMParameters parameters, ASN1BitString publicKeyData)
+        {
+            try
+            {
+                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
+                if (obj instanceof ASN1Sequence)
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+
+                    return new MLKEMPublicKeyParameters(parameters,
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                }
+                else
+                {
+                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                    return new MLKEMPublicKeyParameters(parameters, encKey);
+                }
+            }
+            catch (Exception e)
+            {
+                // we're a raw encoding
+                return new MLKEMPublicKeyParameters(parameters, publicKeyData.getOctets());
             }
         }
     }

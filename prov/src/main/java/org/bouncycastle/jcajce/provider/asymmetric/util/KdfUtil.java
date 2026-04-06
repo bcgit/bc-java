@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.util;
+package org.bouncycastle.jcajce.provider.asymmetric.util;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;

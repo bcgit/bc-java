@@ -2,6 +2,10 @@ package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.params.MLKEMKeyPrivateKeyParameters
+ */
+@Deprecated
 public class MLKEMPrivateKeyParameters
     extends MLKEMKeyParameters
 {

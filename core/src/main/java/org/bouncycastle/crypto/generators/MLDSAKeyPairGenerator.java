@@ -25,7 +25,7 @@ public class MLDSAKeyPairGenerator
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        MLDSAEngine engine = new MLDSAEngine(parameters.getK(), random);
+        MLDSAEngine engine = MLDSAEngine.getInstance(parameters, random);
 
         byte[][] keyPair = engine.generateKeyPair();
         MLDSAPublicKeyParameters pubKey = new MLDSAPublicKeyParameters(parameters, keyPair[0], keyPair[6]);

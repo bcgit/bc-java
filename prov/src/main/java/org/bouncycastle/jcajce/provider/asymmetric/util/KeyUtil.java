@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 
 public class KeyUtil
 {
@@ -47,6 +48,23 @@ public class KeyUtil
          }
     }
 
+    public static byte[] getEncodedSubjectPublicKeyInfo(AsymmetricKeyParameter publicKey)
+    {
+        if (publicKey.isPrivate())
+        {
+            throw new IllegalArgumentException("private key found");
+        }
+
+        try
+        {
+            return getEncodedSubjectPublicKeyInfo(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(publicKey));
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+    
     public static byte[] getEncodedPrivateKeyInfo(AlgorithmIdentifier algId, ASN1Encodable privKey)
     {
          try

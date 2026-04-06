@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.signers.mldsa;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.util.Arrays;
 
 public class MLDSAEngine
@@ -122,7 +123,12 @@ public class MLDSAEngine
         return this.PolyUniformGamma1NBlocks;
     }
 
-    public MLDSAEngine(int mode, SecureRandom random)
+    public static MLDSAEngine getInstance(MLDSAParameters mldsaParameters, SecureRandom random)
+    {
+        return new MLDSAEngine(mldsaParameters.getK(), random);
+    }
+
+    private MLDSAEngine(int mode, SecureRandom random)
     {
         switch (mode)
         {

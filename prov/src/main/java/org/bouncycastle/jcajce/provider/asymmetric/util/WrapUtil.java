@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.util;
+package org.bouncycastle.jcajce.provider.asymmetric.util;
 
 import java.security.InvalidKeyException;
 
