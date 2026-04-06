@@ -13,8 +13,8 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
-import org.bouncycastle.pqc.crypto.bike.BIKEKEMExtractor;
-import org.bouncycastle.pqc.crypto.bike.BIKEKEMGenerator;
+import org.bouncycastle.pqc.legacy.bike.BIKEKEMExtractor;
+import org.bouncycastle.pqc.legacy.bike.BIKEKEMGenerator;
 import org.bouncycastle.util.Arrays;
 
 public class BIKEKeyGeneratorSpi

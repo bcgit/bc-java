@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
@@ -23,11 +23,11 @@ import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
-import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPublicKeyParameters;
 
 /**
  * Factory to create ASN.1 subject public key info objects from lightweight public keys.
