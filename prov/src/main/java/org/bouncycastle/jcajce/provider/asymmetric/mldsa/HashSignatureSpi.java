@@ -8,10 +8,10 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.signers.HashMLDSASigner;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.mldsa.HashMLDSASigner;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 
 public class HashSignatureSpi
     extends BaseDeterministicOrRandomSignature

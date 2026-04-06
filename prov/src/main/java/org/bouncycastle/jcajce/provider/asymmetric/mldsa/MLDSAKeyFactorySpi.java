@@ -16,16 +16,16 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BasePQCKeyFactorySpi;
 import org.bouncycastle.jcajce.spec.MLDSAPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.MLDSAPublicKeySpec;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 import org.bouncycastle.util.Arrays;
 
 public class MLDSAKeyFactorySpi
-    extends BaseKeyFactorySpi
+    extends BasePQCKeyFactorySpi
 {
     private static final Set<ASN1ObjectIdentifier> pureKeyOids = new HashSet<ASN1ObjectIdentifier>();
     private static final Set<ASN1ObjectIdentifier> hashKeyOids = new HashSet<ASN1ObjectIdentifier>();

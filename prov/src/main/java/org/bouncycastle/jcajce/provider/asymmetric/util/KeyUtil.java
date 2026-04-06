@@ -2,9 +2,12 @@ package org.bouncycastle.jcajce.provider.asymmetric.util;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 
 public class KeyUtil
 {
@@ -58,6 +61,24 @@ public class KeyUtil
          }
     }
 
+
+    public static byte[] getEncodedPrivateKeyInfo(AsymmetricKeyParameter privateKey, ASN1Set attributes)
+    {
+        if (!privateKey.isPrivate())
+        {
+            throw new IllegalArgumentException("public key found");
+        }
+
+        try
+        {
+            return getEncodedPrivateKeyInfo(PrivateKeyInfoFactory.createPrivateKeyInfo(privateKey, attributes));
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+    
     public static byte[] getEncodedPrivateKeyInfo(PrivateKeyInfo info)
     {
          try
