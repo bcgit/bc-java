@@ -1,12 +1,5 @@
-package org.bouncycastle.pqc.crypto.mldsa;
+package org.bouncycastle.crypto.params;
 
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-
-
-/**
- * @deprecated use org.bouncycastle.crypto.params.MLDSAKeyParameters
- */
-@Deprecated
 public class MLDSAKeyParameters
     extends AsymmetricKeyParameter
 {

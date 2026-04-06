@@ -1,11 +1,8 @@
-package org.bouncycastle.pqc.crypto.mldsa;
+package org.bouncycastle.crypto.params;
 
+import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
 import org.bouncycastle.util.Arrays;
 
-/**
- * @deprecated use org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters
- */
-@Deprecated
 public class MLDSAPrivateKeyParameters
     extends MLDSAKeyParameters
 {
@@ -53,7 +50,7 @@ public class MLDSAPrivateKeyParameters
     {
         super(true, params);
 
-        MLDSAEngine eng = params.getEngine(null);
+        MLDSAEngine eng = new MLDSAEngine(params.getK(), null);
         if (encoding.length == MLDSAEngine.SeedBytes)
         {
             byte[][] keyDetails = eng.generateKeyPairInternal(encoding);

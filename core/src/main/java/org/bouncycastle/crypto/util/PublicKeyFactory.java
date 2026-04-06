@@ -13,10 +13,12 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.DHParameter;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAPublicKey;
@@ -52,6 +54,8 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
@@ -95,6 +99,13 @@ public class PublicKeyFactory
         converters.put(EdECObjectIdentifiers.id_X448, new X448Converter());
         converters.put(EdECObjectIdentifiers.id_Ed25519, new Ed25519Converter());
         converters.put(EdECObjectIdentifiers.id_Ed448, new Ed448Converter());
+        
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, new MLDSAConverter());
     }
 
     /**
@@ -541,6 +552,45 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
             return new Ed448PublicKeyParameters(getRawKey(keyInfo, defaultParams));
+        }
+    }
+    
+    static class MLDSAConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            MLDSAParameters dilithiumParams = Utils.mldsaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return getPublicKeyParams(dilithiumParams, keyInfo.getPublicKeyData());
+        }
+
+        static MLDSAPublicKeyParameters getPublicKeyParams(MLDSAParameters mlDsaParams, ASN1BitString publicKeyData)
+        {
+            try
+            {
+                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
+                if (obj instanceof ASN1Sequence)
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+
+                    return new MLDSAPublicKeyParameters(mlDsaParams,
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                }
+                else
+                {
+                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                    return new MLDSAPublicKeyParameters(mlDsaParams, encKey);
+                }
+            }
+            catch (Exception e)
+            {
+                // we're a raw encoding
+                return new MLDSAPublicKeyParameters(mlDsaParams, publicKeyData.getOctets());
+            }
         }
     }
 

@@ -1,11 +1,5 @@
-package org.bouncycastle.pqc.crypto.mldsa;
+package org.bouncycastle.crypto.params;
 
-import java.security.SecureRandom;
-
-/**
- * @deprecated use org.bouncycastle.crypto.params.MLDSAParameters
- */
-@Deprecated
 public class MLDSAParameters
 {
     public static final int TYPE_PURE = 0;
@@ -40,11 +34,11 @@ public class MLDSAParameters
         return preHashDigest;
     }
 
-    MLDSAEngine getEngine(SecureRandom random)
+    public int getK()
     {
-        return new MLDSAEngine(k, random);
+        return k;
     }
-
+   
     public String getName()
     {
         return name;
