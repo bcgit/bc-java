@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.picnic;
+package org.bouncycastle.pqc.legacy.picnic;
 
 
 import org.bouncycastle.util.Arrays;

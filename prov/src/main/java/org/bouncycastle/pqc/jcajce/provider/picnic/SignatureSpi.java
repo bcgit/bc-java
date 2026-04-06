@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider.picnic;
 
 import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -14,7 +13,7 @@ import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.pqc.crypto.picnic.PicnicSigner;
+import org.bouncycastle.pqc.legacy.picnic.PicnicSigner;
 
 public class SignatureSpi
     extends java.security.Signature
