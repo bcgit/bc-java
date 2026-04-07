@@ -152,6 +152,7 @@ public class ASN1StreamParser
             // TODO[asn1] DLConstructedBitStringParser
             return new BERBitStringParser(this);
         case BERTags.EXTERNAL:
+            // TODO[asn1] DLExternalParser
             return new DERExternalParser(this);
         case BERTags.OCTET_STRING:
             // TODO[asn1] DLConstructedOctetStringParser
