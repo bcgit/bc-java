@@ -20,12 +20,13 @@ import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.util.Arrays;
 
-public class HKDFSpi extends KDFSpi
+public class HKDFSpi
+    extends KDFSpi
 {
     private final HKDFBytesGenerator hkdf;
 
     HKDFSpi(KDFParameters kdfParameters, Digest digest)
-            throws InvalidAlgorithmParameterException
+        throws InvalidAlgorithmParameterException
     {
         super(requireNull(kdfParameters, "HKDF" + " does not support parameters"));
         this.hkdf = new HKDFBytesGenerator(digest);
@@ -52,7 +53,7 @@ public class HKDFSpi extends KDFSpi
 
     @Override
     protected SecretKey engineDeriveKey(String alg, AlgorithmParameterSpec derivationSpec)
-            throws InvalidAlgorithmParameterException, NoSuchAlgorithmException
+        throws InvalidAlgorithmParameterException, NoSuchAlgorithmException
     {
         byte[] derivedKey = engineDeriveData(derivationSpec);
 
@@ -68,7 +69,7 @@ public class HKDFSpi extends KDFSpi
 
     @Override
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
-            throws InvalidAlgorithmParameterException
+        throws InvalidAlgorithmParameterException
     {
         if (derivationSpec instanceof org.bouncycastle.jcajce.spec.HKDFParameterSpec bcSpec)
         {
@@ -165,6 +166,7 @@ public class HKDFSpi extends KDFSpi
         {
             super(kdfParameters, new SHA256Digest());
         }
+
         public HKDFwithSHA256() throws InvalidAlgorithmParameterException
         {
             this(null);
@@ -177,6 +179,7 @@ public class HKDFSpi extends KDFSpi
         {
             super(kdfParameters, new SHA384Digest());
         }
+
         public HKDFwithSHA384() throws InvalidAlgorithmParameterException
         {
             this(null);
@@ -189,6 +192,7 @@ public class HKDFSpi extends KDFSpi
         {
             super(kdfParameters, new SHA512Digest());
         }
+
         public HKDFwithSHA512() throws InvalidAlgorithmParameterException
         {
             this(null);

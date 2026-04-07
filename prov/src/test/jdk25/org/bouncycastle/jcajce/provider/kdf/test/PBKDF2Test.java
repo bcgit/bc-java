@@ -22,7 +22,7 @@ import java.security.Security;
 
 import static org.bouncycastle.util.Arrays.areEqual;
 
-public class PBEPBKDF2Test
+public class PBKDF2Test
         extends TestCase
 {
     public void setUp()

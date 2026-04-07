@@ -1,5 +1,15 @@
 package org.bouncycastle.jcajce.provider.kdf.pbkdf2;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.AlgorithmParameterSpec;
+
+import javax.crypto.KDFParameters;
+import javax.crypto.KDFSpi;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.PasswordConverter;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
@@ -13,40 +23,30 @@ import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.jcajce.spec.PBKDF2ParameterSpec;
 import org.bouncycastle.util.Arrays;
 
-import javax.crypto.KDFParameters;
-import javax.crypto.KDFSpi;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.AlgorithmParameterSpec;
-
-class PBKDF2Spi
+public class PBKDF2Spi
     extends KDFSpi
 {
-    final PasswordConverter pwdConverter;
-    final PKCS5S2ParametersGenerator generator;
+    private final PasswordConverter pwdConverter;
+    private final PKCS5S2ParametersGenerator generator;
 
-    protected PBKDF2Spi(KDFParameters kdfParameters)
-            throws InvalidAlgorithmParameterException
+    PBKDF2Spi(KDFParameters kdfParameters)
+        throws InvalidAlgorithmParameterException
     {
         this(kdfParameters, new SHA1Digest(), PasswordConverter.UTF8);
     }
 
-    protected PBKDF2Spi(KDFParameters kdfParameters, Digest digest)
-            throws InvalidAlgorithmParameterException
+    PBKDF2Spi(KDFParameters kdfParameters, Digest digest)
+        throws InvalidAlgorithmParameterException
     {
         this(kdfParameters, digest, PasswordConverter.UTF8);
     }
 
-    protected PBKDF2Spi(KDFParameters kdfParameters, Digest digest, PasswordConverter pwdConverter)
-            throws InvalidAlgorithmParameterException
+    PBKDF2Spi(KDFParameters kdfParameters, Digest digest, PasswordConverter pwdConverter)
+        throws InvalidAlgorithmParameterException
     {
-        super(requireNull(kdfParameters, "PBEPBKDF2" + " does not support parameters"));
+        super(requireNull(kdfParameters, "PBKDF2" + " does not support parameters"));
         this.pwdConverter = pwdConverter;
         this.generator = new PKCS5S2ParametersGenerator(digest);
     }
@@ -93,8 +93,8 @@ class PBKDF2Spi
         return derivedData;
     }
 
-    private static KDFParameters requireNull(KDFParameters kdfParameters,
-                                             String message) throws InvalidAlgorithmParameterException
+    private static KDFParameters requireNull(KDFParameters kdfParameters, String message)
+        throws InvalidAlgorithmParameterException
     {
         if (kdfParameters != null)
         {
@@ -103,182 +103,182 @@ class PBKDF2Spi
         return null;
     }
 
-    public static class PBKDF2withUTF8
-            extends PBKDF2Spi
+    public static class PBKDF2withUTF8 extends PBKDF2Spi
     {
         public PBKDF2withUTF8(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA1Digest());
         }
+
         public PBKDF2withUTF8() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA224
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA224 extends PBKDF2Spi
     {
         public PBKDF2withSHA224(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA224Digest());
         }
+
         public PBKDF2withSHA224() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA256
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA256 extends PBKDF2Spi
     {
         public PBKDF2withSHA256(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA256Digest());
         }
+
         public PBKDF2withSHA256() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA384
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA384 extends PBKDF2Spi
     {
         public PBKDF2withSHA384(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA384Digest());
         }
+
         public PBKDF2withSHA384() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA512
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA512 extends PBKDF2Spi
     {
         public PBKDF2withSHA512(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA512Digest());
         }
+
         public PBKDF2withSHA512() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA512_224
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA512_224 extends PBKDF2Spi
     {
         public PBKDF2withSHA512_224(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA512tDigest(224));
         }
+
         public PBKDF2withSHA512_224() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA512_256
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA512_256 extends PBKDF2Spi
     {
         public PBKDF2withSHA512_256(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA512tDigest(256));
         }
+
         public PBKDF2withSHA512_256() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withGOST3411
-            extends PBKDF2Spi
+    public static class PBKDF2withGOST3411 extends PBKDF2Spi
     {
         public PBKDF2withGOST3411(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new GOST3411Digest());
         }
+
         public PBKDF2withGOST3411() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA3_224
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA3_224 extends PBKDF2Spi
     {
         public PBKDF2withSHA3_224(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA3Digest(224));
         }
+
         public PBKDF2withSHA3_224() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA3_256
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA3_256 extends PBKDF2Spi
     {
         public PBKDF2withSHA3_256(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA3Digest(256));
         }
+
         public PBKDF2withSHA3_256() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA3_384
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA3_384 extends PBKDF2Spi
     {
         public PBKDF2withSHA3_384(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
-            super(parameters,  new SHA3Digest(384));
+            super(parameters, new SHA3Digest(384));
         }
+
         public PBKDF2withSHA3_384() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSHA3_512
-            extends PBKDF2Spi
+    public static class PBKDF2withSHA3_512 extends PBKDF2Spi
     {
         public PBKDF2withSHA3_512(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA3Digest(512));
         }
+
         public PBKDF2withSHA3_512() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2with8BIT
-            extends PBKDF2Spi
+    public static class PBKDF2with8BIT extends PBKDF2Spi
     {
         public PBKDF2with8BIT(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SHA1Digest(), PasswordConverter.ASCII);
         }
+
         public PBKDF2with8BIT() throws InvalidAlgorithmParameterException
         {
             this(null);
         }
     }
 
-    public static class PBKDF2withSM3
-            extends PBKDF2Spi
+    public static class PBKDF2withSM3 extends PBKDF2Spi
     {
         public PBKDF2withSM3(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
             super(parameters, new SM3Digest());
         }
+
         public PBKDF2withSM3() throws InvalidAlgorithmParameterException
         {
             this(null);

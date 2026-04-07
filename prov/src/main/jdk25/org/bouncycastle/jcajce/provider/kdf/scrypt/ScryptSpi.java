@@ -1,27 +1,27 @@
 package org.bouncycastle.jcajce.provider.kdf.scrypt;
 
-import org.bouncycastle.crypto.PasswordConverter;
-import org.bouncycastle.crypto.generators.SCrypt;
-import org.bouncycastle.jcajce.spec.ScryptKeySpec;
-import org.bouncycastle.jcajce.spec.ScryptParameterSpec;
-import org.bouncycastle.util.Arrays;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.KDFParameters;
 import javax.crypto.KDFSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.AlgorithmParameterSpec;
+
+import org.bouncycastle.crypto.PasswordConverter;
+import org.bouncycastle.crypto.generators.SCrypt;
+import org.bouncycastle.jcajce.spec.ScryptParameterSpec;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Example KDFSpi that delegates to Bouncy Castle’s SCrypt implementation.
  */
-class ScryptSpi
-        extends KDFSpi
+public class ScryptSpi
+    extends KDFSpi
 {
-    protected ScryptSpi(KDFParameters kdfParameters)
-            throws InvalidAlgorithmParameterException
+    ScryptSpi(KDFParameters kdfParameters)
+        throws InvalidAlgorithmParameterException
     {
         super(requireNull(kdfParameters, "Scrypt" + " does not support parameters"));
     }
@@ -34,7 +34,7 @@ class ScryptSpi
 
     @Override
     protected SecretKey engineDeriveKey(String alg, AlgorithmParameterSpec derivationSpec)
-            throws InvalidAlgorithmParameterException, NoSuchAlgorithmException
+        throws InvalidAlgorithmParameterException, NoSuchAlgorithmException
     {
         byte[] derived = engineDeriveData(derivationSpec);
 
@@ -43,12 +43,12 @@ class ScryptSpi
 
     @Override
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
-            throws InvalidAlgorithmParameterException
+        throws InvalidAlgorithmParameterException
     {
         if (!(derivationSpec instanceof ScryptParameterSpec spec))
         {
             throw new InvalidAlgorithmParameterException(
-                    "SCrypt requires an SCryptParameterSpec as derivation parameters");
+                "SCrypt requires an SCryptParameterSpec as derivation parameters");
         }
 
         char[] password = spec.getPassword();
@@ -66,24 +66,20 @@ class ScryptSpi
         {
             throw new InvalidAlgorithmParameterException("Cost parameter N must be > 1.");
         }
-
         if (keyLen <= 0)
         {
-            throw new InvalidAlgorithmParameterException("positive key length required: "
-                    + keyLen);
+            throw new InvalidAlgorithmParameterException("positive key length required: " + keyLen);
         }
 
-        byte[] derived = SCrypt.generate(
-                PasswordConverter.UTF8.convert(password),
-                salt, cost, blockSize, p, keyLen / 8);
+        byte[] derived = SCrypt.generate(PasswordConverter.UTF8.convert(password), salt, cost, blockSize, p, keyLen / 8);
 
         Arrays.clear(password);
-     
+
         return derived;
     }
 
-    private static KDFParameters requireNull(KDFParameters kdfParameters,
-                                             String message) throws InvalidAlgorithmParameterException
+    private static KDFParameters requireNull(KDFParameters kdfParameters, String message)
+        throws InvalidAlgorithmParameterException
     {
         if (kdfParameters != null)
         {
@@ -92,8 +88,7 @@ class ScryptSpi
         return null;
     }
 
-    public static class ScryptWithUTF8
-            extends ScryptSpi
+    public static class ScryptWithUTF8 extends ScryptSpi
     {
         public ScryptWithUTF8(KDFParameters parameters) throws InvalidAlgorithmParameterException
         {
