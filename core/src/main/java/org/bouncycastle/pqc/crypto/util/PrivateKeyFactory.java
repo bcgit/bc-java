@@ -500,7 +500,7 @@ public class PrivateKeyFactory
             SnovaParameters snovaParams = Utils.snovaParamsLookup(algOID);
             return new SnovaPrivateKeyParameters(snovaParams, keyEnc);
         }
-        else if (algOID.on(BCObjectIdentifiers.ntruPlus))
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntruplus))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             NTRUPlusParameters ntruPlusParams = Utils.ntruPlusParamsLookup(algOID);

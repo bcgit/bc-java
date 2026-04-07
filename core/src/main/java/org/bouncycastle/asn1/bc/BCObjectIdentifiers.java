@@ -737,8 +737,8 @@ public interface BCObjectIdentifiers
     /**
      * NTRU+
      * */
-    ASN1ObjectIdentifier ntruPlus = bc_sig.branch("15");
-    ASN1ObjectIdentifier ntruPlus768 = ntruPlus.branch("1");
-    ASN1ObjectIdentifier ntruPlus864 = ntruPlus.branch("2");
-    ASN1ObjectIdentifier ntruPlus1152 = ntruPlus.branch("3");
+    ASN1ObjectIdentifier pqc_kem_ntruplus = bc_kem.branch("10");
+    ASN1ObjectIdentifier ntruplus768 = pqc_kem_ntruplus.branch("1");
+    ASN1ObjectIdentifier ntruplus864 = pqc_kem_ntruplus.branch("2");
+    ASN1ObjectIdentifier ntruplus1152 = pqc_kem_ntruplus.branch("3");
 }
