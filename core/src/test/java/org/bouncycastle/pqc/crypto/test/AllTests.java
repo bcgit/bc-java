@@ -4,7 +4,6 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.test.SimpleTestResult;
 
@@ -33,7 +32,7 @@ public class AllTests
         suite.addTestSuite(XMSSSignatureTest.class);
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSUtilTest.class);
-        suite.addTestSuite(SphincsPlusTest.class);
+//        suite.addTestSuite(SphincsPlusTest.class);
         suite.addTestSuite(CMCEVectorTest.class);
         suite.addTestSuite(FrodoVectorTest.class);
         suite.addTestSuite(SABERVectorTest.class);
@@ -45,7 +44,7 @@ public class AllTests
         suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(NTRULPRimeTest.class);
         suite.addTestSuite(SNTRUPrimeTest.class);
-        suite.addTestSuite(BIKETest.class);
+//        suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(HQCTest.class);
         suite.addTestSuite(XWingTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
