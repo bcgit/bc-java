@@ -26,9 +26,9 @@ public class NTRUPlusKeyFactorySpi
 
     static
     {
-        keyOids.add(BCObjectIdentifiers.ntruPlus768);
-        keyOids.add(BCObjectIdentifiers.ntruPlus864);
-        keyOids.add(BCObjectIdentifiers.ntruPlus1152);
+        keyOids.add(BCObjectIdentifiers.ntruplus768);
+        keyOids.add(BCObjectIdentifiers.ntruplus864);
+        keyOids.add(BCObjectIdentifiers.ntruplus1152);
     }
 
     public NTRUPlusKeyFactorySpi()
@@ -140,7 +140,7 @@ public class NTRUPlusKeyFactorySpi
     {
         public NTRUPlus768()
         {
-            super(BCObjectIdentifiers.ntruPlus768);
+            super(BCObjectIdentifiers.ntruplus768);
         }
     }
 
@@ -149,7 +149,7 @@ public class NTRUPlusKeyFactorySpi
     {
         public NTRUPlus864()
         {
-            super(BCObjectIdentifiers.ntruPlus864);
+            super(BCObjectIdentifiers.ntruplus864);
         }
     }
 
@@ -158,7 +158,7 @@ public class NTRUPlusKeyFactorySpi
     {
         public NTRUPlus1152()
         {
-            super(BCObjectIdentifiers.ntruPlus1152);
+            super(BCObjectIdentifiers.ntruplus1152);
         }
     }
 }

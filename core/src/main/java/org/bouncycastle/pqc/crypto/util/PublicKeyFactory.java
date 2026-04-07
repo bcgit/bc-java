@@ -305,9 +305,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaConverter());
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaConverter());
 
-        converters.put(BCObjectIdentifiers.ntruPlus768, new NTRUPlusConverter());
-        converters.put(BCObjectIdentifiers.ntruPlus864, new NTRUPlusConverter());
-        converters.put(BCObjectIdentifiers.ntruPlus1152, new NTRUPlusConverter());
+        converters.put(BCObjectIdentifiers.ntruplus768, new NTRUPlusConverter());
+        converters.put(BCObjectIdentifiers.ntruplus864, new NTRUPlusConverter());
+        converters.put(BCObjectIdentifiers.ntruplus1152, new NTRUPlusConverter());
     }
 
     /**
