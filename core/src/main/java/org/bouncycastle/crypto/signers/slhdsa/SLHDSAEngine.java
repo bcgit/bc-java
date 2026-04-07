@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.slhdsa;
+package org.bouncycastle.crypto.signers.slhdsa;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
@@ -10,16 +10,14 @@ import org.bouncycastle.crypto.generators.MGF1BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.MGFParameters;
+import org.bouncycastle.crypto.params.SLHDSAParameters;
+import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
-/**
- * SLH-DSA signer.
- * @deprecated use org.bouncycastle.crypto.signers.slhdsa.SLHDSASigner
- */
-@Deprecated
 public abstract class SLHDSAEngine
 {
     final int N;
@@ -462,19 +460,14 @@ public abstract class SLHDSAEngine
     {
         SLHDSAEngine engine = params.getEngine();
 
-        SK sk = new SK(skSeed, skPrf);
-
         engine.init(pkSeed);
 
-        // TODO
-        PK pk = new PK(pkSeed, new HT(engine, sk.seed, pkSeed).htPubKey);
-
         return new AsymmetricCipherKeyPair(
-            new SLHDSAPublicKeyParameters(params, pk),
-            new SLHDSAPrivateKeyParameters(params, sk, pk));
+            new SLHDSAPublicKeyParameters(params, Arrays.concatenate(pkSeed, new HT(engine, skSeed, pkSeed).htPubKey)),
+            new SLHDSAPrivateKeyParameters(params, skSeed, skPrf, pkSeed, new HT(engine, skSeed, pkSeed).htPubKey));
     }
 
-    public static boolean internalVerifySignature(SLHDSAPublicKeyParameters pubKey, byte[] msgPrefix, byte[] msg,
+    public static boolean internalVerifySignature(SLHDSAParameters params, byte[] pkSeed, byte[] pkRoot, byte[] msgPrefix, byte[] msg,
         byte[] signature)
     {
         // TODO Check init via pubKey != null
@@ -483,9 +476,9 @@ public abstract class SLHDSAEngine
         //# Output: Boolean
 
         // init
-        SLHDSAEngine engine = pubKey.getParameters().getEngine();
+        SLHDSAEngine engine = params.getEngine();
 
-        engine.init(pubKey.getSeed());
+        engine.init(pkSeed);
 
         ADRS adrs = new ADRS();
 
@@ -501,7 +494,7 @@ public abstract class SLHDSAEngine
         SIG_XMSS[] SIG_HT = sig.getSIG_HT();
 
         // compute message digest and index
-        IndexedDigest idxDigest = engine.H_msg(R, pubKey.getSeed(), pubKey.getRoot(), msgPrefix, msg);
+        IndexedDigest idxDigest = engine.H_msg(R, pkSeed, pkRoot, msgPrefix, msg);
         byte[] mHash = idxDigest.digest;
         long idx_tree = idxDigest.idx_tree;
         int idx_leaf = idxDigest.idx_leaf;
@@ -511,28 +504,28 @@ public abstract class SLHDSAEngine
         adrs.setLayerAddress(0);
         adrs.setTreeAddress(idx_tree);
         adrs.setKeyPairAddress(idx_leaf);
-        byte[] PK_FORS = new Fors(engine).pkFromSig(sig_fors, mHash, pubKey.getSeed(), adrs);
+        byte[] PK_FORS = new Fors(engine).pkFromSig(sig_fors, mHash, pkSeed, adrs);
         // verify HT signature
         adrs.setTypeAndClear(ADRS.TREE);
         adrs.setLayerAddress(0);
         adrs.setTreeAddress(idx_tree);
         adrs.setKeyPairAddress(idx_leaf);
-        HT ht = new HT(engine, null, pubKey.getSeed());
-        return ht.verify(PK_FORS, SIG_HT, pubKey.getSeed(), idx_tree, idx_leaf, pubKey.getRoot());
+        HT ht = new HT(engine, null, pkSeed);
+        return ht.verify(PK_FORS, SIG_HT, pkSeed, idx_tree, idx_leaf, pkRoot);
     }
 
-    public static byte[] internalGenerateSignature(SLHDSAPrivateKeyParameters privKey, byte[] msgPrefix, byte[] msg,
+    public static byte[] internalGenerateSignature(SLHDSAParameters params, byte[] skSeed, byte[] skPrf, byte[] pkSeed, byte[] pkRoot, byte[] msgPrefix, byte[] msg,
         byte[] optRand)
     {
         // TODO Check init via privKey != null
 
-        SLHDSAEngine engine = privKey.getParameters().getEngine();
-        engine.init(privKey.pk.seed);
+        SLHDSAEngine engine = params.getEngine();
+        engine.init(pkSeed);
 
         Fors fors = new Fors(engine);
-        byte[] R = engine.PRF_msg(privKey.sk.prf, optRand, msgPrefix, msg);
+        byte[] R = engine.PRF_msg(skPrf, optRand, msgPrefix, msg);
 
-        IndexedDigest idxDigest = engine.H_msg(R, privKey.pk.seed, privKey.pk.root, msgPrefix, msg);
+        IndexedDigest idxDigest = engine.H_msg(R, pkSeed, pkRoot, msgPrefix, msg);
         byte[] mHash = idxDigest.digest;
         long idx_tree = idxDigest.idx_tree;
         int idx_leaf = idxDigest.idx_leaf;
@@ -541,19 +534,19 @@ public abstract class SLHDSAEngine
         adrs.setTypeAndClear(ADRS.FORS_TREE);
         adrs.setTreeAddress(idx_tree);
         adrs.setKeyPairAddress(idx_leaf);
-        SIG_FORS[] sig_fors = fors.sign(mHash, privKey.sk.seed, privKey.pk.seed, adrs);
+        SIG_FORS[] sig_fors = fors.sign(mHash, skSeed, pkSeed, adrs);
         // get FORS public key - spec shows M?
         adrs = new ADRS();
         adrs.setTypeAndClear(ADRS.FORS_TREE);
         adrs.setTreeAddress(idx_tree);
         adrs.setKeyPairAddress(idx_leaf);
-        byte[] PK_FORS = fors.pkFromSig(sig_fors, mHash, privKey.pk.seed, adrs);
+        byte[] PK_FORS = fors.pkFromSig(sig_fors, mHash, pkSeed, adrs);
 
         // sign FORS public key with HT
         ADRS treeAdrs = new ADRS();
         treeAdrs.setTypeAndClear(ADRS.TREE);
 
-        HT ht = new HT(engine, privKey.getSeed(), privKey.getPublicSeed());
+        HT ht = new HT(engine, skSeed, pkSeed);
         byte[] SIG_HT = ht.sign(PK_FORS, idx_tree, idx_leaf);
 
         byte[][] sigComponents = new byte[sig_fors.length + 2][];

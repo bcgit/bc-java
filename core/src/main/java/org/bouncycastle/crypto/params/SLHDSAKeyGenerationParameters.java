@@ -1,13 +1,9 @@
-package org.bouncycastle.pqc.crypto.slhdsa;
+package org.bouncycastle.crypto.params;
 
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
-/**
- * @deprecated use org.bouncycastle.crypto.params.SLHDSAKeyGenerationParameters
- */
-@Deprecated
 public class SLHDSAKeyGenerationParameters
     extends KeyGenerationParameters
 {
@@ -19,7 +15,7 @@ public class SLHDSAKeyGenerationParameters
         this.parameters = parameters;
     }
 
-    SLHDSAParameters getParameters()
+    public SLHDSAParameters getParameters()
     {
         return parameters;
     }

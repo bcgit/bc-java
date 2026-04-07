@@ -1,11 +1,7 @@
-package org.bouncycastle.pqc.crypto.slhdsa;
+package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.util.Arrays;
 
-/**
- * @deprecated use org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters
- */
-@Deprecated
 public class SLHDSAPrivateKeyParameters
     extends SLHDSAKeyParameters
 {
@@ -30,6 +26,7 @@ public class SLHDSAPrivateKeyParameters
         this.sk = new SK(skSeed, prf);
         this.pk = new PK(pkSeed, pkRoot);
     }
+
     SLHDSAPrivateKeyParameters(SLHDSAParameters parameters, SK sk, PK pk)
     {
         super(true, parameters);
@@ -51,6 +48,7 @@ public class SLHDSAPrivateKeyParameters
     {
         return Arrays.clone(pk.seed);
     }
+
     public byte[] getRoot()
     {
         return Arrays.clone(pk.root);
@@ -63,11 +61,35 @@ public class SLHDSAPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(new byte[][]{ sk.seed, sk.prf, pk.seed, pk.root });
+        return Arrays.concatenate(new byte[][]{sk.seed, sk.prf, pk.seed, pk.root});
     }
 
     public byte[] getEncodedPublicKey()
     {
         return Arrays.concatenate(pk.seed, pk.root);
+    }
+
+    private class PK
+    {
+        final byte[] seed;
+        final byte[] root;
+
+        PK(byte[] seed, byte[] root)
+        {
+            this.seed = seed;
+            this.root = root;
+        }
+    }
+
+    private class SK
+    {
+        final byte[] seed;
+        final byte[] prf;
+
+        SK(byte[] seed, byte[] prf)
+        {
+            this.seed = seed;
+            this.prf = prf;
+        }
     }
 }

@@ -7,10 +7,10 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.HashSLHDSASigner;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
-import org.bouncycastle.pqc.crypto.slhdsa.HashSLHDSASigner;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 
 public class HashSignatureSpi
     extends BaseDeterministicOrRandomSignature

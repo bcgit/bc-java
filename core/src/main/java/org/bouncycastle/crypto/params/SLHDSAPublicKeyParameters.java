@@ -1,15 +1,12 @@
-package org.bouncycastle.pqc.crypto.slhdsa;
+package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.util.Arrays;
 
-/**
- * @deprecated use org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters
- */
-@Deprecated
 public class SLHDSAPublicKeyParameters
     extends SLHDSAKeyParameters
 {
-    private final PK pk;
+    private final byte[] pkSeed;
+    private final byte[] pkRoot;
 
     public SLHDSAPublicKeyParameters(SLHDSAParameters parameters, byte[] pkValues)
     {
@@ -19,27 +16,22 @@ public class SLHDSAPublicKeyParameters
         {
             throw new IllegalArgumentException("public key encoding does not match parameters");
         }
-        this.pk = new PK(Arrays.copyOfRange(pkValues, 0, n), Arrays.copyOfRange(pkValues, n, 2 * n));
-    }
-    
-    SLHDSAPublicKeyParameters(SLHDSAParameters parameters, PK pk)
-    {
-        super(false, parameters);
-        this.pk = pk;
+        this.pkSeed = Arrays.copyOfRange(pkValues, 0, n);
+        this.pkRoot = Arrays.copyOfRange(pkValues, n, 2 * n);
     }
 
     public byte[] getSeed()
     {
-        return Arrays.clone(pk.seed);
+        return Arrays.clone(pkSeed);
     }
 
     public byte[] getRoot()
     {
-        return Arrays.clone(pk.root);
+        return Arrays.clone(pkRoot);
     }
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(pk.seed, pk.root);
+        return Arrays.concatenate(pkSeed, pkRoot);
     }
 }

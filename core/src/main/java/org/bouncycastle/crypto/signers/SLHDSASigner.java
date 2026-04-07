@@ -1,10 +1,14 @@
-package org.bouncycastle.pqc.crypto.slhdsa;
+package org.bouncycastle.crypto.signers;
 
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.SLHDSAParameters;
+import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.slhdsa.SLHDSAEngine;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 
 /**
@@ -16,9 +20,7 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
  * "https://github.com/sphincs/sphincsplus/commit/61cd2695c6f984b4f4d6ed675378ed9a486cbede"
  * for further details.
  * </p>
- * @deprecated use org.bouncycastle.crypto.signers.SLHDSASigner
  */
-@Deprecated
 public class SLHDSASigner
     implements MessageSigner
 {
@@ -29,6 +31,8 @@ public class SLHDSASigner
     private SLHDSAPublicKeyParameters pubKey;
     private SLHDSAPrivateKeyParameters privKey;
     private SecureRandom random;
+
+    private byte[] pkSeed, pkRoot, skSeed, skPrf;
 
     /**
      * Base constructor.
@@ -77,6 +81,11 @@ public class SLHDSASigner
                 random = null;
             }
 
+            skSeed = privKey.getSeed();
+            skPrf = privKey.getPrf();
+            pkSeed = privKey.getPublicSeed();
+            pkRoot = privKey.getRoot();
+
             parameters = privKey.getParameters();
 
             // generate randomizer
@@ -87,6 +96,11 @@ public class SLHDSASigner
             pubKey = (SLHDSAPublicKeyParameters)param;
             privKey = null;
             random = null;
+
+            skSeed = null;
+            skPrf = null;
+            pkSeed = pubKey.getSeed();
+            pkRoot = pubKey.getRoot();
 
             parameters = pubKey.getParameters();
         }
@@ -105,25 +119,25 @@ public class SLHDSASigner
         }
         else
         {
-            System.arraycopy(privKey.pk.seed, 0, optRand, 0, optRand.length);
+            System.arraycopy(privKey.getPublicSeed(), 0, optRand, 0, optRand.length);
         }
 
-        return SLHDSAEngine.internalGenerateSignature(privKey, msgPrefix, message, optRand);
+        return SLHDSAEngine.internalGenerateSignature(privKey.getParameters(), skSeed, skPrf, pkSeed, pkRoot, msgPrefix, message, optRand);
     }
 
     // Equivalent to slh_verify_internal from specs
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        return SLHDSAEngine.internalVerifySignature(pubKey, msgPrefix, message, signature);
+        return SLHDSAEngine.internalVerifySignature(pubKey.getParameters(), pkSeed, pkRoot, msgPrefix, message, signature);
     }
 
     protected boolean internalVerifySignature(byte[] message, byte[] signature)
     {
-        return SLHDSAEngine.internalVerifySignature(pubKey, null, message, signature);
+        return SLHDSAEngine.internalVerifySignature(pubKey.getParameters(), pkSeed, pkRoot, null, message, signature);
     }
     
     protected byte[] internalGenerateSignature(byte[] message, byte[] optRand)
     {
-        return SLHDSAEngine.internalGenerateSignature(privKey, null, message, optRand);
+        return SLHDSAEngine.internalGenerateSignature(privKey.getParameters(), skSeed, skPrf, pkSeed, pkRoot, null, message, optRand);
     }
 }
