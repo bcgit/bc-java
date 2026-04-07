@@ -4,7 +4,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.MLDSAParameters;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.tls.SignatureScheme;
 
 public class PQCUtil

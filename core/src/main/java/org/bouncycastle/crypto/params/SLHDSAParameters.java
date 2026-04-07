@@ -1,9 +1,7 @@
-package org.bouncycastle.pqc.crypto.slhdsa;
+package org.bouncycastle.crypto.params;
 
-/**
- * @deprecated use org.bouncycastle.crypto.params.SLHDSAParameters
- */
-@Deprecated
+import org.bouncycastle.crypto.signers.slhdsa.SLHDSAEngine;
+
 public class SLHDSAParameters
 {
     interface SLHDSAEngineProvider
@@ -112,7 +110,7 @@ public class SLHDSAParameters
         return engineProvider.getN();
     }
 
-    SLHDSAEngine getEngine()
+    public SLHDSAEngine getEngine()
     {
         return engineProvider.get();
     }

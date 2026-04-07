@@ -1,15 +1,14 @@
-package org.bouncycastle.pqc.crypto.slhdsa;
+package org.bouncycastle.crypto.generators;
 
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.params.SLHDSAKeyGenerationParameters;
+import org.bouncycastle.crypto.params.SLHDSAParameters;
+import org.bouncycastle.crypto.signers.slhdsa.SLHDSAEngine;
 
-/**
- * @deprecated use org.bouncycastle.crypto.generators.SLHDSAKeyPairGenerator
- */
-@Deprecated
 public class SLHDSAKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {

@@ -47,6 +47,8 @@ import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.params.SLHDSAParameters;
+import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
@@ -293,6 +295,13 @@ public class PrivateKeyFactory
 
             throw new IllegalArgumentException("invalid " + mlkemParams.getName() + " private key");
         }
+        else if (Utils.slhdsaParams.containsKey(algOID))
+        {
+            SLHDSAParameters spParams = Utils.slhdsaParamsLookup(algOID);
+            ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
+
+            return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
+        }
         else if (
             algOID.equals(CryptoProObjectIdentifiers.gostR3410_2001) ||
                 algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) ||
@@ -390,6 +399,33 @@ public class PrivateKeyFactory
         }
     }
 
+    /**
+     * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
+     */
+    private static ASN1OctetString parseOctetString(ASN1OctetString octStr, int expectedLength)
+        throws IOException
+    {
+        byte[] data = octStr.getOctets();
+        //
+        // it's the right length for a RAW encoding, just return it.
+        //
+        if (data.length == expectedLength)
+        {
+            return octStr;
+        }
+
+        //
+        // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
+        ASN1OctetString obj = Utils.parseOctetData(data);
+
+        if (obj != null)
+        {
+            return ASN1OctetString.getInstance(obj);
+        }
+
+        return octStr;
+    }
+    
     /**
      * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
      * and in this case there may also be SEQUENCE.
