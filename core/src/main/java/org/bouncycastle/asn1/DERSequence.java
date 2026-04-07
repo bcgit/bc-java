@@ -157,7 +157,7 @@ public class DERSequence
 
     ASN1External toASN1External()
     {
-        return new DERExternal(this);
+        return DERExternal.fromSequence(this);
     }
 
     ASN1OctetString toASN1OctetString()

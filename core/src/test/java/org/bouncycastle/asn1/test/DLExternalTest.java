@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Exception;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -31,6 +32,27 @@ import org.bouncycastle.util.test.SimpleTest;
 public class DLExternalTest
     extends SimpleTest
 {
+    public void testConstructorInvalidCast()
+    {
+        // Enforce that this (very) malformed input results in an ASN1Exception (via failed ASN1External constructor).
+
+        // 6 bytes: SEQUENCE { CONSTRUCTED(0x28) { SEQUENCE {} } }
+        byte[] badEncoding = { 0x30, 0x30, 0x28, 0x02, 0x30, 0x00 };
+
+        try
+        {
+            ASN1Primitive.fromByteArray(badEncoding);
+            fail("ASN1Exception expected");
+        }
+        catch (ASN1Exception e)
+        {
+            // expected
+        }
+        catch (IOException e)
+        {
+            fail("ASN1Exception expected");
+        }
+    }
 
     /**
      * Checks that the values are correctly instantiated
@@ -46,7 +68,7 @@ public class DLExternalTest
         String ecType;
         try
         {
-            new DLExternal(new DLSequence(vec));
+            DLExternal.fromSequence(new DLSequence(vec));
             fail("exception expected");
         }
         catch (IllegalArgumentException iae)
@@ -57,7 +79,7 @@ public class DLExternalTest
         vec.add(new DERUTF8String("something completely different"));
         try
         {
-            new DLExternal(new DLSequence(vec));
+            DLExternal.fromSequence(new DLSequence(vec));
             fail("exception expected");
         }
         catch (IllegalArgumentException iae)
@@ -66,7 +88,7 @@ public class DLExternalTest
         }
         vec.add(new DLTaggedObject(true, 0, ASN1Integer.valueOf(1234567890)));
 
-        DLExternal dle = new DLExternal(new DLSequence(vec));
+        DLExternal dle = DLExternal.fromSequence(new DLSequence(vec));
 
         isEquals("check direct reference", null, dle.getDirectReference());
         isEquals("check indirect reference", null, dle.getIndirectReference());
@@ -84,7 +106,7 @@ public class DLExternalTest
         vec.add(ASN1Integer.valueOf(9));
         vec.add(new DERUTF8String("something completely different"));
         vec.add(new DLTaggedObject(true, 0, ASN1Integer.valueOf(1234567890)));
-        dle = new DLExternal(vec);
+        dle = DLExternal.fromVector(vec);
 
         isEquals("check direct reference", null, dle.getDirectReference());
         isTrue("check existence of indirect reference", dle.getIndirectReference() != null);
@@ -99,13 +121,13 @@ public class DLExternalTest
         isEquals("check type of external content: " + ecType, ASN1Integer.class.getName(), ecType);
         isEquals("check value of external content", "1234567890", ((ASN1Integer)dle.getExternalContent()).getValue().toString());
 
-        dle = new DLExternal(createRealDataExample(0));
+        dle = DLExternal.fromVector(createRealDataExample(0));
         checkRealDataExample(0, dle);
 
-        dle = new DLExternal(createRealDataExample(1));
+        dle = DLExternal.fromVector(createRealDataExample(1));
         checkRealDataExample(1, dle);
 
-        dle = new DLExternal(createRealDataExample(2));
+        dle = DLExternal.fromVector(createRealDataExample(2));
         checkRealDataExample(2, dle);
     }
 
@@ -248,7 +270,7 @@ public class DLExternalTest
 
     private void implTestReadEncoded(int encoding) throws Exception
     {
-        DLExternal dle = new DLExternal(createRealDataExample(encoding));
+        DLExternal dle = DLExternal.fromVector(createRealDataExample(encoding));
 
         ASN1InputStream ais = new ASN1InputStream(dle.getEncoded());
         ASN1Primitive ap = ais.readObject();
@@ -266,6 +288,7 @@ public class DLExternalTest
     public void performTest()
         throws Exception
     {
+        testConstructorInvalidCast();
         testInstantiationByVector();
         testReadEncoded();
     }
