@@ -29,7 +29,6 @@ public class AllTests
         suite.addTestSuite(InstanceTest.class);
         suite.addTestSuite(KeyManagerFactoryTest.class);
         suite.addTestSuite(MLDSACredentialsTest.class);
-        suite.addTestSuite(PKCS12Test.class);
         suite.addTestSuite(PSSCredentialsTest.class);
         suite.addTestSuite(SLHDSACredentialsTest.class);
         suite.addTestSuite(SSLServerSocketTest.class);

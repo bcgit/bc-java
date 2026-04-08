@@ -264,16 +264,6 @@ public class BouncyCastleJsseProvider
             });
         addAlias("Alg.Alias.SSLContext.SSL", "TLS");
         addAlias("Alg.Alias.SSLContext.SSLV3", "TLSV1");
-
-        addAlgorithmImplementation("KeyStore.PKCS12-PBMAC1", "org.bouncycastle.jsse.provider.KeyStore.PKCS12_PBMSha256",
-            new EngineCreator()
-            {
-                public Object createInstance(Object constructorParameter)
-                        throws GeneralSecurityException
-                {
-                    return new PKCS12KeyStoreSpi.BCPKCS12KeyStore();
-                }
-            });
     }
 
     void addAttribute(String key, String attributeName, String attributeValue)
