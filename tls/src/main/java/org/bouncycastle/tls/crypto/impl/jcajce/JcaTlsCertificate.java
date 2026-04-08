@@ -278,8 +278,9 @@ public class JcaTlsCertificate
         case SignatureScheme.sm2sig_sm3:
         {
             byte[] identifier = Strings.toByteArray("TLSv1.3+GM+Cipher+Suite");
-            AlgorithmParameterSpec paramSpec = new SM2ParameterSpec(identifier);
-            return crypto.createTls13Verifier("SM3withSM2", paramSpec, getPubKeyEC());
+            AlgorithmParameterSpec sm2Spec = new SM2ParameterSpec(identifier);
+
+            return crypto.createTls13Verifier("SM3withSM2", sm2Spec, getPubKeyEC());
         }
 
         case SignatureScheme.mldsa44:

@@ -5,8 +5,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.gm.GMNamedCurves;
-import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
@@ -31,8 +29,6 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
@@ -67,7 +63,6 @@ import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.TlsSigner;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.Tls13NullCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
@@ -475,7 +470,6 @@ public class BcTlsCrypto
     {
         switch (signatureScheme)
         {
-        case SignatureScheme.sm2sig_sm3:
         case SignatureScheme.mldsa44:
         case SignatureScheme.mldsa65:
         case SignatureScheme.mldsa87:
@@ -491,6 +485,7 @@ public class BcTlsCrypto
         case SignatureScheme.DRAFT_slhdsa_shake_192f:
         case SignatureScheme.DRAFT_slhdsa_shake_256s:
         case SignatureScheme.DRAFT_slhdsa_shake_256f:
+        case SignatureScheme.sm2sig_sm3:
             return true;
         default:
         {
