@@ -47,6 +47,6 @@ public class JcaTlsSLHDSASigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        return crypto.createStreamSigner("SLH-DSA", null, privateKey, false);
+        return crypto.createStreamSigner("SLH-DSA", null, privateKey, true);
     }
 }
