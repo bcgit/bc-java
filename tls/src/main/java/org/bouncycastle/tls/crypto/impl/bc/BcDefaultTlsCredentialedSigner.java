@@ -55,7 +55,7 @@ public class BcDefaultTlsCredentialedSigner
                 // [RFC 8998]
                 if (SignatureScheme.sm2sig_sm3 == signatureScheme)
                 {
-                    return new BcTlsSM2Signer(crypto, privKeyEC, Strings.toByteArray("TLSv1.3+GM+Cipher+Suite"));
+                    return new BcTlsSM2Signer(crypto, privKeyEC, signatureScheme);
                 }
 
                 if (SignatureScheme.isECDSA(signatureScheme))

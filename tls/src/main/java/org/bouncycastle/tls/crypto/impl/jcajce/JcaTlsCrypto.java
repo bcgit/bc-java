@@ -1273,7 +1273,10 @@ public class JcaTlsCrypto
             switch (signatureScheme)
             {
             case SignatureScheme.sm2sig_sm3:
-                return Boolean.FALSE;
+            {
+                helper.createSignature("SM3withSM2");
+                return Boolean.TRUE;
+            }
 
             default:
             {

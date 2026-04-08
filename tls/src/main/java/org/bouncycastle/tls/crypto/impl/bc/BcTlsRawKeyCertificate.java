@@ -28,7 +28,6 @@ import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.crypto.signers.MLDSASigner;
 import org.bouncycastle.crypto.signers.PSSSigner;
-import org.bouncycastle.crypto.signers.PlainDSAEncoding;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.crypto.signers.SLHDSASigner;
 import org.bouncycastle.crypto.signers.SM2Signer;
@@ -248,10 +247,10 @@ public class BcTlsRawKeyCertificate
         // [RFC 8998]
         case SignatureScheme.sm2sig_sm3:
         {
-            ParametersWithID parametersWithID = new ParametersWithID(getPubKeyEC(),
-                Strings.toByteArray("TLSv1.3+GM+Cipher+Suite"));
+            byte[] identifier = Strings.toByteArray("TLSv1.3+GM+Cipher+Suite");
+            ParametersWithID parametersWithID = new ParametersWithID(getPubKeyEC(), identifier);
 
-            SM2Signer verifier = new SM2Signer(PlainDSAEncoding.INSTANCE);
+            SM2Signer verifier = new SM2Signer();
             verifier.init(false, parametersWithID);
 
             return new BcTls13Verifier(verifier);

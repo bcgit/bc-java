@@ -601,6 +601,10 @@ class SignatureSchemeInfo
             {
                 // For the time being, do not enable stand-alone PQ schemes by default
             }
+            else if (SignatureScheme.sm2sig_sm3 == signatureScheme)
+            {
+                // Experimental, require explicit configuration
+            }
             else
             {
                 result[pos++] = signatureScheme;
