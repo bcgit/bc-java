@@ -440,7 +440,7 @@ public class BcTlsRawKeyCertificate
     {
         try
         {
-            return (MLDSAPublicKeyParameters)getPQCPublicKey();
+            return (MLDSAPublicKeyParameters)getPublicKey();
         }
         catch (ClassCastException e)
         {
@@ -452,26 +452,13 @@ public class BcTlsRawKeyCertificate
     {
         try
         {
-            return (SLHDSAPublicKeyParameters)getPQCPublicKey();
+            return (SLHDSAPublicKeyParameters)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not SLH-DSA", e);
         }
     }
-
-    protected AsymmetricKeyParameter getPQCPublicKey() throws IOException
-    {
-        try
-        {
-            return org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(keyInfo);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
-        }
-    }
-
 
     public RSAKeyParameters getPubKeyRSA() throws IOException
     {
