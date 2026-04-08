@@ -6,7 +6,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
@@ -137,8 +136,6 @@ public class PKCS12PBMAC1KeyStoreSpi
     extends KeyStoreSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers, BCKeyStore
 {
-    static final String PKCS12_MAX_IT_COUNT_PROPERTY = "org.bouncycastle.pkcs12.max_it_count";
-
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private static final int SALT_SIZE = 20;
@@ -651,7 +648,7 @@ public class PKCS12PBMAC1KeyStoreSpi
                 PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(algId.getParameters());
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
-                    validateIterationCount(pbeParams.getIterations()));
+                    PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
 
@@ -698,7 +695,7 @@ public class PKCS12PBMAC1KeyStoreSpi
             SecretKeyFactory keyFact = helper.createSecretKeyFactory(algorithm);
             PBEParameterSpec defParams = new PBEParameterSpec(
                 pbeParams.getIV(),
-                BigIntegers.intValueExact(pbeParams.getIterations()));
+                PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
             Cipher cipher = helper.createCipher(algorithm);
 
@@ -756,7 +753,7 @@ public class PKCS12PBMAC1KeyStoreSpi
             {
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
-                    BigIntegers.intValueExact(pbeParams.getIterations()));
+                    PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
 
@@ -799,29 +796,32 @@ public class PKCS12PBMAC1KeyStoreSpi
         AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
 
         SecretKeyFactory keyFact = helper.createSecretKeyFactory(alg.getKeyDerivationFunc().getAlgorithm().getId());
+
+        byte[] salt = func.getSalt();
+        int iterationCount = PKCS12Util.validateIterationCount(func.getIterationCount());
+        int keyLength = keySizeProvider.getKeySize(encScheme);
+
         SecretKey key;
-
-
         if (func.isDefaultPrf())
         {
             if ((mode == Cipher.DECRYPT_MODE || mode == Cipher.UNWRAP_MODE) && useISO8859d1ForDecryption)
             {
                 PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA1Digest());
 
-                pGen.init(new String(password).getBytes(StandardCharsets.ISO_8859_1), func.getSalt(), func.getIterationCount().intValueExact());
+                pGen.init(new String(password).getBytes(StandardCharsets.ISO_8859_1), salt, iterationCount);
 
-                KeyParameter kParam = (KeyParameter)pGen.generateDerivedParameters(keySizeProvider.getKeySize(encScheme));
+                KeyParameter kParam = (KeyParameter)pGen.generateDerivedParameters(keyLength);
 
                 key = new SecretKeySpec(kParam.getKey(), "AES");
             }
             else
             {
-                key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), validateIterationCount(func.getIterationCount()), keySizeProvider.getKeySize(encScheme)));
+                key = keyFact.generateSecret(new PBEKeySpec(password, salt, iterationCount, keyLength));
             }
         }
         else
         {
-            key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), validateIterationCount(func.getIterationCount()), keySizeProvider.getKeySize(encScheme), func.getPrf()));
+            key = keyFact.generateSecret(new PBKDF2KeySpec(password, salt, iterationCount, keyLength, func.getPrf()));
         }
 
         Cipher cipher = helper.createCipher(alg.getEncryptionScheme().getAlgorithm().getId());
@@ -945,7 +945,7 @@ public class PKCS12PBMAC1KeyStoreSpi
             DigestInfo dInfo = mData.getMac();
             macAlgorithm = dInfo.getAlgorithmId();
             byte[] salt = mData.getSalt();
-            itCount = validateIterationCount(mData.getIterationCount());
+            itCount = PKCS12Util.validateIterationCount(mData.getIterationCount());
             saltLength = salt.length;
 
             byte[] data = PKCS12Util.getContentOctets(info);
@@ -1347,28 +1347,6 @@ public class PKCS12PBMAC1KeyStoreSpi
         {
             localIds.put(alias, name);
         }
-    }
-
-    private int validateIterationCount(BigInteger i)
-    {
-        int count = BigIntegers.intValueExact(i);
-
-        if (count < 0)
-        {
-            throw new IllegalStateException("negative iteration count found");
-        }
-
-        BigInteger maxValue = Properties.asBigInteger(PKCS12_MAX_IT_COUNT_PROPERTY);
-        if (maxValue != null)
-        {
-            if (BigIntegers.intValueExact(maxValue) < count)
-            {
-                throw new IllegalStateException("iteration count " + count + " greater than "
-                    + BigIntegers.intValueExact(maxValue));
-            }
-        }
-
-        return count;
     }
 
     private ASN1Primitive getAlgParams(ASN1ObjectIdentifier algorithm)
@@ -2117,7 +2095,7 @@ public class PKCS12PBMAC1KeyStoreSpi
                 generator.init(
                     Strings.toUTF8ByteArray(password),
                     pbkdf2Params.getSalt(),
-                    BigIntegers.intValueExact(pbkdf2Params.getIterationCount()));
+                    PKCS12Util.validateIterationCount(pbkdf2Params.getIterationCount()));
 
                 CipherParameters key = generator.generateDerivedParameters(BigIntegers.intValueExact(pbkdf2Params.getKeyLength()) * 8);
 
