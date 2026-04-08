@@ -713,7 +713,8 @@ public class OpenPGPCertificate
                                                        Date evaluationDate)
     {
         // Check if there are signatures at all for the component
-        OpenPGPSignatureChains chainsForComponent = getAllSignatureChainsFor(component);
+        OpenPGPSignatureChains chainsForComponent = getAllSignatureChainsFor(component)
+            .fromOrigin(origin);
         boolean isPrimaryKey = component == getPrimaryKey();
         if (isPrimaryKey && chainsForComponent.getCertificationAt(evaluationDate) == null)
         {
@@ -721,19 +722,22 @@ public class OpenPGPCertificate
             OpenPGPUserId primaryUserId = getPrimaryUserId(evaluationDate);
             if (primaryUserId != null)
             {
-                chainsForComponent.addAll(getAllSignatureChainsFor(primaryUserId));
+                chainsForComponent.addAll(getAllSignatureChainsFor(primaryUserId).fromOrigin(origin));
             }
         }
 
-        // Isolate chains which originate from the passed origin key component
-        OpenPGPSignatureChains fromOrigin = chainsForComponent.fromOrigin(origin);
-        if (fromOrigin == null)
+        if (chainsForComponent == null)
         {
             return null;
         }
 
         // Return chain that currently takes precedence
-        return fromOrigin.getChainAt(evaluationDate);
+        return chainsForComponent.getChainAt(evaluationDate);
+    }
+
+    private OpenPGPSignatureChains getSelfSignatureChainsFor(OpenPGPCertificateComponent component)
+    {
+        return getAllSignatureChainsFor(component).fromOrigin(getPrimaryKey());
     }
 
     /**
@@ -916,11 +920,10 @@ public class OpenPGPCertificate
      * Note: To get all keys that have EITHER flag A or B, call <pre>getEncryptionKeys(evalTime, A, B)</pre>.
      * To instead get all keys that have BOTH flags A AND B, call <pre>getEncryptionKeys(evalTime, A | B)</pre>.
      *
-     * @see KeyFlags
-     *
      * @param evaluationTime evaluation time
-     * @param keyFlags key flags
+     * @param keyFlags       key flags
      * @return keys with the given flags
+     * @see KeyFlags
      */
     public List<OpenPGPComponentKey> getEncryptionKeys(Date evaluationTime, final int... keyFlags)
     {
@@ -998,8 +1001,7 @@ public class OpenPGPCertificate
      */
     private OpenPGPSignatureChain getPreferenceSignature(Date evaluationTime)
     {
-        OpenPGPSignatureChain directKeyBinding = getPrimaryKey().getSignatureChains()
-            .fromOrigin(getPrimaryKey())
+        OpenPGPSignatureChain directKeyBinding = getPrimaryKey().getSelfSignatureChains()
             .getCertificationAt(evaluationTime);
 
         if (directKeyBinding != null)
@@ -1010,8 +1012,8 @@ public class OpenPGPCertificate
         List<OpenPGPSignatureChain> uidBindings = new ArrayList<OpenPGPSignatureChain>();
         for (Iterator<OpenPGPUserId> it = getPrimaryKey().getUserIDs().iterator(); it.hasNext(); )
         {
-            OpenPGPSignatureChain uidBinding = getAllSignatureChainsFor(it.next())
-                .fromOrigin(getPrimaryKey()).getCertificationAt(evaluationTime);
+            OpenPGPSignatureChain uidBinding = getSelfSignatureChainsFor(it.next())
+                .getCertificationAt(evaluationTime);
 
             if (uidBinding != null)
             {
@@ -1115,12 +1117,49 @@ public class OpenPGPCertificate
     }
 
     /**
+     * Return a list containing all third-party issued key signatures on the primary key (delegations
+     * and revocations).
+     * Note: This list DOES NOT contain third-party certifications over user-ids.
+     *
+     * @return third-party key signatures
+     */
+    public List<OpenPGPComponentSignature> getAllThirdPartyKeySignatures()
+    {
+        List<OpenPGPComponentSignature> signatures = new ArrayList<>();
+        signatures.addAll(getPrimaryKey().getThirdPartyCertifications());
+        signatures.addAll(getPrimaryKey().getThirdPartyRevocations());
+        return signatures;
+    }
+
+    /**
+     * Return all {@link OpenPGPSignatureChains} that represent delegations by the given
+     * third-party {@link OpenPGPCertificate} on this certificates primary key.
+     * A delegation is a signature of type {@link PGPSignature#DIRECT_KEY}, which represents a
+     * delegation of trust and can be used to mark the certificate as a trusted introducer.
+     * Each delegation is returned as an {@link OpenPGPSignatureChain} where the delegation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at delegation signature creation time.
+     *
+     * @param thirdPartyCertificate third-party certificate which issued the delegation signatures
+     * @return full signature chains of all delegations by the third-party certificate over this
+     * certificate
+     */
+    public OpenPGPSignatureChains getDelegationsBy(OpenPGPCertificate thirdPartyCertificate)
+    {
+        return getPrimaryKey().getThirdPartySignatureChainsBy(thirdPartyCertificate)
+            .getCertifications();
+    }
+
+    /**
      * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
      * which represents a delegation of trust.
+     * The delegation is returned as an {@link OpenPGPSignatureChain} where the delegation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at delegation signature creation time.
      * If no delegation signature is found, return null.
      *
      * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
-     * @return chain containing the latest delegation issued by the 3rd-party certificate
+     * @return full signature chain of the latest delegation issued by the 3rd-party certificate
      */
     public OpenPGPSignatureChain getDelegationBy(OpenPGPCertificate thirdPartyCertificate)
     {
@@ -1130,27 +1169,52 @@ public class OpenPGPCertificate
     /**
      * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
      * which represents a delegation of trust at evaluation time.
+     * The delegation is returned as an {@link OpenPGPSignatureChain} where the delegation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at delegation signature creation time.
      * If no delegation signature is found, return null.
      *
      * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
      * @param evaluationTime        reference time
-     * @return chain containing the (at evaluation time) latest delegation issued by the 3rd-party certificate
+     * @return full signature chain of the (at evaluation time) latest delegation issued by the
+     * 3rd-party certificate
      */
     public OpenPGPSignatureChain getDelegationBy(
         OpenPGPCertificate thirdPartyCertificate,
         Date evaluationTime)
     {
-        OpenPGPSignatureChains chainsBy = getPrimaryKey().
-            getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
-        return chainsBy.getCertificationAt(evaluationTime);
+        return getDelegationsBy(thirdPartyCertificate).getCertificationAt(evaluationTime);
+    }
+
+    /**
+     * Return all {@link OpenPGPSignatureChains} that represent revocations of delegations by the given
+     * third-party {@link OpenPGPCertificate} on this certificates primary key.
+     * A delegation revocation is a signature of type {@link PGPSignature#KEY_REVOCATION}, which revokes an earlier
+     * delegation of trust.
+     * Each revocation is returned as an {@link OpenPGPSignatureChain} where the revocation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at revocation signature creation time.
+     *
+     * @param thirdPartyCertificate third-party certificate which issued the revocation signatures
+     * @return full signature chains for all revocations by the third-party certificate over this
+     * certificate
+     */
+    public OpenPGPSignatureChains getRevocationsBy(OpenPGPCertificate thirdPartyCertificate)
+    {
+        return getPrimaryKey().getThirdPartySignatureChainsBy(thirdPartyCertificate)
+            .getRevocations();
     }
 
     /**
      * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
      * which represents a revocation of trust.
+     * The revocation is returned as an {@link OpenPGPSignatureChain} where the revocation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at revocation signature creation time.
      *
      * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
-     * @return chain containing the latest revocation issued by the 3rd party certificate
+     * @return full signature chain containing the latest revocation issued by the 3rd party
+     * certificate
      */
     public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
     {
@@ -1160,18 +1224,21 @@ public class OpenPGPCertificate
     /**
      * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
      * which (at evaluation time) represents a revocation of trust.
+     * The revocation is returned as an {@link OpenPGPSignatureChain} where the revocation
+     * is the leaf link prepended by the binding signature chain of the issuing third-party
+     * certificate component at revocation signature creation time.
      *
      * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
      * @param evaluationTime        reference time
-     * @return chain containing the (at evaluation time) latest revocation issued by the 3rd party certificate
+     * @return full signature chain containing the (at evaluation time) latest revocation issued
+     * by the 3rd party certificate
      */
     public OpenPGPSignatureChain getRevocationBy(
         OpenPGPCertificate thirdPartyCertificate,
         Date evaluationTime)
     {
-        OpenPGPSignatureChains chainsBy = getPrimaryKey()
-            .getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
-        return chainsBy.getRevocationAt(evaluationTime);
+        return getRevocationsBy(thirdPartyCertificate)
+            .getRevocationAt(evaluationTime);
     }
 
     /**
@@ -1245,6 +1312,38 @@ public class OpenPGPCertificate
         }
 
         /**
+         * Return all self-signature chains on components of this certificate.
+         *
+         * @return self-signature chains
+         */
+        protected OpenPGPSignatureChains getSelfSignatureChains()
+        {
+            return getSignatureChains().fromOrigin(getCertificate().getPrimaryKey());
+        }
+
+        /**
+         * Return all third-party signature chains originating from the given certificate on this certificate.
+         *
+         * @param thirdPartyCertificate third-party certificate
+         * @return all signature chains over this component which originate at the given third-party certificate.
+         */
+        protected OpenPGPSignatureChains getThirdPartySignatureChainsBy(
+            OpenPGPCertificate thirdPartyCertificate)
+        {
+            return getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate);
+        }
+
+        /**
+         * Return the latest self-signature certification binding this component.
+         *
+         * @return latest component certification signature
+         */
+        public OpenPGPComponentSignature getCertification()
+        {
+            return getCertification(new Date());
+        }
+
+        /**
          * Return the (at evaluation time) latest self certification signature binding this component.
          *
          * @param evaluationTime reference time
@@ -1252,14 +1351,23 @@ public class OpenPGPCertificate
          */
         public OpenPGPComponentSignature getCertification(Date evaluationTime)
         {
-            OpenPGPSignatureChain certification = getSignatureChains()
-                    .fromOrigin(getCertificate().getPrimaryKey())
-                    .getCertificationAt(evaluationTime);
+            OpenPGPSignatureChain certification = getSelfSignatureChains()
+                .getCertificationAt(evaluationTime);
             if (certification != null)
             {
                 return certification.getSignature();
             }
             return null;
+        }
+
+        /**
+         * Return the latest revocation signature on this component.
+         *
+         * @return latest revocation
+         */
+        public OpenPGPComponentSignature getRevocation()
+        {
+            return getRevocation(new Date());
         }
 
         /**
@@ -1270,14 +1378,53 @@ public class OpenPGPCertificate
          */
         public OpenPGPComponentSignature getRevocation(Date evaluationTime)
         {
-            OpenPGPSignatureChain revocation = getSignatureChains()
-                    .fromOrigin(getCertificate().getPrimaryKey())
-                    .getRevocationAt(evaluationTime);
+            OpenPGPSignatureChain revocation = getSelfSignatureChains()
+                .getRevocationAt(evaluationTime);
             if (revocation != null)
             {
                 return revocation.getSignature();
             }
             return null;
+        }
+
+        /**
+         * Return a list of all third-party-issued certifying
+         * {@link OpenPGPComponentSignature OpenPGPComponentSignatures} on this component.
+         *
+         * @return all third-party issued certification signatures on this component.
+         */
+        public List<OpenPGPComponentSignature> getThirdPartyCertifications()
+        {
+            OpenPGPSignatureChains allChains = getSignatureChains();
+            List<OpenPGPComponentSignature> thirdPartyCertifications = new ArrayList<>();
+            for (OpenPGPSignatureChain chain : allChains)
+            {
+                if (chain.isCertification() && chain.getRootLinkIssuer() == null)
+                {
+                    thirdPartyCertifications.add(chain.getSignature());
+                }
+            }
+            return thirdPartyCertifications;
+        }
+
+        /**
+         * Return a list of all third-party-issued revoking
+         * {@link OpenPGPComponentSignature OpenPGPComponentSignatures} on this component.
+         *
+         * @return all third-party issued revocation signatures on this component.
+         */
+        public List<OpenPGPComponentSignature> getThirdPartyRevocations()
+        {
+            OpenPGPSignatureChains allChains = getSignatureChains();
+            List<OpenPGPComponentSignature> thirdPartyRevocations = new ArrayList<>();
+            for (OpenPGPSignatureChain chain : allChains)
+            {
+                if (chain.isRevocation() && chain.getRootLinkIssuer() == null)
+                {
+                    thirdPartyRevocations.add(chain.getSignature());
+                }
+            }
+            return thirdPartyRevocations;
         }
 
         /**
@@ -1552,9 +1699,8 @@ public class OpenPGPCertificate
          */
         protected OpenPGPSignature.OpenPGPSignatureSubpacket getApplyingSubpacket(Date evaluationTime, int subpacketType)
         {
-            OpenPGPSignatureChain binding = getSignatureChains()
-                    .fromOrigin(getCertificate().getPrimaryKey())
-                    .getCertificationAt(evaluationTime);
+            OpenPGPSignatureChain binding = getSelfSignatureChains()
+                .getCertificationAt(evaluationTime);
             if (binding == null)
             {
                 // is not bound
@@ -1605,34 +1751,34 @@ public class OpenPGPCertificate
         }
 
         /**
-         * Iterate over signatures issued over this component by the given 3rd-party certificate,
-         * merge them with the (at evaluation time) valid self-certification chain and return the
-         * results.
+         * Find all third-party {@link OpenPGPComponentSignature component signatures} on this component, which
+         * were issued by the given third-party certificate. Find the {@link OpenPGPSignatureChains} binding the
+         * issuing component key and append the third-party signatures as leaf links. Return all such chains.
+         * This is a utility method for third-party signature chain evaluation.
          *
-         * @param thirdPartyCertificate certificate of a 3rd party
-         * @param evaluationTime        reference time
-         * @return all 3rd party signatures on this component, merged with their issuer chains
+         * @param thirdPartyCertificate third-party certificate
+         * @return dangling external signatures with issuer signature chains prepended
          */
         protected OpenPGPSignatureChains getMergedDanglingExternalSignatureChainEndsFrom(
-            OpenPGPCertificate thirdPartyCertificate,
-            Date evaluationTime)
+            OpenPGPCertificate thirdPartyCertificate)
         {
             OpenPGPSignatureChains chainsBy = new OpenPGPSignatureChains(this);
 
-            OpenPGPSignatureChains allChains = getCertificate().getAllSignatureChainsFor(this)
-                .getChainsAt(evaluationTime);
+            OpenPGPSignatureChains allChains = getCertificate().getAllSignatureChainsFor(this);
+
             for (Iterator<OpenPGPSignatureChain> it = allChains.iterator(); it.hasNext(); )
             {
                 OpenPGPSignatureChain.Link rootLink = it.next().getRootLink();
-                for (Iterator<OpenPGPComponentKey> it2 = thirdPartyCertificate.getKeys().iterator(); it2.hasNext(); )
+                for (Iterator<OpenPGPComponentKey> thirdPartyKeys = thirdPartyCertificate.getKeys().iterator(); thirdPartyKeys.hasNext(); )
                 {
-                    OpenPGPComponentKey issuerKey = it2.next();
+                    OpenPGPComponentKey issuerKey = thirdPartyKeys.next();
                     if (KeyIdentifier.matches(
                         rootLink.getSignature().getKeyIdentifiers(),
                         issuerKey.getKeyIdentifier(),
                         true))
                     {
-                        OpenPGPSignatureChain externalChain = issuerKey.getSignatureChains().getChainAt(evaluationTime);
+                        OpenPGPSignatureChain externalChain = issuerKey.getSelfSignatureChains()
+                            .getChainAt(rootLink.getSignature().getCreationTime());
                         externalChain = externalChain.plus(
                             new OpenPGPComponentSignature(rootLink.signature.getSignature(), issuerKey, this));
                         chainsBy.add(externalChain);
@@ -1739,6 +1885,17 @@ public class OpenPGPCertificate
             }
 
             return new Date(getTargetKeyComponent().getCreationTime().getTime() + 1000 * exp);
+        }
+
+        /**
+         * Verify this signature.
+         *
+         * @throws PGPSignatureException if the signature cannot be verified successfully
+         */
+        public void verify()
+            throws PGPSignatureException
+        {
+            verify(getIssuerCertificate().implementation);
         }
 
         /**
@@ -2157,8 +2314,7 @@ public class OpenPGPCertificate
         @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
-            OpenPGPSignatureChain currentDKChain = getSignatureChains()
-                .fromOrigin(getCertificate().getPrimaryKey())
+            OpenPGPSignatureChain currentDKChain = getSelfSignatureChains()
                 .getChainAt(evaluationTime);
             if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
             {
@@ -2196,7 +2352,7 @@ public class OpenPGPCertificate
          * To instead check, if the key has BOTH flags A AND B, call <pre>isEncryptionKey(evalTime, A | B)</pre>.
          *
          * @param evaluationTime evaluation time
-         * @param keyFlags key flags
+         * @param keyFlags       key flags
          * @return true if the key is an encryption key for any of the given key flags
          */
         public boolean isEncryptionKey(Date evaluationTime, int... keyFlags)
@@ -2361,8 +2517,7 @@ public class OpenPGPCertificate
         public OpenPGPComponentSignature getLatestDirectKeySelfSignature(Date evaluationTime)
         {
             OpenPGPSignatureChain currentDKChain = getCertificate()
-                .getAllSignatureChainsFor(this)
-                .fromOrigin(this)
+                .getSelfSignatureChainsFor(this)
                 .getCertificationAt(evaluationTime);
             if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
             {
@@ -2391,8 +2546,7 @@ public class OpenPGPCertificate
         public OpenPGPComponentSignature getLatestKeyRevocationSelfSignature(Date evaluationTime)
         {
             OpenPGPSignatureChain currentRevocationChain = getCertificate()
-                .getAllSignatureChainsFor(this)
-                .fromOrigin(this)
+                .getSelfSignatureChainsFor(this)
                 .getRevocationAt(evaluationTime);
             if (currentRevocationChain != null && !currentRevocationChain.chainLinks.isEmpty())
             {
@@ -2741,9 +2895,8 @@ public class OpenPGPCertificate
         @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
-            OpenPGPSignatureChain currentChain = getSignatureChains()
-                    .fromOrigin(getPrimaryKey())
-                    .getChainAt(evaluationTime);
+            OpenPGPSignatureChain currentChain = getSelfSignatureChains()
+                .getChainAt(evaluationTime);
             if (currentChain != null && !currentChain.chainLinks.isEmpty())
             {
                 return currentChain.getSignature();
@@ -2758,11 +2911,30 @@ public class OpenPGPCertificate
         }
 
         /**
-         * Return the latest {@link OpenPGPSignatureChain} containing a certification issued by the given
-         * 3rd-party certificate over this identity component.
+         * Return all third-party certification signatures issued by the third-party certificate over
+         * this component.
+         * Each certification is returned as an {@link OpenPGPSignatureChain} where the certification
+         * is the leaf link prepended by the binding signature chain of the issuing third-party
+         * certificate component at certification signature creation time.
          *
-         * @param thirdPartyCertificate certificate of a 3rd party
-         * @return 3rd party certification
+         * @param thirdPartyCertificate third-party certificate
+         * @return all certifications by the third-party cert as full signature chains
+         */
+        public OpenPGPSignatureChains getCertificationsBy(OpenPGPCertificate thirdPartyCertificate)
+        {
+            return getThirdPartySignatureChainsBy(thirdPartyCertificate)
+                .getCertifications();
+        }
+
+        /**
+         * Return the latest third-party certification signature issued by the third-party certificate
+         * over this component.
+         * The certification is returned as an {@link OpenPGPSignatureChain} where the certification
+         * is the leaf link prepended by the binding signature chain of the issuing third-party
+         * certificate component at certification signature creation time.
+         *
+         * @param thirdPartyCertificate third-party certificate
+         * @return latest certification by the third-party cert as full signature chain
          */
         public OpenPGPSignatureChain getCertificationBy(OpenPGPCertificate thirdPartyCertificate)
         {
@@ -2770,27 +2942,48 @@ public class OpenPGPCertificate
         }
 
         /**
-         * Return the latest (at evaluation time) {@link OpenPGPSignatureChain} containing a certification
-         * issued by the given 3rd-party certificate over this identity component.
+         * Return the - at evaluation time - latest third-party certification signature issued by the
+         * third-party certificate over this component.
+         * The certification is returned as an {@link OpenPGPSignatureChain} where the certification
+         * is the leaf link prepended by the binding signature chain of the issuing third-party
+         * certificate component at certification signature creation time.
          *
+         * @param thirdPartyCertificate third-party certificate
          * @param evaluationTime        reference time
-         * @param thirdPartyCertificate certificate of a 3rd party
-         * @return 3rd party certification
+         * @return at reference time latest certification by the third-party cert as full signature chain
          */
         public OpenPGPSignatureChain getCertificationBy(
             OpenPGPCertificate thirdPartyCertificate,
             Date evaluationTime)
         {
-            OpenPGPSignatureChains chainsBy = getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
-            return chainsBy.getCertificationAt(evaluationTime);
+            return getCertificationsBy(thirdPartyCertificate).getCertificationAt(evaluationTime);
         }
 
         /**
-         * Return the latest {@link OpenPGPSignatureChain} containing a revocation issued by the given
-         * 3rd-party certificate over this identity component.
+         * Return all third-party revocation signatures issued by the third-party certificate over
+         * this component.
+         * Each revocation is returned as an {@link OpenPGPSignatureChain} where the revocation is the
+         * leaf link prepended by the binding signature chain of the issuing third-party certificate
+         * component at revocation signature creation time.
          *
-         * @param thirdPartyCertificate certificate of a 3rd party
-         * @return 3rd party revocation signature
+         * @param thirdPartyCertificate third-party certificate
+         * @return all revocations by the third-party cert as full signature chains
+         */
+        public OpenPGPSignatureChains getRevocationsBy(OpenPGPCertificate thirdPartyCertificate)
+        {
+            return getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate)
+                .getRevocations();
+        }
+
+        /**
+         * Return the latest third-party revocation signature issued by the third-party certificate
+         * over this component.
+         * The revocation is returned as an {@link OpenPGPSignatureChain} where the revocation is the
+         * leaf link prepended by the binding signature chain of the issuing third-party certificate
+         * component at revocation signature creation time.
+         *
+         * @param thirdPartyCertificate third-party certificate
+         * @return latest revocation by the third-party cert as full signature chain
          */
         public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
         {
@@ -2798,19 +2991,21 @@ public class OpenPGPCertificate
         }
 
         /**
-         * Return the latest (at evaluation time) {@link OpenPGPSignatureChain} containing a revocation issued by the given
-         * 3rd-party certificate over this identity component.
+         * Return the - at evaluation time - latest third-party revocation signature issued by the
+         * third-party certificate over this component.
+         * The revocation is returned as an {@link OpenPGPSignatureChain} where the revocation is the
+         * leaf link prepended by the binding signature chain of the issuing third-party certificate
+         * component at revocation signature creation time.
          *
-         * @param thirdPartyCertificate certificate of a 3rd party
+         * @param thirdPartyCertificate third-party certificate
          * @param evaluationTime        reference time
-         * @return 3rd party revocation signature
+         * @return at reference time latest revocation by the third-party cert as full signature chain
          */
         public OpenPGPSignatureChain getRevocationBy(
             OpenPGPCertificate thirdPartyCertificate,
             Date evaluationTime)
         {
-            OpenPGPSignatureChains chainsBy = getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
-            return chainsBy.getRevocationAt(evaluationTime);
+            return getRevocationsBy(thirdPartyCertificate).getRevocationAt(evaluationTime);
         }
 
         @Override
@@ -2911,13 +3106,63 @@ public class OpenPGPCertificate
     /**
      * Chain of {@link OpenPGPSignature signatures}.
      * Such a chain originates from a certificates primary key and points towards some certificate component that
-     * is bound to the certificate.
+     * is bound to a certificate.
      * As for example a subkey can only be bound by a primary key that holds either at least one
      * direct-key self-signature or at least one user-id binding signature, multiple signatures may form
      * a validity chain.
+     * Another example is a third-party certification over a user-id or certificates primary key. Here, the chain
+     * originates from the certifiers primary key and ends at the user-id or primary key of the signee.
      * An {@link OpenPGPSignatureChain} can either be a certification
      * ({@link #isCertification()}), e.g. it represents a positive binding,
      * or it can be a revocation ({@link #isRevocation()}) which invalidates a positive binding.
+     * <p>
+     * Example:
+     * <pre>
+     *                           v-----------\
+     *           [PRIMARY KEY 0xAAAA]         \
+     *            /         \       \         |
+     *           /           \       \__(DIRECT KEY SIG #0)
+     *   (USERID BINDING #1) |
+     *          |    (SUBKEY BINDING #2)
+     *          v           |
+     *  [USERID Alice]      v
+     *                  [SUBKEY 0xAABB]
+     * </pre>
+     * Here, the certificates components are bound like follows:
+     * <ul>
+     *     <li>Primary Key {@code 0xAAAA}: {@code [0xAAAA->#0->0xAAAA]}</li>
+     *     <li>UserID {@code Alice}: {@code [0xAAAA->#0->#1->Alice]}</li>
+     *     <li>Subkey {@code 0xAABB}: {@code [0xAAAA->#0->#2->0xAABB]}</li>
+     * </ul>
+     * Note: If the certificate does not carry a direct-key self-signature, the primary user-id
+     * binding would be used as root link in its place.
+     * A binding can also be a revocation. In such case, the whole chain represents a revocation.
+     * <p>
+     * In Web-of-Trust scenarios, signature chains can span multiple certificates.
+     * <p>
+     * Example:
+     * <pre>
+     *                               ________________
+     *                              v               |
+     *               [PRIMARY KEY 0xAAAA]---(DIRECT KEY SIG #0)
+     *               /         |     \
+     *  (USERID BINDING #1)    |      \
+     *        |                |  (DELEGATION #2)-->[PRIMARY KEY 0xBBBB]
+     *        |                \                            |
+     *        v                 \                  (USERID BINDING #3)
+     * [USERID Alice]      (CERTIFICATION #4)               |
+     *                             \                        v
+     *                              \________________>[USERID Bob]
+     * </pre>
+     * Here, Alice delegated trust to Bob by issuing a direct key delegation signature ({@code #0})
+     * over Bobs primary key, as well as a 3rd-party certification signature for UserID Bob.
+     * Now there are the following paths of trust from Alice's certificate down to Bobs certificate:
+     * <ul>
+     *     <li>Bobs Certificate (primary key {@code 0xBBBB}): {@code [0xAAAA->#0->#2->0xBBBB}</li>
+     *     <li>Bobs UserID {@code Bob}: {@code [0xAAAA->#0->#4->Bob}</li>
+     * </ul>
+     * Note, that certificate {@code 0xAAAA} holds signatures {@code #0,#1}, while
+     * certificate {@code 0xBBBB} holds signatures {@code #2,#3,#4}.
      */
     public static class OpenPGPSignatureChain
         implements Comparable<OpenPGPSignatureChain>, Iterable<OpenPGPSignatureChain.Link>
@@ -3554,6 +3799,44 @@ public class OpenPGPCertificate
         public boolean isEmpty()
         {
             return chains.isEmpty();
+        }
+
+        /**
+         * Filter for certifications.
+         *
+         * @return certification signature chains
+         */
+        public OpenPGPSignatureChains getCertifications()
+        {
+            OpenPGPSignatureChains certifications = new OpenPGPSignatureChains(targetComponent);
+            for (Iterator<OpenPGPSignatureChain> it = chains.iterator(); it.hasNext(); )
+            {
+                OpenPGPSignatureChain chain = it.next();
+                if (chain.isCertification())
+                {
+                    certifications.add(chain);
+                }
+            }
+            return certifications;
+        }
+
+        /**
+         * Filter for revocations.
+         *
+         * @return revocation signature chains
+         */
+        public OpenPGPSignatureChains getRevocations()
+        {
+            OpenPGPSignatureChains revocations = new OpenPGPSignatureChains(targetComponent);
+            for (Iterator<OpenPGPSignatureChain> it = chains.iterator(); it.hasNext(); )
+            {
+                OpenPGPSignatureChain chain = it.next();
+                if (chain.isRevocation())
+                {
+                    revocations.add(chain);
+                }
+            }
+            return revocations;
         }
 
         /**
