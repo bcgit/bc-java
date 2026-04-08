@@ -120,6 +120,7 @@ import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -947,7 +948,7 @@ public class PKCS12PBMAC1KeyStoreSpi
             itCount = validateIterationCount(mData.getIterationCount());
             saltLength = salt.length;
 
-            byte[] data = ((ASN1OctetString)info.getContent()).getOctets();
+            byte[] data = PKCS12Util.getContentOctets(info);
 
             try
             {
@@ -996,8 +997,7 @@ public class PKCS12PBMAC1KeyStoreSpi
             {
                 if (c[i].getContentType().equals(data))
                 {
-                    ASN1OctetString authSafeContent = ASN1OctetString.getInstance(c[i].getContent());
-                    ASN1Sequence seq = ASN1Sequence.getInstance(authSafeContent.getOctets());
+                    ASN1Sequence seq = ASN1Sequence.getInstance(PKCS12Util.getContentOctets(c[i]));
 
                     for (int j = 0; j != seq.size(); j++)
                     {
@@ -1025,9 +1025,9 @@ public class PKCS12PBMAC1KeyStoreSpi
                 }
                 else if (c[i].getContentType().equals(encryptedData))
                 {
-                    EncryptedData d = EncryptedData.getInstance(c[i].getContent());
+                    EncryptedData d = EncryptedData.getInstance(PKCS12Util.getContent(c[i]));
                     byte[] octets = cryptData(false, d.getEncryptionAlgorithm(),
-                        password, wrongPKCS12Zero, d.getContent().getOctets());
+                        password, wrongPKCS12Zero, PKCS12Util.getEncryptedContent(d).getOctets());
                     ASN1Sequence seq = ASN1Sequence.getInstance(octets);
 
                     noEnc = false;
@@ -1058,7 +1058,7 @@ public class PKCS12PBMAC1KeyStoreSpi
                 {
                     // -DM 2 System.out.println
                     System.out.println("extra " + c[i].getContentType().getId());
-                    System.out.println("extra " + ASN1Dump.dumpAsString(c[i].getContent()));
+                    System.out.println("extra " + ASN1Dump.dumpAsString(PKCS12Util.getContent(c[i])));
                 }
             }
         }
@@ -1924,7 +1924,7 @@ public class PKCS12PBMAC1KeyStoreSpi
 
         random.nextBytes(mSalt);
 
-        byte[] data = ((ASN1OctetString)mainInfo.getContent()).getOctets();
+        byte[] data = PKCS12Util.getContentOctets(mainInfo);
 
         MacData mData;
 

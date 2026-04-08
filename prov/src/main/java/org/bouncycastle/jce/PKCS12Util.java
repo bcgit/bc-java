@@ -8,13 +8,16 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
+import org.bouncycastle.asn1.pkcs.EncryptedData;
 import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -56,8 +59,7 @@ public class PKCS12Util
 
         ContentInfo info = pfx.getAuthSafe();
 
-        ASN1OctetString content = ASN1OctetString.getInstance(info.getContent());
-        ASN1Primitive obj = ASN1Primitive.fromByteArray(content.getOctets());
+        ASN1Primitive obj = ASN1Primitive.fromByteArray(getContentOctets(info));
 
         byte[] derEncoding = obj.getEncoded(ASN1Encoding.DER);
 
@@ -67,7 +69,7 @@ public class PKCS12Util
         try
         {
             int itCount = mData.getIterationCount().intValue();
-            byte[] data = ASN1OctetString.getInstance(info.getContent()).getOctets();
+            byte[] data = getContentOctets(info);
             byte[] res = calculatePbeMac(mData.getMac().getAlgorithmId().getAlgorithm(), mData.getSalt(), itCount, passwd, data, provider);
 
             AlgorithmIdentifier algId = new AlgorithmIdentifier(mData.getMac().getAlgorithmId().getAlgorithm(), DERNull.INSTANCE);
@@ -83,6 +85,33 @@ public class PKCS12Util
         pfx = new Pfx(info, mData);
 
         return pfx.getEncoded(ASN1Encoding.DER);
+    }
+
+    public static ASN1Encodable getContent(ContentInfo contentInfo) throws IOException
+    {
+        ASN1Encodable content = contentInfo.getContent();
+        if (content == null)
+        {
+            throw new ASN1ParsingException("ContentInfo content missing");
+        }
+
+        return content;
+    }
+
+    public static byte[] getContentOctets(ContentInfo contentInfo) throws IOException
+    {
+        return ASN1OctetString.getInstance(getContent(contentInfo)).getOctets();
+    }
+
+    public static ASN1OctetString getEncryptedContent(EncryptedData encryptedData) throws IOException
+    {
+        ASN1OctetString content = encryptedData.getContent();
+        if (content == null)
+        {
+            throw new ASN1ParsingException("EncryptedContentInfo content missing");
+        }
+
+        return content;
     }
 
     private static byte[] calculatePbeMac(
