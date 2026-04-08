@@ -57,7 +57,7 @@ class MacDataGenerator
             salt = params.getIV();
             iterations = BigIntegers.intValueExact(params.getIterations());
         }
-                     System.err.println(iterations);
+        
         return new MacData(dInfo, salt, iterations);
     }
 }
