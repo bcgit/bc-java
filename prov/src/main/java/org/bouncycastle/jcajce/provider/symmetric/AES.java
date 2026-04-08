@@ -880,7 +880,7 @@ public final class AES
         {
             if (GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                gcmParams = GcmSpecUtil.extractGcmParameters(paramSpec);
+                gcmParams = GCMParameters.getInstance(GcmSpecUtil.extractGcmParameters(paramSpec));
             }
             else if (paramSpec instanceof AEADParameterSpec)
             {

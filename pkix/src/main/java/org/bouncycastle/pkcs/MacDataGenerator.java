@@ -1,7 +1,5 @@
 package org.bouncycastle.pkcs;
 
-
-
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.pkcs.MacData;
@@ -10,6 +8,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.operator.MacCalculator;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 class MacDataGenerator
@@ -56,9 +55,9 @@ class MacDataGenerator
         {
             PKCS12PBEParams params = PKCS12PBEParams.getInstance(algId.getParameters());
             salt = params.getIV();
-            iterations = params.getIterations().intValue();
+            iterations = BigIntegers.intValueExact(params.getIterations());
         }
-        
+                     System.err.println(iterations);
         return new MacData(dInfo, salt, iterations);
     }
 }
