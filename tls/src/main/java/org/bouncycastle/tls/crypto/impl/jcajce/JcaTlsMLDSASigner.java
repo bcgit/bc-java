@@ -47,6 +47,6 @@ public class JcaTlsMLDSASigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        return crypto.createStreamSigner("ML-DSA", null, privateKey, false);
+        return crypto.createStreamSigner("ML-DSA", null, privateKey, true);
     }
 }
