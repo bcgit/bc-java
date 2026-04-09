@@ -18,6 +18,12 @@ sourceSets {
         }
     }
 
+    java17 {
+        java {
+            srcDirs = ['src/main/jdk17']
+        }
+    }
+
     java25 {
         java {
             srcDirs = ['src/main/jdk25']
@@ -37,6 +43,14 @@ sourceSets {
             compileClasspath += main.output + test.output
             runtimeClasspath += test.output
             srcDir(files("src/test/jdk1.15"))
+        }
+    }
+
+    test17 {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += test.output
+            srcDir(files("src/test/jdk17"))
         }
     }
 
@@ -70,15 +84,28 @@ dependencies {
         builtBy compileJava
     }
 
+    java17Implementation project(':prov')
+    java17Implementation project(':util')
+    java17Implementation project(':pkix')
+    java17Implementation files([
+    		sourceSets.main.output.classesDirs,
+    		sourceSets.java9.output]) {
+        builtBy compileJava9Java
+    }
+
     java25Implementation project(':prov')
     java25Implementation project(':util')
     java25Implementation project(':pkix')
-    java25Implementation files([sourceSets.main.output.classesDirs, sourceSets.java9.output]) {
-        builtBy compileJava
+    java25Implementation files([
+    		sourceSets.main.output.classesDirs,
+            sourceSets.java9.output.classesDirs,
+            sourceSets.java17.output.classesDirs]) {
+        builtBy compileJava17Java
     }
 
     test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test17Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test21Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test25Implementation group: 'junit', name: 'junit', version: '4.13.2'
 
@@ -89,6 +116,10 @@ dependencies {
     test15Implementation project(':prov')
     test15Implementation project(':util')
     test15Implementation project(':pkix')
+
+    test17Implementation project(':prov')
+    test17Implementation project(':util')
+    test17Implementation project(':pkix')
 
     test21Implementation project(':prov')
     test21Implementation project(':util')
@@ -124,21 +155,20 @@ compileJava9Java {
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
 }
 
-compileTest11Java {
+compileJava17Java {
 
-    options.release = 11
-    options.sourcepath = files(['src/test/java', 'src/test/jdk1.11'])
-}
+    targetCompatibility = 17
+    sourceCompatibility = 17
 
-compileTest15Java {
-    options.release = 15
-    options.sourcepath = files(['src/test/java', 'src/test/jdk1.15'])
-}
+    def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
+    def util_jar="${project(":util").jar.outputs.files.getFiles().getAt(0)}"
+    def pkix_jar="${project(":pkix").jar.outputs.files.getFiles().getAt(0)}"
 
-compileTest21Java {
+    options.compilerArgs += [
+        '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}${File.pathSeparator}${pkix_jar}"
+    ]
 
-    options.release = 21
-    options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
+    options.sourcepath = files(['src/main/java', 'src/main/jdk17'])
 }
 
 compileJava25Java {
@@ -157,6 +187,36 @@ compileJava25Java {
     options.sourcepath = files(['src/main/java', 'src/main/jdk25'])
 }
 
+compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+compileJava17Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+compileJava25Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+
+compileTest11Java {
+    options.release = 11
+    options.sourcepath = files(['src/test/java', 'src/test/jdk1.11'])
+}
+
+compileTest15Java {
+    options.release = 15
+    options.sourcepath = files(['src/test/java', 'src/test/jdk1.15'])
+}
+
+compileTest17Java {
+    targetCompatibility = 17
+    sourceCompatibility = 17
+    options.sourcepath = files(['src/test/java', 'src/test/jdk17'])
+}
+
+compileTest21Java {
+    options.release = 21
+    options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
+}
+
+compileTest25Java {
+    options.release = 25
+    options.sourcepath = files(['src/test/java', 'src/test/jdk25'])
+}
+
 
 task sourcesJar(type: Jar) {
     archiveBaseName = jar.archiveBaseName
@@ -165,6 +225,9 @@ task sourcesJar(type: Jar) {
     exclude("**/*.so")
     into('META-INF/versions/9') {
         from sourceSets.java9.allSource
+    }
+    into('META-INF/versions/17') {
+        from sourceSets.java17.allSource
     }
     into('META-INF/versions/25') {
         from sourceSets.java25.allSource
@@ -175,6 +238,9 @@ jar {
     from sourceSets.main.output
     into('META-INF/versions/9') {
         from sourceSets.java9.output
+    }
+    into('META-INF/versions/17') {
+        from sourceSets.java17.output
     }
     into('META-INF/versions/25') {
         from sourceSets.java25.output
@@ -317,6 +383,39 @@ task test15(type: Test) {
     }
 }
 
+task test17(type: Test) {
+
+    // This is testing the 17 code base
+    onlyIf {System.getenv("BC_JDK17") != null}
+    dependsOn jar
+
+    testClassesDirs = sourceSets.test17.output.classesDirs
+    classpath = sourceSets.test17.runtimeClasspath + files(jar.archiveFile)
+
+    forkEvery = 1;
+    maxParallelForks = 8;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = false
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+
+    jvmArgs = ['-Dtest.java.version.prefix=17']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+        includeTestsMatching "AllTest*"
+        if (project.hasProperty('excludeTests')) {
+            excludeTestsMatching "${excludeTests}"
+        }
+    }
+}
+
 task test21(type: Test) {
 
     // This is testing the 21 code base
@@ -397,6 +496,8 @@ if (System.getenv("BC_JDK11") != null) {
 if (System.getenv("BC_JDK17") != null) {
     System.out.println("${project.name}: Adding test15 as dependency for test task because BC_JDK17 is defined")
     test.dependsOn("test15")
+    System.out.println("${project.name}: Adding test17 as dependency for test task because BC_JDK17 is defined")
+    test.dependsOn("test17")
 }
 
 if (System.getenv("BC_JDK21") != null) {
@@ -408,6 +509,3 @@ if (System.getenv("BC_JDK25") != null) {
     System.out.println("${project.name}: Adding test25 as dependency for test task because BC_JDK25 is defined")
     test.dependsOn("test25")
 }
-
-
-compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
