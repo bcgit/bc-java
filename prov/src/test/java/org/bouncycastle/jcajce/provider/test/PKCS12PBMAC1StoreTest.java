@@ -21,6 +21,7 @@ import org.bouncycastle.jcajce.BCLoadStoreParameter;
 import org.bouncycastle.jcajce.PKCS12LoadStoreParameter;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
 
 public class PKCS12PBMAC1StoreTest
     extends TestCase
@@ -231,5 +232,26 @@ public class PKCS12PBMAC1StoreTest
         {
             assertTrue(e.getMessage().contains("Key length must be present when using PBMAC1."));
         }
+    }
+
+    public void testDodgyInputs()
+        throws Exception
+    {
+        byte[] negIt = Hex.decode("3049020103301106092a864879f70d010706a004040230003031302130" +
+            "0906052b0e03021a0500041400000100000000000000000000000000" +
+            "00000000040800000000000000000202f300");
+        
+        KeyStore ks = KeyStore.getInstance("PKCS12-PBMAC1", "BC");
+
+        try
+        {
+            ks.load(new ByteArrayInputStream(negIt), passwd);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("negative iteration count found", e.getMessage());
+        }
+
     }
 }
