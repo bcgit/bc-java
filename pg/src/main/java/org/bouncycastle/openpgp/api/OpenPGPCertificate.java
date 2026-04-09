@@ -1125,7 +1125,7 @@ public class OpenPGPCertificate
      */
     public List<OpenPGPComponentSignature> getAllThirdPartyKeySignatures()
     {
-        List<OpenPGPComponentSignature> signatures = new ArrayList<>();
+        List<OpenPGPComponentSignature> signatures = new ArrayList<OpenPGPComponentSignature>();
         signatures.addAll(getPrimaryKey().getThirdPartyCertifications());
         signatures.addAll(getPrimaryKey().getThirdPartyRevocations());
         return signatures;
@@ -1396,7 +1396,7 @@ public class OpenPGPCertificate
         public List<OpenPGPComponentSignature> getThirdPartyCertifications()
         {
             OpenPGPSignatureChains allChains = getSignatureChains();
-            List<OpenPGPComponentSignature> thirdPartyCertifications = new ArrayList<>();
+            List<OpenPGPComponentSignature> thirdPartyCertifications = new ArrayList<OpenPGPComponentSignature>();
             for (OpenPGPSignatureChain chain : allChains)
             {
                 if (chain.isCertification() && chain.getRootLinkIssuer() == null)
@@ -1416,7 +1416,7 @@ public class OpenPGPCertificate
         public List<OpenPGPComponentSignature> getThirdPartyRevocations()
         {
             OpenPGPSignatureChains allChains = getSignatureChains();
-            List<OpenPGPComponentSignature> thirdPartyRevocations = new ArrayList<>();
+            List<OpenPGPComponentSignature> thirdPartyRevocations = new ArrayList<OpenPGPComponentSignature>();
             for (OpenPGPSignatureChain chain : allChains)
             {
                 if (chain.isRevocation() && chain.getRootLinkIssuer() == null)
