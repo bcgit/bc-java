@@ -33,17 +33,11 @@ import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 
 class Utils
 {
     static final AlgorithmIdentifier SPHINCS_SHA3_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256);
     static final AlgorithmIdentifier SPHINCS_SHA512_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256);
-
-    static final AlgorithmIdentifier XMSS_SHA256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-    static final AlgorithmIdentifier XMSS_SHA512 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
-    static final AlgorithmIdentifier XMSS_SHAKE128 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
-    static final AlgorithmIdentifier XMSS_SHAKE256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
 
     static final Map frodoOids = new HashMap();
     static final Map frodoParams = new HashMap();
@@ -418,30 +412,6 @@ class Utils
     static SLHDSAParameters slhdsaParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SLHDSAParameters)slhdsaParams.get(oid);
-    }
-
-    static AlgorithmIdentifier xmssLookupTreeAlgID(String treeDigest)
-    {
-        if (treeDigest.equals(XMSSKeyParameters.SHA_256))
-        {
-            return XMSS_SHA256;
-        }
-        else if (treeDigest.equals(XMSSKeyParameters.SHA_512))
-        {
-            return XMSS_SHA512;
-        }
-        else if (treeDigest.equals(XMSSKeyParameters.SHAKE128))
-        {
-            return XMSS_SHAKE128;
-        }
-        else if (treeDigest.equals(XMSSKeyParameters.SHAKE256))
-        {
-            return XMSS_SHAKE256;
-        }
-        else
-        {
-            throw new IllegalArgumentException("unknown tree digest: " + treeDigest);
-        }
     }
 
     static Digest getDigest(ASN1ObjectIdentifier oid)

@@ -1031,6 +1031,20 @@ public final class Arrays
         }
     }
 
+    /**
+     * Fill input array by zeros
+     *
+     * @param data input array
+     */
+    public static void clear(char[] data)
+    {
+        if (null != data)
+        {
+            java.util.Arrays.fill(data, (char)0x00);
+        }
+    }
+
+    /**/
     public static boolean isNullOrContainsNull(Object[] array)
     {
         if (null == array)
