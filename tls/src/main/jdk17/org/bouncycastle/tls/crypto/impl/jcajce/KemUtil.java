@@ -24,6 +24,7 @@ import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMPublicKeySpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.SpiUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -51,6 +52,11 @@ class KemUtil
 
     static JceTlsSecret decapsulate(JcaTlsCrypto crypto, String kemName, PrivateKey privateKey, byte[] ciphertext)
     {
+        if (SpiUtil.hasKEM())
+        {
+            return KEMSpiUtil.decapsulate(crypto, kemName, privateKey, ciphertext);
+        }
+
         try
         {
             KeyGenerator keyGenerator = crypto.getHelper().createKeyGenerator(kemName);
@@ -61,11 +67,16 @@ class KemUtil
         catch (Exception e)
         {
             throw Exceptions.illegalArgumentException("invalid key: " + e.getMessage(), e);
-        }        
+        }
     }
 
     static SecretKeyWithEncapsulation encapsulate(JcaTlsCrypto crypto, String kemName, PublicKey publicKey)
     {
+        if (SpiUtil.hasKEM())
+        {
+            return KEMSpiUtil.encapsulate(crypto, kemName, publicKey);
+        }
+
         try
         {
             KeyGenerator keyGenerator = crypto.getHelper().createKeyGenerator(kemName);
@@ -75,7 +86,7 @@ class KemUtil
         catch (Exception e)
         {
             throw Exceptions.illegalArgumentException("invalid key: " + e.getMessage(), e);
-        }        
+        }
     }
 
     static PublicKey decodePublicKey(JcaTlsCrypto crypto, String kemName, byte[] encoding) throws TlsFatalAlert
@@ -113,9 +124,9 @@ class KemUtil
     static byte[] encodePublicKey(PublicKey publicKey) throws TlsFatalAlert
     {
         // More efficient BC-specific method
-        if (publicKey instanceof MLKEMPublicKey)
+        if (publicKey instanceof MLKEMPublicKey mlKemPublicKey)
         {
-            return ((MLKEMPublicKey)publicKey).getPublicData();
+            return mlKemPublicKey.getPublicData();
         }
 
         if (!"X.509".equals(publicKey.getFormat()))
@@ -136,6 +147,11 @@ class KemUtil
 
     static KeyPair generateKeyPair(JcaTlsCrypto crypto, String kemName)
     {
+        if (SpiUtil.hasKEM())
+        {
+            return KEMSpiUtil.generateKeyPair(crypto, kemName);
+        }
+
         try
         {
             return createKeyPairGenerator(crypto, kemName).generateKeyPair();
@@ -161,11 +177,16 @@ class KemUtil
             return NISTObjectIdentifiers.id_alg_ml_kem_1024;
         }
 
-        throw new IllegalArgumentException("unknown kem name " + kemName);        
+        throw new IllegalArgumentException("unknown kem name " + kemName);
     }
 
     static boolean isKemSupported(JcaTlsCrypto crypto, String kemName)
     {
+        if (SpiUtil.hasKEM())
+        {
+            return KEMSpiUtil.isKemSupported(crypto, kemName);
+        }
+
         if (kemName != null)
         {
             try
