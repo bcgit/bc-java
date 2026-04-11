@@ -4,6 +4,10 @@ import java.security.Key;
 
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 
+/**
+ * @deprecated to be deleted - use ML-DSA instead.
+ */
+@Deprecated
 public interface DilithiumKey
     extends Key
 {
