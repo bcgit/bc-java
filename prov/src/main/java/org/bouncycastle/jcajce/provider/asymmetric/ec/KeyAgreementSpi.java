@@ -232,7 +232,7 @@ public class KeyAgreementSpi
             }
             catch (IllegalArgumentException e)
             {
-                throw new InvalidAlgorithmParameterException(e.getMessage(), e);
+                throw new InvalidAlgorithmParameterException(e.getMessage());
             }
         }
         else if (parameterSpec instanceof DHUParameterSpec)

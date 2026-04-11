@@ -85,6 +85,7 @@ import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.function.ThrowingRunnable;
 
 import static org.junit.Assert.assertThrows;
@@ -1595,6 +1596,18 @@ public class PfxPduTest
         doPKCS5Test(pkcs5Camellia256Pfx);
         doPKCS5Test(pkcs5Cast5Pfx);
         doPKCS5Test(pkcs5TripleDesPfx);
+    }
+
+    public void testDodgyInputs()
+        throws Exception
+    {
+        byte[] negIt = Hex.decode("3049020103301106092a864879f70d010706a004040230003031302130" +
+            "0906052b0e03021a0500041400000100000000000000000000000000" +
+            "00000000040800000000000000000202f300");
+
+        PKCS12PfxPdu pfx = new PKCS12PfxPdu(negIt);
+
+        assertFalse(pfx.isMacValid(new JcePKCS12MacCalculatorBuilderProvider().setProvider("BC"), passwd));
     }
 
     private void doPKCS5Test(byte[] keyStore)

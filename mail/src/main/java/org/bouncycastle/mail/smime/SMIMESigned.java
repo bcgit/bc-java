@@ -148,7 +148,7 @@ public class SMIMESigned
         final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1));
         return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
         {
-            public SMIMESigned create() throws Exception
+            public Object create() throws Exception
             {
                 return new SMIMESigned(message, sigStream);
             }
@@ -172,7 +172,7 @@ public class SMIMESigned
         final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1));
         return (SMIMESigned) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
         {
-            public SMIMESigned create() throws Exception
+            public Object create() throws Exception
             {
                 return new SMIMESigned(message, defaultEncoding, sigStream);
             }

@@ -2435,7 +2435,7 @@ class RFC3280CertPathUtilities
     private static ASN1Primitive getExtensionValue(java.security.cert.X509Extension ext, String oid)
         throws AnnotatedException
     {
-        CertPathValidatorUtilities.getExtensionValue(ext, oid);
+        return CertPathValidatorUtilities.getExtensionValue(ext, oid);
     }
 
     private static String getUnsupportedCriticalExtensionMessage(Set criticalExtensions)
