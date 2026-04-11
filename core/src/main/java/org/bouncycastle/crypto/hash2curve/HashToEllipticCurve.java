@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.hash2curve;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
@@ -18,6 +17,7 @@ import org.bouncycastle.math.ec.custom.djb.Curve25519;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
+import org.bouncycastle.util.Strings;
 
 /**
  * Main class for implementing hash to elliptic curve according to RFC 9380
@@ -43,7 +43,7 @@ public class HashToEllipticCurve
 
     public static HashToEllipticCurve getInstance(final HashToCurveProfile profile, String dst)
     {
-        byte[] dstBytes = dst.getBytes(StandardCharsets.UTF_8);
+        byte[] dstBytes = Strings.toUTF8ByteArray(dst);
         ECCurve curve;
         switch (profile)
         {
