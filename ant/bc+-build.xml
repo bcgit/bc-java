@@ -122,10 +122,27 @@
                 <javac encoding="UTF-8" source="${bc.javac.source}" target="${bc.javac.target}"
                     srcdir="${artifacts.dir}/@{target}/src"
                     destdir="${build.dir}/@{target}/classes"
-                    memoryMaximumSize="512m"
+                    includes="org/bouncycastle/util/**"
+                    memoryMaximumSize="1024m"
                     debug="${release.debug}" fork="true">
                     <classpath>
                         <path refid="project.classpath" /> 
+                        <fileset dir="${artifacts.jars.dir}">
+                            <include name="**/*.jar" />
+                        </fileset>
+                    </classpath>
+                </javac>
+                <javac encoding="UTF-8" source="${bc.javac.source}" target="${bc.javac.target}"
+                    srcdir="${artifacts.dir}/@{target}/src"
+                    destdir="${build.dir}/@{target}/classes"
+                    excludes="org/bouncycastle/util/**"
+                    memoryMaximumSize="1024m"
+                    debug="${release.debug}" fork="true">
+                    <classpath>
+                        <path refid="project.classpath" /> 
+                        <path>
+                          <pathelement location="${build.dir}/@{target}/classes" />
+                        </path>
                         <fileset dir="${artifacts.jars.dir}">
                             <include name="**/*.jar" />
                         </fileset>
@@ -413,6 +430,7 @@
                  <include name="org/bouncycastle/pqc/crypto/picnic/lowmc.properties" />
              </fileset>
              <fileset dir="${src.dir}" includes="org/bouncycastle/util/test/*.java" />
+             <fileset dir="${src.dir}" includes="org/bouncycastle/util/*.java" />
         </copy>
 
         <compile target="${provider}">

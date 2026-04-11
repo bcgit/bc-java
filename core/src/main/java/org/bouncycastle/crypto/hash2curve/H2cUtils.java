@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.hash2curve;
 
 import java.math.BigInteger;
-import java.util.Objects;
 
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Arrays;
@@ -176,8 +175,8 @@ public class H2cUtils
      */
     public static byte[] xor(final byte[] arg1, final byte[] arg2)
     {
-        Objects.requireNonNull(arg1, "XOR argument must not be null");
-        Objects.requireNonNull(arg2, "XOR argument must not be null");
+        requireNonNull(arg1, "XOR argument must not be null");
+        requireNonNull(arg2, "XOR argument must not be null");
 
         if (arg1.length != arg2.length)
         {
@@ -212,4 +211,11 @@ public class H2cUtils
         return nonSquare;
     }
 
+    private static void requireNonNull(Object o, String msg)
+    {
+        if (o == null)
+        {
+            throw new NullPointerException(msg);
+        }
+    }
 }

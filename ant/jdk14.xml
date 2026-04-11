@@ -28,6 +28,7 @@
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/gemss/*.java"/>
+                <exclude name="**/crypto/hash2curve/**/*.java"/>
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/PhotonBeetle*.java"/>
@@ -65,6 +66,7 @@
                 <exclude name="**/DSTU4145ParameterSpec.java"/>
                 <exclude name="**/BCLoadStoreParameter.java"/>
                 <exclude name="**/BCFKSLoadStoreParameter.java"/>
+                <exclude name="**/PKCS12LoadStoreParameter.java"/>
                 <exclude name="**/BCFKSStoreParameter.java"/>
                 <exclude name="**/ECPointUtil.java"/>
                 <exclude name="**/ECNamedCurveSpec.java"/>
@@ -102,6 +104,7 @@
             <fileset dir="prov/src/main/resources" includes="**/*.properties"/>
             <fileset dir="core/src/test/java">
                 <exclude name="**/speedy/*.java"/>
+                <exclude name="**/hash2curve/**/*.java"/>
                 <exclude name="**/cavp/*.java"/>
                 <exclude name="**/i18n/**/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
@@ -195,6 +198,7 @@
 
             <fileset dir="tls/src/main/java" includes="**/*.java">
                 <exclude name="**/jsse/**"/>
+                <exclude name="**/crypto/impl/jcajce/ECUtil.java"/>
             </fileset>
             <fileset dir="tls/src/main/javadoc" includes="**/*.html"/>
             <fileset dir="tls/src/test/java" includes="**/*.java">
@@ -203,6 +207,7 @@
                 <exclude name="**/TlsTestUtils.java"/>
                 <exclude name="**/TlsServerRawKeysTest.java"/>
                 <exclude name="**/TlsClientRawKeysTest.java"/>
+                <exclude name="**/SM2Tls13Test.java"/>
             </fileset>
 
             <fileset dir="core/src/test/" includes="**/*.properties"/>
