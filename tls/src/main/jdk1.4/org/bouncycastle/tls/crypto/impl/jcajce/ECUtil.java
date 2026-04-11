@@ -6,10 +6,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.ECField;
-import java.security.spec.ECFieldF2m;
-import java.security.spec.ECFieldFp;
-import java.security.spec.EllipticCurve;
 
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
@@ -19,25 +15,6 @@ import org.bouncycastle.math.ec.ECCurve;
 
 class ECUtil
 {
-    static ECCurve convertCurve(EllipticCurve ec, BigInteger order, int cofactor)
-    {
-        ECField field = ec.getField();
-        BigInteger a = ec.getA();
-        BigInteger b = ec.getB();
-
-        if (field instanceof ECFieldFp)
-        {
-            return new ECCurve.Fp(((ECFieldFp)field).getP(), a, b, order, BigInteger.valueOf(cofactor));
-        }
-        else
-        {
-            ECFieldF2m fieldF2m = (ECFieldF2m)field;
-            int m = fieldF2m.getM();
-            int ks[] = convertMidTerms(fieldF2m.getMidTermsOfReductionPolynomial());
-            return new ECCurve.F2m(m, ks[0], ks[1], ks[2], a, b, order, BigInteger.valueOf(cofactor));
-        }
-    }
-
     static int[] convertMidTerms(int[] k)
     {
         int[] res = new int[3];

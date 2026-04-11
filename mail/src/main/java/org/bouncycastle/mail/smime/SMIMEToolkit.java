@@ -211,9 +211,10 @@ public class SMIMEToolkit
 
             // **Critical:** Consume the rest of the signature stream by iterating over all signer infos.
             // This unblocks the DataHandler feeder thread.
-            for (Object ignored : s.getSignerInfos().getSigners())
+            for (Iterator it = s.getSignerInfos().getSigners().iterator(); it.hasNext();)
             {
                 // just iterate
+                it.next();
             }
 
             return result;

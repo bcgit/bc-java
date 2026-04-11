@@ -721,7 +721,7 @@ public class CMSSignedDataStreamGenerator
                 }
             }
 
-            _sigGen.add(isDER ? new DERSet(signerInfos) : new DLSet(signerInfos));
+            _sigGen.add(isDER ? (ASN1Set)new DERSet(signerInfos) : (ASN1Set)new DLSet(signerInfos));
 
             ContentInfo content = new ContentInfo(CMSObjectIdentifiers.signedData, new DLSequence(_sigGen));
 

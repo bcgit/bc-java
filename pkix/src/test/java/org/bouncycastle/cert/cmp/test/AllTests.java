@@ -441,6 +441,10 @@ public class AllTests
     public void testComposite()
         throws Exception
     {
+        if (System.getProperty("java.version").indexOf("1.4.") >= 0)
+        {
+            return;
+        }
         // ── setup: a trusted RSA keypair (stand-in for a CA / server key) ──
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("MLDSA44-RSA2048-PKCS15-SHA256", "BC");
         kpg.initialize(null, new SecureRandom());
