@@ -15,6 +15,7 @@ import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -28,13 +29,13 @@ import junit.framework.TestCase;
 public class NTRUTest
     extends TestCase
 {
-    private static final String NTRU_PROV_NAME = BouncyCastlePQCProvider.PROVIDER_NAME;
+    private static final String NTRU_PROV_NAME = BouncyCastleProvider.PROVIDER_NAME;
 
     public void setUp()
     {
-        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastlePQCProvider());
+            Security.addProvider(new BouncyCastleProvider());
         }
     }
 
