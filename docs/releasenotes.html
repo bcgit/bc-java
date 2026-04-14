@@ -31,6 +31,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, April 14th
 <li>Fixed PKIXNameConstraintValidator to treat a DNS name as intersecting itself.</li>
 <li>Fixed PKCS12 key stores not calling getInstance with the original provider (which was forcing provider registration).</li>
 <li>A resource leak due to the SMIMESigned constructor leaving background threads hanging on MessagingException has been fixed.</li>
+<li>OpenPGP: Fixed an issue where a custom signature creation time was ignored when generating message signatures.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -47,6 +48,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, April 14th
 <li>A new KeyStore, PKCS12-PBMAC1, has been added which defaults to using PBMAC1 and supports RFC 9879.</li>
 <li>A new property "org.bouncycastle.asn1.max_cons_depth" has been added to allow setting of the maximum nesting for SETs/SEQUENCESs in ASN.1. Default is 32.</li>
 <li>A new property "org.bouncycastle.asn1.max_limit" has been added to allow setting of the stream size of ASN.1 encodings. The value can be either in bytes, or appended with k (1 kilobyte blocks), m (1 megabyte blocks), or g (1 gigabyte blocks).</li>
+<li>Added NTRU+ support.</li>
+<li>Added SM4 key wrap/unwrap mode, SM2 key exchange, and logging to SM2Signer.</li>
+<li>OpenPGP: Added encryption‑key filtering by purpose, a new OpenPGPKey constructor, KeyPassphraseProvider‑based passphrase change, wildcard (anonymous) recipient handling, and Web‑of‑Trust methods for third‑party signature chains and delegations.</li>
 </ul>
 <h3>2.1.4 Security Fixes
 <ul>
