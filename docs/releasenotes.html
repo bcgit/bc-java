@@ -19,7 +19,7 @@ to conform the algorithms to the JCE framework.
 <h2>2.0 Release History</h2>
 <a id="r1rv84"><h3>2.1.1 Version</h3></a>
 Release: 1.84<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, April 14th
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Random numbers being generated for DSTU4145 signature calculations were 1 bit shorter than they could be. The code has been corrected to allow the generated numbers to occupy the full numeric range available.</li>
@@ -27,12 +27,14 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>S/MIME: Fix AuthEnveloped support for AES192/GCM and AES256/GCM.</li>
 <li>CMS: Use implicit tag for AuthEnvelopedData.authEncryptedContentInfo.encryptedContent.</li>
 <li>Fixed Strings.split to handle delimiters at position 0.</li>
-<li>Fixed Frodo error sampling to be constant-time.</li>
+<li>Fixed FrodoKEM error sampling to be constant-time.</li>
 <li>Fixed PKIXNameConstraintValidator to treat a DNS name as intersecting itself.</li>
 <li>Fixed PKCS12 key stores not calling getInstance with the original provider (which was forcing provider registration).</li>
+<li>A resource leak due to the SMIMESigned constructor leaving background threads hanging on MessagingException has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
+<li>In line with JVM changes, KEM support has been backported to Java 17.</li>
 <li>BCJSSE: Configurable (client) early key_share groups via BCSSLParameters.earlyKeyShares or "org.bouncycastle.jsse.client.earlyKeyShares" system property.</li>
 <li>BCJSSE: Support for curveSM2MLKEM768 hybrid NamedGroup in TLS 1.3 per draft-yang-tls-hybrid-sm2-mlkem-03.</li>
 <li>BCJSSE: Log when default cipher suites are disabled.</li>
@@ -42,6 +44,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Added initial support for RFC 9380 (Hashing to Elliptic Curves); see org.bouncycastle.crypto.hash2curve .</li>
 <li>PKCS12: Added default max iteration count of 5,000,000 (configurable via "org.bouncycastle.pkcs12.max_it_count" property).</li>
 <li>TLS: Use javax.crypto.KEM API (when available) to access ML-KEM implementation (incl. hybrids).</li>
+<li>A new KeyStore, PKCS12-PBMAC1, has been added which defaults to using PBMAC1 and supports RFC 9879.</li>
+<li>A new property "org.bouncycastle.asn1.max_cons_depth" has been added to allow setting of the maximum nesting for SETs/SEQUENCESs in ASN.1. Default is 32.</li>
+<li>A new property "org.bouncycastle.asn1.max_limit" has been added to allow setting of the stream size of ASN.1 encodings. The value can be either in bytes, or appended with k (1 kilobyte blocks), m (1 megabyte blocks), or g (1 gigabyte blocks).</li>
 </ul>
 <h3>2.1.4 Security Fixes
 <ul>
@@ -53,7 +58,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <h3>2.1.5 Additional Notes</h3>
 <ul>
 <li>DSA was recently deprecated by NIST and several users have requested that we move to an RSA signing certificate for provider signing instead of our current DSA one. We are grateful to report that Oracle have been very supportive of this and issued us a second RSA certificate based on a new RSA key for signing providers. Providers signed with the previous DSA key will continue to work as before.<li>
-<li>This will be the last release which will recognise Dilithium and SphincsPlus in the BC provider. The algorithms won't be deleted in 1.85, but will only be accessible via the low-level APIs and deleted in a later release.</li>
+<li>This will be the last release which will recognise Dilithium and SphincsPlus in the BC provider, the Kyber wrapper (which is just ML-KEM) will also be removed. The algorithms won't be deleted in 1.85, but will only be accessible via the low-level APIs and deleted in a later release.</li>
 </ul>
 
 <a id="r1rv83"><h3>2.2.1 Version</h3></a>
