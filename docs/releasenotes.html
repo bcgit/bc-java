@@ -23,6 +23,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, April 14th
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Random numbers being generated for DSTU4145 signature calculations were 1 bit shorter than they could be. The code has been corrected to allow the generated numbers to occupy the full numeric range available.</li>
+<li>HKDF implementation has been corrected to use multiple IKMs if available.<li>
 <li>CompositePublic/PrivateKey builders had an issue identifying brainpool and EdDSA curves from the algorithm names due to an error in the OID mapping table. This has been fixed.</li>
 <li>S/MIME: Fix AuthEnveloped support for AES192/GCM and AES256/GCM.</li>
 <li>CMS: Use implicit tag for AuthEnvelopedData.authEncryptedContentInfo.encryptedContent.</li>
@@ -32,6 +33,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, April 14th
 <li>Fixed PKCS12 key stores not calling getInstance with the original provider (which was forcing provider registration).</li>
 <li>A resource leak due to the SMIMESigned constructor leaving background threads hanging on MessagingException has been fixed.</li>
 <li>OpenPGP: Fixed an issue where a custom signature creation time was ignored when generating message signatures.</li>
+<li>OpenPGP: Fixed SKESK encoding for direct-S2K-encrypted messages.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -48,20 +50,22 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, April 14th
 <li>A new KeyStore, PKCS12-PBMAC1, has been added which defaults to using PBMAC1 and supports RFC 9879.</li>
 <li>A new property "org.bouncycastle.asn1.max_cons_depth" has been added to allow setting of the maximum nesting for SETs/SEQUENCESs in ASN.1. Default is 32.</li>
 <li>A new property "org.bouncycastle.asn1.max_limit" has been added to allow setting of the stream size of ASN.1 encodings. The value can be either in bytes, or appended with k (1 kilobyte blocks), m (1 megabyte blocks), or g (1 gigabyte blocks).</li>
-<li>Added NTRU+ support.</li>
+<li>Added NTRU+ support to the lightweight PQC API and the BCPQC provider.</li>
 <li>Added SM4 key wrap/unwrap mode, SM2 key exchange, and logging to SM2Signer.</li>
 <li>OpenPGP: Added encryption‑key filtering by purpose, a new OpenPGPKey constructor, KeyPassphraseProvider‑based passphrase change, wildcard (anonymous) recipient handling, and Web‑of‑Trust methods for third‑party signature chains and delegations.</li>
+<li>CMSSignedDataStreamGenerator can now support the generation of DER/DL encoded SignedData objects (note memory restrictions still apply).</li>
+<li>It is now possible to add extra digest alorithm IDs to CMSSignedDataStreamGenerator when required.</li>
 </ul>
 <h3>2.1.4 Security Fixes
 <ul>
-<li>CVE-2026-0636</li>
-<li>CVE-2026-3505</li>
-<li>CVE-2026-5588</li>
-<li>CVE-2026-5998</li>
+<li>CVE-2026-0636 - GOSTCTR implementation unable to process more than 255 blocks correctly.</li>
+<li>CVE-2026-3505 - Unbounded PGP AEAD chunk size leads to pre-auth resource exhaustion.</li>
+<li>CVE-2026-5588 - PKIX draft CompositeVerifier accepts empty signature sequence as valid.</li>
+<li>CVE-2026-5998 - Non-constant time comparisons risk private key leakage in FrodKEM.</li>
 </ul>
 <h3>2.1.5 Additional Notes</h3>
 <ul>
-<li>DSA was recently deprecated by NIST and several users have requested that we move to an RSA signing certificate for provider signing instead of our current DSA one. We are grateful to report that Oracle have been very supportive of this and issued us a second RSA certificate based on a new RSA key for signing providers. Providers signed with the previous DSA key will continue to work as before.<li>
+<li>DSA was recently deprecated by NIST and several users have requested that we move to an RSA signing certificate for provider signing instead of our current DSA one. We are grateful to report that Oracle have been very supportive of this and issued us a second RSA certificate based on a new RSA key for signing providers. Providers signed with the previous DSA key will continue to work as before.</li>
 <li>This will be the last release which will recognise Dilithium and SphincsPlus in the BC provider, the Kyber wrapper (which is just ML-KEM) will also be removed. The algorithms won't be deleted in 1.85, but will only be accessible via the low-level APIs and deleted in a later release.</li>
 </ul>
 
