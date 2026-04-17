@@ -99,7 +99,7 @@ class TestUtils
                         byte[] pk = Hex.decode((String)buf.get("pk"));
                         byte[] sk = Hex.decode((String)buf.get("sk"));
                         byte[] message = Hex.decode((String)buf.get("msg"));
-                        byte[] signature = Hex.decode((String)buf.get("sm"));
+                        byte[] signature = Hex.decode((String)(buf.get("sm") == null ? buf.get("sig") : buf.get("sm")));
 
                         SecureRandom random = operation.getSecureRandom(seed);
 
@@ -202,7 +202,7 @@ class TestUtils
                         {
                             continue;
                         }
-                         System.out.println("test case: " + count);
+                        System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for bike secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
@@ -218,7 +218,8 @@ class TestUtils
                         // Generate keys and test.
                         //
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-                        AsymmetricKeyParameter pubParams = kp.getPublic();;
+                        AsymmetricKeyParameter pubParams = kp.getPublic();
+                        ;
                         AsymmetricKeyParameter privParams = kp.getPrivate();
                         if (enableFactory)
                         {
