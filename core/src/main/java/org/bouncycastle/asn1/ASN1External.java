@@ -41,7 +41,7 @@ public abstract class ASN1External
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct external from byte[]: " + e.getMessage());
+                throw new IllegalArgumentException("failed to construct external from byte[]", e);
             }
         }
 

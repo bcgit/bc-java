@@ -129,7 +129,7 @@ public class ASN1GeneralizedTime
         }
         catch (ParseException e)
         {
-            throw new IllegalArgumentException("invalid date string: " + e.getMessage());
+            throw new IllegalArgumentException("invalid date string", e);
         }
     }
 
