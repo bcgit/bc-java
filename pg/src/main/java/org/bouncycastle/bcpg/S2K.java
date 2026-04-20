@@ -50,6 +50,14 @@ public class S2K
 {
     private static final int EXPBIAS = 6;
 
+    // Cap memorySizeExponent read from untrusted wire data.
+    // Default 21 matches RFC 9580 recommended level (2 GiB) and GnuPG defaults.
+    // Lower this on heap-constrained deployments:
+    //   -Dorg.bouncycastle.openpgp.argon2.max_memory_exp=N  (1 <= N <= 30)
+    private static final int MAX_ARGON2_MEMORY_EXP =
+        Math.min(30, Math.max(1,
+            Integer.getInteger("org.bouncycastle.openpgp.argon2.max_memory_exp", 21)));
+
     /**
      * Simple key generation. A single non-salted iteration of a hash function.
      * This method is deprecated to use, since it can be brute-forced when used
@@ -157,6 +165,11 @@ public class S2K
             passes = dIn.read();
             parallelism = dIn.read();
             memorySizeExponent = dIn.read();
+            if (memorySizeExponent < 1 || memorySizeExponent > MAX_ARGON2_MEMORY_EXP)
+            {
+                throw new IOException("Argon2 memorySizeExponent out of safe range: " + memorySizeExponent
+                    + " (max=" + MAX_ARGON2_MEMORY_EXP + ")");
+            }
             break;
 
         case GNU_DUMMY_S2K:
