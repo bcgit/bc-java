@@ -54,6 +54,7 @@ public class AllTests
         TestSuite suite = new TestSuite("OpenPGP Packet Tests");
 
         suite.addTestSuite(AllTests.class);
+        suite.addTest(new junit.framework.JUnit4TestAdapter(Argon2S2KMemExpPocTest.class));
 
         return new BCPacketTests(suite);
     }
