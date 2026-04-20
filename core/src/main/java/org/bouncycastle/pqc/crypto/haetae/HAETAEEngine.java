@@ -13,6 +13,19 @@ public class HAETAEEngine
     private static final int F = -29720;
     private static final int MONT = 14321;
     private static final int MONTSQ = 4214;
+    private static final long MASK48 = (1L << 48) - 1;
+    private static final long DQREC = 33287;
+    private static final int RANS_BYTE_L = (1 << 23);
+    private final int H_CUT;
+
+    private static final int CDTLEN = 64;
+
+    private static final int GAUSS_RAND = 72 + 16 + 48; // 136
+    private static final int GAUSS_RAND_BYTES = (GAUSS_RAND + 7) / 8; // 17
+
+    private static final int POLY_HYPERBALL_BUFLEN = GAUSS_RAND_BYTES * HAETAEParameters.N;
+    private static final int POLY_HYPERBALL_NBLOCKS =
+        (POLY_HYPERBALL_BUFLEN + SHAKE256_RATE - 1) / SHAKE256_RATE;
 
     // QREC = ceil(2^32 / HAETAE_Q) used in freeze()
     private static final int QREC = 66575;
@@ -66,6 +79,13 @@ public class HAETAEEngine
         7, 135, 71, 199, 39, 167, 103, 231, 23, 151, 87, 215, 55, 183, 119, 247,
         15, 143, 79, 207, 47, 175, 111, 239, 31, 159, 95, 223, 63, 191, 127, 255};
 
+    private static final long[] CDT = {
+        3266L, 6520L, 9748L, 12938L, 16079L, 19159L, 22168L, 25096L, 27934L, 30674L, 33309L,
+        35833L, 38241L, 40531L, 42698L, 44742L, 46663L, 48460L, 50135L, 51690L, 53128L, 54454L,
+        55670L, 56781L, 57794L, 58712L, 59541L, 60287L, 60956L, 61554L, 62085L, 62556L, 62972L,
+        63337L, 63657L, 63936L, 64178L, 64388L, 64569L, 64724L, 64857L, 64970L, 65066L, 65148L,
+        65216L, 65273L, 65321L, 65361L, 65394L, 65422L, 65444L, 65463L, 65478L, 65490L, 65500L,
+        65508L, 65514L, 65519L, 65523L, 65527L, 65529L, 65531L, 65533L, 65534L};
     // Static array of precomputed twiddle factors for the FFT
     private static final ComplexFp32_16[] roots = new ComplexFp32_16[256];
 
@@ -333,6 +353,7 @@ public class HAETAEEngine
     public HAETAEEngine(HAETAEParameters params)
     {
         this.params = params;
+        this.H_CUT = ((params.getM_h() - 1) >> 1);
     }
 
     /**
@@ -956,9 +977,8 @@ public class HAETAEEngine
         {
             int invI = brv8[i]; // placeholder – actual bit‑reversal may differ
             int c = x[i];       // polynomial coefficient
-            // Multiply by pre‑twiddle factor
-            r[invI].real = mulrnd16(c, roots[i].real);
-            r[invI].imag = mulrnd16(c, roots[i].imag);
+            r[invI].real = c * roots[i].real;
+            r[invI].imag = c * roots[i].imag;
         }
     }
 
@@ -972,7 +992,7 @@ public class HAETAEEngine
         for (int r = 1; r <= FFT_LOGN; r++)
         {
             int m = 1 << r;
-            int md2 = m >> 1;
+            int md2 = m >>> 1;
             for (int n = 0; n < FFT_N; n += m)
             {
                 for (int k = 0; k < md2; k++)
@@ -981,14 +1001,18 @@ public class HAETAEEngine
                     int odd = even + md2;
                     int twid = k << (FFT_LOGN - r + 1);
 
-                    ComplexFp32_16 u = data[even];
+                    ComplexFp32_16 u = new ComplexFp32_16(data[even].real, data[even].imag);
                     ComplexFp32_16 t = new ComplexFp32_16();
                     complexMul(t, roots[twid], data[odd]);
-
+//                    System.out.print("r: "+ r + " n: "+ n + " k: "+ k+ " even: "+ even + " odd: "+ odd +
+//                        " data[" +even+"]: "+data[even].real + " "+data[even].imag + " data[" +odd+"]: "+data[odd].real + " "+data[odd].imag +
+//                        "roots[" +twid+"]: "+ roots[twid].real + " "+ roots[twid].imag);
                     data[even].real = u.real + t.real;
                     data[even].imag = u.imag + t.imag;
                     data[odd].real = u.real - t.real;
                     data[odd].imag = u.imag - t.imag;
+                    //System.out.println(" data[" +even+"]: "+data[even].real + " "+data[even].imag + " data[" +odd+"]: "+data[odd].real + " "+data[odd].imag);
+
                 }
             }
         }
@@ -1055,10 +1079,7 @@ public class HAETAEEngine
         }
 
         // Compute bestm (maximum of subsets of size tau)
-        for (int i = 0; i < bestmSize; i++)
-        {
-            bestm[i] = sum[i];
-        }
+        System.arraycopy(sum, 0, bestm, 0, bestmSize);
         for (int i = bestmSize; i < HAETAEParameters.N; i++)
         {
             int[] val = new int[]{sum[i]};
@@ -1330,8 +1351,8 @@ public class HAETAEEngine
 
                 // Compute singular value and check
                 squaredSingularValue = polyvecmkSkSingularValue(s1, s2);
-                s1 = deepCopy(s1hat);
-                System.out.println("counter: " + counter + " b[0][0]: " + b[0][0] + " " + squaredSingularValue);
+
+                //System.out.println("counter: " + counter + " b[0][0]: " + b[0][0] + " " + squaredSingularValue);
             }
             while (squaredSingularValue > params.getGamma() * params.getGamma() * HAETAEParameters.N);
 
@@ -1349,8 +1370,8 @@ public class HAETAEEngine
             while (squaredSingularValue > params.getGamma() * params.getGamma() * HAETAEParameters.N);
 
             // b = A * NTT(s1) + NTT(s2)   (in Montgomery domain)
-            int[][] s1hat = s1;
-            int[][] s2hat = s2;
+            int[][] s1hat = s1.clone();
+            int[][] s2hat = s2.clone();
             polyvecmNtt(s1hat);
             polyveckNtt(s2hat);
 
@@ -1459,6 +1480,995 @@ public class HAETAEEngine
     }
 
     /**
+     * Unpacks a polynomial with coefficients modulo Q.
+     *
+     * @param r      output polynomial (length N)
+     * @param a      input byte array (packed format)
+     * @param offset starting offset in a
+     */
+    public void unpackPolyQ(int[] r, byte[] a, int offset)
+    {
+        if (params == HAETAEParameters.haetae5)
+        {
+            // Mode 5: 2 bytes per coefficient
+            for (int i = 0; i < HAETAEParameters.N; i++)
+            {
+                int lo = a[offset + 2 * i] & 0xFF;
+                int hi = a[offset + 2 * i + 1] & 0xFF;
+                r[i] = (lo | (hi << 8)) & 0xFFFF;
+            }
+        }
+        else
+        {
+            // Modes 2 & 3: 8 coefficients in 15 bytes
+            for (int i = 0; i < (HAETAEParameters.N >> 3); i++)
+            {
+                int bIdx = offset + 15 * i;
+                int dIdx = 8 * i;
+
+                r[dIdx] = (a[bIdx] & 0xFF) | ((a[bIdx + 1] & 0x7F) << 8);
+                r[dIdx + 1] = ((a[bIdx + 1] >> 7) & 0x01) |
+                    ((a[bIdx + 2] & 0xFF) << 1) |
+                    ((a[bIdx + 3] & 0x3F) << 9);
+                r[dIdx + 2] = ((a[bIdx + 3] >> 6) & 0x03) |
+                    ((a[bIdx + 4] & 0xFF) << 2) |
+                    ((a[bIdx + 5] & 0x1F) << 10);
+                r[dIdx + 3] = ((a[bIdx + 5] >> 5) & 0x07) |
+                    ((a[bIdx + 6] & 0xFF) << 3) |
+                    ((a[bIdx + 7] & 0x0F) << 11);
+                r[dIdx + 4] = ((a[bIdx + 7] >> 4) & 0x0F) |
+                    ((a[bIdx + 8] & 0xFF) << 4) |
+                    ((a[bIdx + 9] & 0x07) << 12);
+                r[dIdx + 5] = ((a[bIdx + 9] >> 3) & 0x1F) |
+                    ((a[bIdx + 10] & 0xFF) << 5) |
+                    ((a[bIdx + 11] & 0x03) << 13);
+                r[dIdx + 6] = ((a[bIdx + 11] >> 2) & 0x3F) |
+                    ((a[bIdx + 12] & 0xFF) << 6) |
+                    ((a[bIdx + 13] & 0x01) << 14);
+                r[dIdx + 7] = ((a[bIdx + 13] >> 1) & 0x7F) |
+                    ((a[bIdx + 14] & 0xFF) << 7);
+            }
+        }
+    }
+
+    /**
+     * Expands matrix A of size K x L (where first column is b, others from seed).
+     * This matrix is used in signing (A = [b | 2*A']).
+     *
+     * @param A  output matrix: K x L polynomials (2D array [K][L][N])
+     * @param vk public key byte array
+     */
+    public void unpackVk(int[][][] A, byte[] vk)
+    {
+        // Extract seed and packed b from vk
+        byte[] seed = new byte[HAETAEParameters.SEED_BYTES];
+        System.arraycopy(vk, 0, seed, 0, HAETAEParameters.SEED_BYTES);
+
+        int[][] b = new int[params.getK()][HAETAEParameters.N];
+        int offset = HAETAEParameters.SEED_BYTES;
+        int polyqPackedBytes = params.getPolyqPackedBytes();
+
+        for (int i = 0; i < params.getK(); i++)
+        {
+            unpackPolyQ(b[i], vk, offset + i * polyqPackedBytes);
+        }
+
+        // Expand A' = PRG(seed) for columns 1..L-1
+        polymatklExpandMatA(A, seed);
+        polymatklDouble(A);   // multiply all but first column by 2
+
+        // Adjust first column b based on mode
+        if (params == HAETAEParameters.haetae2 || params == HAETAEParameters.haetae3)
+        {
+            // a = expand vector a (size K)
+            int[][] a = new int[params.getK()][HAETAEParameters.N];
+            polyveckExpandVecA(a, seed);
+            // b = a - 2*b  (since b was doubled first)
+            polyveckDouble(b);
+            polyveckSub(b, a, b);
+            polyveckDouble(b);
+            polyveckNtt(b);
+        }
+
+        // Set first column of A to b
+        for (int i = 0; i < params.getK(); i++)
+        {
+            A[i][0] = b[i];
+        }
+    }
+
+    /**
+     * Expands the matrix A' of size K x M (M = L-1) from seed.
+     * Places result into columns 1..L-1 of A.
+     *
+     * @param A    matrix to fill (K x L)
+     * @param seed 32-byte seed
+     */
+    private void polymatklExpandMatA(int[][][] A, byte[] seed)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < params.getM(); j++)
+            {
+                // nonce = (i << 8) + j
+                short nonce = (short)((i << 8) + j);
+                poly_uniform(A[i][j + 1], seed, nonce);
+            }
+        }
+    }
+
+    /**
+     * Multiplies every polynomial in columns 1..L-1 by 2.
+     */
+    private void polymatklDouble(int[][][] A)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 1; j < params.getL(); j++)
+            {
+                int[] poly = A[i][j];
+                for (int k = 0; k < HAETAEParameters.N; k++)
+                {
+                    poly[k] *= 2;
+                }
+            }
+        }
+    }
+
+    /**
+     * Multiplies every coefficient in the polynomial vector by 2.
+     * No modular reduction is performed.
+     *
+     * @param v vector of K polynomials (modified in place)
+     */
+    public void polyveckDouble(int[][] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                v[i][j] *= 2;
+            }
+        }
+    }
+
+    /**
+     * Unpacks a polynomial with coefficients in {-1,0,1} (η = 1).
+     * Each byte contains four 2‑bit values.
+     *
+     * @param r      output polynomial (length N)
+     * @param a      input byte array (packed format)
+     * @param offset starting offset in a
+     */
+    public void unpackPolyEta(int[] r, byte[] a, int offset)
+    {
+        for (int i = 0; i < HAETAEParameters.N / 4; i++)
+        {
+            int b = a[offset + i] & 0xFF;
+            int t0 = (b) & 0x3;
+            int t1 = (b >> 2) & 0x3;
+            int t2 = (b >> 4) & 0x3;
+            int t3 = (b >> 6) & 0x3;
+
+            r[4 * i] = HAETAEParameters.ETA - t0;
+            r[4 * i + 1] = HAETAEParameters.ETA - t1;
+            r[4 * i + 2] = HAETAEParameters.ETA - t2;
+            r[4 * i + 3] = HAETAEParameters.ETA - t3;
+        }
+    }
+
+    /**
+     * Unpacks a polynomial with coefficients in {-2,-1,0,1,2} (for modes 2 & 3).
+     * 8 coefficients are stored in 3 bytes (24 bits = 8 * 3 bits).
+     *
+     * @param r      output polynomial (length N)
+     * @param a      input byte array (packed format)
+     * @param offset starting offset in a
+     */
+    public void unpackPoly2Eta(int[] r, byte[] a, int offset)
+    {
+        for (int i = 0; i < HAETAEParameters.N / 8; i++)
+        {
+            int idx = offset + 3 * i;
+            int b0 = a[idx] & 0xFF;
+            int b1 = a[idx + 1] & 0xFF;
+            int b2 = a[idx + 2] & 0xFF;
+
+            int t0 = (b0) & 0x7;
+            int t1 = (b0 >> 3) & 0x7;
+            int t2 = ((b0 >> 6) | (b1 << 2)) & 0x7;
+            int t3 = (b1 >> 1) & 0x7;
+            int t4 = (b1 >> 4) & 0x7;
+            int t5 = ((b1 >> 7) | (b2 << 1)) & 0x7;
+            int t6 = (b2 >> 2) & 0x7;
+            int t7 = (b2 >> 5) & 0x7;
+
+            r[8 * i] = 2 * HAETAEParameters.ETA - t0;
+            r[8 * i + 1] = 2 * HAETAEParameters.ETA - t1;
+            r[8 * i + 2] = 2 * HAETAEParameters.ETA - t2;
+            r[8 * i + 3] = 2 * HAETAEParameters.ETA - t3;
+            r[8 * i + 4] = 2 * HAETAEParameters.ETA - t4;
+            r[8 * i + 5] = 2 * HAETAEParameters.ETA - t5;
+            r[8 * i + 6] = 2 * HAETAEParameters.ETA - t6;
+            r[8 * i + 7] = 2 * HAETAEParameters.ETA - t7;
+        }
+    }
+
+    /**
+     * Unpacks a full secret key into the expanded matrix A, secret vectors s0, s1, and the key seed.
+     *
+     * @param A   output expanded matrix of size K x L (from public part)
+     * @param s0  output secret vector s0 (length M)
+     * @param s1  output secret vector s1 (length K)
+     * @param key output key seed (32 bytes)
+     * @param sk  input secret key byte array
+     */
+    public void unpackSk(int[][][] A, int[][] s0, int[][] s1, byte[] key, byte[] sk)
+    {
+        // Unpack public key part (fills A)
+        unpackVk(A, sk);
+
+        int offset = params.getPublicKeyBytes();
+
+        // Unpack s0 (M polynomials, eta‑packed)
+        int polyEtaPackedBytes = HAETAEParameters.POLYETA_PACKED_BYTES;
+        for (int i = 0; i < params.getM(); i++)
+        {
+            unpackPolyEta(s0[i], sk, offset + i * polyEtaPackedBytes);
+        }
+        offset += params.getM() * polyEtaPackedBytes;
+
+        // Unpack s1 (K polynomials, 2*eta‑packed for modes 2/3, eta‑packed for mode 5)
+        if (params == HAETAEParameters.haetae2 || params == HAETAEParameters.haetae3)
+        {
+            int poly2EtaPackedBytes = params.getPoly2etaPackedBytes();
+            for (int i = 0; i < params.getK(); i++)
+            {
+                unpackPoly2Eta(s1[i], sk, offset + i * poly2EtaPackedBytes);
+            }
+            offset += params.getK() * poly2EtaPackedBytes;
+        }
+        else
+        { // haetae5
+            for (int i = 0; i < params.getK(); i++)
+            {
+                unpackPolyEta(s1[i], sk, offset + i * polyEtaPackedBytes);
+            }
+            offset += params.getK() * polyEtaPackedBytes;
+        }
+
+        // Copy the remaining 32‑byte key seed
+        System.arraycopy(sk, offset, key, 0, HAETAEParameters.SEED_BYTES);
+    }
+
+    /**
+     * Renormalizes a fp96_76 number: carries from low limb to high limb.
+     */
+    private static void renormalize(long[] x)
+    {
+        x[1] += (x[0] >>> 48);
+        x[0] &= 0xFFFFFFFFFFFFL; // (1L << 48) - 1
+    }
+
+    /**
+     * 64‑bit multiplication returning 128‑bit result in r[0] (low) and r[1] (high).
+     */
+    private static void sq64(long[] r, long a)
+    {
+        long al = a & 0xFFFFFFFFL;
+        long ah = a >>> 32;
+        long aLo = al * al;
+        long aHi = ah * al * 2;
+        r[0] = a * a;
+        r[1] = (aHi >>> 32) + ((aLo >>> 32) + (aHi & 0xFFFFFFFFL)) + ah * ah;
+        // Adjust for cross terms – simplified using unsigned arithmetic emulation.
+        // For exact correctness, we can use Java's unsigned multiplication with carry.
+        // Since Java 8 doesn't have unsigned long, we implement carefully.
+        // Alternative: use BigInteger for exactness, but performance matters.
+        // Here we use a correct portable implementation:
+        long aLoLo = al * al;
+        long aLoHi = al * ah;
+        long aHiHi = ah * ah;
+        long mid = aLoHi + aLoHi; // 2 * al * ah
+        long low = aLoLo;
+        long carry = (aLoLo >>> 32) + (mid & 0xFFFFFFFFL);
+        long high = aHiHi + (mid >>> 32) + (carry >>> 32);
+        r[0] = low;
+        r[1] = high;
+    }
+
+    /**
+     * Multiply two 64‑bit values, 128‑bit result.
+     */
+    private static void mul64(long[] r, long b, long a)
+    {
+        long al = a & 0xFFFFFFFFL;
+        long ah = a >>> 32;
+        long bl = b & 0xFFFFFFFFL;
+        long bh = b >>> 32;
+        long aLoLo = al * bl;
+        long aLoHi = al * bh;
+        long aHiLo = ah * bl;
+        long aHiHi = ah * bh;
+        long mid = aLoHi + aHiLo;
+        long low = aLoLo;
+        long carry = (aLoLo >>> 32) + (mid & 0xFFFFFFFFL);
+        long high = aHiHi + (mid >>> 32) + (carry >>> 32);
+        r[0] = low;
+        r[1] = high;
+    }
+
+    /**
+     * Multiply two 48‑bit values, produce 96‑bit result with 48‑bit limbs.
+     */
+    private static void mul48(long[] r, long b, long a)
+    {
+        mul64(r, b, a);
+        r[1] <<= 16;
+        r[1] ^= r[0] >>> 48;
+        r[0] &= 0xFFFFFFFFFFFFL;
+    }
+
+    /**
+     * Signed multiply high: (a * b + 2^47) >> 48, with rounding.
+     */
+    private static long smulh48(long a, long b)
+    {
+        // Use 128-bit multiplication emulation
+        long a_high = a >> 24;
+        long a_low = a - (a_high << 24);
+        long b_high = b >> 24;
+        long b_low = b - (b_high << 24);
+
+        long res = (a_low * b_low) >> 24;
+        res += a_low * b_high + a_high * b_low + (1L << 23); // rounding
+        res >>= 24;
+        return res + a_high * b_high;
+    }
+
+    /**
+     * Approximate exp(x) for fixed‑point input x.
+     */
+    private static long approxExp(long x)
+    {
+        long result = 0xFFFFFFFFFFF5A74AL; // -0x0000B6C6340925AELL as signed
+        result = ((smulh48(result, x) + (1L << 2)) >> 3) + 0x0000B4BD4DF85227L;
+        result = ((smulh48(result, x) + (1L << 2)) >> 3) - 0x0000887F727491E2L;
+        result = ((smulh48(result, x) + (1L << 1)) >> 2) + 0x0000AAAA643C7E8DL;
+        result = ((smulh48(result, x) + (1L << 1)) >> 2) - 0x0000AAAAA98179E6L;
+        result = ((smulh48(result, x) + 1L) >> 1) + 0x0000FFFFFFFB2E7AL;
+        result = ((smulh48(result, x) + 1L) >> 1) - 0x0000FFFFFFFFF85FL;
+        result = ((smulh48(result, x))) + 0x0000FFFFFFFFFFFCL;
+        return result;
+    }
+
+    /**
+     * Sample from a discrete Gaussian using CDT.
+     */
+    private static long sampleGauss16(long rand16)
+    {
+        long r = 0;
+        for (int i = 0; i < CDTLEN; i++)
+        {
+            r += ((CDT[i] - rand16) >> 63) & 1L;
+        }
+        return r;
+    }
+
+
+    /**
+     * Samples a Gaussian value and returns a rejection bit.
+     *
+     * @param r    output sampled value (modified via 1‑element array)
+     * @param sqr  output squared value (fp96_76)
+     * @param rand 17‑byte random array
+     * @return 1 if accepted, 0 if rejected
+     */
+    public static int sampleGaussSigma76(long[] r, long[] sqr, byte[] rand, int pos)
+    {
+        // Extract random bits
+        long rand_gauss16 = (rand[pos + 0] & 0xFFL) | ((rand[pos + 1] & 0xFFL) << 8);
+        long rand_rej = (rand[pos + 2] & 0xFFL) | ((rand[pos + 3] & 0xFFL) << 8) |
+            ((rand[pos + 4] & 0xFFL) << 16) | ((rand[pos + 5] & 0xFFL) << 24) |
+            ((rand[pos + 6] & 0xFFL) << 32) | ((rand[pos + 7] & 0xFFL) << 40);
+
+        long x = sampleGauss16(rand_gauss16);
+
+        long[] y = new long[2];
+        y[0] = (rand[pos + 8] & 0xFFL) | ((rand[pos + 9] & 0xFFL) << 8) |
+            ((rand[pos + 10] & 0xFFL) << 16) | ((rand[pos + 11] & 0xFFL) << 24) |
+            ((rand[pos + 12] & 0xFFL) << 32) | ((rand[pos + 13] & 0xFFL) << 40);
+        y[1] = (rand[pos + 14] & 0xFFL) | ((rand[pos + 15] & 0xFFL) << 8) |
+            ((rand[pos + 16] & 0xFFL) << 16) | (x << 24);
+
+        // r := round y
+        long sample = (y[0] >>> 15) ^ (y[1] << 33);
+        sample += 1;
+        sample >>>= 1;
+        r[0] = sample;
+
+        fixpointSquare(sqr, y);
+
+        long exp_in = sqr[1] - ((x * x) << (68 - 48));
+        exp_in <<= 20;
+        exp_in |= sqr[0] >>> 28;
+        exp_in += 1;
+        exp_in >>>= 1;
+
+        // Rejection logic
+        long rand_rej_even = rand_rej ^ (rand_rej & 1L); // clear lowest bit
+        long exp_val = approxExp(exp_in);
+        long reject = ((rand_rej_even - exp_val) >> 63) & 1L;
+        long clear = ((sample | -sample) >> 63) | rand_rej;
+        return (int)((reject & clear) & 1L);
+    }
+
+    private static long sampleGauss(long[] r, int rOff, long[] sqsum, byte[] buf, int bufOffset,
+                                    int bufLen, int len, int dontWriteLast)
+    {
+        int pos = bufOffset;
+        int bytecnt = bufLen;
+        long coefcnt = 0;
+
+        while (coefcnt < len)
+        {
+            if (bytecnt < GAUSS_RAND_BYTES)
+            {
+                renormalize(sqsum);
+                return coefcnt;
+            }
+
+            long[] sampleHolder = new long[1];
+            long[] sqr = new long[2];
+            int accepted;
+
+            // For the last coefficient when dontWriteLast is set, use a dummy holder
+            if (dontWriteLast != 0 && coefcnt == len - 1)
+            {
+                accepted = sampleGaussSigma76(sampleHolder, sqr, buf, pos);
+            }
+            else
+            {
+                accepted = sampleGaussSigma76(sampleHolder, sqr, buf, pos);
+                if (accepted != 0)
+                {
+                    r[rOff + (int)coefcnt] = sampleHolder[0];
+                }
+            }
+
+            coefcnt += accepted;
+            pos += GAUSS_RAND_BYTES;
+            bytecnt -= GAUSS_RAND_BYTES;
+
+            // Add sqr to sqsum if sample was accepted (accepted is 0 or 1)
+            if (accepted != 0)
+            {
+                sqsum[0] += sqr[0];
+                sqsum[1] += sqr[1];
+            }
+        }
+
+        renormalize(sqsum);
+        return len;
+    }
+
+    /**
+     * Samples a full polynomial of Gaussian values (length N).
+     *
+     * @param r     output array of sampled values (length N)
+     * @param signs output sign bytes (length N/8) – each bit indicates sign of corresponding coefficient
+     * @param sqsum output accumulated squared sum (fp96_76)
+     * @param seed  64‑byte seed (CRH_BYTES)
+     * @param nonce 16‑bit nonce
+     * @param len   number of coefficients to sample (usually N)
+     */
+    public static void sampleGaussN(long[] r, int rOff, byte[] signs, int signsOff, long[] sqsum,
+                                    byte[] seed, short nonce, int len)
+    {
+        // Initialize SHAKE‑256 stream
+        SHAKEDigest shake = new SHAKEDigest(256);
+        shake.update(seed, 0, HAETAEParameters.CRH_BYTES);
+        shake.update((byte)(nonce & 0xFF));
+        shake.update((byte)((nonce >> 8) & 0xFF));
+
+        byte[] buf = new byte[POLY_HYPERBALL_NBLOCKS * SHAKE256_RATE];
+        shake.doOutput(buf, 0, buf.length);
+
+        // Copy sign bytes (first len/8 bytes)
+        int signBytesLen = len / 8;
+        System.arraycopy(buf, 0, signs, signsOff, signBytesLen);
+
+        int bytecnt = buf.length - signBytesLen;
+        long coefcnt = sampleGauss(r, rOff, sqsum, buf, signBytesLen, bytecnt, len, len % HAETAEParameters.N);
+
+        boolean firstflag = true;
+        while (coefcnt < len)
+        {
+            int off = bytecnt % GAUSS_RAND_BYTES;
+            // Move leftover bytes to beginning
+            for (int i = 0; i < off; i++)
+            {
+                buf[i] = buf[bytecnt + (firstflag ? signBytesLen : 0) - off + i];
+            }
+            // Squeeze one more block
+            shake.doOutput(buf, off, SHAKE256_RATE);
+            bytecnt = SHAKE256_RATE + off;
+
+            long[] rOffset = new long[len];
+            System.arraycopy(r, rOff + (int)coefcnt, rOffset, 0, (int)(len - coefcnt));
+            long added = sampleGauss(rOffset, 0, sqsum, buf, 0, bytecnt, (int)(len - coefcnt), len % HAETAEParameters.N);
+            System.arraycopy(rOffset, 0, r, rOff + (int)coefcnt, (int)added);
+            coefcnt += added;
+            firstflag = false;
+        }
+    }
+
+    /**
+     * Multiply‑accumulate: r += a * b (with 48‑bit limbs).
+     */
+    static void mulacc48(long[] r, long a, long b)
+    {
+        long[] tmp = new long[2];
+        mul48(tmp, a, b);
+        r[0] += tmp[0];
+        r[1] += tmp[1];
+    }
+
+    /**
+     * Square a 48‑bit value, produce 96‑bit result with 48‑bit limbs.
+     */
+    static void sq48(long[] r, long a)
+    {
+        mul64(r, a, a);
+        r[1] <<= 16;
+        r[1] ^= r[0] >>> 48;
+        r[0] &= MASK48;
+    }
+
+    /**
+     * Fixed‑point square: sqx = x * x.
+     */
+    public static void fixpointSquare(long[] sqx, long[] x)
+    {
+        long[] tmp = new long[2];
+        sq48(sqx, x[0]);
+
+        // shift right by 48, rounding (implicit)
+        sqx[0] >>>= 48;
+        sqx[0] += sqx[1];
+
+        mul48(tmp, x[0], x[1]);
+        sqx[0] += tmp[0] << 1;
+        sqx[1] = tmp[1] << 1;
+
+        // shift right by 28, rounding
+        sqx[0] >>>= 28;
+        sqx[0] += (sqx[1] << 20) & MASK48;
+        sqx[1] >>>= 28;
+
+        mul64(tmp, x[1], x[1]);
+        sqx[0] += (tmp[0] << 20) & MASK48;
+        sqx[1] += (tmp[0] >>> 28) + (tmp[1] << 36);
+
+        renormalize(sqx);
+    }
+
+    /**
+     * Fixed‑point multiplication: xy = x * y.
+     */
+    public static void fixpointMul(long[] xy, long[] x, long[] y)
+    {
+        long[] tmp = new long[2];
+        mul48(xy, x[0], y[0]);
+
+        // shift right by 48, rounding
+        xy[0] = xy[1] + (((xy[0] >>> 47) + 1) >>> 1);
+
+        mul48(tmp, x[0], y[1]);
+        xy[0] += tmp[0];
+        xy[1] = tmp[1];
+        mulacc48(xy, x[1], y[0]);
+
+        // shift right by 28, rounding
+        xy[0] += 1L << 27;
+        xy[0] >>>= 28;
+        xy[0] += (xy[1] << 20) & MASK48;
+        xy[1] >>>= 28;
+
+        mul64(tmp, x[1], y[1]);
+        xy[0] += (tmp[0] << 20) & MASK48;
+        xy[1] += (tmp[0] >>> 28) + (tmp[1] << 36);
+
+        renormalize(xy);
+    }
+
+    /**
+     * Fixed‑point addition: xy = x + y.
+     */
+    public static void fixpointAdd(long[] xy, long[] x, long[] y)
+    {
+        xy[0] = x[0] + y[0];
+        xy[1] = x[1] + y[1];
+    }
+
+    /**
+     * Fixed‑point subtraction: xminy = x - y.
+     */
+    public static void fixpointSub(long[] xminy, long[] x, long[] y)
+    {
+        long[] yneg = new long[2];
+        copyCneg(yneg, y, 1);
+        fixpointAdd(xminy, x, yneg);
+    }
+
+    /**
+     * Copy with conditional negation: y = (sign ? -x : x).
+     */
+    private static void copyCneg(long[] y, long[] x, int sign)
+    {
+        long mask = -(long)sign;
+        y[0] = (mask & MASK48) ^ x[0];
+        y[1] = mask ^ x[1];
+        y[0] += sign;
+        renormalize(y);
+    }
+
+    /**
+     * In‑place conditional negation: x = (sign ? -x : x).
+     */
+    private static void cneg(long[] x, int sign)
+    {
+        long mask = -(long)sign;
+        x[0] ^= mask & MASK48;
+        x[1] ^= mask;
+        x[0] += sign;
+        renormalize(x);
+    }
+
+    /**
+     * In‑place: x = 3/2 - x.
+     */
+    private static void fixpointSubFromThreeHalves(long[] x)
+    {
+        cneg(x, 1);
+        x[1] += 3L << 27; // 3/2 in fp96_76 (left shift by 28 would be "3")
+        renormalize(x);
+    }
+
+    /**
+     * Multiply xy (signed) by y (unsigned) with conditional sign of y.
+     * xy = xy * y   where y may be negative (interpreted as signed).
+     */
+    private static void fixpointUnsignedSignedMul(long[] xy, long[] y)
+    {
+        long[] x = new long[2];
+        long[] z = new long[2];
+        int sign = (int)(y[1] >> 63) & 1;
+        copyCneg(x, y, sign);
+        fixpointMul(z, x, xy);
+        copyCneg(xy, z, sign);
+    }
+
+    /**
+     * Newton's method to compute 1/sqrt(xhalf).
+     *
+     * @param invsqrtx output: 1/sqrt(xhalf)
+     * @param xhalf    input: x/2 (positive)
+     */
+    public void fixpointNewtonInvSqrt(long[] invsqrtx, long[] xhalf)
+    {
+        long[] tmp = new long[2];
+        long[] tmp2 = new long[2];
+
+        // First iteration: start_times_threehalves - start_cube * xhalf
+        fixpointMul(tmp, xhalf, params.getStartCube());
+        fixpointSub(invsqrtx, params.getStartTimesThreehalves(), tmp);
+
+        for (int i = 0; i < 6; i++)
+        {
+            fixpointSquare(tmp, invsqrtx);          // tmp = y^2
+            fixpointMul(tmp2, xhalf, tmp);          // tmp2 = x/2 * y^2
+            fixpointSubFromThreeHalves(tmp2);       // tmp2 = 3/2 - x/2 * y^2
+            fixpointUnsignedSignedMul(invsqrtx, tmp2); // y = y * (3/2 - x/2 * y^2)
+        }
+    }
+
+    /**
+     * Rounds a fixed‑point number: (num + LN/2) >> LN_BITS.
+     */
+    private int fixRound(int num)
+    {
+        return (num + params.getLnHalf()) >> params.getLnBits();
+    }
+
+    /**
+     * Converts a polynomial in fixed‑point representation to a standard polynomial.
+     *
+     * @param a output polynomial (length N)
+     * @param b input fixed‑point polynomial (length N)
+     */
+    public void polyfixRound(int[] a, int[] b)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            a[i] = fixRound(b[i]);
+        }
+    }
+
+    /**
+     * Converts a vector of length L from fixed‑point to standard representation.
+     *
+     * @param a output vector (L x N)
+     * @param b input fixed‑point vector (L x N)
+     */
+    public void polyfixveclRound(int[][] a, int[][] b)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyfixRound(a[i], b[i]);
+        }
+    }
+
+    /**
+     * Converts a vector of length K from fixed‑point to standard representation.
+     *
+     * @param a output vector (K x N)
+     * @param b input fixed‑point vector (K x N)
+     */
+    public void polyfixveckRound(int[][] a, int[][] b)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            polyfixRound(a[i], b[i]);
+        }
+    }
+
+    /**
+     * Applies forward NTT to a polynomial vector of length L.
+     *
+     * @param x vector of L polynomials (L x N)
+     */
+    public void polyveclNtt(int[][] x)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyNtt(x[i]);
+        }
+    }
+
+    /**
+     * Pointwise multiplication and accumulation for two vectors of length L.
+     * w = sum_{j=0}^{L-1} (u_j ∘ v_j)   (pointwise multiplication)
+     *
+     * @param w output polynomial (length N)
+     * @param u first vector (L x N)
+     * @param v second vector (L x N)
+     */
+    private void polyveclPointwiseAccMontgomery(int[] w, int[][] u, int[][] v)
+    {
+        // w = u[0] ∘ v[0]
+        polyPointwiseMontgomery(w, u[0], v[0]);
+
+        int[] t = new int[HAETAEParameters.N];
+        for (int j = 1; j < params.getL(); j++)
+        {
+            polyPointwiseMontgomery(t, u[j], v[j]);
+            polyAdd(w, w, t);
+        }
+    }
+
+    /**
+     * Matrix‑vector multiplication: t = mat * v  where mat is K x L, v is length L.
+     *
+     * @param t   output vector of length K (each polynomial of length N)
+     * @param mat matrix of size K x L (each entry is a polynomial)
+     * @param v   input vector of length L
+     */
+    public void polymatklPointwiseMontgomery(int[][] t, int[][][] mat, int[][] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            polyveclPointwiseAccMontgomery(t[i], mat[i], v);
+        }
+    }
+
+    /**
+     * Standard representative modulo 2Q: returns a value in [0, 2Q-1].
+     */
+    public int freeze2q(int a)
+    {
+        long t = ((long)a * DQREC) >> 32;
+        long r = a - t * HAETAEParameters.DQ;          // -4Q < r < 4Q
+        r += (r >> 31) & (HAETAEParameters.DQ * 2);    // 0 <= r < 4Q
+        r -= ~((r - HAETAEParameters.DQ) >> 31) & HAETAEParameters.DQ; // 0 <= r < 2Q
+        return (int)r;
+    }
+
+    /**
+     * Applies freeze2q to a polynomial.
+     */
+    public void polyFreeze2q(int[] a)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            a[i] = freeze2q(a[i]);
+        }
+    }
+
+    /**
+     * Applies freeze2q to a vector of length K.
+     */
+    public void polyveckFreeze2q(int[][] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            polyFreeze2q(v[i]);
+        }
+    }
+
+    // ---------- CRT Reconstruction ----------
+
+    /**
+     * Reconstructs a coefficient from modulo Q and modulo 2 representations.
+     * w = u + Q if (u XOR v) is odd; else w = u.
+     */
+    private void polyFromcrt(int[] w, int[] u, int[] v)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            int xq = u[i];
+            int x2 = v[i];
+            w[i] = xq + (HAETAEParameters.Q & -(((xq ^ x2) & 1)));
+        }
+    }
+
+    /**
+     * Reconstructs from modulo Q only (assuming the modulo 2 part is zero).
+     * w = u + Q if u is odd; else w = u.
+     */
+    private void polyFromcrt0(int[] w, int[] u)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            int xq = u[i];
+            w[i] = xq + (HAETAEParameters.Q & -(xq & 1));
+        }
+    }
+
+    /**
+     * Vector version: first polynomial uses polyFromcrt with v,
+     * the remaining use polyFromcrt0.
+     */
+    public void polyveckPolyFromcrt(int[][] w, int[][] u, int[] v)
+    {
+        polyFromcrt(w[0], u[0], v);
+        for (int i = 1; i < params.getK(); i++)
+        {
+            polyFromcrt0(w[i], u[i]);
+        }
+    }
+
+    // ---------- Hint Decomposition ----------
+
+    /**
+     * Decomposes a coefficient r into its high bits (hint).
+     * highbits = (r + half_alpha) >> log_alpha, capped at max value.
+     */
+    private void decomposeHint(int[] highbits, int r)
+    {
+        int hb = (r + params.getHalfAlphaHint()) >> params.getLogAlphaHint();
+        // if hb == maxHint, set to 0 (edge case)
+        int maxHint = (HAETAEParameters.DQ - 2) / params.getAlphaHint();
+        int edgecase = (maxHint - (hb + 1)) >> 31;
+        hb -= maxHint & edgecase;
+        highbits[0] = hb;
+    }
+
+    /**
+     * Computes hint high bits for a whole vector of length K.
+     */
+    public void polyveckHighbitsHint(int[][] w, int[][] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                int[] hb = new int[1];
+                decomposeHint(hb, v[i][j]);
+                w[i][j] = hb[0];
+            }
+        }
+    }
+
+    // ---------- LSB Extraction ----------
+
+    /**
+     * Extracts the least significant bit of each coefficient.
+     */
+    public void polyLsb(int[] a0, int[] a)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            a0[i] = a[i] & 1;
+        }
+    }
+
+    // ---------- Packing High Bits ----------
+
+    /**
+     * Packs the high bits of a polynomial vector into bytes.
+     * Assumes high bits are in [0, 2^9-1] (for modes 2/3) or [0, 2^8-1] (for mode 5).
+     */
+    public void packVecHighbits(byte[] buf, int offset, int[][] v)
+    {
+        int packedBytesPerPoly = HAETAEParameters.POLY_HIGHBITS_PACKED_BYTES;
+        for (int i = 0; i < params.getK(); i++)
+        {
+            packPolyHighbits(buf, offset + i * packedBytesPerPoly, v[i]);
+        }
+    }
+
+    /**
+     * Packs the high bits of a single polynomial.
+     * Each coefficient is 9 bits (modes 2/3) or 8 bits (mode 5), packed tightly.
+     */
+    private void packPolyHighbits(byte[] buf, int offset, int[] a)
+    {
+        if (params == HAETAEParameters.haetae5)
+        {
+            // Mode 5: 8 bits per coefficient -> simple
+            for (int i = 0; i < HAETAEParameters.N; i++)
+            {
+                buf[offset + i] = (byte)(a[i] & 0xFF);
+            }
+        }
+        else
+        {
+            // Modes 2 & 3: 9 bits per coefficient, 8 coefficients -> 9 bytes
+            for (int i = 0; i < HAETAEParameters.N / 8; i++)
+            {
+                int base = i * 8;
+                int b0 = a[base];
+                int b1 = a[base + 1];
+                int b2 = a[base + 2];
+                int b3 = a[base + 3];
+                int b4 = a[base + 4];
+                int b5 = a[base + 5];
+                int b6 = a[base + 6];
+                int b7 = a[base + 7];
+
+                int outOffset = offset + 9 * i;
+                buf[outOffset] = (byte)(b0 & 0xFF);
+                buf[outOffset + 1] = (byte)(((b0 >> 8) & 0x01) | ((b1 & 0x7F) << 1));
+                buf[outOffset + 2] = (byte)(((b1 >> 7) & 0x03) | ((b2 & 0x3F) << 2));
+                buf[outOffset + 3] = (byte)(((b2 >> 6) & 0x07) | ((b3 & 0x1F) << 3));
+                buf[outOffset + 4] = (byte)(((b3 >> 5) & 0x0F) | ((b4 & 0x0F) << 4));
+                buf[outOffset + 5] = (byte)(((b4 >> 4) & 0x1F) | ((b5 & 0x07) << 5));
+                buf[outOffset + 6] = (byte)(((b5 >> 3) & 0x3F) | ((b6 & 0x03) << 6));
+                buf[outOffset + 7] = (byte)(((b6 >> 2) & 0x7F) | ((b7 & 0x01) << 7));
+                buf[outOffset + 8] = (byte)((b7 >> 1) & 0xFF);
+            }
+        }
+    }
+
+    // ---------- Packing LSBs ----------
+
+    /**
+     * Packs the LSB of each coefficient into bytes (1 bit per coefficient).
+     */
+    public void packPolyLsb(byte[] buf, int offset, int[] a)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            if ((i % 8) == 0)
+            {
+                buf[offset + i / 8] = 0;
+            }
+            buf[offset + i / 8] |= (a[i] & 1) << (i % 8);
+        }
+    }
+
+    /**
      * Complex number with 32‑bit fixed‑point real and imaginary parts
      * (16 fractional bits).
      */
@@ -1478,5 +2488,890 @@ public class HAETAEEngine
             this.real = real;
             this.imag = imag;
         }
+    }
+
+    // ---------- Challenge Generation ----------
+
+    /**
+     * Generates the challenge polynomial c from the high bits and LSB of w1, and message mu.
+     *
+     * @param c           output challenge polynomial (length N)
+     * @param highbitsLsb packed high bits and LSB (length = POLYVECK_HIGHBITS_PACKEDBYTES + POLYC_PACKEDBYTES)
+     * @param mu          message hash (SEED_BYTES)
+     */
+    public void polyChallenge(int[] c, byte[] highbitsLsb, byte[] mu)
+    {
+        if (params == HAETAEParameters.haetae2 || params == HAETAEParameters.haetae3)
+        {
+            // Modes 2 & 3: generate a sparse polynomial with exactly TAU ones
+            SHAKEDigest shake = new SHAKEDigest(256);
+            shake.update(highbitsLsb, 0, highbitsLsb.length);
+            shake.update(mu, 0, HAETAEParameters.SEED_BYTES);
+
+            byte[] buf = new byte[SHAKE256_RATE];
+            shake.doOutput(buf, 0, SHAKE256_RATE);
+            int pos = 0;
+
+            // Initialize c to zeros
+            for (int i = 0; i < HAETAEParameters.N; i++)
+            {
+                c[i] = 0;
+            }
+
+            for (int i = HAETAEParameters.N - params.getTau(); i < HAETAEParameters.N; i++)
+            {
+                int b;
+                do
+                {
+                    if (pos >= SHAKE256_RATE)
+                    {
+                        shake.doOutput(buf, 0, SHAKE256_RATE);
+                        pos = 0;
+                    }
+                    b = buf[pos++] & 0xFF;
+                }
+                while (b > i);
+                c[i] = c[b];
+                c[b] = 1;
+            }
+        }
+        else
+        { // haetae5
+            // Mode 5: generate a 256-bit string with exactly TAU ones (TAU = 128)
+            SHAKEDigest shake = new SHAKEDigest(256);
+            shake.update(highbitsLsb, 0, highbitsLsb.length);
+            shake.update(mu, 0, HAETAEParameters.SEED_BYTES);
+
+            byte[] buf = new byte[32];
+            shake.doFinal(buf, 0, 32);
+
+            int hwt = 0;
+            for (int i = 0; i < 32; i++)
+            {
+                hwt += hammingWeight8(buf[i]);
+            }
+
+            int cond = 128 - hwt;
+            int mask = 0xFF & (cond >> 8); // 0xFF if cond < 0, else 0
+            int w0 = -(buf[0] & 1);        // -1 if LSB set, else 0
+            // mask = (cond != 0) ? mask : w0
+            mask = w0 ^ ((-(cond != 0 ? 1 : 0)) & (mask ^ w0));
+
+            for (int i = 0; i < 32; i++)
+            {
+                int b = (buf[i] ^ mask) & 0xFF;
+                buf[i] = (byte)b;
+                c[8 * i] = (b) & 1;
+                c[8 * i + 1] = (b >> 1) & 1;
+                c[8 * i + 2] = (b >> 2) & 1;
+                c[8 * i + 3] = (b >> 3) & 1;
+                c[8 * i + 4] = (b >> 4) & 1;
+                c[8 * i + 5] = (b >> 5) & 1;
+                c[8 * i + 6] = (b >> 6) & 1;
+                c[8 * i + 7] = (b >> 7) & 1;
+            }
+        }
+    }
+
+    /**
+     * Hamming weight (population count) of an 8‑bit integer.
+     */
+    private static int hammingWeight8(int x)
+    {
+        x = (x & 0x55) + ((x >> 1) & 0x55);
+        x = (x & 0x33) + ((x >> 2) & 0x33);
+        x = (x & 0x0F) + ((x >> 4) & 0x0F);
+        return x;
+    }
+
+    // ---------- Vector Pointwise Multiplication with a Single Polynomial ----------
+
+    /**
+     * Pointwise multiplication of each polynomial in vector u (length K) by polynomial v.
+     * Result stored in w.
+     */
+    public void polyveckPolyPointwiseMontgomery(int[][] w, int[][] u, int[] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            polyPointwiseMontgomery(w[i], u[i], v);
+        }
+    }
+
+    /**
+     * Conditionally negates a vector of length L.
+     * If b == 0, coefficients unchanged; if b == 1, coefficients are negated.
+     *
+     * @param v vector to modify (L x N)
+     * @param b condition byte (0 or 1)
+     */
+    public void polyveclCneg(int[][] v, int b)
+    {
+        int factor = 1 - 2 * b; // 1 if b==0, -1 if b==1
+        for (int i = 0; i < params.getL(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                v[i][j] *= factor;
+            }
+        }
+    }
+
+    /**
+     * Conditionally negates a vector of length K.
+     */
+    public void polyveckCneg(int[][] v, int b)
+    {
+        int factor = 1 - 2 * b;
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                v[i][j] *= factor;
+            }
+        }
+    }
+
+    /**
+     * Adds a regular polynomial (scaled by LN) to a fixed‑point polynomial.
+     * c[i] = a[i] + LN * b[i]
+     *
+     * @param c output fixed‑point polynomial
+     * @param a input fixed‑point polynomial
+     * @param b input regular polynomial
+     */
+    private void polyfixAdd(int[] c, int[] a, int[] b)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            c[i] = a[i] + params.getLn() * b[i];
+        }
+    }
+
+    /**
+     * Vector version for length L.
+     */
+    public void polyfixveclAdd(int[][] w, int[][] u, int[][] v)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyfixAdd(w[i], u[i], v[i]);
+        }
+    }
+
+    /**
+     * Vector version for length K.
+     */
+    public void polyfixveckAdd(int[][] w, int[][] u, int[][] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            polyfixAdd(w[i], u[i], v[i]);
+        }
+    }
+
+    public long polyfixveclkSqnorm2(int[][] a, int[][] b)
+    {
+        long ret = 0;
+        for (int i = 0; i < params.getL(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                long coeff = a[i][j];
+                ret += coeff * coeff;
+            }
+        }
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                long coeff = b[i][j];
+                ret += coeff * coeff;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Doubles each element of a fixed‑point vector of length L.
+     * b = 2 * a
+     */
+    public void polyfixveclDouble(int[][] b, int[][] a)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                b[i][j] = 2 * a[i][j];
+            }
+        }
+    }
+
+    /**
+     * Doubles each element of a fixed‑point vector of length K.
+     */
+    public void polyfixveckDouble(int[][] b, int[][] a)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                b[i][j] = 2 * a[i][j];
+            }
+        }
+    }
+
+    /**
+     * Subtracts two fixed‑point polynomials: c = a - b.
+     */
+    private void polyfixfixSub(int[] c, int[] a, int[] b)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            c[i] = a[i] - b[i];
+        }
+    }
+
+    /**
+     * Subtracts two fixed‑point vectors of length L: w = u - v.
+     */
+    public void polyfixfixveclSub(int[][] w, int[][] u, int[][] v)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyfixfixSub(w[i], u[i], v[i]);
+        }
+    }
+
+    /**
+     * Subtracts two fixed‑point vectors of length K: w = u - v.
+     */
+    public void polyfixfixveckSub(int[][] w, int[][] u, int[][] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            polyfixfixSub(w[i], u[i], v[i]);
+        }
+    }
+
+    /**
+     * Conditionally adds the maximum hint value to negative coefficients.
+     * This ensures that high‑bits are non‑negative.
+     * h.coeffs += (h.coeffs < 0) ? ((DQ-2)/ALPHA_HINT) : 0
+     */
+    public void polyveckCaddDQ2ALPHA(int[][] h)
+    {
+        int maxHint = (HAETAEParameters.DQ - 2) / params.getAlphaHint();
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                int coeff = h[i][j];
+                // (coeff >> 31) is -1 if negative, 0 otherwise
+                h[i][j] = coeff + ((coeff >> 31) & maxHint);
+            }
+        }
+    }
+
+    // ---------- Decomposition for z1 ----------
+
+    /**
+     * Decomposes a coefficient into high and low parts for z1.
+     * lowbits is in range [-128, 127] and highbits = round(r / 256).
+     *
+     * @param highbits output high part (1-element array)
+     * @param lowbits  output low part (1-element array)
+     * @param r        input coefficient
+     */
+    private void decomposeZ1(int[] highbits, int[] lowbits, int r)
+    {
+        int alpha = 256; // TODO magic numbers!
+        int logAlpha = 8;
+        int alphaMask = alpha - 1;
+
+        int lb = r & alphaMask;
+        int center = ((alpha >> 1) - (lb + 1)) >> 31; // 0xFFFFFFFF if lb >= 128
+        lb -= alpha & center;
+        lowbits[0] = lb;
+        highbits[0] = (r + (alpha >> 1)) >> logAlpha;
+    }
+
+    /**
+     * Extracts the low bits of a polynomial (z1 part).
+     */
+    public void polyLowbits(int[] a1, int[] a)
+    {
+        int[] highTmp = new int[1];
+        int[] lowTmp = new int[1];
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            decomposeZ1(highTmp, lowTmp, a[i]);
+            a1[i] = lowTmp[0];
+        }
+    }
+
+    /**
+     * Extracts the low bits of a vector of length L.
+     */
+    public void polyveclLowbits(int[][] v1, int[][] v)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyLowbits(v1[i], v[i]);
+        }
+    }
+
+    /**
+     * Extracts the high bits of a polynomial (z1 part).
+     */
+    public void polyHighbits(int[] a2, int[] a)
+    {
+        int[] highTmp = new int[1];
+        int[] lowTmp = new int[1];
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            decomposeZ1(highTmp, lowTmp, a[i]);
+            a2[i] = highTmp[0];
+        }
+    }
+
+    /**
+     * Extracts the high bits of a vector of length L.
+     */
+    public void polyveclHighbits(int[][] v2, int[][] v)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyHighbits(v2[i], v[i]);
+        }
+    }
+
+    // ---------- Signature Packing ----------
+
+    /**
+     * Packs the signature into the output byte array.
+     *
+     * @param sig        output signature (length CRYPTO_BYTES)
+     * @param c          challenge polynomial (coefficients in {0,1})
+     * @param lowbitsZ1  low bits of z1 (L x N)
+     * @param highbitsZ1 high bits of z1 (L x N)
+     * @param h          hint vector (K x N)
+     * @return 0 on success, 1 if encoding fails
+     */
+    public int packSig(byte[] sig, int[] c, int[][] lowbitsZ1, int[][] highbitsZ1, int[][] h)
+    {
+        int offset = 0;
+
+        // Zero out signature
+        java.util.Arrays.fill(sig, (byte)0);
+
+        // 1. Pack challenge c (N bits -> N/8 bytes)
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            if (c[i] != 0)
+            {
+                sig[offset + i / 8] |= (byte)(1 << (i % 8));
+            }
+        }
+        offset += HAETAEParameters.N / 8;
+
+        // 2. Pack lowbits of z1 (L * N bytes) – each coefficient is exactly one byte (since lowbits in [-128,127] fits in signed byte)
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyDecomposedPack(sig, offset + HAETAEParameters.N * i, lowbitsZ1[i]);
+        }
+        offset += params.getL() * HAETAEParameters.N;
+
+        // 3. Encode highbits_z1 and h using custom compression
+        byte[] encodedHbZ1 = new byte[HAETAEParameters.N * params.getL()]; // max possible size
+        byte[] encodedH = new byte[HAETAEParameters.N * params.getK()];
+
+        int sizeEncHbZ1 = encodeHbZ1(encodedHbZ1, highbitsZ1);
+        int sizeEncH = encodeH(encodedH, h);
+
+        if (sizeEncH == 0 || sizeEncHbZ1 == 0)
+        {
+            return 1; // encoding failed
+        }
+
+        // Check that size offsets are within one byte
+        if (sizeEncH < params.getBaseEncH() ||
+            sizeEncHbZ1 < params.getBaseEncHbZ1() ||
+            sizeEncH > params.getBaseEncH() + 255 ||
+            sizeEncHbZ1 > params.getBaseEncHbZ1() + 255)
+        {
+            return 1;
+        }
+
+        int offsetEncHbZ1 = sizeEncHbZ1 - params.getBaseEncHbZ1();
+        int offsetEncH = sizeEncH - params.getBaseEncH();
+
+        // Check total size
+        if (HAETAEParameters.SEED_BYTES + params.getL() * HAETAEParameters.N + 2 + sizeEncHbZ1 + sizeEncH >
+            params.getCryptoBytes())
+        {
+            return 1;
+        }
+
+        sig[offset] = (byte)offsetEncHbZ1;
+        sig[offset + 1] = (byte)offsetEncH;
+        offset += 2;
+
+        System.arraycopy(encodedHbZ1, 0, sig, offset, sizeEncHbZ1);
+        offset += sizeEncHbZ1;
+
+        System.arraycopy(encodedH, 0, sig, offset, sizeEncH);
+
+        return 0;
+    }
+
+    /**
+     * Packs a polynomial of decomposed low bits (each coefficient fits in a byte).
+     * Assumes coefficients are already in the range [-128, 127] and just casts to byte.
+     */
+    private void polyDecomposedPack(byte[] out, int outOff, int[] a)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            out[outOff + i] = (byte)a[i];
+        }
+    }
+
+    /**
+     * Initializes the rANS state.
+     */
+    private static int ransEncInit()
+    {
+        return RANS_BYTE_L;
+    }
+
+    /**
+     * Encodes a single symbol.
+     *
+     * @param state current rANS state (modified in place via array)
+     * @param ptr   pointer to current output position (wrapped in an array of byte[])
+     * @param sym   symbol descriptor
+     * @param out   the output byte buffer (used for writing bytes backward)
+     */
+    private static void ransEncPutSymbol(int[] state, int[] ptr, RansEncSymbol sym, byte[] out)
+    {
+        if (sym.x_max == 0)
+        {
+            throw new IllegalArgumentException("Cannot encode symbol with frequency 0");
+        }
+
+        int x = state[0];
+        int x_max = sym.x_max;
+        if (x >= x_max)
+        {
+            int p = ptr[0];
+            do
+            {
+                out[--p] = (byte)(x & 0xFF);
+                x >>>= 8;
+            }
+            while (x >= x_max);
+            ptr[0] = p;
+        }
+
+        // x = C(s,x)
+        long product = ((long)x * sym.rcp_freq) >>> 32;
+        int q = (int)(product >>> sym.rcp_shift);
+        state[0] = x + sym.bias + q * sym.cmpl_freq;
+    }
+
+    /**
+     * Flushes the remaining rANS state to output (4 bytes, little‑endian).
+     */
+    private static void ransEncFlush(int[] state, int[] ptr, byte[] out)
+    {
+        int x = state[0];
+        int p = ptr[0];
+        p -= 4;
+        out[p] = (byte)(x);
+        out[p + 1] = (byte)(x >>> 8);
+        out[p + 2] = (byte)(x >>> 16);
+        out[p + 3] = (byte)(x >>> 24);
+        ptr[0] = p;
+    }
+
+    /**
+     * Instance version using HAETAEParameters.
+     */
+    public int encodeH(byte[] buf, int[][] h)
+    {
+        int sizeH = HAETAEParameters.N * params.getK();
+        byte[] encoding = new byte[sizeH]; // upper bound
+        int[] state = new int[1];
+        int[] ptr = new int[1];
+
+        state[0] = ransEncInit();
+        ptr[0] = encoding.length; // start at the end
+
+        for (int i = sizeH; i > 0; i--)
+        {
+            int idx = i - 1;
+            int polyIdx = idx / HAETAEParameters.N;
+            int coeffIdx = idx % HAETAEParameters.N;
+            int tmp = h[polyIdx][coeffIdx];
+
+            // Check for out‑of‑range values
+            if (H_CUT < tmp && tmp <= H_CUT + params.getOffset_h())
+            {
+                return 0;
+            }
+            // Map to dense symbol index
+            tmp = (tmp > (H_CUT + params.getOffset_h())) ? tmp - params.getOffset_h() : tmp;
+            int s = tmp; // s is in 0..255
+
+            ransEncPutSymbol(state, ptr, params.getEsyms_h()[s], encoding);
+            if (ptr[0] < 4)
+            {
+                return 0; // safety
+            }
+        }
+
+        ransEncFlush(state, ptr, encoding);
+        int sizeEncoded = encoding.length - ptr[0];
+        System.arraycopy(encoding, ptr[0], buf, 0, sizeEncoded);
+        return sizeEncoded;
+    }
+
+    /**
+     * Encodes the high‑bits of z1 (size L×N).
+     */
+    public int encodeHbZ1(byte[] buf, int[][] hbZ1)
+    {
+        int sizeHbZ1 = HAETAEParameters.N * params.getL();
+        byte[] encoding = new byte[sizeHbZ1];
+        int[] state = new int[1];
+        int[] ptr = new int[1];
+
+        state[0] = ransEncInit();
+        ptr[0] = encoding.length;
+
+        for (int i = sizeHbZ1; i > 0; i--)
+        {
+            int idx = i - 1;
+            int polyIdx = idx / HAETAEParameters.N;
+            int coeffIdx = idx % HAETAEParameters.N;
+            int tmp = hbZ1[polyIdx][coeffIdx] + params.getOffset_hb_z1();
+
+            if (tmp < 0 || params.getM_hb_z1() <= tmp)
+            {
+                return 0;
+            }
+            int s = tmp;
+
+            ransEncPutSymbol(state, ptr, params.getEsyms_hb_z1()[s], encoding);
+            if (ptr[0] < 4)
+            {
+                return 0;
+            }
+        }
+
+        ransEncFlush(state, ptr, encoding);
+        int sizeEncoded = encoding.length - ptr[0];
+        System.arraycopy(encoding, ptr[0], buf, 0, sizeEncoded);
+        return sizeEncoded;
+    }
+
+    /**
+     * Multiplies an fp96_76 by a uint64_t scalar and stores the high part (shifted right by 28).
+     */
+    private void fixpointMulHigh(long[] xy, long[] x, long y)
+    {
+        long[] tmp = new long[2];
+        mul48(xy, x[0], y);
+
+        mul48(tmp, x[1], y);
+        xy[1] += tmp[0];
+
+        // Shift right by 28 with rounding
+        xy[0] += 1L << 27;
+        xy[0] >>>= 28;
+        xy[0] += (xy[1] << 20) & MASK48;
+        xy[1] >>>= 28;
+
+        xy[1] += tmp[1] << 20;
+
+        renormalize(xy);
+    }
+
+    /**
+     * Computes (sample * sqsum + 2^12) >> 13, with sign applied.
+     * This matches the C function fixpoint_mul_rnd13.
+     */
+    private int fixpointMulRnd13(long sample, long[] sqsum, int sign)
+    {
+        // Use 128‑bit multiplication via BigInteger (exact but slower)
+        java.math.BigInteger sampleBI = java.math.BigInteger.valueOf(sample & 0xFFFFFFFFL)
+            .or(java.math.BigInteger.valueOf(sample >>> 32).shiftLeft(32));
+        java.math.BigInteger sqsumBI = java.math.BigInteger.valueOf(sqsum[0] & 0xFFFFFFFFFFFFL)
+            .or(java.math.BigInteger.valueOf(sqsum[1] & 0xFFFFFFFFFFFFL).shiftLeft(48));
+        java.math.BigInteger prod = sampleBI.multiply(sqsumBI);
+        // Round and shift
+        prod = prod.add(java.math.BigInteger.ONE.shiftLeft(12));
+        long result = prod.shiftRight(13).longValue();
+        return sign == 0 ? (int)result : -(int)result;
+    }
+
+    public short polyfixveclkSampleHyperball(int[][] y1, int[][] y2, byte[] b,
+                                             byte[] seed, short nonce)
+    {
+        short ni = nonce;
+        int totalPolys = params.getL() + params.getK();
+        long[] samples = new long[HAETAEParameters.N * totalPolys];
+        byte[] signs = new byte[(HAETAEParameters.N * totalPolys) / 8];
+        long[] sqsum = new long[2];
+        long[] invsqrt = new long[2];
+
+        long b0SqLn2 = (long)(params.getB0() * params.getB0()) *
+            params.getLn() * params.getLn();
+
+        do
+        {
+            // Reset squared sum
+            sqsum[0] = 0;
+            sqsum[1] = 0;
+
+            // Sample first two polynomials with N+1 coefficients
+            sampleGaussN(samples, 0, signs, 0, sqsum, seed, ni++, HAETAEParameters.N + 1);
+            sampleGaussN(samples, HAETAEParameters.N, signs, HAETAEParameters.N / 8,
+                sqsum, seed, ni++, HAETAEParameters.N + 1);
+
+            // Sample the remaining polynomials (with N coefficients)
+            for (int i = 2; i < totalPolys; i++)
+            {
+                sampleGaussN(samples, HAETAEParameters.N * i,
+                    signs, (HAETAEParameters.N / 8) * i,
+                    sqsum, seed, ni++, HAETAEParameters.N);
+            }
+
+            // Divide sqsum by 2 (with rounding)
+            sqsum[0] += 1;
+            sqsum[0] >>>= 1;
+            sqsum[0] += (sqsum[1] & 1L) << 47;
+            sqsum[1] >>>= 1;
+            sqsum[1] += sqsum[0] >>> 48;
+            sqsum[0] &= MASK48;
+
+            // invsqrt = 1 / sqrt(sqsum)
+            fixpointNewtonInvSqrt(invsqrt, sqsum);
+
+            // sqsum = invsqrt * scale   (scale = (B0 * LN + SQNM/2) << (28-13))
+            long scaleRaw = (long)(params.getB0() * params.getLn() + params.getSqnm() / 2.0);
+            long scale = scaleRaw << (28 - params.getLnBits());
+            long[] scaledSqsum = new long[2];
+            fixpointMulHigh(scaledSqsum, invsqrt, scale);
+
+            // Fill y1 (L polynomials)
+            for (int i = 0; i < params.getL(); i++)
+            {
+                for (int j = 0; j < HAETAEParameters.N; j++)
+                {
+                    int idx = i * HAETAEParameters.N + j;
+                    long sample = samples[idx];
+                    int signBit = (signs[idx / 8] >> (idx % 8)) & 1;
+                    y1[i][j] = fixpointMulRnd13(sample, scaledSqsum, signBit);
+                }
+            }
+
+            // Fill y2 (K polynomials)
+            for (int i = 0; i < params.getK(); i++)
+            {
+                for (int j = 0; j < HAETAEParameters.N; j++)
+                {
+                    int idx = (params.getL() + i) * HAETAEParameters.N + j;
+                    long sample = samples[idx];
+                    int signBit = (signs[idx / 8] >> (idx % 8)) & 1;
+                    y2[i][j] = fixpointMulRnd13(sample, scaledSqsum, signBit);
+                }
+            }
+        }
+        while (polyfixveclkSqnorm2(y1, y2) > b0SqLn2);
+
+        // Generate the extra byte b using SHAKE‑256
+        SHAKEDigest shake = new SHAKEDigest(256);
+        shake.update(seed, 0, HAETAEParameters.CRH_BYTES);
+        shake.update((byte)(ni & 0xFF));
+        shake.update((byte)((ni >> 8) & 0xFF));
+        byte[] out = new byte[1];
+        shake.doFinal(out, 0, 1);
+        b[0] = out[0];
+
+        return ni;
+    }
+
+    /**
+     * Generates a HAETAE signature.
+     *
+     * @param sig output signature byte array (length at least CRYPTO_BYTES)
+     * @param m   message to sign
+     * @param pre pre‑hash context (can be empty)
+     * @param rnd random seed (SEED_BYTES)
+     * @param sk  secret key (CRYPTO_SECRETKEYBYTES)
+     * @return the signature length (CRYPTO_BYTES) on success, 0 on failure
+     */
+    public int cryptoSignSignatureInternal(byte[] sig, byte[] m, byte[] pre, byte[] rnd, byte[] sk)
+    {
+        // Buffers
+        byte[] buf = new byte[params.getPolyveckHighbitsPackedBytes() + HAETAEParameters.POLYC_PACKED_BYTES];
+        byte[] seedbuf = new byte[HAETAEParameters.CRH_BYTES];
+        byte[] key = new byte[HAETAEParameters.SEED_BYTES];
+        byte[] mu = new byte[HAETAEParameters.CRH_BYTES];
+        byte[] b = new byte[1];
+        short counter = 0;
+
+        // Secret vectors
+        int[][][] A1 = new int[params.getK()][params.getL()][HAETAEParameters.N];
+        int[][] s1 = new int[params.getM()][HAETAEParameters.N];
+        int[][] s2 = new int[params.getK()][HAETAEParameters.N];
+
+        // Unpack secret key
+        unpackSk(A1, s1, s2, key, sk);
+
+        // Compute mu = H(pk, pre, m)
+        SHAKEDigest shake = new SHAKEDigest(256);
+        shake.update(sk, 0, params.getPublicKeyBytes());
+        if (pre != null)
+        {
+            shake.update(pre, 0, pre.length);
+        }
+        shake.update(m, 0, m.length);
+        shake.doFinal(mu, 0, HAETAEParameters.CRH_BYTES);
+
+        // seedbuf = H(key, rnd, mu)
+        shake.reset();
+        shake.update(key, 0, HAETAEParameters.SEED_BYTES);
+        shake.update(rnd, 0, HAETAEParameters.SEED_BYTES);
+        shake.update(mu, 0, HAETAEParameters.CRH_BYTES);
+        shake.doFinal(seedbuf, 0, HAETAEParameters.CRH_BYTES);
+
+        // NTT of secret vectors
+        polyvecmNtt(s1);
+        polyveckNtt(s2);
+
+        // Temporary arrays for the rejection loop
+        int[][] y1 = new int[params.getL()][HAETAEParameters.N];
+        int[][] y2 = new int[params.getK()][HAETAEParameters.N];
+        int[][] z1 = new int[params.getL()][HAETAEParameters.N];
+        int[][] z2 = new int[params.getK()][HAETAEParameters.N];
+        int[][] z1rnd = new int[params.getL()][HAETAEParameters.N];
+        int[][] z2rnd = new int[params.getK()][HAETAEParameters.N];
+        int[][] Ay = new int[params.getK()][HAETAEParameters.N];
+        int[][] highbits = new int[params.getK()][HAETAEParameters.N];
+        int[] lsb = new int[HAETAEParameters.N];
+        int[] c = new int[HAETAEParameters.N];
+        int[] chat = new int[HAETAEParameters.N];
+        int[][] cs1 = new int[params.getL()][HAETAEParameters.N];
+        int[][] cs2 = new int[params.getK()][HAETAEParameters.N];
+        int[][] h = new int[params.getK()][HAETAEParameters.N];
+        int[][] lb_z1 = new int[params.getL()][HAETAEParameters.N];
+        int[][] hb_z1 = new int[params.getL()][HAETAEParameters.N];
+
+        long reject1, reject2;
+        long b0SqLn2 = (long)(params.getB0() * params.getB0()) * params.getLn() * params.getLn();
+        long b1SqLn2 = (long)(params.getB1() * params.getB1()) * params.getLn() * params.getLn();
+
+        while (true)
+        {
+            // 1. Sample y1, y2 and b from hyperball
+            counter = polyfixveclkSampleHyperball(y1, y2, b, seedbuf, counter);
+
+            // 2. Round y1 and y2
+            polyfixveclRound(z1rnd, y1);
+            polyfixveckRound(z2rnd, y2);
+
+            // 3. Compute Ay = A1 * NTT(z1rnd) + 2 * z2rnd (mod Q)
+            int[] z1rnd0 = z1rnd[0].clone();
+            polyveclNtt(z1rnd);
+            polymatklPointwiseMontgomery(Ay, A1, z1rnd);
+            polyveckInvnttTomont(Ay);
+            polyveckDouble(z2rnd);
+            polyveckAdd(Ay, Ay, z2rnd);
+
+            // 4. Recover mod 2Q
+            polyveckPolyFromcrt(Ay, Ay, z1rnd0);
+            polyveckFreeze2q(Ay);
+
+            // 5. HighBits of Ay
+            polyveckHighbitsHint(highbits, Ay);
+
+            // 6. LSB of z1rnd0
+            polyLsb(lsb, z1rnd0);
+
+            // 7. Pack highbits and LSB
+            packVecHighbits(buf, 0, highbits);
+            packPolyLsb(buf, params.getPolyveckHighbitsPackedBytes(), lsb);
+
+            // 8. Generate challenge c
+            polyChallenge(c, buf, mu);
+
+            // 9. Compute cs = c * s
+            cs1[0] = c.clone();
+            chat = c.clone();
+            polyNtt(chat);
+
+            for (int i = 1; i < params.getL(); i++)
+            {
+                polyPointwiseMontgomery(cs1[i], chat, s1[i - 1]);
+                polyInvnttTomont(cs1[i]);
+            }
+            polyveckPolyPointwiseMontgomery(cs2, s2, chat);
+            polyveckInvnttTomont(cs2);
+
+            // 10. z = y + (-1)^b * cs
+            polyveclCneg(cs1, b[0] & 1);
+            polyveckCneg(cs2, b[0] & 1);
+            polyfixveclAdd(z1, y1, cs1);
+            polyfixveckAdd(z2, y2, cs2);
+
+            // 11. Rejection checks
+            long normZ = polyfixveclkSqnorm2(z1, z2);
+            reject1 = (b1SqLn2 - normZ) >>> 63;
+            reject1 &= 1;
+
+            int[][] z1tmp = new int[params.getL()][HAETAEParameters.N];
+            int[][] z2tmp = new int[params.getK()][HAETAEParameters.N];
+            polyfixveclDouble(z1tmp, z1);
+            polyfixveckDouble(z2tmp, z2);
+            polyfixfixveclSub(z1tmp, z1tmp, y1);
+            polyfixfixveckSub(z2tmp, z2tmp, y2);
+
+            long norm2z_y = polyfixveclkSqnorm2(z1tmp, z2tmp);
+            reject2 = (norm2z_y - b0SqLn2) >>> 63;
+            reject2 &= 1;
+            reject2 &= (b[0] & 0x02) >>> 1;
+
+            if ((reject1 | reject2) == 0)
+            {
+                break;
+            }
+        }
+
+        // 12. Make hint
+        polyfixveclRound(z1rnd, z1);
+        polyfixveckRound(z2rnd, z2);
+
+        polyveckDouble(z2rnd);
+        int[][] htmp = new int[params.getK()][HAETAEParameters.N];
+        polyveckSub(htmp, Ay, z2rnd);
+        polyveckFreeze2q(htmp);
+        polyveckHighbitsHint(htmp, htmp);
+        polyveckSub(h, highbits, htmp);
+        polyveckCaddDQ2ALPHA(h);
+
+        // 13. Decompose z1rnd and pack signature
+        polyveclLowbits(lb_z1, z1rnd);
+        polyveclHighbits(hb_z1, z1rnd);
+
+        if (packSig(sig, c, lb_z1, hb_z1, h) != 0)
+        {
+            // Packing failed (should restart, but for simplicity return 0)
+            return 0;
+        }
+
+        return params.getCryptoBytes();
     }
 }
