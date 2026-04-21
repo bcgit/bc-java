@@ -1747,7 +1747,7 @@ public class HAETAEEngine
     private static void renormalize(long[] x)
     {
         x[1] += (x[0] >>> 48);
-        x[0] &= 0xFFFFFFFFFFFFL; // (1L << 48) - 1
+        x[0] &=  (1L << 48) - 1;
     }
 
     /**
@@ -1930,22 +1930,15 @@ public class HAETAEEngine
             else
             {
                 accepted = sampleGaussSigma76(sampleHolder, sqr, buf, pos);
-                if (accepted != 0)
-                {
-                    r[rOff + (int)coefcnt] = sampleHolder[0];
-                }
+                r[rOff + (int)coefcnt] = sampleHolder[0];
             }
 
             coefcnt += accepted;
             pos += GAUSS_RAND_BYTES;
             bytecnt -= GAUSS_RAND_BYTES;
-
-            // Add sqr to sqsum if sample was accepted (accepted is 0 or 1)
-            if (accepted != 0)
-            {
-                sqsum[0] += sqr[0];
-                sqsum[1] += sqr[1];
-            }
+            System.out.println("coefcnt: " + coefcnt + " " + accepted + " sqr[0]: " + sqr[0] + " sqr[1]: " + sqr[1]);
+            sqsum[0] += sqr[0] & -accepted;
+            sqsum[1] += sqr[1] & -accepted;
         }
 
         renormalize(sqsum);
@@ -1981,25 +1974,22 @@ public class HAETAEEngine
         int bytecnt = buf.length - signBytesLen;
         long coefcnt = sampleGauss(r, rOff, sqsum, buf, signBytesLen, bytecnt, len, len % HAETAEParameters.N);
 
-        boolean firstflag = true;
+        int firstflag = 1;
         while (coefcnt < len)
         {
             int off = bytecnt % GAUSS_RAND_BYTES;
             // Move leftover bytes to beginning
             for (int i = 0; i < off; i++)
             {
-                buf[i] = buf[bytecnt + (firstflag ? signBytesLen : 0) - off + i];
+                buf[i] = buf[bytecnt + signBytesLen * firstflag - off + i];
             }
             // Squeeze one more block
             shake.doOutput(buf, off, SHAKE256_RATE);
             bytecnt = SHAKE256_RATE + off;
 
-            long[] rOffset = new long[len];
-            System.arraycopy(r, rOff + (int)coefcnt, rOffset, 0, (int)(len - coefcnt));
-            long added = sampleGauss(rOffset, 0, sqsum, buf, 0, bytecnt, (int)(len - coefcnt), len % HAETAEParameters.N);
-            System.arraycopy(rOffset, 0, r, rOff + (int)coefcnt, (int)added);
+            long added = sampleGauss(r, rOff + (int)coefcnt, sqsum, buf, 0, bytecnt, (int)(len - coefcnt), len % HAETAEParameters.N);
             coefcnt += added;
-            firstflag = false;
+            firstflag = 0;
         }
     }
 
@@ -2019,7 +2009,7 @@ public class HAETAEEngine
      */
     static void sq48(long[] r, long a)
     {
-        mul64(r, a, a);
+        sq64(r, a);
         r[1] <<= 16;
         r[1] ^= r[0] >>> 48;
         r[0] &= MASK48;
