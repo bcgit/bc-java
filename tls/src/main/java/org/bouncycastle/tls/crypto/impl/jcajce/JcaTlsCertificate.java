@@ -274,7 +274,7 @@ public class JcaTlsCertificate
             return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
         }
 
-        // [RFC 8998]
+        // RFC 8998
         case SignatureScheme.sm2sig_sm3:
         {
             byte[] identifier = Strings.toByteArray("TLSv1.3+GM+Cipher+Suite");

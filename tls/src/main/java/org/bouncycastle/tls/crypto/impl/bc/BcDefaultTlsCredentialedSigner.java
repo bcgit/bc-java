@@ -14,7 +14,6 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
-import org.bouncycastle.util.Strings;
 
 /**
  * Credentialed class for generating signatures based on the use of primitives from the BC light-weight API.
@@ -52,7 +51,7 @@ public class BcDefaultTlsCredentialedSigner
             {
                 int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
 
-                // [RFC 8998]
+                // RFC 8998
                 if (SignatureScheme.sm2sig_sm3 == signatureScheme)
                 {
                     return new BcTlsSM2Signer(crypto, privKeyEC, signatureScheme);

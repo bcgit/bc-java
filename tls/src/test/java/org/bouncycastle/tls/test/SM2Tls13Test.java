@@ -23,9 +23,6 @@ import org.bouncycastle.cert.bc.BcX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
@@ -43,14 +40,13 @@ import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsECDomain;
-import org.bouncycastle.tls.crypto.impl.bc.BcTlsRawKeyCertificate;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
@@ -84,15 +80,11 @@ public class SM2Tls13Test
     
             AsymmetricCipherKeyPair keyPair = generateSM2KeyPair(crypto);
             ECPrivateKeyParameters privateKey = (ECPrivateKeyParameters)keyPair.getPrivate();
-            ECPublicKeyParameters publicKey = (ECPublicKeyParameters)keyPair.getPublic();
 
             TlsCertificate tlsCertificate = createBCCertificate(keyPair, crypto);
             certificateEncoding = tlsCertificate.getEncoded();
             Certificate certChain = new Certificate(new TlsCertificate[]{ tlsCertificate });
 
-            SubjectPublicKeyInfo pubKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(publicKey);
-            BcTlsRawKeyCertificate rawCert = new BcTlsRawKeyCertificate(crypto, pubKeyInfo);
-    
             TlsCryptoParameters cryptoParams = new TestTlsCryptoParameters(ProtocolVersion.TLSv13);
     
             TlsCredentialedSigner signer = new BcDefaultTlsCredentialedSigner(cryptoParams, crypto, privateKey, certChain,
@@ -136,15 +128,11 @@ public class SM2Tls13Test
     
             AsymmetricCipherKeyPair keyPair = generateSM2KeyPair(crypto);
             ECPrivateKeyParameters privateKey = (ECPrivateKeyParameters)keyPair.getPrivate();
-            ECPublicKeyParameters publicKey = (ECPublicKeyParameters)keyPair.getPublic();
 
             TlsCertificate tlsCertificate = createBCCertificate(keyPair, crypto);
             certificateEncoding = tlsCertificate.getEncoded();
             Certificate certChain = new Certificate(new TlsCertificate[]{ tlsCertificate });
 
-            SubjectPublicKeyInfo pubKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(publicKey);
-            BcTlsRawKeyCertificate rawCert = new BcTlsRawKeyCertificate(crypto, pubKeyInfo);
-    
             TlsCryptoParameters cryptoParams = new TestTlsCryptoParameters(ProtocolVersion.TLSv13);
     
             TlsCredentialedSigner signer = new BcDefaultTlsCredentialedSigner(cryptoParams, crypto, privateKey, certChain,
@@ -274,12 +262,10 @@ public class SM2Tls13Test
         }
     }
 
-    private AsymmetricCipherKeyPair generateSM2KeyPair(TlsCrypto crypto)
+    private AsymmetricCipherKeyPair generateSM2KeyPair(BcTlsCrypto crypto)
     {
-        ECKeyPairGenerator gen = new ECKeyPairGenerator();
-        ECDomainParameters domainParams = BcTlsECDomain.getDomainParameters(NamedGroup.curveSM2);
-        gen.init(new ECKeyGenerationParameters(domainParams, crypto.getSecureRandom()));
-        return gen.generateKeyPair();
+        BcTlsECDomain ecDomain = new BcTlsECDomain(crypto, new TlsECConfig(NamedGroup.curveSM2));
+        return ecDomain.generateKeyPair();
     }
 
     private BcTlsCertificate createBCCertificate(AsymmetricCipherKeyPair keyPair, BcTlsCrypto crypto)
@@ -310,7 +296,7 @@ public class SM2Tls13Test
 
         X509CertificateHolder certHolder = certBuilder.build(signer);
 
-        return new BcTlsCertificate(crypto, certHolder.getEncoded());
+        return new BcTlsCertificate(crypto, certHolder.toASN1Structure());
     }
 
     private JcaTlsCertificate createJCACertificate(KeyPair keyPair, JcaTlsCrypto crypto)
@@ -364,5 +350,5 @@ public class SM2Tls13Test
         {
             return serverVersion;
         }
-    };
+    }
 }
