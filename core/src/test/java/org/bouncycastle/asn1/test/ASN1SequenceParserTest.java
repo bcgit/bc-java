@@ -342,7 +342,7 @@ public class ASN1SequenceParserTest
         }
         catch (IOException e)
         {
-            assertEquals("maximum nested construction level reached - increase org.bouncycastle.asn1.max_cons_depth (currently 32)", e.getMessage());
+            assertEquals("maximum nested construction level reached - increase org.bouncycastle.asn1.max_cons_depth (currently 64)", e.getMessage());
         }
     }
 
