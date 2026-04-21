@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
+import org.bouncycastle.util.Arrays;
 
 public class HAETAESigner
     implements MessageSigner
@@ -53,10 +54,10 @@ public class HAETAESigner
         byte[] sig = new byte[params.getCryptoBytes()];
         random.nextBytes(rnd);
         random.nextBytes(ctx);
-        byte[] pre = new byte[(ctx[0] & 0xff) + 1];
+        byte[] pre = new byte[(ctx[0] & 0xff)];
         random.nextBytes(pre);
         HAETAEEngine engine = new HAETAEEngine(params);
-        //engine.cryptoSignSignatureInternal(sig, message, pre);
+        engine.cryptoSignSignatureInternal(sig, message, Arrays.concatenate(ctx, pre), rnd, privKey.getEncoded());
         return sig;
     }
 
