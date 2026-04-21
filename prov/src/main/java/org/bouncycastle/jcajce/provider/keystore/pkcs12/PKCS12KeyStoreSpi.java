@@ -948,7 +948,7 @@ public class PKCS12KeyStoreSpi
 
             try
             {
-                byte[] res = calculatePbeMac(macAlgorithm.getAlgorithm(), salt, itCount, password, false, data);
+                byte[] res = calculatePbeMac(helper, macAlgorithm, salt, itCount, password, false, data);
                 byte[] dig = dInfo.getDigest();
 
                 if (!Arrays.constantTimeAreEqual(res, dig))
@@ -960,7 +960,7 @@ public class PKCS12KeyStoreSpi
                     }
 
                     // Try with incorrect zero length password
-                    res = calculatePbeMac(macAlgorithm.getAlgorithm(), salt, itCount, password, true, data);
+                    res = calculatePbeMac(helper, macAlgorithm, salt, itCount, password, true, data);
 
                     if (!Arrays.constantTimeAreEqual(res, dig))
                     {
@@ -1892,7 +1892,7 @@ public class PKCS12KeyStoreSpi
         {
             try
             {
-                byte[] res = calculatePbeMac(macAlgorithm.getAlgorithm(), mSalt, itCount, password, false, data);
+                byte[] res = calculatePbeMac(helper, macAlgorithm, mSalt, itCount, password, false, data);
 
                 DigestInfo dInfo = new DigestInfo(macAlgorithm, res);
 
@@ -2031,8 +2031,9 @@ public class PKCS12KeyStoreSpi
         return usedSet;
     }
 
-    private byte[] calculatePbeMac(
-        ASN1ObjectIdentifier oid,
+    private static byte[] calculatePbeMac(
+        JcaJceHelper helper,
+        AlgorithmIdentifier macAlgID,
         byte[] salt,
         int itCount,
         char[] password,
@@ -2040,9 +2041,11 @@ public class PKCS12KeyStoreSpi
         byte[] data)
         throws Exception
     {
+        ASN1ObjectIdentifier oid = macAlgID.getAlgorithm();
+
         if (PKCSObjectIdentifiers.id_PBMAC1.equals(oid))
         {
-            PBMAC1Params pbmac1Params = PBMAC1Params.getInstance(macAlgorithm.getParameters());
+            PBMAC1Params pbmac1Params = PBMAC1Params.getInstance(macAlgID.getParameters());
             if (pbmac1Params == null)
             {
                 throw new IOException("If the DigestAlgorithmIdentifier is id-PBMAC1, then the parameters field must contain valid PBMAC1-params parameters.");
@@ -2074,7 +2077,7 @@ public class PKCS12KeyStoreSpi
                 return res;
             }
         }
-        
+
         PBEParameterSpec defParams = new PBEParameterSpec(salt, itCount);
         PKCS12Key key = new PKCS12Key(password, wrongPkcs12Zero);
 

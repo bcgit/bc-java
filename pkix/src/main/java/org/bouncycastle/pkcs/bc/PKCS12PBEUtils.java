@@ -31,6 +31,7 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.DESedeParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.util.BigIntegers;
@@ -145,7 +146,7 @@ class PKCS12PBEUtils
         generator.init(
             Strings.toUTF8ByteArray(password),
             pbkdf2Params.getSalt(),
-            BigIntegers.intValueExact(pbkdf2Params.getIterationCount()));
+            PKCS12Util.validateIterationCount(pbkdf2Params.getIterationCount()));
 
         CipherParameters key = generator.generateDerivedParameters(BigIntegers.intValueExact(pbkdf2Params.getKeyLength()) * 8);
 
