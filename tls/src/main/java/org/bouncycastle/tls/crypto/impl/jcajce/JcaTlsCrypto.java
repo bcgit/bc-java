@@ -575,7 +575,7 @@ public class JcaTlsCrypto
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
-        case CryptoSignatureAlgorithm.sm2:         // [RFC 8998]
+        case CryptoSignatureAlgorithm.sm2: // RFC 8998
             return true;
 
         // TODO[RFC 9189]
