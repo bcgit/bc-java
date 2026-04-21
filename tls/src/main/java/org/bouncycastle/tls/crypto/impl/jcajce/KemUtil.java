@@ -61,7 +61,7 @@ class KemUtil
         catch (Exception e)
         {
             throw Exceptions.illegalArgumentException("invalid key: " + e.getMessage(), e);
-        }        
+        }
     }
 
     static SecretKeyWithEncapsulation encapsulate(JcaTlsCrypto crypto, String kemName, PublicKey publicKey)
@@ -75,7 +75,7 @@ class KemUtil
         catch (Exception e)
         {
             throw Exceptions.illegalArgumentException("invalid key: " + e.getMessage(), e);
-        }        
+        }
     }
 
     static PublicKey decodePublicKey(JcaTlsCrypto crypto, String kemName, byte[] encoding) throws TlsFatalAlert
@@ -161,7 +161,7 @@ class KemUtil
             return NISTObjectIdentifiers.id_alg_ml_kem_1024;
         }
 
-        throw new IllegalArgumentException("unknown kem name " + kemName);        
+        throw new IllegalArgumentException("unknown kem name " + kemName);
     }
 
     static boolean isKemSupported(JcaTlsCrypto crypto, String kemName)
