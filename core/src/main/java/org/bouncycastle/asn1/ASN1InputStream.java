@@ -98,7 +98,7 @@ public class ASN1InputStream
         this.lazyEvaluate = lazyEvaluate;
         this.tmpBuffers = tmpBuffers;
         this.level = 0;
-        this.maxLevel = Properties.asInteger(MAX_CONS_DEPTH, 32);
+        this.maxLevel = Properties.asInteger(MAX_CONS_DEPTH, 64);
     }
 
     private ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate, byte[][] tmpBuffers, int level, int maxLevel)
