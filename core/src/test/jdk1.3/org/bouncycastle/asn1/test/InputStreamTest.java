@@ -69,20 +69,20 @@ public class InputStreamTest
         }
         catch (IOException e)
         {
-            if (!e.getMessage().equals("corrupted stream - out of bounds length found: 1048575 >= 5"))
+            if (!e.getMessage().equals("corrupted stream - out of bounds length found: 1048575 > 5"))
             {
                 fail("wrong exception: " + e.getMessage());
             }
         }
 
         // TODO Test data has length issues too; needs to be reworked
-//        testWithByteArray(classCast1, "unknown object encountered: class org.bouncycastle.asn1.DLTaggedObjectParser");
+        testWithByteArray(classCast1, "corrupted stream - out of bounds length found: 80 > 16");
         testWithByteArray(classCast2, "unknown object encountered: class org.bouncycastle.asn1.DLTaggedObjectParser");
         testWithByteArray(classCast3, "unknown object encountered in constructed OCTET STRING: class org.bouncycastle.asn1.DLTaggedObject");
 
         // TODO Error dependent on parser choices; needs to be reworked
-//        testWithByteArray(memoryError1, "corrupted stream - out of bounds length found: 2078365180 >= 39");
-//        testWithByteArray(memoryError2, "corrupted stream - out of bounds length found: 2102504523 >= 39");
+//        testWithByteArray(memoryError1, "corrupted stream - out of bounds length found: 2078365180 > 39");
+//        testWithByteArray(memoryError2, "corrupted stream - out of bounds length found: 2102504523 > 39");
     }
 
     private void testWithByteArray(byte[] data, String message)

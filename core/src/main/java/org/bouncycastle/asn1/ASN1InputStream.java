@@ -6,7 +6,6 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -19,13 +18,10 @@ public class ASN1InputStream
     extends FilterInputStream
     implements BERTags
 {
-    static final String MAX_CONS_DEPTH = "org.bouncycastle.asn1.max_cons_depth";
-
+    private final int depth;
     private final int limit;
     private final boolean lazyEvaluate;
     private final byte[][] tmpBuffers;
-    private final int level;
-    private final int maxLevel;
 
     public ASN1InputStream(InputStream is)
     {
@@ -88,27 +84,22 @@ public class ASN1InputStream
      */
     public ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate)
     {
-        this(input, limit, lazyEvaluate, new byte[11][]);
+        this(input, StreamUtil.findDepth(), limit, lazyEvaluate, new byte[16][]);
     }
 
-    private ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate, byte[][] tmpBuffers)
+    private ASN1InputStream(InputStream input, int depth, int limit, boolean lazyEvaluate, byte[][] tmpBuffers)
     {
         super(input);
+
+        this.depth = depth;
         this.limit = limit;
         this.lazyEvaluate = lazyEvaluate;
         this.tmpBuffers = tmpBuffers;
-        this.level = 0;
-        this.maxLevel = Properties.asInteger(MAX_CONS_DEPTH, 64);
     }
 
-    private ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate, byte[][] tmpBuffers, int level, int maxLevel)
+    private ASN1InputStream createSubStream(InputStream sub, int limit, boolean lazyEvaluate) throws IOException
     {
-        super(input);
-        this.limit = limit;
-        this.lazyEvaluate = lazyEvaluate;
-        this.tmpBuffers = tmpBuffers;
-        this.level = level;
-        this.maxLevel = maxLevel;
+        return new ASN1InputStream(sub, StreamUtil.decrementDepth(depth), limit, lazyEvaluate, tmpBuffers);
     }
 
     protected int getLimit()
@@ -116,12 +107,23 @@ public class ASN1InputStream
         return limit;
     }
 
+    /**
+     * @deprecated No longer used; will be removed
+     */
     protected int readLength()
         throws IOException
     {
-        return readLength(this, limit, false);
+        int length = readLength(this);
+        if (length > 0)
+        {
+            StreamUtil.checkLength(length, limit);
+        }
+        return length;
     }
 
+    /**
+     * @deprecated No longer used; will be removed
+     */
     protected void readFully(
         byte[]  bytes)
         throws IOException
@@ -149,7 +151,8 @@ public class ASN1InputStream
     {
         // TODO[asn1] Special-case zero length first?
 
-        DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, limit);
+        StreamUtil.checkLength(length, limit);
+        DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, length);
 
         if (0 == (tag & FLAGS))
         {
@@ -215,7 +218,7 @@ public class ASN1InputStream
         }
 
         int tagNo = readTagNumber(this, tag);
-        int length = readLength();
+        int length = readLength(this);
 
         if (length >= 0)
         {
@@ -238,7 +241,7 @@ public class ASN1InputStream
         }
 
         IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
-        ASN1StreamParser sp = new ASN1StreamParser(indIn, limit, tmpBuffers);
+        ASN1StreamParser sp = ASN1StreamParser.createSubParser(indIn, depth, limit, tmpBuffers);
 
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
@@ -346,12 +349,7 @@ public class ASN1InputStream
             return new ASN1EncodableVector(0);
         }
 
-        if (this.level == this.maxLevel)
-        {
-            throw new IOException("maximum nested construction level reached - increase " + MAX_CONS_DEPTH + " (currently " + maxLevel + ")");
-        }
-        
-        return new ASN1InputStream(defIn, remaining, lazyEvaluate, tmpBuffers, level + 1, maxLevel).readVector();
+        return createSubStream(defIn, remaining, lazyEvaluate).readVector();
     }
 
     static int readTagNumber(InputStream s, int tag) 
@@ -405,7 +403,7 @@ public class ASN1InputStream
         return tagNo;
     }
 
-    static int readLength(InputStream s, int limit, boolean isParsing)
+    static int readLength(InputStream s)
         throws IOException
     {
         int length = s.read();
@@ -447,11 +445,6 @@ public class ASN1InputStream
             length = (length << 8) + octet;
         }
         while (++octetsPos < octetsCount);
-
-        if (length >= limit && !isParsing)   // after all we must have read at least 1 byte
-        {
-            throw new IOException("corrupted stream - out of bounds length found: " + length + " >= " + limit);
-        }
 
         return length;
     }
