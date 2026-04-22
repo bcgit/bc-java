@@ -1747,7 +1747,7 @@ public class HAETAEEngine
     private static void renormalize(long[] x)
     {
         x[1] += (x[0] >>> 48);
-        x[0] &=  (1L << 48) - 1;
+        x[0] &= (1L << 48) - 1;
     }
 
     /**
@@ -1755,25 +1755,19 @@ public class HAETAEEngine
      */
     private static void sq64(long[] r, long a)
     {
-        long al = a & 0xFFFFFFFFL;
-        long ah = a >>> 32;
-        long aLo = al * al;
-        long aHi = ah * al * 2;
+        long al = a & 0xFFFFFFFFL;           // low 32 bits
+        long ah = a >>> 32;                  // high 32 bits (unsigned shift)
+
+        // Low 64 bits of the product (a * a)
         r[0] = a * a;
-        r[1] = (aHi >>> 32) + ((aLo >>> 32) + (aHi & 0xFFFFFFFFL)) + ah * ah;
-        // Adjust for cross terms – simplified using unsigned arithmetic emulation.
-        // For exact correctness, we can use Java's unsigned multiplication with carry.
-        // Since Java 8 doesn't have unsigned long, we implement carefully.
-        // Alternative: use BigInteger for exactness, but performance matters.
-        // Here we use a correct portable implementation:
-        long aLoLo = al * al;
-        long aLoHi = al * ah;
-        long aHiHi = ah * ah;
-        long mid = aLoHi + aLoHi; // 2 * al * ah
-        long low = aLoLo;
-        long carry = (aLoLo >>> 32) + (mid & 0xFFFFFFFFL);
-        long high = aHiHi + (mid >>> 32) + (carry >>> 32);
-        r[0] = low;
+
+        // Compute high 64 bits: 2 * ah * al + (al*al >> 32), then shift right by 32 and add ah*ah
+        long alSqHigh = (al * al) >>> 32;    // (al*al) >> 32 (unsigned)
+        long cross = ah * al * 2;            // 2 * ah * al (may overflow, but we handle as signed)
+        long high = cross + alSqHigh;
+        high = high >>> 32;                  // (cross + alSqHigh) >> 32 (unsigned)
+        high += ah * ah;
+
         r[1] = high;
     }
 
@@ -1782,20 +1776,19 @@ public class HAETAEEngine
      */
     private static void mul64(long[] r, long b, long a)
     {
-        long al = a & 0xFFFFFFFFL;
-        long ah = a >>> 32;
-        long bl = b & 0xFFFFFFFFL;
-        long bh = b >>> 32;
-        long aLoLo = al * bl;
-        long aLoHi = al * bh;
-        long aHiLo = ah * bl;
-        long aHiHi = ah * bh;
-        long mid = aLoHi + aHiLo;
-        long low = aLoLo;
-        long carry = (aLoLo >>> 32) + (mid & 0xFFFFFFFFL);
-        long high = aHiHi + (mid >>> 32) + (carry >>> 32);
-        r[0] = low;
-        r[1] = high;
+        long al = a & 0xFFFFFFFFL;          // low 32 bits of a
+        long ah = a >>> 32;                 // high 32 bits of a
+        long bl = b & 0xFFFFFFFFL;          // low 32 bits of b
+        long bh = b >>> 32;                 // high 32 bits of b
+
+        // Low 64 bits of the product
+        r[0] = a * b;
+
+        // Compute high part: (ah*bl + al*bh + (al*bl)>>32) >> 32  +  ah*bh
+        long albl = al * bl;
+        long albl_high = albl >>> 32;               // (al * bl) >> 32
+        long cross = ah * bl + al * bh + albl_high; // sum may overflow, but that's fine
+        r[1] = (cross >>> 32) + (ah * bh);
     }
 
     /**
@@ -1864,7 +1857,7 @@ public class HAETAEEngine
      * @param rand 17‑byte random array
      * @return 1 if accepted, 0 if rejected
      */
-    public static int sampleGaussSigma76(long[] r, long[] sqr, byte[] rand, int pos)
+    public static long sampleGaussSigma76(long[] r, long[] sqr, byte[] rand, int pos)
     {
         // Extract random bits
         long rand_gauss16 = (rand[pos + 0] & 0xFFL) | ((rand[pos + 1] & 0xFFL) << 8);
@@ -1900,7 +1893,7 @@ public class HAETAEEngine
         long exp_val = approxExp(exp_in);
         long reject = ((rand_rej_even - exp_val) >> 63) & 1L;
         long clear = ((sample | -sample) >> 63) | rand_rej;
-        return (int)((reject & clear) & 1L);
+        return ((reject & clear) & 1L);
     }
 
     private static long sampleGauss(long[] r, int rOff, long[] sqsum, byte[] buf, int bufOffset,
@@ -1920,7 +1913,7 @@ public class HAETAEEngine
 
             long[] sampleHolder = new long[1];
             long[] sqr = new long[2];
-            int accepted;
+            long accepted;
 
             // For the last coefficient when dontWriteLast is set, use a dummy holder
             if (dontWriteLast != 0 && coefcnt == len - 1)
@@ -1936,9 +1929,10 @@ public class HAETAEEngine
             coefcnt += accepted;
             pos += GAUSS_RAND_BYTES;
             bytecnt -= GAUSS_RAND_BYTES;
-            System.out.println("coefcnt: " + coefcnt + " " + accepted + " sqr[0]: " + sqr[0] + " sqr[1]: " + sqr[1]);
+
             sqsum[0] += sqr[0] & -accepted;
             sqsum[1] += sqr[1] & -accepted;
+            //System.out.println("coefcnt: " + coefcnt + " " + accepted + " sqr[0]: " + sqr[0] + " sqr[1]: " + sqr[1] + " sqsum[0]: " + sqsum[0] + " sqsum[1]: " + sqsum[1]);
         }
 
         renormalize(sqsum);
@@ -2036,7 +2030,7 @@ public class HAETAEEngine
         sqx[0] += (sqx[1] << 20) & MASK48;
         sqx[1] >>>= 28;
 
-        mul64(tmp, x[1], x[1]);
+        sq64(tmp, x[1]);
         sqx[0] += (tmp[0] << 20) & MASK48;
         sqx[1] += (tmp[0] >>> 28) + (tmp[1] << 36);
 
@@ -2404,7 +2398,7 @@ public class HAETAEEngine
      */
     private void packPolyHighbits(byte[] buf, int offset, int[] a)
     {
-        if (params == HAETAEParameters.haetae5)
+        if (params != HAETAEParameters.haetae5)
         {
             // Mode 5: 8 bits per coefficient -> simple
             for (int i = 0; i < HAETAEParameters.N; i++)
@@ -2852,8 +2846,6 @@ public class HAETAEEngine
     {
         int offset = 0;
 
-        // Zero out signature
-        java.util.Arrays.fill(sig, (byte)0);
 
         // 1. Pack challenge c (N bits -> N/8 bytes)
         for (int i = 0; i < HAETAEParameters.N; i++)
@@ -2938,51 +2930,43 @@ public class HAETAEEngine
     /**
      * Encodes a single symbol.
      *
-     * @param state current rANS state (modified in place via array)
-     * @param ptr   pointer to current output position (wrapped in an array of byte[])
-     * @param sym   symbol descriptor
-     * @param out   the output byte buffer (used for writing bytes backward)
+     * @param r   current rANS state (modified in place via array)
+     * @param ptr pointer to current output position (wrapped in an array of byte[])
+     * @param sym symbol descriptor
      */
-    private static void ransEncPutSymbol(int[] state, int[] ptr, RansEncSymbol sym, byte[] out)
+    private static int ransEncPutSymbol(int[] r, byte[] ptr, int ptrOff, RansEncSymbol sym)
     {
-        if (sym.x_max == 0)
-        {
-            throw new IllegalArgumentException("Cannot encode symbol with frequency 0");
-        }
-
-        int x = state[0];
+        int x = r[0];
         int x_max = sym.x_max;
         if (x >= x_max)
         {
-            int p = ptr[0];
             do
             {
-                out[--p] = (byte)(x & 0xFF);
+                ptr[--ptrOff] = (byte)(x & 0xFF);
                 x >>>= 8;
             }
             while (x >= x_max);
-            ptr[0] = p;
         }
 
         // x = C(s,x)
-        long product = ((long)x * sym.rcp_freq) >>> 32;
+        long product = ((x & 0xFFFFFFFFL) * (sym.rcp_freq & 0xFFFFFFFFL)) >>> 32;
         int q = (int)(product >>> sym.rcp_shift);
-        state[0] = x + sym.bias + q * sym.cmpl_freq;
+        r[0] = x + sym.bias + q * sym.cmpl_freq;
+        return ptrOff;
     }
 
     /**
      * Flushes the remaining rANS state to output (4 bytes, little‑endian).
      */
-    private static void ransEncFlush(int[] state, int[] ptr, byte[] out)
+    private static int ransEncFlush(int[] state, byte[] ptr, int ptrOff)
     {
         int x = state[0];
-        int p = ptr[0];
-        p -= 4;
-        out[p] = (byte)(x);
-        out[p + 1] = (byte)(x >>> 8);
-        out[p + 2] = (byte)(x >>> 16);
-        out[p + 3] = (byte)(x >>> 24);
-        ptr[0] = p;
+        ptrOff -= 4;
+        ptr[ptrOff] = (byte)(x);
+        ptr[ptrOff + 1] = (byte)(x >>> 8);
+        ptr[ptrOff + 2] = (byte)(x >>> 16);
+        ptr[ptrOff + 3] = (byte)(x >>> 24);
+        return ptrOff;
     }
 
     /**
@@ -2993,10 +2977,9 @@ public class HAETAEEngine
         int sizeH = HAETAEParameters.N * params.getK();
         byte[] encoding = new byte[sizeH]; // upper bound
         int[] state = new int[1];
-        int[] ptr = new int[1];
+        int ptr = encoding.length;
 
         state[0] = ransEncInit();
-        ptr[0] = encoding.length; // start at the end
 
         for (int i = sizeH; i > 0; i--)
         {
@@ -3014,16 +2997,16 @@ public class HAETAEEngine
             tmp = (tmp > (H_CUT + params.getOffset_h())) ? tmp - params.getOffset_h() : tmp;
             int s = tmp; // s is in 0..255
 
-            ransEncPutSymbol(state, ptr, params.getEsyms_h()[s], encoding);
-            if (ptr[0] < 4)
+            ptr = ransEncPutSymbol(state, encoding, ptr, params.getEsyms_h()[s]);
+            if (ptr < 4)
             {
                 return 0; // safety
             }
         }
 
-        ransEncFlush(state, ptr, encoding);
-        int sizeEncoded = encoding.length - ptr[0];
-        System.arraycopy(encoding, ptr[0], buf, 0, sizeEncoded);
+        ptr = ransEncFlush(state, encoding, ptr);
+        int sizeEncoded = encoding.length - ptr;
+        System.arraycopy(encoding, ptr, buf, 0, sizeEncoded);
         return sizeEncoded;
     }
 
@@ -3035,10 +3018,10 @@ public class HAETAEEngine
         int sizeHbZ1 = HAETAEParameters.N * params.getL();
         byte[] encoding = new byte[sizeHbZ1];
         int[] state = new int[1];
-        int[] ptr = new int[1];
+        int ptr = encoding.length;
 
         state[0] = ransEncInit();
-        ptr[0] = encoding.length;
+
 
         for (int i = sizeHbZ1; i > 0; i--)
         {
@@ -3053,16 +3036,16 @@ public class HAETAEEngine
             }
             int s = tmp;
 
-            ransEncPutSymbol(state, ptr, params.getEsyms_hb_z1()[s], encoding);
-            if (ptr[0] < 4)
+            ptr = ransEncPutSymbol(state, encoding, ptr, params.getEsyms_hb_z1()[s]);
+            if (ptr < 4)
             {
                 return 0;
             }
         }
 
-        ransEncFlush(state, ptr, encoding);
-        int sizeEncoded = encoding.length - ptr[0];
-        System.arraycopy(encoding, ptr[0], buf, 0, sizeEncoded);
+        ptr = ransEncFlush(state, encoding, ptr);
+        int sizeEncoded = encoding.length - ptr;
+        System.arraycopy(encoding, ptr, buf, 0, sizeEncoded);
         return sizeEncoded;
     }
 
@@ -3092,18 +3075,21 @@ public class HAETAEEngine
      * Computes (sample * sqsum + 2^12) >> 13, with sign applied.
      * This matches the C function fixpoint_mul_rnd13.
      */
-    private int fixpointMulRnd13(long sample, long[] sqsum, int sign)
+    public static int fixpointMulRnd13(long x, long[] y, int sign)
     {
-        // Use 128‑bit multiplication via BigInteger (exact but slower)
-        java.math.BigInteger sampleBI = java.math.BigInteger.valueOf(sample & 0xFFFFFFFFL)
-            .or(java.math.BigInteger.valueOf(sample >>> 32).shiftLeft(32));
-        java.math.BigInteger sqsumBI = java.math.BigInteger.valueOf(sqsum[0] & 0xFFFFFFFFFFFFL)
-            .or(java.math.BigInteger.valueOf(sqsum[1] & 0xFFFFFFFFFFFFL).shiftLeft(48));
-        java.math.BigInteger prod = sampleBI.multiply(sqsumBI);
-        // Round and shift
-        prod = prod.add(java.math.BigInteger.ONE.shiftLeft(12));
-        long result = prod.shiftRight(13).longValue();
-        return sign == 0 ? (int)result : -(int)result;
+        // Convert x to fp96_76 format: effectively x * 2^16
+        long[] xx = new long[2];
+        xx[1] = x >>> 32;                       // high 32 bits
+        xx[0] = (x & 0xFFFFFFFFL) << 16;        // low 32 bits shifted left by 16
+
+        long[] tmp = new long[2];
+        fixpointMul(tmp, xx, y);
+
+        // Round: (tmp.high + 2^14) >> 15
+        long res = (tmp[1] + (1L << 14)) >> 15;
+
+        // Apply sign: (1 - 2*sign) * res
+        return (int)((1L - 2L * sign) * res);
     }
 
     public short polyfixveclkSampleHyperball(int[][] y1, int[][] y2, byte[] b,
@@ -3152,8 +3138,8 @@ public class HAETAEEngine
             // sqsum = invsqrt * scale   (scale = (B0 * LN + SQNM/2) << (28-13))
             long scaleRaw = (long)(params.getB0() * params.getLn() + params.getSqnm() / 2.0);
             long scale = scaleRaw << (28 - params.getLnBits());
-            long[] scaledSqsum = new long[2];
-            fixpointMulHigh(scaledSqsum, invsqrt, scale);
+
+            fixpointMulHigh(sqsum, invsqrt, scale);
 
             // Fill y1 (L polynomials)
             for (int i = 0; i < params.getL(); i++)
@@ -3163,7 +3149,7 @@ public class HAETAEEngine
                     int idx = i * HAETAEParameters.N + j;
                     long sample = samples[idx];
                     int signBit = (signs[idx / 8] >> (idx % 8)) & 1;
-                    y1[i][j] = fixpointMulRnd13(sample, scaledSqsum, signBit);
+                    y1[i][j] = fixpointMulRnd13(sample, sqsum, signBit);
                 }
             }
 
@@ -3175,7 +3161,7 @@ public class HAETAEEngine
                     int idx = (params.getL() + i) * HAETAEParameters.N + j;
                     long sample = samples[idx];
                     int signBit = (signs[idx / 8] >> (idx % 8)) & 1;
-                    y2[i][j] = fixpointMulRnd13(sample, scaledSqsum, signBit);
+                    y2[i][j] = fixpointMulRnd13(sample, sqsum, signBit);
                 }
             }
         }
