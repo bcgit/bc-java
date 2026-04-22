@@ -308,7 +308,12 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("SHA512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha512);
         addAlgorithm("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
         addAlgorithm("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
-        
+
+        addAlgorithm("MAYO_1", BCObjectIdentifiers.mayo1);
+        addAlgorithm("MAYO_2", BCObjectIdentifiers.mayo_2);
+        addAlgorithm("MAYO_3", BCObjectIdentifiers.mayo_3);
+        addAlgorithm("MAYO_5", BCObjectIdentifiers.mayo_5);
+
         addAlgorithm("HASHMLDSA44-RSA2048-PSS-SHA256", MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256);
         addAlgorithm("HASHMLDSA44-RSA2048-PKCS15-SHA256", MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256);
         addAlgorithm("HASHMLDSA44-ED25519-SHA512", MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512);
@@ -574,6 +579,14 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512);
         noParams.add(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512);
         noParams.add(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512);
+
+        // Mayo - experimental
+        //
+        noParams.add(BCObjectIdentifiers.mayo_1);
+        noParams.add(BCObjectIdentifiers.mayo_2);
+        noParams.add(BCObjectIdentifiers.mayo_3);
+        noParams.add(BCObjectIdentifiers.mayo_5);
+
         //
         // PKCS 1.5 encrypted  algorithms
         //
