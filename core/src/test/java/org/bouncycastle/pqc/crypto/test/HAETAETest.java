@@ -6,7 +6,8 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithContext;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEKeyPairGenerator;
@@ -14,6 +15,8 @@ import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAESigner;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.test.FixedSecureRandom;
 
 public class HAETAETest
     extends TestCase
@@ -63,7 +66,7 @@ public class HAETAETest
             }
 
             @Override
-            public byte[] getPublicKeyEncoded(AsymmetricKeyParameter pubParams)
+            public byte[] getPublicKeyEncoded(CipherParameters pubParams)
             {
                 return ((HAETAEPublicKeyParameters)pubParams).getEncoded();
             }
@@ -85,8 +88,28 @@ public class HAETAETest
             {
                 return new HAETAESigner();
             }
+
+            @Override
+            public CipherParameters setSignParameters(CipherParameters privParams, SecureRandom random)
+            {
+                byte[] rnd = new byte[32];
+                byte[] ctx = new byte[1];
+                random.nextBytes(rnd);
+                random.nextBytes(ctx);
+                byte[] pre = new byte[(ctx[0] & 0xff)];
+                random.nextBytes(pre);
+                random = new FixedSecureRandom(rnd);
+                return new ParametersWithContext(new ParametersWithRandom(privParams, random), Arrays.concatenate(ctx, pre));
+            }
+
+            @Override
+            public CipherParameters setVerifyParameters(CipherParameters pubParams, CipherParameters privParams)
+            {
+                byte[] pre = ((ParametersWithContext)privParams).getContext();
+                return new ParametersWithContext(pubParams, pre);
+            }
         });
         long end = System.currentTimeMillis();
-        System.out.println("time cost: " + (end - start) +"\n");
+        System.out.println("time cost: " + (end - start) + "\n");
     }
 }
