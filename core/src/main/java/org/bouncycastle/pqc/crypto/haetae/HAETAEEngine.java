@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.haetae;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.Arrays;
 
 public class HAETAEEngine
 {
@@ -17,6 +18,7 @@ public class HAETAEEngine
     private static final long DQREC = 33287;
     private static final int RANS_BYTE_L = (1 << 23);
     private final int H_CUT;
+    private static final int SCALE_BITS = 10;
 
     private static final int CDTLEN = 64;
 
@@ -3349,5 +3351,524 @@ public class HAETAEEngine
         }
 
         return params.getCryptoBytes();
+    }
+
+    /**
+     * Unpacks a decomposed polynomial from a byte array.
+     * Each coefficient is stored as a single signed byte.
+     *
+     * @param a   output polynomial (length N)
+     * @param buf input byte array
+     * @param off offset in buf where the polynomial begins
+     */
+    public void polyDecomposedUnpack(int[] a, byte[] buf, int off)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            a[i] = buf[off + i];   // sign extension automatically happens when byte is promoted to int
+        }
+    }
+
+    /**
+     * Initializes the rANS decoder by reading the first 4 bytes of the input.
+     *
+     * @param state output state (element 0 set to the read value)
+     * @param ptr   pointer to input position (wrapped in 1‑element array)
+     * @param buf   input byte array
+     * @return 0 on success, 1 if initial state is out of range
+     */
+    private static int ransDecInit(int[] state, int[] ptr, byte[] buf)
+    {
+        int p = ptr[0];
+        if (p + 4 > buf.length)
+        {
+            return 1; // not enough data
+        }
+        int x = (buf[p] & 0xFF)
+            | ((buf[p + 1] & 0xFF) << 8)
+            | ((buf[p + 2] & 0xFF) << 16)
+            | ((buf[p + 3] & 0xFF) << 24);
+        //TODO
+//        if (x < RANS_BYTE_L || x >= (RANS_BYTE_L << 8))
+//        {
+//            return 1; // state out of allowed range
+//        }
+        ptr[0] = p + 4;
+        state[0] = x;
+        return 0;
+    }
+
+    /**
+     * Returns the current symbol bucket (lower scale_bits of state).
+     */
+    private static int ransDecGet(int state, int scaleBits)
+    {
+        return state & ((1 << scaleBits) - 1);
+    }
+
+    /**
+     * Advances the rANS state by one symbol.
+     *
+     * @param state     current state (modified in place via array)
+     * @param ptr       pointer to input position (modified)
+     * @param buf       input byte array
+     * @param endIdx    index after the last valid byte (exclusive)
+     * @param start     start of symbol range
+     * @param freq      symbol frequency
+     * @param scaleBits scale bits (usually 10)
+     */
+    private static void ransDecAdvance(int[] state, int[] ptr, byte[] buf, int endIdx,
+                                       int start, int freq, int scaleBits)
+    {
+        int mask = (1 << scaleBits) - 1;
+        int x = state[0];
+        x = freq * (x >>> scaleBits) + (x & mask) - start;
+
+        // Renormalize: read bytes while x < RANS_BYTE_L
+        if (x < RANS_BYTE_L && ptr[0] < endIdx)
+        {
+            int p = ptr[0];
+            do
+            {
+                x = (x << 8) | (buf[p++] & 0xFF);
+            }
+            while (x < RANS_BYTE_L && p < endIdx);
+            ptr[0] = p;
+        }
+        state[0] = x;
+    }
+
+    /**
+     * Advances the state using a precomputed decoder symbol.
+     */
+    private static void ransDecAdvanceSymbol(int[] state, int[] ptr, byte[] buf, int endIdx,
+                                             RansDecSymbol sym, int scaleBits)
+    {
+        ransDecAdvance(state, ptr, buf, endIdx, sym.start, sym.freq, scaleBits);
+    }
+
+    /**
+     * Verifies that the final state equals RANS_BYTE_L.
+     *
+     * @return 0 on success, 1 on failure
+     */
+    private static int ransDecVerify(int state)
+    {
+        return (state == RANS_BYTE_L) ? 0 : 1;
+    }
+
+    /**
+     * Decodes the high‑bits of z1 (size L×N) from the compressed input.
+     *
+     * @param hbZ1   output array (flattened: L×N coefficients)
+     * @param buf    input byte array containing compressed data
+     * @param sizeIn number of bytes in the compressed block
+     * @return 0 on success, 1 on error
+     */
+    public int decodeHbZ1(int[] hbZ1, byte[] buf, int sizeIn)
+    {
+        int sizeHbZ1 = HAETAEParameters.N * params.getL();
+        int[] state = new int[1];
+        int[] ptr = new int[1];
+        ptr[0] = 0;
+        int endIdx = sizeIn;
+
+        if (ransDecInit(state, ptr, buf) != 0)
+        {
+            return 1;
+        }
+
+        for (int i = 0; i < sizeHbZ1; i++)
+        {
+            int bucket = ransDecGet(state[0], SCALE_BITS);
+            int s = params.getSymbolH()[bucket];
+            if (s >= params.getM_hb_z1())
+            {
+                return 1;
+            }
+            hbZ1[i] = s - params.getOffset_hb_z1();
+            ransDecAdvanceSymbol(state, ptr, buf, endIdx, params.getDsyms_h()[s], SCALE_BITS);
+        }
+
+        if (ransDecVerify(state[0]) != 0)
+        {
+            return 1;
+        }
+        if (ptr[0] != sizeIn)
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * Decodes the hint vector h (size K×N) from the compressed input.
+     *
+     * @param h      output array (flattened: K×N coefficients)
+     * @param buf    input byte array
+     * @param sizeIn number of bytes in the compressed block
+     * @return 0 on success, 1 on error
+     */
+    public int decodeH(int[] h, byte[] buf, int sizeIn)
+    {
+        int sizeH = HAETAEParameters.N * params.getK();
+        int[] state = new int[1];
+        int[] ptr = new int[1];
+        ptr[0] = 0;
+        int endIdx = sizeIn;
+
+        if (ransDecInit(state, ptr, buf) != 0)
+        {
+            return 1;
+        }
+
+        short[] symbolH = params.getSymbolH(); // Need to add this getter to HAETAEParameters
+        RansDecSymbol[] dsyms = params.getDsyms_h();
+
+        for (int i = 0; i < sizeH; i++)
+        {
+            int bucket = ransDecGet(state[0], SCALE_BITS);
+            int s = symbolH[bucket];
+            if (s >= params.getM_h())
+            {
+                return 1;
+            }
+            int tmp = (H_CUT < s) ? (s + params.getOffset_h()) : s;
+            h[i] = tmp;
+            ransDecAdvanceSymbol(state, ptr, buf, endIdx, dsyms[s], SCALE_BITS);
+        }
+
+        if (ransDecVerify(state[0]) != 0)
+        {
+            return 1;
+        }
+        if (ptr[0] != sizeIn)
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * Unpacks a HAETAE signature into its components.
+     *
+     * @param c          output challenge polynomial (length N, coefficients 0/1)
+     * @param lowbitsZ1  output low bits of z1 (L × N)
+     * @param highbitsZ1 output high bits of z1 (L × N)
+     * @param h          output hint vector (K × N)
+     * @param sig        input signature byte array (length CRYPTO_BYTES)
+     * @return 0 on success, 1 if the signature is malformed
+     */
+    public int unpackSig(int[] c, int[][] lowbitsZ1, int[][] highbitsZ1, int[][] h, byte[] sig)
+    {
+        int offset = 0;
+
+        // 1. Unpack challenge c (N bits → N/8 bytes)
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            c[i] = (sig[offset + i / 8] >> (i % 8)) & 1;
+        }
+        offset += HAETAEParameters.N / 8;
+
+        // 2. Unpack low bits of z1 (L polynomials, each N signed bytes)
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyDecomposedUnpack(lowbitsZ1[i], sig, offset + HAETAEParameters.N * i);
+        }
+        offset += params.getL() * HAETAEParameters.N;
+
+        // 3. Read compressed sizes (1 byte offset each)
+        int sizeEncHbZ1 = (sig[offset] & 0xFF) + params.getBaseEncHbZ1();
+        int sizeEncH = (sig[offset + 1] & 0xFF) + params.getBaseEncH();
+        offset += 2;
+
+        // Check overall size
+        int minTotal = 2 + params.getL() * HAETAEParameters.N + HAETAEParameters.SEED_BYTES
+            + sizeEncH + sizeEncHbZ1;
+        if (params.getCryptoBytes() < minTotal)
+        {
+            return 1;
+        }
+
+        // 4. Decode highbits of z1
+        int[] flatHbZ1 = new int[HAETAEParameters.N * params.getL()];
+        byte[] encHbZ1 = new byte[sizeEncHbZ1];
+        System.arraycopy(sig, offset, encHbZ1, 0, sizeEncHbZ1);
+        if (decodeHbZ1(flatHbZ1, encHbZ1, sizeEncHbZ1) != 0)
+        {
+            return 1;
+        }
+        // Reshape into 2D array
+        for (int i = 0; i < params.getL(); i++)
+        {
+            System.arraycopy(flatHbZ1, i * HAETAEParameters.N, highbitsZ1[i], 0, HAETAEParameters.N);
+        }
+        offset += sizeEncHbZ1;
+
+        // 5. Decode hint h
+        int[] flatH = new int[HAETAEParameters.N * params.getK()];
+        byte[] encH = new byte[sizeEncH];
+        System.arraycopy(sig, offset, encH, 0, sizeEncH);
+        if (decodeH(flatH, encH, sizeEncH) != 0)
+        {
+            return 1;
+        }
+        for (int i = 0; i < params.getK(); i++)
+        {
+            System.arraycopy(flatH, i * HAETAEParameters.N, h[i], 0, HAETAEParameters.N);
+        }
+        offset += sizeEncH;
+
+        // 6. Verify zero padding
+        for (int i = offset; i < params.getCryptoBytes(); i++)
+        {
+            if (sig[i] != 0)
+            {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    // ---------- Polynomial Composition ----------
+
+    /**
+     * Composes a polynomial from its high and low parts.
+     * a = 256 * ha + la
+     */
+    public void polyCompose(int[] a, int[] ha, int[] la)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            a[i] = ha[i] * 256 + la[i];
+        }
+    }
+
+    // ---------- Squared Norms ----------
+
+    /**
+     * Computes the squared ℓ₂‑norm of a vector of length L.
+     */
+    public long polyveclSqnorm2(int[][] a)
+    {
+        long ret = 0;
+        for (int i = 0; i < params.getL(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                long coeff = a[i][j];
+                ret += coeff * coeff;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Computes the squared ℓ₂‑norm of a vector of length K.
+     */
+    public long polyveckSqnorm2(int[][] b)
+    {
+        long ret = 0;
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                long coeff = b[i][j];
+                ret += coeff * coeff;
+            }
+        }
+        return ret;
+    }
+
+    // ---------- Vector Operations for Verification ----------
+
+    /**
+     * Conditional subtraction: v -= maxHint if v >= maxHint.
+     * maxHint = (DQ - 2) / ALPHA_HINT
+     */
+    public void polyveckCsubDQ2ALPHA(int[][] v)
+    {
+        int maxHint = (HAETAEParameters.DQ - 2) / params.getAlphaHint();
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                int coeff = v[i][j];
+                // if coeff >= maxHint, subtract maxHint
+                int mask = ~((coeff - maxHint) >> 31);
+                v[i][j] = coeff - (mask & maxHint);
+            }
+        }
+    }
+
+    /**
+     * Multiplies each coefficient by ALPHA_HINT.
+     */
+    public void polyveckMulAlpha(int[][] v, int[][] u)
+    {
+        int alpha = params.getAlphaHint();
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                v[i][j] = u[i][j] * alpha;
+            }
+        }
+    }
+
+    /**
+     * Reduces each coefficient to the centered representation modulo 2Q.
+     */
+    public void polyveckReduce2q(int[][] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            polyReduce2q(v[i]);
+        }
+    }
+
+    private void polyReduce2q(int[] a)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            a[i] = reduce32_2q(a[i]);
+        }
+    }
+
+    private int reduce32_2q(int a)
+    {
+        // Use DQREC (precomputed reciprocal for 2Q)
+        long t = ((long)a * DQREC) >> 32;
+        long r = a - t * HAETAEParameters.DQ;               // -4Q < r < 4Q
+        r += (r >> 31) & (HAETAEParameters.DQ * 2);         // 0 <= r < 4Q
+        r -= ~((r - HAETAEParameters.DQ) >> 31) & HAETAEParameters.DQ; // 0 <= r < 2Q
+        // Centered representation: if r >= Q, subtract 2Q (i.e., r - 2Q)
+        r -= ~((r - HAETAEParameters.Q) >> 31) & HAETAEParameters.DQ;
+        return (int)r;
+    }
+
+    /**
+     * Divides each coefficient by 2 (arithmetic right shift).
+     */
+    public void polyveckDiv2(int[][] v)
+    {
+        for (int i = 0; i < params.getK(); i++)
+        {
+            for (int j = 0; j < HAETAEParameters.N; j++)
+            {
+                v[i][j] >>= 1;
+            }
+        }
+    }
+
+    /**
+     * Verifies a HAETAE signature.
+     *
+     * @param sig signature byte array (length CRYPTO_BYTES)
+     * @param m   message to verify
+     * @param pre pre‑hash context (can be empty)
+     * @param vk  public key byte array (CRYPTO_PUBLICKEYBYTES)
+     * @return 0 if signature is valid, -1 otherwise
+     */
+    public boolean cryptoSignVerifyInternal(byte[] sig, byte[] m, byte[] pre, byte[] vk)
+    {
+        // 1. Check signature length
+        if (sig.length != params.getCryptoBytes())
+        {
+            return false;
+        }
+
+        // Buffers
+        byte[] buf = new byte[params.getPolyveckHighbitsPackedBytes() + HAETAEParameters.POLYC_PACKED_BYTES];
+        byte[] mu = new byte[HAETAEParameters.SEED_BYTES];
+
+        // Matrix A1 (K × L)
+        int[][][] A1 = new int[params.getK()][params.getL()][HAETAEParameters.N];
+
+        // Vectors and polynomials
+        int[][] highz = new int[params.getL()][HAETAEParameters.N];   // high bits of z1
+        int[][] lowz = new int[params.getL()][HAETAEParameters.N];   // low bits of z1
+        int[][] z1 = new int[params.getL()][HAETAEParameters.N];   // reconstructed z1
+        int[][] h = new int[params.getK()][HAETAEParameters.N];   // hint vector
+        int[][] highbits = new int[params.getK()][HAETAEParameters.N];
+        int[][] w = new int[params.getK()][HAETAEParameters.N];
+        int[][] z2 = new int[params.getK()][HAETAEParameters.N];
+
+        int[] c = new int[HAETAEParameters.N];
+        int[] cprime = new int[HAETAEParameters.N];
+        int[] wprime = new int[HAETAEParameters.N];
+
+        // 2. Unpack public key → build matrix A1
+        unpackVk(A1, vk);
+
+        // 3. Unpack signature
+        if (unpackSig(c, lowz, highz, h, sig) != 0)
+        {
+            return false;
+        }
+
+        // 4. Compose z1 = 256 * highz + lowz
+        for (int i = 0; i < params.getL(); i++)
+        {
+            polyCompose(z1[i], highz[i], lowz[i]);
+        }
+
+        // 5. Compute squared norm of z1 and w' = LSB(z1[0] - c)
+        long sqnorm2 = polyveclSqnorm2(z1);
+        int[] z1_0 = z1[0];
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            wprime[i] = (z1_0[i] - c[i]) & 1;   // LSB of difference
+        }
+
+        // 6. A1 * NTT(z1)   (mod Q)
+        polyveclNtt(z1);
+        polymatklPointwiseMontgomery(highbits, A1, z1);
+        polyveckInvnttTomont(highbits);
+
+        // 7. Recover A1 * z1 mod 2Q using CRT
+        polyveckPolyFromcrt(highbits, highbits, wprime);
+        polyveckFreeze2q(highbits);
+
+        // 8. w1 = HighBits(highbits)
+        polyveckHighbitsHint(w, highbits);
+        polyveckAdd(w, w, h);
+        polyveckCsubDQ2ALPHA(w);
+
+        // 9. Recover \tilde{z}_2
+        polyveckMulAlpha(z2, w);
+        polyveckSub(z2, z2, highbits);
+        // Add wprime to the first polynomial of z2
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            z2[0][i] += wprime[i];
+        }
+        polyveckReduce2q(z2);
+        polyveckDiv2(z2);
+
+        // 10. Check final norm
+        if (sqnorm2 + polyveckSqnorm2(z2) > params.getB2Sq())
+        {
+            return false;
+        }
+
+        // 11. Compute challenge c' and compare
+        packVecHighbits(buf, 0, w);
+        packPolyLsb(buf, params.getPolyveckHighbitsPackedBytes(), wprime);
+
+        // mu = H(pk, pre, m)
+        SHAKEDigest shake = new SHAKEDigest(256);
+        shake.update(vk, 0, params.getPublicKeyBytes());
+        if (pre != null)
+        {
+            shake.update(pre, 0, pre.length);
+        }
+        shake.update(m, 0, m.length);
+        shake.doFinal(mu, 0, HAETAEParameters.SEED_BYTES);
+
+        polyChallenge(cprime, buf, mu);
+
+        // Compare c and c'
+        return Arrays.areEqual(c, cprime);
     }
 }
