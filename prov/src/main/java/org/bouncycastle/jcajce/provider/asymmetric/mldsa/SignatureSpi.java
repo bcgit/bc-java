@@ -57,7 +57,7 @@ public class SignatureSpi
             try
             {
                 SubjectPublicKeyInfo pubKeyInfo = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
-                this.keyParams = org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(pubKeyInfo);
+                this.keyParams = PublicKeyFactory.createKey(pubKeyInfo);
                 publicKey = new BCMLDSAPublicKey((MLDSAPublicKeyParameters)this.keyParams);
             }
             catch (Exception e)
