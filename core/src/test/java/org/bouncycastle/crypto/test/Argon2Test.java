@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.test;
 
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,13 +35,14 @@ public class Argon2Test
 
         testPermutations();
         testVectorsFromInternetDraft();
-
+        checkArgon2MaxMemoryExpValue();
+        
         int version = Argon2Parameters.ARGON2_VERSION_10;
 
         /* Multiple test cases for various input values */
         hashTest(version, 2, 16, 1, "password", "somesalt",
             "f6c4db4a54e2a370627aff3db6176b94a2a209a62c8e36152711802f7b30c694", DEFAULT_OUTPUTLEN);
-        
+
         hashTest(version, 2, 20, 1, "password", "somesalt",
             "9690ec55d28d3ed32562f2e73ea62b02b018757643a2ae6e79528459de8106e9",
             DEFAULT_OUTPUTLEN);
@@ -158,6 +160,49 @@ public class Argon2Test
                 }
             }
         }
+    }
+
+    private void checkArgon2MaxMemoryExpValue()
+        throws Exception
+    {
+        System.setProperty("org.bouncycastle.argon2.max_memory_exp", "10");
+
+        byte[] salt = new byte[16];
+        new SecureRandom().nextBytes(salt);
+
+        try
+        {
+            Argon2Parameters parameters = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                .withSalt(salt)
+                .withIterations(1)
+                .withParallelism(4)
+                .withMemoryPowOfTwo(30)  // 1 << 22 = 4 GiB, no guard
+                .withVersion(Argon2Parameters.ARGON2_VERSION_13)
+                .build();
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("memory exponent out of range", e.getMessage());
+        }
+
+        try
+        {
+            Argon2Parameters parameters = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                .withSalt(salt)
+                .withIterations(1)
+                .withParallelism(4)
+                .withMemoryAsKB(1 << 25)
+                .withVersion(Argon2Parameters.ARGON2_VERSION_13)
+                .build();
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("memory out of range", e.getMessage());
+        }
+
+        System.setProperty("org.bouncycastle.argon2.max_memory_exp", "30");
     }
 
     private void swap(byte[] buf, int i, int j)
