@@ -271,15 +271,15 @@ public class ParserTest
         doOpenSslDsaTest("rc2_64_cbc");
         doOpenSslRsaTest("rc2_64_cbc");
 
-        doDudPasswordTest("7fd98", 0, "corrupted stream - out of bounds length found: 599005160 >= 19");
-        doDudPasswordTest("ef677", 1, "corrupted stream - out of bounds length found: 2087569732 >= 66");
+        doDudPasswordTest("7fd98", 0, "corrupted stream - out of bounds length found: 599005160 > 19");
+        doDudPasswordTest("ef677", 1, "corrupted stream - out of bounds length found: 2087569732 > 66");
         doDudPasswordTest("800ce", 2, "unknown tag 26 encountered");
         doDudPasswordTest("b6cd8", 3, "DEF length 81 object truncated by 56");
         doDudPasswordTest("28ce09", 4, "corrupted stream - high tag number < 31 found");
         doDudPasswordTest("2ac3b9", 5, "long form definite-length more than 31 bits");
-        doDudPasswordTest("2cba96", 6, "corrupted stream - out of bounds length found: 100 >= 67");
-        doDudPasswordTest("2e3354", 7, "corrupted stream - out of bounds length found: 42 >= 35");
-        doDudPasswordTest("2f4142", 8, "long form definite-length more than 31 bits");
+        doDudPasswordTest("2cba96", 6, "corrupted stream - out of bounds length found: 100 > 67");
+        doDudPasswordTest("2e3354", 7, "corrupted stream - out of bounds length found: 42 > 35");
+        doDudPasswordTest("2f4142", 8, "corrupted stream - out of bounds length found: 127 > 39");
         doDudPasswordTest("2fe9bb", 9, "long form definite-length more than 31 bits");
         doDudPasswordTest("3ee7a8", 10, "long form definite-length more than 31 bits");
         doDudPasswordTest("41af75", 11, "unknown tag 16 encountered");
@@ -288,7 +288,7 @@ public class ParserTest
         doDudPasswordTest("5a3d16", 14, "failed to construct sequence from byte[]: truncated BIT STRING detected");
         doDudPasswordTest("8d0c97", 15, "corrupted stream detected");
         doDudPasswordTest("bc0daf", 16, "failed to construct sequence from byte[]: BOOLEAN value should have 1 byte in it");
-        doDudPasswordTest("aaf9c4d", 17, "corrupted stream - out of bounds length found: 1580418590 >= 447");
+        doDudPasswordTest("aaf9c4d", 17, "unknown DL object encountered: 0x15");
 
         doNoPasswordTest();
         doNoECPublicKeyTest();
@@ -639,14 +639,10 @@ public class ParserTest
         throws Exception
     {
         // EC private key extremely dodgy attributes.
-        System.setProperty("org.bouncycastle.asn1.max_cons_depth", "45");
-
         PEMParser pemRd = openPEMResource("ec_attr_key.pem");
 
         PEMKeyPair kp = (PEMKeyPair)pemRd.readObject();
 
-        System.clearProperty("org.bouncycastle.asn1.max_cons_depth");
-        
         isTrue(kp.getPublicKeyInfo() == null);
     }
 

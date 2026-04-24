@@ -152,7 +152,7 @@ public class MayoTest
         }
         catch (InvalidKeyException e)
         {
-            assertEquals("signature configured for MAYO_5", e.getMessage());
+            assertEquals("signature configured for MAYO-5", e.getMessage());
         }
     }
 
@@ -196,7 +196,7 @@ public class MayoTest
         }
         catch (InvalidKeyException e)
         {
-            assertEquals("signature configured for MAYO_3", e.getMessage());
+            assertEquals("signature configured for MAYO-3", e.getMessage());
         }
     }
 

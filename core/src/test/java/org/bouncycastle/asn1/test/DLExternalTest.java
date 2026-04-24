@@ -37,7 +37,7 @@ public class DLExternalTest
         // Enforce that this (very) malformed input results in an ASN1Exception (via failed ASN1External constructor).
 
         // 6 bytes: SEQUENCE { CONSTRUCTED(0x28) { SEQUENCE {} } }
-        byte[] badEncoding = { 0x30, 0x30, 0x28, 0x02, 0x30, 0x00 };
+        byte[] badEncoding = { 0x30, 0x04, 0x28, 0x02, 0x30, 0x00 };
 
         try
         {

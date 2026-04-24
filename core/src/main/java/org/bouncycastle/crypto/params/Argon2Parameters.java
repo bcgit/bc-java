@@ -3,9 +3,12 @@ package org.bouncycastle.crypto.params;
 import org.bouncycastle.crypto.CharToByteConverter;
 import org.bouncycastle.crypto.PasswordConverter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class Argon2Parameters
 {
+    public static final String MAX_MEMORY_EXP = "org.bouncycastle.argon2.max_memory_exp";
+
     public static final int ARGON2_d = 0x00;
     public static final int ARGON2_i = 0x01;
     public static final int ARGON2_id = 0x02;
@@ -31,6 +34,7 @@ public class Argon2Parameters
 
         private int version;
         private final int type;
+        private final int maxMemory;
         
         private CharToByteConverter converter = PasswordConverter.UTF8;
 
@@ -46,10 +50,19 @@ public class Argon2Parameters
             this.memory = 1 << DEFAULT_MEMORY_COST;
             this.iterations = DEFAULT_ITERATIONS;
             this.version = DEFAULT_VERSION;
+            this.maxMemory = Properties.asInteger(MAX_MEMORY_EXP, 30);
+            if (maxMemory < 3  || maxMemory > 30)
+            {
+                throw new IllegalStateException(MAX_MEMORY_EXP + " out of range");
+            }
         }
 
         public Builder withParallelism(int parallelism)
         {
+            if (lanes < 1)
+            {
+                throw new IllegalArgumentException("lanes out of range");
+            }
             this.lanes = parallelism;
             return this;
         }
@@ -78,16 +91,23 @@ public class Argon2Parameters
             return this;
         }
 
-
         public Builder withMemoryAsKB(int memory)
         {
+            if (memory < 0 || memory > (1 << maxMemory))
+            {
+                throw new IllegalArgumentException("memory out of range");
+            }
             this.memory = memory;
             return this;
         }
 
-
         public Builder withMemoryPowOfTwo(int memory)
         {
+            // Actual range is supposed to be 31 - int's are signed here so cutoff is at 2**30
+            if (memory < 0 || memory > maxMemory)
+            {
+                throw new IllegalArgumentException("memory exponent out of range");
+            }
             this.memory = 1 << memory;
             return this;
         }
