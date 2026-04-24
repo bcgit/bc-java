@@ -396,7 +396,7 @@ public class PQCTSPTest
         X509Certificate cert = new JcaX509CertificateConverter()
             .setProvider("BC").getCertificate(certGen.build(sigGen));
 
-        ContentSigner signer = new JcaContentSignerBuilder("Mayo_1").setProvider("BCPQC").build(privKey);
+        ContentSigner signer = new JcaContentSignerBuilder("Mayo-1").setProvider("BCPQC").build(privKey);
 
         TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
             new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())

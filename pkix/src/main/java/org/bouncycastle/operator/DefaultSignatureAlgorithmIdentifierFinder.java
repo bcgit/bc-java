@@ -309,6 +309,10 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
         addAlgorithm("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
 
+        addAlgorithm("MAYO-1", BCObjectIdentifiers.mayo1);
+        addAlgorithm("MAYO-2", BCObjectIdentifiers.mayo_2);
+        addAlgorithm("MAYO-3", BCObjectIdentifiers.mayo_3);
+        addAlgorithm("MAYO-5", BCObjectIdentifiers.mayo_5);
         addAlgorithm("MAYO_1", BCObjectIdentifiers.mayo1);
         addAlgorithm("MAYO_2", BCObjectIdentifiers.mayo_2);
         addAlgorithm("MAYO_3", BCObjectIdentifiers.mayo_3);
