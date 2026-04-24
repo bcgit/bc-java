@@ -104,12 +104,7 @@ class DefiniteLengthInputStream
             return;
         }
 
-        // make sure it's safe to do this!
-        int limit = getLimit();
-        if (_remaining >= limit)
-        {
-            throw new IOException("corrupted stream - out of bounds length found: " + _remaining + " >= " + limit);
-        }
+        StreamUtil.checkLength(_remaining, getLimit());
 
         if ((_remaining -= Streams.readFully(_in, buf, 0, buf.length)) != 0)
         {
@@ -126,12 +121,7 @@ class DefiniteLengthInputStream
             return EMPTY_BYTES;
         }
 
-        // make sure it's safe to do this!
-        int limit = getLimit();
-        if (_remaining >= limit)
-        {
-            throw new IOException("corrupted stream - out of bounds length found: " + _remaining + " >= " + limit);
-        }
+        StreamUtil.checkLength(_remaining, getLimit());
 
         byte[] bytes = new byte[_remaining];
         if ((_remaining -= Streams.readFully(_in, bytes, 0, bytes.length)) != 0)

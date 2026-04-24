@@ -94,5 +94,10 @@ public class ScryptSpi
         {
             super(parameters);
         }
+
+        public ScryptWithUTF8() throws InvalidAlgorithmParameterException
+        {
+            this(null);
+        }
     }
 }

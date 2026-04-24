@@ -2,12 +2,14 @@ package org.bouncycastle.jce;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.Provider;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -20,9 +22,14 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedData;
 import org.bouncycastle.asn1.pkcs.MacData;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Properties;
 
@@ -55,11 +62,55 @@ public class PKCS12Util
      * as well, recomputing the MAC accordingly.
      *
      * @param berPKCS12File - original PKCS12 file.
-     * @param provider - provider to use for MAC calculation.
+     * @return a byte array representing the DER encoding of the PFX structure.
+     * @throws IOException on parsing, encoding errors.
+     */
+    public static byte[] convertToDefiniteLength(byte[] berPKCS12File, char[] passwd)
+        throws IOException
+    {
+        return convertToDefiniteLength(berPKCS12File, passwd, new DefaultJcaJceHelper());
+    }
+
+    /**
+     * Re-encode the PKCS#12 structure to definite length encoding at the inner layer
+     * as well, recomputing the MAC accordingly.
+     *
+     * @param berPKCS12File - original PKCS12 file.
+     * @param provider - provider name to use for MAC calculation.
      * @return a byte array representing the DER encoding of the PFX structure.
      * @throws IOException on parsing, encoding errors.
      */
     public static byte[] convertToDefiniteLength(byte[] berPKCS12File, char[] passwd, String provider)
+        throws IOException
+    {
+        return convertToDefiniteLength(berPKCS12File, passwd, new NamedJcaJceHelper(provider));
+    }
+
+    /**
+     * Re-encode the PKCS#12 structure to definite length encoding at the inner layer
+     * as well, recomputing the MAC accordingly.
+     *
+     * @param berPKCS12File - original PKCS12 file.
+     * @param provider - provider to use for MAC calculation.
+     * @return a byte array representing the DER encoding of the PFX structure.
+     * @throws IOException on parsing, encoding errors.
+     */
+    public static byte[] convertToDefiniteLength(byte[] berPKCS12File, char[] passwd, Provider provider)
+        throws IOException
+    {
+        return convertToDefiniteLength(berPKCS12File, passwd, new ProviderJcaJceHelper(provider));
+    }
+
+    /**
+     * Re-encode the PKCS#12 structure to definite length encoding at the inner layer
+     * as well, recomputing the MAC accordingly.
+     *
+     * @param berPKCS12File - original PKCS12 file.
+     * @param provider - provider to use for MAC calculation.
+     * @return a byte array representing the DER encoding of the PFX structure.
+     * @throws IOException on parsing, encoding errors.
+     */
+    private static byte[] convertToDefiniteLength(byte[] berPKCS12File, char[] passwd, JcaJceHelper helper)
         throws IOException
     {
         Pfx pfx = Pfx.getInstance(berPKCS12File);
@@ -68,21 +119,27 @@ public class PKCS12Util
 
         ASN1Primitive obj = ASN1Primitive.fromByteArray(getContentOctets(info));
 
-        byte[] derEncoding = obj.getEncoded(ASN1Encoding.DER);
+        byte[] contentOctets = obj.getEncoded(ASN1Encoding.DER);
 
-        info = new ContentInfo(info.getContentType(), new DEROctetString(derEncoding));
+        info = new ContentInfo(info.getContentType(), DEROctetString.withContents(contentOctets));
 
         MacData mData = pfx.getMacData();
         try
         {
+            AlgorithmIdentifier macAlgID = mData.getMac().getAlgorithmId();
+            byte[] salt = mData.getSalt();
             int itCount = validateIterationCount(mData.getIterationCount());
-            byte[] data = getContentOctets(info);
-            byte[] res = calculatePbeMac(mData.getMac().getAlgorithmId().getAlgorithm(), mData.getSalt(), itCount, passwd, data, provider);
+            byte[] res = calculatePbeMac(helper, macAlgID, salt, itCount, passwd, contentOctets);
 
-            AlgorithmIdentifier algId = new AlgorithmIdentifier(mData.getMac().getAlgorithmId().getAlgorithm(), DERNull.INSTANCE);
-            DigestInfo dInfo = new DigestInfo(algId, res);
+            // Avoid replacing e.g. PBMAC1 parameters
+            if (macAlgID.getParameters() == null)
+            {
+                macAlgID = new AlgorithmIdentifier(macAlgID.getAlgorithm(), DERNull.INSTANCE);
+            }
 
-            mData = new MacData(dInfo, mData.getSalt(), itCount);
+            DigestInfo dInfo = new DigestInfo(macAlgID, res);
+
+            mData = new MacData(dInfo, salt, itCount);
         }
         catch (Exception e)
         {
@@ -147,23 +204,49 @@ public class PKCS12Util
     }
 
     private static byte[] calculatePbeMac(
-        ASN1ObjectIdentifier oid,
+        JcaJceHelper        helper,
+        AlgorithmIdentifier macAlgID,
         byte[]              salt,
         int                 itCount,
         char[]              password,
-        byte[]              data,
-        String              provider)
+        byte[]              data)
         throws Exception
     {
-        SecretKeyFactory keyFact = SecretKeyFactory.getInstance(oid.getId(), provider);
+        ASN1ObjectIdentifier oid = macAlgID.getAlgorithm();
+
+        if (PKCSObjectIdentifiers.id_PBMAC1.equals(oid))
+        {
+            // TODO[pkcs12] PBMAC1 support, copy/share with PKCS12KeyStoreSpi.calculatePbeMac
+            throw new UnsupportedOperationException();
+        }
+
         PBEParameterSpec defParams = new PBEParameterSpec(salt, itCount);
-        PBEKeySpec pbeSpec = new PBEKeySpec(password);
-        SecretKey key = keyFact.generateSecret(pbeSpec);
 
-        Mac mac = Mac.getInstance(oid.getId(), provider);
-        mac.init(key, defParams);
-        mac.update(data);
+        SecretKeyFactory keyFact = helper.createSecretKeyFactory(oid.getId());
+        SecretKey key = keyFact.generateSecret(new PBEKeySpec(password));
 
-        return mac.doFinal();
+        try
+        {
+            Mac mac = helper.createMac(oid.getId());
+
+            mac.init(key, defParams);
+            mac.update(data);
+
+            return mac.doFinal();
+        }
+        finally
+        {
+            try
+            {
+                if (key != null)
+                {
+                    key.destroy();
+                }
+            }
+            catch (DestroyFailedException e)
+            {
+                // ignore
+            }
+        }
     }
 }

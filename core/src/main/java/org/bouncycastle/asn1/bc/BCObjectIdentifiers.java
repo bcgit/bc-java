@@ -576,10 +576,7 @@ public interface BCObjectIdentifiers
      * Mayo
      */
     ASN1ObjectIdentifier mayo = bc_sig.branch("10");
-    ASN1ObjectIdentifier mayo1 = mayo.branch("1");
-    ASN1ObjectIdentifier mayo2 = mayo.branch("2");
-    ASN1ObjectIdentifier mayo3 = mayo.branch("3");
-    ASN1ObjectIdentifier mayo5 = mayo.branch("4");
+
     /** 1.3.9999.8.1.3 OQS_OID_MAYO1 */
     ASN1ObjectIdentifier mayo_1 = new ASN1ObjectIdentifier("1.3.9999.8.1.3");
     /** 1.3.9999.8.1.4 OQS_OID_P256_MAYO1 */
@@ -597,6 +594,11 @@ public interface BCObjectIdentifiers
     /** 1.3.9999.8.5.4 OQS_OID_P521_MAYO5 */
     ASN1ObjectIdentifier p521_mayo5 = new ASN1ObjectIdentifier("1.3.9999.8.5.4");
 
+    ASN1ObjectIdentifier mayo1 = mayo_1;
+    ASN1ObjectIdentifier mayo2 = mayo_2;
+    ASN1ObjectIdentifier mayo3 = mayo_3;
+    ASN1ObjectIdentifier mayo5 = mayo_5;
+    
     /**
      * cross
      */
