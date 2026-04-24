@@ -29,6 +29,10 @@ public class MayoKeyPairGeneratorSpi
         parameters.put("MAYO_2", MayoParameters.mayo2);
         parameters.put("MAYO_3", MayoParameters.mayo3);
         parameters.put("MAYO_5", MayoParameters.mayo5);
+        parameters.put("MAYO-1", MayoParameters.mayo1);
+        parameters.put("MAYO-2", MayoParameters.mayo2);
+        parameters.put("MAYO-3", MayoParameters.mayo3);
+        parameters.put("MAYO-5", MayoParameters.mayo5);
         parameters.put(MayoParameterSpec.mayo1.getName(), MayoParameters.mayo1);
         parameters.put(MayoParameterSpec.mayo2.getName(), MayoParameters.mayo2);
         parameters.put(MayoParameterSpec.mayo3.getName(), MayoParameters.mayo3);

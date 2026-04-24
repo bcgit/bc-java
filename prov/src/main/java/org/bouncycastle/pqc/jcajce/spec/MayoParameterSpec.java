@@ -19,14 +19,18 @@ public class MayoParameterSpec
 
     static
     {
-//        parameters.put("mayo1", mayo1);
-//        parameters.put("mayo2", mayo2);
-//        parameters.put("mayo3", mayo3);
-//        parameters.put("mayo5", mayo5);
-        parameters.put("MAYO_1", mayo1);
-        parameters.put("MAYO_2", mayo2);
-        parameters.put("MAYO_3", mayo3);
-        parameters.put("MAYO_5", mayo5);
+        parameters.put("mayo1", mayo1);
+        parameters.put("mayo2", mayo2);
+        parameters.put("mayo3", mayo3);
+        parameters.put("mayo5", mayo5);
+        parameters.put("mayo_1", mayo1);
+        parameters.put("mayo_2", mayo2);
+        parameters.put("mayo_3", mayo3);
+        parameters.put("mayo_5", mayo5);
+        parameters.put("mayo-1", mayo1);
+        parameters.put("mayo-2", mayo2);
+        parameters.put("mayo-3", mayo3);
+        parameters.put("mayo-5", mayo5);
     }
 
     private final String name;
