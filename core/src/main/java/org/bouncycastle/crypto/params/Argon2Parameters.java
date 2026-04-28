@@ -93,7 +93,7 @@ public class Argon2Parameters
 
         public Builder withMemoryAsKB(int memory)
         {
-            if (memory < 0 || memory > (1 << maxMemory))
+            if (memory < 1 || memory > (1 << maxMemory))
             {
                 throw new IllegalArgumentException("memory out of range");
             }
