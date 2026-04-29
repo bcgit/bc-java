@@ -30,7 +30,8 @@ public class BcTlsSLHDSASigner
 
         if (!SignatureScheme.isSLHDSA(signatureScheme))
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not SLH-DSA");
         }
 
         this.signatureScheme = signatureScheme;

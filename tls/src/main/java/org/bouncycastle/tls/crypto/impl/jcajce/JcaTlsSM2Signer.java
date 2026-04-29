@@ -33,7 +33,8 @@ public class JcaTlsSM2Signer
         }
         if (SignatureScheme.sm2sig_sm3 != signatureScheme)
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not SM2");
         }
 
         this.crypto = crypto;
