@@ -246,38 +246,38 @@ public class BasicOCSPRespBuilder
             }
         }
 
-        ResponseData  tbsResp = new ResponseData(responderID.toASN1Primitive(), new ASN1GeneralizedTime(producedAt), new DERSequence(responses), responseExtensions);
+        ResponseData  responseData = new ResponseData(responderID.toASN1Primitive(), new ASN1GeneralizedTime(producedAt), new DERSequence(responses), responseExtensions);
         DERBitString    bitSig;
 
         try
         {
             OutputStream sigOut = signer.getOutputStream();
 
-            sigOut.write(tbsResp.getEncoded(ASN1Encoding.DER));
+            sigOut.write(responseData.getEncoded(ASN1Encoding.DER));
             sigOut.close();
 
             bitSig = new DERBitString(signer.getSignature());
         }
         catch (Exception e)
         {
-            throw new OCSPException("exception processing TBSRequest: " + e.getMessage(), e);
+            throw new OCSPException("exception processing ResponseData: " + e.getMessage(), e);
         }
 
         AlgorithmIdentifier sigAlgId = signer.getAlgorithmIdentifier();
 
-        DERSequence chainSeq = null;
+        DERSequence certs = null;
         if (chain != null && chain.length > 0)
         {
-            ASN1EncodableVector v = new ASN1EncodableVector();
+            ASN1EncodableVector v = new ASN1EncodableVector(chain.length);
 
-            for (int i = 0; i != chain.length; i++)
+            for (int i = 0; i < chain.length; i++)
             {
                 v.add(chain[i].toASN1Structure());
             }
 
-            chainSeq = new DERSequence(v);
+            certs = new DERSequence(v);
         }
 
-        return new BasicOCSPResp(new BasicOCSPResponse(tbsResp, sigAlgId, bitSig, chainSeq));
+        return new BasicOCSPResp(new BasicOCSPResponse(responseData, sigAlgId, bitSig, certs));
     }
 }
