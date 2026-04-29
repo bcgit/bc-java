@@ -4,6 +4,10 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 public class CMSConfig
 {
+    /*
+     * TODO[cms] The only remaining use of this is for registering RSA signature algorithm OIDs. Ideally
+     * we could remove it if operators were able to convey the relevant information instead.
+     */
     /**
      * Set the mapping for the encryption algorithm used in association with a SignedData generation
      * or interpretation.
