@@ -43,6 +43,7 @@ import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -58,6 +59,7 @@ import org.bouncycastle.asn1.bc.ObjectDataSequence;
 import org.bouncycastle.asn1.bc.ObjectStore;
 import org.bouncycastle.asn1.bc.ObjectStoreData;
 import org.bouncycastle.asn1.bc.ObjectStoreIntegrityCheck;
+import org.bouncycastle.asn1.bc.PbkdKeyData;
 import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.bc.SecretKeyData;
 import org.bouncycastle.asn1.bc.SignatureCheck;
@@ -165,6 +167,7 @@ class BcFKSKeyStoreSpi
     private final static BigInteger SECRET_KEY = BigInteger.valueOf(2);
     private final static BigInteger PROTECTED_PRIVATE_KEY = BigInteger.valueOf(3);
     private final static BigInteger PROTECTED_SECRET_KEY = BigInteger.valueOf(4);
+    private final static BigInteger PBKDF_KEY = BigInteger.valueOf(5);
 
     private final JcaJceHelper helper;
     private final Map<String, ObjectData> entries = new HashMap<String, ObjectData>();
@@ -234,6 +237,26 @@ class BcFKSKeyStoreSpi
                 catch (Exception e)
                 {
                     throw new UnrecoverableKeyException("BCFKS KeyStore unable to recover secret key (" + alias + "): " + e.getMessage());
+                }
+            }
+            else if (ent.getType().equals(PBKDF_KEY))
+            {
+                EncryptedSecretKeyData encKeyData = EncryptedSecretKeyData.getInstance(ent.getData());
+
+                try
+                {
+                    PbkdKeyData keyData = PbkdKeyData.getInstance(decryptData("SECRET_KEY_ENCRYPTION", encKeyData.getKeyEncryptionAlgorithm(), password, encKeyData.getEncryptedKeyData()));
+
+                    return new RecoveredPBEKey(
+                        keyData.getKeyAlgorithm(),
+                        bytesToChars(keyData.getPassword()),
+                        keyData.getSalt(),
+                        keyData.getIterationCount(),
+                        keyData.getKeyEncoding());
+                }
+                catch (Exception e)
+                {
+                    throw new UnrecoverableKeyException("BCFKS KeyStore unable to recover PBE key (" + alias + "): " + e.getMessage());
                 }
             }
             else
@@ -405,6 +428,56 @@ class BcFKSKeyStoreSpi
                 throw new ExtKeyStoreException("BCFKS KeyStore exception storing private key: " + e.toString(), e);
             }
         }
+        else if (key instanceof PBEKey)
+        {
+            if (chain != null)
+            {
+                throw new KeyStoreException("BCFKS KeyStore cannot store certificate chain with PBE key.");
+            }
+
+            try
+            {
+                PBEKey pbeKey = (PBEKey)key;
+                PbkdKeyData pbeData = new PbkdKeyData(
+                    pbeKey.getAlgorithm(),
+                    charsToBytes(pbeKey.getPassword()),
+                    pbeKey.getSalt(),
+                    pbeKey.getIterationCount(),
+                    pbeKey.getEncoded());
+
+                KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, 256 / 8);
+                byte[] keyBytes = generateKey(pbkdAlgId, "SECRET_KEY_ENCRYPTION", ((password != null) ? password : new char[0]), 32);
+
+                EncryptedSecretKeyData keyData;
+                if (storeEncryptionAlgorithm.equals(NISTObjectIdentifiers.id_aes256_CCM))
+                {
+                    Cipher c = createCipher("AES/CCM/NoPadding", keyBytes);
+
+                    byte[] encryptedKey = c.doFinal(pbeData.getEncoded());
+
+                    AlgorithmParameters algParams = c.getParameters();
+
+                    PBES2Parameters pbeParams = new PBES2Parameters(pbkdAlgId, new EncryptionScheme(NISTObjectIdentifiers.id_aes256_CCM, CCMParameters.getInstance(algParams.getEncoded())));
+
+                    keyData = new EncryptedSecretKeyData(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBES2, pbeParams), encryptedKey);
+                }
+                else
+                {
+                    Cipher c = createCipher("AESKWP", keyBytes);
+
+                    byte[] encryptedKey = c.doFinal(pbeData.getEncoded());
+
+                    PBES2Parameters pbeParams = new PBES2Parameters(pbkdAlgId, new EncryptionScheme(NISTObjectIdentifiers.id_aes256_wrap_pad));
+
+                    keyData = new EncryptedSecretKeyData(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBES2, pbeParams), encryptedKey);
+                }
+                entries.put(alias, new ObjectData(PBKDF_KEY, alias, creationDate, lastEditDate, keyData.getEncoded(), null));
+            }
+            catch (Exception e)
+            {
+                throw new ExtKeyStoreException("BCFKS KeyStore exception storing PBE key: " + e.toString(), e);
+            }
+        }
         else if (key instanceof SecretKey)
         {
             if (chain != null)
@@ -493,6 +566,35 @@ class BcFKSKeyStoreSpi
         c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
 
         return c;
+    }
+
+    private static byte[] charsToBytes(char[] chars)
+    {
+        if (chars == null)
+        {
+            return new byte[0];
+        }
+        byte[] bytes = new byte[chars.length * 2];
+        for (int i = 0; i != chars.length; i++)
+        {
+            bytes[2 * i] = (byte)(chars[i] >>> 8);
+            bytes[2 * i + 1] = (byte)chars[i];
+        }
+        return bytes;
+    }
+
+    private static char[] bytesToChars(byte[] bytes)
+    {
+        if (bytes == null || bytes.length == 0)
+        {
+            return new char[0];
+        }
+        char[] chars = new char[bytes.length / 2];
+        for (int i = 0; i != chars.length; i++)
+        {
+            chars[i] = (char)(((bytes[2 * i] & 0xff) << 8) | (bytes[2 * i + 1] & 0xff));
+        }
+        return chars;
     }
 
     private SecureRandom getDefaultSecureRandom()
@@ -1670,6 +1772,55 @@ class BcFKSKeyStoreSpi
         public Throwable getCause()
         {
             return cause;
+        }
+    }
+
+    private static class RecoveredPBEKey
+        implements PBEKey
+    {
+        private final String algorithm;
+        private final char[] password;
+        private final byte[] salt;
+        private final int iterationCount;
+        private final byte[] encoded;
+
+        RecoveredPBEKey(String algorithm, char[] password, byte[] salt, int iterationCount, byte[] encoded)
+        {
+            this.algorithm = algorithm;
+            this.password = password;
+            this.salt = (salt != null) ? (byte[])salt.clone() : null;
+            this.iterationCount = iterationCount;
+            this.encoded = (encoded != null) ? (byte[])encoded.clone() : null;
+        }
+
+        public String getAlgorithm()
+        {
+            return algorithm;
+        }
+
+        public String getFormat()
+        {
+            return (encoded != null) ? "RAW" : null;
+        }
+
+        public byte[] getEncoded()
+        {
+            return (encoded != null) ? (byte[])encoded.clone() : null;
+        }
+
+        public char[] getPassword()
+        {
+            return (char[])password.clone();
+        }
+
+        public byte[] getSalt()
+        {
+            return (salt != null) ? (byte[])salt.clone() : null;
+        }
+
+        public int getIterationCount()
+        {
+            return iterationCount;
         }
     }
 }
