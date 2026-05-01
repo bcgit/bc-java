@@ -27,7 +27,8 @@ public class BcTlsRSAPSSSigner
 
         if (!SignatureScheme.isRSAPSS(signatureScheme))
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not RSA/PSS");
         }
 
         this.signatureScheme = signatureScheme;

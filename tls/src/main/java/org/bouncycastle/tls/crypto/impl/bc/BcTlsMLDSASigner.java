@@ -29,7 +29,8 @@ public class BcTlsMLDSASigner
 
         if (!SignatureScheme.isMLDSA(signatureScheme))
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not ML-DSA");
         }
 
         this.signatureScheme = signatureScheme;

@@ -43,6 +43,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
@@ -61,6 +62,7 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.IssuerSerial;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -750,7 +752,23 @@ public class NewSignedDataTest
         noParams.add(X9ObjectIdentifiers.ecdsa_with_SHA256);
         noParams.add(X9ObjectIdentifiers.ecdsa_with_SHA384);
         noParams.add(X9ObjectIdentifiers.ecdsa_with_SHA512);
+        noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_224);
+        noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_256);
+        noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_384);
+        noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
+
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA1);
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA224);
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA256);
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA384);
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA512);
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA3_224);
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA3_256);
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA3_384);
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA3_512);
+
         noParams.add(X9ObjectIdentifiers.id_dsa_with_sha1);
+        noParams.add(OIWObjectIdentifiers.dsaWithSHA1);
         noParams.add(NISTObjectIdentifiers.dsa_with_sha224);
         noParams.add(NISTObjectIdentifiers.dsa_with_sha256);
         noParams.add(NISTObjectIdentifiers.dsa_with_sha384);
@@ -759,15 +777,14 @@ public class NewSignedDataTest
         noParams.add(NISTObjectIdentifiers.id_dsa_with_sha3_256);
         noParams.add(NISTObjectIdentifiers.id_dsa_with_sha3_384);
         noParams.add(NISTObjectIdentifiers.id_dsa_with_sha3_512);
-        noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_224);
-        noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_256);
-        noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_384);
-        noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
+
         noParams.add(EdECObjectIdentifiers.id_Ed25519);
         noParams.add(EdECObjectIdentifiers.id_Ed448);
+
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_44);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_65);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_87);
+
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
@@ -780,6 +797,11 @@ public class NewSignedDataTest
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_192s);
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256f);
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256s);
+
+        noParams.add(X509ObjectIdentifiers.id_rsassa_pss_shake128);
+        noParams.add(X509ObjectIdentifiers.id_rsassa_pss_shake256);
+        noParams.add(X509ObjectIdentifiers.id_ecdsa_with_shake128);
+        noParams.add(X509ObjectIdentifiers.id_ecdsa_with_shake256);
     }
 
     public NewSignedDataTest(String name)

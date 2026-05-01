@@ -37,7 +37,8 @@ public class JcaTlsECDSA13Signer
         }
         if (!SignatureScheme.isECDSA(signatureScheme))
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not ECDSA");
         }
 
         this.crypto = crypto;
