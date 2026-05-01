@@ -164,6 +164,132 @@ public class X509v3CertificateBuilder
     }
 
     /**
+     * Set the certificate issuer.
+     *
+     * @param issuer the certificate issuer.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setIssuer(X500Name issuer)
+    {
+        tbsGen.setIssuer(issuer);
+
+        return this;
+    }
+
+    /**
+     * Set the certificate serial number.
+     *
+     * @param serial the certificate serial number.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setSerialNumber(BigInteger serial)
+    {
+        tbsGen.setSerialNumber(new ASN1Integer(serial));
+
+        return this;
+    }
+
+    /**
+     * Set the date before which the certificate is not valid.
+     *
+     * @param notBefore the date before which the certificate is not valid.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setNotBefore(Date notBefore)
+    {
+        return this.setNotBefore(new Time(notBefore));
+    }
+
+    /**
+     * Set the date before which the certificate is not valid. You may need to use this method if the default
+     * locale doesn't use a Gregorian calender so that the Time produced is compatible with other ASN.1 implementations.
+     *
+     * @param notBefore the date before which the certificate is not valid.
+     * @param dateLocale locale to be used for date interpretation.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setNotBefore(Date notBefore, Locale dateLocale)
+    {
+        return this.setNotBefore(new Time(notBefore, dateLocale));
+    }
+
+    /**
+     * Set the time before which the certificate is not valid.
+     *
+     * @param notBefore the Time before which the certificate is not valid.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setNotBefore(Time notBefore)
+    {
+        tbsGen.setStartDate(notBefore);
+
+        return this;
+    }
+
+    /**
+     * Set the date after which the certificate is not valid.
+     *
+     * @param notAfter the date after which the certificate is not valid.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setNotAfter(Date notAfter)
+    {
+        return this.setNotAfter(new Time(notAfter));
+    }
+
+    /**
+     * Set the date after which the certificate is not valid. You may need to use this method if the default
+     * locale doesn't use a Gregorian calender so that the Time produced is compatible with other ASN.1 implementations.
+     *
+     * @param notAfter the date after which the certificate is not valid.
+     * @param dateLocale locale to be used for date interpretation.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setNotAfter(Date notAfter, Locale dateLocale)
+    {
+        return this.setNotAfter(new Time(notAfter, dateLocale));
+    }
+
+    /**
+     * Set the time after which the certificate is not valid.
+     *
+     * @param notAfter the Time after which the certificate is not valid.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setNotAfter(Time notAfter)
+    {
+        tbsGen.setEndDate(notAfter);
+
+        return this;
+    }
+
+    /**
+     * Set the certificate subject.
+     *
+     * @param subject the certificate subject.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setSubject(X500Name subject)
+    {
+        tbsGen.setSubject(subject);
+
+        return this;
+    }
+
+    /**
+     * Set the info structure for the public key to be associated with this certificate.
+     *
+     * @param publicKeyInfo the public key info structure.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder setSubjectPublicKeyInfo(SubjectPublicKeyInfo publicKeyInfo)
+    {
+        tbsGen.setSubjectPublicKeyInfo(publicKeyInfo);
+
+        return this;
+    }
+
+    /**
      * Set the subjectUniqueID - note: it is very rare that it is correct to do this.
      *
      * @param uniqueID a boolean array representing the bits making up the subjectUniqueID.
