@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.OIDTokenizer;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.util.Strings;
 
@@ -283,58 +282,20 @@ class CertUtil
 
     /**
      * Check the format of an OID.<br />
-     * Throw an IOException if the first component is not 0, 1 or 2 or the
-     * second component is greater than 39.<br />
-     * <br />
-     * User {@link org.bouncycastle.asn1.OIDTokenizer OIDTokenizer}
+     * Throw an IOException if the OID is invalid.<br />
      * 
-     * @param the
-     *            OID to be checked.
+     * @param oid the OID to be checked.
      * 
-     * @exception IOException
-     *                if the first component is not 0, 1 or 2 or the second
-     *                component is greater than 39.
+     * @exception IOException if the OID is invalid.
      */
     static byte[] parseOID(String oid) throws IOException
     {
-        OIDTokenizer tokenizer = new OIDTokenizer(oid);
-        String token;
-        if (!tokenizer.hasMoreTokens())
+        ASN1ObjectIdentifier valid = ASN1ObjectIdentifier.tryFromID(oid);
+        if (valid == null)
         {
-            throw new IOException("OID contains no tokens");
+            throw new IOException("OID invalid");
         }
-        token = tokenizer.nextToken();
-        if (token == null)
-        {
-            throw new IOException("OID contains no tokens");
-        }
-        try
-        {
-            int test = (Integer.valueOf(token)).intValue();
-            if (test < 0 || test > 2)
-            {
-                throw new IOException("first token is not >= 0 and <=2");
-            }
-            if (!tokenizer.hasMoreTokens())
-            {
-                throw new IOException("OID contains only one token");
-            }
-            token = tokenizer.nextToken();
-            if (token == null)
-            {
-                throw new IOException("OID contains only one token");
-            }
-            test = (Integer.valueOf(token)).intValue();
-            if (test < 0 || test > 39)
-            {
-                throw new IOException("secon token is not >= 0 and <=39");
-            }
-        }
-        catch (NumberFormatException ex)
-        {
-            throw new IOException("token: " + token + ": " + ex.toString());
-        }
-        return new ASN1ObjectIdentifier(oid).getEncoded(ASN1Encoding.DER);
+        return valid.getEncoded(ASN1Encoding.DER);
     }
 
     /**

@@ -194,7 +194,8 @@ public abstract class AlgorithmParametersSpi
                 AlgorithmIdentifier maskGenAlgorithm = new AlgorithmIdentifier(
                     PKCSObjectIdentifiers.id_mgf1,
                     new AlgorithmIdentifier(DigestFactory.getOID(mgfSpec.getDigestAlgorithm()), DERNull.INSTANCE));
-                RSASSAPSSparams pssP = new RSASSAPSSparams(hashAlgorithm, maskGenAlgorithm, new ASN1Integer(pssSpec.getSaltLength()), new ASN1Integer(pssSpec.getTrailerField()));
+                RSASSAPSSparams pssP = new RSASSAPSSparams(hashAlgorithm, maskGenAlgorithm,
+                    ASN1Integer.valueOf(pssSpec.getSaltLength()), ASN1Integer.valueOf(pssSpec.getTrailerField()));
 
                 return pssP.getEncoded("DER");
             }
@@ -202,7 +203,8 @@ public abstract class AlgorithmParametersSpi
             {
                 AlgorithmIdentifier maskGenAlgorithm = new AlgorithmIdentifier(
                     pssSpec.getMGFAlgorithm().equals("SHAKE128") ? NISTObjectIdentifiers.id_shake128 : NISTObjectIdentifiers.id_shake256);
-                RSASSAPSSparams pssP = new RSASSAPSSparams(hashAlgorithm, maskGenAlgorithm, new ASN1Integer(pssSpec.getSaltLength()), new ASN1Integer(pssSpec.getTrailerField()));
+                RSASSAPSSparams pssP = new RSASSAPSSparams(hashAlgorithm, maskGenAlgorithm,
+                    ASN1Integer.valueOf(pssSpec.getSaltLength()), ASN1Integer.valueOf(pssSpec.getTrailerField()));
 
                 return pssP.getEncoded("DER");
             }

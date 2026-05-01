@@ -9,7 +9,7 @@ public class HTMLFilter implements Filter
 
     public String doFilter(String input) 
     {
-        StringBuffer buf = new StringBuffer(input);
+        StringBuilder buf = new StringBuilder(input);
         int i = 0;
         while (i < buf.length()) 
         {

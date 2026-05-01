@@ -12,7 +12,7 @@ public class CommitmentTypeIndication
 {
     private ASN1ObjectIdentifier   commitmentTypeId;
     private ASN1Sequence          commitmentTypeQualifier;
-    
+
     private CommitmentTypeIndication(
         ASN1Sequence seq)
     {
@@ -53,12 +53,12 @@ public class CommitmentTypeIndication
     {
         return commitmentTypeId;
     }
-    
+
     public ASN1Sequence getCommitmentTypeQualifier()
     {
         return commitmentTypeQualifier;
     }
-    
+
     /**
      * <pre>
      * CommitmentTypeIndication ::= SEQUENCE {
@@ -66,18 +66,18 @@ public class CommitmentTypeIndication
      *      commitmentTypeQualifier   SEQUENCE SIZE (1..MAX) OF
      *              CommitmentTypeQualifier OPTIONAL }
      * </pre>
-     */ 
+     */
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(2);
-        
+
         v.add(commitmentTypeId);
 
         if (commitmentTypeQualifier != null)
         {
             v.add(commitmentTypeQualifier);
         }
-        
+
         return new DERSequence(v);
     }
 }

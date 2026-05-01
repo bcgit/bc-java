@@ -27,7 +27,7 @@ public class ExtendedFailInfoTest
         // OID not real
         ExtendedFailInfo extendedFailInfo = new ExtendedFailInfo(
             new ASN1ObjectIdentifier("1.2.3.2"),
-            new ASN1Integer(10L));
+            ASN1Integer.valueOf(10));
         byte[] b = extendedFailInfo.getEncoded();
         ExtendedFailInfo extendedFailInfoResult = ExtendedFailInfo.getInstance(b);
 
@@ -36,7 +36,7 @@ public class ExtendedFailInfoTest
 
         try
         {
-            ExtendedFailInfo.getInstance(new DERSequence(new ASN1Integer(10L)));
+            ExtendedFailInfo.getInstance(new DERSequence(ASN1Integer.valueOf(10)));
             fail("Sequence must be 2 elements.");
         }
         catch (Throwable t)

@@ -34,11 +34,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 public class ArchiveTimeStamp
     extends ASN1Object
 {
-    private final AlgorithmIdentifier digestAlgorithm;
-    private final Attributes attributes;
-    private final ASN1Sequence reducedHashTree;
-    private final ContentInfo timeStamp;
-
     /**
      * Return an ArchiveTimestamp from the given object.
      *
@@ -46,7 +41,7 @@ public class ArchiveTimeStamp
      * @return an ArchiveTimestamp instance, or null.
      * @throws IllegalArgumentException if the object cannot be converted.
      */
-    public static ArchiveTimeStamp getInstance(final Object obj)
+    public static ArchiveTimeStamp getInstance(Object obj)
     {
         if (obj instanceof ArchiveTimeStamp)
         {
@@ -59,6 +54,21 @@ public class ArchiveTimeStamp
 
         return null;
     }
+
+    public static ArchiveTimeStamp getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return new ArchiveTimeStamp(ASN1Sequence.getInstance(taggedObject, declaredExplicit));
+    }
+
+    public static ArchiveTimeStamp getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return new ArchiveTimeStamp(ASN1Sequence.getTagged(taggedObject, declaredExplicit));
+    }
+
+    private final AlgorithmIdentifier digestAlgorithm;
+    private final Attributes attributes;
+    private final ASN1Sequence reducedHashTree;
+    private final ContentInfo timeStamp;
 
     public ArchiveTimeStamp(
         AlgorithmIdentifier digestAlgorithm,
@@ -80,59 +90,71 @@ public class ArchiveTimeStamp
         PartialHashtree[] reducedHashTree,
         ContentInfo timeStamp)
     {
+        if (timeStamp == null)
+        {
+            throw new NullPointerException("'timeStamp' cannot be null");
+        }
+
         this.digestAlgorithm = digestAlgorithm;
         this.attributes = attributes;
-        if (reducedHashTree != null)
-        {
-            this.reducedHashTree = new DERSequence(reducedHashTree);
-        }
-        else
-        {
-            this.reducedHashTree = null;
-        }
+        this.reducedHashTree = DERSequence.fromElementsOptional(reducedHashTree);
         this.timeStamp = timeStamp;
     }
 
-    private ArchiveTimeStamp(final ASN1Sequence sequence)
+    private ArchiveTimeStamp(ASN1Sequence seq)
     {
-        if (sequence.size() < 1 || sequence.size() > 4)
+        int count = seq.size(), pos = 0;
+        if (count < 1 || count > 4)
         {
-            throw new IllegalArgumentException("wrong sequence size in constructor: " + sequence.size());
+            throw new IllegalArgumentException("Bad sequence size: " + count);
         }
 
-        AlgorithmIdentifier digAlg = null;
-        Attributes attrs = null;
-        ASN1Sequence rHashTree = null;
-        for (int i = 0; i < sequence.size() - 1; i++)
+        // digestAlgorithm [Ø] AlgorithmIdentifier OPTIONAL
+        AlgorithmIdentifier digestAlgorithm = null;
+        if (pos < count)
         {
-            Object obj = sequence.getObjectAt(i);
-
-            if (obj instanceof ASN1TaggedObject)
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
             {
-                ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(obj);
-
-                switch (taggedObject.getTagNo())
-                {
-                case 0:
-                    digAlg = AlgorithmIdentifier.getInstance(taggedObject, false);
-                    break;
-                case 1:
-                    attrs = Attributes.getInstance(taggedObject, false);
-                    break;
-                case 2:
-                    rHashTree = ASN1Sequence.getInstance(taggedObject, false);
-                    break;
-                default:
-                    throw new IllegalArgumentException("invalid tag no in constructor: "
-                        + taggedObject.getTagNo());
-                }
+                pos++;
+                digestAlgorithm = AlgorithmIdentifier.getTagged(tag0, false);
             }
         }
+        this.digestAlgorithm = digestAlgorithm;
 
-        digestAlgorithm = digAlg;
-        attributes = attrs;
-        reducedHashTree = rHashTree;
-        timeStamp = ContentInfo.getInstance(sequence.getObjectAt(sequence.size() - 1));
+        // attributes [1] Attributes OPTIONAL
+        Attributes attributes = null;
+        if (pos < count)
+        {
+            ASN1TaggedObject tag1 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 1);
+            if (tag1 != null)
+            {
+                pos++;
+                attributes = Attributes.getTagged(tag1, false);
+            }
+        }
+        this.attributes = attributes;
+
+        // reducedHashtree [2] SEQUENCE OF PartialHashtree OPTIONAL
+        ASN1Sequence reducedHashTree = null;
+        if (pos < count)
+        {
+            ASN1TaggedObject tag2 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 2);
+            if (tag2 != null)
+            {
+                pos++;
+                reducedHashTree = ASN1Sequence.getInstance(tag2, false);
+            }
+        }
+        this.reducedHashTree = reducedHashTree;
+
+        // timeStamp ContentInfo
+        timeStamp = ContentInfo.getInstance(seq.getObjectAt(pos++));
+
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("Unexpected elements in sequence");
+        }
     }
 
     public AlgorithmIdentifier getDigestAlgorithmIdentifier()
@@ -141,10 +163,8 @@ public class ArchiveTimeStamp
         {
             return digestAlgorithm;
         }
-        else
-        {
-            return getTimeStampInfo().getMessageImprint().getHashAlgorithm();
-        }
+
+        return getTimeStampInfo().getMessageImprint().getHashAlgorithm();
     }
 
     public byte[] getTimeStampDigestValue()
@@ -154,25 +174,22 @@ public class ArchiveTimeStamp
 
     private TSTInfo getTimeStampInfo()
     {
-        if (timeStamp.getContentType().equals(CMSObjectIdentifiers.signedData))
-        {
-            SignedData tsData = SignedData.getInstance(timeStamp.getContent());
-            if (tsData.getEncapContentInfo().getContentType().equals(PKCSObjectIdentifiers.id_ct_TSTInfo))
-            {
-                TSTInfo tstData = TSTInfo.getInstance(
-                    ASN1OctetString.getInstance(tsData.getEncapContentInfo().getContent()).getOctets());
-
-                return tstData;
-            }
-            else
-            {
-                throw new IllegalStateException("cannot parse time stamp");
-            }
-        }
-        else
+        if (!CMSObjectIdentifiers.signedData.equals(timeStamp.getContentType()))
         {
             throw new IllegalStateException("cannot identify algorithm identifier for digest");
         }
+
+        SignedData tsData = SignedData.getInstance(timeStamp.getContent());
+        ContentInfo encapContentInfo = tsData.getEncapContentInfo();
+
+        if (!PKCSObjectIdentifiers.id_ct_TSTInfo.equals(encapContentInfo.getContentType()))
+        {
+            throw new IllegalStateException("cannot parse time stamp");
+        }
+
+        ASN1OctetString encapContent = ASN1OctetString.getInstance(encapContentInfo.getContent());
+
+        return TSTInfo.getInstance(encapContent.getOctets());
     }
 
     /**
@@ -194,10 +211,10 @@ public class ArchiveTimeStamp
     {
         if (reducedHashTree == null)
         {
-           return null;
+            return null;
         }
 
-        return  PartialHashtree.getInstance(reducedHashTree.getObjectAt(0));
+        return PartialHashtree.getInstance(reducedHashTree.getObjectAt(0));
     }
 
     public PartialHashtree[] getReducedHashTree()
@@ -221,7 +238,7 @@ public class ArchiveTimeStamp
     {
         return timeStamp;
     }
-    
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(4);

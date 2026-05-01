@@ -15,10 +15,12 @@ class CMSTestSetup extends TestSetup
     protected void setUp()
     {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        Security.addProvider(new org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider());
     }
 
     protected void tearDown()
     {
+        Security.removeProvider("BCPQC");
         Security.removeProvider("BC");
     }
 }

@@ -83,7 +83,7 @@ public class SignatureSpi
         signer.init(true, priv);
     }
 
-    private static Ed25519PrivateKeyParameters getEd25519PrivateKey(byte[] keyData)
+    static Ed25519PrivateKeyParameters getEd25519PrivateKey(byte[] keyData)
         throws InvalidKeyException
     {
         if (Ed25519PrivateKeyParameters.KEY_SIZE != keyData.length)
@@ -94,7 +94,7 @@ public class SignatureSpi
         return new Ed25519PrivateKeyParameters(keyData, 0);
     }
 
-    private static Ed25519PublicKeyParameters getEd25519PublicKey(EdECPoint point)
+    static Ed25519PublicKeyParameters getEd25519PublicKey(EdECPoint point)
         throws InvalidKeyException
     {
         byte[] keyData = getPublicKeyData(Ed25519PublicKeyParameters.KEY_SIZE, point);
@@ -102,7 +102,7 @@ public class SignatureSpi
         return new Ed25519PublicKeyParameters(keyData, 0);
     }
 
-    private static Ed448PrivateKeyParameters getEd448PrivateKey(byte[] keyData)
+    static Ed448PrivateKeyParameters getEd448PrivateKey(byte[] keyData)
         throws InvalidKeyException
     {
         if (Ed448PrivateKeyParameters.KEY_SIZE != keyData.length)
@@ -113,7 +113,7 @@ public class SignatureSpi
         return new Ed448PrivateKeyParameters(keyData, 0);
     }
 
-    private static Ed448PublicKeyParameters getEd448PublicKey(EdECPoint point)
+    static Ed448PublicKeyParameters getEd448PublicKey(EdECPoint point)
         throws InvalidKeyException
     {
         byte[] keyData = getPublicKeyData(Ed448PublicKeyParameters.KEY_SIZE, point);

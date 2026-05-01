@@ -29,7 +29,6 @@ public class JceTlsECDomain
     implements TlsECDomain
 {
     protected final JcaTlsCrypto crypto;
-    protected final TlsECConfig ecConfig;
     protected final ECParameterSpec ecSpec;
     protected final ECCurve ecCurve;
 
@@ -42,7 +41,6 @@ public class JceTlsECDomain
             if (null != spec)
             {
                 this.crypto = crypto;
-                this.ecConfig = ecConfig;
                 this.ecSpec =  spec;
                 this.ecCurve = ECUtil.convertCurve(spec.getCurve(), spec.getOrder(), spec.getCofactor());
                 return;

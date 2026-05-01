@@ -751,7 +751,7 @@ public class EdECTest
         PrivateKeyInfo info = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
 
         isTrue(info.getPublicKeyData() == null);
-        isTrue(info.getVersion().equals(new ASN1Integer(0)));
+        isTrue(info.getVersion().equals(ASN1Integer.ZERO));
 
         kpGen = KeyPairGenerator.getInstance("XDH", "BC");
 
@@ -762,7 +762,7 @@ public class EdECTest
         info = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
 
         isTrue(info.getPublicKeyData() == null);
-        isTrue(info.getVersion().equals(new ASN1Integer(0)));
+        isTrue(info.getVersion().equals(ASN1Integer.ZERO));
 
         System.setProperty("org.bouncycastle.pkcs8.v1_info_only", "false");
 
@@ -775,7 +775,7 @@ public class EdECTest
         info = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
 
         isTrue(info.getPublicKeyData() != null);
-        isTrue(info.getVersion().equals(new ASN1Integer(1)));
+        isTrue(info.getVersion().equals(ASN1Integer.ONE));
 
         kpGen = KeyPairGenerator.getInstance("XDH", "BC");
 
@@ -786,7 +786,7 @@ public class EdECTest
         info = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
 
         isTrue(info.getPublicKeyData() != null);
-        isTrue(info.getVersion().equals(new ASN1Integer(1)));
+        isTrue(info.getVersion().equals(ASN1Integer.ONE));
     }
 
     public static void main(

@@ -25,6 +25,10 @@ public class BcKeyFingerprintCalculator
 
         if (publicPk.getVersion() <= PublicKeyPacket.VERSION_3)
         {
+            if (!(key instanceof RSAPublicBCPGKey))
+            {
+                throw new PGPException("Version 3 OpenPGP keys can only use RSA. Found " + key.getClass().getName());
+            }
             RSAPublicBCPGKey rK = (RSAPublicBCPGKey)key;
 
             try

@@ -56,7 +56,9 @@ public class RegressionTest
         new KMACParamsTest(),
         new DERPrivateTest(),
         new X509AltTest(),
-        new CertIDTest()
+        new CertIDTest(),
+        new IANAObjectIdentifierTest(),
+        new StreamLimitTest()
     };
 
     public static void main(String[] args)

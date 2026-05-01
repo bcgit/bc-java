@@ -178,7 +178,7 @@ public class MessageProtectionTest
                 return new MlsCipherSuite(MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448, new BcMlsSigner(MlsSigner.ed448), new BcMlsKdf(new SHA512Digest()), new BcMlsAead(HPKE.aead_CHACHA20_POLY1305), new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_CHACHA20_POLY1305));
 
             case MLS_256_DHKEMP384_AES256GCM_SHA384_P384:
-                return new MlsCipherSuite(MLS_256_DHKEMP384_AES256GCM_SHA384_P384, new BcMlsSigner(MlsSigner.ecdsa_secp384r1_sha384), new BcMlsKdf(new SHA384Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_P384_SHA348, HPKE.kdf_HKDF_SHA384, HPKE.aead_AES_GCM256));
+                return new MlsCipherSuite(MLS_256_DHKEMP384_AES256GCM_SHA384_P384, new BcMlsSigner(MlsSigner.ecdsa_secp384r1_sha384), new BcMlsKdf(new SHA384Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_P384_SHA384, HPKE.kdf_HKDF_SHA384, HPKE.aead_AES_GCM256));
 
         }
         return null;

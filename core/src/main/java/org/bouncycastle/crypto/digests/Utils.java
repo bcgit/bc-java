@@ -25,7 +25,8 @@ class Utils
         private final String algorithmName;
         private final CryptoServicePurpose purpose;
 
-        public DefaultPropertiesWithPRF(int bitsOfSecurity, int prfBitsOfSecurity, String algorithmName, CryptoServicePurpose purpose)
+        DefaultPropertiesWithPRF(int bitsOfSecurity, int prfBitsOfSecurity, String algorithmName,
+            CryptoServicePurpose purpose)
         {
             this.bitsOfSecurity = bitsOfSecurity;
             this.prfBitsOfSecurity = prfBitsOfSecurity;
@@ -67,7 +68,7 @@ class Utils
         private final String algorithmName;
         private final CryptoServicePurpose purpose;
 
-        public DefaultProperties(int bitsOfSecurity, String algorithmName, CryptoServicePurpose purpose)
+        DefaultProperties(int bitsOfSecurity, String algorithmName, CryptoServicePurpose purpose)
         {
             this.bitsOfSecurity = bitsOfSecurity;
             this.algorithmName = algorithmName;

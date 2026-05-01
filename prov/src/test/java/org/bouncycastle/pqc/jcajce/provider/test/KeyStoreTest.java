@@ -40,7 +40,7 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.McElieceKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 
@@ -116,10 +116,9 @@ public class KeyStoreTest
         store.setCertificateEntry("root ca", rootCA);
 
         // McEliece
-        kpg = KeyPairGenerator.getInstance("McEliece", "BCPQC");
-
-        McElieceKeyGenParameterSpec params = new McElieceKeyGenParameterSpec(9, 33);
-        kpg.initialize(params);
+        kpg = KeyPairGenerator.getInstance("CMCE", "BCPQC");
+        
+        kpg.initialize(CMCEParameterSpec.mceliece348864);
 
         KeyPair mcelieceKp = kpg.generateKeyPair();
 
@@ -202,7 +201,7 @@ public class KeyStoreTest
     {
         V3TBSCertificateGenerator certGen = new V3TBSCertificateGenerator();
         long time = System.currentTimeMillis();
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
@@ -239,7 +238,7 @@ public class KeyStoreTest
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
         certGen.setIssuer(signerName);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));

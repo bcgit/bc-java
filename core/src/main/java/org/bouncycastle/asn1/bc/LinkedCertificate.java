@@ -59,7 +59,7 @@ public class LinkedCertificate
                 switch (tagged.getTagNo())
                 {
                 case 0:
-                    certIssuer = X500Name.getInstance(tagged, false);
+                    certIssuer = X500Name.getInstance(tagged, true); // CHOICE
                     break;
                 case 1:
                     cACerts = GeneralNames.getInstance(tagged, false);
@@ -114,7 +114,7 @@ public class LinkedCertificate
 
         if (certIssuer != null)
         {
-            v.add(new DERTaggedObject(false, 0, certIssuer));
+            v.add(new DERTaggedObject(true, 0, certIssuer)); // CHOICE
         }
         if (cACerts != null)
         {

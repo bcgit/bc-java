@@ -74,7 +74,7 @@ public class PublicMessage
         }
     }
 
-    static public PublicMessage protect(AuthenticatedContent authContent, MlsCipherSuite suite,
+    public static PublicMessage protect(AuthenticatedContent authContent, MlsCipherSuite suite,
                                         byte[] membershipKeyBytes, byte[] groupContextBytes)
         throws IOException
     {

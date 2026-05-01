@@ -1,14 +1,15 @@
 package org.bouncycastle.pqc.crypto.test;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Random;
+import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
+import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyGenerationParameters;
@@ -16,126 +17,140 @@ import org.bouncycastle.pqc.crypto.hqc.HQCKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 
 public class HQCTest
     extends TestCase
 {
-    @Override
-    public String getName()
+    private final SecureRandom RANDOM = new SecureRandom();
+
+    public void testConsistencyHQC128()
     {
-        return "HQC Test";
+        implTestConsistency(HQCParameters.hqc128);
+    }
+
+    public void testConsistencyHQC192()
+    {
+        implTestConsistency(HQCParameters.hqc192);
+    }
+
+    public void testConsistencyHQC256()
+    {
+        implTestConsistency(HQCParameters.hqc256);
     }
 
     public void testVectors()
         throws Exception
     {
-        boolean full = System.getProperty("test.full", "false").equals("true");
-
         String[] files;
         // test cases
         files = new String[]{
-                "hqc-128_kat.rsp",
-                "hqc-192_kat.rsp",
-                "hqc-256_kat.rsp",
+            "PQCkemKAT_2321.rsp",
+            "PQCkemKAT_4602.rsp",
+            "PQCkemKAT_7333.rsp",
         };
 
-        HQCParameters[] listParams = new HQCParameters[]{
+        final HQCParameters[] listParams = new HQCParameters[]{
             HQCParameters.hqc128,
             HQCParameters.hqc192,
             HQCParameters.hqc256
         };
 
-        TestSampler sampler = new TestSampler();
-        for (int fileIndex = 0; fileIndex < files.length; fileIndex++)
+        TestUtils.testTestVector(true, true, "pqc/crypto/hqc", files, new TestUtils.KeyEncapsulationOperation()
         {
-            // System.out.println("Working Directory = " + System.getProperty("user.dir"));
-            String name = files[fileIndex];
-            // System.out.println("testing: " + name);
-            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/hqc", name);
-            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+            int sessionKeySize = 0;
 
-            String line = null;
-            HashMap<String, String> buf = new HashMap<String, String>();
-            Random rnd = new Random(System.currentTimeMillis());
-
-            while ((line = bin.readLine()) != null)
+            @Override
+            public SecureRandom getSecureRandom(byte[] seed)
             {
-                line = line.trim();
+                return new Shake256SecureRandom(seed);
+            }
 
-                if (line.startsWith("#"))
+            @Override
+            public AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random)
+            {
+                HQCParameters parameters = listParams[fileIndex];
+                sessionKeySize = parameters.getSessionKeySize();
+                HQCKeyPairGenerator hqcKeyGen = new HQCKeyPairGenerator();
+                HQCKeyGenerationParameters genParam = new HQCKeyGenerationParameters(random, parameters);
+                hqcKeyGen.init(genParam);
+                return hqcKeyGen;
+            }
+
+            @Override
+            public byte[] getPublicKeyEncoded(AsymmetricKeyParameter pubParams)
+            {
+                return ((HQCPublicKeyParameters)pubParams).getPublicKey();
+            }
+
+            @Override
+            public byte[] getPrivateKeyEncoded(AsymmetricKeyParameter privParams)
+            {
+                return ((HQCPrivateKeyParameters)privParams).getPrivateKey();
+            }
+
+            @Override
+            public EncapsulatedSecretGenerator getKEMGenerator(SecureRandom random)
+            {
+                return new HQCKEMGenerator(random);
+            }
+
+            @Override
+            public EncapsulatedSecretExtractor getKEMExtractor(AsymmetricKeyParameter privParams)
+            {
+                return new HQCKEMExtractor((HQCPrivateKeyParameters)privParams);
+            }
+
+            @Override
+            public int getSessionKeySize()
+            {
+                return sessionKeySize;
+            }
+        });
+    }
+
+    private void implTestConsistency(HQCParameters parameters)
+    {
+        HQCKeyPairGenerator kpg = new HQCKeyPairGenerator();
+        kpg.init(new HQCKeyGenerationParameters(RANDOM, parameters));
+
+        for (int i = 0; i < 10; ++i)
+        {
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            for (int j = 0; j < 10; ++j)
+            {
+                HQCKEMGenerator generator = new HQCKEMGenerator(RANDOM);
+                SecretWithEncapsulation encapsulated = generator.generateEncapsulated(kp.getPublic());
+                byte[] encapSecret = encapsulated.getSecret();
+                byte[] encapsulation = encapsulated.getEncapsulation();
+                assertEquals(parameters.getSessionKeySize() / 8, encapSecret.length);
+                assertEquals(parameters.getEncapsulationLength(), encapsulation.length);
+
+                HQCKEMExtractor extractor = new HQCKEMExtractor((HQCPrivateKeyParameters)kp.getPrivate());
+                byte[] decapSecret = extractor.extractSecret(encapsulation);
+                if (!Arrays.areEqual(encapSecret, decapSecret))
                 {
-                    continue;
-                }
-                if (line.length() == 0)
-                {
-                    if (buf.size() > 0)
-                    {
-                        String count = (String)buf.get("count");
-                        if (sampler.skipTest(count))
-                        {
-                            continue;
-                        }
-                        // System.out.println("test case: " + count);
-
-                        byte[] seed = Hex.decode((String)buf.get("seed")); // seed for bike secure random
-                        byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
-                        byte[] sk = Hex.decode((String)buf.get("sk"));     // private key
-                        byte[] ct = Hex.decode((String)buf.get("ct"));     // ciphertext
-                        byte[] ss = Hex.decode((String)buf.get("ss"));     // session key
-
-                        HQCParameters parameters = listParams[fileIndex];
-
-                        HQCKeyPairGenerator hqcKeyGen = new HQCKeyPairGenerator();
-                        HQCKeyGenerationParameters genParam = new HQCKeyGenerationParameters(new FixedSecureRandom(seed), parameters);
-
-                        //
-                        // Generate keys and test.
-                        //
-
-                        // KEM Keypair
-                        hqcKeyGen.init(genParam);
-                        AsymmetricCipherKeyPair pair = hqcKeyGen.generateKeyPair();
-
-                        HQCPublicKeyParameters generatedPk = (HQCPublicKeyParameters)PublicKeyFactory.createKey(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((HQCPublicKeyParameters)pair.getPublic()));
-                        HQCPrivateKeyParameters generatedSk = (HQCPrivateKeyParameters)PrivateKeyFactory.createKey(PrivateKeyInfoFactory.createPrivateKeyInfo((HQCPrivateKeyParameters)pair.getPrivate()));
-
-                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, generatedPk.getPublicKey()));
-                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, generatedSk.getPrivateKey()));
-
-                        // KEM Encapsulation
-                        HQCKEMGenerator hqcKemGenerator = new HQCKEMGenerator(new FixedSecureRandom(seed));
-                        SecretWithEncapsulation secretWithEnc = hqcKemGenerator.generateEncapsulated(generatedPk);
-                        byte[] secret = secretWithEnc.getSecret();
-                        byte[] c = secretWithEnc.getEncapsulation();
-
-                        assertTrue(name + " " + count + ": ciphertext", Arrays.areEqual(c, ct));
-                        assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(secret, 0, secret.length, ss, 0, secret.length));
-
-                        // KEM Decapsulation
-                        HQCKEMExtractor bikekemExtractor = new HQCKEMExtractor(generatedSk);
-                        byte[] dec_key = bikekemExtractor.extractSecret(c);
-
-                        assertEquals(parameters.getSessionKeySize(), secret.length * 8);
-                        assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
-                    }
-                    buf.clear();
-                    continue;
-                }
-                int a = line.indexOf("=");
-                if (a > -1)
-                {
-                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                    fail("Consistency " + parameters.getName() + " #" + i + "[" + j + "]");
                 }
             }
-            // System.out.println("Testing successful!");
+        }
+    }
+    
+    private static class Shake256SecureRandom
+        extends SecureRandom
+    {
+        private final SHAKEDigest xof = new SHAKEDigest(256);
+
+        Shake256SecureRandom(byte[] seed)
+        {
+            xof.update(seed, 0, seed.length);
+            xof.update((byte) 0);
+        }
+
+        public void nextBytes(byte[] bytes)
+        {
+            xof.doOutput(bytes, 0, bytes.length);
         }
     }
 }

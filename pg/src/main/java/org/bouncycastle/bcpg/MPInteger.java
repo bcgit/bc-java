@@ -3,28 +3,30 @@ package org.bouncycastle.bcpg;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.util.BigIntegers;
+
 /**
  * a multiple precision integer
  */
 public class MPInteger 
     extends BCPGObject
 {
-    BigInteger    value = null;
-    
-    public MPInteger(
-        BCPGInputStream    in)
-        throws IOException
+    private final BigInteger value;
+
+    public MPInteger(BCPGInputStream in) throws IOException
     {
-        int       length = StreamUtil.read2OctetLength(in);
-        byte[]    bytes = new byte[(length + 7) / 8];
-        
-        in.readFully(bytes);
-        
-        value = new BigInteger(1, bytes);
+        /*
+         * TODO RFC 9580 3.2. When parsing an MPI in a version 6 Key, Signature, or Public Key Encrypted
+         * Session Key (PKESK) packet, the implementation MUST check that the encoded length matches the
+         * length starting from the most significant non-zero bit; if it doesn't match, reject the packet as
+         * malformed.
+         */
+        boolean validateLength = false;
+
+        this.value = readMPI(in, validateLength);
     }
-    
-    public MPInteger(
-        BigInteger    value)
+
+    public MPInteger(BigInteger value)
     {
         if (value == null || value.signum() < 0)
         {
@@ -33,27 +35,31 @@ public class MPInteger
 
         this.value = value;
     }
-    
+
     public BigInteger getValue()
     {
         return value;
     }
-    
-    public void encode(
-        BCPGOutputStream    out)
-        throws IOException
+
+    public void encode(BCPGOutputStream out) throws IOException
     {
         StreamUtil.write2OctetLength(out, value.bitLength());
+        BigIntegers.writeUnsignedByteArray(out, value);
+    }
 
-        byte[]    bytes = value.toByteArray();
-        
-        if (bytes[0] == 0)
+    private static BigInteger readMPI(BCPGInputStream in, boolean validateLength) throws IOException
+    {
+        int bitLength = StreamUtil.read2OctetLength(in);
+        int byteLength = (bitLength + 7) / 8;
+        byte[] bytes = new byte[byteLength];
+        in.readFully(bytes);
+        BigInteger n = new BigInteger(1, bytes);
+
+        if (validateLength && n.bitLength() != bitLength)
         {
-            out.write(bytes, 1, bytes.length - 1);
+            throw new IOException("malformed MPI");
         }
-        else
-        {
-            out.write(bytes, 0, bytes.length);
-        }
+
+        return n;
     }
 }

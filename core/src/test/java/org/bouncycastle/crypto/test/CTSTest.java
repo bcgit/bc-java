@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -14,6 +16,7 @@ import org.bouncycastle.crypto.modes.OldCTSBlockCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -23,22 +26,22 @@ import org.bouncycastle.util.test.SimpleTest;
 public class CTSTest
     extends SimpleTest
 {
-    static byte[]   in1 = Hex.decode("4e6f7720697320746865207420");
-    static byte[]   in2 = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f0aaa");
-    static byte[]   out1 = Hex.decode("9952f131588465033fa40e8a98");
-    static byte[]   out2 = Hex.decode("358f84d01eb42988dc34efb994");
-    static byte[]   out3 = Hex.decode("170171cfad3f04530c509b0c1f0be0aefbd45a8e3755a873bff5ea198504b71683c6");
-    
+    static byte[] in1 = Hex.decode("4e6f7720697320746865207420");
+    static byte[] in2 = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f0aaa");
+    static byte[] out1 = Hex.decode("9952f131588465033fa40e8a98");
+    static byte[] out2 = Hex.decode("358f84d01eb42988dc34efb994");
+    static byte[] out3 = Hex.decode("170171cfad3f04530c509b0c1f0be0aefbd45a8e3755a873bff5ea198504b71683c6");
+
     private void testCTS(
-        int                 id,
-        BlockCipher         cipher,
-        CipherParameters    params,
-        byte[]              input,
-        byte[]              output)
+        int id,
+        BlockCipher cipher,
+        CipherParameters params,
+        byte[] input,
+        byte[] output)
         throws Exception
     {
-        byte[]                  out = new byte[input.length];
-        BufferedBlockCipher     engine = new CTSBlockCipher(cipher);
+        byte[] out = new byte[input.length];
+        BufferedBlockCipher engine = new CTSBlockCipher(cipher);
 
         engine.init(true, params);
 
@@ -64,15 +67,15 @@ public class CTSTest
     }
 
     private void testOldCTS(
-            int                 id,
-            BlockCipher         cipher,
-            CipherParameters    params,
-            byte[]              input,
-            byte[]              output)
-    throws Exception
+        int id,
+        BlockCipher cipher,
+        CipherParameters params,
+        byte[] input,
+        byte[] output)
+        throws Exception
     {
-        byte[]                  out = new byte[input.length];
-        BufferedBlockCipher     engine = new OldCTSBlockCipher(cipher);
+        byte[] out = new byte[input.length];
+        BufferedBlockCipher engine = new OldCTSBlockCipher(cipher);
 
         engine.init(true, params);
 
@@ -97,64 +100,146 @@ public class CTSTest
         }
     }
 
-    private void testExceptions() throws InvalidCipherTextException
+    private void testExceptions()
+        throws InvalidCipherTextException
     {
         BufferedBlockCipher engine = new CTSBlockCipher(new DESEngine());
         CipherParameters params = new KeyParameter(new byte[engine.getBlockSize()]);
         engine.init(true, params);
 
         byte[] out = new byte[engine.getOutputSize(engine.getBlockSize())];
-        
+
         engine.processBytes(new byte[engine.getBlockSize() - 1], 0, engine.getBlockSize() - 1, out, 0);
-        try 
+        try
         {
             engine.doFinal(out, 0);
             fail("Expected CTS encrypt error on < 1 block input");
-        } catch(DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             // Expected
         }
 
         engine.init(true, params);
         engine.processBytes(new byte[engine.getBlockSize()], 0, engine.getBlockSize(), out, 0);
-        try 
+        try
         {
             engine.doFinal(out, 0);
-        } catch(DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail("Unexpected CTS encrypt error on == 1 block input");
         }
 
         engine.init(false, params);
         engine.processBytes(new byte[engine.getBlockSize() - 1], 0, engine.getBlockSize() - 1, out, 0);
-        try 
+        try
         {
             engine.doFinal(out, 0);
             fail("Expected CTS decrypt error on < 1 block input");
-        } catch(DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             // Expected
         }
 
         engine.init(false, params);
         engine.processBytes(new byte[engine.getBlockSize()], 0, engine.getBlockSize(), out, 0);
-        try 
+        try
         {
             engine.doFinal(out, 0);
-        } catch(DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail("Unexpected CTS decrypt error on == 1 block input");
         }
 
-        try 
+        try
         {
             new CTSBlockCipher(SICBlockCipher.newInstance(AESEngine.newInstance()));
             fail("Expected CTS construction error - only ECB/CBC supported.");
-        } catch(IllegalArgumentException e)
+        }
+        catch (IllegalArgumentException e)
         {
             // Expected
         }
 
+    }
+
+    private void testOverlapping()
+        throws Exception
+    {
+        //Skip the dofinal of the test
+        CTSBlockCipher bc = new CTSBlockCipher(AESEngine.newInstance());
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        random.nextBytes(keyBytes);
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        int offset = 1 + random.nextInt(bc.getBlockSize() - 1) + bc.getBlockSize();
+        byte[] data = new byte[bc.getBlockSize() * 4 + offset];
+        byte[] expected = new byte[bc.getOutputSize(bc.getBlockSize() * 3)];
+        random.nextBytes(data);
+
+        bc.init(true, key);
+        int len = bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.doFinal(expected, len);
+        bc.init(true, key);
+        len = bc.processBytes(data, 0, expected.length, data, offset);
+        bc.doFinal(data, offset + len);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping encryption");
+        }
+
+        bc.init(false, key);
+        bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.init(false, key);
+        bc.processBytes(data, 0, expected.length, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping decryption");
+        }
+    }
+
+    private void testOverlapping2()
+        throws Exception
+    {
+        //Skip the dofinal of the test
+        OldCTSBlockCipher bc = new OldCTSBlockCipher(AESEngine.newInstance());
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        random.nextBytes(keyBytes);
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        int offset = 1 + random.nextInt(bc.getBlockSize() - 1) + bc.getBlockSize();
+        byte[] data = new byte[bc.getBlockSize() * 4 + offset];
+        byte[] expected = new byte[bc.getOutputSize(bc.getBlockSize() * 3)];
+        random.nextBytes(data);
+
+        bc.init(true, key);
+        int len = bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.doFinal(expected, len);
+        bc.init(true, key);
+        len = bc.processBytes(data, 0, expected.length, data, offset);
+        bc.doFinal(data, offset + len);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping encryption");
+        }
+
+        bc.init(false, key);
+        bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.init(false, key);
+        bc.processBytes(data, 0, expected.length, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping decryption");
+        }
     }
 
     public String getName()
@@ -162,12 +247,12 @@ public class CTSTest
         return "CTS";
     }
 
-    public void performTest() 
+    public void performTest()
         throws Exception
     {
-        byte[]  key1 = { (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF };
-        byte[]  key2 = { (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF, (byte)0xee, (byte)0xff  };
-        byte[]  iv = { 1, 2, 3, 4, 5, 6, 7, 8 };
+        byte[] key1 = {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
+        byte[] key2 = {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF, (byte)0xee, (byte)0xff};
+        byte[] iv = {1, 2, 3, 4, 5, 6, 7, 8};
 
         testCTS(1, new DESEngine(), new KeyParameter(key1), in1, out1);
         testCTS(2, new CBCBlockCipher(new DESEngine()), new ParametersWithIV(new KeyParameter(key1), iv), in1, out2);
@@ -177,11 +262,11 @@ public class CTSTest
         // test vectors from rfc3962
         //
         byte[] aes128 = Hex.decode("636869636b656e207465726979616b69");
-        byte[] aesIn1  = Hex.decode("4920776f756c64206c696b652074686520");
+        byte[] aesIn1 = Hex.decode("4920776f756c64206c696b652074686520");
         byte[] aesOut1 = Hex.decode("c6353568f2bf8cb4d8a580362da7ff7f97");
-        byte[] aesIn2  = Hex.decode("4920776f756c64206c696b65207468652047656e6572616c20476175277320");
+        byte[] aesIn2 = Hex.decode("4920776f756c64206c696b65207468652047656e6572616c20476175277320");
         byte[] aesOut2 = Hex.decode("fc00783e0efdb2c1d445d4c8eff7ed2297687268d6ecccc0c07b25e25ecfe5");
-        byte[] aesIn3  = Hex.decode("4920776f756c64206c696b65207468652047656e6572616c2047617527732043");
+        byte[] aesIn3 = Hex.decode("4920776f756c64206c696b65207468652047656e6572616c2047617527732043");
         byte[] aesOut3 = Hex.decode("39312523a78662d5be7fcbcc98ebf5a897687268d6ecccc0c07b25e25ecfe584");
 
         testCTS(4, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn1, aesOut1);
@@ -202,16 +287,18 @@ public class CTSTest
         testOldCTS(9, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, preErrata);
 
         byte[] aes128b = Hex.decode("aafd12f659cae63489b479e5076ddec2f06cb58faafd12f6");
-        byte[] aesIn1b  = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
+        byte[] aesIn1b = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
         byte[] aesOut1b = Hex.decode("6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04");
 
         testCTS(10, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
 
         testExceptions();
+        testOverlapping();
+        testOverlapping2();
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         runTest(new CTSTest());
     }

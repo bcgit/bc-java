@@ -17,7 +17,11 @@ public class HPKE
 
     // kems
     public static final short kem_P256_SHA256 = 16;
+    /**
+     * @deprecated use kem_P384_SHA384
+     */
     public static final short kem_P384_SHA348 = 17;
+    public static final short kem_P384_SHA384 = 17;
     public static final short kem_P521_SHA512 = 18;
     public static final short kem_X25519_SHA256 = 32;
     public static final short kem_X448_SHA512 = 33;
@@ -42,6 +46,7 @@ public class HPKE
     private final short aeadId;
     private final KEM kem;
     private final HKDF hkdf;
+    private final int encSize;
 
     short Nk;
 
@@ -67,13 +72,35 @@ public class HPKE
         {
             Nk = 32;
         }
+        this.encSize = kem.getEncryptionSize();
+    }
 
+    public HPKE(byte mode, short kemId, short kdfId, short aeadId, KEM kem, int encSize)
+    {
+        this.mode = mode;
+        this.kemId = kemId;
+        this.kdfId = kdfId;
+        this.aeadId = aeadId;
+        this.hkdf = new HKDF(kdfId);
+        this.kem = kem;
+
+        if (aeadId == aead_AES_GCM128)
+        {
+            Nk = 16;
+        }
+        else
+        {
+            Nk = 32;
+        }
+
+        this.encSize = encSize;
     }
 
     public int getEncSize()
     {
-        return kem.getEncryptionSize();
+        return encSize;
     }
+
     public short getAeadId()
     {
         return aeadId;

@@ -24,28 +24,25 @@ public class GOST3410Signer
 
         SecureRandom    random;
 
-        public void init(
-            boolean                 forSigning,
-            CipherParameters        param)
+        public void init(boolean forSigning, CipherParameters param)
         {
             if (forSigning)
             {
+                SecureRandom providedRandom = null;
                 if (param instanceof ParametersWithRandom)
                 {
-                    ParametersWithRandom rParam = (ParametersWithRandom)param;
+                    ParametersWithRandom withRandom = (ParametersWithRandom)param;
+                    providedRandom = withRandom.getRandom();
+                    param = withRandom.getParameters();
+                }
 
-                    this.random = rParam.getRandom();
-                    this.key = (GOST3410PrivateKeyParameters)rParam.getParameters();
-                }
-                else
-                {
-                    this.random = CryptoServicesRegistrar.getSecureRandom();
-                    this.key = (GOST3410PrivateKeyParameters)param;
-                }
+                this.key = (GOST3410PrivateKeyParameters)param;
+                this.random = CryptoServicesRegistrar.getSecureRandom(providedRandom);
             }
             else
             {
                 this.key = (GOST3410PublicKeyParameters)param;
+                this.random = null;
             }
 
             CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("GOST3410", key, forSigning));

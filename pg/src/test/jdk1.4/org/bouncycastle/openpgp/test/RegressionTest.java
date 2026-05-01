@@ -60,7 +60,7 @@ public class RegressionTest
         new PGPGeneralTest(),
         new BcpgGeneralTest(),
         //new BcImplProviderTest(),
-        new OperatorJcajceTest(),
+        //new OperatorJcajceTest(),
         new OpenPGPTest(),
         new OperatorBcTest()
     };

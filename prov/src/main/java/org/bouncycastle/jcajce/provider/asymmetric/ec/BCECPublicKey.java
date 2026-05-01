@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
@@ -32,7 +33,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
 
 public class BCECPublicKey
-    implements ECPublicKey, org.bouncycastle.jce.interfaces.ECPublicKey, ECPointEncoder
+    implements ECPublicKey, org.bouncycastle.jce.interfaces.ECPublicKey, ECPointEncoder, BCKey
 {
     static final long serialVersionUID = 2422789860422731812L;
 

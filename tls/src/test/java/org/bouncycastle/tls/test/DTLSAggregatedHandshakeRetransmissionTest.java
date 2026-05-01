@@ -6,8 +6,8 @@ import org.bouncycastle.tls.DTLSServerProtocol;
 import org.bouncycastle.tls.DTLSTransport;
 import org.bouncycastle.tls.DTLSVerifier;
 import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -18,12 +18,15 @@ public class DTLSAggregatedHandshakeRetransmissionTest
 {
     public void testClientServer() throws Exception
     {
+        MockDTLSClient client = new MockDTLSClient(null);
+        MockDTLSServer server = new MockDTLSServer();
+
         DTLSClientProtocol clientProtocol = new DTLSClientProtocol();
         DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
         MockDatagramAssociation network = new MockDatagramAssociation(1500);
 
-        ServerThread serverThread = new ServerThread(serverProtocol, network.getServer());
+        ServerThread serverThread = new ServerThread(serverProtocol, server, network.getServer());
         serverThread.start();
 
         DatagramTransport clientTransport = network.getClient();
@@ -33,8 +36,6 @@ public class DTLSAggregatedHandshakeRetransmissionTest
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
 
         clientTransport = new MinimalHandshakeAggregator(clientTransport, false, true);
-
-        MockDTLSClient client = new MockDTLSClient(null);
 
         client.setHandshakeTimeoutMillis(30000);    // Test gets stuck, so we need it to time out.
 
@@ -61,12 +62,14 @@ public class DTLSAggregatedHandshakeRetransmissionTest
         extends Thread
     {
         private final DTLSServerProtocol serverProtocol;
+        private final TlsServer server;
         private final DatagramTransport serverTransport;
         private volatile boolean isShutdown = false;
 
-        ServerThread(DTLSServerProtocol serverProtocol, DatagramTransport serverTransport)
+        ServerThread(DTLSServerProtocol serverProtocol, TlsServer server, DatagramTransport serverTransport)
         {
             this.serverProtocol = serverProtocol;
+            this.server = server;
             this.serverTransport = serverTransport;
         }
 
@@ -74,7 +77,7 @@ public class DTLSAggregatedHandshakeRetransmissionTest
         {
             try
             {
-                TlsCrypto serverCrypto = new BcTlsCrypto();
+                TlsCrypto serverCrypto = server.getCrypto();
 
                 DTLSRequest request = null;
 
@@ -105,7 +108,6 @@ public class DTLSAggregatedHandshakeRetransmissionTest
 
                 // NOTE: A real server would handle each DTLSRequest in a new task/thread and continue accepting
                 {
-                    MockDTLSServer server = new MockDTLSServer(serverCrypto);
                     DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport, request);
                     byte[] buf = new byte[dtlsTransport.getReceiveLimit()];
                     while (!isShutdown)

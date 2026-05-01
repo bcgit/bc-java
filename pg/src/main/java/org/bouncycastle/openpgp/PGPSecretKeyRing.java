@@ -260,17 +260,19 @@ public class PGPSecretKeyRing
     @Override
     public PGPPublicKey getPublicKey(KeyIdentifier identifier)
     {
-        for (PGPSecretKey k : keys)
+        for (Iterator it = keys.iterator(); it.hasNext();)
         {
-            if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (k.getPublicKey() != null && identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 return k.getPublicKey();
             }
         }
 
-        for (PGPPublicKey k : extraPubKeys)
+        for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
         {
-            if (identifier.matches(k.getKeyIdentifier()))
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -281,18 +283,20 @@ public class PGPSecretKeyRing
     @Override
     public Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier)
     {
-        List<PGPPublicKey> matches = new ArrayList<>();
-        for (PGPSecretKey k : keys)
+        List<PGPPublicKey> matches = new ArrayList<PGPPublicKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
         {
-            if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (k.getPublicKey() != null && identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 matches.add(k.getPublicKey());
             }
         }
 
-        for (PGPPublicKey k : extraPubKeys)
+        for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
         {
-            if (identifier.matches(k.getKeyIdentifier()))
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }
@@ -302,9 +306,10 @@ public class PGPSecretKeyRing
 
     public PGPSecretKey getSecretKey(KeyIdentifier identifier)
     {
-        for (PGPSecretKey k : keys)
+        for (Iterator it = keys.iterator(); it.hasNext();)
         {
-            if (identifier.matches(k.getKeyIdentifier()))
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -314,10 +319,11 @@ public class PGPSecretKeyRing
 
     public Iterator<PGPSecretKey> getSecretKeys(KeyIdentifier identifier)
     {
-        List<PGPSecretKey> matches = new ArrayList<>();
-        for (PGPSecretKey k : keys)
+        List<PGPSecretKey> matches = new ArrayList<PGPSecretKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
         {
-            if (identifier.matches(k.getKeyIdentifier()))
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }
@@ -353,9 +359,10 @@ public class PGPSecretKeyRing
     @Override
     public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier)
     {
-        List<PGPPublicKey> keysWithSigs = new ArrayList<>();
-        for (PGPSecretKey k : keys)
+        List<PGPPublicKey> keysWithSigs = new ArrayList<PGPPublicKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
         {
+            PGPSecretKey k = (PGPSecretKey)it.next();
             if (k.getPublicKey() == null)
             {
                 continue;
@@ -366,8 +373,9 @@ public class PGPSecretKeyRing
                 keysWithSigs.add(k.getPublicKey());
             }
         }
-        for (PGPPublicKey k : extraPubKeys)
+        for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
         {
+            PGPPublicKey k = (PGPPublicKey)it.next();
             Iterator<PGPSignature> sigIt = k.getSignaturesForKey(identifier);
             if (sigIt.hasNext())
             {
@@ -484,6 +492,22 @@ public class PGPSecretKeyRing
         return keys.size();
     }
 
+    /**
+     * Return the OpenPGP certificate (Transferable Public Key) of this key.
+     *
+     * @return certificate
+     */
+    public PGPPublicKeyRing toCertificate()
+    {
+        List<PGPPublicKey> pubKeys = new ArrayList<PGPPublicKey>();
+        Iterator<PGPPublicKey> it = getPublicKeys();
+        while (it.hasNext())
+        {
+            pubKeys.add(it.next());
+        }
+        return new PGPPublicKeyRing(pubKeys);
+    }
+
     public byte[] getEncoded()
         throws IOException
     {
@@ -491,7 +515,8 @@ public class PGPSecretKeyRing
     }
 
     @Override
-    public byte[] getEncoded(PacketFormat format) throws IOException
+    public byte[] getEncoded(PacketFormat format)
+        throws IOException
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);

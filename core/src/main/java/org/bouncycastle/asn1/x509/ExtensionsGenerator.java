@@ -16,7 +16,6 @@ import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.util.Arrays;
 
 /**
  * Generator for X.509 extensions
@@ -55,13 +54,17 @@ public class ExtensionsGenerator
      * @param critical true if critical, false otherwise.
      * @param value    the ASN.1 object to be included in the extension.
      */
-    public void addExtension(
-        ASN1ObjectIdentifier oid,
-        boolean critical,
-        ASN1Encodable value)
-        throws IOException
+    public void addExtension(ASN1ObjectIdentifier oid, boolean critical, ASN1Encodable value) throws IOException
     {
-        this.addExtension(oid, critical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER));
+        Extension existingExtension = (Extension)extensions.get(oid);
+        if (existingExtension != null)
+        {
+            implAddExtensionDup(existingExtension, critical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER));
+        }
+        else
+        {
+            implAddExtension(new Extension(oid, critical, new DEROctetString(value)));
+        }
     }
 
     /**
@@ -72,47 +75,16 @@ public class ExtensionsGenerator
      * @param critical true if critical, false otherwise.
      * @param value    the byte array to be wrapped.
      */
-    public void addExtension(
-        ASN1ObjectIdentifier oid,
-        boolean critical,
-        byte[] value)
+    public void addExtension(ASN1ObjectIdentifier oid, boolean critical, byte[] value)
     {
-        if (extensions.containsKey(oid))
+        Extension existingExtension = (Extension)extensions.get(oid);
+        if (existingExtension != null)
         {
-            if (dupsAllowed.contains(oid))
-            {
-                Extension existingExtension = (Extension)extensions.get(oid);
-                ASN1Sequence seq1 = ASN1Sequence.getInstance(DEROctetString.getInstance(existingExtension.getExtnValue()).getOctets());
-                ASN1Sequence seq2 = ASN1Sequence.getInstance(value);
-
-                ASN1EncodableVector items = new ASN1EncodableVector(seq1.size() + seq2.size());
-                for (Enumeration en = seq1.getObjects(); en.hasMoreElements();)
-                {
-                    items.add((ASN1Encodable)en.nextElement());
-                }
-                for (Enumeration en = seq2.getObjects(); en.hasMoreElements();)
-                {
-                    items.add((ASN1Encodable)en.nextElement());
-                }
-                
-                try
-                {
-                    extensions.put(oid, new Extension(oid, critical, new DERSequence(items).getEncoded()));
-                }
-                catch (IOException e)
-                {
-                    throw new ASN1ParsingException(e.getMessage(), e);
-                }
-            }
-            else
-            {
-                throw new IllegalArgumentException("extension " + oid + " already added");
-            }
+            implAddExtensionDup(existingExtension, critical, value);
         }
         else
         {
-            extOrdering.addElement(oid);
-            extensions.put(oid, new Extension(oid, critical, new DEROctetString(Arrays.clone(value))));
+            implAddExtension(new Extension(oid, critical, value));
         }
     }
 
@@ -124,15 +96,31 @@ public class ExtensionsGenerator
     public void addExtension(
         Extension extension)
     {
-        if (extensions.containsKey(extension.getExtnId()))
+        if (hasExtension(extension.getExtnId()))
         {
             throw new IllegalArgumentException("extension " + extension.getExtnId() + " already added");
         }
 
-        extOrdering.addElement(extension.getExtnId());
-        extensions.put(extension.getExtnId(), extension);
+        implAddExtension(extension);
     }
 
+    /** @deprecated Use addExtensions instead. */
+    public void addExtension(Extensions extensions)
+    {
+        addExtensions(extensions);
+    }
+
+    public void addExtensions(Extensions extensions)
+    {
+        ASN1ObjectIdentifier[] oids = extensions.getExtensionOIDs();
+        for (int i = 0; i != oids.length; i++)
+        {
+            ASN1ObjectIdentifier ident = oids[i];
+            Extension ext = extensions.getExtension(ident);
+            addExtension(ASN1ObjectIdentifier.getInstance(ident), ext.isCritical(), ext.getExtnValue().getOctets());
+        }
+    }
+    
     /**
      * Replace an extension with the given oid and the passed in value to be included
      * in the OCTET STRING associated with the extension.
@@ -147,7 +135,7 @@ public class ExtensionsGenerator
         ASN1Encodable value)
         throws IOException
     {
-        this.replaceExtension(oid, critical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER));
+        replaceExtension(new Extension(oid, critical, new DEROctetString(value)));
     }
 
     /**
@@ -163,7 +151,7 @@ public class ExtensionsGenerator
         boolean critical,
         byte[] value)
     {
-        this.replaceExtension(new Extension(oid, critical, value));
+        replaceExtension(new Extension(oid, critical, value));
     }
 
     /**
@@ -174,7 +162,7 @@ public class ExtensionsGenerator
     public void replaceExtension(
         Extension extension)
     {
-        if (!extensions.containsKey(extension.getExtnId()))
+        if (!hasExtension(extension.getExtnId()))
         {
             throw new IllegalArgumentException("extension " + extension.getExtnId() + " not present");
         }
@@ -190,7 +178,7 @@ public class ExtensionsGenerator
     public void removeExtension(
         ASN1ObjectIdentifier oid)
     {
-        if (!extensions.containsKey(oid))
+        if (!hasExtension(oid))
         {
             throw new IllegalArgumentException("extension " + oid + " not present");
         }
@@ -203,7 +191,7 @@ public class ExtensionsGenerator
      * Return if the extension indicated by OID is present.
      *
      * @param oid the OID for the extension of interest.
-     * @return the Extension, or null if it is not present.
+     * @return true if a matching extension is present, false otherwise.
      */
     public boolean hasExtension(ASN1ObjectIdentifier oid)
     {
@@ -214,7 +202,7 @@ public class ExtensionsGenerator
      * Return the current value of the extension for OID.
      *
      * @param oid the OID for the extension we want to fetch.
-     * @return true if a matching extension is present, false otherwise.
+     * @return the Extension, or null if it is not present.
      */
     public Extension getExtension(ASN1ObjectIdentifier oid)
     {
@@ -248,14 +236,41 @@ public class ExtensionsGenerator
         return new Extensions(exts);
     }
 
-    public void addExtension(Extensions extensions)
+    private void implAddExtension(Extension extension)
     {
-        ASN1ObjectIdentifier[] oids = extensions.getExtensionOIDs();
-        for (int i = 0; i != oids.length; i++)
+        extOrdering.addElement(extension.getExtnId());
+        extensions.put(extension.getExtnId(), extension);
+    }
+
+    private void implAddExtensionDup(Extension existingExtension, boolean critical, byte[] value)
+    {
+        ASN1ObjectIdentifier oid = existingExtension.getExtnId();
+        if (!dupsAllowed.contains(oid))
         {
-            ASN1ObjectIdentifier ident = oids[i];
-            Extension ext = extensions.getExtension(ident);
-            addExtension(ASN1ObjectIdentifier.getInstance(ident), ext.isCritical(), ext.getExtnValue().getOctets());
+            throw new IllegalArgumentException("extension " + oid + " already added");
+        }
+
+        ASN1Sequence seq1 = ASN1Sequence.getInstance(
+            DEROctetString.getInstance(existingExtension.getExtnValue()).getOctets());
+        ASN1Sequence seq2 = ASN1Sequence.getInstance(value);
+
+        ASN1EncodableVector items = new ASN1EncodableVector(seq1.size() + seq2.size());
+        for (Enumeration en = seq1.getObjects(); en.hasMoreElements();)
+        {
+            items.add((ASN1Encodable)en.nextElement());
+        }
+        for (Enumeration en = seq2.getObjects(); en.hasMoreElements();)
+        {
+            items.add((ASN1Encodable)en.nextElement());
+        }
+
+        try
+        {
+            extensions.put(oid, new Extension(oid, critical, new DEROctetString(new DERSequence(items))));
+        }
+        catch (IOException e)
+        {
+            throw new ASN1ParsingException(e.getMessage(), e);
         }
     }
 }

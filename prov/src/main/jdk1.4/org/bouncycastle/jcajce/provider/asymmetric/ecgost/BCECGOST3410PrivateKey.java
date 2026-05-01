@@ -47,10 +47,10 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 public class BCECGOST3410PrivateKey
     implements ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
 {
-    private String          algorithm = "ECGOST3410";
-    private boolean         withCompression;
+    private String algorithm = "ECGOST3410";
+    private boolean withCompression;
 
-    private transient BigInteger      d;
+    private transient BigInteger d;
     private transient ECParameterSpec ecSpec;
     private transient ASN1BitString publicKey;
     private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
@@ -60,7 +60,7 @@ public class BCECGOST3410PrivateKey
     }
 
     BCECGOST3410PrivateKey(
-        ECPrivateKey    key)
+        ECPrivateKey key)
     {
         this.d = key.getD();
         this.algorithm = key.getAlgorithm();
@@ -68,19 +68,19 @@ public class BCECGOST3410PrivateKey
     }
 
     public BCECGOST3410PrivateKey(
-        ECPrivateKeySpec    spec)
+        ECPrivateKeySpec spec)
     {
         this.d = spec.getD();
         this.ecSpec = spec.getParams();
     }
 
     public BCECGOST3410PrivateKey(
-        String                  algorithm,
-        ECPrivateKeyParameters  params,
-        BCECGOST3410PublicKey   pubKey,
-        ECParameterSpec         spec)
+        String algorithm,
+        ECPrivateKeyParameters params,
+        BCECGOST3410PublicKey pubKey,
+        ECParameterSpec spec)
     {
-        ECDomainParameters      dp = params.getParameters();
+        ECDomainParameters dp = params.getParameters();
 
         this.algorithm = algorithm;
         this.d = params.getD();
@@ -88,11 +88,11 @@ public class BCECGOST3410PrivateKey
         if (spec == null)
         {
             this.ecSpec = new ECParameterSpec(
-                            dp.getCurve(),
-                            dp.getG(),
-                            dp.getN(),
-                            dp.getH(),
-                            dp.getSeed());
+                dp.getCurve(),
+                dp.getG(),
+                dp.getN(),
+                dp.getH(),
+                dp.getSeed());
         }
         else
         {
@@ -103,8 +103,8 @@ public class BCECGOST3410PrivateKey
     }
 
     public BCECGOST3410PrivateKey(
-        String                  algorithm,
-        ECPrivateKeyParameters  params)
+        String algorithm,
+        ECPrivateKeyParameters params)
     {
         this.algorithm = algorithm;
         this.d = params.getD();
@@ -112,8 +112,8 @@ public class BCECGOST3410PrivateKey
     }
 
     public BCECGOST3410PrivateKey(
-        String             algorithm,
-        BCECGOST3410PrivateKey    key)
+        String algorithm,
+        BCECGOST3410PrivateKey key)
     {
         this.algorithm = algorithm;
         this.d = key.d;
@@ -124,7 +124,7 @@ public class BCECGOST3410PrivateKey
     }
 
     BCECGOST3410PrivateKey(
-        PrivateKeyInfo      info)
+        PrivateKeyInfo info)
         throws IOException
     {
         populateFromPrivKeyInfo(info);
@@ -133,20 +133,20 @@ public class BCECGOST3410PrivateKey
     private void populateFromPrivKeyInfo(PrivateKeyInfo info)
         throws IOException
     {
-        X962Parameters      params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
+        X962Parameters params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
 
         if (params.isNamedCurve())
         {
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
-            X9ECParameters   ecP = ECGOST3410NamedCurves.getByOIDX9(oid);
+            X9ECParameters ecP = ECGOST3410NamedCurves.getByOIDX9(oid);
 
             ecSpec = new ECNamedCurveParameterSpec(
-                                        ECUtil.getCurveName(oid),
-                                        ecP.getCurve(),
-                                        ecP.getG(),
-                                        ecP.getN(),
-                                        ecP.getH(),
-                                        ecP.getSeed());
+                ECUtil.getCurveName(oid),
+                ecP.getCurve(),
+                ecP.getG(),
+                ecP.getN(),
+                ecP.getH(),
+                ecP.getSeed());
         }
         else if (params.isImplicitlyCA())
         {
@@ -154,23 +154,23 @@ public class BCECGOST3410PrivateKey
         }
         else
         {
-            X9ECParameters          ecP = X9ECParameters.getInstance(params.getParameters());
+            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
             ecSpec = new ECParameterSpec(ecP.getCurve(),
-                                            ecP.getG(),
-                                            ecP.getN(),
-                                            ecP.getH(),
-                                            ecP.getSeed());
+                ecP.getG(),
+                ecP.getN(),
+                ecP.getH(),
+                ecP.getSeed());
         }
 
         if (info.parsePrivateKey() instanceof ASN1Integer)
         {
-            ASN1Integer          derD = ASN1Integer.getInstance(info.parsePrivateKey());
+            ASN1Integer derD = ASN1Integer.getInstance(info.parsePrivateKey());
 
             this.d = derD.getValue();
         }
         else
         {
-            ECPrivateKeyStructure   ec = new ECPrivateKeyStructure(ASN1Sequence.getInstance(info.parsePrivateKey()));
+            ECPrivateKeyStructure ec = new ECPrivateKeyStructure(ASN1Sequence.getInstance(info.parsePrivateKey()));
 
             this.d = ec.getKey();
             this.publicKey = ec.getPublicKey();
@@ -200,14 +200,14 @@ public class BCECGOST3410PrivateKey
      */
     public byte[] getEncoded()
     {
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        ASN1OutputStream        dOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
-        X962Parameters          params = null;
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ASN1OutputStream dOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
+        X962Parameters params = null;
 
         if (ecSpec instanceof ECNamedCurveParameterSpec)
         {
             ASN1ObjectIdentifier curveOid = ECUtil.getNamedCurveOid(((ECNamedCurveParameterSpec)ecSpec).getName());
-            
+
             params = new X962Parameters(curveOid);
         }
         else if (ecSpec == null)
@@ -222,16 +222,16 @@ public class BCECGOST3410PrivateKey
             ECPoint g = pG.getCurve().createPoint(pG.getAffineXCoord().toBigInteger(), pG.getAffineYCoord().toBigInteger());
 
             X9ECParameters ecP = new X9ECParameters(
-                  p.getCurve(),
-                  new X9ECPoint(g, withCompression),
-                  p.getN(),
-                  p.getH(),
-                  p.getSeed());
+                p.getCurve(),
+                new X9ECPoint(g, withCompression),
+                p.getN(),
+                p.getH(),
+                p.getSeed());
 
             params = new X962Parameters(ecP);
         }
 
-        PrivateKeyInfo        info;
+        PrivateKeyInfo info;
         ECPrivateKeyStructure keyStructure;
 
         if (publicKey != null)
@@ -271,7 +271,7 @@ public class BCECGOST3410PrivateKey
     {
         return (ECParameterSpec)ecSpec;
     }
-    
+
     public BigInteger getD()
     {
         return d;
@@ -279,7 +279,7 @@ public class BCECGOST3410PrivateKey
 
     public void setBagAttribute(
         ASN1ObjectIdentifier oid,
-        ASN1Encodable        attribute)
+        ASN1Encodable attribute)
     {
         attrCarrier.setBagAttribute(oid, attribute);
     }
@@ -294,10 +294,20 @@ public class BCECGOST3410PrivateKey
     {
         return attrCarrier.getBagAttributeKeys();
     }
-    
+
+    public boolean hasFriendlyName()
+    {
+        return attrCarrier.hasFriendlyName();
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        attrCarrier.setFriendlyName(friendlyName);
+    }
+
     public void setPointFormat(String style)
     {
-       withCompression = !("UNCOMPRESSED".equalsIgnoreCase(style));
+        withCompression = !("UNCOMPRESSED".equalsIgnoreCase(style));
     }
 
     ECParameterSpec engineGetSpec()
@@ -332,7 +342,7 @@ public class BCECGOST3410PrivateKey
         return getD().hashCode() ^ engineGetSpec().hashCode();
     }
 
-    private ASN1BitString getPublicKeyDetails(BCECGOST3410PublicKey   pub)
+    private ASN1BitString getPublicKeyDetails(BCECGOST3410PublicKey pub)
     {
         try
         {

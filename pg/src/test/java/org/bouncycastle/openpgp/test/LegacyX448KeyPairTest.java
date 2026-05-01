@@ -29,6 +29,19 @@ public class LegacyX448KeyPairTest
     {
         testConversionOfJcaKeyPair();
         testConversionOfBcKeyPair();
+
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("XDH", new BouncyCastleProvider());
+        gen.initialize(new XDHParameterSpec("X448"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.ECDH, kp, date);
+        isEquals("X448 key size mismatch", 448, k.getPublicKey().getBitStrength());
     }
 
     private void testConversionOfJcaKeyPair()

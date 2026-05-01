@@ -1,6 +1,5 @@
 package org.bouncycastle.internal.asn1.misc;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -36,7 +35,7 @@ public class CAST5CBCParameters
         int     keyLength)
     {
         this.iv = new DEROctetString(Arrays.clone(iv));
-        this.keyLength = new ASN1Integer(keyLength);
+        this.keyLength = ASN1Integer.valueOf(keyLength);
     }
 
     private CAST5CBCParameters(
@@ -69,11 +68,6 @@ public class CAST5CBCParameters
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(iv);
-        v.add(keyLength);
-
-        return new DERSequence(v);
+        return new DERSequence(iv, keyLength);
     }
 }

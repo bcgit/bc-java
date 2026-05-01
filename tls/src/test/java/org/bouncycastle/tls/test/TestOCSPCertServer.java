@@ -66,7 +66,7 @@ public class TestOCSPCertServer
         X509Certificate ocspCert = CertChainUtil.createEndEntityCert(
             "CN=OCSP Signing Certificate", signKP.getPublic(), interKP.getPrivate(), interCert, KeyPurposeId.id_kp_OCSPSigning);
 
-        this.chain = new X509CertificateHolder[] {
+        this.chain = new X509CertificateHolder[]{
             new X509CertificateHolder(ocspCert.getEncoded()),
             new X509CertificateHolder(interCert.getEncoded()) };
     }
@@ -100,7 +100,7 @@ public class TestOCSPCertServer
         }
 
         return new PKIXIdentity(PrivateKeyInfo.getInstance(eeKP.getPrivate().getEncoded()),
-            new X509CertificateHolder[] {
+            new X509CertificateHolder[]{
                 new X509CertificateHolder(endEntityCert.getEncoded()),
                 new X509CertificateHolder(interCert.getEncoded())});
     }

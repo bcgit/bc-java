@@ -61,7 +61,7 @@ public class OtherStatusInfo
             {
                 throw new IllegalArgumentException("parsing error: " + e.getMessage());
             }
-        }                          
+        }
         throw new IllegalArgumentException("unknown object in getInstance(): " + obj.getClass().getName());
     }
 

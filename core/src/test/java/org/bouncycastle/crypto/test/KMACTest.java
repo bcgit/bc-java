@@ -1,8 +1,11 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.EncodableService;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -137,7 +140,15 @@ public class KMACTest
         checkKMAC(256, new KMAC(256, null), Hex.decode("eeaabeef"));
         checkKMAC(128, new KMAC(128, new byte[0]), Hex.decode("eeaabeef"));
         checkKMAC(128, new KMAC(128, null), Hex.decode("eeaabeef"));
-        checkKMAC(256, new KMAC(256,  null), Hex.decode("eeaabeef"));
+        checkKMAC(256, new KMAC(256, null), Hex.decode("eeaabeef"));
+
+        byte[] resBuf = new byte[32];
+        byte[] message = Hex.decode("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F");
+        byte[] expected = Hex.decode("059a2eb4961b482ff5bb6a0278d3ad2117b20aafb2f0df33e7748176648c8192");
+
+        testClone(resBuf, message, expected, new KMAC(128, new byte[0]), Hex.decode("eeaabeef"));
+        testMemo(resBuf, message, expected, new KMAC(128, new byte[0]), Hex.decode("eeaabeef"));
+        testEncodedState(resBuf, message, expected, new KMAC(128, new byte[0]), Hex.decode("eeaabeef"));
     }
 
     private void doFinalTest()
@@ -146,7 +157,7 @@ public class KMACTest
 
         kmac.init(new KeyParameter(Hex.decode(
             "404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F")));
-        
+
         kmac.update(Hex.decode("00010203"), 0, 4);
 
         byte[] res = new byte[32];
@@ -236,7 +247,7 @@ public class KMACTest
 
         ref.init(new KeyParameter(new byte[0]));
         kmac.init(new KeyParameter(new byte[0]));
-        
+
         ref.update(msg, 0, msg.length);
         kmac.update(msg, 0, msg.length);
 
@@ -247,6 +258,110 @@ public class KMACTest
         kmac.doFinal(res2, 0, res2.length);
 
         isTrue(Arrays.areEqual(res1, res2));
+    }
+
+    private void testEncodedState(byte[] resBuf, byte[] input, byte[] expected, KMAC kmac, byte[] key)
+    {
+        kmac.init(new KeyParameter(key));
+
+        // test state encoding;
+        kmac.update(input, 0, input.length / 2);
+
+        // copy the Digest
+        Digest copy1 = new KMAC(((EncodableService)kmac).getEncodedState());
+        Digest copy2 = new KMAC(((EncodableService)copy1).getEncodedState());
+
+        kmac.update(input, input.length / 2, input.length - input.length / 2);
+
+        kmac.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing state vector test", expected, new String(Hex.encode(resBuf)));
+        }
+
+        copy1.update(input, input.length / 2, input.length - input.length / 2);
+        copy1.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing state copy1 vector test", expected, new String(Hex.encode(resBuf)));
+        }
+
+        copy2.update(input, input.length / 2, input.length - input.length / 2);
+        copy2.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing state copy2 vector test", expected, new String(Hex.encode(resBuf)));
+        }
+    }
+
+    private void testMemo(byte[] resBuf, byte[] input, byte[] expected, KMAC kmac, byte[] key)
+    {
+        kmac.init(new KeyParameter(key));
+
+        Memoable m = (Memoable)kmac;
+
+        kmac.update(input, 0, input.length / 2);
+
+        // copy the Digest
+        Memoable copy1 = m.copy();
+        Memoable copy2 = copy1.copy();
+
+        kmac.update(input, input.length / 2, input.length - input.length / 2);
+        kmac.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing memo vector test", Hex.toHexString(expected), Hex.toHexString(resBuf));
+        }
+
+        m.reset(copy1);
+
+        kmac.update(input, input.length / 2, input.length - input.length / 2);
+        kmac.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing memo reset vector test", Hex.toHexString(expected), Hex.toHexString(resBuf));
+        }
+
+        KMAC md = (KMAC)copy2;
+
+        md.update(input, input.length / 2, input.length - input.length / 2);
+        md.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing memo copy vector test", Hex.toHexString(expected), Hex.toHexString(resBuf));
+        }
+    }
+
+    private void testClone(byte[] resBuf, byte[] input, byte[] expected, KMAC kmac, byte[] key)
+    {
+        kmac.init(new KeyParameter(key));
+
+        kmac.update(input, 0, input.length / 2);
+
+        // clone the Digest
+        KMAC d = new KMAC(kmac);
+
+        kmac.update(input, input.length / 2, input.length - input.length / 2);
+        kmac.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing clone vector test", Hex.toHexString(expected), Hex.toHexString(resBuf));
+        }
+
+        d.update(input, input.length / 2, input.length - input.length / 2);
+        d.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing second clone vector test", Hex.toHexString(expected), Hex.toHexString(resBuf));
+        }
     }
 
     public static void main(

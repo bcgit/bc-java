@@ -10,9 +10,11 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.BasicTlsPSKExternal;
 import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsPSK;
@@ -24,9 +26,18 @@ import org.bouncycastle.util.Strings;
 class MockPSKTls13Client
     extends AbstractTlsClient
 {
+    private final boolean badKey;
+
     MockPSKTls13Client()
     {
+        this(false);
+    }
+
+    MockPSKTls13Client(boolean badKey)
+    {
         super(new BcTlsCrypto());
+
+        this.badKey = badKey;
     }
 
 //    public Vector getEarlyKeyShareGroups()
@@ -36,7 +47,7 @@ class MockPSKTls13Client
 
 //    public short[] getPskKeyExchangeModes()
 //    {
-//        return new short[] { PskKeyExchangeMode.psk_dhe_ke, PskKeyExchangeMode.psk_ke };
+//        return new short[]{ PskKeyExchangeMode.psk_dhe_ke, PskKeyExchangeMode.psk_ke };
 //    }
 
     protected Vector getProtocolNames()
@@ -60,7 +71,7 @@ class MockPSKTls13Client
     public Vector getExternalPSKs()
     {
         byte[] identity = Strings.toUTF8ByteArray("client");
-        TlsSecret key = getCrypto().createSecret(Strings.toUTF8ByteArray("TLS_TEST_PSK"));
+        TlsSecret key = getCrypto().createSecret(TlsTestUtils.getPSKPasswordUTF8(badKey));
         int prfAlgorithm = PRFAlgorithm.tls13_hkdf_sha256;
 
         return TlsUtils.vectorOfOne(new BasicTlsPSKExternal(identity, key, prfAlgorithm));
@@ -100,7 +111,7 @@ class MockPSKTls13Client
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS 1.3 PSK client negotiated " + serverVersion);
+        System.out.println("TLS 1.3 PSK client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException
@@ -112,10 +123,18 @@ class MockPSKTls13Client
     {
         super.notifyHandshakeComplete();
 
-        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        SecurityParameters securityParameters = context.getSecurityParametersConnection();
+
+        ProtocolName protocolName = securityParameters.getApplicationProtocol();
         if (protocolName != null)
         {
             System.out.println("Client ALPN: " + protocolName.getUtf8Decoding());
+        }
+
+        int negotiatedGroup = securityParameters.getNegotiatedGroup();
+        if (negotiatedGroup >= 0)
+        {
+            System.out.println("Client negotiated group: " + NamedGroup.getText(negotiatedGroup));
         }
     }
 

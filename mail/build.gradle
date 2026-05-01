@@ -1,5 +1,5 @@
 plugins {
-  id "biz.aQute.bnd.builder" version "7.0.0"
+  id "biz.aQute.bnd.builder" version "7.1.0"
 }
 
 jar.archiveBaseName = "bcmail-$vmrange"
@@ -18,7 +18,6 @@ dependencies {
     implementation project(':pkix')
 
     implementation group: 'javax.mail', name: 'mail', version: '1.4'
-    implementation project(path: ':core')
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
@@ -63,6 +62,11 @@ jar {
     manifest.attributes('Export-Package': "org.bouncycastle.mail.*;version=${v}")
     manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,!org.bouncycastle.mail.*,org.bouncycastle.*;version=\"[${v},${maxVersion})\"")
     manifest.attributes('Bundle-Version': "${v}")
+    manifest.attributes('Permissions': 'all-permissions')
+    manifest.attributes('Codebase': '*')
+    manifest.attributes('Application-Library-Allowable-Codebase': '*')
+    manifest.attributes('Caller-Allowable-Codebase': '*') 
+    manifest.attributes('Trusted-Library': 'true')
 }
 
 task sourcesJar(type: Jar) {
@@ -90,6 +94,23 @@ artifacts {
 test {
     forkEvery = 1;
     maxParallelForks = 8;
+    jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcmail-$vmrange"
+            from components.java
+
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+
+    }
+}

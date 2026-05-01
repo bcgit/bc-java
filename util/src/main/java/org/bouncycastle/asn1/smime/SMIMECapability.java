@@ -29,7 +29,7 @@ public class SMIMECapability
     public static final ASN1ObjectIdentifier aES128_CBC = NISTObjectIdentifiers.id_aes128_CBC;
     public static final ASN1ObjectIdentifier aES192_CBC = NISTObjectIdentifiers.id_aes192_CBC;
     public static final ASN1ObjectIdentifier aES256_CBC = NISTObjectIdentifiers.id_aes256_CBC;
-    
+
     private ASN1ObjectIdentifier capabilityID;
     private ASN1Encodable        parameters;
 
@@ -51,7 +51,7 @@ public class SMIMECapability
         this.capabilityID = capabilityID;
         this.parameters = parameters;
     }
-    
+
     public static SMIMECapability getInstance(
         Object obj)
     {
@@ -59,14 +59,14 @@ public class SMIMECapability
         {
             return (SMIMECapability)obj;
         }
-        
+
         if (obj instanceof ASN1Sequence)
         {
             return new SMIMECapability((ASN1Sequence)obj);
         }
-        
+
         throw new IllegalArgumentException("Invalid SMIMECapability");
-    } 
+    }
 
     public ASN1ObjectIdentifier getCapabilityID()
     {
@@ -80,10 +80,10 @@ public class SMIMECapability
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre> 
+     * <pre>
      * SMIMECapability ::= SEQUENCE {
      *     capabilityID OBJECT IDENTIFIER,
-     *     parameters ANY DEFINED BY capabilityID OPTIONAL 
+     *     parameters ANY DEFINED BY capabilityID OPTIONAL
      * }
      * </pre>
      */
@@ -92,12 +92,12 @@ public class SMIMECapability
         ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         v.add(capabilityID);
-        
+
         if (parameters != null)
         {
             v.add(parameters);
         }
-        
+
         return new DERSequence(v);
     }
 }

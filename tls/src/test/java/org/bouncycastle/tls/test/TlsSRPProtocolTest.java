@@ -5,6 +5,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
@@ -24,10 +25,12 @@ public class TlsSRPProtocolTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol);
+        MockSRPTlsClient client = new MockSRPTlsClient(null, MockSRPTlsServer.TEST_SRP_IDENTITY);
+        MockSRPTlsServer server = new MockSRPTlsServer();
+
+        ServerThread serverThread = new ServerThread(serverProtocol, server);
         serverThread.start();
 
-        MockSRPTlsClient client = new MockSRPTlsClient(null, MockSRPTlsServer.TEST_SRP_IDENTITY);
         clientProtocol.connect(client);
 
         // NOTE: Because we write-all before we read-any, this length can't be more than the pipe capacity
@@ -54,17 +57,18 @@ public class TlsSRPProtocolTest
         extends Thread
     {
         private final TlsServerProtocol serverProtocol;
+        private final TlsServer server;
 
-        ServerThread(TlsServerProtocol serverProtocol)
+        ServerThread(TlsServerProtocol serverProtocol, TlsServer server)
         {
             this.serverProtocol = serverProtocol;
+            this.server = server;
         }
 
         public void run()
         {
             try
             {
-                MockSRPTlsServer server = new MockSRPTlsServer();
                 serverProtocol.accept(server);
                 Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
                 serverProtocol.close();

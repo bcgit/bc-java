@@ -1,20 +1,23 @@
 package org.bouncycastle.pqc.crypto.falcon;
 
+import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.Pack;
+
 class FalconKeyGen
 {
-    FPREngine fpr;
-    FalconSmallPrimeList primes;
-    FalconFFT fft;
-    FalconCodec codec;
-    FalconVrfy vrfy;
+    //    FPREngine fpr;
+    //FalconSmallPrimeList primes;
+    //FalconFFT fft;
+//    FalconCodec codec;
+//    FalconVrfy vrfy;
 
     FalconKeyGen()
     {
-        this.fpr = new FPREngine();
-        this.primes = new FalconSmallPrimeList();
-        this.fft = new FalconFFT();
-        this.codec = new FalconCodec();
-        this.vrfy = new FalconVrfy();
+//        this.fpr = new FPREngine();
+        //this.primes = new FalconSmallPrimeList();
+        //this.fft = new FalconFFT();
+//        this.codec = new FalconCodec();
+//        this.vrfy = new FalconVrfy();
     }
 
     private static int mkn(int logn)
@@ -26,11 +29,9 @@ class FalconKeyGen
      * Reduce a small signed integer modulo a small prime. The source
      * value x MUST be such that -p < x < p.
      */
-    int modp_set(int x, int p)
+    private static int modp_set(int x, int p)
     {
-        int w;
-
-        w = x;
+        int w = x;
         w += p & -(w >>> 31);
         return w;
     }
@@ -38,7 +39,7 @@ class FalconKeyGen
     /*
      * Normalize a modular integer around 0.
      */
-    int modp_norm(int x, int p)
+    private static int modp_norm(int x, int p)
     {
         return (x - (p & (((x - ((p + 1) >>> 1)) >>> 31) - 1)));
     }
@@ -47,11 +48,9 @@ class FalconKeyGen
      * Compute -1/p mod 2^31. This works for all odd integers p that fit
      * on 31 bits.
      */
-    int modp_ninv31(int p)
+    private static int modp_ninv31(int p)
     {
-        int y;
-
-        y = 2 - p;
+        int y = 2 - p;
         y *= 2 - p * y;
         y *= 2 - p * y;
         y *= 2 - p * y;
@@ -62,7 +61,7 @@ class FalconKeyGen
     /*
      * Compute R = 2^31 mod p.
      */
-    int modp_R(int p)
+    private static int modp_R(int p)
     {
         /*
          * Since 2^30 < p < 2^31, we know that 2^31 mod p is simply
@@ -74,11 +73,9 @@ class FalconKeyGen
     /*
      * Addition modulo p.
      */
-    int modp_add(int a, int b, int p)
+    private static int modp_add(int a, int b, int p)
     {
-        int d;
-
-        d = a + b - p;
+        int d = a + b - p;
         d += p & -(d >>> 31);
         return d;
     }
@@ -86,11 +83,9 @@ class FalconKeyGen
     /*
      * Subtraction modulo p.
      */
-    int modp_sub(int a, int b, int p)
+    private static int modp_sub(int a, int b, int p)
     {
-        int d;
-
-        d = a - b;
+        int d = a - b;
         d += p & -(d >>> 31);
         return d;
     }
@@ -99,13 +94,13 @@ class FalconKeyGen
      * Montgomery multiplication modulo p. The 'p0i' value is -1/p mod 2^31.
      * It is required that p is an odd integer.
      */
-    int modp_montymul(int a, int b, int p, int p0i)
+    private static int modp_montymul(int a, int b, int p, int p0i)
     {
         long z, w;
         int d;
 
         z = toUnsignedLong(a) * toUnsignedLong(b);
-        w = ((z * p0i) & toUnsignedLong(0x7FFFFFFF)) * p;
+        w = ((z * p0i) & 0x7FFFFFFFL) * p;
         d = (int)((z + w) >>> 31) - p;
         d += p & -(d >>> 31);
         return d;
@@ -114,7 +109,7 @@ class FalconKeyGen
     /*
      * Compute R2 = 2^62 mod p.
      */
-    int modp_R2(int p, int p0i)
+    private static int modp_R2(int p, int p0i)
     {
         int z;
 
@@ -147,7 +142,7 @@ class FalconKeyGen
      * p must be prime such that 2^30 < p < 2^31; p0i must be equal to
      * -1/p mod 2^31; R2 must be equal to 2^62 mod p.
      */
-    int modp_Rx(int x, int p, int p0i, int R2)
+    private static int modp_Rx(int x, int p, int p0i, int R2)
     {
         int i;
         int r, z;
@@ -181,7 +176,7 @@ class FalconKeyGen
      *   p0i   -1/p mod 2^31
      *   R     2^31 mod R
      */
-    int modp_div(int a, int b, int p, int p0i, int R)
+    private static int modp_div(int a, int b, int p, int p0i, int R)
     {
         int z, e;
         int i;
@@ -215,7 +210,7 @@ class FalconKeyGen
     /*
      * Bit-reversal index table.
      */
-    private short REV10[] = {
+    private static final short[] REV10 = {
         0, 512, 256, 768, 128, 640, 384, 896, 64, 576, 320, 832,
         192, 704, 448, 960, 32, 544, 288, 800, 160, 672, 416, 928,
         96, 608, 352, 864, 224, 736, 480, 992, 16, 528, 272, 784,
@@ -317,8 +312,8 @@ class FalconKeyGen
      *
      * p must be a prime such that p = 1 mod 2048.
      */
-    void modp_mkgm2(int[] srcgm, int gm, int[] srcigm, int igm, int logn,
-                    int g, int p, int p0i)
+    private static void modp_mkgm2(int[] srcgm, int gm, int[] srcigm, int igm, int logn,
+                                   int g, int p, int p0i)
     {
         int u, n;
         int k;
@@ -356,8 +351,8 @@ class FalconKeyGen
      * Compute the NTT over a polynomial (binary case). Polynomial elements
      * are a[0], a[stride], a[2 * stride]...
      */
-    void modp_NTT2_ext(int[] srca, int a, int stride, int[] srcgm, int gm, int logn,
-                       int p, int p0i)
+    private static void modp_NTT2_ext(int[] srca, int a, int stride, int[] srcgm, int gm, int logn,
+                                      int p, int p0i)
     {
         int t, m, n;
 
@@ -398,8 +393,8 @@ class FalconKeyGen
     /*
      * Compute the inverse NTT over a polynomial (binary case).
      */
-    void modp_iNTT2_ext(int[] srca, int a, int stride, int[] srcigm, int igm, int logn,
-                        int p, int p0i)
+    private static void modp_iNTT2_ext(int[] srca, int a, int stride, int[] srcigm, int igm, int logn,
+                                       int p, int p0i)
     {
         int t, m, n, k;
         int ni;
@@ -435,7 +430,6 @@ class FalconKeyGen
                     srca[r1] = modp_add(x, y, p);
                     srca[r2] = modp_montymul(
                         modp_sub(x, y, p), s, p, p0i);
-                    ;
                 }
             }
             t = dt;
@@ -458,13 +452,13 @@ class FalconKeyGen
      * are consecutive in RAM.
      */
 //    #define modp_NTT2(a, gm, logn, p, p0i)   modp_NTT2_ext(a, 1, gm, logn, p, p0i)
-    void modp_NTT2(int[] srca, int a, int[] srcgm, int gm, int logn, int p, int p0i)
+    private static void modp_NTT2(int[] srca, int a, int[] srcgm, int gm, int logn, int p, int p0i)
     {
         modp_NTT2_ext(srca, a, 1, srcgm, gm, logn, p, p0i);
     }
 
     //    #define modp_iNTT2(a, igm, logn, p, p0i) modp_iNTT2_ext(a, 1, igm, logn, p, p0i)
-    void modp_iNTT2(int[] srca, int a, int[] srcigm, int igm, int logn, int p, int p0i)
+    private static void modp_iNTT2(int[] srca, int a, int[] srcigm, int igm, int logn, int p, int p0i)
     {
         modp_iNTT2_ext(srca, a, 1, srcigm, igm, logn, p, p0i);
     }
@@ -483,8 +477,8 @@ class FalconKeyGen
      * This function applies only to the binary case; it is invoked from
      * solve_NTRU_binary_depth1().
      */
-    void modp_poly_rec_res(int[] srcf, int f, int logn,
-                           int p, int p0i, int R2)
+    private static void modp_poly_rec_res(int[] srcf, int f, int logn,
+                                          int p, int p0i, int R2)
     {
         int hn, u;
 
@@ -493,7 +487,7 @@ class FalconKeyGen
         {
             int w0, w1;
 
-            w0 = srcf[f + (u << 1) + 0];
+            w0 = srcf[f + (u << 1)];
             w1 = srcf[f + (u << 1) + 1];
             srcf[f + u] = modp_montymul(modp_montymul(w0, w1, p, p0i), R2, p, p0i);
         }
@@ -540,32 +534,30 @@ class FalconKeyGen
      * ctl = 0, the value a[] is unmodified, but all memory accesses are
      * still performed, and the carry is computed and returned.
      */
-    int zint_sub(int[] srca, int a, int[] srcb, int b, int len,
-                 int ctl)
+    private static void zint_sub(int[] srca, int a, int[] srcb, int b, int len,
+                                 int ctl)
     {
         int u;
         int cc, m;
-
+        int aw, w, au;
         cc = 0;
         m = -ctl;
         for (u = 0; u < len; u++)
         {
-            int aw, w;
-
-            aw = srca[a + u];
+            au = a + u;
+            aw = srca[au];
             w = aw - srcb[b + u] - cc;
             cc = w >>> 31;
             aw ^= ((w & 0x7FFFFFFF) ^ aw) & m;
-            srca[a + u] = aw;
+            srca[au] = aw;
         }
-        return cc;
     }
 
     /*
      * Mutiply the provided big integer m with a small value x.
      * This function assumes that x < 2^31. The carry word is returned.
      */
-    int zint_mul_small(int[] srcm, int m, int mlen, int x)
+    private static int zint_mul_small(int[] srcm, int m, int mlen, int x)
     {
         int u;
         int cc;
@@ -591,20 +583,17 @@ class FalconKeyGen
      *  p0i = -(1/p) mod 2^31
      *  R2 = 2^62 mod p
      */
-    int zint_mod_small_unsigned(int[] srcd, int d, int dlen,
-                                int p, int p0i, int R2)
+    private static int zint_mod_small_unsigned(int[] srcd, int d, int dlen,
+                                               int p, int p0i, int R2)
     {
-        int x;
-        int u;
-
         /*
          * Algorithm: we inject words one by one, starting with the high
          * word. Each step is:
          *  - multiply x by 2^31
          *  - add new word
          */
-        x = 0;
-        u = dlen;
+        int x = 0;
+        int u = dlen;
         while (u-- > 0)
         {
             int w;
@@ -621,8 +610,8 @@ class FalconKeyGen
      * Similar to zint_mod_small_unsigned(), except that d may be signed.
      * Extra parameter is Rx = 2^(31*dlen) mod p.
      */
-    int zint_mod_small_signed(int[] srcd, int d, int dlen,
-                              int p, int p0i, int R2, int Rx)
+    private static int zint_mod_small_signed(int[] srcd, int d, int dlen,
+                                             int p, int p0i, int R2, int Rx)
     {
         int z;
 
@@ -640,8 +629,8 @@ class FalconKeyGen
      * has length 'len+1' words. 's' must fit on 31 bits. x[] and y[] must
      * not overlap.
      */
-    void zint_add_mul_small(int[] srcx, int x,
-                            int[] srcy, int y, int len, int s)
+    private static void zint_add_mul_small(int[] srcx, int x,
+                                           int[] srcy, int y, int len, int s)
     {
         int u;
         int cc;
@@ -666,7 +655,7 @@ class FalconKeyGen
      * with x - p (signed encoding with two's complement); otherwise, x is
      * untouched. The two integers x and p are encoded over the same length.
      */
-    void zint_norm_zero(int[] srcx, int x, int[] srcp, int p, int len)
+    private static void zint_norm_zero(int[] srcx, int x, int[] srcp, int p, int len)
     {
         int u;
         int r, bb;
@@ -727,14 +716,14 @@ class FalconKeyGen
      * normalized to the -m/2..m/2 interval (where m is the product of all
      * small prime moduli); two's complement is used for negative values.
      */
-    void zint_rebuild_CRT(int[] srcxx, int xx, int xlen, int xstride,
-                          int num, FalconSmallPrime[] primes, int normalize_signed,
-                          int[] srctmp, int tmp)
+    private static void zint_rebuild_CRT(int[] srcxx, int xx, int xlen, int xstride,
+                                         int num, int normalize_signed,
+                                         int[] srctmp, int tmp)
     {
         int u;
         int x;
 
-        srctmp[tmp + 0] = primes[0].p;
+        srctmp[tmp] = FalconSmallPrimeList.PRIMES[0].p;
         for (u = 1; u < xlen; u++)
         {
             /*
@@ -749,8 +738,8 @@ class FalconKeyGen
             int p, p0i, s, R2;
             int v;
 
-            p = primes[u].p;
-            s = primes[u].s;
+            p = FalconSmallPrimeList.PRIMES[u].p;
+            s = FalconSmallPrimeList.PRIMES[u].s;
             p0i = modp_ninv31(p);
             R2 = modp_R2(p, p0i);
 
@@ -794,7 +783,7 @@ class FalconKeyGen
      * Negate a big integer conditionally: value a is replaced with -a if
      * and only if ctl = 1. Control value ctl must be 0 or 1.
      */
-    void zint_negate(int[] srca, int a, int len, int ctl)
+    private static void zint_negate(int[] srca, int a, int len, int ctl)
     {
         int u;
         int cc, m;
@@ -831,8 +820,8 @@ class FalconKeyGen
      *
      * Coefficients xa, xb, ya and yb may use the full signed 32-bit range.
      */
-    int zint_co_reduce(int[] srca, int a, int[] srcb, int b, int len,
-                       long xa, long xb, long ya, long yb)
+    private static int zint_co_reduce(int[] srca, int a, int[] srcb, int b, int len,
+                                      long xa, long xb, long ya, long yb)
     {
         int u;
         long cca, ccb;
@@ -879,7 +868,7 @@ class FalconKeyGen
      *
      * Modulus m must be odd.
      */
-    void zint_finish_mod(int[] srca, int a, int len, int[] srcm, int m, int neg)
+    private static void zint_finish_mod(int[] srca, int a, int len, int[] srcm, int m, int neg)
     {
         int u;
         int cc, xm, ym;
@@ -923,8 +912,8 @@ class FalconKeyGen
      * Replace a with (a*xa+b*xb)/(2^31) mod m, and b with
      * (a*ya+b*yb)/(2^31) mod m. Modulus m must be odd; m0i = -1/m[0] mod 2^31.
      */
-    void zint_co_reduce_mod(int[] srca, int a, int[] srcb, int b, int[] srcm, int m, int len,
-                            int m0i, long xa, long xb, long ya, long yb)
+    private static void zint_co_reduce_mod(int[] srca, int a, int[] srcb, int b, int[] srcm, int m, int len,
+                                           int m0i, long xa, long xb, long ya, long yb)
     {
         int u;
         long cca, ccb;
@@ -935,8 +924,8 @@ class FalconKeyGen
          */
         cca = 0;
         ccb = 0;
-        fa = ((srca[a + 0] * (int)xa + srcb[b + 0] * (int)xb) * m0i) & 0x7FFFFFFF;
-        fb = ((srca[a + 0] * (int)ya + srcb[b + 0] * (int)yb) * m0i) & 0x7FFFFFFF;
+        fa = ((srca[a] * (int)xa + srcb[b] * (int)xb) * m0i) & 0x7FFFFFFF;
+        fb = ((srca[a] * (int)ya + srcb[b] * (int)yb) * m0i) & 0x7FFFFFFF;
         for (u = 0; u < len; u++)
         {
             int wa, wb;
@@ -984,9 +973,9 @@ class FalconKeyGen
      * extra values of that length. Arrays u, v and tmp may not overlap with
      * each other, or with either x or y.
      */
-    int zint_bezout(int[] srcu, int u, int[] srcv, int v,
-                    int[] srcx, int x, int[] srcy, int y,
-                    int len, int[] srctmp, int tmp)
+    private static int zint_bezout(int[] srcu, int u, int[] srcv, int v,
+                                   int[] srcx, int x, int[] srcy, int y,
+                                   int len, int[] srctmp, int tmp)
     {
         /*
          * Algorithm is an extended binary GCD. We maintain 6 values
@@ -1121,8 +1110,8 @@ class FalconKeyGen
         /*
          * We'll need the Montgomery reduction coefficients.
          */
-        x0i = modp_ninv31(srcx[x + 0]);
-        y0i = modp_ninv31(srcy[y + 0]);
+        x0i = modp_ninv31(srcx[x]);
+        y0i = modp_ninv31(srcy[y]);
 
         /*
          * Initialize a, b, u0, u1, v0 and v1.
@@ -1135,10 +1124,10 @@ class FalconKeyGen
         // memcpy(b, y, len * sizeof *y);
         System.arraycopy(srcy, y, srctmp, b, len);
         // u0[0] = 1;
-        srcu[u0 + 0] = 1;
+        srcu[u0] = 1;
         // memset(u0 + 1, 0, (len - 1) * sizeof *u0);
         // memset(v0, 0, len * sizeof *v0);
-        srcv[v0 + 0] = 0;
+        srcv[v0] = 0;
         for (int i = 1; i < len; i++)
         {
             srcu[u0 + i] = 0;
@@ -1149,7 +1138,7 @@ class FalconKeyGen
         // memcpy(v1, x, len * sizeof *v1);
         System.arraycopy(srcx, x, srctmp, v1, len);
         // v1[0] --;
-        srctmp[v1 + 0]--;
+        srctmp[v1]--;
         /*
          * Each input operand may be as large as 31*len bits, and we
          * reduce the total length by at least 30 bits at each iteration.
@@ -1204,8 +1193,8 @@ class FalconKeyGen
             b0 &= ~c1;
             a_hi = (toUnsignedLong(a0) << 31) + toUnsignedLong(a1);
             b_hi = (toUnsignedLong(b0) << 31) + toUnsignedLong(b1);
-            a_lo = srctmp[a + 0];
-            b_lo = srctmp[b + 0];
+            a_lo = srctmp[a];
+            b_lo = srctmp[b];
 
             /*
              * Compute reduction factors:
@@ -1306,12 +1295,12 @@ class FalconKeyGen
          * is indeed 1. We also check that the two operands x and y
          * are odd.
          */
-        rc = srctmp[a + 0] ^ 1;
+        rc = srctmp[a] ^ 1;
         for (j = 1; j < len; j++)
         {
             rc |= srctmp[a + j];
         }
-        return ((1 - ((rc | -rc) >>> 31)) & srcx[x + 0] & srcy[y + 0]);
+        return ((1 - ((rc | -rc) >>> 31)) & srcx[x] & srcy[y]);
     }
 
     /*
@@ -1325,9 +1314,9 @@ class FalconKeyGen
      * x[] and y[] are both signed integers, using two's complement for
      * negative values.
      */
-    void zint_add_scaled_mul_small(int[] srcx, int x, int xlen,
-                                   int[] srcy, int y, int ylen, int k,
-                                   int sch, int scl)
+    private static void zint_add_scaled_mul_small(int[] srcx, int x, int xlen,
+                                                  int[] srcy, int y, int ylen, int k,
+                                                  int sch, int scl)
     {
         int u;
         int ysign, tw;
@@ -1387,8 +1376,8 @@ class FalconKeyGen
      * x[] and y[] are both signed integers, using two's complement for
      * negative values.
      */
-    void zint_sub_scaled(int[] srcx, int x, int xlen,
-                         int[] srcy, int y, int ylen, int sch, int scl)
+    private static void zint_sub_scaled(int[] srcx, int x, int xlen,
+                                        int[] srcy, int y, int ylen, int sch, int scl)
     {
         int u;
         int ysign, tw;
@@ -1424,11 +1413,11 @@ class FalconKeyGen
     /*
      * Convert a one-word signed big integer into a signed value.
      */
-    int zint_one_to_plain(int[] srcx, int x)
+    private static int zint_one_to_plain(int[] srcx, int x)
     {
         int w;
 
-        w = srcx[x + 0];
+        w = srcx[x];
         w |= (w & 0x40000000) << 1;
         return w;
     }
@@ -1446,8 +1435,8 @@ class FalconKeyGen
      * they should be "trimmed" by pointing not to the lowest word of each,
      * but upper.
      */
-    void poly_big_to_fp(FalconFPR[] srcd, int d, int[] srcf, int f, int flen, int fstride,
-                        int logn)
+    private static void poly_big_to_fp(double[] srcd, int[] srcf, int f, int flen, int fstride,
+                                       int logn)
     {
         int n, u;
 
@@ -1456,7 +1445,7 @@ class FalconKeyGen
         {
             for (u = 0; u < n; u++)
             {
-                srcd[d + u] = fpr.fpr_zero;
+                srcd[u] = FPREngine.fpr_zero;
             }
             return;
         }
@@ -1464,7 +1453,7 @@ class FalconKeyGen
         {
             int v;
             int neg, cc, xm;
-            FalconFPR x, fsc;
+            double x, fsc;
 
             /*
              * Get sign of the integer; if it is negative, then we
@@ -1474,19 +1463,17 @@ class FalconKeyGen
             neg = -(srcf[f + flen - 1] >>> 30);
             xm = neg >>> 1;
             cc = neg & 1;
-            x = fpr.fpr_zero;
-            fsc = fpr.fpr_one;
-            for (v = 0; v < flen; v++, fsc = fpr.fpr_mul(fsc, fpr.fpr_ptwo31))
+            x = FPREngine.fpr_zero;
+            fsc = FPREngine.fpr_one;
+            for (v = 0; v < flen; v++, fsc *= FPREngine.fpr_ptwo31)
             {
-                int w;
-
-                w = (srcf[f + v] ^ xm) + cc;
+                int w = (srcf[f + v] ^ xm) + cc;
                 cc = w >>> 31;
                 w &= 0x7FFFFFFF;
                 w -= (w << 1) & neg;
-                x = fpr.fpr_add(x, fpr.fpr_mul(fpr.fpr_of(w), fsc));
+                x += w * fsc;
             }
-            srcd[d + u] = x;
+            srcd[u] = x;
         }
     }
 
@@ -1500,7 +1487,7 @@ class FalconKeyGen
      * any failure, the NTRU-solving process will be deemed to have failed
      * and the (f,g) polynomials will be discarded.
      */
-    int poly_big_to_small(byte[] srcd, int d, int[] srcs, int s, int lim, int logn)
+    private static int poly_big_to_small(byte[] srcd, int d, int[] srcs, int s, int lim, int logn)
     {
         int n, u;
 
@@ -1529,9 +1516,9 @@ class FalconKeyGen
      * which is efficient in space (no extra buffer needed) but slow at
      * high degree.
      */
-    void poly_sub_scaled(int[] srcF, int F, int Flen, int Fstride,
-                         int[] srcf, int f, int flen, int fstride,
-                         int[] srck, int k, int sch, int scl, int logn)
+    private static void poly_sub_scaled(int[] srcF, int F, int Flen, int Fstride,
+                                        int[] srcf, int f, int flen, int fstride,
+                                        int[] srck, int sch, int scl, int logn)
     {
         int n, u;
 
@@ -1543,7 +1530,7 @@ class FalconKeyGen
             int x;
             int y;
 
-            kf = -srck[k + u];
+            kf = -srck[u];
             x = F + u * Fstride;
             y = f;
             for (v = 0; v < n; v++)
@@ -1570,15 +1557,15 @@ class FalconKeyGen
      * assumes that the degree is large, and integers relatively small.
      * The value sc is provided as sch = sc / 31 and scl = sc % 31.
      */
-    void poly_sub_scaled_ntt(int[] srcF, int F, int Flen, int Fstride,
-                             int[] srcf, int f, int flen, int fstride,
-                             int[] srck, int k, int sch, int scl, int logn,
-                             int[] srctmp, int tmp)
+    private static void poly_sub_scaled_ntt(int[] srcF, int F, int Flen, int Fstride,
+                                            int[] srcf, int f, int flen, int fstride,
+                                            int[] srck, int sch, int scl, int logn,
+                                            int[] srctmp, int tmp)
     {
         int gm, igm, fk, t1, x;
         int y;
         int n, u, tlen;
-        FalconSmallPrime[] primes;
+//        FalconSmallPrime[] primes;
 
         n = mkn(logn);
         tlen = flen + 1;
@@ -1587,7 +1574,7 @@ class FalconKeyGen
         fk = igm + mkn(logn);
         t1 = fk + n * tlen;
 
-        primes = this.primes.PRIMES;
+//        primes = this.primes.PRIMES;
 
         /*
          * Compute k*f in fk[], in RNS notation.
@@ -1597,15 +1584,15 @@ class FalconKeyGen
             int p, p0i, R2, Rx;
             int v;
 
-            p = primes[u].p;
+            p = FalconSmallPrimeList.PRIMES[u].p;
             p0i = modp_ninv31(p);
             R2 = modp_R2(p, p0i);
             Rx = modp_Rx(flen, p, p0i, R2);
-            modp_mkgm2(srctmp, gm, srctmp, igm, logn, primes[u].g, p, p0i);
+            modp_mkgm2(srctmp, gm, srctmp, igm, logn, FalconSmallPrimeList.PRIMES[u].g, p, p0i);
 
             for (v = 0; v < n; v++)
             {
-                srctmp[t1 + v] = modp_set(srck[k + v], p);
+                srctmp[t1 + v] = modp_set(srck[v], p);
             }
             modp_NTT2(srctmp, t1, srctmp, gm, logn, p, p0i);
             for (v = 0, y = f, x = fk + u;
@@ -1625,7 +1612,7 @@ class FalconKeyGen
         /*
          * Rebuild k*f.
          */
-        zint_rebuild_CRT(srctmp, fk, tlen, tlen, n, primes, 1, srctmp, t1);
+        zint_rebuild_CRT(srctmp, fk, tlen, tlen, n, 1, srctmp, t1);
 
         /*
          * Subtract k*f, scaled, from F.
@@ -1644,7 +1631,7 @@ class FalconKeyGen
      * the same values will be obtained over different platforms, in case
      * a known seed is used.
      */
-    long get_rng_u64(SHAKE256 rng)
+    private static long get_rng_u64(SHAKEDigest rng)
     {
         /*
          * We enforce little-endian representation.
@@ -1652,15 +1639,16 @@ class FalconKeyGen
 
         byte[] tmp = new byte[8];
 
-        rng.inner_shake256_extract(tmp, 0, tmp.length);
-        return (tmp[0] & 0xffL)
-            | ((tmp[1] & 0xffL) << 8)
-            | ((tmp[2] & 0xffL) << 16)
-            | ((tmp[3] & 0xffL) << 24)
-            | ((tmp[4] & 0xffL) << 32)
-            | ((tmp[5] & 0xffL) << 40)
-            | ((tmp[6] & 0xffL) << 48)
-            | ((tmp[7] & 0xffL) << 56);
+        rng.doOutput(tmp, 0, tmp.length);
+        return Pack.littleEndianToLong(tmp, 0);
+//        return (tmp[0] & 0xffL)
+//            | ((tmp[1] & 0xffL) << 8)
+//            | ((tmp[2] & 0xffL) << 16)
+//            | ((tmp[3] & 0xffL) << 24)
+//            | ((tmp[4] & 0xffL) << 32)
+//            | ((tmp[5] & 0xffL) << 40)
+//            | ((tmp[6] & 0xffL) << 48)
+//            | ((tmp[7] & 0xffL) << 56);
     }
 
 
@@ -1672,16 +1660,16 @@ class FalconKeyGen
      * For k > 0, element k is P(x >= k+1 | x > 0).
      * Probabilities are scaled up by 2^63.
      */
-    final long[] gauss_1024_12289 = {
-        1283868770400643928l, 6416574995475331444l, 4078260278032692663l,
-        2353523259288686585l, 1227179971273316331l, 575931623374121527l,
-        242543240509105209l, 91437049221049666l, 30799446349977173l,
-        9255276791179340l, 2478152334826140l, 590642893610164l,
-        125206034929641l, 23590435911403l, 3948334035941l,
-        586753615614l, 77391054539l, 9056793210l,
-        940121950l, 86539696l, 7062824l,
-        510971l, 32764l, 1862l,
-        94l, 4l, 0l
+    private static final long[] gauss_1024_12289 = {
+        1283868770400643928L, 6416574995475331444L, 4078260278032692663L,
+        2353523259288686585L, 1227179971273316331L, 575931623374121527L,
+        242543240509105209L, 91437049221049666L, 30799446349977173L,
+        9255276791179340L, 2478152334826140L, 590642893610164L,
+        125206034929641L, 23590435911403L, 3948334035941L,
+        586753615614L, 77391054539L, 9056793210L,
+        940121950L, 86539696L, 7062824L,
+        510971L, 32764L, 1862L,
+        94L, 4L, 0L
     };
 
     /*
@@ -1694,7 +1682,7 @@ class FalconKeyGen
      * sigma*sqrt(2), then we can just generate more values and add them
      * together for lower dimensions.
      */
-    int mkgauss(SHAKE256 rng, int logn)
+    private static int mkgauss(SHAKEDigest rng, int logn)
     {
         int u, g;
         int val;
@@ -1728,7 +1716,7 @@ class FalconKeyGen
              */
             r = get_rng_u64(rng);
             neg = (int)(r >>> 63);
-            r &= ~(1l << 63);
+            r &= ~(1L << 63);
             f = (int)((r - gauss_1024_12289[0]) >>> 63);
 
             /*
@@ -1739,7 +1727,7 @@ class FalconKeyGen
              */
             v = 0;
             r = get_rng_u64(rng);
-            r &= ~(1l << 63);
+            r &= ~(1L << 63);
             for (k = 1; k < gauss_1024_12289.length; k++)
             {
                 int t;
@@ -1819,11 +1807,11 @@ class FalconKeyGen
      * accordingly.
      */
 
-    final int[] MAX_BL_SMALL = {
+    private static final int[] MAX_BL_SMALL = {
         1, 1, 2, 2, 4, 7, 14, 27, 53, 106, 209
     };
 
-    final int[] MAX_BL_LARGE = {
+    private static final int[] MAX_BL_LARGE = {
         2, 2, 5, 7, 12, 21, 40, 78, 157, 308
     };
 
@@ -1832,7 +1820,7 @@ class FalconKeyGen
      * coefficients of (f,g), depending on depth. These values are used
      * to compute bounds for Babai's reduction.
      */
-    final int[] bitlength_avg = {
+    private static final int[] bitlength_avg = {
         4,
         11,
         24,
@@ -1845,7 +1833,7 @@ class FalconKeyGen
         3138,
         6308
     };
-    final int[] bitlength_std = {
+    private static final int[] bitlength_std = {
         0,
         1,
         1,
@@ -1863,13 +1851,13 @@ class FalconKeyGen
      * Minimal recursion depth at which we rebuild intermediate values
      * when reconstructing f and g.
      */
-    final int DEPTH_INT_FG = 4;
+    private static final int DEPTH_INT_FG = 4;
 
     /*
      * Compute squared norm of a short vector. Returned value is saturated to
      * 2^32-1 if it is not lower than 2^31.
      */
-    int poly_small_sqnorm(byte[] srcf, int f, int logn)
+    private static int poly_small_sqnorm(byte[] srcf, int logn)
     {
         int n, u;
         int s, ng;
@@ -1881,7 +1869,7 @@ class FalconKeyGen
         {
             int z;
 
-            z = srcf[f + u];
+            z = srcf[u];
             s += (z * z);
             ng |= s;
         }
@@ -1891,14 +1879,14 @@ class FalconKeyGen
     /*
      * Convert a small vector to floating point.
      */
-    void poly_small_to_fp(FalconFPR[] srcx, int x, byte[] srcf, int f, int logn)
+    private static void poly_small_to_fp(double[] srcx, int x, byte[] srcf, int logn)
     {
         int n, u;
 
         n = mkn(logn);
         for (u = 0; u < n; u++)
         {
-            srcx[x + u] = fpr.fpr_of(srcf[f + u]);
+            srcx[x + u] = srcf[u];
         }
     }
 
@@ -1910,19 +1898,19 @@ class FalconKeyGen
      *
      * Values are in RNS; input and/or output may also be in NTT.
      */
-    void make_fg_step(int[] srcdata, int data, int logn, int depth,
-                      int in_ntt, int out_ntt)
+    private static void make_fg_step(int[] srcdata, int data, int logn, int depth,
+                                     int in_ntt, int out_ntt)
     {
         int n, hn, u;
         int slen, tlen;
         int fd, gd, fs, gs, gm, igm, t1;
-        FalconSmallPrime[] primes;
+        //FalconSmallPrime[] primes;
 
         n = 1 << logn;
         hn = n >> 1;
         slen = MAX_BL_SMALL[depth];
         tlen = MAX_BL_SMALL[depth + 1];
-        primes = this.primes.PRIMES;
+        //primes = FalconSmallPrimeList.PRIMES;
 
         /*
          * Prepare room for the result.
@@ -1947,10 +1935,10 @@ class FalconKeyGen
             int v;
             int x;
 
-            p = primes[u].p;
+            p = FalconSmallPrimeList.PRIMES[u].p;
             p0i = modp_ninv31(p);
             R2 = modp_R2(p, p0i);
-            modp_mkgm2(srcdata, gm, srcdata, igm, logn, primes[u].g, p, p0i);
+            modp_mkgm2(srcdata, gm, srcdata, igm, logn, FalconSmallPrimeList.PRIMES[u].g, p, p0i);
 
             for (v = 0, x = fs + u; v < n; v++, x += slen)
             {
@@ -1964,7 +1952,7 @@ class FalconKeyGen
             {
                 int w0, w1;
 
-                w0 = srcdata[t1 + (v << 1) + 0];
+                w0 = srcdata[t1 + (v << 1)];
                 w1 = srcdata[t1 + (v << 1) + 1];
                 srcdata[x] = modp_montymul(
                     modp_montymul(w0, w1, p, p0i), R2, p, p0i);
@@ -1986,7 +1974,7 @@ class FalconKeyGen
             {
                 int w0, w1;
 
-                w0 = srcdata[t1 + (v << 1) + 0];
+                w0 = srcdata[t1 + (v << 1)];
                 w1 = srcdata[t1 + (v << 1) + 1];
                 srcdata[x] = modp_montymul(
                     modp_montymul(w0, w1, p, p0i), R2, p, p0i);
@@ -2007,8 +1995,8 @@ class FalconKeyGen
          * Since the fs and gs words have been de-NTTized, we can use the
          * CRT to rebuild the values.
          */
-        zint_rebuild_CRT(srcdata, fs, slen, slen, n, primes, 1, srcdata, gm);
-        zint_rebuild_CRT(srcdata, gs, slen, slen, n, primes, 1, srcdata, gm);
+        zint_rebuild_CRT(srcdata, fs, slen, slen, n, 1, srcdata, gm);
+        zint_rebuild_CRT(srcdata, gs, slen, slen, n, 1, srcdata, gm);
 
         /*
          * Remaining words: use modular reductions to extract the values.
@@ -2019,11 +2007,11 @@ class FalconKeyGen
             int v;
             int x;
 
-            p = primes[u].p;
+            p = FalconSmallPrimeList.PRIMES[u].p;
             p0i = modp_ninv31(p);
             R2 = modp_R2(p, p0i);
             Rx = modp_Rx(slen, p, p0i, R2);
-            modp_mkgm2(srcdata, gm, srcdata, igm, logn, primes[u].g, p, p0i);
+            modp_mkgm2(srcdata, gm, srcdata, igm, logn, FalconSmallPrimeList.PRIMES[u].g, p, p0i);
             for (v = 0, x = fs; v < n; v++, x += slen)
             {
                 srcdata[t1 + v] = zint_mod_small_signed(srcdata, x, slen, p, p0i, R2, Rx);
@@ -2033,7 +2021,7 @@ class FalconKeyGen
             {
                 int w0, w1;
 
-                w0 = srcdata[t1 + (v << 1) + 0];
+                w0 = srcdata[t1 + (v << 1)];
                 w1 = srcdata[t1 + (v << 1) + 1];
                 srcdata[x] = modp_montymul(
                     modp_montymul(w0, w1, p, p0i), R2, p, p0i);
@@ -2047,7 +2035,7 @@ class FalconKeyGen
             {
                 int w0, w1;
 
-                w0 = srcdata[t1 + (v << 1) + 0];
+                w0 = srcdata[t1 + (v << 1)];
                 w1 = srcdata[t1 + (v << 1) + 1];
                 srcdata[x] = modp_montymul(
                     modp_montymul(w0, w1, p, p0i), R2, p, p0i);
@@ -2069,23 +2057,23 @@ class FalconKeyGen
      * Space use in data[]: enough room for any two successive values (f', g',
      * f and g).
      */
-    void make_fg(int[] srcdata, int data, byte[] srcf, int f, byte[] srcg, int g,
-                 int logn, int depth, int out_ntt)
+    private static void make_fg(int[] srcdata, int data, byte[] srcf, byte[] srcg,
+                                int logn, int depth, int out_ntt)
     {
         int n, u;
         int ft, gt, p0;
         int d;
-        FalconSmallPrime[] primes;
+
 
         n = mkn(logn);
         ft = data;
         gt = ft + n;
-        primes = this.primes.PRIMES;
-        p0 = primes[0].p;
+
+        p0 = FalconSmallPrimeList.PRIMES[0].p;
         for (u = 0; u < n; u++)
         {
-            srcdata[ft + u] = modp_set(srcf[f + u], p0);
-            srcdata[gt + u] = modp_set(srcg[g + u], p0);
+            srcdata[ft + u] = modp_set(srcf[u], p0);
+            srcdata[gt + u] = modp_set(srcg[u], p0);
         }
 
         if (depth == 0 && out_ntt != 0)
@@ -2093,11 +2081,11 @@ class FalconKeyGen
             int gm, igm;
             int p, p0i;
 
-            p = primes[0].p;
+            p = FalconSmallPrimeList.PRIMES[0].p;
             p0i = modp_ninv31(p);
             gm = gt + n;
             igm = gm + n;
-            modp_mkgm2(srcdata, gm, srcdata, igm, logn, primes[0].g, p, p0i);
+            modp_mkgm2(srcdata, gm, srcdata, igm, logn, FalconSmallPrimeList.PRIMES[0].g, p, p0i);
             modp_NTT2(srcdata, ft, srcdata, gm, logn, p, p0i);
             modp_NTT2(srcdata, gt, srcdata, gm, logn, p, p0i);
             return;
@@ -2117,30 +2105,30 @@ class FalconKeyGen
      *
      * Returned value: 1 on success, 0 on error.
      */
-    int solve_NTRU_deepest(int logn_top,
-                           byte[] srcf, int f, byte[] srcg, int g, int[] srctmp, int tmp)
+    private static int solve_NTRU_deepest(int logn_top,
+                                          byte[] srcf, byte[] srcg, int[] srctmp)
     {
         int len;
         int Fp, Gp, fp, gp, t1, q;
-        FalconSmallPrime[] primes;
+        //FalconSmallPrime[] primes;
 
         len = MAX_BL_SMALL[logn_top];
-        primes = this.primes.PRIMES;
+        //primes = this.primes.PRIMES;
 
-        Fp = tmp;
+        Fp = 0;
         Gp = Fp + len;
         fp = Gp + len;
         gp = fp + len;
         t1 = gp + len;
 
-        make_fg(srctmp, fp, srcf, f, srcg, g, logn_top, logn_top, 0);
+        make_fg(srctmp, fp, srcf, srcg, logn_top, logn_top, 0);
 
         /*
          * We use the CRT to rebuild the resultants as big integers.
          * There are two such big integers. The resultants are always
          * nonnegative.
          */
-        zint_rebuild_CRT(srctmp, fp, len, len, 2, primes, 0, srctmp, t1);
+        zint_rebuild_CRT(srctmp, fp, len, len, 2, 0, srctmp, t1);
 
         /*
          * Apply the binary GCD. The zint_bezout() function works only
@@ -2179,8 +2167,8 @@ class FalconKeyGen
      *
      * Returned value: 1 on success, 0 on error.
      */
-    int solve_NTRU_intermediate(int logn_top,
-                                byte[] srcf, int f, byte[] srcg, int g, int depth, int[] srctmp, int tmp)
+    private static int solve_NTRU_intermediate(int logn_top,
+                                               byte[] srcf, byte[] srcg, int depth, int[] srctmp)
     {
         /*
          * In this function, 'logn' is the log2 of the degree for
@@ -2192,11 +2180,11 @@ class FalconKeyGen
         int logn;
         int n, hn, slen, dlen, llen, rlen, FGlen, u;
         int Fd, Gd, Ft, Gt, ft, gt, t1;
-        FalconFPR[] rt1, rt2, rt3, rt4, rt5;
+        double[] rt1, rt2, rt3, rt4, rt5;
         int scale_fg, minbl_fg, maxbl_fg, maxbl_FG, scale_k;
         int x, y;
         int[] k;
-        FalconSmallPrime[] primes;
+        //FalconSmallPrime[] primes;
 
         logn = logn_top - depth;
         n = 1 << logn;
@@ -2217,12 +2205,12 @@ class FalconKeyGen
         slen = MAX_BL_SMALL[depth];
         dlen = MAX_BL_SMALL[depth + 1];
         llen = MAX_BL_LARGE[depth];
-        primes = this.primes.PRIMES;
+        //primes = this.primes.PRIMES;
 
         /*
          * Fd and Gd are the F and G from the deeper level.
          */
-        Fd = tmp;
+        Fd = 0;
         Gd = Fd + dlen * hn;
 
         /*
@@ -2230,28 +2218,30 @@ class FalconKeyGen
          * and g in RNS + NTT representation.
          */
         ft = Gd + dlen * hn;
-        make_fg(srctmp, ft, srcf, f, srcg, g, logn_top, depth, 1);
+        make_fg(srctmp, ft, srcf, srcg, logn_top, depth, 1);
 
         /*
          * Move the newly computed f and g to make room for our candidate
          * F and G (unreduced).
          */
-        Ft = tmp;
+        Ft = 0;
         Gt = Ft + n * llen;
         t1 = Gt + n * llen;
 //        memmove(t1, ft, 2 * n * slen * sizeof *ft);
-        System.arraycopy(srctmp, ft, srctmp, t1, 2 * n * slen);
+        int tmp = n * slen;
+        System.arraycopy(srctmp, ft, srctmp, t1, tmp + tmp);
         ft = t1;
-        gt = ft + slen * n;
-        t1 = gt + slen * n;
+        gt = ft + tmp;
+        t1 = gt + tmp;
 
         /*
          * Move Fd and Gd _after_ f and g.
          */
 //        memmove(t1, Fd, 2 * hn * dlen * sizeof *Fd);
-        System.arraycopy(srctmp, Fd, srctmp, t1, 2 * hn * dlen);
+        tmp = hn * dlen;
+        System.arraycopy(srctmp, Fd, srctmp, t1, tmp + tmp);
         Fd = t1;
-        Gd = Fd + hn * dlen;
+        Gd = Fd + tmp;
 
         /*
          * We reduce Fd and Gd modulo all the small primes we will need,
@@ -2263,7 +2253,7 @@ class FalconKeyGen
             int v;
             int xs, ys, xd, yd;
 
-            p = primes[u].p;
+            p = FalconSmallPrimeList.PRIMES[u].p;
             p0i = modp_ninv31(p);
             R2 = modp_R2(p, p0i);
             Rx = modp_Rx(dlen, p, p0i, R2);
@@ -2292,7 +2282,7 @@ class FalconKeyGen
             /*
              * All computations are done modulo p.
              */
-            p = primes[u].p;
+            p = FalconSmallPrimeList.PRIMES[u].p;
             p0i = modp_ninv31(p);
             R2 = modp_R2(p, p0i);
 
@@ -2302,8 +2292,8 @@ class FalconKeyGen
              */
             if (u == slen)
             {
-                zint_rebuild_CRT(srctmp, ft, slen, slen, n, primes, 1, srctmp, t1);
-                zint_rebuild_CRT(srctmp, gt, slen, slen, n, primes, 1, srctmp, t1);
+                zint_rebuild_CRT(srctmp, ft, slen, slen, n, 1, srctmp, t1);
+                zint_rebuild_CRT(srctmp, gt, slen, slen, n, 1, srctmp, t1);
             }
 
             gm = t1;
@@ -2311,7 +2301,7 @@ class FalconKeyGen
             fx = igm + n;
             gx = fx + n;
 
-            modp_mkgm2(srctmp, gm, srctmp, igm, logn, primes[u].g, p, p0i);
+            modp_mkgm2(srctmp, gm, srctmp, igm, logn, FalconSmallPrimeList.PRIMES[u].g, p, p0i);
 
             if (u < slen)
             {
@@ -2393,15 +2383,15 @@ class FalconKeyGen
                 int ftA, ftB, gtA, gtB;
                 int mFp, mGp;
 
-                ftA = srctmp[fx + (v << 1) + 0];
+                ftA = srctmp[fx + (v << 1)];
                 ftB = srctmp[fx + (v << 1) + 1];
-                gtA = srctmp[gx + (v << 1) + 0];
+                gtA = srctmp[gx + (v << 1)];
                 gtB = srctmp[gx + (v << 1) + 1];
                 mFp = modp_montymul(srctmp[Fp + v], R2, p, p0i);
                 mGp = modp_montymul(srctmp[Gp + v], R2, p, p0i);
-                srctmp[x + 0] = modp_montymul(gtB, mFp, p, p0i);
+                srctmp[x] = modp_montymul(gtB, mFp, p, p0i);
                 srctmp[x + llen] = modp_montymul(gtA, mFp, p, p0i);
-                srctmp[y + 0] = modp_montymul(ftB, mGp, p, p0i);
+                srctmp[y] = modp_montymul(ftB, mGp, p, p0i);
                 srctmp[y + llen] = modp_montymul(ftA, mGp, p, p0i);
             }
             modp_iNTT2_ext(srctmp, Ft + u, llen, srctmp, igm, logn, p, p0i);
@@ -2411,8 +2401,8 @@ class FalconKeyGen
         /*
          * Rebuild F and G with the CRT.
          */
-        zint_rebuild_CRT(srctmp, Ft, llen, llen, n, primes, 1, srctmp, t1);
-        zint_rebuild_CRT(srctmp, Gt, llen, llen, n, primes, 1, srctmp, t1);
+        zint_rebuild_CRT(srctmp, Ft, llen, llen, n, 1, srctmp, t1);
+        zint_rebuild_CRT(srctmp, Gt, llen, llen, n, 1, srctmp, t1);
 
         /*
          * At that point, Ft, Gt, ft and gt are consecutive in RAM (in that
@@ -2477,11 +2467,11 @@ class FalconKeyGen
          * We ensure that the base is at a properly aligned offset (the
          * source array tmp[] is supposed to be already aligned).
          */
-        rt1 = new FalconFPR[n];
-        rt2 = new FalconFPR[n];
-        rt3 = new FalconFPR[n];
-        rt4 = new FalconFPR[n];
-        rt5 = new FalconFPR[n >> 1];
+        rt1 = new double[n];
+        rt2 = new double[n];
+        rt3 = new double[n];
+        rt4 = new double[n];
+        rt5 = new double[n >> 1];
         k = new int[n];
 
         /*
@@ -2494,9 +2484,9 @@ class FalconKeyGen
          * computed so that average maximum length will fall in the
          * middle or the upper half of these top 10 words.
          */
-        rlen = (slen > 10) ? 10 : slen;
-        poly_big_to_fp(rt3, 0, srctmp, ft + slen - rlen, rlen, slen, logn);
-        poly_big_to_fp(rt4, 0, srctmp, gt + slen - rlen, rlen, slen, logn);
+        rlen = Math.min(slen, 10);
+        poly_big_to_fp(rt3, srctmp, ft + slen - rlen, rlen, slen, logn);
+        poly_big_to_fp(rt4, srctmp, gt + slen - rlen, rlen, slen, logn);
 
         /*
          * Values in rt3 and rt4 are downscaled by 2^(scale_fg).
@@ -2516,11 +2506,11 @@ class FalconKeyGen
          * Compute 1/(f*adj(f)+g*adj(g)) in rt5. We also keep adj(f)
          * and adj(g) in rt3 and rt4, respectively.
          */
-        fft.FFT(rt3, 0, logn);
-        fft.FFT(rt4, 0, logn);
-        fft.poly_invnorm2_fft(rt5, 0, rt3, 0, rt4, 0, logn);
-        fft.poly_adj_fft(rt3, 0, logn);
-        fft.poly_adj_fft(rt4, 0, logn);
+        FalconFFT.FFT(rt3, 0, logn);
+        FalconFFT.FFT(rt4, 0, logn);
+        FalconFFT.poly_invnorm2_fft(rt5, 0, rt3, 0, rt4, 0, logn);
+        FalconFFT.poly_adj_fft(rt3, 0, logn);
+        FalconFFT.poly_adj_fft(rt4, 0, logn);
 
         /*
          * Reduce F and G repeatedly.
@@ -2563,27 +2553,27 @@ class FalconKeyGen
         {
             int scale_FG, dc, new_maxbl_FG;
             int scl, sch;
-            FalconFPR pdc, pt;
+            double pdc, pt;
 
             /*
              * Convert current F and G into floating-point. We apply
              * scaling if the current length is more than 10 words.
              */
-            rlen = (FGlen > 10) ? 10 : FGlen;
-            scale_FG = 31 * (int)(FGlen - rlen);
-            poly_big_to_fp(rt1, 0, srctmp, Ft + FGlen - rlen, rlen, llen, logn);
-            poly_big_to_fp(rt2, 0, srctmp, Gt + FGlen - rlen, rlen, llen, logn);
+            rlen = Math.min(FGlen, 10);
+            scale_FG = 31 * (FGlen - rlen);
+            poly_big_to_fp(rt1, srctmp, Ft + FGlen - rlen, rlen, llen, logn);
+            poly_big_to_fp(rt2, srctmp, Gt + FGlen - rlen, rlen, llen, logn);
 
             /*
              * Compute (F*adj(f)+G*adj(g))/(f*adj(f)+g*adj(g)) in rt2.
              */
-            fft.FFT(rt1, 0, logn);
-            fft.FFT(rt2, 0, logn);
-            fft.poly_mul_fft(rt1, 0, rt3, 0, logn);
-            fft.poly_mul_fft(rt2, 0, rt4, 0, logn);
-            fft.poly_add(rt2, 0, rt1, 0, logn);
-            fft.poly_mul_autoadj_fft(rt2, 0, rt5, 0, logn);
-            fft.iFFT(rt2, 0, logn);
+            FalconFFT.FFT(rt1, 0, logn);
+            FalconFFT.FFT(rt2, 0, logn);
+            FalconFFT.poly_mul_fft(rt1, 0, rt3, 0, logn);
+            FalconFFT.poly_mul_fft(rt2, 0, rt4, 0, logn);
+            FalconFFT.poly_add(rt2, 0, rt1, 0, logn);
+            FalconFFT.poly_mul_autoadj_fft(rt2, 0, rt5, 0, logn);
+            FalconFFT.iFFT(rt2, 0, logn);
 
             /*
              * (f,g) are scaled by 'scale_fg', meaning that the
@@ -2611,28 +2601,26 @@ class FalconKeyGen
             if (dc < 0)
             {
                 dc = -dc;
-                pt = fpr.fpr_two;
+                pt = FPREngine.fpr_two;
             }
             else
             {
-                pt = fpr.fpr_onehalf;
+                pt = FPREngine.fpr_onehalf;
             }
-            pdc = fpr.fpr_one;
+            pdc = FPREngine.fpr_one;
             while (dc != 0)
             {
                 if ((dc & 1) != 0)
                 {
-                    pdc = fpr.fpr_mul(pdc, pt);
+                    pdc = pdc * pt;
                 }
                 dc >>= 1;
-                pt = fpr.fpr_sqr(pt);
+                pt *= pt;
             }
 
             for (u = 0; u < n; u++)
             {
-                FalconFPR xv;
-
-                xv = fpr.fpr_mul(rt2[u], pdc);
+                double xv = rt2[u] * pdc;
 
                 /*
                  * Sometimes the values can be out-of-bounds if
@@ -2643,12 +2631,12 @@ class FalconKeyGen
                  * failure here implies that we discard the current
                  * secret key (f,g).
                  */
-                if (!fpr.fpr_lt(fpr.fpr_mtwo31m1, xv)
-                    || !fpr.fpr_lt(xv, fpr.fpr_ptwo31m1))
+                if (FPREngine.fpr_mtwo31m1 >= xv
+                    || xv >= FPREngine.fpr_ptwo31m1)
                 {
                     return 0;
                 }
-                k[u] = (int)fpr.fpr_rint(xv);
+                k[u] = (int)FPREngine.fpr_rint(xv);
             }
 
             /*
@@ -2663,16 +2651,16 @@ class FalconKeyGen
             if (depth <= DEPTH_INT_FG)
             {
                 poly_sub_scaled_ntt(srctmp, Ft, FGlen, llen, srctmp, ft, slen, slen,
-                    k, 0, sch, scl, logn, srctmp, t1);
+                    k, sch, scl, logn, srctmp, t1);
                 poly_sub_scaled_ntt(srctmp, Gt, FGlen, llen, srctmp, gt, slen, slen,
-                    k, 0, sch, scl, logn, srctmp, t1);
+                    k, sch, scl, logn, srctmp, t1);
             }
             else
             {
                 poly_sub_scaled(srctmp, Ft, FGlen, llen, srctmp, ft, slen, slen,
-                    k, 0, sch, scl, logn);
+                    k, sch, scl, logn);
                 poly_sub_scaled(srctmp, Gt, FGlen, llen, srctmp, gt, slen, slen,
-                    k, 0, sch, scl, logn);
+                    k, sch, scl, logn);
             }
 
             /*
@@ -2735,7 +2723,7 @@ class FalconKeyGen
          * Compress encoding of all values to 'slen' words (this is the
          * expected output format).
          */
-        for (u = 0, x = tmp, y = tmp;
+        for (u = 0, x = 0, y = 0;
              u < (n << 1); u++, x += slen, y += llen)
         {
 //            memmove(x, y, slen * sizeof *y);
@@ -2750,8 +2738,8 @@ class FalconKeyGen
      *
      * Returned value: 1 on success, 0 on error.
      */
-    int solve_NTRU_binary_depth1(int logn_top,
-                                 byte[] srcf, int f, byte[] srcg, int g, int[] srctmp, int tmp)
+    private static int solve_NTRU_binary_depth1(int logn_top,
+                                                byte[] srcf, byte[] srcg, int[] srctmp)
     {
         /*
          * The first half of this function is a copy of the corresponding
@@ -2764,7 +2752,7 @@ class FalconKeyGen
         int depth, logn;
         int n_top, n, hn, slen, dlen, llen, u;
         int Fd, Gd, Ft, Gt, ft, gt, t1;
-        FalconFPR[] rt1, rt2, rt3, rt4, rt5, rt6;
+        double[] rt1, rt2, rt3, rt4, rt5, rt6;
         int x, y;
 
         depth = 1;
@@ -2806,7 +2794,7 @@ class FalconKeyGen
          * Fd and Gd are the F and G from the deeper level. Ft and Gt
          * are the destination arrays for the unreduced F and G.
          */
-        Fd = tmp;
+        Fd = 0;
         Gd = Fd + dlen * hn;
         Ft = Gd + dlen * hn;
         Gt = Ft + llen * n;
@@ -2821,7 +2809,7 @@ class FalconKeyGen
             int v;
             int xs, ys, xd, yd;
 
-            p = this.primes.PRIMES[u].p;
+            p = FalconSmallPrimeList.PRIMES[u].p;
             p0i = modp_ninv31(p);
             R2 = modp_R2(p, p0i);
             Rx = modp_Rx(dlen, p, p0i, R2);
@@ -2838,8 +2826,8 @@ class FalconKeyGen
          * Now Fd and Gd are not needed anymore; we can squeeze them out.
          */
 //        memmove(tmp, Ft, llen * n * sizeof(uint32_t));
-        System.arraycopy(srctmp, Ft, srctmp, tmp, llen * n);
-        Ft = tmp;
+        System.arraycopy(srctmp, Ft, srctmp, 0, llen * n);
+        Ft = 0;
 //        memmove(Ft + llen * n, Gt, llen * n * sizeof(uint32_t));
         System.arraycopy(srctmp, Gt, srctmp, Ft + llen * n, llen * n);
         Gt = Ft + llen * n;
@@ -2861,7 +2849,7 @@ class FalconKeyGen
             /*
              * All computations are done modulo p.
              */
-            p = this.primes.PRIMES[u].p;
+            p = FalconSmallPrimeList.PRIMES[u].p;
             p0i = modp_ninv31(p);
             R2 = modp_R2(p, p0i);
 
@@ -2877,15 +2865,15 @@ class FalconKeyGen
             igm = gm + n_top;
             fx = igm + n;
             gx = fx + n_top;
-            modp_mkgm2(srctmp, gm, srctmp, igm, logn_top, this.primes.PRIMES[u].g, p, p0i);
+            modp_mkgm2(srctmp, gm, srctmp, igm, logn_top, FalconSmallPrimeList.PRIMES[u].g, p, p0i);
 
             /*
              * Set ft and gt to f and g modulo p, respectively.
              */
             for (v = 0; v < n_top; v++)
             {
-                srctmp[fx + v] = modp_set(srcf[f + v], p);
-                srctmp[gx + v] = modp_set(srcg[g + v], p);
+                srctmp[fx + v] = modp_set(srcf[v], p);
+                srctmp[gx + v] = modp_set(srcg[v], p);
             }
 
             /*
@@ -2903,18 +2891,18 @@ class FalconKeyGen
              * From that point onward, we only need tables for
              * degree n, so we can save some space.
              */
-            if (depth > 0)
-            { /* always true */
+//            if (depth > 0)
+//            { /* always true */
 //                memmove(gm + n, igm, n * sizeof *igm);
-                System.arraycopy(srctmp, igm, srctmp, gm + n, n);
-                igm = gm + n;
+            System.arraycopy(srctmp, igm, srctmp, gm + n, n);
+            igm = gm + n;
 //                memmove(igm + n, fx, n * sizeof *ft);
-                System.arraycopy(srctmp, fx, srctmp, igm + n, n);
-                fx = igm + n;
+            System.arraycopy(srctmp, fx, srctmp, igm + n, n);
+            fx = igm + n;
 //                memmove(fx + n, gx, n * sizeof *gt);
-                System.arraycopy(srctmp, gx, srctmp, fx + n, n);
-                gx = fx + n;
-            }
+            System.arraycopy(srctmp, gx, srctmp, fx + n, n);
+            gx = fx + n;
+//            }
 
             /*
              * Get F' and G' modulo p and in NTT representation
@@ -2975,15 +2963,15 @@ class FalconKeyGen
                 int ftA, ftB, gtA, gtB;
                 int mFp, mGp;
 
-                ftA = srctmp[fx + (v << 1) + 0];
+                ftA = srctmp[fx + (v << 1)];
                 ftB = srctmp[fx + (v << 1) + 1];
-                gtA = srctmp[gx + (v << 1) + 0];
+                gtA = srctmp[gx + (v << 1)];
                 gtB = srctmp[gx + (v << 1) + 1];
                 mFp = modp_montymul(srctmp[Fp + v], R2, p, p0i);
                 mGp = modp_montymul(srctmp[Gp + v], R2, p, p0i);
-                srctmp[x + 0] = modp_montymul(gtB, mFp, p, p0i);
+                srctmp[x] = modp_montymul(gtB, mFp, p, p0i);
                 srctmp[x + llen] = modp_montymul(gtA, mFp, p, p0i);
-                srctmp[y + 0] = modp_montymul(ftB, mGp, p, p0i);
+                srctmp[y] = modp_montymul(ftB, mGp, p, p0i);
                 srctmp[y + llen] = modp_montymul(ftA, mGp, p, p0i);
             }
             modp_iNTT2_ext(srctmp, Ft + u, llen, srctmp, igm, logn, p, p0i);
@@ -3010,8 +2998,8 @@ class FalconKeyGen
          * and G are consecutive, and thus can be rebuilt in a single
          * loop; similarly, the elements of f and g are consecutive.
          */
-        zint_rebuild_CRT(srctmp, Ft, llen, llen, n << 1, this.primes.PRIMES, 1, srctmp, t1);
-        zint_rebuild_CRT(srctmp, ft, slen, slen, n << 1, this.primes.PRIMES, 1, srctmp, t1);
+        zint_rebuild_CRT(srctmp, Ft, llen, llen, n << 1, 1, srctmp, t1);
+        zint_rebuild_CRT(srctmp, ft, slen, slen, n << 1, 1, srctmp, t1);
 
         /*
          * Here starts the Babai reduction, specialized for depth = 1.
@@ -3025,31 +3013,31 @@ class FalconKeyGen
          * Convert F and G into floating point (rt1 and rt2).
          */
 //        rt1 = align_fpr(tmp, gt + slen * n);
-        rt1 = new FalconFPR[n];
-        rt2 = new FalconFPR[n];
-        poly_big_to_fp(rt1, 0, srctmp, Ft, llen, llen, logn);
-        poly_big_to_fp(rt2, 0, srctmp, Gt, llen, llen, logn);
+        rt1 = new double[n];
+        rt2 = new double[n];
+        poly_big_to_fp(rt1, srctmp, Ft, llen, llen, logn);
+        poly_big_to_fp(rt2, srctmp, Gt, llen, llen, logn);
 
         /*
          * Integer representation of F and G is no longer needed, we
          * can remove it.
          */
 //        memmove(tmp, ft, 2 * slen * n * sizeof *ft);
-        System.arraycopy(srctmp, ft, srctmp, tmp, 2 * slen * n);
-        ft = tmp;
+        System.arraycopy(srctmp, ft, srctmp, 0, 2 * slen * n);
+        ft = 0;
         gt = ft + slen * n;
 //        rt3 = align_fpr(tmp, gt + slen * n);
 //        memmove(rt3, rt1, 2 * n * sizeof *rt1);
 //        rt1 = rt3;
 //        rt2 = rt1 + n;
-        rt3 = new FalconFPR[n];
-        rt4 = new FalconFPR[n];
+        rt3 = new double[n];
+        rt4 = new double[n];
 
         /*
          * Convert f and g into floating point (rt3 and rt4).
          */
-        poly_big_to_fp(rt3, 0, srctmp, ft, slen, slen, logn);
-        poly_big_to_fp(rt4, 0, srctmp, gt, slen, slen, logn);
+        poly_big_to_fp(rt3, srctmp, ft, slen, slen, logn);
+        poly_big_to_fp(rt4, srctmp, gt, slen, slen, logn);
 
         /*
          * Remove unneeded ft and gt. - not required as we have rt_ in separate array
@@ -3068,10 +3056,10 @@ class FalconKeyGen
          *   rt4 = g
          * in that order in RAM. We convert all of them to FFT.
          */
-        fft.FFT(rt1, 0, logn);
-        fft.FFT(rt2, 0, logn);
-        fft.FFT(rt3, 0, logn);
-        fft.FFT(rt4, 0, logn);
+        FalconFFT.FFT(rt1, 0, logn);
+        FalconFFT.FFT(rt2, 0, logn);
+        FalconFFT.FFT(rt3, 0, logn);
+        FalconFFT.FFT(rt4, 0, logn);
 
         /*
          * Compute:
@@ -3079,16 +3067,16 @@ class FalconKeyGen
          *   rt6 = 1 / (f*adj(f) + g*adj(g))
          * (Note that rt6 is half-length.)
          */
-        rt5 = new FalconFPR[n];
-        rt6 = new FalconFPR[n >> 1];
-        fft.poly_add_muladj_fft(rt5, 0, rt1, 0, rt2, 0, rt3, 0, rt4, 0, logn);
-        fft.poly_invnorm2_fft(rt6, 0, rt3, 0, rt4, 0, logn);
+        rt5 = new double[n];
+        rt6 = new double[n >> 1];
+        FalconFFT.poly_add_muladj_fft(rt5, rt1, rt2, rt3, rt4, logn);
+        FalconFFT.poly_invnorm2_fft(rt6, 0, rt3, 0, rt4, 0, logn);
 
         /*
          * Compute:
          *   rt5 = (F*adj(f)+G*adj(g)) / (f*adj(f)+g*adj(g))
          */
-        fft.poly_mul_autoadj_fft(rt5, 0, rt6, 0, logn);
+        FalconFFT.poly_mul_autoadj_fft(rt5, 0, rt6, 0, logn);
 
         /*
          * Compute k as the rounded version of rt5. Check that none of
@@ -3097,34 +3085,35 @@ class FalconKeyGen
          * note that any out-of-bounds value here implies a failure and
          * (f,g) will be discarded, so we can make a simple test.
          */
-        fft.iFFT(rt5, 0, logn);
+        FalconFFT.iFFT(rt5, 0, logn);
         for (u = 0; u < n; u++)
         {
-            FalconFPR z;
+            double z;
 
             z = rt5[u];
-            if (!fpr.fpr_lt(z, fpr.fpr_ptwo63m1) || !fpr.fpr_lt(fpr.fpr_mtwo63m1, z))
+//            if (!FPREngine.fpr_lt(z, FPREngine.fpr_ptwo63m1) || !FPREngine.fpr_lt(FPREngine.fpr_mtwo63m1, z))
+            if (z >= FPREngine.fpr_ptwo63m1 || FPREngine.fpr_mtwo63m1 >= z)
             {
                 return 0;
             }
-            rt5[u] = fpr.fpr_of(fpr.fpr_rint(z));
+            rt5[u] = FPREngine.fpr_rint(z);
         }
-        fft.FFT(rt5, 0, logn);
+        FalconFFT.FFT(rt5, 0, logn);
 
         /*
          * Subtract k*f from F, and k*g from G.
          */
-        fft.poly_mul_fft(rt3, 0, rt5, 0, logn);
-        fft.poly_mul_fft(rt4, 0, rt5, 0, logn);
-        fft.poly_sub(rt1, 0, rt3, 0, logn);
-        fft.poly_sub(rt2, 0, rt4, 0, logn);
-        fft.iFFT(rt1, 0, logn);
-        fft.iFFT(rt2, 0, logn);
+        FalconFFT.poly_mul_fft(rt3, 0, rt5, 0, logn);
+        FalconFFT.poly_mul_fft(rt4, 0, rt5, 0, logn);
+        FalconFFT.poly_sub(rt1, 0, rt3, 0, logn);
+        FalconFFT.poly_sub(rt2, 0, rt4, 0, logn);
+        FalconFFT.iFFT(rt1, 0, logn);
+        FalconFFT.iFFT(rt2, 0, logn);
 
         /*
          * Convert back F and G to integers, and return.
          */
-        Ft = tmp;
+        //Ft = 0;
         Gt = Ft + n;
 //        rt3 = align_fpr(tmp, Gt + n);
 //        memmove(rt3, rt1, 2 * n * sizeof *rt1);
@@ -3132,8 +3121,8 @@ class FalconKeyGen
 //        rt2 = rt1 + n;
         for (u = 0; u < n; u++)
         {
-            srctmp[Ft + u] = (int)fpr.fpr_rint(rt1[u]);
-            srctmp[Gt + u] = (int)fpr.fpr_rint(rt2[u]);
+            srctmp[Ft + u] = (int)FPREngine.fpr_rint(rt1[u]);
+            srctmp[Gt + u] = (int)FPREngine.fpr_rint(rt2[u]);
         }
 
         return 1;
@@ -3145,8 +3134,8 @@ class FalconKeyGen
      *
      * Returned value: 1 on success, 0 on error.
      */
-    int solve_NTRU_binary_depth0(int logn,
-                                 byte[] srcf, int f, byte[] srcg, int g, int[] srctmp, int tmp)
+    private static int solve_NTRU_binary_depth0(int logn,
+                                                byte[] srcf, byte[] srcg, int[] srctmp)
     {
         int n, hn, u;
         int p, p0i, R2;
@@ -3172,18 +3161,18 @@ class FalconKeyGen
          * Everything should fit in 31-bit integers, hence we can just use
          * the first small prime p = 2147473409.
          */
-        p = this.primes.PRIMES[0].p;
+        p = FalconSmallPrimeList.PRIMES[0].p;
         p0i = modp_ninv31(p);
         R2 = modp_R2(p, p0i);
 
-        Fp = tmp;
+        Fp = 0;
         Gp = Fp + hn;
         ft = Gp + hn;
         gt = ft + n;
         gm = gt + n;
         igm = gm + n;
 
-        modp_mkgm2(srctmp, gm, srctmp, igm, logn, this.primes.PRIMES[0].g, p, p0i);
+        modp_mkgm2(srctmp, gm, srctmp, igm, logn, FalconSmallPrimeList.PRIMES[0].g, p, p0i);
 
         /*
          * Convert F' anf G' in NTT representation.
@@ -3201,8 +3190,8 @@ class FalconKeyGen
          */
         for (u = 0; u < n; u++)
         {
-            srctmp[ft + u] = modp_set(srcf[f + u], p);
-            srctmp[gt + u] = modp_set(srcg[g + u], p);
+            srctmp[ft + u] = modp_set(srcf[u], p);
+            srctmp[gt + u] = modp_set(srcg[u], p);
         }
         modp_NTT2(srctmp, ft, srctmp, gm, logn, p, p0i);
         modp_NTT2(srctmp, gt, srctmp, gm, logn, p, p0i);
@@ -3215,15 +3204,15 @@ class FalconKeyGen
             int ftA, ftB, gtA, gtB;
             int mFp, mGp;
 
-            ftA = srctmp[ft + u + 0];
+            ftA = srctmp[ft + u];
             ftB = srctmp[ft + u + 1];
-            gtA = srctmp[gt + u + 0];
+            gtA = srctmp[gt + u];
             gtB = srctmp[gt + u + 1];
             mFp = modp_montymul(srctmp[Fp + (u >> 1)], R2, p, p0i);
             mGp = modp_montymul(srctmp[Gp + (u >> 1)], R2, p, p0i);
-            srctmp[ft + u + 0] = modp_montymul(gtB, mFp, p, p0i);
+            srctmp[ft + u] = modp_montymul(gtB, mFp, p, p0i);
             srctmp[ft + u + 1] = modp_montymul(gtA, mFp, p, p0i);
-            srctmp[gt + u + 0] = modp_montymul(ftB, mGp, p, p0i);
+            srctmp[gt + u] = modp_montymul(ftB, mGp, p, p0i);
             srctmp[gt + u + 1] = modp_montymul(ftA, mGp, p, p0i);
         }
         modp_iNTT2(srctmp, ft, srctmp, igm, logn, p, p0i);
@@ -3251,7 +3240,7 @@ class FalconKeyGen
          * Compute the NTT tables in t1 and t2. We do not keep t2
          * (we'll recompute it later on).
          */
-        modp_mkgm2(srctmp, t1, srctmp, t2, logn, this.primes.PRIMES[0].g, p, p0i);
+        modp_mkgm2(srctmp, t1, srctmp, t2, logn, FalconSmallPrimeList.PRIMES[0].g, p, p0i);
 
         /*
          * Convert F and G to NTT.
@@ -3263,11 +3252,11 @@ class FalconKeyGen
          * Load f and adj(f) in t4 and t5, and convert them to NTT
          * representation.
          */
-        srctmp[t4 + 0] = srctmp[t5 + 0] = modp_set(srcf[f + 0], p);
+        srctmp[t4] = srctmp[t5] = modp_set(srcf[0], p);
         for (u = 1; u < n; u++)
         {
-            srctmp[t4 + u] = modp_set(srcf[f + u], p);
-            srctmp[t5 + n - u] = modp_set(-srcf[f + u], p);
+            srctmp[t4 + u] = modp_set(srcf[u], p);
+            srctmp[t5 + n - u] = modp_set(-srcf[u], p);
         }
         modp_NTT2(srctmp, t4, srctmp, t1, logn, p, p0i);
         modp_NTT2(srctmp, t5, srctmp, t1, logn, p, p0i);
@@ -3288,11 +3277,11 @@ class FalconKeyGen
          * Load g and adj(g) in t4 and t5, and convert them to NTT
          * representation.
          */
-        srctmp[t4 + 0] = srctmp[t5 + 0] = modp_set(srcg[g + 0], p);
+        srctmp[t4] = srctmp[t5] = modp_set(srcg[0], p);
         for (u = 1; u < n; u++)
         {
-            srctmp[t4 + u] = modp_set(srcg[g + u], p);
-            srctmp[t5 + n - u] = modp_set(-srcg[g + u], p);
+            srctmp[t4 + u] = modp_set(srcg[u], p);
+            srctmp[t5 + n - u] = modp_set(-srcg[u], p);
         }
         modp_NTT2(srctmp, t4, srctmp, t1, logn, p, p0i);
         modp_NTT2(srctmp, t5, srctmp, t1, logn, p, p0i);
@@ -3317,7 +3306,7 @@ class FalconKeyGen
          * move them to t1 and t2. We first need to recompute the
          * inverse table for NTT.
          */
-        modp_mkgm2(srctmp, t1, srctmp, t4, logn, this.primes.PRIMES[0].g, p, p0i);
+        modp_mkgm2(srctmp, t1, srctmp, t4, logn, FalconSmallPrimeList.PRIMES[0].g, p, p0i);
         modp_iNTT2(srctmp, t2, srctmp, t4, logn, p, p0i);
         modp_iNTT2(srctmp, t3, srctmp, t4, logn, p, p0i); // TODO fix binary_depth0 -> t1 value is wrong
         for (u = 0; u < n; u++)
@@ -3344,17 +3333,16 @@ class FalconKeyGen
          * representation are actually real, so we can truncate off
          * the imaginary parts.
          */
-        FalconFPR[]
-            tmp2 = new FalconFPR[3 * n];
+        double[] tmp2 = new double[3 * n];
 //        rt3 = align_fpr(tmp, t3);
         rt1 = 0;
         rt2 = rt1 + n;
         rt3 = rt2 + n;
         for (u = 0; u < n; u++)
         {
-            tmp2[rt3 + u] = fpr.fpr_of(srctmp[t2 + u]);
+            tmp2[rt3 + u] = srctmp[t2 + u];
         }
-        fft.FFT(tmp2, rt3, logn);
+        FalconFFT.FFT(tmp2, rt3, logn);
 //        rt2 = align_fpr(tmp, t2);
 //        memmove(rt2, rt3, hn * sizeof *rt3);
         System.arraycopy(tmp2, rt3, tmp2, rt2, hn);
@@ -3365,19 +3353,19 @@ class FalconKeyGen
         rt3 = rt2 + hn;
         for (u = 0; u < n; u++)
         {
-            tmp2[rt3 + u] = fpr.fpr_of(srctmp[t1 + u]);
+            tmp2[rt3 + u] = srctmp[t1 + u];
         }
-        fft.FFT(tmp2, rt3, logn);
+        FalconFFT.FFT(tmp2, rt3, logn);
 
         /*
          * Compute (F*adj(f)+G*adj(g))/(f*adj(f)+g*adj(g)) and get
          * its rounded normal representation in t1.
          */
-        fft.poly_div_autoadj_fft(tmp2, rt3, tmp2, rt2, logn);
-        fft.iFFT(tmp2, rt3, logn);
+        FalconFFT.poly_div_autoadj_fft(tmp2, rt3, tmp2, rt2, logn);
+        FalconFFT.iFFT(tmp2, rt3, logn);
         for (u = 0; u < n; u++)
         {
-            srctmp[t1 + u] = modp_set((int)fpr.fpr_rint(tmp2[rt3 + u]), p);
+            srctmp[t1 + u] = modp_set((int)FPREngine.fpr_rint(tmp2[rt3 + u]), p);
         }
 
         /*
@@ -3393,11 +3381,11 @@ class FalconKeyGen
         t3 = t2 + n;
         t4 = t3 + n;
         t5 = t4 + n;
-        modp_mkgm2(srctmp, t2, srctmp, t3, logn, this.primes.PRIMES[0].g, p, p0i);
+        modp_mkgm2(srctmp, t2, srctmp, t3, logn, FalconSmallPrimeList.PRIMES[0].g, p, p0i);
         for (u = 0; u < n; u++)
         {
-            srctmp[t4 + u] = modp_set(srcf[f + u], p);
-            srctmp[t5 + u] = modp_set(srcg[g + u], p);
+            srctmp[t4 + u] = modp_set(srcf[u], p);
+            srctmp[t5 + u] = modp_set(srcg[u], p);
         }
         modp_NTT2(srctmp, t1, srctmp, t2, logn, p, p0i);
         modp_NTT2(srctmp, t4, srctmp, t2, logn, p, p0i);
@@ -3429,17 +3417,16 @@ class FalconKeyGen
      * If any of the coefficients of F and G exceeds lim (in absolute value),
      * then 0 is returned.
      */
-    int solve_NTRU(int logn, byte[] srcF, int F, byte[] srcG, int G,
-                   byte[] srcf, int f, byte[] srcg, int g, int lim, int[] srctmp, int tmp)
+    private static int solve_NTRU(int logn, byte[] srcF, //byte[] srcG,
+                                  byte[] srcf, byte[] srcg, int lim, int[] srctmp)
     {
         int n, u;
         int ft, gt, Ft, Gt, gm;
         int p, p0i, r;
-        FalconSmallPrime[] primes;
-
+        int G = 0;
         n = mkn(logn);
 
-        if (solve_NTRU_deepest(logn, srcf, f, srcg, g, srctmp, tmp) == 0)
+        if (solve_NTRU_deepest(logn, srcf, srcg, srctmp) == 0)
         {
             return 0;
         }
@@ -3456,7 +3443,7 @@ class FalconKeyGen
             depth = logn;
             while (depth-- > 0)
             {
-                if (solve_NTRU_intermediate(logn, srcf, f, srcg, g, depth, srctmp, tmp) == 0)
+                if (solve_NTRU_intermediate(logn, srcf, srcg, depth, srctmp) == 0)
                 {
                     return 0;
                 }
@@ -3464,21 +3451,19 @@ class FalconKeyGen
         }
         else
         {
-            int depth;
-
-            depth = logn;
+            int depth = logn;
             while (depth-- > 2)
             {
-                if (solve_NTRU_intermediate(logn, srcf, f, srcg, g, depth, srctmp, tmp) == 0)
+                if (solve_NTRU_intermediate(logn, srcf, srcg, depth, srctmp) == 0)
                 {
                     return 0;
                 }
             }
-            if (solve_NTRU_binary_depth1(logn, srcf, f, srcg, g, srctmp, tmp) == 0)
+            if (solve_NTRU_binary_depth1(logn, srcf, srcg, srctmp) == 0)
             {
                 return 0;
             }
-            if (solve_NTRU_binary_depth0(logn, srcf, f, srcg, g, srctmp, tmp) == 0)
+            if (solve_NTRU_binary_depth0(logn, srcf, srcg, srctmp) == 0)
             {
                 return 0;
             }
@@ -3487,18 +3472,19 @@ class FalconKeyGen
         /*
          * If no buffer has been provided for G, use a temporary one.
          */
-        if (srcG == null)
-        {
-            G = 0;
-            srcG = new byte[n];
-        }
+//        if (srcG == null)
+//        {
+//            G = 0;
+//            srcG = new byte[n];
+//        }
+        byte[] srcG = new byte[n];
 
         /*
          * Final F and G are in fk->tmp, one word per coefficient
          * (signed value over 31 bits).
          */
-        if (poly_big_to_small(srcF, F, srctmp, tmp, lim, logn) == 0
-            || poly_big_to_small(srcG, G, srctmp, tmp + n, lim, logn) == 0)
+        if (poly_big_to_small(srcF, 0, srctmp, 0, lim, logn) == 0
+            || poly_big_to_small(srcG, G, srctmp, n, lim, logn) == 0)
         {
             return 0;
         }
@@ -3511,25 +3497,24 @@ class FalconKeyGen
          * We put Gt[] first in tmp[], and process it first, so that it does
          * not overlap with G[] in case we allocated it ourselves.
          */
-        Gt = tmp;
+        Gt = 0;
         ft = Gt + n;
         gt = ft + n;
         Ft = gt + n;
         gm = Ft + n;
 
-        primes = this.primes.PRIMES;
-        p = primes[0].p;
+        p = FalconSmallPrimeList.PRIMES[0].p;
         p0i = modp_ninv31(p);
-        modp_mkgm2(srctmp, gm, srctmp, tmp, logn, primes[0].g, p, p0i);
+        modp_mkgm2(srctmp, gm, srctmp, 0, logn, FalconSmallPrimeList.PRIMES[0].g, p, p0i);
         for (u = 0; u < n; u++)
         {
             srctmp[Gt + u] = modp_set(srcG[G + u], p);
         }
         for (u = 0; u < n; u++)
         {
-            srctmp[ft + u] = modp_set(srcf[f + u], p);
-            srctmp[gt + u] = modp_set(srcg[g + u], p);
-            srctmp[Ft + u] = modp_set(srcF[F + u], p);
+            srctmp[ft + u] = modp_set(srcf[u], p);
+            srctmp[gt + u] = modp_set(srcg[u], p);
+            srctmp[Ft + u] = modp_set(srcF[u], p);
         }
         modp_NTT2(srctmp, ft, srctmp, gm, logn, p, p0i);
         modp_NTT2(srctmp, gt, srctmp, gm, logn, p, p0i);
@@ -3555,7 +3540,7 @@ class FalconKeyGen
      * Generate a random polynomial with a Gaussian distribution. This function
      * also makes sure that the resultant of the polynomial with phi is odd.
      */
-    void poly_small_mkgauss(SHAKE256 rng, byte[] srcf, int f, int logn)
+    private static void poly_small_mkgauss(SHAKEDigest rng, byte[] srcf, int logn)
     {
         int n, u;
         int mod2;
@@ -3597,16 +3582,16 @@ class FalconKeyGen
                 {
                     mod2 ^= (s & 1);
                 }
-                srcf[f + u] = (byte)s;
+                srcf[u] = (byte)s;
                 break;
             }
         }
     }
 
     /* see falcon.h */
-    void keygen(SHAKE256 rng,
-                byte[] srcf, int f, byte[] srcg, int g, byte[] srcF, int F, byte[] srcG, int G, short[] srch, int h,
-                int logn)
+    static void keygen(SHAKEDigest rc,
+                       byte[] srcf, byte[] srcg, byte[] srcF, short[] srch,
+                       int logn)
     {
         /*
          * Algorithm is the following:
@@ -3629,14 +3614,14 @@ class FalconKeyGen
          */
         int n, u;
         int[] itmp;
-        byte[] btmp;
+        //byte[] btmp;
         short[] stmp;
-        FalconFPR[] ftmp;
+        double[] ftmp;
         int h2, tmp2;
-        SHAKE256 rc;
+        //SHAKE256 rc;
 
         n = mkn(logn);
-        rc = rng;
+        //rc = rng;
 
         /*
          * We need to generate f and g randomly, until we find values
@@ -3659,9 +3644,9 @@ class FalconKeyGen
          */
         for (; ; )
         {
-            ftmp = new FalconFPR[3 * n];
+            ftmp = new double[3 * n];
             int rt1, rt2, rt3;
-            FalconFPR bnorm;
+            double bnorm;
             int normf, normg, norm;
             int lim;
 
@@ -3671,8 +3656,8 @@ class FalconKeyGen
              * (i.e. the resultant of the polynomial with phi
              * will be odd).
              */
-            poly_small_mkgauss(rc, srcf, f, logn);
-            poly_small_mkgauss(rc, srcg, g, logn);
+            poly_small_mkgauss(rc, srcf, logn);
+            poly_small_mkgauss(rc, srcg, logn);
 
             /*
              * Verify that all coefficients are within the bounds
@@ -3680,15 +3665,15 @@ class FalconKeyGen
              * overwhelming probability; this guarantees that the
              * key will be encodable with FALCON_COMP_TRIM.
              */
-            lim = 1 << (codec.max_fg_bits[logn] - 1);
+            lim = 1 << (FalconCodec.max_fg_bits[logn] - 1);
             for (u = 0; u < n; u++)
             {
                 /*
                  * We can use non-CT tests since on any failure
                  * we will discard f and g.
                  */
-                if (srcf[f + u] >= lim || srcf[f + u] <= -lim
-                    || srcg[g + u] >= lim || srcg[g + u] <= -lim)
+                if (srcf[u] >= lim || srcf[u] <= -lim
+                    || srcg[u] >= lim || srcg[u] <= -lim)
                 {
                     lim = -1;
                     break;
@@ -3706,8 +3691,8 @@ class FalconKeyGen
              * Since f and g are integral, the squared norm
              * of (g,-f) is an integer.
              */
-            normf = poly_small_sqnorm(srcf, f, logn);
-            normg = poly_small_sqnorm(srcg, g, logn);
+            normf = poly_small_sqnorm(srcf, logn);
+            normg = poly_small_sqnorm(srcg, logn);
             norm = (normf + normg) | -((normf | normg) >>> 31);
             if ((norm & 0xffffffffL) >= 16823L)
             {
@@ -3720,26 +3705,26 @@ class FalconKeyGen
             rt1 = 0;
             rt2 = rt1 + n;
             rt3 = rt2 + n;
-            poly_small_to_fp(ftmp, rt1, srcf, f, logn);
-            poly_small_to_fp(ftmp, rt2, srcg, g, logn);
-            fft.FFT(ftmp, rt1, logn);
-            fft.FFT(ftmp, rt2, logn);
-            fft.poly_invnorm2_fft(ftmp, rt3, ftmp, rt1, ftmp, rt2, logn);
-            fft.poly_adj_fft(ftmp, rt1, logn);
-            fft.poly_adj_fft(ftmp, rt2, logn);
-            fft.poly_mulconst(ftmp, rt1, fpr.fpr_q, logn);
-            fft.poly_mulconst(ftmp, rt2, fpr.fpr_q, logn);
-            fft.poly_mul_autoadj_fft(ftmp, rt1, ftmp, rt3, logn);
-            fft.poly_mul_autoadj_fft(ftmp, rt2, ftmp, rt3, logn);
-            fft.iFFT(ftmp, rt1, logn);
-            fft.iFFT(ftmp, rt2, logn);
-            bnorm = fpr.fpr_zero;
+            poly_small_to_fp(ftmp, rt1, srcf, logn);
+            poly_small_to_fp(ftmp, rt2, srcg, logn);
+            FalconFFT.FFT(ftmp, rt1, logn);
+            FalconFFT.FFT(ftmp, rt2, logn);
+            FalconFFT.poly_invnorm2_fft(ftmp, rt3, ftmp, rt1, ftmp, rt2, logn);
+            FalconFFT.poly_adj_fft(ftmp, rt1, logn);
+            FalconFFT.poly_adj_fft(ftmp, rt2, logn);
+            FalconFFT.poly_mulconst(ftmp, rt1, FPREngine.fpr_q, logn);
+            FalconFFT.poly_mulconst(ftmp, rt2, FPREngine.fpr_q, logn);
+            FalconFFT.poly_mul_autoadj_fft(ftmp, rt1, ftmp, rt3, logn);
+            FalconFFT.poly_mul_autoadj_fft(ftmp, rt2, ftmp, rt3, logn);
+            FalconFFT.iFFT(ftmp, rt1, logn);
+            FalconFFT.iFFT(ftmp, rt2, logn);
+            bnorm = FPREngine.fpr_zero;
             for (u = 0; u < n; u++)
             {
-                bnorm = fpr.fpr_add(bnorm, fpr.fpr_sqr(ftmp[rt1 + u]));
-                bnorm = fpr.fpr_add(bnorm, fpr.fpr_sqr(ftmp[rt2 + u]));
+                bnorm += ftmp[rt1 + u] * ftmp[rt1 + u] + ftmp[rt2 + u] * ftmp[rt2 + u];
             }
-            if (!fpr.fpr_lt(bnorm, fpr.fpr_bnorm_max))
+            //if (!FPREngine.fpr_lt(bnorm, FPREngine.fpr_bnorm_max))
+            if (bnorm >= FPREngine.fpr_bnorm_max)
             {
                 continue;
             }
@@ -3757,10 +3742,10 @@ class FalconKeyGen
             }
             else
             {
-                h2 = h;
+                h2 = 0;
                 tmp2 = 0;
             }
-            if (vrfy.compute_public(srch, h2, srcf, f, srcg, g, logn, stmp, tmp2) == 0)
+            if (FalconVrfy.compute_public(srch, h2, srcf, srcg, logn, stmp, tmp2) == 0)
             {
                 continue;
             }
@@ -3769,8 +3754,8 @@ class FalconKeyGen
              * Solve the NTRU equation to get F and G.
              */
             itmp = logn > 2 ? new int[28 * n] : new int[28 * n * 3];
-            lim = (1 << (codec.max_FG_bits[logn] - 1)) - 1;
-            if (solve_NTRU(logn, srcF, F, srcG, G, srcf, f, srcg, g, lim, itmp, 0) == 0)
+            lim = (1 << (FalconCodec.max_FG_bits[logn] - 1)) - 1;
+            if (solve_NTRU(logn, srcF, srcf, srcg, lim, itmp) == 0)
             {
                 continue;
             }
@@ -3782,7 +3767,7 @@ class FalconKeyGen
         }
     }
 
-    private long toUnsignedLong(int x)
+    private static long toUnsignedLong(int x)
     {
         return x & 0xffffffffL;
     }

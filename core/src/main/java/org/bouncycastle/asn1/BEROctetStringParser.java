@@ -7,8 +7,6 @@ import org.bouncycastle.util.io.Streams;
 
 /**
  * A parser for indefinite-length OCTET STRINGs.
- * 
- * @deprecated Check for 'ASN1OctetStringParser' instead 
  */
 public class BEROctetStringParser
     implements ASN1OctetStringParser

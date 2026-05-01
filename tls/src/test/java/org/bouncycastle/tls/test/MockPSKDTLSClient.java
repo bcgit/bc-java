@@ -32,7 +32,12 @@ class MockPSKDTLSClient
 
     MockPSKDTLSClient(TlsSession session)
     {
-        this(session, new BasicTlsPSKIdentity("client", Strings.toUTF8ByteArray("TLS_TEST_PSK")));
+        this(session, false);
+    }
+
+    MockPSKDTLSClient(TlsSession session, boolean badKey)
+    {
+        this(session, TlsTestUtils.createDefaultPSKIdentity(badKey));
     }
 
     MockPSKDTLSClient(TlsSession session, TlsPSKIdentity pskIdentity)
@@ -40,6 +45,16 @@ class MockPSKDTLSClient
         super(new BcTlsCrypto(), pskIdentity);
 
         this.session = session;
+    }
+
+    public int getHandshakeTimeoutMillis()
+    {
+        return 1000;
+    }
+
+    public int getHandshakeResendTimeMillis()
+    {
+        return 100; // Fast resend only for tests!
     }
 
     public TlsSession getSessionToResume()
@@ -73,7 +88,7 @@ class MockPSKDTLSClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("DTLS-PSK client negotiated " + serverVersion);
+        System.out.println("DTLS-PSK client negotiated version " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException
@@ -101,7 +116,7 @@ class MockPSKDTLSClient
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
 
-                String[] trustedCertResources = new String[] { "x509-server-rsa-enc.pem" };
+                String[] trustedCertResources = new String[]{ "x509-server-rsa-enc.pem" };
 
                 TlsCertificate[] certPath = TlsTestUtils.getTrustedCertPath(context.getCrypto(), chain[0],
                     trustedCertResources);

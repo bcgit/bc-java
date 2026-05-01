@@ -8,16 +8,16 @@ import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.jcajce.CompositePrivateKey;
-import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class COMPOSITE
 {
@@ -71,50 +71,6 @@ public class COMPOSITE
         }
     }
 
-    private static class CompositeKeyInfoConverter
-        implements AsymmetricKeyInfoConverter
-    {
-        private final ConfigurableProvider provider;
-
-        public CompositeKeyInfoConverter(ConfigurableProvider provider)
-        {
-            this.provider = provider;
-        }
-
-        public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
-            throws IOException
-        {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
-            PrivateKey[] privKeys = new PrivateKey[keySeq.size()];
-
-            for (int i = 0; i != keySeq.size(); i++)
-            {
-                PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(keySeq.getObjectAt(i));
-
-                privKeys[i] = provider.getKeyInfoConverter(
-                    privInfo.getPrivateKeyAlgorithm().getAlgorithm()).generatePrivate(privInfo);
-            }
-
-            return new CompositePrivateKey(privKeys);
-        }
-
-        public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
-            throws IOException
-        {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getBytes());
-            PublicKey[] pubKeys = new PublicKey[keySeq.size()];
-
-            for (int i = 0; i != keySeq.size(); i++)
-            {
-                SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(keySeq.getObjectAt(i));
-
-                pubKeys[i] = provider.getKeyInfoConverter((pubInfo.getAlgorithm().getAlgorithm())).generatePublic(pubInfo);
-            }
-
-            return new CompositePublicKey(pubKeys);
-        }
-    }
-
     public static class Mappings
         extends AsymmetricAlgorithmProvider
     {
@@ -130,7 +86,7 @@ public class COMPOSITE
             provider.addAlgorithm("KeyFactory." + MiscObjectIdentifiers.id_composite_key, PREFIX + "$KeyFactory");
             provider.addAlgorithm("KeyFactory.OID." + MiscObjectIdentifiers.id_composite_key, PREFIX + "$KeyFactory");
 
-            baseConverter = new CompositeKeyInfoConverter(provider);
+            baseConverter = new KeyFactorySpi(new ProviderJcaJceHelper((BouncyCastleProvider)provider));
 
             provider.addKeyInfoConverter(MiscObjectIdentifiers.id_alg_composite, baseConverter);
             provider.addKeyInfoConverter(MiscObjectIdentifiers.id_composite_key, baseConverter);

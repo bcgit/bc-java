@@ -51,6 +51,7 @@ class ProvSSLSocketDirect
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
+    protected ProvSSLSession dummySession = null;
     protected ProvSSLSessionHandshake handshakeSession = null;
 
     /** This constructor is the one used (only) by ProvSSLServerSocket */
@@ -66,14 +67,14 @@ class ProvSSLSocketDirect
     protected ProvSSLSocketDirect(ContextData contextData)
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
+        this.sslParameters = contextData.getDefaultSSLParameters(useClientMode);
     }
 
     protected ProvSSLSocketDirect(ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
         throws IOException
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
+        this.sslParameters = contextData.getDefaultSSLParameters(useClientMode);
 
         implBind(clientAddress, clientPort);
         implConnect(address, port);
@@ -82,7 +83,7 @@ class ProvSSLSocketDirect
     protected ProvSSLSocketDirect(ContextData contextData, InetAddress address, int port) throws IOException
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
+        this.sslParameters = contextData.getDefaultSSLParameters(useClientMode);
 
         implConnect(address, port);
     }
@@ -91,7 +92,7 @@ class ProvSSLSocketDirect
         throws IOException, UnknownHostException
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
+        this.sslParameters = contextData.getDefaultSSLParameters(useClientMode);
         this.peerHost = host;
 
         implBind(clientAddress, clientPort);
@@ -101,7 +102,7 @@ class ProvSSLSocketDirect
     protected ProvSSLSocketDirect(ContextData contextData, String host, int port) throws IOException, UnknownHostException
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
+        this.sslParameters = contextData.getDefaultSSLParameters(useClientMode);
         this.peerHost = host;
 
         implConnect(host, port);
@@ -183,7 +184,12 @@ class ProvSSLSocketDirect
         return sslParameters.getSocketAPSelector();
     }
 
-    public synchronized BCExtendedSSLSession getBCHandshakeSession()
+    public BCExtendedSSLSession getBCHandshakeSession()
+    {
+        return getBCHandshakeSessionImpl();
+    }
+
+    public synchronized ProvSSLSessionHandshake getBCHandshakeSessionImpl()
     {
         return handshakeSession;
     }
@@ -275,13 +281,13 @@ class ProvSSLSocketDirect
     @Override
     public synchronized String[] getSupportedCipherSuites()
     {
-        return contextData.getContext().getSupportedCipherSuites();
+        return contextData.getSupportedCipherSuites();
     }
 
     @Override
     public synchronized String[] getSupportedProtocols()
     {
-        return contextData.getContext().getSupportedProtocols();
+        return contextData.getSupportedProtocols();
     }
 
     public int getTransportID()
@@ -374,7 +380,7 @@ class ProvSSLSocketDirect
 
         if (this.useClientMode != useClientMode)
         {
-            contextData.getContext().updateDefaultSSLParameters(sslParameters, useClientMode);
+            contextData.updateDefaultSSLParameters(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }
@@ -490,7 +496,7 @@ class ProvSSLSocketDirect
         if (null != resumedSession)
         {
             this.handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
-                jsseSecurityParameters, resumedSession.getTlsSession(), resumedSession.getJsseSessionParameters());
+                jsseSecurityParameters, resumedSession);
         }
         else
         {
@@ -508,7 +514,17 @@ class ProvSSLSocketDirect
     {
         getConnection();
 
-        return null == connection ? ProvSSLSession.NULL_SESSION : connection.getSession();
+        if (connection != null)
+        {
+            return connection.getSession();
+        }
+
+        if (dummySession == null)
+        {
+            dummySession = ProvSSLSession.createDummySession();
+        }
+
+        return dummySession;
     }
 
     synchronized void handshakeIfNecessary(boolean resumable) throws IOException

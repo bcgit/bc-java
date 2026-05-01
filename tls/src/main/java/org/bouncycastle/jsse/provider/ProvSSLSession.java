@@ -1,6 +1,8 @@
 package org.bouncycastle.jsse.provider;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.CipherSuite;
@@ -11,23 +13,31 @@ import org.bouncycastle.tls.TlsSession;
 class ProvSSLSession
     extends ProvSSLSessionBase
 {
-    // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
-    // TODO[jsse] This would make more sense as a ProvSSLSessionHandshake
-    static final ProvSSLSession NULL_SESSION = new ProvSSLSession(null, null, -1, null,
-        new JsseSessionParameters(null, null));
-
     protected final TlsSession tlsSession;
     protected final SessionParameters sessionParameters;
     protected final JsseSessionParameters jsseSessionParameters;
+    protected final AtomicLong lastAccessedTime;
 
-    ProvSSLSession(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort, TlsSession tlsSession,
-        JsseSessionParameters jsseSessionParameters)
+    ProvSSLSession(ProvSSLSessionContext sslSessionContext, ConcurrentHashMap<String, Object> valueMap, String peerHost,
+        int peerPort, long creationTime, TlsSession tlsSession, JsseSessionParameters jsseSessionParameters)
     {
-        super(sslSessionContext, peerHost, peerPort);
+        super(sslSessionContext, valueMap, peerHost, peerPort, creationTime);
 
         this.tlsSession = tlsSession;
         this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
         this.jsseSessionParameters = jsseSessionParameters;
+        this.lastAccessedTime = new AtomicLong(creationTime);
+    }
+
+    long access()
+    {
+        long accessTime = getCurrentTime(), previous;
+        do
+        {
+            previous = lastAccessedTime.get();
+        }
+        while (accessTime > previous && !lastAccessedTime.compareAndSet(previous, accessTime));
+        return accessTime;
     }
 
     @Override
@@ -52,6 +62,11 @@ class ProvSSLSession
     protected JsseSessionParameters getJsseSessionParameters()
     {
         return jsseSessionParameters;
+    }
+
+    public long getLastAccessedTime()
+    {
+        return lastAccessedTime.get();
     }
 
     @Override
@@ -109,5 +124,12 @@ class ProvSSLSession
     public boolean isValid()
     {
         return super.isValid() && null != tlsSession && tlsSession.isResumable();
+    }
+
+    static final ProvSSLSession createDummySession()
+    {
+        // NB: Allow session value binding on failed connections for SunJSSE compatibility 
+        return new ProvSSLSession(null, createValueMap(), null, -1, getCurrentTime(), null,
+            new JsseSessionParameters(null, null));
     }
 }

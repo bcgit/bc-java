@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.test;
 
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -18,6 +17,7 @@ import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -547,23 +547,27 @@ public class AESTest
     static byte[] fileBytes = new byte[0];
     static byte[] iv = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    private void testCounter() {
+    private void testCounter()
+    {
         Random random = new Random();
-        for (int i = 0; i < 255; i++) {
-            iv[iv.length - 1] += (byte) i;
+        for (int i = 0; i < 255; i++)
+        {
+            iv[iv.length - 1] += (byte)i;
 
             String inStr = " 1234567890jl字符串";
-            for (int j = 1000; j > 0; j--) {
-                inStr += (char) ('a' + random.nextInt(26));
+            for (int j = 1000; j > 0; j--)
+            {
+                inStr += (char)('a' + random.nextInt(26));
                 verify(inStr);
                 fileBytes = new byte[0];
             }
         }
     }
 
-    private void verify(String inStr) {
-        SICBlockCipher cipher = newCipher();
-        byte[] bytes = inStr.getBytes(StandardCharsets.UTF_8);
+    private void verify(String inStr)
+    {
+        CTRModeCipher cipher = newCipher();
+        byte[] bytes = Strings.toUTF8ByteArray(inStr);
 
         appendFile(bytes, cipher);
         appendFile(bytes, cipher);
@@ -571,14 +575,16 @@ public class AESTest
 
         byte[] out = new byte[fileBytes.length];
         newCipher().processBytes(fileBytes, 0, fileBytes.length, out, 0);
-        String outStr = new String(out, StandardCharsets.UTF_8);
+        String outStr = Strings.fromUTF8ByteArray(out);
 
-        if (!outStr.equals(inStr + inStr + inStr)) {
+        if (!outStr.equals(inStr + inStr + inStr))
+        {
             throw new RuntimeException("fail");
         }
     }
 
-    private void appendFile(byte[] bytes, SICBlockCipher cipher) {
+    private void appendFile(byte[] bytes, CTRModeCipher cipher)
+    {
         cipher.seekTo(fileBytes.length);
         byte[] out = new byte[bytes.length];
         cipher.processBytes(bytes, 0, bytes.length, out, 0);
@@ -588,16 +594,16 @@ public class AESTest
         fileBytes = newFileBytes;
     }
 
-    private static SICBlockCipher newCipher() {
-        SICBlockCipher sicBlockCipher = new SICBlockCipher(new AESEngine());
+    private static CTRModeCipher newCipher()
+    {
+        CTRModeCipher sicBlockCipher = SICBlockCipher.newInstance(AESEngine.newInstance());
         byte[] key = "1234567890123456".getBytes();
         ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
         sicBlockCipher.init(true, parametersWithIV);
         return sicBlockCipher;
     }
 
-    public static void main(
-        String[]    args)
+    public static void main(String[] args)
     {
         runTest(new AESTest());
     }

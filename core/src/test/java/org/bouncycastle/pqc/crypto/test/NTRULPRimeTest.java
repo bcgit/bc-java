@@ -37,8 +37,6 @@ public class NTRULPRimeTest
                 NTRULPRimeParameters.ntrulpr1277
         };
 
-        TestSampler sampler = new TestSampler();
-
         for (int i = 0; i != paramList.length; i++)
         {
             NTRULPRimeParameters paramSpec = paramList[i];
@@ -47,6 +45,7 @@ public class NTRULPRimeTest
             BufferedReader resourceReader = new BufferedReader(new InputStreamReader(resource));
 
             String line;
+            TestSampler sampler = new TestSampler();
             while ((line = resourceReader.readLine()) != null)
             {
                 if (! line.startsWith("count"))

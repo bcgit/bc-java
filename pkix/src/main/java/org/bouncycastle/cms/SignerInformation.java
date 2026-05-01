@@ -341,6 +341,8 @@ public class SignerInformation
         SignerInformationVerifier verifier)
         throws CMSException
     {
+        // TODO[cms] For pure signature algorithms, restrict digest algorithm to permitted set
+
         String encName = CMSSignedHelper.INSTANCE.getEncryptionAlgName(this.getEncryptionAlgOID());
         AlgorithmIdentifier realDigestAlgorithm = signedAttributeSet != null ?
             info.getDigestAlgorithm() : translateBrokenRSAPkcs7(encryptionAlgorithm, info.getDigestAlgorithm());

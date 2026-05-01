@@ -8,7 +8,7 @@ import java.security.Security;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 
 /**
@@ -20,16 +20,16 @@ public class DilithiumKeyPairGeneratorTest
     protected void setUp()
     {
         super.setUp();
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastleProvider());
+            Security.addProvider(new BouncyCastlePQCProvider());
         }
     }
 
     public void testKeyFactory()
         throws Exception
     {
-        kf = KeyFactory.getInstance("Dilithium", "BC");
+        kf = KeyFactory.getInstance("Dilithium", "BCPQC");
     }
 
     public void testKeyPairGeneratorNames()
@@ -49,7 +49,7 @@ public class DilithiumKeyPairGeneratorTest
 
         for (int i = 0; i != oids.length; i++)
         {
-            KeyPairGenerator kpGen = KeyPairGenerator.getInstance(oids[i].getId(), "BC");
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance(oids[i].getId(), "BCPQC");
 
             KeyPair kp = kpGen.generateKeyPair();
 

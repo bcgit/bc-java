@@ -65,7 +65,7 @@ public interface GNUObjectIdentifiers
      */
     ASN1ObjectIdentifier Serpent_192_ECB = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.13.2.21"); // Serpent-192-ECB
     /**
-     * 1.3.6.1.4.1.11591.13.2.22 -- Serpent-192-CCB
+     * 1.3.6.1.4.1.11591.13.2.22 -- Serpent-192-CBC
      */
     ASN1ObjectIdentifier Serpent_192_CBC = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.13.2.22"); // Serpent-192-CBC
     /**
@@ -107,5 +107,11 @@ public interface GNUObjectIdentifiers
      */
     ASN1ObjectIdentifier ellipticCurve = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.15");
 
+    /**
+     * Ed25519Legacy for use with EdDSALegacy.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#ec-curves">
+     * RFC9580 - ECC Curves for OpenPGP</a>
+     */
     ASN1ObjectIdentifier Ed25519 = ellipticCurve.branch("1");
 }

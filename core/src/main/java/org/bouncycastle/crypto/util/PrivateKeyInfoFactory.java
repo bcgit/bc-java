@@ -8,10 +8,13 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -33,8 +36,11 @@ import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
@@ -175,6 +181,46 @@ public class PrivateKeyInfoFactory
                 new ECPrivateKey(orderBitLength, priv.getD(), publicKey, params),
                 attributes);
         }
+        else if (privateKey instanceof MLDSAPrivateKeyParameters)
+        {
+            MLDSAPrivateKeyParameters params = (MLDSAPrivateKeyParameters)privateKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
+
+            if (params.getPreferredFormat() == MLDSAPrivateKeyParameters.SEED_ONLY)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, new DERTaggedObject(false, 0, new DEROctetString(params.getSeed())), attributes);
+            }
+            else if (params.getPreferredFormat() == MLDSAPrivateKeyParameters.EXPANDED_KEY)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
+            }
+            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
+        }
+        else if (privateKey instanceof MLKEMPrivateKeyParameters)
+        {
+            MLKEMPrivateKeyParameters params = (MLKEMPrivateKeyParameters)privateKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
+
+            if (params.getPreferredFormat() == MLKEMPrivateKeyParameters.SEED_ONLY)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, new DERTaggedObject(false, 0, new DEROctetString(params.getSeed())), attributes);
+            }
+            else if (params.getPreferredFormat() == MLKEMPrivateKeyParameters.EXPANDED_KEY)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
+            }
+            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
+        }
+        else if (privateKey instanceof SLHDSAPrivateKeyParameters)
+        {
+            SLHDSAPrivateKeyParameters params = (SLHDSAPrivateKeyParameters)privateKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
+        }
         else if (privateKey instanceof X448PrivateKeyParameters)
         {
             X448PrivateKeyParameters key = (X448PrivateKeyParameters)privateKey;
@@ -209,6 +255,10 @@ public class PrivateKeyInfoFactory
         }
     }
 
+    private static ASN1Sequence getBasicPQCEncoding(byte[] seed, byte[] expanded)
+    {
+        return new DERSequence(new DEROctetString(seed), new DEROctetString(expanded));
+    }
 
     private static void extractBytes(byte[] encKey, int size, int offSet, BigInteger bI)
     {

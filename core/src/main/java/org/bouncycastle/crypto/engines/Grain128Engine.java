@@ -188,7 +188,7 @@ public class Grain128Engine
         int s60 = lfsr[1] >>> 28 | lfsr[2] << 4;
         int s79 = lfsr[2] >>> 15 | lfsr[3] << 17;
         int s93 = lfsr[2] >>> 29 | lfsr[3] << 3;
-        int s94 = lfsr[2] >>> 31 | lfsr[3] << 1;
+        int s94 = lfsr[2] >>> 30 | lfsr[3] << 2;
 
         return b12 & s8 ^ s13 & s20 ^ b95 & s42 ^ s60 & s79 ^ b12 & b95 & s94 ^ s93
             ^ b2 ^ b15 ^ b36 ^ b45 ^ b64 ^ b73 ^ b89;

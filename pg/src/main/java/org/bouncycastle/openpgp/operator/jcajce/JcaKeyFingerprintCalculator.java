@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -65,6 +66,10 @@ public class JcaKeyFingerprintCalculator
 
         if (publicPk.getVersion() <= PublicKeyPacket.VERSION_3)
         {
+            if (!(key instanceof RSAPublicBCPGKey))
+            {
+                throw new PGPException("Version 3 OpenPGP keys can only use RSA. Found " + key.getClass().getName());
+            }
             RSAPublicBCPGKey rK = (RSAPublicBCPGKey)key;
 
             try
@@ -79,7 +84,7 @@ public class JcaKeyFingerprintCalculator
 
                 return digest.digest();
             }
-            catch (NoSuchAlgorithmException | NoSuchProviderException e)
+            catch (GeneralSecurityException e)
             {
                 throw new PGPException("can't find MD5", e);
             }
@@ -103,7 +108,7 @@ public class JcaKeyFingerprintCalculator
 
                 return digest.digest();
             }
-            catch (NoSuchAlgorithmException | NoSuchProviderException e)
+            catch (GeneralSecurityException e)
             {
                 throw new PGPException("can't find SHA1", e);
             }

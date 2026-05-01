@@ -102,23 +102,37 @@ public class NamedGroup
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
 
-    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    /** @deprecated Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    @Deprecated
     public static final int OQS_mlkem512 = 0x0247;
-    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    /** @deprecated Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    @Deprecated
     public static final int OQS_mlkem768 = 0x0248;
-    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    /** @deprecated Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    @Deprecated
     public static final int OQS_mlkem1024 = 0x0249;
 
     /*
-     * draft-connolly-tls-mlkem-key-agreement-01
+     * draft-connolly-tls-mlkem-key-agreement-05
      */
-    /** Experimental API (unstable): draft value requested in draft-connolly-tls-mlkem-key-agreement. */
-    public static final int DRAFT_mlkem768 = 0x0768;
-    /** Experimental API (unstable): draft value requested in draft-connolly-tls-mlkem-key-agreement. */
-    public static final int DRAFT_mlkem1024 = 0x1024;
+    public static final int MLKEM512 = 0x0200;
+    public static final int MLKEM768 = 0x0201;
+    public static final int MLKEM1024 = 0x0202;
+
+    /*
+     * draft-ietf-tls-ecdhe-mlkem-00
+     */
+    public static final int SecP256r1MLKEM768 = 0x11EB;
+    public static final int X25519MLKEM768 = 0x11EC;
+    public static final int SecP384r1MLKEM1024 = 0x11ED;
+
+    /*
+     * draft-yang-tls-hybrid-sm2-mlkem-03
+     */
+    public static final int curveSM2MLKEM768 = 0x11EE;
 
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
-    private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
+    private static final String[] CURVE_NAMES = new String[]{ "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
         "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
         "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1", "brainpoolP256r1", "brainpoolP384r1",
@@ -127,7 +141,7 @@ public class NamedGroup
         "GostR3410-2001-CryptoPro-C", "Tc26-Gost-3410-12-512-paramSetA", "Tc26-Gost-3410-12-512-paramSetB",
         "Tc26-Gost-3410-12-512-paramSetC", "sm2p256v1" };
 
-    private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096",
+    private static final String[] FINITE_FIELD_NAMES = new String[]{ "ffdhe2048", "ffdhe3072", "ffdhe4096",
         "ffdhe6144", "ffdhe8192" };
 
     public static boolean canBeNegotiated(int namedGroup, ProtocolVersion version)
@@ -164,7 +178,7 @@ public class NamedGroup
             }
         }
 
-        if (refersToASpecificKem(namedGroup))
+        if (refersToASpecificHybrid(namedGroup) || refersToASpecificKem(namedGroup))
         {
             return isTLSv13;
         }
@@ -298,17 +312,84 @@ public class NamedGroup
         return null;
     }
 
+    public static int getHybridFirst(int namedGroup)
+    {
+        switch (namedGroup)
+        {
+        case SecP256r1MLKEM768:
+            return secp256r1;
+        case X25519MLKEM768:
+            return MLKEM768;
+        case SecP384r1MLKEM1024:
+            return secp384r1;
+        case curveSM2MLKEM768:
+            return curveSM2;
+        default:
+            return -1;
+        }
+    }
+
+    public static int getHybridSecond(int namedGroup)
+    {
+        switch (namedGroup)
+        {
+        case SecP256r1MLKEM768:
+            return MLKEM768;
+        case X25519MLKEM768:
+            return x25519;
+        case SecP384r1MLKEM1024:
+            return MLKEM1024;
+        case curveSM2MLKEM768:
+            return MLKEM768;
+        default:
+            return -1;
+        }
+    }
+
+    // TODO Temporary until crypto implementations become more self-documenting around lengths
+    static int getHybridSplitClientShare(int namedGroup)
+    {
+        switch (namedGroup)
+        {
+        case curveSM2:
+        case secp256r1:
+            return 65;
+        case secp384r1:
+            return 97;
+        case MLKEM768:
+            return 1184;
+        }
+        return -1;
+    }
+
+    // TODO Temporary until crypto implementations become more self-documenting around lengths
+    static int getHybridSplitServerShare(int namedGroup)
+    {
+        switch (namedGroup)
+        {
+        case curveSM2:
+        case secp256r1:
+            return 65;
+        case secp384r1:
+            return 97;
+        case MLKEM768:
+            return 1088;
+        }
+        return -1;
+    }
+
     public static String getKemName(int namedGroup)
     {
         switch (namedGroup)
         {
         case OQS_mlkem512:
+        case MLKEM512:
             return "ML-KEM-512";
         case OQS_mlkem768:
-        case DRAFT_mlkem768:
+        case MLKEM768:
             return "ML-KEM-768";
         case OQS_mlkem1024:
-        case DRAFT_mlkem1024:
+        case MLKEM1024:
             return "ML-KEM-1024";
         default:
             return null;
@@ -376,10 +457,20 @@ public class NamedGroup
             return "OQS_mlkem768";
         case OQS_mlkem1024:
             return "OQS_mlkem1024";
-        case DRAFT_mlkem768:
-            return "DRAFT_mlkem768";
-        case DRAFT_mlkem1024:
-            return "DRAFT_mlkem1024";
+        case MLKEM512:
+            return "MLKEM512";
+        case MLKEM768:
+            return "MLKEM768";
+        case MLKEM1024:
+            return "MLKEM1024";
+        case SecP256r1MLKEM768:
+            return "SecP256r1MLKEM768";
+        case X25519MLKEM768:
+            return "X25519MLKEM768";
+        case SecP384r1MLKEM1024:
+            return "SecP384r1MLKEM1024";
+        case curveSM2MLKEM768:
+            return "curveSM2MLKEM768";
         case arbitrary_explicit_prime_curves:
             return "arbitrary_explicit_prime_curves";
         case arbitrary_explicit_char2_curves:
@@ -487,7 +578,22 @@ public class NamedGroup
     {
         return refersToASpecificCurve(namedGroup)
             || refersToASpecificFiniteField(namedGroup)
+            || refersToASpecificHybrid(namedGroup)
             || refersToASpecificKem(namedGroup);
+    }
+
+    public static boolean refersToASpecificHybrid(int namedGroup)
+    {
+        switch (namedGroup)
+        {
+        case SecP256r1MLKEM768:
+        case X25519MLKEM768:
+        case SecP384r1MLKEM1024:
+        case curveSM2MLKEM768:
+            return true;
+        default:
+            return false;
+        }
     }
 
     public static boolean refersToASpecificKem(int namedGroup)
@@ -497,8 +603,9 @@ public class NamedGroup
         case OQS_mlkem512:
         case OQS_mlkem768:
         case OQS_mlkem1024:
-        case DRAFT_mlkem768:
-        case DRAFT_mlkem1024:
+        case MLKEM512:
+        case MLKEM768:
+        case MLKEM1024:
             return true;
         default:
             return false;

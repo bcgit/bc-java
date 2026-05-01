@@ -12,7 +12,8 @@ public abstract class ASN1Null
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            return createPrimitive(octetString.getOctets());
+            checkContentsLength(octetString.getOctetsLength());
+            return createPrimitive();
         }
     };
 
@@ -53,9 +54,14 @@ public abstract class ASN1Null
         return null;
     }
 
-    public static ASN1Null getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1Null getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1Null)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1Null)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1Null getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1Null)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     ASN1Null()
@@ -83,12 +89,16 @@ public abstract class ASN1Null
          return "NULL";
     }
 
-    static ASN1Null createPrimitive(byte[] contents)
+    static void checkContentsLength(int contentsLength)
     {
-        if (0 != contents.length)
+        if (0 != contentsLength)
         {
             throw new IllegalStateException("malformed NULL encoding encountered");
         }
+    }
+
+    static ASN1Null createPrimitive()
+    {
         return DERNull.INSTANCE;
     }
 }

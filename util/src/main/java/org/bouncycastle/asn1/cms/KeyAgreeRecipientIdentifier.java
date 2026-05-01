@@ -81,7 +81,7 @@ public class KeyAgreeRecipientIdentifier
         }
 
         return new KeyAgreeRecipientIdentifier(IssuerAndSerialNumber.getInstance(obj));
-    } 
+    }
 
     public KeyAgreeRecipientIdentifier(
         IssuerAndSerialNumber issuerSerial)
@@ -107,7 +107,7 @@ public class KeyAgreeRecipientIdentifier
         return rKeyID;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()

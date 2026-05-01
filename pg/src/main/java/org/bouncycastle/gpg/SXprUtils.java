@@ -1,5 +1,6 @@
 package org.bouncycastle.gpg;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -51,7 +52,10 @@ class SXprUtils
 
         byte[] data = new byte[len];
 
-        Streams.readFully(in, data);
+        if (len != Streams.readFully(in, data))
+        {
+            throw new EOFException();
+        }
 
         return data;
     }
@@ -95,7 +99,7 @@ class SXprUtils
         int ch = in.read();
         if (ch != ')')
         {
-            throw new IOException("unknown character encountered");
+            throw new IOException("unknown character encountered: " + (char)ch);
         }
     }
 }

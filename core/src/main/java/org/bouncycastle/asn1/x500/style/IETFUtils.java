@@ -33,7 +33,7 @@ public class IETFUtils
 
         boolean escaped = false;
         boolean quoted = false;
-        StringBuffer buf = new StringBuffer(elt.length());
+        StringBuilder buf = new StringBuilder(elt.length());
         int start = 0;
 
         // if it's an escaped hash string and not an actual encoding in string form
@@ -48,8 +48,8 @@ public class IETFUtils
         }
 
         boolean nonWhiteSpaceEncountered = false;
-        int     lastEscaped = 0;
-        char    hex1 = 0;
+        int lastEscaped = 0;
+        char hex1 = 0;
 
         for (int i = start; i != elt.length(); i++)
         {
@@ -131,32 +131,30 @@ public class IETFUtils
 
     public static RDN[] rDNsFromString(String name, X500NameStyle x500Style)
     {
-        X500NameTokenizer tokenizer = new X500NameTokenizer(name);
         X500NameBuilder builder = new X500NameBuilder(x500Style);
 
-        addRDNs(x500Style, builder, tokenizer);
+        addRDNs(builder, new X500NameTokenizer(name));
 
-        // TODO There's an unnecessary clone of the RDNs array happening here
-        return builder.build().getRDNs();
+        return builder.buildRDNs();
     }
 
-    private static void addRDNs(X500NameStyle style, X500NameBuilder builder, X500NameTokenizer tokenizer)
+    private static void addRDNs(X500NameBuilder builder, X500NameTokenizer tokenizer)
     {
         String token;
         while ((token = tokenizer.nextToken()) != null)
         {
             if (token.indexOf('+') >= 0)
             {
-                addMultiValuedRDN(style, builder, new X500NameTokenizer(token, '+'));
+                addMultiValuedRDN(builder, new X500NameTokenizer(token, '+'));
             }
             else
             {
-                addRDN(style, builder, token);
+                addRDN(builder, token);
             }
         }
     }
 
-    private static void addMultiValuedRDN(X500NameStyle style, X500NameBuilder builder, X500NameTokenizer tokenizer)
+    private static void addMultiValuedRDN(X500NameBuilder builder, X500NameTokenizer tokenizer)
     {
         String token = tokenizer.nextToken();
         if (token == null)
@@ -166,13 +164,14 @@ public class IETFUtils
 
         if (!tokenizer.hasMoreTokens())
         {
-            addRDN(style, builder, token);
+            addRDN(builder, token);
             return;
         }
 
         Vector oids = new Vector();
         Vector values = new Vector();
 
+        X500NameStyle style = builder.getStyle();
         do
         {
             collectAttributeTypeAndValue(style, oids, values, token);
@@ -183,14 +182,14 @@ public class IETFUtils
         builder.addMultiValuedRDN(toOIDArray(oids), toValueArray(values));
     }
 
-    private static void addRDN(X500NameStyle style, X500NameBuilder builder, String token)
+    private static void addRDN(X500NameBuilder builder, String token)
     {
         X500NameTokenizer tokenizer = new X500NameTokenizer(token, '=');
 
         String typeToken = nextToken(tokenizer, true);
         String valueToken = nextToken(tokenizer, false);
 
-        ASN1ObjectIdentifier oid = style.attrNameToOID(typeToken.trim());
+        ASN1ObjectIdentifier oid = builder.getStyle().attrNameToOID(typeToken.trim());
         String value = unescape(valueToken);
 
         builder.addRDN(oid, value);
@@ -246,10 +245,10 @@ public class IETFUtils
 
     public static String[] findAttrNamesForOID(
         ASN1ObjectIdentifier oid,
-        Hashtable            lookup)
+        Hashtable lookup)
     {
         int count = 0;
-        for (Enumeration en = lookup.elements(); en.hasMoreElements();)
+        for (Enumeration en = lookup.elements(); en.hasMoreElements(); )
         {
             if (oid.equals(en.nextElement()))
             {
@@ -260,7 +259,7 @@ public class IETFUtils
         String[] aliases = new String[count];
         count = 0;
 
-        for (Enumeration en = lookup.keys(); en.hasMoreElements();)
+        for (Enumeration en = lookup.keys(); en.hasMoreElements(); )
         {
             String key = (String)en.nextElement();
             if (oid.equals(lookup.get(key)))
@@ -295,8 +294,8 @@ public class IETFUtils
     }
 
     public static ASN1Encodable valueFromHexString(
-        String  str,
-        int     off)
+        String str,
+        int off)
         throws IOException
     {
         byte[] data = new byte[(str.length() - off) / 2];
@@ -312,9 +311,9 @@ public class IETFUtils
     }
 
     public static void appendRDN(
-        StringBuffer          buf,
-        RDN                   rdn,
-        Hashtable             oidSymbols)
+        StringBuilder buf,
+        RDN rdn,
+        Hashtable oidSymbols)
     {
         if (rdn.isMultiValued())
         {
@@ -337,19 +336,75 @@ public class IETFUtils
         }
         else
         {
-            if (rdn.getFirst() != null)
+            AttributeTypeAndValue first = rdn.getFirst();
+            if (first != null)
             {
-                IETFUtils.appendTypeAndValue(buf, rdn.getFirst(), oidSymbols);
+                IETFUtils.appendTypeAndValue(buf, first, oidSymbols);
+            }
+        }
+    }
+
+    public static void appendRDN(
+        StringBuffer buf,
+        RDN rdn,
+        Hashtable oidSymbols)
+    {
+        if (rdn.isMultiValued())
+        {
+            AttributeTypeAndValue[] atv = rdn.getTypesAndValues();
+            boolean firstAtv = true;
+
+            for (int j = 0; j != atv.length; j++)
+            {
+                if (firstAtv)
+                {
+                    firstAtv = false;
+                }
+                else
+                {
+                    buf.append('+');
+                }
+
+                IETFUtils.appendTypeAndValue(buf, atv[j], oidSymbols);
+            }
+        }
+        else
+        {
+            AttributeTypeAndValue first = rdn.getFirst();
+            if (first != null)
+            {
+                IETFUtils.appendTypeAndValue(buf, first, oidSymbols);
             }
         }
     }
 
     public static void appendTypeAndValue(
-        StringBuffer          buf,
+        StringBuilder buf,
         AttributeTypeAndValue typeAndValue,
-        Hashtable             oidSymbols)
+        Hashtable oidSymbols)
     {
-        String  sym = (String)oidSymbols.get(typeAndValue.getType());
+        String sym = (String)oidSymbols.get(typeAndValue.getType());
+
+        if (sym != null)
+        {
+            buf.append(sym);
+        }
+        else
+        {
+            buf.append(typeAndValue.getType().getId());
+        }
+
+        buf.append('=');
+
+        buf.append(valueToString(typeAndValue.getValue()));
+    }
+
+    public static void appendTypeAndValue(
+        StringBuffer buf,
+        AttributeTypeAndValue typeAndValue,
+        Hashtable oidSymbols)
+    {
+        String sym = (String)oidSymbols.get(typeAndValue.getType());
 
         if (sym != null)
         {
@@ -367,7 +422,7 @@ public class IETFUtils
 
     public static String valueToString(ASN1Encodable value)
     {
-        StringBuffer vBuf = new StringBuffer();
+        StringBuilder vBuf = new StringBuilder();
 
         if (value instanceof ASN1String && !(value instanceof ASN1UniversalString))
         {
@@ -405,25 +460,25 @@ public class IETFUtils
         {
             switch (vBuf.charAt(index))
             {
-                case ',':
-                case '"':
-                case '\\':
-                case '+':
-                case '=':
-                case '<':
-                case '>':
-                case ';':
-                {
-                    vBuf.insert(index, "\\");
-                    index += 2;
-                    ++end;
-                    break;
-                }
-                default:
-                {
-                    ++index;
-                    break;
-                }
+            case ',':
+            case '"':
+            case '\\':
+            case '+':
+            case '=':
+            case '<':
+            case '>':
+            case ';':
+            {
+                vBuf.insert(index, "\\");
+                index += 2;
+                ++end;
+                break;
+            }
+            default:
+            {
+                ++index;
+                break;
+            }
             }
         }
 
@@ -512,7 +567,7 @@ public class IETFUtils
             return str;
         }
 
-        StringBuffer res = new StringBuffer();
+        StringBuilder res = new StringBuilder();
 
         char c1 = str.charAt(0);
         res.append(c1);

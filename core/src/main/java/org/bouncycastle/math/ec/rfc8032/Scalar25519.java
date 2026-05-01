@@ -339,7 +339,7 @@ abstract class Scalar25519
                 ScalarUtil.subShifted_UV(3, s, u0, u1, v0, v1);
             }
 
-            if (ScalarUtil.lessThan(last, Nu, Nv))
+            if (ScalarUtil.lessThanUnsigned(last, Nu, Nv))
             {
                 int[] t0 = u0; u0 = v0; v0 = t0;
                 int[] t1 = u1; u1 = v1; v1 = t1;

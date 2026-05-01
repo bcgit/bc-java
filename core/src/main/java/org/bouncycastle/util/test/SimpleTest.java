@@ -16,7 +16,7 @@ public abstract class SimpleTest
         return SimpleTestResult.successful(this, "Okay");
     }
 
-    protected void fail(
+    public void fail(
         String message)
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message));
@@ -31,7 +31,7 @@ public abstract class SimpleTest
         }
     }
 
-    protected void isTrue(
+    public void isTrue(
         String message,
         boolean value)
     {
@@ -163,7 +163,7 @@ public abstract class SimpleTest
         throw new TestFailedException(SimpleTestResult.failed(this, message, throwable));
     }
 
-    protected void fail(
+    public void fail(
         String message,
         Object expected,
         Object found)
@@ -178,7 +178,7 @@ public abstract class SimpleTest
         return Arrays.areEqual(a, b);
     }
 
-    protected boolean areEqual(byte[] a, int aFromIndex, int aToIndex, byte[] b, int bFromIndex, int bToIndex)
+    public boolean areEqual(byte[] a, int aFromIndex, int aToIndex, byte[] b, int bFromIndex, int bToIndex)
     {
         return Arrays.areEqual(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
     }
@@ -273,7 +273,7 @@ public abstract class SimpleTest
             throws Exception;
     }
 
-    protected Exception testException(String failMessage, String exceptionClass, TestExceptionOperation operation)
+    public Exception testException(String failMessage, String exceptionClass, TestExceptionOperation operation)
     {
         try
         {
@@ -286,7 +286,7 @@ public abstract class SimpleTest
             {
                 isTrue(e.getMessage(), e.getMessage().indexOf(failMessage) >= 0);
             }
-            isTrue(e.getClass().getName().indexOf(exceptionClass) >= 0);
+            isTrue(e.getMessage(),e.getClass().getName().indexOf(exceptionClass) >= 0);
             return e;
         }
         return null;

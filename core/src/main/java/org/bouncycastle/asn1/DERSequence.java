@@ -11,27 +11,49 @@ import java.io.IOException;
 public class DERSequence
     extends ASN1Sequence
 {
+    public static final DERSequence EMPTY = new DERSequence();
+
     public static DERSequence convert(ASN1Sequence seq)
     {
         return (DERSequence)seq.toDERObject();
     }
 
+    public static DERSequence fromElementsOptional(ASN1Encodable[] elements)
+    {
+        if (elements == null)
+        {
+            return null;
+        }
+
+        return elements.length < 1 ? EMPTY : new DERSequence(elements);
+    }
+
     private int contentsLength = -1;
 
     /**
-     * Create an empty sequence
+     * Create an empty sequence.
      */
     public DERSequence()
     {
     }
 
     /**
-     * Create a sequence containing one object
+     * Create a sequence containing one object.
      * @param element the object to go in the sequence.
      */
     public DERSequence(ASN1Encodable element)
     {
         super(element);
+    }
+
+    /**
+     * Create a sequence containing two objects.
+     * @param element1 the first object to go in the sequence.
+     * @param element2 the second object to go in the sequence.
+     */
+    public DERSequence(ASN1Encodable element1, ASN1Encodable element2)
+    {
+        super(element1, element2);
     }
 
     /**
@@ -135,7 +157,7 @@ public class DERSequence
 
     ASN1External toASN1External()
     {
-        return new DERExternal(this);
+        return DERExternal.fromSequence(this);
     }
 
     ASN1OctetString toASN1OctetString()

@@ -11,12 +11,13 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
 
 public class BCEdDSAPublicKey
-    implements EdDSAPublicKey
+    implements EdDSAPublicKey, BCKey
 {
     static final long serialVersionUID = 1L;
 

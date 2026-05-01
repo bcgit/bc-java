@@ -104,7 +104,7 @@ public class BasicConstraints
         int     pathLenConstraint)
     {
         this.cA = ASN1Boolean.getInstance(true);
-        this.pathLenConstraint = new ASN1Integer(pathLenConstraint);
+        this.pathLenConstraint = ASN1Integer.valueOf(pathLenConstraint);
     }
 
     public boolean isCA()

@@ -2,8 +2,9 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -18,6 +19,7 @@ import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -35,7 +37,10 @@ public class KeyIdentifierTest
             throws Exception
     {
         testWildcardIdentifier();
+        testWildcardMatches();
         testIdentifierFromKeyId();
+
+        testIdentifierFromLongKeyId();
 
         testIdentifierFromV4Fingerprint();
         testIdentifierFromV6Fingerprint();
@@ -55,6 +60,20 @@ public class KeyIdentifierTest
                 wildcard.isWildcard());
 
         isEquals("*", wildcard.toString());
+
+        KeyIdentifier id = new KeyIdentifier(0L);
+        isTrue(id.isWildcard());
+    }
+
+    private void testWildcardMatches() {
+        KeyIdentifier wildcard = KeyIdentifier.wildcard();
+        KeyIdentifier nonWildcard = new KeyIdentifier(123L);
+
+        isTrue(wildcard.matches(nonWildcard));
+        isTrue(nonWildcard.matches(wildcard));
+
+        isTrue(!wildcard.matchesExplicit(nonWildcard));
+        isTrue(!nonWildcard.matchesExplicit(wildcard));
     }
 
     private void testIdentifierFromKeyId()
@@ -66,6 +85,17 @@ public class KeyIdentifierTest
                 identifier.getFingerprint() == null);
 
         isEquals("1234", identifier.toString());
+    }
+
+    private void testIdentifierFromLongKeyId()
+    {
+        isEquals(5145070902336167606L, new KeyIdentifier("4766F6B9D5F21EB6").getKeyId());
+        isEquals(5145070902336167606L, new KeyIdentifier("4766f6b9d5f21eb6").getKeyId());
+
+        isEquals(5507497285755629956L, new KeyIdentifier("4C6E8F99F6E47184").getKeyId());
+        isEquals(1745434690267590572L, new KeyIdentifier("1839079A640B2FAC").getKeyId());
+
+        isTrue(new KeyIdentifier("1839079A640B2FAC").getFingerprint() == null);
     }
 
     private void testIdentifierFromV4Fingerprint()
@@ -99,8 +129,8 @@ public class KeyIdentifierTest
     {
         PGPSecretKeyRing secretKeys = getV4Key();
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
-        PGPSecretKey subkey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
+        PGPSecretKey subkey = (PGPSecretKey)it.next();
 
         KeyIdentifier primaryIdentifier = primaryKey.getKeyIdentifier();
         isEquals(primaryKey.getKeyID(), primaryIdentifier.getKeyId());
@@ -135,13 +165,23 @@ public class KeyIdentifierTest
         isTrue(wildcard.matches(privateKey.getKeyIdentifier(new JcaKeyFingerprintCalculator())));
 
         isTrue(primaryKey.getKeyIdentifier().isPresentIn(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier)));
+                asList(primaryIdentifier, subkeyIdentifier)));
         isTrue(primaryKey.getPublicKey().getKeyIdentifier().isPresentIn(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier)));
+                asList(primaryIdentifier, subkeyIdentifier)));
         isTrue(subkey.getKeyIdentifier().isPresentIn(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier)));
+                asList(primaryIdentifier, subkeyIdentifier)));
         isTrue(subkey.getPublicKey().getKeyIdentifier().isPresentIn(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier)));
+                asList(primaryIdentifier, subkeyIdentifier)));
+    }
+
+    private List<KeyIdentifier> asList(KeyIdentifier a, KeyIdentifier b)
+    {
+        List<KeyIdentifier> l = new ArrayList<KeyIdentifier>(2);
+
+        l.add(a);
+        l.add(b);
+
+        return l;
     }
 
     private void testMatchV6Key()
@@ -149,8 +189,8 @@ public class KeyIdentifierTest
     {
         PGPSecretKeyRing secretKeys = getV6Key();
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
-        PGPSecretKey subkey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
+        PGPSecretKey subkey = (PGPSecretKey)it.next();
 
         KeyIdentifier primaryIdentifier = primaryKey.getKeyIdentifier();
         isEquals(primaryKey.getKeyID(), primaryIdentifier.getKeyId());
@@ -184,13 +224,13 @@ public class KeyIdentifierTest
         isTrue(wildcard.matches(privateKey.getKeyIdentifier(new BcKeyFingerprintCalculator())));
 
         isTrue(primaryKey.getKeyIdentifier().isPresentIn(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier)));
+                asList(primaryIdentifier, subkeyIdentifier)));
         isTrue(primaryKey.getPublicKey().getKeyIdentifier().isPresentIn(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier)));
+                asList(primaryIdentifier, subkeyIdentifier)));
         isTrue(subkey.getKeyIdentifier().isPresentIn(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier)));
+                asList(primaryIdentifier, subkeyIdentifier)));
         isTrue(subkey.getPublicKey().getKeyIdentifier().isPresentIn(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier)));
+                asList(primaryIdentifier, subkeyIdentifier)));
     }
 
     /**
@@ -220,7 +260,7 @@ public class KeyIdentifierTest
                 "M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr\n" +
                 "k0mXubZvyl4GBg==\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----\n";
-        ByteArrayInputStream bIn = new ByteArrayInputStream(KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -256,7 +296,7 @@ public class KeyIdentifierTest
                 "Pnn+We1aTBhaGa86AQ==\n" +
                 "=n8OM\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----\n";
-        ByteArrayInputStream bIn = new ByteArrayInputStream(KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);

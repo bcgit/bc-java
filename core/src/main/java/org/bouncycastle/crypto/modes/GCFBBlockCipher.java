@@ -25,14 +25,16 @@ public class GCFBBlockCipher
 
     private final CFBBlockCipher cfbEngine;
 
+    private ParametersWithIV initParams;
+
     private KeyParameter key;
-    private long         counter = 0;
-    private boolean      forEncryption;
+    private long counter = 0;
+    private boolean forEncryption;
 
     public GCFBBlockCipher(BlockCipher engine)
     {
         super(engine);
-
+        //TODO: Ensure the key size of the engine is 32 bits
         this.cfbEngine = new CFBBlockCipher(engine, engine.getBlockSize() * 8);
     }
 
@@ -41,12 +43,15 @@ public class GCFBBlockCipher
     {
         counter = 0;
         cfbEngine.init(forEncryption, params);
+        byte[] iv = null;
 
         this.forEncryption = forEncryption;
 
         if (params instanceof ParametersWithIV)
         {
-            params = ((ParametersWithIV)params).getParameters();
+            ParametersWithIV ivParams = (ParametersWithIV)params;
+            params = ivParams.getParameters();
+            iv = ivParams.getIV();
         }
 
         if (params instanceof ParametersWithRandom)
@@ -60,6 +65,23 @@ public class GCFBBlockCipher
         }
 
         key = (KeyParameter)params;
+
+        /* Pick up key/IV from parameters or most recent parameters */
+        if (key == null && initParams != null)
+        {
+            key = (KeyParameter)initParams.getParameters();
+        }
+        if (iv == null && initParams != null)
+        {
+            iv = initParams.getIV();
+        }
+        else
+        {
+            iv = cfbEngine.getCurrentIV();
+        }
+
+        /* Save the initParameters */
+        initParams = new ParametersWithIV(key, iv);
     }
 
     public String getAlgorithmName()
@@ -83,18 +105,19 @@ public class GCFBBlockCipher
 
     protected byte calculateByte(byte b)
     {
-        if (counter > 0 && counter % 1024 == 0)
+        if (counter > 0 && (counter & 1023) == 0)
         {
-            BlockCipher  base = cfbEngine.getUnderlyingCipher();
+            BlockCipher base = cfbEngine.getUnderlyingCipher();
 
             base.init(false, key);
 
             byte[] nextKey = new byte[32];
+            int blockSize = base.getBlockSize();
 
-            base.processBlock(C, 0, nextKey, 0);
-            base.processBlock(C, 8, nextKey, 8);
-            base.processBlock(C, 16, nextKey, 16);
-            base.processBlock(C, 24, nextKey, 24);
+            for (int i = 0; i < nextKey.length; i += blockSize)
+            {
+                base.processBlock(C, i, nextKey, i);
+            }
 
             key = new KeyParameter(nextKey);
 
@@ -115,6 +138,14 @@ public class GCFBBlockCipher
     public void reset()
     {
         counter = 0;
-        cfbEngine.reset();
+        if (initParams != null)
+        {
+            key = (KeyParameter)initParams.getParameters();
+            cfbEngine.init(forEncryption, initParams);
+        }
+        else
+        {
+            cfbEngine.reset();
+        }
     }
 }

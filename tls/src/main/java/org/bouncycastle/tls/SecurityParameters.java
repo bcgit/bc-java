@@ -55,6 +55,7 @@ public class SecurityParameters
     Certificate localCertificate = null;
     Certificate peerCertificate = null;
     ProtocolVersion negotiatedVersion = null;
+    int negotiatedGroup = -1;
     int statusRequestVersion = 0;
     short clientCertificateType = CertificateType.X509;
     short serverCertificateType = CertificateType.X509;
@@ -177,6 +178,8 @@ public class SecurityParameters
      * 
      * @deprecated Will be removed. Use constant CompressionMethod._null instead.
      */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public short getCompressionAlgorithm()
     {
         return CompressionMethod._null;
@@ -193,6 +196,7 @@ public class SecurityParameters
     /**
      * @deprecated Use {@link #getPRFAlgorithm()} instead.
      */
+    @Deprecated
     public int getPrfAlgorithm()
     {
         return prfAlgorithm;
@@ -367,6 +371,17 @@ public class SecurityParameters
     public ProtocolVersion getNegotiatedVersion()
     {
         return negotiatedVersion;
+    }
+
+    /**
+     * The named group selected by the server for key exchange (if any), or -1 when not negotiated.
+     * <br/>
+     * See {@link NamedGroup} for group constants. Currently not set (i.e. -1) when pre-1.3 version negotiated. Not all
+     * TLS 1.3 key exchanges negotiate a group (e.g. PskKeyExchangeMode.psk_ke).
+     */
+    public int getNegotiatedGroup()
+    {
+        return negotiatedGroup;
     }
 
     public int getStatusRequestVersion()

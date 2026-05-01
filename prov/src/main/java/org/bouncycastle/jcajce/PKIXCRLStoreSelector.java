@@ -185,45 +185,44 @@ public class PKIXCRLStoreSelector<T extends CRL>
         }
 
         X509CRL crl = (X509CRL)obj;
-        ASN1Integer dci = null;
-        try
-        {
-            byte[] bytes = crl
-                .getExtensionValue(Extension.deltaCRLIndicator.getId());
-            if (bytes != null)
-            {
-                dci = ASN1Integer.getInstance(ASN1OctetString.getInstance(bytes).getOctets());
-            }
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
-        if (isDeltaCRLIndicatorEnabled())
-        {
-            if (dci == null)
-            {
-                return false;
-            }
-        }
-        if (isCompleteCRLEnabled())
-        {
-            if (dci != null)
-            {
-                return false;
-            }
-        }
-        if (dci != null)
-        {
 
-            if (maxBaseCRLNumber != null)
+        // TODO[pkix] Do we always need to parse the Delta CRL Indicator extension?
+        {
+            ASN1Integer baseCRLNumber = null;
+            try
             {
-                if (dci.getPositiveValue().compareTo(maxBaseCRLNumber) == 1)
+                byte[] dci = crl.getExtensionValue(Extension.deltaCRLIndicator.getId());
+                if (dci != null)
+                {
+                    baseCRLNumber = ASN1Integer.getInstance(ASN1OctetString.getInstance(dci).getOctets());
+                }
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
+            if (baseCRLNumber == null)
+            {
+                if (isDeltaCRLIndicatorEnabled())
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (isCompleteCRLEnabled())
+                {
+                    return false;
+                }
+
+                if (maxBaseCRLNumber != null && baseCRLNumber.getPositiveValue().compareTo(maxBaseCRLNumber) == 1)
                 {
                     return false;
                 }
             }
         }
+
         if (issuingDistributionPointEnabled)
         {
             byte[] idp = crl

@@ -559,13 +559,8 @@ public class EthereumIESEngine
             long oBytes = len;
             int outLen = digest.getDigestSize();
 
-            //
-            // this is at odds with the standard implementation, the
-            // maximum value should be hBits * (2^32 - 1) where hBits
-            // is the digest output size in bits. We can't have an
-            // array with a long index at the moment...
-            //
-            if (oBytes > ((2L << 32) - 1))
+            // NOTE: This limit isn't reachable for current array lengths
+            if (oBytes > ((1L << 32) - 1) * outLen)
             {
                 throw new IllegalArgumentException("output length too large");
             }

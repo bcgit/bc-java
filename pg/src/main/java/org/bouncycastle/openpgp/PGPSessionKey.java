@@ -3,10 +3,13 @@ package org.bouncycastle.openpgp;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class PGPSessionKey
 {
+    private static final Pattern ASCII_ENCODING_PATTERN = Pattern.compile("(\\d{1,3}):([0-9A-Fa-f]+)");
+
     private final int algorithm;
     private final byte[] sessionKey;
 
@@ -23,22 +26,20 @@ public class PGPSessionKey
 
     public byte[] getKey()
     {
-        byte[] copy = new byte[sessionKey.length];
-        System.arraycopy(sessionKey, 0, copy, 0, sessionKey.length);
-        return copy;
+        return Arrays.clone(sessionKey);
     }
 
-    @SuppressWarnings("ArrayToString")
     public String toString()
     {
-        // mote: we only print the reference to sessionKey to prevent accidental disclosure of the actual key value.
-        return algorithm + ":" + sessionKey;
+        // NOTE: Avoid disclosing the sessionKey value.
+        String sessionKeyHashCode = Integer.toHexString(System.identityHashCode(sessionKey));
+
+        return algorithm + ":" + sessionKey.getClass().getName() + "@" + sessionKeyHashCode;
     }
 
     public static PGPSessionKey fromAsciiRepresentation(String ascii)
     {
-        Pattern pattern = Pattern.compile("(\\d{1,3}):([0-9A-Fa-f]+)");
-        Matcher matcher = pattern.matcher(ascii);
+        Matcher matcher = ASCII_ENCODING_PATTERN.matcher(ascii);
         if (!matcher.matches())
         {
             throw new IllegalArgumentException("Provided ascii encoding does not match expected format <algo-num>:<hex-key>");

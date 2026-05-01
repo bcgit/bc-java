@@ -13,19 +13,42 @@ import java.io.IOException;
 public class BERSequence
     extends ASN1Sequence
 {
+    public static final BERSequence EMPTY = new BERSequence();
+
+    public static BERSequence fromElementsOptional(ASN1Encodable[] elements)
+    {
+        if (elements == null)
+        {
+            return null;
+        }
+
+        return elements.length < 1 ? EMPTY : new BERSequence(elements);
+    }
+
     /**
-     * Create an empty sequence
+     * Create an empty sequence.
      */
     public BERSequence()
     {
     }
 
     /**
-     * Create a sequence containing one object
+     * Create a sequence containing one object.
+     * @param element the object to go in the sequence.
      */
     public BERSequence(ASN1Encodable element)
     {
         super(element);
+    }
+
+    /**
+     * Create a sequence containing two objects.
+     * @param element1 the first object to go in the sequence.
+     * @param element2 the second object to go in the sequence.
+     */
+    public BERSequence(ASN1Encodable element1, ASN1Encodable element2)
+    {
+        super(element1, element2);
     }
 
     /**

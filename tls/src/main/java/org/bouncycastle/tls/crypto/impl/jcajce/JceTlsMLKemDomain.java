@@ -1,14 +1,11 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
+import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsKemConfig;
@@ -16,31 +13,14 @@ import org.bouncycastle.tls.crypto.TlsKemDomain;
 
 public class JceTlsMLKemDomain implements TlsKemDomain
 {
-    protected static MLKEMParameters getKyberParameters(int namedGroup)
-    {
-        switch (namedGroup)
-        {
-        case NamedGroup.OQS_mlkem512:
-            return MLKEMParameters.ml_kem_512;
-        case NamedGroup.OQS_mlkem768:
-        case NamedGroup.DRAFT_mlkem768:
-            return MLKEMParameters.ml_kem_768;
-        case NamedGroup.OQS_mlkem1024:
-        case NamedGroup.DRAFT_mlkem1024:
-            return MLKEMParameters.ml_kem_1024;
-        default:
-            return null;
-        }
-    }
-
     protected final JcaTlsCrypto crypto;
-    protected final MLKEMParameters kyberParameters;
+    protected final String kemName;
     protected final boolean isServer;
 
     public JceTlsMLKemDomain(JcaTlsCrypto crypto, TlsKemConfig kemConfig)
     {
         this.crypto = crypto;
-        this.kyberParameters = getKyberParameters(kemConfig.getNamedGroup());
+        this.kemName = NamedGroup.getKemName(kemConfig.getNamedGroup());
         this.isServer = kemConfig.isServer();
     }
 
@@ -54,34 +34,31 @@ public class JceTlsMLKemDomain implements TlsKemDomain
         return new JceTlsMLKem(this);
     }
 
-    public JceTlsSecret decapsulate(MLKEMPrivateKeyParameters privateKey, byte[] ciphertext)
+    public JceTlsSecret decapsulate(PrivateKey privateKey, byte[] ciphertext)
     {
-        MLKEMExtractor kemExtract = new MLKEMExtractor(privateKey);
-        byte[] secret = kemExtract.extractSecret(ciphertext);
-        return adoptLocalSecret(secret);
+        return KemUtil.decapsulate(crypto, kemName, privateKey, ciphertext);
     }
 
-    public MLKEMPublicKeyParameters decodePublicKey(byte[] encoding)
+    public PublicKey decodePublicKey(byte[] encoding)
+        throws IOException
     {
-        return new MLKEMPublicKeyParameters(kyberParameters, encoding);
+        return KemUtil.decodePublicKey(crypto, kemName, encoding);
     }
 
-    public SecretWithEncapsulation encapsulate(MLKEMPublicKeyParameters publicKey)
+    public SecretKeyWithEncapsulation encapsulate(PublicKey publicKey)
     {
-        MLKEMGenerator kemGen = new MLKEMGenerator(crypto.getSecureRandom());
-        return kemGen.generateEncapsulated(publicKey);
+        return KemUtil.encapsulate(crypto, kemName, publicKey);
     }
 
-    public byte[] encodePublicKey(MLKEMPublicKeyParameters publicKey)
+    public byte[] encodePublicKey(PublicKey publicKey)
+        throws IOException
     {
-        return publicKey.getEncoded();
+        return KemUtil.encodePublicKey(publicKey);
     }
 
-    public AsymmetricCipherKeyPair generateKeyPair()
+    public KeyPair generateKeyPair()
     {
-        MLKEMKeyPairGenerator keyPairGenerator = new MLKEMKeyPairGenerator();
-        keyPairGenerator.init(new MLKEMKeyGenerationParameters(crypto.getSecureRandom(), kyberParameters));
-        return keyPairGenerator.generateKeyPair();
+        return KemUtil.generateKeyPair(crypto, kemName);
     }
 
     public boolean isServer()

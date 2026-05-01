@@ -1,13 +1,12 @@
 package org.bouncycastle.crypto.generators;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.MacDerivationFunction;
 import org.bouncycastle.crypto.params.KDFCounterParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Integers;
 
 /**
  * This KDF has been defined by the publicly available NIST SP 800-108 specification.
@@ -39,10 +38,6 @@ import org.bouncycastle.crypto.params.KeyParameter;
 public class KDFCounterBytesGenerator
     implements MacDerivationFunction
 {
-
-    private static final BigInteger INTEGER_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
-    private static final BigInteger TWO = BigInteger.valueOf(2);
-
     // please refer to the standard for the meaning of the variable names
     // all field lengths are in bytes, not in bits as specified by the standard
 
@@ -92,9 +87,7 @@ public class KDFCounterBytesGenerator
         int r = kdfParams.getR();
         this.ios = new byte[r / 8];
 
-        BigInteger maxSize = TWO.pow(r).multiply(BigInteger.valueOf(h));
-        this.maxSizeExcl = maxSize.compareTo(INTEGER_MAX) == 1 ?
-            Integer.MAX_VALUE : maxSize.intValue();
+        this.maxSizeExcl = r >= Integers.numberOfLeadingZeros(h) ? Integer.MAX_VALUE : h << r;
 
         // --- set operational state ---
 

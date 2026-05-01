@@ -6,20 +6,17 @@ import java.io.OutputStream;
 import java.util.Collection;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
-import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.ess.ESSCertID;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
 import org.bouncycastle.asn1.ess.SigningCertificate;
 import org.bouncycastle.asn1.ess.SigningCertificateV2;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.tsp.TSTInfo;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
@@ -47,7 +44,7 @@ public class TimeStampToken
 
     TimeStampTokenInfo tstInfo;
     
-    CertID   certID;
+    ESSCertIDv2 certID;
 
     public TimeStampToken(ContentInfo contentInfo)
         throws TSPException, IOException
@@ -96,15 +93,15 @@ public class TimeStampToken
 
             content.write(bOut);
 
-            this.tstInfo = new TimeStampTokenInfo(TSTInfo.getInstance(ASN1Primitive.fromByteArray(bOut.toByteArray())));
-            
+            this.tstInfo = new TimeStampTokenInfo(TSTInfo.getInstance(bOut.toByteArray()));
+
             Attribute attr = tsaSignerInfo.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificate);
 
             if (attr != null)
             {
                 SigningCertificate signCert = SigningCertificate.getInstance(attr.getAttrValues().getObjectAt(0));
 
-                this.certID = new CertID(ESSCertID.getInstance(signCert.getCerts()[0]));
+                this.certID = ESSCertIDv2.from(ESSCertID.getInstance(signCert.getCerts()[0]));
             }
             else
             {
@@ -117,7 +114,7 @@ public class TimeStampToken
 
                 SigningCertificateV2 signCertV2 = SigningCertificateV2.getInstance(attr.getAttrValues().getObjectAt(0));
 
-                this.certID = new CertID(ESSCertIDv2.getInstance(signCertV2.getCerts()[0]));
+                this.certID = ESSCertIDv2.getInstance(signCertV2.getCerts()[0]);
             }
         }
         catch (CMSException e)
@@ -195,30 +192,31 @@ public class TimeStampToken
             DigestCalculator calc = sigVerifier.getDigestCalculator(certID.getHashAlgorithm());
 
             OutputStream cOut = calc.getOutputStream();
-
             cOut.write(certHolder.getEncoded());
             cOut.close();
 
-            if (!Arrays.constantTimeAreEqual(certID.getCertHash(), calc.getDigest()))
+            if (!Arrays.constantTimeAreEqual(certID.getCertHashObject().getOctets(), calc.getDigest()))
             {
                 throw new TSPValidationException("certificate hash does not match certID hash.");
             }
 
-            if (certID.getIssuerSerial() != null)
+            IssuerSerial issuerSerial = certID.getIssuerSerial();
+            if (issuerSerial != null)
             {
-                IssuerAndSerialNumber issuerSerial = new IssuerAndSerialNumber(certHolder.toASN1Structure());
+                Certificate c = certHolder.toASN1Structure();
 
-                if (!certID.getIssuerSerial().getSerial().equals(issuerSerial.getSerialNumber()))
+                if (!issuerSerial.getSerial().equals(c.getSerialNumber()))
                 {
                     throw new TSPValidationException("certificate serial number does not match certID for signature.");
                 }
 
-                GeneralName[]   names = certID.getIssuerSerial().getIssuer().getNames();
-                boolean         found = false;
+                GeneralName[] names = issuerSerial.getIssuer().getNames();
+                boolean found = false;
 
                 for (int i = 0; i != names.length; i++)
                 {
-                    if (names[i].getTagNo() == 4 && X500Name.getInstance(names[i].getName()).equals(X500Name.getInstance(issuerSerial.getName())))
+                    if (names[i].getTagNo() == GeneralName.directoryName &&
+                        X500Name.getInstance(names[i].getName()).equals(c.getIssuer()))
                     {
                         found = true;
                         break;
@@ -325,60 +323,5 @@ public class TimeStampToken
         throws IOException
     {
         return tsToken.getEncoded(encoding);
-    }
-
-    // perhaps this should be done using an interface on the ASN.1 classes...
-    private static class CertID
-    {
-        private ESSCertID certID;
-        private ESSCertIDv2 certIDv2;
-
-        CertID(ESSCertID certID)
-        {
-            this.certID = certID;
-            this.certIDv2 = null;
-        }
-
-        CertID(ESSCertIDv2 certID)
-        {
-            this.certIDv2 = certID;
-            this.certID = null;
-        }
-
-        public AlgorithmIdentifier getHashAlgorithm()
-        {
-            if (certID != null)
-            {
-                return new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1);
-            }
-            else
-            {
-                return certIDv2.getHashAlgorithm();
-            }
-        }
-
-        public byte[] getCertHash()
-        {
-            if (certID != null)
-            {
-                return certID.getCertHash();
-            }
-            else
-            {
-                return certIDv2.getCertHash();
-            }
-        }
-
-        public IssuerSerial getIssuerSerial()
-        {
-            if (certID != null)
-            {
-                return certID.getIssuerSerial();
-            }
-            else
-            {
-                return certIDv2.getIssuerSerial();
-            }
-        }
     }
 }

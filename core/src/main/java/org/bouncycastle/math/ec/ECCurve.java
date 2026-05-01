@@ -596,9 +596,14 @@ public abstract class ECCurve
             super(FiniteFields.getPrimeField(q));
         }
 
+        public BigInteger getQ()
+        {
+            return getField().getCharacteristic();
+        }
+
         public boolean isValidFieldElement(BigInteger x)
         {
-            return x != null && x.signum() >= 0 && x.compareTo(this.getField().getCharacteristic()) < 0;
+            return x != null && x.signum() >= 0 && x.compareTo(getQ()) < 0;
         }
 
         public ECFieldElement randomFieldElement(SecureRandom r)
@@ -607,7 +612,7 @@ public abstract class ECCurve
              * NOTE: BigInteger comparisons in the rejection sampling are not constant-time, so we
              * use the product of two independent elements to mitigate side-channels.
              */
-            BigInteger p = getField().getCharacteristic();
+            BigInteger p = getQ();
             ECFieldElement fe1 = fromBigInteger(implRandomFieldElement(r, p));
             ECFieldElement fe2 = fromBigInteger(implRandomFieldElement(r, p));
             return fe1.multiply(fe2);
@@ -619,7 +624,7 @@ public abstract class ECCurve
              * NOTE: BigInteger comparisons in the rejection sampling are not constant-time, so we
              * use the product of two independent elements to mitigate side-channels.
              */
-            BigInteger p = getField().getCharacteristic();
+            BigInteger p = getQ();
             ECFieldElement fe1 = fromBigInteger(implRandomFieldElementMult(r, p));
             ECFieldElement fe2 = fromBigInteger(implRandomFieldElementMult(r, p));
             return fe1.multiply(fe2);
@@ -686,6 +691,8 @@ public abstract class ECCurve
         /**
          * @deprecated use constructor taking order/cofactor
          */
+        @Deprecated
+        @SuppressWarnings("InlineMeSuggester")
         public Fp(BigInteger q, BigInteger a, BigInteger b)
         {
             this(q, a, b, null, null);
@@ -702,12 +709,11 @@ public abstract class ECCurve
 
             if (isInternal)
             {
-                this.q = q;
                 knownQs.add(q);
             }
             else if (knownQs.contains(q) || validatedQs.contains(q))
             {
-                this.q = q;
+                // No need to validate
             }
             else
             {
@@ -727,10 +733,9 @@ public abstract class ECCurve
                 }
 
                 validatedQs.add(q);
-
-                this.q = q;
             }
 
+            this.q = q;
             this.r = ECFieldElement.Fp.calculateResidue(q);
             this.infinity = new ECPoint.Fp(this, null, null);
 
@@ -1150,6 +1155,8 @@ public abstract class ECCurve
          * <code>F<sub>2<sup>m</sup></sub></code>.
          * @deprecated use constructor taking order/cofactor
          */
+        @Deprecated
+        @SuppressWarnings("InlineMeSuggester")
         public F2m(
             int m,
             int k,
@@ -1208,6 +1215,8 @@ public abstract class ECCurve
          * <code>F<sub>2<sup>m</sup></sub></code>.
          * @deprecated use constructor taking order/cofactor
          */
+        @Deprecated
+        @SuppressWarnings("InlineMeSuggester")
         public F2m(
             int m,
             int k1,

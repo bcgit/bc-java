@@ -126,10 +126,10 @@ public class ECDSACredentialsTest
         X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
 
         KeyStore serverKs = createKeyStore();
-        serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[] { caCert });
+        serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
         KeyStore clientKs = createKeyStore();
-        clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[] { caCert });
+        clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
         TestProtocolUtil.runClientAndServer(new ECDSAServer(port, protocol, serverKs, keyPass, caCert),
             new ECDSAClient(port, protocol, clientKs, keyPass, caCert));

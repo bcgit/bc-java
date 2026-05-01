@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.ParallelHash;
 import org.bouncycastle.util.Arrays;
@@ -23,6 +24,7 @@ public class ParallelHashTest
     public void performTest()
         throws Exception
     {
+        testException();
         ParallelHash pHash = new ParallelHash(128, new byte[0], 8);
 
         byte[] data = Hex.decode("00 01 02 03 04 05 06 07 10 11 12 13 14 15 16 17 20 21 22 23 24 25 26 27");
@@ -162,6 +164,19 @@ public class ParallelHashTest
         {
             fail("failing second clone vector test", Hex.toHexString(expected), new String(Hex.encode(resBuf)));
         }
+    }
+
+    private void testException()
+    {
+        testException("block size should be greater than 0", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                Digest digest = new ParallelHash(128, null, 0);
+            }
+        });
     }
 
     public static void main(

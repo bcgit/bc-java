@@ -104,7 +104,7 @@ public class JceAsymmetricKeyWrapper
     public byte[] generateWrappedKey(GenericKey encryptionKey)
         throws OperatorException
     {
-        Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier().getAlgorithm(), extraMappings);
+        Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier(), extraMappings);
         AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
 
         byte[] encryptedKeyBytes = null;

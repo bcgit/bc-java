@@ -101,7 +101,7 @@ class HT
         for (int k = 0; k < engine.H_PRIME; k++)
         {
             adrs.setTreeHeight(k + 1);
-            if (((idx / (1 << k)) % 2) == 0)
+            if ((idx & (1 << k)) == 0)
             {
                 adrs.setTreeIndex(adrs.getTreeIndex() / 2);
                 node1 = engine.H(pkSeed, adrs, node0, AUTH[k]);

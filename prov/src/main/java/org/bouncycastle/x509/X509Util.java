@@ -133,8 +133,8 @@ class X509Util
         return new RSASSAPSSparams(
             hashAlgId,
             new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
-            new ASN1Integer(saltSize),
-            new ASN1Integer(1));
+            ASN1Integer.valueOf(saltSize),
+            RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
     }
 
     static ASN1ObjectIdentifier getAlgorithmOID(

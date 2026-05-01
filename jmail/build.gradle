@@ -1,6 +1,6 @@
 
 plugins {
-  id "biz.aQute.bnd.builder" version "7.0.0"
+  id "biz.aQute.bnd.builder" version "7.1.0"
 }
 
 jar.archiveBaseName = "bcjmail-$vmrange"
@@ -27,7 +27,6 @@ dependencies {
 
     implementation group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.0.1'
     implementation group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.0.0'
-    implementation project(path: ':core')
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
@@ -40,13 +39,14 @@ evaluationDependsOn(":pkix")
 
 task copyTask(type: Copy) {
     duplicatesStrategy = 'include'
-    from '../mail/src/main/java'
-    from 'src/main/java'
-    into 'build/src/main/java'
+    from '../mail/src/main'
+    from 'src/main'
+    into 'build/src/main'
     filter { String line -> (line.contains('javax.mail') ||  line.contains('javax.activation')) ? line.replace('javax.mail', 'jakarta.mail').replace('javax.activation', 'jakarta.activation') : line }
 }
 
 compileJava.dependsOn(copyTask)
+processResources.dependsOn(copyTask)
 
 
 compileJava {
@@ -83,6 +83,11 @@ jar {
     manifest.attributes('Export-Package': "org.bouncycastle.mail.*;version=${v}")
     manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,jakarta.*;resolution:=optional,!org.bouncycastle.mail.*,org.bouncycastle.*;version=\"[${v},${maxVersion})\"")
     manifest.attributes('Bundle-Version': "${v}")
+    manifest.attributes('Permissions': 'all-permissions')
+    manifest.attributes('Codebase': '*')
+    manifest.attributes('Application-Library-Allowable-Codebase': '*')
+    manifest.attributes('Caller-Allowable-Codebase': '*') 
+    manifest.attributes('Trusted-Library': 'true')
 }
 
 task sourcesJar(type: Jar) {
@@ -114,3 +119,18 @@ test {
 }
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcjmail-$vmrange"
+            from components.java
+
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+    }
+}

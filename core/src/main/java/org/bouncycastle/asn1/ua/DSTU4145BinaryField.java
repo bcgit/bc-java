@@ -96,17 +96,17 @@ public class DSTU4145BinaryField
     {
         ASN1EncodableVector v = new ASN1EncodableVector(2);
 
-        v.add(new ASN1Integer(m));
+        v.add(ASN1Integer.valueOf(m));
         if (j == 0) //Trinomial
         {
-            v.add(new ASN1Integer(k));
+            v.add(ASN1Integer.valueOf(k));
         }
         else
         {
             ASN1EncodableVector coefs = new ASN1EncodableVector(3);
-            coefs.add(new ASN1Integer(k));
-            coefs.add(new ASN1Integer(j));
-            coefs.add(new ASN1Integer(l));
+            coefs.add(ASN1Integer.valueOf(k));
+            coefs.add(ASN1Integer.valueOf(j));
+            coefs.add(ASN1Integer.valueOf(l));
 
             v.add(new DERSequence(coefs));
         }

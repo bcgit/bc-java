@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -79,7 +78,7 @@ public class PublicVerificationKey
 
         if (object != null)
         {
-            return new PublicVerificationKey(ASN1TaggedObject.getInstance(object, BERTags.CONTEXT_SPECIFIC));
+            return new PublicVerificationKey(ASN1TaggedObject.getContextInstance(object));
         }
         return null;
     }

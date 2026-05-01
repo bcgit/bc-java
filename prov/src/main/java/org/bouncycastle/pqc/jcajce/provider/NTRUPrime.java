@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.util.SpiUtil;
 import org.bouncycastle.pqc.jcajce.provider.ntruprime.NTRULPRimeKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.ntruprime.SNTRUPrimeKeyFactorySpi;
 
@@ -27,16 +28,15 @@ public class NTRUPrime
 
             AsymmetricKeyInfoConverter keyFact = new NTRULPRimeKeyFactorySpi();
 
-            provider.addAlgorithm("Cipher.NTRULPRIME", PREFIX + "NTRULPRimeCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_ntrulprime, "NTRU");
-            
+            addCipherAlgorithm(provider, "NTRULPRIME", PREFIX + "NTRULPRimeCipherSpi$Base", BCObjectIdentifiers.pqc_kem_ntrulprime);
+
             registerOid(provider, BCObjectIdentifiers.ntrulpr653, "NTRULPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntrulpr761, "NTRULPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntrulpr857, "NTRULPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntrulpr953, "NTRULPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntrulpr1013, "NTRULPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntrulpr1277, "NTRULPRIME", keyFact);
-            
+
             provider.addAlgorithm("KeyFactory.SNTRUPRIME", PREFIX + "SNTRUPrimeKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.SNTRUPRIME", PREFIX + "SNTRUPrimeKeyPairGeneratorSpi");
 
@@ -44,8 +44,7 @@ public class NTRUPrime
 
             keyFact = new SNTRUPrimeKeyFactorySpi();
 
-            provider.addAlgorithm("Cipher.SNTRUPRIME", PREFIX + "SNTRUPrimeCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_sntruprime, "NTRU");
+            addCipherAlgorithm(provider, "SNTRUPRIME", PREFIX + "SNTRUPrimeCipherSpi$Base", BCObjectIdentifiers.pqc_kem_sntruprime);
 
             registerOid(provider, BCObjectIdentifiers.sntrup653, "SNTRUPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.sntrup761, "SNTRUPRIME", keyFact);
@@ -53,6 +52,12 @@ public class NTRUPrime
             registerOid(provider, BCObjectIdentifiers.sntrup953, "SNTRUPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.sntrup1013, "SNTRUPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.sntrup1277, "SNTRUPRIME", keyFact);
+
+            if (SpiUtil.hasKEM())
+            {
+                // TODO Per-parameter-set SPI classes?
+                addKEMAlgorithm(provider, "SNTRUPRIME", PREFIX + "SNTRUPrimeKEMSpi$SNTRUPrime", BCObjectIdentifiers.pqc_kem_sntruprime);
+            }
         }
     }
 }

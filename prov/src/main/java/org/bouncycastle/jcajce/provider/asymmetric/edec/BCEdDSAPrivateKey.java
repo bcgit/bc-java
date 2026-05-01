@@ -15,13 +15,14 @@ import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
 
 public class BCEdDSAPrivateKey
-    implements EdDSAPrivateKey
+    implements EdDSAPrivateKey, BCKey
 {
     static final long serialVersionUID = 1L;
     

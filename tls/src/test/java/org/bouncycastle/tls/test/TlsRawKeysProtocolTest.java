@@ -40,7 +40,7 @@ public class TlsRawKeysProtocolTest
         MockRawKeysTlsClient client = new MockRawKeysTlsClient(
                 CertificateType.X509,
                 (short) -1,
-                new short[] {CertificateType.RawPublicKey, CertificateType.X509},
+                new short[]{ CertificateType.RawPublicKey, CertificateType.X509 },
                 null,
                 generateKeyPair(),
                 tlsVersion);
@@ -68,14 +68,14 @@ public class TlsRawKeysProtocolTest
         MockRawKeysTlsClient client = new MockRawKeysTlsClient(
                 CertificateType.X509,
                 CertificateType.X509,
-                new short[] {CertificateType.X509},
-                new short[] {CertificateType.X509},
+                new short[]{ CertificateType.X509 },
+                new short[]{ CertificateType.X509 },
                 generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.X509,
                 CertificateType.X509,
-                new short[] {CertificateType.X509},
+                new short[]{ CertificateType.X509 },
                 generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
@@ -103,14 +103,14 @@ public class TlsRawKeysProtocolTest
         MockRawKeysTlsClient client = new MockRawKeysTlsClient(
                 CertificateType.RawPublicKey,
                 CertificateType.RawPublicKey,
-                new short[] {CertificateType.RawPublicKey},
-                new short[] {CertificateType.RawPublicKey},
+                new short[]{ CertificateType.RawPublicKey },
+                new short[]{ CertificateType.RawPublicKey },
                 generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.RawPublicKey,
                 CertificateType.RawPublicKey,
-                new short[] {CertificateType.RawPublicKey},
+                new short[]{ CertificateType.RawPublicKey },
                 generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
@@ -131,7 +131,7 @@ public class TlsRawKeysProtocolTest
         MockRawKeysTlsClient client = new MockRawKeysTlsClient(
                 CertificateType.RawPublicKey,
                 (short) -1,
-                new short[] {CertificateType.RawPublicKey},
+                new short[]{ CertificateType.RawPublicKey },
                 null,
                 generateKeyPair(),
                 tlsVersion);
@@ -159,7 +159,7 @@ public class TlsRawKeysProtocolTest
         MockRawKeysTlsClient client = new MockRawKeysTlsClient(
                 CertificateType.RawPublicKey,
                 CertificateType.X509,
-                new short[] {CertificateType.RawPublicKey},
+                new short[]{ CertificateType.RawPublicKey },
                 null,
                 generateKeyPair(),
                 tlsVersion);
@@ -188,13 +188,13 @@ public class TlsRawKeysProtocolTest
                 CertificateType.X509,
                 CertificateType.RawPublicKey,
                 null,
-                new short[] {CertificateType.RawPublicKey},
+                new short[]{ CertificateType.RawPublicKey },
                 generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.X509,
                 CertificateType.RawPublicKey,
-                new short[] {CertificateType.RawPublicKey},
+                new short[]{ CertificateType.RawPublicKey },
                 generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
@@ -218,13 +218,13 @@ public class TlsRawKeysProtocolTest
                     CertificateType.X509,
                     CertificateType.RawPublicKey,
                     null,
-                    new short[] {CertificateType.RawPublicKey},
+                    new short[]{ CertificateType.RawPublicKey },
                     generateKeyPair(),
                     tlsVersion);
             MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                     CertificateType.X509,
                     CertificateType.X509,
-                    new short[] {CertificateType.X509},
+                    new short[]{ CertificateType.X509 },
                     generateKeyPair(),
                     tlsVersion);
             pumpData(client, server);
@@ -253,14 +253,14 @@ public class TlsRawKeysProtocolTest
             MockRawKeysTlsClient client = new MockRawKeysTlsClient(
                     CertificateType.RawPublicKey,
                     CertificateType.RawPublicKey,
-                    new short[] {CertificateType.RawPublicKey},
+                    new short[]{ CertificateType.RawPublicKey },
                     null,
                     generateKeyPair(),
                     tlsVersion);
             MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                     CertificateType.X509,
                     CertificateType.RawPublicKey,
-                    new short[] {CertificateType.RawPublicKey},
+                    new short[]{ CertificateType.RawPublicKey },
                     generateKeyPair(),
                     tlsVersion);
             pumpData(client, server);

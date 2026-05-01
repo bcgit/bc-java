@@ -20,6 +20,15 @@ public class ASN1Integer
         }
     };
 
+    private static final ASN1Integer[] SMALL_CONSTANTS = new ASN1Integer[17];
+
+    public static final ASN1Integer ZERO;
+    public static final ASN1Integer ONE;
+    public static final ASN1Integer TWO;
+    public static final ASN1Integer THREE;
+    public static final ASN1Integer FOUR;
+    public static final ASN1Integer FIVE;
+
     static final int SIGN_EXT_SIGNED = 0xFFFFFFFF;
     static final int SIGN_EXT_UNSIGNED = 0xFF;
 
@@ -60,15 +69,62 @@ public class ASN1Integer
      * Return an Integer from a tagged object.
      *
      * @param taggedObject the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
+     * @param declaredExplicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
      * @return an ASN1Integer instance.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
      */
-    public static ASN1Integer getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1Integer getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1Integer)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1Integer)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1Integer getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1Integer)TYPE.getTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1Integer valueOf(int value)
+    {
+        if (value >= 0L && value < SMALL_CONSTANTS.length)
+            return SMALL_CONSTANTS[value];
+
+        return new ASN1Integer(value);
+    }
+
+    public static ASN1Integer valueOf(long value)
+    {
+        if (value >= 0L && value < SMALL_CONSTANTS.length)
+            return SMALL_CONSTANTS[(int)value];
+
+        return new ASN1Integer(value);
+    }
+
+    static
+    {
+        for (int i = 0; i < SMALL_CONSTANTS.length; ++i)
+        {
+            SMALL_CONSTANTS[i] = new ASN1Integer(i);
+        }
+
+        ZERO = SMALL_CONSTANTS[0];
+        ONE = SMALL_CONSTANTS[1];
+        TWO = SMALL_CONSTANTS[2];
+        THREE = SMALL_CONSTANTS[3];
+        FOUR = SMALL_CONSTANTS[4];
+        FIVE = SMALL_CONSTANTS[5];
+    }
+
+    /**
+     * Construct an INTEGER from the passed in int value.
+     *
+     * @param value the int representing the value desired.
+     */
+    public ASN1Integer(int value)
+    {
+        this.bytes = BigInteger.valueOf(value).toByteArray();
+        this.start = 0;
     }
 
     /**

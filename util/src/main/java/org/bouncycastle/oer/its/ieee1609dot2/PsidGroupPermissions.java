@@ -123,7 +123,7 @@ public class PsidGroupPermissions
 
         public Builder setMinChainLength(long minChainLength)
         {
-            this.minChainLength = new ASN1Integer(minChainLength);
+            this.minChainLength = ASN1Integer.valueOf(minChainLength);
             return this;
         }
 
@@ -147,7 +147,7 @@ public class PsidGroupPermissions
 
         public Builder setChainLengthRange(long chainLengthRange)
         {
-            this.chainLengthRange = new ASN1Integer(chainLengthRange);
+            this.chainLengthRange = ASN1Integer.valueOf(chainLengthRange);
             return this;
         }
 

@@ -145,6 +145,16 @@ public class BCDSAPrivateKey
         return attrCarrier.getBagAttributeKeys();
     }
 
+    public boolean hasFriendlyName()
+    {
+        return attrCarrier.hasFriendlyName();
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        attrCarrier.setFriendlyName(friendlyName);
+    }
+
     private void readObject(
         ObjectInputStream in)
         throws IOException, ClassNotFoundException
@@ -168,7 +178,7 @@ public class BCDSAPrivateKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder   buf = new StringBuilder();
         String          nl = Strings.lineSeparator();
 
         BigInteger y = getParams().getG().modPow(x, getParams().getP());

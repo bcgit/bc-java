@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * EncryptedContentInfo ::= SEQUENCE {
  *     contentType ContentType,
  *     contentEncryptionAlgorithm ContentEncryptionAlgorithmIdentifier,
- *     encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL 
+ *     encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL
  * }
  * </pre>
  */
@@ -27,26 +27,26 @@ public class EncryptedContentInfoParser
     private ASN1TaggedObjectParser _encryptedContent;
 
     public EncryptedContentInfoParser(
-        ASN1SequenceParser  seq) 
+        ASN1SequenceParser  seq)
         throws IOException
     {
         _contentType = (ASN1ObjectIdentifier)seq.readObject();
         _contentEncryptionAlgorithm = AlgorithmIdentifier.getInstance(seq.readObject().toASN1Primitive());
         _encryptedContent = (ASN1TaggedObjectParser)seq.readObject();
     }
-    
+
     public ASN1ObjectIdentifier getContentType()
     {
         return _contentType;
     }
-    
+
     public AlgorithmIdentifier getContentEncryptionAlgorithm()
     {
         return _contentEncryptionAlgorithm;
     }
 
     public ASN1Encodable getEncryptedContent(
-        int  tag) 
+        int  tag)
         throws IOException
     {
         return ASN1Util.parseContextBaseUniversal(_encryptedContent, 0, false, tag);

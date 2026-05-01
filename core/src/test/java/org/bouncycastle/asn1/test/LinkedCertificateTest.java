@@ -70,11 +70,7 @@ public class LinkedCertificateTest
 
         checkValues(linked, digestInfo, certLocation, certIssuer, caCerts);
 
-        ASN1InputStream aIn = new ASN1InputStream(linked.toASN1Primitive().getEncoded());
-
-        ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
-
-        linked = LinkedCertificate.getInstance(seq);
+        linked = LinkedCertificate.getInstance(linked.getEncoded());
 
         checkValues(linked, digestInfo, certLocation, certIssuer, caCerts);
     }

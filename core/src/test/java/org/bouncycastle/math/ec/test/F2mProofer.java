@@ -40,7 +40,7 @@ public class F2mProofer
         int m = x.getM();
         int len = m / 2 + 5;
 
-        StringBuffer sb = new StringBuffer(len);
+        StringBuilder sb = new StringBuilder(len);
         sb.append('(');
         sb.append(x.toBigInteger().toString(16));
         sb.append(", ");

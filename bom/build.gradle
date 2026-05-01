@@ -1,0 +1,55 @@
+plugins {
+    id("java-platform")
+    id("maven-publish")
+}
+
+
+dependencies {
+    constraints {
+        api(project(":prov"))
+        api(project(":util"))
+        api(project(":pkix"))
+        api(project(":pg"))
+        api(project(":tls"))
+        api(project(":mls"))
+        api(project(":mail"))
+        api(project(":jmail"))
+    }
+}
+
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bc-$vmrange-bom"
+            from components.javaPlatform
+            pom {
+                name = "Bouncy Castle Java 8+ 1.82 (Bill of Materials)"
+                description = "This Bill of Materials POM can be used to ease dependency management when referencing multiple Bouncy Castle artifacts using Gradle or Maven."
+                url = 'https://www.bouncycastle.org/download/bouncy-castle-java/'
+                licenses {
+                    license {
+                        name = 'Bouncy Castle Licence'
+                        url = 'https://www.bouncycastle.org/licence.html'
+                        distribution = 'repo'
+                    }
+                }
+                scm {
+                    url = 'https://github.com/bcgit/bc-java'
+                }
+                issueManagement {
+                    system = 'GitHub'
+                    url = 'https://github.com/bcgit/bc-java/issues'
+                }
+                developers {
+                    developer {
+                        id = 'feedback-crypto'
+                        name = 'The Legion of the Bouncy Castle Inc.'
+                        email = 'feedback-crypto@bouncycastle.org'
+                    }
+                }
+            }
+        }
+    }
+}

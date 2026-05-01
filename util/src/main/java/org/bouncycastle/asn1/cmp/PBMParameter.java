@@ -49,8 +49,7 @@ public class PBMParameter
         int iterationCount,
         AlgorithmIdentifier mac)
     {
-        this(new DEROctetString(salt), owf,
-            new ASN1Integer(iterationCount), mac);
+        this(new DEROctetString(salt), owf, ASN1Integer.valueOf(iterationCount), mac);
     }
 
     public PBMParameter(

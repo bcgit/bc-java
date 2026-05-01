@@ -9,6 +9,7 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -20,8 +21,11 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
@@ -30,17 +34,30 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
+import org.bouncycastle.openpgp.PGPKdfParameters;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaAEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -66,6 +83,8 @@ public class OperatorJcajceTest
     public void performTest()
         throws Exception
     {
+        testPGPKeyEncryptionMethodGenerator();
+        testJcaAEADSecretKeyEncryptorBuilder();
         testCreateDigest();
         testX25519HKDF();
         testJcePBESecretKeyEncryptorBuilder();
@@ -76,6 +95,147 @@ public class OperatorJcajceTest
         testStandardDigests();
     }
 
+    private void testPGPKeyEncryptionMethodGenerator()
+        throws Exception
+    {
+        v4PBEKeyEncryptionMethodGenerator();
+        v5PBEKeyEncryptionMethodGenerator();
+        v6PBEKeyEncryptionMethodGenerator();
+
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "X448");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "X25519");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "ECDH");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.X448, "X448");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.X25519, "X25519");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
+
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "X448");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "X25519");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "ECDH");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.X448, "X448");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.X25519, "X25519");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
+
+    }
+
+    private void v3PublicKeyKeyEncryptionMethodGenerator(int publicKeyID, String algorithmName)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithmName, "BC");
+        if (publicKeyID == PublicKeyAlgorithmTags.ECDH && algorithmName.equals("ECDH"))
+        {
+            kpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+        }
+        PGPKdfParameters parameters = null;
+        if (algorithmName.equals("X448"))
+        {
+            parameters = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        }
+        else if (algorithmName.equals("X25519"))
+        {
+            parameters = new PGPKdfParameters(HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+        }
+        PGPKeyPair pgpKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, publicKeyID,
+            parameters, kpGen.generateKeyPair(), new Date());
+
+        JcePublicKeyKeyEncryptionMethodGenerator methodGenerator = new JcePublicKeyKeyEncryptionMethodGenerator(pgpKeyPair.getPublicKey());
+        int symAlgId = SymmetricKeyAlgorithmTags.CAST5;
+        JcePGPDataEncryptorBuilder v4 = new JcePGPDataEncryptorBuilder(symAlgId);
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        PublicKeyEncSessionPacket packet = (PublicKeyEncSessionPacket)methodGenerator.generate(v4, sessionKey);
+        PublicKeyDataDecryptorFactory decryptorFactory = new JcePublicKeyDataDecryptorFactoryBuilder().build(pgpKeyPair.getPrivateKey());
+        byte[] data = decryptorFactory.recoverSessionData(publicKeyID, packet.getEncSessionKey(), PublicKeyEncSessionPacket.VERSION_3);
+        if (publicKeyID == PublicKeyAlgorithmTags.X448 || publicKeyID == PublicKeyAlgorithmTags.X25519)
+        {
+            isTrue(Arrays.areEqual(sessionKey, data));
+        }
+        else
+        {
+            isTrue(Arrays.areEqual(sessionKey, Arrays.copyOfRange(data, 1, data.length - 2)));
+        }
+    }
+
+    private void v6PublicKeyKeyEncryptionMethodGenerator(int publicKeyID, String algorithmName)
+        throws Exception
+    {
+        int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithmName, "BC");
+        if (publicKeyID == PublicKeyAlgorithmTags.ECDH && algorithmName.equals("ECDH"))
+        {
+            kpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+        }
+        PGPKdfParameters parameters = null;
+        if (algorithmName.equals("X448"))
+        {
+            parameters = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        }
+        else if (algorithmName.equals("X25519"))
+        {
+            parameters = new PGPKdfParameters(HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+        }
+        PGPKeyPair pgpKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, publicKeyID,
+            parameters, kpGen.generateKeyPair(), new Date());
+
+        JcePublicKeyKeyEncryptionMethodGenerator methodGenerator = new JcePublicKeyKeyEncryptionMethodGenerator(pgpKeyPair.getPublicKey());
+
+        JcePGPDataEncryptorBuilder v6 = new JcePGPDataEncryptorBuilder(symAlgId).setUseV6AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 8);
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        PublicKeyEncSessionPacket packet = (PublicKeyEncSessionPacket)methodGenerator.generate(v6, sessionKey);
+        PublicKeyDataDecryptorFactory decryptorFactory = new JcePublicKeyDataDecryptorFactoryBuilder().build(pgpKeyPair.getPrivateKey());
+        byte[] data = decryptorFactory.recoverSessionData(publicKeyID, packet.getEncSessionKey(), PublicKeyEncSessionPacket.VERSION_6);
+        if (publicKeyID == PublicKeyAlgorithmTags.X448 || publicKeyID == PublicKeyAlgorithmTags.X25519)
+        {
+            isTrue(Arrays.areEqual(sessionKey, data));
+        }
+        else
+        {
+            isTrue(Arrays.areEqual(sessionKey, Arrays.copyOfRange(data, 0, data.length - 2)));
+        }
+    }
+
+    private void v4PBEKeyEncryptionMethodGenerator()
+        throws Exception
+    {
+        int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
+
+        JcePBEKeyEncryptionMethodGenerator methodGenerator = new JcePBEKeyEncryptionMethodGenerator("password".toCharArray());
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        JcePGPDataEncryptorBuilder v4 = new JcePGPDataEncryptorBuilder(symAlgId);
+        SymmetricKeyEncSessionPacket packet = (SymmetricKeyEncSessionPacket)methodGenerator.generate(v4, sessionKey);
+        PBEDataDecryptorFactory pbeDataDecryptorFactory = new JcePBEDataDecryptorFactoryBuilder().build("password".toCharArray());
+        byte[] key = pbeDataDecryptorFactory.makeKeyFromPassPhrase(packet.getEncAlgorithm(), packet.getS2K());
+        byte[] data = pbeDataDecryptorFactory.recoverSessionData(packet.getEncAlgorithm(), key, packet.getSecKeyData());
+        isTrue(Arrays.areEqual(sessionKey, Arrays.copyOfRange(data, 1, data.length)));
+    }
+
+    private void v5PBEKeyEncryptionMethodGenerator()
+        throws Exception
+    {
+        int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
+        JcePBEKeyEncryptionMethodGenerator methodGenerator = new JcePBEKeyEncryptionMethodGenerator("password".toCharArray());
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        JcePGPDataEncryptorBuilder v5 = new JcePGPDataEncryptorBuilder(symAlgId).setUseV5AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 10);
+        SymmetricKeyEncSessionPacket packet = (SymmetricKeyEncSessionPacket)methodGenerator.generate(v5, sessionKey);
+        PBEDataDecryptorFactory pbeDataDecryptorFactory = new JcePBEDataDecryptorFactoryBuilder().build("password".toCharArray());
+        byte[] key = pbeDataDecryptorFactory.makeKeyFromPassPhrase(packet.getEncAlgorithm(), packet.getS2K());
+        byte[] data = pbeDataDecryptorFactory.recoverAEADEncryptedSessionData(packet, key);
+        isTrue(Arrays.areEqual(sessionKey, data));
+    }
+
+    private void v6PBEKeyEncryptionMethodGenerator()
+        throws Exception
+    {
+        int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
+
+        JcePBEKeyEncryptionMethodGenerator methodGenerator = new JcePBEKeyEncryptionMethodGenerator("password".toCharArray());
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        JcePGPDataEncryptorBuilder v6 = new JcePGPDataEncryptorBuilder(symAlgId).setUseV6AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 10);
+        SymmetricKeyEncSessionPacket packet = (SymmetricKeyEncSessionPacket)methodGenerator.generate(v6, sessionKey);
+        PBEDataDecryptorFactory pbeDataDecryptorFactory = new JcePBEDataDecryptorFactoryBuilder().build("password".toCharArray());
+        byte[] key = pbeDataDecryptorFactory.makeKeyFromPassPhrase(packet.getEncAlgorithm(), packet.getS2K());
+        byte[] data = pbeDataDecryptorFactory.recoverAEADEncryptedSessionData(packet, key);
+        isTrue(Arrays.areEqual(sessionKey, data));
+    }
     private void testStandardDigests()
         throws Exception
     {
@@ -316,16 +476,47 @@ public class OperatorJcajceTest
         //isTrue(Arrays.areEqual(output, expectedDecryptedSessionKey));
     }
 
-    private class NullProvider
+    public void testJcaAEADSecretKeyEncryptorBuilder()
+        throws Exception
+    {
+        BouncyCastleProvider prov = new BouncyCastleProvider();
+        KeyPairGenerator eddsaGen = KeyPairGenerator.getInstance("EdDSA", prov);
+        Date creationTime = new Date();
+        eddsaGen.initialize(new ECNamedCurveGenParameterSpec("ed25519"));
+        KeyPair kp = eddsaGen.generateKeyPair();
+        SecureRandom random = new SecureRandom();
+        for (int version : new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        {
+            PGPKeyPair keyPair = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+            JcaAEADSecretKeyEncryptorBuilder jcaEncBuilder = new JcaAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                S2K.Argon2Params.memoryConstrainedParameters())
+                .setProvider(new BouncyCastleProvider());
+            PBESecretKeyEncryptor encryptor = jcaEncBuilder.build(
+                "Yin".toCharArray(),
+                keyPair.getPublicKey().getPublicKeyPacket());
+            byte[] key = new byte[16];
+            random.nextBytes(key);
+            byte[] input1 = new byte[64];
+            random.nextBytes(input1);
+
+            byte[] input2 = Arrays.copyOfRange(input1, 32, 64);
+            byte[] output1 = encryptor.encryptKeyData(key, input1, 32, 32);
+            byte[] output2 = encryptor.encryptKeyData(key, input2, 0, 32);
+            isTrue(Arrays.areEqual(output1, output2));
+        }
+    }
+
+    private static final class NullProvider
         extends Provider
     {
         NullProvider()
         {
-             super("NULL", 0.0, "Null Provider");
+            super("NULL", 0.0, "Null Provider");
         }
     }
 
-    private class NonDashProvider
+    private static final class NonDashProvider
         extends Provider
     {
         NonDashProvider()
@@ -336,7 +527,7 @@ public class OperatorJcajceTest
         }
     }
 
-    private class DashProvider
+    private static final class DashProvider
         extends Provider
     {
         DashProvider()

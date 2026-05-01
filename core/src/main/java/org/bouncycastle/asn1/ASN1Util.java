@@ -68,6 +68,42 @@ public abstract class ASN1Util
         return taggedObjectParser;
     }
 
+    public static Object getInstanceChoiceBaseObject(ASN1TaggedObject taggedObject, boolean declaredExplicit,
+        String choiceName)
+    {
+        if (!declaredExplicit)
+        {
+            String message = "Implicit tagging cannot be used with untagged choice type " + choiceName +
+                " (X.680 30.6, 30.8).";
+
+            throw new IllegalArgumentException(message);
+        }
+        if (taggedObject == null)
+        {
+            throw new NullPointerException("'taggedObject' cannot be null");
+        }
+
+        return getExplicitContextBaseObject(taggedObject);
+    }
+
+    public static Object getTaggedChoiceBaseObject(ASN1TaggedObject taggedObject, boolean declaredExplicit,
+        String choiceName)
+    {
+        if (!declaredExplicit)
+        {
+            String message = "Implicit tagging cannot be used with untagged choice type " + choiceName +
+                " (X.680 30.6, 30.8).";
+
+            throw new IllegalArgumentException(message);
+        }
+        if (taggedObject == null)
+        {
+            throw new NullPointerException("'taggedObject' cannot be null");
+        }
+
+        return taggedObject.getExplicitBaseObject();
+    }
+
 
     /*
      * Tag text methods
@@ -138,14 +174,34 @@ public abstract class ASN1Util
      * Wrappers for ASN1TaggedObject#getExplicitBaseObject
      */
 
+    public static ASN1Object getExplicitBaseObject(ASN1TaggedObject taggedObject, int tagClass)
+    {
+        return checkTagClass(taggedObject, tagClass).getExplicitBaseObject();
+    }
+
     public static ASN1Object getExplicitBaseObject(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
     {
         return checkTag(taggedObject, tagClass, tagNo).getExplicitBaseObject();
     }
 
+    public static ASN1Object getExplicitContextBaseObject(ASN1TaggedObject taggedObject)
+    {
+        return getExplicitBaseObject(taggedObject, BERTags.CONTEXT_SPECIFIC);
+    }
+
     public static ASN1Object getExplicitContextBaseObject(ASN1TaggedObject taggedObject, int tagNo)
     {
         return getExplicitBaseObject(taggedObject, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    public static ASN1Object tryGetExplicitBaseObject(ASN1TaggedObject taggedObject, int tagClass)
+    {
+        if (!taggedObject.hasTagClass(tagClass))
+        {
+            return null;
+        }
+
+        return taggedObject.getExplicitBaseObject();
     }
 
     public static ASN1Object tryGetExplicitBaseObject(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
@@ -156,6 +212,11 @@ public abstract class ASN1Util
         }
 
         return taggedObject.getExplicitBaseObject();
+    }
+
+    public static ASN1Object tryGetExplicitContextBaseObject(ASN1TaggedObject taggedObject)
+    {
+        return tryGetExplicitBaseObject(taggedObject, BERTags.CONTEXT_SPECIFIC);
     }
 
     public static ASN1Object tryGetExplicitContextBaseObject(ASN1TaggedObject taggedObject, int tagNo)

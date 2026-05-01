@@ -20,6 +20,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DHParameterSpec;
 
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
@@ -46,12 +47,14 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.encoders.Base64;
 
 public class CMSTestUtil
 {
     public static SecureRandom     rand;
     public static KeyPairGenerator kpg;
+    public static KeyPairGenerator kpg_2048;
 
     public static KeyPairGenerator gostKpg;
     public static KeyPairGenerator dsaKpg;
@@ -60,6 +63,25 @@ public class CMSTestUtil
     public static KeyPairGenerator ecDsaKpg;
     public static KeyPairGenerator ed25519Kpg;
     public static KeyPairGenerator ed448Kpg;
+    public static KeyPairGenerator mlDsa44Kpg;
+    public static KeyPairGenerator mlDsa65Kpg;
+    public static KeyPairGenerator mlDsa87Kpg;
+    public static KeyPairGenerator mlKem512Kpg;
+    public static KeyPairGenerator mlKem768Kpg;
+    public static KeyPairGenerator mlKem1024Kpg;
+    public static KeyPairGenerator ntruKpg;
+    public static KeyPairGenerator slhDsa_Sha2_128f_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_128s_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_192f_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_192s_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_256f_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_256s_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_128f_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_128s_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_192f_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_192s_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_256f_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_256s_Kpg;
     public static KeyGenerator     aes192kg;
     public static KeyGenerator     desede128kg;
     public static KeyGenerator     desede192kg;
@@ -121,6 +143,7 @@ public class CMSTestUtil
         try
         {
             java.security.Security.addProvider(new BouncyCastleProvider());
+            java.security.Security.addProvider(new BouncyCastlePQCProvider());
 
             try
             {
@@ -136,8 +159,8 @@ public class CMSTestUtil
             kpg  = KeyPairGenerator.getInstance("RSA", "BC");
             kpg.initialize(1024, rand);
 
-            kpg  = KeyPairGenerator.getInstance("RSA", "BC");
-            kpg.initialize(1024, rand);
+            kpg_2048  = KeyPairGenerator.getInstance("RSA", "BC");
+            kpg_2048.initialize(2048, rand);
 
             gostKpg  = KeyPairGenerator.getInstance("GOST3410", "BC");
             GOST3410ParameterSpec gost3410P = new GOST3410ParameterSpec(CryptoProObjectIdentifiers.gostR3410_94_CryptoPro_A.getId());
@@ -163,6 +186,29 @@ public class CMSTestUtil
 
             ed25519Kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
             ed448Kpg = KeyPairGenerator.getInstance("Ed448", "BC");
+
+            ntruKpg = KeyPairGenerator.getInstance(BCObjectIdentifiers.ntruhps2048509.getId(), "BCPQC");
+
+            mlDsa44Kpg = KeyPairGenerator.getInstance("ML-DSA-44", "BC");
+            mlDsa65Kpg = KeyPairGenerator.getInstance("ML-DSA-65", "BC");
+            mlDsa87Kpg = KeyPairGenerator.getInstance("ML-DSA-87", "BC");
+
+            mlKem512Kpg = KeyPairGenerator.getInstance("ML-KEM-512", "BC");
+            mlKem768Kpg = KeyPairGenerator.getInstance("ML-KEM-768", "BC");
+            mlKem1024Kpg = KeyPairGenerator.getInstance("ML-KEM-1024", "BC");
+
+            slhDsa_Sha2_128f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-128F", "BC");
+            slhDsa_Sha2_128s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-128S", "BC");
+            slhDsa_Sha2_192f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-192F", "BC");
+            slhDsa_Sha2_192s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-192S", "BC");
+            slhDsa_Sha2_256f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-256F", "BC");
+            slhDsa_Sha2_256s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-256S", "BC");
+            slhDsa_Shake_128f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-128F", "BC");
+            slhDsa_Shake_128s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-128S", "BC");
+            slhDsa_Shake_192f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-192F", "BC");
+            slhDsa_Shake_192s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-192S", "BC");
+            slhDsa_Shake_256f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-256F", "BC");
+            slhDsa_Shake_256s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-256S", "BC");
 
             aes192kg = KeyGenerator.getInstance("AES", "BC");
             aes192kg.init(192, rand);
@@ -204,7 +250,7 @@ public class CMSTestUtil
     public static String dumpBase64(
         byte[]  data)
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder    buf = new StringBuilder();
         
         data = Base64.encode(data);
         
@@ -233,6 +279,11 @@ public class CMSTestUtil
     public static KeyPair makeKeyPair()
     {
         return kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeKeyPair_2048()
+    {
+        return kpg_2048.generateKeyPair();
     }
 
     public static KeyPair makeGostKeyPair()
@@ -268,6 +319,101 @@ public class CMSTestUtil
     public static KeyPair makeEcGostKeyPair()
     {
         return ecGostKpg.generateKeyPair();
+    }
+
+    public static KeyPair makeNtruKeyPair()
+    {
+        return ntruKpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLKem512KeyPair()
+    {
+        return mlKem512Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLKem768KeyPair()
+    {
+        return mlKem768Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLKem1024KeyPair()
+    {
+        return mlKem1024Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa44KeyPair()
+    {
+        return mlDsa44Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa65KeyPair()
+    {
+        return mlDsa65Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa87KeyPair()
+    {
+        return mlDsa87Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_128f_KeyPair()
+    {
+        return slhDsa_Sha2_128f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_128s_KeyPair()
+    {
+        return slhDsa_Sha2_128s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_192f_KeyPair()
+    {
+        return slhDsa_Sha2_192f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_192s_KeyPair()
+    {
+        return slhDsa_Sha2_192s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_256f_KeyPair()
+    {
+        return slhDsa_Sha2_256f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_256s_KeyPair()
+    {
+        return slhDsa_Sha2_256s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_128f_KeyPair()
+    {
+        return slhDsa_Shake_128f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_128s_KeyPair()
+    {
+        return slhDsa_Shake_128s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_192f_KeyPair()
+    {
+        return slhDsa_Shake_192f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_192s_KeyPair()
+    {
+        return slhDsa_Shake_192s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_256f_KeyPair()
+    {
+        return slhDsa_Shake_256f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_256s_KeyPair()
+    {
+        return slhDsa_Shake_256s_Kpg.generateKeyPair();
     }
 
     public static SecretKey makeDesede128Key()
@@ -488,6 +634,10 @@ public class CMSTestUtil
 
     private static JcaContentSignerBuilder makeContentSignerBuilder(PublicKey issPub)
     {
+        /*
+         * NOTE: Current ALL test certificates are issued under a SHA1withRSA root, so this list is mostly
+         * redundant (and also incomplete in that it doesn't handle EdDSA or ML-DSA issuers).
+         */
         JcaContentSignerBuilder contentSignerBuilder;
         if (issPub instanceof RSAPublicKey)
         {
@@ -505,9 +655,13 @@ public class CMSTestUtil
         {
             contentSignerBuilder = new JcaContentSignerBuilder("GOST3411withECGOST3410");
         }
-        else
+        else if (issPub.getAlgorithm().equals("GOST3410"))
         {
             contentSignerBuilder = new JcaContentSignerBuilder("GOST3411WithGOST3410");
+        }
+        else
+        {
+            throw new UnsupportedOperationException("Algorithm handlers incomplete");
         }
 
         contentSignerBuilder.setProvider(BouncyCastleProvider.PROVIDER_NAME);

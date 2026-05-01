@@ -39,7 +39,7 @@ public class LocalizedMessage
      * @param id the id of the corresponding bundle in the resource file
      * @throws NullPointerException if <code>resource</code> or <code>id</code> is <code>null</code>
      */
-    public LocalizedMessage(String resource,String id) throws NullPointerException
+    public LocalizedMessage(String resource, String id) throws NullPointerException
     {
         if (resource == null || id == null)
         {
@@ -59,7 +59,7 @@ public class LocalizedMessage
      * @throws NullPointerException if <code>resource</code> or <code>id</code> is <code>null</code>
      * @throws UnsupportedEncodingException if the encoding is not supported
      */
-    public LocalizedMessage(String resource,String id, String encoding) throws NullPointerException, UnsupportedEncodingException
+    public LocalizedMessage(String resource, String id, String encoding) throws NullPointerException, UnsupportedEncodingException
     {
         if (resource == null || id == null)
         {
@@ -126,10 +126,10 @@ public class LocalizedMessage
      * @param key second part of the entry id
      * @param loc the used {@link Locale}
      * @param timezone the used {@link TimeZone}
-     * @return a Strng containing the localized message
+     * @return a String containing the localized message
      * @throws MissingEntryException if the resource file is not available or the entry does not exist.
      */
-    public String getEntry(String key,Locale loc, TimeZone timezone) throws MissingEntryException
+    public String getEntry(String key, Locale loc, TimeZone timezone) throws MissingEntryException
     {
         String entry = id;
         if (key != null)
@@ -204,7 +204,7 @@ public class LocalizedMessage
     {
         if (extraArgs != null)
         {
-            StringBuffer sb = new StringBuffer(msg);
+            StringBuilder sb = new StringBuilder(msg);
             Object[] filteredArgs = extraArgs.getFilteredArgs(locale);
             for (int i = 0; i < filteredArgs.length; i++)
             {
@@ -460,7 +460,7 @@ public class LocalizedMessage
     
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Resource: \"").append(resource);
         sb.append("\" Id: \"").append(id).append("\"");
         sb.append(" Arguments: ").append(arguments.getArguments().length).append(" normal");

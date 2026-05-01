@@ -11,7 +11,6 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedData;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.OutputEncryptor;
 
 /**
@@ -46,9 +45,6 @@ public class CMSEncryptedDataGenerator
         OutputEncryptor contentEncryptor)
         throws CMSException
     {
-        AlgorithmIdentifier     encAlgId;
-        ASN1OctetString         encContent;
-
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         try
@@ -64,22 +60,16 @@ public class CMSEncryptedDataGenerator
             throw new CMSException("");
         }
 
-        byte[] encryptedContent = bOut.toByteArray();
+        ASN1OctetString encryptedContent = new BEROctetString(bOut.toByteArray());
 
-        encAlgId = contentEncryptor.getAlgorithmIdentifier();
-
-        encContent = new BEROctetString(encryptedContent);
-
-        EncryptedContentInfo  eci = CMSUtils.getEncryptedContentInfo(
-                        content.getContentType(),
-                        encAlgId,
-                        encryptedContent);
+        EncryptedContentInfo encryptedContentInfo = CMSUtils.getEncryptedContentInfo(content, contentEncryptor,
+            encryptedContent);
 
         ASN1Set unprotectedAttrSet = CMSUtils.getAttrBERSet(unprotectedAttributeGenerator);
 
-        ContentInfo contentInfo = new ContentInfo(
-                CMSObjectIdentifiers.encryptedData,
-                new EncryptedData(eci, unprotectedAttrSet));
+        EncryptedData encryptedData = new EncryptedData(encryptedContentInfo, unprotectedAttrSet);
+
+        ContentInfo contentInfo = new ContentInfo(CMSObjectIdentifiers.encryptedData, encryptedData);
 
         return new CMSEncryptedData(contentInfo);
     }

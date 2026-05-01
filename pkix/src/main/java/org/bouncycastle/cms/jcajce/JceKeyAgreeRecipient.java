@@ -253,8 +253,8 @@ public abstract class JceKeyAgreeRecipient
     {
         try
         {
-            AlgorithmIdentifier wrapAlg =
-                AlgorithmIdentifier.getInstance(keyEncryptionAlgorithm.getParameters());
+            AlgorithmIdentifier wrapAlgID = AlgorithmIdentifier.getInstance(keyEncryptionAlgorithm.getParameters());
+            ASN1ObjectIdentifier wrapAlgOID = wrapAlgID.getAlgorithm();
 
             X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(senderKey.getEncoded());
             KeyFactory fact = helper.createKeyFactory(senderKey.getAlgorithm().getAlgorithm());
@@ -262,43 +262,50 @@ public abstract class JceKeyAgreeRecipient
 
             try
             {
-                SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
-                    senderPublicKey, userKeyingMaterial, recipientKey, ecc_cms_Generator);
+                SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlgID, senderPublicKey,
+                    userKeyingMaterial, recipientKey, ecc_cms_Generator);
 
-                if (wrapAlg.getAlgorithm().equals(CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap)
-                    || wrapAlg.getAlgorithm().equals(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap))
+                if (CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap.equals(wrapAlgOID) ||
+                    CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap.equals(wrapAlgOID))
                 {
                     Gost2814789EncryptedKey encKey = Gost2814789EncryptedKey.getInstance(encryptedContentEncryptionKey);
-                    Gost2814789KeyWrapParameters wrapParams = Gost2814789KeyWrapParameters.getInstance(wrapAlg.getParameters());
+                    Gost2814789KeyWrapParameters wrapParams = Gost2814789KeyWrapParameters.getInstance(
+                        wrapAlgID.getParameters());
 
-                    Cipher keyCipher = helper.createCipher(wrapAlg.getAlgorithm());
+                    Cipher keyCipher = helper.createCipher(wrapAlgOID);
 
-                    keyCipher.init(Cipher.UNWRAP_MODE, agreedWrapKey, new GOST28147WrapParameterSpec(wrapParams.getEncryptionParamSet(), userKeyingMaterial.getOctets()));
+                    keyCipher.init(Cipher.UNWRAP_MODE, agreedWrapKey,
+                        new GOST28147WrapParameterSpec(wrapParams.getEncryptionParamSet(), userKeyingMaterial.getOctets()));
 
-                    return keyCipher.unwrap(Arrays.concatenate(encKey.getEncryptedKey(), encKey.getMacKey()), helper.getBaseCipherName(contentEncryptionAlgorithm.getAlgorithm()), Cipher.SECRET_KEY);
+                    byte[] wrappedKey = Arrays.concatenate(encKey.getEncryptedKey(), encKey.getMacKey());
+                    return keyCipher.unwrap(wrappedKey, helper.getBaseCipherName(contentEncryptionAlgorithm.getAlgorithm()),
+                        Cipher.SECRET_KEY);
                 }
 
-                return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
+                return unwrapSessionKey(wrapAlgOID, agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(),
+                    encryptedContentEncryptionKey);
             }
             catch (InvalidKeyException e)
             {
                 // might be a pre-RFC 5753 message
                 if (possibleOldMessages.contains(keyEncryptionAlgorithm.getAlgorithm()))
                 {
-                    SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
+                    SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlgID,
                         senderPublicKey, userKeyingMaterial, recipientKey, old_ecc_cms_Generator);
 
-                    return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
+                    return unwrapSessionKey(wrapAlgOID, agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(),
+                        encryptedContentEncryptionKey);
                 }
                 // one last try - people do actually do this it turns out
                 if (userKeyingMaterial != null)
                 {
                     try
                     {
-                        SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
+                        SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlgID,
                             senderPublicKey, userKeyingMaterial, recipientKey, simple_ecc_cmsGenerator);
 
-                        return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
+                        return unwrapSessionKey(wrapAlgOID, agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(),
+                            encryptedContentEncryptionKey);
                     }
                     catch (InvalidKeyException ex)
                     {

@@ -4,6 +4,7 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
 import org.bouncycastle.test.PrintTestResult;
 
 public class AllTests
@@ -27,9 +28,12 @@ public class AllTests
         suite.addTestSuite(EdDSACredentialsTest.class);
         suite.addTestSuite(InstanceTest.class);
         suite.addTestSuite(KeyManagerFactoryTest.class);
+        suite.addTestSuite(MLDSACredentialsTest.class);
         suite.addTestSuite(PSSCredentialsTest.class);
+        suite.addTestSuite(SLHDSACredentialsTest.class);
         suite.addTestSuite(SSLServerSocketTest.class);
         suite.addTestSuite(SSLSocketTest.class);
+
 
         if (hasClass("javax.net.ssl.CertPathTrustManagerParameters"))
         {
@@ -40,6 +44,7 @@ public class AllTests
         suite.addTest(CipherSuitesEngineTestSuite.suite());
         suite.addTest(FipsCipherSuitesTestSuite.suite());
         suite.addTest(FipsCipherSuitesEngineTestSuite.suite());
+
 
         return new BCTestSetup(suite);
     }

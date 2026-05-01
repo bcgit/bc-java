@@ -4,8 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.AuthEnvelopedData;
@@ -36,10 +39,17 @@ public class CMSAuthEnvelopedDataGenerator
         try
         {
             OutputStream cOut = contentEncryptor.getOutputStream(bOut);
-
-            content.write(cOut);
-
-            authenticatedAttrSet = CMSUtils.processAuthAttrSet(authAttrsGenerator, contentEncryptor);
+            if (CMSAlgorithm.ChaCha20Poly1305.equals(contentEncryptor.getAlgorithmIdentifier().getAlgorithm()))
+            {
+                // AEAD Ciphers process AAD at first
+                authenticatedAttrSet = CMSUtils.processAuthAttrSet(authAttrsGenerator, contentEncryptor);
+                content.write(cOut);
+            }
+            else
+            {
+                content.write(cOut);
+                authenticatedAttrSet = CMSUtils.processAuthAttrSet(authAttrsGenerator, contentEncryptor);
+            }
 
             cOut.close();
         }
@@ -48,16 +58,18 @@ public class CMSAuthEnvelopedDataGenerator
             throw new CMSException("unable to process authenticated content: " + e.getMessage(), e);
         }
 
-        byte[] encryptedContent = bOut.toByteArray();
-        byte[] mac = contentEncryptor.getMAC();
+        ASN1OctetString encryptedContent = new BEROctetString(bOut.toByteArray());
+        ASN1OctetString mac = new DEROctetString(contentEncryptor.getMAC());
 
-        EncryptedContentInfo eci = CMSUtils.getEncryptedContentInfo(content, contentEncryptor, encryptedContent);
+        EncryptedContentInfo encryptedContentInfo = CMSUtils.getEncryptedContentInfo(content, contentEncryptor,
+            encryptedContent);
 
         ASN1Set unprotectedAttrSet = CMSUtils.getAttrDLSet(unauthAttrsGenerator);
 
-        ContentInfo contentInfo = new ContentInfo(
-            CMSObjectIdentifiers.authEnvelopedData,
-            new AuthEnvelopedData(originatorInfo, new DERSet(recipientInfos), eci, authenticatedAttrSet, new DEROctetString(mac), unprotectedAttrSet));
+        ASN1Encodable authEnvelopedData = new AuthEnvelopedData(originatorInfo, new DERSet(recipientInfos),
+            encryptedContentInfo, authenticatedAttrSet, mac, unprotectedAttrSet);
+
+        ContentInfo contentInfo = new ContentInfo(CMSObjectIdentifiers.authEnvelopedData, authEnvelopedData);
 
         return new CMSAuthEnvelopedData(contentInfo);
     }
@@ -66,7 +78,7 @@ public class CMSAuthEnvelopedDataGenerator
      * generate an auth-enveloped object that contains an CMS Enveloped Data
      * object using the given provider.
      *
-     * @param content the content to be encrypted
+     * @param content          the content to be encrypted
      * @param contentEncryptor the symmetric key based encryptor to encrypt the content with.
      */
     public CMSAuthEnvelopedData generate(

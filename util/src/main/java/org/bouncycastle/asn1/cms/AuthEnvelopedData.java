@@ -52,7 +52,7 @@ public class AuthEnvelopedData
         ASN1Set unauthAttrs)
     {
         // "It MUST be set to 0."
-        this.version = new ASN1Integer(0);
+        this.version = ASN1Integer.ZERO;
 
         this.originatorInfo = originatorInfo;
 

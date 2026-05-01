@@ -18,6 +18,7 @@ public class ASN1InputStream
     extends FilterInputStream
     implements BERTags
 {
+    private final int depth;
     private final int limit;
     private final boolean lazyEvaluate;
     private final byte[][] tmpBuffers;
@@ -83,28 +84,46 @@ public class ASN1InputStream
      */
     public ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate)
     {
-        this(input, limit, lazyEvaluate, new byte[11][]);
+        this(input, StreamUtil.findDepth(), limit, lazyEvaluate, new byte[16][]);
     }
 
-    private ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate, byte[][] tmpBuffers)
+    private ASN1InputStream(InputStream input, int depth, int limit, boolean lazyEvaluate, byte[][] tmpBuffers)
     {
         super(input);
+
+        this.depth = depth;
         this.limit = limit;
         this.lazyEvaluate = lazyEvaluate;
         this.tmpBuffers = tmpBuffers;
     }
 
-    int getLimit()
+    private ASN1InputStream createSubStream(InputStream sub, int limit, boolean lazyEvaluate) throws IOException
+    {
+        return new ASN1InputStream(sub, StreamUtil.decrementDepth(depth), limit, lazyEvaluate, tmpBuffers);
+    }
+
+    protected int getLimit()
     {
         return limit;
     }
 
+    /**
+     * @deprecated No longer used; will be removed
+     */
     protected int readLength()
         throws IOException
     {
-        return readLength(this, limit, false);
+        int length = readLength(this);
+        if (length > 0)
+        {
+            StreamUtil.checkLength(length, limit);
+        }
+        return length;
     }
 
+    /**
+     * @deprecated No longer used; will be removed
+     */
     protected void readFully(
         byte[]  bytes)
         throws IOException
@@ -132,7 +151,8 @@ public class ASN1InputStream
     {
         // TODO[asn1] Special-case zero length first?
 
-        DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, limit);
+        StreamUtil.checkLength(length, limit);
+        DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, length);
 
         if (0 == (tag & FLAGS))
         {
@@ -198,7 +218,7 @@ public class ASN1InputStream
         }
 
         int tagNo = readTagNumber(this, tag);
-        int length = readLength();
+        int length = readLength(this);
 
         if (length >= 0)
         {
@@ -221,7 +241,7 @@ public class ASN1InputStream
         }
 
         IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
-        ASN1StreamParser sp = new ASN1StreamParser(indIn, limit, tmpBuffers);
+        ASN1StreamParser sp = ASN1StreamParser.createSubParser(indIn, depth, limit, tmpBuffers);
 
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
@@ -329,7 +349,7 @@ public class ASN1InputStream
             return new ASN1EncodableVector(0);
         }
 
-        return new ASN1InputStream(defIn, remaining, lazyEvaluate, tmpBuffers).readVector();
+        return createSubStream(defIn, remaining, lazyEvaluate).readVector();
     }
 
     static int readTagNumber(InputStream s, int tag) 
@@ -383,7 +403,7 @@ public class ASN1InputStream
         return tagNo;
     }
 
-    static int readLength(InputStream s, int limit, boolean isParsing)
+    static int readLength(InputStream s)
         throws IOException
     {
         int length = s.read();
@@ -425,11 +445,6 @@ public class ASN1InputStream
             length = (length << 8) + octet;
         }
         while (++octetsPos < octetsCount);
-
-        if (length >= limit && !isParsing)   // after all we must have read at least 1 byte
-        {
-            throw new IOException("corrupted stream - out of bounds length found: " + length + " >= " + limit);
-        }
 
         return length;
     }
@@ -540,7 +555,10 @@ public class ASN1InputStream
             case INTEGER:
                 return ASN1Integer.createPrimitive(defIn.toByteArray());
             case NULL:
-                return ASN1Null.createPrimitive(defIn.toByteArray());
+            {
+                ASN1Null.checkContentsLength(defIn.getRemaining());
+                return ASN1Null.createPrimitive();
+            }
             case NUMERIC_STRING:
                 return ASN1NumericString.createPrimitive(defIn.toByteArray());
             case OBJECT_DESCRIPTOR:

@@ -20,7 +20,7 @@ public class IntendedRecipientFingerprint
         boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT, critical, isLongLength, data);
+        super(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT, critical, isLongLength, verifyData(data));
     }
 
     public IntendedRecipientFingerprint(
@@ -30,6 +30,15 @@ public class IntendedRecipientFingerprint
     {
         super(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT, critical, false,
             Arrays.prepend(fingerprint, (byte)keyVersion));
+    }
+
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 1)
+        {
+            throw new IllegalArgumentException("Data too short. Expect at least one octet of key version number.");
+        }
+        return data;
     }
 
     public int getKeyVersion()
@@ -46,4 +55,5 @@ public class IntendedRecipientFingerprint
     {
         return new KeyIdentifier(getFingerprint());
     }
+
 }

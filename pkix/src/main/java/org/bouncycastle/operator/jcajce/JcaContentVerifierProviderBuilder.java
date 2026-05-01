@@ -144,7 +144,8 @@ public class JcaContentVerifierProviderBuilder
                 }
 
                 //Use this legacy method only for composite public keys (they have that identifier)
-                if (publicKey instanceof CompositePublicKey && ((CompositePublicKey)publicKey).getAlgorithmIdentifier().equals(MiscObjectIdentifiers.id_composite_key))
+                if (publicKey instanceof CompositePublicKey
+                    && ((CompositePublicKey)publicKey).getAlgorithmIdentifier().getAlgorithm().equals(MiscObjectIdentifiers.id_composite_key))
                 {
                     List<PublicKey> keys = ((CompositePublicKey)publicKey).getPublicKeys();
 
@@ -430,17 +431,20 @@ public class JcaContentVerifierProviderBuilder
             {
                 ASN1Sequence sigSeq = ASN1Sequence.getInstance(expected);
                 boolean failed = false;
+                boolean atLeastOneChecked = false;
+            
                 for (int i = 0; i != sigSeq.size(); i++)
                 {
                     if (sigs[i] != null)
                     {
+                        atLeastOneChecked = true;
                         if (!sigs[i].verify(ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getOctets()))
                         {
                             failed = true;
                         }
                     }
                 }
-                return !failed;
+                return !failed & atLeastOneChecked;
             }
             catch (SignatureException e)
             {

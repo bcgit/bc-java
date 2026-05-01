@@ -18,7 +18,6 @@ import javax.net.ssl.SSLSessionContext;
 import org.bouncycastle.tls.SessionID;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class ProvSSLSessionContext
     implements SSLSessionContext
@@ -55,21 +54,16 @@ class ProvSSLSessionContext
         this.contextData = contextData;
     }
 
-    ProvSSLContextSpi getSSLContext()
+    ContextData getContextData()
     {
-        return contextData.getContext();
-    }
-
-    JcaTlsCrypto getCrypto()
-    {
-        return contextData.getCrypto();
+        return contextData;
     }
 
     synchronized ProvSSLSession getSessionImpl(byte[] sessionID)
     {
         processQueue();
 
-        return accessSession(mapGet(sessionsByID, makeSessionID(sessionID)));
+        return getSessionImpl(mapGet(sessionsByID, makeSessionID(sessionID)));
     }
 
     synchronized ProvSSLSession getSessionImpl(String hostName, int port)
@@ -77,7 +71,7 @@ class ProvSSLSessionContext
         processQueue();
 
         SessionEntry sessionEntry = mapGet(sessionsByPeer, makePeerKey(hostName, port));
-        ProvSSLSession session = accessSession(sessionEntry);
+        ProvSSLSession session = getSessionImpl(sessionEntry);
         if (session != null)
         {
             // NOTE: For the current simple cache implementation, need to 'access' the sessionByIDs entry
@@ -95,14 +89,15 @@ class ProvSSLSessionContext
         }
     }
 
-    synchronized ProvSSLSession reportSession(String peerHost, int peerPort, TlsSession tlsSession,
-        JsseSessionParameters jsseSessionParameters, boolean addToCache)
+    synchronized ProvSSLSession reportSession(ProvSSLSessionHandshake handshakeSession, String peerHost, int peerPort,
+        TlsSession tlsSession, JsseSessionParameters jsseSessionParameters, boolean addToCache)
     {
         processQueue();
 
         if (!addToCache)
         {
-            return new ProvSSLSession(this, peerHost, peerPort, tlsSession, jsseSessionParameters);
+            return new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort,
+                handshakeSession.getCreationTime(), tlsSession, jsseSessionParameters);
         }
 
         SessionID sessionID = makeSessionID(tlsSession.getSessionID());
@@ -111,7 +106,8 @@ class ProvSSLSessionContext
         ProvSSLSession session = sessionEntry == null ? null : sessionEntry.get();
         if (null == session || session.getTlsSession() != tlsSession)
         {
-            session = new ProvSSLSession(this, peerHost, peerPort, tlsSession, jsseSessionParameters);
+            session = new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort,
+                handshakeSession.getCreationTime(), tlsSession, jsseSessionParameters);
 
             if (null != sessionID)
             {
@@ -211,17 +207,15 @@ class ProvSSLSessionContext
         removeAllExpiredSessions();
     }
 
-    private ProvSSLSession accessSession(SessionEntry sessionEntry)
+    private ProvSSLSession getSessionImpl(SessionEntry sessionEntry)
     {
         if (sessionEntry != null)
         {
             ProvSSLSession session = sessionEntry.get();
             if (session != null)
             {
-                long currentTimeMillis = System.currentTimeMillis();
-                if (!invalidateIfCreatedBefore(sessionEntry, getCreationTimeLimit(currentTimeMillis)))
+                if (!invalidateIfCreatedBefore(sessionEntry, getCreationTimeLimit()))
                 {
-                    session.accessedAt(currentTimeMillis);
                     return session;
                 }
             }
@@ -231,9 +225,9 @@ class ProvSSLSessionContext
         return null;
     }
 
-    private long getCreationTimeLimit(long expiryTimeMillis)
+    private long getCreationTimeLimit()
     {
-        return sessionTimeoutSeconds < 1 ? Long.MIN_VALUE : (expiryTimeMillis - 1000L * sessionTimeoutSeconds);
+        return sessionTimeoutSeconds < 1 ? Long.MIN_VALUE : (System.currentTimeMillis() - 1000L * sessionTimeoutSeconds);
     }
 
     private boolean invalidateIfCreatedBefore(SessionEntry sessionEntry, long creationTimeLimit)
@@ -271,7 +265,7 @@ class ProvSSLSessionContext
     {
         processQueue();
 
-        long creationTimeLimit = getCreationTimeLimit(System.currentTimeMillis());
+        long creationTimeLimit = getCreationTimeLimit();
 
         Iterator<SessionEntry> iter = sessionsByID.values().iterator();
         while (iter.hasNext())
@@ -383,12 +377,12 @@ class ProvSSLSessionContext
             this.peerKey = makePeerKey(session);
         }
 
-        public String getPeerKey()
+        String getPeerKey()
         {
             return peerKey;
         }
 
-        public SessionID getSessionID()
+        SessionID getSessionID()
         {
             return sessionID;
         }

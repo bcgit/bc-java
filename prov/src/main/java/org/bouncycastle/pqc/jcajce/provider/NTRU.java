@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.util.SpiUtil;
 import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
 
 public class NTRU
@@ -27,22 +28,33 @@ public class NTRU
             provider.addAlgorithm("Alg.Alias.KeyGenerator." + BCObjectIdentifiers.ntruhps2048509, "NTRU");
             provider.addAlgorithm("Alg.Alias.KeyGenerator." + BCObjectIdentifiers.ntruhps2048677, "NTRU");
             provider.addAlgorithm("Alg.Alias.KeyGenerator." + BCObjectIdentifiers.ntruhps4096821, "NTRU");
+            provider.addAlgorithm("Alg.Alias.KeyGenerator." + BCObjectIdentifiers.ntruhps40961229, "NTRU");
             provider.addAlgorithm("Alg.Alias.KeyGenerator." + BCObjectIdentifiers.ntruhrss701, "NTRU");
+            provider.addAlgorithm("Alg.Alias.KeyGenerator." + BCObjectIdentifiers.ntruhrss1373, "NTRU");
 
             AsymmetricKeyInfoConverter keyFact = new NTRUKeyFactorySpi();
 
-            provider.addAlgorithm("Cipher.NTRU", PREFIX + "NTRUCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_ntru, "NTRU");
+            addCipherAlgorithm(provider, "NTRU", PREFIX + "NTRUCipherSpi$Base", BCObjectIdentifiers.pqc_kem_ntru);
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhps2048509, "NTRU");
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhps2048677, "NTRU");
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhps4096821, "NTRU");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhps40961229, "NTRU");
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhrss701, "NTRU");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhrss1373, "NTRU");
 
             registerOid(provider, BCObjectIdentifiers.pqc_kem_ntru, "NTRU", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntruhps2048509, "NTRU", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntruhps2048677, "NTRU", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntruhps4096821, "NTRU", keyFact);
+            registerOid(provider, BCObjectIdentifiers.ntruhps40961229, "NTRU", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntruhrss701, "NTRU", keyFact);
+            registerOid(provider, BCObjectIdentifiers.ntruhrss1373, "NTRU", keyFact);
+
+            if (SpiUtil.hasKEM())
+            {
+                // TODO Per-parameter-set SPI classes?
+                addKEMAlgorithm(provider, "NTRU", PREFIX + "NTRUKEMSpi$NTRU", BCObjectIdentifiers.pqc_kem_ntru);
+            }
         }
     }
 }

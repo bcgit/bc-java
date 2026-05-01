@@ -59,7 +59,7 @@ public class ECDSAPublicKey
         while (en.hasMoreElements())
         {
             Object obj = en.nextElement();
-            
+
             if (obj instanceof ASN1TaggedObject)
             {
                 ASN1TaggedObject to = (ASN1TaggedObject)obj;

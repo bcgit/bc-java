@@ -5,6 +5,7 @@ import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.Signature;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
@@ -80,7 +81,7 @@ public class JcaTlsRSAVerifier
                  */
                 AlgorithmIdentifier algID = new AlgorithmIdentifier(
                     TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE);
-                byte[] digestInfo = new DigestInfo(algID, hash).getEncoded();
+                byte[] digestInfo = new DigestInfo(algID, hash).getEncoded(ASN1Encoding.DER);
                 verifier.update(digestInfo, 0, digestInfo.length);
             }
             else

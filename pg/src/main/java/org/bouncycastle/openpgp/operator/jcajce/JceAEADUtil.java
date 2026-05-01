@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.PGPAEADUtil;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.util.Arrays;
@@ -29,59 +30,13 @@ import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
 
 class JceAEADUtil
+    extends PGPAEADUtil
 {
     private final OperatorHelper helper;
 
     public JceAEADUtil(OperatorHelper helper)
     {
         this.helper = helper;
-    }
-
-    /**
-     * Generate a nonce by xor-ing the given iv with the chunk index.
-     *
-     * @param iv         initialization vector
-     * @param chunkIndex chunk index
-     * @return nonce
-     */
-    protected static byte[] getNonce(byte[] iv, long chunkIndex)
-    {
-        byte[] nonce = Arrays.clone(iv);
-
-        xorChunkId(nonce, chunkIndex);
-
-        return nonce;
-    }
-
-    /**
-     * XOR the byte array with the chunk index in-place.
-     *
-     * @param nonce      byte array
-     * @param chunkIndex chunk index
-     */
-    protected static void xorChunkId(byte[] nonce, long chunkIndex)
-    {
-        int index = nonce.length - 8;
-
-        nonce[index++] ^= (byte)(chunkIndex >> 56);
-        nonce[index++] ^= (byte)(chunkIndex >> 48);
-        nonce[index++] ^= (byte)(chunkIndex >> 40);
-        nonce[index++] ^= (byte)(chunkIndex >> 32);
-        nonce[index++] ^= (byte)(chunkIndex >> 24);
-        nonce[index++] ^= (byte)(chunkIndex >> 16);
-        nonce[index++] ^= (byte)(chunkIndex >> 8);
-        nonce[index] ^= (byte)(chunkIndex);
-    }
-
-    /**
-     * Calculate an actual chunk length from the encoded chunk size.
-     *
-     * @param chunkSize encoded chunk size
-     * @return decoded length
-     */
-    protected static long getChunkLength(int chunkSize)
-    {
-        return 1L << (chunkSize + 6);
     }
 
     /**
@@ -274,6 +229,29 @@ class JceAEADUtil
             + "/" + mode + "/NoPadding";
 
         return helper.createCipher(cName);
+    }
+
+    static byte[] processAeadKeyData(JceAEADUtil aeadUtil, int mode, int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv, int packetTag, int keyVersion, byte[] keyData, int keyOff, int keyLen, byte[] pubkeyData)
+        throws PGPException
+    {
+        // TODO: Replace HDKF code with JCE based implementation
+        byte[] key = generateHKDFBytes(s2kKey, null,
+            new byte[]{(byte)(0xC0 | packetTag), (byte)keyVersion, (byte)encAlgorithm, (byte)aeadAlgorithm},
+            SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm));
+
+        try
+        {
+            byte[] aad = Arrays.prepend(pubkeyData, (byte)(0xC0 | packetTag));
+            SecretKey secretKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
+            final Cipher c = aeadUtil.createAEADCipher(encAlgorithm, aeadAlgorithm);
+
+            JceAEADCipherUtil.setUpAeadCipher(c, secretKey, mode, iv, 128, aad);
+            return c.doFinal(keyData, keyOff, keyLen);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new PGPException("Exception recovering AEAD protected private key material", e);
+        }
     }
 
     static class PGPAeadInputStream

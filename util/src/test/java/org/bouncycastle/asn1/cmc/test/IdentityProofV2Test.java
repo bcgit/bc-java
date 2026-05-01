@@ -26,8 +26,8 @@ public class IdentityProofV2Test
         throws Exception
     {
         IdentityProofV2 proofV2 = new IdentityProofV2(
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.encryptionAlgorithm, new ASN1Integer(10L)),
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.bagtypes, new ASN1Integer(10L)),
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.encryptionAlgorithm, ASN1Integer.valueOf(10)),
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.bagtypes, ASN1Integer.valueOf(10)),
             "Cats".getBytes()
         );
 

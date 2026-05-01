@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -54,7 +53,7 @@ public class OtherRevocationInfoFormat
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a OtherRevocationInfoFormat object from the given object.
      * <p>
@@ -75,12 +74,12 @@ public class OtherRevocationInfoFormat
         {
             return (OtherRevocationInfoFormat)obj;
         }
-        
+
         if (obj != null)
         {
             return new OtherRevocationInfoFormat(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
     }
 
@@ -94,16 +93,11 @@ public class OtherRevocationInfoFormat
         return otherRevInfo;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(otherRevInfoFormat);
-        v.add(otherRevInfo);
-
-        return new DERSequence(v);
+        return new DERSequence(otherRevInfoFormat, otherRevInfo);
     }
 }

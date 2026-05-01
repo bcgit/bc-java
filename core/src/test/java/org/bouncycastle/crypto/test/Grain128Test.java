@@ -15,8 +15,8 @@ public class Grain128Test
     extends SimpleTest
 {
 
-    String keyStream1 = "f09b7bf7d7f6b5c2de2ffc73ac21397f";
-    String keyStream2 = "afb5babfa8de896b4b9c6acaf7c4fbfd";
+    String keyStream1 = "4bdb20824c5dce6fc63e94456c3281d4";
+    String keyStream2 = "ba399daf90df8eba103d9ea83c805904";
 
     public String getName()
     {

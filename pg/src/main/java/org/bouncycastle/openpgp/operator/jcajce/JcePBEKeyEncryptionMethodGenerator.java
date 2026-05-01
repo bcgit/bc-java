@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Provider;
@@ -12,12 +13,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -25,7 +25,6 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcAEADUtil;
 
 /**
  * JCE based generator for password based encryption (PBE) data protection methods.
@@ -81,6 +80,11 @@ public class JcePBEKeyEncryptionMethodGenerator
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, int s2kCount)
     {
         super(passPhrase, new SHA1PGPDigestCalculator(), s2kCount);
+    }
+
+    public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, S2K.Argon2Params params)
+    {
+        super(passPhrase, params);
     }
 
     /**
@@ -147,29 +151,74 @@ public class JcePBEKeyEncryptionMethodGenerator
     }
 
     protected byte[] generateV6KEK(int kekAlgorithm, byte[] ikm, byte[] info)
-     {
-         return JceAEADUtil.generateHKDFBytes(ikm, null, info, SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm));
-     }
+    {
+        return JceAEADUtil.generateHKDFBytes(ikm, null, info, SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm));
+    }
 
-     protected byte[] getEskAndTag(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo, byte[] key, byte[] iv, byte[] info)
-         throws PGPException
-     {
-         byte[] sessionKey = new byte[sessionInfo.length - 3];
-         System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
+    protected byte[] getEskAndTag(int kekAlgorithm, int aeadAlgorithm, byte[] sessionKey, byte[] key, byte[] iv, byte[] info)
+        throws PGPException
+    {
+        String algorithm = getBaseAEADAlgorithm(kekAlgorithm);
 
-         AEADCipher aeadCipher = BcAEADUtil.createAEADCipher(kekAlgorithm, aeadAlgorithm);
-         aeadCipher.init(true, new AEADParameters(new KeyParameter(key), 128, iv, info));
-         int outLen = aeadCipher.getOutputSize(sessionKey.length);
-         byte[] eskAndTag = new byte[outLen];
-         int len = aeadCipher.processBytes(sessionKey, 0, sessionKey.length, eskAndTag, 0);
-         try
-         {
-             len += aeadCipher.doFinal(eskAndTag, len);
-         }
-         catch (InvalidCipherTextException e)
-         {
-             throw new PGPException("cannot encrypt session info", e);
-         }
-         return eskAndTag;
-     }
+        Cipher aeadCipher = createAEADCipher(algorithm, aeadAlgorithm);
+
+        try
+        {
+            aeadCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, algorithm), new AEADParameterSpec(iv, 128, info));
+            int outLen = aeadCipher.getOutputSize(sessionKey.length);
+            byte[] eskAndTag = new byte[outLen];
+
+            int len = aeadCipher.update(sessionKey, 0, sessionKey.length, eskAndTag, 0);
+
+            len += aeadCipher.doFinal(eskAndTag, len);
+
+            if (len < eskAndTag.length)
+            {
+                byte[] rv = new byte[len];
+                System.arraycopy(eskAndTag, 0, rv, 0, len);
+                return rv;
+            }
+
+            return eskAndTag;
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new PGPException("cannot encrypt session info", e);
+        }
+    }
+
+    private static String getBaseAEADAlgorithm(int encAlgorithm)
+        throws PGPException
+    {
+        if (encAlgorithm == SymmetricKeyAlgorithmTags.AES_128
+            || encAlgorithm == SymmetricKeyAlgorithmTags.AES_192
+            || encAlgorithm == SymmetricKeyAlgorithmTags.AES_256)
+        {
+            return "AES";
+        }
+        else if (encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_128
+            || encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_192
+            || encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_256)
+        {
+            return "Camellia";
+        }
+        throw new PGPException("AEAD only supported for AES and Camellia based algorithms");
+    }
+
+    private Cipher createAEADCipher(String algorithm, int aeadAlgorithm)
+        throws PGPException
+    {
+        // Block Cipher must work on 16 byte blocks
+        switch (aeadAlgorithm)
+        {
+        case AEADAlgorithmTags.EAX:
+            return helper.createCipher(algorithm + "/EAX/NoPadding");
+        case AEADAlgorithmTags.OCB:
+            return helper.createCipher(algorithm + "/OCB/NoPadding");
+        case AEADAlgorithmTags.GCM:
+            return helper.createCipher(algorithm + "/GCM/NoPadding");
+        default:
+            throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
+        }
+    }
 }

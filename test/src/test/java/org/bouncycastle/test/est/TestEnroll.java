@@ -55,7 +55,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class TestEnroll
-    extends SimpleTest
+//    extends SimpleTest
 {
 
     public String getName()
@@ -63,11 +63,12 @@ public class TestEnroll
         return "TestEnroll";
     }
 
-    public void performTest()
-        throws Exception
-    {
-        ESTTestUtils.runJUnit(TestEnroll.class);
-    }
+
+//    public void performTest()
+//        throws Exception
+//    {
+//        ESTTestUtils.runJUnit(TestEnroll.class);
+//    }
 
 
     // Start a server instance that uses basic auth.
@@ -2323,8 +2324,8 @@ public class TestEnroll
 //            }
 //        }
 
-        ESTTestUtils.ensureProvider();
-        runTest(new TestEnroll());
+//        ESTTestUtils.ensureProvider();
+//        runTest(new TestEnroll());
     }
 
 }

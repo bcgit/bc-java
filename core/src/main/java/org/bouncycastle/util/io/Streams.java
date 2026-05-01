@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * Utility methods to assist with stream processing.
  */
@@ -160,16 +162,7 @@ public final class Streams
 
     public static void validateBufferArguments(byte[] buf, int off, int len)
     {
-        if (buf == null)
-        {
-            throw new NullPointerException();
-        }
-        int available = buf.length - off;
-        int remaining = available - len;
-        if ((off | len | available | remaining) < 0)
-        {
-            throw new IndexOutOfBoundsException();
-        }
+        Arrays.validateSegment(buf, off, len);
     }
 
     public static void writeBufTo(ByteArrayOutputStream buf, OutputStream output)

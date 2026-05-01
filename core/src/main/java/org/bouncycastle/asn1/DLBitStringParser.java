@@ -5,8 +5,6 @@ import java.io.InputStream;
 
 /**
  * Parser for a DL encoded BIT STRING.
- * 
- * @deprecated Check for 'ASN1BitStringParser' instead 
  */
 public class DLBitStringParser
     implements ASN1BitStringParser

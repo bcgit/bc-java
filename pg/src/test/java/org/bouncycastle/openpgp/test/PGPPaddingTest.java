@@ -1,5 +1,12 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -16,6 +23,7 @@ import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPadding;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -23,12 +31,6 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Date;
 
 public class PGPPaddingTest
     extends SimpleTest
@@ -71,12 +73,26 @@ public class PGPPaddingTest
 
     private void negativePaddingLengthThrows()
     {
-        testException(null, "IllegalArgumentException", () -> new PGPPadding(-1));
+        testException(null, "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new PGPPadding(-1);
+            }
+        });
     }
 
     private void zeroPaddingLengthThrows()
     {
-        testException(null, "IllegalArgumentException", () -> new PGPPadding(0));
+        testException(null, "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new PGPPadding(0);
+            }
+        });
     }
 
     private void parsePaddedCertificate()
@@ -99,7 +115,7 @@ public class PGPPaddingTest
         PGPSecretKey secretPrimaryKey = new PGPSecretKey(primaryKeyPair.getPrivateKey(), primaryKeyPair.getPublicKey(), digestCalc, true, null);
         PGPSecretKey secretSubKey = new PGPSecretKey(subKeyPair.getPrivateKey(), subKeyPair.getPublicKey(), digestCalc, false, null);
 
-        PGPPublicKeyRing certificate = new PGPPublicKeyRing(Arrays.asList(secretPrimaryKey.getPublicKey(), secretSubKey.getPublicKey()));
+        PGPPublicKeyRing certificate = new PGPPublicKeyRing(asList(secretPrimaryKey.getPublicKey(), secretSubKey.getPublicKey()));
         PGPPadding padding = new PGPPadding();
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -119,6 +135,16 @@ public class PGPPaddingTest
         isTrue(org.bouncycastle.util.Arrays.areEqual(
             certificate.getEncoded(PacketFormat.CURRENT),
             parsed.getEncoded(PacketFormat.CURRENT)));
+    }
+
+    private List<PGPPublicKey> asList(PGPPublicKey a, PGPPublicKey b)
+    {
+        List<PGPPublicKey> l = new ArrayList<PGPPublicKey>();
+
+        l.add(a);
+        l.add(b);
+
+        return l;
     }
 
     public static void main(String[] args)

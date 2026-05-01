@@ -76,7 +76,7 @@ public class ECPointPerformanceTest extends TestCase
 
                 double avgRate = randMult(random, g, n);
                 String coordName = COORD_NAMES[coord];
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("   ");
                 sb.append(defaultCoord ? '*' : ' ');
                 sb.append(coordName);

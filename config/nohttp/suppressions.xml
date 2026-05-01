@@ -8,7 +8,7 @@
   <suppress files="test[\\/]est.+" checks="NoHttp"/>
 
   <!-- Suppress warnings in certificates, signatures, configs and emails for testing -->
-  <suppress files=".+\.(?:tsr|ers|pem|crt|cer|eml|cnf|sig|message)$" checks="NoHttp"/>
+  <suppress files=".+\.(?:asc|bin|cer|cnf|crt|dsa|eml|ers|gen|gpg|jar|key|kbx|message|p12|pem|pub|rsa|sec|sig|tmpl|tsr|txt)$" checks="NoHttp"/>
 
   <!-- This tests server doesn't seem to support HTTPS -->
   <suppress message="http://testrfc7030.com/" checks="NoHttp"/>
@@ -19,6 +19,8 @@
   <suppress message="http://gpgtools.org" files=".+Test.java" checks="NoHttp"/>
   <suppress message="http://www.tbs-certificats.com" files=".+Test.java" checks="NoHttp"/>
   <suppress message="http://point-at-infinity.org/ecc/nisttv" files=".+[\\/]nist_ecc.txt" checks="NoHttp"/>
+  <suppress message="http://xadessrv.plugtests.net/capso/certs/SCOK/LevelBCAOK.cer0o" files=".+[\\/]bc1639test.p7m" checks="NoHttp"/>
+  <suppress message="http://xadessrv.plugtests.net/capso/crls/SCOK-LevelBCAOK.crl0" files=".+[\\/]bc1639test.p7m" checks="NoHttp"/>
 
   <!-- Suppress warnings in this file -->
   <suppress files=".+[\\/]nohttp[\\/]suppressions.xml" checks="NoHttp"/>

@@ -7,18 +7,35 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * SHAKE Digest Test
  */
 public class SHAKEDigestTest
-    extends SimpleTest
+    extends DigestTest
 {
+    private static String[] messages =
+    {
+        "",
+        "a",
+        "abc",
+        "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+    };
+
+    private static String[] digests =
+    {
+        "7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26",
+        "85c8de88d28866bf0868090b3961162bf82392f690d9e4730910f4af7c6ab3ee",
+        "5881092dd818bf5cf8a3ddb793fbcba74097d5c526a6d35f97b83351940f2cc8",
+        "1a96182b50fb8c7e74e0a707788f55e98209b8d91fade8f32f8dd5cff7bf21f5"
+    };
+
     static class MySHAKEDigest extends SHAKEDigest
     {
         MySHAKEDigest(int bitLength)
@@ -34,6 +51,7 @@ public class SHAKEDigestTest
 
     SHAKEDigestTest()
     {
+        super(new SHAKEDigest(), messages, digests);
     }
 
     public String getName()
@@ -41,9 +59,28 @@ public class SHAKEDigestTest
         return "SHAKE";
     }
 
-    public void performTest() throws Exception
+    public void performTest()
     {
-        testVectors();
+        super.performTest();
+
+        try
+        {
+            testVectors();
+        }
+        catch (Exception e)
+        {
+            throw Exceptions.illegalStateException(e.toString(), e);
+        }
+    }
+
+    protected Digest cloneDigest(Digest digest)
+    {
+        return new SHAKEDigest((SHAKEDigest)digest);
+    }
+
+    protected Digest cloneDigest(byte[] encodedState)
+    {
+        return new SHAKEDigest(encodedState);
     }
 
     public void testVectors() throws Exception

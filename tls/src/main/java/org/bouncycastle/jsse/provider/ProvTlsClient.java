@@ -174,7 +174,11 @@ class ProvTlsClient
             List<BCSNIServerName> sniServerNames = sslParameters.getServerNames();
             if (null == sniServerNames)
             {
-                String peerHostSNI = manager.getPeerHostSNI();
+                /*
+                 * A fully qualified domain name (FQDN) may contain a trailing dot. We remove it for the
+                 * purpose of SNI and endpoint ID checks (e.g. SNIHostName doesn't permit it).
+                 */
+                String peerHostSNI = JsseUtils.stripTrailingDot(manager.getPeerHostSNI());
 
                 /*
                  * TODO[jsse] Consider removing the restriction that the name must contain a '.'
@@ -210,8 +214,7 @@ class ProvTlsClient
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return manager.getContextData().getContext().getActiveCipherSuites(getCrypto(), sslParameters,
-            getProtocolVersions());
+        return null;
     }
 
     @Override
@@ -237,7 +240,7 @@ class ProvTlsClient
     @Override
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContextData().getContext().getActiveProtocolVersions(sslParameters);
+        return null;
     }
 
     @Override
@@ -391,15 +394,27 @@ class ProvTlsClient
     }
 
     @Override
+    public Vector getEarlyKeyShareGroups()
+    {
+        Vector jsse = jsseSecurityParameters.namedGroups.getLocalEarly();
+        if (jsse != null)
+        {
+            return jsse;
+        }
+
+        return super.getEarlyKeyShareGroups();
+    }
+
+    @Override
     public int getMaxCertificateChainLength()
     {
-        return JsseUtils.getMaxCertificateChainLength();
+        return JsseUtils.getMaxInboundCertChainLenClient();
     }
 
     @Override
     public int getMaxHandshakeMessageSize()
     {
-        return JsseUtils.getMaxHandshakeMessageSize();
+        return manager.getContextData().getMaxHandshakeMessageSize();
     }
 
     @Override
@@ -478,9 +493,9 @@ class ProvTlsClient
     {
         super.notifyConnectionClosed();
 
-        if (LOG.isLoggable(Level.INFO))
+        if (LOG.isLoggable(Level.FINE))
         {
-            LOG.info(clientID + " disconnected from " + JsseUtils.getPeerReport(manager));
+            LOG.fine(clientID + " disconnected from " + JsseUtils.getPeerReport(manager));
         }
     }
 
@@ -489,13 +504,30 @@ class ProvTlsClient
     {
         super.notifyHandshakeBeginning();
 
-        if (LOG.isLoggable(Level.INFO))
+        ContextData contextData = manager.getContextData();
+        ProtocolVersion[] activeProtocolVersions;
+
+        if (context.getSecurityParametersHandshake().isRenegotiating())
         {
-            LOG.info(clientID + " opening connection to " + JsseUtils.getPeerReport(manager));
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine(clientID + " renegotiating connection to " + JsseUtils.getPeerReport(manager));
+            }
+
+            activeProtocolVersions = context.getSecurityParametersConnection().getNegotiatedVersion().only();
+        }
+        else
+        {
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine(clientID + " opening connection to " + JsseUtils.getPeerReport(manager));
+            }
+
+            activeProtocolVersions = contextData.getActiveProtocolVersions(sslParameters);
         }
 
-        ContextData contextData = manager.getContextData();
-        ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
+        this.protocolVersions = activeProtocolVersions;
+        this.cipherSuites = contextData.getActiveCipherSuites(getCrypto(), sslParameters, activeProtocolVersions);
 
         jsseSecurityParameters.namedGroups = contextData.getNamedGroupsClient(sslParameters, activeProtocolVersions);
 
@@ -510,9 +542,9 @@ class ProvTlsClient
 
         this.handshakeComplete = true;
 
-        if (LOG.isLoggable(Level.INFO))
+        if (LOG.isLoggable(Level.FINE))
         {
-            LOG.info(clientID + " established connection with " + JsseUtils.getPeerReport(manager));
+            LOG.fine(clientID + " established connection with " + JsseUtils.getPeerReport(manager));
         }
 
         TlsSession connectionTlsSession = context.getSession();
@@ -527,8 +559,8 @@ class ProvTlsClient
             // TODO[tls13] Resumption/PSK
             boolean addToCache = provClientEnableSessionResumption && !TlsUtils.isTLSv13(context);
 
-            this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
-                jsseSessionParameters, addToCache);
+            this.sslSession = sslSessionContext.reportSession(manager.getBCHandshakeSessionImpl(), peerHost, peerPort,
+                connectionTlsSession, jsseSessionParameters, addToCache);
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(this));
@@ -552,8 +584,9 @@ class ProvTlsClient
     @Override
     public void notifySelectedCipherSuite(int selectedCipherSuite)
     {
-        String selectedCipherSuiteName = manager.getContextData().getContext()
-            .validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
+        final ContextData contextData = manager.getContextData();
+
+        String selectedCipherSuiteName = contextData.validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
 
         if (LOG.isLoggable(Level.FINE))
         {
@@ -566,7 +599,7 @@ class ProvTlsClient
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        String serverVersionName = manager.getContextData().getContext().validateNegotiatedProtocol(sslParameters,
+        String serverVersionName = manager.getContextData().validateNegotiatedProtocol(sslParameters,
             serverVersion);
 
         if (LOG.isLoggable(Level.FINE))
@@ -892,7 +925,7 @@ class ProvTlsClient
         return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key, null);
     }
 
-    private void handleKeyManagerMisses(LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap, String selectedKeyType)
+    private void handleKeyManagerMisses(Map<String, SignatureSchemeInfo> keyTypeMap, String selectedKeyType)
     {
         for (Map.Entry<String, SignatureSchemeInfo> entry : keyTypeMap.entrySet())
         {

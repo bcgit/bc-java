@@ -45,12 +45,12 @@ class ProvSSLServerSocketFactory
     @Override
     public String[] getDefaultCipherSuites()
     {
-        return contextData.getContext().getDefaultCipherSuites(false);
+        return contextData.getDefaultCipherSuites(false);
     }
 
     @Override
     public String[] getSupportedCipherSuites()
     {
-        return contextData.getContext().getSupportedCipherSuites();
+        return contextData.getSupportedCipherSuites();
     }
 }

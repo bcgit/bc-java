@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 
@@ -28,6 +29,10 @@ public class GM
 
         public void configure(ConfigurableProvider provider)
         {
+            provider.addAlgorithm("KeyAgreement.SM2", PREFIX + "GMKeyExchangeSpi$SM2");
+            provider.addAlgorithm("KeyAgreement", GMObjectIdentifiers.sm2exchange, PREFIX + "GMKeyExchangeSpi$SM2");
+
+
 //            provider.addAlgorithm("Signature.BLAKE2BWITHSM2", PREFIX + "GMSignatureSpi$blake2b512WithSM2");
 //            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_blake2b512, "BLAKE2BWITHSM2");
 //            provider.addAlgorithm("Signature.BLAKE2SWITHSM2", PREFIX + "GMSignatureSpi$blake2s256WithSM2");

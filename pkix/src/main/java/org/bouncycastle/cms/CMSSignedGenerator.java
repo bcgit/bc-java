@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -89,6 +90,8 @@ public class CMSSignedGenerator
     protected Map digests = new HashMap();
 
     protected DigestAlgorithmIdentifierFinder digestAlgIdFinder;
+
+    protected Set<AlgorithmIdentifier> extraDigestAlgorithms = new LinkedHashSet<AlgorithmIdentifier>();
 
     /**
      * base constructor
@@ -250,5 +253,14 @@ public class CMSSignedGenerator
     public Map getGeneratedDigests()
     {
         return new HashMap(digests);
+    }
+
+    /**
+     * Add extra digest algorithm identifiers to the digest algorithm set in resulting SignedData object.
+     * @param digestAlgorithmIDs a set of extra digest algorithms
+     * */
+    public void addDigestAlgorithms(Set<AlgorithmIdentifier> digestAlgorithmIDs)
+    {
+        extraDigestAlgorithms.addAll(digestAlgorithmIDs);
     }
 }

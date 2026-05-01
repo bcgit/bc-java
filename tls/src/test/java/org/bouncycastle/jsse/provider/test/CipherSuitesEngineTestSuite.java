@@ -9,6 +9,7 @@ import javax.net.ssl.SSLContext;
 
 import org.junit.Assert;
 
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -23,7 +24,9 @@ public class CipherSuitesEngineTestSuite
     public static Test suite()
         throws Exception
     {
-        return createSuite(new CipherSuitesEngineTestSuite(), null, false, new CipherSuitesFilter()
+        ProviderUtils.setupHighPriority(false);
+
+        TestSuite suite = createSuite(new CipherSuitesEngineTestSuite(), null, false, new CipherSuitesFilter()
         {
             public boolean isIgnored(String cipherSuite)
             {
@@ -32,7 +35,7 @@ public class CipherSuitesEngineTestSuite
                  * we could modify that security property when running this test suite.
                  */
                 return cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_")
-                    || cipherSuite.contains("_anon_");
+                    || cipherSuite.contains("_anon_") || cipherSuite.startsWith("TLS_SHA");
             }
 
             public boolean isPermitted(String cipherSuite)
@@ -40,14 +43,20 @@ public class CipherSuitesEngineTestSuite
                 return true;
             }
         });
+
+        return new TestSetup(suite)
+        {
+            @Override
+            protected void setUp() throws Exception
+            {
+                ProviderUtils.setupHighPriority(false);
+            }
+        };
     }
 
-    static Test createSuite(TestSuite testSuite, String category, boolean fips, CipherSuitesFilter filter)
+    static TestSuite createSuite(TestSuite testSuite, String category, boolean fips, CipherSuitesFilter filter)
         throws Exception
     {
-        // TODO Consider configuring BCJSSE with explicit crypto provider (maybe only when in fips mode?)
-        ProviderUtils.setupHighPriority(fips);
-
         char[] serverPassword = "serverPassword".toCharArray();
 
         KeyPair caKeyPairDSA = TestUtils.generateDSAKeyPair();
@@ -126,7 +135,6 @@ public class CipherSuitesEngineTestSuite
                 config.category = category;
                 config.cipherSuite = cipherSuite;
                 config.clientTrustStore = ts;
-                config.fips = fips;
                 config.protocol = protocol;
                 config.serverKeyStore = ks;
                 config.serverPassword = serverPassword;

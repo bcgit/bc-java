@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
@@ -90,7 +89,7 @@ public class StringTest
 
         try
         {
-            String t61String = new String(t61Bytes, "iso-8859-1");
+            String t61String = StringTestUtil.fromISO_8891(t61Bytes);
             ASN1T61String t61 = new DERT61String(Strings.fromByteArray(t61Bytes));
 
             if (!t61.getString().equals(t61String))
@@ -103,8 +102,8 @@ public class StringTest
                 fail("DERT61String.toString() result incorrect");
             }
         }
-        catch (UnsupportedEncodingException e)
-        {
+        catch (IllegalStateException e)
+        { 
             // ignore test
         }
 

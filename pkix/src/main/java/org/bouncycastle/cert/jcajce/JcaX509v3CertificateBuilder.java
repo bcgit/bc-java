@@ -23,11 +23,11 @@ public class JcaX509v3CertificateBuilder
     /**
      * Initialise the builder using a PublicKey.
      *
-     * @param issuer X500Name representing the issuer of this certificate.
-     * @param serial the serial number for the certificate.
+     * @param issuer    X500Name representing the issuer of this certificate.
+     * @param serial    the serial number for the certificate.
      * @param notBefore date before which the certificate is not valid.
-     * @param notAfter date after which the certificate is not valid.
-     * @param subject X500Name representing the subject of this certificate.
+     * @param notAfter  date after which the certificate is not valid.
+     * @param subject   X500Name representing the subject of this certificate.
      * @param publicKey the public key to be associated with the certificate.
      */
     public JcaX509v3CertificateBuilder(X500Name issuer, BigInteger serial, Date notBefore, Date notAfter, X500Name subject, SubjectPublicKeyInfo publicKey)
@@ -38,46 +38,46 @@ public class JcaX509v3CertificateBuilder
     /**
      * Initialise the builder using a PublicKey.
      *
-     * @param issuer X500Name representing the issuer of this certificate.
-     * @param serial the serial number for the certificate.
+     * @param issuer    X500Name representing the issuer of this certificate.
+     * @param serial    the serial number for the certificate.
      * @param notBefore date before which the certificate is not valid.
-     * @param notAfter date after which the certificate is not valid.
-     * @param subject X500Name representing the subject of this certificate.
+     * @param notAfter  date after which the certificate is not valid.
+     * @param subject   X500Name representing the subject of this certificate.
      * @param publicKey the public key to be associated with the certificate.
      */
     public JcaX509v3CertificateBuilder(X500Name issuer, BigInteger serial, Date notBefore, Date notAfter, X500Name subject, PublicKey publicKey)
     {
-        super(issuer, serial, notBefore, notAfter, subject, SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
+        super(issuer, serial, notBefore, notAfter, subject, getSubjectPublicKeyInfo(publicKey));
     }
 
     /**
      * Initialise the builder using a PublicKey.
      *
-     * @param issuer X500Name representing the issuer of this certificate.
-     * @param serial the serial number for the certificate.
+     * @param issuer    X500Name representing the issuer of this certificate.
+     * @param serial    the serial number for the certificate.
      * @param notBefore Time before which the certificate is not valid.
-     * @param notAfter Time after which the certificate is not valid.
-     * @param subject X500Name representing the subject of this certificate.
+     * @param notAfter  Time after which the certificate is not valid.
+     * @param subject   X500Name representing the subject of this certificate.
      * @param publicKey the public key to be associated with the certificate.
      */
     public JcaX509v3CertificateBuilder(X500Name issuer, BigInteger serial, Time notBefore, Time notAfter, X500Name subject, PublicKey publicKey)
     {
-        super(issuer, serial, notBefore, notAfter, subject, SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
+        super(issuer, serial, notBefore, notAfter, subject, getSubjectPublicKeyInfo(publicKey));
     }
 
     /**
      * Initialise the builder using X500Principal objects and a PublicKey.
      *
-     * @param issuer principal representing the issuer of this certificate.
-     * @param serial the serial number for the certificate.
+     * @param issuer    principal representing the issuer of this certificate.
+     * @param serial    the serial number for the certificate.
      * @param notBefore date before which the certificate is not valid.
-     * @param notAfter date after which the certificate is not valid.
-     * @param subject principal representing the subject of this certificate.
+     * @param notAfter  date after which the certificate is not valid.
+     * @param subject   principal representing the subject of this certificate.
      * @param publicKey the public key to be associated with the certificate.
      */
     public JcaX509v3CertificateBuilder(X500Principal issuer, BigInteger serial, Date notBefore, Date notAfter, X500Principal subject, PublicKey publicKey)
     {
-        super(X500Name.getInstance(issuer.getEncoded()), serial, notBefore, notAfter, X500Name.getInstance(subject.getEncoded()), SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
+        super(X500Name.getInstance(issuer.getEncoded()), serial, notBefore, notAfter, X500Name.getInstance(subject.getEncoded()), getSubjectPublicKeyInfo(publicKey));
     }
 
     /**
@@ -85,11 +85,11 @@ public class JcaX509v3CertificateBuilder
      * passing through and converting the other objects provided.
      *
      * @param issuerCert certificate who's subject is the issuer of the certificate we are building.
-     * @param serial the serial number for the certificate.
-     * @param notBefore date before which the certificate is not valid.
-     * @param notAfter date after which the certificate is not valid.
-     * @param subject principal representing the subject of this certificate.
-     * @param publicKey the public key to be associated with the certificate.
+     * @param serial     the serial number for the certificate.
+     * @param notBefore  date before which the certificate is not valid.
+     * @param notAfter   date after which the certificate is not valid.
+     * @param subject    principal representing the subject of this certificate.
+     * @param publicKey  the public key to be associated with the certificate.
      */
     public JcaX509v3CertificateBuilder(X509Certificate issuerCert, BigInteger serial, Date notBefore, Date notAfter, X500Principal subject, PublicKey publicKey)
     {
@@ -101,11 +101,11 @@ public class JcaX509v3CertificateBuilder
      * passing through and converting the other objects provided.
      *
      * @param issuerCert certificate who's subject is the issuer of the certificate we are building.
-     * @param serial the serial number for the certificate.
-     * @param notBefore date before which the certificate is not valid.
-     * @param notAfter date after which the certificate is not valid.
-     * @param subject principal representing the subject of this certificate.
-     * @param publicKey the public key to be associated with the certificate.
+     * @param serial     the serial number for the certificate.
+     * @param notBefore  date before which the certificate is not valid.
+     * @param notAfter   date after which the certificate is not valid.
+     * @param subject    principal representing the subject of this certificate.
+     * @param publicKey  the public key to be associated with the certificate.
      */
     public JcaX509v3CertificateBuilder(X509Certificate issuerCert, BigInteger serial, Date notBefore, Date notAfter, X500Name subject, PublicKey publicKey)
     {
@@ -120,15 +120,15 @@ public class JcaX509v3CertificateBuilder
     public JcaX509v3CertificateBuilder(X509Certificate template)
         throws CertificateEncodingException
     {
-         super(new JcaX509CertificateHolder(template));
+        super(new JcaX509CertificateHolder(template));
     }
 
     /**
      * Add a given extension field for the standard extensions tag (tag 3)
      * copying the extension value from another certificate.
      *
-     * @param oid the type of the extension to be copied.
-     * @param critical true if the extension is to be marked critical, false otherwise.
+     * @param oid         the type of the extension to be copied.
+     * @param critical    true if the extension is to be marked critical, false otherwise.
      * @param certificate the source of the extension to be copied.
      * @return the builder instance.
      */
@@ -141,5 +141,10 @@ public class JcaX509v3CertificateBuilder
         this.copyAndAddExtension(oid, critical, new JcaX509CertificateHolder(certificate));
 
         return this;
+    }
+
+    private static SubjectPublicKeyInfo getSubjectPublicKeyInfo(PublicKey publicKey)
+    {
+        return SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
     }
 }

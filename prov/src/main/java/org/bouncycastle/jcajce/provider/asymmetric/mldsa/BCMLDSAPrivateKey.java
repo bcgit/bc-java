@@ -6,19 +6,21 @@ import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Fingerprint;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class BCMLDSAPrivateKey
-    implements MLDSAPrivateKey
+    implements MLDSAPrivateKey, BCKey
 {
     private static final long serialVersionUID = 1L;
 
@@ -31,7 +33,7 @@ public class BCMLDSAPrivateKey
             MLDSAPrivateKeyParameters params)
     {
         this.params = params;
-        this.algorithm = MLDSAParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        this.algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     public BCMLDSAPrivateKey(PrivateKeyInfo keyInfo)
@@ -43,6 +45,7 @@ public class BCMLDSAPrivateKey
     private void init(PrivateKeyInfo keyInfo)
             throws IOException
     {
+        this.encoding = keyInfo.getEncoded();
         init((MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
     }
 
@@ -50,7 +53,7 @@ public class BCMLDSAPrivateKey
     {
         this.attributes = attributes;
         this.params = params;
-        algorithm = MLDSAParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     /**
@@ -89,6 +92,20 @@ public class BCMLDSAPrivateKey
         return algorithm;
     }
 
+    public MLDSAPrivateKey getPrivateKey(boolean preferSeedOnly)
+    {
+        if (preferSeedOnly)
+        {
+            byte[] seed = params.getSeed();
+            if (seed != null)
+            {
+                return new BCMLDSAPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
+            }
+        }
+
+        return new BCMLDSAPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
+    }
+
     public byte[] getEncoded()
     {
         if (encoding == null)
@@ -101,7 +118,24 @@ public class BCMLDSAPrivateKey
 
     public MLDSAPublicKey getPublicKey()
     {
-        return new BCMLDSAPublicKey(params.getPublicKeyParameters());
+        MLDSAPublicKeyParameters publicKeyParameters = params.getPublicKeyParameters();
+        if (publicKeyParameters == null)
+        {
+            return null;
+        }
+        return new BCMLDSAPublicKey(publicKeyParameters);
+    }
+
+    @Override
+    public byte[] getPrivateData()
+    {
+        return params.getEncoded();
+    }
+
+    @Override
+    public byte[] getSeed()
+    {
+        return params.getSeed();
     }
 
     public MLDSAParameterSpec getParameterSpec()

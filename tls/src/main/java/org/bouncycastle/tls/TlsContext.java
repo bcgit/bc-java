@@ -63,7 +63,7 @@ public interface TlsContext
      * 
      * @param channelBinding
      *            A {@link ChannelBinding} constant specifying the channel binding to export.
-     * @return A copy of the channel binding data as a {@link byte[]}, or null if the binding could
+     * @return A copy of the channel binding data as a byte[], or null if the binding could
      *         not be determined.
      */
     byte[] exportChannelBinding(int channelBinding);

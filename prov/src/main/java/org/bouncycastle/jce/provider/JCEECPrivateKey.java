@@ -382,6 +382,16 @@ public class JCEECPrivateKey
         return attrCarrier.getBagAttributeKeys();
     }
 
+    public boolean hasFriendlyName()
+    {
+        return attrCarrier.hasFriendlyName();
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        attrCarrier.setFriendlyName(friendlyName);
+    }
+
     public void setPointFormat(String style)
     {
        withCompression = !("UNCOMPRESSED".equalsIgnoreCase(style));
@@ -406,7 +416,7 @@ public class JCEECPrivateKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder   buf = new StringBuilder();
         String          nl = Strings.lineSeparator();
 
         buf.append("EC Private Key").append(nl);

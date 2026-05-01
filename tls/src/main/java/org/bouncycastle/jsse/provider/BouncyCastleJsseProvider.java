@@ -26,13 +26,14 @@ public class BouncyCastleJsseProvider
 
     private static final String JSSE_CONFIG_PROPERTY = "org.bouncycastle.jsse.config";
 
-    private static final double PROVIDER_VERSION = 1.0020;
-    private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.20";
+    private static final double PROVIDER_VERSION = 1.0024;
+    private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.24";
 
     private final Map<String, BcJsseService> serviceMap = new ConcurrentHashMap<String, BcJsseService>();
     private final Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
 
-    private final boolean isInFipsMode;
+    private final boolean configFipsMode;
+    private final JcaTlsCryptoProvider configCryptoProvider;
 
     public BouncyCastleJsseProvider()
     {
@@ -43,7 +44,10 @@ public class BouncyCastleJsseProvider
     {
         super(PROVIDER_NAME, PROVIDER_VERSION, PROVIDER_INFO);
 
-        this.isInFipsMode = configure(fipsMode, new JcaTlsCryptoProvider());
+        this.configFipsMode = fipsMode;
+        this.configCryptoProvider = new JcaTlsCryptoProvider();
+
+        configure();
     }
 
     public BouncyCastleJsseProvider(Provider provider)
@@ -55,7 +59,10 @@ public class BouncyCastleJsseProvider
     {
         super(PROVIDER_NAME, PROVIDER_VERSION, PROVIDER_INFO);
 
-        this.isInFipsMode = configure(fipsMode, new JcaTlsCryptoProvider().setProvider(provider));
+        this.configFipsMode = fipsMode;
+        this.configCryptoProvider = new JcaTlsCryptoProvider().setProvider(provider);
+
+        configure();
     }
 
     public BouncyCastleJsseProvider(String config)
@@ -66,6 +73,7 @@ public class BouncyCastleJsseProvider
 
         boolean fipsMode = false;
         String cryptoName = config;
+        String altCryptoName = null;
 
         int colonPos = config.indexOf(':');
         if (colonPos >= 0)
@@ -74,27 +82,44 @@ public class BouncyCastleJsseProvider
             String second = config.substring(colonPos + 1).trim();
 
             fipsMode = first.equalsIgnoreCase("fips");
-            cryptoName = second;
+            config = second;
+        }
+
+        int commaPos = config.indexOf(',');
+        if (commaPos >= 0)
+        {
+            cryptoName = config.substring(0, commaPos).trim();
+            altCryptoName = config.substring(commaPos + 1).trim();
+        }
+        else
+        {
+            cryptoName = config;
         }
 
         JcaTlsCryptoProvider cryptoProvider;
         try
         {
-            cryptoProvider = createCryptoProvider(cryptoName);
+            cryptoProvider = createCryptoProvider(cryptoName, altCryptoName);
         }
         catch (GeneralSecurityException e)
         {
             throw new IllegalArgumentException("unable to set up JcaTlsCryptoProvider: " + e.getMessage(), e);
         }
 
-        this.isInFipsMode = configure(fipsMode, cryptoProvider);
+        this.configFipsMode = fipsMode;
+        this.configCryptoProvider = cryptoProvider;
+
+        configure();
     }
 
-    public BouncyCastleJsseProvider(boolean fipsMode, JcaTlsCryptoProvider tlsCryptoProvider)
+    public BouncyCastleJsseProvider(boolean fipsMode, JcaTlsCryptoProvider cryptoProvider)
     {
         super(PROVIDER_NAME, PROVIDER_VERSION, PROVIDER_INFO);
 
-        this.isInFipsMode = configure(fipsMode, tlsCryptoProvider);
+        this.configFipsMode = fipsMode;
+        this.configCryptoProvider = cryptoProvider;
+
+        configure();
     }
 
     // for Java 11
@@ -103,7 +128,7 @@ public class BouncyCastleJsseProvider
         return new BouncyCastleJsseProvider(configArg);
     }
 
-    private JcaTlsCryptoProvider createCryptoProvider(String cryptoName)
+    private JcaTlsCryptoProvider createCryptoProvider(String cryptoName, String altCryptoName)
         throws GeneralSecurityException
     {
         if (cryptoName.equalsIgnoreCase("default"))
@@ -114,9 +139,18 @@ public class BouncyCastleJsseProvider
         Provider provider = Security.getProvider(cryptoName);
         if (provider != null)
         {
-            return new JcaTlsCryptoProvider().setProvider(provider);
+            JcaTlsCryptoProvider cryptoProvider = new JcaTlsCryptoProvider().setProvider(provider);
+
+            if (altCryptoName != null)
+            {
+                // this has to be done by name as a PKCS#11 login may be required.
+                cryptoProvider.setAlternateProvider(altCryptoName);
+            }
+
+            return cryptoProvider;
         }
 
+        // TODO: should we support alt name here?
         try
         {
             Class<?> cryptoProviderClass = Class.forName(cryptoName);
@@ -150,26 +184,30 @@ public class BouncyCastleJsseProvider
         }
     }
 
-    private boolean configure(final boolean fipsMode, final JcaTlsCryptoProvider cryptoProvider)
+    private void configure()
     {
-        // TODO[jsse]: should X.509 be an alias.
-        addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", new EngineCreator()
-        {
-            public Object createInstance(Object constructorParameter)
+        final boolean fipsMode = configFipsMode;
+        final JcaTlsCryptoProvider cryptoProvider = configCryptoProvider;
+
+        addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", 
+            new EngineCreator()
             {
-                return new ProvKeyManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
-            }
-        });
+                public Object createInstance(Object constructorParameter)
+                {
+                    return new ProvKeyManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
+                }
+            });
         addAlias("Alg.Alias.KeyManagerFactory.X509", "X.509");
         addAlias("Alg.Alias.KeyManagerFactory.PKIX", "X.509");
 
-        addAlgorithmImplementation("TrustManagerFactory.PKIX", "org.bouncycastle.jsse.provider.TrustManagerFactory", new EngineCreator()
-        {
-            public Object createInstance(Object constructorParameter)
+        addAlgorithmImplementation("TrustManagerFactory.PKIX", "org.bouncycastle.jsse.provider.TrustManagerFactory", 
+            new EngineCreator()
             {
-                return new ProvTrustManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
-            }
-        });
+                public Object createInstance(Object constructorParameter)
+                {
+                    return new ProvTrustManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
+                }
+            });
         addAlias("Alg.Alias.TrustManagerFactory.X.509", "PKIX");
         addAlias("Alg.Alias.TrustManagerFactory.X509", "PKIX");
 
@@ -218,15 +256,14 @@ public class BouncyCastleJsseProvider
         addAlgorithmImplementation("SSLContext.DEFAULT", "org.bouncycastle.jsse.provider.SSLContext.Default",
             new EngineCreator()
             {
-                public Object createInstance(Object constructorParameter) throws GeneralSecurityException
+                public Object createInstance(Object constructorParameter)
+                    throws GeneralSecurityException
                 {
                     return new DefaultSSLContextSpi(fipsMode, cryptoProvider);
                 }
             });
         addAlias("Alg.Alias.SSLContext.SSL", "TLS");
         addAlias("Alg.Alias.SSLContext.SSLV3", "TLSV1");
-
-        return fipsMode;
     }
 
     void addAttribute(String key, String attributeName, String attributeValue)
@@ -263,11 +300,12 @@ public class BouncyCastleJsseProvider
         doPut(key, value);
     }
 
+    @Override
     public final Provider.Service getService(String type, String algorithm)
     {
         String upperCaseAlgName = Strings.toUpperCase(algorithm);
         String serviceKey = type + "." + upperCaseAlgName;
-        
+
         BcJsseService service = serviceMap.get(serviceKey);
 
         if (service == null)
@@ -326,12 +364,13 @@ public class BouncyCastleJsseProvider
         return service;
     }
 
-    public synchronized final Set<Provider.Service> getServices()
+    @Override
+    public final synchronized Set<Provider.Service> getServices()
     {
         Set<Provider.Service> serviceSet = super.getServices();
         Set<Provider.Service> bcServiceSet = new HashSet<Provider.Service>();
 
-        for (Provider.Service service: serviceSet)
+        for (Provider.Service service : serviceSet)
         {
             bcServiceSet.add(getService(service.getType(), service.getAlgorithm()));
         }
@@ -372,7 +411,7 @@ public class BouncyCastleJsseProvider
 
     public boolean isFipsMode()
     {
-        return isInFipsMode;
+        return configFipsMode;
     }
 
     private static class BcJsseService
@@ -391,14 +430,15 @@ public class BouncyCastleJsseProvider
          * @param attributes Map of attributes or null if this implementation
          *                   has no attributes
          * @throws NullPointerException if provider, type, algorithm, or
-         * className is null
+         *                              className is null
          */
-        public BcJsseService(Provider provider, String type, String algorithm, String className, List<String> aliases, Map<String, String> attributes, EngineCreator creator)
+        BcJsseService(Provider provider, String type, String algorithm, String className, List<String> aliases, Map<String, String> attributes, EngineCreator creator)
         {
             super(provider, type, algorithm, className, aliases, attributes);
             this.creator = creator;
         }
 
+        @Override
         public Object newInstance(Object constructorParameter)
             throws NoSuchAlgorithmException
         {

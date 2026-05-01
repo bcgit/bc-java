@@ -19,17 +19,16 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.jcajce.provider.asymmetric.util.WrapUtil;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
-import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
@@ -154,7 +153,7 @@ class HQCCipherSpi
             if (key instanceof BCHQCPublicKey)
             {
                 wrapKey = (BCHQCPublicKey)key;
-                kemGen = new HQCKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
+                kemGen = new HQCKEMGenerator(random);
             }
             else
             {
@@ -251,7 +250,7 @@ class HQCCipherSpi
 
             Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
-            KeyParameter keyParameter = new KeyParameter(secEnc.getSecret());
+            KeyParameter keyParameter = new KeyParameter(WrapUtil.trimSecret(kemParameterSpec.getKeyAlgorithmName(), secEnc.getSecret()));
 
             kWrap.init(true, keyParameter);
 
@@ -296,7 +295,7 @@ class HQCCipherSpi
 
             Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
-            KeyParameter keyParameter = new KeyParameter(secret);
+            KeyParameter keyParameter = new KeyParameter(WrapUtil.trimSecret(kemParameterSpec.getKeyAlgorithmName(), secret));
 
             Arrays.clear(secret);
 

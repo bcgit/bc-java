@@ -355,7 +355,6 @@ public class EnrollExample
                 }
                 t += 1000;
                 Thread.sleep(t);
-                continue;
             }
         }
         while (!enrollmentResponse.isCompleted());

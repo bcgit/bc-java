@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -18,7 +17,7 @@ import org.bouncycastle.asn1.DERSequence;
  *     attrType OBJECT IDENTIFIER,
  *     attrValues SET OF AttributeValue
  * }
- * 
+ *
  * AttributeValue ::= ANY
  * </pre>
  * <p>
@@ -56,7 +55,7 @@ public class Attribute
         {
             return (Attribute)o;
         }
-        
+
         if (o != null)
         {
             return new Attribute(ASN1Sequence.getInstance(o));
@@ -64,7 +63,7 @@ public class Attribute
 
         return null;
     }
-    
+
     private Attribute(
         ASN1Sequence seq)
     {
@@ -84,7 +83,7 @@ public class Attribute
     {
         return attrType;
     }
-    
+
     public ASN1Set getAttrValues()
     {
         return attrValues;
@@ -95,16 +94,11 @@ public class Attribute
         return attrValues.toArray();
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(attrType);
-        v.add(attrValues);
-
-        return new DERSequence(v);
+        return new DERSequence(attrType, attrValues);
     }
 }

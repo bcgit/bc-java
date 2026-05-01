@@ -41,7 +41,7 @@ public class ContentIdentifier
     {
         this(new DEROctetString(value));
     }
-    
+
     public ASN1OctetString getValue()
     {
         return value;

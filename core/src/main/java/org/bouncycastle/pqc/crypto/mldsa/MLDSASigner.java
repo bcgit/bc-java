@@ -10,15 +10,17 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.signers.MLDSASigner
+ */
+@Deprecated
 public class MLDSASigner
     implements Signer
 {
     private static final byte[] EMPTY_CONTEXT = new byte[0];
-
     private MLDSAPublicKeyParameters pubKey;
     private MLDSAPrivateKeyParameters privKey;
     private SecureRandom random;
-
     private MLDSAEngine engine;
     private SHAKEDigest msgDigest;
 
@@ -93,6 +95,38 @@ public class MLDSASigner
         msgDigest.update(in, off, len);
     }
 
+    public byte[] generateMu()
+        throws CryptoException, DataLengthException
+    {
+        byte[] mu = engine.generateMu(msgDigest);
+
+        reset();
+
+        return mu;
+    }
+
+    public byte[] generateMuSignature(byte[] mu)
+        throws CryptoException, DataLengthException
+    {
+        if (mu.length != MLDSAEngine.CrhBytes)
+        {
+            throw new DataLengthException("mu value must be " + MLDSAEngine.CrhBytes + " bytes");
+        }
+        byte[] rnd = new byte[MLDSAEngine.RndBytes];
+        if (random != null)
+        {
+            random.nextBytes(rnd);
+        }
+
+        msgDigest.reset();
+
+        byte[] sig = engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+
+        reset();
+
+        return sig;
+    }
+
     public byte[] generateSignature()
         throws CryptoException, DataLengthException
     {
@@ -102,16 +136,47 @@ public class MLDSASigner
             random.nextBytes(rnd);
         }
 
-        byte[] sig = engine.generateSignature(msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        byte[] mu = engine.generateMu(msgDigest);
+        byte[] sig = engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
 
         reset();
 
         return sig;
     }
 
+    public boolean verifyMu(byte[] mu)
+    {
+        if (mu.length != MLDSAEngine.CrhBytes)
+        {
+            throw new DataLengthException("mu value must be " + MLDSAEngine.CrhBytes + " bytes");
+        }
+
+        boolean isTrue = engine.verifyInternalMu(mu);
+
+        reset();
+
+        return isTrue;
+    }
+
     public boolean verifySignature(byte[] signature)
     {
         boolean isTrue = engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
+
+        reset();
+
+        return isTrue;
+    }
+
+    public boolean verifyMuSignature(byte[] mu, byte[] signature)
+    {
+        if (mu.length != MLDSAEngine.CrhBytes)
+        {
+            throw new DataLengthException("mu value must be " + MLDSAEngine.CrhBytes + " bytes");
+        }
+
+        msgDigest.reset();
+
+        boolean isTrue = engine.verifyInternalMuSignature(mu, signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
 
         reset();
 

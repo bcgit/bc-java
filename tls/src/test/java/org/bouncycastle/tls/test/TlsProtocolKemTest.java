@@ -7,18 +7,26 @@ import java.io.PipedOutputStream;
 
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.TlsServerProtocol;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 import junit.framework.TestCase;
 
-public class TlsProtocolKemTest
-        extends TestCase
+public abstract class TlsProtocolKemTest
+    extends TestCase
 {
+    protected final TlsCrypto crypto;
 
-    // mismatched ML-KEM strengths w/o classical crypto
-    public void testMismatchStrength() throws Exception
+    protected TlsProtocolKemTest(TlsCrypto crypto)
+    {
+        this.crypto = crypto;
+    }
+
+    // mismatched ML-KEM groups w/o classical crypto
+    public void testMismatchedGroups() throws Exception
     {
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
         PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
@@ -28,7 +36,13 @@ public class TlsProtocolKemTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol, new int[] {NamedGroup.OQS_mlkem768}, true);
+        MockTlsKemClient client = new MockTlsKemClient(crypto, null);
+        MockTlsKemServer server = new MockTlsKemServer(crypto);
+
+        client.setNamedGroups(new int[]{ NamedGroup.MLKEM512 });
+        server.setNamedGroups(new int[]{ NamedGroup.MLKEM768 });
+
+        ServerThread serverThread = new ServerThread(serverProtocol, server, true);
         try
         {
             serverThread.start();
@@ -36,21 +50,35 @@ public class TlsProtocolKemTest
         catch (Exception ignored)
         {
         }
-        MockTlsKemClient client = new MockTlsKemClient(null);
-        client.setSupportedGroups(new int[] {NamedGroup.OQS_mlkem512});
+
         try
         {
             clientProtocol.connect(client);
             fail();
         }
-        catch (Exception ex)
+        catch (Exception ignored)
         {
         }
 
         serverThread.join();
     }
 
-    public void testClientServer() throws Exception
+    public void testMLKEM512() throws Exception
+    {
+        implTestClientServer(NamedGroup.MLKEM512);
+    }
+
+    public void testMLKEM768() throws Exception
+    {
+        implTestClientServer(NamedGroup.MLKEM768);
+    }
+
+    public void testMLKEM1024() throws Exception
+    {
+        implTestClientServer(NamedGroup.MLKEM1024);
+    }
+
+    private void implTestClientServer(int kemGroup) throws Exception
     {
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
         PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
@@ -60,10 +88,15 @@ public class TlsProtocolKemTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol, false);
+        MockTlsKemClient client = new MockTlsKemClient(crypto, null);
+        MockTlsKemServer server = new MockTlsKemServer(crypto);
+
+        client.setNamedGroups(new int[]{ kemGroup });
+        server.setNamedGroups(new int[]{ kemGroup });
+
+        ServerThread serverThread = new ServerThread(serverProtocol, server, false);
         serverThread.start();
 
-        MockTlsKemClient client = new MockTlsKemClient(null);
         clientProtocol.connect(client);
 
         // NOTE: Because we write-all before we read-any, this length can't be more than the pipe capacity
@@ -87,36 +120,23 @@ public class TlsProtocolKemTest
     }
 
     static class ServerThread
-            extends Thread
+        extends Thread
     {
         private final TlsServerProtocol serverProtocol;
-        private final int[] supportedGroups;
+        private final TlsServer server;
+        private final boolean shouldFail;
 
-        private boolean shouldFail = false;
-
-        ServerThread(TlsServerProtocol serverProtocol, int[] supportedGroups, boolean fail)
+        ServerThread(TlsServerProtocol serverProtocol, TlsServer server, boolean shouldFail)
         {
             this.serverProtocol = serverProtocol;
-            this.supportedGroups = supportedGroups;
-            this.shouldFail = fail;
-        }
-        ServerThread(TlsServerProtocol serverProtocol, boolean fail)
-        {
-            this.serverProtocol = serverProtocol;
-            this.supportedGroups = null;
-            this.shouldFail = fail;
+            this.server = server;
+            this.shouldFail = shouldFail;
         }
 
         public void run()
         {
             try
             {
-                MockTlsKemServer server = new MockTlsKemServer();
-                if (supportedGroups != null)
-                {
-                    server.setSupportedGroups(supportedGroups);
-                }
-
                 try
                 {
                     serverProtocol.accept(server);
@@ -124,6 +144,8 @@ public class TlsProtocolKemTest
                     {
                         fail();
                     }
+
+                    Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
                 }
                 catch (IOException ignored)
                 {
@@ -133,7 +155,6 @@ public class TlsProtocolKemTest
                     }
                 }
 
-                Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
                 serverProtocol.close();
             }
             catch (Exception e)

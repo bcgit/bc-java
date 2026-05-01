@@ -14,13 +14,6 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 public class BcPGPKeyPair
     extends PGPKeyPair
 {
-    @Deprecated
-    private static PGPPublicKey getPublicKey(int algorithm, PGPAlgorithmParameters parameters, AsymmetricKeyParameter pubKey, Date date)
-        throws PGPException
-    {
-        return getPublicKey(PublicKeyPacket.VERSION_4, algorithm, parameters, pubKey, date);
-    }
-
     private static PGPPublicKey getPublicKey(int version, int algorithm, PGPAlgorithmParameters parameters, AsymmetricKeyParameter pubKey, Date date)
         throws PGPException
     {
@@ -34,6 +27,7 @@ public class BcPGPKeyPair
     }
 
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public BcPGPKeyPair(int algorithm, AsymmetricCipherKeyPair keyPair, Date date)
         throws PGPException
     {
@@ -48,6 +42,7 @@ public class BcPGPKeyPair
     }
 
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public BcPGPKeyPair(int algorithm, PGPAlgorithmParameters parameters, AsymmetricCipherKeyPair keyPair, Date date)
         throws PGPException
     {

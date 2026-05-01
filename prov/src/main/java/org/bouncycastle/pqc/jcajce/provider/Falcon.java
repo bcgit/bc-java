@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.jcajce.provider;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
-import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 
 public class Falcon
@@ -33,6 +32,8 @@ public class Falcon
 
             addSignatureAlgorithm(provider, "FALCON-512", PREFIX + "SignatureSpi$Falcon512", BCObjectIdentifiers.falcon_512);
             addSignatureAlgorithm(provider, "FALCON-1024", PREFIX + "SignatureSpi$Falcon1024", BCObjectIdentifiers.falcon_1024);
+            registerSignatureOid(provider, BCObjectIdentifiers.old_falcon_512, "FALCON-512");
+            registerSignatureOid(provider, BCObjectIdentifiers.old_falcon_1024, "FALCON-1024");
         }
     }
 }

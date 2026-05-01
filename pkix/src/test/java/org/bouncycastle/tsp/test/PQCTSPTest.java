@@ -8,6 +8,7 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.Iterator;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -23,10 +24,12 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoVerifierBuilder;
+import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.tsp.TSPAlgorithms;
 import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampRequestGenerator;
@@ -43,6 +46,7 @@ public class PQCTSPTest
     public void setUp()
     {
         Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(new BouncyCastlePQCProvider());
     }
 
     public void testLMS()
@@ -172,6 +176,315 @@ public class PQCTSPTest
         TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
             new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
                 .setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256))
+                .build(signer, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        // tsTokenGen.addCertificates(certs);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA3_256, new byte[32], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+
+        tsResp = new TimeStampResponse(tsResp.getEncoded());
+
+        TimeStampToken tsToken = tsResp.getTimeStampToken();
+
+        tsToken.validate(new JcaSignerInfoVerifierBuilder(new JcaDigestCalculatorProviderBuilder().build())
+            .setProvider(BC).build(cert));
+
+        AttributeTable table = tsToken.getSignedAttributes();
+
+        assertNotNull("no signingCertificate attribute found", table.get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+    }
+
+    public void testSLHDSA()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        PrivateKey privKey;
+        PublicKey pubKey;
+
+        try
+        {
+            KeyPairGenerator g = KeyPairGenerator.getInstance("SLH-DSA", BC);
+
+            KeyPair p = g.generateKeyPair();
+
+            privKey = p.getPrivate();
+            pubKey = p.getPublic();
+        }
+        catch (Exception e)
+        {
+            fail("error setting up keys - " + e);
+            return;
+        }
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 1
+        //
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("SLH-DSA")
+            .setProvider(BC).build(privKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            new X500Name("CN=Test"),
+            BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000),
+            new Date(System.currentTimeMillis() + 50000),
+            new X500Name("CN=Test"),
+            pubKey);
+
+        certGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
+
+        X509Certificate cert = new JcaX509CertificateConverter()
+            .setProvider("BC").getCertificate(certGen.build(sigGen));
+
+        ContentSigner signer = new JcaContentSignerBuilder("SLH-DSA").setProvider(BC).build(privKey);
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
+                .setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512))
+                .build(signer, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        // tsTokenGen.addCertificates(certs);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA3_256, new byte[32], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+
+        tsResp = new TimeStampResponse(tsResp.getEncoded());
+
+        TimeStampToken tsToken = tsResp.getTimeStampToken();
+
+        tsToken.validate(new JcaSignerInfoVerifierBuilder(new JcaDigestCalculatorProviderBuilder().build())
+            .setProvider(BC).build(cert));
+
+        AttributeTable table = tsToken.getSignedAttributes();
+
+        assertNotNull("no signingCertificate attribute found", table.get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+    }
+
+    public void testMLDSA()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        PrivateKey privKey;
+        PublicKey pubKey;
+
+        try
+        {
+            KeyPairGenerator g = KeyPairGenerator.getInstance("ML-DSA", BC);
+
+            KeyPair p = g.generateKeyPair();
+
+            privKey = p.getPrivate();
+            pubKey = p.getPublic();
+        }
+        catch (Exception e)
+        {
+            fail("error setting up keys - " + e);
+            return;
+        }
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 1
+        //
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("SLH-DSA")
+            .setProvider(BC).build(privKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            new X500Name("CN=Test"),
+            BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000),
+            new Date(System.currentTimeMillis() + 50000),
+            new X500Name("CN=Test"),
+            pubKey);
+
+        certGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
+
+        X509Certificate cert = new JcaX509CertificateConverter()
+            .setProvider("BC").getCertificate(certGen.build(sigGen));
+
+        ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").setProvider(BC).build(privKey);
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
+                .setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512))
+                .build(signer, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        // tsTokenGen.addCertificates(certs);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA3_256, new byte[32], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+
+        tsResp = new TimeStampResponse(tsResp.getEncoded());
+
+        TimeStampToken tsToken = tsResp.getTimeStampToken();
+
+        tsToken.validate(new JcaSignerInfoVerifierBuilder(new JcaDigestCalculatorProviderBuilder().build())
+            .setProvider(BC).build(cert));
+
+        AttributeTable table = tsToken.getSignedAttributes();
+
+        assertNotNull("no signingCertificate attribute found", table.get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+    }
+
+    public void testMayo()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        PrivateKey privKey;
+        PublicKey pubKey;
+
+        try
+        {
+            KeyPairGenerator g = KeyPairGenerator.getInstance("Mayo_1", "BCPQC");
+
+            KeyPair p = g.generateKeyPair();
+
+            privKey = p.getPrivate();
+            pubKey = p.getPublic();
+        }
+        catch (Exception e)
+        {
+            fail("error setting up keys - " + e);
+            return;
+        }
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 1
+        //
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("Mayo_1")
+            .setProvider("BCPQC").build(privKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            new X500Name("CN=Test"),
+            BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000),
+            new Date(System.currentTimeMillis() + 50000),
+            new X500Name("CN=Test"),
+            pubKey);
+
+        certGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
+
+        X509Certificate cert = new JcaX509CertificateConverter()
+            .setProvider("BC").getCertificate(certGen.build(sigGen));
+
+        ContentSigner signer = new JcaContentSignerBuilder("Mayo-1").setProvider("BCPQC").build(privKey);
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
+                .setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512))
+                .build(signer, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        // tsTokenGen.addCertificates(certs);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA3_256, new byte[32], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+
+        tsResp = new TimeStampResponse(tsResp.getEncoded());
+
+        TimeStampToken tsToken = tsResp.getTimeStampToken();
+
+        tsToken.validate(new JcaSignerInfoVerifierBuilder(new JcaDigestCalculatorProviderBuilder().build())
+            .setProvider("BCPQC").build(cert));
+
+        AttributeTable table = tsToken.getSignedAttributes();
+
+        assertNotNull("no signingCertificate attribute found", table.get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+    }
+
+    public void testComposite()
+        throws Exception
+    {
+        for (Iterator it = CompositeIndex.getSupportedIdentifiers().iterator(); it.hasNext(); )
+        {
+            String name = CompositeIndex.getAlgorithmName((ASN1ObjectIdentifier)it.next());
+            doTestComposite(name);
+        }
+    }
+
+    private void doTestComposite(String algorithmName)
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        PrivateKey privKey;
+        PublicKey pubKey;
+
+        try
+        {
+            KeyPairGenerator g = KeyPairGenerator.getInstance(algorithmName, BC);
+
+            KeyPair p = g.generateKeyPair();
+
+            privKey = p.getPrivate();
+            pubKey = p.getPublic();
+        }
+        catch (Exception e)
+        {
+            fail("error setting up keys - " + e);
+            return;
+        }
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 1
+        //
+
+        ContentSigner sigGen = new JcaContentSignerBuilder(algorithmName)
+            .setProvider(BC).build(privKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            new X500Name("CN=Test"),
+            BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000),
+            new Date(System.currentTimeMillis() + 50000),
+            new X500Name("CN=Test"),
+            pubKey);
+
+        certGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
+
+        X509Certificate cert = new JcaX509CertificateConverter()
+            .setProvider("BC").getCertificate(certGen.build(sigGen));
+
+        ContentSigner signer = new JcaContentSignerBuilder(algorithmName).setProvider(BC).build(privKey);
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
                 .build(signer, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
 
         // tsTokenGen.addCertificates(certs);

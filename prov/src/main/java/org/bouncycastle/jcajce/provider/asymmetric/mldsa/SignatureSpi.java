@@ -1,24 +1,31 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.MLDSASigner;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.jcajce.MLDSAProxyPrivateKey;
+import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 
 public class SignatureSpi
-    extends java.security.Signature
+    extends BaseDeterministicOrRandomSignature
 {
-    private MLDSASigner signer;
-    private MLDSAParameters parameters;
+    protected MLDSASigner signer;
+    protected MLDSAParameters parameters;
 
     protected SignatureSpi(MLDSASigner signer)
     {
@@ -36,47 +43,48 @@ public class SignatureSpi
         this.parameters = parameters;
     }
 
-    protected void engineInitVerify(PublicKey publicKey)
+    protected void verifyInit(PublicKey publicKey)
         throws InvalidKeyException
     {
         if (publicKey instanceof BCMLDSAPublicKey)
         {
             BCMLDSAPublicKey key = (BCMLDSAPublicKey)publicKey;
 
-            CipherParameters param = key.getKeyParams();
-
-            if (parameters != null)
-            {
-                String canonicalAlg = MLDSAParameterSpec.fromName(parameters.getName()).getName();
-                if (!canonicalAlg.equals(key.getAlgorithm()))
-                {
-                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
-                }
-            }
-
-            signer.init(false, param);
+            this.keyParams = key.getKeyParams();
         }
         else
         {
-            throw new InvalidKeyException("unknown public key passed to ML-DSA");
+            try
+            {
+                SubjectPublicKeyInfo pubKeyInfo = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+                this.keyParams = PublicKeyFactory.createKey(pubKeyInfo);
+                publicKey = new BCMLDSAPublicKey((MLDSAPublicKeyParameters)this.keyParams);
+            }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("unknown public key passed to ML-DSA");
+            }
+        }
+
+        if (parameters != null)
+        {
+            String canonicalAlg = MLDSAParameterSpec.fromName(parameters.getName()).getName();
+            if (!canonicalAlg.equals(publicKey.getAlgorithm()))
+            {
+                throw new InvalidKeyException("signature configured for " + canonicalAlg);
+            }
         }
     }
 
-    protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
+    protected void signInit(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
         this.appRandom = random;
-        engineInitSign(privateKey);
-    }
-
-    protected void engineInitSign(PrivateKey privateKey)
-        throws InvalidKeyException
-    {
         if (privateKey instanceof BCMLDSAPrivateKey)
         {
             BCMLDSAPrivateKey key = (BCMLDSAPrivateKey)privateKey;
 
-            CipherParameters param = key.getKeyParams();
+            this.keyParams = key.getKeyParams();
 
             if (parameters != null)
             {
@@ -86,14 +94,28 @@ public class SignatureSpi
                     throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }
             }
+        }
+        else if (privateKey instanceof MLDSAProxyPrivateKey && this instanceof MLDSACalcMu)
+        {
+            MLDSAProxyPrivateKey pKey = (MLDSAProxyPrivateKey)privateKey;
+            MLDSAPublicKey key = pKey.getPublicKey();
 
-            if (appRandom != null)
+            try
             {
-                signer.init(true, new ParametersWithRandom(param, appRandom));
+                this.keyParams = PublicKeyFactory.createKey(key.getEncoded());
             }
-            else
+            catch (IOException e)
             {
-                signer.init(true, param);
+                throw new InvalidKeyException(e.getMessage());
+            }
+
+            if (parameters != null)
+            {
+                String canonicalAlg = MLDSAParameterSpec.fromName(parameters.getName()).getName();
+                if (!canonicalAlg.equals(key.getAlgorithm()))
+                {
+                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
+                }
             }
         }
         else
@@ -102,13 +124,13 @@ public class SignatureSpi
         }
     }
 
-    protected void engineUpdate(byte b)
+    protected void updateEngine(byte b)
         throws SignatureException
     {
         signer.update(b);
     }
 
-    protected void engineUpdate(byte[] b, int off, int len)
+    protected void updateEngine(byte[] b, int off, int len)
         throws SignatureException
     {
         signer.update(b, off, len);
@@ -133,39 +155,22 @@ public class SignatureSpi
         return signer.verifySignature(sigBytes);
     }
 
-    protected void engineSetParameter(AlgorithmParameterSpec params)
+    protected void reInitialize(boolean forSigning, CipherParameters params)
     {
-        // TODO
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
+        signer.init(forSigning, params);
     }
-
-    /**
-     * @deprecated replaced with #engineSetParameter(java.security.spec.AlgorithmParameterSpec)
-     */
-    protected void engineSetParameter(String param, Object value)
-    {
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
-    }
-
-    /**
-     * @deprecated
-     */
-    protected Object engineGetParameter(String param)
-    {
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
-    }
-
 
     public static class MLDSA
-            extends SignatureSpi
+        extends SignatureSpi
     {
         public MLDSA()
         {
             super(new MLDSASigner());
         }
     }
+
     public static class MLDSA44
-            extends SignatureSpi
+        extends SignatureSpi
     {
         public MLDSA44()
         {
@@ -174,7 +179,7 @@ public class SignatureSpi
     }
 
     public static class MLDSA65
-            extends SignatureSpi
+        extends SignatureSpi
     {
         public MLDSA65()
         {
@@ -183,12 +188,101 @@ public class SignatureSpi
     }
 
     public static class MLDSA87
-            extends SignatureSpi
+        extends SignatureSpi
     {
         public MLDSA87()
-                throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
         {
             super(new MLDSASigner(), MLDSAParameters.ml_dsa_87);
+        }
+    }
+
+    public static class MLDSAExtMu
+        extends SignatureSpi
+    {
+        private ByteArrayOutputStream bOut = new ByteArrayOutputStream(64);
+
+        public MLDSAExtMu()
+        {
+            super(new MLDSASigner());
+        }
+
+        protected void updateEngine(byte b)
+            throws SignatureException
+        {
+            bOut.write(b);
+        }
+
+        protected void updateEngine(byte[] b, int off, int len)
+            throws SignatureException
+        {
+            bOut.write(b, off, len);
+        }
+
+        protected byte[] engineSign()
+            throws SignatureException
+        {
+            try
+            {
+                byte[] mu = bOut.toByteArray();
+
+                bOut.reset();
+
+                return signer.generateMuSignature(mu);
+            }
+            catch (DataLengthException e)
+            {
+                throw new SignatureException(e.getMessage());
+            }
+            catch (Exception e)
+            {
+                throw new SignatureException(e.toString());
+            }
+        }
+
+        protected boolean engineVerify(byte[] sigBytes)
+            throws SignatureException
+        {
+            byte[] mu = bOut.toByteArray();
+
+            bOut.reset();
+
+            try
+            {
+                return signer.verifyMuSignature(mu, sigBytes);
+            }
+            catch (DataLengthException e)
+            {
+                throw new SignatureException(e.getMessage());
+            }
+        }
+    }
+
+    public static class MLDSACalcMu
+        extends SignatureSpi
+    {
+        public MLDSACalcMu()
+        {
+            super(new MLDSASigner());
+        }
+
+        protected byte[] engineSign()
+            throws SignatureException
+        {
+            try
+            {
+                return signer.generateMu();
+            }
+            catch (Exception e)
+            {
+                throw new SignatureException(e.toString());
+            }
+        }
+
+        protected boolean engineVerify(byte[] sigBytes)
+            throws SignatureException
+        {
+            return signer.verifyMu(sigBytes);
         }
     }
 }

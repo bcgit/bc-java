@@ -94,6 +94,7 @@ public class BcPGPKeyConverter
      * @deprecated use versioned {@link #getPGPPublicKey(int, int, PGPAlgorithmParameters, AsymmetricKeyParameter, Date)} instead
      */
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public PGPPublicKey getPGPPublicKey(int algorithm, PGPAlgorithmParameters algorithmParameters, AsymmetricKeyParameter pubKey, Date time)
         throws PGPException
     {

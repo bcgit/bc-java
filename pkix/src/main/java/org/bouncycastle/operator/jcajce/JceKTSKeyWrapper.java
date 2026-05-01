@@ -77,7 +77,7 @@ public class JceKTSKeyWrapper
     public byte[] generateWrappedKey(GenericKey encryptionKey)
         throws OperatorException
     {
-        Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier().getAlgorithm(), new HashMap());
+        Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier(), new HashMap());
 
         try
         {

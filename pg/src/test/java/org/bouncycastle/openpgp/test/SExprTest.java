@@ -1,15 +1,18 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.Security;
 
 import org.bouncycastle.gpg.SExprParser;
+import org.bouncycastle.gpg.SExpression;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEProtectionRemoverFactory;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -139,9 +142,54 @@ public class SExprTest
         return "SExprTest";
     }
 
+    private void corruptStreamTest()
+    {
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("12")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("invalid input stream", e.getMessage());
+        }
+
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("2:3abc")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("invalid input stream at ':'", e.getMessage());
+        }
+
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("#3abc")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals(e.getMessage(), "invalid input stream at '#'", e.getMessage());
+        }
+
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("\"3abc")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals(e.getMessage(), "invalid input stream at '\"'", e.getMessage());
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        corruptStreamTest();
+
         SExprParser parser = new SExprParser(new JcaPGPDigestCalculatorProviderBuilder().build());
 
         PGPSecretKey k1 = parser.parseSecretKey(new ByteArrayInputStream(key1), new JcePBEProtectionRemoverFactory("fred".toCharArray()), new JcaKeyFingerprintCalculator());

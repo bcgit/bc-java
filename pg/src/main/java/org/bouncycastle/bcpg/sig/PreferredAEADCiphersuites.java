@@ -1,11 +1,11 @@
 package org.bouncycastle.bcpg.sig;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Signature Subpacket containing the AEAD cipher suites (AEAD algorithm, Symmetric Key Algorithm pairs)
@@ -29,6 +29,11 @@ public class PreferredAEADCiphersuites
      * OpenPGP - Preferred AEAD Ciphersuites</a>
      */
     private static final Combination AES_128_OCB = new Combination(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB);
+
+    public static PreferredAEADCiphersuites DEFAULT()
+    {
+        return new PreferredAEADCiphersuites(false, new Combination[]{AES_128_OCB});
+    }
 
     /**
      * Create a new PreferredAEADAlgorithms signature subpacket from raw data.
@@ -169,7 +174,7 @@ public class PreferredAEADCiphersuites
     public static final class Builder
     {
 
-        private final List<Combination> combinations = new ArrayList<>();
+        private final List<Combination> combinations = new ArrayList<Combination>();
         private final boolean isCritical;
 
         private Builder(boolean isCritical)
@@ -197,7 +202,7 @@ public class PreferredAEADCiphersuites
          */
         public PreferredAEADCiphersuites build()
         {
-            return new PreferredAEADCiphersuites(isCritical, combinations.toArray(new Combination[0]));
+            return new PreferredAEADCiphersuites(isCritical, (Combination[])combinations.toArray(new Combination[0]));
         }
     }
 

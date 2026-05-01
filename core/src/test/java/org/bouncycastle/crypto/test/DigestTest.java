@@ -1,9 +1,20 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Random;
 
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.EncodableDigest;
+import org.bouncycastle.crypto.digests.TupleHash;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.encoders.Hex;
@@ -27,16 +38,16 @@ public abstract class DigestTest
         this.input = input;
         this.results = results;
     }
-    
+
     public String getName()
     {
         return digest.getAlgorithmName();
     }
-    
+
     public void performTest()
     {
         byte[] resBuf = new byte[digest.getDigestSize()];
-    
+
         for (int i = 0; i < input.length - 1; i++)
         {
             byte[] m = toByteArray(input[i]);
@@ -48,7 +59,7 @@ public abstract class DigestTest
 
         byte[] lastV = toByteArray(input[input.length - 1]);
         byte[] lastDigest = Hex.decode(results[input.length - 1]);
-        
+
         vectorTest(digest, input.length - 1, resBuf, lastV, Hex.decode(results[input.length - 1]));
 
         testClone(resBuf, lastV, lastDigest);
@@ -61,71 +72,115 @@ public abstract class DigestTest
 
     private void testEncodedState(byte[] resBuf, byte[] input, byte[] expected)
     {
-        // test state encoding;
-        digest.update(input, 0, input.length / 2);
-
-        // copy the Digest
-        Digest copy1 = cloneDigest(((EncodableDigest)digest).getEncodedState());
-        Digest copy2 = cloneDigest(((EncodableDigest)copy1).getEncodedState());
-
-        digest.update(input, input.length / 2, input.length - input.length / 2);
-
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        if (digest instanceof TupleHash)
         {
-            fail("failing state vector test", expected, new String(Hex.encode(resBuf)));
+            digest.update(input, 0, input.length);
+            Digest copy1 = cloneDigest(((EncodableDigest)digest).getEncodedState());
+            Digest copy2 = cloneDigest(((EncodableDigest)copy1).getEncodedState());
+
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing TupleHash state vector test", expected, new String(Hex.encode(resBuf)));
+            }
+
+            copy2.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing TupleHash state copy2 vector test", expected, new String(Hex.encode(resBuf)));
+            }
         }
-
-        copy1.update(input, input.length / 2, input.length - input.length / 2);
-        copy1.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        else
         {
-            fail("failing state copy1 vector test", expected, new String(Hex.encode(resBuf)));
-        }
+            // test state encoding;
+            digest.update(input, 0, input.length / 2);
 
-        copy2.update(input, input.length / 2, input.length - input.length / 2);
-        copy2.doFinal(resBuf, 0);
+            // copy the Digest
+            Digest copy1 = cloneDigest(((EncodableDigest)digest).getEncodedState());
+            Digest copy2 = cloneDigest(((EncodableDigest)copy1).getEncodedState());
 
-        if (!areEqual(expected, resBuf))
-        {
-            fail("failing state copy2 vector test", expected, new String(Hex.encode(resBuf)));
+            digest.update(input, input.length / 2, input.length - input.length / 2);
+
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing state vector test", expected, new String(Hex.encode(resBuf)));
+            }
+
+            copy1.update(input, input.length / 2, input.length - input.length / 2);
+            copy1.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing state copy1 vector test", expected, new String(Hex.encode(resBuf)));
+            }
+
+            copy2.update(input, input.length / 2, input.length - input.length / 2);
+            copy2.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing state copy2 vector test", expected, new String(Hex.encode(resBuf)));
+            }
         }
     }
 
     private void testMemo(byte[] resBuf, byte[] input, byte[] expected)
     {
-        Memoable m = (Memoable)digest;
-
-        digest.update(input, 0, input.length/2);
-
-        // copy the Digest
-        Memoable copy1 = m.copy();
-        Memoable copy2 = copy1.copy();
-
-        digest.update(input, input.length/2, input.length - input.length/2);
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        if (digest instanceof TupleHash)
         {
-            fail("failing memo vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            Memoable m = (Memoable)digest;
+
+            digest.update(input, 0, input.length);
+
+            Memoable copy1 = m.copy();
+            Memoable copy2 = copy1.copy();
+
+            digest.doFinal(resBuf, 0);
+            if (!areEqual(expected, resBuf))
+            {
+               fail("failing tuplehash memo vector test 1", results[results.length - 1], new String(Hex.encode(resBuf)));
+            }
+
+            Digest d = (Digest)copy2;
+            d.doFinal(resBuf, 0);
         }
-
-        m.reset(copy1);
-
-        digest.update(input, input.length/2, input.length - input.length/2);
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        else
         {
-            fail("failing memo reset vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            Memoable m = (Memoable)digest;
+
+            digest.update(input, 0, input.length / 2);
+
+            // copy the Digest
+            Memoable copy1 = m.copy();
+            Memoable copy2 = copy1.copy();
+
+            digest.update(input, input.length / 2, input.length - input.length / 2);
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing memo vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            }
+
+            m.reset(copy1);
+
+            digest.update(input, input.length / 2, input.length - input.length / 2);
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing memo reset vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            }
+
+            Digest md = (Digest)copy2;
+
+            md.update(input, input.length / 2, input.length - input.length / 2);
+            md.doFinal(resBuf, 0);
         }
-
-        Digest md = (Digest)copy2;
-
-        md.update(input, input.length/2, input.length - input.length/2);
-        md.doFinal(resBuf, 0);
 
         if (!areEqual(expected, resBuf))
         {
@@ -135,21 +190,32 @@ public abstract class DigestTest
 
     private void testClone(byte[] resBuf, byte[] input, byte[] expected)
     {
-        digest.update(input, 0, input.length / 2);
-
-        // clone the Digest
-        Digest d = cloneDigest(digest);
-
-        digest.update(input, input.length/2, input.length - input.length/2);
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(expected, resBuf))
+        if (digest instanceof TupleHash)
         {
-            fail("failing clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
-        }
+            // can't support multiple updates like the others - it's the whole point!
+            Digest d = cloneDigest(digest);
 
-        d.update(input, input.length/2, input.length - input.length/2);
-        d.doFinal(resBuf, 0);
+            d.update(input, 0, input.length);
+            d.doFinal(resBuf, 0);
+        }
+        else
+        {
+            digest.update(input, 0, input.length / 2);
+
+            // clone the Digest
+            Digest d = cloneDigest(digest);
+
+            digest.update(input, input.length / 2, input.length - input.length / 2);
+            digest.doFinal(resBuf, 0);
+
+            if (!areEqual(expected, resBuf))
+            {
+                fail("failing clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            }
+
+            d.update(input, input.length / 2, input.length - input.length / 2);
+            d.doFinal(resBuf, 0);
+        }
 
         if (!areEqual(expected, resBuf))
         {
@@ -160,15 +226,15 @@ public abstract class DigestTest
     protected byte[] toByteArray(String input)
     {
         byte[] bytes = new byte[input.length()];
-        
+
         for (int i = 0; i != bytes.length; i++)
         {
             bytes[i] = (byte)input.charAt(i);
         }
-        
+
         return bytes;
     }
-    
+
     private void vectorTest(
         Digest digest,
         int count,
@@ -216,12 +282,12 @@ public abstract class DigestTest
         String expected)
     {
         byte[] resBuf = new byte[digest.getDigestSize()];
-        
+
         for (int i = 0; i < 1000000; i++)
         {
             digest.update((byte)'a');
         }
-        
+
         digest.doFinal(resBuf, 0);
 
         if (!areEqual(resBuf, Hex.decode(expected)))
@@ -229,17 +295,17 @@ public abstract class DigestTest
             fail("Million a's failed", expected, new String(Hex.encode(resBuf)));
         }
     }
-    
+
     protected void sixtyFourKTest(
         String expected)
     {
         byte[] resBuf = new byte[digest.getDigestSize()];
-        
+
         for (int i = 0; i < 65536; i++)
         {
             digest.update((byte)(i & 0xff));
         }
-        
+
         digest.doFinal(resBuf, 0);
 
         if (!areEqual(resBuf, Hex.decode(expected)))
@@ -271,7 +337,130 @@ public abstract class DigestTest
         /* Check that we have the same result */
         if (!java.util.Arrays.equals(myFirst, mySecond))
         {
-            throw new TestFailedException(SimpleTestResult.failed(test,"Digest " + pDigest.getAlgorithmName() + " does not reset properly on doFinal()"));
+            throw new TestFailedException(SimpleTestResult.failed(test, "Digest " + pDigest.getAlgorithmName() + " does not reset properly on doFinal()"));
+        }
+    }
+
+    static void implTestExceptionsAndParametersDigest(final SimpleTest test, final Digest pDigest, final int digestsize)
+    {
+        if (pDigest.getDigestSize() != digestsize)
+        {
+            test.fail(pDigest.getAlgorithmName() + ": digest size is not correct");
+        }
+
+        try
+        {
+            pDigest.update(new byte[1], 1, 1);
+            test.fail(pDigest.getAlgorithmName() + ": input for update is too short");
+        }
+        catch (DataLengthException e)
+        {
+            //expected
+        }
+
+        try
+        {
+            pDigest.doFinal(new byte[pDigest.getDigestSize() - 1], 2);
+            test.fail(pDigest.getAlgorithmName() + ": output for dofinal is too short");
+        }
+        catch (OutputLengthException e)
+        {
+            //expected
+        }
+    }
+
+    static void implTestVectorsDigest(SimpleTest test, ExtendedDigest digest, String path, String filename)
+        throws Exception
+    {
+        Random random = new Random();
+        InputStream src = TestResourceFinder.findTestResource(path, filename);
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> map = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            int a = line.indexOf('=');
+            if (a < 0)
+            {
+                int count = Integer.parseInt((String)map.get("Count"));
+                if (count != 21)
+                {
+                    continue;
+                }
+                byte[] ptByte = Hex.decode((String)map.get("Msg"));
+                byte[] expected = Hex.decode((String)map.get("MD"));
+
+                byte[] hash = new byte[digest.getDigestSize()];
+
+                digest.update(ptByte, 0, ptByte.length);
+                digest.doFinal(hash, 0);
+                if (!Arrays.areEqual(hash, expected))
+                {
+                    mismatch(test, "Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                }
+
+                if (ptByte.length > 1)
+                {
+                    int split = random.nextInt(ptByte.length - 1) + 1;
+                    digest.update(ptByte, 0, split);
+                    digest.update(ptByte, split, ptByte.length - split);
+                    digest.doFinal(hash, 0);
+                    if (!Arrays.areEqual(hash, expected))
+                    {
+                        mismatch(test, "Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                    }
+                }
+
+                map.clear();
+            }
+            else
+            {
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    private static void mismatch(SimpleTest test, String name, String expected, byte[] found)
+    {
+        test.fail("mismatch on " + name, expected, new String(Hex.encode(found)));
+    }
+
+    /**
+     * Check xof.
+     *
+     * @param pXof the xof
+     * @param DATALEN DataLength
+     * @param PARTIALLEN Partial length
+     */
+    public static void checkXof(final Xof pXof, int DATALEN, int PARTIALLEN, SecureRandom random, SimpleTest test)
+    {
+        /* Create the data */
+        final byte[] myData = new byte[DATALEN];
+        random.nextBytes(myData);
+
+        /* Update the Xof with the data */
+        pXof.update(myData, 0, DATALEN);
+
+        /* Extract Xof as single block */
+        final byte[] myFull = new byte[DATALEN];
+        pXof.doFinal(myFull, 0, DATALEN);
+
+        /* Update the Xof with the data */
+        pXof.update(myData, 0, DATALEN);
+        final byte[] myPart = new byte[DATALEN];
+
+        /* Create the xof as partial blocks */
+        for (int myPos = 0; myPos < DATALEN; myPos += PARTIALLEN)
+        {
+            final int myLen = Math.min(PARTIALLEN, DATALEN - myPos);
+            pXof.doOutput(myPart, myPos, myLen);
+        }
+        pXof.doFinal(myPart, 0, 0);
+
+        /* Check that they are identical */
+        if (!Arrays.areEqual(myPart, myFull))
+        {
+            test.fail(pXof.getAlgorithmName() + ": Mismatch on partial vs full xof");
         }
     }
 }

@@ -7,15 +7,17 @@ buildscript {
 
 }
 
+
 plugins {
     id "io.spring.nohttp" version "0.0.11"
     id "checkstyle"
     id "jacoco"
-    id "net.ltgt.errorprone" version "3.1.0"
+    id "net.ltgt.errorprone" version "4.2.0"
+    id 'maven-publish'
 }
 
 println("Environment setup:")
-["BC_JDK8", "BC_JDK11", "BC_JDK17"].each({ it ->
+["BC_JDK8", "BC_JDK11", "BC_JDK17","BC_JDK21", "BC_JDK25"].each({ it ->
     println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}");
 //    if (System.getenv(it) == null) {
 //        throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
@@ -51,7 +53,7 @@ ext {
 // this needs to go here, otherwise it can't find config
 apply plugin: 'io.spring.nohttp'
 
-allprojects {
+configure(allprojects.findAll {it.name != 'bom'}) {
     apply plugin: 'java'
     apply plugin: 'idea'
     apply plugin: 'checkstyle'
@@ -160,6 +162,7 @@ allprojects {
         }
     }
 
+
 }
 
 task printProperties {
@@ -180,9 +183,9 @@ ext {
 
 }
 
-
-subprojects {
+configure(subprojects.findAll {it.name != 'bom'}) {
     apply plugin: 'eclipse'
+    apply plugin: 'maven-publish'
 
 
     JavaVersion current = JavaVersion.current();
@@ -222,9 +225,7 @@ subprojects {
         maxHeapSize = "1536m"
         testLogging.showStandardStreams = false
 
-        javaLauncher = javaToolchains.launcherFor {
-            languageVersion = JavaLanguageVersion.of(8)
-        }
+        jvmArgs = ['-Dtest.java.version.prefix=any']
 
         finalizedBy jacocoTestReport
 
@@ -237,10 +238,11 @@ subprojects {
     }
 
 
+
     dependencies {
         checkstyle files("$rootDir/config/checkstyle/lib/methodchecker-1.0.0.jar")
         checkstyle 'com.puppycrawl.tools:checkstyle:9.0'
-        errorprone "com.google.errorprone:error_prone_core:2.24.1"
+        errorprone "com.google.errorprone:error_prone_core:2.43.0"
     }
 
     checkstyle {
@@ -250,7 +252,18 @@ subprojects {
     }
 
     nohttp {
+        source.exclude '**/*.asc'
+        source.exclude '**/*.class'
+        source.exclude '**/*.crt'
+        source.exclude '**/*.crl'
+        source.exclude '**/*.eml'
+        source.exclude '**/*.gpg'
+        source.exclude '**/*.jar'
+        source.exclude '**/*.message'
+        source.exclude '**/*.pem'
+        source.exclude '**/*.*pub'
         source.exclude '**/*.rsp'
+        source.exclude 'out/*'
     }
 
     jacocoTestReport {
@@ -271,12 +284,13 @@ subprojects {
         }
     }
 
-    tasks.withType(JavaCompile).configureEach {
-        javaCompiler = javaToolchains.compilerFor {
-            languageVersion = JavaLanguageVersion.of(21)
-        }
-    }
 }
 
 
-test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test17', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+
+apply from: "publish.gradle"
+
+
+
+

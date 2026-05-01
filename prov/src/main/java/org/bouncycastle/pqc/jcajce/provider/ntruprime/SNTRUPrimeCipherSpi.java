@@ -19,15 +19,14 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.jcajce.provider.asymmetric.util.WrapUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
@@ -144,7 +143,7 @@ class SNTRUPrimeCipherSpi
             if (key instanceof BCSNTRUPrimePublicKey)
             {
                 wrapKey = (BCSNTRUPrimePublicKey)key;
-                kemGen = new SNTRUPrimeKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
+                kemGen = new SNTRUPrimeKEMGenerator(random);
             }
             else
             {

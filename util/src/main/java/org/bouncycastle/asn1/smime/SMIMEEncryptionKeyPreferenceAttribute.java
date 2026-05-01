@@ -26,15 +26,15 @@ public class SMIMEEncryptionKeyPreferenceAttribute
         super(SMIMEAttributes.encrypKeyPref,
                 new DERSet(new DERTaggedObject(false, 0, issAndSer)));
     }
-    
+
     public SMIMEEncryptionKeyPreferenceAttribute(
         RecipientKeyIdentifier rKeyId)
     {
 
-        super(SMIMEAttributes.encrypKeyPref, 
+        super(SMIMEAttributes.encrypKeyPref,
                     new DERSet(new DERTaggedObject(false, 1, rKeyId)));
     }
-    
+
     /**
      * @param sKeyId the subjectKeyIdentifier value (normally the X.509 one)
      */

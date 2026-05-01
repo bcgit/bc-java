@@ -57,7 +57,7 @@ class Utils
             throw new IllegalStateException("Byte array has unexpected length. Expected length 4, got " + bytes.length);
         }
 
-        return Pack.bigEndianToInt(bytes, 0);
+        return Pack.bigEndianToInt(bytes, 0) & 0xFFFFFFFFL; // time is unsigned
     }
 
     static byte[] timeToBytes(long t)

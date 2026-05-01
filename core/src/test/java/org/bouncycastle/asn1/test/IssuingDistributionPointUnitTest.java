@@ -27,7 +27,9 @@ public class IssuingDistributionPointUnitTest
                                               new GeneralNames(new GeneralName(new X500Name("cn=test"))));
         ReasonFlags reasonFlags = new ReasonFlags(ReasonFlags.cACompromise);
 
-        checkPoint(6, name, true, true, reasonFlags, true, true);
+        checkOnlyException(name, true, true, reasonFlags, true, true);
+        checkOnlyException(name, true, true, reasonFlags, true, false);
+        checkOnlyException(name, true, false, reasonFlags, true, true);
 
         checkPoint(2, name, false, false, reasonFlags, false, false);
 
@@ -42,6 +44,26 @@ public class IssuingDistributionPointUnitTest
         catch (IllegalArgumentException e)
         {
             // expected
+        }
+    }
+
+    private void checkOnlyException(
+        DistributionPointName distributionPoint,
+        boolean onlyContainsUserCerts,
+        boolean onlyContainsCACerts,
+        ReasonFlags onlySomeReasons,
+        boolean indirectCRL,
+        boolean onlyContainsAttributeCerts)
+        throws IOException
+    {
+        try
+        {
+            new IssuingDistributionPoint(distributionPoint, onlyContainsUserCerts, onlyContainsCACerts, onlySomeReasons, indirectCRL, onlyContainsAttributeCerts);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("only one of onlyContainsCACerts, onlyContainsUserCerts, or onlyContainsAttributeCerts can be true", e.getMessage());
         }
     }
 

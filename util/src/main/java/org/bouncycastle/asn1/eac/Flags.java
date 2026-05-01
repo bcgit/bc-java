@@ -67,7 +67,7 @@ public class Flags
 
         String mSeparator;
         boolean First = true;
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
 
         public StringJoiner(String separator)
         {

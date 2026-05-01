@@ -497,7 +497,7 @@ public class Ieee1609Dot2BaseTypes
      */
     public static final OERDefinition.Builder OneEightyDegreeInt = OERDefinition.integer(-1799999999, 1800000001).typeName("OneEightyDegreeInt");
     public static final OERDefinition.Builder KnownLongitude = OneEightyDegreeInt.copy().typeName("KnownLongitude");
-    public static final OERDefinition.Builder UnknownLongitude = OERDefinition.integer().validSwitchValue(new ASN1Integer(1800000001)).typeName("UnknownLongitude");
+    public static final OERDefinition.Builder UnknownLongitude = OERDefinition.integer().validSwitchValue(ASN1Integer.valueOf(1800000001)).typeName("UnknownLongitude");
     /**
      * NinetyDegreeInt ::= INTEGER {
      * min         (-900000000),
@@ -510,7 +510,7 @@ public class Ieee1609Dot2BaseTypes
     //
     // PSID / ITS-AID
     //
-    public static final OERDefinition.Builder UnknownLatitude = OERDefinition.integer().validSwitchValue(new ASN1Integer(900000001)).typeName("UnknownLatitude");
+    public static final OERDefinition.Builder UnknownLatitude = OERDefinition.integer().validSwitchValue(ASN1Integer.valueOf(900000001)).typeName("UnknownLatitude");
     public static final OERDefinition.Builder Elevation = UINT16.typeName("Elevation");
     public static final OERDefinition.Builder Longitude = OneEightyDegreeInt.copy().typeName("Longitude");
     public static final OERDefinition.Builder Latitude = NinetyDegreeInt.copy().typeName("Latitude");

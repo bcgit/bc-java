@@ -202,19 +202,63 @@ public interface BCObjectIdentifiers
 
     ASN1ObjectIdentifier sphincsPlus_interop = new ASN1ObjectIdentifier("1.3.9999.6");
 
+    /** 1.3.9999.6.4.13 OQS_OID_SPHINCSSHA2128FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_128f = new ASN1ObjectIdentifier("1.3.9999.6.4.13");
+    /** 1.3.9999.6.4.16 OQS_OID_SPHINCSSHA2128SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_128s = new ASN1ObjectIdentifier("1.3.9999.6.4.16");
+    /** 1.3.9999.6.5.10 OQS_OID_SPHINCSSHA2192FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_192f = new ASN1ObjectIdentifier("1.3.9999.6.5.10");
+    /** 1.3.9999.6.5.12 OQS_OID_SPHINCSSHA2192SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_192s = new ASN1ObjectIdentifier("1.3.9999.6.5.12");
+    /** 1.3.9999.6.6.10 OQS_OID_SPHINCSSHA2256FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_256f = new ASN1ObjectIdentifier("1.3.9999.6.6.10");
+    /** 1.3.9999.6.6.12 OQS_OID_SPHINCSSHA2256SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_256s = new ASN1ObjectIdentifier("1.3.9999.6.6.12");
 
+    /** 1.3.9999.6.7.13 OQS_OID_SPHINCSSHAKE128FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_128f = new ASN1ObjectIdentifier("1.3.9999.6.7.13");
+    /** 1.3.9999.6.7.16 OQS_OID_SPHINCSSHAKE128SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_128s = new ASN1ObjectIdentifier("1.3.9999.6.7.16");
+    /** 1.3.9999.6.8.10 OQS_OID_SPHINCSSHAKE192FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_192f = new ASN1ObjectIdentifier("1.3.9999.6.8.10");
+    /** 1.3.9999.6.8.12 OQS_OID_SPHINCSSHAKE192SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_192s = new ASN1ObjectIdentifier("1.3.9999.6.8.12");
+    /** 1.3.9999.6.9.10 OQS_OID_SPHINCSSHAKE256FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_256f = new ASN1ObjectIdentifier("1.3.9999.6.9.10");
+    /** 1.3.9999.6.9.12 OQS_OID_SPHINCSSHAKE256SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_256s = new ASN1ObjectIdentifier("1.3.9999.6.9.12");
+    /** 1.3.9999.6.4.14 OQS_OID_P256_SPHINCSSHA2128FSIMPLE */
+    ASN1ObjectIdentifier p256_sphincs_sha2_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.14");
+    /** 1.3.9999.6.4.15 OQS_OID_RSA3072_SPHINCSSHA2128FSIMPLE */
+    ASN1ObjectIdentifier rsa_3072_sphincs_sha2_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.15");
+    /** 1.3.9999.6.4.17 OQS_OID_P256_SPHINCSSHA2128SSIMPLE */
+    ASN1ObjectIdentifier p256_sphincs_sha2_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.17");
+    /** 1.3.9999.6.4.18 OQS_OID_RSA3072_SPHINCSSHA2128SSIMPLE */
+    ASN1ObjectIdentifier rsa_3072_sphincs_sha2_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.18");
+    /** 1.3.9999.6.5.11 OQS_OID_P384_SPHINCSSHA2192FSIMPLE */
+    ASN1ObjectIdentifier p384_sphincs_sha2_192f_simple = new ASN1ObjectIdentifier("1.3.9999.6.5.11");
+    /** 1.3.9999.6.5.13 OQS_OID_P384_SPHINCSSHA2192SSIMPLE */
+    ASN1ObjectIdentifier p384_sphincs_sha2192s_simple = new ASN1ObjectIdentifier("1.3.9999.6.5.13");
+    /** 1.3.9999.6.6.11 OQS_OID_P521_SPHINCSSHA2256FSIMPLE */
+    ASN1ObjectIdentifier p521_sphincs_sha2_256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.6.11");
+    /** 1.3.9999.6.6.13 OQS_OID_P521_SPHINCSSHA2256SSIMPLE */
+    ASN1ObjectIdentifier p521_sphincs_sha2_256s_simple = new ASN1ObjectIdentifier("1.3.9999.6.6.13");
+    /** 1.3.9999.6.7.14 OQS_OID_P256_SPHINCSSHAKE128FSIMPLE */
+    ASN1ObjectIdentifier p256_sphincs_shake_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.14");
+    /** 1.3.9999.6.7.15 OQS_OID_RSA3072_SPHINCSSHAKE128FSIMPLE */
+    ASN1ObjectIdentifier rsa_3072_sphincs_shake_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.15");
+    /** 1.3.9999.6.7.17 OQS_OID_P256_SPHINCSSHAKE128SSIMPLE */
+    ASN1ObjectIdentifier p256_sphincs_shake_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.17");
+    /** 1.3.9999.6.7.18 OQS_OID_RSA3072_SPHINCSSHAKE128SSIMPLE */
+    ASN1ObjectIdentifier rsa_3072_sphincs_shake_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.18");
+    /** 1.3.9999.6.8.11 OQS_OID_P384_SPHINCSSHAKE192FSIMPLE */
+    ASN1ObjectIdentifier p384_sphincs_shake_192f_simple = new ASN1ObjectIdentifier("1.3.9999.6.8.11");
+    /** 1.3.9999.6.8.13 OQS_OID_P384_SPHINCSSHAKE192SSIMPLE */
+    ASN1ObjectIdentifier p384_sphincs_shake_192s_simple = new ASN1ObjectIdentifier("1.3.9999.6.8.13");
+    /** 1.3.9999.6.9.11 OQS_OID_P521_SPHINCSSHAKE256FSIMPLE */
+    ASN1ObjectIdentifier p521_sphincs_shake256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.11");
+    /** 1.3.9999.6.9.13 OQS_OID_P521_SPHINCSSHAKE256SSIMPLE */
+    ASN1ObjectIdentifier p521_sphincs_shake256s_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.13");
 
     /**
      * Picnic
@@ -237,18 +281,39 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier picnicl5full = picnic_key.branch("12");
 
     ASN1ObjectIdentifier picnic_signature = picnic.branch("2");
+
     ASN1ObjectIdentifier picnic_with_sha512 = picnic_signature.branch("1");
     ASN1ObjectIdentifier picnic_with_shake256 = picnic_signature.branch("2");
     ASN1ObjectIdentifier picnic_with_sha3_512 = picnic_signature.branch("3");
-
 
     /*
      * Falcon
      */
     ASN1ObjectIdentifier falcon = bc_sig.branch("7");
 
-    ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.6");  // falcon.branch("1");
-    ASN1ObjectIdentifier falcon_1024 =  new ASN1ObjectIdentifier("1.3.9999.3.9"); // falcon.branch("2");
+    ASN1ObjectIdentifier old_falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.6");  // falcon.branch("1");
+    ASN1ObjectIdentifier old_falcon_1024 = new ASN1ObjectIdentifier("1.3.9999.3.9"); // falcon.branch("2");
+
+    /** 1.3.9999.3.11 OQS_OID_FALCON512 */
+    ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.11");
+    /** 1.3.9999.3.12 OQS_OID_P256_FALCON512 */
+    ASN1ObjectIdentifier p256_falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.12");
+    /** 1.3.9999.3.13 OQS_OID_RSA3072_FALCON512 */
+    ASN1ObjectIdentifier rsa_3072_falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.13");
+    /** 1.3.9999.3.14 OQS_OID_FALCON1024 */
+    ASN1ObjectIdentifier falcon_1024 = new ASN1ObjectIdentifier("1.3.9999.3.14");
+    /** 1.3.9999.3.15 OQS_OID_P521_FALCON1024 */
+    ASN1ObjectIdentifier p521_falcon1024 = new ASN1ObjectIdentifier("1.3.9999.3.15");
+    /** 1.3.9999.3.16 OQS_OID_FALCONPADDED512 */
+    ASN1ObjectIdentifier falcon_padded_512 = new ASN1ObjectIdentifier("1.3.9999.3.16");
+    /** 1.3.9999.3.17 OQS_OID_P256_FALCONPADDED512 */
+    ASN1ObjectIdentifier p256_falcon_padded512 = new ASN1ObjectIdentifier("1.3.9999.3.17");
+    /** 1.3.9999.3.18 OQS_OID_RSA3072_FALCONPADDED512 */
+    ASN1ObjectIdentifier rsa_3072_falconpadded512 = new ASN1ObjectIdentifier("1.3.9999.3.18");
+    /** 1.3.9999.3.19 OQS_OID_FALCONPADDED1024 */
+    ASN1ObjectIdentifier falcon_padded_1024 = new ASN1ObjectIdentifier("1.3.9999.3.19");
+    /** 1.3.9999.3.20 OQS_OID_P521_FALCONPADDED1024 */
+    ASN1ObjectIdentifier p521_falcon_padded_1024 = new ASN1ObjectIdentifier("1.3.9999.3.20");
 
     /*
      * Dilithium
@@ -262,6 +327,84 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier dilithium2_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.4.4"); // dilithium.branch("4");
     ASN1ObjectIdentifier dilithium3_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.6.5"); // dilithium.branch("5");
     ASN1ObjectIdentifier dilithium5_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.8.7"); // dilithium.branch("6");
+
+    /*
+     * ML-DSA
+     */
+    ///** 2.16.840.1.101.3.4.3.17 OQS_OID_MLDSA44 */
+    /** 1.3.9999.7.5 OQS_OID_P256_MLDSA44 */
+    ASN1ObjectIdentifier p256_mldsa44 = new ASN1ObjectIdentifier("1.3.9999.7.5");
+    /** 1.3.9999.7.6 OQS_OID_RSA3072_MLDSA44 */
+    ASN1ObjectIdentifier rsa3072_mldsa44 = new ASN1ObjectIdentifier("1.3.9999.7.6");
+    /** 2.16.840.1.114027.80.8.1.1 OQS_OID_MLDSA44_pss2048 */
+    ASN1ObjectIdentifier mldsa44_pss2048 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.1");
+    /** 2.16.840.1.114027.80.8.1.2 OQS_OID_MLDSA44_rsa2048 */
+    ASN1ObjectIdentifier mldsa44_rsa2048 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.2");
+    /** 2.16.840.1.114027.80.8.1.3 OQS_OID_MLDSA44_ed25519 */
+    ASN1ObjectIdentifier mldsa44_ed25519 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.3");
+    /** 2.16.840.1.114027.80.8.1.4 OQS_OID_MLDSA44_p256 */
+    ASN1ObjectIdentifier mldsa44_p256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.4");
+    /** 2.16.840.1.114027.80.8.1.5 OQS_OID_MLDSA44_bp256 */
+    ASN1ObjectIdentifier mldsa44_bp256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.5");
+    ///** 2.16.840.1.101.3.4.3.18 OQS_OID_MLDSA65 */
+    /** 1.3.9999.7.7 OQS_OID_P384_MLDSA65 */
+    ASN1ObjectIdentifier p384_mldsa65 = new ASN1ObjectIdentifier("1.3.9999.7.7");
+    /** 2.16.840.1.114027.80.8.1.6 OQS_OID_MLDSA65_pss3072 */
+    ASN1ObjectIdentifier mldsa65_pss3072 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.6");
+    /** 2.16.840.1.114027.80.8.1.7 OQS_OID_MLDSA65_rsa3072 */
+    ASN1ObjectIdentifier mldsa65_rsa3072 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.7");
+    /** 2.16.840.1.114027.80.8.1.8 OQS_OID_MLDSA65_p256 */
+    ASN1ObjectIdentifier mldsa65_p256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.8");
+    /** 2.16.840.1.114027.80.8.1.9 OQS_OID_MLDSA65_bp256 */
+    ASN1ObjectIdentifier mldsa65_bp256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.9");
+    /** 2.16.840.1.114027.80.8.1.10 OQS_OID_MLDSA65_ed25519 */
+    ASN1ObjectIdentifier mldsa65_ed25519 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.10");
+    ///** 2.16.840.1.101.3.4.3.19 OQS_OID_MLDSA87 */
+    /** 1.3.9999.7.8 OQS_OID_P521_MLDSA87 */
+    ASN1ObjectIdentifier p521_mldsa87 = new ASN1ObjectIdentifier("1.3.9999.7.8");
+    /** 2.16.840.1.114027.80.8.1.11 OQS_OID_MLDSA87_p384 */
+    ASN1ObjectIdentifier mldsa87_p384 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.11");
+    /** 2.16.840.1.114027.80.8.1.12 OQS_OID_MLDSA87_bp384 */
+    ASN1ObjectIdentifier mldsa87_bp384 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.12");
+    /** 2.16.840.1.114027.80.8.1.13 OQS_OID_MLDSA87_ed448 */
+    ASN1ObjectIdentifier mldsa87_ed448 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.13");
+
+    /** 2.16.840.1.114027.80.9.1.0 id-MLDSA44-RSA2048-PSS-SHA256 */
+    ASN1ObjectIdentifier id_MLDSA44_RSA2048_PSS_SHA256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.0");
+    /** 2.16.840.1.114027.80.9.1.1 id-MLDSA44-RSA2048-PKCS15-SHA256 */
+    ASN1ObjectIdentifier id_MLDSA44_RSA2048_PKCS15_SHA256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.1");
+    /** 2.16.840.1.114027.80.9.1.2 id-MLDSA44-Ed25519-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA44_Ed25519_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.2");
+    /** 2.16.840.1.114027.80.9.1.3 id-MLDSA44-ECDSA-P256-SHA256 */
+    ASN1ObjectIdentifier id_MLDSA44_ECDSA_P256_SHA256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.3");
+    /** 2.16.840.1.114027.80.9.1.4 id-MLDSA65-RSA3072-PSS-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_RSA3072_PSS_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.4");
+    /** 2.16.840.1.114027.80.9.1.5 id-MLDSA65-RSA3072-PKCS15-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_RSA3072_PKCS15_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.5");
+    /** 2.16.840.1.114027.80.9.1.6 id-MLDSA65-RSA4096-PSS-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_RSA4096_PSS_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.6");
+    /** 2.16.840.1.114027.80.9.1.7 id-MLDSA65-RSA4096-PKCS15-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_RSA4096_PKCS15_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.7");
+    /** 2.16.840.1.114027.80.9.1.8 id-MLDSA65-ECDSA-P256-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_ECDSA_P256_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.8");
+    /** 2.16.840.1.114027.80.9.1.9 id-MLDSA65-ECDSA-P384-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_ECDSA_P384_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.9");
+    /** 2.16.840.1.114027.80.9.1.10 id-MLDSA65-ECDSA-brainpoolP256r1-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_ECDSA_brainpoolP256r1_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.10");
+    /** 2.16.840.1.114027.80.9.1.11 id-MLDSA65-Ed25519-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA65_Ed25519_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.11");
+    /** 2.16.840.1.114027.80.9.1.12 id-MLDSA87-ECDSA-P384-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_ECDSA_P384_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.12");
+    /** 2.16.840.1.114027.80.9.1.13 id-MLDSA87-ECDSA-brainpoolP384r1-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_ECDSA_brainpoolP384r1_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.13");
+    /** 2.16.840.1.114027.80.9.1.14 id-MLDSA87-Ed448-SHAKE256 */
+    ASN1ObjectIdentifier id_MLDSA87_Ed448_SHAKE256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.14");
+    /** 2.16.840.1.114027.80.9.1.15 id-MLDSA87-RSA3072-PSS-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_RSA3072_PSS_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.15");
+    /** 2.16.840.1.114027.80.9.1.16 id-MLDSA87-RSA4096-PSS-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_RSA4096_PSS_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.16");
+    /** 2.16.840.1.114027.80.9.1.17 id-MLDSA87-ECDSA-P521-SHA512 */
+    ASN1ObjectIdentifier id_MLDSA87_ECDSA_P521_SHA512 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.9.1.17");
 
     /*
      * Rainbow
@@ -315,7 +458,6 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mceliece6960119f_r3 = pqc_kem_mceliece.branch("8");
     ASN1ObjectIdentifier mceliece8192128_r3 = pqc_kem_mceliece.branch("9");
     ASN1ObjectIdentifier mceliece8192128f_r3 = pqc_kem_mceliece.branch("10");
-
 
     /**
      * Frodo
@@ -403,7 +545,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier ntrulpr953 = pqc_kem_ntrulprime.branch("4");
     ASN1ObjectIdentifier ntrulpr1013 = pqc_kem_ntrulprime.branch("5");
     ASN1ObjectIdentifier ntrulpr1277 = pqc_kem_ntrulprime.branch("6");
-    
+
     ASN1ObjectIdentifier pqc_kem_sntruprime = pqc_kem_ntruprime.branch("2");
     ASN1ObjectIdentifier sntrup653 = pqc_kem_sntruprime.branch("1");
     ASN1ObjectIdentifier sntrup761 = pqc_kem_sntruprime.branch("2");
@@ -411,7 +553,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sntrup953 = pqc_kem_sntruprime.branch("4");
     ASN1ObjectIdentifier sntrup1013 = pqc_kem_sntruprime.branch("5");
     ASN1ObjectIdentifier sntrup1277 = pqc_kem_sntruprime.branch("6");
-    
+
     /**
      * BIKE
      **/
@@ -429,4 +571,176 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier hqc128 = pqc_kem_hqc.branch("1");
     ASN1ObjectIdentifier hqc192 = pqc_kem_hqc.branch("2");
     ASN1ObjectIdentifier hqc256 = pqc_kem_hqc.branch("3");
+    
+    /**
+     * Mayo
+     */
+    ASN1ObjectIdentifier mayo = bc_sig.branch("10");
+
+    /** 1.3.9999.8.1.3 OQS_OID_MAYO1 */
+    ASN1ObjectIdentifier mayo_1 = new ASN1ObjectIdentifier("1.3.9999.8.1.3");
+    /** 1.3.9999.8.1.4 OQS_OID_P256_MAYO1 */
+    ASN1ObjectIdentifier p256_mayo1 = new ASN1ObjectIdentifier("1.3.9999.8.1.4");
+    /** 1.3.9999.8.2.3 OQS_OID_MAYO2 */
+    ASN1ObjectIdentifier mayo_2 = new ASN1ObjectIdentifier("1.3.9999.8.2.3");
+    /** 1.3.9999.8.2.4 OQS_OID_P256_MAYO2 */
+    ASN1ObjectIdentifier p256_mayo2 = new ASN1ObjectIdentifier("1.3.9999.8.2.4");
+    /** 1.3.9999.8.3.3 OQS_OID_MAYO3 */
+    ASN1ObjectIdentifier mayo_3 = new ASN1ObjectIdentifier("1.3.9999.8.3.3");
+    /** 1.3.9999.8.3.4 OQS_OID_P384_MAYO3 */
+    ASN1ObjectIdentifier p384_mayo3 = new ASN1ObjectIdentifier("1.3.9999.8.3.4");
+    /** 1.3.9999.8.5.3 OQS_OID_MAYO5 */
+    ASN1ObjectIdentifier mayo_5 = new ASN1ObjectIdentifier("1.3.9999.8.5.3");
+    /** 1.3.9999.8.5.4 OQS_OID_P521_MAYO5 */
+    ASN1ObjectIdentifier p521_mayo5 = new ASN1ObjectIdentifier("1.3.9999.8.5.4");
+
+    ASN1ObjectIdentifier mayo1 = mayo_1;
+    ASN1ObjectIdentifier mayo2 = mayo_2;
+    ASN1ObjectIdentifier mayo3 = mayo_3;
+    ASN1ObjectIdentifier mayo5 = mayo_5;
+    
+    /**
+     * cross
+     */
+//    /** 1.3.6.1.4.1.62245.2.1.1.2 OQS_OID_CROSSRSDP128BALANCED */
+//    ASN1ObjectIdentifier crossrsdp_128balanced = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.1.2");
+//    /** 1.3.6.1.4.1.62245.2.1.2.2 OQS_OID_CROSSRSDP128FAST */
+//    ASN1ObjectIdentifier crossrsdp_128fast = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.2.2");
+//    /** 1.3.6.1.4.1.62245.2.1.3.2 OQS_OID_CROSSRSDP128SMALL */
+//    ASN1ObjectIdentifier crossrsdp_128small = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.3.2");
+//    /** 1.3.6.1.4.1.62245.2.1.4.2 OQS_OID_CROSSRSDP192BALANCED */
+//    ASN1ObjectIdentifier crossrsdp_192balanced = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.4.2");
+//    /** 1.3.6.1.4.1.62245.2.1.5.2 OQS_OID_CROSSRSDP192FAST */
+//    ASN1ObjectIdentifier crossrsdp_192fast = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.5.2");
+//    /** 1.3.6.1.4.1.62245.2.1.6.2 OQS_OID_CROSSRSDP192SMALL */
+//    ASN1ObjectIdentifier crossrsdp_192small = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.6.2");
+//    /** 1.3.6.1.4.1.62245.2.1.9.2 OQS_OID_CROSSRSDP256SMALL */
+//    ASN1ObjectIdentifier crossrsdp256small = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.9.2");
+//    /** 1.3.6.1.4.1.62245.2.1.10.2 OQS_OID_CROSSRSDPG128BALANCED */
+//    ASN1ObjectIdentifier crossrsdpg_128balanced = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.10.2");
+//    /** 1.3.6.1.4.1.62245.2.1.11.2 OQS_OID_CROSSRSDPG128FAST */
+//    ASN1ObjectIdentifier crossrsdpg_128fast = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.11.2");
+//    /** 1.3.6.1.4.1.62245.2.1.12.2 OQS_OID_CROSSRSDPG128SMALL */
+//    ASN1ObjectIdentifier crossrsdpg_128small = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.12.2");
+//    /** 1.3.6.1.4.1.62245.2.1.13.2 OQS_OID_CROSSRSDPG192BALANCED */
+//    ASN1ObjectIdentifier crossrsdpg_192balanced = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.13.2");
+//    /** 1.3.6.1.4.1.62245.2.1.14.2 OQS_OID_CROSSRSDPG192FAST */
+//    ASN1ObjectIdentifier crossrsdpg_192fast = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.14.2");
+//    /** 1.3.6.1.4.1.62245.2.1.15.2 OQS_OID_CROSSRSDPG192SMALL */
+//    ASN1ObjectIdentifier crossrsdpg_192small = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.15.2");
+//    /** 1.3.6.1.4.1.62245.2.1.16.2 OQS_OID_CROSSRSDPG256BALANCED */
+//    ASN1ObjectIdentifier crossrsdpg_256balanced = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.16.2");
+//    /** 1.3.6.1.4.1.62245.2.1.17.2 OQS_OID_CROSSRSDPG256FAST */
+//    ASN1ObjectIdentifier crossrsdpg_256fast = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.17.2");
+//    /** 1.3.6.1.4.1.62245.2.1.18.2 OQS_OID_CROSSRSDPG256SMALL */
+//    ASN1ObjectIdentifier crossrsdpg_256small = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.18.2");
+
+    /**
+     * OV
+     * */
+//    /** 1.3.9999.9.1.1 OQS_OID_OV_IS */
+//    ASN1ObjectIdentifier ov_is = new ASN1ObjectIdentifier("1.3.9999.9.1.1");
+//    /** 1.3.9999.9.1.2 OQS_OID_P256_OV_IS */
+//    ASN1ObjectIdentifier p256_ov_is = new ASN1ObjectIdentifier("1.3.9999.9.1.2");
+//    /** 1.3.9999.9.2.1 OQS_OID_OV_IP */
+//    ASN1ObjectIdentifier ov_ip = new ASN1ObjectIdentifier("1.3.9999.9.2.1");
+//    /** 1.3.9999.9.2.2 OQS_OID_P256_OV_IP */
+//    ASN1ObjectIdentifier p256_ov_ip = new ASN1ObjectIdentifier("1.3.9999.9.2.2");
+//    /** 1.3.9999.9.3.1 OQS_OID_OV_III */
+//    ASN1ObjectIdentifier ov_iii = new ASN1ObjectIdentifier("1.3.9999.9.3.1");
+//    /** 1.3.9999.9.3.2 OQS_OID_P384_OV_III */
+//    ASN1ObjectIdentifier p384_ov_iii = new ASN1ObjectIdentifier("1.3.9999.9.3.2");
+//    /** 1.3.9999.9.4.1 OQS_OID_OV_V */
+//    ASN1ObjectIdentifier ov_v = new ASN1ObjectIdentifier("1.3.9999.9.4.1");
+//    /** 1.3.9999.9.4.2 OQS_OID_P521_OV_V */
+//    ASN1ObjectIdentifier p521_ov_v = new ASN1ObjectIdentifier("1.3.9999.9.4.2");
+//    /** 1.3.9999.9.5.1 OQS_OID_OV_IS_PKC */
+//    ASN1ObjectIdentifier ov_is_pkc = new ASN1ObjectIdentifier("1.3.9999.9.5.1");
+//    /** 1.3.9999.9.5.2 OQS_OID_P256_OV_IS_PKC */
+//    ASN1ObjectIdentifier p256_ov_is_pkc = new ASN1ObjectIdentifier("1.3.9999.9.5.2");
+//    /** 1.3.9999.9.6.1 OQS_OID_OV_IP_PKC */
+//    ASN1ObjectIdentifier ov_ip_pkc = new ASN1ObjectIdentifier("1.3.9999.9.6.1");
+//    /** 1.3.9999.9.6.2 OQS_OID_P256_OV_IP_PKC */
+//    ASN1ObjectIdentifier p256_ov_ip_pkc = new ASN1ObjectIdentifier("1.3.9999.9.6.2");
+//    /** 1.3.9999.9.7.1 OQS_OID_OV_III_PKC */
+//    ASN1ObjectIdentifier ov_iii_pkc = new ASN1ObjectIdentifier("1.3.9999.9.7.1");
+//    /** 1.3.9999.9.7.2 OQS_OID_P384_OV_III_PKC */
+//    ASN1ObjectIdentifier p384_ov_iii_pkc = new ASN1ObjectIdentifier("1.3.9999.9.7.2");
+//    /** 1.3.9999.9.8.1 OQS_OID_OV_V_PKC */
+//    ASN1ObjectIdentifier ov_v_pkc = new ASN1ObjectIdentifier("1.3.9999.9.8.1");
+//    /** 1.3.9999.9.8.2 OQS_OID_P521_OV_V_PKC */
+//    ASN1ObjectIdentifier p521_ov_v_pkc = new ASN1ObjectIdentifier("1.3.9999.9.8.2");
+//    /** 1.3.9999.9.9.1 OQS_OID_OV_IS_PKC_SKC */
+//    ASN1ObjectIdentifier ov_is_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.9.1");
+//    /** 1.3.9999.9.9.2 OQS_OID_P256_OV_IS_PKC_SKC */
+//    ASN1ObjectIdentifier p256_ov_is_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.9.2");
+//    /** 1.3.9999.9.10.1 OQS_OID_OV_IP_PKC_SKC */
+//    ASN1ObjectIdentifier ov_ip_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.10.1");
+//    /** 1.3.9999.9.10.2 OQS_OID_P256_OV_IP_PKC_SKC */
+//    ASN1ObjectIdentifier p256_ov_ip_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.10.2");
+//    /** 1.3.9999.9.11.1 OQS_OID_OV_III_PKC_SKC */
+//    ASN1ObjectIdentifier ov_iii_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.11.1");
+//    /** 1.3.9999.9.11.2 OQS_OID_P384_OV_III_PKC_SKC */
+//    ASN1ObjectIdentifier p384_ov_iii_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.11.2");
+//    /** 1.3.9999.9.12.1 OQS_OID_OV_V_PKC_SKC */
+//    ASN1ObjectIdentifier ov_v_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.12.1");
+//    /** 1.3.9999.9.12.2 OQS_OID_P521_OV_V_PKC_SKC */
+//    ASN1ObjectIdentifier p521_ov_v_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.12.2");
+
+    /**
+     * Snova
+     */
+    ASN1ObjectIdentifier snova = bc_sig.branch("11");
+    ASN1ObjectIdentifier snova_24_5_4_ssk = snova.branch("1");
+    ASN1ObjectIdentifier snova_24_5_4_esk = snova.branch("2");
+    ASN1ObjectIdentifier snova_24_5_4_shake_ssk = snova.branch("3");
+    ASN1ObjectIdentifier snova_24_5_4_shake_esk = snova.branch("4");
+    ASN1ObjectIdentifier snova_24_5_5_ssk = snova.branch("5");
+    ASN1ObjectIdentifier snova_24_5_5_esk = snova.branch("6");
+    ASN1ObjectIdentifier snova_24_5_5_shake_ssk = snova.branch("7");
+    ASN1ObjectIdentifier snova_24_5_5_shake_esk = snova.branch("8");
+    ASN1ObjectIdentifier snova_25_8_3_ssk = snova.branch("9");
+    ASN1ObjectIdentifier snova_25_8_3_esk = snova.branch("10");
+    ASN1ObjectIdentifier snova_25_8_3_shake_ssk = snova.branch("11");
+    ASN1ObjectIdentifier snova_25_8_3_shake_esk = snova.branch("12");
+    ASN1ObjectIdentifier snova_29_6_5_ssk = snova.branch("13");
+    ASN1ObjectIdentifier snova_29_6_5_esk = snova.branch("14");
+    ASN1ObjectIdentifier snova_29_6_5_shake_ssk = snova.branch("15");
+    ASN1ObjectIdentifier snova_29_6_5_shake_esk = snova.branch("16");
+    ASN1ObjectIdentifier snova_37_8_4_ssk = snova.branch("17");
+    ASN1ObjectIdentifier snova_37_8_4_esk = snova.branch("18");
+    ASN1ObjectIdentifier snova_37_8_4_shake_ssk = snova.branch("19");
+    ASN1ObjectIdentifier snova_37_8_4_shake_esk = snova.branch("20");
+    ASN1ObjectIdentifier snova_37_17_2_ssk = snova.branch("21");
+    ASN1ObjectIdentifier snova_37_17_2_esk = snova.branch("22");
+    ASN1ObjectIdentifier snova_37_17_2_shake_ssk = snova.branch("23");
+    ASN1ObjectIdentifier snova_37_17_2_shake_esk = snova.branch("24");
+    ASN1ObjectIdentifier snova_49_11_3_ssk = snova.branch("25");
+    ASN1ObjectIdentifier snova_49_11_3_esk = snova.branch("26");
+    ASN1ObjectIdentifier snova_49_11_3_shake_ssk = snova.branch("27");
+    ASN1ObjectIdentifier snova_49_11_3_shake_esk = snova.branch("28");
+    ASN1ObjectIdentifier snova_56_25_2_ssk = snova.branch("29");
+    ASN1ObjectIdentifier snova_56_25_2_esk = snova.branch("30");
+    ASN1ObjectIdentifier snova_56_25_2_shake_ssk = snova.branch("31");
+    ASN1ObjectIdentifier snova_56_25_2_shake_esk = snova.branch("32");
+    ASN1ObjectIdentifier snova_60_10_4_ssk = snova.branch("33");
+    ASN1ObjectIdentifier snova_60_10_4_esk = snova.branch("34");
+    ASN1ObjectIdentifier snova_60_10_4_shake_ssk = snova.branch("35");
+    ASN1ObjectIdentifier snova_60_10_4_shake_esk = snova.branch("36");
+    ASN1ObjectIdentifier snova_66_15_3_ssk = snova.branch("37");
+    ASN1ObjectIdentifier snova_66_15_3_esk = snova.branch("38");
+    ASN1ObjectIdentifier snova_66_15_3_shake_ssk = snova.branch("39");
+    ASN1ObjectIdentifier snova_66_15_3_shake_esk = snova.branch("40");
+    ASN1ObjectIdentifier snova_75_33_2_ssk = snova.branch("41");
+    ASN1ObjectIdentifier snova_75_33_2_esk = snova.branch("42");
+    ASN1ObjectIdentifier snova_75_33_2_shake_ssk = snova.branch("43");
+    ASN1ObjectIdentifier snova_75_33_2_shake_esk = snova.branch("44");
+
+    /**
+     * NTRU+
+     * */
+    ASN1ObjectIdentifier pqc_kem_ntruplus = bc_kem.branch("10");
+    ASN1ObjectIdentifier ntruplus768 = pqc_kem_ntruplus.branch("1");
+    ASN1ObjectIdentifier ntruplus864 = pqc_kem_ntruplus.branch("2");
+    ASN1ObjectIdentifier ntruplus1152 = pqc_kem_ntruplus.branch("3");
 }

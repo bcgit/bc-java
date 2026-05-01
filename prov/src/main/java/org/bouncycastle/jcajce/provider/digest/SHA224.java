@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 
 public class SHA224
 {
@@ -44,6 +45,15 @@ public class SHA224
         }
     }
 
+    static public class KeyFactory
+        extends BaseSecretKeyFactory
+    {
+        public KeyFactory()
+        {
+            super("HmacSHA224", null);
+        }
+    }
+
     public static class KeyGenerator
         extends BaseKeyGenerator
     {
@@ -73,6 +83,8 @@ public class SHA224
             addHMACAlgorithm(provider, "SHA224", PREFIX + "$HashMac",  PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "SHA224", PKCSObjectIdentifiers.id_hmacWithSHA224);
 
+            provider.addAlgorithm("SecretKeyFactory.HMACSHA224", PREFIX + "$KeyFactory");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.id_hmacWithSHA224, "HMACSHA224");
         }
     }
 }

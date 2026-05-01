@@ -25,7 +25,7 @@ public class LraPopWitnessTest
     public void performTest()
         throws Exception
     {
-        LraPopWitness popWitness = new LraPopWitness(new BodyPartID(10L), new DERSequence(new ASN1Integer(20L)));
+        LraPopWitness popWitness = new LraPopWitness(new BodyPartID(10L), new DERSequence(ASN1Integer.valueOf(20)));
         byte[] b = popWitness.getEncoded();
         LraPopWitness popWitnessResult = LraPopWitness.getInstance(b);
 

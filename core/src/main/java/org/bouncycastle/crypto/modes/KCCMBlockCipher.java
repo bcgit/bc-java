@@ -455,7 +455,7 @@ public class KCCMBlockCipher
 
     private byte getFlag(boolean authTextPresents, int macSize)
     {
-        StringBuffer flagByte = new StringBuffer();
+        StringBuilder flagByte = new StringBuilder();
 
         if (authTextPresents)
         {
@@ -489,7 +489,7 @@ public class KCCMBlockCipher
         String binaryNb = Integer.toBinaryString(Nb_ - 1);
         while (binaryNb.length() < 4)
         {
-            binaryNb = new StringBuffer(binaryNb).insert(0, "0").toString();
+            binaryNb = new StringBuilder(binaryNb).insert(0, "0").toString();
         }
 
         flagByte.append(binaryNb);
@@ -501,11 +501,11 @@ public class KCCMBlockCipher
     private static class ExposedByteArrayOutputStream
         extends ByteArrayOutputStream
     {
-        public ExposedByteArrayOutputStream()
+        ExposedByteArrayOutputStream()
         {
         }
 
-        public byte[] getBuffer()
+        byte[] getBuffer()
         {
             return this.buf;
         }

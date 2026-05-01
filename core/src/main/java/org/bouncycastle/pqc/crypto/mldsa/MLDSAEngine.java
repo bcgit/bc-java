@@ -8,14 +8,13 @@ import org.bouncycastle.util.Arrays;
 class MLDSAEngine
 {
     private final SecureRandom random;
-
-    private final SHAKEDigest shake256Digest = new SHAKEDigest(256);
+    final SHAKEDigest shake256Digest = new SHAKEDigest(256);
 
     public final static int DilithiumN = 256;
     public final static int DilithiumQ = 8380417;
     public final static int DilithiumQinv = 58728449; // q^(-1) mod 2^32
     public final static int DilithiumD = 13;
-    public final static int DilithiumRootOfUnity = 1753;
+    //public final static int DilithiumRootOfUnity = 1753;
     public final static int SeedBytes = 32;
     public final static int CrhBytes = 64;
     public final static int RndBytes = 32;
@@ -30,8 +29,6 @@ class MLDSAEngine
     private final int DilithiumPolyW1PackedBytes;
     private final int DilithiumPolyEtaPackedBytes;
 
-    private final int DilithiumMode;
-
     private final int DilithiumK;
     private final int DilithiumL;
     private final int DilithiumEta;
@@ -43,7 +40,7 @@ class MLDSAEngine
     private final int DilithiumCTilde;
 
     private final int CryptoPublicKeyBytes;
-    private final int CryptoSecretKeyBytes;
+//    private final int CryptoSecretKeyBytes;
     private final int CryptoBytes;
 
     private final int PolyUniformGamma1NBlocks;
@@ -53,11 +50,6 @@ class MLDSAEngine
     protected Symmetric GetSymmetric()
     {
         return symmetric;
-    }
-
-    int getDilithiumPolyVecHPackedBytes()
-    {
-        return DilithiumPolyVecHPackedBytes;
     }
 
     int getDilithiumPolyZPackedBytes()
@@ -73,11 +65,6 @@ class MLDSAEngine
     int getDilithiumPolyEtaPackedBytes()
     {
         return DilithiumPolyEtaPackedBytes;
-    }
-
-    int getDilithiumMode()
-    {
-        return DilithiumMode;
     }
 
     int getDilithiumK()
@@ -130,16 +117,6 @@ class MLDSAEngine
         return CryptoPublicKeyBytes;
     }
 
-    int getCryptoSecretKeyBytes()
-    {
-        return CryptoSecretKeyBytes;
-    }
-
-    int getCryptoBytes()
-    {
-        return CryptoBytes;
-    }
-
     int getPolyUniformGamma1NBlocks()
     {
         return this.PolyUniformGamma1NBlocks;
@@ -147,7 +124,6 @@ class MLDSAEngine
 
     MLDSAEngine(int mode, SecureRandom random)
     {
-        this.DilithiumMode = mode;
         switch (mode)
         {
         case 2:
@@ -201,14 +177,6 @@ class MLDSAEngine
         this.random = random;
         this.DilithiumPolyVecHPackedBytes = this.DilithiumOmega + this.DilithiumK;
         this.CryptoPublicKeyBytes = SeedBytes + this.DilithiumK * DilithiumPolyT1PackedBytes;
-        this.CryptoSecretKeyBytes =
-            (
-                2 * SeedBytes
-                    + TrBytes
-                    + DilithiumL * this.DilithiumPolyEtaPackedBytes
-                    + DilithiumK * this.DilithiumPolyEtaPackedBytes
-                    + DilithiumK * DilithiumPolyT0PackedBytes
-            );
         this.CryptoBytes = DilithiumCTilde + DilithiumL * this.DilithiumPolyZPackedBytes + this.DilithiumPolyVecHPackedBytes;
 
         if (this.DilithiumGamma1 == (1 << 17))
@@ -269,7 +237,7 @@ class MLDSAEngine
 
         s1hat = new PolyVecL(this);
 
-        s1.copyPolyVecL(s1hat);
+        s1.copyTo(s1hat);
         s1hat.polyVecNtt();
 
         // System.out.println(s1hat.toString("s1hat"));
@@ -300,7 +268,53 @@ class MLDSAEngine
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
 
-        return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1, seed};
+        return new byte[][]{sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1, seed};
+    }
+
+    byte[] deriveT1(byte[] rho, byte[] key, byte[] tr, byte[] s1Enc, byte[] s2Enc, byte[] t0Enc)
+    {
+        PolyVecMatrix aMatrix = new PolyVecMatrix(this);
+
+        PolyVecL s1 = new PolyVecL(this), s1hat;
+        PolyVecK s2 = new PolyVecK(this), t1 = new PolyVecK(this), t0 = new PolyVecK(this);
+
+        Packing.unpackSecretKey(t0, s1, s2, t0Enc, s1Enc, s2Enc, this);
+
+        // System.out.print("rho = ");
+        // Helper.printByteArray(rho);
+
+        // System.out.println("key = ");
+        // Helper.printByteArray(key);
+
+        aMatrix.expandMatrix(rho);
+        // System.out.print(aMatrix.toString("aMatrix"));
+
+        s1hat = new PolyVecL(this);
+
+        s1.copyTo(s1hat);
+        s1hat.polyVecNtt();
+
+        // System.out.println(s1hat.toString("s1hat"));
+
+        aMatrix.pointwiseMontgomery(t1, s1hat);
+        // System.out.println(t1.toString("t1"));
+
+        t1.reduce();
+        t1.invNttToMont();
+
+        t1.addPolyVecK(s2);
+        // System.out.println(s2.toString("s2"));
+        // System.out.println(t1.toString("t1"));
+        t1.conditionalAddQ();
+        t1.power2Round(t0);
+
+        // System.out.println(t1.toString("t1"));
+        // System.out.println(t0.toString("t0"));
+
+        byte[] encT1 = Packing.packPublicKey(t1, this);
+        // System.out.println("enc t1 = ");
+        // Helper.printByteArray(encT1);
+        return encT1;
     }
 
     SHAKEDigest getShake256Digest()
@@ -311,12 +325,7 @@ class MLDSAEngine
     void initSign(byte[] tr, boolean isPreHash, byte[] ctx)
     {
         shake256Digest.update(tr, 0, TrBytes);
-        if (ctx != null)
-        {
-            shake256Digest.update(isPreHash ? (byte)1 : (byte)0);
-            shake256Digest.update((byte)ctx.length);
-            shake256Digest.update(ctx, 0, ctx.length);
-        }
+        absorbCtx(isPreHash, ctx);
     }
 
     void initVerify(byte[] rho, byte[] encT1, boolean isPreHash, byte[] ctx)
@@ -328,6 +337,11 @@ class MLDSAEngine
         shake256Digest.doFinal(mu, 0, TrBytes);
 
         shake256Digest.update(mu, 0, TrBytes);
+        absorbCtx(isPreHash, ctx);
+    }
+
+    void absorbCtx(boolean isPreHash, byte[] ctx)
+    {
         if (ctx != null)
         {
             shake256Digest.update(isPreHash ? (byte)1 : (byte)0);
@@ -336,22 +350,25 @@ class MLDSAEngine
         }
     }
 
-    public byte[] signInternal(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    byte[] signInternal(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
     {
         SHAKEDigest shake256 = new SHAKEDigest(shake256Digest);
 
         shake256.update(msg, 0, msglen);
 
-        return generateSignature(shake256, rho, key, t0Enc, s1Enc, s2Enc, rnd);
+        return generateSignature(generateMu(shake256), shake256, rho, key, t0Enc, s1Enc, s2Enc, rnd);
     }
 
-    byte[] generateSignature(SHAKEDigest shake256Digest, byte[] rho, byte[] key, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    byte[] generateMu(SHAKEDigest shake256Digest)
     {
         byte[] mu = new byte[CrhBytes];
 
         shake256Digest.doFinal(mu, 0, CrhBytes);
+        return mu;
+    }
 
-        int n;
+    byte[] generateSignature(byte[] mu, SHAKEDigest shake256Digest, byte[] rho, byte[] key, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    {
         byte[] outSig = new byte[CryptoBytes];
         byte[] rhoPrime = new byte[CrhBytes];
         short nonce = 0;
@@ -382,7 +399,7 @@ class MLDSAEngine
             // Sample intermediate vector
             y.uniformGamma1(rhoPrime, nonce++);
 
-            y.copyPolyVecL(z);
+            y.copyTo(z);
             z.polyVecNtt();
 
             // Matrix-vector multiplication
@@ -394,13 +411,13 @@ class MLDSAEngine
             w1.conditionalAddQ();
             w1.decompose(w0);
 
-            System.arraycopy(w1.packW1(), 0, outSig, 0, DilithiumK * DilithiumPolyW1PackedBytes);
+            w1.packW1(this, outSig, 0);
 
             shake256Digest.update(mu, 0, CrhBytes);
             shake256Digest.update(outSig, 0, DilithiumK * DilithiumPolyW1PackedBytes);
             shake256Digest.doFinal(outSig, 0, DilithiumCTilde);
 
-            cp.challenge(Arrays.copyOfRange(outSig, 0, DilithiumCTilde));  // uses only the first DilithiumCTilde bytes of sig
+            cp.challenge(outSig, 0, DilithiumCTilde);
             cp.polyNtt();
 
             // Compute z, reject if it reveals secret
@@ -432,235 +449,108 @@ class MLDSAEngine
 
             w0.addPolyVecK(h);
             w0.conditionalAddQ();
-            n = h.makeHint(w0, w1);
+            int n = h.makeHint(w0, w1);
             if (n > DilithiumOmega)
             {
                 continue;
             }
 
-            return Packing.packSignature(outSig, z, h, this);
+            Packing.packSignature(outSig, z, h, this);
+            return outSig;
         }
 
+        // TODO[pqc] Shouldn't this throw an exception here (or in caller)?
         return null;
     }
 
-    public boolean verifyInternal(byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
+    boolean verifyInternalMu(byte[] providedMu)
+    {
+        byte[] mu = new byte[CrhBytes];
+
+        shake256Digest.doFinal(mu, 0);
+
+        return Arrays.constantTimeAreEqual(mu, providedMu);
+    }
+
+    boolean verifyInternalMuSignature(byte[] mu, byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
+    {
+        byte[] buf = new byte[Math.max(CrhBytes + DilithiumK * DilithiumPolyW1PackedBytes, DilithiumCTilde)];
+
+        // Mu
+        System.arraycopy(mu, 0, buf, 0, mu.length);
+
+        return doVerifyInternal(buf, sig, siglen, shake256Digest, rho, encT1);
+    }
+
+    boolean verifyInternal(byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
+    {
+        byte[] buf = new byte[Math.max(CrhBytes + DilithiumK * DilithiumPolyW1PackedBytes, DilithiumCTilde)];
+
+        // Mu
+        shake256Digest.doFinal(buf, 0);
+
+        return doVerifyInternal(buf, sig, siglen, shake256Digest, rho, encT1);
+    }
+
+    private boolean doVerifyInternal(byte[] buf, byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
     {
         if (siglen != CryptoBytes)
         {
             return false;
         }
 
-        // System.out.println("publickey = ");
-        // Helper.printByteArray(publicKey);
-        byte[] buf,
-            mu = new byte[CrhBytes],
-            c,
-            c2 = new byte[DilithiumCTilde];
-        Poly cp = new Poly(this);
-        PolyVecMatrix aMatrix = new PolyVecMatrix(this);
+        PolyVecK h = new PolyVecK(this);
         PolyVecL z = new PolyVecL(this);
-        PolyVecK t1 = new PolyVecK(this), w1 = new PolyVecK(this), h = new PolyVecK(this);
-
-        t1 = Packing.unpackPublicKey(t1, encT1, this);
-
-        // System.out.println(t1.toString("t1"));
-
-        // System.out.println("rho = ");
-        // Helper.printByteArray(rho);
 
         if (!Packing.unpackSignature(z, h, sig, this))
         {
             return false;
         }
-        c = Arrays.copyOfRange(sig, 0, DilithiumCTilde);
-
-        // System.out.println(z.toString("z"));
-        // System.out.println(h.toString("h"));
 
         if (z.checkNorm(getDilithiumGamma1() - getDilithiumBeta()))
         {
             return false;
         }
 
-        shake256Digest.doFinal(mu, 0);
-
-        // System.out.println("mu after = ");
-        // Helper.printByteArray(mu);
-
-        // Matrix-vector multiplication; compute Az - c2^dt1
-        cp.challenge(Arrays.copyOfRange(c, 0, DilithiumCTilde));  // use only first DilithiumCTilde of c.
-        // System.out.println("cp = ");
-        // System.out.println(cp.toString());
-
-        aMatrix.expandMatrix(rho);
-        // System.out.println(aMatrix.toString("aMatrix = "));
-
-
-        z.polyVecNtt();
-        aMatrix.pointwiseMontgomery(w1, z);
-
-        cp.polyNtt();
-        // System.out.println("cp = ");
-        // System.out.println(cp.toString());
-
-        t1.shiftLeft();
-        t1.polyVecNtt();
-        t1.pointwisePolyMontgomery(cp, t1);
-
-        // System.out.println(t1.toString("t1"));
-
-        w1.subtract(t1);
-        w1.reduce();
-        w1.invNttToMont();
-
-        // System.out.println(w1.toString("w1 before caddq"));
-
-        // Reconstruct w1
-        w1.conditionalAddQ();
-        // System.out.println(w1.toString("w1 before hint"));
-        w1.useHint(w1, h);
-        // System.out.println(w1.toString("w1"));
-
-        buf = w1.packW1();
-
-        // System.out.println("buf = ");
-        // Helper.printByteArray(buf);
-
-        // System.out.println("mu = ");
-        // Helper.printByteArray(mu);
-
-        SHAKEDigest shakeDigest256 = new SHAKEDigest(256);
-        shakeDigest256.update(mu, 0, CrhBytes);
-        shakeDigest256.update(buf, 0, DilithiumK * DilithiumPolyW1PackedBytes);
-        shakeDigest256.doFinal(c2, 0, DilithiumCTilde);
-
-        // System.out.println("c = ");
-        // Helper.printByteArray(c);
-
-        // System.out.println("c2 = ");
-        // Helper.printByteArray(c2);
-
-
-        return Arrays.constantTimeAreEqual(c, c2);
-    }
-
-    public boolean verifyInternal(byte[] sig, int siglen, byte[] msg, int msglen, byte[] rho, byte[] encT1)
-    {
-        if (siglen != CryptoBytes)
-        {
-            return false;
-        }
-
-        // System.out.println("publickey = ");
-        // Helper.printByteArray(publicKey);
-        byte[] buf,
-            mu = new byte[CrhBytes],
-            c,
-            c2 = new byte[DilithiumCTilde];
         Poly cp = new Poly(this);
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
-        PolyVecL z = new PolyVecL(this);
-        PolyVecK t1 = new PolyVecK(this), w1 = new PolyVecK(this), h = new PolyVecK(this);
+        PolyVecK t1 = new PolyVecK(this), w1 = new PolyVecK(this);
 
         t1 = Packing.unpackPublicKey(t1, encT1, this);
 
-        // System.out.println(t1.toString("t1"));
-
-        // System.out.println("rho = ");
-        // Helper.printByteArray(rho);
-
-        if (!Packing.unpackSignature(z, h, sig, this))
-        {
-            return false;
-        }
-        c = Arrays.copyOfRange(sig, 0, DilithiumCTilde);
-
-        // System.out.println(z.toString("z"));
-        // System.out.println(h.toString("h"));
-
-        if (z.checkNorm(getDilithiumGamma1() - getDilithiumBeta()))
-        {
-            return false;
-        }
-
-        // Compute crh(crh(rho, t1), msg)
-//        shake256Digest.update(rho, 0, rho.length);
-//        shake256Digest.update(encT1, 0, encT1.length);
-//        shake256Digest.doFinal(mu, 0, TrBytes);
-        // System.out.println("mu before = ");
-        // Helper.printByteArray(mu);
-
-        //shake256Digest.update(mu, 0, TrBytes);
-        shake256Digest.update(msg, 0, msglen);
-        shake256Digest.doFinal(mu, 0);
-
-        // System.out.println("mu after = ");
-        // Helper.printByteArray(mu);
-
         // Matrix-vector multiplication; compute Az - c2^dt1
-        cp.challenge(Arrays.copyOfRange(c, 0, DilithiumCTilde));  // use only first DilithiumCTilde of c.
-        // System.out.println("cp = ");
-        // System.out.println(cp.toString());
+        cp.challenge(sig, 0, DilithiumCTilde);
 
         aMatrix.expandMatrix(rho);
-        // System.out.println(aMatrix.toString("aMatrix = "));
-
 
         z.polyVecNtt();
         aMatrix.pointwiseMontgomery(w1, z);
 
         cp.polyNtt();
-        // System.out.println("cp = ");
-        // System.out.println(cp.toString());
 
         t1.shiftLeft();
         t1.polyVecNtt();
         t1.pointwisePolyMontgomery(cp, t1);
 
-        // System.out.println(t1.toString("t1"));
-
         w1.subtract(t1);
         w1.reduce();
         w1.invNttToMont();
 
-        // System.out.println(w1.toString("w1 before caddq"));
-
-        // Reconstruct w1
         w1.conditionalAddQ();
-        // System.out.println(w1.toString("w1 before hint"));
         w1.useHint(w1, h);
-        // System.out.println(w1.toString("w1"));
 
-        buf = w1.packW1();
+        w1.packW1(this, buf, CrhBytes);
 
-        // System.out.println("buf = ");
-        // Helper.printByteArray(buf);
+        shake256Digest.update(buf, 0, CrhBytes + DilithiumK * DilithiumPolyW1PackedBytes);
+        shake256Digest.doFinal(buf, 0, DilithiumCTilde);
 
-        // System.out.println("mu = ");
-        // Helper.printByteArray(mu);
-
-        SHAKEDigest shakeDigest256 = new SHAKEDigest(256);
-        shakeDigest256.update(mu, 0, CrhBytes);
-        shakeDigest256.update(buf, 0, DilithiumK * DilithiumPolyW1PackedBytes);
-        shakeDigest256.doFinal(c2, 0, DilithiumCTilde);
-
-        // System.out.println("c = ");
-        // Helper.printByteArray(c);
-
-        // System.out.println("c2 = ");
-        // Helper.printByteArray(c2);
-
-
-        return Arrays.constantTimeAreEqual(c, c2);
+        return Arrays.constantTimeAreEqual(DilithiumCTilde, sig, 0, buf, 0);
     }
 
-    public byte[][] generateKeyPair()
+    byte[][] generateKeyPair()
     {
         byte[] seedBuf = new byte[SeedBytes];
         random.nextBytes(seedBuf);
         return generateKeyPairInternal(seedBuf);
-
     }
-
 }

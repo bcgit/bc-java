@@ -3,10 +3,13 @@ package org.bouncycastle.crypto.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.macs.SipHash;
+import org.bouncycastle.crypto.modes.CTSBlockCipher;
 import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.Times;
 import org.bouncycastle.util.encoders.Hex;
@@ -48,6 +51,7 @@ public class ChaCha20Poly1305Test
 
     public void performTest() throws Exception
     {
+        testOverlapping();
         for (int i = 0; i < TEST_VECTORS.length; ++i)
         {
             runTestCase(TEST_VECTORS[i]);
@@ -436,6 +440,55 @@ public class ChaCha20Poly1305Test
         catch (IllegalArgumentException e)
         {
             isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for ChaCha20Poly1305 encryption"));
+        }
+    }
+
+    private void testOverlapping()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        int kLength = 32;
+        byte[] K = new byte[kLength];
+        random.nextBytes(K);
+
+        int aLength = random.nextInt() >>> 24;
+        byte[] A = new byte[aLength];
+        random.nextBytes(A);
+
+        int nonceLength = 12;
+        byte[] nonce = new byte[nonceLength];
+        random.nextBytes(nonce);
+
+        AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, nonce, A);
+
+        ChaCha20Poly1305 bc = initCipher(true, parameters);
+
+        final int blockSize = 64;
+        int offset = 1 + random.nextInt(blockSize - 1) + blockSize;
+        byte[] data = new byte[blockSize * 4 + offset];
+        byte[] expected = new byte[bc.getOutputSize(blockSize * 3)];
+        random.nextBytes(data);
+
+
+        int len = bc.processBytes(data, 0, blockSize * 3, expected, 0);
+        bc.doFinal(expected, len);
+        bc = initCipher(true, parameters);
+        len = bc.processBytes(data, 0, blockSize * 3, data, offset);
+        bc.doFinal(data, offset + len);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping encryption");
+        }
+
+        bc = initCipher(false, parameters);
+        bc.processBytes(data, 0, expected.length, expected, 0);
+        bc = initCipher(false, parameters);
+        bc.processBytes(data, 0, expected.length, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping decryption");
         }
     }
 

@@ -505,7 +505,7 @@ public class BaseBlockCipher
             else
             {
                 ivLength = 12;
-                cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+                cipher = new AEADGenericBlockCipher(GCMBlockCipher.newInstance(baseEngine));
             }
         }
         else
@@ -1214,7 +1214,7 @@ public class BaseBlockCipher
      * The ciphers that inherit from us.
      */
 
-    static private interface GenericBlockCipher
+    private static interface GenericBlockCipher
     {
         public void init(boolean forEncryption, CipherParameters params)
             throws IllegalArgumentException;

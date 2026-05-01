@@ -13,43 +13,60 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 
 /**
  * Generator for RFC 3161 Time Stamp Request objects.
  */
 public class TimeStampRequestGenerator
 {
-    private static final DefaultDigestAlgorithmIdentifierFinder dgstAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
+    private static final DefaultDigestAlgorithmIdentifierFinder DEFAULT_DIGEST_ALG_FINDER =
+        new DefaultDigestAlgorithmIdentifierFinder();
+
+    private final ExtensionsGenerator extGenerator = new ExtensionsGenerator();
+
+    private final DigestAlgorithmIdentifierFinder digestAlgFinder;
 
     private ASN1ObjectIdentifier reqPolicy;
-
     private ASN1Boolean certReq;
-    private ExtensionsGenerator extGenerator = new ExtensionsGenerator();
 
     public TimeStampRequestGenerator()
     {
+        this(DEFAULT_DIGEST_ALG_FINDER);
     }
 
+    public TimeStampRequestGenerator(DigestAlgorithmIdentifierFinder digestAlgFinder)
+    {
+        if (digestAlgFinder == null)
+        {
+            throw new NullPointerException("'digestAlgFinder' cannot be null");
+        }
+
+        this.digestAlgFinder = digestAlgFinder;
+    }
+
+    public void setReqPolicy(ASN1ObjectIdentifier reqPolicy)
+    {
+        this.reqPolicy = reqPolicy;
+    }
+    
     /**
      * @deprecated use method taking ASN1ObjectIdentifier
      * @param reqPolicy
      */
-    public void setReqPolicy(
-        String reqPolicy)
+    public void setReqPolicy(String reqPolicy)
     {
-        this.reqPolicy= new ASN1ObjectIdentifier(reqPolicy);
+        setReqPolicy(new ASN1ObjectIdentifier(reqPolicy));
     }
 
-    public void setReqPolicy(
-        ASN1ObjectIdentifier reqPolicy)
+    public void setCertReq(ASN1Boolean certReq)
     {
-        this.reqPolicy= reqPolicy;
+        this.certReq = certReq;
     }
 
-    public void setCertReq(
-        boolean certReq)
+    public void setCertReq(boolean certReq)
     {
-        this.certReq = ASN1Boolean.getInstance(certReq);
+        setCertReq(ASN1Boolean.getInstance(certReq));
     }
 
     /**
@@ -57,13 +74,9 @@ public class TimeStampRequestGenerator
      * @throws IOException
      * @deprecated use method taking ASN1ObjectIdentifier
      */
-    public void addExtension(
-        String          OID,
-        boolean         critical,
-        ASN1Encodable   value)
-        throws IOException
+    public void addExtension(String OID, boolean critical, ASN1Encodable value) throws IOException
     {
-        this.addExtension(OID, critical, value.toASN1Primitive().getEncoded());
+        addExtension(new ASN1ObjectIdentifier(OID), critical, value);
     }
 
     /**
@@ -72,23 +85,16 @@ public class TimeStampRequestGenerator
      * with the extension.
      * @deprecated use method taking ASN1ObjectIdentifier
      */
-    public void addExtension(
-        String          OID,
-        boolean         critical,
-        byte[]          value)
+    public void addExtension(String OID, boolean critical, byte[] value)
     {
-        extGenerator.addExtension(new ASN1ObjectIdentifier(OID), critical, value);
+        addExtension(new ASN1ObjectIdentifier(OID), critical, value);
     }
 
     /**
      * add a given extension field for the standard extensions tag (tag 3)
      * @throws TSPIOException
      */
-    public void addExtension(
-        ASN1ObjectIdentifier oid,
-        boolean              isCritical,
-        ASN1Encodable        value)
-        throws TSPIOException
+    public void addExtension(ASN1ObjectIdentifier oid, boolean isCritical, ASN1Encodable value) throws TSPIOException
     {
         TSPUtil.addExtension(extGenerator, oid, isCritical, value);
     }
@@ -98,106 +104,58 @@ public class TimeStampRequestGenerator
      * The value parameter becomes the contents of the octet string associated
      * with the extension.
      */
-    public void addExtension(
-        ASN1ObjectIdentifier oid,
-        boolean              isCritical,
-        byte[]               value)
+    public void addExtension(ASN1ObjectIdentifier oid, boolean isCritical, byte[] value)
     {
         extGenerator.addExtension(oid, isCritical, value);
     }
 
     /**
-     * @deprecated use method taking ANS1ObjectIdentifier
+     * @deprecated use method taking ANS1ObjectIdentifier or AlgorithmIdentifier
      */
-    public TimeStampRequest generate(
-        String digestAlgorithm,
-        byte[] digest)
+    public TimeStampRequest generate(String digestAlgorithm, byte[] digest)
     {
-        return this.generate(digestAlgorithm, digest, null);
+        return generate(digestAlgorithm, digest, null);
     }
 
     /**
-     * @deprecated use method taking ANS1ObjectIdentifier
+     * @deprecated use method taking ANS1ObjectIdentifier or AlgorithmIdentifier
      */
-    public TimeStampRequest generate(
-        String      digestAlgorithmOID,
-        byte[]      digest,
-        BigInteger  nonce)
+    public TimeStampRequest generate(String digestAlgorithmOID, byte[] digest, BigInteger nonce)
     {
         if (digestAlgorithmOID == null)
         {
-            throw new IllegalArgumentException("No digest algorithm specified");
+            throw new NullPointerException("'digestAlgorithmOID' cannot be null");
         }
 
-        ASN1ObjectIdentifier digestAlgOID = new ASN1ObjectIdentifier(digestAlgorithmOID);
-
-        AlgorithmIdentifier algID = dgstAlgFinder.find(digestAlgOID);
-        MessageImprint messageImprint = new MessageImprint(algID, digest);
-
-        Extensions  ext = null;
-        
-        if (!extGenerator.isEmpty())
-        {
-            ext = extGenerator.generate();
-        }
-        
-        if (nonce != null)
-        {
-            return new TimeStampRequest(new TimeStampReq(messageImprint,
-                    reqPolicy, new ASN1Integer(nonce), certReq, ext));
-        }
-        else
-        {
-            return new TimeStampRequest(new TimeStampReq(messageImprint,
-                    reqPolicy, null, certReq, ext));
-        }
+        return generate(new ASN1ObjectIdentifier(digestAlgorithmOID), digest, nonce);
     }
 
     public TimeStampRequest generate(ASN1ObjectIdentifier digestAlgorithm, byte[] digest)
     {
-        return generate(dgstAlgFinder.find(digestAlgorithm), digest);
+        return generate(digestAlgorithm, digest, null);
     }
 
     public TimeStampRequest generate(ASN1ObjectIdentifier digestAlgorithm, byte[] digest, BigInteger nonce)
     {
-        return generate(dgstAlgFinder.find(digestAlgorithm), digest, nonce);
+        return generate(digestAlgFinder.find(digestAlgorithm), digest, nonce);
     }
 
-    public TimeStampRequest generate(
-        AlgorithmIdentifier     digestAlgorithmID,
-        byte[]                  digest)
+    public TimeStampRequest generate(AlgorithmIdentifier digestAlgorithmID, byte[] digest)
     {
         return generate(digestAlgorithmID, digest, null);
     }
 
-    public TimeStampRequest generate(
-        AlgorithmIdentifier     digestAlgorithmID,
-        byte[]                  digest,
-        BigInteger              nonce)
+    public TimeStampRequest generate(AlgorithmIdentifier digestAlgorithmID, byte[] digest, BigInteger nonce)
     {
         if (digestAlgorithmID == null)
         {
-            throw new IllegalArgumentException("digest algorithm not specified");
+            throw new NullPointerException("'digestAlgorithmID' cannot be null");
         }
 
         MessageImprint messageImprint = new MessageImprint(digestAlgorithmID, digest);
+        ASN1Integer reqNonce = nonce == null ? null : new ASN1Integer(nonce);
+        Extensions ext = extGenerator.isEmpty() ? null : extGenerator.generate();
 
-        Extensions  ext = null;
-
-        if (!extGenerator.isEmpty())
-        {
-            ext = extGenerator.generate();
-        }
-
-        if (nonce != null)
-        {
-            return new TimeStampRequest(new TimeStampReq(messageImprint,
-                    reqPolicy, new ASN1Integer(nonce), certReq, ext));
-        }
-        else
-        {
-            return new TimeStampRequest(new TimeStampReq(messageImprint,
-                    reqPolicy, null, certReq, ext));
-        }
+        return new TimeStampRequest(new TimeStampReq(messageImprint, reqPolicy, reqNonce, certReq, ext));
     }
 }

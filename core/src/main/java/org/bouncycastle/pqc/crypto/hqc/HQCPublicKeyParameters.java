@@ -5,7 +5,7 @@ import org.bouncycastle.util.Arrays;
 public class HQCPublicKeyParameters
     extends HQCKeyParameters
 {
-    private byte[] pk;
+    private final byte[] pk;
 
     public HQCPublicKeyParameters(HQCParameters params, byte[] pk)
     {

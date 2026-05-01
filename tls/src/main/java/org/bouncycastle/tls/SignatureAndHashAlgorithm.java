@@ -15,14 +15,15 @@ public class SignatureAndHashAlgorithm
         create(SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384);
     public static final SignatureAndHashAlgorithm ecdsa_brainpoolP512r1tls13_sha512 =
         create(SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512);
-    public static final SignatureAndHashAlgorithm ed25519 =
-        create(SignatureScheme.ed25519);
-    public static final SignatureAndHashAlgorithm ed448 =
-        create(SignatureScheme.ed448);
+    public static final SignatureAndHashAlgorithm ed25519 = create(SignatureScheme.ed25519);
+    public static final SignatureAndHashAlgorithm ed448 = create(SignatureScheme.ed448);
     public static final SignatureAndHashAlgorithm gostr34102012_256 =
         create(HashAlgorithm.Intrinsic, SignatureAlgorithm.gostr34102012_256);
     public static final SignatureAndHashAlgorithm gostr34102012_512 =
         create(HashAlgorithm.Intrinsic, SignatureAlgorithm.gostr34102012_512);
+    public static final SignatureAndHashAlgorithm mldsa44 = create(SignatureScheme.mldsa44);
+    public static final SignatureAndHashAlgorithm mldsa65 = create(SignatureScheme.mldsa65);
+    public static final SignatureAndHashAlgorithm mldsa87 = create(SignatureScheme.mldsa87);
     public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha256 =
         create(SignatureScheme.rsa_pss_rsae_sha256);
     public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha384 =
@@ -35,6 +36,19 @@ public class SignatureAndHashAlgorithm
         create(SignatureScheme.rsa_pss_pss_sha384);
     public static final SignatureAndHashAlgorithm rsa_pss_pss_sha512 =
         create(SignatureScheme.rsa_pss_pss_sha512);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_128s = create(SignatureScheme.DRAFT_slhdsa_sha2_128s);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_128f = create(SignatureScheme.DRAFT_slhdsa_sha2_128f);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_192s = create(SignatureScheme.DRAFT_slhdsa_sha2_192s);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_192f = create(SignatureScheme.DRAFT_slhdsa_sha2_192f);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_256s = create(SignatureScheme.DRAFT_slhdsa_sha2_256s);
+    public static final SignatureAndHashAlgorithm slhdsa_sha2_256f = create(SignatureScheme.DRAFT_slhdsa_sha2_256f);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_128s = create(SignatureScheme.DRAFT_slhdsa_shake_128s);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_128f = create(SignatureScheme.DRAFT_slhdsa_shake_128f);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_192s = create(SignatureScheme.DRAFT_slhdsa_shake_192s);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_192f = create(SignatureScheme.DRAFT_slhdsa_shake_192f);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_256s = create(SignatureScheme.DRAFT_slhdsa_shake_256s);
+    public static final SignatureAndHashAlgorithm slhdsa_shake_256f = create(SignatureScheme.DRAFT_slhdsa_shake_256f);
+    public static final SignatureAndHashAlgorithm sm2sig_sm3 = create(SignatureScheme.sm2sig_sm3);
 
     public static SignatureAndHashAlgorithm getInstance(short hashAlgorithm, short signatureAlgorithm)
     {

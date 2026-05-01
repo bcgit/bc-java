@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -23,6 +24,8 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
+import org.bouncycastle.bcpg.sig.RevocationReason;
+import org.bouncycastle.bcpg.sig.RevocationReasonTags;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
@@ -45,7 +48,7 @@ public class PGPSignature
      * This signature type is used to create data signatures.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-binary-signature-type-id-0x">
-     *     RFC9580 - Binary Signature of a Document</a>
+     * RFC9580 - Binary Signature of a Document</a>
      */
     public static final int BINARY_DOCUMENT = 0x00;
 
@@ -56,7 +59,7 @@ public class PGPSignature
      * This signature type is used to create data signatures.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-text-signature-type-id-0x01">
-     *     RFC9580 - Text Signature of a Canonical Document</a>
+     * RFC9580 - Text Signature of a Canonical Document</a>
      */
     public static final int CANONICAL_TEXT_DOCUMENT = 0x01;
 
@@ -64,7 +67,7 @@ public class PGPSignature
      * The signature is made only over its own signature subpackets.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-standalone-signature-type-i">
-     *     RFC9580 - Standalone Signature</a>
+     * RFC9580 - Standalone Signature</a>
      */
     public static final int STAND_ALONE = 0x02;
 
@@ -77,7 +80,7 @@ public class PGPSignature
      * of a third party.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-generic-certification-signa">
-     *     RFC9580 - Generic Certification Signature of a User ID and Public Key Packet</a>
+     * RFC9580 - Generic Certification Signature of a User ID and Public Key Packet</a>
      */
     public static final int DEFAULT_CERTIFICATION = 0x10;
 
@@ -89,7 +92,7 @@ public class PGPSignature
      * of a third party.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-persona-certification-signa">
-     *     RFC9580 - Persona Certification Signature of a User ID and Public Key Packet</a>
+     * RFC9580 - Persona Certification Signature of a User ID and Public Key Packet</a>
      */
     public static final int NO_CERTIFICATION = 0x11;
 
@@ -102,7 +105,7 @@ public class PGPSignature
      * of a third party.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-casual-certification-signat">
-     *     RFC9580 - Casual Certification of a User ID an Public Key Packet</a>
+     * RFC9580 - Casual Certification of a User ID an Public Key Packet</a>
      */
     public static final int CASUAL_CERTIFICATION = 0x12;
 
@@ -114,7 +117,7 @@ public class PGPSignature
      * of a third party.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-positive-certification-sign">
-     *     RFC9580 - Positive Certification Signature of a User ID and Public Key Packet</a>
+     * RFC9580 - Positive Certification Signature of a User ID and Public Key Packet</a>
      */
     public static final int POSITIVE_CERTIFICATION = 0x13;
 
@@ -123,7 +126,7 @@ public class PGPSignature
      * This signature type is used to bind a subkey to the primary key of a certificate.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-subkey-binding-signature-ty">
-     *     RFC9580 - Subkey Binding Signature</a>
+     * RFC9580 - Subkey Binding Signature</a>
      */
     public static final int SUBKEY_BINDING = 0x18;
 
@@ -133,7 +136,7 @@ public class PGPSignature
      * a claim by the subkey, stating that it is in fact a subkey of the primary key.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-primary-key-binding-signatu">
-     *     RFC9580 - Primary Key Binding Signature</a>
+     * RFC9580 - Primary Key Binding Signature</a>
      */
     public static final int PRIMARYKEY_BINDING = 0x19;
 
@@ -144,7 +147,7 @@ public class PGPSignature
      * Issued as a signature over a third-party certificate, it can be used to mark said certificate as a CA.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-direct-key-signature-type-i">
-     *     RFC9580 - Direct Key Signature</a>
+     * RFC9580 - Direct Key Signature</a>
      */
     public static final int DIRECT_KEY = 0x1f;
 
@@ -152,7 +155,7 @@ public class PGPSignature
      * The signature is used to revoke a primary key (and in turn the whole certificate with all its subkeys).
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-key-revocation-signature-ty">
-     *     RFC9580 - Key Revocation Signature</a>
+     * RFC9580 - Key Revocation Signature</a>
      */
     public static final int KEY_REVOCATION = 0x20;
 
@@ -160,7 +163,7 @@ public class PGPSignature
      * The signature is used to revoke the binding of a particular subkey.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-subkey-revocation-signature">
-     *     RFC9580 - Subkey Revocation Signature</a>
+     * RFC9580 - Subkey Revocation Signature</a>
      */
     public static final int SUBKEY_REVOCATION = 0x28;
 
@@ -172,7 +175,7 @@ public class PGPSignature
      * Issued over a third-party certificate, it revokes the attestation of the third-party's claim.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-certification-revocation-si">
-     *     RFC9580 - Certification Revocation Signature</a>
+     * RFC9580 - Certification Revocation Signature</a>
      */
     public static final int CERTIFICATION_REVOCATION = 0x30;
 
@@ -180,7 +183,7 @@ public class PGPSignature
      * The signature is only meaningful for the timestamp contained in it.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-timestamp-signature-type-id">
-     *     RFC9580 - Timestamp Signature</a>
+     * RFC9580 - Timestamp Signature</a>
      */
     public static final int TIMESTAMP = 0x40;
 
@@ -191,11 +194,11 @@ public class PGPSignature
      * to prevent certificate flooding.
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-third-party-confirmation-si">
-     *     RFC9580 - Third-Party Confirmation Signature/a>
+     * RFC9580 - Third-Party Confirmation Signature/a>
      */
     public static final int THIRD_PARTY_CONFIRMATION = 0x50;
 
-    private final SignaturePacket sigPck;
+    final SignaturePacket sigPck;
     private final TrustPacket trustPck;
 
     private volatile PGPContentVerifier verifier;
@@ -212,6 +215,7 @@ public class PGPSignature
 
     /**
      * Parse a {@link PGPSignature} from an OpenPGP packet input stream.
+     *
      * @param pIn packet input stream
      * @throws IOException
      * @throws PGPException
@@ -302,7 +306,7 @@ public class PGPSignature
      * Initialize the signature for verification.
      *
      * @param verifierBuilderProvider provide the implementation for signature verification
-     * @param pubKey issuer public key
+     * @param pubKey                  issuer public key
      * @throws PGPException
      */
     public void init(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
@@ -334,7 +338,7 @@ public class PGPSignature
         return verifierBuilderProvider.get(sigPck.getKeyAlgorithm(), sigPck.getHashAlgorithm());
     }
 
-    void init(PGPContentVerifier verifier) 
+    void init(PGPContentVerifier verifier)
         throws PGPException
     {
         this.verifier = verifier;
@@ -362,7 +366,7 @@ public class PGPSignature
     }
 
     private void updateWithSalt()
-            throws PGPException
+        throws PGPException
     {
         if (getVersion() == SignaturePacket.VERSION_6)
         {
@@ -382,6 +386,7 @@ public class PGPSignature
      * Note: The fact that this method returned <pre>true</pre> does not yet mean that the signature is valid.
      * A correct signature may very well be expired, the issuer key may be revoked, etc.
      * All these constraints are not checked by this method.
+     *
      * @return true if the signature is correct
      * @throws PGPException
      */
@@ -599,10 +604,10 @@ public class PGPSignature
 
     /**
      * Return the type id of the signature.
-     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-signature-types">
-     *     RFC9580 - Signature Types</a>
      *
      * @return type id
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-signature-types">
+     * RFC9580 - Signature Types</a>
      */
     public int getSignatureType()
     {
@@ -632,10 +637,29 @@ public class PGPSignature
      */
     public List<KeyIdentifier> getKeyIdentifiers()
     {
-        List<KeyIdentifier> identifiers = new ArrayList<>();
-        identifiers.addAll(getHashedKeyIdentifiers());
-        identifiers.addAll(getUnhashedKeyIdentifiers());
+        List<KeyIdentifier> identifiers = new ArrayList<KeyIdentifier>();
+        if (getVersion() <= SignaturePacket.VERSION_3)
+        {
+            identifiers.add(new KeyIdentifier(getKeyID()));
+        }
+        else
+        {
+            identifiers.addAll(getHashedKeyIdentifiers());
+            identifiers.addAll(getUnhashedKeyIdentifiers());
+        }
         return identifiers;
+    }
+
+    public boolean hasKeyIdentifier(KeyIdentifier identifier)
+    {
+        for (Iterator it = getKeyIdentifiers().iterator(); it.hasNext(); )
+        {
+            if (((KeyIdentifier)it.next()).matchesExplicit(identifier))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -664,18 +688,19 @@ public class PGPSignature
 
     private List<KeyIdentifier> extractKeyIdentifiers(SignatureSubpacket[] subpackets)
     {
-        List<KeyIdentifier> identifiers = new ArrayList<>();
-        for (SignatureSubpacket s : subpackets)
+        List<KeyIdentifier> identifiers = new ArrayList<KeyIdentifier>();
+        for (int idx = 0; idx != subpackets.length; idx++)
         {
+            SignatureSubpacket s = subpackets[idx];
             if (s instanceof IssuerFingerprint)
             {
-                IssuerFingerprint issuer = (IssuerFingerprint) s;
+                IssuerFingerprint issuer = (IssuerFingerprint)s;
                 identifiers.add(new KeyIdentifier(issuer.getFingerprint()));
             }
 
             if (s instanceof IssuerKeyID)
             {
-                IssuerKeyID issuer = (IssuerKeyID) s;
+                IssuerKeyID issuer = (IssuerKeyID)s;
                 identifiers.add(new KeyIdentifier(issuer.getKeyID()));
             }
         }
@@ -746,6 +771,7 @@ public class PGPSignature
 
     /**
      * Return the salt of a v6 signature.
+     *
      * @return salt
      */
     byte[] getSalt()
@@ -756,6 +782,7 @@ public class PGPSignature
     /**
      * Return the cryptographic raw signature contained in the OpenPGP signature packet.
      * The value is dependent on the signing algorithm.
+     *
      * @return cryptographic signature
      * @throws PGPException
      */
@@ -777,12 +804,20 @@ public class PGPSignature
                 byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
                 if (a.length + b.length > Ed25519.SIGNATURE_SIZE)
                 {
+                    if (a.length > Ed448.PUBLIC_KEY_SIZE || b.length > Ed448.SIGNATURE_SIZE)
+                    {
+                        throw new PGPException("Malformed Ed448 signature encoding (too long).");
+                    }
                     signature = new byte[Ed448.SIGNATURE_SIZE];
                     System.arraycopy(a, 0, signature, Ed448.PUBLIC_KEY_SIZE - a.length, a.length);
                     System.arraycopy(b, 0, signature, Ed448.SIGNATURE_SIZE - b.length, b.length);
                 }
                 else
                 {
+                    if (a.length > Ed25519.PUBLIC_KEY_SIZE || b.length > Ed25519.SIGNATURE_SIZE)
+                    {
+                        throw new PGPException("Malformed Ed25519 signature encoding (too long).");
+                    }
                     signature = new byte[Ed25519.SIGNATURE_SIZE];
                     System.arraycopy(a, 0, signature, Ed25519.PUBLIC_KEY_SIZE - a.length, a.length);
                     System.arraycopy(b, 0, signature, Ed25519.SIGNATURE_SIZE - b.length, b.length);
@@ -814,6 +849,7 @@ public class PGPSignature
 
     /**
      * Return the OpenPGP packet encoding of the signature.
+     *
      * @return OpenPGP packet encoding
      * @throws IOException
      */
@@ -847,6 +883,7 @@ public class PGPSignature
     /**
      * Encode the signature to an OpenPGP packet stream.
      * This method does not strip out any trust packets.
+     *
      * @param outStream packet stream
      * @throws IOException
      */
@@ -870,7 +907,10 @@ public class PGPSignature
         throws IOException
     {
         // Exportable signatures MUST NOT be exported if forTransfer==true
-        if (forTransfer && (!getHashedSubPackets().isExportable() || !getUnhashedSubPackets().isExportable()))
+        if (forTransfer &&
+                ((getHashedSubPackets() != null && !getHashedSubPackets().isExportable()) ||
+                (getUnhashedSubPackets() != null && !getUnhashedSubPackets().isExportable()))
+        )
         {
             return;
         }
@@ -898,8 +938,49 @@ public class PGPSignature
             || PGPSignature.POSITIVE_CERTIFICATION == signatureType;
     }
 
+    public static boolean isRevocation(int signatureType)
+    {
+        return PGPSignature.KEY_REVOCATION == signatureType
+            || PGPSignature.CERTIFICATION_REVOCATION == signatureType
+            || PGPSignature.SUBKEY_REVOCATION == signatureType;
+    }
+
+    public boolean isHardRevocation()
+    {
+        if (!isRevocation(getSignatureType()))
+        {
+            return false; // no revocation
+        }
+
+        if (!hasSubpackets())
+        {
+            return true; // consider missing subpackets (and therefore missing reason) as hard revocation
+        }
+
+        // only consider reasons from the hashed packet area
+        RevocationReason reason = getHashedSubPackets() != null ?
+            getHashedSubPackets().getRevocationReason() : null;
+        if (reason == null)
+        {
+            return true; // missing reason packet is hard
+        }
+
+        byte code = reason.getRevocationReason();
+        if (code >= 100 && code <= 110)
+        {
+            // private / experimental reasons are considered hard
+            return true;
+        }
+
+        // Reason is not from the set of known soft reasons
+        return code != RevocationReasonTags.KEY_SUPERSEDED &&
+            code != RevocationReasonTags.KEY_RETIRED &&
+            code != RevocationReasonTags.USER_NO_LONGER_VALID;
+    }
+
     /**
      * Return true, if the cryptographic signature encoding of the two signatures match.
+     *
      * @param sig1 first signature
      * @param sig2 second signature
      * @return true if both signatures contain the same cryptographic signature
@@ -915,6 +996,7 @@ public class PGPSignature
      * (e.g. an embedded {@link #THIRD_PARTY_CONFIRMATION} signature), an implementation might want to
      * join an existing instance of a signature with an updated copy, e.g. retrieved from a key server.
      * This method merges both signature instances by joining unhashed subpackets.
+     *
      * @param sig1 first signature
      * @param sig2 second signature
      * @return merged signature
@@ -923,7 +1005,14 @@ public class PGPSignature
     public static PGPSignature join(PGPSignature sig1, PGPSignature sig2)
         throws PGPException
     {
-        if (!isSignatureEncodingEqual(sig1, sig2))
+        if (sig1.getVersion() < SignaturePacket.VERSION_4)
+        {
+            // Version 2/3 signatures have no subpackets, so don't need to get merged.
+            return sig1;
+        }
+
+        if (sig1.getVersion() != sig2.getVersion() ||
+            !isSignatureEncodingEqual(sig1, sig2))
         {
             throw new IllegalArgumentException("These are different signatures.");
         }
@@ -955,16 +1044,7 @@ public class PGPSignature
 
         SignatureSubpacket[] unhashed = (SignatureSubpacket[])merged.toArray(new SignatureSubpacket[0]);
         return new PGPSignature(
-            new SignaturePacket(
-                sig1.getSignatureType(),
-                sig1.getKeyID(),
-                sig1.getKeyAlgorithm(),
-                sig1.getHashAlgorithm(),
-                sig1.getHashedSubPackets().packets,
-                unhashed,
-                sig1.getDigestPrefix(),
-                sig1.sigPck.getSignature()
-            )
+            SignaturePacket.copyOfWith(sig1.sigPck, unhashed)
         );
     }
 }

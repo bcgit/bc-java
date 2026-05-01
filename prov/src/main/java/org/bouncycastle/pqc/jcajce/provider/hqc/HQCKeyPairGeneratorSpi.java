@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.jcajce.provider.hqc;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
@@ -9,17 +10,17 @@ import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
 import org.bouncycastle.util.Strings;
 
 public class HQCKeyPairGeneratorSpi
-        extends java.security.KeyPairGenerator
+    extends java.security.KeyPairGenerator
 {
     private static Map parameters = new HashMap();
 
@@ -45,17 +46,22 @@ public class HQCKeyPairGeneratorSpi
         super("HQC");
     }
 
+    protected HQCKeyPairGeneratorSpi(HQCParameterSpec paramSpec)
+    {
+        super(Strings.toUpperCase(paramSpec.getName()));
+    }
+
     public void initialize(
-            int strength,
-            SecureRandom random)
+        int strength,
+        SecureRandom random)
     {
         throw new IllegalArgumentException("use AlgorithmParameterSpec");
     }
 
     public void initialize(
-            AlgorithmParameterSpec params,
-            SecureRandom random)
-            throws InvalidAlgorithmParameterException
+        AlgorithmParameterSpec params,
+        SecureRandom random)
+        throws InvalidAlgorithmParameterException
     {
         String name = getNameFromParams(params);
 
@@ -100,5 +106,35 @@ public class HQCKeyPairGeneratorSpi
         HQCPrivateKeyParameters priv = (HQCPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCHQCPublicKey(pub), new BCHQCPrivateKey(priv));
+    }
+
+    public static class HQC128
+        extends HQCKeyPairGeneratorSpi
+    {
+        public HQC128()
+            throws NoSuchAlgorithmException
+        {
+            super(HQCParameterSpec.hqc128);
+        }
+    }
+
+    public static class HQC192
+        extends HQCKeyPairGeneratorSpi
+    {
+        public HQC192()
+            throws NoSuchAlgorithmException
+        {
+            super(HQCParameterSpec.hqc192);
+        }
+    }
+
+    public static class HQC256
+        extends HQCKeyPairGeneratorSpi
+    {
+        public HQC256()
+            throws NoSuchAlgorithmException
+        {
+            super(HQCParameterSpec.hqc256);
+        }
     }
 }

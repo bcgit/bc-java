@@ -52,8 +52,7 @@ public abstract class X25519Field
         {
             d |= x[i] ^ y[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return ((d - 1) & ~d) >> 31;
     }
 
     public static boolean areEqualVar(int[] x, int[] y)
@@ -145,32 +144,28 @@ public abstract class X25519Field
         }
     }
 
-    public static void decode(int[] x, int xOff, int[] z)
-    {
-        decode128(x, xOff, z, 0);
-        decode128(x, xOff + 4, z, 5);
-        z[9] &= M24;
-    }
-
+    /** @deprecated Use {@link #decode255(byte[], int[])} instead. */
     public static void decode(byte[] x, int[] z)
     {
-        decode128(x, 0, z, 0);
-        decode128(x, 16, z, 5);
-        z[9] &= M24;
+        decode255(x, 0, z, 0);
     }
 
+    /** @deprecated Use {@link #decode255(byte[], int, int[], int)} instead. */
     public static void decode(byte[] x, int xOff, int[] z)
     {
-        decode128(x, xOff, z, 0);
-        decode128(x, xOff + 16, z, 5);
-        z[9] &= M24;
+        decode255(x, xOff, z, 0);
     }
 
+    /** @deprecated Use {@link #decode255(byte[], int, int[], int)} instead. */
     public static void decode(byte[] x, int xOff, int[] z, int zOff)
     {
-        decode128(x, xOff, z, zOff);
-        decode128(x, xOff + 16, z, zOff + 5);
-        z[zOff + 9] &= M24;
+        decode255(x, xOff, z, zOff);
+    }
+
+    /** @deprecated Use {@link #decode255(int[], int, int[], int)} instead. */
+    public static void decode(int[] x, int xOff, int[] z)
+    {
+        decode255(x, xOff, z, 0);
     }
 
     private static void decode128(int[] is, int off, int[] z, int zOff)
@@ -198,7 +193,31 @@ public abstract class X25519Field
         z[zOff + 4] = t3 >>> 7;
     }
 
-    private static int decode32(byte[] bs, int off)
+    public static void decode255(byte[] x, int[] z)
+    {
+        decode255(x, 0, z, 0);
+    }
+
+    public static void decode255(byte[] x, int xOff, int[] z, int zOff)
+    {
+        decode128(x, xOff, z, zOff);
+        decode128(x, xOff + 16, z, zOff + 5);
+        z[zOff + 9] &= M24;
+    }
+
+    public static void decode255(int[] x, int[] z)
+    {
+        decode255(x, 0, z, 0);
+    }
+
+    public static void decode255(int[] x, int xOff, int[] z, int zOff)
+    {
+        decode128(x, xOff, z, zOff);
+        decode128(x, xOff + 4, z, zOff + 5);
+        z[zOff + 9] &= M24;
+    }
+
+    static int decode32(byte[] bs, int off)
     {
         int n = bs[off] & 0xFF;
         n |= (bs[++off] & 0xFF) << 8;
@@ -276,7 +295,7 @@ public abstract class X25519Field
 
         Mod.modOddInverse(P32, u, u);
 
-        decode(u, 0, z);
+        decode255(u, z);
     }
 
     public static void invVar(int[] x, int[] z)
@@ -290,7 +309,7 @@ public abstract class X25519Field
 
         Mod.modOddInverseVar(P32, u, u);
 
-        decode(u, 0, z);
+        decode255(u, z);
     }
 
     public static int isOne(int[] x)
@@ -300,8 +319,7 @@ public abstract class X25519Field
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return ((d - 1) & ~d) >> 31;
     }
 
     public static boolean isOneVar(int[] x)
@@ -316,8 +334,7 @@ public abstract class X25519Field
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return ((d - 1) & ~d) >> 31;
     }
 
     public static boolean isZeroVar(int[] x)

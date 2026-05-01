@@ -15,14 +15,27 @@ import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
+import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
+import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 public class HQCKeyGeneratorSpi
-        extends KeyGeneratorSpi
+    extends KeyGeneratorSpi
 {
     private KEMGenerateSpec genSpec;
     private SecureRandom random;
     private KEMExtractSpec extSpec;
+    private HQCParameters hqcParameters;
+
+    public HQCKeyGeneratorSpi()
+    {
+        this(null);
+    }
+
+    public HQCKeyGeneratorSpi(HQCParameters hqcParameters)
+    {
+        this.hqcParameters = hqcParameters;
+    }
 
     protected void engineInit(SecureRandom secureRandom)
     {
@@ -30,18 +43,34 @@ public class HQCKeyGeneratorSpi
     }
 
     protected void engineInit(AlgorithmParameterSpec algorithmParameterSpec, SecureRandom secureRandom)
-            throws InvalidAlgorithmParameterException
+        throws InvalidAlgorithmParameterException
     {
         this.random = secureRandom;
         if (algorithmParameterSpec instanceof KEMGenerateSpec)
         {
             this.genSpec = (KEMGenerateSpec)algorithmParameterSpec;
             this.extSpec = null;
+            if (hqcParameters != null)
+            {
+                String canonicalAlgName = HQCParameterSpec.fromName(hqcParameters.getName()).getName();
+                if (!canonicalAlgName.equals(genSpec.getPublicKey().getAlgorithm()))
+                {
+                    throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
+                }
+            }
         }
         else if (algorithmParameterSpec instanceof KEMExtractSpec)
         {
             this.genSpec = null;
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
+            if (hqcParameters != null)
+            {
+                String canonicalAlgName = HQCParameterSpec.fromName(hqcParameters.getName()).getName();
+                if (!canonicalAlgName.equals(extSpec.getPrivateKey().getAlgorithm()))
+                {
+                    throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
+                }
+            }
         }
         else
         {
@@ -89,6 +118,33 @@ public class HQCKeyGeneratorSpi
             Arrays.clear(secret);
 
             return rv;
+        }
+    }
+
+    public static class HQC128
+        extends HQCKeyGeneratorSpi
+    {
+        public HQC128()
+        {
+            super(HQCParameters.hqc128);
+        }
+    }
+
+    public static class HQC192
+        extends HQCKeyGeneratorSpi
+    {
+        public HQC192()
+        {
+            super(HQCParameters.hqc192);
+        }
+    }
+
+    public static class HQC256
+        extends HQCKeyGeneratorSpi
+    {
+        public HQC256()
+        {
+            super(HQCParameters.hqc256);
         }
     }
 }

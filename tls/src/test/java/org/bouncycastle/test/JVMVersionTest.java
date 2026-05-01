@@ -34,12 +34,17 @@ public class JVMVersionTest
         // It is important for multi-release jars to be exercised on a representative JVM for each JVM they support.
         //
         //
-        assertNotNull(String.format("property %s is not set, see comment in test for reason why.", expectedVersionPropName), System.getProperty(expectedVersionPropName));
 
-
-        String version = System.getProperty("java.version");
         String expectedPrefix = System.getProperty(expectedVersionPropName);
 
+        if ("any".equals(expectedPrefix)) {
+            assertTrue(true);
+            return;
+        }
+
+        assertNotNull(String.format("property %s is not set, see comment in test for reason why.", expectedVersionPropName), expectedPrefix);
+
+        String version = System.getProperty("java.version");
         assertTrue(String.format("JVM Version: '%s' did not start with '%s' see comment in test", version, expectedPrefix), version.startsWith(expectedPrefix));
 
 

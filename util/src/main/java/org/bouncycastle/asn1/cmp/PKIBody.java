@@ -88,7 +88,7 @@ public class PKIBody
             throw Exceptions.illegalArgumentException("malformed body found: " + e.getMessage(), e);
         }
         catch (IllegalArgumentException e)
-        {       
+        {
             throw Exceptions.illegalArgumentException("malformed body found: " + e.getMessage(), e);
         }
     }

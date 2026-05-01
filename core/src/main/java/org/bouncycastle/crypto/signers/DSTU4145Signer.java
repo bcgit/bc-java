@@ -38,23 +38,21 @@ public class DSTU4145Signer
     {
         if (forSigning)
         {
+            SecureRandom providedRandom = null;
             if (param instanceof ParametersWithRandom)
             {
                 ParametersWithRandom rParam = (ParametersWithRandom)param;
-
-                this.random = rParam.getRandom();
+                providedRandom = rParam.getRandom();
                 param = rParam.getParameters();
-            }
-            else
-            {
-                this.random = CryptoServicesRegistrar.getSecureRandom();
             }
 
             this.key = (ECPrivateKeyParameters)param;
+            this.random = CryptoServicesRegistrar.getSecureRandom(providedRandom);
         }
         else
         {
             this.key = (ECPublicKeyParameters)param;
+            this.random = null;
         }
 
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("DSTU4145", key, forSigning));
@@ -91,7 +89,7 @@ public class DSTU4145Signer
             {
                 do
                 {
-                    e = generateRandomInteger(n, random);
+                    e = BigIntegers.createRandomInRange(BigInteger.ONE, n.subtract(BigInteger.ONE), random);
                     Fe = basePointMultiplier.multiply(ec.getG(), e).normalize().getAffineXCoord();
                 }
                 while (Fe.isZero());
@@ -146,14 +144,6 @@ public class DSTU4145Signer
     protected ECMultiplier createBasePointMultiplier()
     {
         return new FixedPointCombMultiplier();
-    }
-
-    /**
-     * Generates random integer such, than its bit length is less than that of n
-     */
-    private static BigInteger generateRandomInteger(BigInteger n, SecureRandom random)
-    {
-        return BigIntegers.createRandomBigInteger(n.bitLength() - 1, random);
     }
 
     private static ECFieldElement hash2FieldElement(ECCurve curve, byte[] hash)

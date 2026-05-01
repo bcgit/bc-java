@@ -13,6 +13,7 @@ public class JDKPKCS12StoreParameter implements LoadStoreParameter
     private OutputStream outputStream;
     private ProtectionParameter protectionParameter;
     private boolean useDEREncoding;
+    private boolean overwriteFriendlyName;
 
     public OutputStream getOutputStream()
     {
@@ -27,6 +28,10 @@ public class JDKPKCS12StoreParameter implements LoadStoreParameter
     public boolean isUseDEREncoding()
     {
         return useDEREncoding;
+    }
+    public boolean isOverwriteFriendlyName()
+    {
+        return overwriteFriendlyName;
     }
 
     public void setOutputStream(OutputStream outputStream)
@@ -47,5 +52,9 @@ public class JDKPKCS12StoreParameter implements LoadStoreParameter
     public void setUseDEREncoding(boolean useDEREncoding)
     {
         this.useDEREncoding = useDEREncoding;
+    }
+    public void setOverwriteFriendlyName(boolean overwriteFriendlyName)
+    {
+        this.overwriteFriendlyName = overwriteFriendlyName;
     }
 }

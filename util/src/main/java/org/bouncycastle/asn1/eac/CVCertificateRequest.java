@@ -3,7 +3,6 @@ package org.bouncycastle.asn1.eac;
 import java.io.IOException;
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1ParsingException;
@@ -146,12 +145,10 @@ public class CVCertificateRequest
         }
         else
         {
-            ASN1EncodableVector v = new ASN1EncodableVector(2);
+            DERSequence seq = new DERSequence(certificateBody,
+                EACTagged.create(EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP, innerSignature));
 
-            v.add(certificateBody);
-            v.add(EACTagged.create(EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP, innerSignature));
-
-            return EACTagged.create(EACTags.CARDHOLDER_CERTIFICATE, new DERSequence(v));
+            return EACTagged.create(EACTags.CARDHOLDER_CERTIFICATE, seq);
         }
     }
 }

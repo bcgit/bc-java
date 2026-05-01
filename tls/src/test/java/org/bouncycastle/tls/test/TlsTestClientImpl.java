@@ -21,6 +21,7 @@ import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -201,6 +202,12 @@ class TlsTestClientImpl
 
         if (TlsTestConfig.DEBUG)
         {
+            int negotiatedGroup = securityParameters.getNegotiatedGroup();
+            if (negotiatedGroup >= 0)
+            {
+                System.out.println("TLS client negotiated group: " + NamedGroup.getText(negotiatedGroup));
+            }
+
             System.out.println("TLS client reports 'tls-server-end-point' = " + hex(tlsServerEndPoint));
             System.out.println("TLS client reports 'tls-unique' = " + hex(tlsUnique));
         }
@@ -214,7 +221,7 @@ class TlsTestClientImpl
 
         if (TlsTestConfig.DEBUG)
         {
-            System.out.println("TLS client negotiated " + serverVersion);
+            System.out.println("TLS client negotiated version " + serverVersion);
         }
     }
 
@@ -250,6 +257,7 @@ class TlsTestClientImpl
 
                 String[] trustedCertResources = new String[]{ "x509-server-dsa.pem", "x509-server-ecdh.pem",
                     "x509-server-ecdsa.pem", "x509-server-ed25519.pem", "x509-server-ed448.pem",
+                    "x509-server-ml_dsa_44.pem", "x509-server-ml_dsa_65.pem", "x509-server-ml_dsa_87.pem",
                     "x509-server-rsa_pss_256.pem", "x509-server-rsa_pss_384.pem", "x509-server-rsa_pss_512.pem",
                     "x509-server-rsa-enc.pem", "x509-server-rsa-sign.pem" };
 

@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -47,7 +46,7 @@ public class CrlOcspRef
         Enumeration e = seq.getObjects();
         while (e.hasMoreElements())
         {
-            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement(), BERTags.CONTEXT_SPECIFIC);
+            ASN1TaggedObject o = ASN1TaggedObject.getContextInstance(e.nextElement());
             switch (o.getTagNo())
             {
                 case 0:

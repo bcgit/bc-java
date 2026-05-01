@@ -1,6 +1,5 @@
 /**
- * The NTRU algorithm based on the round 3 submission of the NIST post-quantum cryptography. For the old NTRU, see
- * {@link org.bouncycastle.pqc.legacy.crypto.ntru}.
+ * The NTRU algorithm based on the round 3 submission of the NIST post-quantum cryptography.
  *
  * <p>
  * This implementation is based on the C reference implementation submitted for the round 3 NIST PQC competition,

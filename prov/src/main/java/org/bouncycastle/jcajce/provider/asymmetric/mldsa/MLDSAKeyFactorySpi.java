@@ -16,10 +16,16 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BasePQCKeyFactorySpi;
+import org.bouncycastle.jcajce.spec.MLDSAPrivateKeySpec;
+import org.bouncycastle.jcajce.spec.MLDSAPublicKeySpec;
+import org.bouncycastle.util.Arrays;
 
 public class MLDSAKeyFactorySpi
-        extends BaseKeyFactorySpi
+    extends BasePQCKeyFactorySpi
 {
     private static final Set<ASN1ObjectIdentifier> pureKeyOids = new HashSet<ASN1ObjectIdentifier>();
     private static final Set<ASN1ObjectIdentifier> hashKeyOids = new HashSet<ASN1ObjectIdentifier>();
@@ -38,24 +44,47 @@ public class MLDSAKeyFactorySpi
         hashKeyOids.add(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
     }
 
+    private final boolean isHashOnly;
+
     public MLDSAKeyFactorySpi(Set<ASN1ObjectIdentifier> keyOids)
     {
         super(keyOids);
+
+        this.isHashOnly = false;
     }
 
     public MLDSAKeyFactorySpi(ASN1ObjectIdentifier keyOid)
     {
         super(keyOid);
+
+        this.isHashOnly = (keyOid.equals(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512)
+            || keyOid.equals(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512)
+            || keyOid.equals(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512));
     }
 
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
-            throws InvalidKeySpecException
+        throws InvalidKeySpecException
     {
         if (key instanceof BCMLDSAPrivateKey)
         {
             if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
                 return new PKCS8EncodedKeySpec(key.getEncoded());
+            }
+            if (MLDSAPrivateKeySpec.class.isAssignableFrom(keySpec))
+            {
+                BCMLDSAPrivateKey mldsaKey = (BCMLDSAPrivateKey)key;
+                byte[] seed = mldsaKey.getSeed();
+                if (seed != null)
+                {
+                    return new MLDSAPrivateKeySpec(mldsaKey.getParameterSpec(), seed);
+                }
+                return new MLDSAPrivateKeySpec(mldsaKey.getParameterSpec(), mldsaKey.getPrivateData(), mldsaKey.getPublicKey().getPublicData());
+            }
+            if (MLDSAPublicKeySpec.class.isAssignableFrom(keySpec))
+            {
+                BCMLDSAPrivateKey mldsaKey = (BCMLDSAPrivateKey)key;
+                return new MLDSAPublicKeySpec(mldsaKey.getParameterSpec(), mldsaKey.getPublicKey().getPublicData());
             }
         }
         else if (key instanceof BCMLDSAPublicKey)
@@ -64,42 +93,127 @@ public class MLDSAKeyFactorySpi
             {
                 return new X509EncodedKeySpec(key.getEncoded());
             }
+            if (MLDSAPublicKeySpec.class.isAssignableFrom(keySpec))
+            {
+                BCMLDSAPublicKey mldsaKey = (BCMLDSAPublicKey)key;
+                return new MLDSAPublicKeySpec(mldsaKey.getParameterSpec(), mldsaKey.getPublicData());
+            }
         }
         else
         {
-            throw new InvalidKeySpecException("Unsupported key type: "
-                    + key.getClass() + ".");
+            throw new InvalidKeySpecException("unsupported key type: "
+                + key.getClass() + ".");
         }
 
-        throw new InvalidKeySpecException("Unknown key specification: "
-                + keySpec + ".");
+        throw new InvalidKeySpecException("unknown key specification: "
+            + keySpec + ".");
     }
 
     public final Key engineTranslateKey(Key key)
-            throws InvalidKeyException
+        throws InvalidKeyException
     {
         if (key instanceof BCMLDSAPrivateKey || key instanceof BCMLDSAPublicKey)
         {
             return key;
         }
 
-        throw new InvalidKeyException("Unsupported key type");
+        throw new InvalidKeyException("unsupported key type");
+    }
+
+    public PrivateKey engineGeneratePrivate(
+        KeySpec keySpec)
+        throws InvalidKeySpecException
+    {
+        if (keySpec instanceof MLDSAPrivateKeySpec)
+        {
+            MLDSAPrivateKeySpec spec = (MLDSAPrivateKeySpec)keySpec;
+            MLDSAPrivateKeyParameters params;
+            MLDSAParameters mldsaParameters = Utils.getParameters(spec.getParameterSpec().getName());
+            if (spec.isSeed())
+            {
+                params = new MLDSAPrivateKeyParameters(
+                    mldsaParameters, spec.getSeed());
+            }
+            else
+            {
+                params = new MLDSAPrivateKeyParameters(
+                    mldsaParameters, spec.getPrivateData(), null);
+                byte[] publicData = spec.getPublicData();
+                if (publicData != null)
+                {
+                    if (!Arrays.constantTimeAreEqual(publicData, params.getPublicKey()))
+                    {
+                        throw new InvalidKeySpecException("public key data does not match private key data");
+                    }
+                }
+            }
+
+            return new BCMLDSAPrivateKey(params);
+        }
+
+        return super.engineGeneratePrivate(keySpec);
+    }
+
+    public PublicKey engineGeneratePublic(
+        KeySpec keySpec)
+        throws InvalidKeySpecException
+    {
+        if (keySpec instanceof MLDSAPublicKeySpec)
+        {
+            MLDSAPublicKeySpec spec = (MLDSAPublicKeySpec)keySpec;
+
+            return new BCMLDSAPublicKey(new MLDSAPublicKeyParameters(
+                Utils.getParameters(spec.getParameterSpec().getName()),
+                spec.getPublicData()));
+        }
+
+        return super.engineGeneratePublic(keySpec);
     }
 
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
-            throws IOException
+        throws IOException
     {
-        return new BCMLDSAPrivateKey(keyInfo);
+        BCMLDSAPrivateKey key = new BCMLDSAPrivateKey(keyInfo);
+
+        if (!isHashOnly || (key.getAlgorithm().indexOf("WITH") > 0))
+        {
+            return key;
+        }
+
+        // keyfactory for hash-only, convert key to hash-only.
+        MLDSAPrivateKeyParameters kParams = key.getKeyParams();
+        MLDSAParameters mldsaParameters = null;
+        if (kParams.getParameters().equals(MLDSAParameters.ml_dsa_44))
+        {
+            mldsaParameters = MLDSAParameters.ml_dsa_44_with_sha512;
+        }
+        else if (kParams.getParameters().equals(MLDSAParameters.ml_dsa_65))
+        {
+            mldsaParameters = MLDSAParameters.ml_dsa_65_with_sha512;
+        }
+        else if (kParams.getParameters().equals(MLDSAParameters.ml_dsa_87))
+        {
+            mldsaParameters = MLDSAParameters.ml_dsa_87_with_sha512;
+        }
+        else
+        {
+            throw new IllegalStateException("unknown ML-DSA parameters");
+        }
+        
+        MLDSAPrivateKeyParameters hkParams = new MLDSAPrivateKeyParameters(
+            mldsaParameters, kParams.getRho(), kParams.getK(), kParams.getTr(), kParams.getS1(), kParams.getS2(), kParams.getT0(), kParams.getT1(), kParams.getSeed());
+
+        return new BCMLDSAPrivateKey(hkParams);
     }
 
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
-            throws IOException
+        throws IOException
     {
         return new BCMLDSAPublicKey(keyInfo);
     }
 
     public static class Pure
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public Pure()
         {
@@ -108,7 +222,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class MLDSA44
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public MLDSA44()
         {
@@ -117,7 +231,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class MLDSA65
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public MLDSA65()
         {
@@ -126,7 +240,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class MLDSA87
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public MLDSA87()
         {
@@ -135,7 +249,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class Hash
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public Hash()
         {
@@ -144,7 +258,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class HashMLDSA44
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public HashMLDSA44()
         {
@@ -153,7 +267,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class HashMLDSA65
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public HashMLDSA65()
         {
@@ -162,7 +276,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class HashMLDSA87
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public HashMLDSA87()
         {

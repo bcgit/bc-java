@@ -1,7 +1,6 @@
 package org.bouncycastle.openpgp.operator.bc;
 
 import java.io.IOException;
-import java.math.BigInteger;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -18,6 +17,7 @@ import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.agreement.BasicRawAgreement;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.agreement.X448Agreement;
@@ -37,7 +37,6 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * A decryptor factory for handling public key decryption operations.
@@ -210,15 +209,11 @@ public class BcPublicKeyDataDecryptorFactory
         }
         else
         {
-            ECDomainParameters ecParameters = ((ECPrivateKeyParameters) privKey).getParameters();
-
+            ECDomainParameters ecParameters = ((ECPrivateKeyParameters)privKey).getParameters();
             ECPublicKeyParameters ephPub = new ECPublicKeyParameters(ecParameters.getCurve().decodePoint(pEnc),
-                    ecParameters);
+                ecParameters);
 
-            ECDHBasicAgreement agreement = new ECDHBasicAgreement();
-            agreement.init(privKey);
-            BigInteger S = agreement.calculateAgreement(ephPub);
-            secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
+            secret = BcUtil.getSecret(new BasicRawAgreement(new ECDHBasicAgreement()), privKey, ephPub);
         }
         hashAlgorithm = ecPubKey.getHashAlgorithm();
         symmetricKeyAlgorithm = ecPubKey.getSymmetricKeyAlgorithm();

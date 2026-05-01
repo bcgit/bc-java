@@ -104,6 +104,10 @@ public class SExpression
 
                 if (c == ':')
                 {
+                    if (expr == null)
+                    {
+                        throw new IOException("invalid input stream at ':'");
+                    }
                     try
                     {
                         int len = Integer.parseInt(Strings.fromByteArray(accumulator.toByteArray()));
@@ -144,6 +148,11 @@ public class SExpression
 
                 if (accumulator.size() > 0)
                 {
+                    if (expr == null)
+                    {
+                        throw new IOException("invalid input stream");
+                    }
+
                     expr.addValue(Strings.fromByteArray(accumulator.toByteArray()));
                 }
 
@@ -164,11 +173,19 @@ public class SExpression
                 }
                 else if (c == '#')
                 {
+                    if (expr == null)
+                    {
+                        throw new IOException("invalid input stream at '#'");
+                    }
                     consumeUntilSkipWhiteSpace(src, accumulator, '#');
                     expr.addValue(Hex.decode(accumulator.toByteArray()));
                 }
                 else if (c == '"')
                 {
+                    if (expr == null)
+                    {
+                        throw new IOException("invalid input stream at '\"'");
+                    }
                     consumeUntilSkipCRorLF(src, accumulator, '"');
                     expr.addValue(new SExpression.QuotedString(Strings.fromByteArray(accumulator.toByteArray())));
                 }

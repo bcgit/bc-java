@@ -1,6 +1,5 @@
 package org.bouncycastle.tsp;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -15,6 +14,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
+import org.bouncycastle.asn1.tsp.MessageImprint;
 import org.bouncycastle.asn1.tsp.TimeStampReq;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
@@ -27,6 +27,40 @@ public class TimeStampRequest
 {
     private static Set EMPTY_SET = Collections.unmodifiableSet(new HashSet());
 
+    private static TimeStampReq parseTimeStampReq(byte[] encoding)
+        throws IOException
+    {
+        try
+        {
+            return TimeStampReq.getInstance(encoding);
+        }
+        catch (ClassCastException e)
+        {
+            throw new IOException("malformed request: " + e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new IOException("malformed request: " + e);
+        }
+    }
+
+    private static TimeStampReq parseTimeStampReq(InputStream in)
+        throws IOException
+    {
+        try
+        {
+            return TimeStampReq.getInstance(new ASN1InputStream(in).readObject());
+        }
+        catch (ClassCastException e)
+        {
+            throw new IOException("malformed request: " + e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new IOException("malformed request: " + e);
+        }
+    }
+    
     private TimeStampReq req;
     private Extensions extensions;
 
@@ -45,7 +79,7 @@ public class TimeStampRequest
     public TimeStampRequest(byte[] req) 
         throws IOException
     {
-        this(new ByteArrayInputStream(req));
+        this(parseTimeStampReq(req));
     }
 
     /**
@@ -57,29 +91,22 @@ public class TimeStampRequest
     public TimeStampRequest(InputStream in) 
         throws IOException
     {
-        this(loadRequest(in));
+        this(parseTimeStampReq(in));
     }
 
-    private static TimeStampReq loadRequest(InputStream in)
-        throws IOException
+    public TimeStampReq toASN1Structure()
     {
-        try
-        {
-            return TimeStampReq.getInstance(new ASN1InputStream(in).readObject());
-        }
-        catch (ClassCastException e)
-        {
-            throw new IOException("malformed request: " + e);
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new IOException("malformed request: " + e);
-        }
+        return req;
     }
 
     public int getVersion()
     {
         return req.getVersion().intValueExact();
+    }
+
+    public MessageImprint getMessageImprint()
+    {
+        return req.getMessageImprint();
     }
 
     public ASN1ObjectIdentifier getMessageImprintAlgOID()
@@ -152,6 +179,11 @@ public class TimeStampRequest
         policies = convert(policies);
         extensions = convert(extensions);
 
+        if (algorithms == null)
+        {
+            throw new TSPValidationException("no algorithms associated with request", PKIFailureInfo.badAlg);
+        }
+
         if (!algorithms.contains(this.getMessageImprintAlgOID()))
         {
             throw new TSPValidationException("request contains unknown algorithm", PKIFailureInfo.badAlg);
@@ -167,7 +199,7 @@ public class TimeStampRequest
             Enumeration en = this.getExtensions().oids();
             while(en.hasMoreElements())
             {
-                ASN1ObjectIdentifier  oid = (ASN1ObjectIdentifier)en.nextElement();
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)en.nextElement();
                 if (!extensions.contains(oid))
                 {
                     throw new TSPValidationException("request contains unknown extension", PKIFailureInfo.unacceptedExtension);
@@ -177,7 +209,7 @@ public class TimeStampRequest
 
         int digestLength = TSPUtil.getDigestLength(this.getMessageImprintAlgOID().getId());
 
-        if (digestLength != this.getMessageImprintDigest().length)
+        if (digestLength != this.getMessageImprint().getHashedMessageLength())
         {
             throw new TSPValidationException("imprint digest the wrong length", PKIFailureInfo.badDataFormat);
         }

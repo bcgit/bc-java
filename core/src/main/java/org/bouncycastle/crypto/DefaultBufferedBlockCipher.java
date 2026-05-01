@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto;
 
-
 /**
  * A wrapper class that allows block ciphers to be used to process data in
  * a piecemeal fashion. The BufferedBlockCipher outputs a block only when the
@@ -188,8 +187,7 @@ public class DefaultBufferedBlockCipher
 
         if (bufOff == buf.length)
         {
-            resultLen = cipher.processBlock(buf, 0, out, outOff);
-            bufOff = 0;
+            resultLen = processBuffer(out, outOff);
         }
 
         return resultLen;
@@ -222,7 +220,7 @@ public class DefaultBufferedBlockCipher
 
         int blockSize   = getBlockSize();
         int length      = getUpdateOutputSize(len);
-        
+
         if (length > 0)
         {
             if ((outOff + length) > out.length)
@@ -236,23 +234,35 @@ public class DefaultBufferedBlockCipher
 
         if (len > gapLen)
         {
-            System.arraycopy(in, inOff, buf, bufOff, gapLen);
+            if (bufOff != 0)
+            {
+                System.arraycopy(in, inOff, buf, bufOff, gapLen);
+                inOff += gapLen;
+                len -= gapLen;
+            }
 
-            resultLen += cipher.processBlock(buf, 0, out, outOff);
+            if (in == out)
+            {
+                in = new byte[len];
+                System.arraycopy(out, inOff, in, 0, len);
+                inOff = 0;
+            }
 
-            bufOff = 0;
-            len -= gapLen;
-            inOff += gapLen;
+            // if bufOff non-zero buffer must now be full
+            if (bufOff != 0)
+            {
+                resultLen += processBuffer(out, outOff);
+            }
 
             if (mbCipher != null)
             {
-                int blockCount = len / mbCipher.getMultiBlockSize();
+                int blockCount = (len / mbCipher.getMultiBlockSize()) * (mbCipher.getMultiBlockSize() / blockSize);
 
                 if (blockCount > 0)
                 {
                     resultLen += mbCipher.processBlocks(in, inOff, blockCount, out, outOff + resultLen);
 
-                    int processed = blockCount * mbCipher.getMultiBlockSize();
+                    int processed = blockCount * blockSize;
 
                     len -= processed;
                     inOff += processed;
@@ -276,11 +286,23 @@ public class DefaultBufferedBlockCipher
 
         if (bufOff == buf.length)
         {
-            resultLen += cipher.processBlock(buf, 0, out, outOff + resultLen);
-            bufOff = 0;
+            resultLen += processBuffer(out, outOff + resultLen);
         }
 
         return resultLen;
+    }
+
+    private int processBuffer(byte[] out, int outOff)
+    {
+        bufOff = 0;
+        if (mbCipher != null)
+        {
+            return mbCipher.processBlocks(buf, 0, buf.length / mbCipher.getBlockSize(), out, outOff);
+        }
+        else
+        {
+            return cipher.processBlock(buf, 0, out, outOff);
+        }
     }
 
     /**
@@ -313,15 +335,26 @@ public class DefaultBufferedBlockCipher
 
             if (bufOff != 0)
             {
-                if (!partialBlockOkay)
+                int index = 0;
+                if (mbCipher != null)
                 {
-                    throw new DataLengthException("data not block size aligned");
+                    int nBlocks = bufOff / mbCipher.getBlockSize();
+                    resultLen += mbCipher.processBlocks(buf, 0, nBlocks, out, outOff);
+                    index = nBlocks * mbCipher.getBlockSize();
                 }
 
-                cipher.processBlock(buf, 0, buf, 0);
-                resultLen = bufOff;
-                bufOff = 0;
-                System.arraycopy(buf, 0, out, outOff, resultLen);
+                if (bufOff != index)
+                {
+                    if (!partialBlockOkay)
+                    {
+                        throw new DataLengthException("data not block size aligned");
+                    }
+
+                    cipher.processBlock(buf, index, buf, index);
+                    System.arraycopy(buf, index, out, outOff + resultLen, bufOff - index);
+                    resultLen += bufOff - index;
+                    bufOff = 0;
+                }
             }
 
             return resultLen;

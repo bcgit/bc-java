@@ -48,7 +48,7 @@ public final class CAST6
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new CAST6Engine())));
+            super(new GMac(GCMBlockCipher.newInstance(new CAST6Engine())));
         }
     }
 

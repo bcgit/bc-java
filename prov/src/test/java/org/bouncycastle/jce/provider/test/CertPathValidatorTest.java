@@ -536,7 +536,7 @@ public class CertPathValidatorTest
             isTrue("No CRLs found for issuer \"o=Certs 'r Us,c=XX\"".equals(e.getMessage()));
         }
 
-        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "true");
     }
 
     public void performTest()
@@ -664,7 +664,7 @@ public class CertPathValidatorTest
             }
         }
 
-        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "true");
 
         checkCircProcessing();
         checkPolicyProcessingAtDomainMatch();
@@ -1393,7 +1393,7 @@ public class CertPathValidatorTest
 
         public String toString()
         {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             String nl = Strings.lineSeparator();
 
             buf.append("  [0]         Version: ").append(this.getVersion()).append(nl);
@@ -1668,7 +1668,7 @@ public class CertPathValidatorTest
         }
     }
 
-    private class DodgyCertificate
+    private static class DodgyCertificate
         extends ASN1Object
     {
         ASN1Sequence  seq;
@@ -1758,7 +1758,7 @@ public class CertPathValidatorTest
         }
     }
 
-    private class DodgyTBSCertificate
+    private static class DodgyTBSCertificate
         extends ASN1Object
     {
         ASN1Sequence            seq;
@@ -1791,7 +1791,7 @@ public class CertPathValidatorTest
             else
             {
                 seqStart = -1;          // field 0 is missing!
-                version = new ASN1Integer(0);
+                version = ASN1Integer.ZERO;
             }
 
             boolean isV1 = false;
@@ -1951,13 +1951,7 @@ public class CertPathValidatorTest
             //
             // before and after dates
             //
-            {
-                ASN1EncodableVector validity = new ASN1EncodableVector(2);
-                validity.add(startDate);
-                validity.add(endDate);
-
-                v.add(new DERSequence(validity));
-            }
+            v.add(new DERSequence(startDate, endDate));
 
             if (subject != null)
             {

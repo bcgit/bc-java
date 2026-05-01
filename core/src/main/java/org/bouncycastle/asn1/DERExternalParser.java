@@ -2,6 +2,7 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+// TODO[asn1] Replace with BERExternalParser, DLExternalParser (currently functions as DLExternalParser already)
 /**
  * Parser DER EXTERNAL tagged objects.
  */
@@ -61,13 +62,15 @@ public class DERExternalParser
 
     static DLExternal parse(ASN1StreamParser sp) throws IOException
     {
+        ASN1Sequence seq = new DLSequence(sp.readVector());
+
         try
         {
-            return new DLExternal(new DLSequence(sp.readVector()));
+            return DLExternal.fromSequence(seq);
         }
         catch (IllegalArgumentException e)
         {
-            throw new ASN1Exception(e.getMessage(), e);
+            throw new ASN1Exception("corrupted stream detected", e);
         }
     }
 }

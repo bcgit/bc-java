@@ -53,37 +53,37 @@ public class PKIXPolicyNode
     {
         return children.iterator();
     }
-    
+
     public int getDepth()
     {
         return depth;
     }
-    
+
     public Set getExpectedPolicies()
     {
         return expectedPolicies;
     }
-    
+
     public PolicyNode getParent()
     {
         return parent;
     }
-    
+
     public Set getPolicyQualifiers()
     {
         return policyQualifiers;
     }
-    
+
     public String getValidPolicy()
     {
         return validPolicy;
     }
-    
+
     public boolean hasChildren()
     {
         return !children.isEmpty();
     }
-    
+
     public boolean isCritical()
     {
         return critical;
@@ -98,7 +98,12 @@ public class PKIXPolicyNode
     {
         critical = _critical;
     }
-    
+
+    public void setExpectedPolicies(Set expectedPolicies)
+    {
+        this.expectedPolicies = expectedPolicies;
+    }
+
     public void setParent(PKIXPolicyNode _parent)
     {
         parent = _parent;
@@ -125,49 +130,39 @@ public class PKIXPolicyNode
         _buf.append("}\n");
         return _buf.toString();
     }
-    
+
+    // TODO[api] Maybe remove this, the 'clone' loses its parent
     public Object clone()
     {
         return copy();
     }
-    
+
     public PKIXPolicyNode copy()
     {
-        Set     _expectedPolicies = new HashSet();
+        Set _expectedPolicies = new HashSet();
         Iterator _iter = expectedPolicies.iterator();
         while (_iter.hasNext())
         {
-            _expectedPolicies.add(new String((String)_iter.next()));
+            _expectedPolicies.add(_iter.next());
         }
-        
-        Set     _policyQualifiers = new HashSet();
+
+        Set _policyQualifiers = new HashSet();
         _iter = policyQualifiers.iterator();
         while (_iter.hasNext())
         {
-            _policyQualifiers.add(new String((String)_iter.next()));
+            _policyQualifiers.add(_iter.next());
         }
-        
-        PKIXPolicyNode _node = new PKIXPolicyNode(new ArrayList(),
-                                                  depth,
-                                                  _expectedPolicies,
-                                                  null,
-                                                  _policyQualifiers,
-                                                  new String(validPolicy),
-                                                  critical);
-        
+
+        PKIXPolicyNode copy = new PKIXPolicyNode(new ArrayList(), depth, _expectedPolicies, null, _policyQualifiers,
+            validPolicy, critical);
+
         _iter = children.iterator();
         while (_iter.hasNext())
         {
-            PKIXPolicyNode _child = ((PKIXPolicyNode)_iter.next()).copy();
-            _child.setParent(_node);
-            _node.addChild(_child);
+            PKIXPolicyNode child = (PKIXPolicyNode)_iter.next();
+            copy.addChild(child.copy());
         }
-        
-        return _node;
-    }
 
-    public void setExpectedPolicies(Set expectedPolicies)
-    {
-        this.expectedPolicies = expectedPolicies;
+        return copy;
     }
 }

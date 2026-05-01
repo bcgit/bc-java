@@ -262,6 +262,7 @@ public final class XMSSMTPrivateKeyParameters
     /**
      * @deprecated use getEncoded() - this method will become private.
      */
+    @Deprecated
     public byte[] toByteArray()
     {
         synchronized (this)

@@ -2,6 +2,10 @@ package org.bouncycastle.pqc.crypto.slhdsa;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters
+ */
+@Deprecated
 public class SLHDSAPrivateKeyParameters
     extends SLHDSAKeyParameters
 {

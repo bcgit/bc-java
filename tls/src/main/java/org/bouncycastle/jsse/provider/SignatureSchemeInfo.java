@@ -43,8 +43,8 @@ class SignatureSchemeInfo
     // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
     private enum All
     {
-        ed25519(SignatureScheme.ed25519, "Ed25519", "Ed25519"),
-        ed448(SignatureScheme.ed448, "Ed448", "Ed448"),
+        ed25519(SignatureScheme.ed25519, "Ed25519", true),
+        ed448(SignatureScheme.ed448, "Ed448", true),
 
         ecdsa_secp256r1_sha256(SignatureScheme.ecdsa_secp256r1_sha256, "SHA256withECDSA", "EC"),
         ecdsa_secp384r1_sha384(SignatureScheme.ecdsa_secp384r1_sha384, "SHA384withECDSA", "EC"),
@@ -64,12 +64,30 @@ class SignatureSchemeInfo
         rsa_pss_rsae_sha384(SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1", "RSA"),
         rsa_pss_rsae_sha512(SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1", "RSA"),
 
+        // NOTE: Not supported pre-13, but that is enforced by TLS protocol code rather than at the (BC)JSSE level.
+        mldsa44(SignatureScheme.mldsa44, "ML-DSA-44", false),
+        mldsa65(SignatureScheme.mldsa65, "ML-DSA-65", false),
+        mldsa87(SignatureScheme.mldsa87, "ML-DSA-87", false),
+
+        slhdsa_sha2_128s(SignatureScheme.DRAFT_slhdsa_sha2_128s, "SLH-DSA-SHA2-128S", false),
+        slhdsa_sha2_128f(SignatureScheme.DRAFT_slhdsa_sha2_128f, "SLH-DSA-SHA2-128F", false),
+        slhdsa_sha2_192s(SignatureScheme.DRAFT_slhdsa_sha2_192s, "SLH-DSA-SHA2-192S", false),
+        slhdsa_sha2_192f(SignatureScheme.DRAFT_slhdsa_sha2_192f, "SLH-DSA-SHA2-192F", false),
+        slhdsa_sha2_256s(SignatureScheme.DRAFT_slhdsa_sha2_256s, "SLH-DSA-SHA2-256S", false),
+        slhdsa_sha2_256f(SignatureScheme.DRAFT_slhdsa_sha2_256f, "SLH-DSA-SHA2-256F", false),
+        slhdsa_shake_128s(SignatureScheme.DRAFT_slhdsa_shake_128s, "SLH-DSA-SHAKE-128S", false),
+        slhdsa_shake_128f(SignatureScheme.DRAFT_slhdsa_shake_128f, "SLH-DSA-SHAKE-128F", false),
+        slhdsa_shake_192s(SignatureScheme.DRAFT_slhdsa_shake_192s, "SLH-DSA-SHAKE-192S", false),
+        slhdsa_shake_192f(SignatureScheme.DRAFT_slhdsa_shake_192f, "SLH-DSA-SHAKE-192F", false),
+        slhdsa_shake_256s(SignatureScheme.DRAFT_slhdsa_shake_256s, "SLH-DSA-SHAKE-256S", false),
+        slhdsa_shake_256f(SignatureScheme.DRAFT_slhdsa_shake_256f, "SLH-DSA-SHAKE-256F", false),
+
+        sm2sig_sm3(SignatureScheme.sm2sig_sm3, "SM3withSM2", "EC"),
+
         // Deprecated: only for certs in 1.3
         rsa_pkcs1_sha256(SignatureScheme.rsa_pkcs1_sha256, "SHA256withRSA", "RSA", true),
         rsa_pkcs1_sha384(SignatureScheme.rsa_pkcs1_sha384, "SHA384withRSA", "RSA", true),
         rsa_pkcs1_sha512(SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA", "RSA", true),
-
-        sm2sig_sm3(SignatureScheme.sm2sig_sm3, "SM3withSM2", "EC"),
 
         /*
          * Legacy/Historical: mostly not supported in 1.3, except ecdsa_sha1 and rsa_pkcs1_sha1 are
@@ -91,42 +109,47 @@ class SignatureSchemeInfo
         private final String jcaSignatureAlgorithmBC;
         private final String keyAlgorithm;
         private final String keyType13;
-        private final boolean supportedPost13;
         private final boolean supportedPre13;
+        private final boolean supportedPost13;
         private final boolean supportedCerts13;
         private final int namedGroup13;
 
+        private All(int signatureScheme, String algorithm, boolean supportedPre13)
+        {
+            this(signatureScheme, algorithm, algorithm, supportedPre13, true, true,
+                SignatureScheme.getNamedGroup(signatureScheme));
+        }
+
         private All(int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm)
         {
-            this(signatureScheme, jcaSignatureAlgorithm, keyAlgorithm, true, true,
+            this(signatureScheme, jcaSignatureAlgorithm, keyAlgorithm, true, true, true,
                 SignatureScheme.getNamedGroup(signatureScheme));
+        }
+
+        private All(int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm, boolean supportedPre13,
+            boolean supportedPost13, boolean supportedCerts13, int namedGroup13)
+        {
+            this(signatureScheme, SignatureScheme.getName(signatureScheme), jcaSignatureAlgorithm, keyAlgorithm,
+                supportedPre13, supportedPost13, supportedCerts13, namedGroup13);
         }
 
         // Deprecated/Legacy
         private All(int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm, boolean supportedCerts13)
         {
-            this(signatureScheme, jcaSignatureAlgorithm, keyAlgorithm, false, supportedCerts13, -1);
-        }
-
-        private All(int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm, boolean supportedPost13,
-            boolean supportedCerts13, int namedGroup13)
-        {
-            this(signatureScheme, SignatureScheme.getName(signatureScheme), jcaSignatureAlgorithm, keyAlgorithm,
-                supportedPost13, supportedCerts13, namedGroup13);
+            this(signatureScheme, jcaSignatureAlgorithm, keyAlgorithm, true, false, supportedCerts13, -1);
         }
 
         // Historical
         private All(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm)
         {
-            this(signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false, false, -1);
+            this(signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, true, false, false, -1);
         }
 
         private All(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm,
-            boolean supportedPost13, boolean supportedCerts13, int namedGroup13)
+            boolean supportedPre13, boolean supportedPost13, boolean supportedCerts13, int namedGroup13)
         {
             String keyType13 = JsseUtils.getKeyType13(keyAlgorithm, namedGroup13);
             String jcaSignatureAlgorithmBC = JsseUtils.getJcaSignatureAlgorithmBC(jcaSignatureAlgorithm, keyAlgorithm);
-
 
             this.signatureScheme = signatureScheme;
             this.name = name;
@@ -135,8 +158,9 @@ class SignatureSchemeInfo
             this.jcaSignatureAlgorithmBC = jcaSignatureAlgorithmBC;
             this.keyAlgorithm = keyAlgorithm;
             this.keyType13 = keyType13;
+            this.supportedPre13 = supportedPre13 &&
+                (namedGroup13 < 0 || NamedGroup.canBeNegotiated(namedGroup13, ProtocolVersion.TLSv12));
             this.supportedPost13 = supportedPost13;
-            this.supportedPre13 = (namedGroup13 < 0) || NamedGroup.canBeNegotiated(namedGroup13, ProtocolVersion.TLSv12);
             this.supportedCerts13 = supportedCerts13;
             this.namedGroup13 = namedGroup13;
         }
@@ -566,10 +590,31 @@ class SignatureSchemeInfo
     private static int[] createCandidatesDefault()
     {
         All[] values = All.values();
-        int[] result = new int[values.length];
-        for (int i = 0; i < values.length; ++i)
+        int count = values.length, pos = 0;
+        int[] result = new int[count];
+        for (int i = 0; i < count; ++i)
         {
-            result[i] = values[i].signatureScheme;
+            int signatureScheme = values[i].signatureScheme;
+
+            if (SignatureScheme.isMLDSA(signatureScheme) ||
+                SignatureScheme.isSLHDSA(signatureScheme))
+            {
+                // For the time being, do not enable stand-alone PQ schemes by default
+            }
+            else if (SignatureScheme.sm2sig_sm3 == signatureScheme)
+            {
+                // Experimental, require explicit configuration
+            }
+            else
+            {
+                result[pos++] = signatureScheme;
+            }
+        }
+        if (pos < count)
+        {
+            int[] tmp = new int[pos];
+            System.arraycopy(result, 0, tmp, 0, pos);
+            return tmp;
         }
         return result;
     }

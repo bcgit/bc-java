@@ -68,6 +68,24 @@ class ProvAlgorithmChecker
 
         names.put(EdECObjectIdentifiers.id_Ed25519.getId(), "Ed25519");
         names.put(EdECObjectIdentifiers.id_Ed448.getId(), "Ed448");
+
+        names.put(NISTObjectIdentifiers.id_ml_dsa_44.getId(), "ML-DSA-44");
+        names.put(NISTObjectIdentifiers.id_ml_dsa_65.getId(), "ML-DSA-65");
+        names.put(NISTObjectIdentifiers.id_ml_dsa_87.getId(), "ML-DSA-87");
+
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s.getId(), "SLH-DSA-SHA2-128S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f.getId(), "SLH-DSA-SHA2-128F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s.getId(), "SLH-DSA-SHA2-192S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f.getId(), "SLH-DSA-SHA2-192F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s.getId(), "SLH-DSA-SHA2-256S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f.getId(), "SLH-DSA-SHA2-256F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s.getId(), "SLH-DSA-SHAKE-128S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f.getId(), "SLH-DSA-SHAKE-128F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s.getId(), "SLH-DSA-SHAKE-192S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f.getId(), "SLH-DSA-SHAKE-192F");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s.getId(), "SLH-DSA-SHAKE-256S");
+        names.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f.getId(), "SLH-DSA-SHAKE-256F");
+
         names.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "SHA1withDSA");
         names.put(X9ObjectIdentifiers.id_dsa_with_sha1.getId(), "SHA1withDSA");
 
@@ -85,13 +103,13 @@ class ProvAlgorithmChecker
         return Collections.unmodifiableSet(noParams);
     }
 
-    private final boolean isInFipsMode;
+    private final boolean fipsMode;
     private final JcaJceHelper helper;
     private final BCAlgorithmConstraints algorithmConstraints;
 
     private X509Certificate issuerCert;
 
-    ProvAlgorithmChecker(boolean isInFipsMode, JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints)
+    ProvAlgorithmChecker(boolean fipsMode, JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints)
     {
         if (null == helper)
         {
@@ -102,7 +120,7 @@ class ProvAlgorithmChecker
             throw new NullPointerException("'algorithmConstraints' cannot be null");
         }
 
-        this.isInFipsMode = isInFipsMode;
+        this.fipsMode = fipsMode;
         this.helper = helper;
         this.algorithmConstraints = algorithmConstraints;
 
@@ -149,7 +167,7 @@ class ProvAlgorithmChecker
 
         X509Certificate subjectCert = (X509Certificate)cert;
 
-        if (isInFipsMode && !isValidFIPSPublicKey(subjectCert.getPublicKey()))
+        if (fipsMode && !isValidFIPSPublicKey(subjectCert.getPublicKey()))
         {
             throw new CertPathValidatorException("non-FIPS public key found");
         }
@@ -182,7 +200,7 @@ class ProvAlgorithmChecker
         checkEndEntity(helper, algorithmConstraints, eeCert, ekuOID, kuBit);
     }
 
-    static void checkChain(boolean isInFipsMode, JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
+    static void checkChain(boolean fipsMode, JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
         Set<X509Certificate> trustedCerts, X509Certificate[] chain, KeyPurposeId ekuOID, int kuBit)
         throws CertPathValidatorException
     {
@@ -206,7 +224,7 @@ class ProvAlgorithmChecker
             checkIssued(helper, algorithmConstraints, chain[taPos - 1]);
         }
 
-        ProvAlgorithmChecker algorithmChecker = new ProvAlgorithmChecker(isInFipsMode, helper, algorithmConstraints);
+        ProvAlgorithmChecker algorithmChecker = new ProvAlgorithmChecker(fipsMode, helper, algorithmConstraints);
         algorithmChecker.init(false);
 
         for (int i = taPos - 1; i >= 0; --i)

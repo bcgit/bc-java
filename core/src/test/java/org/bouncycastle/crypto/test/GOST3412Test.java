@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.engines.GOST3412_2015Engine;
 import org.bouncycastle.crypto.modes.G3413CBCBlockCipher;
 import org.bouncycastle.crypto.modes.G3413CFBBlockCipher;
@@ -7,6 +8,7 @@ import org.bouncycastle.crypto.modes.G3413CTRBlockCipher;
 import org.bouncycastle.crypto.modes.G3413OFBBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -87,8 +89,64 @@ public class GOST3412Test
     {
         super.performTest();
 
+        ctrTest();
 //        cfbTest();
 //        ofbTest();
+    }
+
+    private void ctrTest()
+        throws Exception
+    {
+        StreamBlockCipher sb = new G3413CTRBlockCipher(new GOST3412_2015Engine(), 8);
+
+        sb.init(true, new ParametersWithIV(new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
+            Hex.decode("0001020304050607")));
+
+        byte[] block = Hex.decode("000102030405060708090a0b0c0d0e0f");
+        byte[] output = new byte[16];
+        byte[] last = new byte[16];
+
+        sb.processBytes(block, 0, block.length, last, 0);
+
+        for (int i = 1; i < 255; i++)
+        {
+            sb.processBytes(block, 0, block.length, output, 0);
+            if (Arrays.areEqual(last, output))
+            {
+                fail("cipher text repeats 1");
+            }
+        }
+
+        sb.processBytes(block, 0, block.length, output, 0);
+        if (Arrays.areEqual(last, output))
+        {
+            fail("cipher text repeats 2");
+        }
+
+        sb = new G3413CTRBlockCipher(new GOST3412_2015Engine(), 8);
+
+        sb.init(true, new ParametersWithIV(new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
+            Hex.decode("0001020304050607")));
+
+        sb.processBytes(block, 0, block.length, last, 0);
+
+        for (int i = 1; i != ((1 << 15) - 1); i++)
+        {
+            sb.processBytes(block, 0, block.length, output, 0);
+            if (Arrays.areEqual(last, output))
+            {
+                fail("cipher text repeats 3");
+            }
+            byte[] tmp = last;
+            last = output;
+            output = tmp;
+        }
+
+        sb.processBytes(block, 0, block.length, output, 0);
+        if (Arrays.areEqual(last, output))
+        {
+            fail("cipher text repeats");
+        }
     }
 
     public static void main(

@@ -235,7 +235,7 @@ public class JceAsymmetricKeyWrapper
         }
         else
         {
-            Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier().getAlgorithm(), extraMappings);
+            Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier(), extraMappings);
             AlgorithmParameters algParams = null;
 
             try

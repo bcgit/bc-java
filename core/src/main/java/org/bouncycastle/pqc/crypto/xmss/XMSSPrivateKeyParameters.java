@@ -162,14 +162,7 @@ public final class XMSSPrivateKeyParameters
             }
             else
             {
-                if (builder.index < ((1 << params.getHeight()) - 2) && tmpPublicSeed != null && tmpSecretKeySeed != null)
-                {
-                    bdsState = new BDS(params, tmpPublicSeed, tmpSecretKeySeed, (OTSHashAddress)new OTSHashAddress.Builder().build(), builder.index);
-                }
-                else
-                {
-                    bdsState = new BDS(params, (1 << params.getHeight()) - 1, builder.index);
-                }
+                bdsState = new BDS(params, tmpPublicSeed, tmpSecretKeySeed, (OTSHashAddress)new OTSHashAddress.Builder().build(), builder.index);
             }
             if (builder.maxIndex >= 0 && builder.maxIndex != bdsState.getMaxIndex())
             {
@@ -228,6 +221,7 @@ public final class XMSSPrivateKeyParameters
      * <p>
      * Note: this will use the range [index...index + usageCount) for the current key.
      * </p>
+     *
      * @param usageCount the number of usages the key should have.
      * @return a key based on the current key that can be used usageCount times.
      */
@@ -343,6 +337,10 @@ public final class XMSSPrivateKeyParameters
 
         public XMSSPrivateKeyParameters build()
         {
+            if (!((privateKey != null) || (publicSeed != null && secretKeySeed != null)))
+            {
+                throw new IllegalStateException("publicSeed or secretKeySeed is null");
+            }
             return new XMSSPrivateKeyParameters(this);
         }
     }
@@ -350,6 +348,7 @@ public final class XMSSPrivateKeyParameters
     /**
      * @deprecated use getEncoded() - this method will become private.
      */
+    @Deprecated
     public byte[] toByteArray()
     {
         synchronized (this)

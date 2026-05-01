@@ -250,6 +250,11 @@ public class TlsExtensionsUtils
         extensions.put(EXT_supported_groups, createSupportedGroupsExtension(namedGroups));
     }
 
+    public static void addSupportedGroupsExtension(Hashtable extensions, int[] namedGroups) throws IOException
+    {
+        extensions.put(EXT_supported_groups, createSupportedGroupsExtension(namedGroups));
+    }
+
     public static void addSupportedPointFormatsExtension(Hashtable extensions, short[] ecPointFormats)
         throws IOException
     {
@@ -320,6 +325,7 @@ public class TlsExtensionsUtils
     /**
      * @deprecated Use version without defaultValue instead
      */
+    @Deprecated
     public static short getClientCertificateTypeExtensionServer(Hashtable extensions, short defaultValue)
         throws IOException
     {
@@ -447,6 +453,7 @@ public class TlsExtensionsUtils
     /**
      * @deprecated Use version without defaultValue instead
      */
+    @Deprecated
     public static short getServerCertificateTypeExtensionServer(Hashtable extensions, short defaultValue)
         throws IOException
     {
@@ -932,6 +939,16 @@ public class TlsExtensionsUtils
         }
 
         return TlsUtils.encodeUint16ArrayWithUint16Length(values);
+    }
+
+    public static byte[] createSupportedGroupsExtension(int[] namedGroups) throws IOException
+    {
+        if (TlsUtils.isNullOrEmpty(namedGroups))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return TlsUtils.encodeUint16ArrayWithUint16Length(namedGroups);
     }
 
     public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException

@@ -38,8 +38,8 @@ public class ParallelHash
      * Base constructor.
      *
      * @param bitLength security strength (bits) of the underlying SHAKE function, 128 or 256.
-     * @param S the customization string - available for local use.
-     * @param B the blocksize (in bytes) for hashing.
+     * @param S         the customization string - available for local use.
+     * @param B         the blocksize (in bytes) for hashing.
      */
     public ParallelHash(int bitLength, byte[] S, int B)
     {
@@ -50,12 +50,18 @@ public class ParallelHash
     {
         this(bitLength, S, B, outputSize, CryptoServicePurpose.ANY);
     }
+
     public ParallelHash(int bitLength, byte[] S, int B, int outputSize, CryptoServicePurpose purpose)
     {
+        if (B <= 0)
+        {
+            throw new IllegalArgumentException("block size should be greater than 0");
+        }
         this.cshake = new CSHAKEDigest(bitLength, N_PARALLEL_HASH, S);
         this.compressor = new CSHAKEDigest(bitLength, new byte[0], new byte[0]);
         this.bitLength = bitLength;
         this.B = B;
+
         this.outputLength = (outputSize + 7) / 8;
         this.buffer = new byte[B];
         this.compressorBuffer = new byte[bitLength * 2 / 8];
@@ -112,7 +118,7 @@ public class ParallelHash
     public void update(byte[] in, int inOff, int len)
         throws DataLengthException, IllegalStateException
     {
-        len = Math.max(0,  len);
+        len = Math.max(0, len);
 
         //
         // fill the current word
@@ -198,7 +204,7 @@ public class ParallelHash
         {
             wrapUp(outputLength);
         }
-        
+
         int rv = cshake.doFinal(out, outOff, outLen);
 
         reset();

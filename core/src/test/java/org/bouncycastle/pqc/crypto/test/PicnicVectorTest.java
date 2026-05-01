@@ -8,12 +8,12 @@ import java.util.HashMap;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.pqc.crypto.picnic.PicnicKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.picnic.PicnicKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
-import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.picnic.PicnicSigner;
+import org.bouncycastle.pqc.legacy.picnic.PicnicKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.picnic.PicnicKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.picnic.PicnicParameters;
+import org.bouncycastle.pqc.legacy.picnic.PicnicPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.picnic.PicnicPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.picnic.PicnicSigner;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
@@ -21,6 +21,7 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -39,7 +40,7 @@ public class PicnicVectorTest
     public void testVectors()
         throws Exception
     {
-        boolean full = System.getProperty("test.full", "false").equals("true");
+        boolean full = Properties.isOverrideSet("test.full");
         String[] files;
         PicnicParameters[] params;
         if (full)
@@ -90,17 +91,16 @@ public class PicnicVectorTest
             };
         }
 
-        TestSampler sampler = new TestSampler();
-
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            // System.out.println("testing: " + name);
+
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/picnic", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
+            TestSampler sampler = new TestSampler();
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();

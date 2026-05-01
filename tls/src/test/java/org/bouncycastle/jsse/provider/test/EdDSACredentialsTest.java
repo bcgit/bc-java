@@ -28,10 +28,10 @@ public class EdDSACredentialsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_12_ED25519 = 9020;
-    private static final int PORT_NO_12_ED448 = 9021;
-    private static final int PORT_NO_13_ED25519 = 9022;
-    private static final int PORT_NO_13_ED448 = 9023;
+    private static final int PORT_NO_12_ED25519 = 9050;
+    private static final int PORT_NO_12_ED448 = 9051;
+    private static final int PORT_NO_13_ED25519 = 9052;
+    private static final int PORT_NO_13_ED448 = 9053;
 
     static class EdDSAClient
         implements TestProtocolUtil.BlockingCallable

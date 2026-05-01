@@ -4,8 +4,6 @@ import java.io.IOException;
 
 /**
  * Parser for indefinite-length SEQUENCEs.
- * 
- * @deprecated Check for 'ASN1SequenceParser' instead 
  */
 public class BERSequenceParser
     implements ASN1SequenceParser

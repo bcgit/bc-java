@@ -144,6 +144,7 @@ public final class XMSSMTPublicKeyParameters
     /**
      * @deprecated use getEncoded() - this method will become private.
      */
+    @Deprecated
     public byte[] toByteArray()
     {
         /* oid || root || seed */

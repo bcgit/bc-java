@@ -1,6 +1,8 @@
 package org.bouncycastle.bcpg;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -16,6 +18,11 @@ public class KeyIdentifier
     private final byte[] fingerprint;
     private final long keyId;
 
+    public KeyIdentifier(String hexEncoded)
+    {
+        this(Hex.decode(hexEncoded));
+    }
+
     /**
      * Create a new {@link KeyIdentifier} based on a keys fingerprint.
      * For fingerprints matching the format of a v4, v5 or v6 key, the constructor will
@@ -25,6 +32,14 @@ public class KeyIdentifier
      */
     public KeyIdentifier(byte[] fingerprint)
     {
+        // Long KeyID
+        if (fingerprint.length == 8)
+        {
+            keyId = FingerprintUtil.longFromRightMostBytes(fingerprint);
+            this.fingerprint = null;
+            return;
+        }
+
         this.fingerprint = Arrays.clone(fingerprint);
 
         // v4
@@ -63,7 +78,16 @@ public class KeyIdentifier
      */
     public KeyIdentifier(long keyId)
     {
-        this(null, keyId);
+        if (keyId == 0L)
+        {
+            this.keyId = 0L;
+            this.fingerprint = new byte[0];
+        }
+        else
+        {
+            this.keyId = keyId;
+            this.fingerprint = null;
+        }
     }
 
     /**
@@ -71,7 +95,7 @@ public class KeyIdentifier
      */
     private KeyIdentifier()
     {
-        this(new byte[0], 0L);
+        this(0L);
     }
 
     /**
@@ -117,7 +141,7 @@ public class KeyIdentifier
      */
     public boolean isWildcard()
     {
-        return keyId == 0L && fingerprint.length == 0;
+        return keyId == 0L && (fingerprint == null || fingerprint.length == 0);
     }
 
     /**
@@ -146,6 +170,11 @@ public class KeyIdentifier
             return true;
         }
 
+        return matchesExplicit(other);
+    }
+
+    public boolean matchesExplicit(KeyIdentifier other)
+    {
         if (fingerprint != null && other.fingerprint != null)
         {
             return Arrays.constantTimeAreEqual(fingerprint, other.fingerprint);
@@ -154,6 +183,28 @@ public class KeyIdentifier
         {
             return keyId == other.keyId;
         }
+    }
+
+    public static boolean matches(List<KeyIdentifier> identifiers, KeyIdentifier identifier, boolean explicit)
+    {
+        for (Iterator it = identifiers.iterator(); it.hasNext();)
+        {
+            KeyIdentifier candidate = (KeyIdentifier)it.next();
+            
+            if (!explicit && candidate.isWildcard())
+            {
+                return true;
+            }
+
+            if (candidate.getFingerprint() != null &&
+                    Arrays.constantTimeAreEqual(candidate.getFingerprint(), identifier.getFingerprint()))
+            {
+                return true;
+            }
+
+            return candidate.getKeyId() == identifier.getKeyId();
+        }
+        return false;
     }
 
     /**
@@ -166,15 +217,44 @@ public class KeyIdentifier
      */
     public boolean isPresentIn(List<KeyIdentifier> others)
     {
-        for (KeyIdentifier other: others)
+        for (Iterator it = others.iterator(); it.hasNext();)
         {
-            if (this.matches(other))
+            if (this.matchesExplicit((KeyIdentifier)it.next()))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+        if (this == obj)
+        {
+            return true;
+        }
+        if (!(obj instanceof KeyIdentifier))
+        {
+            return false;
+        }
+        KeyIdentifier other = (KeyIdentifier) obj;
+        if (getFingerprint() != null && other.getFingerprint() != null)
+        {
+            return Arrays.constantTimeAreEqual(getFingerprint(), other.getFingerprint());
+        }
+        return getKeyId() == other.getKeyId();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return (int) getKeyId();
     }
 
     public String toString()
@@ -190,6 +270,19 @@ public class KeyIdentifier
         }
 
         // -DM Hex.toHexString
-        return Hex.toHexString(fingerprint).toUpperCase();
+        return Hex.toHexString(fingerprint).toUpperCase(Locale.getDefault());
+    }
+
+    public String toPrettyPrint()
+    {
+        if (isWildcard())
+        {
+            return "*";
+        }
+        if (fingerprint == null)
+        {
+            return "0x" + Long.toHexString(keyId).toUpperCase(Locale.getDefault());
+        }
+        return FingerprintUtil.prettifyFingerprint(fingerprint);
     }
 }

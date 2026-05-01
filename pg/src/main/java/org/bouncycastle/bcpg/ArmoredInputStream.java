@@ -4,6 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.bouncycastle.util.StringList;
 import org.bouncycastle.util.Strings;
@@ -75,7 +78,7 @@ public class ArmoredInputStream
 
         if (in2 == '=')
         {
-            b1 = decodingTable[in0] &0xff;
+            b1 = decodingTable[in0] & 0xff;
             b2 = decodingTable[in1] & 0xff;
 
             if ((b1 | b2) < 0)
@@ -129,30 +132,33 @@ public class ArmoredInputStream
      */
     private boolean detectMissingChecksum = false;
 
-    private final CRC24   crc;
+    private final CRC24 crc;
 
-    InputStream    in;
-    boolean        start = true;
-    byte[]         outBuf = new byte[3];
-    int            bufPtr = 3;
-    boolean        crcFound = false;
-    boolean        hasHeaders = true;
-    String         header = null;
-    boolean        newLineFound = false;
-    boolean        clearText = false;
-    boolean        restart = false;
-    StringList     headerList= Strings.newList();
-    int            lastC = 0;
-    boolean        isEndOfStream;
-    
+    InputStream in;
+    boolean start = true;
+    byte[] outBuf = new byte[3];
+    int bufPtr = 3;
+    boolean crcFound = false;
+    boolean hasHeaders = true;
+    String header = null;
+    boolean newLineFound = false;
+    boolean clearText = false;
+    boolean restart = false;
+    StringList headerList = Strings.newList();
+    int lastC = 0;
+    boolean isEndOfStream;
+
+    private boolean validateAllowedHeaders = false;
+    private List<String> allowedHeaders = defaultAllowedHeaders();
+
     /**
-     * Create a stream for reading a PGP armoured message, parsing up to a header 
+     * Create a stream for reading a PGP armoured message, parsing up to a header
      * and then reading the data that follows.
-     * 
+     *
      * @param in
      */
     public ArmoredInputStream(
-        InputStream    in) 
+        InputStream in)
         throws IOException
     {
         this(in, true);
@@ -160,21 +166,21 @@ public class ArmoredInputStream
 
     /**
      * Create an armoured input stream which will assume the data starts
-     * straight away, or parse for headers first depending on the value of 
+     * straight away, or parse for headers first depending on the value of
      * hasHeaders.
-     * 
+     *
      * @param in
      * @param hasHeaders true if headers are to be looked for, false otherwise.
      */
     public ArmoredInputStream(
-        InputStream    in,
-        boolean        hasHeaders) 
+        InputStream in,
+        boolean hasHeaders)
         throws IOException
     {
         this.in = in;
         this.hasHeaders = hasHeaders;
         this.crc = new FastCRC24();
-        
+
         if (hasHeaders)
         {
             parseHeaders();
@@ -184,21 +190,55 @@ public class ArmoredInputStream
     }
 
     private ArmoredInputStream(
-        InputStream    in,
-        Builder        builder)
+        InputStream in,
+        Builder builder)
         throws IOException
     {
         this.in = in;
         this.hasHeaders = builder.hasHeaders;
         this.detectMissingChecksum = builder.detectMissingCRC;
         this.crc = builder.ignoreCRC ? null : new FastCRC24();
+        this.validateAllowedHeaders = builder.validateAllowedHeaders;
+        this.allowedHeaders = builder.allowedHeaders;
 
         if (hasHeaders)
         {
             parseHeaders();
         }
 
+        if (validateAllowedHeaders)
+        {
+            rejectUnknownHeadersInCSFMessages();
+        }
+
         start = false;
+    }
+
+    private void rejectUnknownHeadersInCSFMessages()
+        throws ArmoredInputException
+    {
+        Iterator<String> headerLines = headerList.iterator();
+        String header = (String)headerLines.next();
+
+        // Only reject unknown headers in cleartext signed messages
+        if (!header.startsWith("-----BEGIN PGP SIGNED MESSAGE-----"))
+        {
+            return;
+        }
+
+        outerloop:
+        while (headerLines.hasNext())
+        {
+            String headerLine = (String)headerLines.next();
+            for (Iterator it = allowedHeaders.iterator(); it.hasNext(); )
+            {
+                if (headerLine.startsWith((String)it.next() + ": "))
+                {
+                    continue outerloop;
+                }
+            }
+            throw new ArmoredInputException("Illegal ASCII armor header line in clearsigned message encountered: " + headerLine);
+        }
     }
 
     public int available()
@@ -206,18 +246,18 @@ public class ArmoredInputStream
     {
         return in.available();
     }
-    
+
     private boolean parseHeaders()
         throws IOException
     {
         header = null;
-        
-        int        c;
-        int        last = 0;
-        boolean    headerFound = false;
-        
+
+        int c;
+        int last = 0;
+        boolean headerFound = false;
+
         headerList = Strings.newList();
-        
+
         //
         // if restart we already have a header
         //
@@ -234,15 +274,15 @@ public class ArmoredInputStream
                     headerFound = true;
                     break;
                 }
-    
+
                 last = c;
             }
         }
 
         if (headerFound)
         {
-            boolean         eolReached = false;
-            boolean         crLf = false;
+            boolean eolReached = false;
+            boolean crLf = false;
 
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
             buf.write('-');
@@ -251,7 +291,7 @@ public class ArmoredInputStream
             {
                 buf.write('-');
             }
-            
+
             while ((c = in.read()) >= 0)
             {
                 if (last == '\r' && c == '\n')
@@ -268,7 +308,16 @@ public class ArmoredInputStream
                 }
                 if (c == '\r' || (last != '\r' && c == '\n'))
                 {
-                    String line = Strings.fromUTF8ByteArray(buf.toByteArray());
+                    String line;
+
+                    try
+                    {
+                        line = Strings.fromUTF8ByteArray(buf.toByteArray());
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ArmoredInputException(e.getMessage());
+                    }
                     if (line.trim().length() == 0)
                     {
                         break;
@@ -293,10 +342,10 @@ public class ArmoredInputStream
                         eolReached = true;
                     }
                 }
-                
+
                 last = c;
             }
-            
+
             if (crLf)
             {
                 int nl = in.read(); // skip last \n
@@ -306,12 +355,12 @@ public class ArmoredInputStream
                 }
             }
         }
-        
+
         if (headerList.size() > 0)
         {
             header = headerList.get(0);
         }
-        
+
         clearText = "-----BEGIN PGP SIGNED MESSAGE-----".equals(header);
         newLineFound = true;
 
@@ -337,15 +386,17 @@ public class ArmoredInputStream
 
     /**
      * Return the armor header line (if there is one)
+     *
      * @return the armor header line, null if none present.
      */
-    public String    getArmorHeaderLine()
+    public String getArmorHeaderLine()
     {
         return header;
     }
-    
+
     /**
      * Return the armor headers (the lines after the armor header line),
+     *
      * @return an array of armor headers, null if there aren't any.
      */
     public String[] getArmorHeaders()
@@ -357,12 +408,12 @@ public class ArmoredInputStream
 
         return headerList.toStringArray(1, headerList.size());
     }
-    
-    private int readIgnoreSpace() 
+
+    private int readIgnoreSpace()
         throws IOException
     {
-        int    c = in.read();
-        
+        int c = in.read();
+
         while (c == ' ' || c == '\t' || c == '\f' || c == '\u000B') // \u000B ~ \v
         {
             c = in.read();
@@ -375,11 +426,11 @@ public class ArmoredInputStream
 
         return c;
     }
-    
+
     public int read()
         throws IOException
     {
-        int    c;
+        int c;
 
         if (start)
         {
@@ -394,7 +445,7 @@ public class ArmoredInputStream
             }
             start = false;
         }
-        
+
         if (clearText)
         {
             c = in.read();
@@ -425,25 +476,25 @@ public class ArmoredInputStream
                     newLineFound = false;
                 }
             }
-            
+
             lastC = c;
 
             if (c < 0)
             {
                 isEndOfStream = true;
             }
-            
+
             return c;
         }
 
         if (bufPtr > 2 || crcFound)
         {
             c = readIgnoreSpace();
-            
+
             if (c == '\r' || c == '\n')
             {
                 c = readIgnoreSpace();
-                
+
                 while (c == '\n' || c == '\r')
                 {
                     c = readIgnoreSpace();
@@ -533,24 +584,24 @@ public class ArmoredInputStream
      * an array of bytes.  An attempt is made to read as many as
      * <code>len</code> bytes, but a smaller number may be read.
      * The number of bytes actually read is returned as an integer.
-     *
+     * <p>
      * The first byte read is stored into element <code>b[off]</code>, the
      * next one into <code>b[off+1]</code>, and so on. The number of bytes read
      * is, at most, equal to <code>len</code>.
-     *
+     * <p>
      * NOTE: We need to override the custom behavior of Java's {@link InputStream#read(byte[], int, int)},
      * as the upstream method silently swallows {@link IOException IOExceptions}.
      * This would cause CRC checksum errors to go unnoticed.
      *
-     * @see <a href="https://github.com/bcgit/bc-java/issues/998">Related BC bug report</a>
-     * @param b byte array
+     * @param b   byte array
      * @param off offset at which we start writing data to the array
      * @param len number of bytes we write into the array
      * @return total number of bytes read into the buffer
-     *
      * @throws IOException if an exception happens AT ANY POINT
+     * @see <a href="https://github.com/bcgit/bc-java/issues/998">Related BC bug report</a>
      */
-    public int read(byte[] b, int off, int len) throws IOException
+    public int read(byte[] b, int off, int len)
+        throws IOException
     {
         checkIndexSize(b.length, off, len);
 
@@ -567,7 +618,7 @@ public class ArmoredInputStream
         b[off] = (byte)c;
 
         int i = 1;
-        for (; i < len ; i++)
+        for (; i < len; i++)
         {
             c = read();
             if (c == -1)
@@ -610,6 +661,17 @@ public class ArmoredInputStream
         this.detectMissingChecksum = detectMissing;
     }
 
+    private static List<String> defaultAllowedHeaders()
+    {
+        List<String> allowedHeaders = new ArrayList<String>();
+        allowedHeaders.add(ArmoredOutputStream.COMMENT_HDR);
+        allowedHeaders.add(ArmoredOutputStream.VERSION_HDR);
+        allowedHeaders.add(ArmoredOutputStream.CHARSET_HDR);
+        allowedHeaders.add(ArmoredOutputStream.HASH_HDR);
+        allowedHeaders.add(ArmoredOutputStream.MESSAGE_ID_HDR);
+        return allowedHeaders;
+    }
+
     public static Builder builder()
     {
         return new Builder();
@@ -620,6 +682,8 @@ public class ArmoredInputStream
         private boolean hasHeaders = true;
         private boolean detectMissingCRC = false;
         private boolean ignoreCRC = false;
+        private boolean validateAllowedHeaders = false;
+        private List<String> allowedHeaders = defaultAllowedHeaders();
 
         private Builder()
         {
@@ -636,6 +700,18 @@ public class ArmoredInputStream
         {
             this.hasHeaders = hasHeaders;
 
+            return this;
+        }
+
+        public Builder setValidateClearsignedMessageHeaders(boolean validateHeaders)
+        {
+            this.validateAllowedHeaders = validateHeaders;
+            return this;
+        }
+
+        public Builder addAllowedArmorHeader(String header)
+        {
+            allowedHeaders.add(header.trim());
             return this;
         }
 

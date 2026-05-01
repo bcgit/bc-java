@@ -23,7 +23,7 @@ public class RegularExpression
             byte[] data)
     {
         super(SignatureSubpacketTags.REG_EXP, critical, isLongLength, data);
-        if (data[data.length - 1] != 0)
+        if (data.length == 0 || data[data.length - 1] != 0)
         {
             throw new IllegalArgumentException("data in regex missing null termination");
         }

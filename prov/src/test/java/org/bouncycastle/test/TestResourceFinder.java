@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
+import org.bouncycastle.util.Strings;
+
 public class TestResourceFinder
 {
     private static final String dataDirName = "bc-test-data";
@@ -30,7 +32,7 @@ public class TestResourceFinder
 
         if (!dataDir.exists())
         {
-            String ln = System.getProperty("line.separator");
+            String ln = Strings.lineSeparator();
             throw new FileNotFoundException("Test data directory " + dataDirName + " not found." + ln + "Test data available from: https://github.com/bcgit/bc-test-data.git");
         }
 

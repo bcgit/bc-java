@@ -50,7 +50,7 @@ public abstract class KeyPairGeneratorSpi
         String                      algorithm;
         ProviderConfiguration       configuration;
 
-        static private Hashtable    ecParameters;
+        private static final Hashtable ecParameters;
 
         static {
             ecParameters = new Hashtable();

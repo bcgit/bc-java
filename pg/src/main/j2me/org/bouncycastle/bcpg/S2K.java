@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.util.Integers;
 
 
 /**
@@ -436,27 +437,30 @@ public class S2K
             {
                 throw new IllegalArgumentException("Argon2 uses 16 bytes of salt");
             }
+            if (passes < 1 | passes > 255)
+            {
+                throw new IllegalArgumentException("Passes MUST be an integer value from 1 to 255.");
+            }
+            if (parallelism < 1 || parallelism > 255)
+            {
+                throw new IllegalArgumentException("Parallelism MUST be an integer value from 1 to 255.");
+            }
+
+            /*
+             * Memory size (i.e. 1 << memorySizeExponent) MUST be an integer number of kibibytes from 8*p to 2^32-1.
+             * Max here is 30 because we are treating memory size as a signed 32-bit value.
+             */
+            int minExp = 3 + Integers.bitLength(parallelism - 1);
+            int maxExp = 30;
+            if (memSizeExp < minExp || memSizeExp > maxExp)
+            {
+                throw new IllegalArgumentException(
+                    "Memory size exponent MUST be an integer value from 3 + bitlen(parallelism - 1) to 30.");
+            }
+
             this.salt = salt;
-
-            if (passes < 1)
-            {
-                throw new IllegalArgumentException("Number of passes MUST be positive, non-zero");
-            }
             this.passes = passes;
-
-            if (parallelism < 1)
-            {
-                throw new IllegalArgumentException("Parallelism MUST be positive, non-zero.");
-            }
             this.parallelism = parallelism;
-
-            // log_2(p) = log_e(p) / log_e(2)
-            //double log2_p = Math.log((double)parallelism) / Math.log(2.0);
-            // see https://www.rfc-editor.org/rfc/rfc9580.html#section-3.7.1.4-5
-            //if (memSizeExp < (3 + Math.ceil(log2_p)) || memSizeExp > 31)
-            //{
-                //throw new IllegalArgumentException("Memory size exponent MUST be between 3+ceil(log_2(parallelism)) and 31");
-            //}
             this.memSizeExp = memSizeExp;
         }
 

@@ -140,6 +140,11 @@ public class CBZip2InputStream
         beginBlock();
     }
 
+    public void close() throws IOException
+    {
+        implClose(true);
+    }
+
     public int read()
         throws IOException
     {
@@ -186,7 +191,7 @@ public class CBZip2InputStream
                 throw new IOException("Stream CRC error");
             }
 
-            bsFinishedWithStream();
+            // TODO If not a LeaveOpen stream, should we check that we are at the end of stream here?
             streamEnd = true;
             return;
         }
@@ -250,22 +255,16 @@ public class CBZip2InputStream
         streamCRC = Integers.rotateLeft(streamCRC, 1) ^ blockFinalCRC;
     }
 
-    private void bsFinishedWithStream()
+    private void implClose(boolean closeInput) throws IOException
     {
-        try
+        if (this.bsStream != null)
         {
-            if (this.bsStream != null)
+            if (closeInput)
             {
-                if (this.bsStream != System.in)
-                {
-                    this.bsStream.close();
-                    this.bsStream = null;
-                }
+                this.bsStream.close();
             }
-        }
-        catch (IOException ioe)
-        {
-            //ignore
+
+            this.bsStream = null;
         }
     }
 

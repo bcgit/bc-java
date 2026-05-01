@@ -10,10 +10,12 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.BasicTlsPSKExternal;
 import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.PskIdentity;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsPSKExternal;
@@ -25,9 +27,18 @@ import org.bouncycastle.util.Strings;
 class MockPSKTls13Server
     extends AbstractTlsServer
 {
+    private final boolean badKey;
+
     MockPSKTls13Server()
     {
+        this(false);
+    }
+
+    MockPSKTls13Server(boolean badKey)
+    {
         super(new BcTlsCrypto());
+
+        this.badKey = badKey;
     }
 
     public TlsCredentials getCredentials() throws IOException
@@ -46,7 +57,7 @@ class MockPSKTls13Server
     protected int[] getSupportedCipherSuites()
     {
         return TlsUtils.getSupportedCipherSuites(getCrypto(),
-            new int[] { CipherSuite.TLS_AES_128_CCM_8_SHA256, CipherSuite.TLS_AES_128_CCM_SHA256,
+            new int[]{ CipherSuite.TLS_AES_128_CCM_8_SHA256, CipherSuite.TLS_AES_128_CCM_SHA256,
                 CipherSuite.TLS_AES_128_GCM_SHA256, CipherSuite.TLS_CHACHA20_POLY1305_SHA256 });
     }
 
@@ -59,7 +70,7 @@ class MockPSKTls13Server
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS 1.3 PSK server negotiated " + serverVersion);
+        System.out.println("TLS 1.3 PSK server negotiated version " + serverVersion);
 
         return serverVersion;
     }
@@ -75,7 +86,7 @@ class MockPSKTls13Server
         {
             if (matchIdentity.equals(identities.elementAt(i)))
             {
-                TlsSecret key = getCrypto().createSecret(Strings.toUTF8ByteArray("TLS_TEST_PSK"));
+                TlsSecret key = getCrypto().createSecret(TlsTestUtils.getPSKPasswordUTF8(badKey));
                 int prfAlgorithm = PRFAlgorithm.tls13_hkdf_sha256;
 
                 return new BasicTlsPSKExternal(identity, key, prfAlgorithm);
@@ -110,10 +121,18 @@ class MockPSKTls13Server
     {
         super.notifyHandshakeComplete();
 
-        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        SecurityParameters securityParameters = context.getSecurityParametersConnection();
+
+        ProtocolName protocolName = securityParameters.getApplicationProtocol();
         if (protocolName != null)
         {
             System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
+        }
+
+        int negotiatedGroup = securityParameters.getNegotiatedGroup();
+        if (negotiatedGroup >= 0)
+        {
+            System.out.println("Server negotiated group: " + NamedGroup.getText(negotiatedGroup));
         }
     }
 

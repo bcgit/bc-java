@@ -1,26 +1,26 @@
 package org.bouncycastle.crypto.digests;
 
-
-/*  The BLAKE2 cryptographic hash function was designed by Jean-
- Philippe Aumasson, Samuel Neves, Zooko Wilcox-O'Hearn, and Christian
- Winnerlein.
-   
- Reference Implementation and Description can be found at: https://blake2.net/      
- Internet Draft: https://tools.ietf.org/html/draft-saarinen-blake2-02
-
- This implementation does not support the Tree Hashing Mode. 
- 
-   For unkeyed hashing, developers adapting BLAKE2 to ASN.1 - based
-   message formats SHOULD use the OID tree at x = 1.3.6.1.4.1.1722.12.2.
-
-         Algorithm     | Target | Collision | Hash | Hash ASN.1 |
-            Identifier |  Arch  |  Security |  nn  | OID Suffix |
-        ---------------+--------+-----------+------+------------+
-         id-blake2b160 | 64-bit |   2**80   |  20  |   x.1.20   |
-         id-blake2b256 | 64-bit |   2**128  |  32  |   x.1.32   |
-         id-blake2b384 | 64-bit |   2**192  |  48  |   x.1.48   |
-         id-blake2b512 | 64-bit |   2**256  |  64  |   x.1.64   |
-        ---------------+--------+-----------+------+------------+
+/*
+ * The BLAKE2 cryptographic hash function was designed by Jean-Philippe Aumasson, Samuel Neves, Zooko Wilcox-O'Hearn,
+ * and Christian Winnerlein.
+ *
+ * Reference Implementation and Description can be found at: https://blake2.net/
+ * RFC: https://tools.ietf.org/html/rfc7693
+ *
+ * This implementation does not support the Tree Hashing Mode.
+ *
+ * For unkeyed hashing, developers adapting BLAKE2 to ASN.1-based message formats SHOULD use the OID tree at:
+ *     x = 1.3.6.1.4.1.1722.12.2.
+ *
+ * +---------------+--------+-----------+------+------------+
+ * | Algorithm     | Target | Collision | Hash | Hash ASN.1 |
+ * |    Identifier |  Arch  |  Security |  nn  | OID Suffix |
+ * +---------------+--------+-----------+------+------------+
+ * | id-blake2b160 | 64-bit |   2**80   |  20  |   x.1.20   |
+ * | id-blake2b256 | 64-bit |   2**128  |  32  |   x.1.32   |
+ * | id-blake2b384 | 64-bit |   2**192  |  48  |   x.1.48   |
+ * | id-blake2b512 | 64-bit |   2**256  |  64  |   x.1.64   |
+ * +---------------+--------+-----------+------+------------+
  */
 
 import org.bouncycastle.crypto.CryptoServicePurpose;
@@ -31,57 +31,55 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
-
 /**
- * Implementation of the cryptographic hash function Blakbe2b.
+ * Implementation of the cryptographic hash function BLAKE2b. BLAKE2b is optimized for 64-bit platforms and produces
+ * digests of any size between 1 and 64 bytes.
  * <p>
- * Blake2b offers a built-in keying mechanism to be used directly
- * for authentication ("Prefix-MAC") rather than a HMAC construction.
+ * BLAKE2b offers a built-in keying mechanism to be used directly for authentication ("Prefix-MAC") rather than an HMAC
+ * construction.
  * <p>
- * Blake2b offers a built-in support for a salt for randomized hashing
- * and a personal string for defining a unique hash function for each application.
- * <p>
- * BLAKE2b is optimized for 64-bit platforms and produces digests of any size
- * between 1 and 64 bytes.
+ * BLAKE2b offers built-in support for a salt for randomized hashing and a personal string for defining a unique hash
+ * function for each application.
  */
 public class Blake2bDigest
     implements ExtendedDigest
 {
-    // Blake2b Initialization Vector:
+    /*
+     * BLAKE2b Initialization Vector (the same as SHA-512 IV).
+     *
+     * Produced from the square root of primes 2, 3, 5, 7, 11, 13, 17, 19.
+     */
     private final static long[] blake2b_IV =
-        // Produced from the square root of primes 2, 3, 5, 7, 11, 13, 17, 19.
-        // The same as SHA-512 IV.
-        {
-            0x6a09e667f3bcc908L, 0xbb67ae8584caa73bL, 0x3c6ef372fe94f82bL,
-            0xa54ff53a5f1d36f1L, 0x510e527fade682d1L, 0x9b05688c2b3e6c1fL,
-            0x1f83d9abfb41bd6bL, 0x5be0cd19137e2179L
-        };
+    {
+        0x6a09e667f3bcc908L, 0xbb67ae8584caa73bL, 0x3c6ef372fe94f82bL, 0xa54ff53a5f1d36f1L,
+        0x510e527fade682d1L, 0x9b05688c2b3e6c1fL, 0x1f83d9abfb41bd6bL, 0x5be0cd19137e2179L
+    };
 
     // Message word permutations:
     private final static byte[][] blake2b_sigma =
-        {
-            {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-            {14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3},
-            {11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4},
-            {7, 9, 3, 1, 13, 12, 11, 14, 2, 6, 5, 10, 4, 0, 15, 8},
-            {9, 0, 5, 7, 2, 4, 10, 15, 14, 1, 11, 12, 6, 8, 3, 13},
-            {2, 12, 6, 10, 0, 11, 8, 3, 4, 13, 7, 5, 15, 14, 1, 9},
-            {12, 5, 1, 15, 14, 13, 4, 10, 0, 7, 6, 3, 9, 2, 8, 11},
-            {13, 11, 7, 14, 12, 1, 3, 9, 5, 0, 15, 4, 8, 6, 2, 10},
-            {6, 15, 14, 9, 11, 3, 0, 8, 12, 2, 13, 7, 1, 4, 10, 5},
-            {10, 2, 8, 4, 7, 6, 1, 5, 15, 11, 9, 14, 3, 12, 13, 0},
-            {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-            {14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3}
-        };
+    {
+        {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+        {14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3},
+        {11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4},
+        {7, 9, 3, 1, 13, 12, 11, 14, 2, 6, 5, 10, 4, 0, 15, 8},
+        {9, 0, 5, 7, 2, 4, 10, 15, 14, 1, 11, 12, 6, 8, 3, 13},
+        {2, 12, 6, 10, 0, 11, 8, 3, 4, 13, 7, 5, 15, 14, 1, 9},
+        {12, 5, 1, 15, 14, 13, 4, 10, 0, 7, 6, 3, 9, 2, 8, 11},
+        {13, 11, 7, 14, 12, 1, 3, 9, 5, 0, 15, 4, 8, 6, 2, 10},
+        {6, 15, 14, 9, 11, 3, 0, 8, 12, 2, 13, 7, 1, 4, 10, 5},
+        {10, 2, 8, 4, 7, 6, 1, 5, 15, 11, 9, 14, 3, 12, 13, 0},
+        {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+        {14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3}
+    };
 
-    private static int ROUNDS = 12; // to use for Catenas H'
+    private final static int ROUNDS = 12; // to use for Catenas H'
     private final static int BLOCK_LENGTH_BYTES = 128;// bytes
 
     // General parameters:
-    private int digestLength = 64; // 1- 64 bytes
+    private int digestLength = 64; // 1 - 64 bytes
     private int keyLength = 0; // 0 - 64 bytes for keyed hashing for MAC
-    private byte[] salt = null;// new byte[16];
-    private byte[] personalization = null;// new byte[16];
+    private byte[] salt = null;
+    private byte[] personalization = null;
 
     // the key
     private byte[] key = null;
@@ -90,33 +88,32 @@ public class Blake2bDigest
     // Because this class does not implement the Tree Hashing Mode,
     // these parameters can be treated as constants (see init() function)
 
-     private int fanout = 1; // 0-255
-     private int depth = 1; // 1 - 255
-     private int leafLength= 0;
-     private long nodeOffset = 0L;
-     private int nodeDepth = 0;
-     private int innerHashLength = 0;
+    private int fanout = 1; // 0 - 255
+    private int depth = 1; // 1 - 255
+    private int leafLength= 0;
+    private long nodeOffset = 0L;
+    private int nodeDepth = 0;
+    private int innerHashLength = 0;
 
-     private boolean isLastNode = false;
+    private boolean isLastNode = false;
 
     // whenever this buffer overflows, it will be processed
     // in the compress() function.
     // For performance issues, long messages will not use this buffer.
-    private byte[] buffer = null;// new byte[BLOCK_LENGTH_BYTES];
-    // Position of last inserted byte:
-    private int bufferPos = 0;// a value from 0 up to 128
+    private final byte[] buffer = new byte[BLOCK_LENGTH_BYTES];
 
-    private long[] internalState = new long[16]; // In the Blake2b paper it is
-    // called: v
-    private long[] chainValue = null; // state vector, in the Blake2b paper it
-    // is called: h
+    // Position of last inserted byte:
+    private int bufferPos = 0; // a value from 0 up to BLOCK_LENGTH_BYTES
+
+    private final long[] internalState = new long[16]; // In the BLAKE2 paper it is called: v
+    private final long[] chainValue = new long[8]; // state vector, in the BLAKE2 paper it is called: h
 
     private long t0 = 0L; // holds last significant bits, counter (counts bytes)
     private long t1 = 0L; // counter: Length up to 2^128 are supported
     private long f0 = 0L; // finalization flag, for last block: ~0L
 
     // For Tree Hashing Mode, not used here:
-     private long f1 = 0L; // finalization flag, for last node: ~0L
+    private long f1 = 0L; // finalization flag, for last node: ~0L
 
     // digest purpose
     private final CryptoServicePurpose purpose;
@@ -125,7 +122,6 @@ public class Blake2bDigest
     {
         this(512, CryptoServicePurpose.ANY);
     }
-
 
     /**
      * Basic sized constructor - size in bits.
@@ -137,22 +133,21 @@ public class Blake2bDigest
         this(digestSize, CryptoServicePurpose.ANY);
     }
 
-
     public Blake2bDigest(Blake2bDigest digest)
     {
+        System.arraycopy(digest.chainValue, 0, chainValue, 0, 8);
+        System.arraycopy(digest.buffer, 0, buffer, 0, BLOCK_LENGTH_BYTES);
+
         this.bufferPos = digest.bufferPos;
-        this.buffer = Arrays.clone(digest.buffer);
         this.keyLength = digest.keyLength;
         this.key = Arrays.clone(digest.key);
         this.digestLength = digest.digestLength;
-        this.chainValue = Arrays.clone(digest.chainValue);
         this.personalization = Arrays.clone(digest.personalization);
         this.salt = Arrays.clone(digest.salt);
         this.t0 = digest.t0;
         this.t1 = digest.t1;
         this.f0 = digest.f0;
         this.purpose = digest.purpose;
-
     }
 
     /**
@@ -169,7 +164,6 @@ public class Blake2bDigest
                 "BLAKE2b digest bit length must be a multiple of 8 and not greater than 512");
         }
 
-        buffer = new byte[BLOCK_LENGTH_BYTES];
         keyLength = 0;
         this.digestLength = digestSize / 8;
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestSize, purpose));
@@ -177,7 +171,7 @@ public class Blake2bDigest
     }
 
     /**
-     * Blake2b for authentication ("Prefix-MAC mode").
+     * BLAKE2b for authentication ("Prefix-MAC mode").
      * After calling the doFinal() method, the key will
      * remain to be used for further computations of
      * this instance.
@@ -190,19 +184,17 @@ public class Blake2bDigest
     {
         this(key, CryptoServicePurpose.ANY);
     }
+
     public Blake2bDigest(byte[] key, CryptoServicePurpose purpose)
     {
-        buffer = new byte[BLOCK_LENGTH_BYTES];
         if (key != null)
         {
-            this.key = new byte[key.length];
-            System.arraycopy(key, 0, this.key, 0, key.length);
-
             if (key.length > 64)
             {
-                throw new IllegalArgumentException(
-                    "Keys > 64 are not supported");
+                throw new IllegalArgumentException("Keys > 64 bytes are not supported");
             }
+            this.key = new byte[key.length];
+            System.arraycopy(key, 0, this.key, 0, key.length);
             keyLength = key.length;
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
@@ -215,7 +207,7 @@ public class Blake2bDigest
     }
 
     /**
-     * Blake2b with key, required digest length (in bytes), salt and personalization.
+     * BLAKE2b with key, required digest length (in bytes), salt and personalization.
      * After calling the doFinal() method, the key, the salt and the personal string
      * will remain and might be used for further computations with this instance.
      * The key can be overwritten using the clearKey() method, the salt (pepper)
@@ -234,7 +226,7 @@ public class Blake2bDigest
     public Blake2bDigest(byte[] key, int digestLength, byte[] salt, byte[] personalization, CryptoServicePurpose purpose)
     {
         this.purpose = purpose;
-        buffer = new byte[BLOCK_LENGTH_BYTES];
+
         if (digestLength < 1 || digestLength > 64)
         {
             throw new IllegalArgumentException(
@@ -264,14 +256,13 @@ public class Blake2bDigest
         }
         if (key != null)
         {
-            this.key = new byte[key.length];
-            System.arraycopy(key, 0, this.key, 0, key.length);
-
             if (key.length > 64)
             {
                 throw new IllegalArgumentException(
-                    "Keys > 64 are not supported");
+                    "Keys > 64 bytes are not supported");
             }
+            this.key = new byte[key.length];
+            System.arraycopy(key, 0, this.key, 0, key.length);
             keyLength = key.length;
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
@@ -281,9 +272,8 @@ public class Blake2bDigest
         init();
     }
 
-    public Blake2bDigest (byte[] key, byte[] param)
+    public Blake2bDigest(byte[] key, byte[] param)
     {
-        buffer = new byte[BLOCK_LENGTH_BYTES];
 //        if (key != null)
 //        {
 //            this.key = new byte[key.length];
@@ -292,7 +282,7 @@ public class Blake2bDigest
 //            if (key.length > 64)
 //            {
 //                throw new IllegalArgumentException(
-//                        "Keys > 64 are not supported");
+//                        "Keys > 64 bytes are not supported");
 //            }
 //            keyLength = key.length;
 //            System.arraycopy(key, 0, buffer, 0, key.length);
@@ -319,32 +309,27 @@ public class Blake2bDigest
     // initialize chainValue
     private void init()
     {
-        if (chainValue == null)
+        chainValue[0] = blake2b_IV[0]
+            ^ (digestLength | (keyLength << 8) | ((fanout << 16) | (depth << 24) | (leafLength << 32)));
+        chainValue[1] = blake2b_IV[1] ^ nodeOffset;
+        chainValue[2] = blake2b_IV[2] ^ ( nodeDepth | (innerHashLength << 8) );
+
+        chainValue[3] = blake2b_IV[3];
+
+        chainValue[4] = blake2b_IV[4];
+        chainValue[5] = blake2b_IV[5];
+        if (salt != null)
         {
-            chainValue = new long[8];
+            chainValue[4] ^= Pack.littleEndianToLong(salt, 0);
+            chainValue[5] ^= Pack.littleEndianToLong(salt, 8);
+        }
 
-            chainValue[0] = blake2b_IV[0]
-                ^ (digestLength | (keyLength << 8) | ((fanout << 16) | (depth << 24) | (leafLength << 32)));
-            chainValue[1] = blake2b_IV[1] ^ nodeOffset;
-            chainValue[2] = blake2b_IV[2] ^ ( nodeDepth | (innerHashLength << 8) );
-
-            chainValue[3] = blake2b_IV[3];
-
-            chainValue[4] = blake2b_IV[4];
-            chainValue[5] = blake2b_IV[5];
-            if (salt != null)
-            {
-                chainValue[4] ^= Pack.littleEndianToLong(salt, 0);
-                chainValue[5] ^= Pack.littleEndianToLong(salt, 8);
-            }
-
-            chainValue[6] = blake2b_IV[6];
-            chainValue[7] = blake2b_IV[7];
-            if (personalization != null)
-            {
-                chainValue[6] ^= Pack.littleEndianToLong(personalization, 0);
-                chainValue[7] ^= Pack.littleEndianToLong(personalization, 8);
-            }
+        chainValue[6] = blake2b_IV[6];
+        chainValue[7] = blake2b_IV[7];
+        if (personalization != null)
+        {
+            chainValue[6] ^= Pack.littleEndianToLong(personalization, 0);
+            chainValue[7] ^= Pack.littleEndianToLong(personalization, 8);
         }
     }
 
@@ -366,17 +351,12 @@ public class Blake2bDigest
      */
     public void update(byte b)
     {
-        int remainingLength = 0; // left bytes of buffer
-
         // process the buffer if full else add to buffer:
-        remainingLength = BLOCK_LENGTH_BYTES - bufferPos;
+        int remainingLength = BLOCK_LENGTH_BYTES - bufferPos;
         if (remainingLength == 0)
-        { // full buffer
-            t0 += BLOCK_LENGTH_BYTES;
-            if (t0 == 0)
-            { // if message > 2^64
-                t1++;
-            }
+        {
+            // full buffer
+            incrementCounter(BLOCK_LENGTH_BYTES);
             compress(buffer, 0);
             Arrays.fill(buffer, (byte)0);// clear buffer
             buffer[0] = b;
@@ -384,9 +364,7 @@ public class Blake2bDigest
         }
         else
         {
-            buffer[bufferPos] = b;
-            bufferPos++;
-            return;
+            buffer[bufferPos++] = b;
         }
     }
 
@@ -399,7 +377,6 @@ public class Blake2bDigest
      */
     public void update(byte[] message, int offset, int len)
     {
-
         if (message == null || len == 0)
         {
             return;
@@ -408,54 +385,44 @@ public class Blake2bDigest
         int remainingLength = 0; // left bytes of buffer
 
         if (bufferPos != 0)
-        { // commenced, incomplete buffer
+        {
+            // commenced, incomplete buffer
 
             // complete the buffer:
             remainingLength = BLOCK_LENGTH_BYTES - bufferPos;
-            if (remainingLength < len)
-            { // full buffer + at least 1 byte
-                System.arraycopy(message, offset, buffer, bufferPos,
-                    remainingLength);
-                t0 += BLOCK_LENGTH_BYTES;
-                if (t0 == 0)
-                { // if message > 2^64
-                    t1++;
-                }
-                compress(buffer, 0);
-                bufferPos = 0;
-                Arrays.fill(buffer, (byte)0);// clear buffer
-            }
-            else
+            if (remainingLength >= len)
             {
                 System.arraycopy(message, offset, buffer, bufferPos, len);
                 bufferPos += len;
                 return;
             }
+
+            // full buffer + at least 1 byte
+            System.arraycopy(message, offset, buffer, bufferPos, remainingLength);
+            incrementCounter(BLOCK_LENGTH_BYTES);
+            compress(buffer, 0);
+            bufferPos = 0;
+            Arrays.fill(buffer, (byte)0);// clear buffer
         }
 
         // process blocks except last block (also if last block is full)
-        int messagePos;
         int blockWiseLastPos = offset + len - BLOCK_LENGTH_BYTES;
-        for (messagePos = offset + remainingLength; messagePos < blockWiseLastPos; messagePos += BLOCK_LENGTH_BYTES)
-        { // block wise 128 bytes
-            // without buffer:
-            t0 += BLOCK_LENGTH_BYTES;
-            if (t0 == 0)
-            {
-                t1++;
-            }
+        int messagePos = offset + remainingLength;
+        while (messagePos < blockWiseLastPos)
+        {
+            // block wise 128 bytes without buffer:
+            incrementCounter(BLOCK_LENGTH_BYTES);
             compress(message, messagePos);
+            messagePos += BLOCK_LENGTH_BYTES;
         }
 
         // fill the buffer with left bytes, this might be a full block
-        System.arraycopy(message, messagePos, buffer, 0, offset + len
-            - messagePos);
+        System.arraycopy(message, messagePos, buffer, 0, offset + len - messagePos);
         bufferPos += offset + len - messagePos;
     }
 
     /**
-     * close the digest, producing the final digest value. The doFinal
-     * call leaves the digest reset.
+     * Close the digest, producing the final digest value. The doFinal() call leaves the digest reset.
      * Key, salt and personal string remain.
      *
      * @param out       the array the digest is to be copied into.
@@ -471,27 +438,22 @@ public class Blake2bDigest
         f0 = 0xFFFFFFFFFFFFFFFFL;
         if(isLastNode)
         {
-            f1 = 0xFFFFFFFF;
+            f1 = 0xFFFFFFFFFFFFFFFFL;
         }
-        t0 += bufferPos;
-        if (bufferPos > 0 && t0 == 0)
+
+        if (bufferPos > 0)
         {
-            t1++;
+            incrementCounter(bufferPos);
         }
+
         compress(buffer, 0);
-        Arrays.fill(buffer, (byte)0);// Holds eventually the key if input is null
-        Arrays.fill(internalState, 0L);
 
         int full = digestLength >>> 3, partial = digestLength & 7;
         Pack.longToLittleEndian(chainValue, 0, full, out, outOffset);
         if (partial > 0)
         {
-            byte[] bytes = new byte[8];
-            Pack.longToLittleEndian(chainValue[full], bytes, 0);
-            System.arraycopy(bytes, 0, out, outOffset + digestLength - partial, partial);
+            Pack.longToLittleEndian_Low(chainValue[full], out, outOffset + digestLength - partial, partial);
         }
-
-        Arrays.fill(chainValue, 0L);
 
         reset();
 
@@ -499,25 +461,27 @@ public class Blake2bDigest
     }
 
     /**
-     * Reset the digest back to it's initial state.
-     * The key, the salt and the personal string will
-     * remain for further computations.
+     * Reset the digest back to it's initial state. The key, the salt and the personal string will remain for further
+     * computations.
      */
     public void reset()
     {
         bufferPos = 0;
         f0 = 0L;
-        f1 = 0;
+        f1 = 0L;
         t0 = 0L;
         t1 = 0L;
         isLastNode = false;
-        chainValue = null;
+
+        Arrays.fill(internalState, 0L);
+
         Arrays.fill(buffer, (byte)0);
         if (key != null)
         {
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
         }
+
         init();
     }
 
@@ -530,9 +494,7 @@ public class Blake2bDigest
 
         for (int round = 0; round < ROUNDS; round++)
         {
-
-            // G apply to columns of internalState:m[blake2b_sigma[round][2 *
-            // blockPos]] /+1
+            // G apply to columns of internalState:m[blake2b_sigma[round][2 * blockPos]] /+1
             G(m[blake2b_sigma[round][0]], m[blake2b_sigma[round][1]], 0, 4, 8, 12);
             G(m[blake2b_sigma[round][2]], m[blake2b_sigma[round][3]], 1, 5, 9, 13);
             G(m[blake2b_sigma[round][4]], m[blake2b_sigma[round][5]], 2, 6, 10, 14);
@@ -553,7 +515,6 @@ public class Blake2bDigest
 
     private void G(long m1, long m2, int posA, int posB, int posC, int posD)
     {
-
         internalState[posA] = internalState[posA] + internalState[posB] + m1;
         internalState[posD] = Longs.rotateRight(internalState[posD] ^ internalState[posA], 32);
         internalState[posC] = internalState[posC] + internalState[posD];
@@ -590,8 +551,7 @@ public class Blake2bDigest
     }
 
     /**
-     * Return the size in bytes of the internal buffer the digest applies it's compression
-     * function to.
+     * Return the size in bytes of the internal buffer the digest applies it's compression function to.
      *
      * @return byte length of the digests internal buffer.
      */
@@ -601,8 +561,7 @@ public class Blake2bDigest
     }
 
     /**
-     * Overwrite the key
-     * if it is no longer used (zeroization)
+     * Overwrite the key if it is no longer used (zeroization)
      */
     public void clearKey()
     {
@@ -614,14 +573,25 @@ public class Blake2bDigest
     }
 
     /**
-     * Overwrite the salt (pepper) if it
-     * is secret and no longer used (zeroization)
+     * Overwrite the salt (pepper) if it is secret and no longer used (zeroization)
      */
     public void clearSalt()
     {
         if (salt != null)
         {
             Arrays.fill(salt, (byte)0);
+        }
+    }
+
+    private void incrementCounter(int count)
+    {
+//        assert count > 0;
+
+        long count64 = (long)count;
+        t0 += count64;
+        if (Longs.compareUnsigned(t0, count64) < 0)
+        {
+            ++t1;
         }
     }
 }

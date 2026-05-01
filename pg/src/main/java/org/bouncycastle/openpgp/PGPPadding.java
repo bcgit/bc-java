@@ -95,7 +95,7 @@ public class PGPPadding
      */
     public PGPPadding(int len, SecureRandom random)
     {
-        this.p = new PaddingPacket(len, random);
+        this.p = new PaddingPacket(len, CryptoServicesRegistrar.getSecureRandom(random));
     }
 
     /**

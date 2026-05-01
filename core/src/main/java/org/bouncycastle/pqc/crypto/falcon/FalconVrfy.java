@@ -3,11 +3,11 @@ package org.bouncycastle.pqc.crypto.falcon;
 class FalconVrfy
 {
 
-    FalconCommon common;
+//    FalconCommon common;
 
     FalconVrfy()
     {
-        this.common = new FalconCommon();
+//        this.common = new FalconCommon();
     }
     /* ===================================================================== */
     /*
@@ -25,10 +25,10 @@ class FalconVrfy
 //    #define Q0I   12287
 //    #define R      4091
 //    #define R2    10952
-    final int Q = 12289;
-    final int Q0I = 12287;
-    final int R = 4091;
-    final int R2 = 10952;
+    static final int Q = 12289;
+    static final int Q0I = 12287;
+    static final int R = 4091;
+    static final int R2 = 10952;
 
     /*
      * Table for NTT, binary case:
@@ -36,7 +36,7 @@ class FalconVrfy
      * where g = 7 (it is a 2048-th primitive root of 1 modulo q)
      * and rev() is the bit-reversal function over 10 bits.
      */
-    final short[] GMb = {
+    static final short[] GMb = {
         4091, 7888, 11060, 11208, 6960, 4342, 6275, 9759,
         1591, 6399, 9477, 5266, 586, 5825, 7538, 9710,
         1134, 6407, 1711, 965, 7099, 7674, 3743, 6442,
@@ -172,7 +172,7 @@ class FalconVrfy
      *   iGMb[x] = R*((1/g)^rev(x)) mod q
      * Since g = 7, 1/g = 8778 mod 12289.
      */
-    final short[] iGMb = {
+    static final short[] iGMb = {
         4091, 4401, 1081, 1229, 2530, 6014, 7947, 5329,
         2579, 4751, 6464, 11703, 7023, 2812, 5890, 10698,
         3109, 2125, 1960, 10925, 10601, 10404, 4189, 1875,
@@ -307,23 +307,23 @@ class FalconVrfy
      * Reduce a small signed integer modulo q. The source integer MUST
      * be between -q/2 and +q/2.
      */
-    int mq_conv_small(int x)
+    static int mq_conv_small(int x)
     {
         /*
          * If x < 0, the cast to uint32_t will set the high bit to 1.
          * ^ in Java, integers already use 2s complement so high bit will be 1 if negative
          */
-        int y;
-
-        y = x;
-        y += Q & -(y >>> 31);
-        return y;
+//        int x;
+//
+//        x = x;
+        x += Q & -(x >>> 31);
+        return x;
     }
 
     /*
      * Addition modulo q. Operands must be in the 0..q-1 range.
      */
-    int mq_add(int x, int y)
+    static int mq_add(int x, int y)
     {
         /*
          * We compute x + y - q. If the result is negative, then the
@@ -342,7 +342,7 @@ class FalconVrfy
     /*
      * Subtraction modulo q. Operands must be in the 0..q-1 range.
      */
-    int mq_sub(int x, int y)
+    static int mq_sub(int x, int y)
     {
         /*
          * As in mq_add(), we use a conditional addition to ensure the
@@ -358,7 +358,7 @@ class FalconVrfy
     /*
      * Division by 2 modulo q. Operand must be in the 0..q-1 range.
      */
-    int mq_rshift1(int x)
+    static int mq_rshift1(int x)
     {
         x += Q & -(x & 1);
         return (x >>> 1);
@@ -369,7 +369,7 @@ class FalconVrfy
      * this function computes: x * y / R mod q
      * Operands must be in the 0..q-1 range.
      */
-    int mq_montymul(int x, int y)
+    static int mq_montymul(int x, int y)
     {
         int z, w;
 
@@ -404,7 +404,7 @@ class FalconVrfy
     /*
      * Montgomery squaring (computes (x^2)/R).
      */
-    int mq_montysqr(int x)
+    static int mq_montysqr(int x)
     {
         return mq_montymul(x, x);
     }
@@ -412,7 +412,7 @@ class FalconVrfy
     /*
      * Divide x by y modulo q = 12289.
      */
-    int mq_div_12289(int x, int y)
+    static int mq_div_12289(int x, int y)
     {
         /*
          * We invert y by computing y^(q-2) mod q.
@@ -477,7 +477,7 @@ class FalconVrfy
     /*
      * Compute NTT on a ring element.
      */
-    void mq_NTT(short[] srca, int a, int logn)
+    static void mq_NTT(short[] srca, int a, int logn)
     {
         int n, t, m;
 
@@ -512,7 +512,7 @@ class FalconVrfy
     /*
      * Compute the inverse NTT on a ring element, binary case.
      */
-    void mq_iNTT(short[] srca, int a, int logn)
+    static void mq_iNTT(short[] srca, int a, int logn)
     {
         int n, t, m;
         int ni;
@@ -571,7 +571,7 @@ class FalconVrfy
     /*
      * Convert a polynomial (mod q) to Montgomery representation.
      */
-    void mq_poly_tomonty(short[] srcf, int f, int logn)
+    static void mq_poly_tomonty(short[] srcf, int f, int logn)
     {
         int u, n;
 
@@ -586,7 +586,7 @@ class FalconVrfy
      * Multiply two polynomials together (NTT representation, and using
      * a Montgomery multiplication). Result f*g is written over f.
      */
-    void mq_poly_montymul_ntt(short[] srcf, int f, short[] srcg, int g, int logn)
+    static void mq_poly_montymul_ntt(short[] srcf, int f, short[] srcg, int g, int logn)
     {
         int u, n;
 
@@ -600,35 +600,35 @@ class FalconVrfy
     /*
      * Subtract polynomial g from polynomial f.
      */
-    void mq_poly_sub(short[] srcf, int f, short[] srcg, int g, int logn)
+    static void mq_poly_sub(short[] srcf, int f, short[] srcg, int logn)
     {
         int u, n;
 
         n = 1 << logn;
         for (u = 0; u < n; u++)
         {
-            srcf[f + u] = (short)mq_sub(srcf[f + u], srcg[g + u]);
+            srcf[f + u] = (short)mq_sub(srcf[f + u], srcg[u]);
         }
     }
 
     /* ===================================================================== */
 
     /* see inner.h */
-    void to_ntt_monty(short[] srch, int h, int logn)
+    static void to_ntt_monty(short[] srch, int logn)
     {
-        mq_NTT(srch, h, logn);
-        mq_poly_tomonty(srch, h, logn);
+        mq_NTT(srch, 0, logn);
+        mq_poly_tomonty(srch, 0, logn);
     }
 
     /* see inner.h */
-    int verify_raw(short[] srcc0, int c0, short[] srcs2, int s2,
-                   short[] srch, int h, int logn, short[] srctmp, int tmp)
+    static int verify_raw(short[] srcc0, short[] srcs2,
+                          short[] srch, int logn, short[] srctmp)
     {
         int u, n;
         int tt;
 
         n = 1 << logn;
-        tt = tmp;
+        tt = 0;
 
         /*
          * Reduce s2 elements modulo q ([0..q-1] range).
@@ -637,7 +637,7 @@ class FalconVrfy
         {
             int w;
 
-            w = (int)srcs2[s2 + u]; // s2 is signed, so ( & 0xffff) is not needed
+            w = srcs2[u]; // s2 is signed, so ( & 0xffff) is not needed
             w += Q & -(w >>> 31);
             srctmp[tt + u] = (short)w;
         }
@@ -646,9 +646,9 @@ class FalconVrfy
          * Compute -s1 = s2*h - c0 mod phi mod q (in tt[]).
          */
         mq_NTT(srctmp, tt, logn);
-        mq_poly_montymul_ntt(srctmp, tt, srch, h, logn);
+        mq_poly_montymul_ntt(srctmp, tt, srch, 0, logn);
         mq_iNTT(srctmp, tt, logn);
-        mq_poly_sub(srctmp, tt, srcc0, c0, logn);
+        mq_poly_sub(srctmp, tt, srcc0, logn);
 
         /*
          * Normalize -s1 elements into the [-q/2..q/2] range.
@@ -666,12 +666,12 @@ class FalconVrfy
          * Signature is valid if and only if the aggregate (-s1,s2) vector
          * is short enough.
          */
-        return common.is_short(srctmp, tt, srcs2, s2, logn);
+        return FalconCommon.is_short(srctmp, tt, srcs2, logn);
     }
 
     /* see inner.h */
-    int compute_public(short[] srch, int h,
-                       byte[] srcf, int f, byte[] srcg, int g, int logn, short[] srctmp, int tmp)
+    static int compute_public(short[] srch, int h,
+                              byte[] srcf, byte[] srcg, int logn, short[] srctmp, int tmp)
     {
         int u, n;
         int tt;
@@ -680,8 +680,8 @@ class FalconVrfy
         tt = tmp;
         for (u = 0; u < n; u++)
         {
-            srctmp[tt + u] = (short)mq_conv_small(srcf[f + u]);
-            srch[h + u] = (short)mq_conv_small(srcg[g + u]);
+            srctmp[tt + u] = (short)mq_conv_small(srcf[u]);
+            srch[h + u] = (short)mq_conv_small(srcg[u]);
         }
         mq_NTT(srch, h, logn);
         mq_NTT(srctmp, tt, logn);
@@ -698,21 +698,21 @@ class FalconVrfy
     }
 
     /* see inner.h */
-    boolean complete_private(byte[] srcG, int G,
-                         byte[] srcf, int f, byte[] srcg, int g, byte[] srcF, int F,
-                         int logn, short[] srctmp, int tmp)
+    static boolean complete_private(byte[] srcG,
+                                    byte[] srcf, byte[] srcg, byte[] srcF,
+                                    int logn, short[] srctmp)
     {
         int success = -1;
         int u, n;
         int t1, t2;
 
         n = 1 << logn;
-        t1 = tmp;
+        t1 = 0;
         t2 = t1 + n;
         for (u = 0; u < n; u++)
         {
-            srctmp[t1 + u] = (short)mq_conv_small(srcg[g + u]);
-            srctmp[t2 + u] = (short)mq_conv_small(srcF[F + u]);
+            srctmp[t1 + u] = (short)mq_conv_small(srcg[u]);
+            srctmp[t2 + u] = (short)mq_conv_small(srcF[u]);
         }
         mq_NTT(srctmp, t1, logn);
         mq_NTT(srctmp, t2, logn);
@@ -720,7 +720,7 @@ class FalconVrfy
         mq_poly_montymul_ntt(srctmp, t1, srctmp, t2, logn);
         for (u = 0; u < n; u++)
         {
-            srctmp[t2 + u] = (short)mq_conv_small(srcf[f + u]);
+            srctmp[t2 + u] = (short)mq_conv_small(srcf[u]);
         }
         mq_NTT(srctmp, t2, logn);
         for (u = 0; u < n; u++)
@@ -734,124 +734,124 @@ class FalconVrfy
         {
             int w = srctmp[t1 + u] & 0xffff;
             int gi = w - (Q & (((Q >> 1) - w) >> 31));
-            success &= +gi - 128; // check +gi < 128
+            success &= gi - 128; // check +gi < 128
             success &= -gi - 128; // check -gi < 128
-            srcG[G + u] = (byte)gi;
+            srcG[u] = (byte)gi;
         }
         return success < 0;
     }
 
     /* see inner.h */
-    int is_invertible(short[] srcs2, int s2, int logn, short[] srctmp, int tmp)
-    {
-        int u, n;
-        int tt;
-        int r;
-
-        n = 1 << logn;
-        tt = tmp;
-        for (u = 0; u < n; u++)
-        {
-            int w;
-
-            w = (int)srcs2[s2 + u]; // s2 is signed
-            w += Q & -(w >>> 31);
-            srctmp[tt + u] = (short)w;
-        }
-        mq_NTT(srctmp, tt, logn);
-        r = 0;
-        for (u = 0; u < n; u++)
-        {
-            r |= (srctmp[tt + u] & 0xffff) - 1;
-        }
-        return (1 - (r >>> 31));
-    }
-
-    /* see inner.h */
-    int verify_recover(short[] srch, int h,
-                       short[] srcc0, int c0, short[] srcs1, int s1, short[] srcs2, int s2,
-                       int logn, short[] srctmp, int tmp)
-    {
-        int u, n;
-        int tt;
-        int r;
-
-        n = 1 << logn;
-
-        /*
-         * Reduce elements of s1 and s2 modulo q; then write s2 into tt[]
-         * and c0 - s1 into h[].
-         */
-        tt = tmp;
-        for (u = 0; u < n; u++)
-        {
-            int w;
-
-            w = (int)srcs2[s2 + u]; // s2 is signed
-            w += Q & -(w >> 31);
-            srctmp[tt + u] = (short)w;
-
-            w = (int)srcs1[s1 + u]; // s2 is signed
-            w += Q & -(w >>> 31);
-            w = mq_sub((srcc0[c0 + u]), w & 0xffff); // c0 is unsigned
-            srch[h + u] = (short)w;
-        }
-
-        /*
-         * Compute h = (c0 - s1) / s2. If one of the coefficients of s2
-         * is zero (in NTT representation) then the operation fails. We
-         * keep that information into a flag so that we do not deviate
-         * from strict constant-time processing; if all coefficients of
-         * s2 are non-zero, then the high bit of r will be zero.
-         */
-        mq_NTT(srctmp, tt, logn);
-        mq_NTT(srctmp, h, logn);
-        r = 0;
-        for (u = 0; u < n; u++)
-        {
-            r |= (srctmp[tt + u] & 0xffff) - 1;
-            srch[h + u] = (short)mq_div_12289((srch[h + u] & 0xffff),
-                (srctmp[tt + u]) & 0xffff);
-        }
-        mq_iNTT(srch, h, logn);
-
-        /*
-         * Signature is acceptable if and only if it is short enough,
-         * and s2 was invertible mod phi mod q. The caller must still
-         * check that the rebuilt public key matches the expected
-         * value (e.g. through a hash).
-         */
-        r = ~r & -common.is_short(srcs1, s1, srcs2, s2, logn);
-        return (int)(r >>> 31);
-    }
+//    int is_invertible(short[] srcs2, int s2, int logn, short[] srctmp, int tmp)
+//    {
+//        int u, n;
+//        int tt;
+//        int r;
+//
+//        n = 1 << logn;
+//        tt = tmp;
+//        for (u = 0; u < n; u++)
+//        {
+//            int w;
+//
+//            w = (int)srcs2[s2 + u]; // s2 is signed
+//            w += Q & -(w >>> 31);
+//            srctmp[tt + u] = (short)w;
+//        }
+//        mq_NTT(srctmp, tt, logn);
+//        r = 0;
+//        for (u = 0; u < n; u++)
+//        {
+//            r |= (srctmp[tt + u] & 0xffff) - 1;
+//        }
+//        return (1 - (r >>> 31));
+//    }
 
     /* see inner.h */
-    int count_nttzero(short[] srcsig, int sig, int logn, short[] srctmp, int tmp)
-    {
-        int s2;
-        int u, n;
-        int r;
+//    int verify_recover(short[] srch, int h,
+//                       short[] srcc0, int c0, short[] srcs1, int s1, short[] srcs2, int s2,
+//                       int logn, short[] srctmp, int tmp)
+//    {
+//        int u, n;
+//        int tt;
+//        int r;
+//
+//        n = 1 << logn;
+//
+//        /*
+//         * Reduce elements of s1 and s2 modulo q; then write s2 into tt[]
+//         * and c0 - s1 into h[].
+//         */
+//        tt = tmp;
+//        for (u = 0; u < n; u++)
+//        {
+//            int w;
+//
+//            w = (int)srcs2[s2 + u]; // s2 is signed
+//            w += Q & -(w >> 31);
+//            srctmp[tt + u] = (short)w;
+//
+//            w = (int)srcs1[s1 + u]; // s2 is signed
+//            w += Q & -(w >>> 31);
+//            w = mq_sub((srcc0[c0 + u]), w & 0xffff); // c0 is unsigned
+//            srch[h + u] = (short)w;
+//        }
+//
+//        /*
+//         * Compute h = (c0 - s1) / s2. If one of the coefficients of s2
+//         * is zero (in NTT representation) then the operation fails. We
+//         * keep that information into a flag so that we do not deviate
+//         * from strict constant-time processing; if all coefficients of
+//         * s2 are non-zero, then the high bit of r will be zero.
+//         */
+//        mq_NTT(srctmp, tt, logn);
+//        mq_NTT(srctmp, h, logn);
+//        r = 0;
+//        for (u = 0; u < n; u++)
+//        {
+//            r |= (srctmp[tt + u] & 0xffff) - 1;
+//            srch[h + u] = (short)mq_div_12289((srch[h + u] & 0xffff),
+//                (srctmp[tt + u]) & 0xffff);
+//        }
+//        mq_iNTT(srch, h, logn);
+//
+//        /*
+//         * Signature is acceptable if and only if it is short enough,
+//         * and s2 was invertible mod phi mod q. The caller must still
+//         * check that the rebuilt public key matches the expected
+//         * value (e.g. through a hash).
+//         */
+//        r = ~r & -FalconCommon.is_short(srcs1, s1, srcs2, s2, logn);
+//        return (int)(r >>> 31);
+//    }
 
-        n = 1 << logn;
-        s2 = tmp;
-        for (u = 0; u < n; u++)
-        {
-            int w;
-
-            w = (int)srcsig[sig + u]; // sig is signed
-            w += Q & -(w >>> 31);
-            srctmp[s2 + u] = (short)w;
-        }
-        mq_NTT(srctmp, s2, logn);
-        r = 0;
-        for (u = 0; u < n; u++)
-        {
-            int w;
-
-            w = (srctmp[s2 + u] & 0xffff) - 1; // s2 is unsigned
-            r += (w >>> 31);
-        }
-        return (int)r;
-    }
+    /* see inner.h */
+//    int count_nttzero(short[] srcsig, int sig, int logn, short[] srctmp, int tmp)
+//    {
+//        int s2;
+//        int u, n;
+//        int r;
+//
+//        n = 1 << logn;
+//        s2 = tmp;
+//        for (u = 0; u < n; u++)
+//        {
+//            int w;
+//
+//            w = (int)srcsig[sig + u]; // sig is signed
+//            w += Q & -(w >>> 31);
+//            srctmp[s2 + u] = (short)w;
+//        }
+//        mq_NTT(srctmp, s2, logn);
+//        r = 0;
+//        for (u = 0; u < n; u++)
+//        {
+//            int w;
+//
+//            w = (srctmp[s2 + u] & 0xffff) - 1; // s2 is unsigned
+//            r += (w >>> 31);
+//        }
+//        return (int)r;
+//    }
 
 }

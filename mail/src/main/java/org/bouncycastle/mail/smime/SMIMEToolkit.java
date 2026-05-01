@@ -54,7 +54,10 @@ public class SMIMEToolkit
     public boolean isEncrypted(Part message)
         throws MessagingException
     {
-        return message.getHeader("Content-Type")[0].equals("application/pkcs7-mime; name=\"smime.p7m\"; smime-type=enveloped-data");
+        String mainContentType = message.getHeader("Content-Type")[0];
+
+        return mainContentType.equals(SMIMEEnvelopedGenerator.ENVELOPED_DATA_CONTENT_TYPE)
+            || mainContentType.equals(SMIMEAuthEnvelopedGenerator.AUTH_ENVELOPED_DATA_CONTENT_TYPE);
     }
 
     /**
@@ -192,14 +195,29 @@ public class SMIMEToolkit
 
             if (message instanceof MimeMessage && message.isMimeType("multipart/signed"))
             {
-                s = new SMIMESignedParser(digestCalculatorProvider, (MimeMultipart)message.getContent());
+                s = SMIMESignedParser.getSafeInstance(digestCalculatorProvider, (MimeMultipart)message.getContent());
             }
             else
             {
-                s = new SMIMESignedParser(digestCalculatorProvider, message);
+                s = SMIMESignedParser.getSafeInstance(digestCalculatorProvider, message);
             }
 
-            return getX509CertificateHolder(s, signerInformation);
+            // Read all certificates and CRLs (if any)
+            s.getCertificates().getMatches(null);
+            s.getCRLs().getMatches(null);
+
+            // Extract the certificate that matches the given signer
+            X509CertificateHolder result = getX509CertificateHolder(s, signerInformation);
+
+            // **Critical:** Consume the rest of the signature stream by iterating over all signer infos.
+            // This unblocks the DataHandler feeder thread.
+            for (Iterator it = s.getSignerInfos().getSigners().iterator(); it.hasNext();)
+            {
+                // just iterate
+                it.next();
+            }
+
+            return result;
         }
         catch (CMSException e)
         {

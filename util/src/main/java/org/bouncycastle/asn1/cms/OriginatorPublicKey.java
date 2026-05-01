@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1BitString;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -17,7 +16,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * <pre>
  * OriginatorPublicKey ::= SEQUENCE {
  *     algorithm AlgorithmIdentifier,
- *     publicKey BIT STRING 
+ *     publicKey BIT STRING
  * }
  * </pre>
  */
@@ -49,7 +48,7 @@ public class OriginatorPublicKey
         algorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         publicKey = (DERBitString)seq.getObjectAt(1);
     }
-    
+
     /**
      * Return an OriginatorPublicKey object from a tagged object.
      *
@@ -65,7 +64,7 @@ public class OriginatorPublicKey
     {
         return new OriginatorPublicKey(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return an OriginatorPublicKey object from the given object.
      * <p>
@@ -86,14 +85,14 @@ public class OriginatorPublicKey
         {
             return (OriginatorPublicKey)obj;
         }
-        
+
         if (obj != null)
         {
             return new OriginatorPublicKey(ASN1Sequence.getInstance(obj));
         }
 
         return null;
-    } 
+    }
 
     public AlgorithmIdentifier getAlgorithm()
     {
@@ -113,16 +112,11 @@ public class OriginatorPublicKey
         return publicKey;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(algorithm);
-        v.add(publicKey);
-
-        return new DERSequence(v);
+        return new DERSequence(algorithm, publicKey);
     }
 }

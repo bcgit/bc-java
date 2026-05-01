@@ -118,7 +118,7 @@ public class RecipientInfo
             case 3:
                 return PasswordRecipientInfo.getInstance(tagged, false).getVersion();
             case 4:
-                return new ASN1Integer(0);    // no syntax version for OtherRecipientInfo
+                return ASN1Integer.ZERO;    // no syntax version for OtherRecipientInfo
             }
         }
         throw new IllegalStateException("unknown tag");

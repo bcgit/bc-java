@@ -435,6 +435,8 @@ public class X500NameTest
             fail("strict comparison failed");
         }
 
+        equalityTest(new X500Name(""), new X500Name(""));
+
         //
         // inequality to sequences
         //

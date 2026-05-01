@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.tsp;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -15,10 +14,10 @@ public class MessageImprint
 {
     AlgorithmIdentifier hashAlgorithm;
     byte[]              hashedMessage;
-    
+
     /**
      * Return an instance of MessageImprint, or null, based on o.
-     * 
+     *
      * @param o the object to be converted.
      * @return a MessageImprint object.
      */
@@ -36,7 +35,7 @@ public class MessageImprint
 
         return null;
     }
-    
+
     private MessageImprint(
         ASN1Sequence seq)
     {
@@ -50,7 +49,7 @@ public class MessageImprint
             throw new IllegalArgumentException("sequence has wrong number of elements");
         }
     }
-    
+
     public MessageImprint(
         AlgorithmIdentifier hashAlgorithm,
         byte[]              hashedMessage)
@@ -58,17 +57,22 @@ public class MessageImprint
         this.hashAlgorithm = hashAlgorithm;
         this.hashedMessage = Arrays.clone(hashedMessage);
     }
-    
+
     public AlgorithmIdentifier getHashAlgorithm()
     {
         return hashAlgorithm;
     }
-    
+
     public byte[] getHashedMessage()
     {
         return Arrays.clone(hashedMessage);
     }
-    
+
+    public int getHashedMessageLength()
+    {
+        return hashedMessage.length;
+    }
+
     /**
      * <pre>
      *    MessageImprint ::= SEQUENCE  {
@@ -78,11 +82,6 @@ public class MessageImprint
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(hashAlgorithm);
-        v.add(new DEROctetString(hashedMessage));
-
-        return new DERSequence(v);
+        return new DERSequence(hashAlgorithm, new DEROctetString(hashedMessage));
     }
 }

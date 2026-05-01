@@ -84,6 +84,12 @@ public class IssuingDistributionPoint
         boolean indirectCRL,
         boolean onlyContainsAttributeCerts)
     {
+        if ((onlyContainsCACerts && (onlyContainsUserCerts || onlyContainsAttributeCerts))
+            || (onlyContainsUserCerts && onlyContainsAttributeCerts))
+        {
+            throw new IllegalArgumentException("only one of onlyContainsCACerts, onlyContainsUserCerts, or onlyContainsAttributeCerts can be true");
+        }
+
         this.distributionPoint = distributionPoint;
         this.indirectCRL = indirectCRL;
         this.onlyContainsAttributeCerts = onlyContainsAttributeCerts;
@@ -222,7 +228,7 @@ public class IssuingDistributionPoint
     public String toString()
     {
         String       sep = Strings.lineSeparator();
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         buf.append("IssuingDistributionPoint: [");
         buf.append(sep);
@@ -255,7 +261,7 @@ public class IssuingDistributionPoint
         return buf.toString();
     }
 
-    private void appendObject(StringBuffer buf, String sep, String name, String value)
+    private void appendObject(StringBuilder buf, String sep, String name, String value)
     {
         String       indent = "    ";
 

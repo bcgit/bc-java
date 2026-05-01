@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.PasswordConverter;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.PBKDF2Key;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
@@ -44,10 +45,13 @@ public class PBEPBKDF2
         prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA224, Integers.valueOf(PBE.SHA224));
         prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA384, Integers.valueOf(PBE.SHA384));
         prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512, Integers.valueOf(PBE.SHA512));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512_224, Integers.valueOf(PBE.SHA512_224));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512_256, Integers.valueOf(PBE.SHA512_256));
         prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_256, Integers.valueOf(PBE.SHA3_256));
         prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_224, Integers.valueOf(PBE.SHA3_224));
         prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, Integers.valueOf(PBE.SHA3_384));
         prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, Integers.valueOf(PBE.SHA3_512));
+        prfCodes.put(IANAObjectIdentifiers.hmacRIPEMD160, Integers.valueOf(PBE.RIPEMD160));
         prfCodes.put(GMObjectIdentifiers.hmac_sm3, Integers.valueOf(PBE.SM3));
     }
 
@@ -273,6 +277,24 @@ public class PBEPBKDF2
         }
     }
 
+    public static class PBKDF2withSHA512_224
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA512_224()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA512_224);
+        }
+    }
+
+    public static class PBKDF2withSHA512_256
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA512_256()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA512_256);
+        }
+    }
+
     public static class PBKDF2withGOST3411
         extends BasePBKDF2
     {
@@ -360,6 +382,8 @@ public class PBEPBKDF2
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA256", PREFIX + "$PBKDF2withSHA256");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA384", PREFIX + "$PBKDF2withSHA384");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA512", PREFIX + "$PBKDF2withSHA512");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA512-224", PREFIX + "$PBKDF2withSHA512_224");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA512-256", PREFIX + "$PBKDF2withSHA512_256");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-224", PREFIX + "$PBKDF2withSHA3_224");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-256", PREFIX + "$PBKDF2withSHA3_256");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-384", PREFIX + "$PBKDF2withSHA3_384");

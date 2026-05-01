@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A wrapper class that allows block ciphers to be used to process data in
@@ -202,12 +203,18 @@ public class PaddedBufferedBlockCipher
         if (len > gapLen)
         {
             System.arraycopy(in, inOff, buf, bufOff, gapLen);
+            inOff += gapLen;
+            len -= gapLen;
+            if (in == out && Arrays.segmentsOverlap(inOff, len, outOff, length))
+            {
+                in = new byte[len];
+                System.arraycopy(out, inOff, in, 0, len);
+                inOff = 0;
+            }
 
             resultLen += cipher.processBlock(buf, 0, out, outOff);
 
             bufOff = 0;
-            len -= gapLen;
-            inOff += gapLen;
 
             while (len > buf.length)
             {

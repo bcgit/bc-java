@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.operator.bc;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
@@ -117,15 +116,7 @@ public class BcPBESecretKeyEncryptorBuilder
 
                         this.random.nextBytes(iv);
                     }
-
-                    BufferedBlockCipher c = BcUtil.createSymmetricKeyWrapper(true, engine, key, iv);
-
-                    byte[] out = new byte[keyLen];
-                    int    outLen = c.processBytes(keyData, keyOff, keyLen, out, 0);
-
-                    outLen += c.doFinal(out, outLen);
-
-                    return out;
+                    return BcUtil.processBufferedBlockCipher(true, engine, key, iv, keyData, keyOff, keyLen);
                 }
                 catch (InvalidCipherTextException e)
                 {

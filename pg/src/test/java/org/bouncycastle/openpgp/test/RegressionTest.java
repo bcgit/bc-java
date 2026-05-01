@@ -77,14 +77,16 @@ public class RegressionTest
         new LegacyX448KeyPairTest(),
 
         new PGPv6MessageDecryptionTest(),
-
         new Curve25519PrivateKeyEncodingTest(),
         new EdDSAKeyConversionWithLeadingZeroTest(),
         new ECDSAKeyPairTest(),
+        new UnknownBCPGKeyPairTest(),
 
         new PGPv5KeyTest(),
         new PGPv5MessageDecryptionTest(),
-        new PGPv6SignatureTest()
+        new PGPv6SignatureTest(),
+        new PGPKeyPairGeneratorTest(),
+        new PGPKeyRingGeneratorTest(),
     };
 
     public static void main(String[] args)

@@ -266,7 +266,7 @@ public class Extension
         ASN1Encodable value)
         throws IOException
     {
-        return new Extension(extnId, critical, value.toASN1Primitive().getEncoded());
+        return new Extension(extnId, critical, new DEROctetString(value.toASN1Primitive().getEncoded()));
     }
 
     private Extension(ASN1Sequence seq)

@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1TaggedObjectParser;
 import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BERTags;
 
-/** 
+/**
  * Parser of <a href="https://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> {@link EnvelopedData} object.
  * <p>
  * <pre>
@@ -19,7 +19,7 @@ import org.bouncycastle.asn1.BERTags;
  *     originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
  *     recipientInfos RecipientInfos,
  *     encryptedContentInfo EncryptedContentInfo,
- *     unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL 
+ *     unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL
  * }
  * </pre>
  */
@@ -29,7 +29,7 @@ public class EnvelopedDataParser
     private ASN1Integer        _version;
     private ASN1Encodable      _nextObject;
     private boolean            _originatorInfoCalled;
-    
+
     public EnvelopedDataParser(
         ASN1SequenceParser seq)
         throws IOException
@@ -43,11 +43,11 @@ public class EnvelopedDataParser
         return _version;
     }
 
-    public OriginatorInfo getOriginatorInfo() 
+    public OriginatorInfo getOriginatorInfo()
         throws IOException
     {
-        _originatorInfoCalled = true; 
-        
+        _originatorInfoCalled = true;
+
         if (_nextObject == null)
         {
             _nextObject = _seq.readObject();
@@ -66,7 +66,7 @@ public class EnvelopedDataParser
 
         return null;
     }
-    
+
     public ASN1SetParser getRecipientInfos()
         throws IOException
     {
@@ -74,33 +74,33 @@ public class EnvelopedDataParser
         {
             getOriginatorInfo();
         }
-        
+
         if (_nextObject == null)
         {
             _nextObject = _seq.readObject();
         }
-        
+
         ASN1SetParser recipientInfos = (ASN1SetParser)_nextObject;
         _nextObject = null;
         return recipientInfos;
     }
 
-    public EncryptedContentInfoParser getEncryptedContentInfo() 
+    public EncryptedContentInfoParser getEncryptedContentInfo()
         throws IOException
     {
         if (_nextObject == null)
         {
             _nextObject = _seq.readObject();
         }
-        
-        
+
+
         if (_nextObject != null)
         {
             ASN1SequenceParser o = (ASN1SequenceParser) _nextObject;
             _nextObject = null;
             return new EncryptedContentInfoParser(o);
         }
-        
+
         return null;
     }
 

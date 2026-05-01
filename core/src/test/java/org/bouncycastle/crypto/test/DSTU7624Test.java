@@ -96,6 +96,7 @@ public class DSTU7624Test
         CCMModeTests();
         XTSModeTests();
         GCMModeTests();
+        testOverlapping();
     }
 
     public static void main(
@@ -1462,6 +1463,43 @@ public class DSTU7624Test
         if (!Arrays.areEqual(output, expected))
         {
             fail("Failed doFinal test - after: " + cipher.getAlgorithmName());
+        }
+    }
+
+    private void testOverlapping()
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        byte[] iv = new byte[16];
+        random.nextBytes(keyBytes);
+        KXTSBlockCipher bc = new KXTSBlockCipher(new DSTU7624Engine(128));
+        ParametersWithIV param = new ParametersWithIV(new KeyParameter(keyBytes), iv);
+
+        int offset = 1 + random.nextInt(bc.getBlockSize() - 1) + bc.getBlockSize();
+        byte[] data = new byte[bc.getBlockSize() * 4 + offset];
+        byte[] expected = new byte[bc.getOutputSize(bc.getBlockSize() * 3)];
+        random.nextBytes(data);
+
+        bc.init(true, param);
+        int len = bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.doFinal(expected, len);
+        bc.init(true, param);
+        len = bc.processBytes(data, 0, expected.length, data, offset);
+        bc.doFinal(data, offset + len);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping encryption");
+        }
+
+        bc.init(false, param);
+        bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.init(false, param);
+        bc.processBytes(data, 0, expected.length, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping decryption");
         }
     }
 }

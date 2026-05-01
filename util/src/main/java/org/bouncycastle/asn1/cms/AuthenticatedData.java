@@ -67,8 +67,8 @@ public class AuthenticatedData
             }
         }
 
-        version = new ASN1Integer(calculateVersion(originatorInfo));
-        
+        version = ASN1Integer.valueOf(calculateVersion(originatorInfo));
+
         this.originatorInfo = originatorInfo;
         this.macAlgorithm = macAlgorithm;
         this.digestAlgorithm = digestAlgorithm;
@@ -116,7 +116,7 @@ public class AuthenticatedData
         }
 
         mac = ASN1OctetString.getInstance(tmp);
-        
+
         if (seq.size() > index)
         {
             unauthAttrs = ASN1Set.getInstance((ASN1TaggedObject)seq.getObjectAt(index), false);

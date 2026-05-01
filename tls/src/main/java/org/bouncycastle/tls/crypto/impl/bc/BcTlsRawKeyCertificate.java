@@ -18,14 +18,21 @@ import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.Ed448Signer;
+import org.bouncycastle.crypto.signers.MLDSASigner;
 import org.bouncycastle.crypto.signers.PSSSigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.crypto.signers.SLHDSASigner;
+import org.bouncycastle.crypto.signers.SM2Signer;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.MessageSignerAdapter;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -39,7 +46,9 @@ import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
+import org.bouncycastle.tls.crypto.impl.PQCUtil;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
+import org.bouncycastle.util.Strings;
 
 /**
  * Implementation class for a single X.509 certificate based on the BC light-weight API.
@@ -91,7 +100,7 @@ public class BcTlsRawKeyCertificate
 //        }
         }
 
-        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
@@ -146,7 +155,7 @@ public class BcTlsRawKeyCertificate
         case SignatureAlgorithm.gostr34102012_512:
 
         default:
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
@@ -235,20 +244,59 @@ public class BcTlsRawKeyCertificate
             return new BcTls13Verifier(verifier);
         }
 
-        // TODO[RFC 8998]
-//        case SignatureScheme.sm2sig_sm3:
-//        {
-//            ParametersWithID parametersWithID = new ParametersWithID(getPubKeyEC(),
-//                Strings.toByteArray("TLSv1.3+GM+Cipher+Suite"));
-//
-//            SM2Signer verifier = new SM2Signer();
-//            verifier.init(false, parametersWithID);
-//
-//            return new BcTls13Verifier(verifier);
-//        }
+        // RFC 8998
+        case SignatureScheme.sm2sig_sm3:
+        {
+            byte[] identifier = Strings.toByteArray("TLSv1.3+GM+Cipher+Suite");
+            ParametersWithID parametersWithID = new ParametersWithID(getPubKeyEC(), identifier);
+
+            SM2Signer verifier = new SM2Signer();
+            verifier.init(false, parametersWithID);
+
+            return new BcTls13Verifier(verifier);
+        }
+
+        case SignatureScheme.mldsa44:
+        case SignatureScheme.mldsa65:
+        case SignatureScheme.mldsa87:
+        {
+            ASN1ObjectIdentifier mlDsaAlgOid = PQCUtil.getMLDSAObjectidentifier(signatureScheme);
+            validateMLDSA(mlDsaAlgOid);
+
+            MLDSAPublicKeyParameters publicKey = getPubKeyMLDSA();
+
+            MLDSASigner verifier = new MLDSASigner();
+            verifier.init(false, publicKey);
+
+            return new BcTls13Verifier(verifier);
+        }
+
+        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
+        case SignatureScheme.DRAFT_slhdsa_shake_128s:
+        case SignatureScheme.DRAFT_slhdsa_shake_128f:
+        case SignatureScheme.DRAFT_slhdsa_shake_192s:
+        case SignatureScheme.DRAFT_slhdsa_shake_192f:
+        case SignatureScheme.DRAFT_slhdsa_shake_256s:
+        case SignatureScheme.DRAFT_slhdsa_shake_256f:
+        {
+            ASN1ObjectIdentifier slhDsaAlgOid = PQCUtil.getSLHDSAObjectidentifier(signatureScheme);
+            validateSLHDSA(slhDsaAlgOid);
+
+            SLHDSAPublicKeyParameters publicKey = getPubKeySLHDSA();
+
+            SLHDSASigner verifier = new SLHDSASigner();
+            verifier.init(false, publicKey);
+
+            return new BcTls13Verifier(new MessageSignerAdapter(verifier));
+        }
 
         default:
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
@@ -335,7 +383,7 @@ public class BcTlsRawKeyCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not DH", e);
         }
     }
 
@@ -347,7 +395,7 @@ public class BcTlsRawKeyCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not DSS", e);
         }
     }
 
@@ -359,7 +407,7 @@ public class BcTlsRawKeyCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not EC", e);
         }
     }
 
@@ -371,7 +419,7 @@ public class BcTlsRawKeyCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not Ed25519", e);
         }
     }
 
@@ -383,7 +431,31 @@ public class BcTlsRawKeyCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not Ed448", e);
+        }
+    }
+
+    public MLDSAPublicKeyParameters getPubKeyMLDSA() throws IOException
+    {
+        try
+        {
+            return (MLDSAPublicKeyParameters)getPublicKey();
+        }
+        catch (ClassCastException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not ML-DSA", e);
+        }
+    }
+
+    public SLHDSAPublicKeyParameters getPubKeySLHDSA() throws IOException
+    {
+        try
+        {
+            return (SLHDSAPublicKeyParameters)getPublicKey();
+        }
+        catch (ClassCastException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not SLH-DSA", e);
         }
     }
 
@@ -395,7 +467,7 @@ public class BcTlsRawKeyCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not RSA", e);
         }
     }
 
@@ -428,7 +500,7 @@ public class BcTlsRawKeyCertificate
         }
         }
 
-        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected AsymmetricKeyParameter getPublicKey() throws IOException
@@ -443,9 +515,15 @@ public class BcTlsRawKeyCertificate
         }
     }
 
-    protected boolean supportsKeyUsage(int keyUsageBits)
+    protected boolean supportsKeyUsage(int keyUsageBit)
     {
         return true;
+    }
+
+    protected boolean supportsMLDSA(ASN1ObjectIdentifier mlDsaAlgOid)
+    {
+        AlgorithmIdentifier pubKeyAlgID = keyInfo.getAlgorithm();
+        return PQCUtil.supportsMLDSA(pubKeyAlgID, mlDsaAlgOid);
     }
 
     protected boolean supportsRSA_PKCS1()
@@ -464,6 +542,12 @@ public class BcTlsRawKeyCertificate
     {
         AlgorithmIdentifier pubKeyAlgID = keyInfo.getAlgorithm();
         return RSAUtil.supportsPSS_RSAE(pubKeyAlgID);
+    }
+
+    protected boolean supportsSLHDSA(ASN1ObjectIdentifier slhDsaAlgOid)
+    {
+        AlgorithmIdentifier pubKeyAlgID = keyInfo.getAlgorithm();
+        return PQCUtil.supportsSLHDSA(pubKeyAlgID, slhDsaAlgOid);
     }
 
     protected boolean supportsSignatureAlgorithm(short signatureAlgorithm, int keyUsage) throws IOException
@@ -517,12 +601,34 @@ public class BcTlsRawKeyCertificate
         }
     }
 
-    public void validateKeyUsage(int keyUsageBits)
+    public void validateKeyUsage(int keyUsageBit)
         throws IOException
     {
-        if (!supportsKeyUsage(keyUsageBits))
+        if (!supportsKeyUsage(keyUsageBit))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            switch (keyUsageBit)
+            {
+            case KeyUsage.digitalSignature:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow digital signatures");
+            case KeyUsage.keyAgreement:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow key agreement");
+            case KeyUsage.keyEncipherment:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow key encipherment");
+            default:
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
+    }
+
+    protected void validateMLDSA(ASN1ObjectIdentifier mlDsaAlgOid)
+        throws IOException
+    {
+        if (!supportsMLDSA(mlDsaAlgOid))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for ML-DSA signature scheme");
         }
     }
 
@@ -531,7 +637,7 @@ public class BcTlsRawKeyCertificate
     {
         if (!supportsRSA_PKCS1())
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for rsa_pkcs1 signature schemes");
         }
     }
 
@@ -540,7 +646,8 @@ public class BcTlsRawKeyCertificate
     {
         if (!supportsRSA_PSS_PSS(signatureAlgorithm))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                "No support for rsa_pss_pss signature schemes");
         }
     }
 
@@ -549,7 +656,17 @@ public class BcTlsRawKeyCertificate
     {
         if (!supportsRSA_PSS_RSAE())
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                "No support for rsa_pss_rsae signature schemes");
+        }
+    }
+
+    protected void validateSLHDSA(ASN1ObjectIdentifier slhDsaAlgOid)
+        throws IOException
+    {
+        if (!supportsSLHDSA(slhDsaAlgOid))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for SLH-DSA signature scheme");
         }
     }
 }

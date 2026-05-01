@@ -21,7 +21,9 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -36,7 +38,9 @@ import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
+import org.bouncycastle.tls.crypto.impl.PQCUtil;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
+import org.bouncycastle.util.Strings;
 
 /**
  * Implementation class for a single X.509 certificate based on the JCA.
@@ -132,7 +136,7 @@ public class JcaTlsCertificate
 //        }
         }
 
-        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
@@ -187,7 +191,7 @@ public class JcaTlsCertificate
         case SignatureAlgorithm.gostr34102012_512:
 
         default:
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
@@ -270,11 +274,46 @@ public class JcaTlsCertificate
             return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
         }
 
-        // TODO[RFC 8998]
-//        case SignatureScheme.sm2sig_sm3:
+        // RFC 8998
+        case SignatureScheme.sm2sig_sm3:
+        {
+            byte[] identifier = Strings.toByteArray("TLSv1.3+GM+Cipher+Suite");
+            AlgorithmParameterSpec sm2Spec = new SM2ParameterSpec(identifier);
+
+            return crypto.createTls13Verifier("SM3withSM2", sm2Spec, getPubKeyEC());
+        }
+
+        case SignatureScheme.mldsa44:
+        case SignatureScheme.mldsa65:
+        case SignatureScheme.mldsa87:
+        {
+            ASN1ObjectIdentifier mlDsaAlgOid = PQCUtil.getMLDSAObjectidentifier(signatureScheme);
+            validateMLDSA(mlDsaAlgOid);
+
+            return crypto.createTls13Verifier("ML-DSA", null, getPubKeyMLDSA());
+        }
+
+        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
+        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
+        case SignatureScheme.DRAFT_slhdsa_shake_128s:
+        case SignatureScheme.DRAFT_slhdsa_shake_128f:
+        case SignatureScheme.DRAFT_slhdsa_shake_192s:
+        case SignatureScheme.DRAFT_slhdsa_shake_192f:
+        case SignatureScheme.DRAFT_slhdsa_shake_256s:
+        case SignatureScheme.DRAFT_slhdsa_shake_256f:
+        {
+            ASN1ObjectIdentifier slhDsaAlgOid = PQCUtil.getSLHDSAObjectidentifier(signatureScheme);
+            validateSLHDSA(slhDsaAlgOid);
+
+            return crypto.createTls13Verifier("SLH-DSA", null, getPubKeySLHDSA());
+        }
 
         default:
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
@@ -329,7 +368,7 @@ public class JcaTlsCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not DH", e);
         }
     }
 
@@ -341,7 +380,7 @@ public class JcaTlsCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not DSS", e);
         }
     }
 
@@ -353,7 +392,7 @@ public class JcaTlsCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not EC", e);
         }
     }
 
@@ -365,7 +404,7 @@ public class JcaTlsCertificate
             // Oracle provider (Java 15+) returns the key as an EdDSA one
             if (!("EdDSA".equals(publicKey.getAlgorithm()) && publicKey.toString().indexOf("Ed25519") >= 0))
             {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not Ed25519");
             }
         }
         return publicKey;
@@ -379,13 +418,24 @@ public class JcaTlsCertificate
             // Oracle provider (Java 15+) returns the key as an EdDSA one
             if (!("EdDSA".equals(publicKey.getAlgorithm()) && publicKey.toString().indexOf("Ed448") >= 0))
             {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not Ed448");
             }
         }
         return publicKey;
     }
 
     PublicKey getPubKeyRSA() throws IOException
+    {
+        // TODO[tls] How to reliably check that this is an RSA key?
+        return getPublicKey();
+    }
+
+    PublicKey getPubKeyMLDSA() throws IOException
+    {
+        return getPublicKey();
+    }
+
+    PublicKey getPubKeySLHDSA() throws IOException
     {
         return getPublicKey();
     }
@@ -470,7 +520,7 @@ public class JcaTlsCertificate
         }
         }
 
-        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected boolean implSupportsSignatureAlgorithm(short signatureAlgorithm) throws IOException
@@ -548,6 +598,13 @@ public class JcaTlsCertificate
         return null == keyUsage || (keyUsage.length > keyUsageBit && keyUsage[keyUsageBit]);
     }
 
+    protected boolean supportsMLDSA(ASN1ObjectIdentifier mlDsaAlgOid)
+        throws IOException
+    {
+        AlgorithmIdentifier pubKeyAlgID = getSubjectPublicKeyInfo().getAlgorithm();
+        return PQCUtil.supportsMLDSA(pubKeyAlgID, mlDsaAlgOid);
+    }
+
     protected boolean supportsRSA_PKCS1()
         throws IOException
     {
@@ -569,12 +626,41 @@ public class JcaTlsCertificate
         return RSAUtil.supportsPSS_RSAE(pubKeyAlgID);
     }
 
+    protected boolean supportsSLHDSA(ASN1ObjectIdentifier slhDsaAlgOid)
+        throws IOException
+    {
+        AlgorithmIdentifier pubKeyAlgID = getSubjectPublicKeyInfo().getAlgorithm();
+        return PQCUtil.supportsSLHDSA(pubKeyAlgID, slhDsaAlgOid);
+    }
+
     protected void validateKeyUsageBit(int keyUsageBit)
         throws IOException
     {
         if (!supportsKeyUsageBit(keyUsageBit))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            switch (keyUsageBit)
+            {
+            case KeyUsage.digitalSignature:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow digital signatures");
+            case KeyUsage.keyAgreement:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow key agreement");
+            case KeyUsage.keyEncipherment:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow key encipherment");
+            default:
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
+    }
+
+    protected void validateMLDSA(ASN1ObjectIdentifier mlDsaAlgOid)
+        throws IOException
+    {
+        if (!supportsMLDSA(mlDsaAlgOid))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for ML-DSA signature scheme");
         }
     }
 
@@ -583,7 +669,7 @@ public class JcaTlsCertificate
     {
         if (!supportsRSA_PKCS1())
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for rsa_pkcs1 signature schemes");
         }
     }
 
@@ -592,7 +678,8 @@ public class JcaTlsCertificate
     {
         if (!supportsRSA_PSS_PSS(signatureAlgorithm))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                "No support for rsa_pss_pss signature schemes");
         }
     }
 
@@ -601,7 +688,17 @@ public class JcaTlsCertificate
     {
         if (!supportsRSA_PSS_RSAE())
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                "No support for rsa_pss_rsae signature schemes");
+        }
+    }
+
+    protected void validateSLHDSA(ASN1ObjectIdentifier slhDsaAlgOid)
+        throws IOException
+    {
+        if (!supportsSLHDSA(slhDsaAlgOid))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for SLH-DSA signature scheme");
         }
     }
 }

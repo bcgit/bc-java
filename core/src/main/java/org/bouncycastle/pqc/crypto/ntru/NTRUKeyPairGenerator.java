@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUParameterSet;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Key generator for NTRU.
@@ -19,32 +20,31 @@ public class NTRUKeyPairGenerator
     private NTRUKeyGenerationParameters params;
     private SecureRandom random;
 
-    @Override
     public void init(KeyGenerationParameters param)
     {
         this.params = (NTRUKeyGenerationParameters)param;
         this.random = param.getRandom();
     }
 
-    @Override
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-//        assert this.random != null;
-        NTRUParameterSet parameterSet = this.params.getParameters().parameterSet;
+        NTRUParameters parameters = params.getParameters();
+        NTRUParameterSet parameterSet = parameters.getParameterSet();
+
         byte[] seed = new byte[parameterSet.sampleFgBytes()];
         random.nextBytes(seed);
 
         NTRUOWCPA owcpa = new NTRUOWCPA(parameterSet);
         OWCPAKeyPair owcpaKeys = owcpa.keypair(seed);
+
         byte[] publicKey = owcpaKeys.publicKey;
-        byte[] privateKey = new byte[parameterSet.ntruSecretKeyBytes()];
-        byte[] owcpaPrivateKey = owcpaKeys.privateKey;
-        System.arraycopy(owcpaPrivateKey, 0, privateKey, 0, owcpaPrivateKey.length);
 
         byte[] prfBytes = new byte[parameterSet.prfKeyBytes()];
         random.nextBytes(prfBytes);
-        System.arraycopy(prfBytes, 0, privateKey, parameterSet.owcpaSecretKeyBytes(), prfBytes.length);
+        byte[] privateKey = Arrays.concatenate(owcpaKeys.privateKey, prfBytes);
 
-        return new AsymmetricCipherKeyPair(new NTRUPublicKeyParameters(params.getParameters(), publicKey), new NTRUPrivateKeyParameters(params.getParameters(), privateKey));
+        return new AsymmetricCipherKeyPair(
+            new NTRUPublicKeyParameters(parameters, publicKey),
+            new NTRUPrivateKeyParameters(parameters, privateKey));
     }
 }

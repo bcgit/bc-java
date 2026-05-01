@@ -1,11 +1,16 @@
 package org.bouncycastle.jcajce.provider.asymmetric;
 
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
+import java.util.Vector;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
@@ -13,6 +18,7 @@ import org.bouncycastle.internal.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.util.Properties;
 
 public class EC
@@ -20,11 +26,102 @@ public class EC
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".ec.";
 
     private static final Map<String, String> generalEcAttributes = new HashMap<String, String>();
+    private static final Map<String, String> ecSupportCurves = new HashMap<String, String>();
 
     static
     {
         generalEcAttributes.put("SupportedKeyClasses", "java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey");
         generalEcAttributes.put("SupportedKeyFormats", "PKCS#8|X.509");
+        Enumeration names = ECNamedCurveTable.getNames();
+        Hashtable oidToNames = new Hashtable();
+
+        // 1. Group names by OID
+        while (names.hasMoreElements())
+        {
+            String name = (String)names.nextElement();
+            ECNamedCurveParameterSpec spec = org.bouncycastle.jce.ECNamedCurveTable.getParameterSpec(name);
+            if (spec == null)
+            {
+                continue;
+            }
+
+            ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(name);
+            if (oid == null)
+            {
+                continue;
+            }
+
+            String oidStr = oid.getId();
+            Vector v = (Vector)oidToNames.get(oidStr);
+            if (v == null)
+            {
+                v = new Vector();
+                oidToNames.put(oidStr, v);
+            }
+            if (!v.contains(name))
+            {
+                v.addElement(name);
+            }
+        }
+
+        Enumeration oids = oidToNames.keys();
+        Vector results = new Vector();
+
+        while (oids.hasMoreElements())
+        {
+            String oidStr = (String)oids.nextElement();
+            Vector namesForOid = (Vector)oidToNames.get(oidStr);
+
+            StringBuffer sb = new StringBuffer();
+            sb.append("[");
+            ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier(oidStr);
+
+            if (X9ObjectIdentifiers.prime256v1.equals(oid))
+            {
+                sb.append("secp256r1,NIST P-256,X9.62 prime256v1");
+            }
+            else if (X9ObjectIdentifiers.prime192v1.equals(oid))
+            {
+                sb.append("secp192r1,NIST P-192,X9.62 prime192v1");
+            }
+            else
+            {
+                if (oid.on(X9ObjectIdentifiers.primeCurve) || oid.on(X9ObjectIdentifiers.cTwoCurve))
+                {
+                    sb.append("X9.62 ");
+                }
+                // Append all curve names separated by commas
+                for (int i = 0; i < namesForOid.size(); i++)
+                {
+                    if (i > 0)
+                    {
+                        sb.append(",");
+                    }
+                    String name = (String)namesForOid.elementAt(i);
+                    if ((oid.on(SECObjectIdentifiers.ellipticCurve) || X9ObjectIdentifiers.prime256v1.equals(oid) || X9ObjectIdentifiers.prime192v1.equals(oid))
+                        && (name.startsWith("K-") || name.startsWith("B-") || (name.startsWith("P-"))))
+                    {
+                        sb.append("NIST ");
+                    }
+                    sb.append(name);
+                }
+            }
+            sb.append(",").append(oidStr).append("]");
+            results.addElement(sb.toString());
+        }
+
+        // 3. Join all results with '|'
+        StringBuffer output = new StringBuffer();
+        for (int i = 0; i < results.size(); i++)
+        {
+            if (i > 0)
+            {
+                output.append("|");
+            }
+            output.append((String)results.elementAt(i));
+        }
+
+        ecSupportCurves.put("SupportedCurves", output.toString());
     }
 
     public static class Mappings
@@ -36,12 +133,12 @@ public class EC
 
         public void configure(ConfigurableProvider provider)
         {
-            provider.addAlgorithm("AlgorithmParameters.EC", PREFIX + "AlgorithmParametersSpi");
+            provider.addAlgorithm("AlgorithmParameters.EC", PREFIX + "AlgorithmParametersSpi", ecSupportCurves);
 
             provider.addAlgorithm("KeyAgreement.ECDH", PREFIX + "KeyAgreementSpi$DH", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECDHC", PREFIX + "KeyAgreementSpi$DHC", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECCDH", PREFIX + "KeyAgreementSpi$DHC", generalEcAttributes);
-            
+
             provider.addAlgorithm("KeyAgreement.ECCDHU", PREFIX + "KeyAgreementSpi$DHUC", generalEcAttributes);
 
             provider.addAlgorithm("KeyAgreement.ECDHWITHSHA1KDF", PREFIX + "KeyAgreementSpi$DHwithSHA1KDFAndSharedInfo", generalEcAttributes);
@@ -267,7 +364,7 @@ public class EC
             addSignatureAlgorithm(provider, "SHA3-512", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_512", NISTObjectIdentifiers.id_ecdsa_with_sha3_512, generalEcAttributes);
             addSignatureAlgorithm(provider, "SHAKE128", "ECDSA", PREFIX + "SignatureSpi$ecDSAShake128", CMSObjectIdentifiers.id_ecdsa_with_shake128, generalEcAttributes);
             addSignatureAlgorithm(provider, "SHAKE256", "ECDSA", PREFIX + "SignatureSpi$ecDSAShake256", CMSObjectIdentifiers.id_ecdsa_with_shake256, generalEcAttributes);
-            addSignatureAlgorithm(provider, "RIPEMD160", "ECDSA", PREFIX + "SignatureSpi$ecDSARipeMD160",TeleTrusTObjectIdentifiers.ecSignWithRipemd160, generalEcAttributes);
+            addSignatureAlgorithm(provider, "RIPEMD160", "ECDSA", PREFIX + "SignatureSpi$ecDSARipeMD160", TeleTrusTObjectIdentifiers.ecSignWithRipemd160, generalEcAttributes);
 
             provider.addAlgorithm("Signature.SHA1WITHECNR", PREFIX + "SignatureSpi$ecNR", generalEcAttributes);
             provider.addAlgorithm("Signature.SHA224WITHECNR", PREFIX + "SignatureSpi$ecNR224", generalEcAttributes);

@@ -25,7 +25,7 @@ class OldCertUtil
     static javax.security.cert.X509Certificate[] getPeerCertificateChain(BCExtendedSSLSession sslSession)
         throws SSLPeerUnverifiedException
     {
-        boolean isFips = sslSession.isFipsMode();
+        boolean fipsMode = sslSession.isFipsMode();
         Certificate[] peerCertificates = sslSession.getPeerCertificates();
 
         javax.security.cert.X509Certificate[] result = new javax.security.cert.X509Certificate[peerCertificates.length];
@@ -39,7 +39,7 @@ class OldCertUtil
                 if (peerCertificate instanceof X509Certificate)
                 {
                     X509Certificate peerX509Certificate = (X509Certificate)peerCertificate;
-                    if (isFips)
+                    if (fipsMode)
                     {
                         result[count++] = new X509CertificateWrapper(peerX509Certificate);
                     }

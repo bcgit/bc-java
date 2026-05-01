@@ -40,12 +40,13 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
 /**
- * A simple utility class that generates an RSA key ring.
- * <p>
- * usage: RSAKeyPairGenerator [-a] identity passPhrase
- * <p>
- * Where identity is the name to be associated with the public key. The keys are placed
- * in the files pub.[asc|bpg] and secret.[asc|bpg].
+ * A simple utility class that generates an OpenPGP key ring using
+ * Ed25519 for certification and signing and X25519 for encryption.
+ *
+ * usage: EllipticCurveKeyPairGenerator [-a] identity passPhrase
+ *
+ * Where identity is the name to be associated with the public key.
+ * The keys are written to pub.[asc|bpg] and secret.[asc|bpg].
  */
 public class EllipticCurveKeyPairGenerator
 {

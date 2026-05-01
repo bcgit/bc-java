@@ -317,7 +317,7 @@ public class GCMTest
 
     private void testResetBehavior() throws Exception
     {
-        GCMBlockCipher gcm = new GCMBlockCipher(createAESEngine());
+        GCMModeCipher gcm = createGCM(createAESEngine());
         SecureRandom rnd = new SecureRandom();
 
         int[] ivLens = new int[]{10,12,16};
@@ -372,13 +372,18 @@ public class GCMTest
         return AESEngine.newInstance();
     }
 
+    protected GCMModeCipher createGCM(BlockCipher cipher)
+    {
+        return GCMBlockCipher.newInstance(cipher);
+    }
+
     private void testExceptions() throws InvalidCipherTextException
     {
-        GCMBlockCipher gcm = new GCMBlockCipher(createAESEngine());
+        GCMModeCipher gcm = createGCM(createAESEngine());
 
         try
         {
-            gcm = new GCMBlockCipher(new DESEngine());
+            gcm = createGCM(new DESEngine());
 
             fail("incorrect block size not picked up");
         } catch (IllegalArgumentException e)

@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.security.Security;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -39,22 +42,22 @@ public class ArmoredInputStreamTest
             "bc2af032d2a59e36be6467bc23456b4ac178d36cf9f45df5e833a1981ed1a1032679ea0a");
 
     private static final String badHeaderData1 =
-          "-----BEGIN PGP MESSAGE-----\n"
-        + "Version: BCPG v1.32\n"
-        + "Comment: A dummy message\n"
-        + "Comment actually not really as there is no colon"
-        + " \t \t\n"
-        + "SGVsbG8gV29ybGQh\n"
-        + "=d9Xi\n"
-        + "-----END PGP MESSAGE-----\n";
+        "-----BEGIN PGP MESSAGE-----\n"
+            + "Version: BCPG v1.32\n"
+            + "Comment: A dummy message\n"
+            + "Comment actually not really as there is no colon"
+            + " \t \t\n"
+            + "SGVsbG8gV29ybGQh\n"
+            + "=d9Xi\n"
+            + "-----END PGP MESSAGE-----\n";
 
     private static final String badHeaderData2 =
-          "-----BEGIN PGP MESSAGE-----\n"
-        + "Comment actually not really as there is no colon"
-        + " \t \t\n"
-        + "SGVsbG8gV29ybGQh\n"
-        + "=d9Xi\n"
-        + "-----END PGP MESSAGE-----\n";
+        "-----BEGIN PGP MESSAGE-----\n"
+            + "Comment actually not really as there is no colon"
+            + " \t \t\n"
+            + "SGVsbG8gV29ybGQh\n"
+            + "=d9Xi\n"
+            + "-----END PGP MESSAGE-----\n";
 
     public String getName()
     {
@@ -64,11 +67,17 @@ public class ArmoredInputStreamTest
     public void performTest()
         throws Exception
     {
+        bogusHeadersTest();
+        unknownClearsignedMessageHeadersTest();
+    }
+
+    private void bogusHeadersTest()
+    {
         try
         {
             PGPObjectFactory pgpObjectFactoryOfTestFile = new PGPObjectFactory(
                 new ArmoredInputStream(new ByteArrayInputStream(Arrays.concatenate(Strings.toByteArray("-----BEGIN PGP MESSAGE-----\n"
-                        + "Version: BCPG v1.32\n\n"), bogusData))), new JcaKeyFingerprintCalculator());
+                    + "Version: BCPG v1.32\n\n"), bogusData))), new JcaKeyFingerprintCalculator());
             pgpObjectFactoryOfTestFile.nextObject(); // <-- EXCEPTION HERE
             fail("no exception");
         }
@@ -98,6 +107,90 @@ public class ArmoredInputStreamTest
         {
             isTrue("invalid armor header".equals(e.getMessage()));
         }
+    }
+
+    private void unknownClearsignedMessageHeadersTest()
+        throws IOException
+    {
+        // https://sequoia-pgp.gitlab.io/openpgp-interoperability-test-suite/results.html#Mangled_message_using_the_Cleartext_Signature_Framework_
+        String armor = "-----BEGIN PGP SIGNED MESSAGE-----\n" +
+            "Hello: this is totally part of the signed text\n" +
+            "Hash: SHA512\n" +
+            "\n" +
+            "- From the grocery store we need:\n" +
+            "\n" +
+            "- - tofu\n" +
+            "- - vegetables\n" +
+            "- - noodles\n" +
+            "\n" +
+            "\n" +
+            "-----BEGIN PGP SIGNATURE-----\n" +
+            "\n" +
+            "wsE7BAEBCgBvBYJoMZ08CRD7/MgqAV5zMEcUAAAAAAAeACBzYWx0QG5vdGF0aW9u\n" +
+            "cy5zZXF1b2lhLXBncC5vcmeO1uFIMk5ydOB8SNGi9ZkD0sHEoFRZM20v669ghBur\n" +
+            "KBYhBNGmbhojsYLJmA94jPv8yCoBXnMwAACffQwArOoXVWEF/Yii182hZPqE6t/E\n" +
+            "ZEyJcZLwsJXQ00ctno0TjXY9iDS0l1i0cWVIIcgkoutd+Gn8XI30EQEJivAs8uvE\n" +
+            "yCDFRQgkag2kOn+QtawyQ3LO+Xd5oZDbcy9Jvf4sG5YobBs7kfTb2NQgXDViM+k3\n" +
+            "69je5Mj+oKhtckM3BROYxq+B8DPgPT9UJuz0UgFQVYm5Mjj9jnFlUbMVl7UnsZwP\n" +
+            "0RNnbW8jtuQn7ehePzAOB94bzkvJL8/obPw2LsDfC0gWTovpJo0JibPZD/zaTA4y\n" +
+            "7yLnRvEM+8PilR6eIY40Us9oJerpjYsA16WMyIEvRfgHrYITpqHEzpJa7/vnMF2g\n" +
+            "t2PjcdtFeBsmJZrLwaJWB5Tku6wMsVL8Rmit8qecnVg9qYL3FrRUweEGo/dAH49M\n" +
+            "udZeck+sMaXdIhJnwy4HnH0tUiEGnHQ5mnBtTvKFR98paDVIW/xS+o95hUfmAXA8\n" +
+            "rmMglLYQkIXAZayAquW+VrxSxglNqXYxZNIxuHT6\n" +
+            "=yj77\n" +
+            "-----END PGP SIGNATURE-----";
+
+        // Test validation is not enabled by default
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armor));
+        ArmoredInputStream aIn = ArmoredInputStream.builder()
+            .build(bIn);
+        // Skip over cleartext
+        isTrue(aIn.isClearText());
+        while (aIn.isClearText())
+        {
+            aIn.read();
+        }
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSignatureList sigs = (PGPSignatureList)objFac.nextObject();
+        isTrue(sigs != null);
+
+
+        // Test validation enabled
+        bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armor));
+        final ByteArrayInputStream finalBIn = bIn;
+        isTrue(null != testException(
+            "Illegal ASCII armor header line in clearsigned message encountered: Hello: this is totally part of the signed text",
+            "ArmoredInputException",
+            new TestExceptionOperation()
+            {
+                public void operation()
+                    throws Exception
+                {
+                    ArmoredInputStream.builder()
+                        .setValidateClearsignedMessageHeaders(true)
+                        .build(finalBIn);
+                }
+            })
+        );
+
+
+        // Test validation enabled, but custom header allowed
+        bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armor));
+        aIn = ArmoredInputStream.builder()
+            .setValidateClearsignedMessageHeaders(true)
+            .addAllowedArmorHeader("Hello")
+            .build(bIn);
+        // Skip over cleartext
+        isTrue(aIn.isClearText());
+        while (aIn.isClearText())
+        {
+            aIn.read();
+        }
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+        sigs = (PGPSignatureList)objFac.nextObject();
+        isTrue(sigs != null);
     }
 
     public static void main(

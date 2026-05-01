@@ -156,12 +156,12 @@ public class OctetStringTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         
         BERSequenceGenerator sGen = new BERSequenceGenerator(bOut);
-        
-        sGen.addObject(new ASN1ObjectIdentifier(CMSObjectIdentifiers.compressedData.getId()));
-        
+
+        sGen.addObject(CMSObjectIdentifiers.compressedData);
+
         BERSequenceGenerator cGen = new BERSequenceGenerator(sGen.getRawOutputStream(), 0, true);
         
-        cGen.addObject(new ASN1Integer(0));
+        cGen.addObject(ASN1Integer.ZERO);
         
         //
         // AlgorithmIdentifier

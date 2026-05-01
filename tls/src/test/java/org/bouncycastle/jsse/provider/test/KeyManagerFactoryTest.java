@@ -4,6 +4,7 @@ import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
 import java.security.Principal;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
@@ -27,9 +28,34 @@ public class KeyManagerFactoryTest
 {
     private static final char[] PASSWORD = "fred".toCharArray();
 
+    private boolean rsaEncryptionAvailable = true;
+
     protected void setUp()
     {
         ProviderUtils.setupLowPriority(false);
+
+        /*
+         * TODO This is a quick fix to spot the presence of the entry "TLS_RSA_*" in the security property
+         * "jdk.tls.disabledAlgorithms" (usually configured in java.security). BCJSSE currently doesn't
+         * support that wild-card style, but some of the tests in this class try to test against a JDK (i.e.
+         * SunJSSE) server configured only with RSA encryption credentials. The current preference is that
+         * the "jdk.tls.disabledAlgorithms" property be suitably modified in JDKs used for testing, so that
+         * all TLS features may be tested.
+         */
+        boolean rsaEncryptionAvailable = true;
+        String disabledAlgsProp = Security.getProperty("jdk.tls.disabledAlgorithms");
+        if (disabledAlgsProp != null)
+        {
+            for (String entry : disabledAlgsProp.split(","))
+            {
+                if ("TLS_RSA_*".equals(entry.trim()))
+                {
+                    rsaEncryptionAvailable = false;
+                    break;
+                }
+            }
+        }
+        this.rsaEncryptionAvailable = rsaEncryptionAvailable;
     }
 
     public void testBasicEC()
@@ -58,6 +84,11 @@ public class KeyManagerFactoryTest
     public void testRSAServer()
         throws Exception
     {
+        if (!rsaEncryptionAvailable)
+        {
+            return;
+        }
+
         KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -93,6 +124,11 @@ public class KeyManagerFactoryTest
     public void testRSAServerTrustEE()
         throws Exception
     {
+        if (!rsaEncryptionAvailable)
+        {
+            return;
+        }
+
         KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -104,7 +140,7 @@ public class KeyManagerFactoryTest
         /*
          * For this variation we add the server's certificate to the client's trust store directly,
          * instead of the root (TA).
-         * 
+         *
          * NOTE: For TLS 1.3 with certificate_authorities in ClientHello, or earlier versions with
          * trusted_ca_keys in ClientHello, this test only works when a) there are no actual CA
          * certificates in the client trust store, AND/OR b) the server is willing to (eventually)
@@ -138,6 +174,11 @@ public class KeyManagerFactoryTest
     public void testRSAServerWithClientAuth()
         throws Exception
     {
+        if (!rsaEncryptionAvailable)
+        {
+            return;
+        }
+
         KeyStore clientKS = getRsaKeyStore(false);
         KeyStore serverKS = getRsaKeyStore(true);
 
@@ -199,7 +240,7 @@ public class KeyManagerFactoryTest
 
         ks.load(null, PASSWORD);
 
-        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[] { eCert, iCert });
+        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[]{ eCert, iCert });
 
         ks.setCertificateEntry("root", rCert);
 
@@ -230,7 +271,7 @@ public class KeyManagerFactoryTest
 
         ks.load(null, PASSWORD);
 
-        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[] { eCert, iCert });
+        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[]{ eCert, iCert });
 
         ks.setCertificateEntry("root", rCert);
 
@@ -248,14 +289,14 @@ public class KeyManagerFactoryTest
         BCX509Key key = manager.chooseServerKeyBC(new String[]{ keyType }, null, null);
         assertNotNull(key);
 
-        alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
+        alias = manager.chooseServerAlias(keyType, new Principal[]{ new X500Principal("CN=TLS Test") }, null);
         assertNull(alias);
 
-        key = manager.chooseServerKeyBC(new String[]{ keyType }, new Principal[] { new X500Principal("CN=TLS Test") },
+        key = manager.chooseServerKeyBC(new String[]{ keyType }, new Principal[]{ new X500Principal("CN=TLS Test") },
             null);
         assertNull(key);
 
-        alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+        alias = manager.chooseServerAlias(keyType, new Principal[]{ new X500Principal("CN=TLS Test CA") }, null);
         assertNotNull(alias);
         assertNotNull(manager.getCertificateChain(alias));
         assertNotNull(manager.getPrivateKey(alias));

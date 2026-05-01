@@ -3,14 +3,14 @@ package org.bouncycastle.pqc.crypto.falcon;
 class SamplerZ
 {
 
-    FPREngine fpr;
+    //FPREngine fpr;
 
-    SamplerZ()
-    {
-        this.fpr = new FPREngine();
-    }
+//    SamplerZ()
+//    {
+//        //this.fpr = new FPREngine();
+//    }
 
-    int sample(SamplerCtx ctx, FalconFPR mu, FalconFPR iSigma)
+    static int sample(SamplerCtx ctx, double mu, double iSigma)
     {
         return sampler(ctx, mu, iSigma);
     }
@@ -19,7 +19,7 @@ class SamplerZ
      * Sample an integer value along a half-gaussian distribution centered
      * on zero and standard deviation 1.8205, with a precision of 72 bits.
      */
-    int gaussian0_sampler(FalconRNG p)
+    static int gaussian0_sampler(FalconRNG p)
     {
 
         int[] dist = {
@@ -68,11 +68,11 @@ class SamplerZ
 
             w0 = dist[u + 2];
             w1 = dist[u + 1];
-            w2 = dist[u + 0];
+            w2 = dist[u];
             cc = (v0 - w0) >>> 31;
             cc = (v1 - w1 - cc) >>> 31;
             cc = (v2 - w2 - cc) >>> 31;
-            z += (int)cc;
+            z += cc;
         }
         return z;
 
@@ -81,10 +81,10 @@ class SamplerZ
     /*
      * Sample a bit with probability exp(-x) for some x >= 0.
      */
-    int BerExp(FalconRNG p, FalconFPR x, FalconFPR ccs)
+    private static int BerExp(FalconRNG p, double x, double ccs)
     {
         int s, i;
-        FalconFPR r;
+        double r;
         int sw, w;
         long z;
 
@@ -92,8 +92,8 @@ class SamplerZ
          * Reduce x modulo log(2): x = s*log(2) + r, with s an integer,
          * and 0 <= r < log(2). Since x >= 0, we can use fpr_trunc().
          */
-        s = (int)fpr.fpr_trunc(fpr.fpr_mul(x, fpr.fpr_inv_log2));
-        r = fpr.fpr_sub(x, fpr.fpr_mul(fpr.fpr_of(s), fpr.fpr_log2));
+        s = (int)(x * FPREngine.fpr_inv_log2);//(int)fpr.fpr_trunc(fpr.fpr_mul(x, fpr.fpr_inv_log2));
+        r = x - s * FPREngine.fpr_log2;
 
         /*
          * It may happen (quite rarely) that s >= 64; if sigma = 1.2
@@ -119,7 +119,7 @@ class SamplerZ
          * case). The bias is negligible since fpr_expm_p63() only computes
          * with 51 bits of precision or so.
          */
-        z = ((fpr.fpr_expm_p63(r, ccs) << 1) - 1) >>> s;
+        z = ((FPREngine.fpr_expm_p63(r, ccs) << 1) - 1) >>> s;
 
         /*
          * Sample a bit with probability exp(-x). Since x = s*log(2) + r,
@@ -145,11 +145,11 @@ class SamplerZ
      * The value of sigma MUST lie between 1 and 2 (i.e. isigma lies between
      * 0.5 and 1); in Falcon, sigma should always be between 1.2 and 1.9.
      */
-    int sampler(SamplerCtx ctx, FalconFPR mu, FalconFPR isigma)
+    private static int sampler(SamplerCtx ctx, double mu, double isigma)
     {
         SamplerCtx spc;
         int s;
-        FalconFPR r, dss, ccs;
+        double r, dss, ccs;
 
         spc = ctx;
 
@@ -157,18 +157,18 @@ class SamplerZ
          * Center is mu. We compute mu = s + r where s is an integer
          * and 0 <= r < 1.
          */
-        s = (int)fpr.fpr_floor(mu);
-        r = fpr.fpr_sub(mu, fpr.fpr_of(s));
+        s = (int)FPREngine.fpr_floor(mu);
+        r = mu - s;
 
         /*
          * dss = 1/(2*sigma^2) = 0.5*(isigma^2).
          */
-        dss = fpr.fpr_half(fpr.fpr_sqr(isigma));
+        dss = isigma * isigma * 0.5;
 
         /*
          * ccs = sigma_min / sigma = sigma_min * isigma.
          */
-        ccs = fpr.fpr_mul(isigma, spc.sigma_min);
+        ccs = isigma * spc.sigma_min;
 
         /*
          * We now need to sample on center r.
@@ -176,7 +176,7 @@ class SamplerZ
         for (; ; )
         {
             int z0, z, b;
-            FalconFPR x;
+            double x;
 
             /*
              * Sample z for a Gaussian distribution. Then get a
@@ -218,8 +218,9 @@ class SamplerZ
              * center and standard deviation that the whole sampler
              * can be said to be constant-time.
              */
-            x = fpr.fpr_mul(fpr.fpr_sqr(fpr.fpr_sub(fpr.fpr_of(z), r)), dss);
-            x = fpr.fpr_sub(x, fpr.fpr_mul(fpr.fpr_of(z0 * z0), fpr.fpr_inv_2sqrsigma0));
+            x = z - r;
+            x = x * x * dss;
+            x -= (double)(z0 * z0) * FPREngine.fpr_inv_2sqrsigma0;
             if (BerExp(spc.p, x, ccs) != 0)
             {
                 /*

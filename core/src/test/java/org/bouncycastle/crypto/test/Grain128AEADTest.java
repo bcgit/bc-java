@@ -1,19 +1,17 @@
 package org.bouncycastle.crypto.test;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
+import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.Grain128AEADEngine;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.SimpleTestResult;
+import org.bouncycastle.util.test.TestFailedException;
 
 public class Grain128AEADTest
     extends SimpleTest
@@ -26,49 +24,27 @@ public class Grain128AEADTest
     public void performTest()
         throws Exception
     {
-        testVectors();
+        CipherTest.testOverlapping(this, 16, 12, 8, 20, new Grain128AEADEngine());
+        CipherTest.implTestVectorsEngine(new Grain128AEADEngine(), "crypto", "LWC_AEAD_KAT_128_96.txt", this);
+        checkAEADCipherOutputSize(this, 16, 12, 8, new Grain128AEADEngine());
+        CipherTest.checkCipher(32, 12, 100, 128, new CipherTest.Instance()
+        {
+            @Override
+            public AEADCipher createInstance()
+            {
+                return new Grain128AEADEngine();
+            }
+        });
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 7, 100, 128, 12, new Grain128AEADEngine());
+
+
+        CipherTest.checkAEADParemeter(this, 16, 12, 8, 20, new Grain128AEADEngine());
+
         testSplitUpdate();
         testExceptions();
         testLongAEAD();
     }
 
-    private void testVectors()
-        throws Exception
-    {
-        Grain128AEADEngine grain = new Grain128AEADEngine();
-        CipherParameters params;
-        InputStream src = TestResourceFinder.findTestResource("crypto", "LWC_AEAD_KAT_128_96.txt");
-        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-        String line;
-        byte[] ptByte, adByte;
-        byte[] rv;
-        HashMap<String, String> map = new HashMap<String, String>();
-        while ((line = bin.readLine()) != null)
-        {
-            int a = line.indexOf('=');
-            if (a < 0)
-            {
-                params = new ParametersWithIV(new KeyParameter(Hex.decode((String)map.get("Key"))), Hex.decode((String)map.get("Nonce")));
-                grain.init(true, params);
-                adByte = Hex.decode((String)map.get("AD"));
-                grain.processAADBytes(adByte, 0, adByte.length);
-                ptByte = Hex.decode((String)map.get("PT"));
-                rv = new byte[ptByte.length];
-                grain.processBytes(ptByte, 0, ptByte.length, rv, 0);
-                byte[] mac = new byte[8];
-                grain.doFinal(mac, 0);
-                if (!areEqual(Arrays.concatenate(rv, mac), Hex.decode((String)map.get("CT"))))
-                {
-                    mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv);
-                }
-                map.clear();
-            }
-            else
-            {
-                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-            }
-        }
-    }
 
     private void testSplitUpdate()
         throws InvalidCipherTextException
@@ -95,7 +71,7 @@ public class Grain128AEADTest
         grain.doFinal(rv, len);
 
         isTrue(Arrays.areEqual(rv, CT));
-
+        grain.init(true, params);
         grain.processBytes(PT, 0, 10, rv, 0);
         try
         {
@@ -104,7 +80,7 @@ public class Grain128AEADTest
         }
         catch (IllegalStateException e)
         {
-            isEquals("associated data must be added before plaintext/ciphertext", e.getMessage());
+            isEquals("Grain-128 AEAD needs to be initialized", e.getMessage());
         }
 
         try
@@ -114,7 +90,7 @@ public class Grain128AEADTest
         }
         catch (IllegalStateException e)
         {
-            isEquals("associated data must be added before plaintext/ciphertext", e.getMessage());
+            isEquals("Grain-128 AEAD needs to be initialized", e.getMessage());
         }
     }
 
@@ -127,11 +103,11 @@ public class Grain128AEADTest
         byte[] AD = Hex.decode(   // 186 bytes
             "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9");
         byte[] CT = Hex.decode("731DAA8B1D15317A1CCB4E3DD320095FB27E5BB2A10F2C669F870538637D4F162298C70430A2B560");
-    
+
         Grain128AEADEngine grain = new Grain128AEADEngine();
         ParametersWithIV params = new ParametersWithIV(new KeyParameter(Key), Nonce);
         grain.init(true, params);
-        
+
         grain.processAADBytes(AD, 0, AD.length);
 
         byte[] rv = new byte[CT.length];
@@ -140,9 +116,9 @@ public class Grain128AEADTest
         len += grain.processBytes(PT, 11, PT.length - 11, rv, len);
 
         grain.doFinal(rv, len);
- 
-        isTrue(Arrays.areEqual(rv, CT));
 
+        isTrue(Arrays.areEqual(rv, CT));
+        grain.init(true, params);
         grain.processBytes(PT, 0, 10, rv, 0);
         try
         {
@@ -151,7 +127,7 @@ public class Grain128AEADTest
         }
         catch (IllegalStateException e)
         {
-            isEquals("associated data must be added before plaintext/ciphertext", e.getMessage());
+            isEquals("Grain-128 AEAD needs to be initialized", e.getMessage());
         }
 
         try
@@ -161,7 +137,7 @@ public class Grain128AEADTest
         }
         catch (IllegalStateException e)
         {
-            isEquals("associated data must be added before plaintext/ciphertext", e.getMessage());
+            isEquals("Grain-128 AEAD needs to be initialized", e.getMessage());
         }
     }
 
@@ -177,7 +153,7 @@ public class Grain128AEADTest
         }
         catch (IllegalArgumentException e)
         {
-            isEquals("Grain-128AEAD init parameters must include an IV", e.getMessage());
+            isEquals("invalid parameters passed to Grain-128 AEAD", e.getMessage());
         }
 
         try
@@ -189,7 +165,7 @@ public class Grain128AEADTest
         }
         catch (IllegalArgumentException e)
         {
-            isEquals("Grain-128AEAD requires exactly 12 bytes of IV", e.getMessage());
+            isEquals("Grain-128 AEAD requires exactly 12 bytes of IV", e.getMessage());
         }
 
         try
@@ -201,13 +177,57 @@ public class Grain128AEADTest
         }
         catch (IllegalArgumentException e)
         {
-            isEquals("Grain-128AEAD key must be 128 bits long", e.getMessage());
+            isEquals("Grain-128 AEAD key must be 16 bytes long", e.getMessage());
         }
     }
 
-    private void mismatch(String name, String expected, byte[] found)
+    static void checkAEADCipherOutputSize(SimpleTest parent, int keySize, int ivSize, int tagSize, AEADCipher cipher)
+        throws InvalidCipherTextException
     {
-        fail("mismatch on " + name, expected, new String(Hex.encode(found)));
+        final SecureRandom random = new SecureRandom();
+        int tmpLength = random.nextInt(tagSize - 1) + 1;
+        final byte[] plaintext = new byte[tmpLength];
+        byte[] key = new byte[keySize];
+        byte[] iv = new byte[ivSize];
+        random.nextBytes(key);
+        random.nextBytes(iv);
+        random.nextBytes(plaintext);
+        cipher.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+        byte[] ciphertext = new byte[cipher.getOutputSize(plaintext.length)];
+        //before the encrypt
+        isEqualTo(parent, plaintext.length + tagSize, ciphertext.length);
+        isEqualTo(parent, plaintext.length, cipher.getUpdateOutputSize(plaintext.length));
+        //during the encrypt process of the first block
+        int len = cipher.processBytes(plaintext, 0, tmpLength, ciphertext, 0);
+        isEqualTo(parent, plaintext.length + tagSize, len + cipher.getOutputSize(plaintext.length - tmpLength));
+        isEqualTo(parent, plaintext.length, len + cipher.getUpdateOutputSize(plaintext.length - tmpLength));
+        //process doFinal
+        len += cipher.doFinal(ciphertext, len);
+        isEqualTo(parent, len, ciphertext.length);
+
+        cipher.init(false, new ParametersWithIV(new KeyParameter(key), iv));
+        //before the encrypt
+        isEqualTo(parent, plaintext.length, cipher.getOutputSize(ciphertext.length));
+        isEqualTo(parent, plaintext.length, cipher.getUpdateOutputSize(ciphertext.length));
+        //during the encrypt process of the first block
+        len = cipher.processBytes(ciphertext, 0, tmpLength, plaintext, 0);
+        isEqualTo(parent, plaintext.length, len + cipher.getOutputSize(ciphertext.length - tmpLength));
+        isEqualTo(parent, plaintext.length, len + cipher.getUpdateOutputSize(ciphertext.length - tmpLength));
+        //process doFinal
+        len = cipher.processBytes(ciphertext, tmpLength, tagSize, plaintext, 0);
+        len += cipher.doFinal(plaintext, len);
+        isEqualTo(parent, len, plaintext.length);
+    }
+
+    static void isEqualTo(
+        SimpleTest parent,
+        int a,
+        int b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(parent, "no message"));
+        }
     }
 
     public static void main(String[] args)
@@ -215,4 +235,3 @@ public class Grain128AEADTest
         runTest(new Grain128AEADTest());
     }
 }
-

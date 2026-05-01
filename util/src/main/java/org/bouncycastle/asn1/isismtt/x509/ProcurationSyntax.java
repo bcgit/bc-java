@@ -9,7 +9,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -34,21 +33,21 @@ import org.bouncycastle.asn1.x509.IssuerSerial;
  * stateOrProvincename, localityName, postalAddress) and - SubjectDirectoryName
  * attributes (title, dateOfBirth, placeOfBirth, gender, countryOfCitizenship,
  * countryOfResidence and NameAtBirth).
- * 
+ *
  * <pre>
  *               ProcurationSyntax ::= SEQUENCE {
  *                 country [1] EXPLICIT PrintableString(SIZE(2)) OPTIONAL,
  *                 typeOfSubstitution [2] EXPLICIT DirectoryString (SIZE(1..128)) OPTIONAL,
- *                 signingFor [3] EXPLICIT SigningFor 
+ *                 signingFor [3] EXPLICIT SigningFor
  *               }
- *               
- *               SigningFor ::= CHOICE 
- *               { 
+ *
+ *               SigningFor ::= CHOICE
+ *               {
  *                 thirdPerson GeneralName,
- *                 certRef IssuerSerial 
+ *                 certRef IssuerSerial
  *               }
  * </pre>
- * 
+ *
  */
 public class ProcurationSyntax
     extends ASN1Object
@@ -105,7 +104,7 @@ public class ProcurationSyntax
 
         while (e.hasMoreElements())
         {
-            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement(), BERTags.CONTEXT_SPECIFIC);
+            ASN1TaggedObject o = ASN1TaggedObject.getContextInstance(e.nextElement());
             switch (o.getTagNo())
             {
                 case 1:

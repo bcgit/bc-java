@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -72,15 +74,17 @@ public class CMSEnvelopedDataGenerator
             throw new CMSException("");
         }
 
-        byte[] encryptedContent = bOut.toByteArray();
+        ASN1OctetString encryptedContent = new BEROctetString(bOut.toByteArray());
 
-        EncryptedContentInfo eci = CMSUtils.getEncryptedContentInfo(content, contentEncryptor,  encryptedContent);
+        EncryptedContentInfo encryptedContentInfo = CMSUtils.getEncryptedContentInfo(content, contentEncryptor,
+            encryptedContent);
 
         ASN1Set unprotectedAttrSet = CMSUtils.getAttrBERSet(unprotectedAttributeGenerator);
 
-        ContentInfo contentInfo = new ContentInfo(
-            CMSObjectIdentifiers.envelopedData,
-            new EnvelopedData(originatorInfo, new DERSet(recipientInfos), eci, unprotectedAttrSet));
+        EnvelopedData envelopedData = new EnvelopedData(originatorInfo, new DERSet(recipientInfos),
+            encryptedContentInfo, unprotectedAttrSet);
+
+        ContentInfo contentInfo = new ContentInfo(CMSObjectIdentifiers.envelopedData, envelopedData);
 
         return new CMSEnvelopedData(contentInfo);
     }

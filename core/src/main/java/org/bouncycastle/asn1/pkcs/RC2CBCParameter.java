@@ -43,7 +43,7 @@ public class RC2CBCParameter
         int     parameterVersion,
         byte[]  iv)
     {
-        this.version = new ASN1Integer(parameterVersion);
+        this.version = ASN1Integer.valueOf(parameterVersion);
         this.iv = new DEROctetString(iv);
     }
 

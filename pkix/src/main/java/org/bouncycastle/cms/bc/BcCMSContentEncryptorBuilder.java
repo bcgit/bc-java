@@ -73,14 +73,59 @@ public class BcCMSContentEncryptorBuilder
         return this;
     }
 
+    /**
+     * Build the OutputEncryptor with an internally generated key.
+     *
+     * @return an OutputEncryptor configured to use an internal key.
+     * @throws CMSException
+     */
     public OutputEncryptor build()
         throws CMSException
     {
+        if (random == null)
+        {
+            random = new SecureRandom();
+        }
+
+        CipherKeyGenerator keyGen = helper.createKeyGenerator(encryptionOID, keySize, random);
+
+        return build(keyGen.generateKey());
+    }
+
+    /**
+     * Build the OutputEncryptor using a pre-generated key.
+     *
+     * @param rawEncKey a raw byte encoding of the key to be used for encryption.
+     * @return an OutputEncryptor configured to use rawEncKey.
+     * @throws CMSException
+     */
+    public OutputEncryptor build(byte[] rawEncKey)
+        throws CMSException
+    {
+        if (random == null)
+        {
+            random = new SecureRandom();
+        }
+
+        // fixed key size defined
+        if (this.keySize > 0)
+        {
+            if (((this.keySize + 7) / 8) != rawEncKey.length)
+            {
+                if ((this.keySize != 56 && rawEncKey.length != 8)
+                    && (this.keySize != 168 && rawEncKey.length != 24))
+                {
+                    throw new IllegalArgumentException("attempt to create encryptor with the wrong sized key");
+                }
+            }
+        }
+   
         if (helper.isAuthEnveloped(encryptionOID))
         {
-            return new CMSAuthOutputEncryptor(encryptionOID, keySize, random);
+            return new CMSAuthOutputEncryptor(encryptionOID, new KeyParameter(rawEncKey), random);
         }
-        return new CMSOutputEncryptor(encryptionOID, keySize, random);
+
+        return new CMSOutputEncryptor(encryptionOID, new KeyParameter(rawEncKey), random);
     }
 
     private class CMSOutputEncryptor
@@ -90,21 +135,12 @@ public class BcCMSContentEncryptorBuilder
         private AlgorithmIdentifier algorithmIdentifier;
         protected Object cipher;
 
-        CMSOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, SecureRandom random)
+        CMSOutputEncryptor(ASN1ObjectIdentifier encryptionOID, KeyParameter encKey, SecureRandom random)
             throws CMSException
         {
-            if (random == null)
-            {
-                random = new SecureRandom();
-            }
-
-            CipherKeyGenerator keyGen = helper.createKeyGenerator(encryptionOID, keySize, random);
-
-            encKey = new KeyParameter(keyGen.generateKey());
-
-            algorithmIdentifier = helper.generateEncryptionAlgID(encryptionOID, encKey, random);
-
-            cipher = EnvelopedDataHelper.createContentCipher(true, encKey, algorithmIdentifier);
+            this.algorithmIdentifier = helper.generateEncryptionAlgID(encryptionOID, encKey, random);
+            this.encKey = encKey;
+            this.cipher = EnvelopedDataHelper.createContentCipher(true, encKey, algorithmIdentifier);
         }
 
         public AlgorithmIdentifier getAlgorithmIdentifier()
@@ -130,10 +166,10 @@ public class BcCMSContentEncryptorBuilder
         private AEADBlockCipher aeadCipher;
         private MacCaptureStream macOut;
 
-        CMSAuthOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, SecureRandom random)
+        CMSAuthOutputEncryptor(ASN1ObjectIdentifier encryptionOID, KeyParameter encKey, SecureRandom random)
             throws CMSException
         {
-            super(encryptionOID, keySize, random);
+            super(encryptionOID, encKey, random);
 
             aeadCipher = getCipher();
         }

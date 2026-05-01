@@ -170,7 +170,7 @@ public class RSAPrivateKeyStructure
     {
         ASN1EncodableVector  v = new ASN1EncodableVector(10);
 
-        v.add(new ASN1Integer(version));                       // version
+        v.add(ASN1Integer.valueOf(version));                       // version
         v.add(new ASN1Integer(getModulus()));
         v.add(new ASN1Integer(getPublicExponent()));
         v.add(new ASN1Integer(getPrivateExponent()));

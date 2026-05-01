@@ -383,7 +383,12 @@ public class GCMBlockCipher
         {
             throw new DataLengthException("Input buffer too short");
         }
-
+        if (in == out && Arrays.segmentsOverlap(inOff, len, outOff, getUpdateOutputSize(len)))
+        {
+            in = new byte[len];
+            System.arraycopy(out, inOff, in, 0, len);
+            inOff = 0;
+        }
         int resultLen = 0;
 
         if (forEncryption)

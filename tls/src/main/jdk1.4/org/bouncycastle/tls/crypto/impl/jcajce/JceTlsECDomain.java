@@ -32,9 +32,6 @@ public class JceTlsECDomain
     implements TlsECDomain
 {
     protected final JcaTlsCrypto crypto;
-    protected final TlsECConfig ecConfig;
-
-
     protected ECNamedCurveGenParameterSpec ecGenSpec;
     protected ECParameterSpec ecParameterSpec;
     protected ECCurve ecCurve;
@@ -42,7 +39,6 @@ public class JceTlsECDomain
     public JceTlsECDomain(JcaTlsCrypto crypto, TlsECConfig ecConfig)
     {
         this.crypto = crypto;
-        this.ecConfig = ecConfig;
 
         init(ecConfig.getNamedGroup());
     }
@@ -137,7 +133,7 @@ public class JceTlsECDomain
             return;
         }
 
-        String curveName = NamedGroup.getName(namedGroup);
+        String curveName = NamedGroup.getCurveName(namedGroup);
         if (curveName == null)
         {
             return;

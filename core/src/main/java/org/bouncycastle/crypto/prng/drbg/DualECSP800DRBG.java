@@ -2,8 +2,8 @@ package org.bouncycastle.crypto.prng.drbg;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECMultiplier;
@@ -36,23 +36,18 @@ public class DualECSP800DRBG
     private static final BigInteger p521_Qx = new BigInteger("1b9fa3e518d683c6b65763694ac8efbaec6fab44f2276171a42726507dd08add4c3b3f4c1ebc5b1222ddba077f722943b24c3edfa0f85fe24d0c8c01591f0be6f63", 16);
     private static final BigInteger p521_Qy = new BigInteger("1f3bdba585295d9a1110d1df1f9430ef8442c5018976ff3437ef91b81dc0b8132c8d5c39c32d0e004a3092b7d327c0e7a4d26d2c7b69b58f9066652911e457779de", 16);
 
-    private static final DualECPoints[] nistPoints;
-
-    static
+    private static final DualECPoints[] nistPoints = new DualECPoints[]
     {
-        nistPoints = new DualECPoints[3];
+        createDualECPoints("P-256", 128, p256_Px, p256_Py, p256_Qx, p256_Qy, 1),
+        createDualECPoints("P-384", 192, p384_Px, p384_Py, p384_Qx, p384_Qy, 1),
+        createDualECPoints("P-521", 256, p521_Px, p521_Py, p521_Qx, p521_Qy, 1),
+    };
 
-        ECCurve.Fp curve = (ECCurve.Fp)NISTNamedCurves.getByNameLazy("P-256").getCurve();
-
-        nistPoints[0] = new DualECPoints(128, curve.createPoint(p256_Px, p256_Py), curve.createPoint(p256_Qx, p256_Qy), 1);
-
-        curve = (ECCurve.Fp)NISTNamedCurves.getByNameLazy("P-384").getCurve();
-
-        nistPoints[1] = new DualECPoints(192, curve.createPoint(p384_Px, p384_Py), curve.createPoint(p384_Qx, p384_Qy), 1);
-
-        curve = (ECCurve.Fp)NISTNamedCurves.getByNameLazy("P-521").getCurve();
-
-        nistPoints[2] = new DualECPoints(256, curve.createPoint(p521_Px, p521_Py), curve.createPoint(p521_Qx, p521_Qy), 1);
+    private static DualECPoints createDualECPoints(String curveName, int securityStrength, BigInteger Px,
+        BigInteger Py, BigInteger Qx, BigInteger Qy, int cofactor)
+    {
+        ECCurve.AbstractFp c = (ECCurve.AbstractFp)CustomNamedCurves.getByNameLazy(curveName).getCurve();
+        return new DualECPoints(securityStrength, c.createPoint(Px, Py), c.createPoint(Qx, Qy), cofactor);
     }
 
 
@@ -67,7 +62,6 @@ public class DualECSP800DRBG
     private int                    _securityStrength;
     private int                    _seedlen;
     private int                    _outlen;
-    private ECCurve.Fp             _curve;
     private ECPoint                _P;
     private ECPoint                _Q;
     private byte[]                 _s;
@@ -210,11 +204,9 @@ public class DualECSP800DRBG
         {
             s = getScalarMultipleXCoord(_P, s);
 
-            //System.err.println("S: " + new String(Hex.encode(_s)));
-
             byte[] r = getScalarMultipleXCoord(_Q, s).toByteArray();
 
-            if (r.length > _outlen)
+            if (r.length >= _outlen)
             {
                 System.arraycopy(r, r.length - _outlen, output, outOffset, _outlen);
             }
@@ -223,7 +215,6 @@ public class DualECSP800DRBG
                 System.arraycopy(r, 0, output, outOffset + (_outlen - r.length), r.length);
             }
 
-            //System.err.println("R: " + new String(Hex.encode(r)));
             outOffset += _outlen;
 
             _reseedCounter++;
@@ -237,13 +228,17 @@ public class DualECSP800DRBG
 
             int required = output.length - outOffset;
 
-            if (r.length > _outlen)
+            if (r.length >= _outlen)
             {
                 System.arraycopy(r, r.length - _outlen, output, outOffset, required);
             }
             else
             {
-                System.arraycopy(r, 0, output, outOffset + (_outlen - r.length), required);
+                int outPos = _outlen - r.length;
+                if (outPos < required)
+                {
+                    System.arraycopy(r, 0, output, outOffset + outPos, required - outPos);
+                }
             }
 
             _reseedCounter++;

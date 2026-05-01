@@ -25,7 +25,7 @@ public class DHParameter
 
         if (l != 0)
         {
-            this.l = new ASN1Integer(l);
+            this.l = ASN1Integer.valueOf(l);
         }
         else
         {

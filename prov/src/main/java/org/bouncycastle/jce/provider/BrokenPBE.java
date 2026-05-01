@@ -156,7 +156,7 @@ class OldPKCS12ParametersGenerator
             digest.update(D, 0, D.length);
             digest.update(I, 0, I.length);
             digest.doFinal(A, 0);
-            for (int j = 1; j != iterationCount; j++)
+            for (int j = 1; j < iterationCount; j++)
             {
                 digest.update(A, 0, A.length);
                 digest.doFinal(A, 0);
@@ -267,8 +267,7 @@ public interface BrokenPBE
          *
          * @param bytes the byte array to set the parity on.
          */
-        static private void setOddParity(
-            byte[] bytes)
+        private static void setOddParity(byte[] bytes)
         {
             for (int i = 0; i < bytes.length; i++)
             {
@@ -284,9 +283,7 @@ public interface BrokenPBE
             }
         }
 
-        static private PBEParametersGenerator makePBEGenerator(
-            int                     type,
-            int                     hash)
+        private static PBEParametersGenerator makePBEGenerator(int type, int hash)
         {
             PBEParametersGenerator  generator;
     

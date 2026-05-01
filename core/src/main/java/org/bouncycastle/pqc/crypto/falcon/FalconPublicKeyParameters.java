@@ -5,7 +5,7 @@ import org.bouncycastle.util.Arrays;
 public class FalconPublicKeyParameters
     extends FalconKeyParameters
 {
-    private byte[] H;
+    private final byte[] H;
 
     public FalconPublicKeyParameters(FalconParameters parameters, byte[] H)
     {

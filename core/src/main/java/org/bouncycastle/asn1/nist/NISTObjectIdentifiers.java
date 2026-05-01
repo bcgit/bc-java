@@ -58,7 +58,11 @@ public interface NISTObjectIdentifiers
     /** 2.16.840.1.101.3.4.2.19 */
     static final ASN1ObjectIdentifier    id_KmacWithSHAKE128 = hashAlgs.branch("19");
     /** 2.16.840.1.101.3.4.2.20 */
-    static final ASN1ObjectIdentifier id_KmacWithSHAKE256 = hashAlgs.branch("20");
+    static final ASN1ObjectIdentifier    id_KmacWithSHAKE256 = hashAlgs.branch("20");
+    /** 2.16.840.1.101.3.4.2.21 */
+    static final ASN1ObjectIdentifier    id_Kmac128 = hashAlgs.branch("21");
+    /** 2.16.840.1.101.3.4.2.22 */
+    static final ASN1ObjectIdentifier    id_Kmac256 = hashAlgs.branch("22");
 
     /**
      * 2.16.840.1.101.3.4.1

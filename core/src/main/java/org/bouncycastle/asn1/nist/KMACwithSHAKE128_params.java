@@ -101,7 +101,7 @@ public class KMACwithSHAKE128_params
 
         if (outputLength != DEF_LENGTH)
         {
-            v.add(new ASN1Integer(outputLength));
+            v.add(ASN1Integer.valueOf(outputLength));
         }
 
         if (customizationString.length != 0)

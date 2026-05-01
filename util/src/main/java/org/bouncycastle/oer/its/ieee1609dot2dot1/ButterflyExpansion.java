@@ -6,10 +6,8 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
-
 
 /**
  * ButterflyExpansion ::= CHOICE {
@@ -55,7 +53,7 @@ public class ButterflyExpansion
 
         if (o != null)
         {
-            return new ButterflyExpansion(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
+            return new ButterflyExpansion(ASN1TaggedObject.getContextInstance(o));
         }
 
         return null;

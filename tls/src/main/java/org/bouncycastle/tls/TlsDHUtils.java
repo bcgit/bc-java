@@ -101,7 +101,7 @@ public class TlsDHUtils
 
     public static DHGroup getStandardGroupForDHParameters(BigInteger p, BigInteger g)
     {
-        DHGroup[] standardGroups = new DHGroup[] { DHStandardGroups.rfc7919_ffdhe2048,
+        DHGroup[] standardGroups = new DHGroup[]{ DHStandardGroups.rfc7919_ffdhe2048,
             DHStandardGroups.rfc7919_ffdhe3072, DHStandardGroups.rfc7919_ffdhe4096, DHStandardGroups.rfc7919_ffdhe6144,
             DHStandardGroups.rfc7919_ffdhe8192, DHStandardGroups.rfc3526_1536, DHStandardGroups.rfc3526_2048,
             DHStandardGroups.rfc3526_3072, DHStandardGroups.rfc3526_4096, DHStandardGroups.rfc3526_6144,

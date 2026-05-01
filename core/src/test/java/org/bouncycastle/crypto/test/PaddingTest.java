@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.paddings.X923Padding;
 import org.bouncycastle.crypto.paddings.ZeroBytePadding;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -27,28 +28,28 @@ public class PaddingTest
     }
 
     private void blockCheck(
-        PaddedBufferedBlockCipher   cipher,
-        BlockCipherPadding          padding,
-        KeyParameter                key,
-        byte[]                      data)
+        PaddedBufferedBlockCipher cipher,
+        BlockCipherPadding padding,
+        KeyParameter key,
+        byte[] data)
     {
-        byte[]  out = new byte[data.length + 8];
-        byte[]  dec = new byte[data.length];
-        
+        byte[] out = new byte[data.length + 8];
+        byte[] dec = new byte[data.length];
+
         try
-        {                
+        {
             cipher.init(true, key);
-            
-            int    len = cipher.processBytes(data, 0, data.length, out, 0);
-            
+
+            int len = cipher.processBytes(data, 0, data.length, out, 0);
+
             len += cipher.doFinal(out, len);
-            
+
             cipher.init(false, key);
-            
-            int    decLen = cipher.processBytes(out, 0, len, dec, 0);
-            
+
+            int decLen = cipher.processBytes(out, 0, len, dec, 0);
+
             decLen += cipher.doFinal(dec, decLen);
-            
+
             if (!areEqual(data, dec))
             {
                 fail("failed to decrypt - i = " + data.length + ", padding = " + padding.getPaddingName());
@@ -59,31 +60,31 @@ public class PaddingTest
             fail("Exception - " + e.toString(), e);
         }
     }
-    
+
     public void testPadding(
-        BlockCipherPadding  padding,
-        SecureRandom        rand,
-        byte[]              ffVector,
-        byte[]              ZeroVector)
+        BlockCipherPadding padding,
+        SecureRandom rand,
+        byte[] ffVector,
+        byte[] ZeroVector)
     {
-        PaddedBufferedBlockCipher    cipher = new PaddedBufferedBlockCipher(new DESEngine(), padding);
-        KeyParameter                 key = new KeyParameter(Hex.decode("0011223344556677"));
-        
+        PaddedBufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new DESEngine(), padding);
+        KeyParameter key = new KeyParameter(Hex.decode("0011223344556677"));
+
         //
         // ff test
         //
-        byte[]    data = { (byte)0xff, (byte)0xff, (byte)0xff, (byte)0, (byte)0, (byte)0, (byte)0, (byte)0 };
-        
+        byte[] data = {(byte)0xff, (byte)0xff, (byte)0xff, (byte)0, (byte)0, (byte)0, (byte)0, (byte)0};
+
         if (ffVector != null)
         {
             padding.addPadding(data, 3);
-            
+
             if (!areEqual(data, ffVector))
             {
                 fail("failed ff test for " + padding.getPaddingName());
             }
         }
-        
+
         //
         // zero test
         //
@@ -91,23 +92,23 @@ public class PaddingTest
         {
             data = new byte[8];
             padding.addPadding(data, 4);
-            
+
             if (!areEqual(data, ZeroVector))
             {
                 fail("failed zero test for " + padding.getPaddingName());
             }
         }
-        
+
         for (int i = 1; i != 200; i++)
         {
             data = new byte[i];
-            
+
             rand.nextBytes(data);
 
             blockCheck(cipher, padding, key, data);
         }
     }
-    
+
     private void testOutputSizes()
     {
         PaddedBufferedBlockCipher bc = new PaddedBufferedBlockCipher(new DESEngine(), new PKCS7Padding());
@@ -138,15 +139,51 @@ public class PaddingTest
         }
     }
 
+    private void testOverlapping()
+    {
+        //Skip the dofinal of the test
+        PaddedBufferedBlockCipher bc = new PaddedBufferedBlockCipher(new DESEngine(), new PKCS7Padding());
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[8];
+        random.nextBytes(keyBytes);
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        int offset = 2 + random.nextInt(bc.getBlockSize() - 1);
+        byte[] data = new byte[bc.getBlockSize() * 2 + offset];
+        byte[] expected = new byte[bc.getOutputSize(bc.getBlockSize() * 2)];
+        random.nextBytes(data);
+
+        bc.init(true, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, expected, 0);
+        bc.init(true, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed for overlapping encryption");
+        }
+
+        bc.init(false, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, expected, 0);
+        bc.init(false, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed for overlapping decryption");
+        }
+    }
+
     public void performTest()
     {
-        SecureRandom    rand = new SecureRandom(new byte[20]);
-        
+        testOverlapping();
+        SecureRandom rand = new SecureRandom(new byte[20]);
+
         rand.setSeed(System.currentTimeMillis());
-        
+
         testPadding(new PKCS7Padding(), rand,
-                                    Hex.decode("ffffff0505050505"),
-                                    Hex.decode("0000000004040404"));
+            Hex.decode("ffffff0505050505"),
+            Hex.decode("0000000004040404"));
 
         PKCS7Padding padder = new PKCS7Padding();
         try
@@ -161,27 +198,27 @@ public class PaddingTest
             {
                 fail("wrong exception for corrupt padding: " + e);
             }
-        } 
+        }
 
         testPadding(new ISO10126d2Padding(), rand,
-                                    null,
-                                    null);
-        
+            null,
+            null);
+
         testPadding(new X923Padding(), rand,
-                                    null,
-                                    null);
+            null,
+            null);
 
         testPadding(new TBCPadding(), rand,
-                                    Hex.decode("ffffff0000000000"),
-                                    Hex.decode("00000000ffffffff"));
+            Hex.decode("ffffff0000000000"),
+            Hex.decode("00000000ffffffff"));
 
         testPadding(new ZeroBytePadding(), rand,
-                                    Hex.decode("ffffff0000000000"),
-                                    null);
-        
+            Hex.decode("ffffff0000000000"),
+            null);
+
         testPadding(new ISO7816d4Padding(), rand,
-                                    Hex.decode("ffffff8000000000"),
-                                    Hex.decode("0000000080000000"));
+            Hex.decode("ffffff8000000000"),
+            Hex.decode("0000000080000000"));
 
         testOutputSizes();
 
@@ -193,7 +230,7 @@ public class PaddingTest
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         runTest(new PaddingTest());
     }

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
@@ -37,11 +38,16 @@ import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.RC5ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.DefaultMultiBlockCipher;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestFailedException;
+
 
 /**
  * basic test class for a block cipher, basically this just exercises the provider, and makes sure we
@@ -840,6 +846,61 @@ public class BlockCipherTest
         if (!areEqual(bytes, output))
         {
             fail("" + algorithm + " failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
+        }
+
+        //
+        // Try the doFinal - same input/output same index, index
+        //
+        byte[] data = Arrays.concatenate(input, new byte[2 * in.getBlockSize()]);
+        int len = 0;
+        try
+        {
+            if (algorithm.indexOf("GCM") > 0)
+            {
+                out = Cipher.getInstance(algorithm, "BC");
+                out.init(Cipher.ENCRYPT_MODE, key, rand);
+            }
+
+            len = out.doFinal(data, 0, input.length, data, 0);
+        }
+        catch (Exception e)
+        {
+            fail(e.toString());
+        }
+
+        if (!Arrays.areEqual(data, 0, len, output, 0, output.length))
+        {
+            fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
+        }
+
+        //
+        // Try the doFinal - same input/output shifted offset
+        //
+        data = Arrays.concatenate(input, new byte[2 * in.getBlockSize()]);
+        len = 0;
+        try
+        {
+
+            if (algorithm.indexOf("GCM") > 0)
+            {
+                out = Cipher.getInstance(algorithm, "BC");
+                out.init(Cipher.ENCRYPT_MODE, key, rand);
+            }
+
+            len = out.doFinal(data, 0, input.length, data, 1);
+
+//            System.out.println(Hex.toHexString(output));
+//            System.out.println(Hex.toHexString(Arrays.copyOfRange(data, 1, 1 + len)));
+//            System.out.println(len + " " + output.length);
+        }
+        catch (Exception e)
+        {
+            fail(e.toString());
+        }
+
+        if (!Arrays.areEqual(data, 1, 1 + len, output, 0, output.length))
+        {
+            fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
         }
 
         //
@@ -1699,6 +1760,7 @@ public class BlockCipherTest
     }
 
     public void performTest()
+        throws Exception
     {
         for (int i = 0; i != cipherTests1.length; i += 2)
         {
@@ -1738,6 +1800,163 @@ public class BlockCipherTest
         
         testExceptions();
         testIncorrectCipherModes();
+        doFinalTest();
+        testOverlapping();
+        testOverlapping2();
+        testOverlap();
+    }
+
+    private void doFinalTest()
+    {
+        try
+        {
+            int INPUT_LENGTH = 32;
+            int offset = 1;
+            byte[] PT = new byte[INPUT_LENGTH + offset];
+            SecretKey KEY = new SecretKeySpec(new byte[16], "AES");
+            Cipher c = Cipher.getInstance("AES/ECB/NoPadding", "BC");
+            c.init(Cipher.ENCRYPT_MODE, KEY);
+            int len = c.doFinal(PT, 0, INPUT_LENGTH, PT, offset);
+
+            byte[] expected = Hex.decode("0066e94bd4ef8a2c3b884cfa59ca342b2e66e94bd4ef8a2c3b884cfa59ca342b2e");
+
+            isTrue("expected not match PT", areEqual(expected, PT));
+        }
+        catch (GeneralSecurityException e)
+        {
+            fail(e.toString());
+        }
+    }
+
+    private void testOverlapping()
+        throws Exception
+    {
+        //Skip the dofinal of the test
+        BufferedBlockCipher bc = new BufferedBlockCipher(AESEngine.newInstance());
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        random.nextBytes(keyBytes);
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        int offset = 2 + random.nextInt(bc.getBlockSize() - 1);
+        byte[] data = new byte[bc.getBlockSize() * 2 + offset];
+        byte[] expected = new byte[bc.getOutputSize(bc.getBlockSize() * 2)];
+        random.nextBytes(data);
+
+        bc.init(true, key);
+        int r = bc.processBytes(data, 0, bc.getBlockSize() * 2, expected, 0);
+        r += bc.doFinal(expected, r);
+
+        bc.init(true, key);
+        r = bc.processBytes(data, 0, bc.getBlockSize() * 2, data, offset);
+        r += bc.doFinal(data, r + offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed for overlapping encryption");
+        }
+
+        bc.init(false, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, expected, 0);
+        bc.init(false, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed for overlapping decryption");
+        }
+    }
+
+    private void testOverlapping2()
+    {
+        //Skip the dofinal of the test
+        DefaultMultiBlockCipher bc = new AESEngine();
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        random.nextBytes(keyBytes);
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        int offset = 2 + random.nextInt(bc.getBlockSize() - 1);
+        byte[] data = new byte[bc.getBlockSize() * 2 + offset];
+        byte[] expected = new byte[bc.getBlockSize() * 2];
+        random.nextBytes(data);
+
+        bc.init(true, key);
+        bc.processBlocks(data, 0, 2, expected, 0);
+        bc.init(true, key);
+        bc.processBlocks(data, 0, 2, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed to overlapping of encryption");
+        }
+
+        bc.init(false, key);
+        bc.processBlocks(data, 0, 2, expected, 0);
+        bc.init(false, key);
+        bc.processBlocks(data, 0, 2, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed to overlapping of encryption");
+        }
+    }
+
+    public void testOverlap()
+    {
+        try
+        {
+            int l = 32;
+            byte[] msg = new byte[l];
+            Arrays.fill(msg, (byte)1);
+
+            byte[] workingArray = new byte[l * 2];
+            Arrays.fill(workingArray, (byte)1);
+            System.arraycopy(msg, 0, workingArray, 0, msg.length);
+
+            byte[] originalWorkingArray = new byte[workingArray.length];
+            System.arraycopy(workingArray, 0, originalWorkingArray, 0, workingArray.length);
+
+            Cipher javaEncrypt = Cipher.getInstance("AES/ECB/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
+            javaEncrypt.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(new byte[16], "AES"));
+
+            //
+            // Expected encryption
+            //
+            byte[] expectedOutput = new byte[msg.length];
+            javaEncrypt.doFinal(msg, 0, msg.length, expectedOutput, 0);
+
+
+            //
+            // We expect to see the "expectedOutput" being written at each offset.
+            //
+            for (int outputOffset = 0; outputOffset < msg.length; outputOffset++)
+            {
+                javaEncrypt.doFinal(workingArray, 0, msg.length, workingArray, outputOffset);
+
+                // Grab a copy of the produced cipher text
+                byte[] ct = Arrays.copyOfRange(workingArray, outputOffset, outputOffset + msg.length);
+//                System.out.println("\nOutput Offset: " + outputOffset);
+//                System.out.println("Expected: " + pad(outputOffset * 2) + Hex.toHexString(expectedOutput));
+//                System.out.println("Actual  : " + Hex.toHexString(workingArray));
+
+                isTrue(Arrays.areEqual(ct, expectedOutput));
+
+                System.arraycopy(originalWorkingArray, 0, workingArray, 0, originalWorkingArray.length);
+            }
+        }
+        catch (Exception e)
+        {
+            fail(e.getMessage(), e);
+        }
+
+    }
+
+    public String pad(int len)
+    {
+        char[] buf = new char[len];
+        Arrays.fill(buf, ' ');
+        return new String(buf);
     }
 
     public static void main(

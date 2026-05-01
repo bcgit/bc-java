@@ -4,18 +4,17 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.crypto.bike.BIKEKEMExtractor;
-import org.bouncycastle.pqc.crypto.bike.BIKEKEMGenerator;
-import org.bouncycastle.pqc.crypto.bike.BIKEKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.bike.BIKEKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
-import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEKEMExtractor;
+import org.bouncycastle.pqc.legacy.bike.BIKEKEMGenerator;
+import org.bouncycastle.pqc.legacy.bike.BIKEKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
@@ -37,8 +36,6 @@ public class BIKETest
     public void testVectors()
         throws Exception
     {
-//        boolean full = System.getProperty("test.full", "false").equals("true");
-
         String[] files;
         files = new String[]{
             "PQCkemKAT_BIKE_3114.rsp",
@@ -52,7 +49,6 @@ public class BIKETest
             BIKEParameters.bike256
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex < files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -62,8 +58,7 @@ public class BIKETest
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
-            Random rnd = new Random(System.currentTimeMillis());
-
+            TestSampler sampler = new TestSampler();
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();

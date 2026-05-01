@@ -68,8 +68,9 @@ public abstract class AbstractX500NameStyle
             }
             else
             {
-                hashCodeValue ^= rdns[i].getFirst().getType().hashCode();
-                hashCodeValue ^= calcHashCode(rdns[i].getFirst().getValue());
+                AttributeTypeAndValue first = rdns[i].getFirst(); 
+                hashCodeValue ^= first.getType().hashCode();
+                hashCodeValue ^= calcHashCode(first.getValue());
             }
         }
 

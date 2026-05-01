@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.EncryptedKey;
@@ -37,7 +36,7 @@ public class CertifiedKeyPair
         {
             if (seq.size() == 2)
             {
-                ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(seq.getObjectAt(1), BERTags.CONTEXT_SPECIFIC);
+                ASN1TaggedObject tagged = ASN1TaggedObject.getContextInstance(seq.getObjectAt(1));
                 if (tagged.getTagNo() == 0)
                 {
                     privateKey = EncryptedKey.getInstance(tagged.getExplicitBaseObject());
@@ -49,8 +48,8 @@ public class CertifiedKeyPair
             }
             else
             {
-                privateKey = EncryptedKey.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(1), BERTags.CONTEXT_SPECIFIC).getExplicitBaseObject());
-                publicationInfo = PKIPublicationInfo.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2), BERTags.CONTEXT_SPECIFIC).getExplicitBaseObject());
+                privateKey = EncryptedKey.getInstance(ASN1TaggedObject.getContextInstance(seq.getObjectAt(1)).getExplicitBaseObject());
+                publicationInfo = PKIPublicationInfo.getInstance(ASN1TaggedObject.getContextInstance(seq.getObjectAt(2)).getExplicitBaseObject());
             }
         }
     }

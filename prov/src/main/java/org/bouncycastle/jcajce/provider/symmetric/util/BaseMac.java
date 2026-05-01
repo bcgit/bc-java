@@ -43,6 +43,14 @@ public class BaseMac
     }
 
     protected BaseMac(
+        int keySize,
+        Mac macEngine)
+    {
+        this.keySize = keySize;
+        this.macEngine = macEngine;
+    }
+
+    protected BaseMac(
         Mac macEngine,
         int scheme,
         int pbeHash,

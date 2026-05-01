@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
@@ -52,8 +53,7 @@ import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 public class CMSSignedDataGenerator
     extends CMSSignedGenerator
 {
-    private List signerInfs = new ArrayList();
-    private boolean isDefiniteLength = false;
+    private String encoding = ASN1Encoding.BER;
 
     /**
      * base constructor
@@ -74,10 +74,26 @@ public class CMSSignedDataGenerator
      * Specify use of definite length rather than indefinite length encoding.
      *
      * @param isDefiniteLength true use definite length, false use indefinite (default false).
+     * @deprecated use setEncoding(ANS1Encoding.DL)
      */
     public void setDefiniteLengthEncoding(boolean isDefiniteLength)
     {
-        this.isDefiniteLength = isDefiniteLength;
+        this.setEncoding((isDefiniteLength) ? ASN1Encoding.DL : ASN1Encoding.BER);
+    }
+
+    /**
+     * Specify use of definite-length/DER rather than indefinite length encoding ("BER").
+     *
+     * @param encoding one of "DER", "DL", "BER".
+     */
+    public void setEncoding(String encoding)
+    {
+        if (!(ASN1Encoding.BER.equals(encoding) || ASN1Encoding.DL.equals(encoding) || ASN1Encoding.DER.equals(encoding)))
+        {
+            throw new IllegalArgumentException("encoding must be one of BER, DER, or DL");
+        }
+
+        this.encoding = encoding;
     }
 
     /**
@@ -96,7 +112,7 @@ public class CMSSignedDataGenerator
      * Generate a CMS Signed Data object which can be carrying a detached CMS signature, or have encapsulated data, depending on the value
      * of the encapsulated parameter.
      *
-     * @param content the content to be signed.
+     * @param content     the content to be signed.
      * @param encapsulate true if the content should be encapsulated in the signature, false otherwise.
      */
     public CMSSignedData generate(
@@ -105,12 +121,7 @@ public class CMSSignedDataGenerator
         boolean encapsulate)
         throws CMSException
     {
-        if (!signerInfs.isEmpty())
-        {
-            throw new IllegalStateException("this method can only be used with SignerInfoGenerator");
-        }
-
-                // TODO
+        // TODO
 //        if (signerInfs.isEmpty())
 //        {
 //            /* RFC 3852 5.2
@@ -141,14 +152,14 @@ public class CMSSignedDataGenerator
 //        }
 
         Set<AlgorithmIdentifier> digestAlgs = new LinkedHashSet<AlgorithmIdentifier>();
-        ASN1EncodableVector  signerInfos = new ASN1EncodableVector();
+        ASN1EncodableVector signerInfos = new ASN1EncodableVector();
 
         digests.clear();  // clear the current preserved digest state
-
+        digestAlgs.addAll(extraDigestAlgorithms);
         //
         // add the precalculated SignerInfo objects.
         //
-        for (Iterator it = _signers.iterator(); it.hasNext();)
+        for (Iterator it = _signers.iterator(); it.hasNext(); )
         {
             SignerInformation signer = (SignerInformation)it.next();
             CMSUtils.addDigestAlgs(digestAlgs, signer, digestAlgIdFinder);
@@ -159,90 +170,57 @@ public class CMSSignedDataGenerator
         //
         // add the SignerInfo objects
         //
-        ASN1ObjectIdentifier contentTypeOID = content.getContentType();
+        ASN1ObjectIdentifier encapContentType = content.getContentType();
+        ASN1OctetString encapContent = null;
 
-        ASN1OctetString octs = null;
-
+        // TODO[cms] Could be unnecessary copy e.g. if content is CMSProcessableByteArray (add hasContent method?)
         if (content.getContent() != null)
         {
-            ByteArrayOutputStream bOut = null;
-
             if (encapsulate)
             {
-                bOut = new ByteArrayOutputStream();
-            }
+                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-            OutputStream cOut = CMSUtils.attachSignersToOutputStream(signerGens, bOut);
+                writeContentViaSignerGens(content, bOut);
 
-            // Just in case it's unencapsulated and there are no signers!
-            cOut = CMSUtils.getSafeOutputStream(cOut);
-
-            try
-            {
-                content.write(cOut);
-
-                cOut.close();
-            }
-            catch (IOException e)
-            {
-                throw new CMSException("data processing exception: " + e.getMessage(), e);
-            }
-
-            if (encapsulate)
-            {
-                if (isDefiniteLength)
+                if (ASN1Encoding.BER.equals(this.encoding))
                 {
-                    octs = new DEROctetString(bOut.toByteArray());
+                    encapContent = new BEROctetString(bOut.toByteArray());
                 }
                 else
                 {
-                    octs = new BEROctetString(bOut.toByteArray());
+                    encapContent = new DEROctetString(bOut.toByteArray());
                 }
             }
-        }
-
-        for (Iterator it = signerGens.iterator(); it.hasNext();)
-        {
-            SignerInfoGenerator sGen = (SignerInfoGenerator)it.next();
-            SignerInfo inf = sGen.generate(contentTypeOID);
-
-            digestAlgs.add(inf.getDigestAlgorithm());
-            signerInfos.add(inf);
-
-            byte[] calcDigest = sGen.getCalculatedDigest();
-
-            if (calcDigest != null)
+            else
             {
-                digests.put(inf.getDigestAlgorithm().getAlgorithm().getId(), calcDigest);
+                writeContentViaSignerGens(content, null);
             }
         }
 
-        ASN1Set certificates = createSetFromList(certs, isDefiniteLength);
+        for (Iterator it = signerGens.iterator(); it.hasNext(); )
+        {
+            SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
+            SignerInfo signerInfo = generateSignerInfo(signerGen, encapContentType);
+            digestAlgs.add(signerInfo.getDigestAlgorithm());
+            signerInfos.add(signerInfo);
+        }
 
-        ASN1Set certrevlist = createSetFromList(crls, isDefiniteLength);
+        ASN1Set certificates = createSetFromList(this.certs, encoding);
 
-        ContentInfo encInfo = new ContentInfo(contentTypeOID, octs);
+        ASN1Set crls = createSetFromList(this.crls, encoding);
 
-        SignedData  sd = new SignedData(
-                                 CMSUtils.convertToDlSet(digestAlgs),
-                                 encInfo,
-                                 certificates,
-                                 certrevlist,
-                                 new DERSet(signerInfos));
+        ContentInfo encapContentInfo = new ContentInfo(encapContentType, encapContent);
 
-        ContentInfo contentInfo = new ContentInfo(
-            CMSObjectIdentifiers.signedData, sd);
+        SignedData signedData = new SignedData(
+            CMSUtils.convertToDlSet(digestAlgs),
+            encapContentInfo,
+            certificates,
+            crls,
+            new DERSet(signerInfos));
+
+        ContentInfo contentInfo = new ContentInfo(CMSObjectIdentifiers.signedData, signedData);
 
         return new CMSSignedData(content, contentInfo);
-    }
-
-    private static ASN1Set createSetFromList(List list, boolean isDefiniteLength)
-    {
-        if(list.size()!=0)
-        {
-            return isDefiniteLength ? CMSUtils.createDlSetFromList(list) : CMSUtils.createBerSetFromList(list);
-        }
-        return null;
     }
 
     /**
@@ -255,7 +233,73 @@ public class CMSSignedDataGenerator
     public SignerInformationStore generateCounterSigners(SignerInformation signer)
         throws CMSException
     {
-        return this.generate(new CMSProcessableByteArray(null, signer.getSignature()), false).getSignerInfos();
+        digests.clear();
+
+        CMSTypedData content = new CMSProcessableByteArray(null, signer.getSignature());
+
+        ArrayList signerInformations = new ArrayList();
+
+        for (Iterator it = _signers.iterator(); it.hasNext(); )
+        {
+            SignerInformation _signer = (SignerInformation)it.next();
+            SignerInfo signerInfo = _signer.toASN1Structure();
+            signerInformations.add(new SignerInformation(signerInfo, null, content, null));
+        }
+
+        writeContentViaSignerGens(content, null);
+
+        for (Iterator it = signerGens.iterator(); it.hasNext(); )
+        {
+            SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
+            SignerInfo signerInfo = generateSignerInfo(signerGen, null);
+            signerInformations.add(new SignerInformation(signerInfo, null, content, null));
+        }
+
+        return new SignerInformationStore(signerInformations);
+    }
+
+    private SignerInfo generateSignerInfo(SignerInfoGenerator signerGen, ASN1ObjectIdentifier contentType)
+        throws CMSException
+    {
+        SignerInfo signerInfo = signerGen.generate(contentType);
+
+        byte[] calcDigest = signerGen.getCalculatedDigest();
+        if (calcDigest != null)
+        {
+            digests.put(signerInfo.getDigestAlgorithm().getAlgorithm().getId(), calcDigest);
+        }
+
+        return signerInfo;
+    }
+
+    private void writeContentViaSignerGens(CMSTypedData content, OutputStream s)
+        throws CMSException
+    {
+        OutputStream cOut = CMSUtils.attachSignersToOutputStream(signerGens, s);
+
+        // Just in case it's unencapsulated and there are no signers!
+        cOut = CMSUtils.getSafeOutputStream(cOut);
+
+        try
+        {
+            content.write(cOut);
+
+            cOut.close();
+        }
+        catch (IOException e)
+        {
+            throw new CMSException("data processing exception: " + e.getMessage(), e);
+        }
+    }
+
+    private static ASN1Set createSetFromList(List list, String encoding)
+    {
+        return list.size() < 1
+            ? null
+            : ASN1Encoding.DL.equals(encoding)
+            ? CMSUtils.createDlSetFromList(list)
+            : (ASN1Encoding.DER.equals(encoding)
+            ? CMSUtils.createDerSetFromList(list)
+            : CMSUtils.createBerSetFromList(list));
     }
 }
-

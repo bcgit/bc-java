@@ -122,7 +122,7 @@ public class TimeStampResponseGenerator
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
         
-        v.add(new ASN1Integer(status));
+        v.add(ASN1Integer.valueOf(status));
         
         if (statusStrings.size() > 0)
         {
@@ -372,7 +372,7 @@ public class TimeStampResponseGenerator
     {
         FailInfo(int failInfoValue)
         {
-            super(getBytes(failInfoValue), getPadBits(failInfoValue));
+            super(failInfoValue);
         }
     }
 }

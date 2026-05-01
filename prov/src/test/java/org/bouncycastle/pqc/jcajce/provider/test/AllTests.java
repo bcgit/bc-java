@@ -75,8 +75,9 @@ public class AllTests
         suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(HQCKeyPairGeneratorTest.class);
         suite.addTestSuite(HQCTest.class);
-        suite.addTestSuite(RainbowKeyPairGeneratorTest.class);
-        suite.addTestSuite(RainbowTest.class);
+        suite.addTestSuite(MayoKeyPairGeneratorTest.class);
+        suite.addTestSuite(MayoTest.class);
+        suite.addTestSuite(SnovaTest.class);
 
         return new BCTestSetup(suite);
     }

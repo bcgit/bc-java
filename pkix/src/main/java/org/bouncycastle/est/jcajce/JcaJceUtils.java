@@ -35,6 +35,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 public class JcaJceUtils
 {
 
+    @SuppressWarnings("TrustAllX509TrustManager")
     public static X509TrustManager getTrustAllTrustManager()
     {
 

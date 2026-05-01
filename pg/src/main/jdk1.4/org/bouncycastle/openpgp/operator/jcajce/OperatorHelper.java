@@ -151,6 +151,11 @@ class OperatorHelper
 
     static long getChunkLength(int chunkSize)
     {
+        // RFC 9580 - 5.13.2
+        if (chunkSize < 0 || chunkSize > 16)
+        {
+            throw new IllegalStateException("chunkSize out of range");
+        }
         return 1L << (chunkSize + 6);
     }
 
@@ -306,7 +311,7 @@ class OperatorHelper
         }
     }
 
-    private Signature createSignature(String cipherName)
+    Signature createSignature(String cipherName)
         throws PGPException
     {
         try

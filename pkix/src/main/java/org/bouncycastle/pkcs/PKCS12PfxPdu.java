@@ -2,15 +2,20 @@ package org.bouncycastle.pkcs;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.MacData;
+import org.bouncycastle.asn1.pkcs.PBMAC1Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * A holding class for the PKCS12 Pfx structure.
@@ -104,26 +109,44 @@ public class PKCS12PfxPdu
     public boolean isMacValid(PKCS12MacCalculatorBuilderProvider macCalcProviderBuilder, char[] password)
         throws PKCSException
     {
-        if (hasMac())
+        MacData pfxmData = pfx.getMacData();
+        if (pfxmData == null)
         {
-            MacData pfxmData = pfx.getMacData();
-            MacDataGenerator mdGen = new MacDataGenerator(macCalcProviderBuilder.get(new AlgorithmIdentifier(pfxmData.getMac().getAlgorithmId().getAlgorithm(), new PKCS12PBEParams(pfxmData.getSalt(), pfxmData.getIterationCount().intValue()))));
-
-            try
-            {
-                MacData mData = mdGen.build(
-                    password,
-                    ASN1OctetString.getInstance(pfx.getAuthSafe().getContent()).getOctets());
-
-                return Arrays.constantTimeAreEqual(mData.getEncoded(), pfx.getMacData().getEncoded());
-            }
-            catch (IOException e)
-            {
-                throw new PKCSException("unable to process AuthSafe: " + e.getMessage());
-            }
+            throw new IllegalStateException("no MAC present on PFX");
         }
 
-        throw new IllegalStateException("no MAC present on PFX");
+        AlgorithmIdentifier macAlgID = pfxmData.getMac().getAlgorithmId();
+        ASN1ObjectIdentifier macAlgOid = macAlgID.getAlgorithm();
+
+        ASN1Encodable algParams;
+        if (PKCSObjectIdentifiers.id_PBMAC1.equals(macAlgOid))
+        {
+            algParams = PBMAC1Params.getInstance(macAlgID.getParameters());
+            if (algParams == null)
+            {
+                throw new PKCSException("If the DigestAlgorithmIdentifier is id-PBMAC1, then the parameters field must contain valid PBMAC1-params parameters.");
+            }
+        }
+        else
+        {
+            algParams = new PKCS12PBEParams(pfxmData.getSalt(), BigIntegers.intValueExact(pfxmData.getIterationCount()));
+        }
+
+        PKCS12MacCalculatorBuilder builder = macCalcProviderBuilder.get(new AlgorithmIdentifier(macAlgOid, algParams));
+        MacDataGenerator mdGen = new MacDataGenerator(builder);
+
+        try
+        {
+            byte[] pfxContents = ASN1OctetString.getInstance(pfx.getAuthSafe().getContent()).getOctets();
+
+            MacData mData = mdGen.build(password, pfxContents);
+
+            return Arrays.constantTimeAreEqual(mData.getEncoded(), pfxmData.getEncoded());
+        }
+        catch (IOException e)
+        {
+            throw new PKCSException("unable to process AuthSafe: " + e.getMessage());
+        }
     }
 
     /**

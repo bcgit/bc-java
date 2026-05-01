@@ -4,7 +4,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.util.Strings;
 
 public class BIKEParameterSpec

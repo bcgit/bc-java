@@ -19,6 +19,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -79,50 +80,11 @@ public class DESedeTest
         return "DESEDE";
     }
 
-    private boolean equalArray(
-        byte[]  a,
-        byte[]  b)
+    private static boolean equalPrefix(byte[] a, byte[] b, int length)
     {
-        if (a.length != b.length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean equalArray(
-        byte[]  a,
-        byte[]  b,
-        int     length)
-    {
-        if (a.length < length)
-        {
-            return false;
-        }
-
-        if (b.length < length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i != length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return a.length >= length
+            && b.length >= length
+            && Arrays.areEqual(a, 0, length, b, 0, length);
     }
 
     private void wrapTest(
@@ -142,7 +104,7 @@ public class DESedeTest
             try
             {
                 byte[]  cText = wrapper.wrap(new SecretKeySpec(in, alg));
-                if (!equalArray(cText, out))
+                if (!Arrays.areEqual(cText, out))
                 {
                     fail("failed wrap test " + id  + " expected " + new String(Hex.encode(out)) + " got " + new String(Hex.encode(cText)));
                 }
@@ -157,7 +119,7 @@ public class DESedeTest
             try
             {
                 Key  pText = wrapper.unwrap(out, alg, Cipher.SECRET_KEY);
-                if (!equalArray(pText.getEncoded(), in))
+                if (!Arrays.areEqual(pText.getEncoded(), in))
                 {
                     fail("failed unwrap test " + id  + " expected " + new String(Hex.encode(in)) + " got " + new String(Hex.encode(pText.getEncoded())));
                 }
@@ -242,7 +204,7 @@ public class DESedeTest
 
         bytes = bOut.toByteArray();
 
-        if (!equalArray(bytes, output))
+        if (!Arrays.areEqual(bytes, output))
         {
             fail(alg + " failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
         }
@@ -265,13 +227,14 @@ public class DESedeTest
                 bytes[i] = (byte)dIn.read();
             }
             dIn.readFully(bytes, input.length / 2, bytes.length - input.length / 2);
+            dIn.close();
         }
         catch (Exception e)
         {
             fail(alg + " failed encryption - " + e.toString());
         }
 
-        if (!equalArray(bytes, input))
+        if (!Arrays.areEqual(bytes, input))
         {
             fail(alg + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
         }
@@ -284,7 +247,7 @@ public class DESedeTest
             SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(alg, "BC");
             DESedeKeySpec keySpec = (DESedeKeySpec)keyFactory.getKeySpec((SecretKey)key, DESedeKeySpec.class);
 
-            if (!equalArray(key.getEncoded(), keySpec.getKey(), 16))
+            if (!equalPrefix(key.getEncoded(), keySpec.getKey(), 16))
             {
                 fail(alg + " KeySpec does not match key.");
             }

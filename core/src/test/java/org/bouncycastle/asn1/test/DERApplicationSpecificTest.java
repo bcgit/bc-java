@@ -100,7 +100,7 @@ public class DERApplicationSpecificTest
             fail("wrong tag detected");
         }
 
-        ASN1Integer value = new ASN1Integer(9);
+        ASN1Integer value = ASN1Integer.valueOf(9);
 
         DERTaggedObject tagged = new DERTaggedObject(false, BERTags.APPLICATION, 3, value);
 

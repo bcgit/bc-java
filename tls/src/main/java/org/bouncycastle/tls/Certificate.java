@@ -83,7 +83,12 @@ public class Certificate
 
     public Certificate(TlsCertificate[] certificateList)
     {
-        this(null, convert(certificateList));
+        this(CertificateType.X509, certificateList);
+    }
+
+    public Certificate(short certificateType, TlsCertificate[] certificateList)
+    {
+        this(certificateType, null, convert(certificateList));
     }
 
     public Certificate(byte[] certificateRequestContext, CertificateEntry[] certificateEntryList)
@@ -245,6 +250,8 @@ public class Certificate
      * @throws IOException
      * @deprecated Use version taking a {@link ParseOptions} argument instead. 
      */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public static Certificate parse(TlsContext context, InputStream messageInput, OutputStream endPointHashOutput)
         throws IOException
     {

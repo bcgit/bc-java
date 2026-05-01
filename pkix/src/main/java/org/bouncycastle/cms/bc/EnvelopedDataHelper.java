@@ -99,12 +99,13 @@ class EnvelopedDataHelper
         MAC_ALG_NAMES.put(CMSAlgorithm.AES256_CBC, "AESMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.RC2_CBC, "RC2Mac");
 
-        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes128_GCM);
-        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes192_GCM);
-        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes256_GCM);
-        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes128_CCM);
-        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes192_CCM);
-        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes256_CCM);
+        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_GCM);
+        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_GCM);
+        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_GCM);
+        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_CCM);
+        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_CCM);
+        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_CCM);
+        authEnvelopedAlgorithms.add(CMSAlgorithm.ChaCha20Poly1305);
     }
 
     EnvelopedDataHelper()

@@ -14,31 +14,12 @@ abstract class AbstractAlgorithmConstraints implements BCAlgorithmConstraints
 
     AbstractAlgorithmConstraints(AlgorithmDecomposer decomposer)
     {
+        if (decomposer == null)
+        {
+            throw new NullPointerException("'decomposer' cannot be null");
+        }
+
         this.decomposer = decomposer;
-    }
-
-    protected void checkAlgorithmName(String algorithm)
-    {
-        if (!JsseUtils.isNameSpecified(algorithm))
-        {
-            throw new IllegalArgumentException("No algorithm name specified");
-        }
-    }
-
-    protected void checkKey(Key key)
-    {
-        if (null == key)
-        {
-            throw new NullPointerException("'key' cannot be null");
-        }
-    }
-
-    protected void checkPrimitives(Set<BCCryptoPrimitive> primitives)
-    {
-        if (!isPrimitivesSpecified(primitives))
-        {
-            throw new IllegalArgumentException("No cryptographic primitive specified");
-        }
     }
 
     protected boolean containsAnyPartIgnoreCase(Set<String> elements, String algorithm)
@@ -53,21 +34,42 @@ abstract class AbstractAlgorithmConstraints implements BCAlgorithmConstraints
             return true;
         }
 
-        if (null != decomposer)
+        for (String part : decomposer.decompose(algorithm))
         {
-            for (String part : decomposer.decompose(algorithm))
+            if (containsIgnoreCase(elements, part))
             {
-                if (containsIgnoreCase(elements, part))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
         return false;
     }
 
-    protected boolean containsIgnoreCase(Set<String> elements, String s)
+    static void checkAlgorithmName(String algorithm)
+    {
+        if (!JsseUtils.isNameSpecified(algorithm))
+        {
+            throw new IllegalArgumentException("No algorithm name specified");
+        }
+    }
+
+    static void checkKey(Key key)
+    {
+        if (null == key)
+        {
+            throw new NullPointerException("'key' cannot be null");
+        }
+    }
+
+    static void checkPrimitives(Set<BCCryptoPrimitive> primitives)
+    {
+        if (!isPrimitivesSpecified(primitives))
+        {
+            throw new IllegalArgumentException("No cryptographic primitive specified");
+        }
+    }
+
+    static boolean containsIgnoreCase(Set<String> elements, String s)
     {
         for (String element : elements)
         {
@@ -79,12 +81,12 @@ abstract class AbstractAlgorithmConstraints implements BCAlgorithmConstraints
         return false;
     }
 
-    protected boolean isPrimitivesSpecified(Set<BCCryptoPrimitive> primitives)
+    static boolean isPrimitivesSpecified(Set<BCCryptoPrimitive> primitives)
     {
         return null != primitives && !primitives.isEmpty();
     }
 
-    protected static Set<String> asUnmodifiableSet(String[] algorithms)
+    static Set<String> asUnmodifiableSet(String[] algorithms)
     {
         if (null != algorithms && algorithms.length > 0)
         {
@@ -97,7 +99,7 @@ abstract class AbstractAlgorithmConstraints implements BCAlgorithmConstraints
         return Collections.<String> emptySet();
     }
 
-    protected static Set<String> asSet(String[] algorithms)
+    static Set<String> asSet(String[] algorithms)
     {
         Set<String> result = new HashSet<String>();
         if (null != algorithms)

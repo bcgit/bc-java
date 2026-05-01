@@ -40,8 +40,8 @@ public class TlsClientRawKeysTest
         MockRawKeysTlsClient client = new MockRawKeysTlsClient(
                 CertificateType.RawPublicKey,
                 CertificateType.RawPublicKey,
-                new short[] {CertificateType.RawPublicKey},
-                new short[] {CertificateType.RawPublicKey},
+                new short[]{ CertificateType.RawPublicKey },
+                new short[]{ CertificateType.RawPublicKey },
                 new Ed25519PrivateKeyParameters(new SecureRandom()),
                 tlsVersion);
         TlsClientProtocol protocol = openTlsConnection(address, port, client);

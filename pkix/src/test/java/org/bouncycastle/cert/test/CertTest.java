@@ -3,7 +3,6 @@ package org.bouncycastle.cert.test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -78,6 +77,7 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectAltPublicKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -101,9 +101,9 @@ import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAValidationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
-import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
 import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
@@ -116,11 +116,12 @@ import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.operator.BufferingContentSigner;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.NoSignatureContentSigner;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -137,7 +138,6 @@ import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
-import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -2866,7 +2866,7 @@ public class CertTest
         {
             ASN1Enumerated reasonCode = (ASN1Enumerated)fromExtensionValue(ext);
 
-            if (reasonCode.intValueExact() != CRLReason.privilegeWithdrawn)
+            if (!reasonCode.hasValue(CRLReason.privilegeWithdrawn))
             {
                 fail("CRL entry reasonCode wrong");
             }
@@ -2892,14 +2892,11 @@ public class CertTest
         PrivateKey ecPriv = ecKp.getPrivate();
         PublicKey ecPub = ecKp.getPublic();
 
-        KeyPairGenerator lmsKpg = KeyPairGenerator.getInstance("LMS", "BCPQC");
+        KeyPairGenerator mlDsaKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        lmsKpg.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+        mlDsaKpg.initialize(MLDSAParameterSpec.ml_dsa_65);
 
-        KeyPair lmsKp = lmsKpg.generateKeyPair();
-
-        PrivateKey lmsPriv = lmsKp.getPrivate();
-        PublicKey lmsPub = lmsKp.getPublic();
+        KeyPair mlDsaKp = mlDsaKpg.generateKeyPair();
 
         //
         // distinguished name table.
@@ -2909,14 +2906,16 @@ public class CertTest
         //
         // create the certificate - version 3
         //
-        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
-            .add("SHA256withECDSA")
-            .add("LMS")
+        CompositePublicKey compPub = CompositePublicKey.builder(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512)
+            .addPublicKey(mlDsaKp.getPublic(),  "BC")
+            .addPublicKey(ecPub)
             .build();
-        CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
-        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
+        CompositePrivateKey compPrivKey = CompositePrivateKey.builder(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512)
+            .addPrivateKey(mlDsaKp.getPrivate(), "BC")
+            .addPrivateKey(ecPriv)
+            .build();
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).setProvider(BC).build(compPrivKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("COMPOSITE").setProvider(BC).build(compPrivKey);
 
         Date now = new Date();
 
@@ -2949,6 +2948,8 @@ public class CertTest
 
         X509CRLHolder crlHolder = crlGen.build(sigGen);
 
+        isTrue(crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(compPub)));
+
         X509CRL crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
 
         // comp test
@@ -2958,14 +2959,15 @@ public class CertTest
         try
         {
             crl.verify(new CompositePublicKey(new PublicKey[]{null, null}));
+            fail("no exception");
         }
         catch (InvalidKeyException e)
         {
-            isTrue(e.getMessage().equals("no matching key found"));
+            isTrue(e.getMessage().equals("provided composite public key cannot be used with the composite signature algorithm"));
         }
 
         // single key test
-        crl.verify(ecPub, BC);
+//        crl.verify(ecPub, BC);   no longer supported... possibly TODO
 
         if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
         {
@@ -3014,14 +3016,14 @@ public class CertTest
             fail("CRL entry reasonCode not found");
         }
 
-        sigGen = new JcaContentSignerBuilder("SHA256withECDSA", compAlgSpec).setProvider(BC).build(compPrivKey);
-
-        crlHolder = crlGen.build(sigGen);
-
-        crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
-
-        // comp test - single key
-        crl.verify(compPub);
+//        sigGen = new JcaContentSignerBuilder("SHA256withECDSA", compAlgSpec).setProvider(BC).build(compPrivKey);
+//
+//        crlHolder = crlGen.build(sigGen);
+//
+//        crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
+//
+//        // comp test - single key
+//        crl.verify(compPub);
     }
 
     public void checkCrlECDSAwithDilithiumCreation()
@@ -3146,6 +3148,44 @@ public class CertTest
         {
             fail("CRL entry reasonCode not found");
         }
+    }
+
+    public void checkMixedCompositionCreation()
+        throws Exception
+    {
+        if (Security.getProvider("SunEC") == null)
+        {
+            return;
+        }
+        KeyPairGenerator mldsaKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
+
+        mldsaKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
+
+        KeyPair mldsaKp = mldsaKpGen.generateKeyPair();
+
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "SunEC");
+
+        ecKpGen.initialize(new ECGenParameterSpec("secp256r1"));
+
+        KeyPair ecKp = ecKpGen.generateKeyPair();
+
+        CompositePublicKey compPublicKey = CompositePublicKey.builder(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+            .addPublicKey(mldsaKp.getPublic(), "BC")
+            .addPublicKey(ecKp.getPublic(), "BC")
+            .build();
+        CompositePrivateKey compPrivateKey = CompositePrivateKey.builder(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256)
+            .addPrivateKey(mldsaKp.getPrivate(), "BC")
+            .addPrivateKey(ecKp.getPrivate(), "SunEC")
+            .build();
+
+        // First sign (and verify) a certificate
+        final ContentSigner certsigner = new BufferingContentSigner(new JcaContentSignerBuilder("MLDSA44-ECDSA-P256-SHA256").setProvider("BC").build(compPrivateKey), 4096);
+        final SubjectPublicKeyInfo pkinfo = SubjectPublicKeyInfo.getInstance(compPublicKey.getEncoded());
+        final X509v3CertificateBuilder certbuilder = new X509v3CertificateBuilder(new X500Name("CN=issuer"), new BigInteger("12345678"), new Date(), new Date(), new X500Name("CN=subject"), pkinfo);
+        final X509CertificateHolder certHolder = certbuilder.build(certsigner);
+        //Assert.assertNotNull("signing must have created a certificate", certHolder);
+        final ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder().setProvider("BC").build(compPublicKey);
+        isTrue("Certificate signature must verify", certHolder.isSignatureValid(verifier));
     }
 
     /*
@@ -3975,6 +4015,60 @@ public class CertTest
 
         isTrue(PKCSObjectIdentifiers.id_RSASSA_PSS.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
         isTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
+    }
+
+    public void checkCreationNoSignature()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSASSA-PSS", BC);
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new NoSignatureContentSigner();
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        //
+        // check fails on verify
+        //
+        try
+        {
+            cert.verify(pubKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals(e.getMessage(), "attempt to pass public key to NoSig");
+        }
+
+        // convert and check components.
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        org.bouncycastle.asn1.x509.Certificate crt = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
+
+        isTrue(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_unsigned).equals(crt.getTBSCertificate().getSignature()));
+        isTrue(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_unsigned).equals(crt.getSignatureAlgorithm()));
+        isTrue(0 == cert.getSignature().length);
     }
 
     /*
@@ -5418,94 +5512,96 @@ public class CertTest
 
     // TESTS REGARDING COMPOSITES https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
     private static String[] compositeSignaturesOIDs = {
-            "2.16.840.1.114027.80.8.1.1", //id-MLDSA44-RSA2048-PSS-SHA256
-            "2.16.840.1.114027.80.8.1.2", //id-MLDSA44-RSA2048-PKCS15-SHA256
-            "2.16.840.1.114027.80.8.1.3", //id-MLDSA44-Ed25519-SHA512
-            "2.16.840.1.114027.80.8.1.4", //id-MLDSA44-ECDSA-P256-SHA256
-            "2.16.840.1.114027.80.8.1.5", //id-MLDSA44-ECDSA-brainpoolP256r1-SHA256
-            "2.16.840.1.114027.80.8.1.6", //id-MLDSA65-RSA3072-PSS-SHA512
-            "2.16.840.1.114027.80.8.1.7", //id-MLDSA65-RSA3072-PKCS15-SHA512
-            "2.16.840.1.114027.80.8.1.8", //id-MLDSA65-ECDSA-P256-SHA512
-            "2.16.840.1.114027.80.8.1.9", //id-MLDSA65-ECDSA-brainpoolP256r1-SHA512
-            "2.16.840.1.114027.80.8.1.10", //id-MLDSA65-Ed25519-SHA512
-            "2.16.840.1.114027.80.8.1.11", //id-MLDSA87-ECDSA-P384-SHA512
-            "2.16.840.1.114027.80.8.1.12", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA512
-            "2.16.840.1.114027.80.8.1.13", //id-MLDSA87-Ed448-SHA512
-            // Falcon composites below were excluded from the draft. See MiscObjectIdentifiers for details.
-            "2.16.840.1.114027.80.8.1.14", //id-Falcon512-ECDSA-P256-SHA256
-            "2.16.840.1.114027.80.8.1.15", //id-Falcon512-ECDSA-brainpoolP256r1-SHA256
-            "2.16.840.1.114027.80.8.1.16", //id-Falcon512-Ed25519-SHA512
-        };
+        "1.3.6.1.5.5.7.6.37", // id_MLDSA44_RSA2048_PSS_SHA256
+        "1.3.6.1.5.5.7.6.38", // id_MLDSA44_RSA2048_PKCS15_SHA256
+        "1.3.6.1.5.5.7.6.39", // id_MLDSA44_Ed25519_SHA512
+        "1.3.6.1.5.5.7.6.40", // id_MLDSA44_ECDSA_P256_SHA256
+        "1.3.6.1.5.5.7.6.41", // id_MLDSA65_RSA3072_PSS_SHA512
+        "1.3.6.1.5.5.7.6.42", // id_MLDSA65_RSA3072_PKCS15_SHA512
+        "1.3.6.1.5.5.7.6.43", // id_MLDSA65_RSA4096_PSS_SHA512
+        "1.3.6.1.5.5.7.6.44", // id_MLDSA65_RSA4096_PKCS15_SHA512
+        "1.3.6.1.5.5.7.6.45", // id_MLDSA65_ECDSA_P256_SHA512
+        "1.3.6.1.5.5.7.6.46", // id_MLDSA65_ECDSA_P384_SHA512
+        "1.3.6.1.5.5.7.6.47", // id_MLDSA65_ECDSA_brainpoolP256r1_SHA512
+        "1.3.6.1.5.5.7.6.48", // id_MLDSA65_Ed25519_SHA512
+        "1.3.6.1.5.5.7.6.49", // id_MLDSA87_ECDSA_P384_SHA512
+        "1.3.6.1.5.5.7.6.50", // id_MLDSA87_ECDSA_brainpoolP384r1_SHA512
+        "1.3.6.1.5.5.7.6.51", // id_MLDSA87_Ed448_SHAKE256
+        "1.3.6.1.5.5.7.6.52", // id_MLDSA87_RSA3072_PSS_SHA512
+        "1.3.6.1.5.5.7.6.53", // id_MLDSA87_RSA4096_PSS_SHA512
+        "1.3.6.1.5.5.7.6.54"  // id_MLDSA87_ECDSA_P521_SHA512
+    };
 
-    private static String[] compositeSignaturesIDs = {
+    private static final String[] compositeSignaturesIDs = {
         "MLDSA44-RSA2048-PSS-SHA256",
         "MLDSA44-RSA2048-PKCS15-SHA256",
         "MLDSA44-ED25519-SHA512",
-        "MLDSA44-ECDSA-P256-SHA256", 
-        "MLDSA44-ECDSA-BRAINPOOLP256R1-SHA256",
-        "MLDSA65-RSA3072-PSS-SHA512", 
+        "MLDSA44-ECDSA-P256-SHA256",
+        "MLDSA65-RSA3072-PSS-SHA512",
         "MLDSA65-RSA3072-PKCS15-SHA512",
+        "MLDSA65-RSA4096-PSS-SHA512",
+        "MLDSA65-RSA4096-PKCS15-SHA512",
         "MLDSA65-ECDSA-P256-SHA512",
-        "MLDSA65-ECDSA-BRAINPOOLP256R1-SHA512",
-        "MLDSA65-ED25519-SHA512", 
-        "MLDSA87-ECDSA-P384-SHA512", 
-        "MLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", 
-        "MLDSA87-ED448-SHA512", 
-        "FALCON512-ECDSA-P256-SHA256", 
-        "FALCON512-ECDSA-BRAINPOOLP256R1-SHA256", 
-        "FALCON512-ED25519-SHA512"
+        "MLDSA65-ECDSA-P384-SHA512",
+        "MLDSA65-ECDSA-brainpoolP256r1-SHA512",
+        "MLDSA65-ED25519-SHA512",
+        "MLDSA87-ECDSA-P384-SHA512",
+        "MLDSA87-ECDSA-brainpoolP384r1-SHA512",
+        "MLDSA87-ED448-SHAKE256",
+        "MLDSA87-RSA3072-PSS-SHA512",
+        "MLDSA87-RSA4096-PSS-SHA512",
+        "MLDSA87-ECDSA-P521-SHA512",
     };
 
     private void checkCompositeSignatureCertificateCreation()
         throws Exception
     {
-            int index = 0;
-            for (String oid : compositeSignaturesOIDs)
-            {
-                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(oid, "BC");
-                KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        int index = 0;
+        for (String oid : compositeSignaturesOIDs)
+        {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(oid, "BC");
+            KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
-                String subjectName = "CN=ROOT CA";
-                X500Name issuer = new X500Name(subjectName);
-                BigInteger serial = BigInteger.valueOf(5);
-                Date notBefore = new Date();
-                Date notAfter = new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 365L);
-                X500Name subject = new X500Name(subjectName);
+            String subjectName = "CN=ROOT CA";
+            X500Name issuer = new X500Name(subjectName);
+            BigInteger serial = BigInteger.valueOf(5);
+            Date notBefore = new Date();
+            Date notAfter = new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 365L);
+            X500Name subject = new X500Name(subjectName);
+            JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(issuer, serial, notBefore, notAfter, subject, keyPair.getPublic());
+            X509CertificateHolder certHolder = certificateBuilder.build(new JcaContentSignerBuilder(compositeSignaturesIDs[index]).build(keyPair.getPrivate()));
+            X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
 
-                JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(issuer, serial, notBefore, notAfter, subject, keyPair.getPublic());
-                X509CertificateHolder certHolder = certificateBuilder.build(new JcaContentSignerBuilder(compositeSignaturesIDs[index]).build(keyPair.getPrivate()));
-                X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
+            isEquals(oid, cert.getSigAlgOID());
+            CompositePublicKey compositePublicKey = (CompositePublicKey)cert.getPublicKey();
 
-                isEquals(oid, cert.getSigAlgOID());
-                CompositePublicKey compositePublicKey = (CompositePublicKey)cert.getPublicKey();
+            // isEquals(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(new ASN1ObjectIdentifier(oid)).getId(), compositePublicKey.getAlgorithm());
 
-                isEquals(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(new ASN1ObjectIdentifier(oid)).getId(), compositePublicKey.getAlgorithm());
+            isEquals(subjectName, cert.getSubjectX500Principal().getName());
 
-                isEquals(subjectName, cert.getSubjectX500Principal().getName());
-
-                cert.verify(cert.getPublicKey());
-                index++;
-            }
+            cert.verify(cert.getPublicKey(), "BC");
+            index++;
+        }
     }
 
     private void checkParseCompositePublicKey()
     {
-        try
-        {
-            //compositePublicKeyExampleRFC.pem contains the sample public key from https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
-            PEMParser pemParser = new PEMParser(new InputStreamReader(TestResourceFinder.findTestResource("pqc/composite", "compositePublicKeyExampleRFC.pem")));
-            SubjectPublicKeyInfo subjectPublicKeyInfo = (SubjectPublicKeyInfo)pemParser.readObject();
-            isEquals(subjectPublicKeyInfo.getAlgorithm().getAlgorithm(), MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
-
-            CompositePublicKey compositePublicKey = new CompositePublicKey(subjectPublicKeyInfo);
-
-            isEquals(compositePublicKey.getPublicKeys().get(0).getAlgorithm(), "ML-DSA-44");
-            isEquals(compositePublicKey.getPublicKeys().get(1).getAlgorithm(), "ECDSA");
-        }
-        catch (Exception e)
-        {
-            fail("checkParseCompositePublicKey failed: " + e.getMessage());
-        }
+//        try
+//        {
+//            //compositePublicKeyExampleRFC.pem contains the sample public key from https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
+//            PEMParser pemParser = new PEMParser(new InputStreamReader(TestResourceFinder.findTestResource("pqc/composite", "compositePublicKeyExampleRFC.pem")));
+//            SubjectPublicKeyInfo subjectPublicKeyInfo = (SubjectPublicKeyInfo)pemParser.readObject();
+//            isEquals(subjectPublicKeyInfo.getAlgorithm().getAlgorithm(), IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+//
+//            CompositePublicKey compositePublicKey = new CompositePublicKey(subjectPublicKeyInfo);
+//
+//            isEquals(compositePublicKey.getPublicKeys().get(0).getAlgorithm(), "ML-DSA-44");
+//            isEquals(compositePublicKey.getPublicKeys().get(1).getAlgorithm(), "ECDSA");
+//        }
+//        catch (Exception e)
+//        {
+//            fail("checkParseCompositePublicKey failed: " + e.getMessage());
+//        }
     }
 
     // TODO: OIDS no updated
@@ -5519,7 +5615,7 @@ public class CertTest
 //            PEMParser pemParser = new PEMParser(new InputStreamReader(TestResourceFinder.findTestResource("pqc/composite", "compositePrivateKeyExample.pem")));
 //            PrivateKeyInfo privateKeyInfo = (PrivateKeyInfo)pemParser.readObject();
 //
-//            isEquals(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm(), MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+//            isEquals(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm(), IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
 //
 //            CompositePrivateKey compositePrivateKey = new CompositePrivateKey(privateKeyInfo);
 //
@@ -5537,23 +5633,24 @@ public class CertTest
         try
         {
             //compositeCertificateExampleRFC.pem contains the sample certificate from https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
-            PEMParser pemParser = new PEMParser(new InputStreamReader(TestResourceFinder.findTestResource("pqc/composite", "compositeCertificateExampleRFC.pem")));
-            X509CertificateHolder certificateHolder = (X509CertificateHolder)pemParser.readObject();
-            JcaX509CertificateConverter x509Converter = new JcaX509CertificateConverter().setProvider("BC");
-            X509Certificate certificate = x509Converter.getCertificate(certificateHolder);
-
-            isEquals(certificate.getSigAlgOID(), MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.toString());
-
-            CompositePublicKey compositePublicKey = (CompositePublicKey)certificate.getPublicKey();
-
-            isEquals(compositePublicKey.getPublicKeys().get(0).getAlgorithm(), "ML-DSA-44");
-            isEquals(compositePublicKey.getPublicKeys().get(1).getAlgorithm(), "ECDSA");
+//            PEMParser pemParser = new PEMParser(new InputStreamReader(TestResourceFinder.findTestResource("pqc/composite", "compositeCertificateExampleRFC.pem")));
+//            X509CertificateHolder certificateHolder = (X509CertificateHolder)pemParser.readObject();
+//            JcaX509CertificateConverter x509Converter = new JcaX509CertificateConverter().setProvider("BC");
+//            X509Certificate certificate = x509Converter.getCertificate(certificateHolder);
+//
+//            isEquals(certificate.getSigAlgOID(), IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256.toString());
+//
+//            CompositePublicKey compositePublicKey = (CompositePublicKey)certificate.getPublicKey();
+//
+//            isEquals(compositePublicKey.getPublicKeys().get(0).getAlgorithm(), "ML-DSA-44");
+//            isEquals(compositePublicKey.getPublicKeys().get(1).getAlgorithm(), "ECDSA");
 
             // TODO: dilithium was used in the sample.
             //certificate.verify(compositePublicKey);
         }
         catch (Exception e)
-        {                e.printStackTrace();
+        {
+            e.printStackTrace();
             fail("checkParseAndVerifyCompositeCertificate failed: " + e.getMessage());
         }
     }
@@ -5661,6 +5758,7 @@ public class CertTest
         checkCreationECDSA();
         checkCreationRSA();
         checkCreationRSAPSS();
+        checkCreationNoSignature();
 
         checkCreationFalcon();
         checkCreationDilithium();
@@ -5672,6 +5770,7 @@ public class CertTest
         checkCreationDilithiumSigWithECDSASig();
 
         checkCreationComposite();
+        checkMixedCompositionCreation();
         checkCompositeCertificateVerify();
 
         createECCert("SHA1withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA1);

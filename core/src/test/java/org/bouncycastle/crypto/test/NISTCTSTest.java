@@ -1,14 +1,19 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.DSTU7624Engine;
+import org.bouncycastle.crypto.modes.KXTSBlockCipher;
 import org.bouncycastle.crypto.modes.NISTCTSBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -36,23 +41,23 @@ public class NISTCTSTest
     private static byte[] cs2NotQuiteTwoBlockOut = Hex.decode("f098097ca69b72e3a46e9ca21bb5ebbc22ecf2ac77");
     private static byte[] cs3NotQuiteTwoBlockOut = Hex.decode("f098097ca69b72e3a46e9ca21bb5ebbc22ecf2ac77");
 
-    static byte[]   in1 = Hex.decode("4e6f7720697320746865207420");
-    static byte[]   in2 = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f0aaa");
-    static byte[]   out1 = Hex.decode("9952f131588465033fa40e8a98");
-    static byte[]   out2 = Hex.decode("358f84d01eb42988dc34efb994");
-    static byte[]   out3 = Hex.decode("170171cfad3f04530c509b0c1f0be0aefbd45a8e3755a873bff5ea198504b71683c6");
-    
+    static byte[] in1 = Hex.decode("4e6f7720697320746865207420");
+    static byte[] in2 = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f0aaa");
+    static byte[] out1 = Hex.decode("9952f131588465033fa40e8a98");
+    static byte[] out2 = Hex.decode("358f84d01eb42988dc34efb994");
+    static byte[] out3 = Hex.decode("170171cfad3f04530c509b0c1f0be0aefbd45a8e3755a873bff5ea198504b71683c6");
+
     private void testCTS(
-        int                 id,
-        int                 type,
-        BlockCipher         cipher,
-        CipherParameters    params,
-        byte[]              input,
-        byte[]              output)
+        int id,
+        int type,
+        BlockCipher cipher,
+        CipherParameters params,
+        byte[] input,
+        byte[] output)
         throws Exception
     {
-        byte[]                  out = new byte[input.length];
-        BufferedBlockCipher     engine = new NISTCTSBlockCipher(type, cipher);
+        byte[] out = new byte[input.length];
+        BufferedBlockCipher engine = new NISTCTSBlockCipher(type, cipher);
 
         engine.init(true, params);
 
@@ -77,55 +82,98 @@ public class NISTCTSTest
         }
     }
 
-    private void testExceptions() throws InvalidCipherTextException
+    private void testExceptions()
+        throws InvalidCipherTextException
     {
         BufferedBlockCipher engine = new NISTCTSBlockCipher(NISTCTSBlockCipher.CS1, AESEngine.newInstance());
         CipherParameters params = new KeyParameter(new byte[engine.getBlockSize()]);
         engine.init(true, params);
 
         byte[] out = new byte[engine.getOutputSize(engine.getBlockSize())];
-        
+
         engine.processBytes(new byte[engine.getBlockSize() - 1], 0, engine.getBlockSize() - 1, out, 0);
-        try 
+        try
         {
             engine.doFinal(out, 0);
             fail("Expected CTS encrypt error on < 1 block input");
-        } catch(DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             // Expected
         }
 
         engine.init(true, params);
         engine.processBytes(new byte[engine.getBlockSize()], 0, engine.getBlockSize(), out, 0);
-        try 
+        try
         {
             engine.doFinal(out, 0);
-        } catch(DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail("Unexpected CTS encrypt error on == 1 block input");
         }
 
         engine.init(false, params);
         engine.processBytes(new byte[engine.getBlockSize() - 1], 0, engine.getBlockSize() - 1, out, 0);
-        try 
+        try
         {
             engine.doFinal(out, 0);
             fail("Expected CTS decrypt error on < 1 block input");
-        } catch(DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             // Expected
         }
 
         engine.init(false, params);
         engine.processBytes(new byte[engine.getBlockSize()], 0, engine.getBlockSize(), out, 0);
-        try 
+        try
         {
             engine.doFinal(out, 0);
-        } catch(DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail("Unexpected CTS decrypt error on == 1 block input");
         }
 
+    }
+
+    private void testOverlapping()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        byte[] iv = new byte[16];
+        random.nextBytes(keyBytes);
+        BufferedBlockCipher bc = new NISTCTSBlockCipher(NISTCTSBlockCipher.CS1, AESEngine.newInstance());
+        ParametersWithIV param = new ParametersWithIV(new KeyParameter(keyBytes), iv);
+
+        int offset = 1 + random.nextInt(bc.getBlockSize() - 1) + bc.getBlockSize();
+        byte[] data = new byte[bc.getBlockSize() * 4 + offset];
+        byte[] expected = new byte[bc.getOutputSize(bc.getBlockSize() * 3)];
+        random.nextBytes(data);
+
+        bc.init(true, param);
+        int len = bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.doFinal(expected, len);
+        bc.init(true, param);
+        len = bc.processBytes(data, 0, expected.length, data, offset);
+        bc.doFinal(data, offset + len);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping encryption");
+        }
+
+        bc.init(false, param);
+        bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.init(false, param);
+        bc.processBytes(data, 0, expected.length, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed for overlapping decryption");
+        }
     }
 
     public String getName()
@@ -133,7 +181,7 @@ public class NISTCTSTest
         return "NISTCTS";
     }
 
-    public void performTest() 
+    public void performTest()
         throws Exception
     {
         testCTS(1, NISTCTSBlockCipher.CS1, AESEngine.newInstance(), new ParametersWithIV(key, iv), singleBlock, singleOut);
@@ -149,7 +197,7 @@ public class NISTCTSTest
         testCTS(9, NISTCTSBlockCipher.CS3, AESEngine.newInstance(), new ParametersWithIV(key, iv), notQuiteTwo, cs3NotQuiteTwoBlockOut);
 
         byte[] aes128b = Hex.decode("aafd12f659cae63489b479e5076ddec2f06cb58faafd12f6");
-        byte[] aesIn1b  = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
+        byte[] aesIn1b = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
         byte[] aesOut1b = Hex.decode("6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04");
 
         testCTS(10, NISTCTSBlockCipher.CS3, AESEngine.newInstance(), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
@@ -160,10 +208,11 @@ public class NISTCTSTest
         testCTS(11, NISTCTSBlockCipher.CS3, AESEngine.newInstance(), new ParametersWithIV(new KeyParameter(aes128c), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1c);
 
         testExceptions();
+        testOverlapping();
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         runTest(new NISTCTSTest());
     }

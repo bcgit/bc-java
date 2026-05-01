@@ -13,15 +13,18 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1BitString;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -32,9 +35,17 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.math.ec.rfc8032.Ed448;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 /**
@@ -42,24 +53,91 @@ import org.bouncycastle.util.Exceptions;
  */
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
+    implements AsymmetricKeyInfoConverter
 {
+    private static AlgorithmIdentifier createECAlgID(ASN1ObjectIdentifier curveOid)
+    {
+        return new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(curveOid));
+    }
 
     //Specific algorithm identifiers of all component signature algorithms for SubjectPublicKeyInfo. These do not need to be all initialized here but makes the code more readable IMHO.
-    private static final AlgorithmIdentifier dilithium2Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_44);
-    private static final AlgorithmIdentifier dilithium3Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_65);
-    private static final AlgorithmIdentifier dilithium5Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_87);
-    private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
-    private static final AlgorithmIdentifier ed25519Identifier = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519);
-    private static final AlgorithmIdentifier ecdsaP256Identifier = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp256r1));
-    private static final AlgorithmIdentifier ecdsaBrainpoolP256r1Identifier = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(TeleTrusTObjectIdentifiers.brainpoolP256r1));
-    private static final AlgorithmIdentifier rsaIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption);
-    private static final AlgorithmIdentifier ed448Identifier = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448);
-    private static final AlgorithmIdentifier ecdsaP384Identifier = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp384r1));
-    private static final AlgorithmIdentifier ecdsaBrainpoolP384r1Identifier = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(TeleTrusTObjectIdentifiers.brainpoolP384r1));
+    private static final AlgorithmIdentifier mlDsa44 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_44);
+    private static final AlgorithmIdentifier mlDsa65 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_65);
+    private static final AlgorithmIdentifier mlDsa87 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_87);
+//    private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
+    private static final AlgorithmIdentifier ed25519 = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519);
+    private static final AlgorithmIdentifier ed448 = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448);
+    private static final AlgorithmIdentifier ecDsaP256 = createECAlgID(SECObjectIdentifiers.secp256r1);
+    private static final AlgorithmIdentifier ecDsaP384 = createECAlgID(SECObjectIdentifiers.secp384r1);
+    private static final AlgorithmIdentifier ecDsaP521 = createECAlgID(SECObjectIdentifiers.secp521r1);
+    private static final AlgorithmIdentifier ecDsaBrainpoolP256r1 = createECAlgID(TeleTrusTObjectIdentifiers.brainpoolP256r1);
+    private static final AlgorithmIdentifier ecDsaBrainpoolP384r1 = createECAlgID(TeleTrusTObjectIdentifiers.brainpoolP384r1);
+    private static final AlgorithmIdentifier rsa = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption);
+
+    private static Map<ASN1ObjectIdentifier, AlgorithmIdentifier[]> pairings = new HashMap<ASN1ObjectIdentifier, AlgorithmIdentifier[]>();
+    private static Map<ASN1ObjectIdentifier, int[]> componentKeySizes = new HashMap<ASN1ObjectIdentifier, int[]>();
+
+    static
+    {
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new AlgorithmIdentifier[]{mlDsa44, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new AlgorithmIdentifier[]{mlDsa44, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new AlgorithmIdentifier[]{mlDsa44, ed25519});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new AlgorithmIdentifier[]{mlDsa44, ecDsaP256});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new AlgorithmIdentifier[]{mlDsa65, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaP256});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaP384});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new AlgorithmIdentifier[]{mlDsa65, ecDsaBrainpoolP256r1});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new AlgorithmIdentifier[]{mlDsa65, ed25519});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaP384});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaBrainpoolP384r1});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new AlgorithmIdentifier[]{mlDsa87, ed448});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa87, rsa});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaP521});
+        pairings.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa87, rsa});
+        
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new int[]{1312, 268});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new int[]{1312, 284});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new int[]{1312, Ed25519.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new int[]{1312, 76});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512, new int[]{1952, 256});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512, new int[]{1952, 256});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512, new int[]{1952, 542});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512, new int[]{1952, 542});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512, new int[]{1952, 76});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512, new int[]{1952, 87});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, new int[]{1952, 76});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new int[]{1952, Ed25519.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512, new int[]{2592, 87});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, new int[]{2592, 87});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256, new int[]{2592, Ed448.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new int[]{2592, 542});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new int[]{2592, 256});
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new int[]{2592, 93});
+    }
+
+    private JcaJceHelper helper;
+
+    public KeyFactorySpi()
+    {
+        this(null);
+    }
+
+    public KeyFactorySpi(JcaJceHelper helper)
+    {
+        this.helper = helper;
+    }
 
     protected Key engineTranslateKey(Key key)
         throws InvalidKeyException
     {
+        if (helper == null)
+        {
+            helper = new BCJcaJceHelper();
+        }
+
         try
         {
             if (key instanceof PrivateKey)
@@ -91,19 +169,95 @@ public class KeyFactorySpi
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        ASN1Sequence seq = DERSequence.getInstance(keyInfo.parsePrivateKey());
+        if (helper == null)
+        {
+            helper = new BCJcaJceHelper();
+        }
+
         ASN1ObjectIdentifier keyIdentifier = keyInfo.getPrivateKeyAlgorithm().getAlgorithm();
 
+        if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
+            || MiscObjectIdentifiers.id_composite_key.equals(keyIdentifier))
+        {
+            ASN1Sequence seq = DERSequence.getInstance(keyInfo.parsePrivateKey());
+
+            PrivateKey[] privKeys = new PrivateKey[seq.size()];
+
+            for (int i = 0; i != seq.size(); i++)
+            {
+                ASN1Sequence kSeq = ASN1Sequence.getInstance(seq.getObjectAt(i));
+
+                PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kSeq);
+
+                try
+                {
+                    privKeys[i] = helper.createKeyFactory(
+                        privInfo.getPrivateKeyAlgorithm().getAlgorithm().getId()).generatePrivate(new PKCS8EncodedKeySpec(privInfo.getEncoded()));
+                }
+                catch (Exception e)
+                {
+                    throw new IOException("cannot decode generic composite: " + e.getMessage(), e);
+                }
+            }
+
+            return new CompositePrivateKey(privKeys);
+        }
         try
         {
+            ASN1Sequence seq;
             List<KeyFactory> factories = getKeyFactoriesFromIdentifier(keyIdentifier); //Get key factories for each component algorithm.
+            byte[] data;
+            ASN1EncodableVector v = new ASN1EncodableVector();
+            // TODO: backwards compatibility code - should be deleted after 1.84.
+            try
+            {
+                data = DEROctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            }
+            catch (Exception e)
+            {
+                data = keyInfo.getPrivateKey().getOctets();
+            }
+            v.add(new DEROctetString(Arrays.copyOfRange(data, 0, 32)));
+            String traditionAlg = factories.get(1).getAlgorithm();
+            if (traditionAlg.equals("Ed25519"))
+            {
+                v.add(new DEROctetString(Arrays.concatenate(new byte[]{0x04, 0x20}, Arrays.copyOfRange(data, 32, data.length))));
+            }
+            else if (traditionAlg.equals("Ed448"))
+            {
+                v.add(new DEROctetString(Arrays.concatenate(new byte[]{0x04, 0x39}, Arrays.copyOfRange(data, 32, data.length))));
+            }
+            else
+            {
+                v.add(new DEROctetString(Arrays.copyOfRange(data, 32, data.length)));
+            }
+            seq = new DERSequence(v);
+
             PrivateKey[] privateKeys = new PrivateKey[seq.size()];
+            AlgorithmIdentifier[] algIds = pairings.get(keyIdentifier);
             for (int i = 0; i < seq.size(); i++)
             {
-                // We assume each component is of type OneAsymmetricKey (PrivateKeyInfo) as defined by the draft RFC
-                // and use the component key factory to decode the component key from PrivateKeyInfo.
-                PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(PrivateKeyInfo.getInstance(seq.getObjectAt(i)).getEncoded());
-                privateKeys[i] = factories.get(i).generatePrivate(keySpec);
+                if (seq.getObjectAt(i) instanceof ASN1OctetString)
+                {
+                    v = new ASN1EncodableVector(3);
+
+                    v.add(keyInfo.getVersion());
+                    v.add(algIds[i]);
+                    v.add(seq.getObjectAt(i));
+
+                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(
+                        PrivateKeyInfo.getInstance(new DERSequence(v)).getEncoded());
+                    privateKeys[i] = factories.get(i).generatePrivate(keySpec);
+                }
+                else
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(seq.getObjectAt(i));
+
+                    // We assume each component is of type OneAsymmetricKey (PrivateKeyInfo) as defined by the draft RFC
+                    // and use the component key factory to decode the component key from PrivateKeyInfo.
+                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(PrivateKeyInfo.getInstance(keySeq).getEncoded());
+                    privateKeys[i] = factories.get(i).generatePrivate(keySpec);
+                }
             }
             return new CompositePrivateKey(keyIdentifier, privateKeys);
         }
@@ -126,32 +280,81 @@ public class KeyFactorySpi
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        ASN1Sequence seq = DERSequence.getInstance(keyInfo.getPublicKeyData().getBytes());
+        if (helper == null)
+        {
+            helper = new BCJcaJceHelper();
+        }
+
         ASN1ObjectIdentifier keyIdentifier = keyInfo.getAlgorithm().getAlgorithm();
+
+        ASN1Sequence seq = null;
+        byte[][] componentKeys = new byte[2][];
 
         try
         {
+            seq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+        }
+        catch (Exception e)
+        {
+            componentKeys = split(keyIdentifier, keyInfo.getPublicKeyData());
+        }
+
+        if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
+            || MiscObjectIdentifiers.id_composite_key.equals(keyIdentifier))
+        {
+            // TODO This is redundant with 'seq' calculation above 
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+            PublicKey[] pubKeys = new PublicKey[keySeq.size()];
+
+            for (int i = 0; i != keySeq.size(); i++)
+            {
+                SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(keySeq.getObjectAt(i));
+
+                try
+                {
+                    pubKeys[i] = helper.createKeyFactory((pubInfo.getAlgorithm().getAlgorithm().getId())).generatePublic(new X509EncodedKeySpec(pubInfo.getEncoded()));
+                }
+                catch (Exception e)
+                {
+                    throw new IOException("cannot decode generic composite: " + e.getMessage(), e);
+                }
+            }
+
+            return new CompositePublicKey(pubKeys);
+        }
+
+        try
+        {
+            int numKeys = (seq == null) ? componentKeys.length : seq.size();
+
             List<KeyFactory> factories = getKeyFactoriesFromIdentifier(keyIdentifier);
-            ASN1BitString[] componentBitStrings = new ASN1BitString[seq.size()];
-            for (int i = 0; i < seq.size(); i++)
+            ASN1BitString[] componentBitStrings = new ASN1BitString[numKeys];
+            for (int i = 0; i < numKeys; i++)
             {
                 // Check if component is OCTET STRING. If yes, convert it to BIT STRING.
                 // This check should not be necessary since the draft RFC specifies components as BIT STRING encoded,
                 // but currently the example public keys are OCTET STRING. So we leave it for interoperability.
-                if (seq.getObjectAt(i) instanceof DEROctetString)
+                if (seq != null)
                 {
-                    componentBitStrings[i] = new DERBitString(((DEROctetString)seq.getObjectAt(i)).getOctets());
+                    if (seq.getObjectAt(i) instanceof DEROctetString)
+                    {
+                        componentBitStrings[i] = new DERBitString(((DEROctetString)seq.getObjectAt(i)).getOctets());
+                    }
+                    else
+                    {
+                        componentBitStrings[i] = (DERBitString)seq.getObjectAt(i);
+                    }
                 }
                 else
                 {
-                    componentBitStrings[i] = (DERBitString)seq.getObjectAt(i);
+                    componentBitStrings[i] = new DERBitString(componentKeys[i]);
                 }
             }
 
             // We need to get X509EncodedKeySpec to use key factories to produce component public keys.
             X509EncodedKeySpec[] x509EncodedKeySpecs = getKeysSpecs(keyIdentifier, componentBitStrings);
-            PublicKey[] publicKeys = new PublicKey[seq.size()];
-            for (int i = 0; i < seq.size(); i++)
+            PublicKey[] publicKeys = new PublicKey[numKeys];
+            for (int i = 0; i < numKeys; i++)
             {
                 publicKeys[i] = factories.get(i).generatePublic(x509EncodedKeySpecs[i]);
             }
@@ -162,6 +365,16 @@ public class KeyFactorySpi
         {
             throw Exceptions.ioException(e.getMessage(), e);
         }
+    }
+
+    byte[][] split(ASN1ObjectIdentifier algorithm, ASN1BitString publicKeyData)
+    {
+        int[] sizes = componentKeySizes.get(algorithm);
+        byte[] keyData = publicKeyData.getOctets();
+        byte[][] components = new byte[][]{new byte[sizes[0]], new byte[keyData.length - sizes[0]]};
+        System.arraycopy(keyData, 0, components[0], 0, sizes[0]);
+        System.arraycopy(keyData, sizes[0], components[1], 0, components[1].length);
+        return components;
     }
 
     /**
@@ -178,48 +391,14 @@ public class KeyFactorySpi
         List<KeyFactory> factories = new ArrayList<KeyFactory>();
         List<String> algorithmNames = new ArrayList<String>();
 
-        switch (CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(algorithmIdentifier))
+        String[] pairings = CompositeIndex.getPairing(algorithmIdentifier);
+        if (pairings == null)
         {
-        case MLDSA44_Ed25519_SHA512:
-        case MLDSA65_Ed25519_SHA512:
-            algorithmNames.add("ML-DSA");
-            algorithmNames.add("Ed25519");
-            break;
-        case MLDSA87_Ed448_SHA512:
-            algorithmNames.add("ML-DSA");
-            algorithmNames.add("Ed448");
-            break;
-        case MLDSA44_RSA2048_PSS_SHA256:
-        case MLDSA44_RSA2048_PKCS15_SHA256:
-        case MLDSA65_RSA3072_PSS_SHA512:
-        case MLDSA65_RSA3072_PKCS15_SHA512:
-            algorithmNames.add("ML-DSA");
-            algorithmNames.add("RSA");
-            break;
-        case MLDSA44_ECDSA_P256_SHA256:
-        case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-        case MLDSA65_ECDSA_P256_SHA512:
-        case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-        case MLDSA87_ECDSA_P384_SHA512:
-        case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-            algorithmNames.add("ML-DSA");
-            algorithmNames.add("ECDSA");
-            break;
-        case Falcon512_Ed25519_SHA512:
-            algorithmNames.add("Falcon");
-            algorithmNames.add("Ed25519");
-            break;
-        case Falcon512_ECDSA_P256_SHA256:
-        case Falcon512_ECDSA_brainpoolP256r1_SHA256:
-            algorithmNames.add("Falcon");
-            algorithmNames.add("ECDSA");
-            break;
-        default:
-            throw new IllegalArgumentException("Cannot create KeyFactories. Unsupported algorithm identifier.");
+            throw new NoSuchAlgorithmException("Cannot create KeyFactories. Unsupported algorithm identifier.");
         }
 
-        factories.add(KeyFactory.getInstance(algorithmNames.get(0), "BC"));
-        factories.add(KeyFactory.getInstance(algorithmNames.get(1), "BC"));
+        factories.add(helper.createKeyFactory(CompositeIndex.getBaseName(pairings[0])));
+        factories.add(helper.createKeyFactory(CompositeIndex.getBaseName(pairings[1])));
         return Collections.unmodifiableList(factories);
     }
 
@@ -239,69 +418,15 @@ public class KeyFactorySpi
         X509EncodedKeySpec[] specs = new X509EncodedKeySpec[subjectPublicKeys.length];
         SubjectPublicKeyInfo[] keyInfos = new SubjectPublicKeyInfo[subjectPublicKeys.length];
 
-        switch (CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(algorithmIdentifier))
+        AlgorithmIdentifier[] algIds = pairings.get(algorithmIdentifier);
+
+        if (algIds == null)
         {
-        case MLDSA44_Ed25519_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA44_ECDSA_P256_SHA256:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA44_RSA2048_PSS_SHA256:
-        case MLDSA44_RSA2048_PKCS15_SHA256:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(rsaIdentifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA65_Ed25519_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA65_ECDSA_P256_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA65_RSA3072_PSS_SHA512:
-        case MLDSA65_RSA3072_PKCS15_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(rsaIdentifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA87_Ed448_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ed448Identifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA87_ECDSA_P384_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP384Identifier, subjectPublicKeys[1]);
-            break;
-        case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP384r1Identifier, subjectPublicKeys[1]);
-            break;
-        case Falcon512_Ed25519_SHA512:
-            keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
-            break;
-        case Falcon512_ECDSA_P256_SHA256:
-            keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
-            break;
-        case Falcon512_ECDSA_brainpoolP256r1_SHA256:
-            keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
-            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
-            break;
-        default:
-            throw new IllegalArgumentException("Cannot create key specs. Unsupported algorithm identifier.");
+            throw new IOException("Cannot create key specs. Unsupported algorithm identifier.");
         }
+
+        keyInfos[0] = new SubjectPublicKeyInfo(algIds[0], subjectPublicKeys[0]);
+        keyInfos[1] = new SubjectPublicKeyInfo(algIds[1], subjectPublicKeys[1]);
 
         specs[0] = new X509EncodedKeySpec(keyInfos[0].getEncoded());
         specs[1] = new X509EncodedKeySpec(keyInfos[1].getEncoded());

@@ -36,7 +36,7 @@ public class SimulatedTlsSRPIdentityManager
 
         TlsSRPConfig srpConfig = new TlsSRPConfig();
 
-        srpConfig.setExplicitNG(new BigInteger[] { group.getN(), group.getG() });
+        srpConfig.setExplicitNG(new BigInteger[]{ group.getN(), group.getG() });
 
         return new SimulatedTlsSRPIdentityManager(group, crypto.createSRP6VerifierGenerator(srpConfig), mac);
     }

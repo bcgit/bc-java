@@ -38,6 +38,7 @@ import java.util.Vector;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -47,7 +48,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.AccessDescription;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
@@ -768,8 +768,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         X509Certificate sign = null;
 
         AlgorithmIdentifier workingAlgId = null;
-        ASN1ObjectIdentifier workingPublicKeyAlgorithm = null;
-        ASN1Encodable workingPublicKeyParameters = null;
 
         if (trust != null)
         {
@@ -787,8 +785,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             try
             {
                 workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-                workingPublicKeyParameters = workingAlgId.getParameters();
             }
             catch (CertPathValidatorException ex)
             {
@@ -852,11 +848,11 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             {
                 ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.NoIssuerPublicKey");
                 // if there is an authority key extension add the serial and issuer of the missing certificate
-                byte[] akiBytes = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
-                if (akiBytes != null)
+                byte[] akiExtValue = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+                if (akiExtValue != null)
                 {
                     AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(
-                        DEROctetString.getInstance(akiBytes).getOctets());
+                        ASN1OctetString.getInstance(akiExtValue).getOctets());
                     GeneralNames issuerNames = aki.getAuthorityCertIssuer();
                     if (issuerNames != null)
                     {
@@ -1034,16 +1030,12 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             {
                 workingPublicKey = getNextWorkingKey(certs, index);
                 workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-                workingPublicKeyParameters = workingAlgId.getParameters();
             }
             catch (CertPathValidatorException ex)
             {
                 ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.pubKeyError");
                 addError(msg,index);
                 workingAlgId = null;
-                workingPublicKeyAlgorithm = null;
-                workingPublicKeyParameters = null;
             }
 
         } // for
@@ -1952,7 +1944,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
         catch (Exception e)
         {
-            StringBuffer b = new StringBuffer();
+            StringBuilder b = new StringBuilder();
             
             for (int i = 0; i != ip.length; i++)
             {
@@ -2435,25 +2427,25 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         try
         {
             certSelectX509.setSubject(getEncodedIssuerPrincipal(cert).getEncoded());
-            byte[] ext = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
 
-            if (ext != null)
+            byte[] akiExtValue = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+            if (akiExtValue != null)
             {
-                ASN1OctetString oct = (ASN1OctetString)ASN1Primitive.fromByteArray(ext);
-                AuthorityKeyIdentifier authID = AuthorityKeyIdentifier.getInstance(ASN1Primitive.fromByteArray(oct.getOctets()));
+                AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(
+                    ASN1OctetString.getInstance(akiExtValue).getOctets());
 
                 // we ignore key identifier as if set, selector expects parent to have subjectKeyID
-                BigInteger serial = authID.getAuthorityCertSerialNumber();
+                BigInteger serial = aki.getAuthorityCertSerialNumber();
                 if (serial != null)
                 {
-                    certSelectX509.setSerialNumber(authID.getAuthorityCertSerialNumber());
+                    certSelectX509.setSerialNumber(aki.getAuthorityCertSerialNumber());
                 }
                 else
                 {
-                    byte[] keyID = authID.getKeyIdentifier();
-                    if (keyID != null)
+                    ASN1OctetString keyIdentifier = aki.getKeyIdentifierObject();
+                    if (keyIdentifier != null)
                     {
-                        certSelectX509.setSubjectKeyIdentifier(new DEROctetString(keyID).getEncoded());
+                        certSelectX509.setSubjectKeyIdentifier(keyIdentifier.getEncoded(ASN1Encoding.DER));
                     }
                 }
             }

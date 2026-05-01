@@ -33,7 +33,7 @@ public final class XMSSMTSignature
         {
             /* import */
             int len = params.getWOTSPlus().getParams().getLen();
-            int indexSize = (int)Math.ceil(params.getHeight() / (double)8);
+            int indexSize = (int)Math.ceil(params.getHeight() / 8.0);
             int randomSize = n;
             int reducedSignatureSizeSingle = ((params.getHeight() / params.getLayers()) + len) * n;
             int reducedSignaturesSizeTotal = reducedSignatureSizeSingle * params.getLayers();
@@ -149,7 +149,7 @@ public final class XMSSMTSignature
         /* index || random || reduced signatures */
         int n = params.getTreeDigestSize();
         int len = params.getWOTSPlus().getParams().getLen();
-        int indexSize = (int)Math.ceil(params.getHeight() / (double)8);
+        int indexSize = (int)Math.ceil(params.getHeight() / 8.0);
         int randomSize = n;
         int reducedSignatureSizeSingle = ((params.getHeight() / params.getLayers()) + len) * n;
         int reducedSignaturesSizeTotal = reducedSignatureSizeSingle * params.getLayers();

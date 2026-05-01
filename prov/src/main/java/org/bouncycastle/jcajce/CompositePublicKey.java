@@ -1,9 +1,10 @@
 package org.bouncycastle.jcajce;
 
 import java.io.IOException;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,19 +14,80 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
+import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A composite key class.
  */
-public class CompositePublicKey implements PublicKey
+public class CompositePublicKey
+    implements PublicKey
 {
-    private final List<PublicKey> keys;
+    public static class Builder
+    {
+        private final AlgorithmIdentifier algorithmIdentifier;
+        private final PublicKey[] keys = new PublicKey[2];
+        private final Provider[] providers = new Provider[2];
 
-    private final ASN1ObjectIdentifier algorithmIdentifier;
+        private int count = 0;
+
+        private Builder(AlgorithmIdentifier algorithmIdentifier)
+        {
+            this.algorithmIdentifier = algorithmIdentifier;
+        }
+
+        public Builder addPublicKey(PublicKey key)
+        {
+            return addPublicKey(key, (Provider)null);
+        }
+
+        public Builder addPublicKey(PublicKey key, String providerName)
+        {
+            return addPublicKey(key, Security.getProvider(providerName));
+        }
+
+        public Builder addPublicKey(PublicKey key, Provider provider)
+        {
+            if (count == keys.length)
+            {
+                throw new IllegalStateException("only " + keys.length + " allowed in composite");
+            }
+
+            keys[count] = key;
+            providers[count++] = provider;
+
+            return this;
+        }
+
+        public CompositePublicKey build()
+        {
+            if (providers[0] == null && providers[1] == null)
+            {
+                return new CompositePublicKey(algorithmIdentifier, keys, null);
+            }
+
+            return new CompositePublicKey(algorithmIdentifier, keys, providers);
+        }
+    }
+
+    public static Builder builder(ASN1ObjectIdentifier compAlgOid)
+    {
+        return new Builder(new AlgorithmIdentifier(compAlgOid));
+    }
+
+    public static Builder builder(String algorithmName)
+    {
+        return builder(CompositeUtil.getOid(algorithmName));
+    }
+
+    private final List<PublicKey> keys;
+    private final List<Provider> providers;
+
+    private final AlgorithmIdentifier algorithmIdentifier;
 
     /**
      * Create a composite public key from an array of PublicKeys.
@@ -38,6 +100,11 @@ public class CompositePublicKey implements PublicKey
         this(MiscObjectIdentifiers.id_composite_key, keys);
     }
 
+    public CompositePublicKey(ASN1ObjectIdentifier algorithmIdentifier, PublicKey... keys)
+    {
+        this(new AlgorithmIdentifier(algorithmIdentifier), keys);
+    }
+
     /**
      * Create a composite public key which corresponds to a composite signature algorithm in algorithmIdentifier.
      * The component public keys are not checked if they satisfy the composite definition at this point,
@@ -46,7 +113,7 @@ public class CompositePublicKey implements PublicKey
      * @param algorithmIdentifier
      * @param keys
      */
-    public CompositePublicKey(ASN1ObjectIdentifier algorithmIdentifier, PublicKey... keys)
+    public CompositePublicKey(AlgorithmIdentifier algorithmIdentifier, PublicKey... keys)
     {
         this.algorithmIdentifier = algorithmIdentifier;
 
@@ -61,6 +128,7 @@ public class CompositePublicKey implements PublicKey
             keyList.add(keys[i]);
         }
         this.keys = Collections.unmodifiableList(keyList);
+        this.providers = null;
     }
 
     /**
@@ -75,12 +143,12 @@ public class CompositePublicKey implements PublicKey
         try
         {
             //Check if the public key algorithm specified in SubjectPublicKeyInfo is one of the supported composite signatures.
-            if (!Arrays.asList(CompositeSignaturesConstants.supportedIdentifiers).contains(keyInfoIdentifier))
+            if (!CompositeIndex.isAlgorithmSupported(keyInfoIdentifier))
             {
                 throw new IllegalStateException("unable to create CompositePublicKey from SubjectPublicKeyInfo");
             }
             AsymmetricKeyInfoConverter keyInfoConverter = new KeyFactorySpi();
-            publicKeyFromFactory = (CompositePublicKey) keyInfoConverter.generatePublic(keyInfo);
+            publicKeyFromFactory = (CompositePublicKey)keyInfoConverter.generatePublic(keyInfo);
 
             if (publicKeyFromFactory == null)
             {
@@ -94,6 +162,38 @@ public class CompositePublicKey implements PublicKey
 
         this.keys = publicKeyFromFactory.getPublicKeys();
         this.algorithmIdentifier = publicKeyFromFactory.getAlgorithmIdentifier();
+        this.providers = null;
+    }
+
+    private CompositePublicKey(AlgorithmIdentifier algorithmIdentifier, PublicKey[] keys, Provider[] providers)
+    {
+        this.algorithmIdentifier = algorithmIdentifier;
+
+        if (keys.length != 2)
+        {
+            throw new IllegalArgumentException("two keys required for composite private key");
+        }
+
+        List<PublicKey> keyList = new ArrayList<PublicKey>(keys.length);
+        if (providers == null)
+        {
+            for (int i = 0; i < keys.length; i++)
+            {
+                keyList.add(keys[i]);
+            }
+            this.providers = null;
+        }
+        else
+        {
+            List<Provider> providerList = new ArrayList<Provider>(providers.length);
+            for (int i = 0; i < keys.length; i++)
+            {
+                providerList.add(providers[i]);
+                keyList.add(keys[i]);
+            }
+            this.providers = Collections.unmodifiableList(providerList);
+        }
+        this.keys = Collections.unmodifiableList(keyList);
     }
 
     /**
@@ -106,12 +206,22 @@ public class CompositePublicKey implements PublicKey
         return keys;
     }
 
-    public String getAlgorithm()
+    /**
+     * Return a list of the providers supporting the component private keys.
+     *
+     * @return an immutable list of Provider objects.
+     */
+    public List<Provider> getProviders()
     {
-        return CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(this.algorithmIdentifier).getId();
+        return providers;
     }
 
-    public ASN1ObjectIdentifier getAlgorithmIdentifier()
+    public String getAlgorithm()
+    {
+        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier.getAlgorithm());
+    }
+
+    public AlgorithmIdentifier getAlgorithmIdentifier()
     {
         return algorithmIdentifier;
     }
@@ -125,7 +235,9 @@ public class CompositePublicKey implements PublicKey
      * Returns the composite public key encoded as a SubjectPublicKeyInfo.
      * If the composite public key is legacy (MiscObjectIdentifiers.id_composite_key),
      * it each component public key is wrapped in its own SubjectPublicKeyInfo.
-     * Other composite public keys are encoded according to https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-compositesignaturepublickey
+     * Other composite public keys are encoded according to
+     * <a href="https://lamps-wg.github.io/draft-composite-sigs/draft-ietf-lamps-pq-composite-sigs.html">
+     * Composite ML-DSA for use in X.509 Public Key Infrastructure</a>
      * where each component public key is a BIT STRING which contains the result of calling
      * getEncoded() for each component public key.
      *
@@ -134,25 +246,43 @@ public class CompositePublicKey implements PublicKey
     @Override
     public byte[] getEncoded()
     {
+        ASN1ObjectIdentifier algOid = algorithmIdentifier.getAlgorithm();
+
+        if (algOid.on(IANAObjectIdentifiers.id_alg))
+        {
+            try
+            {
+                byte[] mldsaPK = SubjectPublicKeyInfo.getInstance(keys.get(0).getEncoded()).getPublicKeyData().getOctets();
+                byte[] tradPK = SubjectPublicKeyInfo.getInstance(keys.get(1).getEncoded()).getPublicKeyData().getOctets();
+                return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaPK, tradPK)).getEncoded(ASN1Encoding.DER);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
+            }
+        }
+
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         for (int i = 0; i < keys.size(); i++)
         {
-            if (this.algorithmIdentifier.equals(MiscObjectIdentifiers.id_composite_key))
+            SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(keys.get(i).getEncoded());
+
+            if (MiscObjectIdentifiers.id_composite_key.equals(algOid))
             {
                 //Legacy, component is the whole SubjectPublicKeyInfo
-                v.add(SubjectPublicKeyInfo.getInstance(keys.get(i).getEncoded()));
+                v.add(spki);
             }
             else
             {
                 //component is the value of subjectPublicKey from SubjectPublicKeyInfo
-                SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(keys.get(i).getEncoded());
-                v.add(keyInfo.getPublicKeyData());
+                v.add(spki.getPublicKeyData());
             }
         }
+
         try
         {
-            return new SubjectPublicKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+            return new SubjectPublicKeyInfo(this.algorithmIdentifier, new DERSequence(v)).getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {
@@ -160,31 +290,26 @@ public class CompositePublicKey implements PublicKey
         }
     }
 
-
     public int hashCode()
     {
-        return keys.hashCode();
+        return algorithmIdentifier.hashCode() ^ keys.hashCode();
     }
 
-    public boolean equals(Object o)
+    public boolean equals(Object obj)
     {
-        if (o == this)
+        if (obj == this)
         {
             return true;
         }
 
-        if (o instanceof CompositePublicKey)
+        if (!(obj instanceof CompositePublicKey))
         {
-            boolean isEqual = true;
-            CompositePublicKey comparedKey = (CompositePublicKey) o;
-            if (!comparedKey.getAlgorithmIdentifier().equals(this.algorithmIdentifier) || !this.keys.equals(comparedKey.keys))
-            {
-                isEqual = false;
-            }
-
-            return isEqual;
+            return false;
         }
 
-        return false;
+        CompositePublicKey that = (CompositePublicKey)obj;
+
+        return this.algorithmIdentifier.equals(that.algorithmIdentifier)
+            && this.keys.equals(that.keys);
     }
 }

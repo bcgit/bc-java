@@ -38,7 +38,7 @@ import org.bouncycastle.util.Iterable;
  * </ul>
  */
 public class PGPObjectFactory
-    implements Iterable
+    implements Iterable<Object>
 {
     private BCPGInputStream in;
     private KeyFingerPrintCalculator fingerPrintCalculator;
@@ -83,9 +83,8 @@ public class PGPObjectFactory
     public Object nextObject()
         throws IOException
     {
-        List l;
-
-        switch (in.nextPacketTag())
+        int tag = in.nextPacketTag();
+        switch (tag)
         {
         case -1:
             return null;
@@ -96,7 +95,8 @@ public class PGPObjectFactory
         case PacketTags.EXPERIMENTAL_4:
             return in.readPacket();
         case PacketTags.SIGNATURE:
-            l = new ArrayList();
+        {
+            ArrayList l = new ArrayList();
 
             while (in.nextPacketTag() == PacketTags.SIGNATURE)
             {
@@ -117,6 +117,7 @@ public class PGPObjectFactory
             }
 
             return new PGPSignatureList((PGPSignature[])l.toArray(new PGPSignature[l.size()]));
+        }
         case PacketTags.SECRET_KEY:
             try
             {
@@ -141,6 +142,8 @@ public class PGPObjectFactory
             return new PGPCompressedData(in);
         case PacketTags.LITERAL_DATA:
             return new PGPLiteralData(in);
+        case PacketTags.TRUST:
+            return new PGPTrust(in);
         case PacketTags.PUBLIC_KEY_ENC_SESSION:
         case PacketTags.SYMMETRIC_KEY_ENC_SESSION:
         case PacketTags.SYMMETRIC_KEY_ENC:
@@ -148,7 +151,8 @@ public class PGPObjectFactory
         case PacketTags.AEAD_ENC_DATA:
             return new PGPEncryptedDataList(in);
         case PacketTags.ONE_PASS_SIGNATURE:
-            l = new ArrayList();
+        {
+            ArrayList l = new ArrayList();
 
             while (in.nextPacketTag() == PacketTags.ONE_PASS_SIGNATURE)
             {
@@ -163,18 +167,23 @@ public class PGPObjectFactory
             }
 
             return new PGPOnePassSignatureList((PGPOnePassSignature[])l.toArray(new PGPOnePassSignature[l.size()]));
+        }
         case PacketTags.MARKER:
             return new PGPMarker(in);
         case PacketTags.PADDING:
             return new PGPPadding(in);
+        case PacketTags.MOD_DETECTION_CODE:
+        case PacketTags.USER_ID:
+        case PacketTags.USER_ATTRIBUTE:
+            return new UnknownPacket(tag, in);
         }
 
-        int tag = in.nextPacketTag();
+        int nextTag = in.nextPacketTag();
         UnknownPacket unknownPacket = (UnknownPacket)in.readPacket();
         if (throwForUnknownCriticalPackets && unknownPacket.isCritical())
         {
             // Leave the error message intact for backwards compatibility
-            throw new IOException("unknown object in stream: " + tag);
+            throw new IOException("unknown object in stream: " + nextTag);
         }
         return unknownPacket;
     }

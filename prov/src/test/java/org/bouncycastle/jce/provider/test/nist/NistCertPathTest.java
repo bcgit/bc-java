@@ -476,7 +476,7 @@ public class NistCertPathTest
                 "No valid policy tree found when one expected.");
     }
 
-    public void testValidinhibitPolicyMappingTest2()
+    public void testValidInhibitPolicyMappingTest2()
         throws Exception
     {
         String[] certList = new String[] { "inhibitPolicyMapping1P12CACert", "inhibitPolicyMapping1P12subCACert", "ValidinhibitPolicyMappingTest2EE" };
@@ -486,7 +486,7 @@ public class NistCertPathTest
     }
 
     // 4.12.7
-    public void testValidSelfIssuedinhibitAnyPolicyTest7()
+    public void testValidSelfIssuedInhibitAnyPolicyTest7()
         throws Exception
     {
         String[] certList = new String[] { "inhibitAnyPolicy1CACert", "inhibitAnyPolicy1SelfIssuedCACert", "inhibitAnyPolicy1subCA2Cert", "ValidSelfIssuedinhibitAnyPolicyTest7EE" };

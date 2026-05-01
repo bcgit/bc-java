@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.test;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -12,9 +15,6 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
 
 public class RSABlindedTest
     extends SimpleTest
@@ -425,6 +425,29 @@ public class RSABlindedTest
         catch (IllegalStateException e)
         {
             // expected
+        }
+
+        // null public exponent
+        privParameters = new RSAPrivateCrtKeyParameters(mod, null, privExp, p, q, pExp, qExp, crtCoef);
+
+        RSABlindedEngine bEng = new RSABlindedEngine();
+
+        bEng.init(true, privParameters);
+
+        bEng.processBlock(new byte[]{ 1 }, 0, 1);
+
+        privParameters = new RSAPrivateCrtKeyParameters(mod, null, null, p, q, pExp, qExp, crtCoef);
+        
+        bEng.init(true, privParameters);
+
+        try
+        {
+            bEng.processBlock(new byte[]{1}, 0, 1);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            // ignore - expected.
         }
     }
 

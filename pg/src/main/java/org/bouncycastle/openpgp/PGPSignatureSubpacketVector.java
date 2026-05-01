@@ -53,7 +53,7 @@ public class PGPSignatureSubpacketVector
         }
         else
         {
-            return fromSubpackets(packets.toArray(new SignatureSubpacket[0]));
+            return fromSubpackets((SignatureSubpacket[])packets.toArray(new SignatureSubpacket[0]));
         }
     }
 

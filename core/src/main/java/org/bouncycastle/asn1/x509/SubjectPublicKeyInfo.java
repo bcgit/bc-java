@@ -5,7 +5,6 @@ import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -75,6 +74,7 @@ public class SubjectPublicKeyInfo
     /**
      @deprecated use SubjectPublicKeyInfo.getInstance()
      */
+    @Deprecated
     public SubjectPublicKeyInfo(
         ASN1Sequence  seq)
     {
@@ -99,6 +99,7 @@ public class SubjectPublicKeyInfo
      * @deprecated use getAlgorithm()
      * @return    alg ID.
      */
+    @Deprecated
     public AlgorithmIdentifier getAlgorithmId()
     {
         return algId;
@@ -127,6 +128,7 @@ public class SubjectPublicKeyInfo
      * @deprecated use parsePublicKey
      * @return the public key as an ASN.1 primitive.
      */
+    @Deprecated
     public ASN1Primitive getPublicKey()
         throws IOException
     {
@@ -153,11 +155,6 @@ public class SubjectPublicKeyInfo
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(algId);
-        v.add(keyData);
-
-        return new DERSequence(v);
+        return new DERSequence(algId, keyData);
     }
 }

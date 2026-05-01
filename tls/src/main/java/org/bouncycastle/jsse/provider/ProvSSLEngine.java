@@ -57,6 +57,7 @@ class ProvSSLEngine
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
+    protected ProvSSLSession dummySession = null;
     protected ProvSSLSessionHandshake handshakeSession = null;
 
     protected SSLException deferredException = null;
@@ -71,7 +72,7 @@ class ProvSSLEngine
         super(peerHost, peerPort);
 
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
+        this.sslParameters = contextData.getDefaultSSLParameters(useClientMode);
     }
 
     public ContextData getContextData()
@@ -225,7 +226,12 @@ class ProvSSLEngine
         return sslParameters.getEngineAPSelector();
     }
 
-    public synchronized BCExtendedSSLSession getBCHandshakeSession()
+    public BCExtendedSSLSession getBCHandshakeSession()
+    {
+        return getBCHandshakeSessionImpl();
+    }
+
+    public synchronized ProvSSLSessionHandshake getBCHandshakeSessionImpl()
     {
         return handshakeSession;
     }
@@ -319,13 +325,13 @@ class ProvSSLEngine
     @Override
     public synchronized String[] getSupportedCipherSuites()
     {
-        return contextData.getContext().getSupportedCipherSuites();
+        return contextData.getSupportedCipherSuites();
     }
 
     @Override
     public synchronized String[] getSupportedProtocols()
     {
-        return contextData.getContext().getSupportedProtocols();
+        return contextData.getSupportedProtocols();
     }
 
     public int getTransportID()
@@ -425,7 +431,7 @@ class ProvSSLEngine
 
         if (this.useClientMode != useClientMode)
         {
-            contextData.getContext().updateDefaultSSLParameters(sslParameters, useClientMode);
+            contextData.updateDefaultSSLParameters(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }
@@ -703,7 +709,7 @@ class ProvSSLEngine
         if (null != resumedSession)
         {
             this.handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
-                jsseSecurityParameters, resumedSession.getTlsSession(), resumedSession.getJsseSessionParameters());
+                jsseSecurityParameters, resumedSession);
         }
         else
         {
@@ -717,9 +723,19 @@ class ProvSSLEngine
         return sslParameters.getEngineAPSelector().select(this, protocols);
     }
 
-    ProvSSLSession getSessionImpl()
+    synchronized ProvSSLSession getSessionImpl()
     {
-        return null == connection ? ProvSSLSession.NULL_SESSION : connection.getSession();
+        if (connection != null)
+        {
+            return connection.getSession();
+        }
+
+        if (dummySession == null)
+        {
+            dummySession = ProvSSLSession.createDummySession();
+        }
+
+        return dummySession;
     }
 
     private RecordPreview getRecordPreview(ByteBuffer src)

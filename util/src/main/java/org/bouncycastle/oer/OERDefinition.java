@@ -40,7 +40,7 @@ public class OERDefinition
 
     public static Builder integer(long val)
     {
-        return new Builder(BaseType.INT).defaultValue(new ASN1Integer(val));
+        return new Builder(BaseType.INT).defaultValue(ASN1Integer.valueOf(val));
     }
 
     public static Builder bitString(long len)

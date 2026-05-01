@@ -22,6 +22,7 @@ import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilderProvider;
+import org.bouncycastle.util.BigIntegers;
 
 public class JcePKCS12MacCalculatorBuilderProvider
     implements PKCS12MacCalculatorBuilderProvider
@@ -61,7 +62,7 @@ public class JcePKCS12MacCalculatorBuilderProvider
 
                     final Mac mac = helper.createMac(algorithm.getId());
 
-                    PBEParameterSpec defParams = new PBEParameterSpec(pbeParams.getIV(), pbeParams.getIterations().intValue());
+                    PBEParameterSpec defParams = new PBEParameterSpec(pbeParams.getIV(), BigIntegers.intValueExact(pbeParams.getIterations()));
 
                     final SecretKey key = new PKCS12Key(password);
 

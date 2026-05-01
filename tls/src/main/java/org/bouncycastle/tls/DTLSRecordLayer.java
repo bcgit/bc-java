@@ -150,6 +150,11 @@ class DTLSRecordLayer
         return closed;
     }
 
+    boolean isFailed()
+    {
+        return failed;
+    }
+
     void resetAfterHelloVerifyRequestServer(long recordSeq)
     {
         this.inConnection = true;
@@ -283,6 +288,9 @@ class DTLSRecordLayer
         return receive(buf, off, len, waitMillis, null);
     }
 
+    /**
+     * A waitMillis of zero is interpreted as an infinite timeout.
+     */
     int receive(byte[] buf, int off, int len, int waitMillis, DTLSRecordCallback recordCallback)
         throws IOException
     {
@@ -740,7 +748,7 @@ class DTLSRecordLayer
                 if (alertLevel == AlertLevel.fatal)
                 {
                     failed();
-                    throw new TlsFatalAlert(alertDescription);
+                    throw new TlsFatalAlertReceived(alertDescription);
                 }
 
                 // TODO Can close_notify be a fatal alert?

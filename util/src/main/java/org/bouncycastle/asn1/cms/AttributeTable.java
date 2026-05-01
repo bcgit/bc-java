@@ -62,7 +62,7 @@ public class AttributeTable
         Attribute           a)
     {
         Object value = attributes.get(oid);
-        
+
         if (value == null)
         {
             attributes.put(oid, a);
@@ -70,28 +70,28 @@ public class AttributeTable
         else
         {
             Vector v;
-            
+
             if (value instanceof Attribute)
             {
                 v = new Vector();
-                
+
                 v.addElement(value);
                 v.addElement(a);
             }
             else
             {
                 v = (Vector)value;
-            
+
                 v.addElement(a);
             }
-            
+
             attributes.put(oid, v);
         }
     }
 
     /**
      * Return the first attribute matching the OBJECT IDENTIFIER oid.
-     * 
+     *
      * @param oid type of attribute required.
      * @return first attribute found of type oid.
      */
@@ -99,19 +99,19 @@ public class AttributeTable
         ASN1ObjectIdentifier oid)
     {
         Object value = attributes.get(oid);
-        
+
         if (value instanceof Vector)
         {
             return (Attribute)((Vector)value).elementAt(0);
         }
-        
+
         return (Attribute)value;
     }
 
     /**
-     * Return all the attributes matching the OBJECT IDENTIFIER oid. The vector will be 
+     * Return all the attributes matching the OBJECT IDENTIFIER oid. The vector will be
      * empty if there are no attributes of the required type present.
-     * 
+     *
      * @param oid type of attribute required.
      * @return a vector of all the attributes found of type oid.
      */
@@ -119,13 +119,13 @@ public class AttributeTable
         ASN1ObjectIdentifier oid)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
-        
+
         Object value = attributes.get(oid);
-        
+
         if (value instanceof Vector)
         {
             Enumeration e = ((Vector)value).elements();
-            
+
             while (e.hasMoreElements())
             {
                 v.add((Attribute)e.nextElement());
@@ -135,7 +135,7 @@ public class AttributeTable
         {
             v.add((Attribute)value);
         }
-        
+
         return v;
     }
 
@@ -164,20 +164,20 @@ public class AttributeTable
     {
         return copyTable(attributes);
     }
-    
+
     public ASN1EncodableVector toASN1EncodableVector()
     {
         ASN1EncodableVector  v = new ASN1EncodableVector();
         Enumeration          e = attributes.elements();
-        
+
         while (e.hasMoreElements())
         {
             Object value = e.nextElement();
-            
+
             if (value instanceof Vector)
             {
                 Enumeration en = ((Vector)value).elements();
-                
+
                 while (en.hasMoreElements())
                 {
                     v.add(Attribute.getInstance(en.nextElement()));
@@ -188,7 +188,7 @@ public class AttributeTable
                 v.add(Attribute.getInstance(value));
             }
         }
-        
+
         return v;
     }
 
@@ -202,14 +202,14 @@ public class AttributeTable
     {
         Hashtable   out = new Hashtable();
         Enumeration e = in.keys();
-        
+
         while (e.hasMoreElements())
         {
             Object key = e.nextElement();
-            
+
             out.put(key, in.get(key));
         }
-        
+
         return out;
     }
 

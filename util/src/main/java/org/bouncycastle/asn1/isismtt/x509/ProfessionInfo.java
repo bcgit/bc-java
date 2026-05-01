@@ -19,21 +19,21 @@ import org.bouncycastle.asn1.x500.DirectoryString;
 
 /**
  * Professions, specializations, disciplines, fields of activity, etc.
- * 
+ *
  * <pre>
- *               ProfessionInfo ::= SEQUENCE 
+ *               ProfessionInfo ::= SEQUENCE
  *               {
  *                 namingAuthority [0] EXPLICIT NamingAuthority OPTIONAL,
  *                 professionItems SEQUENCE OF DirectoryString (SIZE(1..128)),
  *                 professionOIDs SEQUENCE OF OBJECT IDENTIFIER OPTIONAL,
  *                 registrationNumber PrintableString(SIZE(1..128)) OPTIONAL,
- *                 addProfessionInfo OCTET STRING OPTIONAL 
+ *                 addProfessionInfo OCTET STRING OPTIONAL
  *               }
  * </pre>
- * 
+ *
  * @see org.bouncycastle.asn1.isismtt.x509.AdmissionSyntax
  */
-public class ProfessionInfo 
+public class ProfessionInfo
     extends ASN1Object
 {
 

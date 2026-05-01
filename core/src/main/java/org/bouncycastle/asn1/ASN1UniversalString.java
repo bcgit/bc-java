@@ -63,14 +63,19 @@ public abstract class ASN1UniversalString
      * Return a Universal String from a tagged object.
      *
      * @param taggedObject      the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly tagged false
+     * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                 otherwise.
      * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return a ASN1UniversalString instance, or null
      */
-    public static ASN1UniversalString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    public static ASN1UniversalString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return (ASN1UniversalString)TYPE.getContextInstance(taggedObject, explicit);
+        return (ASN1UniversalString)TYPE.getContextTagged(taggedObject, declaredExplicit);
+    }
+
+    public static ASN1UniversalString getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return (ASN1UniversalString)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
     final byte[] contents;
@@ -83,7 +88,7 @@ public abstract class ASN1UniversalString
     public final String getString()
     {
         int dl = contents.length;
-        StringBuffer buf = new StringBuffer(3 + 2 * (ASN1OutputStream.getLengthOfDL(dl) + dl));
+        StringBuilder buf = new StringBuilder(3 + 2 * (ASN1OutputStream.getLengthOfDL(dl) + dl));
         buf.append("#1C");
         encodeHexDL(buf, dl);
 
@@ -142,13 +147,13 @@ public abstract class ASN1UniversalString
         return new DERUniversalString(contents, false);
     }
 
-    private static void encodeHexByte(StringBuffer buf, int i)
+    private static void encodeHexByte(StringBuilder buf, int i)
     {
         buf.append(table[(i >>> 4) & 0xF]);
         buf.append(table[i & 0xF]);
     }
 
-    private static void encodeHexDL(StringBuffer buf, int dl)
+    private static void encodeHexDL(StringBuilder buf, int dl)
     {
         if (dl < 128)
         {

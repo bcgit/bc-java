@@ -12,7 +12,7 @@ import junit.framework.TestCase;
  *  if -Dtest.java.version.prefix=17 and System.getProperty("java.version") = 17.0.4.1
  *  Then this test will pass.
  */
-public class JVMVersionTestProv extends TestCase
+public class JVMVersionTest extends TestCase
 {
 
     private static final String expectedVersionPropName = "test.java.version.prefix";

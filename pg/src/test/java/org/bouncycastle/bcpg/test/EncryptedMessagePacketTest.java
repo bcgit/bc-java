@@ -1,5 +1,9 @@
 package org.bouncycastle.bcpg.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -24,13 +28,9 @@ import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 public class EncryptedMessagePacketTest
         extends AbstractPacketTest
@@ -110,7 +110,7 @@ public class EncryptedMessagePacketTest
                 "286e1177d00f888a" +
                 "db31c4");
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V6_SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V6_SECRET_KEY));;
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -128,7 +128,7 @@ public class EncryptedMessagePacketTest
         objFac = new BcPGPObjectFactory(in);
         PGPLiteralData literalData = (PGPLiteralData) objFac.nextObject();
         byte[] msg = Streams.readAll(literalData.getDataStream());
-        isEncodingEqual("Hello, world!".getBytes(StandardCharsets.UTF_8), msg);
+        isEncodingEqual(Strings.toUTF8ByteArray("Hello, world!"), msg);
         PGPPadding padding = (PGPPadding) objFac.nextObject();
         isEncodingEqual(Hex.decode("c5a293072991628147d72c8f86b7"), padding.getPadding());
     }
@@ -136,7 +136,7 @@ public class EncryptedMessagePacketTest
     private void testX25519AEADOCBTestVector_bc()
             throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V6_SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V6_SECRET_KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -155,7 +155,7 @@ public class EncryptedMessagePacketTest
         objFac = new BcPGPObjectFactory(in);
         PGPLiteralData literalData = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(literalData.getDataStream());
-        isEncodingEqual("Hello, world!".getBytes(StandardCharsets.UTF_8), plaintext);
+        isEncodingEqual(Strings.toUTF8ByteArray("Hello, world!"), plaintext);
         PGPPadding padding = (PGPPadding) objFac.nextObject();
         isEncodingEqual(Hex.decode("c5a293072991628147d72c8f86b7"), padding.getPadding());
     }
@@ -163,7 +163,7 @@ public class EncryptedMessagePacketTest
     private void testX25519AEADOCBTestVector_jce()
             throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V6_SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V6_SECRET_KEY));;
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new JcaPGPObjectFactory(pIn);
@@ -186,7 +186,7 @@ public class EncryptedMessagePacketTest
         objFac = new JcaPGPObjectFactory(in);
         PGPLiteralData literalData = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(literalData.getDataStream());
-        isEncodingEqual("Hello, world!".getBytes(StandardCharsets.UTF_8), plaintext);
+        isEncodingEqual(Strings.toUTF8ByteArray("Hello, world!"), plaintext);
         PGPPadding padding = (PGPPadding) objFac.nextObject();
         isEncodingEqual(Hex.decode("c5a293072991628147d72c8f86b7"), padding.getPadding());
     }
@@ -204,7 +204,7 @@ public class EncryptedMessagePacketTest
                 "=u2kL\n" +
                 "-----END PGP MESSAGE-----\n";
         byte[] fingerprint = Hex.decode("12C83F1E706F6308FE151A417743A1F033790E93E9978488D1DB378DA9930885");
-        ByteArrayInputStream bIn = new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(MSG));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PublicKeyEncSessionPacket pkesk = (PublicKeyEncSessionPacket) pIn.readPacket();

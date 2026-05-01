@@ -612,6 +612,41 @@ public class ArmoredOutputStream
             return addHeader(COMMENT_HDR, comment);
         }
 
+        public Builder addEllipsizedComment(String comment)
+        {
+            int availableCommentCharsPerLine = 64 - (COMMENT_HDR.length() + 2); // ASCII armor width - header len
+            comment = comment.trim();
+
+            if (comment.length() > availableCommentCharsPerLine)
+            {
+                comment = comment.substring(0, availableCommentCharsPerLine - 1) + '…';
+            }
+            addComment(comment);
+            return this;
+        }
+
+        public Builder addSplitMultilineComment(String comment)
+        {
+            int availableCommentCharsPerLine = 64 - (COMMENT_HDR.length() + 2); // ASCII armor width - header len
+
+            comment = comment.trim();
+            for (String line : comment.split("\n"))
+            {
+                while (line.length() > availableCommentCharsPerLine)
+                {
+                        // split comment into multiple lines
+                    addComment(comment.substring(0, availableCommentCharsPerLine));
+                    line = line.substring(availableCommentCharsPerLine).trim();
+                }
+
+                if (line.length() != 0)
+                {
+                    addComment(line);
+                }
+            }
+            return this;
+        }
+
         /**
          * Set and replace the given header value with a single-line header.
          * If the value is <pre>null</pre>, this method will remove the header entirely.

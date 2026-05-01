@@ -10,9 +10,9 @@ import org.bouncycastle.mls.crypto.MlsCipherSuite;
 public class Capabilities
     implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    static private final Short[] DEFAULT_SUPPORTED_VERSIONS = {ProtocolVersion.mls10.value};
-    static private final short[] DEFAULT_SUPPORTED_CIPHERSUITES = MlsCipherSuite.ALL_SUPPORTED_SUITES;
-    static private final Short[] DEFAULT_SUPPORTED_CREDENTIALS = {CredentialType.basic.value, CredentialType.x509.value};
+    private static final Short[] DEFAULT_SUPPORTED_VERSIONS = {ProtocolVersion.mls10.value};
+    private static final short[] DEFAULT_SUPPORTED_CIPHERSUITES = MlsCipherSuite.ALL_SUPPORTED_SUITES;
+    private static final Short[] DEFAULT_SUPPORTED_CREDENTIALS = {CredentialType.basic.value, CredentialType.x509.value};
     List<Short> versions;
     List<Short> cipherSuites;
     List<Short> extensions;

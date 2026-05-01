@@ -45,6 +45,7 @@ public class Fingerprint
      * @param useSHA512t use the old SHA512/160 calculation.
      * @deprecated use the SHAKE only version.
      */
+    @Deprecated
     public Fingerprint(byte[] source, boolean useSHA512t)
     {
         if (useSHA512t)
@@ -64,7 +65,7 @@ public class Fingerprint
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i != fingerprint.length; i++)
         {
             if (i > 0)
@@ -143,6 +144,7 @@ public class Fingerprint
      * @return a byte array containing a 20 byte fingerprint.
      * @deprecated use the SHAKE based version.
      */
+    @Deprecated
     public static byte[] calculateFingerprintSHA512_160(byte[] input)
     {
         SHA512tDigest digest = new SHA512tDigest(160);

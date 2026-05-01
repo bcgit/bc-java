@@ -61,8 +61,8 @@ public class MonetaryValue
         int                 exponent)
     {    
         this.currency = currency;
-        this.amount = new ASN1Integer(amount);
-        this.exponent = new ASN1Integer(exponent);
+        this.amount = ASN1Integer.valueOf(amount);
+        this.exponent = ASN1Integer.valueOf(exponent);
     }                    
              
     public Iso4217CurrencyCode getCurrency()

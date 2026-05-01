@@ -1,6 +1,10 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Pack;
@@ -220,8 +224,6 @@ public final class Kangaroo
          */
         private int theProcessed;
 
-        private final CryptoServicePurpose purpose;
-
         /**
          * Constructor.
          *
@@ -241,7 +243,6 @@ public final class Kangaroo
 
             /* Build personalisation */
             buildPersonal(null);
-            this.purpose = purpose;
 
             CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, pStrength, purpose));
 
@@ -542,7 +543,7 @@ public final class Kangaroo
         /**
          * The round constants.
          */
-        private static long[] KeccakRoundConstants = new long[]{0x0000000000000001L, 0x0000000000008082L,
+        private static final long[] KeccakRoundConstants = new long[]{0x0000000000000001L, 0x0000000000008082L,
             0x800000000000808aL, 0x8000000080008000L, 0x000000000000808bL, 0x0000000080000001L, 0x8000000080008081L,
             0x8000000000008009L, 0x000000000000008aL, 0x0000000000000088L, 0x0000000080008009L, 0x000000008000000aL,
             0x000000008000808bL, 0x800000000000008bL, 0x8000000000008089L, 0x8000000000008003L, 0x8000000000008002L,
@@ -625,6 +626,12 @@ public final class Kangaroo
             int count = 0;
             while (count < len)
             {
+                if (bytesInQueue == theRateBytes)
+                {
+                    KangarooAbsorb(theQueue, 0);
+                    bytesInQueue = 0;
+                }
+
                 if (bytesInQueue == 0 && count <= (len - theRateBytes))
                 {
                     do
@@ -642,12 +649,6 @@ public final class Kangaroo
 
                     bytesInQueue += partialBlock;
                     count += partialBlock;
-
-                    if (bytesInQueue == theRateBytes)
-                    {
-                        KangarooAbsorb(theQueue, 0);
-                        bytesInQueue = 0;
-                    }
                 }
             }
         }

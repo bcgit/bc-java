@@ -16,6 +16,7 @@ import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
@@ -23,15 +24,23 @@ import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.encoders.Hex;
 
 class MockTlsKemServer
-        extends DefaultTlsServer
+    extends DefaultTlsServer
 {
-    MockTlsKemServer()
+    int[] namedGroups = new int[]
     {
-        super(new BcTlsCrypto());
+        NamedGroup.MLKEM512,
+        NamedGroup.MLKEM768,
+        NamedGroup.MLKEM1024,
+        NamedGroup.x25519,
+    };
+
+    MockTlsKemServer(TlsCrypto crypto)
+    {
+        super(crypto);
     }
 
     protected Vector getProtocolNames()
@@ -42,20 +51,14 @@ class MockTlsKemServer
         return protocolNames;
     }
 
-    public int[] supportedGroups = new int[] {
-            NamedGroup.OQS_mlkem512,
-            NamedGroup.OQS_mlkem768,
-            NamedGroup.OQS_mlkem1024,
-            NamedGroup.x25519
-    };
-
-    public void setSupportedGroups(int[] supportedGroups)
+    void setNamedGroups(int[] namedGroups)
     {
-        this.supportedGroups = supportedGroups;
+        this.namedGroups = namedGroups;
     }
 
-    public int[] getSupportedGroups() throws IOException {
-        return supportedGroups;
+    public int[] getSupportedGroups() throws IOException
+    {
+        return namedGroups;
     }
 
     public TlsCredentials getCredentials() throws IOException
@@ -76,7 +79,7 @@ class MockTlsKemServer
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
         out.println("TLS KEM server raised alert: " + AlertLevel.getText(alertLevel)
-                + ", " + AlertDescription.getText(alertDescription));
+            + ", " + AlertDescription.getText(alertDescription));
         if (message != null)
         {
             out.println("> " + message);
@@ -91,14 +94,14 @@ class MockTlsKemServer
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
         out.println("TLS KEM server received alert: " + AlertLevel.getText(alertLevel)
-                + ", " + AlertDescription.getText(alertDescription));
+            + ", " + AlertDescription.getText(alertDescription));
     }
 
     public ProtocolVersion getServerVersion() throws IOException
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS KEM server negotiated " + serverVersion);
+        System.out.println("TLS KEM server negotiated version " + serverVersion);
 
         return serverVersion;
     }
@@ -128,12 +131,12 @@ class MockTlsKemServer
             Vector serverSigAlgsCert = null;
 
             return new CertificateRequest(certificateRequestContext, serverSigAlgs, serverSigAlgsCert,
-                    certificateAuthorities);
+                certificateAuthorities);
         }
         else
         {
             short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
-                    ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
+                ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
             return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
         }
@@ -149,7 +152,7 @@ class MockTlsKemServer
             Certificate entry = Certificate.getInstance(chain[i].getEncoded());
             // TODO Create fingerprint based on certificate signature algorithm digest
             System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
-                    + entry.getSubject() + ")");
+                + entry.getSubject() + ")");
         }
 
         boolean isEmpty = (clientCertificate == null || clientCertificate.isEmpty());
@@ -160,11 +163,12 @@ class MockTlsKemServer
         }
 
         String[] trustedCertResources = new String[]{ "x509-client-dsa.pem", "x509-client-ecdh.pem",
-                "x509-client-ecdsa.pem", "x509-client-ed25519.pem", "x509-client-ed448.pem", "x509-client-rsa_pss_256.pem",
-                "x509-client-rsa_pss_384.pem", "x509-client-rsa_pss_512.pem", "x509-client-rsa.pem" };
+            "x509-client-ecdsa.pem", "x509-client-ed25519.pem", "x509-client-ed448.pem", "x509-client-ml_dsa_44.pem",
+            "x509-client-ml_dsa_65.pem", "x509-client-ml_dsa_87.pem", "x509-client-rsa_pss_256.pem",
+            "x509-client-rsa_pss_384.pem", "x509-client-rsa_pss_512.pem", "x509-client-rsa.pem" };
 
         TlsCertificate[] certPath = TlsTestUtils.getTrustedCertPath(context.getCrypto(), chain[0],
-                trustedCertResources);
+            trustedCertResources);
 
         if (null == certPath)
         {
@@ -178,20 +182,28 @@ class MockTlsKemServer
     {
         super.notifyHandshakeComplete();
 
-        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        SecurityParameters securityParameters = context.getSecurityParametersConnection();
+
+        ProtocolName protocolName = securityParameters.getApplicationProtocol();
         if (protocolName != null)
         {
-            System.out.println("KEM Server ALPN: " + protocolName.getUtf8Decoding());
+            System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
+        }
+
+        int negotiatedGroup = securityParameters.getNegotiatedGroup();
+        if (negotiatedGroup >= 0)
+        {
+            System.out.println("Server negotiated group: " + NamedGroup.getText(negotiatedGroup));
         }
 
         byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
-        System.out.println("KEM Server 'tls-server-end-point': " + hex(tlsServerEndPoint));
+        System.out.println("Server 'tls-server-end-point': " + hex(tlsServerEndPoint));
 
         byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
-        System.out.println("KEM Server 'tls-unique': " + hex(tlsUnique));
+        System.out.println("Server 'tls-unique': " + hex(tlsUnique));
 
         byte[] tlsExporter = context.exportChannelBinding(ChannelBinding.tls_exporter);
-        System.out.println("KEM Server 'tls-exporter': " + hex(tlsExporter));
+        System.out.println("Server 'tls-exporter': " + hex(tlsExporter));
     }
 
     public void processClientExtensions(Hashtable clientExtensions) throws IOException
@@ -227,7 +239,7 @@ class MockTlsKemServer
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
     {
         return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server-rsa-enc.pem", "x509-ca-rsa.pem" },
-                "x509-server-key-rsa-enc.pem");
+            "x509-server-key-rsa-enc.pem");
     }
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException

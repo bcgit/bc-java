@@ -28,7 +28,7 @@ public class RSABlindedEngine
      * initialise the RSA engine.
      *
      * @param forEncryption true if we are encrypting, false otherwise.
-     * @param param the necessary RSA key parameters.
+     * @param parameters the necessary RSA key parameters.
      */
     public void init(boolean forEncryption, CipherParameters parameters)
     {

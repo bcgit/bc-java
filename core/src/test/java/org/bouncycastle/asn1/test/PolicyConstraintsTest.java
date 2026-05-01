@@ -44,7 +44,7 @@ public class PolicyConstraintsTest
 
         isTrue("encoding test", Arrays.areEqual(
             new PolicyConstraints(BigInteger.valueOf(1), null).getEncoded(),
-            new DERSequence(new DERTaggedObject(false, 0, new ASN1Integer(1))).getEncoded()));
+            new DERSequence(new DERTaggedObject(false, 0, ASN1Integer.ONE)).getEncoded()));
     }
 
     public static void main(

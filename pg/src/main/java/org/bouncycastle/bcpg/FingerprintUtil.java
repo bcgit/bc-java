@@ -3,6 +3,8 @@ package org.bouncycastle.bcpg;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.util.Locale;
+
 public class FingerprintUtil
 {
 
@@ -141,51 +143,51 @@ public class FingerprintUtil
     public static String prettifyFingerprint(byte[] fingerprint)
     {
         // -DM Hex.toHexString
-        String hex = Hex.toHexString(fingerprint).toUpperCase();
+        char[] hex = Hex.toHexString(fingerprint).toUpperCase(Locale.getDefault()).toCharArray();
         StringBuilder sb = new StringBuilder();
-        switch (hex.length())
+        switch (hex.length)
         {
             case 32:
                 // v3 keys
                 for (int i = 0; i < 4; i++)
                 {
-                    sb.append(hex, i * 4, (i + 1) * 4).append(' ');
+                    sb.append(hex, i * 4, 4).append(' ');
                 }
                 sb.append(' ');
                 for (int i = 4; i < 7; i++)
                 {
-                    sb.append(hex, i * 4, (i + 1) * 4).append(' ');
+                    sb.append(hex, i * 4, 4).append(' ');
                 }
-                sb.append(hex, 28, 32);
+                sb.append(hex, 28, 4);
                 return sb.toString();
             case 40:
                 // v4 keys
                 for (int i = 0; i <= 4; i++)
                 {
-                    sb.append(hex, i * 4, (i + 1) * 4).append(' ');
+                    sb.append(hex, i * 4, 4).append(' ');
                 }
                 sb.append(' ');
                 for (int i = 5; i <= 8; i++)
-                {
-                    sb.append(hex, i * 4, (i + 1) * 4).append(' ');
+                { 
+                    sb.append(hex, i * 4, 4).append(' ');
                 }
-                sb.append(hex, 36, 40);
+                sb.append(hex, 36, 4);
                 return sb.toString();
             case 64:
                 // v5, v6 keys
                 for (int i = 0; i < 4; i++)
                 {
-                    sb.append(hex, i * 8, (i + 1) * 8).append(' ');
+                    sb.append(hex, i * 8, 8).append(' ');
                 }
                 sb.append(' ');
                 for (int i = 4; i < 7; i++)
                 {
-                    sb.append(hex, i * 8, (i + 1) * 8).append(' ');
+                    sb.append(hex, i * 8, 8).append(' ');
                 }
-                sb.append(hex, 56, 64);
+                sb.append(hex, 56, 8);
                 return sb.toString();
             default:
-                return hex;
+                return new String(hex);
         }
     }
 }

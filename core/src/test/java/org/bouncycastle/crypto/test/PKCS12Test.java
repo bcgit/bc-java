@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -21,26 +22,6 @@ public class PKCS12Test
 {
     char[]  password1 = { 's', 'm', 'e', 'g' };
     char[]  password2 = { 'q', 'u', 'e', 'e', 'g' };
-
-    private boolean isEqual(
-        byte[]  a,
-        byte[]  b)
-    {
-        if (a.length != b.length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     private TestResult run1(
         int     id,
@@ -59,7 +40,7 @@ public class PKCS12Test
 
         CipherParameters  key = generator.generateDerivedParameters(24 * 8);
 
-        if (isEqual(result, ((KeyParameter)key).getKey()))
+        if (Arrays.areEqual(result, ((KeyParameter)key).getKey()))
         {
             return new SimpleTestResult(true, "PKCS12Test: Okay");
         }
@@ -87,7 +68,7 @@ public class PKCS12Test
 
         ParametersWithIV params = (ParametersWithIV)generator.generateDerivedParameters(64, 64);
 
-        if (isEqual(result, params.getIV()))
+        if (Arrays.areEqual(result, params.getIV()))
         {
             return new SimpleTestResult(true, "PKCS12Test: Okay");
         }
@@ -115,7 +96,7 @@ public class PKCS12Test
 
         CipherParameters  key = generator.generateDerivedMacParameters(160);
 
-        if (isEqual(result, ((KeyParameter)key).getKey()))
+        if (Arrays.areEqual(result, ((KeyParameter)key).getKey()))
         {
             return new SimpleTestResult(true, "PKCS12Test: Okay");
         }

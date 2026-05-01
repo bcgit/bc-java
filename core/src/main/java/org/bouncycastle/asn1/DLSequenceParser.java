@@ -4,8 +4,6 @@ import java.io.IOException;
 
 /**
  * Parser class for DL SEQUENCEs.
- * 
- * @deprecated Check for 'ASN1SequenceParser' instead 
  */
 public class DLSequenceParser
     implements ASN1SequenceParser

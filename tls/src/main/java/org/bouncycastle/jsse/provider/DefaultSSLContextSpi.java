@@ -106,9 +106,9 @@ class DefaultSSLContextSpi extends ProvSSLContextSpi
         return LazyInstance.instance;
     }
 
-    DefaultSSLContextSpi(boolean isInFipsMode, JcaTlsCryptoProvider cryptoProvider) throws KeyManagementException
+    DefaultSSLContextSpi(boolean fipsMode, JcaTlsCryptoProvider cryptoProvider) throws KeyManagementException
     {
-        super(isInFipsMode, cryptoProvider, null);
+        super(fipsMode, cryptoProvider, null);
 
         if (null != LazyManagers.initException)
         {

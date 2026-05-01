@@ -44,12 +44,9 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
-import org.bouncycastle.test.DumpUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -186,7 +183,7 @@ public class PGPAeadTest
     private void knownV6TestVectorDecryptionTests()
         throws IOException, PGPException
     {
-        // Test known-good V6 test vectors    TODO: decryption tests
+        // Test known-good V6 test vectors
         testBcDecryption(V6_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testBcDecryption(V6_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testBcDecryption(V6_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
@@ -429,7 +426,7 @@ public class PGPAeadTest
     public static void printHex(byte[] bytes)
     {
         // -DM System.out.println
-        System.out.println(DumpUtil.hexdump(bytes));
+        //System.out.println(DumpUtil.hexdump(bytes));
     }
 
     private static String algNames(int aeadAlg, int symAlg)

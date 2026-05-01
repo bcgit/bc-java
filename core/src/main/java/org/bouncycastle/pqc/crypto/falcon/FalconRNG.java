@@ -1,57 +1,63 @@
 package org.bouncycastle.pqc.crypto.falcon;
 
+import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.Pack;
+
 class FalconRNG
 {
 
     byte[] bd;
-    long bdummy_u64;
+    //    long bdummy_u64;
     int ptr;
     byte[] sd;
-    long sdummy_u64;
-    int type;
+//    long sdummy_u64;
+//    int type;
 
-    FalconConversions convertor;
+    //FalconConversions convertor;
 
     FalconRNG()
     {
         this.bd = new byte[512];
-        this.bdummy_u64 = 0;
+//        this.bdummy_u64 = 0;
         this.ptr = 0;
         this.sd = new byte[256];
-        this.sdummy_u64 = 0;
-        this.type = 0;
-        this.convertor = new FalconConversions();
+//        this.sdummy_u64 = 0;
+//        this.type = 0;
+        //this.convertor = new FalconConversions();
     }
 
-    void prng_init(SHAKE256 src)
+    void prng_init(SHAKEDigest src)
     {
         /*
          * To ensure reproducibility for a given seed, we
          * must enforce little-endian interpretation of
          * the state words.
          */
-        byte[] tmp = new byte[56];
-        long th, tl;
-        int i;
+//        byte[] tmp = new byte[56];
+//        long th, tl;
+//        int i;
 
-        src.inner_shake256_extract(tmp, 0, 56);
-        for (i = 0; i < 14; i++)
-        {
-            int w;
+        src.doOutput(this.sd, 0, 56);
+//        System.arraycopy(tmp, 0, this.sd, 0, 56);
+//        for (i = 0; i < 14; i++)
+//        {
+//            int w = (tmp[(i << 2)] & 0xff)
+//                | ((tmp[(i << 2) + 1] & 0xff) << 8)
+//                | ((tmp[(i << 2) + 2] & 0xff) << 16)
+//                | ((tmp[(i << 2) + 3] & 0xff) << 24);
+//
+//
+//            System.arraycopy(Pack.intToLittleEndian(w), 0, this.sd, i << 2, 4);
+//        }
 
-            w = (tmp[(i << 2) + 0] & 0xff)
-                | ((tmp[(i << 2) + 1] & 0xff) << 8)
-                | ((tmp[(i << 2) + 2] & 0xff) << 16)
-                | ((tmp[(i << 2) + 3] & 0xff) << 24);
+        //tl = (convertor.bytes_to_int(this.sd, 48) & 0xffffffffL);
+//        tl = Pack.littleEndianToInt(this.sd, 48) & 0xffffffffL;
+//
+//        //th = (convertor.bytes_to_int(this.sd, 52) & 0xffffffffL);
+//        th = Pack.littleEndianToInt(this.sd, 52) & 0xffffffffL;
+//        Pack.longToLittleEndian(tl + (th << 32), this.sd, 48);
 
-            System.arraycopy(convertor.int_to_bytes(w), 0, this.sd, i << 2, 4);
-        }
-
-        tl = (convertor.bytes_to_int(this.sd, 48) & 0xffffffffL);
-
-        th = (convertor.bytes_to_int(this.sd, 52) & 0xffffffffL);
-
-        System.arraycopy(convertor.long_to_bytes(tl + (th << 32)), 0, this.sd, 48, 8);
+        //System.arraycopy(convertor.long_to_bytes(tl + (th << 32)), 0, this.sd, 48, 8);
         this.prng_refill();
     }
 
@@ -84,17 +90,19 @@ class FalconRNG
          * converted to little endian (if used on a big-endian machine).
          */
 //        cc = *(uint64_t *)(p->state.d + 48);
-        cc = convertor.bytes_to_long(this.sd, 48);
+        cc = Pack.littleEndianToLong(this.sd, 48);
+        //cc = convertor.bytes_to_long(this.sd, 48);
+        int[] state = new int[16];
         for (u = 0; u < 8; u++)
         {
-            int[] state = new int[16];
             int v;
             int i;
 
 //            memcpy(&state[0], CW, sizeof CW);
             System.arraycopy(CW, 0, state, 0, CW.length);
 //            memcpy(&state[4], p->state.d, 48);
-            System.arraycopy(convertor.bytes_to_int_array(this.sd, 0, 12), 0, state, 4, 12);
+            Pack.littleEndianToInt(this.sd, 0, state, 4, 12);
+            //System.arraycopy(convertor.bytes_to_int_array(this.sd, 0, 12), 0, state, 4, 12);
             state[14] ^= (int)cc;
             state[15] ^= (int)(cc >>> 32);
             for (i = 0; i < 10; i++)
@@ -117,14 +125,17 @@ class FalconRNG
             {
 //                state[v] += ((uint32_t *)p->state.d)[v - 4];
                 // we multiply the -4 by 4 to account for 4 bytes per int
-                state[v] += convertor.bytes_to_int(sd, (4 * v) - 16);
+                //state[v] += convertor.bytes_to_int(sd, (4 * v) - 16);
+                state[v] += Pack.littleEndianToInt(sd, (4 * v) - 16);
             }
 //            state[14] += ((uint32_t *)p->state.d)[10]
 //            ^ (uint32_t)cc;
-            state[14] += convertor.bytes_to_int(sd, 40) ^ ((int)cc);
+            //state[14] += convertor.bytes_to_int(sd, 40) ^ ((int)cc);
+            state[14] += Pack.littleEndianToInt(sd, 40) ^ ((int)cc);
 //            state[15] += ((uint32_t *)p->state.d)[11]
 //            ^ (uint32_t)(cc >> 32);
-            state[15] += convertor.bytes_to_int(sd, 44) ^ ((int)(cc >>> 32));
+            //state[15] += convertor.bytes_to_int(sd, 44) ^ ((int)(cc >>> 32));
+            state[15] += Pack.littleEndianToInt(sd, 44) ^ ((int)(cc >>> 32));
             cc++;
 
             /*
@@ -141,49 +152,47 @@ class FalconRNG
 //                        (uint8_t)(state[v] >> 16);
 //                p->buf.d[(u << 2) + (v << 5) + 3] =
 //                        (uint8_t)(state[v] >> 24);
-                bd[(u << 2) + (v << 5) + 0] =
-                    (byte)state[v];
-                bd[(u << 2) + (v << 5) + 1] =
-                    (byte)(state[v] >>> 8);
-                bd[(u << 2) + (v << 5) + 2] =
-                    (byte)(state[v] >>> 16);
-                bd[(u << 2) + (v << 5) + 3] =
-                    (byte)(state[v] >>> 24);
+                Pack.intToLittleEndian(state[v], bd, (u << 2) + (v << 5));
+//                bd[index] = (byte)state[v];
+//                bd[index + 1] = (byte)(state[v] >>> 8);
+//                bd[index + 2] = (byte)(state[v] >>> 16);
+//                bd[index + 3] = (byte)(state[v] >>> 24);
             }
         }
 //    *(uint64_t *)(p->state.d + 48) = cc;
-        System.arraycopy(convertor.long_to_bytes(cc), 0, sd, 48, 8);
+        //System.arraycopy(convertor.long_to_bytes(cc), 0, sd, 48, 8);
+        Pack.longToLittleEndian(cc, this.sd, 48);
 
 
         this.ptr = 0;
     }
 
     /* see inner.h */
-    void prng_get_bytes(byte[] srcdst, int dst, int len)
-    {
-        int buf;
-
-        buf = dst;
-        while (len > 0)
-        {
-            int clen;
-
-            clen = (bd.length) - ptr;
-            if (clen > len)
-            {
-                clen = len;
-            }
-//            memcpy(buf, p->buf.d, clen);
-            System.arraycopy(bd, 0, srcdst, buf, clen);
-            buf += clen;
-            len -= clen;
-            ptr += clen;
-            if (ptr == bd.length)
-            {
-                this.prng_refill();
-            }
-        }
-    }
+//    void prng_get_bytes(byte[] srcdst, int dst, int len)
+//    {
+//        int buf;
+//
+//        buf = dst;
+//        while (len > 0)
+//        {
+//            int clen;
+//
+//            clen = (bd.length) - ptr;
+//            if (clen > len)
+//            {
+//                clen = len;
+//            }
+////            memcpy(buf, p->buf.d, clen);
+//            System.arraycopy(bd, 0, srcdst, buf, clen);
+//            buf += clen;
+//            len -= clen;
+//            ptr += clen;
+//            if (ptr == bd.length)
+//            {
+//                this.prng_refill();
+//            }
+//        }
+//    }
 
     private void QROUND(int a, int b, int c, int d, int[] state)
     {
@@ -223,14 +232,15 @@ class FalconRNG
          * On systems that use little-endian encoding and allow
          * unaligned accesses, we can simply read the data where it is.
          */
-        return (this.bd[u + 0] & 0xffL)
-            | ((this.bd[u + 1] & 0xffL) << 8)
-            | ((this.bd[u + 2] & 0xffL) << 16)
-            | ((this.bd[u + 3] & 0xffL) << 24)
-            | ((this.bd[u + 4] & 0xffL) << 32)
-            | ((this.bd[u + 5] & 0xffL) << 40)
-            | ((this.bd[u + 6] & 0xffL) << 48)
-            | ((this.bd[u + 7] & 0xffL) << 56);
+        return Pack.littleEndianToLong(this.bd, u);
+//        return (this.bd[u] & 0xffL)
+//            | ((this.bd[u + 1] & 0xffL) << 8)
+//            | ((this.bd[u + 2] & 0xffL) << 16)
+//            | ((this.bd[u + 3] & 0xffL) << 24)
+//            | ((this.bd[u + 4] & 0xffL) << 32)
+//            | ((this.bd[u + 5] & 0xffL) << 40)
+//            | ((this.bd[u + 6] & 0xffL) << 48)
+//            | ((this.bd[u + 7] & 0xffL) << 56);
     }
 
     byte prng_get_u8()

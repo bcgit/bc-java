@@ -57,7 +57,7 @@ public class JceKTSKeyUnwrapper
         throws OperatorException
     {
         GenericHybridParameters params = GenericHybridParameters.getInstance(this.getAlgorithmIdentifier().getParameters());
-        Cipher keyCipher = helper.createAsymmetricWrapper(this.getAlgorithmIdentifier().getAlgorithm(), extraMappings);
+        Cipher keyCipher = helper.createAsymmetricWrapper(this.getAlgorithmIdentifier(), extraMappings);
         String symmetricWrappingAlg = helper.getWrappingAlgorithmName(params.getDem().getAlgorithm());
         RsaKemParameters kemParameters = RsaKemParameters.getInstance(params.getKem().getParameters());
         int keySizeInBits = kemParameters.getKeyLength().intValue() * 8;

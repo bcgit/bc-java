@@ -435,6 +435,7 @@ private static final int[] Tinv0 =
      * default constructor - 128 bit block size.
      * @deprecated use AESEngine.newInstance()
      */
+    @Deprecated
     public AESEngine()
     {
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 256));

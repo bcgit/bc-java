@@ -72,7 +72,7 @@ public class JndiDANEFetcherFactory
 
         if (dnsServerList.size() > 0)
         {
-            StringBuffer dnsServers = new StringBuffer();
+            StringBuilder dnsServers = new StringBuilder();
 
             for (Iterator it = dnsServerList.iterator(); it.hasNext(); )
             {

@@ -5,28 +5,30 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Fingerprint;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class BCMLDSAPublicKey
-    implements MLDSAPublicKey
+    implements MLDSAPublicKey, BCKey
 {
     private static final long serialVersionUID = 1L;
 
     private transient MLDSAPublicKeyParameters params;
+    private transient String algorithm;
 
     public BCMLDSAPublicKey(
         MLDSAPublicKeyParameters params)
     {
         this.params = params;
+        this.algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     public BCMLDSAPublicKey(SubjectPublicKeyInfo keyInfo)
@@ -39,6 +41,7 @@ public class BCMLDSAPublicKey
         throws IOException
     {
         this.params = (MLDSAPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
     
     /**
@@ -74,7 +77,7 @@ public class BCMLDSAPublicKey
      */
     public final String getAlgorithm()
     {
-        return MLDSAParameterSpec.fromName(params.getParameters().getName()).getName();
+        return algorithm;
     }
 
     public byte[] getPublicData()
@@ -126,7 +129,7 @@ public class BCMLDSAPublicKey
         return buf.toString();
     }
 
-    CipherParameters getKeyParams()
+    MLDSAPublicKeyParameters getKeyParams()
     {
         return params;
     }

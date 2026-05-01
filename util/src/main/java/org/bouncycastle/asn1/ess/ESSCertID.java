@@ -42,7 +42,7 @@ public class ESSCertID
         }
 
         certHash = ASN1OctetString.getInstance(seq.getObjectAt(0));
- 
+
         if (seq.size() > 1)
         {
             issuerSerial = IssuerSerial.getInstance(seq.getObjectAt(1));
@@ -63,6 +63,22 @@ public class ESSCertID
         this.issuerSerial = issuerSerial;
     }
 
+    public ESSCertID(ASN1OctetString certHash, IssuerSerial issuerSerial)
+    {
+        if (certHash == null)
+        {
+            throw new NullPointerException("'certHash' cannot be null");
+        }
+
+        this.certHash = certHash;
+        this.issuerSerial = issuerSerial;
+    }
+
+    public ASN1OctetString getCertHashObject()
+    {
+        return certHash;
+    }
+
     public byte[] getCertHash()
     {
         return certHash.getOctets();
@@ -76,16 +92,16 @@ public class ESSCertID
     /**
      * <pre>
      * ESSCertID ::= SEQUENCE {
-     *     certHash Hash, 
+     *     certHash Hash,
      *     issuerSerial IssuerSerial OPTIONAL }
      * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(2);
-        
+
         v.add(certHash);
-        
+
         if (issuerSerial != null)
         {
             v.add(issuerSerial);

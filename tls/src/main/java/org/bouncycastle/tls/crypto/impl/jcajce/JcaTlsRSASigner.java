@@ -6,6 +6,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
@@ -31,6 +32,8 @@ public class JcaTlsRSASigner
     /**
      * @deprecated Use constructor without 'publicKey' parameter.
      */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public JcaTlsRSASigner(JcaTlsCrypto crypto, PrivateKey privateKey, PublicKey publicKey)
     {
         this(crypto, privateKey);
@@ -71,7 +74,7 @@ public class JcaTlsRSASigner
                  */
                 AlgorithmIdentifier algID = new AlgorithmIdentifier(
                     TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE);
-                input = new DigestInfo(algID, hash).getEncoded();
+                input = new DigestInfo(algID, hash).getEncoded(ASN1Encoding.DER);
             }
             else
             {

@@ -126,7 +126,7 @@ public class JDKDSAPublicKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder   buf = new StringBuilder();
         String          nl = Strings.lineSeparator();
 
         buf.append("DSA Public Key").append(nl);

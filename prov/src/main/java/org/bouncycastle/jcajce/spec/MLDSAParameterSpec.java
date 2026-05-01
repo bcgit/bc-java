@@ -46,6 +46,18 @@ public class MLDSAParameterSpec
     
     public static MLDSAParameterSpec fromName(String name)
     {
-        return (MLDSAParameterSpec)parameters.get(Strings.toLowerCase(name));
+        if (name == null)
+        {
+            throw new NullPointerException("name cannot be null");
+        }
+
+        MLDSAParameterSpec parameterSpec = (MLDSAParameterSpec)parameters.get(Strings.toLowerCase(name));
+
+        if (parameterSpec == null)
+        {
+            throw new IllegalArgumentException("unknown parameter name: " + name);
+        }
+
+        return parameterSpec;
     }
 }

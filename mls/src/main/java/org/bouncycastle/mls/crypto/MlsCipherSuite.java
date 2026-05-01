@@ -78,7 +78,7 @@ public class MlsCipherSuite
     public static final MlsCipherSuite BCMLS_256_DHKEMX448_AES256GCM_SHA512_Ed448 = new MlsCipherSuite(MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448, new BcMlsSigner(MlsSigner.ed448), new BcMlsKdf(new SHA512Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256));
     public static final MlsCipherSuite BCMLS_256_DHKEMP521_AES256GCM_SHA512_P521 = new MlsCipherSuite(MLS_256_DHKEMP521_AES256GCM_SHA512_P521, new BcMlsSigner(MlsSigner.ecdsa_secp521r1_sha512), new BcMlsKdf(new SHA512Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_P521_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256));
     public static final MlsCipherSuite BCMLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448 = new MlsCipherSuite(MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448, new BcMlsSigner(MlsSigner.ed448), new BcMlsKdf(new SHA512Digest()), new BcMlsAead(HPKE.aead_CHACHA20_POLY1305), new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_CHACHA20_POLY1305));
-    public static final MlsCipherSuite BCMLS_256_DHKEMP384_AES256GCM_SHA384_P384 = new MlsCipherSuite(MLS_256_DHKEMP384_AES256GCM_SHA384_P384, new BcMlsSigner(MlsSigner.ecdsa_secp384r1_sha384), new BcMlsKdf(new SHA384Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_P384_SHA348, HPKE.kdf_HKDF_SHA384, HPKE.aead_AES_GCM256));
+    public static final MlsCipherSuite BCMLS_256_DHKEMP384_AES256GCM_SHA384_P384 = new MlsCipherSuite(MLS_256_DHKEMP384_AES256GCM_SHA384_P384, new BcMlsSigner(MlsSigner.ecdsa_secp384r1_sha384), new BcMlsKdf(new SHA384Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_P384_SHA384, HPKE.kdf_HKDF_SHA384, HPKE.aead_AES_GCM256));
 
     public static final short[] ALL_SUPPORTED_SUITES = {
         MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
@@ -107,7 +107,7 @@ public class MlsCipherSuite
         this.hpke = hpke;
     }
 
-    static public MlsCipherSuite getSuite(short id)
+    public static MlsCipherSuite getSuite(short id)
         throws Exception
     {
         switch (id)

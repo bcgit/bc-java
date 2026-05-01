@@ -44,6 +44,8 @@ public interface PBE
     static final int        SHA3_384     = 12;
     static final int        SHA3_512     = 13;
     static final int        SM3          = 14;
+    static final int        SHA512_224   = 15;
+    static final int        SHA512_256   = 16;
 
     static final int        PKCS5S1      = 0;
     static final int        PKCS5S2      = 1;
@@ -57,9 +59,7 @@ public interface PBE
      */
     static class Util
     {
-        static private PBEParametersGenerator makePBEGenerator(
-            int                     type,
-            int                     hash)
+        private static PBEParametersGenerator makePBEGenerator(int type, int hash)
         {
             PBEParametersGenerator  generator;
     
@@ -113,6 +113,12 @@ public interface PBE
                     break;
                 case SHA512:
                     generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512PRF());
+                    break;
+                case SHA512_224:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512_224PRF());
+                    break;
+                case SHA512_256:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512_256PRF());
                     break;
                 case SHA3_224:
                     generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA3_224PRF());

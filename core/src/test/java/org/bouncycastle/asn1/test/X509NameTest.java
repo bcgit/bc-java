@@ -402,6 +402,8 @@ public class X509NameTest
 
         equalityTest(n1, n2);
         
+        equalityTest(new X509Name(""), new X509Name(""));
+
         //
         // inequality to sequences
         //

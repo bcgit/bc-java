@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.x9;
 
-import java.util.Enumeration;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -25,20 +23,6 @@ import org.bouncycastle.asn1.DERTaggedObject;
 public class OtherInfo
     extends ASN1Object
 {
-    private KeySpecificInfo     keyInfo;
-    private ASN1OctetString     partyAInfo;
-    private ASN1OctetString     suppPubInfo;
-
-    public OtherInfo(
-        KeySpecificInfo     keyInfo,
-        ASN1OctetString     partyAInfo,
-        ASN1OctetString     suppPubInfo)
-    {
-        this.keyInfo = keyInfo;
-        this.partyAInfo = partyAInfo;
-        this.suppPubInfo = suppPubInfo;
-    }
-
     /**
      * Return a OtherInfo object from the passed in object.
      *
@@ -59,26 +43,66 @@ public class OtherInfo
         return null;
     }
 
-    private OtherInfo(
-        ASN1Sequence  seq)
+    public static OtherInfo getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        Enumeration e = seq.getObjects();
+        return new OtherInfo(ASN1Sequence.getInstance(taggedObject, declaredExplicit));
+    }
 
-        keyInfo = KeySpecificInfo.getInstance(e.nextElement());
+    public static OtherInfo getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return new OtherInfo(ASN1Sequence.getTagged(taggedObject, declaredExplicit));
+    }
 
-        while (e.hasMoreElements())
+    private final KeySpecificInfo keyInfo;
+    private final ASN1OctetString partyAInfo;
+    private final ASN1OctetString suppPubInfo;
+
+    private OtherInfo(ASN1Sequence seq)
+    {
+        int count = seq.size(), pos = 0;
+        if (count < 2 || count > 3)
         {
-            ASN1TaggedObject o = (ASN1TaggedObject)e.nextElement();
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
 
-            if (o.hasContextTag(0))
+        this.keyInfo = KeySpecificInfo.getInstance(seq.getObjectAt(pos++));
+
+        // partyAInfo [0] OCTET STRING OPTIONAL
+        ASN1OctetString partyAInfo = null;
+        if (pos < count)
+        {
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
             {
-                partyAInfo = (ASN1OctetString)o.getExplicitBaseObject();
-            }
-            else if (o.hasContextTag(2))
-            {
-                suppPubInfo = (ASN1OctetString)o.getExplicitBaseObject();
+                pos++;
+                partyAInfo = ASN1OctetString.getTagged(tag0, true);
             }
         }
+        this.partyAInfo = partyAInfo;
+
+        ASN1TaggedObject tag2 = ASN1TaggedObject.getContextInstance(seq.getObjectAt(pos++), 2);        
+        this.suppPubInfo = ASN1OctetString.getTagged(tag2, true);
+
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("Unexpected elements in sequence");
+        }
+    }
+
+    public OtherInfo(KeySpecificInfo keyInfo, ASN1OctetString partyAInfo, ASN1OctetString suppPubInfo)
+    {
+        if (keyInfo == null)
+        {
+            throw new NullPointerException("'keyInfo' cannot be null");
+        }
+        if (suppPubInfo == null)
+        {
+            throw new NullPointerException("'suppPubInfo' cannot be null");
+        }
+
+        this.keyInfo = keyInfo;
+        this.partyAInfo = partyAInfo;
+        this.suppPubInfo = suppPubInfo;
     }
 
     /**

@@ -81,8 +81,7 @@ class PKITSTest
         policiesByName.put("NIST-test-policy-10", new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.10"));
     }
 
-
-    public static ASN1ObjectIdentifier[] resolvePolicyOid(String... nistNames)
+    private static ASN1ObjectIdentifier[] resolvePolicyOid(String... nistNames)
     {
         ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[nistNames.length];
 
@@ -156,7 +155,7 @@ class PKITSTest
 
         for (ASN1ObjectIdentifier policy : policies)
         {
-            this.policies.add(policy.toString());
+            this.policies.add(policy.getId());
         }
 
         return this;

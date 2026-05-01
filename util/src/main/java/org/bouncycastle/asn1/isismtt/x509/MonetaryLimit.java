@@ -82,8 +82,8 @@ public class MonetaryLimit
     public MonetaryLimit(String currency, int amount, int exponent)
     {
         this.currency = new DERPrintableString(currency, true);
-        this.amount = new ASN1Integer(amount);
-        this.exponent = new ASN1Integer(exponent);
+        this.amount = ASN1Integer.valueOf(amount);
+        this.exponent = ASN1Integer.valueOf(exponent);
     }
 
     public String getCurrency()

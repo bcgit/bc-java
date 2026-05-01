@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.cms;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -30,7 +29,7 @@ public class RecipientEncryptedKey
         identifier = KeyAgreeRecipientIdentifier.getInstance(seq.getObjectAt(0));
         encryptedKey = (ASN1OctetString)seq.getObjectAt(1);
     }
-    
+
     /**
      * Return an RecipientEncryptedKey object from a tagged object.
      *
@@ -46,7 +45,7 @@ public class RecipientEncryptedKey
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a RecipientEncryptedKey object from the given object.
      * <p>
@@ -67,14 +66,14 @@ public class RecipientEncryptedKey
         {
             return (RecipientEncryptedKey)obj;
         }
-        
+
         if (obj != null)
         {
             return new RecipientEncryptedKey(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
-    } 
+    }
 
     public RecipientEncryptedKey(
         KeyAgreeRecipientIdentifier id,
@@ -94,16 +93,11 @@ public class RecipientEncryptedKey
         return encryptedKey;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(identifier);
-        v.add(encryptedKey);
-
-        return new DERSequence(v);
+        return new DERSequence(identifier, encryptedKey);
     }
 }

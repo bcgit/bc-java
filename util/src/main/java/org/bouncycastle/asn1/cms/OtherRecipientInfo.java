@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -31,7 +30,7 @@ public class OtherRecipientInfo
         this.oriType = oriType;
         this.oriValue = oriValue;
     }
-    
+
     private OtherRecipientInfo(
         ASN1Sequence seq)
     {
@@ -54,7 +53,7 @@ public class OtherRecipientInfo
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-    
+
     /**
      * Return a OtherRecipientInfo object from the given object.
      * <p>
@@ -75,12 +74,12 @@ public class OtherRecipientInfo
         {
             return (OtherRecipientInfo)obj;
         }
-        
+
         if (obj != null)
         {
             return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
         }
-        
+
         return null;
     }
 
@@ -94,16 +93,11 @@ public class OtherRecipientInfo
         return oriValue;
     }
 
-    /** 
+    /**
      * Produce an object suitable for an ASN1OutputStream.
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(oriType);
-        v.add(oriValue);
-
-        return new DERSequence(v);
+        return new DERSequence(oriType, oriValue);
     }
 }

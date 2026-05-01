@@ -4,8 +4,6 @@ import java.io.IOException;
 
 /**
  * Parser for indefinite-length SETs.
- * 
- * @deprecated Check for 'ASN1SetParser' instead 
  */
 public class BERSetParser
     implements ASN1SetParser

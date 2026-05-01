@@ -13,6 +13,27 @@ public class Longs
         0x3E, 0x33, 0x05, 0x19, 0x24, 0x27, 0x20, 0x2E, 0x3C, 0x2C, 0x2A, 0x14, 0x16, 0x39, 0x10, 0x09,
         0x32, 0x18, 0x23, 0x1F, 0x3B, 0x13, 0x38, 0x0F, 0x31, 0x1E, 0x12, 0x0E, 0x1D, 0x0D, 0x0C, 0x0B };
 
+    public static int bitCount(long i)
+    {
+        return Integers.bitCount((int)i)
+            +  Integers.bitCount((int)(i >>> 32));
+    }
+
+    public static int bitLength(long i)
+    {
+        return SIZE - numberOfLeadingZeros(i);
+    }
+
+    public static int compare(long x, long y)
+    {
+        return x < y ? -1 : x == y ? 0 : 1;
+    }
+
+    public static int compareUnsigned(long x, long y)
+    {
+        return compare(x + Long.MIN_VALUE, y + Long.MIN_VALUE);
+    }
+
     public static long highestOneBit(long i)
     {
         i |= (i >>  1);
@@ -76,5 +97,13 @@ public class Longs
     public static Long valueOf(long value)
     {
         return new Long(value);
+    }
+
+    public static void xorTo(int len, long[] x, int xOff, long[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] ^= x[xOff + i];
+        }
     }
 }

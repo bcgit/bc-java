@@ -333,7 +333,12 @@ public class OCBBlockCipher
             throw new DataLengthException("Input buffer too short");
         }
         int resultLen = 0;
-
+        if (input == output && Arrays.segmentsOverlap(inOff, len, outOff, getUpdateOutputSize(len)))
+        {
+            input = new byte[len];
+            System.arraycopy(output, inOff, input, 0, len);
+            inOff = 0;
+        }
         for (int i = 0; i < len; ++i)
         {
             mainBlock[mainBlockPos] = input[inOff + i];

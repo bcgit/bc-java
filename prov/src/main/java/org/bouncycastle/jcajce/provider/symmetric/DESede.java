@@ -54,7 +54,7 @@ public final class DESede
     {
         public CBC()
         {
-            super(new CBCBlockCipher(new DESedeEngine()), 64);
+            super(CBCBlockCipher.newInstance(new DESedeEngine()), 64);
         }
     }
 

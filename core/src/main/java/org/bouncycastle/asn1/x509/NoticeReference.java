@@ -48,7 +48,7 @@ public class NoticeReference
             }
             else if (o instanceof Integer)
             {
-                di = new ASN1Integer(((Integer)o).intValue());
+                di = ASN1Integer.valueOf(((Integer)o).intValue());
             }
             else
             {
@@ -161,9 +161,6 @@ public class NoticeReference
     */
    public ASN1Primitive toASN1Primitive()
    {
-      ASN1EncodableVector av = new ASN1EncodableVector(2);
-      av.add (organization);
-      av.add (noticeNumbers);
-      return new DERSequence (av);
+      return new DERSequence(organization, noticeNumbers);
    }
 }

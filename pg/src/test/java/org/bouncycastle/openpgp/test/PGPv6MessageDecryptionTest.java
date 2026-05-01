@@ -1,5 +1,9 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -19,12 +23,8 @@ import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcSessionKeyDataDecryptorFactory;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 public class PGPv6MessageDecryptionTest
         extends AbstractPgpKeyPairTest
@@ -62,7 +62,7 @@ public class PGPv6MessageDecryptionTest
                 "M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr\n" +
                 "k0mXubZvyl4GBg==\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----\n";
-        ByteArrayInputStream bIn = new ByteArrayInputStream(key.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(key));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -81,7 +81,7 @@ public class PGPv6MessageDecryptionTest
                 "VWFrxQRbxEVYUWc=\n" +
                 "=u2kL\n" +
                 "-----END PGP MESSAGE-----\n";
-        bIn = new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8));
+        bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(MSG));
         aIn = new ArmoredInputStream(bIn);
         pIn = new BCPGInputStream(aIn);
         objFac = new BcPGPObjectFactory(pIn);
@@ -100,7 +100,7 @@ public class PGPv6MessageDecryptionTest
         PGPObjectFactory decFac = new BcPGPObjectFactory(decrypted);
         PGPLiteralData lit = (PGPLiteralData) decFac.nextObject();
         isEncodingEqual("Message plaintext mismatch",
-                "Hello World :)".getBytes(StandardCharsets.UTF_8),
+                Strings.toUTF8ByteArray("Hello World :)"),
                 Streams.readAll(lit.getDataStream()));
     }
 
@@ -128,7 +128,7 @@ public class PGPv6MessageDecryptionTest
                 "BU64272NrJ+UFXrzAEKZ/HK+hIL6yZvYDqIxWBg3Pwt9YxgpOfJ8UeYcrEx3\n" +
                 "B1Hkd6QprSOLFCj53zZ++q3SZkWYz28gAA==\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----\n";
-        ByteArrayInputStream bIn = new ByteArrayInputStream(key.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(key));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -147,7 +147,7 @@ public class PGPv6MessageDecryptionTest
                 "KS5f5WYbntB4N+FspsbQ7GN6taOrAqUtEuKWKzrlhZdtg9qGG4RLCvX1vfL0u6NV\n" +
                 "Yzk9fGVgty73B8pmyYdefLdWt87ljwr8wGGX/Dl8PSBIE3w=\n" +
                 "-----END PGP MESSAGE-----\n";
-        bIn = new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8));
+        bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(MSG));
         aIn = new ArmoredInputStream(bIn);
         pIn = new BCPGInputStream(aIn);
         objFac = new BcPGPObjectFactory(pIn);
@@ -166,7 +166,7 @@ public class PGPv6MessageDecryptionTest
         PGPObjectFactory decFac = new BcPGPObjectFactory(decrypted);
         PGPLiteralData lit = (PGPLiteralData) decFac.nextObject();
         isEncodingEqual("Message plaintext mismatch",
-                "Hello, World!\n".getBytes(StandardCharsets.UTF_8),
+                Strings.toUTF8ByteArray("Hello, World!\n"),
                 Streams.readAll(lit.getDataStream()));
     }
 
@@ -185,7 +185,7 @@ public class PGPv6MessageDecryptionTest
                 "-----END PGP MESSAGE-----\n";
         String SESSION_KEY = "9:47343387303C170873252051978966871EE2EA0F68D975F061AF022B78B165C1";
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(MSG));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -198,7 +198,7 @@ public class PGPv6MessageDecryptionTest
         PGPObjectFactory decFac = new BcPGPObjectFactory(decrypted);
         PGPLiteralData lit = (PGPLiteralData) decFac.nextObject();
         isEncodingEqual("Message plaintext mismatch",
-                "Hello, World!\n".getBytes(StandardCharsets.UTF_8),
+                Strings.toUTF8ByteArray("Hello, World!\n"),
                 Streams.readAll(lit.getDataStream()));
     }
 

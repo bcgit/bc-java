@@ -19,9 +19,9 @@ import org.bouncycastle.asn1.x500.DirectoryString;
 /**
  * Names of authorities which are responsible for the administration of title
  * registers.
- * 
+ *
  * <pre>
- *             NamingAuthority ::= SEQUENCE 
+ *             NamingAuthority ::= SEQUENCE
  *             {
  *               namingAuthorityId OBJECT IDENTIFIER OPTIONAL,
  *               namingAuthorityUrl IA5String OPTIONAL,
@@ -29,7 +29,7 @@ import org.bouncycastle.asn1.x500.DirectoryString;
  *             }
  * </pre>
  * @see org.bouncycastle.asn1.isismtt.x509.AdmissionSyntax
- * 
+ *
  */
 public class NamingAuthority
     extends ASN1Object

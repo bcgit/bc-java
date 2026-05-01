@@ -72,7 +72,7 @@ public class Pfx
     {
         ASN1EncodableVector v = new ASN1EncodableVector(3);
 
-        v.add(new ASN1Integer(3));
+        v.add(ASN1Integer.THREE);
         v.add(contentInfo);
 
         if (macData != null)

@@ -2,13 +2,13 @@ package org.bouncycastle.tls.crypto.impl.bc;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
+import org.bouncycastle.crypto.generators.MLKEMKeyPairGenerator;
+import org.bouncycastle.crypto.kems.MLKEMExtractor;
+import org.bouncycastle.crypto.kems.MLKEMGenerator;
+import org.bouncycastle.crypto.params.MLKEMKeyGenerationParameters;
+import org.bouncycastle.crypto.params.MLKEMParameters;
+import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsKemConfig;
@@ -16,31 +16,32 @@ import org.bouncycastle.tls.crypto.TlsKemDomain;
 
 public class BcTlsMLKemDomain implements TlsKemDomain
 {
-    protected static MLKEMParameters getKyberParameters(int namedGroup)
+    public static MLKEMParameters getDomainParameters(TlsKemConfig kemConfig)
     {
-        switch (namedGroup)
+        switch (kemConfig.getNamedGroup())
         {
         case NamedGroup.OQS_mlkem512:
+        case NamedGroup.MLKEM512:
             return MLKEMParameters.ml_kem_512;
         case NamedGroup.OQS_mlkem768:
-        case NamedGroup.DRAFT_mlkem768:
+        case NamedGroup.MLKEM768:
             return MLKEMParameters.ml_kem_768;
         case NamedGroup.OQS_mlkem1024:
-        case NamedGroup.DRAFT_mlkem1024:
+        case NamedGroup.MLKEM1024:
             return MLKEMParameters.ml_kem_1024;
         default:
-            return null;
+            throw new IllegalArgumentException("No ML-KEM configuration provided");
         }
     }
 
     protected final BcTlsCrypto crypto;
-    protected final MLKEMParameters kyberParameters;
+    protected final MLKEMParameters domainParameters;
     protected final boolean isServer;
 
     public BcTlsMLKemDomain(BcTlsCrypto crypto, TlsKemConfig kemConfig)
     {
         this.crypto = crypto;
-        this.kyberParameters = getKyberParameters(kemConfig.getNamedGroup());
+        this.domainParameters = getDomainParameters(kemConfig);
         this.isServer = kemConfig.isServer();
     }
 
@@ -63,7 +64,7 @@ public class BcTlsMLKemDomain implements TlsKemDomain
 
     public MLKEMPublicKeyParameters decodePublicKey(byte[] encoding)
     {
-        return new MLKEMPublicKeyParameters(kyberParameters, encoding);
+        return new MLKEMPublicKeyParameters(domainParameters, encoding);
     }
 
     public SecretWithEncapsulation encapsulate(MLKEMPublicKeyParameters publicKey)
@@ -80,7 +81,7 @@ public class BcTlsMLKemDomain implements TlsKemDomain
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         MLKEMKeyPairGenerator keyPairGenerator = new MLKEMKeyPairGenerator();
-        keyPairGenerator.init(new MLKEMKeyGenerationParameters(crypto.getSecureRandom(), kyberParameters));
+        keyPairGenerator.init(new MLKEMKeyGenerationParameters(crypto.getSecureRandom(), domainParameters));
         return keyPairGenerator.generateKeyPair();
     }
 

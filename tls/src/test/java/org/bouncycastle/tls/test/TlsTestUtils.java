@@ -29,17 +29,21 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsPSKIdentity;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -53,6 +57,7 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedDecryptor;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -81,6 +86,11 @@ public class TlsTestUtils
             + "pL26Ymz66ZAPdqv7EhOdzl3lZWT6srZUMWWgQMYGiHQg4z2R7X7XAgERo0QwQjAOBgNVHQ8BAf8EBAMCAAEwEgYDVR"
             + "0lAQH/BAgwBgYEVR0lADAcBgNVHREBAf8EEjAQgQ50ZXN0QHRlc3QudGVzdDANBgkqhkiG9w0BAQQFAANBAJg55PBS"
             + "weg6obRUKF4FF6fCrWFi6oCYSQ99LWcAeupc5BofW5MstFMhCOaEucuGVqunwT5G7/DweazzCIrSzB0=");
+
+    static TlsPSKIdentity createDefaultPSKIdentity(boolean badKey)
+    {
+        return new BasicTlsPSKIdentity("client", getPSKPasswordUTF8(badKey));
+    }
 
     static String fingerprint(org.bouncycastle.asn1.x509.Certificate c)
         throws IOException
@@ -112,7 +122,7 @@ public class TlsTestUtils
 
     static String getCACertResource(short signatureAlgorithm) throws IOException
     {
-        return "x509-ca-" + getResourceName(signatureAlgorithm) + ".pem";
+        return "x509-ca-" + getResourceName12(signatureAlgorithm, false) + ".pem";
     }
 
     static String getCACertResource(String eeCertResource) throws IOException
@@ -143,17 +153,87 @@ public class TlsTestUtils
 
         if ("ed25519".equalsIgnoreCase(eeCertResource))
         {
-            return getCACertResource(SignatureAlgorithm.ed25519);
+            return getCACertResource13(SignatureScheme.ed25519);
         }
-
         if ("ed448".equalsIgnoreCase(eeCertResource))
         {
-            return getCACertResource(SignatureAlgorithm.ed448);
+            return getCACertResource13(SignatureScheme.ed448);
         }
 
-        if ("rsa".equalsIgnoreCase(eeCertResource)
-            || "rsa-enc".equalsIgnoreCase(eeCertResource)
-            || "rsa-sign".equalsIgnoreCase(eeCertResource))
+        if (eeCertResource.startsWith("ml_dsa_"))
+        {
+            if ("ml_dsa_44".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.mldsa44);
+            }
+            if ("ml_dsa_65".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.mldsa65);
+            }
+            if ("ml_dsa_87".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.mldsa87);
+            }
+        }
+
+        if (eeCertResource.startsWith("slh_dsa_sha2_"))
+        {
+            if ("slh_dsa_sha2_128s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_128s);
+            }
+            if ("slh_dsa_sha2_128f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_128f);
+            }
+            if ("slh_dsa_sha2_192s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_192s);
+            }
+            if ("slh_dsa_sha2_192f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_192f);
+            }
+            if ("slh_dsa_sha2_256s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_256s);
+            }
+            if ("slh_dsa_sha2_256f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_sha2_256f);
+            }
+        }
+        if (eeCertResource.startsWith("slh_dsa_shake_"))
+        {
+            if ("slh_dsa_shake_128s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_128s);
+            }
+            if ("slh_dsa_shake_128f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_128f);
+            }
+            if ("slh_dsa_shake_192s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_192s);
+            }
+            if ("slh_dsa_shake_192f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_192f);
+            }
+            if ("slh_dsa_shake_256s".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_256s);
+            }
+            if ("slh_dsa_shake_256f".equalsIgnoreCase(eeCertResource))
+            {
+                return getCACertResource13(SignatureScheme.DRAFT_slhdsa_shake_256f);
+            }
+        }
+
+        if ("rsa".equalsIgnoreCase(eeCertResource) ||
+            "rsa-enc".equalsIgnoreCase(eeCertResource) ||
+            "rsa-sign".equalsIgnoreCase(eeCertResource))
         {
             return getCACertResource(SignatureAlgorithm.rsa);
         }
@@ -174,15 +254,45 @@ public class TlsTestUtils
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    static String getResourceName(short signatureAlgorithm) throws IOException
+    static String getCACertResource13(int signatureScheme) throws IOException
+    {
+        return "x509-ca-" + getResourceName13(signatureScheme, false) + ".pem";
+    }
+
+    static String getPSKPassword(boolean badKey)
+    {
+        return badKey ? "TLS_TEST_PSK_BAD" : "TLS_TEST_PSK";
+    }
+
+    static byte[] getPSKPasswordUTF8(boolean badKey)
+    {
+        return Strings.toUTF8ByteArray(getPSKPassword(badKey));
+    }
+
+    static String getResourceName12(short signatureAlgorithm, boolean forServer) throws IOException
+    {
+        String resourceName = findResourceName12(signatureAlgorithm, forServer);
+        if (resourceName == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        return resourceName;
+    }
+
+    static String getResourceName13(int signatureScheme, boolean forServer) throws IOException
+    {
+        String resourceName = findResourceName13(signatureScheme, forServer);
+        if (resourceName == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        return resourceName;
+    }
+
+    public static String findResourceName12(short signatureAlgorithm, boolean forServer)
     {
         switch (signatureAlgorithm)
         {
-        case SignatureAlgorithm.rsa:
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return "rsa";
         case SignatureAlgorithm.dsa:
             return "dsa";
         case SignatureAlgorithm.ecdsa:
@@ -197,13 +307,84 @@ public class TlsTestUtils
             return "rsa_pss_384";
         case SignatureAlgorithm.rsa_pss_pss_sha512:
             return "rsa_pss_512";
+        case SignatureAlgorithm.rsa:
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return forServer ? "rsa-sign" : "rsa";
 
         // TODO[RFC 9189] Choose names here and apply reverse mappings in getCACertResource(String)
         case SignatureAlgorithm.gostr34102012_256:
         case SignatureAlgorithm.gostr34102012_512:
 
         default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            return null;
+        }
+    }
+
+    public static String findResourceName13(int signatureScheme, boolean forServer)
+    {
+        switch (signatureScheme)
+        {
+        case SignatureScheme.ecdsa_secp256r1_sha256:
+            return "ecdsa";
+        case SignatureScheme.ed25519:
+            return "ed25519";
+        case SignatureScheme.ed448:
+            return "ed448";
+        case SignatureScheme.rsa_pss_pss_sha256:
+            return "rsa_pss_256";
+        case SignatureScheme.rsa_pss_pss_sha384:
+            return "rsa_pss_384";
+        case SignatureScheme.rsa_pss_pss_sha512:
+            return "rsa_pss_512";
+        case SignatureScheme.rsa_pss_rsae_sha256:
+        case SignatureScheme.rsa_pss_rsae_sha384:
+        case SignatureScheme.rsa_pss_rsae_sha512:
+            return forServer ? "rsa-sign" : "rsa";
+        case SignatureScheme.mldsa44:
+            return "ml_dsa_44";
+        case SignatureScheme.mldsa65:
+            return "ml_dsa_65";
+        case SignatureScheme.mldsa87:
+            return "ml_dsa_87";
+        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
+            return "slh_dsa_sha2_128s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
+            return "slh_dsa_sha2_128f";
+        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
+            return "slh_dsa_sha2_192s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
+            return "slh_dsa_sha2_192f";
+        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
+            return "slh_dsa_sha2_256s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
+            return "slh_dsa_sha2_256f";
+        case SignatureScheme.DRAFT_slhdsa_shake_128s:
+            return "slh_dsa_shake_128s";
+        case SignatureScheme.DRAFT_slhdsa_shake_128f:
+            return "slh_dsa_shake_128f";
+        case SignatureScheme.DRAFT_slhdsa_shake_192s:
+            return "slh_dsa_shake_192s";
+        case SignatureScheme.DRAFT_slhdsa_shake_192f:
+            return "slh_dsa_shake_192f";
+        case SignatureScheme.DRAFT_slhdsa_shake_256s:
+            return "slh_dsa_shake_256s";
+        case SignatureScheme.DRAFT_slhdsa_shake_256f:
+            return "slh_dsa_shake_256f";
+
+        // TODO[tls] Add test resources for these
+        case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512:
+        case SignatureScheme.ecdsa_secp384r1_sha384:
+        case SignatureScheme.ecdsa_secp521r1_sha512:
+
+        // TODO[RFC 8998]
+        case SignatureScheme.sm2sig_sm3:
+
+        default:
+            return null;
         }
     }
 
@@ -314,17 +495,7 @@ public class TlsTestUtils
     static TlsCredentialedSigner loadSignerCredentialsServer(TlsContext context, Vector supportedSignatureAlgorithms,
         short signatureAlgorithm) throws IOException
     {
-        String sigName = getResourceName(signatureAlgorithm);
-
-        switch (signatureAlgorithm)
-        {
-        case SignatureAlgorithm.rsa:
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            sigName += "-sign";
-            break;
-        }
+        String sigName = getResourceName12(signatureAlgorithm, true);
 
         String certResource = "x509-server-" + sigName + ".pem";
         String keyResource = "x509-server-key-" + sigName + ".pem";
@@ -398,7 +569,16 @@ public class TlsTestUtils
         PemObject pem = loadPemResource(resource);
         if (pem.getType().equals("PRIVATE KEY"))
         {
-            return PrivateKeyFactory.createKey(pem.getContent());
+            AsymmetricKeyParameter kp;
+            try
+            {
+                kp = PrivateKeyFactory.createKey(pem.getContent());
+            }
+            catch (Exception e)
+            {
+                kp = org.bouncycastle.pqc.crypto.util.PrivateKeyFactory.createKey(pem.getContent());
+            }
+            return kp;
         }
         if (pem.getType().equals("ENCRYPTED PRIVATE KEY"))
         {
@@ -493,7 +673,7 @@ public class TlsTestUtils
     static PemObject loadPemResource(String resource)
         throws IOException
     {
-        InputStream s = TlsTestUtils.class.getResourceAsStream(resource);
+        InputStream s = TestResourceFinder.findTestResource("tls/credentials", resource);
         PemReader p = new PemReader(new InputStreamReader(s));
         PemObject o = p.readPemObject();
         p.close();

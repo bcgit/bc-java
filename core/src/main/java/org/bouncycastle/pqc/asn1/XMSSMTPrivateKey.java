@@ -176,23 +176,23 @@ public class XMSSMTPrivateKey
 
         if (maxIndex >= 0)
         {
-            v.add(new ASN1Integer(1)); // version 1
+            v.add(ASN1Integer.ONE); // version 1
         }
         else
         {
-            v.add(new ASN1Integer(0)); // version 0
+            v.add(ASN1Integer.ZERO); // version 0
         }
 
         ASN1EncodableVector vK = new ASN1EncodableVector();
 
-        vK.add(new ASN1Integer(index));
+        vK.add(ASN1Integer.valueOf(index));
         vK.add(new DEROctetString(secretKeySeed));
         vK.add(new DEROctetString(secretKeyPRF));
         vK.add(new DEROctetString(publicSeed));
         vK.add(new DEROctetString(root));
         if (maxIndex >= 0)
         {
-            vK.add(new DERTaggedObject(false, 0, new ASN1Integer(maxIndex)));
+            vK.add(new DERTaggedObject(false, 0, ASN1Integer.valueOf(maxIndex)));
         }
 
         v.add(new DERSequence(vK));

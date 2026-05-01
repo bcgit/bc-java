@@ -47,14 +47,6 @@ public class CipherSuitesTestCase extends TestCase
         this.config = config;
     }
 
-    protected void setUp()
-    {
-        if (config != null)
-        {
-            ProviderUtils.setupHighPriority(config.fips);
-        }
-    }
-
     public void testDummy()
     {
         // Avoid "No tests found" warning from junit

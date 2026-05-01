@@ -198,9 +198,10 @@ public class PGPPublicKeyRing
     @Override
     public PGPPublicKey getPublicKey(KeyIdentifier identifier)
     {
-        for (PGPPublicKey k : keys)
+        for (Iterator it = keys.iterator(); it.hasNext();)
         {
-            if (identifier.matches(k.getKeyIdentifier()))
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -211,10 +212,11 @@ public class PGPPublicKeyRing
     @Override
     public Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier)
     {
-        List<PGPPublicKey> matches = new ArrayList<>();
-        for (PGPPublicKey k : keys)
+        List<PGPPublicKey> matches = new ArrayList<PGPPublicKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
         {
-            if (identifier.matches(k.getKeyIdentifier()))
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }
@@ -250,9 +252,10 @@ public class PGPPublicKeyRing
     @Override
     public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier)
     {
-        List<PGPPublicKey> keysWithSigs = new ArrayList<>();
-        for (PGPPublicKey k : keys)
+        List<PGPPublicKey> keysWithSigs = new ArrayList<PGPPublicKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
         {
+            PGPPublicKey k = (PGPPublicKey)it.next();
             Iterator<PGPSignature> sigIt = k.getSignaturesForKey(identifier);
             if (sigIt.hasNext())
             {

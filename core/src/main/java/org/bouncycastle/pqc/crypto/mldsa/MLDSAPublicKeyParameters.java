@@ -2,6 +2,10 @@ package org.bouncycastle.pqc.crypto.mldsa;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.params.MLDSAPublicKeyParameters
+ */
+@Deprecated
 public class MLDSAPublicKeyParameters
     extends MLDSAKeyParameters
 {
@@ -18,11 +22,23 @@ public class MLDSAPublicKeyParameters
         super(false, params);
         this.rho = Arrays.copyOfRange(encoding, 0, MLDSAEngine.SeedBytes);
         this.t1 = Arrays.copyOfRange(encoding, MLDSAEngine.SeedBytes, encoding.length);
+        if (t1.length == 0)
+        {
+            throw new IllegalArgumentException("encoding too short");
+        }
     }
 
     public MLDSAPublicKeyParameters(MLDSAParameters params, byte[] rho, byte[] t1)
     {
         super(false, params);
+        if (rho == null)
+        {
+            throw new NullPointerException("rho cannot be null");
+        }
+        if (t1 == null)
+        {
+            throw new NullPointerException("t1 cannot be null");
+        }
         this.rho = Arrays.clone(rho);
         this.t1 = Arrays.clone(t1);
     }

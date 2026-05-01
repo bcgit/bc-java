@@ -8,10 +8,11 @@ import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Strings;
 
 class HKDF
 {
-    private final static String versionLabel = "HPKE-v1";
+    private final static byte[] VERSION_LABEL = getBytes("HPKE-v1");
     private final HKDFBytesGenerator kdf;
     private final int hashLength;
 
@@ -50,7 +51,7 @@ class HKDF
             salt = new byte[hashLength];
         }
 
-        byte[] labeledIKM = Arrays.concatenate(versionLabel.getBytes(), suiteID, label.getBytes(), ikm);
+        byte[] labeledIKM = Arrays.concatenate(VERSION_LABEL, suiteID, getBytes(label), ikm);
 
         return kdf.extractPRK(salt, labeledIKM);
     }
@@ -61,7 +62,9 @@ class HKDF
         {
             throw new IllegalArgumentException("Expand length cannot be larger than 2^16");
         }
-        byte[] labeledInfo = Arrays.concatenate(Pack.shortToBigEndian((short)L), versionLabel.getBytes(), suiteID, label.getBytes());
+
+        byte[] labeledInfo = Arrays.concatenate(Pack.shortToBigEndian((short)L), VERSION_LABEL, suiteID,
+            getBytes(label));
 
         kdf.init(HKDFParameters.skipExtractParameters(prk, Arrays.concatenate(labeledInfo, info)));
 
@@ -96,5 +99,15 @@ class HKDF
         kdf.generateBytes(rv, 0, rv.length);
 
         return rv;
+    }
+
+    private static byte[] getBytes(String label)
+    {
+        /*
+         * RFC 9180 seems silent about this conversion, but all given labels are ASCII anyway.
+         *
+         * NOTE: String#getBytes not reliable because it depends on the platform's default charset.
+         */
+        return Strings.toByteArray(label);
     }
 }

@@ -95,7 +95,7 @@ public class GOST3410ParamSetParameters
     {
         ASN1EncodableVector v = new ASN1EncodableVector(4);
 
-        v.add(new ASN1Integer(keySize));
+        v.add(ASN1Integer.valueOf(keySize));
         v.add(p);
         v.add(q);
         v.add(a);

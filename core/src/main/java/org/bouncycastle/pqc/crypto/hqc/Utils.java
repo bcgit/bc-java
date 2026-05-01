@@ -4,96 +4,27 @@ import org.bouncycastle.util.Pack;
 
 class Utils
 {
-    static void resizeArray(long[] out, int sizeOutBits, long[] in, int sizeInBits, int n1n2ByteSize, int n1n2Byte64Size)
+    static void fromLongArrayToByteArray(byte[] out, int outOff, int outLen, long[] in)
     {
-        long mask = 0x7FFFFFFFFFFFFFFFl;
-        int val = 0;
-        if (sizeOutBits < sizeInBits)
-        {
-            if (sizeOutBits % 64 != 0)
-            {
-                val = 64 - (sizeOutBits % 64);
-            }
+        int nsLen = outLen >> 3;
+        Pack.longToLittleEndian(in, 0, nsLen, out, outOff);
 
-            System.arraycopy(in, 0, out, 0, n1n2ByteSize);
-
-            for (int i = 0; i < val; ++i)
-            {
-                out[n1n2Byte64Size - 1] &= (mask >> i);
-            }
-        }
-        else
+        int partial = outLen & 7;
+        if (partial != 0)
         {
-            System.arraycopy(in, 0, out, 0, (sizeInBits + 7) / 8);
+            Pack.longToLittleEndian_Low(in[nsLen], out, outOff + outLen - partial, partial);
         }
     }
 
-    static void fromByte16ArrayToLongArray(long[] output, int[] input)
+    static void fromByteArrayToLongArray(long[] out, byte[] in, int inOff, int inLen)
     {
-        for (int i = 0; i != input.length; i += 4)
-        {
-            output[i / 4] = (long)input[i] & 0xffffL;
-            output[i / 4] |= (long)input[i + 1] << 16;
-            output[i / 4] |= (long)input[i + 2] << 32;
-            output[i / 4] |= (long)input[i + 3] << 48;
-        }
-    }
+        int nsLen = inLen >> 3;
+        Pack.littleEndianToLong(in, inOff, out, 0, nsLen);
 
-    static void fromByteArrayToByte16Array(int[] output, byte[] input)
-    {
-        byte[] tmp = input;
-        if (input.length % 2 != 0)
+        int partial = inLen & 7;
+        if (partial != 0)
         {
-            tmp = new byte[((input.length + 1) / 2) * 2];
-            System.arraycopy(input, 0, tmp, 0, input.length);
-        }
-
-        int off = 0;
-        for (int i = 0; i < output.length; i++)
-        {
-            output[i] = (int)Pack.littleEndianToShort(tmp, off) & 0xffff;
-            off += 2;
-        }
-    }
-
-    static void fromLongArrayToByteArray(byte[] out, long[] in)
-    {
-        int max = out.length / 8;
-        for (int i = 0; i != max; i++)
-        {
-            Pack.longToLittleEndian(in[i], out, i * 8);
-        }
-
-        if (out.length % 8 != 0)
-        {
-            int off = max * 8;
-            int count = 0;
-            while (off < out.length)
-            {
-                out[off++] = (byte)(in[max] >>> (count++ * 8));
-            }
-        }
-    }
-
-    static long bitMask(long a, long b)
-    {
-        return ((1L << (a % b)) - 1);
-    }
-
-    static void fromByteArrayToLongArray(long[] out, byte[] in)
-    {
-        byte[] tmp = in;
-        if (in.length % 8 != 0)
-        {
-            tmp = new byte[((in.length + 7) / 8) * 8];
-            System.arraycopy(in, 0, tmp, 0, in.length);
-        }
-
-        int off = 0;
-        for (int i = 0; i < out.length; i++)
-        {
-            out[i] = Pack.littleEndianToLong(tmp, off);
-            off += 8;
+            out[nsLen] = Pack.littleEndianToLong_Low(in, inOff + inLen - partial, partial);
         }
     }
 
@@ -115,11 +46,6 @@ class Utils
         }
     }
 
-    static void copyBytes(int[] src, int offsetSrc, int[] dst, int offsetDst, int lengthBytes)
-    {
-        System.arraycopy(src, offsetSrc, dst, offsetDst, lengthBytes / 2);
-    }
-
     static int getByteSizeFromBitSize(int size)
     {
         return (size + 7) / 8;
@@ -138,13 +64,5 @@ class Utils
     static int toUnsigned16Bits(int a)
     {
         return a & 0xffff;
-    }
-
-    static void xorLongToByte16Array(int[] output, long input, int startIndex)
-    {
-        output[startIndex + 0] ^= (int)input & 0xffff;
-        output[startIndex + 1] ^= (int)(input >>> 16) & 0xffff;
-        output[startIndex + 2] ^= (int)(input >>> 32) & 0xffff;
-        output[startIndex + 3] ^= (int)(input >>> 48) & 0xffff;
     }
 }

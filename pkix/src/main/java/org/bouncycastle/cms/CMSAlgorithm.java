@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
 public class CMSAlgorithm
@@ -46,6 +47,9 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  AES128_WRAP     = NISTObjectIdentifiers.id_aes128_wrap.intern();
     public static final ASN1ObjectIdentifier  AES192_WRAP     = NISTObjectIdentifiers.id_aes192_wrap.intern();
     public static final ASN1ObjectIdentifier  AES256_WRAP     = NISTObjectIdentifiers.id_aes256_wrap.intern();
+    public static final ASN1ObjectIdentifier  AES128_WRAP_PAD     = NISTObjectIdentifiers.id_aes128_wrap_pad.intern();
+    public static final ASN1ObjectIdentifier  AES192_WRAP_PAD     = NISTObjectIdentifiers.id_aes192_wrap_pad.intern();
+    public static final ASN1ObjectIdentifier  AES256_WRAP_PAD     = NISTObjectIdentifiers.id_aes256_wrap_pad.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA128_WRAP = NTTObjectIdentifiers.id_camellia128_wrap.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA192_WRAP = NTTObjectIdentifiers.id_camellia192_wrap.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA256_WRAP = NTTObjectIdentifiers.id_camellia256_wrap.intern();
@@ -102,4 +106,12 @@ public class CMSAlgorithm
 
     public static final ASN1ObjectIdentifier  SHAKE128_LEN = NISTObjectIdentifiers.id_shake128_len.intern();
     public static final ASN1ObjectIdentifier  SHAKE256_LEN = NISTObjectIdentifiers.id_shake256_len.intern();
+    public static final ASN1ObjectIdentifier  ChaCha20Poly1305 = PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.intern();
+
+    public static final AlgorithmIdentifier   SHAKE128_XOF = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
+    public static final AlgorithmIdentifier   SHAKE256_XOF = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+
+    public static final AlgorithmIdentifier   SHA256_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256);
+    public static final AlgorithmIdentifier   SHA384_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha384);
+    public static final AlgorithmIdentifier   SHA512_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha512);
 }

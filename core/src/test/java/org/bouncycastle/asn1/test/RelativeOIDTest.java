@@ -107,6 +107,15 @@ public class RelativeOIDTest
         checkValid("3.1");
         checkValid("37.196556539987194312349856245628873852187.100");
         checkValid("192.168.1.1");
+        checkValid("9");
+        checkValid("99");
+        checkValid("999");
+        checkValid("9999");
+        checkValid("99999");
+        checkValid("999999");
+        checkValid("999999999999999999");
+        checkValid("9999999999999999999");
+        checkValid("99999999999999999999");
 
         checkInvalid("00");
         checkInvalid("0.01");

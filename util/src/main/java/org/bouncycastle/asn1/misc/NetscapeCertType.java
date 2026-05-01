@@ -20,7 +20,7 @@ import org.bouncycastle.asn1.DERBitString;
 public class NetscapeCertType
     extends DERBitString
 {
-    public static final int        sslClient        = (1 << 7); 
+    public static final int        sslClient        = (1 << 7);
     public static final int        sslServer        = (1 << 6);
     public static final int        smime            = (1 << 5);
     public static final int        objectSigning    = (1 << 4);
@@ -31,19 +31,17 @@ public class NetscapeCertType
 
     /**
      * Basic constructor.
-     * 
+     *
      * @param usage - the bitwise OR of the Key Usage flags giving the
      * allowed uses for the key.
      * e.g. (X509NetscapeCertType.sslCA | X509NetscapeCertType.smimeCA)
      */
-    public NetscapeCertType(
-        int usage)
+    public NetscapeCertType(int usage)
     {
-        super(getBytes(usage), getPadBits(usage));
+        super(usage);
     }
 
-    public NetscapeCertType(
-        ASN1BitString usage)
+    public NetscapeCertType(ASN1BitString usage)
     {
         super(usage.getBytes(), usage.getPadBits());
     }

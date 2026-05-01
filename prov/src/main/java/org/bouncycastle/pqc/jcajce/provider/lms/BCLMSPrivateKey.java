@@ -27,7 +27,7 @@ public class BCLMSPrivateKey
     public BCLMSPrivateKey(
         LMSKeyParameters keyParams)
     {
-        this.keyParams = keyParams;
+        this.keyParams = (keyParams instanceof HSSPrivateKeyParameters) ? (HSSPrivateKeyParameters)keyParams : new HSSPrivateKeyParameters((LMSPrivateKeyParameters)keyParams, ((LMSPrivateKeyParameters)keyParams).getIndex(), ((LMSPrivateKeyParameters)keyParams).getIndex() + ((LMSPrivateKeyParameters)keyParams).getUsagesRemaining());
     }
 
     public BCLMSPrivateKey(PrivateKeyInfo keyInfo)

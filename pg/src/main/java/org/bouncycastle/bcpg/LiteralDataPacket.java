@@ -31,6 +31,10 @@ public class LiteralDataPacket
 
         format = in.read();
         int    l = in.read();
+        if (l < 0)
+        {
+            throw new MalformedPacketException("File name size cannot be negative.");
+        }
 
         fileName = new byte[l];
         for (int i = 0; i != fileName.length; i++)

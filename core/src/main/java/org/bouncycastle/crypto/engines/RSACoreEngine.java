@@ -12,12 +12,15 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 /**
  * this does your basic RSA algorithm.
  */
 class RSACoreEngine
 {
+    static final String NO_LENSTRA_CHECK = "org.bouncycastle.rsa.no_lenstra_check";
+
     private RSAKeyParameters key;
     private boolean forEncryption;
 
@@ -182,7 +185,7 @@ class RSACoreEngine
             RSAPrivateCrtKeyParameters crtKey = (RSAPrivateCrtKeyParameters)key;
 
             BigInteger e = crtKey.getPublicExponent();
-            if (e != null)   // can't apply fault-attack countermeasure without public exponent
+            if (e != null || Properties.isOverrideSet(NO_LENSTRA_CHECK))   // can't apply fault-attack countermeasure without public exponent
             {
                 BigInteger p = crtKey.getP();
                 BigInteger q = crtKey.getQ();
@@ -206,14 +209,24 @@ class RSACoreEngine
                 // m = h * q + mQ
                 m = h.multiply(q).add(mQ);
 
-                // defence against Arjen Lenstra’s CRT attack
-                BigInteger check = m.modPow(e, crtKey.getModulus()); 
-                if (!check.equals(input))
+                if (e != null)
                 {
-                    throw new IllegalStateException("RSA engine faulty decryption/signing detected");
+                    // defence against Arjen Lenstra’s CRT attack
+                    BigInteger check = m.modPow(e, crtKey.getModulus());
+                    if (!check.equals(input))
+                    {
+                        throw new IllegalStateException("RSA engine faulty decryption/signing detected");
+                    }
                 }
 
                 return m;
+            }
+            else
+            {
+                if (key.getExponent() == null)
+                {
+                    throw new IllegalStateException("null exponent, should \"org.bouncycastle.rsa.no_lenstra_check\" be enabled?");
+                }
             }
         }
 

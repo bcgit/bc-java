@@ -47,7 +47,7 @@ import static org.bouncycastle.mls.protocol.Group.NORMAL_COMMIT_PARAMS;
 public class MLSClientImpl
     extends MLSClientGrpc.MLSClientImplBase
 {
-    class CachedGroup
+    static class CachedGroup
     {
         Group group;
         boolean encryptHandshake;
@@ -70,7 +70,7 @@ public class MLSClientImpl
         }
     }
 
-    class CachedJoin
+    static class CachedJoin
     {
         KeyPackageWithSecrets kpSecrets;
         Map<Secret, byte[]> externalPsks;
@@ -82,7 +82,7 @@ public class MLSClientImpl
         }
     }
 
-    class CachedReinit
+    static class CachedReinit
     {
         KeyPackageWithSecrets kpSk;
         Group.Tombstone tombstone;
@@ -1423,7 +1423,7 @@ public class MLSClientImpl
         LeafNode leaf = entry.group.getTree().getLeafNode(entry.group.getIndex());
         byte[] identity = leaf.getCredential().getIdentity();
         KeyPackageWithSecrets kpSk = newKeyPackage(twm.getSuite(), identity);
-        ;
+
         int reinitID = storeReinit(kpSk, twm, entry.encryptHandshake);
         byte[] commitBytes = MLSOutputStream.encode(twm.getMessage());
 

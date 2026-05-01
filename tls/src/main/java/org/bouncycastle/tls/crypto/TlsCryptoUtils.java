@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
@@ -140,9 +141,8 @@ public abstract class TlsCryptoUtils
             return NISTObjectIdentifiers.id_sha384;
         case CryptoHashAlgorithm.sha512:
             return NISTObjectIdentifiers.id_sha512;
-        // TODO[RFC 8998]
-//        case CryptoHashAlgorithm.sm3:
-//            return GMObjectIdentifiers.sm3;
+        case CryptoHashAlgorithm.sm3:
+            return GMObjectIdentifiers.sm3;
         case CryptoHashAlgorithm.gostr3411_2012_256:
             return RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256;
         default:

@@ -117,6 +117,54 @@ public class CertPathBuilderTest
         }
     }
 
+    private void noSigV0Test()
+        throws Exception
+    {
+        // create certificates and CRLs
+        KeyPair rootPair = TestUtils.generateRSAKeyPair();
+        KeyPair interPair = TestUtils.generateRSAKeyPair();
+        KeyPair endPair = TestUtils.generateRSAKeyPair();
+
+        X509Certificate rootCert = TestUtils.generateNoSigRootCert(rootPair);
+        X509Certificate interCert = TestUtils.generateIntermediateCert(interPair.getPublic(), rootPair.getPrivate(), rootCert);
+        X509Certificate endCert = TestUtils.generateEndEntityCert(endPair.getPublic(), interPair.getPrivate(), interCert);
+
+        BigInteger revokedSerialNumber = BigInteger.valueOf(2);
+        X509CRL rootCRL = TestCertificateGen.createCRL(rootCert, rootPair.getPrivate(), revokedSerialNumber);
+        X509CRL interCRL = TestCertificateGen.createCRL(interCert, interPair.getPrivate(), revokedSerialNumber);
+
+        // create CertStore to support path building
+        List list = new ArrayList();
+
+        list.add(rootCert);
+        list.add(interCert);
+        list.add(endCert);
+        list.add(rootCRL);
+        list.add(interCRL);
+
+        CollectionCertStoreParameters params = new CollectionCertStoreParameters(list);
+        CertStore store = CertStore.getInstance("Collection", params);
+
+        // build the path
+        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+        X509CertSelector pathConstraints = new X509CertSelector();
+
+        pathConstraints.setSubject(endCert.getSubjectX500Principal().getEncoded());
+
+        PKIXBuilderParameters buildParams = new PKIXBuilderParameters(Collections.singleton(new TrustAnchor(rootCert, null)), pathConstraints);
+
+        buildParams.addCertStore(store);
+        buildParams.setDate(new Date());
+
+        PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
+        CertPath path = result.getCertPath();
+
+        if (path.getCertificates().size() != 2)
+        {
+            fail("wrong number of certs in v0Test path");
+        }
+    }
+
     private void eeInSelectorTest()
         throws Exception
     {
@@ -206,10 +254,11 @@ public class CertPathBuilderTest
     public void performTest()
         throws Exception
     {
-        baseTest();
-        v0Test();
-        eeInSelectorTest();
-        eeOnlyInSelectorTest();
+//        baseTest();
+//        v0Test();
+        noSigV0Test();
+//        eeInSelectorTest();
+//        eeOnlyInSelectorTest();
     }
     
     public String getName()

@@ -97,7 +97,7 @@ public class JceAsymmetricKeyUnwrapper
         {
             Key sKey = null;
 
-            Cipher keyCipher = helper.createAsymmetricWrapper(this.getAlgorithmIdentifier().getAlgorithm(), extraMappings);
+            Cipher keyCipher = helper.createAsymmetricWrapper(this.getAlgorithmIdentifier(), extraMappings);
             AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
 
             try

@@ -1,11 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.util;
 
-import java.lang.reflect.Method;
 import java.math.BigInteger;
-import java.security.AccessController;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
-import java.security.PrivilegedAction;
 import java.security.PublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Enumeration;
@@ -24,6 +21,7 @@ import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
+import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -332,7 +330,7 @@ public class ECUtil
             curveName = curveName.substring(spacePos + 1);
         }
 
-        ASN1ObjectIdentifier oid = getOID(curveName);
+        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(curveName);
         if (null != oid)
         {
             return oid;
@@ -396,7 +394,7 @@ public class ECUtil
 
     public static String privateKeyToString(String algorithm, BigInteger d, org.bouncycastle.jce.spec.ECParameterSpec spec)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String nl = Strings.lineSeparator();
 
         org.bouncycastle.math.ec.ECPoint q = new FixedPointCombMultiplier().multiply(spec.getG(), d).normalize();
@@ -411,7 +409,7 @@ public class ECUtil
 
     public static String publicKeyToString(String algorithm, org.bouncycastle.math.ec.ECPoint q, org.bouncycastle.jce.spec.ECParameterSpec spec)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String nl = Strings.lineSeparator();
 
         buf.append(algorithm);
@@ -437,39 +435,6 @@ public class ECUtil
 
     public static String getNameFrom(final AlgorithmParameterSpec paramSpec)
     {
-        return (String)AccessController.doPrivileged(new PrivilegedAction()
-        {
-            public Object run()
-            {
-                try
-                {
-                    Method m = paramSpec.getClass().getMethod("getName");
-
-                    return m.invoke(paramSpec);
-                }
-                catch (Exception e)
-                {
-                    // ignore - maybe log?
-                }
-
-                return null;
-            }
-        });
-    }
-
-    private static ASN1ObjectIdentifier getOID(String curveName)
-    {
-        char firstChar = curveName.charAt(0);
-        if (firstChar >= '0' && firstChar <= '2')
-        {
-            try
-            {
-                return new ASN1ObjectIdentifier(curveName);
-            }
-            catch (Exception e)
-            {
-            }
-        }
-        return null;
+        return SpecUtil.getNameFrom(paramSpec);
     }
 }

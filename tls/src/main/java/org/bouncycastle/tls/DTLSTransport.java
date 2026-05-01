@@ -31,6 +31,9 @@ public class DTLSTransport
         return receive(buf, off, len, waitMillis, null);
     }
 
+    /**
+     * A waitMillis of zero is interpreted as an infinite timeout.
+     */
     public int receive(byte[] buf, int off, int len, int waitMillis, DTLSRecordCallback recordCallback)    
         throws IOException
     {
@@ -54,6 +57,11 @@ public class DTLSTransport
         try
         {
             return recordLayer.receive(buf, off, len, waitMillis, recordCallback);
+        }
+        catch (TlsFatalAlertReceived fatalAlertReceived)
+        {
+//            assert recordLayer.isFailed();
+            throw fatalAlertReceived;
         }
         catch (TlsFatalAlert fatalAlert)
         {
@@ -106,6 +114,11 @@ public class DTLSTransport
         try
         {
             return recordLayer.receivePending(buf, off, len, recordCallback);
+        }
+        catch (TlsFatalAlertReceived fatalAlertReceived)
+        {
+//            assert recordLayer.isFailed();
+            throw fatalAlertReceived;
         }
         catch (TlsFatalAlert fatalAlert)
         {

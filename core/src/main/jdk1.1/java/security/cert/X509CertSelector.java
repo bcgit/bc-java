@@ -77,7 +77,6 @@ import org.bouncycastle.util.Integers;
  * Uses {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
  * {@link org.bouncycastle.asn1.ASN1ObjectIdentifier ASN1ObjectIdentifier},
  * {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
- * {@link org.bouncycastle.asn1.OIDTokenizer OIDTokenizer},
  * {@link org.bouncycastle.asn1.x509.X509Name X509Name},
  * {@link org.bouncycastle.asn1.x509.X509Extensions X509Extensions},
  * {@link org.bouncycastle.asn1.x509.ExtendedKeyUsage ExtendedKeyUsage},
@@ -1685,7 +1684,7 @@ public class X509CertSelector implements CertSelector
             data = obj.get(1);
             if (data instanceof byte[])
             {
-                data = data.clone();
+                data = org.bouncycastle.util.Arrays.clone((byte[])data);
             }
             returnList.add(data);
             returnAltNames.add(returnList);
@@ -1809,7 +1808,7 @@ public class X509CertSelector implements CertSelector
             data = obj.get(1);
             if (data instanceof byte[])
             {
-                data = data.clone();
+                data = org.bouncycastle.util.Arrays.clone((byte[])data);
             }
             returnList.add(data);
             returnPathToNames.add(returnList);
@@ -2028,7 +2027,7 @@ public class X509CertSelector implements CertSelector
                     return false;
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
                 return false;
             }
@@ -2048,7 +2047,7 @@ public class X509CertSelector implements CertSelector
                     return false;
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
                 return false;
             }
@@ -2302,7 +2301,7 @@ public class X509CertSelector implements CertSelector
             }
             if (subjectAltNames != null)
             {
-                copy.subjectAltNames = getSubjectAlternativeNames();
+                copy.subjectAltNames = (Set)getSubjectAlternativeNames();
                 Iterator iter = subjectAltNamesByte.iterator();
                 List obj;
                 List cloneObj;
@@ -2317,7 +2316,7 @@ public class X509CertSelector implements CertSelector
             }
             if (pathToNames != null)
             {
-                copy.pathToNames = getPathToNames();
+                copy.pathToNames = (Set)getPathToNames();
                 Iterator iter = pathToNamesByte.iterator();
                 List obj;
                 List cloneObj;

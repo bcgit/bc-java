@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -172,11 +171,9 @@ public class CertificateHolderAuthorization
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
+        DERSequence seq = new DERSequence(oid,
+            EACTagged.create(EACTags.DISCRETIONARY_DATA, new byte[]{ accessRights }));
 
-        v.add(oid);
-        v.add(EACTagged.create(EACTags.DISCRETIONARY_DATA, new byte[] { accessRights }));
-
-        return EACTagged.create(EACTags.CERTIFICATE_HOLDER_AUTHORIZATION_TEMPLATE, new DERSequence(v));
+        return EACTagged.create(EACTags.CERTIFICATE_HOLDER_AUTHORIZATION_TEMPLATE, seq);
     }
 }
