@@ -24,6 +24,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Other provider public key conversions was failing with an exception for ML-DSA signature verification. This has been fixed.</li>
+<li>ProvOcspRevocationChecker was silently ignoring OCSP response signature verification failures when an OCSP response was supplied via PKIXRevocationChecker.setOcspResponses(). The checker now raises a CertPathValidatorException when the response signature fails to validate.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
