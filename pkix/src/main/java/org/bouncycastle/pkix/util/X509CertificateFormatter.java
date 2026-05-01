@@ -258,7 +258,7 @@ public class X509CertificateFormatter
                             buf.append(pad).append("isCA : " + bc.isCA()).append(nl);
                             if (bc.isCA())
                             {
-                                buf.append(spaces(2 + label.length()));
+                                buf.append(pad);
                                 buf.append("pathLenConstraint : " + bc.getPathLenConstraint()).append(nl);
                             }
                         }
