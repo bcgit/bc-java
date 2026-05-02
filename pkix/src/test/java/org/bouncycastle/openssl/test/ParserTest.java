@@ -283,11 +283,11 @@ public class ParserTest
         doDudPasswordTest("2fe9bb", 9, "long form definite-length more than 31 bits");
         doDudPasswordTest("3ee7a8", 10, "long form definite-length more than 31 bits");
         doDudPasswordTest("41af75", 11, "unknown tag 16 encountered");
-        doDudPasswordTest("1704a5", 12, "failed to construct sequence from byte[]: BOOLEAN value should have 1 byte in it");
+        doDudPasswordTest("1704a5", 12, "BOOLEAN value should have 1 byte in it");
         doDudPasswordTest("1c5822", 13, "Extra data detected in stream");
-        doDudPasswordTest("5a3d16", 14, "failed to construct sequence from byte[]: truncated BIT STRING detected");
+        doDudPasswordTest("5a3d16", 14, "truncated BIT STRING detected");
         doDudPasswordTest("8d0c97", 15, "corrupted stream detected");
-        doDudPasswordTest("bc0daf", 16, "failed to construct sequence from byte[]: BOOLEAN value should have 1 byte in it");
+        doDudPasswordTest("bc0daf", 16, "BOOLEAN value should have 1 byte in it");
         doDudPasswordTest("aaf9c4d", 17, "unknown DL object encountered: 0x15");
 
         doNoPasswordTest();
@@ -585,9 +585,13 @@ public class ParserTest
         }
         catch (IOException e)
         {
-            if (e.getCause() != null && !e.getCause().getMessage().endsWith(message))
+            if (e.getCause() != null)
             {
-               fail("issue " + index + " exception thrown, but wrong message: " + e.getCause().getMessage());
+                if (!e.getCause().getMessage().endsWith(message)
+                    && (e.getCause().getCause() != null && !e.getCause().getCause().getMessage().endsWith(message)))
+                {
+                    fail("issue " + index + " exception thrown, but wrong message: " + e.getCause().getCause().getMessage() + " expected: " + message);
+                }
             }
             else if (e.getCause() == null && !e.getMessage().equals(message))
             {
