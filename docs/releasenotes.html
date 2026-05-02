@@ -36,6 +36,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 <li>BCFKS keystore now supports storing and retrieving javax.crypto.interfaces.PBEKey entries, so passwords and other PBE-based secrets no longer need to be stored as HMAC keys (issue #2164).</li>
 <li>X509v3CertificateBuilder now exposes setters for the constructor arguments (setIssuer, setSerialNumber, setNotBefore, setNotAfter, setSubject, setSubjectPublicKeyInfo) to support equivalence-comparison use cases (issue #1545).</li>
 <li>CMS EnvelopedData now supports RFC 8418 ECDH key agreement using X25519 or X448 with HKDF (SHA-256/384/512). Three CMSAlgorithm constants (ECDH_HKDF_SHA256, ECDH_HKDF_SHA384, ECDH_HKDF_SHA512) and the corresponding KeyAgreement registrations (XDHwithSHA256HKDF / XDHwithSHA384HKDF / XDHwithSHA512HKDF) have been added (issue #1845).</li>
+<li>The SM2 JCE Cipher now accepts a ciphertext-format mode in the transformation string. Cipher.getInstance("SM2/C1C3C2/NoPadding", "BC") and Cipher.getInstance("SM2/C1C2C3/NoPadding", "BC") select between the two SM2Engine modes; the previous "SM2"/"SM2/NONE/NoPadding" forms continue to default to C1C2C3 (issue #1302).</li>
 </ul>
 
 <a id="r1rv84"><h3>2.2.1 Version</h3></a>
