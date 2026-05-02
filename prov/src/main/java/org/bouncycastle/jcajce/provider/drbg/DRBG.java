@@ -23,6 +23,7 @@ import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
@@ -370,7 +371,7 @@ public class DRBG
                     }
                     catch (IOException e)
                     {
-                        throw new IllegalStateException("unable to open random source");
+                        throw Exceptions.illegalStateException("unable to open random source", e);
                     }
                 }
             });

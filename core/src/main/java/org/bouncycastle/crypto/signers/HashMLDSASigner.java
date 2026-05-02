@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
 import org.bouncycastle.pqc.crypto.DigestUtils;
+import org.bouncycastle.util.Exceptions;
 
 public class HashMLDSASigner
     implements Signer
@@ -114,7 +115,7 @@ public class HashMLDSASigner
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("oid encoding failed: " + e.getMessage());
+            throw Exceptions.illegalStateException("oid encoding failed", e);
         }
     }
 

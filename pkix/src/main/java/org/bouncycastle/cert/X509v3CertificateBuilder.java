@@ -525,7 +525,7 @@ public class X509v3CertificateBuilder
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalStateException("unable to replace deltaCertificateDescriptor: " + e.getMessage()) ;
+                    throw Exceptions.illegalStateException("unable to replace deltaCertificateDescriptor", e) ;
                 }
             }
 
@@ -593,7 +593,7 @@ public class X509v3CertificateBuilder
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("unable to replace deltaCertificateDescriptor: " + e.getMessage());
+                throw Exceptions.illegalStateException("unable to replace deltaCertificateDescriptor", e);
             }
         }
 

@@ -16,6 +16,7 @@ import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.pqc.crypto.frodo.FrodoKEMExtractor;
 import org.bouncycastle.pqc.crypto.frodo.FrodoKEMGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class FrodoKeyGeneratorSpi
         extends KeyGeneratorSpi
@@ -71,7 +72,7 @@ public class FrodoKeyGeneratorSpi
             }
             catch (DestroyFailedException e)
             {
-                throw new IllegalStateException("key cleanup failed");
+                throw Exceptions.illegalStateException("key cleanup failed", e);
             }
 
             return rv;

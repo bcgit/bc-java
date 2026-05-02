@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 class RFC5753KeyMaterialGenerator
@@ -20,7 +21,7 @@ class RFC5753KeyMaterialGenerator
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("Unable to create KDF material: " + e);
+            throw Exceptions.illegalStateException("Unable to create KDF material", e);
         }
     }
 }

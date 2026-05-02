@@ -20,6 +20,7 @@ import org.bouncycastle.jce.interfaces.GOST3410PublicKey;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.jce.spec.GOST3410PublicKeyParameterSetSpec;
 import org.bouncycastle.jce.spec.GOST3410PublicKeySpec;
+import org.bouncycastle.util.Exceptions;
 
 public class BCGOST3410PublicKey
     implements GOST3410PublicKey
@@ -162,7 +163,7 @@ public class BCGOST3410PublicKey
         }
         catch (InvalidKeyException e)
         {
-            throw new IllegalStateException(e.getMessage()); // should not be possible
+            throw Exceptions.illegalStateException(e.getMessage(), e); // should not be possible
         }
     }
     

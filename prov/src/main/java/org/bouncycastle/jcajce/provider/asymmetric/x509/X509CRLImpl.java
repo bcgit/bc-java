@@ -403,7 +403,7 @@ abstract class X509CRLImpl
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("can't encode issuer DN");
+            throw Exceptions.illegalStateException("can't encode issuer DN", e);
         }
     }
 

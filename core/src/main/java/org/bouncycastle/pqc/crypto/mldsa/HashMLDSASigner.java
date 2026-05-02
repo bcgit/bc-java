@@ -15,7 +15,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
-
+import org.bouncycastle.util.Exceptions;
 /**
  * @deprecated use org.bouncycastle.crypto.signers.HashMLDSASigner
  */
@@ -100,7 +100,7 @@ public class HashMLDSASigner
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("oid encoding failed: " + e.getMessage());
+            throw Exceptions.illegalStateException("oid encoding failed", e);
         }
     }
 

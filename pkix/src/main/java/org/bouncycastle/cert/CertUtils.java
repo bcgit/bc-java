@@ -37,6 +37,7 @@ import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Properties;
 
 class CertUtils
@@ -65,7 +66,7 @@ class CertUtils
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot produce certificate signature");
+            throw Exceptions.illegalStateException("cannot produce certificate signature", e);
         }
     }
 
@@ -77,7 +78,7 @@ class CertUtils
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot produce attribute certificate signature");
+            throw Exceptions.illegalStateException("cannot produce attribute certificate signature", e);
         }
     }
 
@@ -205,7 +206,7 @@ class CertUtils
         }
         catch (ParseException e)
         {
-            throw new IllegalStateException("unable to recover date: " + e.getMessage());
+            throw Exceptions.illegalStateException("unable to recover date", e);
         }
     }
 

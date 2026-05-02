@@ -17,6 +17,7 @@ import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 public class KyberKeyGeneratorSpi
@@ -105,7 +106,7 @@ public class KyberKeyGeneratorSpi
             }
             catch (DestroyFailedException e)
             {
-                throw new IllegalStateException("key cleanup failed");
+                throw Exceptions.illegalStateException("key cleanup failed", e);
             }
 
             return rv;

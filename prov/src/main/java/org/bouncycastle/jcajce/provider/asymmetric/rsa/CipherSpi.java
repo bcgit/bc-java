@@ -109,7 +109,7 @@ public class CipherSpi
         }
         catch (NullPointerException e)
         {
-            throw new IllegalStateException("RSA Cipher not initialised");
+            throw Exceptions.illegalStateException("RSA Cipher not initialised", e);
         }
     }
 
@@ -146,7 +146,7 @@ public class CipherSpi
         }
         catch (NullPointerException e)
         {
-            throw new IllegalStateException("RSA Cipher not initialised");
+            throw Exceptions.illegalStateException("RSA Cipher not initialised", e);
         }
     }
 

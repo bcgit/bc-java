@@ -1,6 +1,5 @@
 package org.bouncycastle.jcajce.spec;
 
-
 import javax.crypto.SecretKey;
 
 /**

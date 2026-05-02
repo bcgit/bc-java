@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SkeinDigest;
 import org.bouncycastle.crypto.digests.SkeinEngine;
 import org.bouncycastle.crypto.macs.SkeinMac;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -254,7 +255,7 @@ public class SkeinParameters
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("Byte I/O failed: " + e);
+                throw Exceptions.illegalStateException("Byte I/O failed", e);
             }
         }
 
@@ -289,7 +290,7 @@ public class SkeinParameters
              }
              catch (IOException e)
              {
-                 throw new IllegalStateException("Byte I/O failed: " + e);
+                 throw Exceptions.illegalStateException("Byte I/O failed", e);
              }
          }
 

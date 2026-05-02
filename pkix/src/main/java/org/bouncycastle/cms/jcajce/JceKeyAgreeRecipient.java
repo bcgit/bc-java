@@ -40,6 +40,7 @@ import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 public abstract class JceKeyAgreeRecipient
@@ -362,7 +363,7 @@ public abstract class JceKeyAgreeRecipient
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("Unable to create KDF material: " + e);
+                throw Exceptions.illegalStateException("Unable to create KDF material", e);
             }
         }
     };

@@ -6,6 +6,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
 public abstract class RecipientInformation
@@ -103,7 +104,7 @@ public abstract class RecipientInformation
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalStateException("unable to drain input: " + e.getMessage());
+                    throw Exceptions.illegalStateException("unable to drain input", e);
                 }
             }
             resultMac = operator.getMac();
