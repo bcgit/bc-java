@@ -9,16 +9,16 @@ import java.io.InputStream;
  */
 public class ASN1StreamParser
 {
-    static ASN1StreamParser createSubParser(InputStream sub, int parentDepth, int limit, byte[][] tmpBuffers)
+    static ASN1StreamParser createSubParser(InputStream sub, int parentDepth, int limit, byte[] tmp)
         throws IOException
     {
-        return new ASN1StreamParser(sub, StreamUtil.decrementDepth(parentDepth), limit, tmpBuffers);
+        return new ASN1StreamParser(sub, StreamUtil.decrementDepth(parentDepth), limit, tmp);
     }
 
     private final InputStream _in;
     private final int _depth;
     private final int _limit;
-    private final byte[][] tmpBuffers;
+    private final byte[] tmp;
 
     public ASN1StreamParser(InputStream in)
     {
@@ -32,15 +32,15 @@ public class ASN1StreamParser
 
     public ASN1StreamParser(InputStream in, int limit)
     {
-        this(in, StreamUtil.findDepth(), limit, new byte[16][]);
+        this(in, StreamUtil.findDepth(), limit, new byte[16]);
     }
 
-    private ASN1StreamParser(InputStream in, int depth, int limit, byte[][] tmpBuffers)
+    private ASN1StreamParser(InputStream in, int depth, int limit, byte[] tmp)
     {
         this._in = in;
         this._depth = depth;
         this._limit = limit;
-        this.tmpBuffers = tmpBuffers;
+        this.tmp = tmp;
     }
 
     public ASN1Encodable readObject() throws IOException
@@ -72,7 +72,7 @@ public class ASN1StreamParser
             }
 
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
-            ASN1StreamParser sp = createSubParser(indIn, _depth, _limit, tmpBuffers);
+            ASN1StreamParser sp = createSubParser(indIn, _depth, _limit, tmp);
 
             int tagClass = tagHdr & BERTags.PRIVATE;
             if (0 != tagClass)
@@ -93,7 +93,7 @@ public class ASN1StreamParser
                 return parseImplicitPrimitive(tagNo, defIn);
             }
 
-            ASN1StreamParser sp = createSubParser(defIn, _depth, subLimit, tmpBuffers);
+            ASN1StreamParser sp = createSubParser(defIn, _depth, subLimit, tmp);
 
             int tagClass = tagHdr & BERTags.PRIVATE;
             if (0 != tagClass)
@@ -194,7 +194,7 @@ public class ASN1StreamParser
 
         try
         {
-            return ASN1InputStream.createPrimitiveDERObject(univTagNo, defIn, tmpBuffers);
+            return ASN1InputStream.createPrimitiveDERObject(univTagNo, defIn, tmp);
         }
         catch (IllegalArgumentException e)
         {

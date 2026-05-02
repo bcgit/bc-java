@@ -21,7 +21,7 @@ public class ASN1InputStream
     private final int depth;
     private final int limit;
     private final boolean lazyEvaluate;
-    private final byte[][] tmpBuffers;
+    private final byte[] tmp;
 
     public ASN1InputStream(InputStream is)
     {
@@ -84,22 +84,22 @@ public class ASN1InputStream
      */
     public ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate)
     {
-        this(input, StreamUtil.findDepth(), limit, lazyEvaluate, new byte[16][]);
+        this(input, StreamUtil.findDepth(), limit, lazyEvaluate, new byte[16]);
     }
 
-    private ASN1InputStream(InputStream input, int depth, int limit, boolean lazyEvaluate, byte[][] tmpBuffers)
+    private ASN1InputStream(InputStream input, int depth, int limit, boolean lazyEvaluate, byte[] tmp)
     {
         super(input);
 
         this.depth = depth;
         this.limit = limit;
         this.lazyEvaluate = lazyEvaluate;
-        this.tmpBuffers = tmpBuffers;
+        this.tmp= tmp;
     }
 
     private ASN1InputStream createSubStream(InputStream sub, int limit, boolean lazyEvaluate) throws IOException
     {
-        return new ASN1InputStream(sub, StreamUtil.decrementDepth(depth), limit, lazyEvaluate, tmpBuffers);
+        return new ASN1InputStream(sub, StreamUtil.decrementDepth(depth), limit, lazyEvaluate, tmp);
     }
 
     protected int getLimit()
@@ -156,7 +156,7 @@ public class ASN1InputStream
 
         if (0 == (tag & FLAGS))
         {
-            return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
+            return createPrimitiveDERObject(tagNo, defIn, tmp);
         }
 
         int tagClass = tag & PRIVATE;
@@ -241,7 +241,7 @@ public class ASN1InputStream
         }
 
         IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
-        ASN1StreamParser sp = ASN1StreamParser.createSubParser(indIn, depth, limit, tmpBuffers);
+        ASN1StreamParser sp = ASN1StreamParser.createSubParser(indIn, depth, limit, tmp);
 
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
@@ -449,87 +449,11 @@ public class ASN1InputStream
         return length;
     }
 
-    private static byte[] getBuffer(DefiniteLengthInputStream defIn, byte[][] tmpBuffers)
-        throws IOException
-    {
-        int len = defIn.getRemaining();
-        if (len >= tmpBuffers.length)
-        {
-            return defIn.toByteArray();
-        }
-
-        byte[] buf = tmpBuffers[len];
-        if (buf == null)
-        {
-            buf = tmpBuffers[len] = new byte[len];
-        }
-
-        defIn.readAllIntoByteArray(buf);
-
-        return buf;
-    }
-
-    private static char[] getBMPCharBuffer(DefiniteLengthInputStream defIn)
-        throws IOException
-    {
-        int remainingBytes = defIn.getRemaining();
-        if (0 != (remainingBytes & 1))
-        {
-            throw new IOException("malformed BMPString encoding encountered");
-        }
-
-        char[] string = new char[remainingBytes / 2];
-        int stringPos = 0;
-
-        byte[] buf = new byte[8];
-        while (remainingBytes >= 8)
-        {
-            if (Streams.readFully(defIn, buf, 0, 8) != 8)
-            {
-                throw new EOFException("EOF encountered in middle of BMPString");
-            }
-
-            string[stringPos    ] = (char)((buf[0] << 8) | (buf[1] & 0xFF));
-            string[stringPos + 1] = (char)((buf[2] << 8) | (buf[3] & 0xFF));
-            string[stringPos + 2] = (char)((buf[4] << 8) | (buf[5] & 0xFF));
-            string[stringPos + 3] = (char)((buf[6] << 8) | (buf[7] & 0xFF));
-            stringPos += 4;
-            remainingBytes -= 8;
-        }
-        if (remainingBytes > 0)
-        {
-            if (Streams.readFully(defIn, buf, 0, remainingBytes) != remainingBytes)
-            {
-                throw new EOFException("EOF encountered in middle of BMPString");
-            }
-
-            int bufPos = 0;
-            do
-            {
-                int b1 = buf[bufPos++] << 8;
-                int b2 = buf[bufPos++] & 0xFF;
-                string[stringPos++] = (char)(b1 | b2);
-            }
-            while (bufPos < remainingBytes);
-        }
-
-        if (0 != defIn.getRemaining() || string.length != stringPos)
-        {
-            throw new IllegalStateException();
-        }
-
-        return string;
-    }
-
-    static ASN1Primitive createPrimitiveDERObject(
-        int     tagNo,
-        DefiniteLengthInputStream defIn,
-        byte[][] tmpBuffers)
+    static ASN1Primitive createPrimitiveDERObject(int tagNo, DefiniteLengthInputStream defIn, byte[] tmp)
         throws IOException
     {
         /*
-         * TODO[asn1] Lookup the universal type object and get it to parse the stream directly (possibly with
-         * access to a single temporary buffer replacing tmpBuffers).
+         * TODO[asn1] Lookup the universal type object and get it to parse 'defIn' stream with help of 'tmp' buffer.
          */
         try
         {
@@ -538,12 +462,11 @@ public class ASN1InputStream
             case BIT_STRING:
                 return ASN1BitString.createPrimitive(defIn.toByteArray());
             case BMP_STRING:
-                return ASN1BMPString.createPrimitive(getBMPCharBuffer(defIn));
+                return ASN1BMPString.createPrimitive(defIn);
             case BOOLEAN:
-                return ASN1Boolean.createPrimitive(getBuffer(defIn, tmpBuffers));
+                return ASN1Boolean.createPrimitive(defIn);
             case ENUMERATED:
-                // TODO Ideally only clone if we used a buffer
-                return ASN1Enumerated.createPrimitive(getBuffer(defIn, tmpBuffers), true);
+                return ASN1Enumerated.createPrimitive(defIn);
             case GENERAL_STRING:
                 return ASN1GeneralString.createPrimitive(defIn.toByteArray());
             case GENERALIZED_TIME:
@@ -555,30 +478,19 @@ public class ASN1InputStream
             case INTEGER:
                 return ASN1Integer.createPrimitive(defIn.toByteArray());
             case NULL:
-            {
-                ASN1Null.checkContentsLength(defIn.getRemaining());
-                return ASN1Null.createPrimitive();
-            }
+                return ASN1Null.createPrimitive(defIn);
             case NUMERIC_STRING:
                 return ASN1NumericString.createPrimitive(defIn.toByteArray());
             case OBJECT_DESCRIPTOR:
                 return ASN1ObjectDescriptor.createPrimitive(defIn.toByteArray());
             case OBJECT_IDENTIFIER:
-            {
-                ASN1ObjectIdentifier.checkContentsLength(defIn.getRemaining());
-                // TODO Ideally only clone if we used a buffer
-                return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers), true);
-            }
+                return ASN1ObjectIdentifier.createPrimitive(defIn, tmp);
             case OCTET_STRING:
                 return ASN1OctetString.createPrimitive(defIn.toByteArray());
             case PRINTABLE_STRING:
                 return ASN1PrintableString.createPrimitive(defIn.toByteArray());
             case RELATIVE_OID:
-            {
-                ASN1RelativeOID.checkContentsLength(defIn.getRemaining());
-                // TODO Ideally only clone if we used a buffer
-                return ASN1RelativeOID.createPrimitive(getBuffer(defIn, tmpBuffers), true);
-            }
+                return ASN1RelativeOID.createPrimitive(defIn, tmp);
             case T61_STRING:
                 return ASN1T61String.createPrimitive(defIn.toByteArray());
             case UNIVERSAL_STRING:

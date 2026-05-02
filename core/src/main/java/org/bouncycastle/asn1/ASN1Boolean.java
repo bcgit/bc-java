@@ -175,7 +175,7 @@ public class ASN1Boolean
       return isTrue() ? "TRUE" : "FALSE";
     }
 
-    static void checkContentsLength(int contentsLength)
+    private static void checkContentsLength(int contentsLength)
     {
         if (contentsLength != 1)
         {
@@ -183,7 +183,13 @@ public class ASN1Boolean
         }
     }
 
-    static ASN1Boolean createPrimitive(byte[] contents)
+    static ASN1Boolean createPrimitive(DefiniteLengthInputStream defIn) throws IOException
+    {
+        checkContentsLength(defIn.getRemaining());
+        return createPrimitive((byte)defIn.read());
+    }
+
+    private static ASN1Boolean createPrimitive(byte[] contents)
     {
         checkContentsLength(contents.length);
         return createPrimitive(contents[0]);
