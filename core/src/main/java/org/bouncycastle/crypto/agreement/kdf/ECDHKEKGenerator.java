@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.DigestDerivationFunction;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -74,7 +75,7 @@ public class ECDHKEKGenerator
         }
         catch (IOException e)
         {
-            throw new IllegalArgumentException("unable to initialise kdf: " + e.getMessage());
+            throw Exceptions.illegalArgumentException("unable to initialise kdf", e);
         }
 
         return kdf.generateBytes(out, outOff, len);

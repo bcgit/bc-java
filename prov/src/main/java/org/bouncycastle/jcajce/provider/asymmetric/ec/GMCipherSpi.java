@@ -38,6 +38,7 @@ import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 
@@ -205,7 +206,7 @@ public class GMCipherSpi
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            throw new IllegalArgumentException("cannot handle supplied parameter spec: " + e.getMessage());
+            throw Exceptions.illegalArgumentException("cannot handle supplied parameter spec", e);
         }
     }
 

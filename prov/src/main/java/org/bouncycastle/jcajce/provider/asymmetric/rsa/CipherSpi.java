@@ -39,6 +39,7 @@ import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.spec.TLSRSAPremasterSecretParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 public class CipherSpi
@@ -70,7 +71,7 @@ public class CipherSpi
         }
         catch (NoSuchPaddingException e)
         {
-            throw new IllegalArgumentException(e.getMessage());
+            throw Exceptions.illegalArgumentException(e.getMessage(), e);
         }
     }
 

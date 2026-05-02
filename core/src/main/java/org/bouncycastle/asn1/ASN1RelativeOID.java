@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Properties;
 
 public class ASN1RelativeOID
@@ -64,7 +65,7 @@ public class ASN1RelativeOID
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct relative OID from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct relative OID from byte[]", e);
             }
         }
 

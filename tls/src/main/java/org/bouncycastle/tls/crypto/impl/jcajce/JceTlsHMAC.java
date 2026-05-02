@@ -8,6 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsHMAC;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Wrapper class for a JCE MAC based on HMAC to provide the necessary operations for TLS.
@@ -41,7 +42,7 @@ public class JceTlsHMAC
         }
         catch (InvalidKeyException e)
         {
-            throw new IllegalArgumentException(e.getMessage());
+            throw Exceptions.illegalArgumentException(e.getMessage(), e);
         }
     }
 
@@ -63,7 +64,7 @@ public class JceTlsHMAC
         }
         catch (ShortBufferException e)
         {
-            throw new IllegalArgumentException(e.getMessage());
+            throw Exceptions.illegalArgumentException(e.getMessage(), e);
         }
     }
 

@@ -2,6 +2,8 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Exceptions;
+
 /**
  * A NULL object - use DERNull.INSTANCE for populating structures.
  */
@@ -46,7 +48,7 @@ public abstract class ASN1Null
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct NULL from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct NULL from byte[]", e);
             }
         }
 

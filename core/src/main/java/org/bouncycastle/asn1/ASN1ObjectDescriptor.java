@@ -2,6 +2,8 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Exceptions;
+
 public final class ASN1ObjectDescriptor
     extends ASN1Primitive
 {
@@ -49,7 +51,7 @@ public final class ASN1ObjectDescriptor
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct object descriptor from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct object descriptor from byte[]", e);
             }
         }
 
