@@ -887,6 +887,62 @@ public class PGPRSATest
         }
     }
 
+    private void removedExpiryTest()
+        throws Exception
+    {
+        // RFC 4880 5.2.4.1: a more recent self-signature without a Key Expiration
+        // Time subpacket cancels an earlier self-signature's expiration.
+        char[] passPhrase = "test".toCharArray();
+        String identity = "TEST <test@test.org>";
+        Date date = new Date();
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        kpg.initialize(2048);
+        KeyPair kpSgn = kpg.generateKeyPair();
+
+        PGPKeyPair sgnKeyPair = new JcaPGPKeyPair(PGPPublicKey.RSA_SIGN, kpSgn, date);
+
+        PGPSignatureSubpacketGenerator svg = new PGPSignatureSubpacketGenerator();
+        svg.setKeyExpirationTime(true, 86400L * 366 * 2);
+        svg.setKeyFlags(true, KeyFlags.CERTIFY_OTHER + KeyFlags.SIGN_DATA);
+        PGPSignatureSubpacketVector hashedPcks = svg.generate();
+
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION,
+            sgnKeyPair, identity,
+            sha1Calc, hashedPcks, null,
+            new JcaPGPContentSignerBuilder(sgnKeyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1),
+            new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
+
+        PGPPublicKeyRing keyRing = new PGPPublicKeyRing(
+            keyRingGen.generatePublicKeyRing().getEncoded(), new JcaKeyFingerprintCalculator());
+
+        PGPPublicKey pKey = keyRing.getPublicKey();
+
+        if (pKey.getValidSeconds() != 86400L * 366 * 2)
+        {
+            fail("initial key expiration time wrong");
+        }
+
+        // Add a newer self-cert that omits KEY_EXPIRE_TIME (intent: remove the expiry).
+        Thread.sleep(1100); // ensure later creation time at one-second granularity
+
+        PGPSignatureGenerator keySigGen = new PGPSignatureGenerator(
+            new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1).setProvider("BC"));
+        keySigGen.init(PGPSignature.POSITIVE_CERTIFICATION, sgnKeyPair.getPrivateKey());
+
+        PGPSignatureSubpacketGenerator noExpiry = new PGPSignatureSubpacketGenerator();
+        noExpiry.setKeyFlags(true, KeyFlags.CERTIFY_OTHER + KeyFlags.SIGN_DATA);
+        keySigGen.setHashedSubpackets(noExpiry.generate());
+
+        pKey = PGPPublicKey.addCertification(pKey, keySigGen.generateCertification(identity, pKey));
+
+        if (pKey.getValidSeconds() != 0)
+        {
+            fail("expected getValidSeconds() == 0 after newer self-sig without KEY_EXPIRE_TIME, got "
+                + pKey.getValidSeconds());
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -1576,6 +1632,7 @@ public class PGPRSATest
         embeddedJpegTest();
         sigsubpacketTest();
         multipleExpiryTest();
+        removedExpiryTest();
         shortSigTest();
     }
 

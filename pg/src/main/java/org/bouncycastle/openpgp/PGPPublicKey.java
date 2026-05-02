@@ -357,27 +357,23 @@ public class PGPPublicKey
             if (!selfSigned || sig.getKeyID() == this.getKeyID())
             {
                 PGPSignatureSubpacketVector hashed = sig.getHashedSubPackets();
-                if (hashed == null)
-                {
-                    continue;
-                }
 
-                if (!hashed.hasSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME))
-                {
-                    continue;
-                }
-
-                long current = hashed.getKeyExpirationTime();
+                boolean hasExpiry = hashed != null
+                    && hashed.hasSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME);
+                long current = hasExpiry ? hashed.getKeyExpirationTime() : 0;
 
                 if (sig.getKeyID() == this.getKeyID())
                 {
+                    // RFC 4880 5.2.4.1: the most recent self-signature wins, even if
+                    // it omits the Key Expiration Time subpacket (which removes any
+                    // previously asserted expiry).
                     if (sig.getCreationTime().getTime() > lastDate)
                     {
                         lastDate = sig.getCreationTime().getTime();
                         expiryTime = current;
                     }
                 }
-                else
+                else if (hasExpiry)
                 {
                     if (current == 0 || current > expiryTime)
                     {
