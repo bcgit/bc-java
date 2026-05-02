@@ -78,6 +78,13 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  ECCDH_SHA512KDF    = SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme.intern();
     public static final ASN1ObjectIdentifier  ECMQV_SHA512KDF   = SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme.intern();
 
+    /** RFC 8418 - dhSinglePass-stdDH-hkdf-sha256-scheme (use with X25519 or X448 recipient keys). */
+    public static final ASN1ObjectIdentifier  ECDH_HKDF_SHA256 = PKCSObjectIdentifiers.dhSinglePass_stdDH_hkdf_sha256_scheme.intern();
+    /** RFC 8418 - dhSinglePass-stdDH-hkdf-sha384-scheme (use with X25519 or X448 recipient keys). */
+    public static final ASN1ObjectIdentifier  ECDH_HKDF_SHA384 = PKCSObjectIdentifiers.dhSinglePass_stdDH_hkdf_sha384_scheme.intern();
+    /** RFC 8418 - dhSinglePass-stdDH-hkdf-sha512-scheme (use with X25519 or X448 recipient keys). */
+    public static final ASN1ObjectIdentifier  ECDH_HKDF_SHA512 = PKCSObjectIdentifiers.dhSinglePass_stdDH_hkdf_sha512_scheme.intern();
+
     public static final ASN1ObjectIdentifier  ECDHGOST3410_2001    = CryptoProObjectIdentifiers.gostR3410_2001.intern();
     public static final ASN1ObjectIdentifier  ECDHGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.intern();
     public static final ASN1ObjectIdentifier  ECDHGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512.intern();

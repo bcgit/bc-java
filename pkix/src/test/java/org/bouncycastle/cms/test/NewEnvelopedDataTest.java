@@ -3313,6 +3313,51 @@ public class NewEnvelopedDataTest
         }
     }
 
+    // Regression test for https://github.com/bcgit/bc-java/issues/1845 - RFC 8418 X25519/X448 in CMS.
+    public void testRFC8418X25519AndX448()
+        throws Exception
+    {
+        doRFC8418Round("X25519", CMSAlgorithm.ECDH_HKDF_SHA256);
+        doRFC8418Round("X25519", CMSAlgorithm.ECDH_HKDF_SHA384);
+        doRFC8418Round("X25519", CMSAlgorithm.ECDH_HKDF_SHA512);
+        doRFC8418Round("X448",   CMSAlgorithm.ECDH_HKDF_SHA256);
+        doRFC8418Round("X448",   CMSAlgorithm.ECDH_HKDF_SHA384);
+        doRFC8418Round("X448",   CMSAlgorithm.ECDH_HKDF_SHA512);
+    }
+
+    private void doRFC8418Round(String curve, ASN1ObjectIdentifier kaOid)
+        throws Exception
+    {
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        java.security.KeyPairGenerator kpg = java.security.KeyPairGenerator.getInstance(curve, BC);
+        KeyPair origKP = kpg.generateKeyPair();
+        KeyPair reciKP = kpg.generateKeyPair();
+
+        byte[] reciKeyId = new byte[]{1, 2, 3, 4, 5};
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+        edGen.addRecipientInfoGenerator(
+            new JceKeyAgreeRecipientInfoGenerator(kaOid, origKP.getPrivate(), origKP.getPublic(), CMSAlgorithm.AES128_WRAP)
+                .addRecipient(reciKeyId, reciKP.getPublic())
+                .setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+        Collection c = recipients.getRecipients();
+        assertEquals(1, c.size());
+
+        RecipientInformation recipient = (RecipientInformation)c.iterator().next();
+        assertEquals(kaOid.getId(), recipient.getKeyEncryptionAlgOID());
+
+        byte[] recData = recipient.getContent(
+            new JceKeyAgreeEnvelopedRecipient(reciKP.getPrivate()).setProvider(BC));
+        assertTrue(curve + "/" + kaOid + " mismatch", Arrays.equals(data, recData));
+    }
+
     private void verifyECKeyAgreeVectors(PrivateKey privKey, String wrapAlg, byte[] message)
         throws CMSException, GeneralSecurityException
     {

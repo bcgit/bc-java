@@ -25,12 +25,14 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 <ul>
 <li>Other provider public key conversions was failing with an exception for ML-DSA signature verification. This has been fixed.</li>
 <li>ProvOcspRevocationChecker was silently ignoring OCSP response signature verification failures when an OCSP response was supplied via PKIXRevocationChecker.setOcspResponses(). The checker now raises a CertPathValidatorException when the response signature fails to validate.</li>
+<li>X509CertificateFormatter was indenting the basicConstraints pathLenConstraint line incorrectly, dropping the 23-space prefix shared with other extension lines. The line now uses the same pad as the surrounding output (issue #2214).</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
 <li>The system/security property "org.bouncycastle.argon2.max_memory_exp" can now be used to set the maximum exponent for the memory setting in Argon2. Default value is (and max possible) is 30.</li>
 <li>BCFKS keystore now supports storing and retrieving javax.crypto.interfaces.PBEKey entries, so passwords and other PBE-based secrets no longer need to be stored as HMAC keys (issue #2164).</li>
 <li>X509v3CertificateBuilder now exposes setters for the constructor arguments (setIssuer, setSerialNumber, setNotBefore, setNotAfter, setSubject, setSubjectPublicKeyInfo) to support equivalence-comparison use cases (issue #1545).</li>
+<li>CMS EnvelopedData now supports RFC 8418 ECDH key agreement using X25519 or X448 with HKDF (SHA-256/384/512). Three CMSAlgorithm constants (ECDH_HKDF_SHA256, ECDH_HKDF_SHA384, ECDH_HKDF_SHA512) and the corresponding KeyAgreement registrations (XDHwithSHA256HKDF / XDHwithSHA384HKDF / XDHwithSHA512HKDF) have been added (issue #1845).</li>
 </ul>
 
 <a id="r1rv84"><h3>2.2.1 Version</h3></a>

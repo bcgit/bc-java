@@ -311,6 +311,27 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier id_alg_AEADChaCha20Poly1305 = smime_alg.branch("18");
 
     /**
+     * RFC 8418: dhSinglePass-stdDH-hkdf-sha256-scheme OBJECT IDENTIFIER ::= { smime-alg 19 }
+     * <p>
+     * 1.2.840.113549.1.9.16.3.19
+     */
+    ASN1ObjectIdentifier dhSinglePass_stdDH_hkdf_sha256_scheme = smime_alg.branch("19");
+
+    /**
+     * RFC 8418: dhSinglePass-stdDH-hkdf-sha384-scheme OBJECT IDENTIFIER ::= { smime-alg 20 }
+     * <p>
+     * 1.2.840.113549.1.9.16.3.20
+     */
+    ASN1ObjectIdentifier dhSinglePass_stdDH_hkdf_sha384_scheme = smime_alg.branch("20");
+
+    /**
+     * RFC 8418: dhSinglePass-stdDH-hkdf-sha512-scheme OBJECT IDENTIFIER ::= { smime-alg 21 }
+     * <p>
+     * 1.2.840.113549.1.9.16.3.21
+     */
+    ASN1ObjectIdentifier dhSinglePass_stdDH_hkdf_sha512_scheme = smime_alg.branch("21");
+
+    /**
      * <pre>
      *    id-alg-hkdf-with-sha256 OBJECT IDENTIFIER ::= { iso(1) member-body(2)
      *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 28 }
