@@ -19,6 +19,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
 import org.bouncycastle.crypto.digests.Blake2sDigest;
 import org.bouncycastle.crypto.digests.MD5Digest;
@@ -28,6 +29,7 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.engines.SM2Engine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -47,15 +49,18 @@ public class GMCipherSpi
 {
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
+    private final Digest digest;
+    private SM2Engine.Mode mode = SM2Engine.Mode.C1C2C3;
     private SM2Engine engine;
     private int state = -1;
     private ErasableOutputStream buffer = new ErasableOutputStream();
     private AsymmetricKeyParameter key;
     private SecureRandom random;
 
-    public GMCipherSpi(SM2Engine engine)
+    public GMCipherSpi(Digest digest)
     {
-        this.engine = engine;
+        this.digest = digest;
+        this.engine = new SM2Engine(digest, mode);
     }
 
     public int engineGetBlockSize()
@@ -91,10 +96,20 @@ public class GMCipherSpi
     {
         String modeName = Strings.toUpperCase(mode);
 
-        if (!modeName.equals("NONE"))
+        if (modeName.equals("NONE") || modeName.equals("C1C2C3"))
         {
-            throw new IllegalArgumentException("can't support mode " + mode);
+            this.mode = SM2Engine.Mode.C1C2C3;
         }
+        else if (modeName.equals("C1C3C2"))
+        {
+            this.mode = SM2Engine.Mode.C1C3C2;
+        }
+        else
+        {
+            throw new NoSuchAlgorithmException("can't support mode " + mode);
+        }
+
+        this.engine = new SM2Engine(digest, this.mode);
     }
 
     public int engineGetOutputSize(int inputLen)
@@ -310,7 +325,7 @@ public class GMCipherSpi
     {
         public SM2()
         {
-            super(new SM2Engine());
+            super(new SM3Digest());
         }
     }
 
@@ -319,7 +334,7 @@ public class GMCipherSpi
     {
         public SM2withBlake2b()
         {
-            super(new SM2Engine(new Blake2bDigest(512)));
+            super(new Blake2bDigest(512));
         }
     }
 
@@ -328,7 +343,7 @@ public class GMCipherSpi
     {
         public SM2withBlake2s()
         {
-            super(new SM2Engine(new Blake2sDigest(256)));
+            super(new Blake2sDigest(256));
         }
     }
 
@@ -337,7 +352,7 @@ public class GMCipherSpi
     {
         public SM2withWhirlpool()
         {
-            super(new SM2Engine(new WhirlpoolDigest()));
+            super(new WhirlpoolDigest());
         }
     }
 
@@ -346,7 +361,7 @@ public class GMCipherSpi
     {
         public SM2withMD5()
         {
-            super(new SM2Engine(new MD5Digest()));
+            super(new MD5Digest());
         }
     }
 
@@ -355,7 +370,7 @@ public class GMCipherSpi
     {
         public SM2withRMD()
         {
-            super(new SM2Engine(new RIPEMD160Digest()));
+            super(new RIPEMD160Digest());
         }
     }
 
@@ -364,7 +379,7 @@ public class GMCipherSpi
     {
         public SM2withSha1()
         {
-            super(new SM2Engine(new SHA1Digest()));
+            super(new SHA1Digest());
         }
     }
 
@@ -373,7 +388,7 @@ public class GMCipherSpi
     {
         public SM2withSha224()
         {
-            super(new SM2Engine(new SHA224Digest()));
+            super(new SHA224Digest());
         }
     }
 
@@ -382,7 +397,7 @@ public class GMCipherSpi
     {
         public SM2withSha256()
         {
-            super(new SM2Engine(SHA256Digest.newInstance()));
+            super(SHA256Digest.newInstance());
         }
     }
 
@@ -391,7 +406,7 @@ public class GMCipherSpi
     {
         public SM2withSha384()
         {
-            super(new SM2Engine(new SHA384Digest()));
+            super(new SHA384Digest());
         }
     }
 
@@ -400,7 +415,7 @@ public class GMCipherSpi
     {
         public SM2withSha512()
         {
-            super(new SM2Engine(new SHA512Digest()));
+            super(new SHA512Digest());
         }
     }
 
