@@ -29,6 +29,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -42,6 +43,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.CertificateTrustBlock;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
+import org.bouncycastle.openssl.PEMEncryptor;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.X509TrustedCertificateBlock;
@@ -50,9 +52,13 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -378,6 +384,97 @@ public class ParserTest
 
         doOpenSslGost2012Test();
         doParseAttrECKeyTest();
+        doLegacyEncryptedPkcs8PemTest();
+        doLegacyEncryptedPkcs8GenPemTest();
+    }
+
+    private void doLegacyEncryptedPkcs8PemTest()
+         throws Exception
+     {
+         char[] password = "Vjvyhfngz0MCUs$kwOF0".toCharArray();
+
+         String pem = "-----BEGIN PRIVATE KEY-----\n"
+         + "Proc-Type: 4,ENCRYPTED\n"
+         + "DEK-Info: AES-128-CBC,b619a06a16b7b7a6436579f06a14f45e\n"
+         + "\n"
+         + "QmysBFzoMkgvVTM39kvHjkKhcBjK6PVMZ6a/taF44ZXeOl3t5DUp4EWxyfs8htng\n"
+         + "tjsKIb0yKJigIZGrCeHROQ==\n"
+         + "-----END PRIVATE KEY-----\n";
+
+         PEMParser parser = new PEMParser(new StringReader(pem.toString()));
+         Object o = parser.readObject();
+
+         if (!(o instanceof PEMEncryptedKeyPair))
+         {
+             fail("expected PEMEncryptedKeyPair, got " + (o == null ? "null" : o.getClass().getName()));
+         }
+
+         PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder()
+             .setProvider("BC").build(password);
+         PEMKeyPair pkp = ((PEMEncryptedKeyPair)o).decryptKeyPair(decProv);
+
+         PrivateKeyInfo decoded = pkp.getPrivateKeyInfo();
+         if (decoded == null)
+         {
+             fail("decrypted PrivateKeyInfo was null");
+         }
+         isEquals(EdECObjectIdentifiers.id_Ed25519, decoded.getPrivateKeyAlgorithm().getAlgorithm());
+     }
+
+    private void doLegacyEncryptedPkcs8GenPemTest()
+        throws Exception
+    {
+        // Reproduces github #1238: a PKCS#8 PrivateKeyInfo wrapped in OpenSSL legacy
+        // encryption headers ("Proc-Type: 4,ENCRYPTED" / "DEK-Info") under a
+        // "BEGIN PRIVATE KEY" label. Earlier releases tried to ASN.1-parse the
+        // ciphertext and failed with "corrupted stream" before this could be
+        // recognised as encrypted.
+        char[] password = "wibble".toCharArray();
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
+        KeyPair kp = kpg.generateKeyPair();
+
+        byte[] pkcs8 = kp.getPrivate().getEncoded();
+
+        PEMEncryptor encryptor = new JcePEMEncryptorBuilder("AES-128-CBC")
+            .setProvider("BC").build(password);
+
+        byte[] encrypted = encryptor.encrypt(pkcs8);
+        String ivHex = Strings.fromByteArray(Hex.encode(encryptor.getIV()));
+        String b64 = Strings.fromByteArray(Base64.encode(encrypted));
+
+        StringBuilder pem = new StringBuilder();
+        pem.append("-----BEGIN PRIVATE KEY-----\n");
+        pem.append("Proc-Type: 4,ENCRYPTED\n");
+        pem.append("DEK-Info: AES-128-CBC,").append(ivHex).append("\n");
+        pem.append("\n");
+        for (int i = 0; i < b64.length(); i += 64)
+        {
+            pem.append(b64, i, Math.min(i + 64, b64.length())).append("\n");
+        }
+        pem.append("-----END PRIVATE KEY-----\n");
+
+        PEMParser parser = new PEMParser(new StringReader(pem.toString()));
+        Object o = parser.readObject();
+
+        if (!(o instanceof PEMEncryptedKeyPair))
+        {
+            fail("expected PEMEncryptedKeyPair, got " + (o == null ? "null" : o.getClass().getName()));
+        }
+
+        PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder()
+            .setProvider("BC").build(password);
+        PEMKeyPair pkp = ((PEMEncryptedKeyPair)o).decryptKeyPair(decProv);
+
+        PrivateKeyInfo decoded = pkp.getPrivateKeyInfo();
+        if (decoded == null)
+        {
+            fail("decrypted PrivateKeyInfo was null");
+        }
+        if (!Arrays.areEqual(pkcs8, decoded.getEncoded()))
+        {
+            fail("decrypted PrivateKeyInfo did not round-trip");
+        }
     }
 
     private void checkTrustedCert(X509TrustedCertificateBlock trusted)
