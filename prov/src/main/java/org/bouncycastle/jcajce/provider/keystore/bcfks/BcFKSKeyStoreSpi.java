@@ -101,6 +101,7 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 class BcFKSKeyStoreSpi
@@ -934,7 +935,7 @@ class BcFKSKeyStoreSpi
         }
         catch (InvalidKeyException e)
         {
-            throw new IOException("Cannot set up MAC calculation: " + e.getMessage());
+            throw Exceptions.ioException("Cannot set up MAC calculation: " + e.getMessage(), e);
         }
 
         return mac.doFinal(content);
@@ -1096,7 +1097,7 @@ class BcFKSKeyStoreSpi
         }
         catch (NoSuchProviderException e)
         {
-            throw new IOException("cannot calculate mac: " + e.getMessage());
+            throw Exceptions.ioException("cannot calculate mac: " + e.getMessage(), e);
         }
 
         ObjectStore store = new ObjectStore(encStoreData, new ObjectStoreIntegrityCheck(new PbkdMacIntegrityCheck(hmacAlgorithm, hmacPkbdAlgorithm, mac)));
@@ -1147,19 +1148,19 @@ class BcFKSKeyStoreSpi
         }
         catch (BadPaddingException e)
         {
-            throw new IOException(e.toString());
+            throw Exceptions.ioException(e.toString(), e);
         }
         catch (IllegalBlockSizeException e)
         {
-            throw new IOException(e.toString());
+            throw Exceptions.ioException(e.toString(), e);
         }
         catch (InvalidKeyException e)
         {
-            throw new IOException(e.toString());
+            throw Exceptions.ioException(e.toString(), e);
         }
         catch (NoSuchProviderException e)
         {
-            throw new IOException(e.toString());
+            throw Exceptions.ioException(e.toString(), e);
         }
         return encStoreData;
     }
@@ -1310,7 +1311,7 @@ class BcFKSKeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException(e.getMessage());
+            throw Exceptions.ioException(e.getMessage(), e);
         }
 
         ObjectStoreIntegrityCheck integrityCheck = store.getIntegrityCheck();
@@ -1331,7 +1332,7 @@ class BcFKSKeyStoreSpi
             }
             catch (NoSuchProviderException e)
             {
-                throw new IOException(e.getMessage());
+                throw Exceptions.ioException(e.getMessage(), e);
             }
         }
         else if (integrityCheck.getType() == ObjectStoreIntegrityCheck.SIG_CHECK)
@@ -1404,7 +1405,7 @@ class BcFKSKeyStoreSpi
         }
         catch (ParseException e)
         {
-            throw new IOException("BCFKS KeyStore unable to parse store data information.");
+            throw Exceptions.ioException("BCFKS KeyStore unable to parse store data information.", e);
         }
 
         if (!storeData.getIntegrityAlgorithm().equals(integrityAlg))
@@ -1467,7 +1468,7 @@ class BcFKSKeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException(e.toString());
+            throw Exceptions.ioException(e.toString(), e);
         }
     }
 

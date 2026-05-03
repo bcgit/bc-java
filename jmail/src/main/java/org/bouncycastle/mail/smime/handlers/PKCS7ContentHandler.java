@@ -12,6 +12,8 @@ import jakarta.activation.DataSource;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeBodyPart;
 
+import org.bouncycastle.util.Exceptions;
+
 import org.bouncycastle.mail.smime.SMIMEStreamingProcessor;
 
 public class PKCS7ContentHandler 
@@ -69,7 +71,7 @@ public class PKCS7ContentHandler
             }
             catch (MessagingException ex)
             {
-                throw new IOException(ex.getMessage());
+                throw Exceptions.ioException(ex.getMessage(), ex);
             }
         }
         else if (obj instanceof byte[]) 

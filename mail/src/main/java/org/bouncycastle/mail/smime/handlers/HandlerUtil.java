@@ -13,6 +13,7 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeBodyPart;
 
 import org.bouncycastle.mail.smime.SMIMEStreamingProcessor;
+import org.bouncycastle.util.Exceptions;
 
 class HandlerUtil
 {
@@ -68,7 +69,7 @@ class HandlerUtil
         }
         catch (MessagingException ex)
         {
-            throw new IOException(ex.getMessage());
+            throw Exceptions.ioException(ex.getMessage(), ex);
         }
     }
 

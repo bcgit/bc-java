@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * a general extension of X509Name with a couple of extra methods and
@@ -35,7 +36,7 @@ public class X509Principal
         }
         catch (IllegalArgumentException e)
         {
-            throw new IOException("not an ASN.1 Sequence: " + e);
+            throw Exceptions.ioException("not an ASN.1 Sequence: " + e, e);
         }
     }
 

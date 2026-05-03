@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.SkippingCipher;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * A CipherInputStream is composed of an InputStream and a cipher so that read() methods return data
@@ -201,7 +202,7 @@ public class CipherInputStream
         }
         catch (Exception e)
         {
-            throw new IOException("Error finalising cipher " + e);
+            throw Exceptions.ioException("Error finalising cipher " + e, e);
         }
     }
 

@@ -26,6 +26,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Longs;
 
@@ -136,7 +137,7 @@ public class PGPPublicKeyRing
         }
         catch (PGPException e)
         {
-            throw new IOException("processing exception: " + e.toString());
+            throw Exceptions.ioException("processing exception: " + e.toString(), e);
         }
     }
 

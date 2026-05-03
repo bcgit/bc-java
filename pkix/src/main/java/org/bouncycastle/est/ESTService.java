@@ -35,6 +35,7 @@ import org.bouncycastle.mime.MimeParserListener;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
@@ -615,7 +616,7 @@ public class ESTService
                         }
                         catch (CMCException e)
                         {
-                            throw new IOException(e.getMessage());
+                            throw Exceptions.ioException(e.getMessage(), e);
                         }
 
                         // We want to check we got what we expected in terms of responses,

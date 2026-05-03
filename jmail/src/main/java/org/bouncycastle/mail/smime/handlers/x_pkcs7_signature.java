@@ -11,6 +11,8 @@ import jakarta.activation.DataSource;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeBodyPart;
 
+import org.bouncycastle.util.Exceptions;
+
 public class x_pkcs7_signature 
     implements DataContentHandler 
 {
@@ -63,9 +65,9 @@ public class x_pkcs7_signature
             {
                 ((MimeBodyPart)_obj).writeTo(_os);
             } 
-            catch (MessagingException ex) 
+            catch (MessagingException ex)
             {
-                throw new IOException(ex.getMessage());
+                throw Exceptions.ioException(ex.getMessage(), ex);
             }
         }
         else if (_obj instanceof byte[]) 

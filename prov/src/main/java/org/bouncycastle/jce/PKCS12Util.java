@@ -31,6 +31,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Properties;
 
 /**
@@ -143,7 +144,7 @@ public class PKCS12Util
         }
         catch (Exception e)
         {
-            throw new IOException("error constructing MAC: " + e.toString());
+            throw Exceptions.ioException("error constructing MAC: " + e.toString(), e);
         }
 
         pfx = new Pfx(info, mData);

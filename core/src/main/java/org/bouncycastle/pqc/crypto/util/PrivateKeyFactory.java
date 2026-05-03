@@ -80,6 +80,7 @@ import org.bouncycastle.pqc.legacy.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -450,7 +451,7 @@ public class PrivateKeyFactory
             }
             catch (ClassNotFoundException e)
             {
-                throw new IOException("ClassNotFoundException processing BDS state: " + e.getMessage());
+                throw Exceptions.ioException("ClassNotFoundException processing BDS state: " + e.getMessage(), e);
             }
         }
         else if (algOID.equals(PQCObjectIdentifiers.xmss_mt))
@@ -485,7 +486,7 @@ public class PrivateKeyFactory
             }
             catch (ClassNotFoundException e)
             {
-                throw new IOException("ClassNotFoundException processing BDS state: " + e.getMessage());
+                throw Exceptions.ioException("ClassNotFoundException processing BDS state: " + e.getMessage(), e);
             }
         }
         else if (BCObjectIdentifiers.mayo1.equals(algOID)

@@ -38,6 +38,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -134,6 +135,8 @@ public class PKCS12KeyStoreSpi
     extends KeyStoreSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers, BCKeyStore
 {
+    static final Logger LOG = Logger.getLogger(PKCS12KeyStoreSpi.class.getName());
+
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private static final int SALT_SIZE = 20;
@@ -708,7 +711,7 @@ public class PKCS12KeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException("exception encrypting data - " + e.toString());
+            throw Exceptions.ioException("exception encrypting data - " + e.toString(), e);
         }
 
         return out;
@@ -741,7 +744,7 @@ public class PKCS12KeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException("exception encrypting data - " + e.toString());
+            throw Exceptions.ioException("exception encrypting data - " + e.toString(), e);
         }
 
         return out;
@@ -776,7 +779,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new IOException("exception decrypting data - " + e.toString());
+                throw Exceptions.ioException("exception decrypting data - " + e.toString(), e);
             }
             finally
             {
@@ -793,7 +796,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new IOException("exception decrypting data - " + e.toString());
+                throw Exceptions.ioException("exception decrypting data - " + e.toString(), e);
             }
         }
         else
@@ -921,7 +924,7 @@ public class PKCS12KeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException(e.getMessage());
+            throw Exceptions.ioException(e.getMessage(), e);
         }
 
         ContentInfo info = bag.getAuthSafe();
@@ -976,7 +979,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new IOException("error constructing MAC: " + e.toString());
+                throw Exceptions.ioException("error constructing MAC: " + e.toString(), e);
             }
         }
 
@@ -1012,9 +1015,8 @@ public class PKCS12KeyStoreSpi
                         }
                         else
                         {
-                            // -DM 2 System.out.println
-                            System.out.println("extra in data " + b.getBagId());
-                            System.out.println(ASN1Dump.dumpAsString(b));
+                            LOG.info("extra in data " + b.getBagId());
+                            LOG.fine(ASN1Dump.dumpAsString(b));
                         }
                     }
                 }
@@ -1043,17 +1045,15 @@ public class PKCS12KeyStoreSpi
                         }
                         else
                         {
-                            // -DM 2 System.out.println
-                            System.out.println("extra in encryptedData " + b.getBagId());
-                            System.out.println(ASN1Dump.dumpAsString(b));
+                            LOG.info("extra in encrypted data " + b.getBagId());
+                            LOG.fine(ASN1Dump.dumpAsString(b));
                         }
                     }
                 }
                 else
                 {
-                    // -DM 2 System.out.println
-                    System.out.println("extra " + c[i].getContentType().getId());
-                    System.out.println("extra " + ASN1Dump.dumpAsString(PKCS12Util.getContent(c[i])));
+                    LOG.info("extra " + c[i].getContentType().getId());
+                    LOG.fine(ASN1Dump.dumpAsString(PKCS12Util.getContent(c[i])));
                 }
             }
         }
@@ -1533,7 +1533,7 @@ public class PKCS12KeyStoreSpi
                     }
                     catch (CertificateEncodingException e)
                     {
-                        throw new IOException("Error encoding certificate: " + e.toString());
+                        throw Exceptions.ioException("Error encoding certificate: " + e.toString(), e);
                     }
                 }
 
@@ -1767,7 +1767,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (CertificateEncodingException e)
             {
-                throw new IOException("Error encoding certificate: " + e.toString());
+                throw Exceptions.ioException("Error encoding certificate: " + e.toString(), e);
             }
         }
 
@@ -1792,7 +1792,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (CertificateEncodingException e)
             {
-                throw new IOException("Error encoding certificate: " + e.toString());
+                throw Exceptions.ioException("Error encoding certificate: " + e.toString(), e);
             }
         }
 
@@ -1853,7 +1853,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (CertificateEncodingException e)
             {
-                throw new IOException("Error encoding certificate: " + e.toString());
+                throw Exceptions.ioException("Error encoding certificate: " + e.toString(), e);
             }
         }
 
@@ -1900,7 +1900,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new IOException("error constructing MAC: " + e.toString());
+                throw Exceptions.ioException("error constructing MAC: " + e.toString(), e);
             }
         }
 
