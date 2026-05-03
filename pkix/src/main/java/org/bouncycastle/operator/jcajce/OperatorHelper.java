@@ -453,7 +453,7 @@ class OperatorHelper
                 }
                 catch (IOException e)
                 {
-                    throw new GeneralSecurityException("unable to process PSS parameters: " + e.getMessage());
+                    throw new GeneralSecurityException("unable to process PSS parameters: " + e.getMessage(), e);
                 }
             }
         }
