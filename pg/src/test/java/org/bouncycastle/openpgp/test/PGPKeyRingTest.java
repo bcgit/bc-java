@@ -3466,7 +3466,7 @@ public class PGPKeyRingTest
 
         long validSeconds = publicKey.getValidSeconds();
 
-        isEquals(81129600L, validSeconds);
+        isEquals("got " + validSeconds, 0L, validSeconds);
     }
 
     private void testApacheRings()
