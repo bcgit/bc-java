@@ -365,6 +365,17 @@ public class CMSSignedData
         return signedData.getEncapContentInfo().getContentType().getId();
     }
 
+    /**
+     * Return the ASN1ObjectIdentifier associated with the encapsulated content info structure
+     * carried in the signed data.
+     *
+     * @return the OID for the content type.
+     */
+    public ASN1ObjectIdentifier getSignedContentType()
+    {
+        return signedData.getEncapContentInfo().getContentType();
+    }
+
     public CMSTypedData getSignedContent()
     {
         return signedContent;

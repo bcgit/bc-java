@@ -6,12 +6,20 @@ import java.util.Collection;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1String;
+import org.bouncycastle.asn1.cmc.BodyPartID;
+import org.bouncycastle.asn1.cmc.CMCFailInfo;
+import org.bouncycastle.asn1.cmc.CMCObjectIdentifiers;
+import org.bouncycastle.asn1.cmc.CMCStatus;
+import org.bouncycastle.asn1.cmc.CMCStatusInfoV2;
+import org.bouncycastle.asn1.cmc.CMCStatusInfoV2Builder;
+import org.bouncycastle.asn1.cmc.TaggedAttribute;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.selector.X509CertificateHolderSelector;
+import org.bouncycastle.cmc.PKIResponseBuilder;
 import org.bouncycastle.cmc.SimplePKIResponse;
 import org.bouncycastle.est.CSRAttributesResponse;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -213,5 +221,40 @@ public class ESTParsingTest
         assertEquals(1, certs.getMatches(null).size());
 
         assertEquals(1, certs.getMatches(new X509CertificateHolderSelector(new X500Name("CN=estExampleCA NwN"), new BigInteger("21"))).size());
+    }
+
+    public void testParsingFullPKIErrorResponse()
+        throws Exception
+    {
+        // Build the unsigned Full PKI Response (RFC 7030 server-generated error) containing
+        // a CMCStatusInfoV2 attribute via PKIResponseBuilder, then round-trip it through
+        // SimplePKIResponse(byte[]) to check the structured accessors expose the same
+        // content. See github #1452.
+        BodyPartID bodyPartID = new BodyPartID(1);
+        CMCStatusInfoV2 statusInfo = new CMCStatusInfoV2Builder(CMCStatus.failed, bodyPartID)
+            .setOtherInfo(CMCFailInfo.badIdentity)
+            .setStatusString("bad identity")
+            .build();
+
+        SimplePKIResponse built = new PKIResponseBuilder()
+            .addStatusInfoV2(bodyPartID, statusInfo)
+            .build();
+
+        SimplePKIResponse response = new SimplePKIResponse(built.getEncoded());
+
+        assertNotNull("PKIResponse should be exposed", response.getPKIResponse());
+        assertEquals(1, response.getControlAttributes().length);
+        assertEquals(0, response.getCmsContents().length);
+
+        TaggedAttribute attr = response.getControlAttributes()[0];
+        assertEquals(CMCObjectIdentifiers.id_cmc_statusInfoV2, attr.getAttrType());
+
+        CMCStatusInfoV2 parsed = response.getStatusInfoV2();
+        assertNotNull("statusInfoV2 should be exposed", parsed);
+        assertEquals(CMCStatus.failed, parsed.getCMCStatus());
+        assertEquals("bad identity", parsed.getStatusStringUTF8().getString());
+        assertTrue(parsed.hasOtherInfo());
+
+        assertEquals(0, response.getCertificates().getMatches(null).size());
     }
 }
