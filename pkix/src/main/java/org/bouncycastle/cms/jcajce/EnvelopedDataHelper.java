@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
@@ -89,6 +90,7 @@ public class EnvelopedDataHelper
         BASE_CIPHER_NAMES.put(CMSAlgorithm.SEED_CBC, "SEED");
         BASE_CIPHER_NAMES.put(PKCSObjectIdentifiers.rc4, "RC4");
         BASE_CIPHER_NAMES.put(CryptoProObjectIdentifiers.gostR28147_gcfb, "GOST28147");
+        BASE_CIPHER_NAMES.put(GMObjectIdentifiers.sms4_cbc, "SM4");
 
         CIPHER_ALG_NAMES.put(CMSAlgorithm.DES_CBC,  "DES/CBC/PKCS5Padding");
         CIPHER_ALG_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2/CBC/PKCS5Padding");
@@ -103,6 +105,7 @@ public class EnvelopedDataHelper
         CIPHER_ALG_NAMES.put(CMSAlgorithm.CAMELLIA256_CBC, "Camellia/CBC/PKCS5Padding");
         CIPHER_ALG_NAMES.put(CMSAlgorithm.SEED_CBC, "SEED/CBC/PKCS5Padding");
         CIPHER_ALG_NAMES.put(PKCSObjectIdentifiers.rc4, "RC4");
+        CIPHER_ALG_NAMES.put(GMObjectIdentifiers.sms4_cbc, "SM4/CBC/PKCS5Padding");
 
         MAC_ALG_NAMES.put(CMSAlgorithm.DES_EDE3_CBC,  "DESEDEMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.AES128_CBC,  "AESMac");

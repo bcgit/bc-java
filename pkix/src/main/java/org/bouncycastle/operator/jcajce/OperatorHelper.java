@@ -29,6 +29,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
@@ -77,6 +78,9 @@ class OperatorHelper
         asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_RSAES_OAEP, "RSA/ECB/OAEPPadding");
 
         asymmetricWrapperAlgNames.put(CryptoProObjectIdentifiers.gostR3410_2001, "ECGOST3410");
+        // GB/T 35276 / GM/T 0010 mandate the C1C3C2 ciphertext format for SM2 envelope
+        // operations; callers wanting C1C2C3 can override via setAlgorithmMapping.
+        asymmetricWrapperAlgNames.put(GMObjectIdentifiers.sm2encrypt_with_sm3, "SM2/C1C3C2/NoPadding");
 
         symmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, "DESEDEWrap");
         symmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_alg_CMSRC2wrap, "RC2Wrap");
@@ -321,6 +325,11 @@ class OperatorHelper
         AlgorithmParameters parameters = null;
 
         if (cipherAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.rsaEncryption))
+        {
+            return null;
+        }
+
+        if (cipherAlgId.getAlgorithm().equals(GMObjectIdentifiers.sm2encrypt_with_sm3))
         {
             return null;
         }

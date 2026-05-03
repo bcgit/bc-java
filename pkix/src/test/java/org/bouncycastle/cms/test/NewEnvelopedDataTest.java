@@ -9,6 +9,7 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
@@ -52,6 +53,7 @@ import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
@@ -104,6 +106,7 @@ import org.bouncycastle.cms.jcajce.JcePasswordEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JcePasswordRecipientInfoGenerator;
 import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
@@ -1002,6 +1005,41 @@ public class NewEnvelopedDataTest
             fail("recipients not matched using general recipient ID.");
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testKeyTransSM2()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", BC);
+        kpg.initialize(new ECNamedCurveGenParameterSpec("sm2p256v1"));
+        KeyPair sm2Kp = kpg.generateKeyPair();
+
+        byte[] subjectKeyIdentifier = new byte[]{
+            (byte)0x53, (byte)0x4d, (byte)0x32, (byte)0x52, (byte)0x65, (byte)0x63, (byte)0x69, (byte)0x70};
+
+        AlgorithmIdentifier sm2AlgId = new AlgorithmIdentifier(GMObjectIdentifiers.sm2encrypt_with_sm3);
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+        edGen.addRecipientInfoGenerator(
+            new JceKeyTransRecipientInfoGenerator(subjectKeyIdentifier, sm2AlgId, sm2Kp.getPublic()).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.SM4_CBC).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+        assertEquals(CMSAlgorithm.SM4_CBC.getId(), ed.getEncryptionAlgOID());
+
+        Collection c = recipients.getRecipients();
+        assertEquals(1, c.size());
+
+        RecipientInformation recipient = (RecipientInformation)c.iterator().next();
+        assertEquals(GMObjectIdentifiers.sm2encrypt_with_sm3.getId(), recipient.getKeyEncryptionAlgOID());
+
+        byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(sm2Kp.getPrivate()).setProvider(BC));
+        assertTrue(Arrays.equals(data, recData));
     }
 
     public void testKeyTransWithHKDF()
