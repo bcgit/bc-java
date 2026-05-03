@@ -1042,6 +1042,47 @@ public class NewEnvelopedDataTest
         assertTrue(Arrays.equals(data, recData));
     }
 
+    public void testKeyTransSM2WithCertificate()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", BC);
+        kpg.initialize(new ECNamedCurveGenParameterSpec("sm2p256v1"));
+        KeyPair sm2Kp = kpg.generateKeyPair();
+
+        // Cert is issued under the existing RSA root. The subject's SubjectPublicKeyInfo
+        // therefore carries algorithm id_ecPublicKey rather than any SM2-specific OID;
+        // the SM2 key transport algorithm is supplied explicitly to the generator.
+        X509Certificate sm2Cert = CMSTestUtil.makeCertificate(
+            sm2Kp, "CN=SM2 Test, O=Bouncy Castle, C=AU", _signKP, _signDN);
+
+        assertEquals(X9ObjectIdentifiers.id_ecPublicKey,
+            SubjectPublicKeyInfo.getInstance(sm2Cert.getPublicKey().getEncoded()).getAlgorithm().getAlgorithm());
+
+        AlgorithmIdentifier sm2AlgId = new AlgorithmIdentifier(GMObjectIdentifiers.sm2encrypt_with_sm3);
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+        edGen.addRecipientInfoGenerator(
+            new JceKeyTransRecipientInfoGenerator(sm2Cert, sm2AlgId).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.SM4_CBC).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+        assertEquals(CMSAlgorithm.SM4_CBC.getId(), ed.getEncryptionAlgOID());
+
+        Collection c = recipients.getRecipients();
+        assertEquals(1, c.size());
+
+        RecipientInformation recipient = (RecipientInformation)c.iterator().next();
+        assertEquals(GMObjectIdentifiers.sm2encrypt_with_sm3.getId(), recipient.getKeyEncryptionAlgOID());
+
+        byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(sm2Kp.getPrivate()).setProvider(BC));
+        assertTrue(Arrays.equals(data, recData));
+    }
+
     public void testKeyTransWithHKDF()
         throws Exception
     {
