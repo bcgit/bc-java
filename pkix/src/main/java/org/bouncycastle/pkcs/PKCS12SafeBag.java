@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.SafeBag;
+import org.bouncycastle.asn1.pkcs.SecretBag;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.cert.X509CRLHolder;
@@ -86,6 +87,10 @@ public class PKCS12SafeBag
             CRLBag crlBag = CRLBag.getInstance(safeBag.getBagValue());
 
             return new X509CRLHolder(CertificateList.getInstance(ASN1OctetString.getInstance(crlBag.getCrlValue()).getOctets()));
+        }
+        if (getType().equals(PKCSObjectIdentifiers.secretBag))
+        {
+            return new PKCS12SecretBag(SecretBag.getInstance(safeBag.getBagValue()));
         }
 
         return safeBag.getBagValue();

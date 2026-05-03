@@ -28,7 +28,9 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERBMPString;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -67,6 +69,8 @@ import org.bouncycastle.pkcs.PKCS12PfxPduBuilder;
 import org.bouncycastle.pkcs.PKCS12SafeBag;
 import org.bouncycastle.pkcs.PKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.PKCS12SafeBagFactory;
+import org.bouncycastle.pkcs.PKCS12SecretBag;
+import org.bouncycastle.pkcs.PKCS12SecretBagBuilder;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfoBuilder;
 import org.bouncycastle.pkcs.PKCSException;
@@ -1342,6 +1346,68 @@ public class PfxPduTest
                 fail("unknown bag encountered");
             }
         }
+    }
+
+    public void testSecretBag()
+        throws Exception
+    {
+        OutputEncryptor encOut = new BcPKCS12PBEOutputEncryptorBuilder(
+            PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC, new CBCBlockCipher(new DESedeEngine())).build(passwd);
+        InputDecryptorProvider inputDecryptorProvider = new BcPKCS12PBEInputDecryptorProviderBuilder().build(passwd);
+
+        byte[] secret = "shared-symmetric-secret".getBytes();
+
+        PKCS12SecretBag secretBag = new PKCS12SecretBagBuilder(
+            PKCSObjectIdentifiers.data, new DEROctetString(secret)).build();
+
+        PKCS12SafeBagBuilder safeBagBuilder = new PKCS12SafeBagBuilder(secretBag);
+        safeBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName, new DERBMPString("Eric's Secret"));
+
+        PKCS12PfxPduBuilder builder = new PKCS12PfxPduBuilder();
+        builder.addEncryptedData(encOut, safeBagBuilder.build());
+
+        PKCS12PfxPdu pfx = builder.build(new BcPKCS12MacCalculatorBuilder(), passwd);
+        assertTrue(pfx.hasMac());
+        assertTrue(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProvider(BcDefaultDigestProvider.INSTANCE), passwd));
+
+        ContentInfo[] infos = pfx.getContentInfos();
+        boolean sawSecretBag = false;
+
+        for (int i = 0; i != infos.length; i++)
+        {
+            if (infos[i].getContentType().equals(PKCSObjectIdentifiers.encryptedData))
+            {
+                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i], inputDecryptorProvider);
+
+                PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                assertEquals(1, bags.length);
+                assertEquals(PKCSObjectIdentifiers.secretBag, bags[0].getType());
+
+                Object value = bags[0].getBagValue();
+                assertTrue(value instanceof PKCS12SecretBag);
+
+                PKCS12SecretBag recovered = (PKCS12SecretBag)value;
+                assertEquals(PKCSObjectIdentifiers.data, recovered.getSecretTypeId());
+                assertTrue(Arrays.areEqual(secret,
+                    ASN1OctetString.getInstance(recovered.getSecretValue()).getOctets()));
+
+                Attribute[] attributes = bags[0].getAttributes();
+                assertEquals(1, attributes.length);
+                assertEquals(PKCSObjectIdentifiers.pkcs_9_at_friendlyName, attributes[0].getAttrType());
+                ASN1Encodable[] attrValues = attributes[0].getAttributeValues();
+                assertEquals(1, attrValues.length);
+                assertEquals(new DERBMPString("Eric's Secret"), attrValues[0]);
+
+                sawSecretBag = true;
+            }
+            else
+            {
+                fail("unknown bag encountered");
+            }
+        }
+
+        assertTrue("secret bag not found in PFX", sawSecretBag);
     }
 
     public void testSafeBagRecovery()
