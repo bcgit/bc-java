@@ -20,6 +20,8 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.attr.ImageAttribute;
 import org.bouncycastle.bcpg.sig.Features;
@@ -896,14 +898,14 @@ public class PGPRSATest
         String identity = "TEST <test@test.org>";
         Date date = new Date();
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-        kpg.initialize(2048);
+        kpg.initialize(1024);
         KeyPair kpSgn = kpg.generateKeyPair();
 
-        PGPKeyPair sgnKeyPair = new JcaPGPKeyPair(PGPPublicKey.RSA_SIGN, kpSgn, date);
+        PGPKeyPair sgnKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, PGPPublicKey.RSA_GENERAL, kpSgn, date);
 
         PGPSignatureSubpacketGenerator svg = new PGPSignatureSubpacketGenerator();
         svg.setKeyExpirationTime(true, 86400L * 366 * 2);
-        svg.setKeyFlags(true, KeyFlags.CERTIFY_OTHER + KeyFlags.SIGN_DATA);
+        svg.setKeyFlags(true, KeyFlags.CERTIFY_OTHER | KeyFlags.SIGN_DATA);
         PGPSignatureSubpacketVector hashedPcks = svg.generate();
 
         PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
@@ -913,8 +915,10 @@ public class PGPRSATest
             new JcaPGPContentSignerBuilder(sgnKeyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1),
             new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
 
-        PGPPublicKeyRing keyRing = new PGPPublicKeyRing(
-            keyRingGen.generatePublicKeyRing().getEncoded(), new JcaKeyFingerprintCalculator());
+        PGPPublicKeyRing keyRing = keyRingGen.generatePublicKeyRing();
+
+        // Encode/decode
+        keyRing = new PGPPublicKeyRing(keyRing.getEncoded(), new JcaKeyFingerprintCalculator());
 
         PGPPublicKey pKey = keyRing.getPublicKey();
 
@@ -927,11 +931,12 @@ public class PGPRSATest
         Thread.sleep(1100); // ensure later creation time at one-second granularity
 
         PGPSignatureGenerator keySigGen = new PGPSignatureGenerator(
-            new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1).setProvider("BC"));
+            new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_GENERAL, HashAlgorithmTags.SHA1).setProvider("BC"),
+            sgnKeyPair.getPublicKey());
         keySigGen.init(PGPSignature.POSITIVE_CERTIFICATION, sgnKeyPair.getPrivateKey());
 
         PGPSignatureSubpacketGenerator noExpiry = new PGPSignatureSubpacketGenerator();
-        noExpiry.setKeyFlags(true, KeyFlags.CERTIFY_OTHER + KeyFlags.SIGN_DATA);
+        noExpiry.setKeyFlags(true, KeyFlags.CERTIFY_OTHER | KeyFlags.SIGN_DATA);
         keySigGen.setHashedSubpackets(noExpiry.generate());
 
         pKey = PGPPublicKey.addCertification(pKey, keySigGen.generateCertification(identity, pKey));
