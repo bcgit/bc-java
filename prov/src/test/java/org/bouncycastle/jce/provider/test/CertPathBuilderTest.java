@@ -315,11 +315,11 @@ public class CertPathBuilderTest
     public void performTest()
         throws Exception
     {
-//        baseTest();
-//        v0Test();
+        baseTest();
+        v0Test();
         noSigV0Test();
-//        eeInSelectorTest();
-//        eeOnlyInSelectorTest();
+        eeInSelectorTest();
+        eeOnlyInSelectorTest();
         multipleTrustAnchorsWithCRLTest();
     }
     
