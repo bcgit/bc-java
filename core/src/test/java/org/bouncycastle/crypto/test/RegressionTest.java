@@ -198,6 +198,8 @@ public class RegressionTest
             new GiftCofbTest(),
             new RomulusTest(),
             new SAKKEKEMSTest(),
+            new LEATest(),
+            new SHA3HMacTest()
         };
 
     public static void main(String[] args)
