@@ -26,12 +26,14 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
+import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
+import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 
@@ -342,42 +344,44 @@ public class PGPPublicKey
         }
     }
 
-    private long getExpirationTimeFromSig(
-        boolean selfSigned,
-        int signatureType)
+    private long getExpirationTimeFromSig(boolean selfSigned, int signatureType)
     {
-        Iterator<PGPSignature> signatures = this.getSignaturesOfType(signatureType);
+        long keyID = getKeyID();
         long expiryTime = -1;
         long lastDate = -1;
 
+        Iterator<PGPSignature> signatures = this.getSignaturesOfType(signatureType);
         while (signatures.hasNext())
         {
             PGPSignature sig = (PGPSignature)signatures.next();
 
-            if (!selfSigned || sig.getKeyID() == this.getKeyID())
+            if (sig.getKeyID() == keyID)
+            {
+                // RFC 4880 5.2.4.1: the most recent self-signature wins, even if
+                // it omits the Key Expiration Time subpacket (which removes any
+                // previously asserted expiry).
+                long thisDate = sig.getCreationTime().getTime();
+                if (thisDate > lastDate)
+                {
+                    lastDate = thisDate;
+
+                    PGPSignatureSubpacketVector hashed = sig.getHashedSubPackets();
+                    expiryTime = hashed == null ? 0L : hashed.getKeyExpirationTime();
+                }
+            }
+            else if (!selfSigned)
             {
                 PGPSignatureSubpacketVector hashed = sig.getHashedSubPackets();
-
-                boolean hasExpiry = hashed != null
-                    && hashed.hasSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME);
-                long current = hasExpiry ? hashed.getKeyExpirationTime() : 0;
-
-                if (sig.getKeyID() == this.getKeyID())
+                if (hashed != null)
                 {
-                    // RFC 4880 5.2.4.1: the most recent self-signature wins, even if
-                    // it omits the Key Expiration Time subpacket (which removes any
-                    // previously asserted expiry).
-                    if (sig.getCreationTime().getTime() > lastDate)
+                    SignatureSubpacket keyExpireTime = hashed.getSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME);
+                    if (keyExpireTime != null)
                     {
-                        lastDate = sig.getCreationTime().getTime();
-                        expiryTime = current;
-                    }
-                }
-                else if (hasExpiry)
-                {
-                    if (current == 0 || current > expiryTime)
-                    {
-                        expiryTime = current;
+                        long current = ((KeyExpirationTime)keyExpireTime).getTime();
+                        if (current == 0 || current > expiryTime)
+                        {
+                            expiryTime = current;
+                        }
                     }
                 }
             }
