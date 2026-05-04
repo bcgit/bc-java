@@ -251,6 +251,67 @@ public class CertPathBuilderTest
         }
     }
 
+    private void multipleTrustAnchorsWithCRLTest()
+        throws Exception
+    {
+        // github #2291: with CRL revocation enabled and multiple trust anchors whose
+        // subjects match the CRL issuer name, the previous code recursed into a fresh
+        // CertPathBuilder build for every candidate signer, and that recursive build
+        // re-entered CRL processing on the same CRL. The fix short-circuits when the
+        // candidate signer is itself a trust anchor.
+        KeyPair rootPair = TestUtils.generateRSAKeyPair();
+        KeyPair otherRootPair = TestUtils.generateRSAKeyPair();
+        KeyPair interPair = TestUtils.generateRSAKeyPair();
+        KeyPair endPair = TestUtils.generateRSAKeyPair();
+
+        org.bouncycastle.asn1.x500.X500Name rootDN =
+            new org.bouncycastle.asn1.x500.X500Name("CN=Test CA Certificate");
+
+        // Two self-signed roots sharing the same Subject DN — different keys.
+        X509Certificate rootCert = TestUtils.generateRootCert(rootPair, rootDN);
+        X509Certificate otherRootCert = TestUtils.generateRootCert(otherRootPair, rootDN);
+
+        X509Certificate interCert = TestUtils.generateIntermediateCert(
+            interPair.getPublic(), rootPair.getPrivate(), rootCert);
+        X509Certificate endCert = TestUtils.generateEndEntityCert(
+            endPair.getPublic(), interPair.getPrivate(), interCert);
+
+        BigInteger revokedSerial = BigInteger.valueOf(2);
+        X509CRL rootCRL = TestCertificateGen.createCRL(rootCert, rootPair.getPrivate(), revokedSerial);
+        X509CRL interCRL = TestCertificateGen.createCRL(interCert, interPair.getPrivate(), revokedSerial);
+
+        List collection = new ArrayList();
+        collection.add(rootCert);
+        collection.add(otherRootCert);
+        collection.add(interCert);
+        collection.add(endCert);
+        collection.add(rootCRL);
+        collection.add(interCRL);
+        CertStore store = CertStore.getInstance("Collection",
+            new CollectionCertStoreParameters(collection), "BC");
+
+        Set anchors = new HashSet();
+        anchors.add(new TrustAnchor(rootCert, null));
+        anchors.add(new TrustAnchor(otherRootCert, null));
+
+        X509CertSelector pathConstraints = new X509CertSelector();
+        pathConstraints.setSubject(endCert.getSubjectX500Principal().getEncoded());
+
+        PKIXBuilderParameters buildParams = new PKIXBuilderParameters(anchors, pathConstraints);
+        buildParams.addCertStore(store);
+        buildParams.setDate(new Date());
+        buildParams.setRevocationEnabled(true);
+
+        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+        PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
+        CertPath path = result.getCertPath();
+
+        if (path.getCertificates().size() != 2)
+        {
+            fail("wrong number of certs in multi-anchor path: " + path.getCertificates().size());
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -259,6 +320,7 @@ public class CertPathBuilderTest
         noSigV0Test();
 //        eeInSelectorTest();
 //        eeOnlyInSelectorTest();
+        multipleTrustAnchorsWithCRLTest();
     }
     
     public String getName()

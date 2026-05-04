@@ -426,6 +426,43 @@ class RFC3280CertPathUtilities
 
     protected static final int CRL_SIGN = 6;
 
+    // Per-thread set of CRL-signer certificates currently being validated by
+    // processCRLF. Used to break cycles when multiple candidate signers cause
+    // the recursive engineBuild call inside processCRLF to re-enter for the
+    // same signer (github #2291).
+    private static final ThreadLocal<Set<X509Certificate>> crlSignersInProgress =
+        new ThreadLocal<Set<X509Certificate>>();
+
+    private static boolean crlSignerInProgress(X509Certificate cert)
+    {
+        Set<X509Certificate> set = crlSignersInProgress.get();
+        return set != null && set.contains(cert);
+    }
+
+    private static void crlSignerEnter(X509Certificate cert)
+    {
+        Set<X509Certificate> set = crlSignersInProgress.get();
+        if (set == null)
+        {
+            set = new HashSet<X509Certificate>();
+            crlSignersInProgress.set(set);
+        }
+        set.add(cert);
+    }
+
+    private static void crlSignerExit(X509Certificate cert)
+    {
+        Set<X509Certificate> set = crlSignersInProgress.get();
+        if (set != null)
+        {
+            set.remove(cert);
+            if (set.isEmpty())
+            {
+                crlSignersInProgress.remove();
+            }
+        }
+    }
+
     /**
      * Obtain and validate the certification path for the complete CRL issuer.
      * If a key usage extension is present in the CRL issuer's certificate,
@@ -490,6 +527,7 @@ class RFC3280CertPathUtilities
 
         List validCerts = new ArrayList();
         List validKeys = new ArrayList();
+        AnnotatedException signerLastException = null;
 
         while (cert_it.hasNext())
         {
@@ -505,6 +543,21 @@ class RFC3280CertPathUtilities
                 validKeys.add(defaultCRLSignKey);
                 continue;
             }
+            /*
+             * Guard against infinite recursion when multiple candidate signers (often
+             * trust-anchor root CAs sharing a Subject DN) cause the recursive
+             * engineBuild call below to re-enter processCRLF for the same signer
+             * (github #2291). If we're already validating this cert further up the
+             * call stack, treat it as a trust anchor / self-signed root and short
+             * circuit, otherwise the iteration would loop forever.
+             */
+            if (crlSignerInProgress(signingCert))
+            {
+                validCerts.add(signingCert);
+                validKeys.add(signingCert.getPublicKey());
+                continue;
+            }
+            crlSignerEnter(signingCert);
             try
             {
                 CertPathBuilderSpi builder = (revChkClass != null)
@@ -541,16 +594,28 @@ class RFC3280CertPathUtilities
             }
             catch (CertPathBuilderException e)
             {
-                throw new AnnotatedException("CertPath for CRL signer failed to validate.", e);
+                // Candidate signer's path could not be built - skip and try the next
+                // candidate. The post-loop empty-check will surface a useful error if
+                // no valid signer is found.
+                signerLastException = new AnnotatedException("CertPath for CRL signer failed to validate.", e);
             }
             catch (CertPathValidatorException e)
             {
-                throw new AnnotatedException("Public key of issuer certificate of CRL could not be retrieved.", e);
+                signerLastException = new AnnotatedException("Public key of issuer certificate of CRL could not be retrieved.", e);
             }
             catch (Exception e)
             {
-                throw new AnnotatedException(e.getMessage());
+                signerLastException = new AnnotatedException(e.getMessage());
             }
+            finally
+            {
+                crlSignerExit(signingCert);
+            }
+        }
+
+        if (validCerts.isEmpty() && signerLastException != null)
+        {
+            throw signerLastException;
         }
 
         Set checkKeys = new HashSet();
