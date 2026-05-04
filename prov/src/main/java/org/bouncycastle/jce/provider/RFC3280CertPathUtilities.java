@@ -596,7 +596,7 @@ class RFC3280CertPathUtilities
             {
                 // Candidate signer's path could not be built - skip and try the next
                 // candidate. The post-loop empty-check will surface a useful error if
-                // no valid signer is found.
+                // no valid signer is found at all.
                 signerLastException = new AnnotatedException("CertPath for CRL signer failed to validate.", e);
             }
             catch (CertPathValidatorException e)
