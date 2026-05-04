@@ -22,9 +22,12 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Exceptions;
@@ -67,9 +70,47 @@ public class OpenSSHPrivateKeyUtil
         }
         else if (params instanceof ECPrivateKeyParameters)
         {
-            PrivateKeyInfo pInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(params);
+            ECPrivateKeyParameters privateKey = (ECPrivateKeyParameters)params;
+            ECDomainParameters domain = privateKey.getParameters();
 
-            return pInfo.parsePrivateKey().toASN1Primitive().getEncoded();
+            String curveName = SSHNamedCurves.getNameForParameters(domain);
+            if (curveName == null)
+            {
+                throw new IllegalArgumentException("unable to derive ssh curve name for "
+                    + domain.getCurve().getClass().getName());
+            }
+
+            // OpenSSH stores the affine public point alongside the private scalar; derive
+            // it from D and the curve's base point.
+            ECPoint q = new FixedPointCombMultiplier().multiply(domain.getG(), privateKey.getD()).normalize();
+            ECPublicKeyParameters publicKey = new ECPublicKeyParameters(q, domain);
+
+            SSHBuilder builder = new SSHBuilder();
+            builder.writeBytes(AUTH_MAGIC);
+            builder.writeString("none");    // cipher name
+            builder.writeString("none");    // KDF name
+            builder.writeString("");        // KDF options
+
+            builder.u32(1); // Number of keys
+
+            byte[] pkEncoded = OpenSSHPublicKeyUtil.encodePublicKey(publicKey);
+            builder.writeBlock(pkEncoded);
+
+            SSHBuilder pkBuild = new SSHBuilder();
+
+            int checkint = CryptoServicesRegistrar.getSecureRandom().nextInt();
+            pkBuild.u32(checkint);
+            pkBuild.u32(checkint);
+
+            pkBuild.writeString("ecdsa-sha2-" + curveName);
+            pkBuild.writeString(curveName);
+            pkBuild.writeBlock(q.getEncoded(false));
+            pkBuild.writeBigNum(privateKey.getD());
+            pkBuild.writeString("");        // Comment
+
+            builder.writeBlock(pkBuild.getPaddedBytes());
+
+            return builder.getBytes();
         }
         else if (params instanceof DSAPrivateKeyParameters)
         {
