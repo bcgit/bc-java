@@ -79,6 +79,7 @@ public class RegressionTest
         new PGPv6MessageDecryptionTest(),
         new Curve25519PrivateKeyEncodingTest(),
         new EdDSAKeyConversionWithLeadingZeroTest(),
+        new JcaECDSAKeyConverterTest(),
         new ECDSAKeyPairTest(),
         new UnknownBCPGKeyPairTest(),
 

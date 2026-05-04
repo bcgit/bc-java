@@ -16,9 +16,11 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.DSAPublicKeySpec;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
+import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
@@ -516,7 +518,26 @@ public class JcaPGPKeyConverter
     private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid)
         throws IOException, GeneralSecurityException
     {
+        // Resolve via the JCE provider's curve-name registry first; this works with both
+        // the BC and JDK 11+ Sun providers. If no name match is available (for example
+        // if the OID is for a curve the provider doesn't know by name) fall back to the
+        // X9.62 OID-encoded form, which BC accepts directly. See github #1230.
         AlgorithmParameters params = helper.createAlgorithmParameters("EC");
+        String curveName = ECNamedCurveTable.getName(curveOid);
+
+        if (curveName != null)
+        {
+            try
+            {
+                params.init(new ECGenParameterSpec(curveName));
+                return params.getParameterSpec(ECParameterSpec.class);
+            }
+            catch (InvalidParameterSpecException e)
+            {
+                // provider didn't recognise the name - retry with the OID encoding.
+                params = helper.createAlgorithmParameters("EC");
+            }
+        }
 
         params.init(new X962Parameters(curveOid).getEncoded());
 
