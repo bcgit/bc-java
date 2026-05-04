@@ -60,10 +60,21 @@ public class MLDSA
             addSignatureAlgorithm(provider, "ML-DSA-65-WITH-SHA512", PREFIX + "HashSignatureSpi$MLDSA65", NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
             addSignatureAlgorithm(provider, "ML-DSA-87-WITH-SHA512", PREFIX + "HashSignatureSpi$MLDSA87", NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
 
+            // External-hash variants: caller pre-hashes the message and feeds the
+            // digest to Signature.update(...). See github #2198.
+            addSignatureAlgorithm(provider, "HASH-ML-DSA-EXTERNAL-HASH", PREFIX + "HashSignatureSpi$MLDSAExtHash", (ASN1ObjectIdentifier)null);
+            addSignatureAlgorithm(provider, "ML-DSA-44-WITH-SHA512-EXTERNAL-HASH", PREFIX + "HashSignatureSpi$MLDSA44ExtHash", (ASN1ObjectIdentifier)null);
+            addSignatureAlgorithm(provider, "ML-DSA-65-WITH-SHA512-EXTERNAL-HASH", PREFIX + "HashSignatureSpi$MLDSA65ExtHash", (ASN1ObjectIdentifier)null);
+            addSignatureAlgorithm(provider, "ML-DSA-87-WITH-SHA512-EXTERNAL-HASH", PREFIX + "HashSignatureSpi$MLDSA87ExtHash", (ASN1ObjectIdentifier)null);
+
             provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHMLDSA", "HASH-ML-DSA");
             provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHMLDSA44", "ML-DSA-44-WITH-SHA512");
             provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHMLDSA65", "ML-DSA-65-WITH-SHA512");
             provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHMLDSA87", "ML-DSA-87-WITH-SHA512");
+            provider.addAlgorithm("Alg.Alias.Signature.MLDSA-EXTERNAL-HASH", "HASH-ML-DSA-EXTERNAL-HASH");
+            provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHMLDSA44EXTERNALHASH", "ML-DSA-44-WITH-SHA512-EXTERNAL-HASH");
+            provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHMLDSA65EXTERNALHASH", "ML-DSA-65-WITH-SHA512-EXTERNAL-HASH");
+            provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHMLDSA87EXTERNALHASH", "ML-DSA-87-WITH-SHA512-EXTERNAL-HASH");
 
             AsymmetricKeyInfoConverter keyFact = new MLDSAKeyFactorySpi.Hash();
 
