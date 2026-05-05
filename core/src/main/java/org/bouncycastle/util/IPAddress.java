@@ -75,7 +75,10 @@ public class IPAddress
     }
 
     /**
-     * Validate the given IPv6 address.
+     * Validate the given IPv6 address. Per RFC 4007 sec. 11 a non-global address
+     * may carry a zone identifier introduced by '%' (e.g. "fe80::1%eth0"); the
+     * zone identifier must be non-empty and not contain ':' or '/' (the IPv6
+     * segment / netmask separators) but is otherwise treated as opaque.
      *
      * @param address the IP address as a String.
      *
@@ -88,11 +91,25 @@ public class IPAddress
             return false;
         }
 
+        int percentIdx = address.indexOf('%');
+        if (percentIdx >= 0)
+        {
+            if (!isValidIPv6ZoneId(address, percentIdx + 1, address.length()))
+            {
+                return false;
+            }
+            address = address.substring(0, percentIdx);
+            if (address.length() == 0)
+            {
+                return false;
+            }
+        }
+
         char firstChar = address.charAt(0);
         if (firstChar != ':' && Character.digit(firstChar, 16) < 0)
         {
             return false;
-        }        
+        }
 
         int segmentCount = 0;
         String temp = address + ":";
@@ -175,6 +192,26 @@ public class IPAddress
     private static boolean isParseableIPv6Segment(String s, int pos, int end)
     {
         return isParseable(s, pos, end, 16, 4, true, 0x0000, 0xFFFF);
+    }
+
+    private static boolean isValidIPv6ZoneId(String s, int pos, int end)
+    {
+        // RFC 4007 leaves the zone-id syntax implementation defined; require a
+        // non-empty sequence of printable characters that are not used to
+        // separate IPv6 components or netmasks.
+        if (pos >= end)
+        {
+            return false;
+        }
+        for (int i = pos; i < end; i++)
+        {
+            char c = s.charAt(i);
+            if (c <= 0x20 || c == 0x7f || c == ':' || c == '/' || c == '%')
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isParseable(String s, int pos, int end, int radix, int maxLength, boolean allowLeadingZero,
