@@ -65,6 +65,6 @@ public class PublicKeys
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{verificationKey, OEROptional.getInstance(encryptionKey)});
+        return new DERSequence(verificationKey, OEROptional.getInstance(encryptionKey));
     }
 }

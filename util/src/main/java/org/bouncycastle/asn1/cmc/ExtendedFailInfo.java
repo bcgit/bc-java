@@ -64,7 +64,7 @@ public class ExtendedFailInfo
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{failInfoOID, failInfoValue});
+        return new DERSequence(failInfoOID, failInfoValue);
     }
 
     public ASN1ObjectIdentifier getFailInfoOID()

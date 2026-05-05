@@ -39,8 +39,10 @@ public class ECDSAEncoder
 
         try
         {
-            return new DERSequence(new ASN1Encodable[]{new ASN1Integer(BigIntegers.fromUnsignedByteArray(r)),
-                new ASN1Integer(BigIntegers.fromUnsignedByteArray(s))}).getEncoded();
+            return new DERSequence(
+                new ASN1Integer(BigIntegers.fromUnsignedByteArray(r)),
+                new ASN1Integer(BigIntegers.fromUnsignedByteArray(s))
+            ).getEncoded();
         }
         catch (IOException ioException)
         {

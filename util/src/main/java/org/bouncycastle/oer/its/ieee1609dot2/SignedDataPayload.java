@@ -63,10 +63,7 @@ public class SignedDataPayload
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(
-            new ASN1Encodable[]{
-                OEROptional.getInstance(data),
-                OEROptional.getInstance(extDataHash)});
+        return new DERSequence(OEROptional.getInstance(data), OEROptional.getInstance(extDataHash));
     }
 
     public Ieee1609Dot2Data getData()
