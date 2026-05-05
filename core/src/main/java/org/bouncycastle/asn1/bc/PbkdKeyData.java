@@ -40,10 +40,10 @@ public class PbkdKeyData
     public PbkdKeyData(String keyAlgorithm, byte[] password, byte[] salt, int iterationCount, byte[] encoded)
     {
         this.keyAlgorithm = new DERUTF8String(keyAlgorithm);
-        this.password = new DEROctetString(Arrays.clone(password));
-        this.salt = (salt != null) ? new DEROctetString(Arrays.clone(salt)) : null;
+        this.password = DEROctetString.fromContents(password);
+        this.salt = DEROctetString.fromContentsOptional(salt);
         this.iterationCount = (iterationCount > 0) ? new ASN1Integer(iterationCount) : null;
-        this.encoded = (encoded != null) ? new DEROctetString(Arrays.clone(encoded)) : null;
+        this.encoded = DEROctetString.fromContentsOptional(encoded);
     }
 
     private PbkdKeyData(ASN1Sequence seq)
