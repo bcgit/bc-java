@@ -174,6 +174,10 @@ public class V3TBSCertificateGenerator
         {
             throw new IllegalStateException("not all mandatory fields set in V3 TBScertificate generator");
         }
+        if (issuer.size() == 0)
+        {
+            throw new IllegalStateException("issuer is an empty distinguished name");
+        }
 
         ASN1EncodableVector v = new ASN1EncodableVector(9);
 
@@ -210,6 +214,10 @@ public class V3TBSCertificateGenerator
             (subject == null && !altNamePresentAndCritical) || (subjectPublicKeyInfo == null))
         {
             throw new IllegalStateException("not all mandatory fields set in V3 TBScertificate generator");
+        }
+        if (issuer.size() == 0)
+        {
+            throw new IllegalStateException("issuer is an empty distinguished name");
         }
 
         return new TBSCertificate(ASN1Integer.TWO, serialNumber, signature, issuer,

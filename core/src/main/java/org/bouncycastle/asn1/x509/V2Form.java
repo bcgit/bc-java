@@ -77,7 +77,7 @@ public class V2Form
         
         int    index = 0;
 
-        if (!(seq.getObjectAt(0) instanceof ASN1TaggedObject))
+        if (seq.size() > 0 && !(seq.getObjectAt(0) instanceof ASN1TaggedObject))
         {
             index++;
             this.issuerName = GeneralNames.getInstance(seq.getObjectAt(0));

@@ -217,7 +217,11 @@ public class V2TBSCertListGenerator
         {
             throw new IllegalStateException("not all mandatory fields set in V2 TBSCertList generator");
         }
-        
+        if (issuer.size() == 0)
+        {
+            throw new IllegalStateException("issuer is an empty distinguished name");
+        }
+
         return new TBSCertList(generateTBSCertStructure());
     }
 
@@ -230,6 +234,10 @@ public class V2TBSCertListGenerator
         if ((issuer == null) || (thisUpdate == null))
         {
             throw new IllegalStateException("not all mandatory fields set in V2 PreTBSCertList generator");
+        }
+        if (issuer.size() == 0)
+        {
+            throw new IllegalStateException("issuer is an empty distinguished name");
         }
 
         return generateTBSCertStructure();

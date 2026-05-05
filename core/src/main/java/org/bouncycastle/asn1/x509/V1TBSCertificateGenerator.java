@@ -121,6 +121,10 @@ public class V1TBSCertificateGenerator
         {
             throw new IllegalStateException("not all mandatory fields set in V1 TBScertificate generator");
         }
+        if (issuer.size() == 0)
+        {
+            throw new IllegalStateException("issuer is an empty distinguished name");
+        }
 
         return new TBSCertificate(ASN1Integer.ZERO, serialNumber, signature, issuer,
             validity != null ? validity : new Validity(startDate, endDate), subject, subjectPublicKeyInfo, null,
