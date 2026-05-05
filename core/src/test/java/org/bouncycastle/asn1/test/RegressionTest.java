@@ -44,6 +44,7 @@ public class RegressionTest
         new IssuingDistributionPointUnitTest(),
         new TargetInformationTest(),
         new SubjectKeyIdentifierTest(),
+        new AuthorityKeyIdentifierTest(),
         new ParsingTest(),
         new GeneralNameTest(),
         new ObjectIdentifierTest(),

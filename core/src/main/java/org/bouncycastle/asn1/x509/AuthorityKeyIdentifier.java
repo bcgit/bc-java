@@ -30,7 +30,8 @@ import org.bouncycastle.util.encoders.Hex;
  *
  *   KeyIdentifier ::= OCTET STRING
  * </pre>
- *
+ * Per RFC 5280 sec. 4.2.1.1 the authorityCertIssuer and
+ * authorityCertSerialNumber fields MUST both be present or both be absent.
  */
 public class AuthorityKeyIdentifier
     extends ASN1Object
@@ -88,6 +89,21 @@ public class AuthorityKeyIdentifier
                 throw new IllegalArgumentException("illegal tag");
             }
         }
+
+        checkIssuerAndSerial(this.certissuer, this.certserno);
+    }
+
+    /**
+     * RFC 5280 sec. 4.2.1.1: authorityCertIssuer and authorityCertSerialNumber
+     * MUST both be present or both be absent.
+     */
+    private static void checkIssuerAndSerial(GeneralNames certIssuer, ASN1Integer certSerial)
+    {
+        if ((certIssuer == null) != (certSerial == null))
+        {
+            throw new IllegalArgumentException(
+                "AuthorityKeyIdentifier authorityCertIssuer and authorityCertSerialNumber MUST both be present or both be absent");
+        }
     }
 
     /**
@@ -119,6 +135,9 @@ public class AuthorityKeyIdentifier
         GeneralNames            name,
         BigInteger              serialNumber)
     {
+        ASN1Integer certSerial = (serialNumber != null) ? new ASN1Integer(serialNumber) : null;
+        checkIssuerAndSerial(name, certSerial);
+
         Digest  digest = new SHA1Digest();
         byte[]  resBuf = new byte[digest.getDigestSize()];
 
@@ -128,7 +147,7 @@ public class AuthorityKeyIdentifier
 
         this.keyIdentifier = new DEROctetString(resBuf);
         this.certissuer = name;
-        this.certserno = (serialNumber != null) ? new ASN1Integer(serialNumber) : null;
+        this.certserno = certSerial;
     }
 
     /**
@@ -160,9 +179,12 @@ public class AuthorityKeyIdentifier
         GeneralNames            name,
         BigInteger              serialNumber)
     {
+        ASN1Integer certSerial = (serialNumber != null) ? new ASN1Integer(serialNumber) : null;
+        checkIssuerAndSerial(name, certSerial);
+
         this.keyIdentifier = (keyIdentifier != null) ? new DEROctetString(Arrays.clone(keyIdentifier)) : null;
         this.certissuer = name;
-        this.certserno = (serialNumber != null) ? new ASN1Integer(serialNumber) : null;
+        this.certserno = certSerial;
     }
 
     /**
