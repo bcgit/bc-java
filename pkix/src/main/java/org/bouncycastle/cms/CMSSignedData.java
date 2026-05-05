@@ -18,9 +18,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -71,20 +69,22 @@ public class CMSSignedData
     private static final DefaultDigestAlgorithmIdentifierFinder DIGEST_ALG_ID_FINDER =
         new DefaultDigestAlgorithmIdentifierFinder();
 
-    SignedData signedData;
-    ContentInfo contentInfo;
-    CMSTypedData signedContent;
-    SignerInformationStore signerInfoStore;
+    private final SignedData signedData;
+    private final ContentInfo contentInfo;
+    private final CMSTypedData signedContent;
+    private final Map hashes;
 
-    private Map hashes;
+    // Lazily constructed
+    private SignerInformationStore signerInfoStore;
 
-    private CMSSignedData(
-        CMSSignedData c)
+    private CMSSignedData(ASN1ObjectIdentifier contentType, SignedData signedData, CMSTypedData signedContent,
+        SignerInformationStore signerInfoStore)
     {
-        this.signedData = c.signedData;
-        this.contentInfo = c.contentInfo;
-        this.signedContent = c.signedContent;
-        this.signerInfoStore = c.signerInfoStore;
+        this.signedData = signedData;
+        this.contentInfo = new ContentInfo(contentType, signedData);
+        this.signedContent = signedContent;
+        this.hashes = null;
+        this.signerInfoStore = signerInfoStore;
     }
 
     public CMSSignedData(
@@ -173,6 +173,7 @@ public class CMSSignedData
 
         this.contentInfo = sigData;
         this.signedData = getSignedData();
+        this.hashes = null;
     }
 
     public CMSSignedData(
@@ -183,6 +184,7 @@ public class CMSSignedData
         this.hashes = hashes;
         this.contentInfo = sigData;
         this.signedData = getSignedData();
+        this.signedContent = null;
     }
 
     public CMSSignedData(
@@ -191,6 +193,7 @@ public class CMSSignedData
     {
         this.contentInfo = sigData;
         this.signedData = getSignedData();
+        this.hashes = null;
 
         //
         // this can happen if the signed message is sent simply to send a
@@ -531,11 +534,6 @@ public class CMSSignedData
         }
 
         //
-        // copy
-        //
-        CMSSignedData cms = new CMSSignedData(signedData);
-
-        //
         // build up the new set
         //
         Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
@@ -548,28 +546,14 @@ public class CMSSignedData
         digestAlgs.add(digestAlg);
 
         ASN1Set digestSet = CMSUtils.convertToDlSet(digestAlgs);
-        ASN1Sequence sD = (ASN1Sequence)signedData.signedData.toASN1Primitive();
 
-        //
-        // signers are the last item in the sequence.
-        //
-        ASN1EncodableVector vec = new ASN1EncodableVector(sD.size());
-        vec.add(sD.getObjectAt(0)); // version
-        vec.add(digestSet);
+        SignedData oldContent = signedData.signedData;
 
-        for (int i = 2; i != sD.size(); i++)
-        {
-            vec.add(sD.getObjectAt(i));
-        }
+        SignedData newContent = new SignedData(digestSet, oldContent.getEncapContentInfo(),
+            oldContent.getCertificates(), oldContent.getCRLs(), oldContent.getSignerInfos());
 
-        cms.signedData = SignedData.getInstance(new BERSequence(vec));
-
-        //
-        // replace the contentInfo with the new one
-        //
-        cms.contentInfo = new ContentInfo(cms.contentInfo.getContentType(), cms.signedData);
-
-        return cms;
+        return new CMSSignedData(signedData.contentInfo.getContentType(), newContent, signedData.getSignedContent(),
+            signedData.signerInfoStore);
     }
 
     /**
@@ -604,16 +588,6 @@ public class CMSSignedData
         DigestAlgorithmIdentifierFinder digestAlgIdFinder)
     {
         //
-        // copy
-        //
-        CMSSignedData cms = new CMSSignedData(signedData);
-
-        //
-        // replace the store
-        //
-        cms.signerInfoStore = signerInformationStore;
-
-        //
         // replace the signers in the SignedData object
         //
         Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
@@ -640,30 +614,13 @@ public class CMSSignedData
         ASN1Set digestSet = new DLSet(newDigestAlgIds);
         ASN1Set signerSet = new DLSet(vec);
 
-        ASN1Sequence sD = (ASN1Sequence)signedData.signedData.toASN1Primitive();
+        SignedData oldContent = signedData.signedData;
 
-        //
-        // signers are the last item in the sequence.
-        //
-        vec = new ASN1EncodableVector(sD.size());
-        vec.add(sD.getObjectAt(0)); // version
-        vec.add(digestSet);
+        SignedData newContent = new SignedData(digestSet, oldContent.getEncapContentInfo(),
+            oldContent.getCertificates(), oldContent.getCRLs(), signerSet);
 
-        for (int i = 2; i != sD.size() - 1; i++)
-        {
-            vec.add(sD.getObjectAt(i));
-        }
-
-        vec.add(signerSet);
-
-        cms.signedData = SignedData.getInstance(new BERSequence(vec));
-
-        //
-        // replace the contentInfo with the new one
-        //
-        cms.contentInfo = new ContentInfo(cms.contentInfo.getContentType(), cms.signedData);
-
-        return cms;
+        return new CMSSignedData(signedData.contentInfo.getContentType(), newContent, signedData.getSignedContent(),
+            signerInformationStore);
     }
 
     private static void compareAndReplaceAlgIds(AlgorithmIdentifier[] oldDigestAlgIds, AlgorithmIdentifier[] newDigestAlgIds)
@@ -706,11 +663,6 @@ public class CMSSignedData
         throws CMSException
     {
         //
-        // copy
-        //
-        CMSSignedData cms = new CMSSignedData(signedData);
-
-        //
         // replace the certs and revocations in the SignedData object
         //
         ASN1Set certSet = null;
@@ -747,20 +699,12 @@ public class CMSSignedData
             }
         }
 
-        //
-        // replace the CMS structure.
-        //
-        cms.signedData = new SignedData(signedData.signedData.getDigestAlgorithms(),
-            signedData.signedData.getEncapContentInfo(),
-            certSet,
-            crlSet,
-            signedData.signedData.getSignerInfos());
+        SignedData oldContent = signedData.signedData;
 
-        //
-        // replace the contentInfo with the new one
-        //
-        cms.contentInfo = new ContentInfo(cms.contentInfo.getContentType(), cms.signedData);
+        SignedData newContent = new SignedData(oldContent.getDigestAlgorithms(), oldContent.getEncapContentInfo(),
+            certSet, crlSet, oldContent.getSignerInfos());
 
-        return cms;
+        return new CMSSignedData(signedData.contentInfo.getContentType(), newContent, signedData.getSignedContent(),
+            signedData.signerInfoStore);
     }
 }
