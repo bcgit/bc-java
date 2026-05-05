@@ -685,9 +685,35 @@ public class X500NameTest
     private void bogusEqualsTest()
         throws Exception
     {
+        // RFC 4514 sec. 3 allows '=' (0x3D) in stringchar without escaping;
+        // only the FIRST '=' separates attributeType from attributeValue.
+        // (issue #2226 - matches javax.security.auth.x500.X500Principal)
+        String[] subjects = new String[]
+        {
+            "CN=foo=bar",
+            "CN==^_^=",
+            "CN=a=b=c",
+            "CN=\\=^_^\\=",
+        };
+        String[] expectedValues = new String[]
+        {
+            "foo=bar",
+            "=^_^=",
+            "a=b=c",
+            "=^_^=",
+        };
+
+        for (int i = 0; i != subjects.length; i++)
+        {
+            X500Name name = new X500Name(subjects[i]);
+            String value = ((ASN1String)name.getRDNs()[0].getFirst().getValue()).getString();
+            isEquals("unexpected value for " + subjects[i], expectedValues[i], value);
+        }
+
+        // a token with no '=' at all is still a malformed RDN
         try
         {
-            new X500Name("CN=foo=bar");
+            new X500Name("CN");
             fail("no exception");
         }
         catch (IllegalArgumentException e)
