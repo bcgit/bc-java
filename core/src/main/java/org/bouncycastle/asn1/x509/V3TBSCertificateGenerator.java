@@ -66,7 +66,7 @@ public class V3TBSCertificateGenerator
     public void setIssuer(
         X509Name    issuer)
     {
-        this.issuer = X500Name.getInstance(issuer);
+        setIssuer(X500Name.getInstance(issuer));
     }
 
     public void setIssuer(

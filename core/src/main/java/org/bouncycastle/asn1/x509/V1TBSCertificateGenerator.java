@@ -54,7 +54,7 @@ public class V1TBSCertificateGenerator
     public void setIssuer(
         X509Name    issuer)
     {
-        this.issuer = X500Name.getInstance(issuer.toASN1Primitive());
+        setIssuer(X500Name.getInstance(issuer.toASN1Primitive()));
     }
 
     public void setIssuer(
