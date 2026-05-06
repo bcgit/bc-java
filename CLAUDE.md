@@ -17,16 +17,39 @@ The build is Gradle multi-module. JDK 21+ is required to drive Gradle. Optional 
 
 ### Running an individual test fast
 
-Most BC tests extend `org.bouncycastle.util.test.SimpleTest` and have a `main()` that registers `BouncyCastleProvider` and runs `performTest()`. Gradle's `:test` only matches `AllTest*` JUnit wrappers (which iterate over `RegressionTest.tests` arrays and run each `SimpleTest`). To iterate quickly on one test, run its `main()` directly — much faster than spinning up Gradle:
+Two conventions coexist:
+
+- `org.bouncycastle.util.test.SimpleTest` subclasses (~half of the suite) override `performTest()` and call `fail(msg)` / `isTrue(msg, cond)` / `areEqual(a, b)`. They have a `main()` that registers `BouncyCastleProvider` and prints `<TestName>: Okay` on success or `<TestName>: <message>` on failure.
+- `junit.framework.TestCase` subclasses (the other half, especially in `pkix/.../pkcs/test`, `pkix/.../cms/test`, etc.) use plain JUnit assertions and are aggregated by an `AllTests` suite class. Run one via `junit.textui.TestRunner`:
+  ```
+  java -cp ... junit.textui.TestRunner org.bouncycastle.pkcs.test.PKCS12UtilTest
+  ```
+
+To iterate quickly on either flavour, run directly without Gradle. The full classpath you need:
 
 ```
 java -cp pkix/build/classes/java/main:pkix/build/classes/java/test:pkix/src/test/resources:\
-        prov/build/classes/java/main:core/build/classes/java/main:core/build/classes/java/test:\
-        util/build/classes/java/main:$(find ~/.gradle -name 'junit-*.jar' | head -1) \
+        prov/build/classes/java/main:prov/build/classes/java/test:prov/build/resources/main:\
+        prov/src/test/resources:\
+        core/build/classes/java/main:core/build/classes/java/test:core/build/resources/main:\
+        core/src/test/resources:\
+        util/build/classes/java/main:\
+        $(find ~/.gradle -name 'junit-*.jar' | head -1):\
+        $(find ~/.gradle -name 'hamcrest-core-1*.jar' | head -1) \
+     -Dbc.test.data.home=core/src/test/data \
      org.bouncycastle.openssl.test.ParserTest
 ```
 
-Test resources live under `*/src/test/resources` and must be on the classpath. Failures inside `performTest()` print `<TestName>: <message>`; success prints `<TestName>: Okay`.
+Common gotchas:
+- `*/build/resources/main` directories are required — some tests pull resource files (e.g. `lowmcL1.bin.properties` for Picnic, GOST tables) that fail with cryptic `NullPointerException` if missing.
+- `prov/src/test/resources` and `core/src/test/resources` carry test fixtures referenced by `TestResourceFinder` and direct classpath lookups.
+- IDE-built classes under `out/production/...` (IntelliJ) are NOT on the Gradle classpath — don't reference them, and beware that they can drift from Gradle's outputs.
+
+### Verifying a fix actually catches the bug
+
+The repo's working norm for any defect-fix patch is: write the test that reproduces the bug, then **stash the fix** (`git stash push <fix-files>`), recompile (`./gradlew :<module>:compileJava`), rerun the test to confirm it now fails on the original symptom, then `git stash pop` and rerun to confirm it now passes. This catches tests that pass for the wrong reason. Use it whenever you add a regression test alongside a fix.
+
+When the fix is in `core/`, remember to recompile `prov` too (the `core`-into-`prov` trap below) so the test JVM picks up the updated bytecode rather than a stale `prov/build/classes` shadow.
 
 ## Architecture
 
@@ -73,6 +96,18 @@ The same applies to tests: `src/test/java` is the Gradle-driven tree; `src/test/
 
 Many tests assert on exact exception message text (e.g. `isTrue(e.getMessage().equals("..."))` or `getCause().getMessage()` checks). Changing the wording of a thrown exception — even something as small as adding a colon, rewording for clarity, or wrapping with `Exceptions.illegalArgumentException(...)` — will silently break tests in another module. Before modifying any exception message, grep the whole tree for the existing string and update every matching assertion in lockstep.
 
+### System / security property constants
+
+Any system or security property that controls BC behaviour belongs in `core/src/main/java/org/bouncycastle/util/Properties.java` as a `public static final String`, e.g. `Properties.PKCS12_MAX_IT_COUNT`, `Properties.PKCS12_IGNORE_USELESS_PASSWD`, `Properties.EMULATE_ORACLE`. Callers should reference the constant rather than inlining the literal `"org.bouncycastle.…"` name — both in production code and in tests that flip the property via `System.setProperty`. New properties should be added to `Properties` with the same naming pattern (`org.bouncycastle.<area>.<flag>`).
+
 ### Release notes
 
 Defects fixed and additional features go into `docs/releasenotes.html` under the **current** unreleased version block (e.g. section 2.1 with header "Release: 1.85"). Each entry is a single `<li>...</li>` referencing the GitHub issue number where applicable. The file is hand-edited HTML; preserve the existing prose style and `<ul>` structure.
+
+### Commit messages
+
+Existing convention: a short imperative sentence ending with `relates to github #NNNN.` for issue-driven work (e.g. `Corrected casing of Falcon naming when used with NamedParameterSpec, relates to github #2194`). Multi-line bodies are unusual — keep the headline self-contained.
+
+### Code style
+
+Match the surrounding file: Allman braces (open brace on its own line for class / method / control structures), 4-space indentation, no tabs. Don't reformat untouched code while editing — diffs that include unrelated whitespace changes are noisy and slow review.
