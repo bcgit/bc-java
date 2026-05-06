@@ -219,24 +219,13 @@ public class IETFUtils
     }
 
     /**
-     * Consume the remaining tokens from an '='-separated tokenizer as the
+     * Consume the remaining input from an '='-separated tokenizer as the
      * attributeValue. RFC 4514 sec. 3 allows unescaped '=' in stringchar, so
-     * only the FIRST '=' separates the attributeType from the attributeValue;
-     * any additional unescaped '=' the tokenizer split out are rejoined here.
+     * only the FIRST '=' separates the attributeType from the attributeValue.
      */
     private static String collectValueToken(X500NameTokenizer tokenizer)
     {
-        String first = tokenizer.nextToken();
-        if (!tokenizer.hasMoreTokens())
-        {
-            return first;
-        }
-        StringBuilder buf = new StringBuilder(first);
-        while (tokenizer.hasMoreTokens())
-        {
-            buf.append('=').append(tokenizer.nextToken());
-        }
-        return buf.toString();
+        return tokenizer.remaining();
     }
 
     private static String[] toValueArray(Vector values)
