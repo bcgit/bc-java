@@ -292,7 +292,7 @@ public class ParserTest
         doDudPasswordTest("1704a5", 12, "BOOLEAN value should have 1 byte in it");
         doDudPasswordTest("1c5822", 13, "Extra data detected in stream");
         doDudPasswordTest("5a3d16", 14, "truncated BIT STRING detected");
-        doDudPasswordTest("8d0c97", 15, "corrupted stream detected");
+        doDudPasswordTest("8d0c97", 15, "too few objects in input sequence");
         doDudPasswordTest("bc0daf", 16, "BOOLEAN value should have 1 byte in it");
         doDudPasswordTest("aaf9c4d", 17, "unknown DL object encountered: 0x15");
 
@@ -682,17 +682,16 @@ public class ParserTest
         }
         catch (IOException e)
         {
-            if (e.getCause() != null)
+            // Find the ultimate cause
+            Throwable uc = e;
+            while (uc.getCause() != null)
             {
-                if (!e.getCause().getMessage().endsWith(message)
-                    && (e.getCause().getCause() != null && !e.getCause().getCause().getMessage().endsWith(message)))
-                {
-                    fail("issue " + index + " exception thrown, but wrong message: " + e.getCause().getCause().getMessage() + " expected: " + message);
-                }
+                uc = uc.getCause();
             }
-            else if (e.getCause() == null && !e.getMessage().equals(message))
+
+            if (!uc.getMessage().equals(message))
             {
-               fail("issue " + index + " exception thrown, but wrong message");
+                fail("issue " + index + " exception thrown, but wrong message: " + uc.getMessage() + " expected: " + message);
             }
         }
     }
