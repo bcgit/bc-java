@@ -118,7 +118,6 @@ import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -140,7 +139,7 @@ public class PKCS12KeyStoreSpi
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private static final int SALT_SIZE = 20;
-    private static final int MIN_ITERATIONS = 50 * 1024;
+    private static final int MIN_ITERATIONS = 600000;
 
     private static final DefaultSecretKeyProvider keySizeProvider = new DefaultSecretKeyProvider();
 

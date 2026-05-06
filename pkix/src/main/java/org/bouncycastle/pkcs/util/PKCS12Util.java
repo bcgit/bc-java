@@ -1,4 +1,4 @@
-package org.bouncycastle.jce;
+package org.bouncycastle.pkcs.util;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -22,27 +22,36 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedData;
 import org.bouncycastle.asn1.pkcs.MacData;
+import org.bouncycastle.asn1.pkcs.PBKDF2Params;
+import org.bouncycastle.asn1.pkcs.PBMAC1Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Strings;
 
 /**
  * Utility class for re-encoding PKCS#12 files to definite length.
- *
- * @deprecated Replaced by {@link org.bouncycastle.pkcs.util.PKCS12Util}; this class
- * does not understand RFC 9579 PBMAC1-protected PKCS#12 files (it throws
- * UnsupportedOperationException for them) and will be removed in a future
- * release.
+ * <p>
+ * Replaces {@link org.bouncycastle.jce.PKCS12Util}; this class additionally
+ * understands RFC 9579 PBMAC1 protected PFX files.
+ * </p>
  */
-@Deprecated
 public class PKCS12Util
 {
     private static final BigInteger DEFAULT_MAX_IT_COUNT = BigInteger.valueOf(5000000);
@@ -106,15 +115,6 @@ public class PKCS12Util
         return convertToDefiniteLength(berPKCS12File, passwd, new ProviderJcaJceHelper(provider));
     }
 
-    /**
-     * Re-encode the PKCS#12 structure to definite length encoding at the inner layer
-     * as well, recomputing the MAC accordingly.
-     *
-     * @param berPKCS12File - original PKCS12 file.
-     * @param provider - provider to use for MAC calculation.
-     * @return a byte array representing the DER encoding of the PFX structure.
-     * @throws IOException on parsing, encoding errors.
-     */
     private static byte[] convertToDefiniteLength(byte[] berPKCS12File, char[] passwd, JcaJceHelper helper)
         throws IOException
     {
@@ -221,8 +221,7 @@ public class PKCS12Util
 
         if (PKCSObjectIdentifiers.id_PBMAC1.equals(oid))
         {
-            // TODO[pkcs12] PBMAC1 support, copy/share with PKCS12KeyStoreSpi.calculatePbeMac
-            throw new UnsupportedOperationException();
+            return calculatePBMAC1(macAlgID, password, data);
         }
 
         PBEParameterSpec defParams = new PBEParameterSpec(salt, itCount);
@@ -253,5 +252,56 @@ public class PKCS12Util
                 // ignore
             }
         }
+    }
+
+    private static byte[] calculatePBMAC1(AlgorithmIdentifier macAlgID, char[] password, byte[] data)
+        throws IOException
+    {
+        PBMAC1Params pbmac1Params = PBMAC1Params.getInstance(macAlgID.getParameters());
+        if (pbmac1Params == null)
+        {
+            throw new IOException("If the DigestAlgorithmIdentifier is id-PBMAC1, then the parameters field must contain valid PBMAC1-params parameters.");
+        }
+        if (!PKCSObjectIdentifiers.id_PBKDF2.equals(pbmac1Params.getKeyDerivationFunc().getAlgorithm()))
+        {
+            throw new IOException("Unsupported PBMAC1 key derivation function: " + pbmac1Params.getKeyDerivationFunc().getAlgorithm());
+        }
+
+        PBKDF2Params pbkdf2Params = PBKDF2Params.getInstance(pbmac1Params.getKeyDerivationFunc().getParameters());
+        if (pbkdf2Params.getKeyLength() == null)
+        {
+            throw new IOException("Key length must be present when using PBMAC1.");
+        }
+
+        HMac hMac = new HMac(getPrf(pbmac1Params.getMessageAuthScheme().getAlgorithm()));
+        PBEParametersGenerator generator = new PKCS5S2ParametersGenerator(getPrf(pbkdf2Params.getPrf().getAlgorithm()));
+
+        generator.init(
+            Strings.toUTF8ByteArray(password),
+            pbkdf2Params.getSalt(),
+            validateIterationCount(pbkdf2Params.getIterationCount()));
+
+        CipherParameters key = generator.generateDerivedParameters(BigIntegers.intValueExact(pbkdf2Params.getKeyLength()) * 8);
+
+        Arrays.clear(generator.getPassword());
+
+        hMac.init(key);
+        hMac.update(data, 0, data.length);
+        byte[] res = new byte[hMac.getMacSize()];
+        hMac.doFinal(res, 0);
+        return res;
+    }
+
+    private static Digest getPrf(ASN1ObjectIdentifier prfId)
+    {
+        if (PKCSObjectIdentifiers.id_hmacWithSHA256.equals(prfId))
+        {
+            return new SHA256Digest();
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA512.equals(prfId))
+        {
+            return new SHA512Digest();
+        }
+        throw new IllegalArgumentException("unknown prf id " + prfId);
     }
 }

@@ -31,6 +31,11 @@ public class Properties
      */
     public static final String PKCS12_IGNORE_USELESS_PASSWD = "org.bouncycastle.pkcs12.ignore_useless_passwd";
 
+    /**
+     * If set, a PKCS12 file with a larger iteration count on PBE processing will rejected.
+     */
+    public static final String PKCS12_MAX_IT_COUNT = "org.bouncycastle.pkcs12.max_it_count";
+
     private Properties()
     {
     }

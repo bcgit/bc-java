@@ -2505,7 +2505,7 @@ public class PKCS12StoreTest
     private void testIterationCount()
         throws Exception
     {
-        System.setProperty("org.bouncycastle.pkcs12.max_it_count", "10");
+        System.setProperty(Properties.PKCS12_MAX_IT_COUNT, "10");
 
         ByteArrayInputStream stream = new ByteArrayInputStream(pkcs12StorageIssue);
         KeyStore store = KeyStore.getInstance("PKCS12", BC);
@@ -2520,7 +2520,7 @@ public class PKCS12StoreTest
             isTrue(e.getMessage().endsWith("iteration count 2000 greater than 10"));
         }
 
-        System.clearProperty("org.bouncycastle.pkcs12.max_it_count");
+        System.clearProperty(Properties.PKCS12_MAX_IT_COUNT);
     }
 
     private void testPBMac1PBKdf2()
