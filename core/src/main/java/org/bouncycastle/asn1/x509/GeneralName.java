@@ -157,14 +157,12 @@ public class GeneralName
         else if (tag == iPAddress)
         {
             byte[] enc = toGeneralNameEncoding(name);
-            if (enc != null)
-            {
-                this.obj = new DEROctetString(enc);
-            }
-            else
+            if (enc == null)
             {
                 throw new IllegalArgumentException("IP Address is invalid");
             }
+
+            this.obj = DEROctetString.withContents(enc);
         }
         else
         {
@@ -414,8 +412,13 @@ public class GeneralName
                 {
                     StringTokenizer eTok = new StringTokenizer(e, ".");
 
-                    val[index++] = (Integer.parseInt(eTok.nextToken()) << 8) | Integer.parseInt(eTok.nextToken());
-                    val[index++] = (Integer.parseInt(eTok.nextToken()) << 8) | Integer.parseInt(eTok.nextToken());
+                    String t0 = eTok.nextToken();
+                    String t1 = eTok.nextToken();
+                    String t2 = eTok.nextToken();
+                    String t3 = eTok.nextToken();
+
+                    val[index++] = Integer.parseInt(t0) << 8 | Integer.parseInt(t1);
+                    val[index++] = Integer.parseInt(t2) << 8 | Integer.parseInt(t3);
                 }
             }
         }
