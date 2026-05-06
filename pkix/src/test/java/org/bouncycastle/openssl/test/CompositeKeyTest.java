@@ -63,6 +63,8 @@ import org.bouncycastle.util.Strings;
 
 /**
  * Tests from: https://datatracker.ietf.org/doc/draft-ounsworth-pq-composite-keys/
+ *
+ * @deprecated These are old acceptance tests once used for inter-op testing.
  */
 public class CompositeKeyTest
     extends TestCase
