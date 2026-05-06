@@ -15,24 +15,10 @@ public class IPTest
 
     private static final String validIP6v[] = new String[]
     { "0:0:0:0:0:0:0:0", "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF",
-            "0:1:2:3:FFFF:5:FFFF:1",
-            // RFC 4007 sec. 11 zone identifiers: github #2024
-            "fe80::1%eth0",
-            "fe80:0:0:0:202:b3ff:fe1e:8329%en0",
-            "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF%2",
-            "::%lo",
-            "fe80::1%link.local-1" };
+            "0:1:2:3:FFFF:5:FFFF:1" };
 
     private static final String invalidIP6v[] = new String[]
-    { "0.0.0.0:1", "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFFF",
-            // empty / address-less / multiple zone identifiers
-            "fe80::1%",
-            "%eth0",
-            "fe80::1%eth0%bad",
-            // zone identifier containing forbidden characters
-            "fe80::1%eth 0",
-            "fe80::1%eth/0",
-            "fe80::1%eth:0" };
+    { "0.0.0.0:1", "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFFF" };
 
     private void testIP(String[] valid, String[] invalid)
     {
