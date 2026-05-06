@@ -182,7 +182,7 @@ public class AuthorityKeyIdentifier
         ASN1Integer certSerial = (serialNumber != null) ? new ASN1Integer(serialNumber) : null;
         checkIssuerAndSerial(name, certSerial);
 
-        this.keyIdentifier = (keyIdentifier != null) ? new DEROctetString(Arrays.clone(keyIdentifier)) : null;
+        this.keyIdentifier = DEROctetString.fromContentsOptional(keyIdentifier);
         this.certissuer = name;
         this.certserno = certSerial;
     }

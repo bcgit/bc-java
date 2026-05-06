@@ -63,7 +63,7 @@ public class DcEntry
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{url, cert});
+        return new DERSequence(url, cert);
     }
 
     public static Builder builder()

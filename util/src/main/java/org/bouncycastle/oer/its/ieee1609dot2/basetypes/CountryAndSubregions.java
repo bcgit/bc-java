@@ -65,7 +65,7 @@ public class CountryAndSubregions
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{country, regionAndSubregions});
+        return new DERSequence(country, regionAndSubregions);
     }
 
     public static Builder builder()

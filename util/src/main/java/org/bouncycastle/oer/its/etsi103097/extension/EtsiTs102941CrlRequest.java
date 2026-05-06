@@ -77,7 +77,7 @@ public class EtsiTs102941CrlRequest
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{issuerId, OEROptional.getInstance(lastKnownUpdate)});
+        return new DERSequence(issuerId, OEROptional.getInstance(lastKnownUpdate));
     }
 
     public static class Builder

@@ -102,7 +102,7 @@ public class Extension
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{id, content});
+        return new DERSequence(id, content);
     }
 
     public ExtId getId()
