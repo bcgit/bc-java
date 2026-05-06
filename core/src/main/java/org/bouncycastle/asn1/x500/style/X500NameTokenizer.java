@@ -41,7 +41,8 @@ public class X500NameTokenizer
 
     public String nextToken()
     {
-        if (index >= value.length())
+        int length = value.length();
+        if (index >= length)
         {
             return null;
         }
@@ -50,7 +51,7 @@ public class X500NameTokenizer
         boolean escaped = false;
 
         int beginIndex = index + 1;
-        while (++index < value.length())
+        while (++index < length)
         {
             char c = value.charAt(index);
 
@@ -81,5 +82,18 @@ public class X500NameTokenizer
         }
 
         return value.substring(beginIndex, index);
+    }
+
+    public String remaining()
+    {
+        int length = value.length();
+        if (index >= length)
+        {
+            return null;
+        }
+
+        int beginIndex = index + 1;
+        index = length;
+        return value.substring(beginIndex, length);
     }
 }
