@@ -92,6 +92,17 @@ The same applies to tests: `src/test/java` is the Gradle-driven tree; `src/test/
 - Tests pass `-Dbc.test.data.home=<core/src/test/data>` for fixture lookups.
 - The `:test` task runs each test class in its own JVM (`forkEvery = 1`).
 
+### X.509 ASN.1 changes — check the RFC first
+
+Anything under `core/src/main/java/org/bouncycastle/asn1/x509/` is a wire-format ASN.1 type from a specific PKI RFC. Before changing or extending one of these classes (parsing rules, structural constraints, defaults, error messages thrown for malformed input), verify the proposed behaviour against the authoritative RFC:
+
+- Most extensions and the certificate / CRL container types: **RFC 5280** (extensions in §4.2.x, cert fields in §4.1.x, CRL fields in §5.1.x).
+- Attribute certificates (`AttributeCertificateInfo`, `Holder`, `AttCertIssuer`, `V2Form`, `IssuerSerial`, etc.): **RFC 5755** (current; previously RFC 3281).
+- OCSP types (`OCSPResponse`, `BasicOCSPResponse`, `ResponseData`, etc.): **RFC 6960**.
+- Validation policy / qualified-cert types: RFC 3739 / RFC 3279 / X9.62 as appropriate.
+
+When the RFC contains a "MUST" / "MUST NOT" that the existing code doesn't enforce, that's the actionable spec — cite the section in the commit message and (where helpful) in javadoc. When the RFC is silent, prefer staying compatible with what other major libraries (OpenSSL, Java's CertificateFactory, GnuTLS) accept rather than tightening unilaterally. Same convention applies to neighbouring ASN.1 PKI packages (`asn1/pkcs`, `asn1/cms`, `asn1/cmp`, `asn1/ocsp`) — cite RFC 7292 / 5652 / 4210 / 6960 etc.
+
 ### Exception messages are part of the test contract
 
 Many tests assert on exact exception message text (e.g. `isTrue(e.getMessage().equals("..."))` or `getCause().getMessage()` checks). Changing the wording of a thrown exception — even something as small as adding a colon, rewording for clarity, or wrapping with `Exceptions.illegalArgumentException(...)` — will silently break tests in another module. Before modifying any exception message, grep the whole tree for the existing string and update every matching assertion in lockstep.
