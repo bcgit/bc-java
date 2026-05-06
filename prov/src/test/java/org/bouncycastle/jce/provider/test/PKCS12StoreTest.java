@@ -56,6 +56,7 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1369,7 +1370,7 @@ public class PKCS12StoreTest
 
         pkcs12.load(new ByteArrayInputStream(certsOnly), "1".toCharArray());
 
-        System.setProperty("org.bouncycastle.pkcs12.ignore_useless_passwd", "false");
+        System.setProperty(Properties.PKCS12_IGNORE_USELESS_PASSWD, "false");
     }
 
     private void testGOSTStore()

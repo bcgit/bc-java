@@ -1189,7 +1189,7 @@ public class PKCS12KeyStoreSpi
         {
             if (password != null && password.length != 0)
             {
-                if (!Properties.isOverrideSet("org.bouncycastle.pkcs12.ignore_useless_passwd"))
+                if (!Properties.isOverrideSet(Properties.PKCS12_IGNORE_USELESS_PASSWD))
                 {
                     throw new IOException("password supplied for keystore that does not require one");
                 }

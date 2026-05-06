@@ -24,6 +24,13 @@ public class Properties
      */
     public static final String EMULATE_ORACLE = "org.bouncycastle.emulate.oracle";
 
+    /**
+     * A PKCS12 file which does not require a password will normally throw an exception if a password
+     * is provided. Setting PKCS12_IGNORE_USELESS_PASSWD to "true" will result in the provider ignoring a
+     * password if one is provided and not required.
+     */
+    public static final String PKCS12_IGNORE_USELESS_PASSWD = "org.bouncycastle.pkcs12.ignore_useless_passwd";
+
     private Properties()
     {
     }
