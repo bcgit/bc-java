@@ -47,7 +47,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.ec;
     exports org.bouncycastle.crypto.encodings;
     exports org.bouncycastle.crypto.engines;
-    exports org.bouncycastle.crypto.examples;
     exports org.bouncycastle.crypto.fpe;
     exports org.bouncycastle.crypto.generators;
     exports org.bouncycastle.crypto.hpke;
