@@ -22,6 +22,7 @@ public class RegressionTest
         new CertPathBuilderTest(),
         new CertPathTest(),
         new CertPathValidatorTest(),
+        new org.bouncycastle.jce.provider.CrlCacheTest(),
         new CertStoreTest(),
         new CertTest(),
         new CertUniqueIDTest(),

@@ -36,6 +36,15 @@ public class Properties
      */
     public static final String PKCS12_MAX_IT_COUNT = "org.bouncycastle.pkcs12.max_it_count";
 
+    /**
+     * Maximum time, in seconds, that a downloaded CRL is cached by the internal CrlCache used
+     * by the CertPath validator and X509RevocationChecker. When set to a positive value, cached
+     * entries are evicted whichever expires sooner: the configured TTL or the CRL's own
+     * {@code nextUpdate}. Default (or 0) preserves the legacy behaviour of evicting only when
+     * {@code nextUpdate} has passed.
+     */
+    public static final String X509_CRL_CACHE_TTL = "org.bouncycastle.x509.crl_cache_ttl";
+
     private Properties()
     {
     }
