@@ -41,6 +41,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
+<li>The system/security property "org.bouncycastle.x509.crl_cache_ttl" (also exposed as Properties.X509_CRL_CACHE_TTL) sets a TTL, in seconds, for entries in the internal CRL cache used by CertPathValidator and X509RevocationChecker. When set to a positive value, cached entries are evicted whichever expires sooner: the configured TTL or the CRL's own nextUpdate. Unset (or 0) preserves the legacy behaviour of trusting the CRL's nextUpdate alone (issue #1833).</li>
 <li>The system/security property "org.bouncycastle.argon2.max_memory_exp" can now be used to set the maximum exponent for the memory setting in Argon2. Default value is (and max possible) is 30.</li>
 <li>Argon2BytesGenerator now accepts a caller-supplied BlockPool via Argon2Parameters.Builder.withBlockPool(...), allowing reuse of working memory across successive generateBytes calls (issue #1646 / PR #1647). A bounded FixedBlockPool implementation is included.</li>
 <li>BCFKS keystore now supports storing and retrieving javax.crypto.interfaces.PBEKey entries, so passwords and other PBE-based secrets no longer need to be stored as HMAC keys (issue #2164).</li>
