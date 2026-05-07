@@ -13,7 +13,6 @@ import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound1Payload;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound2Payload;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound3Payload;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
