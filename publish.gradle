@@ -5,11 +5,11 @@ gradle.projectsEvaluated {
         publishing {
             repositories {
                 maven {
-                    name "${env.CW_MAVEN_NAME}"
-                    url "${env.CW_MAVEN_BUCKET_URL}/${env.CI_COMMIT_BRANCH}"
+                    name "${System.getenv("CW_MAVEN_NAME")}"
+                    url "${System.getenv("CW_MAVEN_BUCKET_URL")}/${System.getenv("CI_COMMIT_BRANCH")}"
                     credentials(AwsCredentials) {
-                        accessKey "${env.CW_BUCKET_KEY}"
-                        secretKey "${env.CW_BUCKET_SECRET}"
+                        accessKey "${System.getenv("CW_BUCKET_KEY")}"
+                        secretKey "${System.getenv("CW_BUCKET_SECRET")}"
                     }
                 }
             }
@@ -23,11 +23,9 @@ gradle.projectsEvaluated {
 
         publish.doLast {
 
-            "s3index -key ${env.CW_BUCKET_KEY} -secret ${CW_BUCKET_SECRET} -region ${env.CW_BUCKET_REGION}" +
-                    " -url ${env.CW_MAVEN_STAGE_URL}/${env.CI_COMMIT_BRANCH} " +
-                    "-s3url ${env.CW_MAVEN_BUCKET_URL}/${env.CI_COMMIT_BRANCH}".execute()
-
-
+            "s3index -key ${System.getenv("CW_BUCKET_KEY")} -secret ${System.getenv("CW_BUCKET_SECRET")} -region ${System.getenv("CW_BUCKET_REGION")}" +
+                    " -url ${System.getenv("CW_MAVEN_STAGE_URL")}/${System.getenv("CI_COMMIT_BRANCH")} " +
+                    "-s3url ${System.getenv("CW_MAVEN_BUCKET_URL")}/${System.getenv("CI_COMMIT_BRANCH")}".execute()
         }
 
 
