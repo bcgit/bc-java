@@ -18,6 +18,18 @@ to conform the algorithms to the JCE framework.
 </p>
 <h2>2.0 Release History</h2>
 
+<a id="r1rv80v1"><h3>2.0.1 Version</h3></a>
+Release: 1.80.1<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, 7th May.
+<h3>2.0.2 Defects Fixed</h3>
+<ul>
+<li>CVE-2025-14813: An off-by-one error in G3413CTRBlockCipher for GOST 3412 CTR mode could result in incorrect counter values for messages exceeding 255 blocks. This has been fixed.</li>
+<li>CVE-2026-0636: LDAP injection was possible via unescaped DN values used in LDAP filters in LDAPStoreHelper. Filter encoding has been added to prevent injection attacks.</li>
+<li>CVE-2026-3505: The AEAD Encrypted Data Packet did not validate the chunk size parameter, allowing unbounded values. Validation has been added to restrict the chunk size to the range defined in RFC 9580.</li>
+<li>CVE-2026-5588: The CompositeVerifier in JcaContentVerifierProviderBuilder could incorrectly return true for an empty signature sequence. A check has been added to ensure at least one signature is verified.</li>
+<li>CVE-2026-5598: Error sampling in the FrodoKEM implementation used non-constant-time comparisons. The sampling has been replaced with a constant-time implementation.</li>
+</ul>
+
 <a id="r1rv80"><h3>2.1.1 Version</h3></a>
 Release: 1.80<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2025, 14th January.
