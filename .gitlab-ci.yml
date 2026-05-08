@@ -1,8 +1,8 @@
 stages:
+  - publish
   - check
   - build
   - test
-  - publish
   - sync
 
 check-code:
