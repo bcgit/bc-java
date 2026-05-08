@@ -31,14 +31,17 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -500,6 +503,25 @@ class RFC3280CertPathUtilities
         {
             byte[] issuerPrincipal = PrincipalUtils.getIssuerPrincipal(crl).getEncoded();
             certSelector.setSubject(issuerPrincipal);
+
+            // RFC 5280 sec. 5.2.1: when the CRL has an authorityKeyIdentifier
+            // with a keyIdentifier field, narrow the candidate signer set by
+            // SubjectKeyIdentifier. With multiple trust anchors sharing the
+            // issuer DN this prevents O(N^depth) fan-out across distinct
+            // candidates (github #2291).
+            byte[] crlAkiExt = crl.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+            if (crlAkiExt != null)
+            {
+                AuthorityKeyIdentifier akid = AuthorityKeyIdentifier.getInstance(
+                    ASN1OctetString.getInstance(crlAkiExt).getOctets());
+                byte[] keyId = akid.getKeyIdentifierOctets();
+                if (keyId != null)
+                {
+                    // X509CertSelector.setSubjectKeyIdentifier wants the DER
+                    // encoding of the OCTET STRING wrapping the keyId bytes.
+                    certSelector.setSubjectKeyIdentifier(new DEROctetString(keyId).getEncoded());
+                }
+            }
         }
         catch (IOException e)
         {
