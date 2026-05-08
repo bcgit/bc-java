@@ -1,3 +1,36 @@
 gradle.projectsEvaluated {
+    rootProject.subprojects {
 
+
+        publishing {
+            repositories {
+                maven {
+                    name "${env.CW_MAVEN_NAME}"
+                    url "${env.CW_MAVEN_BUCKET_URL}/${env.CI_COMMIT_BRANCH}"
+                    credentials(AwsCredentials) {
+                        accessKey "${env.CW_BUCKET_KEY}"
+                        secretKey "${env.CW_BUCKET_SECRET}"
+                    }
+                }
+            }
+        }
+
+
+        jar.doLast {
+            "signjar ${archiveFile.get()}".execute()
+        }
+
+
+        publish.doLast {
+
+            "s3index -key ${env.CW_BUCKET_KEY} -secret ${CW_BUCKET_SECRET} -region ${env.CW_BUCKET_REGION}" +
+                    " -url ${env.CW_MAVEN_STAGE_URL}/${env.CI_COMMIT_BRANCH} " +
+                    "-s3url ${env.CW_MAVEN_BUCKET_URL}/${env.CI_COMMIT_BRANCH}".execute()
+
+
+        }
+
+
+    }
 }
+
