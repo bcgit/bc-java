@@ -25,11 +25,17 @@ public class PasswordRecipientInformation
         BLOCKSIZES.put(CMSAlgorithm.AES128_CBC, Integers.valueOf(16));
         BLOCKSIZES.put(CMSAlgorithm.AES192_CBC, Integers.valueOf(16));
         BLOCKSIZES.put(CMSAlgorithm.AES256_CBC, Integers.valueOf(16));
+        BLOCKSIZES.put(CMSAlgorithm.CAMELLIA128_CBC, Integers.valueOf(16));
+        BLOCKSIZES.put(CMSAlgorithm.CAMELLIA192_CBC, Integers.valueOf(16));
+        BLOCKSIZES.put(CMSAlgorithm.CAMELLIA256_CBC, Integers.valueOf(16));
 
         KEYSIZES.put(CMSAlgorithm.DES_EDE3_CBC, Integers.valueOf(192));
         KEYSIZES.put(CMSAlgorithm.AES128_CBC, Integers.valueOf(128));
         KEYSIZES.put(CMSAlgorithm.AES192_CBC, Integers.valueOf(192));
         KEYSIZES.put(CMSAlgorithm.AES256_CBC, Integers.valueOf(256));
+        KEYSIZES.put(CMSAlgorithm.CAMELLIA128_CBC, Integers.valueOf(128));
+        KEYSIZES.put(CMSAlgorithm.CAMELLIA192_CBC, Integers.valueOf(192));
+        KEYSIZES.put(CMSAlgorithm.CAMELLIA256_CBC, Integers.valueOf(256));
     }
 
     private PasswordRecipientInfo info;
