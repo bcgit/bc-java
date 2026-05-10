@@ -480,6 +480,151 @@ public class AllTests
         Assert.assertEquals(new DEROctetString(Hex.decode("beef")), oaepParams.getPSourceAlgorithm().getParameters());
     }
 
+    /**
+     * github #721: BcRSAContentSignerBuilder and BcRSAContentVerifierProviderBuilder
+     * used to hardcode RSADigestSigner (PKCS#1 v1.5) regardless of the supplied
+     * signature algorithm OID, so passing an id-RSASSA-PSS sigAlgId produced
+     * PKCS#1 v1.5 bytes that no PSS verifier accepted. Exercise both directions
+     * and a JCE/Bc cross-check round-trip.
+     */
+    public void testRsaPssBcRoundTripIssue721()
+        throws Exception
+    {
+        if (Security.getProvider(BC) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BC);
+        kpg.initialize(2048);
+        java.security.KeyPair kp = kpg.generateKeyPair();
+
+        org.bouncycastle.crypto.params.AsymmetricKeyParameter privBc =
+            org.bouncycastle.crypto.util.PrivateKeyFactory.createKey(kp.getPrivate().getEncoded());
+        org.bouncycastle.asn1.x509.SubjectPublicKeyInfo spki =
+            org.bouncycastle.asn1.x509.SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
+        org.bouncycastle.crypto.params.AsymmetricKeyParameter pubBc =
+            org.bouncycastle.crypto.util.PublicKeyFactory.createKey(spki);
+
+        // SHA-256 / MGF1+SHA-256 / saltLen=32 / trailerField=1
+        AlgorithmIdentifier sha256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
+        AlgorithmIdentifier sigAlgId = new AlgorithmIdentifier(
+            PKCSObjectIdentifiers.id_RSASSA_PSS,
+            new RSASSAPSSparams(
+                sha256AlgId,
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256AlgId),
+                new org.bouncycastle.asn1.ASN1Integer(32),
+                RSASSAPSSparams.DEFAULT_TRAILER_FIELD));
+
+        byte[] msg = "the quick brown fox jumped over the lazy dog".getBytes();
+
+        // (1) Sign + verify using the lightweight Bc* path on both sides.
+        org.bouncycastle.operator.bc.BcRSAContentSignerBuilder bcSignerBuilder =
+            new org.bouncycastle.operator.bc.BcRSAContentSignerBuilder(sigAlgId, sha256AlgId);
+        org.bouncycastle.operator.ContentSigner bcSigner = bcSignerBuilder.build(privBc);
+        bcSigner.getOutputStream().write(msg);
+        bcSigner.getOutputStream().close();
+        byte[] bcSig = bcSigner.getSignature();
+
+        org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder bcVerifierBuilder =
+            new org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder(
+                new org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder());
+        org.bouncycastle.operator.ContentVerifier bcVerifier =
+            bcVerifierBuilder.build(pubBc).get(sigAlgId);
+        bcVerifier.getOutputStream().write(msg);
+        bcVerifier.getOutputStream().close();
+        assertTrue("Bc-signed RSA-PSS sig did not verify under Bc verifier",
+            bcVerifier.verify(bcSig));
+
+        // (2) Cross-check: a Bc-produced PSS sig should also validate under
+        //     the JCE verifier.
+        org.bouncycastle.operator.ContentVerifier jcaVerifier =
+            new org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder()
+                .setProvider(BC).build(spki).get(sigAlgId);
+        jcaVerifier.getOutputStream().write(msg);
+        jcaVerifier.getOutputStream().close();
+        assertTrue("Bc-signed RSA-PSS sig did not verify under JCE verifier",
+            jcaVerifier.verify(bcSig));
+
+        // (3) Reverse cross-check: a JCE-produced PSS sig should validate
+        //     under the Bc verifier.
+        java.security.spec.PSSParameterSpec pssSpec = new java.security.spec.PSSParameterSpec(
+            "SHA-256", "MGF1", new java.security.spec.MGF1ParameterSpec("SHA-256"), 32, 1);
+        org.bouncycastle.operator.ContentSigner jcaSigner =
+            new org.bouncycastle.operator.jcajce.JcaContentSignerBuilder("RSAPSS", pssSpec)
+                .setProvider(BC).build(kp.getPrivate());
+        jcaSigner.getOutputStream().write(msg);
+        jcaSigner.getOutputStream().close();
+        byte[] jcaSig = jcaSigner.getSignature();
+
+        org.bouncycastle.operator.ContentVerifier bcVerifier2 =
+            bcVerifierBuilder.build(pubBc).get(jcaSigner.getAlgorithmIdentifier());
+        bcVerifier2.getOutputStream().write(msg);
+        bcVerifier2.getOutputStream().close();
+        assertTrue("JCE-signed RSA-PSS sig did not verify under Bc verifier",
+            bcVerifier2.verify(jcaSig));
+    }
+
+    /**
+     * SHAKE256 used as both the content hash and the mask generation function
+     * inside an id-RSASSA-PSS RSASSA-PSS-params encoding (RFC 8702: SHAKE OID
+     * appears directly as the MGF AlgorithmIdentifier rather than wrapped in
+     * id-mgf1). SHAKEDigest implements Xof, and PSSSigner's maskGenerator
+     * branches on {@code mgfDigest instanceof Xof} to use the native
+     * variable-length output instead of MGF1.
+     */
+    public void testRsaPssBcShake256Issue721()
+        throws Exception
+    {
+        if (Security.getProvider(BC) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BC);
+        kpg.initialize(2048);
+        java.security.KeyPair kp = kpg.generateKeyPair();
+
+        org.bouncycastle.crypto.params.AsymmetricKeyParameter privBc =
+            org.bouncycastle.crypto.util.PrivateKeyFactory.createKey(kp.getPrivate().getEncoded());
+        org.bouncycastle.asn1.x509.SubjectPublicKeyInfo spki =
+            org.bouncycastle.asn1.x509.SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
+        org.bouncycastle.crypto.params.AsymmetricKeyParameter pubBc =
+            org.bouncycastle.crypto.util.PublicKeyFactory.createKey(spki);
+
+        // SHAKE256 hash + SHAKE256 MGF + 64-byte salt + trailerField=1.
+        // Per RFC 8702 the MGF AlgorithmIdentifier is the SHAKE OID
+        // directly (not id-mgf1 with SHAKE inside); the SHAKE OIDs are
+        // parameterless (no DERNull).
+        AlgorithmIdentifier shake256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+        AlgorithmIdentifier sigAlgId = new AlgorithmIdentifier(
+            PKCSObjectIdentifiers.id_RSASSA_PSS,
+            new RSASSAPSSparams(
+                shake256AlgId,
+                shake256AlgId,
+                new org.bouncycastle.asn1.ASN1Integer(64),
+                RSASSAPSSparams.DEFAULT_TRAILER_FIELD));
+
+        byte[] msg = "the quick brown fox jumped over the lazy dog".getBytes();
+
+        org.bouncycastle.operator.bc.BcRSAContentSignerBuilder bcSignerBuilder =
+            new org.bouncycastle.operator.bc.BcRSAContentSignerBuilder(sigAlgId, shake256AlgId);
+        org.bouncycastle.operator.ContentSigner bcSigner = bcSignerBuilder.build(privBc);
+        bcSigner.getOutputStream().write(msg);
+        bcSigner.getOutputStream().close();
+        byte[] bcSig = bcSigner.getSignature();
+
+        org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder bcVerifierBuilder =
+            new org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder(
+                new org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder());
+        org.bouncycastle.operator.ContentVerifier bcVerifier =
+            bcVerifierBuilder.build(pubBc).get(sigAlgId);
+        bcVerifier.getOutputStream().write(msg);
+        bcVerifier.getOutputStream().close();
+        assertTrue("Bc-signed RSA-PSS+SHAKE256 sig did not verify under Bc verifier",
+            bcVerifier.verify(bcSig));
+    }
+
     public void testDefaultKemEncapsulationLengthProvider()
     {
         KemEncapsulationLengthProvider lengthProvider = new DefaultKemEncapsulationLengthProvider();
