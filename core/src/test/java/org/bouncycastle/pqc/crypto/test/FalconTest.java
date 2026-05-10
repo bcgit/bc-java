@@ -179,4 +179,50 @@ public class FalconTest
             }
         }
     }
+
+    /**
+     * github #2297: FalconPrivateKeyParameters.getPublicKeyParameters()
+     * should return a FalconPublicKeyParameters whose encoded form matches
+     * the keypair's original public key, and a signature produced under
+     * the private key must verify under the recovered public key.
+     */
+    public void testPublicKeyRecoveryFromPrivateKey()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] msg = Strings.toByteArray("recover me");
+
+        FalconParameters[] parameters = new FalconParameters[]{
+            FalconParameters.falcon_512,
+            FalconParameters.falcon_1024
+        };
+
+        for (int p = 0; p < parameters.length; p++)
+        {
+            FalconKeyPairGenerator keyGen = new FalconKeyPairGenerator();
+            keyGen.init(new FalconKeyGenerationParameters(random, parameters[p]));
+            AsymmetricCipherKeyPair kp = keyGen.generateKeyPair();
+
+            FalconPrivateKeyParameters priv = (FalconPrivateKeyParameters)kp.getPrivate();
+            FalconPublicKeyParameters pubFromKpg = (FalconPublicKeyParameters)kp.getPublic();
+
+            FalconPublicKeyParameters recovered = priv.getPublicKeyParameters();
+
+            assertEquals("parameter set mismatch on recovered public key",
+                priv.getParameters(), recovered.getParameters());
+            assertTrue("recovered public-key bytes don't match keypair output for "
+                + parameters[p].getName(),
+                org.bouncycastle.util.Arrays.areEqual(pubFromKpg.getH(), recovered.getH()));
+
+            FalconSigner signer = new FalconSigner();
+            signer.init(true, new ParametersWithRandom(priv, random));
+            byte[] signature = signer.generateSignature(msg);
+
+            FalconSigner verifier = new FalconSigner();
+            verifier.init(false, recovered);
+            assertTrue("signature did not verify under recovered public key for "
+                + parameters[p].getName(),
+                verifier.verifySignature(msg, signature));
+        }
+    }
 }
