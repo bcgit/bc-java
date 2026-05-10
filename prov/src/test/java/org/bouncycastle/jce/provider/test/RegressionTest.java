@@ -27,6 +27,7 @@ public class RegressionTest
         new CertTest(),
         new CertUniqueIDTest(),
         new ChaCha20Poly1305Test(),
+        new XChaCha20Poly1305Test(),
         new CipherStreamTest(),
         new CipherStreamTest2(),
         new CMacTest(),

@@ -110,7 +110,7 @@ public final class BouncyCastleProvider extends Provider
             service("IDEA", 128), service("LEA", 256), service("Noekeon", 128), service("RC2", 128), service("RC5", 128), service("RC6", 256),
             service("Rijndael", 256), service("Salsa20", 128), service("SEED", 128), service("Serpent", 256), service("Shacal2", 128),
             service("Skipjack", 80), service("SM4", 128), service("TEA", 128), service("Twofish", 256), service("Threefish", 128),
-            service("VMPC", 128), service("VMPCKSA3", 128), service("XTEA", 128), service("XSalsa20", 128), service("OpenSSLPBKDF", 128),
+            service("VMPC", 128), service("VMPCKSA3", 128), service("XTEA", 128), service("XSalsa20", 128), service("XChaCha", 128), service("OpenSSLPBKDF", 128),
             service("DSTU7624", 256), service("GOST3412_2015", 256), service("Zuc", 128)
         };
 
