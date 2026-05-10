@@ -53,6 +53,7 @@ import org.bouncycastle.jcajce.provider.symmetric.TEA;
 import org.bouncycastle.jcajce.provider.symmetric.Twofish;
 import org.bouncycastle.jcajce.provider.symmetric.VMPC;
 import org.bouncycastle.jcajce.provider.symmetric.VMPCKSA3;
+import org.bouncycastle.jcajce.provider.symmetric.XChaCha;
 import org.bouncycastle.jcajce.provider.symmetric.XSalsa20;
 import org.bouncycastle.jcajce.provider.symmetric.XTEA;
 
@@ -86,6 +87,7 @@ public class PrivateConstructorTest
         evilNoConstructionTest(ChaCha.class);
         evilNoConstructionTest(Salsa20.class);
         evilNoConstructionTest(XSalsa20.class);
+        evilNoConstructionTest(XChaCha.class);
         evilNoConstructionTest(SEED.class);
         evilNoConstructionTest(Serpent.class);
         evilNoConstructionTest(Skipjack.class);
