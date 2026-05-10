@@ -753,6 +753,47 @@ public class BcEnvelopedDataTest
         passwordUTF8Test(CMSAlgorithm.DES_EDE3_CBC);
     }
 
+    public void testPasswordCamellia256()
+        throws Exception
+    {
+        passwordTest(CMSAlgorithm.CAMELLIA256_CBC);
+        passwordUTF8Test(CMSAlgorithm.CAMELLIA256_CBC);
+    }
+
+    /**
+     * github #491: id-aes-GCM and id-aes-WRAP cannot be PWRI-KEK inner KEKs
+     * per RFC 3211 sec. 2.3 — those modes are not CBC. Verify the
+     * BcPasswordRecipientInfoGenerator constructor rejects both with a
+     * message that points the caller at the spec, not the previous
+     * "cannot find key size for algorithm: ..." message.
+     */
+    public void testPasswordRejectsNonCbcKeks()
+    {
+        ASN1ObjectIdentifier[] invalidKeks = {
+            CMSAlgorithm.AES128_GCM, CMSAlgorithm.AES256_GCM,
+            CMSAlgorithm.AES128_WRAP, CMSAlgorithm.AES256_WRAP,
+            CMSAlgorithm.AES128_WRAP_PAD, CMSAlgorithm.AES256_WRAP_PAD,
+        };
+
+        for (int i = 0; i != invalidKeks.length; i++)
+        {
+            try
+            {
+                new BcPasswordRecipientInfoGenerator(invalidKeks[i], "password".toCharArray());
+                fail("BcPasswordRecipientInfoGenerator accepted non-CBC kekAlgorithm " + invalidKeks[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                if (e.getMessage() == null
+                    || !e.getMessage().contains("RFC 3211")
+                    || !e.getMessage().contains("CBC"))
+                {
+                    fail("expected an RFC 3211 / CBC pointer in the rejection message, got: " + e.getMessage());
+                }
+            }
+        }
+    }
+
     public void testRFC4134ex5_1()
         throws Exception
     {
