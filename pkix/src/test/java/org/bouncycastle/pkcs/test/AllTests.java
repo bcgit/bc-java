@@ -22,6 +22,7 @@ public class AllTests
         suite.addTestSuite(PKCS8Test.class);
         suite.addTestSuite(PBETest.class);
         suite.addTestSuite(PKCS12UtilTest.class);
+        suite.addTestSuite(PKCS12PfxPduSecretKeyTest.class);
 
         return new BCTestSetup(suite);
     }

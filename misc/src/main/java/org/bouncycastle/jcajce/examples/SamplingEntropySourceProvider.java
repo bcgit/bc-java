@@ -147,7 +147,7 @@ public class SamplingEntropySourceProvider
     public static void main(String[] ags)
         throws Exception
     {
-        System.setProperty("org.bouncycastle.drbg.entropysource", "org.bouncycastle.jcajce.examples.SamplingEntropySourceProvider");
+        System.setProperty(org.bouncycastle.util.Properties.DRBG_ENTROPY_SOURCE, "org.bouncycastle.jcajce.examples.SamplingEntropySourceProvider");
 
         Provider prov = new BouncyCastleProvider();
 

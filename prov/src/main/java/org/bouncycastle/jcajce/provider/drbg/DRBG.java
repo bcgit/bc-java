@@ -57,7 +57,7 @@ public class DRBG
     private static int get256BitsEffectiveEntropySize()
     {
         // by default we assume .9 bits per real bit
-        int effectiveBits = Properties.asInteger("org.bouncycastle.drbg.effective_256bits_entropy", 282);
+        int effectiveBits = Properties.asInteger(Properties.DRBG_EFFECTIVE_256BITS_ENTROPY, 282);
 
         return ((effectiveBits + 7) / 8) * 8;
     }
@@ -175,11 +175,11 @@ public class DRBG
 
     private static SecureRandom createBaseRandom(boolean isPredictionResistant)
     {
-        if (Properties.getPropertyValue("org.bouncycastle.drbg.entropysource") != null)
+        if (Properties.getPropertyValue(Properties.DRBG_ENTROPY_SOURCE) != null)
         {
             return createBaseRandom(isPredictionResistant, 128, createEntropySource());
         }
-        else if (Properties.isOverrideSet("org.bouncycastle.drbg.entropy_thread"))
+        else if (Properties.isOverrideSet(Properties.DRBG_ENTROPY_THREAD))
         {
             initEntropyThread();
 
@@ -296,7 +296,7 @@ public class DRBG
 
     private static EntropySourceProvider createEntropySource()
     {
-        final String sourceClass = Properties.getPropertyValue("org.bouncycastle.drbg.entropysource");
+        final String sourceClass = Properties.getPropertyValue(Properties.DRBG_ENTROPY_SOURCE);
 
         return AccessController.doPrivileged(new PrivilegedAction<EntropySourceProvider>()
         {

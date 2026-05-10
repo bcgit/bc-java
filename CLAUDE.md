@@ -122,6 +122,8 @@ Anything under `core/src/main/java/org/bouncycastle/asn1/x509/` is a wire-format
 
 When the RFC contains a "MUST" / "MUST NOT" that the existing code doesn't enforce, that's the actionable spec — cite the section in the commit message and (where helpful) in javadoc. When the RFC is silent, prefer staying compatible with what other major libraries (OpenSSL, Java's CertificateFactory, GnuTLS) accept rather than tightening unilaterally. Same convention applies to neighbouring ASN.1 PKI packages (`asn1/pkcs`, `asn1/cms`, `asn1/cmp`, `asn1/ocsp`) — cite RFC 7292 / 5652 / 4210 / 6960 etc.
 
+For X.509 / WebPKI work specifically, the **CAB Forum** Baseline Requirements (<https://cabforum.org/>) layer additional constraints on top of RFC 5280 — key sizes, signature algorithm sets, extension presence/criticality, profile-specific name encodings, etc. Where a CAB Forum BR or guideline narrows what RFC 5280 allows and the change makes sense for general-purpose BC users (not just publicly-trusted CAs), follow the BR rather than the looser RFC. Cite the BR section alongside the RFC in the commit message / javadoc, and call out in the PR when a change is BR-driven so reviewers know it's deliberately stricter than the RFC.
+
 ### Exception messages are part of the test contract
 
 Many tests assert on exact exception message text (e.g. `isTrue(e.getMessage().equals("..."))` or `getCause().getMessage()` checks). Changing the wording of a thrown exception — even something as small as adding a colon, rewording for clarity, or wrapping with `Exceptions.illegalArgumentException(...)` — will silently break tests in another module. Before modifying any exception message, grep the whole tree for the existing string and update every matching assertion in lockstep.
@@ -129,6 +131,23 @@ Many tests assert on exact exception message text (e.g. `isTrue(e.getMessage().e
 ### System / security property constants
 
 Any system or security property that controls BC behaviour belongs in `core/src/main/java/org/bouncycastle/util/Properties.java` as a `public static final String`, e.g. `Properties.PKCS12_MAX_IT_COUNT`, `Properties.PKCS12_IGNORE_USELESS_PASSWD`, `Properties.EMULATE_ORACLE`. Callers should reference the constant rather than inlining the literal `"org.bouncycastle.…"` name — both in production code and in tests that flip the property via `System.setProperty`. New properties should be added to `Properties` with the same naming pattern (`org.bouncycastle.<area>.<flag>`).
+
+### Non-standard format interop
+
+When supporting a non-standard wire encoding for interop with another implementation (e.g. SunJCE-shaped PKCS#12 secret keys per `Properties.PKCS12_ALLOW_SUN_SECRET_KEYS`, or vendor-specific TLS quirks), gate the new code path behind a `Properties.*` boolean and default it OFF. Keep the writer producing the standards-compliant form unconditionally — interop is a one-way concession on the read side, not a license to round-trip non-standard output. Cite the deviation in the property's javadoc (what's read, why it's gated, what BC writes instead) and reference the issue number in the release note so future maintainers can find the rationale.
+
+### PKCS#12 SPI pair
+
+The PKCS#12 keystore comes in two SPI flavours that share the bag-handling pipeline: `PKCS12KeyStoreSpi` (legacy MAC) and `PKCS12PBMAC1KeyStoreSpi` (RFC 9579 PBMAC1). When changing entry-type acceptance, bag dispatch in `engineLoad`, the cert/key write passes in `engineStore`, or the `getUsedCertificateSet` / `cryptData` helpers, the change usually needs mirroring in the other SPI. Shared static helpers — algorithm-OID lookup, key-size table, content/iteration-count helpers — live in the package-private `org.bouncycastle.jcajce.provider.keystore.pkcs12.PKCS12Util` so both SPIs can call them without one having to fully-qualify the other; new helpers should land there too rather than as static methods on either SPI.
+
+### Two locations for the same OID-table class
+
+A handful of less-common arc OID classes are duplicated in the tree:
+
+- `core/src/main/java/org/bouncycastle/internal/asn1/<arc>/<X>ObjectIdentifiers.java` — the **`internal.asn1`** copy, bundled into `core` (and so into `prov` via the core-into-prov srcDirs trick).
+- `util/src/main/java/org/bouncycastle/asn1/<arc>/<X>ObjectIdentifiers.java` — the **public** copy, the API surface for downstream consumers.
+
+Affected arcs include `kisa` (SEED), `nsri` (ARIA), `ntt` (Camellia), `oiw`, `gnu`, `iana`, `eac`, `cms`, `bsi`, `cryptlib`, `edec`, `iso`, `isara`, `isismtt`, `microsoft`, `misc`, `rosstandart`, etc. When importing from inside `core` or `prov` use the `internal.asn1.<arc>.<X>ObjectIdentifiers` form — `util` isn't on those modules' compile classpath, and the obvious `org.bouncycastle.asn1.<arc>` import will fail with a misleading "package does not exist". From `pkix` upward (or any module that already depends on `util`), the public form is fine.
 
 ### Release notes
 

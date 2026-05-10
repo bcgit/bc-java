@@ -73,6 +73,7 @@ public class RegressionTest
         new PKCS10CertRequestTest(),
         new PKCS12StorePBETest(),
         new PKCS12StoreTest(),
+        new PKCS12SecretKeyStoreTest(),
         new PKIXNameConstraintsTest(),
         new PKIXPolicyMappingTest(),
         new PKIXTest(),
