@@ -56,6 +56,18 @@ public class Properties
     public static final String PKCS12_ALLOW_SUN_SECRET_KEYS = "org.bouncycastle.pkcs12.allow_sun_secret_keys";
 
     /**
+     * If set to "true", RSA PKCS#1 v1.5 signature verification rejects DigestInfo
+     * encodings whose AlgorithmIdentifier omits the {@code NULL} parameters octets
+     * required by RFC 8017 sec. 9.2 / Appendix A.2.4. By default (or "false") the
+     * verifier falls back to accepting that two-byte-shorter encoding for compatibility
+     * with implementations that have historically produced it; setting this property
+     * to "true" disables the fallback so only strictly RFC-compliant signatures verify
+     * (github #2273). Affects both the BC JCE provider's
+     * {@code DigestSignatureSpi} and the lightweight {@code RSADigestSigner}.
+     */
+    public static final String PKCS1_STRICT_DIGESTINFO = "org.bouncycastle.pkcs1.strict_digestinfo";
+
+    /**
      * Effective bits-of-entropy assumed per real bit when the BC DRBG provider seeds for
      * a 256-bit security level — used to compute the byte-oriented samples requested from
      * the underlying entropy source. Defaults to 282 bits (about 0.9 effective bits per
