@@ -33,6 +33,8 @@ This project can now be built and tested with JDK25.
 If the build script detects BC_JDK8, BC_JDK11, BC_JDK17, BC_JDK21 it will add to the usual test task a dependency on test tasks 
 that specifically use the JVMs addressed by those environmental variables. The script relies on JAVA_HOME for picking up Java 25 if it is use.
 
+To run the tests of the project as part of the build test data is needed. Our test data can be found at the [bc-test-data](https://github.com/bcgit/bc-test-data) repository.
+
 We support testing on specific JVMs as it is the only way to be certain the library is compatible.
 
 ## Environmental Variables
