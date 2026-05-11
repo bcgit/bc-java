@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.SignedData;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -79,7 +80,13 @@ public class CertificateFactory
         if (seq.size() > 1
                 && seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)
         {
-            if (seq.getObjectAt(0).equals(PKCSObjectIdentifiers.signedData))
+            // RFC 2315 PKCS#7 SignedData (1.2.840.113549.1.7.2) and GM/T 0010-2012
+            // SM2 SignedData (1.2.156.10197.6.1.4.2.2) share the same SignedData
+            // ASN.1 structure, so the certificate-extraction path is the same for
+            // both ContentType OIDs (github #1355).
+            ASN1ObjectIdentifier contentType = (ASN1ObjectIdentifier)seq.getObjectAt(0);
+            if (contentType.equals(PKCSObjectIdentifiers.signedData)
+                || contentType.equals(GMObjectIdentifiers.sm2_pkcs7_signedData))
             {
                 sData = SignedData.getInstance(ASN1Sequence.getInstance(
                     (ASN1TaggedObject)seq.getObjectAt(1), true)).getCertificates();
@@ -145,7 +152,12 @@ public class CertificateFactory
         if (seq.size() > 1
                 && seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)
         {
-            if (seq.getObjectAt(0).equals(PKCSObjectIdentifiers.signedData))
+            // PKCS#7 SignedData (1.2.840.113549.1.7.2) and GM/T 0010-2012 SM2
+            // SignedData (1.2.156.10197.6.1.4.2.2) share the same SignedData
+            // structure, so the CRL-extraction path applies to both (github #1355).
+            ASN1ObjectIdentifier contentType = (ASN1ObjectIdentifier)seq.getObjectAt(0);
+            if (contentType.equals(PKCSObjectIdentifiers.signedData)
+                || contentType.equals(GMObjectIdentifiers.sm2_pkcs7_signedData))
             {
                 sCrlData = SignedData.getInstance(ASN1Sequence.getInstance(
                     (ASN1TaggedObject)seq.getObjectAt(1), true)).getCRLs();
