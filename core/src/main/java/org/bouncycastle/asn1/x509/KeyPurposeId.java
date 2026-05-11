@@ -129,6 +129,34 @@ public class KeyPurposeId
      */
     public static final KeyPurposeId id_kp_cmKGA = new KeyPurposeId(id_kp.branch("32"));
 
+    /**
+     * RFC 9809 sec. 3 - signing general-purpose configuration files.
+     * <p>
+     * id-kp-configSigning OBJECT IDENTIFIER ::= { id-kp 41 }
+     */
+    public static final KeyPurposeId id_kp_configSigning = new KeyPurposeId(id_kp.branch("41"));
+
+    /**
+     * RFC 9809 sec. 3 - signing trust anchor configuration files.
+     * <p>
+     * id-kp-trustAnchorConfigSigning OBJECT IDENTIFIER ::= { id-kp 42 }
+     */
+    public static final KeyPurposeId id_kp_trustAnchorConfigSigning = new KeyPurposeId(id_kp.branch("42"));
+
+    /**
+     * RFC 9809 sec. 3 - signing software or firmware update packages.
+     * <p>
+     * id-kp-updatePackageSigning OBJECT IDENTIFIER ::= { id-kp 43 }
+     */
+    public static final KeyPurposeId id_kp_updatePackageSigning = new KeyPurposeId(id_kp.branch("43"));
+
+    /**
+     * RFC 9809 sec. 3 - authenticating communication peers for safety-critical communication.
+     * <p>
+     * id-kp-safetyCommunication OBJECT IDENTIFIER ::= { id-kp 44 }
+     */
+    public static final KeyPurposeId id_kp_safetyCommunication = new KeyPurposeId(id_kp.branch("44"));
+
 
 
     //
