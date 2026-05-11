@@ -184,6 +184,16 @@ public class RFC4519Style
         else if (oid.equals(c) || oid.equals(serialNumber) || oid.equals(dnQualifier)
             || oid.equals(telephoneNumber))
         {
+            if (oid.equals(c) && value.length() != 2)
+            {
+                // RFC 5280 sec. 4.1.2.4 / X.520: countryName is
+                // PrintableString (SIZE (2)). CAB Forum Baseline
+                // Requirements 7.1.4.2.1 narrows this to a valid ISO 3166-1
+                // alpha-2 code (github #2011).
+                throw new IllegalArgumentException("country code attribute "
+                    + oid.getId() + " must be exactly 2 characters per ISO 3166-1 / X.520, got "
+                    + value.length() + ": '" + value + "'");
+            }
             return new DERPrintableString(value);
         }
 

@@ -22,7 +22,9 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.X500NameStyle;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.X509DefaultEntryConverter;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.util.Arrays;
@@ -295,6 +297,8 @@ public class X509NameTest
         }
 
         compositeTest();
+
+        countryCodeLengthTest();
 
         ByteArrayOutputStream bOut;
         ASN1OutputStream aOut;
@@ -606,6 +610,64 @@ public class X509NameTest
         }
 
         return true;
+    }
+
+    private void countryCodeLengthTest()
+        throws IOException
+    {
+        // Positive cases: 2-character codes are accepted.
+        new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.C, "US").build();
+        new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.JURISDICTION_C, "US").build();
+        new X500NameBuilder(RFC4519Style.INSTANCE).addRDN(RFC4519Style.c, "US").build();
+        new X500Name("C=AU");
+
+        X500NameStyle[] styles = new X500NameStyle[]
+            { BCStyle.INSTANCE, BCStyle.INSTANCE, RFC4519Style.INSTANCE };
+        ASN1ObjectIdentifier[] countryOids = new ASN1ObjectIdentifier[]
+            { BCStyle.C, BCStyle.JURISDICTION_C, RFC4519Style.c };
+        String[] badValues = new String[] { "USA", "U", "" };
+
+        for (int i = 0; i != countryOids.length; ++i)
+        {
+            for (int j = 0; j != badValues.length; ++j)
+            {
+                try
+                {
+                    new X500NameBuilder(styles[i])
+                        .addRDN(countryOids[i], badValues[j]).build();
+                    fail("country code attribute " + countryOids[i].getId()
+                        + " accepted '" + badValues[j] + "'");
+                }
+                catch (IllegalArgumentException expected)
+                {
+                    // expected
+                }
+            }
+        }
+
+        try
+        {
+            new X500Name("C=USA");
+            fail("X500Name(\"C=USA\") accepted 3-character country code");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        // Parsing existing DER with a non-conforming country code is
+        // deliberately still permitted (leniency boundary): we don't want
+        // to block reading already-issued certificates in the wild.
+        ASN1EncodableVector atav = new ASN1EncodableVector();
+        atav.add(BCStyle.C);
+        atav.add(new org.bouncycastle.asn1.DERPrintableString("USA"));
+        ASN1EncodableVector rdn = new ASN1EncodableVector();
+        rdn.add(new DERSet(new DERSequence(atav)));
+        X500Name parsed = X500Name.getInstance(new DERSequence(rdn));
+        if (!"USA".equals(parsed.getRDNs(BCStyle.C)[0].getFirst().getValue().toString()))
+        {
+            fail("lenient parse of 3-character C failed: " + parsed);
+        }
     }
 
     private void compositeTest()
