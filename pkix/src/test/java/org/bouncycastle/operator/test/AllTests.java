@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -47,6 +48,7 @@ import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.AlgorithmNameFinder;
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
 import org.bouncycastle.operator.DefaultSignatureNameFinder;
 import org.bouncycastle.operator.KemEncapsulationLengthProvider;
@@ -715,6 +717,50 @@ public class AllTests
             HQCKEMExtractor ext = new HQCKEMExtractor((HQCPrivateKeyParameters)kp.getPrivate());
 
             assertEquals(ext.getEncapsulationLength(), lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(hqcOids[i])));
+        }
+    }
+
+    public void testCompositeMLDsaDigestLookupIssue1767()
+    {
+        DefaultDigestAlgorithmIdentifierFinder f = new DefaultDigestAlgorithmIdentifierFinder();
+
+        // Unknown sig OID must return null, not throw NPE("digest OID is null").
+        assertNull(f.find(new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.3.4.5.6.7.8.9"))));
+
+        // BC-namespaced composite OIDs aren't mapped: also null, not NPE.
+        assertNull(f.find(new AlgorithmIdentifier(BCObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256)));
+
+        // IANA composite OIDs must return the per-scheme prehash that matches what
+        // the composite SignatureSpi feeds the inner signers (the OID name suffix).
+        Object[][] expected = new Object[][]
+        {
+            { IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256,        NISTObjectIdentifiers.id_sha256 },
+            { IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256,     NISTObjectIdentifiers.id_sha256 },
+            { IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512,            NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256,         NISTObjectIdentifiers.id_sha256 },
+            { IANAObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512,        NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512,     NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA512,        NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA512,     NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512,         NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA512,         NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512, NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA65_Ed25519_SHA512,            NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512,         NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512, NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA87_Ed448_SHAKE256,            NISTObjectIdentifiers.id_shake256 },
+            { IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512,        NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512,        NISTObjectIdentifiers.id_sha512 },
+            { IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512,         NISTObjectIdentifiers.id_sha512 },
+        };
+        for (int i = 0; i != expected.length; ++i)
+        {
+            ASN1ObjectIdentifier sigOid = (ASN1ObjectIdentifier)expected[i][0];
+            ASN1ObjectIdentifier expDig = (ASN1ObjectIdentifier)expected[i][1];
+            AlgorithmIdentifier got = f.find(new AlgorithmIdentifier(sigOid));
+            assertNotNull("missing mapping for " + sigOid.getId(), got);
+            assertEquals("wrong digest for " + sigOid.getId(),
+                expDig, got.getAlgorithm());
         }
     }
 }
