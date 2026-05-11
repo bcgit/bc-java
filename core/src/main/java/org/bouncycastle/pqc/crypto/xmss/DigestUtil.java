@@ -21,11 +21,13 @@ class DigestUtil
         nameToOid.put("SHA-512", NISTObjectIdentifiers.id_sha512);
         nameToOid.put("SHAKE128", NISTObjectIdentifiers.id_shake128);
         nameToOid.put("SHAKE256", NISTObjectIdentifiers.id_shake256);
+        nameToOid.put("SHAKE256-LEN", NISTObjectIdentifiers.id_shake256_len);
 
         oidToName.put(NISTObjectIdentifiers.id_sha256, "SHA-256");
         oidToName.put(NISTObjectIdentifiers.id_sha512, "SHA-512");
         oidToName.put(NISTObjectIdentifiers.id_shake128, "SHAKE128");
         oidToName.put(NISTObjectIdentifiers.id_shake256, "SHAKE256");
+        oidToName.put(NISTObjectIdentifiers.id_shake256_len, "SHAKE256-LEN");
     }
 
     static Digest getDigest(ASN1ObjectIdentifier oid)
@@ -43,6 +45,10 @@ class DigestUtil
             return new SHAKEDigest(128);
         }
         if (oid.equals(NISTObjectIdentifiers.id_shake256))
+        {
+            return new SHAKEDigest(256);
+        }
+        if (oid.equals(NISTObjectIdentifiers.id_shake256_len))
         {
             return new SHAKEDigest(256);
         }

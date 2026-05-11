@@ -485,4 +485,130 @@ public class XMSSTest
         {
         }
     }
+
+    public void testSignVerifySP800208_SHA256_192()
+        throws Exception
+    {
+        XMSSParameters params = XMSSParameters.lookupByOID(0x0000000d);
+        assertNotNull(params);
+        assertEquals(24, params.getTreeDigestSize());
+        assertEquals(10, params.getHeight());
+
+        XMSS xmss = new XMSS(params, new SecureRandom());
+        xmss.generateKeys();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        byte[] publicKey = xmss.exportPublicKey().getEncoded();
+        byte[] signature = xmss.sign(msg);
+
+        assertEquals(true, xmss.verifySignature(msg, signature, publicKey));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, xmss.verifySignature(msg, signature, publicKey));
+    }
+
+    public void testSignVerifySP800208_SHAKE256_256()
+        throws Exception
+    {
+        XMSSParameters params = XMSSParameters.lookupByOID(0x00000010);
+        assertNotNull(params);
+        assertEquals(32, params.getTreeDigestSize());
+        assertEquals(10, params.getHeight());
+
+        XMSS xmss = new XMSS(params, new SecureRandom());
+        xmss.generateKeys();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        byte[] publicKey = xmss.exportPublicKey().getEncoded();
+        byte[] signature = xmss.sign(msg);
+
+        assertEquals(true, xmss.verifySignature(msg, signature, publicKey));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, xmss.verifySignature(msg, signature, publicKey));
+    }
+
+    public void testSignVerifySP800208_SHAKE256_192()
+        throws Exception
+    {
+        XMSSParameters params = XMSSParameters.lookupByOID(0x00000013);
+        assertNotNull(params);
+        assertEquals(24, params.getTreeDigestSize());
+        assertEquals(10, params.getHeight());
+
+        XMSS xmss = new XMSS(params, new SecureRandom());
+        xmss.generateKeys();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        byte[] publicKey = xmss.exportPublicKey().getEncoded();
+        byte[] signature = xmss.sign(msg);
+
+        assertEquals(true, xmss.verifySignature(msg, signature, publicKey));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, xmss.verifySignature(msg, signature, publicKey));
+    }
+
+    public void testKeyImportSP800208_SHA256_192()
+        throws Exception
+    {
+        XMSSParameters params = XMSSParameters.lookupByOID(0x0000000d);
+        XMSS xmss = new XMSS(params, new SecureRandom());
+        xmss.generateKeys();
+
+        byte[] exportedPrivateKey = xmss.exportPrivateKey().getEncoded();
+        byte[] exportedPublicKey = xmss.exportPublicKey().getEncoded();
+
+        byte[] msg = new byte[1024];
+        byte[] sig1 = xmss.sign(msg);
+
+        xmss.importState(exportedPrivateKey, exportedPublicKey);
+        byte[] sig2 = xmss.sign(msg);
+
+        assertEquals(true, Arrays.areEqual(sig1, sig2));
+    }
+
+    public void testKeyImportSP800208_SHAKE256_256()
+        throws Exception
+    {
+        XMSSParameters params = XMSSParameters.lookupByOID(0x00000010);
+        XMSS xmss = new XMSS(params, new SecureRandom());
+        xmss.generateKeys();
+
+        byte[] exportedPrivateKey = xmss.exportPrivateKey().getEncoded();
+        byte[] exportedPublicKey = xmss.exportPublicKey().getEncoded();
+
+        byte[] msg = new byte[1024];
+        byte[] sig1 = xmss.sign(msg);
+
+        xmss.importState(exportedPrivateKey, exportedPublicKey);
+        byte[] sig2 = xmss.sign(msg);
+
+        assertEquals(true, Arrays.areEqual(sig1, sig2));
+    }
+
+    public void testKeyImportSP800208_SHAKE256_192()
+        throws Exception
+    {
+        XMSSParameters params = XMSSParameters.lookupByOID(0x00000013);
+        XMSS xmss = new XMSS(params, new SecureRandom());
+        xmss.generateKeys();
+
+        byte[] exportedPrivateKey = xmss.exportPrivateKey().getEncoded();
+        byte[] exportedPublicKey = xmss.exportPublicKey().getEncoded();
+
+        byte[] msg = new byte[1024];
+        byte[] sig1 = xmss.sign(msg);
+
+        xmss.importState(exportedPrivateKey, exportedPublicKey);
+        byte[] sig2 = xmss.sign(msg);
+
+        assertEquals(true, Arrays.areEqual(sig1, sig2));
+    }
 }
