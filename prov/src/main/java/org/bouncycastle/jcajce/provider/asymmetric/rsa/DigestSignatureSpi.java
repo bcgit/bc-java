@@ -34,6 +34,7 @@ import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jcajce.util.AnnotatedPrivateKey;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class DigestSignatureSpi
     extends SignatureSpi
@@ -175,7 +176,8 @@ public class DigestSignatureSpi
         {
             return Arrays.constantTimeAreEqual(sig, expected);
         }
-        else if (sig.length == expected.length - 2)  // NULL left out
+        else if (sig.length == expected.length - 2
+            && !Properties.isOverrideSet(Properties.PKCS1_STRICT_DIGESTINFO))  // NULL left out
         {
             expected[1] -= 2;      // adjust lengths
             expected[3] -= 2;
