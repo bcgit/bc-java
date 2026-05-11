@@ -84,6 +84,19 @@ import org.bouncycastle.util.io.Streams;
  *          CMSSignedDataParser     ep = new CMSSignedDataParser(new BufferedInputStream(encapSigData, bufSize));
  *  </pre>
  *  where bufSize is a suitably large buffer size.
+ * <p>
+ * <b>Stream handling note:</b>
+ * <ul>
+ *   <li>The constructor reads only enough of the supplied InputStream to expose the
+ *       digest algorithms and signed-content metadata. The encapsulated content
+ *       must be drained by the caller (e.g.
+ *       {@link #getSignedContent()}.{@link CMSTypedStream#drain drain()}) before
+ *       calling {@link #getSignerInfos()} so the running digests can be finalized.</li>
+ *   <li>The supplied InputStream is <b>not closed automatically</b>. Call
+ *       {@link #close()} on this parser (inherited from
+ *       {@link CMSContentInfoParser}) to close the underlying InputStream, or close
+ *       it yourself.</li>
+ * </ul>
  */
 public class CMSSignedDataParser
     extends CMSContentInfoParser
