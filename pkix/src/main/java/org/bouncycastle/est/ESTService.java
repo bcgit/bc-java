@@ -39,6 +39,7 @@ import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * ESTService provides unified access to an EST server which is defined as implementing
@@ -705,9 +706,15 @@ public class ESTService
 
                 break;
             case 204:
-                response = null;
-                break;
             case 404:
+                // RFC 7030 sec. 4.5: a 204 has no body and a 404 SHOULD be empty.
+                // Some servers nevertheless attach an error body (e.g. a JSON
+                // message) to a 404. Drain whatever is there so the subsequent
+                // resp.close() in the finally block doesn't trip the
+                // LimitedInputStream's "Stream closed before limit fully read"
+                // guard and obscure the actual 404 status with a useless wrapper
+                // exception (github #781).
+                Streams.drain(resp.getInputStream());
                 response = null;
                 break;
             default:
