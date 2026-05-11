@@ -35,6 +35,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
@@ -1785,6 +1786,55 @@ public class CertTest
     }
 
     /**
+     * GM/T 0010-2012 SM2 SignedData ContentType (1.2.156.10197.6.1.4.2.2)
+     * shares the SignedData ASN.1 structure with PKCS#7 SignedData, so
+     * CertificateFactory.generateCertificate{s} / generateCRL{s} must extract
+     * embedded certificates and CRLs from it just like a PKCS#7 wrapper
+     * (github #1355).
+     */
+    private void sm2SignedDataTestIssue1355()
+        throws Exception
+    {
+        ASN1EncodableVector certs = new ASN1EncodableVector();
+        certs.add(new ASN1InputStream(CertPathTest.rootCertBin).readObject());
+
+        ASN1EncodableVector crls = new ASN1EncodableVector();
+        crls.add(new ASN1InputStream(CertPathTest.rootCrlBin).readObject());
+
+        // Inner content type uses the GM/T 0010 SM2 data OID (parallel to PKCS#7 data).
+        SignedData sigData = new SignedData(new DERSet(),
+            new ContentInfo(GMObjectIdentifiers.sm2_pkcs7_data, null),
+            new DERSet(certs), new DERSet(crls), new DERSet());
+
+        // Outer ContentInfo carries the SM2 SignedData ContentType.
+        ContentInfo info = new ContentInfo(GMObjectIdentifiers.sm2_pkcs7_signedData, sigData);
+
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+
+        X509Certificate cert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(info.getEncoded()));
+        if (cert == null || !areEqual(cert.getEncoded(), certs.get(0).toASN1Primitive().getEncoded()))
+        {
+            fail("SM2 SignedData cert not read");
+        }
+        X509CRL crl = (X509CRL)cf.generateCRL(new ByteArrayInputStream(info.getEncoded()));
+        if (crl == null || !areEqual(crl.getEncoded(), crls.get(0).toASN1Primitive().getEncoded()))
+        {
+            fail("SM2 SignedData crl not read");
+        }
+
+        Collection col = cf.generateCertificates(new ByteArrayInputStream(info.getEncoded()));
+        if (col.size() != 1 || !col.contains(cert))
+        {
+            fail("SM2 SignedData cert collection not right");
+        }
+        col = cf.generateCRLs(new ByteArrayInputStream(info.getEncoded()));
+        if (col.size() != 1 || !col.contains(crl))
+        {
+            fail("SM2 SignedData crl collection not right");
+        }
+    }
+
+    /**
      * RFC 5280 sec. 4.2.1.12 permits extendedKeyUsage to be marked critical.
      * Loading a cert with critical EKU through the BC CertificateFactory
      * must report hasUnsupportedCriticalExtension() == false (matching the
@@ -1926,6 +1976,8 @@ public class CertTest
         testCertPathEncAvailableTest();
 
         testCriticalEkuIssue1796();
+
+        sm2SignedDataTestIssue1355();
     }
 
     public static void main(
