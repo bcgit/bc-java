@@ -192,7 +192,7 @@ public class GeneralName
                     // TODO[api] Actually return EDIPartyName instead of only using it for validation
 //                    return new GeneralName(tag, EDIPartyName.getTagged(tagObj, false));
                     ASN1Sequence seq = ASN1Sequence.getTagged(tagObj, false);
-                    EDIPartyName.getInstance(seq);
+//                    EDIPartyName.getInstance(seq);
                     return new GeneralName(tag, seq);
                 }
 
