@@ -182,6 +182,46 @@ public class
         TestCase.assertEquals(key, rdKey);
     }
 
+    /**
+     * github #400: OpenSSL 1.1+ "openssl pkcs8 -topk8 -scrypt" emits a PBES2
+     * EncryptedPrivateKeyInfo whose key-derivation function is scrypt
+     * (RFC 7914) rather than PBKDF2. JceOpenSSLPKCS8DecryptorProviderBuilder
+     * previously cast the KDF parameters blind to PBKDF2Params and threw
+     * "DLSequence cannot be cast to PBKDF2Params". The builder now recognises
+     * id-scrypt inside PBES2 and derives the key via SCrypt.generate.
+     *
+     * Fixture from RFC 7914 sec. 7.2 (password "Rabbit").
+     */
+    public void testScryptOpenSSLDecryptorIssue400()
+        throws Exception
+    {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        byte[] pkcs8Scrypt = Base64.decode(
+            "MIHiME0GCSqGSIb3DQEFDTBAMB8GCSsGAQQB2kcECzASBAVNb3VzZQIDEAAAAgEI" +
+            "AgEBMB0GCWCGSAFlAwQBKgQQyYmguHMsOwzGMPoyObk/JgSBkJb47EWd5iAqJlyy" +
+            "+ni5ftd6gZgOPaLQClL7mEZc2KQay0VhjZm/7MbBUNbqOAXNM6OGebXxVp6sHUAL" +
+            "iBGY/Dls7B1TsWeGObE0sS1MXEpuREuloZjcsNVcNXWPlLdZtkSH6uwWzR0PyG/Z" +
+            "+ZXfNodZtd/voKlvLOw5B3opGIFaLkbtLZQwMiGtl42AS89lZg==");
+
+        byte[] expected = Base64.decode(
+            "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg4RaNK5CuHY3CXr9f" +
+            "/CdVgOhEurMohrQmWbbLZK4ZInyhRANCAARs2WMV6UMlLjLaoc0Dsdnj4Vlffc9T" +
+            "t48lJU0RiCzXc280Vg/H5fm1xAP1B7UnIVcBqgDHDcfqWm1h/xSeCHXS");
+
+        PKCS8EncryptedPrivateKeyInfo info = new PKCS8EncryptedPrivateKeyInfo(pkcs8Scrypt);
+
+        PrivateKeyInfo pkInfo = info.decryptPrivateKeyInfo(
+            new JceOpenSSLPKCS8DecryptorProviderBuilder()
+                .setProvider("BC")
+                .build("Rabbit".toCharArray()));
+
+        assertTrue(org.bouncycastle.util.Arrays.areEqual(expected, pkInfo.getEncoded()));
+    }
+
     public void testPKCS8PlainNew()
         throws Exception
     {
