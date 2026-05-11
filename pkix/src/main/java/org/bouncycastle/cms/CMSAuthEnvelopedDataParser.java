@@ -24,11 +24,20 @@ import org.bouncycastle.util.Arrays;
 /**
  * Parser for authenticated enveloped CMS data structures.
  * <p>
- * Important usage notes:
+ * <b>Stream handling note:</b>
  * <ul>
- *   <li>The constructor <b>fully drains and closes</b> the provided InputStream</li>
- *   <li>Plaintext content is buffered in memory and available via {@code RecipientInformation}</li>
- *   <li>Do not reuse the input stream after parsing</li>
+ *   <li>The constructor reads only enough of the supplied InputStream to expose the
+ *       CMS structure metadata (originator info, recipient infos, content-encryption
+ *       algorithm). The encrypted content and trailing MAC are drained lazily by the
+ *       caller via {@link RecipientInformation#getContentStream} /
+ *       {@link RecipientInformation#getContent}; the MAC is verified when the content
+ *       stream reaches EOF.</li>
+ *   <li>The supplied InputStream is <b>not closed automatically</b>. Call
+ *       {@link #close()} on this parser (inherited from
+ *       {@link CMSContentInfoParser}) to close the underlying InputStream, or close
+ *       it yourself.</li>
+ *   <li>This class does not introduce buffering &mdash; if you are processing large
+ *       inputs, wrap the InputStream in a {@link java.io.BufferedInputStream}.</li>
  * </ul>
  */
 public class CMSAuthEnvelopedDataParser
@@ -48,8 +57,6 @@ public class CMSAuthEnvelopedDataParser
 
     /**
      * Create a parser from a byte array.
-     * <p>
-     * <b>Note:</b> The input is fully consumed during parsing. Plaintext content is buffered in memory.
      *
      * @param envelopedData the CMS auth enveloped data bytes
      */
@@ -61,11 +68,10 @@ public class CMSAuthEnvelopedDataParser
     }
 
     /**
-     * Create a parser from an input stream.
-     * <p>
-     * <b>Stream handling note:</b> This constructor fully reads and <b>closes the input stream</b>
-     * before returning. The plaintext content is buffered in memory and accessible via
-     * {@link RecipientInformation#getContentStream}.
+     * Create a parser from an input stream. See the class-level javadoc for the
+     * stream handling protocol &mdash; the content is drained lazily via
+     * {@link RecipientInformation#getContentStream}, and the supplied InputStream
+     * is not closed automatically.
      *
      * @param envelopedData the CMS auth enveloped data stream
      */

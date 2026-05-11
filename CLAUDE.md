@@ -44,6 +44,7 @@ Common gotchas:
 - `*/build/resources/main` directories are required — some tests pull resource files (e.g. `lowmcL1.bin.properties` for Picnic, GOST tables) that fail with cryptic `NullPointerException` if missing.
 - `prov/src/test/resources` and `core/src/test/resources` carry test fixtures referenced by `TestResourceFinder` and direct classpath lookups.
 - IDE-built classes under `out/production/...` (IntelliJ) are NOT on the Gradle classpath — don't reference them, and beware that they can drift from Gradle's outputs.
+- After deleting or renaming a test method (e.g. when rolling back an edit), the stale `.class` file lingers under `<module>/build/classes/java/test/`. JUnit's `TestSuite.class` reflection-walk will still find and run the stale method, surfacing confusing `ClassNotFoundException` / `NoClassDefFoundError` for inner-class artifacts that were removed. Run `./gradlew :<module>:compileTestJava --rerun-tasks` (or `:<module>:clean`) after a rollback to flush.
 
 ### Verifying a fix actually catches the bug
 
@@ -139,6 +140,12 @@ When supporting a non-standard wire encoding for interop with another implementa
 ### PKCS#12 SPI pair
 
 The PKCS#12 keystore comes in two SPI flavours that share the bag-handling pipeline: `PKCS12KeyStoreSpi` (legacy MAC) and `PKCS12PBMAC1KeyStoreSpi` (RFC 9579 PBMAC1). When changing entry-type acceptance, bag dispatch in `engineLoad`, the cert/key write passes in `engineStore`, or the `getUsedCertificateSet` / `cryptData` helpers, the change usually needs mirroring in the other SPI. Shared static helpers — algorithm-OID lookup, key-size table, content/iteration-count helpers — live in the package-private `org.bouncycastle.jcajce.provider.keystore.pkcs12.PKCS12Util` so both SPIs can call them without one having to fully-qualify the other; new helpers should land there too rather than as static methods on either SPI.
+
+### CMS streaming I/O: caller owns the outer stream
+
+The streaming classes under `pkix/src/main/java/org/bouncycastle/cms/CMS*{Parser,StreamGenerator}.java` deliberately do **not** cascade close to caller-supplied streams, unlike `GZIPOutputStream` / `CipherOutputStream`. Stream generators finalize the CMS structure on `close()` of the returned `OutputStream` (writes signer infos, MAC, end-of-contents markers) but do not close the target `OutputStream` — if the target is a buffering encoder whose tail state only flushes on close (e.g. Apache Commons `Base64OutputStream`), the caller has to close it themselves. Parsers read only enough of the supplied `InputStream` to expose CMS metadata; encapsulated content drains lazily through `getContentStream()` / `getSignedContent()`, and the `InputStream` is closed only when the caller invokes `parser.close()` (inherited from `CMSContentInfoParser`). This convention is long-standing — changing it has been explicitly rejected (github #1572).
+
+When updating CMS class-level javadoc, verify by tracing rather than paraphrasing aspirational behaviour: between Aug–Dec 2025 the `CMSAuthEnvelopedDataParser` doc claimed the constructor "fully drains and closes" the InputStream and that "plaintext content is buffered in memory" — both were wrong (the constructor reads ~84% of the input, no buffering happens), and the doc was corrected as part of github #2133. The model `<b>Stream handling note:</b>` blocks added across the package under that issue are the template to follow.
 
 ### Two locations for the same OID-table class
 
