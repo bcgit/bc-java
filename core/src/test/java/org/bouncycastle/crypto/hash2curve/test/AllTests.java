@@ -27,6 +27,19 @@ public class AllTests
         suite.addTestSuite(SimplifiedShallueVanDeWoestijneMapToCurveTest.class);
         suite.addTestSuite(H2cUtilsTest.class);
         suite.addTestSuite(HashToEllipticCurveTest.class);
+        suite.addTestSuite(BLS12_381G1HashToCurveTest.class);
+        suite.addTestSuite(BLS12_381G2HashToCurveTest.class);
+        suite.addTestSuite(Fp6Fp12Test.class);
+        suite.addTestSuite(BLS12_381PairingTest.class);
+        suite.addTestSuite(BLS12_381BasicSchemeTest.class);
+        suite.addTestSuite(BLS12_381SuitesTest.class);
+        suite.addTestSuite(BLS12_381SerializationTest.class);
+        suite.addTestSuite(BLS12_381SubgroupCheckTest.class);
+        suite.addTestSuite(BLS12_381FpTest.class);
+        suite.addTestSuite(BLS12_381Eth2KatTest.class);
+        suite.addTestSuite(BLS12_381ConstantTimeMulTest.class);
+        suite.addTestSuite(BLSKeyPairGeneratorTest.class);
+        suite.addTestSuite(BLSSignerTest.class);
 
         return new BCTestSetup(suite);
     }

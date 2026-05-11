@@ -2,10 +2,13 @@ package org.bouncycastle.crypto.hash2curve;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.crypto.bls.BLS12_381G1;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.hash2curve.data.AffineXY;
+import org.bouncycastle.crypto.hash2curve.impl.BLS12_381G1CurveProcessor;
+import org.bouncycastle.crypto.hash2curve.impl.BLS12_381G1MapToCurve;
 import org.bouncycastle.crypto.hash2curve.impl.Elligator2MapToCurve;
 import org.bouncycastle.crypto.hash2curve.impl.MontgomeryCurveProcessor;
 import org.bouncycastle.crypto.hash2curve.impl.NistCurveProcessor;
@@ -73,6 +76,12 @@ public class HashToEllipticCurve
                 new Elligator2MapToCurve(curve, profile.getZ(), BigInteger.valueOf(profile.getmJ()),
                     BigInteger.valueOf(profile.getmK())),
                 new MontgomeryCurveProcessor(curve, profile.getmJ(), profile.getmK(), profile.getH()));
+        case BLS12_381_G1_XMD_SHA_256_SSWU_RO:
+            curve = BLS12_381G1.createCurve();
+            return new HashToEllipticCurve(
+                new HashToField(dstBytes, curve, new XmdMessageExpansion(new SHA256Digest(), profile.getK()),
+                    profile.getL()),
+                new BLS12_381G1MapToCurve(curve), new BLS12_381G1CurveProcessor());
         default:
             throw new IllegalArgumentException("Unsupported profile: " + profile);
         }
