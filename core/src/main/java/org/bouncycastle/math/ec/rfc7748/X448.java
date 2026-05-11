@@ -5,6 +5,47 @@ import java.security.SecureRandom;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * A low-level implementation of X448 (RFC 7748).
+ * <p>
+ * <b>Algorithm map.</b>
+ * <ul>
+ *   <li>{@link #generatePrivateKey} &mdash; 56 random bytes followed by
+ *       {@link #clampPrivateKey} (RFC 7748 sec. 5 clamping: clear bits
+ *       0..1, set bit 447).</li>
+ *   <li>{@link #generatePublicKey} / {@link #scalarMultBase} &mdash;
+ *       computed as {@code k * B} on the birationally-equivalent
+ *       {@code edwards448} curve via
+ *       {@link Ed448#scalarMultBaseXY(Friend, byte[], int, int[], int[])}
+ *       (a signed multi-comb in projective Edwards coordinates), then
+ *       converted to the Curve448 {@code u} coordinate using the RFC
+ *       7748 sec. 4.2 / errata 5568 birational map
+ *       {@code u = (y / x)^2}.</li>
+ *   <li>{@link #scalarMult} (key agreement) &mdash; Montgomery ladder on
+ *       XZ-only projective coordinates per RFC 7748 sec. 5, with
+ *       per-bit constant-time {@code cswap}; the
+ *       {@code A24 = (A + 2) / 4} curve constant is precomputed from
+ *       {@code A = 156326}. The trailing two doublings cancel the
+ *       cofactor introduced by the lowest cleared scalar bits.</li>
+ *   <li>{@link #calculateAgreement} &mdash; {@link #scalarMult} followed
+ *       by the RFC 7748 sec. 6.2 all-zero rejection.</li>
+ * </ul>
+ * <p>
+ * <b>Side-channel scope.</b> Secret-scalar operations are written to be
+ * constant-time at the Java level: the Montgomery ladder in
+ * {@link #scalarMult} performs identical field operations per bit with
+ * branchless {@code cswap}; {@link #scalarMultBase} routes through the
+ * Ed448 signed-comb, which walks all precomputed entries with mask-based
+ * {@code cmov} rather than a secret-indexed array load and applies
+ * conditional negation by XOR-with-mask; the final modular inverse uses
+ * constant-time {@code Mod.modOddInverse}. The all-zero rejection in
+ * {@link #calculateAgreement} runs an OR-accumulator and only leaks the
+ * RFC-mandated public rejection criterion. This is sufficient against a
+ * remote network timing attacker but is not a substitute for a constant-time
+ * native implementation against a co-located cache-line-resolution
+ * adversary &mdash; JVM-level timing variance from JIT, GC and cache
+ * eviction is not addressable in pure Java.
+ */
 public abstract class X448
 {
     public static class Friend
@@ -173,6 +214,9 @@ public abstract class X448
 
         Ed448.scalarMultBaseXY(Friend.INSTANCE, k, kOff, x, y);
 
+        // Birational map edwards448 -> Curve448 (RFC 7748 sec. 4.2 /
+        // errata 5568):  u = (y / x)^2.  The Ed448 comb returns the
+        // affine Edwards (x, y); invert x and square the ratio.
         F.inv(x, x);
         F.mul(x, y, x);
         F.sqr(x, x);
