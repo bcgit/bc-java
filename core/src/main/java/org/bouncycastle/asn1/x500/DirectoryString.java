@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1T61String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.ASN1UniversalString;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.DERUTF8String;
 
 /**
@@ -57,14 +58,14 @@ public class DirectoryString
         throw new IllegalArgumentException("illegal object in getInstance: " + o.getClass().getName());
     }
 
-    public static DirectoryString getInstance(ASN1TaggedObject o, boolean explicit)
+    public static DirectoryString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        if (!explicit)
-        {
-            throw new IllegalArgumentException("choice item must be explicitly tagged");
-        }
+        return getInstance(ASN1Util.getInstanceChoiceBaseObject(taggedObject, declaredExplicit, "DirectoryString"));
+    }
 
-        return getInstance(o.getExplicitBaseObject());
+    public static DirectoryString getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return getInstance(ASN1Util.getTaggedChoiceBaseObject(taggedObject, declaredExplicit, "DirectoryString"));
     }
 
     private DirectoryString(
