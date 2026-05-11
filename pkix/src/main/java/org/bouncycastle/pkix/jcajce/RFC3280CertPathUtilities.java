@@ -181,8 +181,12 @@ class RFC3280CertPathUtilities
                     }
                     if (!matches)
                     {
+                        // github #800: include the conflicting names so operators
+                        // can see which CRL was returned for which cert DP.
                         throw new AnnotatedException(
-                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point."
+                                + " cert DP names: " + java.util.Arrays.asList(genNames)
+                                + "; CRL IDP names: " + names);
                     }
                 }
                 // verify that one of the names in
@@ -206,8 +210,12 @@ class RFC3280CertPathUtilities
                     }
                     if (!matches)
                     {
+                        // github #800: include the conflicting names so operators
+                        // can see which CRL was returned for which cert cRLIssuer.
                         throw new AnnotatedException(
-                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point."
+                                + " cert cRLIssuer names: " + java.util.Arrays.asList(genNames)
+                                + "; CRL IDP names: " + names);
                     }
                 }
             }

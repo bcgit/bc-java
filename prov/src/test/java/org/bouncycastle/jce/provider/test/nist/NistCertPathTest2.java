@@ -3756,7 +3756,7 @@ public class NistCertPathTest2
             .withEndEntity("Invalid distributionPoint Test3 EE")
             .withCrls("distributionPoint1 CA CRL")
             .withCACert("distributionPoint1 CA Cert")
-            .doExceptionTest(0, "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+            .doExceptionTestStartsWith(0, "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
     }
 
     /**
@@ -3855,7 +3855,7 @@ public class NistCertPathTest2
             .withEndEntity("Invalid distributionPoint Test8 EE")
             .withCrls("distributionPoint2 CA CRL")
             .withCACert("distributionPoint2 CA Cert")
-            .doExceptionTest(0, "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+            .doExceptionTestStartsWith(0, "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
     }
 
     /**
@@ -3872,7 +3872,7 @@ public class NistCertPathTest2
             .withEndEntity("Invalid distributionPoint Test9 EE")
             .withCrls("distributionPoint2 CA CRL")
             .withCACert("distributionPoint2 CA Cert")
-            .doExceptionTest(0, "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+            .doExceptionTestStartsWith(0, "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
     }
 
     /**
