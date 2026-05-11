@@ -44,22 +44,33 @@ final class WOTSPlusParameters
      */
     protected WOTSPlusParameters(ASN1ObjectIdentifier treeDigest)
     {
+        this(treeDigest, XMSSUtil.getDigestSize(DigestUtil.getDigest(treeDigest)));
+    }
+
+    /**
+     * Constructor with explicit digest size (security parameter n).
+     *
+     * @param treeDigest The digest used for WOTS+.
+     * @param digestSize The security parameter n in bytes.
+     */
+    protected WOTSPlusParameters(ASN1ObjectIdentifier treeDigest, int digestSize)
+    {
         super();
         if (treeDigest == null)
         {
             throw new NullPointerException("treeDigest == null");
         }
         this.treeDigest = treeDigest;
-        Digest digest = DigestUtil.getDigest(treeDigest);
-        digestSize = XMSSUtil.getDigestSize(digest);
+        this.digestSize = digestSize;
         winternitzParameter = 16;
         len1 = (int)Math.ceil((double)(8 * digestSize) / XMSSUtil.log2(winternitzParameter));
         len2 = (int)Math.floor(XMSSUtil.log2(len1 * (winternitzParameter - 1)) / XMSSUtil.log2(winternitzParameter)) + 1;
         len = len1 + len2;
-        oid = WOTSPlusOid.lookup(digest.getAlgorithmName(), digestSize, winternitzParameter, len);
+        String algName = DigestUtil.getDigestName(treeDigest);
+        oid = WOTSPlusOid.lookup(algName, digestSize, winternitzParameter, len);
         if (oid == null)
         {
-            throw new IllegalArgumentException("cannot find OID for digest algorithm: " + digest.getAlgorithmName());
+            throw new IllegalArgumentException("cannot find OID for digest algorithm: " + algName);
         }
     }
 

@@ -9,6 +9,7 @@ public class XMSSKeyParameters
     public static final String SHA_512 = "SHA-512";
     public static final String SHAKE128 = "SHAKE128";
     public static final String SHAKE256 = "SHAKE256";
+    public static final String SHAKE256_LEN = "SHAKE256-LEN";
 
     private final String treeDigest;
 
