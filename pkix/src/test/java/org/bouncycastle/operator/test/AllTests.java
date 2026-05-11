@@ -9,8 +9,10 @@ import java.security.Signature;
 import java.security.spec.MGF1ParameterSpec;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
+import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
@@ -20,6 +22,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -51,8 +54,11 @@ import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
 import org.bouncycastle.operator.DefaultSignatureNameFinder;
+import org.bouncycastle.operator.InputDecryptor;
+import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.KemEncapsulationLengthProvider;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
+import org.bouncycastle.operator.jcajce.JceInputDecryptorProviderBuilder;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyPairGenerator;
@@ -762,5 +768,53 @@ public class AllTests
             assertEquals("wrong digest for " + sigOid.getId(),
                 expDig, got.getAlgorithm());
         }
+    }
+
+    /**
+     * github #1510: JceInputDecryptorProviderBuilder previously assumed
+     * algorithm parameters were either a raw IV (ASN1OctetString) or
+     * GOST28147Parameters. AES-GCM AlgorithmIdentifiers carry a SEQUENCE
+     * (GCMParameters: nonce + icvLen), so init failed when the only
+     * fallback was the GOST path. The builder now recognises the AES-GCM
+     * (and AES-CCM) OIDs and inits via GCMParameterSpec.
+     */
+    public void testGcmDecryptorIssue1510()
+        throws Exception
+    {
+        if (Security.getProvider(BC) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        byte[] keyBytes = new byte[32];
+        new SecureRandom().nextBytes(keyBytes);
+        byte[] nonce = new byte[12];
+        new SecureRandom().nextBytes(nonce);
+        int tagLenBits = 128;
+        byte[] plaintext = "JceInputDecryptorProviderBuilder GCM roundtrip — github #1510.".getBytes("UTF-8");
+
+        // Encrypt with a JCE AES-GCM cipher.
+        Cipher encCipher = Cipher.getInstance(NISTObjectIdentifiers.id_aes256_GCM.getId(), BC);
+        encCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"),
+            new GCMParameterSpec(tagLenBits, nonce));
+        byte[] ciphertext = encCipher.doFinal(plaintext);
+
+        // Hand the AlgorithmIdentifier(id-aes256-GCM, GCMParameters) to the builder.
+        AlgorithmIdentifier algId = new AlgorithmIdentifier(
+            NISTObjectIdentifiers.id_aes256_GCM,
+            new GCMParameters(nonce, tagLenBits / 8));
+
+        InputDecryptorProvider provider = new JceInputDecryptorProviderBuilder()
+            .setProvider(BC)
+            .build(keyBytes);
+        InputDecryptor decryptor = provider.get(algId);
+
+        java.io.InputStream decStream = decryptor.getInputStream(
+            new java.io.ByteArrayInputStream(ciphertext));
+        java.io.ByteArrayOutputStream bOut = new java.io.ByteArrayOutputStream();
+        org.bouncycastle.util.io.Streams.pipeAll(decStream, bOut);
+
+        assertTrue("AES-GCM round-trip via JceInputDecryptorProviderBuilder",
+            org.bouncycastle.util.Arrays.areEqual(plaintext, bOut.toByteArray()));
     }
 }
