@@ -23,7 +23,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 public class KeyPurposeId
     extends ASN1Object
 {
-    private static final ASN1ObjectIdentifier id_kp = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.3");
+    private static final ASN1ObjectIdentifier id_kp = X509ObjectIdentifiers.id_pkix.branch("3");
 
     /**
      * { 2 5 29 37 0 }
