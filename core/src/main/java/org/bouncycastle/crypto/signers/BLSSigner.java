@@ -104,6 +104,10 @@ public class BLSSigner
 
     public void update(byte[] in, int off, int len)
     {
+        if (in == null)
+        {
+            throw new NullPointerException("input must not be null");
+        }
         buffer.write(in, off, len);
     }
 
@@ -114,15 +118,17 @@ public class BLSSigner
         {
             throw new IllegalStateException("BLSSigner not initialised for signing");
         }
+        byte[] msg = buffer.toByteArray();
         try
         {
             BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(dst);
-            BLS12_381G2Point q = h.hashToCurve(buffer.toByteArray());
+            BLS12_381G2Point q = h.hashToCurve(msg);
             BLS12_381G2Point sig = q.constantTimeMultiply(privateKey.getSecret());
             return BLS12_381Serialization.compressG2(sig);
         }
         finally
         {
+            Arrays.fill(msg, (byte)0);
             reset();
         }
     }
@@ -133,6 +139,7 @@ public class BLSSigner
         {
             throw new IllegalStateException("BLSSigner not initialised for verification");
         }
+        byte[] msg = buffer.toByteArray();
         try
         {
             BLS12_381G2Point sig;
@@ -154,7 +161,7 @@ public class BLSSigner
                 return false;
             }
             BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(dst);
-            BLS12_381G2Point q = h.hashToCurve(buffer.toByteArray());
+            BLS12_381G2Point q = h.hashToCurve(msg);
             ECCurve curve = BLS12_381G1.createCurve();
             ECPoint g1 = BLS12_381G1.getGenerator(curve);
             // e(g1, sig) == e(pk, H(msg))   <=>   e(g1, sig) * e(-pk, H(msg)) == 1
@@ -165,6 +172,7 @@ public class BLSSigner
         }
         finally
         {
+            Arrays.fill(msg, (byte)0);
             reset();
         }
     }
@@ -178,11 +186,17 @@ public class BLSSigner
      * ByteArrayOutputStream subclass that wipes its internal byte storage
      * before resetting the count, so message bytes don't linger in the
      * heap between {@code reset()} and the next GC.
+     * <p>
+     * Not thread-safe — {@link BLSSigner} itself follows the usual BC
+     * convention of single-threaded use, so the {@code synchronized}
+     * qualifiers on the inherited {@link ByteArrayOutputStream#write}
+     * methods are not relied on, and {@code wipeAndReset} matches that
+     * contract.
      */
     private static final class WipingBuffer
         extends ByteArrayOutputStream
     {
-        synchronized void wipeAndReset()
+        void wipeAndReset()
         {
             Arrays.fill(buf, 0, count, (byte)0);
             this.count = 0;

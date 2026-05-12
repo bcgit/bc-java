@@ -245,6 +245,14 @@ public class BLS12_381Pairing
         return hardPart(easy);
     }
 
+    /**
+     * The hard part of the final exponentiation, exposed for cross-package
+     * layered testing (the test classes live in
+     * {@code org.bouncycastle.crypto.hash2curve.test} and need direct access
+     * to the easy/hard split for KAT comparison against reference outputs).
+     * Not part of the intended public API of this class — production callers
+     * should use {@link #pair} / {@link #multiPair}.
+     */
     public static Fp12Element hardPart(Fp12Element f)
     {
         // g0 = f^((x - 1)^2 / 3), via a direct ~126-bit modPow. This is

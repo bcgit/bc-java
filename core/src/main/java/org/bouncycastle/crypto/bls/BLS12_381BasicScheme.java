@@ -74,22 +74,30 @@ public class BLS12_381BasicScheme
 
         byte[] salt = KEYGEN_SALT_INIT;
         BigInteger r = BLS12_381G1.ORDER;
+        byte[] okm = new byte[L];
 
-        // Loop on the negligible chance that OS2IP(OKM) mod r == 0.
-        for (int iteration = 0; iteration < 16; ++iteration)
+        try
         {
-            salt = sha256(salt);
-            HKDFBytesGenerator hkdf = new HKDFBytesGenerator(SHA256Digest.newInstance());
-            hkdf.init(new HKDFParameters(ikmWithZero, salt, info));
-            byte[] okm = new byte[L];
-            hkdf.generateBytes(okm, 0, L);
-            BigInteger sk = new BigInteger(1, okm).mod(r);
-            if (sk.signum() != 0)
+            // Loop on the negligible chance that OS2IP(OKM) mod r == 0.
+            for (int iteration = 0; iteration < 16; ++iteration)
             {
-                return sk;
+                salt = sha256(salt);
+                HKDFBytesGenerator hkdf = new HKDFBytesGenerator(SHA256Digest.newInstance());
+                hkdf.init(new HKDFParameters(ikmWithZero, salt, info));
+                hkdf.generateBytes(okm, 0, L);
+                BigInteger sk = new BigInteger(1, okm).mod(r);
+                if (sk.signum() != 0)
+                {
+                    return sk;
+                }
             }
+            throw new IllegalStateException("KeyGen failed to produce a non-zero secret key");
         }
-        throw new IllegalStateException("KeyGen failed to produce a non-zero secret key");
+        finally
+        {
+            Arrays.fill(okm, (byte)0);
+            Arrays.fill(ikmWithZero, (byte)0);
+        }
     }
 
     /**
@@ -148,6 +156,10 @@ public class BLS12_381BasicScheme
      */
     public static boolean verify(ECPoint pk, byte[] message, BLS12_381G2Point signature)
     {
+        if (message == null)
+        {
+            throw new NullPointerException("message must not be null");
+        }
         if (!keyValidate(pk))
         {
             return false;
@@ -191,6 +203,17 @@ public class BLS12_381BasicScheme
         if (pks == null || messages == null || pks.length != messages.length || pks.length == 0)
         {
             return false;
+        }
+        for (int i = 0; i < messages.length; ++i)
+        {
+            if (pks[i] == null)
+            {
+                throw new NullPointerException("pks[" + i + "] must not be null");
+            }
+            if (messages[i] == null)
+            {
+                throw new NullPointerException("messages[" + i + "] must not be null");
+            }
         }
         for (int i = 0; i < messages.length; ++i)
         {
