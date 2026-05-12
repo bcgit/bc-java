@@ -31,11 +31,10 @@ import org.bouncycastle.util.Integers;
  *       {@code r = SHA-512(prefix || M) mod L}, then {@code S = (r + k * s) mod L} (RFC 8032
  *       sec. 5.1.6). Reduction modulo {@code L} uses {@code Scalar25519.reduce512} (Barrett-style,
  *       straight-line). No variable-base scalar multiplication is performed.</li>
- *   <li>Verification &mdash; {@code verify} runs the small-multiple basis-reduction trick of
- *       <a href="https://ia.cr/2003/116">Antipa-Brown-Menezes-Struik-Vanstone</a> via
- *       {@code Scalar25519.reduceBasisVar} then evaluates the combined relation with Strauss-Shamir's
- *       trick in {@code scalarMultStraus128Var}. Both routines are deliberately variable-time and
- *       operate only on public material (signature, message, public key).</li>
+ *   <li>Verification &mdash; {@code verify} uses the basis reduction algorithm of
+ *       <a href="https://ia.cr/2020/454">Pornin</a> via {@code Scalar25519.reduceBasisVar} then evaluates the
+ *       combined relation with Strauss-Shamir's trick in {@code scalarMultStraus128Var}. Both routines are
+ *       deliberately variable-time and operate only on public material (signature, message, public key).</li>
  *   <li>Coordinates &mdash; the precomputed base-point comb table lives in
  *       <a href="https://ia.cr/2012/309">half-Niels</a> form; signing-side accumulators use extensible
  *       (twisted Edwards) coordinates so each step needs only one extra point-addition formula.

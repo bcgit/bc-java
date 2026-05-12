@@ -18,15 +18,16 @@ import org.bouncycastle.util.Arrays;
  *       {@code edwards25519} curve via
  *       {@link Ed25519#scalarMultBaseYZ(Friend, byte[], int, int[], int[])}
  *       (a signed multi-comb in extended Edwards coordinates), then
- *       converted to the Curve25519 {@code u} coordinate using the RFC
+ *       converted to the curve25519 {@code u} coordinate using the RFC
  *       7748 sec. 4.1 birational map {@code u = (1 + Y) / (1 - Y)}
  *       where {@code Y = y / z}.</li>
  *   <li>{@link #scalarMult} (key agreement) &mdash; Montgomery ladder on
  *       XZ-only projective coordinates per RFC 7748 sec. 5, with
  *       per-bit constant-time {@code cswap}; the
  *       {@code A24 = (A + 2) / 4} curve constant is precomputed from
- *       {@code A = 486662}. The trailing three doublings cancel the
- *       cofactor introduced by the lowest cleared scalar bits.</li>
+ *       {@code A = 486662}. The final three doublings correspond to the
+ *       always-cleared low bits of the scalar; these clear the cofactor
+ *       to ensure a non-twist result.</li>
  *   <li>{@link #calculateAgreement} &mdash; {@link #scalarMult} followed
  *       by the RFC 7748 sec. 6.1 all-zero rejection.</li>
  * </ul>
@@ -206,7 +207,7 @@ public abstract class X25519
 
         Ed25519.scalarMultBaseYZ(Friend.INSTANCE, k, kOff, y, z);
 
-        // Birational map edwards25519 -> Curve25519 (RFC 7748 sec. 4.1):
+        // Birational map edwards25519 -> curve25519 (RFC 7748 sec. 4.1):
         //   u = (1 + Y) / (1 - Y),  where Y = y / z.
         // Computed projectively: y' := z + y, z' := z - y, then u = y' / z'.
         F.apm(z, y, y, z);
