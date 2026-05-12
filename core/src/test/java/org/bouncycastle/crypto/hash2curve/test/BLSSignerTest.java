@@ -211,4 +211,141 @@ public class BLSSignerTest
             fail("expected IllegalStateException, got CryptoException");
         }
     }
+
+    // ---------------------------------------------------------------------
+    // Signature-length boundary tests (review gap G12).
+    //
+    // testVerifyRejectsMalformedSignature covers a 3-byte input. Pin
+    // the +/-1 boundary cases around the legal 96-byte length too —
+    // those are the classic off-by-one regressions.
+    // ---------------------------------------------------------------------
+
+    public void testVerifyRejectsSignatureLength95()
+        throws CryptoException
+    {
+        AsymmetricCipherKeyPair kp = makeKeyPair(10);
+        BLSSigner verifier = new BLSSigner();
+        verifier.init(false, kp.getPublic());
+        verifier.update(new byte[]{0}, 0, 1);
+        assertFalse("95-byte signature must be rejected (one short)",
+            verifier.verifySignature(new byte[95]));
+    }
+
+    public void testVerifyRejectsSignatureLength97()
+        throws CryptoException
+    {
+        AsymmetricCipherKeyPair kp = makeKeyPair(11);
+        BLSSigner verifier = new BLSSigner();
+        verifier.init(false, kp.getPublic());
+        verifier.update(new byte[]{0}, 0, 1);
+        assertFalse("97-byte signature must be rejected (one too many)",
+            verifier.verifySignature(new byte[97]));
+    }
+
+    // ---------------------------------------------------------------------
+    // Long-message round-trip (review gap G13).
+    //
+    // RFC 9380's expand_message_xmd processes the input one SHA-256
+    // block at a time. The hash-to-curve KATs exercise messages up to
+    // 512 bytes; this test pushes well past the SHA-256 block-boundary
+    // count to catch any "I only iterated up to N blocks" regression
+    // in the message expansion path. Also exercises the wipe-on-grow
+    // path in BLSSigner.WipingBuffer (the buffer starts at 64 bytes
+    // and has to grow several times to hold a megabyte).
+    // ---------------------------------------------------------------------
+
+    public void testSignVerifyLongMessageRoundTrip()
+        throws CryptoException
+    {
+        AsymmetricCipherKeyPair kp = makeKeyPair(12);
+        byte[] msg = new byte[100_000];
+        for (int i = 0; i < msg.length; ++i)
+        {
+            msg[i] = (byte)(i * 31 + 7);
+        }
+        BLSSigner signer = new BLSSigner();
+        signer.init(true, kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+        byte[] sig = signer.generateSignature();
+
+        BLSSigner verifier = new BLSSigner();
+        verifier.init(false, kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+        assertTrue("100 KB message must round-trip through sign/verify",
+            verifier.verifySignature(sig));
+    }
+
+    // ---------------------------------------------------------------------
+    // Long DST handling (review gap G14).
+    //
+    // RFC 9380 sec. 5.3.3 specifies that DSTs > 255 bytes MUST be
+    // pre-hashed (DST <- H("H2C-OVERSIZE-DST-" || originalDST)) before
+    // being fed into expand_message_xmd. The current BC implementation
+    // (XmdMessageExpansion in core/.../hash2curve/impl) does NOT
+    // implement this rewrite — it throws IllegalArgumentException
+    // instead. That's a fail-fast posture rather than a security bug
+    // (a non-compliant caller gets an explicit error, not silently
+    // wrong output), but it does mean BLS-signature suites with long
+    // DSTs cannot interop with RFC-9380-compliant peers.
+    //
+    // This test documents the current behaviour. If/when the
+    // implementation is updated to perform the hash-then-use rewrite,
+    // this test will fail, and the right move is to replace the
+    // try/catch with an assertion that the long-DST signature verifies
+    // against an equivalent signature produced with the spec-mandated
+    // pre-hashed DST.
+    // ---------------------------------------------------------------------
+
+    public void testLongDstCurrentlyRejected()
+        throws CryptoException
+    {
+        AsymmetricCipherKeyPair kp = makeKeyPair(13);
+        // DST exactly 256 bytes — one past the 255-byte XMD limit.
+        byte[] longDst = new byte[256];
+        for (int i = 0; i < longDst.length; ++i)
+        {
+            longDst[i] = (byte)'X';
+        }
+        BLSSigner signer = new BLSSigner(longDst);
+        signer.init(true, kp.getPrivate());
+        signer.update(new byte[]{0}, 0, 1);
+        try
+        {
+            signer.generateSignature();
+            fail("DST > 255 bytes is rejected by the current XMD implementation "
+                + "— if this fails, the implementation has been updated to do the "
+                + "RFC 9380 sec. 5.3.3 hash-then-use rewrite, and this test "
+                + "should be rewritten to verify the rewrite works.");
+        }
+        catch (IllegalArgumentException expected)
+        {
+        }
+        catch (CryptoException expectedToo)
+        {
+            // generateSignature wraps inner exceptions; either type is fine.
+        }
+    }
+
+    public void testDstAt255BytesAccepted()
+        throws CryptoException
+    {
+        // Boundary: 255 bytes is the maximum the current XMD impl accepts.
+        AsymmetricCipherKeyPair kp = makeKeyPair(14);
+        byte[] maxDst = new byte[255];
+        for (int i = 0; i < maxDst.length; ++i)
+        {
+            maxDst[i] = (byte)'M';
+        }
+        BLSSigner signer = new BLSSigner(maxDst);
+        signer.init(true, kp.getPrivate());
+        signer.update(new byte[]{0}, 0, 1);
+        byte[] sig = signer.generateSignature();
+        assertEquals(96, sig.length);
+
+        BLSSigner verifier = new BLSSigner(maxDst);
+        verifier.init(false, kp.getPublic());
+        verifier.update(new byte[]{0}, 0, 1);
+        assertTrue("255-byte DST is the boundary and must work",
+            verifier.verifySignature(sig));
+    }
 }

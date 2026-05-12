@@ -184,4 +184,76 @@ public class BLS12_381G2HashToCurveTest
         assertNotNull(root);
         assertTrue(root.equals(a) || root.equals(a.neg()));
     }
+
+    // ---------------------------------------------------------------------
+    // Fp2 sqrtOrNull / isSquare non-square branch (review gap G9).
+    //
+    // The round-trip test above only exercises the success path (squares
+    // always have a square root). Pin the documented null-on-non-square
+    // behaviour, using Z = -(2 + I) — the SSWU "Z" parameter for
+    // BLS12381G2_XMD:SHA-256_SSWU_RO_, picked specifically because it
+    // is a non-residue in Fp^2 (RFC 9380 sec. 8.8.2). If sqrtOrNull or
+    // isSquare ever returned a wrong answer for Z, the entire SSWU map
+    // would degenerate to picking the wrong branch.
+    // ---------------------------------------------------------------------
+
+    public void testFp2SqrtNullForNonSquare()
+    {
+        Fp2Element z = Fp2Element.of(-2, -1);
+        assertFalse("Z = -(2 + I) must be a non-square in Fp^2 (SSWU precondition)",
+            z.isSquare());
+        assertNull("sqrtOrNull(non-square) must be null", z.sqrtOrNull());
+    }
+
+    public void testFp2SqrtNullForAnotherNonSquare()
+    {
+        // Second independent non-square to confirm the branch isn't
+        // hard-coded to a single value. (1 + I) and (-2 - I) are both
+        // documented non-residues for BLS12-381's Fp^2 = Fp[I]/(I^2 + 1).
+        Fp2Element xi = Fp2Element.of(1, 1);
+        assertFalse("1 + I is a non-residue in Fp^2", xi.isSquare());
+        assertNull(xi.sqrtOrNull());
+    }
+
+    public void testFp2SqrtOfZeroIsZero()
+    {
+        // Boundary: sqrtOrNull(0) returns the zero element, not null.
+        assertEquals(Fp2Element.ZERO, Fp2Element.ZERO.sqrtOrNull());
+    }
+
+    // ---------------------------------------------------------------------
+    // Fp2 sgn0 direct unit test (review gap G10).
+    //
+    // RFC 9380 sec. 4.1 for m = 2:
+    //   sign_0 = x_0 mod 2
+    //   zero_0 = (x_0 == 0)
+    //   sign_1 = x_1 mod 2
+    //   return sign_0 OR (zero_0 AND sign_1)
+    //
+    // sgn0 is exercised transitively through hashToCurve KATs, but a
+    // direct unit test pins the formula against any future "clarifying
+    // refactor".
+    // ---------------------------------------------------------------------
+
+    public void testFp2Sgn0SpecVectors()
+    {
+        // (c0, c1) -> expected sgn0
+        // (0, 0): sign_0=0, zero_0=1, sign_1=0 -> 0
+        assertEquals(0, Fp2Element.of(0, 0).sgn0());
+        // (1, 0): sign_0=1 -> 1
+        assertEquals(1, Fp2Element.of(1, 0).sgn0());
+        // (2, 0): sign_0=0, zero_0=0, sign_1=0 -> 0
+        assertEquals(0, Fp2Element.of(2, 0).sgn0());
+        // (0, 1): sign_0=0, zero_0=1, sign_1=1 -> 1
+        assertEquals(1, Fp2Element.of(0, 1).sgn0());
+        // (0, 2): sign_0=0, zero_0=1, sign_1=0 -> 0
+        assertEquals(0, Fp2Element.of(0, 2).sgn0());
+        // (3, 5): sign_0=1 -> 1 (zero_0=0 makes sign_1 irrelevant)
+        assertEquals(1, Fp2Element.of(3, 5).sgn0());
+        // (4, 3): sign_0=0, zero_0=0, sign_1=1 -> 0 (the c1-tiebreaker
+        // only fires when c0 is zero)
+        assertEquals(0, Fp2Element.of(4, 3).sgn0());
+        // (2, 1): sign_0=0, zero_0=0, sign_1=1 -> 0
+        assertEquals(0, Fp2Element.of(2, 1).sgn0());
+    }
 }

@@ -165,4 +165,59 @@ public class BLS12_381PairingTest
         Fp12Element rhs = BLS12_381Pairing.pair(p, q.multiply(a));
         assertEquals("e(a*P, Q) must equal e(P, a*Q)", rhs, lhs);
     }
+
+    // ---------------------------------------------------------------------
+    // multiPair edge cases (review gap G11).
+    //
+    // The verify paths transitively exercise multiPair with one or two
+    // (g1, g2) pairs, but the documented edge cases (length mismatch,
+    // all inputs infinity, mixed infinity) aren't tested directly.
+    // Each affects whether aggregate-verify produces correct results
+    // for malformed or degenerate input lists.
+    // ---------------------------------------------------------------------
+
+    public void testMultiPairRejectsLengthMismatch()
+    {
+        ECPoint g1 = g1Generator();
+        BLS12_381G2Point g2 = BLS12_381G2.getGenerator();
+        try
+        {
+            BLS12_381Pairing.multiPair(
+                new ECPoint[]{g1, g1},
+                new BLS12_381G2Point[]{g2});
+            fail("g1/g2 length mismatch must throw");
+        }
+        catch (IllegalArgumentException expected)
+        {
+        }
+    }
+
+    public void testMultiPairAllInfinityReturnsOne()
+    {
+        // Per BLS12_381Pairing.multiPair javadoc: pairs whose G1 or G2
+        // component is the point at infinity are skipped, and an
+        // all-infinity input list returns the GT identity.
+        ECCurve curve = BLS12_381G1.createCurve();
+        Fp12Element result = BLS12_381Pairing.multiPair(
+            new ECPoint[]{curve.getInfinity(), curve.getInfinity()},
+            new BLS12_381G2Point[]{BLS12_381G2Point.INFINITY, BLS12_381G2Point.INFINITY});
+        assertEquals("all-infinity multiPair must return GT identity",
+            Fp12Element.ONE, result);
+    }
+
+    public void testMultiPairMixedInfinitySkips()
+    {
+        // (g1, g2) + (infinity, q) + (p, infinity) should equal e(g1, g2)
+        // alone, because the two infinity pairs are skipped.
+        ECCurve curve = BLS12_381G1.createCurve();
+        ECPoint g1 = g1Generator();
+        BLS12_381G2Point g2 = BLS12_381G2.getGenerator();
+
+        Fp12Element pure = BLS12_381Pairing.pair(g1, g2);
+        Fp12Element padded = BLS12_381Pairing.multiPair(
+            new ECPoint[]{g1, curve.getInfinity(), g1.multiply(BigInteger.valueOf(3))},
+            new BLS12_381G2Point[]{g2, g2, BLS12_381G2Point.INFINITY});
+        assertEquals("interleaved-infinity multiPair must equal the non-infinity-only product",
+            pure, padded);
+    }
 }
