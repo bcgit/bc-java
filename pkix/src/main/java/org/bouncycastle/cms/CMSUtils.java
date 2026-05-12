@@ -29,6 +29,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSet;
+import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -91,6 +92,18 @@ class CMSUtils
         ecAlgs.add(PKCSObjectIdentifiers.dhSinglePass_stdDH_hkdf_sha256_scheme);
         ecAlgs.add(PKCSObjectIdentifiers.dhSinglePass_stdDH_hkdf_sha384_scheme);
         ecAlgs.add(PKCSObjectIdentifiers.dhSinglePass_stdDH_hkdf_sha512_scheme);
+
+        // BSI TR-03111 ECKA-EG with X9.63 KDF. Structurally identical to
+        // dhSinglePass_stdDH_*kdf_scheme (ECDH + X9.63 KDF + RFC 5753
+        // ECC-CMS-SharedInfo per BSI TR-03109-3 / ICAO 9303-11); dispatch
+        // through the same EC code path so the RFC 5753 KDF material is
+        // generated consistently for both encode and decode (issue #790).
+        ecAlgs.add(BSIObjectIdentifiers.ecka_eg_X963kdf_SHA1);
+        ecAlgs.add(BSIObjectIdentifiers.ecka_eg_X963kdf_SHA224);
+        ecAlgs.add(BSIObjectIdentifiers.ecka_eg_X963kdf_SHA256);
+        ecAlgs.add(BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384);
+        ecAlgs.add(BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512);
+        ecAlgs.add(BSIObjectIdentifiers.ecka_eg_X963kdf_RIPEMD160);
 
         gostAlgs.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH);
         gostAlgs.add(CryptoProObjectIdentifiers.gostR3410_2001);

@@ -102,6 +102,12 @@ public class BLS12_381SubgroupCheck
 
     /**
      * The GLV endomorphism on G1: &sigma;(x, y) = (&beta;&middot;x, y).
+     * <p>
+     * Exposed for cross-package layered testing (the test classes live in
+     * {@code org.bouncycastle.crypto.hash2curve.test} and need direct access
+     * to the endomorphism for verification against the naive
+     * {@code [r] * P == 0} check). Not part of the intended public API of
+     * this class — production callers should use {@link #isInG1Subgroup}.
      */
     public static ECPoint sigmaG1(ECPoint p)
     {
@@ -119,6 +125,10 @@ public class BLS12_381SubgroupCheck
     /**
      * The untwist-Frobenius-twist endomorphism on G2:
      * {@code (x, y) -> (conjugate(x) * PSI_X, conjugate(y) * PSI_Y)}.
+     * <p>
+     * Exposed for cross-package layered testing (see {@link #sigmaG1} for
+     * the rationale). Not part of the intended public API of this class —
+     * production callers should use {@link #isInG2Subgroup}.
      */
     public static BLS12_381G2Point psiG2(BLS12_381G2Point p)
     {

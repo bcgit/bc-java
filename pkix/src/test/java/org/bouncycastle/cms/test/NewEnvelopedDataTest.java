@@ -2164,6 +2164,43 @@ public class NewEnvelopedDataTest
         assertEquals(X9ObjectIdentifiers.prime239v1, recInfo.getOriginator().getOriginatorKey().getAlgorithm().getParameters());
     }
 
+    public void testEckaEgX963Kdf()
+        throws Exception
+    {
+        // Round-trip a CMS EnvelopedData under the BSI TR-03111 ECKA-EG-X963KDF-SHA256
+        // key agreement, wrapping an AES-128 content-encryption key. Closes
+        // github #790 — without the dispatch fix in CMSUtils the encode side throws
+        // "Unknown key agreement algorithm" and the decode side (in pre-2.85 BC)
+        // fell through to a null UserKeyingMaterialSpec, producing the wrong shared
+        // secret and a "checksum failed" InvalidKeyException from the AES key unwrap.
+        ASN1ObjectIdentifier[] kdfs = new ASN1ObjectIdentifier[]{
+            CMSAlgorithm.ECKA_EG_X963KDF_SHA256,
+            CMSAlgorithm.ECKA_EG_X963KDF_SHA384,
+            CMSAlgorithm.ECKA_EG_X963KDF_SHA512
+        };
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        for (int i = 0; i != kdfs.length; ++i)
+        {
+            CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+            edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(kdfs[i],
+                _origEcKP.getPrivate(), _origEcKP.getPublic(),
+                CMSAlgorithm.AES128_WRAP).addRecipient(_reciEcCert).setProvider(BC));
+
+            CMSEnvelopedData ed = edGen.generate(
+                new CMSProcessableByteArray(data),
+                new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+            assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
+
+            RecipientInformationStore recipients = ed.getRecipientInfos();
+
+            confirmDataReceived(recipients, data, _reciEcCert, _reciEcKP.getPrivate(), BC);
+            confirmNumberRecipients(recipients, 1);
+        }
+    }
+
     public void testFaultyAgreementRecipient()
         throws Exception
     {
