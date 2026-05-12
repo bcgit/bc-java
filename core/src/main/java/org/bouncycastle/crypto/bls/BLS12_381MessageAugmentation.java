@@ -54,6 +54,10 @@ public class BLS12_381MessageAugmentation
      */
     public static boolean verify(ECPoint pk, byte[] message, BLS12_381G2Point signature)
     {
+        if (message == null)
+        {
+            throw new NullPointerException("message must not be null");
+        }
         if (!BLS12_381BasicScheme.keyValidate(pk))
         {
             return false;
@@ -87,6 +91,17 @@ public class BLS12_381MessageAugmentation
         if (pks == null || messages == null || pks.length != messages.length || pks.length == 0)
         {
             return false;
+        }
+        for (int i = 0; i < messages.length; ++i)
+        {
+            if (pks[i] == null)
+            {
+                throw new NullPointerException("pks[" + i + "] must not be null");
+            }
+            if (messages[i] == null)
+            {
+                throw new NullPointerException("messages[" + i + "] must not be null");
+            }
         }
         BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
         BLS12_381G2Point[] hashes = new BLS12_381G2Point[pks.length];

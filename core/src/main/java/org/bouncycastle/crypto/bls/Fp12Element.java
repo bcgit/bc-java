@@ -30,14 +30,14 @@ public final class Fp12Element
 
     static
     {
-        java.math.BigInteger pSqMinus1Over6 = Fp2Element.P.pow(2)
-            .subtract(java.math.BigInteger.ONE)
-            .divide(java.math.BigInteger.valueOf(6));
+        BigInteger pSqMinus1Over6 = Fp2Element.P.pow(2)
+            .subtract(BigInteger.ONE)
+            .divide(BigInteger.valueOf(6));
         FROB_SQ_W = Fp6Element.NON_RESIDUE.modPow(pSqMinus1Over6);
 
-        java.math.BigInteger pMinus1Over6 = Fp2Element.P
-            .subtract(java.math.BigInteger.ONE)
-            .divide(java.math.BigInteger.valueOf(6));
+        BigInteger pMinus1Over6 = Fp2Element.P
+            .subtract(BigInteger.ONE)
+            .divide(BigInteger.valueOf(6));
         FROB_W = Fp6Element.NON_RESIDUE.modPow(pMinus1Over6);
     }
 
@@ -169,9 +169,10 @@ public final class Fp12Element
     }
 
     /**
-     * Modular exponentiation by a non-negative integer. Uses
-     * left-to-right square-and-multiply on the bit representation of
-     * {@code exponent}.
+     * Modular exponentiation by an integer exponent. Uses right-to-left
+     * square-and-multiply on the bit representation of {@code exponent};
+     * a negative exponent is handled by inverting and recursing on the
+     * absolute value.
      */
     public Fp12Element modPow(BigInteger exponent)
     {
