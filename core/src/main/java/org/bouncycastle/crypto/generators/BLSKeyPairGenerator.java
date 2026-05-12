@@ -49,7 +49,20 @@ public class BLSKeyPairGenerator
         }
 
         // Draw 32 bytes of IKM from the SecureRandom (the spec's minimum).
-        // Feeding this through KeyGen / HKDF gives a uniform secret in [1, r - 1].
+        // Feeding this through KeyGen / HKDF gives a uniform secret in
+        // [1, r - 1].
+        //
+        // The try/finally wipe of ikm is load-bearing: KeyGen is a pure
+        // deterministic function of (IKM, salt, key_info), and salt /
+        // key_info are fixed public constants for this generator. So
+        // anyone who reads ikm from a heap dump can derive the same sk by
+        // re-running keyGen offline — i.e. ikm is effectively a second
+        // copy of the secret-key bytes. Without the wipe, the bytes
+        // survive until the next GC collects the local stack frame and
+        // the array body; with the wipe the residence window is the body
+        // of the try-block. (The constant-time scalar-mult work at
+        // sign-time would be pointless if a heap inspector could just
+        // read the seed material from a separate file.)
         byte[] ikm = new byte[32];
         try
         {
