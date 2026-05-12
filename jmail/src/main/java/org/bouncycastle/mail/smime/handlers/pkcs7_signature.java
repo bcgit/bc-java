@@ -1,7 +1,5 @@
 package org.bouncycastle.mail.smime.handlers;
 
-import java.awt.datatransfer.DataFlavor;
-
 import jakarta.activation.ActivationDataFlavor;
 import jakarta.mail.internet.MimeBodyPart;
 
