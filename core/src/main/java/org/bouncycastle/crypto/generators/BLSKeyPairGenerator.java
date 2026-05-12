@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.params.BLSParameters;
 import org.bouncycastle.crypto.params.BLSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.BLSPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Generates a BLS signature scheme keypair. The secret key is derived from
@@ -50,12 +51,19 @@ public class BLSKeyPairGenerator
         // Draw 32 bytes of IKM from the SecureRandom (the spec's minimum).
         // Feeding this through KeyGen / HKDF gives a uniform secret in [1, r - 1].
         byte[] ikm = new byte[32];
-        random.nextBytes(ikm);
-        BigInteger sk = BLS12_381BasicScheme.keyGen(ikm, new byte[0]);
+        try
+        {
+            random.nextBytes(ikm);
+            BigInteger sk = BLS12_381BasicScheme.keyGen(ikm, new byte[0]);
 
-        ECPoint pk = BLS12_381BasicScheme.skToPk(sk);
-        return new AsymmetricCipherKeyPair(
-            new BLSPublicKeyParameters(parameters, pk),
-            new BLSPrivateKeyParameters(parameters, sk));
+            ECPoint pk = BLS12_381BasicScheme.skToPk(sk);
+            return new AsymmetricCipherKeyPair(
+                new BLSPublicKeyParameters(parameters, pk),
+                new BLSPrivateKeyParameters(parameters, sk));
+        }
+        finally
+        {
+            Arrays.fill(ikm, (byte)0);
+        }
     }
 }

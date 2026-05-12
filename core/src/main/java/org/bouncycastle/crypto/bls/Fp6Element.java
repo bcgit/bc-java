@@ -39,15 +39,15 @@ public final class Fp6Element
 
     static
     {
-        java.math.BigInteger pSqMinus1Over3 = Fp2Element.P.pow(2)
-            .subtract(java.math.BigInteger.ONE)
-            .divide(java.math.BigInteger.valueOf(3));
+        BigInteger pSqMinus1Over3 = Fp2Element.P.pow(2)
+            .subtract(BigInteger.ONE)
+            .divide(BigInteger.valueOf(3));
         FROB_SQ_V = NON_RESIDUE.modPow(pSqMinus1Over3);
         FROB_SQ_V2 = FROB_SQ_V.square();
 
-        java.math.BigInteger pMinus1Over3 = Fp2Element.P
-            .subtract(java.math.BigInteger.ONE)
-            .divide(java.math.BigInteger.valueOf(3));
+        BigInteger pMinus1Over3 = Fp2Element.P
+            .subtract(BigInteger.ONE)
+            .divide(BigInteger.valueOf(3));
         FROB_V = NON_RESIDUE.modPow(pMinus1Over3);
         FROB_V2 = FROB_V.square();
     }
