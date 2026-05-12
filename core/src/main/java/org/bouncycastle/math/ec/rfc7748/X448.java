@@ -14,19 +14,18 @@ import org.bouncycastle.util.Arrays;
  *       {@link #clampPrivateKey} (RFC 7748 sec. 5 clamping: clear bits
  *       0..1, set bit 447).</li>
  *   <li>{@link #generatePublicKey} / {@link #scalarMultBase} &mdash;
- *       computed as {@code k * B} on the birationally-equivalent
- *       {@code edwards448} curve via
- *       {@link Ed448#scalarMultBaseXY(Friend, byte[], int, int[], int[])}
+ *       computed as {@code k * B} on the 4-isogenous {@code edwards448} curve
+ *       via {@link Ed448#scalarMultBaseXY(Friend, byte[], int, int[], int[])}
  *       (a signed multi-comb in projective Edwards coordinates), then
- *       converted to the Curve448 {@code u} coordinate using the RFC
- *       7748 sec. 4.2 / errata 5568 birational map
- *       {@code u = (y / x)^2}.</li>
+ *       converted to the curve448 {@code u} coordinate using the RFC
+ *       7748 sec. 4.2 4-isogeny map {@code u = (y / x)^2}.</li>
  *   <li>{@link #scalarMult} (key agreement) &mdash; Montgomery ladder on
  *       XZ-only projective coordinates per RFC 7748 sec. 5, with
  *       per-bit constant-time {@code cswap}; the
  *       {@code A24 = (A + 2) / 4} curve constant is precomputed from
- *       {@code A = 156326}. The trailing two doublings cancel the
- *       cofactor introduced by the lowest cleared scalar bits.</li>
+ *       {@code A = 156326}. The final two doublings correspond to the
+ *       always-cleared low bits of the scalar; these clear the cofactor
+ *       to ensure a non-twist result.</li>
  *   <li>{@link #calculateAgreement} &mdash; {@link #scalarMult} followed
  *       by the RFC 7748 sec. 6.2 all-zero rejection.</li>
  * </ul>
@@ -214,9 +213,9 @@ public abstract class X448
 
         Ed448.scalarMultBaseXY(Friend.INSTANCE, k, kOff, x, y);
 
-        // Birational map edwards448 -> Curve448 (RFC 7748 sec. 4.2 /
-        // errata 5568):  u = (y / x)^2.  The Ed448 comb returns the
-        // affine Edwards (x, y); invert x and square the ratio.
+        // 4-isogeny map edwards448 -> curve448 (RFC 7748 sec. 4.2): u = (y / x)^2.
+        // The Ed448 comb returns the X, Y of a result in projective coordinates (with Z elided);
+        // invert x and square the ratio.
         F.inv(x, x);
         F.mul(x, y, x);
         F.sqr(x, x);
