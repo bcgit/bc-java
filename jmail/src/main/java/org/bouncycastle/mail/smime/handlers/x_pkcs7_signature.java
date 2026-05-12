@@ -1,6 +1,5 @@
 package org.bouncycastle.mail.smime.handlers;
 
-import java.awt.datatransfer.DataFlavor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,7 +9,6 @@ import jakarta.activation.DataContentHandler;
 import jakarta.activation.DataSource;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeBodyPart;
-
 import org.bouncycastle.util.Exceptions;
 
 public class x_pkcs7_signature 
