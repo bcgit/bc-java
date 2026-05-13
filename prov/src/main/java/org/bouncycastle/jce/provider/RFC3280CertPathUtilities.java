@@ -38,6 +38,7 @@ import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -1171,16 +1172,13 @@ class RFC3280CertPathUtilities
             throw new CertPathValidatorException("Subject alternative name extension could not be decoded.", e,
                 certPath, index);
         }
-        RDN[] emails = X500Name.getInstance(dns).getRDNs(BCStyle.EmailAddress);
-        for (int eI = 0; eI != emails.length; eI++)
+        String[] subjectEmails = extractEmailAddressesFromSubjectDN(X500Name.getInstance(dns));
+        for (int eI = 0; eI != subjectEmails.length; eI++)
         {
-            // TODO: this should take into account multi-valued RDNs
-            String email = ((ASN1String)emails[eI].getFirst().getValue()).getString();
-
             try
             {
-                nameConstraintValidator.checkPermittedEmail(email);
-                nameConstraintValidator.checkExcludedEmail(email);
+                nameConstraintValidator.checkPermittedEmail(subjectEmails[eI]);
+                nameConstraintValidator.checkExcludedEmail(subjectEmails[eI]);
             }
             catch (PKIXNameConstraintValidatorException ex)
             {
@@ -2479,6 +2477,42 @@ class RFC3280CertPathUtilities
         throws AnnotatedException
     {
         return CertPathValidatorUtilities.getExtensionValue(ext, oid);
+    }
+
+    /**
+     * Returns every {@code emailAddress} value present in {@code dn},
+     * including the values inside multi-valued RDNs that hold other
+     * attribute types in the same RDN.
+     * <p>
+     * Package-visible so the regression test at
+     * {@code prov/src/test/java/org/bouncycastle/jce/provider/MultiValuedRDNEmailTest.java}
+     * can call it without going through full cert-chain construction.
+     */
+    static String[] extractEmailAddressesFromSubjectDN(X500Name dn)
+    {
+        if (dn == null)
+        {
+            return new String[0];
+        }
+        List collected = new ArrayList();
+        RDN[] rdns = dn.getRDNs(BCStyle.EmailAddress);
+        for (int rI = 0; rI != rdns.length; rI++)
+        {
+            AttributeTypeAndValue[] tvs = rdns[rI].getTypesAndValues();
+            for (int tI = 0; tI != tvs.length; tI++)
+            {
+                AttributeTypeAndValue tv = tvs[tI];
+                if (!BCStyle.EmailAddress.equals(tv.getType()))
+                {
+                    continue;
+                }
+                if (tv.getValue() instanceof ASN1String)
+                {
+                    collected.add(((ASN1String)tv.getValue()).getString());
+                }
+            }
+        }
+        return (String[])collected.toArray(new String[collected.size()]);
     }
 
     private static String getUnsupportedCriticalExtensionMessage(Set criticalExtensions)
