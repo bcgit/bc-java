@@ -65,6 +65,12 @@ The project now uses ```gradlew``` which can be invoked for example:
 
 The gradle script will endeavour to verify their existence but not the correctness of their value.
 
+Each module's built jars are written to its own ```<module>/build/libs``` directory (e.g. ```prov/build/libs/bcprov-jdk18on-<version>.jar```). For convenience, a top-level ```copyJars``` task gathers the main jars for all published modules (```bccore```, ```bcutil```, ```bcprov```, ```bcpkix```, ```bcpg```, ```bctls```, ```bcmls```, ```bcmail```, ```bcjmail```) into a single ```dist``` directory at the project root:
+
+```
+./gradlew copyJars
+```
+
 
 ## Multi-release jars and testing
 Some subprojects produce multi-release jars and these jars are can be tested on different jvm versions specifically.
