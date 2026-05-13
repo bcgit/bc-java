@@ -278,6 +278,8 @@ public class BCStyle
         DefaultLookUp.put("unstructuredname", UnstructuredName);
         DefaultLookUp.put("uniqueidentifier", UNIQUE_IDENTIFIER);
         DefaultLookUp.put("dn", DN_QUALIFIER);
+        DefaultLookUp.put("dnq", DN_QUALIFIER);
+        DefaultLookUp.put("dnqualifier", DN_QUALIFIER);
         DefaultLookUp.put("pseudonym", PSEUDONYM);
         DefaultLookUp.put("postaladdress", POSTAL_ADDRESS);
         DefaultLookUp.put("nameatbirth", NAME_AT_BIRTH);

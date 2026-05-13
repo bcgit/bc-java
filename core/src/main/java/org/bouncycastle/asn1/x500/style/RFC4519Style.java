@@ -122,6 +122,8 @@ public class RFC4519Style
         DefaultLookUp.put("destinationindicator", destinationIndicator);
         DefaultLookUp.put("distinguishedname", distinguishedName);
         DefaultLookUp.put("dnqualifier", dnQualifier);
+        DefaultLookUp.put("dn", dnQualifier);
+        DefaultLookUp.put("dnq", dnQualifier);
         DefaultLookUp.put("enhancedsearchguide", enhancedSearchGuide);
         DefaultLookUp.put("facsimiletelephonenumber", facsimileTelephoneNumber);
         DefaultLookUp.put("generationqualifier", generationQualifier);
