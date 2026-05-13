@@ -2270,6 +2270,83 @@ public class NewSignedDataTest
         }
     }
 
+    public void testNestedCounterSignature()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_signCert);
+        certList.add(_origCert);
+
+        Store certStore = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_signKP.getPrivate());
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha1Signer, _signCert));
+        gen.addCertificates(certStore);
+
+        CMSSignedData s = gen.generate(msg, true);
+        SignerInformation origSigner = (SignerInformation)s.getSignerInfos().getSigners().toArray()[0];
+
+        // First-level counter-signer: signed by _origKP, counters the primary signer.
+        CMSSignedDataGenerator firstLevelGen = new CMSSignedDataGenerator();
+        ContentSigner firstLevelSigner = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+        firstLevelGen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(firstLevelSigner, _origCert));
+        SignerInformationStore firstLevel = firstLevelGen.generateCounterSigners(origSigner);
+
+        SignerInformation enriched = SignerInformation.addCounterSigners(origSigner, firstLevel);
+
+        // Second-level counter-signer: signed by _signKP, counters the first-level counter-signer.
+        SignerInformation firstLevelCs = (SignerInformation)enriched.getCounterSignatures().getSigners().iterator().next();
+        SignerId firstLevelCsId = firstLevelCs.getSID();
+
+        CMSSignedDataGenerator secondLevelGen = new CMSSignedDataGenerator();
+        ContentSigner secondLevelSigner = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_signKP.getPrivate());
+        secondLevelGen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(secondLevelSigner, _signCert));
+        SignerInformationStore secondLevel = secondLevelGen.generateCounterSigners(firstLevelCs);
+
+        SignerInformation nested = SignerInformation.addCounterSigners(enriched, firstLevelCsId, secondLevel);
+
+        // Outer signer still has exactly one first-level counter-signer.
+        assertEquals(1, nested.getCounterSignatures().size());
+
+        SignerInformation reachedFirst = (SignerInformation)nested.getCounterSignatures().getSigners().iterator().next();
+        assertTrue(reachedFirst.getSID().equals(firstLevelCsId));
+        assertTrue(reachedFirst.isCounterSignature());
+        assertTrue(reachedFirst.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_origCert)));
+
+        // The first-level counter-signer now has exactly one nested counter-signer.
+        SignerInformationStore nestedStore = reachedFirst.getCounterSignatures();
+        assertEquals(1, nestedStore.size());
+
+        SignerInformation reachedSecond = (SignerInformation)nestedStore.getSigners().iterator().next();
+        assertTrue(reachedSecond.isCounterSignature());
+        assertTrue(reachedSecond.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+
+        // Replace the signer in the original SignedData and verify the whole structure round-trips.
+        List signers = new ArrayList();
+        signers.add(nested);
+        CMSSignedData enrichedSd = CMSSignedData.replaceSigners(s, new SignerInformationStore(signers));
+
+        SignerInformation roundTripped = (SignerInformation)enrichedSd.getSignerInfos().getSigners().iterator().next();
+        assertEquals(1, roundTripped.getCounterSignatures().size());
+        SignerInformation roundTrippedFirst = (SignerInformation)roundTripped.getCounterSignatures().getSigners().iterator().next();
+        assertEquals(1, roundTrippedFirst.getCounterSignatures().size());
+
+        // Mismatched SignerId rejected with IllegalArgumentException.
+        try
+        {
+            SignerInformation.addCounterSigners(enriched, new SignerId(new byte[]{ 1, 2, 3 }), secondLevel);
+            fail("expected IllegalArgumentException for non-matching SignerId");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("no counter-signer matches the supplied SignerId", e.getMessage());
+        }
+    }
+
     public void testSHA1WithRSACounterSignatureAndVerifierProvider()
         throws Exception
     {
