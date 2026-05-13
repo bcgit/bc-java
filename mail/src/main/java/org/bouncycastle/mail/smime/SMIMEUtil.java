@@ -192,6 +192,18 @@ public class SMIMEUtil
         }
     }
 
+    /*
+     * Write the bytes between an inner multipart child's closing boundary and the
+     * next outer boundary into the digest input. When the parent body part was
+     * parsed from bytes, the raw stream is consulted so any extra postamble lines
+     * the original signer included in its digest input are preserved. When the
+     * parent was constructed in-memory (no raw stream), the signing side
+     * (SMIMESignedGenerator.ContentSigner.writeBodyPart) emits exactly one CRLF
+     * between the inner closing boundary and the next outer boundary, so the same
+     * single CRLF is emitted here. Earlier versions returned silently in the
+     * in-memory case, producing a digest input one CRLF short of what the signer
+     * hashed (github #542).
+     */
     static void outputPostamble(LineOutputStream lOut, BodyPart parent, String parentBoundary, BodyPart part)
         throws MessagingException, IOException
     {
@@ -203,7 +215,8 @@ public class SMIMEUtil
         }
         catch (MessagingException e)
         {
-            return;   // no underlying content rely on default generation
+            lOut.writeln();
+            return;
         }
 
 
@@ -286,7 +299,7 @@ public class SMIMEUtil
                         lOut.writeln();       // CRLF terminator needed
                     }
                     else
-                    {                        // output nested preamble
+                    {                        // output nested postamble
                         outputPostamble(lOut, mimePart, boundary, part);
                     }
                 }
