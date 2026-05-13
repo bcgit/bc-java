@@ -8,7 +8,8 @@ import org.bouncycastle.asn1.x509.NameConstraintValidatorException;
 
 public class PKIXNameConstraintValidator
 {
-    ASN1PKIXNameConstraintValidator validator = new ASN1PKIXNameConstraintValidator();
+    org.bouncycastle.asn1.x509.PKIXNameConstraintValidator validator =
+        new org.bouncycastle.asn1.x509.PKIXNameConstraintValidator();
 
     public PKIXNameConstraintValidator()
     {

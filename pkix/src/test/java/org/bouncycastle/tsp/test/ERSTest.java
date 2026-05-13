@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -1130,9 +1131,8 @@ public class ERSTest
     public void testDirUtil()
         throws Exception
     {
-        File rootDir = File.createTempFile("ers", ".dir");
-        rootDir.delete();
-        if (rootDir.mkdir())
+        File rootDir = Files.createTempDirectory("ers.dir").toFile();
+        try
         {
             DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
             DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
@@ -1173,12 +1173,10 @@ public class ERSTest
 
             assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
                 tspReq.getMessageImprintDigest()));
-
-            deleteDirectory(rootDir);
         }
-        else
+        finally
         {
-            throw new Exception("can't create temp dir");
+            deleteDirectory(rootDir);
         }
     }
 

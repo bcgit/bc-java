@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStrictStyle;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.X509DefaultEntryConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -150,6 +151,7 @@ public class X500NameTest
     {
         ietfUtilsTest();
         bogusEqualsTest();
+        dnQualifierAliasParseTest();
 
         testEncodingPrintableString(BCStyle.C, "AU");
         testEncodingPrintableString(BCStyle.SERIALNUMBER, "123456");
@@ -680,6 +682,43 @@ public class X500NameTest
         throws Exception
     {
         IETFUtils.valueToString(new DERUTF8String(" "));
+    }
+
+    /**
+     * BCStyle / RFC4519Style now accept "DN", "DNQ" and "dnQualifier"
+     * as parser aliases for the dnQualifier attribute (OID 2.5.4.46).
+     * The motivating case was that {@code java.security.cert.X509Certificate.getSubjectX500Principal().toString()}
+     * emits "DNQ=" on some JDKs (Amazon Corretto 17 observed) and
+     * "DNQUALIFIER=" on others, neither of which round-tripped through
+     * {@code new X500Name(principal.toString())} under BCStyle's
+     * historical "DN" form (issue #1622).
+     */
+    private void dnQualifierAliasParseTest()
+        throws Exception
+    {
+        String[] aliases = new String[]{ "DN", "DNQ", "dnQualifier", "dn", "dnq", "dnqualifier" };
+        for (int i = 0; i != aliases.length; ++i)
+        {
+            String alias = aliases[i];
+
+            X500Name viaBcStyle = new X500Name(BCStyle.INSTANCE,
+                "CN=Foo," + alias + "=ABC123");
+            RDN[] rdnsBc = viaBcStyle.getRDNs(BCStyle.DN_QUALIFIER);
+            if (rdnsBc.length != 1)
+            {
+                fail("BCStyle: alias '" + alias
+                    + "' did not parse to a single dnQualifier RDN");
+            }
+
+            X500Name viaRfc = new X500Name(RFC4519Style.INSTANCE,
+                "CN=Foo," + alias + "=ABC123");
+            RDN[] rdnsRfc = viaRfc.getRDNs(RFC4519Style.dnQualifier);
+            if (rdnsRfc.length != 1)
+            {
+                fail("RFC4519Style: alias '" + alias
+                    + "' did not parse to a single dnQualifier RDN");
+            }
+        }
     }
 
     private void bogusEqualsTest()

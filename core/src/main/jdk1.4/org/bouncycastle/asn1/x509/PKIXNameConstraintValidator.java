@@ -1698,29 +1698,47 @@ public class PKIXNameConstraintValidator
 
     private static String extractHostFromURL(String url)
     {
-        // see RFC 1738
-        // remove ':' after protocol, e.g. https:
-        String sub = url.substring(url.indexOf(':') + 1);
-        // extract host from Common Internet Scheme Syntax, e.g. https://
-        int slashesPos = sub.indexOf("//");
-        if (slashesPos != -1)
+        // RFC 3986 §3.2 authority structure:
+        //   authority = [ userinfo "@" ] host [ ":" port ]
+        // The strip order is now: scheme -> "//" -> path/query fragment terminator -> userinfo (last '@') -> host
+        // with optional bracketed IPv6 / trailing ":port".
+        String sub = url;
+        int schemeEnd = sub.indexOf(':');
+        if (schemeEnd >= 0)
         {
-            sub = sub.substring(slashesPos + 2);
+            sub = sub.substring(schemeEnd + 1);
         }
-        // first remove port, e.g. https://test.com:21
-        int portColonPos = sub.lastIndexOf(':');
-        if (portColonPos != -1)
+        if (sub.startsWith("//"))
         {
-            sub = sub.substring(0, portColonPos);
+            sub = sub.substring(2);
         }
-        // remove user and password, e.g. https://john:password@test.com
-        sub = sub.substring(sub.indexOf(':') + 1);
-        sub = sub.substring(sub.indexOf('@') + 1);
-        // remove local parts, e.g. https://test.com/bla
-        int slashPos = sub.indexOf('/');
-        if (slashPos != -1)
+        for (int i = 0; i < sub.length(); ++i)
         {
-            sub = sub.substring(0, slashPos);
+            char c = sub.charAt(i);
+            if (c == '/' || c == '?' || c == '#')
+            {
+                sub = sub.substring(0, i);
+                break;
+            }
+        }
+        int atPos = sub.lastIndexOf('@');
+        if (atPos >= 0)
+        {
+            sub = sub.substring(atPos + 1);
+        }
+        if (sub.startsWith("["))
+        {
+            int closeBracket = sub.indexOf(']');
+            if (closeBracket > 0)
+            {
+                return sub.substring(1, closeBracket);
+            }
+            return sub.substring(1);
+        }
+        int portColon = sub.lastIndexOf(':');
+        if (portColon >= 0)
+        {
+            sub = sub.substring(0, portColon);
         }
         return sub;
     }
