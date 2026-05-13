@@ -289,6 +289,32 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 
 test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test17', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
 
+// Aggregate all published jars (main, sources, javadoc) into a top-level dist/
+// directory so consumers have a single place to pick up the build outputs.
+def distModules = ['core', 'util', 'prov', 'pkix', 'pg', 'tls', 'mls', 'mail', 'jmail']
+
+distModules.each { evaluationDependsOn(":$it") }
+
+task copyJars(type: Copy) {
+    description = 'Bundles produced main jars into the top-level dist/ directory.'
+    group = 'distribution'
+
+    distModules.each { name ->
+        from(project(":$name").tasks.named('jar'))
+    }
+
+    into layout.projectDirectory.dir('dist')
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    doFirst {
+        delete fileTree(destinationDir).matching { include '*.jar' }
+    }
+
+    doLast {
+        logger.lifecycle("Copied ${didWork ? source.files.size() : 0} jar(s) to ${destinationDir}")
+    }
+}
+
 //apply from: "publish.gradle"
 
 
