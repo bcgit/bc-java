@@ -69,6 +69,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 <li>Argon2BytesGenerator now accepts a caller-supplied BlockPool via Argon2Parameters.Builder.withBlockPool(...), allowing reuse of working memory across successive generateBytes calls (issue #1646 / PR #1647). A bounded FixedBlockPool implementation is included.</li>
 <li>BCFKS keystore now supports storing and retrieving javax.crypto.interfaces.PBEKey entries, so passwords and other PBE-based secrets no longer need to be stored as HMAC keys (issue #2164).</li>
 <li>X509v3CertificateBuilder now exposes setters for the constructor arguments (setIssuer, setSerialNumber, setNotBefore, setNotAfter, setSubject, setSubjectPublicKeyInfo) to support equivalence-comparison use cases (issue #1545).</li>
+<li>org.bouncycastle.asn1.x509.qualified.QcType — typed wrapper for the ETSI EN 319 412-5 sec. 4.2.3 QcType statementInfo (SEQUENCE OF OBJECT IDENTIFIER) carried inside a QCStatement whose statementId is id_etsi_qcs_QcType. Constructors take either a single OID or an array; hasType(ASN1ObjectIdentifier) returns whether a given QcType OID (id_etsi_qct_esign / id_etsi_qct_eseal / id_etsi_qct_web) is declared. QCStatementUnitTest has been extended to round-trip every ETSI QC statement type — QcCompliance, QcSSCD, QcType, QcCClegislation, RetentionPeriod and LimitValue — through encode/parse via QCStatement (issue #1467).</li>
 <li>CMS EnvelopedData now supports RFC 8418 ECDH key agreement using X25519 or X448 with HKDF (SHA-256/384/512). Three CMSAlgorithm constants (ECDH_HKDF_SHA256, ECDH_HKDF_SHA384, ECDH_HKDF_SHA512) and the corresponding KeyAgreement registrations (XDHwithSHA256HKDF / XDHwithSHA384HKDF / XDHwithSHA512HKDF) have been added (issue #1845).</li>
 <li>The SM2 JCE Cipher now accepts a ciphertext-format mode in the transformation string. Cipher.getInstance("SM2/C1C3C2/NoPadding", "BC") and Cipher.getInstance("SM2/C1C2C3/NoPadding", "BC") select between the two SM2Engine modes; the previous "SM2"/"SM2/NONE/NoPadding" forms continue to default to C1C2C3 (issue #1302).</li>
 <li>SimplePKIResponse now also accepts the unsigned Full PKI Response variant used for EST server-generated errors (RFC 7030 4.2.3 / 4.4.2): a CMS SignedData carrying an id-cct-PKIResponse PKIResponse SEQUENCE. New accessors getPKIResponse(), getControlAttributes(), getCmsContents() and getStatusInfoV2() return the embedded content as structured TaggedAttribute / TaggedContentInfo / CMCStatusInfoV2 objects. A new PKIResponseBuilder assembles SimplePKIResponse instances for both shapes — the Full PKI Response error case (addControlAttribute / addStatusInfoV2 / addCmsContent / addOtherMsg) and the cert-delivery success case used by EST /simpleenroll (addCertificate). CMSSignedData has a new getSignedContentType() returning the encapsulated content type as an ASN1ObjectIdentifier (issue #1452).</li>
@@ -313,6 +314,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 30th October.
 <li>Support for the Argon2 S2K has been added to the PGP API.</li>
 <li>The system property "org.bouncycastle.pemreader.lax" has been introduced for situations where the BC PEM parsing is now too strict.</li>
 <li>The system property "org.bouncycastle.ec.disable_f2m" has been introduced to allow F2m EC support to be disabled.</li>
+<li>ETSIQCObjectIdentifiers now defines id_etsi_qcs_QcCClegislation (0.4.0.1862.1.7), the ETSI EN 319 412-5 qualified-certificate statement identifying the country legislation under which the qualified certificate was issued (issue #1467).</li>
 </ul>
 
 <a id="r1rv78d1"><h3>2.8.1 Version</h3></a>
@@ -364,6 +366,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 7th April.
 <li>X500Name now recognises jurisdiction{C,ST,L} DNs.</li>
 <li>CertPathValidationContext and CertificatePoliciesValidation now include implementations of Memoable.</li>
 <li>The Composite post-quantum signatures implementation has been updated to the latest draft <a href="https://datatracker.ietf.org/doc/html/draft-ounsworth-pq-composite-sigs/">draft-ounsworth-pq-composite-sigs</a>.</li>
+<li>X509v2CRLBuilder now exposes setThisUpdate(Date), setThisUpdate(Date, Locale) and setThisUpdate(Time) overloads, mirroring the existing setNextUpdate methods so the thisUpdate field can be reset after the builder has been constructed (issue #1545).</li>
 </ul>
 <h3>2.9.4 Notes.</h3>
 <ul>

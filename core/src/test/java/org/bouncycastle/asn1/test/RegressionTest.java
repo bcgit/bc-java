@@ -31,6 +31,7 @@ public class RegressionTest
         new Iso4217CurrencyCodeUnitTest(),
         new SemanticsInformationUnitTest(),
         new QCStatementUnitTest(),
+        new QcTypeUnitTest(),
         new TypeOfBiometricDataUnitTest(),
         new EncryptedPrivateKeyInfoTest(),
         new ReasonFlagsTest(),
