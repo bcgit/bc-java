@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
@@ -249,6 +250,54 @@ public class CertPathTest
         // exception tests
         //
         testExceptions();
+
+        sortCertsTest();
+    }
+
+    private void sortCertsTest()
+        throws Exception
+    {
+        KeyPair rootPair = TestUtils.generateRSAKeyPair();
+        KeyPair interPair = TestUtils.generateRSAKeyPair();
+        KeyPair endPair = TestUtils.generateRSAKeyPair();
+
+        X509Certificate root = TestUtils.generateRootCert(rootPair);
+        X509Certificate inter = TestUtils.generateIntermediateCert(interPair.getPublic(), rootPair.getPrivate(), root);
+        X509Certificate end = TestUtils.generateEndEntityCert(endPair.getPublic(), interPair.getPrivate(), inter);
+
+        // For every permutation of [end, inter, root] the X.509 BC CertificateFactory
+        // must hand back end-entity first, then intermediate, then root (github #1269).
+        // Pre-fix the sortCerts loops mutated the working list while iterating, so the
+        // [end, root, inter] permutation in particular came back unsorted because both
+        // end and inter were classified as end-entity candidates.
+        X509Certificate[][] permutations = {
+            { end, inter, root },
+            { end, root, inter },
+            { inter, end, root },
+            { inter, root, end },
+            { root, end, inter },
+            { root, inter, end }
+        };
+
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+
+        for (int i = 0; i != permutations.length; i++)
+        {
+            List in = new ArrayList();
+            in.add(permutations[i][0]);
+            in.add(permutations[i][1]);
+            in.add(permutations[i][2]);
+
+            CertPath path = cf.generateCertPath(in);
+            List sorted = path.getCertificates();
+
+            if (sorted.size() != 3 || !sorted.get(0).equals(end) || !sorted.get(1).equals(inter) || !sorted.get(2).equals(root))
+            {
+                fail("CertPath not sorted for permutation [" + permutations[i][0].getSubjectX500Principal()
+                    + ", " + permutations[i][1].getSubjectX500Principal()
+                    + ", " + permutations[i][2].getSubjectX500Principal() + "]: got " + sorted);
+            }
+        }
     }
 
     public String getName()
