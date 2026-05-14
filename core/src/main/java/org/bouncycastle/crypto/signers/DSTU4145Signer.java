@@ -91,7 +91,7 @@ public class DSTU4145Signer
             {
                 do
                 {
-                    e = generateRandomInteger(n, random);
+                    e = BigIntegers.createRandomInRange(BigInteger.ONE, n.subtract(BigInteger.ONE), random);
                     Fe = basePointMultiplier.multiply(ec.getG(), e).normalize().getAffineXCoord();
                 }
                 while (Fe.isZero());
@@ -146,14 +146,6 @@ public class DSTU4145Signer
     protected ECMultiplier createBasePointMultiplier()
     {
         return new FixedPointCombMultiplier();
-    }
-
-    /**
-     * Generates random integer such, than its bit length is less than that of n
-     */
-    private static BigInteger generateRandomInteger(BigInteger n, SecureRandom random)
-    {
-        return BigIntegers.createRandomBigInteger(n.bitLength() - 1, random);
     }
 
     private static ECFieldElement hash2FieldElement(ECCurve curve, byte[] hash)
