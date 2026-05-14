@@ -296,11 +296,14 @@ def distModules = ['core', 'util', 'prov', 'pkix', 'pg', 'tls', 'mls', 'mail', '
 distModules.each { evaluationDependsOn(":$it") }
 
 task copyJars(type: Copy) {
-    description = 'Bundles produced main jars into the top-level dist/ directory.'
+    description = 'Bundles produced jars (main, sources, javadoc) into the top-level dist/ directory.'
     group = 'distribution'
 
     distModules.each { name ->
-        from(project(":$name").tasks.named('jar'))
+        def sp = project(":$name")
+        from(sp.tasks.named('jar'))
+        from(sp.tasks.named('sourcesJar'))
+        from(sp.tasks.named('javadocJar'))
     }
 
     into layout.projectDirectory.dir('dist')
