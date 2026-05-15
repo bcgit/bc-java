@@ -300,6 +300,8 @@ public class X509NameTest
 
         countryCodeLengthTest();
 
+        commonNameLengthTest();
+
         ByteArrayOutputStream bOut;
         ASN1OutputStream aOut;
         ASN1InputStream aIn;
@@ -668,6 +670,73 @@ public class X509NameTest
         {
             fail("lenient parse of 3-character C failed: " + parsed);
         }
+    }
+
+    private void commonNameLengthTest()
+        throws IOException
+    {
+        // 64 chars: at the boundary, must be accepted.
+        String cn64 = repeat("A", 64);
+        new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, cn64).build();
+        new X500NameBuilder(RFC4519Style.INSTANCE).addRDN(RFC4519Style.cn, cn64).build();
+        new X500Name("CN=" + cn64);
+
+        // 65 chars: just over, must be rejected by both styles + the string constructor.
+        String cn65 = repeat("A", 65);
+
+        try
+        {
+            new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, cn65).build();
+            fail("BCStyle accepted 65-char CN");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        try
+        {
+            new X500NameBuilder(RFC4519Style.INSTANCE).addRDN(RFC4519Style.cn, cn65).build();
+            fail("RFC4519Style accepted 65-char CN");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        try
+        {
+            new X500Name("CN=" + cn65);
+            fail("X500Name(\"CN=...\") accepted 65-char CN");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        // Parsing existing DER with an over-length CN is deliberately
+        // still permitted: don't block reading already-issued certificates
+        // in the wild (leniency boundary, matches the country-code split).
+        ASN1EncodableVector atav = new ASN1EncodableVector();
+        atav.add(BCStyle.CN);
+        atav.add(new org.bouncycastle.asn1.DERUTF8String(cn65));
+        ASN1EncodableVector rdn = new ASN1EncodableVector();
+        rdn.add(new DERSet(new DERSequence(atav)));
+        X500Name parsed = X500Name.getInstance(new DERSequence(rdn));
+        if (!cn65.equals(parsed.getRDNs(BCStyle.CN)[0].getFirst().getValue().toString()))
+        {
+            fail("lenient parse of 65-char CN failed: " + parsed);
+        }
+    }
+
+    private static String repeat(String s, int n)
+    {
+        StringBuilder sb = new StringBuilder(s.length() * n);
+        for (int i = 0; i < n; i++)
+        {
+            sb.append(s);
+        }
+        return sb.toString();
     }
 
     private void compositeTest()
