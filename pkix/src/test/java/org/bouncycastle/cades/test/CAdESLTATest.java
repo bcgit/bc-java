@@ -188,4 +188,70 @@ public class CAdESLTATest
         assertEquals("both archive-timestamps must be in one attribute",
             2, archAttr.getAttrValues().size());
     }
+
+    /**
+     * The streaming computeArchiveTimestampImprint(CMSSignedDataParser, ...)
+     * variant produces the same digest as the in-memory variant when fed the
+     * wire-form bytes of the same SignedData (github #1983). Exercised at
+     * B-B, B-LT (so the certificates and CRLs fields are non-empty) and
+     * B-LTA (so a SignerInfo carrying an archive-timestamp attribute is
+     * present and the stripping path runs).
+     */
+    public void testStreamingImprintMatchesInMemory()
+        throws Exception
+    {
+        byte[] payload = "streaming imprint test".getBytes("UTF-8");
+
+        DigestCalculatorProvider digProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        ContentSigner signerBuilder = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(signKP.getPrivate());
+        X509CertificateHolder signCh = new JcaX509CertificateHolder(signCert);
+        X509CertificateHolder caCh = new JcaX509CertificateHolder(caCert);
+        X509CRLHolder crlHolder = new JcaX509CRLHolder(caCrl);
+
+        // B-B baseline.
+        CAdESSignerInfoGeneratorBuilder cb = new CAdESSignerInfoGeneratorBuilder(digProv);
+        CAdESSignedDataGenerator gen = new CAdESSignedDataGenerator();
+        gen.addSignerInfoGenerator(cb.build(signerBuilder, signCh));
+        gen.addCertificates(new JcaCertStore(java.util.Collections.singletonList(signCert)));
+        CMSSignedData signed = gen.generate(new CMSProcessableByteArray(payload), true);
+
+        assertImprintsMatch(signed, digProv, "B-B");
+
+        // B-LT (adds certificates and CRLs to the SignedData).
+        SignerInformation signer = (SignerInformation)signed.getSignerInfos().getSigners().iterator().next();
+        signed = CAdESLongTermValuesUtil.applyLongTermValues(
+            signed, signer.getSID(),
+            Collections.singletonList(caCh),
+            Collections.singletonList(crlHolder),
+            SHA256, digProv);
+
+        assertImprintsMatch(signed, digProv, "B-LT");
+
+        // B-LTA (SignerInfo now carries an archive-timestamp; stripping must
+        // produce the same canonical bytes in both code paths).
+        signer = (SignerInformation)signed.getSignerInfos().getSigners().iterator().next();
+        byte[] archImprint = CAdESArchiveTimestampUtil.computeArchiveTimestampImprint(signed, SHA256, digProv);
+        signed = CAdESArchiveTimestampUtil.applyArchiveTimestamp(
+            signed, signer.getSID(), CAdESTestHelpers.mintTsaToken(archImprint));
+
+        assertImprintsMatch(signed, digProv, "B-LTA");
+    }
+
+    private static void assertImprintsMatch(CMSSignedData signed,
+                                            DigestCalculatorProvider digProv,
+                                            String label)
+        throws Exception
+    {
+        byte[] inMemory = CAdESArchiveTimestampUtil.computeArchiveTimestampImprint(
+            signed, SHA256, digProv);
+
+        org.bouncycastle.cms.CMSSignedDataParser parser =
+            new org.bouncycastle.cms.CMSSignedDataParser(digProv, signed.getEncoded());
+        byte[] streamed = CAdESArchiveTimestampUtil.computeArchiveTimestampImprint(
+            parser, SHA256, digProv);
+        parser.close();
+
+        assertEquals(label + ": streaming imprint must match in-memory imprint",
+            Hex.toHexString(inMemory), Hex.toHexString(streamed));
+    }
 }
