@@ -371,6 +371,38 @@ public class CMSSignedDataParser
         return HELPER.getOtherRevocationInfo(otherRevocationInfoFormat, _crlSet);
     }
 
+    /**
+     * Return the raw <code>certificates</code> field as parsed from the wire,
+     * preserving every choice (X.509 SEQUENCE, attribute certificate
+     * <code>[1]</code>, other <code>[2]</code>) in original encoding order.
+     * Null if the field was absent. Forces a populate of the cert/CRL sets
+     * (which is harmless to call multiple times). Use this when the wire
+     * order or non-X.509 choices matter; otherwise prefer {@link #getCertificates()}.
+     */
+    public ASN1Set getCertificateSet()
+        throws CMSException
+    {
+        populateCertCrlSets();
+
+        return _certSet;
+    }
+
+    /**
+     * Return the raw <code>crls</code> field as parsed from the wire,
+     * preserving every choice (CertificateList, other revocation info
+     * <code>[1]</code>) in original encoding order. Null if the field was
+     * absent. Forces a populate of the cert/CRL sets. Use this when the
+     * wire order or non-CertificateList choices matter; otherwise prefer
+     * {@link #getCRLs()} or {@link #getOtherRevocationInfo}.
+     */
+    public ASN1Set getCRLSet()
+        throws CMSException
+    {
+        populateCertCrlSets();
+
+        return _crlSet;
+    }
+
     private void populateCertCrlSets()
         throws CMSException
     {

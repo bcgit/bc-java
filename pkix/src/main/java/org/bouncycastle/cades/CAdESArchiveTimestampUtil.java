@@ -23,7 +23,10 @@ import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.esf.ESFAttributes;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.cms.CMSSignedDataParser;
+import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.cms.SignerId;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
@@ -31,6 +34,7 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.tsp.TimeStampToken;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * Helpers for upgrading a CAdES B-LT signature to B-LTA by attaching an
@@ -100,6 +104,77 @@ public final class CAdESArchiveTimestampUtil
         DigestCalculator dc = digCalcProv.get(digestAlg);
         OutputStream out = dc.getOutputStream();
         feedCanonicalInput(signed, out);
+        out.close();
+        return dc.getDigest();
+    }
+
+    /**
+     * Streaming variant: digest the canonical archive-time-stamp v2 input
+     * directly from a {@link CMSSignedDataParser} without materialising the
+     * whole SignedData. The parser's signed content is fully drained during
+     * this call; cert/CRL/SignerInfo sections are then parsed in stream
+     * order. After this method returns the parser's content stream has been
+     * consumed and cannot be re-read from the same parser.
+     * <p>
+     * The supplied parser must be positioned at the start of the SignedData
+     * (i.e. freshly constructed, with {@code getSignedContent()} not yet
+     * drained).
+     */
+    public static byte[] computeArchiveTimestampImprint(CMSSignedDataParser parser,
+                                                        AlgorithmIdentifier digestAlg,
+                                                        DigestCalculatorProvider digCalcProv)
+        throws CAdESException, CMSException, OperatorCreationException, IOException
+    {
+        if (parser == null)
+        {
+            throw new NullPointerException("parser");
+        }
+        if (digestAlg == null)
+        {
+            throw new NullPointerException("digestAlg");
+        }
+
+        DigestCalculator dc = digCalcProv.get(digestAlg);
+        OutputStream out = dc.getOutputStream();
+
+        // (1) eContent octets, streamed through the imprint digest.
+        CMSTypedStream content = parser.getSignedContent();
+        if (content != null)
+        {
+            Streams.pipeAll(content.getContentStream(), out);
+        }
+
+        // (2) certificates, in wire-encoding order, every choice DER-encoded as-is.
+        ASN1Set certs = parser.getCertificateSet();
+        if (certs != null)
+        {
+            Enumeration e = certs.getObjects();
+            while (e.hasMoreElements())
+            {
+                ASN1Encodable c = (ASN1Encodable)e.nextElement();
+                out.write(c.toASN1Primitive().getEncoded(ASN1Encoding.DER));
+            }
+        }
+
+        // (3) CRLs, same treatment.
+        ASN1Set crls = parser.getCRLSet();
+        if (crls != null)
+        {
+            Enumeration e = crls.getObjects();
+            while (e.hasMoreElements())
+            {
+                ASN1Encodable c = (ASN1Encodable)e.nextElement();
+                out.write(c.toASN1Primitive().getEncoded(ASN1Encoding.DER));
+            }
+        }
+
+        // (4) SignerInfos with archive-timestamps stripped and re-DER-encoded.
+        for (SignerInformation s : parser.getSignerInfos().getSigners())
+        {
+            SignerInformation stripped = stripArchiveTimestamps(s);
+            out.write(stripped.toASN1Structure().getEncoded(ASN1Encoding.DER));
+        }
+
         out.close();
         return dc.getDigest();
     }
