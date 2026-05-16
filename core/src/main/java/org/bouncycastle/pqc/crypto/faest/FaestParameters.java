@@ -17,7 +17,9 @@ public final class FaestParameters
 {
     // ----- Base FAEST (AES one-way function) -----
 
-    /** FAEST-128s: lambda=128, small-signature trade-off. Signature 4506 bytes. */
+    /**
+     * FAEST-128s: lambda=128, small-signature trade-off. Signature 4506 bytes.
+     */
     public static final FaestParameters faest_128s = new FaestParameters(
         "faest_128s", false,
         /* lambda */ 128, /* tau */ 11, /* wGrind */ 7,  /* tOpen */ 102,
@@ -27,35 +29,45 @@ public final class FaestParameters
         /* beta */ 1, /* owfIn */ 16, /* owfOut */ 16,
         /* pkSize */ 32, /* skSize */ 32, /* sigSize */ 4506);
 
-    /** FAEST-128f: lambda=128, fast-signing trade-off. Signature 5924 bytes. */
+    /**
+     * FAEST-128f: lambda=128, fast-signing trade-off. Signature 5924 bytes.
+     */
     public static final FaestParameters faest_128f = new FaestParameters(
         "faest_128f", false,
         128, 16, 8, 110, 1280,
         4, 40, 10, 160, 448, 832, 321,
         1, 16, 16, 32, 32, 5924);
 
-    /** FAEST-192s: lambda=192, small-signature trade-off. Signature 11260 bytes. */
+    /**
+     * FAEST-192s: lambda=192, small-signature trade-off. Signature 11260 bytes.
+     */
     public static final FaestParameters faest_192s = new FaestParameters(
         "faest_192s", false,
         192, 16, 12, 162, 2496,
         4, 32, 12, 192, 448, 1024, 641,
         2, 16, 32, 48, 40, 11260);
 
-    /** FAEST-192f: lambda=192, fast-signing trade-off. Signature 14948 bytes. */
+    /**
+     * FAEST-192f: lambda=192, fast-signing trade-off. Signature 14948 bytes.
+     */
     public static final FaestParameters faest_192f = new FaestParameters(
         "faest_192f", false,
         192, 24, 8, 163, 2496,
         4, 32, 12, 192, 448, 1024, 641,
         2, 16, 32, 48, 40, 14948);
 
-    /** FAEST-256s: lambda=256, small-signature trade-off. Signature 20696 bytes. */
+    /**
+     * FAEST-256s: lambda=256, small-signature trade-off. Signature 20696 bytes.
+     */
     public static final FaestParameters faest_256s = new FaestParameters(
         "faest_256s", false,
         256, 22, 6, 245, 3104,
         4, 52, 14, 224, 672, 1216, 777,
         2, 16, 32, 48, 48, 20696);
 
-    /** FAEST-256f: lambda=256, fast-signing trade-off. Signature 26548 bytes. */
+    /**
+     * FAEST-256f: lambda=256, fast-signing trade-off. Signature 26548 bytes.
+     */
     public static final FaestParameters faest_256f = new FaestParameters(
         "faest_256f", false,
         256, 32, 8, 246, 3104,
@@ -64,42 +76,54 @@ public final class FaestParameters
 
     // ----- FAEST-EM (Even-Mansour one-way function) -----
 
-    /** FAEST-EM-128s: lambda=128, EM mode, small-signature trade-off. Signature 3906 bytes. */
+    /**
+     * FAEST-EM-128s: lambda=128, EM mode, small-signature trade-off. Signature 3906 bytes.
+     */
     public static final FaestParameters faest_em_128s = new FaestParameters(
         "faest_em_128s", true,
         128, 11, 7, 103, 960,
         4, 0, 10, 160, 128, 832, 241,
         1, 16, 16, 32, 32, 3906);
 
-    /** FAEST-EM-128f: lambda=128, EM mode, fast-signing trade-off. Signature 5060 bytes. */
+    /**
+     * FAEST-EM-128f: lambda=128, EM mode, fast-signing trade-off. Signature 5060 bytes.
+     */
     public static final FaestParameters faest_em_128f = new FaestParameters(
         "faest_em_128f", true,
         128, 16, 8, 112, 960,
         4, 0, 10, 160, 128, 832, 241,
         1, 16, 16, 32, 32, 5060);
 
-    /** FAEST-EM-192s: lambda=192, EM mode, small-signature trade-off. Signature 9340 bytes. */
+    /**
+     * FAEST-EM-192s: lambda=192, EM mode, small-signature trade-off. Signature 9340 bytes.
+     */
     public static final FaestParameters faest_em_192s = new FaestParameters(
         "faest_em_192s", true,
         192, 16, 8, 162, 1728,
         6, 0, 12, 288, 192, 1536, 433,
         1, 24, 24, 48, 48, 9340);
 
-    /** FAEST-EM-192f: lambda=192, EM mode, fast-signing trade-off. Signature 12380 bytes. */
+    /**
+     * FAEST-EM-192f: lambda=192, EM mode, fast-signing trade-off. Signature 12380 bytes.
+     */
     public static final FaestParameters faest_em_192f = new FaestParameters(
         "faest_em_192f", true,
         192, 24, 8, 176, 1728,
         6, 0, 12, 288, 192, 1536, 433,
         1, 24, 24, 48, 48, 12380);
 
-    /** FAEST-EM-256s: lambda=256, EM mode, small-signature trade-off. Signature 17984 bytes. */
+    /**
+     * FAEST-EM-256s: lambda=256, EM mode, small-signature trade-off. Signature 17984 bytes.
+     */
     public static final FaestParameters faest_em_256s = new FaestParameters(
         "faest_em_256s", true,
         256, 22, 6, 218, 2688,
         8, 0, 14, 448, 256, 2432, 673,
         1, 32, 32, 64, 64, 17984);
 
-    /** FAEST-EM-256f: lambda=256, EM mode, fast-signing trade-off. Signature 23476 bytes. */
+    /**
+     * FAEST-EM-256f: lambda=256, EM mode, fast-signing trade-off. Signature 23476 bytes.
+     */
     public static final FaestParameters faest_em_256f = new FaestParameters(
         "faest_em_256f", true,
         256, 32, 8, 234, 2688,
@@ -108,13 +132,21 @@ public final class FaestParameters
 
     // ----- Spec-mandated invariants -----
 
-    /** Max length of a witness, mirrors MAX_LAMBDA in instances.h. */
+    /**
+     * Max length of a witness, mirrors MAX_LAMBDA in instances.h.
+     */
     public static final int MAX_LAMBDA = 256;
-    /** Max VOLE repetitions, mirrors MAX_TAU. */
+    /**
+     * Max VOLE repetitions, mirrors MAX_TAU.
+     */
     public static final int MAX_TAU = 32;
-    /** Universal-hash output width in bytes, mirrors UNIVERSAL_HASH_B. */
+    /**
+     * Universal-hash output width in bytes, mirrors UNIVERSAL_HASH_B.
+     */
     public static final int UNIVERSAL_HASH_B = 2;
-    /** IV size in bytes for randomness expansion. */
+    /**
+     * IV size in bytes for randomness expansion.
+     */
     public static final int IV_SIZE = 16;
 
     // ----- Instance state -----
@@ -191,7 +223,9 @@ public final class FaestParameters
         this.sigSize = sigSize;
     }
 
-    /** Return the parameter set whose {@link #getName()} matches, or null. */
+    /**
+     * Return the parameter set whose {@link #getName()} matches, or null.
+     */
     public static FaestParameters byName(String name)
     {
         FaestParameters[] all = {
@@ -208,33 +242,129 @@ public final class FaestParameters
         return null;
     }
 
-    public String getName() { return name; }
-    public boolean isEm() { return em; }
+    public String getName()
+    {
+        return name;
+    }
 
-    public int getLambda() { return lambda; }
-    public int getLambdaBytes() { return lambda / 8; }
-    public int getTau() { return tau; }
-    public int getWGrind() { return wGrind; }
-    public int getEll() { return ell; }
-    public int getK() { return k; }
-    public int getTau0() { return tau0; }
-    public int getTau1() { return tau1; }
-    public int getL() { return L; }
-    public int getSke() { return Ske; }
+    public boolean isEm()
+    {
+        return em;
+    }
 
-    public int getOwfInputSize() { return owfInputSize; }
-    public int getOwfOutputSize() { return owfOutputSize; }
-    public int getPkSize() { return pkSize; }
-    public int getSkSize() { return skSize; }
-    public int getSigSize() { return sigSize; }
+    public int getLambda()
+    {
+        return lambda;
+    }
+
+    public int getLambdaBytes()
+    {
+        return lambda / 8;
+    }
+
+    public int getTau()
+    {
+        return tau;
+    }
+
+    public int getWGrind()
+    {
+        return wGrind;
+    }
+
+    public int getEll()
+    {
+        return ell;
+    }
+
+    public int getK()
+    {
+        return k;
+    }
+
+    public int getTau0()
+    {
+        return tau0;
+    }
+
+    public int getTau1()
+    {
+        return tau1;
+    }
+
+    public int getL()
+    {
+        return L;
+    }
+
+    public int getSke()
+    {
+        return Ske;
+    }
+
+    public int getOwfInputSize()
+    {
+        return owfInputSize;
+    }
+
+    public int getOwfOutputSize()
+    {
+        return owfOutputSize;
+    }
+
+    public int getPkSize()
+    {
+        return pkSize;
+    }
+
+    public int getSkSize()
+    {
+        return skSize;
+    }
+
+    public int getSigSize()
+    {
+        return sigSize;
+    }
 
     // Spec-internal dimensions used only by the in-package constraint system.
-    int getTOpen() { return tOpen; }
-    int getNst() { return Nst; }
-    int getR() { return R; }
-    int getSenc() { return Senc; }
-    int getLke() { return Lke; }
-    int getLenc() { return Lenc; }
-    int getC() { return C; }
-    int getBeta() { return beta; }
+    int getTOpen()
+    {
+        return tOpen;
+    }
+
+    int getNst()
+    {
+        return Nst;
+    }
+
+    int getR()
+    {
+        return R;
+    }
+
+    int getSenc()
+    {
+        return Senc;
+    }
+
+    int getLke()
+    {
+        return Lke;
+    }
+
+    int getLenc()
+    {
+        return Lenc;
+    }
+
+    int getC()
+    {
+        return C;
+    }
+
+    int getBeta()
+    {
+        return beta;
+    }
 }
