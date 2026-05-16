@@ -105,6 +105,30 @@ When moving existing example code into `misc/`, remember to drop any matching `e
 
 `BouncyCastleProvider` (in `prov`) registers algorithms by string name through `ConfigurableProvider.addAlgorithm("Cipher.SM2", "...GMCipherSpi$SM2")` etc. Per-algorithm registration code lives in `prov/src/main/java/org/bouncycastle/jcajce/provider/{asymmetric,symmetric,digest,keystore,...}/<Family>.java`. The corresponding `*Spi` classes (CipherSpi, KeyFactorySpi, KeyPairGeneratorSpi, etc.) are siblings under the same package. When adding or fixing a JCE-visible behaviour, the registration `Family.java` is the entry point; the underlying lightweight engine usually lives in `core/src/main/java/org/bouncycastle/crypto/engines/`.
 
+### Adding a PQC algorithm: BCPQC ≠ BC, but BC needs the OID table too
+
+PQC algorithms live in a second provider, `BouncyCastlePQCProvider` (`BCPQC`), separate from `BouncyCastleProvider` (`BC`). The two providers have independent service tables. A new algorithm wired only into `BCPQC` will be reachable through `*.getInstance(name, "BCPQC")` calls and matching MR-jar / module-info exports, but it will NOT be recognised when a `X.509 CertificateFactory` / `KeyFactory` / etc. is obtained from the standard `BC` provider — which is the much more common path in caller code, because most BC-using applications add only `BouncyCastleProvider`.
+
+The bridge is `BouncyCastleProvider.loadPQCKeys()` in `prov/src/main/java/org/bouncycastle/jce/provider/BouncyCastleProvider.java`. It is called from the `BouncyCastleProvider` constructor and registers an `AsymmetricKeyInfoConverter` (typically the BCPQC-side `KeyFactorySpi`) against every PQC OID via `addKeyInfoConverter(OID, new <Pqc>KeyFactorySpi())`. The `BC` provider's certificate / PKCS#8 / SubjectPublicKeyInfo parsing then routes unknown OIDs through this converter table — so a `CertificateFactory.getInstance("X.509", "BC")` can extract and decode a FAEST / Snova / Mayo / etc. public key even though the actual algorithm is implemented in BCPQC.
+
+Practical checklist when porting a new PQC algorithm — easy to leave any of these out and end up with a half-wired addition:
+
+- `core/src/main/java/org/bouncycastle/asn1/bc/BCObjectIdentifiers.java` (or `NISTObjectIdentifiers.java` for NIST-standardised schemes) — one OID per parameter set.
+- `core/src/main/java/org/bouncycastle/pqc/crypto/<alg>/` — lightweight classes: `*Parameters`, `*PublicKeyParameters`, `*PrivateKeyParameters`, `*KeyGenerationParameters`, `*KeyPairGenerator`, `*Signer` (or KEM equivalents).
+- `core/src/main/java/org/bouncycastle/pqc/crypto/util/Utils.java` — `<alg>Oids` / `<alg>Params` maps plus `<alg>OidLookup` / `<alg>ParamsLookup` helpers.
+- `core/src/main/java/org/bouncycastle/pqc/crypto/util/PublicKeyFactory.java` — `<Alg>Converter` inner class + one `converters.put(oid, new <Alg>Converter())` per OID.
+- `core/src/main/java/org/bouncycastle/pqc/crypto/util/PrivateKeyFactory.java` — `else if (algOID.on(BCObjectIdentifiers.<alg>))` branch.
+- `core/src/main/java/org/bouncycastle/pqc/crypto/util/SubjectPublicKeyInfoFactory.java` and `PrivateKeyInfoFactory.java` — `instanceof <Alg>PublicKeyParameters` / `<Alg>PrivateKeyParameters` branches.
+- `prov/src/main/java/org/bouncycastle/pqc/jcajce/spec/<Alg>ParameterSpec.java` — `AlgorithmParameterSpec` with one constant per parameter set + `fromName(String)` lookup.
+- `prov/src/main/java/org/bouncycastle/pqc/jcajce/interfaces/<Alg>Key.java` — `extends Key` with `getParameterSpec()`.
+- `prov/src/main/java/org/bouncycastle/pqc/jcajce/provider/<alg>/` — `BC<Alg>PublicKey` (use `Arrays.areEqual`) and `BC<Alg>PrivateKey` (use `Arrays.constantTimeAreEqual` in `equals()` for the secret-bearing path), `<Alg>KeyFactorySpi`, `<Alg>KeyPairGeneratorSpi`, `SignatureSpi` (or KEM equivalents) — each with one inner subclass per parameter set.
+- `prov/src/main/java/org/bouncycastle/pqc/jcajce/provider/<Alg>.java` — `Mappings` extending `AsymmetricAlgorithmProvider`, calling `addKeyFactoryAlgorithm` / `addKeyPairGeneratorAlgorithm` / `addSignatureAlgorithm` for each parameter set.
+- `prov/.../jcajce/provider/BouncyCastlePQCProvider.java` — add `"<Alg>"` to `ALGORITHMS`.
+- `prov/.../jce/provider/BouncyCastleProvider.java` — in `loadPQCKeys()`, `addKeyInfoConverter(BCObjectIdentifiers.<alg>_<param>, new <Alg>KeyFactorySpi())` for every OID. **This is the BCPQC→BC bridge; skip it and certs / PKCS#8 work fine through BCPQC but break through BC.** Test it.
+- `prov/src/main/jdk1.9/module-info.java` — `opens org.bouncycastle.pqc.jcajce.provider.<alg> to java.base;` plus `exports org.bouncycastle.pqc.crypto.<alg>;` plus `exports org.bouncycastle.pqc.jcajce.provider.<alg>;`. Mirror `pqc.crypto.<alg>` into `prov/src/main/ext-jdk1.9/module-info.java` (the legacy distribution does not export the JCE-side `provider.<alg>` packages).
+- Tests in `prov/src/test/java/org/bouncycastle/pqc/jcajce/provider/test/<Alg>Test.java` plus an entry in `AllTests.java`. Include a `testBcProviderKeyInfoConverter`-style case that exercises `BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo)` and `getPrivateKey(PrivateKeyInfo)` against every parameter set, proving the `loadPQCKeys()` registration works.
+- `docs/releasenotes.html` — one `<li>` under the current unreleased version's "Additional Features and Functionality" block.
+
 ### Package layering: `.bc` (lightweight) vs `.jcajce` (JCA/JCE)
 
 The high-level modules (`pkix`, `pg`, `mail`/`jmail`, `tls`, `mls`) split their public surface by which low-level crypto stack a class touches:
