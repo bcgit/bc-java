@@ -33,6 +33,8 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.faest.FaestParameters;
+import org.bouncycastle.pqc.crypto.faest.FaestPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -509,6 +511,12 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             NTRUPlusParameters ntruPlusParams = Utils.ntruPlusParamsLookup(algOID);
             return new NTRUPlusPrivateKeyParameters(ntruPlusParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.faest))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            FaestParameters faestParams = Utils.faestParamsLookup(algOID);
+            return new FaestPrivateKeyParameters(faestParams, keyEnc);
         }
         else
         {
