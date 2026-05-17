@@ -241,18 +241,29 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     nohttp {
-        source.exclude '**/*.asc'
-        source.exclude '**/*.class'
+        source.exclude '*/*.asc'
+        source.exclude '*/*.bpg'
+        source.exclude '*/*.class'
+        source.exclude '*/*.crl'
+        source.exclude '*/*.eml'
+        source.exclude '*/*.gen'
+        source.exclude '*/*.gpg'
+        source.exclude '*/*.jar'
+        source.exclude '*/*.message'
+        source.exclude '*/*.pub'
+        source.exclude '*/*.rsp'
+        source.exclude '.*'
+        source.exclude 'out'
+        source.exclude 'build'
+        source.exclude '**/build'
+        source.exclude '**/src/test'
+        source.exclude '**/*.cnf'
         source.exclude '**/*.crt'
-        source.exclude '**/*.crl'
-        source.exclude '**/*.eml'
-        source.exclude '**/*.gpg'
-        source.exclude '**/*.jar'
-        source.exclude '**/*.message'
+        source.exclude '**/*.iml'
+        source.exclude '**/*.key'
+        source.exclude '**/*.txt'
         source.exclude '**/*.pem'
-        source.exclude '**/*.*pub'
-        source.exclude '**/*.rsp'
-        source.exclude 'out/*'
+        source.exclude '**/legacy'
     }
 
     jacocoTestReport {
@@ -309,6 +320,12 @@ task copyJars(type: Copy) {
 
 //apply from: "publish.gradle"
 
+//tasks.named('checkstyleNohttp') {
+//    doFirst {
+//        println "NoHttp is scanning the following files:"
+//        source.each { file -> println file }
+//    }
+//}
 
 
 
