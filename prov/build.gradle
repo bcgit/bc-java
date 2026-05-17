@@ -89,23 +89,56 @@ dependencies {
 
 // Stamp the current project version into the human-readable info string of
 // BouncyCastleProvider and BouncyCastlePQCProvider (and their legacy ant-build
-// mirrors). Operates in place and is idempotent: files are only rewritten
-// when their stamped content actually differs, so a clean checkout matching
-// the gradle version produces no working-tree diff and downstream compile
-// tasks stay UP-TO-DATE. The numeric Provider(name, version, info) arg in
-// each constructor is intentionally not stamped — it carries a hand-tuned
-// double value (e.g. 1.8499) maintained separately from the human-readable
-// label.
+// mirrors), plus the numeric Provider(name, version, info) constructor arg.
+// Operates in place and is idempotent: files are only rewritten when their
+// stamped content actually differs, so a clean checkout matching the gradle
+// version produces no working-tree diff and downstream compile tasks stay
+// UP-TO-DATE.
+//
+// Numeric encoding follows the long-standing convention in this file:
+//   * Two-part X.YY: release maps to literal X.YY; pre-release X.YY-SNAPSHOT
+//     maps to X.YY - 0.0001 (so 1.85-SNAPSHOT becomes 1.8499).
+//   * Three-part X.YY.ZZ: the second dot is dropped and ZZ is zero-padded to
+//     two digits (so 1.81.01 and 1.81.1 both become 1.8101). The SNAPSHOT
+//     marker is preserved in the info string but does NOT shift the numeric
+//     for three-part versions, since the patch component already distinguishes
+//     pre-release builds.
+// The hand-maintained set of stale-but-correct numerics that pre-dates this
+// task — 1.8499 in BC, the drifted 1.84 in BCPQC, 1.8200 in jdk1.1, 1.8400
+// in jdk1.4 — is now driven purely from gradle.properties.
 task stampVersion {
-    description = 'Stamps the current project version into BouncyCastleProvider / BouncyCastlePQCProvider info strings.'
+    description = 'Stamps the current project version into BouncyCastleProvider / BouncyCastlePQCProvider info strings and numeric Provider version arg.'
 
     doLast {
         def gradleVersion = "${version}".toString()
         def bcStamp = "BouncyCastle Security Provider v${gradleVersion}".toString()
         def bcpqcStamp = "BouncyCastle Post-Quantum Security Provider v${gradleVersion}".toString()
-        def versionTail = ~/v\d+(?:\.\d+){1,2}(?:-SNAPSHOT)?/
 
-        def replacements = [
+        def numericVersion
+        def hasSnapshot = gradleVersion.endsWith('-SNAPSHOT')
+        def baseVersion = hasSnapshot
+            ? gradleVersion.substring(0, gradleVersion.length() - '-SNAPSHOT'.length())
+            : gradleVersion
+        def parts = baseVersion.split('\\.')
+        if (parts.length == 2)
+        {
+            def bd = new BigDecimal(baseVersion)
+            numericVersion = hasSnapshot
+                ? bd.subtract(new BigDecimal('0.0001')).toPlainString()
+                : bd.toPlainString()
+        }
+        else if (parts.length == 3)
+        {
+            def patch = parts[2].padLeft(2, '0')
+            numericVersion = "${parts[0]}.${parts[1]}${patch}"
+        }
+        else
+        {
+            throw new GradleException("Unrecognised gradle version format for stamping: ${gradleVersion}")
+        }
+        def numericStamp = "super(PROVIDER_NAME, ${numericVersion},".toString()
+
+        def infoReplacements = [
             (file('src/main/java/org/bouncycastle/jce/provider/BouncyCastleProvider.java')):
                 ~/BouncyCastle Security Provider v\d+(?:\.\d+){1,2}(?:-SNAPSHOT)?/,
             (file('src/main/jdk1.1/org/bouncycastle/jce/provider/BouncyCastleProvider.java')):
@@ -116,13 +149,16 @@ task stampVersion {
                 ~/BouncyCastle Post-Quantum Security Provider v\d+(?:\.\d+){1,2}(?:-SNAPSHOT)?/
         ]
 
-        replacements.each { f, pattern ->
+        def numericPattern = ~/super\(PROVIDER_NAME,\s*\d+(?:\.\d+)?\s*,/
+
+        infoReplacements.each { f, pattern ->
             def stamp = f.name.contains('PQC') ? bcpqcStamp : bcStamp
             def text = f.text
             def updated = pattern.matcher(text).replaceAll(stamp)
+            updated = numericPattern.matcher(updated).replaceAll(numericStamp)
             if (updated != text) {
                 f.text = updated
-                logger.lifecycle("Stamped ${stamp} into ${f}")
+                logger.lifecycle("Stamped ${stamp} (numeric ${numericVersion}) into ${f}")
             }
         }
     }

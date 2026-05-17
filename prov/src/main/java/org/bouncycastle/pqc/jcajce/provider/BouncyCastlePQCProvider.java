@@ -51,7 +51,7 @@ public class BouncyCastlePQCProvider
      */
     public BouncyCastlePQCProvider()
     {
-        super(PROVIDER_NAME, 1.84, info);
+        super(PROVIDER_NAME, 1.8499, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
