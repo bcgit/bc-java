@@ -4,11 +4,6 @@ plugins {
 }
 
 sourceSets {
-    main {
-        java {
-            srcDirs = ["$buildDir/generated-src"]
-        }
-    }
     java9 {
         java {
             srcDirs = ['src/main/jdk1.9']
@@ -33,13 +28,44 @@ dependencies {
 evaluationDependsOn(":prov")
 evaluationDependsOn(":util")
 
-task generateSources(type: Copy) {
-    from 'src/main/java'
-    into "$buildDir/generated-src"
-    filter { line -> line.replaceAll('@RELEASE_NAME@', "${version}") }
+// Stamp the current project version into the BCPG default-version string in
+// ArmoredOutputStream and the matching PGP-armored test inputs. Operates in
+// place (no generated-src copy) and is idempotent: files are only rewritten
+// when their stamped content actually differs, so a clean checkout matching
+// the gradle version produces no working-tree diff and downstream compile
+// tasks stay UP-TO-DATE.
+//
+// The stamped set is explicit rather than tree-walked because several test
+// classes pin historical BCPG version strings (e.g. v1.32, v1.68) as parser
+// fixtures and must not be rewritten.
+task stampVersion {
+    description = 'Stamps the current project version into ArmoredOutputStream and the matching PGP-armored test inputs.'
+
+    doLast {
+        def stamp = "BCPG v${version}".toString()
+        def pattern = ~/BCPG v\d+(?:\.\d+){1,2}(?:-SNAPSHOT)?/
+
+        def filesToStamp = [
+            file('src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java'),
+            file('src/main/jdk1.4/org/bouncycastle/bcpg/ArmoredOutputStream.java'),
+            file('src/test/java/org/bouncycastle/openpgp/test/ECDSAKeyPairTest.java'),
+            file('src/test/java/org/bouncycastle/openpgp/test/PGPv6SignatureTest.java'),
+            file('src/test/java/org/bouncycastle/bcpg/test/BCPGOutputStreamTest.java')
+        ]
+
+        filesToStamp.each { f ->
+            def text = f.text
+            def updated = pattern.matcher(text).replaceAll(stamp)
+            if (updated != text) {
+                f.text = updated
+                logger.lifecycle("Stamped ${stamp} into ${f}")
+            }
+        }
+    }
 }
 
-compileJava.dependsOn generateSources
+compileJava.dependsOn stampVersion
+compileTestJava.dependsOn stampVersion
 
 compileJava {
 
@@ -58,7 +84,7 @@ compileJava9Java {
             '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}"
     ]
 
-    options.sourcepath = files(["$buildDir/generated-src", 'src/main/jdk1.9'])
+    options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
 }
 
 
@@ -67,7 +93,7 @@ jar.archiveBaseName = "bcpg-$vmrange"
 
 
 task sourcesJar(type: Jar) {
-    dependsOn generateSources
+    dependsOn stampVersion
 
     archiveBaseName = jar.archiveBaseName
     archiveClassifier = 'sources'
