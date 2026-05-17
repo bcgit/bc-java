@@ -37,7 +37,7 @@ import org.bouncycastle.util.encoders.Hex;
  * </ol>
  * <p>
  * KAT files live in {@code bc-test-data/pqc/crypto/faest/}; the test is
- * driven by {@code -Dbc.test.data.home}.
+ * driven by {@code org.bouncycastle.test.TestResourceFinder}.
  */
 public class FaestKatTest
     extends TestCase
