@@ -11,10 +11,10 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
+import junit.framework.TestCase;
 import org.bouncycastle.jcajce.PKIXCRLStore;
 import org.bouncycastle.jce.provider.test.TestCertificateGen;
 import org.bouncycastle.util.Properties;
-import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * Lives in the {@code org.bouncycastle.jce.provider} package so it can call the
@@ -22,21 +22,24 @@ import org.bouncycastle.util.test.SimpleTest;
  * {@link Properties#X509_CRL_CACHE_TTL} eviction behaviour that issue #1833 asked for.
  */
 public class CrlCacheTest
-    extends SimpleTest
+    extends TestCase
 {
     public String getName()
     {
         return "CrlCache";
     }
 
-    public void performTest()
-        throws Exception
+    public void setUp()
     {
         if (Security.getProvider("BC") == null)
         {
             Security.addProvider(new BouncyCastleProvider());
         }
+    }
 
+    public void testCache()
+        throws Exception
+    {
         // Build a small self-signed CA + CRL and write the CRL to a temp file we
         // can point a file: URI at; the prov-side CrlCache fetcher dispatches
         // any non-ldap scheme through URLConnection, which handles file://.
@@ -60,11 +63,11 @@ public class CrlCacheTest
         {
             // 1) cold fetch populates the cache
             PKIXCRLStore a = CrlCache.getCrl(certFact, now, dp);
-            isTrue("first fetch returned null", a != null);
+            assertTrue("first fetch returned null", a != null);
 
             // 2) immediate re-fetch with no TTL set — same instance (cache hit)
             PKIXCRLStore b = CrlCache.getCrl(certFact, now, dp);
-            isTrue("expected cache hit (same instance)", a == b);
+            assertTrue("expected cache hit (same instance)", a == b);
 
             // 3) TTL = 1 second; sleep past it; expect a fresh store from re-fetch
             System.setProperty(Properties.X509_CRL_CACHE_TTL, "1");
@@ -72,11 +75,11 @@ public class CrlCacheTest
             {
                 Thread.sleep(1200);
                 PKIXCRLStore c = CrlCache.getCrl(certFact, now, dp);
-                isTrue("TTL did not trigger re-fetch", a != c);
+                assertTrue("TTL did not trigger re-fetch", a != c);
 
                 // 4) within TTL window again — same fresh instance
                 PKIXCRLStore d = CrlCache.getCrl(certFact, now, dp);
-                isTrue("expected cache hit within TTL", c == d);
+                assertTrue("expected cache hit within TTL", c == d);
             }
             finally
             {
@@ -87,10 +90,5 @@ public class CrlCacheTest
         {
             tmp.delete();
         }
-    }
-
-    public static void main(String[] args)
-    {
-        runTest(new CrlCacheTest());
     }
 }
