@@ -15,12 +15,23 @@ import org.bouncycastle.pkix.util.filter.TrustedInput;
 import org.bouncycastle.pkix.util.filter.UntrustedInput;
 import org.bouncycastle.pkix.util.filter.UntrustedUrlInput;
 
-public class LocalizedMessage 
+public class LocalizedMessage
 {
+
+    /**
+     * Resource-bundle control that disables Java's "fall back to the JVM default
+     * locale" step in the candidate-locale chain. Without it, a caller who
+     * explicitly requests {@link Locale#ENGLISH} on a JVM whose default locale
+     * is e.g. German would receive the {@code _de} bundle when no {@code _en}
+     * file is shipped (see github #2249). With this control the lookup falls
+     * through directly to the base bundle instead.
+     */
+    private static final ResourceBundle.Control NO_FALLBACK_CONTROL =
+        ResourceBundle.Control.getNoFallbackControl(ResourceBundle.Control.FORMAT_DEFAULT);
 
     protected final String id;
     protected final String resource;
-    
+
     // ISO-8859-1 is the default encoding
     public static final String DEFAULT_ENCODING = "ISO-8859-1";
     protected String encoding = DEFAULT_ENCODING;
@@ -142,11 +153,12 @@ public class LocalizedMessage
             ResourceBundle bundle;
             if (loader == null)
             {
-                bundle = ResourceBundle.getBundle(resource,loc);
+                bundle = ResourceBundle.getBundle(resource, loc,
+                    LocalizedMessage.class.getClassLoader(), NO_FALLBACK_CONTROL);
             }
             else
             {
-                bundle = ResourceBundle.getBundle(resource, loc, loader);
+                bundle = ResourceBundle.getBundle(resource, loc, loader, NO_FALLBACK_CONTROL);
             }
             String result = bundle.getString(entry);
             if (!encoding.equals(DEFAULT_ENCODING))

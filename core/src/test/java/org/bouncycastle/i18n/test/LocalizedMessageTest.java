@@ -148,6 +148,39 @@ public class LocalizedMessageTest extends TestCase
 
     }
     
+    /**
+     * Regression test for github #2249: when the JVM default locale points at a
+     * bundle that exists (e.g. {@code de}), a caller explicitly requesting
+     * {@link Locale#ENGLISH} should still get the English (base) bundle —
+     * Java's default candidate-locale chain falls back to {@code Locale.getDefault()}
+     * when the requested locale has no matching properties file, and that
+     * fallback would otherwise leak the JVM default into a caller's explicit
+     * English request. Uses a fixture bundle (base + {@code _de}, no
+     * {@code _en}) that mirrors the {@code SignedMailValidatorMessages}
+     * layout in which the bug was reported.
+     */
+    public void testGetEntryIgnoresDefaultLocaleFallback()
+    {
+        final String DEFAULT_LOCALE_TEST_RESOURCE =
+            "org.bouncycastle.i18n.test.I18nDefaultLocaleTestMessages";
+
+        Locale savedDefault = Locale.getDefault();
+        try
+        {
+            Locale.setDefault(Locale.GERMAN);
+
+            LocalizedMessage msg = new LocalizedMessage(DEFAULT_LOCALE_TEST_RESOURCE, localeTestId);
+            assertEquals("Hello world.", msg.getEntry("text", Locale.ENGLISH,
+                    TimeZone.getDefault()));
+            assertEquals("Hallo Welt.", msg.getEntry("text", Locale.GERMAN,
+                    TimeZone.getDefault()));
+        }
+        finally
+        {
+            Locale.setDefault(savedDefault);
+        }
+    }
+
     public void testLocalizedArgs()
     {
         LocaleString ls = new LocaleString(TEST_RESOURCE, "name");
