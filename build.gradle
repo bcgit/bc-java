@@ -165,15 +165,7 @@ configure(allprojects.findAll {it.name != 'bom'}) {
 
 }
 
-task printProperties {
-    doLast {
-        println bcTestDataHome
-    }
-}
-
 ext {
-    bcTestDataHome = file('core/src/test/data').absolutePath
-
     JavaVersion current = JavaVersion.current();
     if (current.compareTo(JavaVersion.VERSION_1_8) <= 0) {
         ext.vmrange = 'jdk15to18'
@@ -205,10 +197,8 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 
     task testFull(type: Test) {
         systemProperties = [
-                'bc.test.data.home': bcTestDataHome,
                 'test.full'        : 'true'
         ]
-        systemProperty 'bc.test.data.home', bcTestDataHome
         maxHeapSize = "1536m"
 
         finalizedBy jacocoTestReport
@@ -221,7 +211,6 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     test {
         forkEvery = 1;
         maxParallelForks = 1;
-        systemProperty 'bc.test.data.home', bcTestDataHome
         maxHeapSize = "1536m"
         testLogging.showStandardStreams = false
 

@@ -33,7 +33,13 @@ This project can now be built and tested with JDK25.
 If the build script detects BC_JDK8, BC_JDK11, BC_JDK17, BC_JDK21 it will add to the usual test task a dependency on test tasks 
 that specifically use the JVMs addressed by those environmental variables. The script relies on JAVA_HOME for picking up Java 25 if it is use.
 
-To run the tests of the project as part of the build test data is needed. Our test data can be found at the [bc-test-data](https://github.com/bcgit/bc-test-data) repository.
+To run the tests of the project as part of the build test data is needed. Our test data can be found at the [bc-test-data](https://github.com/bcgit/bc-test-data) repository. The tests locate the bc-test-data tree using, in order:
+
+1. The system property ```bc.test.data.home```, if set.
+2. The environment variable ```BC_TEST_DATA_HOME```, if set.
+3. Otherwise the tests walk up from the working directory looking for a directory literally named ```bc-test-data```. The simplest configuration is therefore to check ```bc-test-data``` out as a sibling of ```bc-java``` and no further setup is required.
+
+When the property or environment variable is supplied, the named path is required to exist; a mistyped value fails fast with a ```FileNotFoundException``` naming whichever source supplied it, rather than silently falling through to the walk-up.
 
 We support testing on specific JVMs as it is the only way to be certain the library is compatible.
 
@@ -46,6 +52,12 @@ export BC_JDK8=/path/to/java8
 export BC_JDK11=/path/to/java11
 export BC_JDK17=/path/to/java17
 export BC_JDK21=/path/to/java21
+```
+
+If your ```bc-test-data``` checkout is not a sibling of ```bc-java```, set ```BC_TEST_DATA_HOME``` (or pass ```-Dbc.test.data.home=...``` on the command line) so the tests can find it:
+
+```
+export BC_TEST_DATA_HOME=/path/to/bc-test-data
 ```
 
 ## Building

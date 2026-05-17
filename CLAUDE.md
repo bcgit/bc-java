@@ -13,7 +13,13 @@ The build is Gradle multi-module. JDK 21+ is required to drive Gradle. Optional 
 ./gradlew -PexcludeTests=<glob> :prov:test           # exclude pattern
 ```
 
-`bc-test-data` (separate repo `bcgit/bc-test-data`) must be checked out as a sibling of `bc-java` for the full suite to pass; the Gradle property `bcTestDataHome` defaults to `core/src/test/data`.
+`bc-test-data` (separate repo `bcgit/bc-test-data`) must be checked out for the full suite to pass. `TestResourceFinder.findTestResource(homeDir, fileName)` (six per-module copies under `<module>/src/test/java/org/bouncycastle/test/`) resolves the bc-test-data root in this order:
+
+1. The system property `bc.test.data.home`, if set.
+2. The environment variable `BC_TEST_DATA_HOME`, if set.
+3. Walk up from the working directory looking for a directory literally named `bc-test-data` — the default that makes `./gradlew :prov:test` work when bc-test-data is checked out as a sibling of `bc-java`.
+
+When the property or environment variable is supplied, the named path is required to exist; a mistyped value fails fast with a `FileNotFoundException` naming both the source (`-Dbc.test.data.home` or `$BC_TEST_DATA_HOME`) and the bad path, rather than silently falling through. The Gradle build no longer sets the property itself; supply `-Dbc.test.data.home=/path/to/bc-test-data` (or export `BC_TEST_DATA_HOME` once in your shell) only when the sibling-checkout convention doesn't fit your layout. Direct `java -cp ... junit.textui.TestRunner ...` invocations follow the same rule.
 
 ### Running an individual test fast
 
@@ -36,9 +42,10 @@ java -cp pkix/build/classes/java/main:pkix/build/classes/java/test:pkix/src/test
         util/build/classes/java/main:\
         $(find ~/.gradle -name 'junit-*.jar' | head -1):\
         $(find ~/.gradle -name 'hamcrest-core-1*.jar' | head -1) \
-     -Dbc.test.data.home=core/src/test/data \
      org.bouncycastle.openssl.test.ParserTest
 ```
+
+If your bc-test-data checkout isn't a sibling of `bc-java`, add `-Dbc.test.data.home=/abs/path/to/bc-test-data` to the command. Otherwise the walk-up search picks it up automatically.
 
 Common gotchas:
 - `*/build/resources/main` directories are required — some tests pull resource files (e.g. `lowmcL1.bin.properties` for Picnic, GOST tables) that fail with cryptic `NullPointerException` if missing.

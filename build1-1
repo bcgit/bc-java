@@ -441,8 +441,8 @@ javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JD
 javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */u*/*.java )
 
         echo "lightweight regression test"
-        java -mx868m -classpath classes:$JDK11PATH/lib/classes.zip -Dbc.test.data.home=/home/dgh/bc/java/crypto/test/data org.bouncycastle.crypto.test.RegressionTest
-        java -classpath classes:$JDK11PATH/lib/classes.zip -Dbc.test.data.home=/home/dgh/bc/java/crypto/test/data org.bouncycastle.asn1.test.RegressionTest
+        java -mx868m -classpath classes:$JDK11PATH/lib/classes.zip org.bouncycastle.crypto.test.RegressionTest
+        java -classpath classes:$JDK11PATH/lib/classes.zip org.bouncycastle.asn1.test.RegressionTest
     )
     (2>&1 find $artifacts/lcrypto-jdk11-$base -name CVS -exec rm -rf \{\} \; ) > /dev/null
 fi
