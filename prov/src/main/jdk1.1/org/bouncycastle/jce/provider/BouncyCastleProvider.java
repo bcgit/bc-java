@@ -118,7 +118,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.8200, info);
+        super(PROVIDER_NAME, 1.8499, info);
 
         setup();
     }
