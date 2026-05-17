@@ -402,6 +402,7 @@
                  <exclude name="org/bouncycastle/asn1/smime/**" />
                  <exclude name="org/bouncycastle/asn1/tsp/**" />
                  <exclude name="org/bouncycastle/bcpg/**" />
+                 <exclude name="org/bouncycastle/cades/**" />
                  <exclude name="org/bouncycastle/cert/**" />
                  <exclude name="org/bouncycastle/cms/**" />
                  <exclude name="org/bouncycastle/pkix/**" />
@@ -424,6 +425,7 @@
                  <exclude name="org/bouncycastle/apache/**" />
                  <exclude name="org/bouncycastle/tls/**" />
                  <exclude name="org/bouncycastle/jsse/**" />
+                 <exclude name="org/bouncycastle/**/CrlCacheTest.java" />
              </fileset>
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/x509/CertPathReviewerMessages*.properties" />
@@ -846,6 +848,7 @@
 
         <copy todir="${pkix.target.src.dir}">
              <fileset dir="${src.dir}">
+                 <include name="org/bouncycastle/cades/**/*.java" />
                  <include name="org/bouncycastle/cms/**/*.java" />
                  <include name="org/bouncycastle/pkix/**/*.java" />
                  <include name="org/bouncycastle/dvcs/**/*.java" />
