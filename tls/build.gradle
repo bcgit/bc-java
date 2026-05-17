@@ -298,7 +298,6 @@ task test8(type: Test) {
     forkEvery = 1;
     maxParallelForks = 8;
 
-    systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
 
@@ -329,7 +328,6 @@ task test11(type: Test) {
     forkEvery = 1;
     maxParallelForks = 8;
 
-    systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
 
@@ -362,7 +360,6 @@ task test15(type: Test) {
     forkEvery = 1;
     maxParallelForks = 8;
 
-    systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
 
@@ -395,7 +392,6 @@ task test17(type: Test) {
     forkEvery = 1;
     maxParallelForks = 8;
 
-    systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
 
@@ -428,7 +424,6 @@ task test21(type: Test) {
     forkEvery = 1;
     maxParallelForks = 8;
 
-    systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
 
@@ -461,7 +456,6 @@ task test25(type: Test) {
     forkEvery = 1;
     maxParallelForks = 8;
 
-    systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
 
