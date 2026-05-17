@@ -22,7 +22,7 @@ public class BouncyCastlePQCProvider
     extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Post-Quantum Security Provider v1.84";
+    private static String info = "BouncyCastle Post-Quantum Security Provider v1.85-SNAPSHOT";
 
     public static String PROVIDER_NAME = "BCPQC";
 
