@@ -455,6 +455,13 @@ public interface PKCSObjectIdentifiers
     /** PKCS#9: 1.2.840.113549.1.9.16.2.40   <a href="https://tools.ietf.org/html/rfc7030">RFC7030</a>*/
     ASN1ObjectIdentifier id_aa_communityIdentifiers = id_aa.branch("40");
 
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.56 - <a href="https://tools.ietf.org/html/rfc7894#section-3.1">RFC 7894 §3.1</a>: EST otpChallenge attribute, conveys a one-time password as part of a CSR. DirectoryString, length 1..255. */
+    ASN1ObjectIdentifier id_aa_otpChallenge = id_aa.branch("56");
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.57 - <a href="https://tools.ietf.org/html/rfc7894#section-3.2">RFC 7894 §3.2</a>: EST revocationChallenge attribute, unambiguous replacement for the overloaded PKCS#9 challengePassword used for certificate revocation. DirectoryString, length 1..255. */
+    ASN1ObjectIdentifier id_aa_revocationChallenge = id_aa.branch("57");
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.58 - <a href="https://tools.ietf.org/html/rfc7894#section-3.3">RFC 7894 §3.3</a>: EST estIdentityLinking attribute, unambiguous replacement for the overloaded PKCS#9 challengePassword used for transport-identity linking per <a href="https://tools.ietf.org/html/rfc7030#section-3.5">RFC 7030 §3.5</a>. DirectoryString, length 1..255. */
+    ASN1ObjectIdentifier id_aa_estIdentityLinking = id_aa.branch("58");
+
     /** @deprecated use id_aa_ets_sigPolicyId instead */
     @Deprecated
     ASN1ObjectIdentifier id_aa_sigPolicyId    = id_aa_ets_sigPolicyId;
