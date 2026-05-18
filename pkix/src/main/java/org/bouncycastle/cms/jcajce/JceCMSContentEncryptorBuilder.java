@@ -40,7 +40,19 @@ import org.bouncycastle.operator.jcajce.JceGenericKey;
 import org.bouncycastle.util.Strings;
 
 /**
- * Builder for the content encryptor in EnvelopedData - used to encrypt the actual transmitted content.
+ * Builder for the content encryptor used in CMS {@code EnvelopedData},
+ * {@code AuthEnvelopedData} and {@code EncryptedData} structures &mdash; i.e. it
+ * encrypts the actual transmitted (or stored) content.
+ * <p>
+ * The no-arg {@link #build()} call generates a fresh content-encryption key
+ * internally, which is the right behaviour for {@code EnvelopedData} where the
+ * CEK is freshly drawn per message and wrapped per recipient. Callers that
+ * already have a key &mdash; e.g. building an {@code EncryptedData} blob over
+ * a long-lived locally-stored key (no recipients, no intermediate key wrap),
+ * or feeding in a CEK supplied by an external key-management service such as
+ * AWS KMS / Nitro Enclaves &mdash; should use {@link #build(byte[])} or
+ * {@link #build(SecretKey)} instead.
+ * </p>
  */
 public class JceCMSContentEncryptorBuilder
 {

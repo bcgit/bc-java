@@ -20,6 +20,19 @@ import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 
+/**
+ * Lightweight builder for the content encryptor used in CMS {@code EnvelopedData},
+ * {@code AuthEnvelopedData} and {@code EncryptedData} structures &mdash; i.e. it
+ * encrypts the actual transmitted (or stored) content.
+ * <p>
+ * The no-arg {@link #build()} call generates a fresh content-encryption key
+ * internally, which is the right behaviour for {@code EnvelopedData} where the
+ * CEK is freshly drawn per message and wrapped per recipient. Callers that
+ * already have a key &mdash; e.g. building an {@code EncryptedData} blob over
+ * a long-lived locally-stored key (no recipients, no intermediate key wrap)
+ * &mdash; should use {@link #build(byte[])} instead.
+ * </p>
+ */
 public class BcCMSContentEncryptorBuilder
 {
     private static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
