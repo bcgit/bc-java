@@ -518,6 +518,41 @@ public class BcEnvelopedDataTest
         tryKeyTrans(CMSAlgorithm.AES256_CBC, NISTObjectIdentifiers.id_aes256_CBC, 32, DEROctetString.class);
     }
 
+    /**
+     * Verify that {@link BcCMSContentEncryptorBuilder#build(KeyParameter)} produces
+     * an OutputEncryptor that round-trips through CMSEnvelopedData with the
+     * caller-supplied key, mirroring the JceCMSContentEncryptorBuilder.build(SecretKey)
+     * / build(byte[]) path. The key bytes carried inside the encryptor's
+     * GenericKey must match exactly what the caller passed in.
+     */
+    public void testProvidedKeyAsKeyParameter()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+        byte[] keyBytes = Hex.decode("000102030405060708090a0b0c0d0e0f");
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+        edGen.addRecipientInfoGenerator(new BcRSAKeyTransRecipientInfoGenerator(new JcaX509CertificateHolder(_reciCert)));
+
+        OutputEncryptor encryptor = new BcCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC)
+            .build(new KeyParameter(keyBytes));
+
+        // The OutputEncryptor's GenericKey representation must be the bytes we provided.
+        assertTrue(Arrays.equals(keyBytes, (byte[])encryptor.getKey().getRepresentation()));
+
+        CMSEnvelopedData ed = edGen.generate(new CMSProcessableByteArray(data), encryptor);
+
+        assertEquals(CMSAlgorithm.AES128_CBC.getId(), ed.getEncryptionAlgOID());
+
+        // Decrypt and verify the plaintext came through unchanged.
+        Collection c = ed.getRecipientInfos().getRecipients();
+        assertEquals(1, c.size());
+        RecipientInformation recipient = (RecipientInformation)c.iterator().next();
+        byte[] recData = recipient.getContent(
+            new BcRSAKeyTransEnvelopedRecipient(PrivateKeyFactory.createKey(PrivateKeyInfo.getInstance(_reciKP.getPrivate().getEncoded()))));
+        assertTrue(Arrays.equals(data, recData));
+    }
+
     private void tryKeyTrans(ASN1ObjectIdentifier generatorOID, ASN1ObjectIdentifier checkOID, int keySize, Class asn1Params)
         throws Exception
     {
