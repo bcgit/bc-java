@@ -945,6 +945,11 @@ public class HAETAEParameters
         return symbolH;
     }
 
+    public short[] getSymbolH_z1()
+    {
+        return symbolHbZ1;
+    }
+
     // ==================== Utility ====================
 
     @Override
