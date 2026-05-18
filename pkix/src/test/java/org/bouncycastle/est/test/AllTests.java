@@ -38,6 +38,7 @@ public class AllTests
         suite.addTestSuite(HostNameAuthorizerMatchTest.class);
         suite.addTestSuite(TestHostNameAuthorizer.class);
         suite.addTestSuite(ESTResponseTest.class);
+        suite.addTestSuite(Rfc7894AttributesTest.class);
 
         return new ESTTestSetup(suite);
     }
