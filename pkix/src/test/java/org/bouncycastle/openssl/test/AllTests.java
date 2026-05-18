@@ -89,6 +89,7 @@ public class
         encryptedTestNew(key, PKCS8Generator.AES_256_CBC);
         encryptedTestNew(key, PKCS8Generator.DES3_CBC);
         encryptedTestNew(key, PKCS8Generator.PBE_SHA1_3DES);
+        encryptedTestNew(key, PKCS8Generator.SM4_CBC);
 
         encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA1);
         encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA224);
@@ -100,6 +101,12 @@ public class
         encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA3_384);
         encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA3_512);
         encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACGOST3411);
+
+        encryptedTestNew(key, PKCS8Generator.SM4_CBC, PKCS8Generator.PRF_HMACSHA1);
+        encryptedTestNew(key, PKCS8Generator.SM4_CBC, PKCS8Generator.PRF_HMACSHA256);
+        encryptedTestNew(key, PKCS8Generator.SM4_CBC, PKCS8Generator.PRF_HMACSHA512);
+        encryptedTestNew(key, PKCS8Generator.SM4_CBC, PKCS8Generator.PRF_HMACSM3);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSM3);
     }
 
     private void encryptedTestNew(PrivateKey key, ASN1ObjectIdentifier algorithm)
