@@ -3425,7 +3425,7 @@ public class HAETAEEngine
         x = freq * (x >>> scaleBits) + (x & mask) - start;
 
         // Renormalize: read bytes while x < RANS_BYTE_L
-        if (x < RANS_BYTE_L && ptr[0] < endIdx)
+        if (x < RANS_BYTE_L && buf[ptr[0]] < endIdx)
         {
             int p = ptr[0];
             do
@@ -3481,7 +3481,7 @@ public class HAETAEEngine
         for (int i = 0; i < sizeHbZ1; i++)
         {
             int bucket = ransDecGet(state[0], SCALE_BITS);
-            int s = params.getSymbolH()[bucket];
+            int s = params.getSymbolH_z1()[bucket];
             if (s >= params.getM_hb_z1())
             {
                 return 1;
