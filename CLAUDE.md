@@ -104,9 +104,11 @@ Symmetrically, if you delete or merge away an entire package, remove its `export
 
 ### Examples live in `misc/`, not in the Gradle modules
 
-`misc/` is a non-Gradle source tree (not in `settings.gradle`, no `build.gradle`) used as the canonical home for example / demo code. Existing example packages: `misc/src/main/java/org/bouncycastle/{asn1,crypto,jcajce,pqc/crypto}/examples/`. New example code should land here, not under `core/.../examples`, `prov/.../examples`, etc. — putting it inside a Gradle module would force it into the published `bc*` jars and make it part of the JPMS-exported API surface.
+`misc/` is a non-Gradle source tree (not in `settings.gradle`, no `build.gradle`) used as the canonical home for example / demo code. Existing example packages: `misc/src/main/java/org/bouncycastle/{asn1,crypto,jcajce,openpgp,pqc/crypto}/examples/`. New example code should land here, not under `core/.../examples`, `prov/.../examples`, `pg/.../openpgp/examples`, etc. — putting it inside a Gradle module would force it into the published `bc*` jars and make it part of the JPMS-exported API surface. `pg/src/main/java/org/bouncycastle/openpgp/examples/` already exists as a legacy quirk and is published; the rule applies symmetrically — new OpenPGP example code goes under `misc/.../openpgp/examples/` instead (the package was added there for github #1414's `PublicKeyByteArrayHandler`, complementing the older PBE-only `ByteArrayHandler` in pg).
 
 When moving existing example code into `misc/`, remember to drop any matching `exports …examples;` line from the source module's `module-info.java` files (both `jdk1.9` and `ext-jdk1.9` variants when the source was `prov`).
+
+When the natural place for an example would be a generic JCE alias that BC deliberately doesn't ship (e.g. `Cipher.ECIESwithSHA256andAES-ECB` — non-standard for ECIES per IEEE 1363a / ISO 18033-2 / SECG SEC 1; see `misc/.../crypto/examples/ECIESAESECBExample.java` for the model, github #1095), the convention is: don't register the alias, ship a `misc/` example that builds the construction locally via the lightweight API, and open the class-level javadoc with the reason BC doesn't endorse the named form (cite the relevant standard sections) plus a pointer at the standards-compliant variant production callers should prefer. The example exists so the next person searching for the non-standard form has a concrete answer rather than nothing.
 
 ### JCE provider registration
 
