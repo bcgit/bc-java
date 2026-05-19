@@ -50,7 +50,10 @@ public class JcePEMEncryptorBuilder
             random = new SecureRandom();
         }
 
-        int ivLength = algorithm.startsWith("AES-") ? 16 : 8;
+        // Both AES- and SM4- are 128-bit block ciphers (16-byte IV); everything
+        // else in this OpenSSL legacy table (DES, DES-EDE3, BF, RC2) is 64-bit
+        // block (8-byte IV).
+        int ivLength = (algorithm.startsWith("AES-") || algorithm.startsWith("SM4-")) ? 16 : 8;
 
         final byte[] iv = new byte[ivLength];
 

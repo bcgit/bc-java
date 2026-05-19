@@ -48,6 +48,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.X509TrustedCertificateBlock;
 import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
+import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
@@ -386,6 +387,7 @@ public class ParserTest
         doParseAttrECKeyTest();
         doLegacyEncryptedPkcs8PemTest();
         doLegacyEncryptedPkcs8GenPemTest();
+        doLegacyEncryptedEcPemSm4CbcTest();
     }
 
     private void doLegacyEncryptedPkcs8PemTest()
@@ -420,6 +422,62 @@ public class ParserTest
          }
          isEquals(EdECObjectIdentifiers.id_Ed25519, decoded.getPrivateKeyAlgorithm().getAlgorithm());
      }
+
+    private void doLegacyEncryptedEcPemSm4CbcTest()
+        throws Exception
+    {
+        // github #1066: an EC private key serialised as an OpenSSL legacy PEM
+        // block ("BEGIN EC PRIVATE KEY" with "Proc-Type: 4,ENCRYPTED" /
+        // "DEK-Info: SM4-CBC,<iv>"). Earlier releases threw
+        // "unknown encryption with private key" because PEMUtilities.crypt's
+        // dispatch table only knew AES/DES/RC2/BF; JcePEMEncryptorBuilder
+        // additionally chose an 8-byte IV (wrong — SM4 is 128-bit block).
+        char[] password = "wibble".toCharArray();
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+        kpg.initialize(new java.security.spec.ECGenParameterSpec("secp256r1"));
+        KeyPair kp = kpg.generateKeyPair();
+
+        // Write the keypair as a legacy encrypted EC PRIVATE KEY block via the
+        // SM4-CBC encryptor — exercises both the new SM4- branch in
+        // PEMUtilities.crypt and the IV-length fix in JcePEMEncryptorBuilder.
+        PEMEncryptor encryptor = new JcePEMEncryptorBuilder("SM4-CBC")
+            .setProvider("BC").build(password);
+
+        StringWriter sw = new StringWriter();
+        JcaPEMWriter pemWriter = new JcaPEMWriter(sw);
+        pemWriter.writeObject(new JcaMiscPEMGenerator(kp.getPrivate(), encryptor));
+        pemWriter.close();
+
+        String pemStr = sw.toString();
+        if (!pemStr.contains("DEK-Info: SM4-CBC,"))
+        {
+            fail("emitted PEM lacks 'DEK-Info: SM4-CBC,' header:\n" + pemStr);
+        }
+        if (!pemStr.contains("-----BEGIN EC PRIVATE KEY-----"))
+        {
+            fail("emitted PEM is not an EC PRIVATE KEY block:\n" + pemStr);
+        }
+
+        // Parse and decrypt.
+        PEMParser parser = new PEMParser(new StringReader(pemStr));
+        Object o = parser.readObject();
+
+        if (!(o instanceof PEMEncryptedKeyPair))
+        {
+            fail("expected PEMEncryptedKeyPair, got " + (o == null ? "null" : o.getClass().getName()));
+        }
+
+        PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder()
+            .setProvider("BC").build(password);
+        PEMKeyPair pkp = ((PEMEncryptedKeyPair)o).decryptKeyPair(decProv);
+        KeyPair recovered = new JcaPEMKeyConverter().setProvider("BC").getKeyPair(pkp);
+
+        if (!kp.getPrivate().equals(recovered.getPrivate()))
+        {
+            fail("recovered EC private key did not match the original");
+        }
+    }
 
     private void doLegacyEncryptedPkcs8GenPemTest()
         throws Exception
