@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.examples;
 import java.io.FileInputStream;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.util.ASN1Dump;
 
 /**
  * Command line ASN.1 Dump utility.
