@@ -186,12 +186,28 @@ public class CertificateFactory
     /**
      * Generates a certificate object and initializes it with the data
      * read from the input stream inStream.
+     * <p>
+     * Per the {@link java.security.cert.CertificateFactory} contract a
+     * {@code CertificateException} is thrown when no certificate can be
+     * parsed from the stream &mdash; this includes empty input, a stream
+     * that has already been exhausted, and input that is neither valid DER
+     * nor valid PEM (github #457). The streaming {@link #engineGenerateCertificates}
+     * path retains its (possibly-empty) {@code Collection} return for the
+     * same input.
+     * </p>
      */
     public java.security.cert.Certificate engineGenerateCertificate(
         InputStream in)
         throws CertificateException
     {
-        return doGenerateCertificate(in, true);
+        java.security.cert.Certificate cert = doGenerateCertificate(in, true);
+
+        if (cert == null)
+        {
+            throw new CertificateException("could not parse certificate, no recognised certificate data found");
+        }
+
+        return cert;
     }
 
    private java.security.cert.Certificate doGenerateCertificate(
@@ -288,12 +304,27 @@ public class CertificateFactory
     /**
      * Generates a certificate revocation list (CRL) object and initializes
      * it with the data read from the input stream inStream.
+     * <p>
+     * Per the {@link java.security.cert.CertificateFactory} contract a
+     * {@code CRLException} is thrown when no CRL can be parsed from the
+     * stream &mdash; this includes empty input, a stream that has already
+     * been exhausted, and input that is neither valid DER nor valid PEM
+     * (github #457). The streaming {@link #engineGenerateCRLs} path retains
+     * its (possibly-empty) {@code Collection} return for the same input.
+     * </p>
      */
     public CRL engineGenerateCRL(
         InputStream in)
         throws CRLException
     {
-        return doGenerateCRL(in, true);
+        CRL crl = doGenerateCRL(in, true);
+
+        if (crl == null)
+        {
+            throw new CRLException("could not parse CRL, no recognised CRL data found");
+        }
+
+        return crl;
     }
 
     /**

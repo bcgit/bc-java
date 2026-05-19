@@ -1479,38 +1479,54 @@ public class CertTest
             fail("PKCS7 crl collection not right");
         }
 
-        // data with no certificates or CRLs
-
+        // data with no certificates or CRLs — per github #457 these must now
+        // throw rather than return null (spec compliance for empty input).
         sigData = new SignedData(new DERSet(), new ContentInfo(CMSObjectIdentifiers.data, null), new DERSet(), new DERSet(), new DERSet());
 
         info = new ContentInfo(CMSObjectIdentifiers.signedData, sigData);
 
-        cert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(info.getEncoded()));
-        if (cert != null)
+        try
         {
-            fail("PKCS7 cert present");
+            cf.generateCertificate(new ByteArrayInputStream(info.getEncoded()));
+            fail("PKCS7 cert: empty SignedData did not throw CertificateException");
         }
-        crl = (X509CRL)cf.generateCRL(new ByteArrayInputStream(info.getEncoded()));
-        if (crl != null)
+        catch (CertificateException e)
         {
-            fail("PKCS7 crl present");
+            // expected
+        }
+        try
+        {
+            cf.generateCRL(new ByteArrayInputStream(info.getEncoded()));
+            fail("PKCS7 crl: empty SignedData did not throw CRLException");
+        }
+        catch (CRLException e)
+        {
+            // expected
         }
 
-        // data with absent certificates and CRLS
+        // data with absent certificates and CRLS — same exception expectation.
 
         sigData = new SignedData(new DERSet(), new ContentInfo(CMSObjectIdentifiers.data, null), null, null, new DERSet());
 
         info = new ContentInfo(CMSObjectIdentifiers.signedData, sigData);
 
-        cert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(info.getEncoded()));
-        if (cert != null)
+        try
         {
-            fail("PKCS7 cert present");
+            cf.generateCertificate(new ByteArrayInputStream(info.getEncoded()));
+            fail("PKCS7 cert: absent-certs SignedData did not throw CertificateException");
         }
-        crl = (X509CRL)cf.generateCRL(new ByteArrayInputStream(info.getEncoded()));
-        if (crl != null)
+        catch (CertificateException e)
         {
-            fail("PKCS7 crl present");
+            // expected
+        }
+        try
+        {
+            cf.generateCRL(new ByteArrayInputStream(info.getEncoded()));
+            fail("PKCS7 crl: absent-crls SignedData did not throw CRLException");
+        }
+        catch (CRLException e)
+        {
+            // expected
         }
 
         //
@@ -1625,6 +1641,94 @@ public class CertTest
 //        {
 //            fail("BC/Sun hashCode test failed");
 //        }
+    }
+
+    /**
+     * Regression test for github #457: {@code generateCertificate} /
+     * {@code generateCRL} must throw {@code CertificateException} /
+     * {@code CRLException} on empty or unparseable input, per the
+     * {@link java.security.cert.CertificateFactory} contract. The collection-
+     * returning {@code generateCertificates} / {@code generateCRLs} must
+     * still return a (possibly-empty) {@code Collection} for empty input.
+     */
+    private void testInvalidInputThrows()
+        throws Exception
+    {
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
+
+        // (a) empty stream — single-cert path throws.
+        try
+        {
+            fact.generateCertificate(new ByteArrayInputStream(new byte[0]));
+            fail("no exception for empty stream (generateCertificate)");
+        }
+        catch (CertificateException e)
+        {
+            // expected
+        }
+
+        // (b) garbage binary that isn't DER and isn't valid PEM.
+        try
+        {
+            fact.generateCertificate(new ByteArrayInputStream(new byte[] { 0x31, 0x11, 0x12, 0x13, 0x14 }));
+            fail("no exception for garbage binary (generateCertificate)");
+        }
+        catch (CertificateException e)
+        {
+            // expected
+        }
+
+        // (c) plain garbage text.
+        try
+        {
+            fact.generateCertificate(new ByteArrayInputStream("Hello world\n".getBytes()));
+            fail("no exception for garbage text (generateCertificate)");
+        }
+        catch (CertificateException e)
+        {
+            // expected
+        }
+
+        // (d) generateCertificates on the same garbage paths.
+        // For empty input the collection method must still return an empty
+        // Collection (the documented "possibly empty" return shape).
+        if (!fact.generateCertificates(new ByteArrayInputStream(new byte[0])).isEmpty())
+        {
+            fail("generateCertificates(emptyStream) returned non-empty collection");
+        }
+
+        // (e) parallel coverage for CRLs.
+        try
+        {
+            fact.generateCRL(new ByteArrayInputStream(new byte[0]));
+            fail("no exception for empty stream (generateCRL)");
+        }
+        catch (CRLException e)
+        {
+            // expected
+        }
+
+        try
+        {
+            fact.generateCRL(new ByteArrayInputStream("Hello world\n".getBytes()));
+            fail("no exception for garbage text (generateCRL)");
+        }
+        catch (CRLException e)
+        {
+            // expected
+        }
+
+        if (!fact.generateCRLs(new ByteArrayInputStream(new byte[0])).isEmpty())
+        {
+            fail("generateCRLs(emptyStream) returned non-empty collection");
+        }
+
+        // (f) sanity: a real, valid cert still parses fine.
+        Certificate cert = fact.generateCertificate(new ByteArrayInputStream(cert1));
+        if (cert == null)
+        {
+            fail("valid cert returned null");
+        }
     }
 
     private void testV1CRL()
@@ -1889,6 +1993,7 @@ public class CertTest
         throws Exception
     {
         testV1CRL();
+        testInvalidInputThrows();
 
         checkCertificate(1, cert1);
         checkCertificate(2, cert2);
