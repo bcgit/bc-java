@@ -299,7 +299,7 @@ public class CipherInputStream
             int avail = available();
             if (n <= avail)
             {
-                bufOff += n;
+                bufOff += (int)n;
 
                 return n;
             }
