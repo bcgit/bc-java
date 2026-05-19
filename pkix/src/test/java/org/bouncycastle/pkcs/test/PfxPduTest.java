@@ -92,9 +92,6 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
-import org.junit.function.ThrowingRunnable;
-
-import static org.junit.Assert.assertThrows;
 
 public class PfxPduTest
     extends TestCase
@@ -1198,16 +1195,15 @@ public class PfxPduTest
         // invalid test vector that throws exception
         final PKCS12PfxPdu pfx = new PKCS12PfxPdu(pkcs12WithPBMac1PBKdf2_a6);
         assertTrue(pfx.hasMac());
-        PKCSException thrown = assertThrows(PKCSException.class, new ThrowingRunnable()
+        try
         {
-            @Override
-            public void run()
-                throws Throwable
-            {
-                pfx.isMacValid(new BcPKCS12PBMac1CalculatorBuilderProvider(), password);
-            }
-        });
-        assertTrue(thrown.getMessage().contains("Key length must be present when using PBMAC1."));
+            pfx.isMacValid(new BcPKCS12PBMac1CalculatorBuilderProvider(), password);
+            fail("no exception");
+        }
+        catch (PKCSException thrown)
+        {
+            assertTrue(thrown.getMessage().contains("Key length must be present when using PBMAC1."));
+        }
     }
 
     public void testBcEncryptedPrivateKeyInfo()
