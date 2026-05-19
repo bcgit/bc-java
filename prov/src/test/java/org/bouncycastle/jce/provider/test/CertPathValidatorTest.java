@@ -533,7 +533,7 @@ public class CertPathValidatorTest
         }
         catch (CertPathValidatorException e)
         {                   
-            isTrue("No CRLs found for issuer \"o=Certs 'r Us,c=XX\"".equals(e.getMessage()));
+            isTrue(e.getMessage().startsWith("No CRLs found for issuer \"o=Certs 'r Us,c=XX\""));
         }
 
         System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "true");

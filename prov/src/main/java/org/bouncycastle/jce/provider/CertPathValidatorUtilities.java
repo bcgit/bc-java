@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -642,7 +643,7 @@ class CertPathValidatorUtilities
         }
 
         // if the named CRL store is empty, and we're told to check with CRLDP
-        if (stores.isEmpty() && Properties.isOverrideSet("org.bouncycastle.x509.enableCRLDP"))
+        if (stores.isEmpty() && Properties.isOverrideSet(Properties.X509_ENABLE_CRLDP))
         {
             CertificateFactory certFact;
             try
@@ -653,6 +654,11 @@ class CertPathValidatorUtilities
             {
                 throw new AnnotatedException("cannot create certificate factory: " + e.getMessage(), e);
             }
+
+            // Collect per-URI fetch failures so the all-fail case can surface them
+            // rather than producing a silent empty list. Preserves the legacy "swallow
+            // and continue" behaviour as long as at least one CDP succeeds.
+            Map<URI, Throwable> fetchFailures = new LinkedHashMap<URI, Throwable>();
 
             for (int i = 0; i < dps.length; i++)
             {
@@ -667,9 +673,10 @@ class CertPathValidatorUtilities
                         GeneralName name = genNames[j];
                         if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
                         {
+                            URI distributionPoint = null;
                             try
                             {
-                                URI distributionPoint = new URI(((ASN1String)name.getName()).getString());
+                                distributionPoint = new URI(((ASN1String)name.getName()).getString());
                                 PKIXCRLStore store = CrlCache.getCrl(certFact, validDate, distributionPoint);
                                 if (store != null)
                                 {
@@ -679,15 +686,50 @@ class CertPathValidatorUtilities
                             }
                             catch (Exception e)
                             {
-                                // ignore...  TODO: maybe log
+                                if (distributionPoint != null)
+                                {
+                                    fetchFailures.put(distributionPoint, e);
+                                }
                             }
                         }
                     }
                 }
             }
+
+            // Every CDP we tried failed and nothing else satisfied the lookup either.
+            // Surface the failure causes so the caller can see *why* CRL download
+            // failed (DNS, TLS, 404, parse error, etc.) instead of getting the
+            // legacy generic "No CRLs found for issuer ..." downstream.
+            if (stores.isEmpty() && !fetchFailures.isEmpty())
+            {
+                throw new AnnotatedException(formatFetchFailures(fetchFailures));
+            }
         }
 
         return stores;
+    }
+
+    /**
+     * Format an ordered {@code URI -> Throwable} map of failed CRL Distribution Point
+     * download attempts as a human-readable diagnostic string suitable for an exception
+     * message. Each entry occupies one line, prefixed with the URI and followed by the
+     * Throwable's class name plus message.
+     */
+    static String formatFetchFailures(Map<URI, Throwable> fetchFailures)
+    {
+        StringBuilder msg = new StringBuilder(
+            "CRL download failed for every distribution-point URI tried (").append(fetchFailures.size()).append(" attempted):");
+        for (Map.Entry<URI, Throwable> entry : fetchFailures.entrySet())
+        {
+            Throwable cause = entry.getValue();
+            msg.append("\n  ").append(entry.getKey()).append(" -> ")
+                .append(cause.getClass().getName());
+            if (cause.getMessage() != null)
+            {
+                msg.append(": ").append(cause.getMessage());
+            }
+        }
+        return msg.toString();
     }
 
     /**
@@ -978,7 +1020,7 @@ class CertPathValidatorUtilities
         Set deltaCRLs = getDeltaCRLs(PKIXCRLUtil.findCRLs(deltaSelect, validityDate, certStores, pkixCrlStores));
 
         // if the named CRL store is empty, and we're told to check with CRLDP
-        if (deltaCRLs.isEmpty() && Properties.isOverrideSet("org.bouncycastle.x509.enableCRLDP"))
+        if (deltaCRLs.isEmpty() && Properties.isOverrideSet(Properties.X509_ENABLE_CRLDP))
         {
             CertificateFactory certFact;
             try
@@ -1094,7 +1136,7 @@ class CertPathValidatorUtilities
 
         Set crls = PKIXCRLUtil.findCRLs(crlSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
 
-        checkCRLsNotEmpty(params, crls, cert);
+        checkCRLsNotEmpty(params, crls, cert, paramsPKIX);
 
         return crls;
     }
@@ -1289,26 +1331,138 @@ class CertPathValidatorUtilities
         }
     }
 
-    static void checkCRLsNotEmpty(PKIXCertRevocationCheckerParameters params, Set crls, Object cert)
+    static void checkCRLsNotEmpty(PKIXCertRevocationCheckerParameters params, Set crls, Object cert,
+        PKIXExtendedParameters paramsPKIX)
         throws RecoverableCertPathValidatorException
     {
         if (crls.isEmpty())
         {
+            String issuer;
             if (cert instanceof X509AttributeCertificate)
             {
-                X509AttributeCertificate aCert = (X509AttributeCertificate)cert;
-
-                throw new RecoverableCertPathValidatorException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"", null,
-                                params.getCertPath(), params.getIndex());
+                issuer = ((X509AttributeCertificate)cert).getIssuer().getPrincipals()[0].toString();
             }
             else
             {
-                X509Certificate xCert = (X509Certificate)cert;
+                issuer = RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal((X509Certificate)cert));
+            }
 
-                throw new RecoverableCertPathValidatorException("No CRLs found for issuer \"" + RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal(xCert)) + "\"", null,
-                    params.getCertPath(), params.getIndex());
+            StringBuilder msg = new StringBuilder("No CRLs found for issuer \"").append(issuer).append("\"");
+            appendCrlLookupDiagnostics(msg, cert, paramsPKIX);
+            throw new RecoverableCertPathValidatorException(msg.toString(), null,
+                params.getCertPath(), params.getIndex());
+        }
+    }
+
+    /**
+     * Append diagnostic context to the supplied {@code msg} buffer explaining why a CRL lookup
+     * came back empty: the certificate's advertised CRL Distribution Point URIs (if any), the
+     * number of stores the validator consulted, and the current state of the
+     * {@link Properties#X509_ENABLE_CRLDP} toggle with a one-line hint when it's off.
+     */
+    private static void appendCrlLookupDiagnostics(StringBuilder msg, Object cert, PKIXExtendedParameters paramsPKIX)
+    {
+        // CRL Distribution Point URIs advertised by the cert, where we can extract them
+        // (X509AttributeCertificate has its own extension surface and is rare in this
+        // flow, so we only enumerate URIs for X509Certificate).
+        List<URI> cdpUris = Collections.emptyList();
+        if (cert instanceof X509Certificate)
+        {
+            cdpUris = extractCRLDistributionPointURIs((X509Certificate)cert);
+        }
+
+        if (!cdpUris.isEmpty())
+        {
+            msg.append(". CRL Distribution Points listed by the certificate: ");
+            for (int i = 0; i < cdpUris.size(); i++)
+            {
+                if (i > 0)
+                {
+                    msg.append(", ");
+                }
+                msg.append(cdpUris.get(i));
             }
         }
+
+        if (paramsPKIX != null)
+        {
+            msg.append(". Searched ")
+                .append(paramsPKIX.getCRLStores().size()).append(" PKIXCRLStore(s) and ")
+                .append(paramsPKIX.getCertStores().size()).append(" CertStore(s)");
+        }
+
+        if (Properties.isOverrideSet(Properties.X509_ENABLE_CRLDP))
+        {
+            msg.append(". -D").append(Properties.X509_ENABLE_CRLDP).append(" is set, so the validator")
+                .append(" attempted to download CRLs over the network but did not find a usable CRL")
+                .append(" (per-URI fetch failures, if any, would have been reported earlier in the cause chain)");
+        }
+        else
+        {
+            msg.append(". Bouncy Castle does not fetch CRLs over the network by default; set ")
+                .append("-D").append(Properties.X509_ENABLE_CRLDP).append("=true to enable, ")
+                .append("or pre-populate a CertStore / PKIXCRLStore on the PKIXParameters");
+        }
+    }
+
+    /**
+     * Extract the URI-typed CRL Distribution Point names from a certificate's CRLDP extension.
+     * Returns an empty list when the extension is absent, unparseable, or contains no URI-typed
+     * DistributionPointName entries.
+     */
+    private static List<URI> extractCRLDistributionPointURIs(X509Certificate cert)
+    {
+        ASN1Primitive extValue;
+        try
+        {
+            extValue = getExtensionValue(cert, CRL_DISTRIBUTION_POINTS);
+        }
+        catch (AnnotatedException e)
+        {
+            return Collections.emptyList();
+        }
+        if (extValue == null)
+        {
+            return Collections.emptyList();
+        }
+
+        List<URI> uris = new ArrayList<URI>();
+        try
+        {
+            CRLDistPoint crldp = CRLDistPoint.getInstance(extValue);
+            DistributionPoint[] dps = crldp.getDistributionPoints();
+            if (dps != null)
+            {
+                for (int i = 0; i < dps.length; i++)
+                {
+                    DistributionPointName dpn = dps[i].getDistributionPoint();
+                    if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
+                    {
+                        GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
+                        for (int j = 0; j < genNames.length; j++)
+                        {
+                            GeneralName name = genNames[j];
+                            if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
+                            {
+                                try
+                                {
+                                    uris.add(new URI(((ASN1String)name.getName()).getString()));
+                                }
+                                catch (Exception ignore)
+                                {
+                                    // skip unparseable URIs
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ignore)
+        {
+            // malformed CRLDP — fall through to whatever we collected
+        }
+        return uris;
     }
 
     static void checkCRLCriticalExtensions(X509CRL crl, String exceptionMessage)
