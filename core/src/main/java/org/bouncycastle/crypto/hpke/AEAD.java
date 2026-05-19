@@ -12,6 +12,17 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Pack;
 
+/**
+ * AEAD wrapper backing {@link HPKEContext#seal}/{@link HPKEContext#open}.
+ * Holds the key and base nonce derived during context setup and applies the
+ * RFC 9180 &sect;5.2 nonce-XOR-counter construction per call. Supports the four
+ * AEAD suite IDs registered by RFC 9180 (AES-128-GCM, AES-256-GCM,
+ * ChaCha20-Poly1305, and the export-only sentinel 0xFFFF).
+ * <p>
+ * Typical callers don't construct {@code AEAD} directly &mdash; obtain a context
+ * via {@link HPKE#setupBaseS}/etc. and use the seal/open methods on the
+ * returned {@link HPKEContext}.
+ */
 public class AEAD
 {
     private final short aeadId;
