@@ -280,6 +280,22 @@ class PEMUtilities
             }
             sKey = getKey(helper, password, "AES", keyBits / 8, salt);
         }
+        else if (dekAlgName.startsWith("SM4-"))
+        {
+            // SM4 (GM/T 0006 / RFC 8998): 128-bit block, 128-bit key. Salt
+            // derivation follows the AES path — OpenSSL's EVP_BytesToKey uses
+            // the first 8 bytes of IV as PBKDF-OpenSSL salt. Block-mode
+            // detection (-CBC/-CFB/-OFB/-ECB) earlier in this method is
+            // algorithm-agnostic; supports github #1066.
+            alg = "SM4";
+            byte[] salt = iv;
+            if (salt.length > 8)
+            {
+                salt = new byte[8];
+                System.arraycopy(iv, 0, salt, 0, 8);
+            }
+            sKey = getKey(helper, password, "SM4", 16, salt);
+        }
         else
         {
             throw new EncryptionException("unknown encryption with private key");
