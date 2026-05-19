@@ -16,7 +16,6 @@ module org.bouncycastle.pg
     exports org.bouncycastle.openpgp.api.bc;
     exports org.bouncycastle.openpgp.api.jcajce;
     exports org.bouncycastle.openpgp.bc;
-    exports org.bouncycastle.openpgp.examples;
     exports org.bouncycastle.openpgp.jcajce;
     exports org.bouncycastle.openpgp.operator;
     exports org.bouncycastle.openpgp.operator.bc;
