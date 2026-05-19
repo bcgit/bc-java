@@ -7,17 +7,22 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
 /**
- * FAEST key-pair generator.
+ * Implementation of the FAEST asymmetric key pair generator following the FAEST
+ * signature scheme specifications.
  * <p>
- * Mirrors the upstream {@code faest_<lambda>_keygen} flow:
- * <ol>
- *   <li>Draw {@code lambda/8} bytes of OWF key material, rejecting any sample
- *       whose low two bits are both set (matches the upstream validity check on
- *       {@code SK_KEY}).</li>
- *   <li>Draw {@code owfInputSize} bytes for the OWF input.</li>
- *   <li>Compute {@code owfOutput = OWF(owfKey, owfInput)} via {@link Faest#owf}.</li>
- *   <li>Pack {@code pk = owfInput || owfOutput} and {@code sk = owfInput || owfKey}.</li>
- * </ol>
+ * This generator produces {@link FaestPublicKeyParameters} and {@link FaestPrivateKeyParameters}
+ * based on the FAEST algorithm parameters. The secret signing key is an AES key, while the
+ * public verification key is a plaintext–ciphertext pair obtained by encrypting a random message
+ * under the signing key. The implementation follows the specification defined in the official
+ * FAEST documentation and the reference C implementation.
+ * </p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://faest.info/">FAEST Official Website</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/faest-spec-round2-web.pdf">FAEST v2.0 Specification Document (NIST Round 2)</a></li>
+ *   <li><a href="https://github.com/faest-sign/faest-ref">FAEST Reference Implementation (C)</a></li>
+ * </ul>
  */
 public class FaestKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
