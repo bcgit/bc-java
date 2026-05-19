@@ -210,6 +210,23 @@ public final class BigIntegers
         return x.longValue();
     }
 
+    public static boolean hasAnySmallFactors(BigInteger x)
+    {
+        if (!x.testBit(0))
+        {
+            return true;
+        }
+
+        BigInteger y = SMALL_PRIMES_PRODUCT;
+        if (x.bitLength() < SMALL_PRIMES_PRODUCT.bitLength())
+        {
+            y = x;
+            x = SMALL_PRIMES_PRODUCT;
+        }
+
+        return !BigIntegers.modOddIsCoprimeVar(x, y);
+    }
+
     public static BigInteger modOddInverse(BigInteger M, BigInteger X)
     {
         if (!M.testBit(0))
@@ -347,7 +364,7 @@ public final class BigIntegers
             + "ce86165a978d719ebf647f362d33fca29cd179fb42401cbaf3df0c614056f9c8"
             + "f3cfd51e474afb6bc6974f78db8aba8e9e517fded658591ab7502bd41849462f",
         16);
-    private static final int MAX_SMALL = BigInteger.valueOf(743).bitLength(); // bitlength of 743 * 743
+//    private static final int SMALL_PRIMES_MAX = 743;
 
     /**
      * Return a prime number candidate of the specified bit length.
@@ -358,41 +375,50 @@ public final class BigIntegers
      */
     public static BigInteger createRandomPrime(int bitLength, int certainty, SecureRandom random)
     {
+        // BigInteger implementations use the SecureRandom in varying ways, making testing difficult 
+//        return new BigInteger(bitLength, certainty, random);
+
         if (bitLength < 2)
         {
             throw new IllegalArgumentException("bitLength < 2");
         }
-
-        BigInteger rv;
 
         if (bitLength == 2)
         {
             return (random.nextInt() < 0) ? TWO : THREE;
         }
 
-        do
+        int nBytes = (bitLength + 7) / 8;
+        int xBits = 8 * nBytes - bitLength;
+        byte[] base = new byte[nBytes];
+
+        for (;;)
         {
-            byte[] base = createRandom(bitLength, random);
+            random.nextBytes(base);
 
-            int xBits = 8 * base.length - bitLength;
-            byte lead = (byte)(1 << (7 - xBits));
-
-            // ensure top and bottom bit set
-            base[0] |= lead;
+            // strip off excess bits, set MSB and LSB
+            base[0] = (byte)((base[0] & (0xFF >>> xBits)) | 1 << (7 - xBits));
             base[base.length - 1] |= 0x01;
 
-            rv = new BigInteger(1, base);
-            if (bitLength > MAX_SMALL)
-            {
-                while (!rv.gcd(SMALL_PRIMES_PRODUCT).equals(ONE))
-                {
-                    rv = rv.add(TWO);
-                }
-            }
-        }
-        while (!rv.isProbablePrime(certainty));
+            BigInteger rv = new BigInteger(1, base);
 
-        return rv;
+            int count = 0;
+            do
+            {
+                if (!hasAnySmallFactors(rv))
+                {
+                    if (rv.isProbablePrime(certainty))
+                    {
+                        return rv;
+                    }
+
+                    break;
+                }
+
+                rv = rv.add(TWO);
+            }
+            while (++count < 256 && rv.bitLength() == bitLength);
+        }
     }
 
     public static void writeUnsignedByteArray(OutputStream out, BigInteger n) throws IOException
