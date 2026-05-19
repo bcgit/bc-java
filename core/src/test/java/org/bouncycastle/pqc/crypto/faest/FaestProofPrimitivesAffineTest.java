@@ -399,7 +399,9 @@ public class FaestProofPrimitivesAffineTest
             long[] z0 = new long[BF128.LIMBS];
             long[] z1 = new long[BF128.LIMBS];
             long[] z2 = new long[BF128.LIMBS];
-            FaestProofPrimitives.invNormConstraintsProver128(z0, 0, z1, 0, z2, 0, conj, conjTag, y, yTag);
+            long[] proverT1 = new long[BF128.LIMBS];
+            long[] proverT2 = new long[BF128.LIMBS];
+            FaestProofPrimitives.invNormConstraintsProver128(z0, 0, z1, 0, z2, 0, conj, conjTag, y, yTag, proverT1, proverT2);
 
             // Compute the (c0, c1, c2, c3) coefficients directly from the algebraic expansion.
             // yEval(d) * conjEval[1](d) * conjEval[4](d) + conjEval[0](d) * d^2
@@ -451,11 +453,11 @@ public class FaestProofPrimitivesAffineTest
             BF128.mul(t, 0, y, 0, delta, 0);
             BF128.add(yEval, 0, yTag, 0, t, 0);
             long[] zEval = new long[BF128.LIMBS];
-            FaestProofPrimitives.invNormConstraintsVerifier128(zEval, 0, conjEval, yEval, delta);
+            long[] d2 = new long[BF128.LIMBS]; BF128.mul(d2, 0, delta, 0, delta, 0);
+            FaestProofPrimitives.invNormConstraintsVerifier128(zEval, 0, conjEval, yEval, d2, t);
 
             // Expected: P(delta) = c0 + c1*delta + c2*delta^2 + c3*delta^3
             long[] expEval = new long[BF128.LIMBS];
-            long[] d2 = new long[BF128.LIMBS]; BF128.mul(d2, 0, delta, 0, delta, 0);
             long[] d3 = new long[BF128.LIMBS]; BF128.mul(d3, 0, d2, 0, delta, 0);
             System.arraycopy(c0, 0, expEval, 0, BF128.LIMBS);
             BF128.mul(t, 0, c1, 0, delta, 0); BF128.addInPlace(expEval, 0, t, 0);

@@ -868,11 +868,9 @@ final class FaestProofPrimitives
                                             long[] zDeg1, int z1Off,
                                             long[] zDeg2, int z2Off,
                                             long[] conj, long[] conjTag,
-                                            long[] y, long[] yTag)
+                                            long[] y, long[] yTag,
+                                            long[] t1, long[] t2)
     {
-        long[] t1 = new long[BF128.LIMBS];
-        long[] t2 = new long[BF128.LIMBS];
-
         // zDeg0 = yTag * conjTag[1] * conjTag[4]
         BF128.mul(t1, 0, yTag, 0, conjTag, 1 * BF128.LIMBS);
         BF128.mul(zDeg0, z0Off, t1, 0, conjTag, 4 * BF128.LIMBS);
@@ -903,11 +901,9 @@ final class FaestProofPrimitives
                                             long[] zDeg1, int z1Off,
                                             long[] zDeg2, int z2Off,
                                             long[] conj, long[] conjTag,
-                                            long[] y, long[] yTag)
+                                            long[] y, long[] yTag,
+                                            long[] t1, long[] t2)
     {
-        long[] t1 = new long[BF192.LIMBS];
-        long[] t2 = new long[BF192.LIMBS];
-
         BF192.mul(t1, 0, yTag, 0, conjTag, 1 * BF192.LIMBS);
         BF192.mul(zDeg0, z0Off, t1, 0, conjTag, 4 * BF192.LIMBS);
 
@@ -935,11 +931,9 @@ final class FaestProofPrimitives
                                             long[] zDeg1, int z1Off,
                                             long[] zDeg2, int z2Off,
                                             long[] conj, long[] conjTag,
-                                            long[] y, long[] yTag)
+                                            long[] y, long[] yTag,
+                                            long[] t1, long[] t2)
     {
-        long[] t1 = new long[BF256.LIMBS];
-        long[] t2 = new long[BF256.LIMBS];
-
         BF256.mul(t1, 0, yTag, 0, conjTag, 1 * BF256.LIMBS);
         BF256.mul(zDeg0, z0Off, t1, 0, conjTag, 4 * BF256.LIMBS);
 
@@ -963,39 +957,39 @@ final class FaestProofPrimitives
         BF256.addInPlace(zDeg2, z2Off, conjTag, 0 * BF256.LIMBS);
     }
 
+    /**
+     * z = y * c[1] * c[4] + c[0] * delta^2.
+     * <p>
+     * {@code d2} is the caller's pre-computed {@code delta * delta} — passing it in
+     * avoids redundantly squaring delta on every inner-loop call. {@code t} is a
+     * caller-allocated scratch of length {@code BF128.LIMBS}.
+     */
     static void invNormConstraintsVerifier128(long[] zEval, int zEvalOff,
-                                              long[] conjEval, long[] yEval, long[] delta)
+                                              long[] conjEval, long[] yEval,
+                                              long[] d2, long[] t)
     {
-        long[] t = new long[BF128.LIMBS];
-        long[] d2 = new long[BF128.LIMBS];
-        // z = y * c[1] * c[4] + c[0] * delta^2
         BF128.mul(t, 0, yEval, 0, conjEval, 1 * BF128.LIMBS);
         BF128.mul(zEval, zEvalOff, t, 0, conjEval, 4 * BF128.LIMBS);
-        BF128.mul(d2, 0, delta, 0, delta, 0);
         BF128.mul(t, 0, conjEval, 0 * BF128.LIMBS, d2, 0);
         BF128.addInPlace(zEval, zEvalOff, t, 0);
     }
 
     static void invNormConstraintsVerifier192(long[] zEval, int zEvalOff,
-                                              long[] conjEval, long[] yEval, long[] delta)
+                                              long[] conjEval, long[] yEval,
+                                              long[] d2, long[] t)
     {
-        long[] t = new long[BF192.LIMBS];
-        long[] d2 = new long[BF192.LIMBS];
         BF192.mul(t, 0, yEval, 0, conjEval, 1 * BF192.LIMBS);
         BF192.mul(zEval, zEvalOff, t, 0, conjEval, 4 * BF192.LIMBS);
-        BF192.mul(d2, 0, delta, 0, delta, 0);
         BF192.mul(t, 0, conjEval, 0 * BF192.LIMBS, d2, 0);
         BF192.addInPlace(zEval, zEvalOff, t, 0);
     }
 
     static void invNormConstraintsVerifier256(long[] zEval, int zEvalOff,
-                                              long[] conjEval, long[] yEval, long[] delta)
+                                              long[] conjEval, long[] yEval,
+                                              long[] d2, long[] t)
     {
-        long[] t = new long[BF256.LIMBS];
-        long[] d2 = new long[BF256.LIMBS];
         BF256.mul(t, 0, yEval, 0, conjEval, 1 * BF256.LIMBS);
         BF256.mul(zEval, zEvalOff, t, 0, conjEval, 4 * BF256.LIMBS);
-        BF256.mul(d2, 0, delta, 0, delta, 0);
         BF256.mul(t, 0, conjEval, 0 * BF256.LIMBS, d2, 0);
         BF256.addInPlace(zEval, zEvalOff, t, 0);
     }

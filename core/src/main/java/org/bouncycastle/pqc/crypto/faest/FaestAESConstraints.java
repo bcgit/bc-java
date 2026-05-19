@@ -75,6 +75,10 @@ final class FaestAESConstraints
         long[] sSqDeg1 = new long[BF128.LIMBS];
         long[] tmp = new long[BF128.LIMBS];
         long[] tmp2 = new long[BF128.LIMBS];
+        // Scratch for invNormConstraintsProver128's internal field operations,
+        // hoisted out of the r×i inner loop.
+        long[] invNormT1 = new long[BF128.LIMBS];
+        long[] invNormT2 = new long[BF128.LIMBS];
 
         byte[] tmpState = new byte[Nstbits];
         long[] tmpStateTag = new long[Nstbits * BF128.LIMBS];
@@ -98,7 +102,7 @@ final class FaestAESConstraints
                     zDeg0, zOff, zDeg1, zOff, zDeg2, zOff,
                     sliceLongs(stateConj, 8 * i * BF128.LIMBS, 8 * BF128.LIMBS),
                     sliceLongs(stateConjTag, 8 * i * BF128.LIMBS, 8 * BF128.LIMBS),
-                    y, yTag);
+                    y, yTag, invNormT1, invNormT2);
 
                 for (int j = 0; j < 8; j++)
                 {
@@ -277,6 +281,8 @@ final class FaestAESConstraints
         long[] tmp = new long[BF128.LIMBS];
         long[] d2 = new long[BF128.LIMBS];
         BF128.mul(d2, 0, delta, 0, delta, 0);
+        // Scratch for invNormConstraintsVerifier128, hoisted out of the r×i inner loop.
+        long[] invNormT = new long[BF128.LIMBS];
 
         long[] tmpStateKey = new long[Nstbits * BF128.LIMBS];
 
@@ -294,7 +300,7 @@ final class FaestAESConstraints
                 int zOff = (3 * r * Nstbytes + i) * BF128.LIMBS;
                 FaestProofPrimitives.invNormConstraintsVerifier128(zKey, zOff,
                     sliceLongs(stateConjKey, 8 * i * BF128.LIMBS, 8 * BF128.LIMBS),
-                    yKey, delta);
+                    yKey, d2, invNormT);
 
                 for (int j = 0; j < 8; j++)
                 {
@@ -709,6 +715,8 @@ final class FaestAESConstraints
         long[] sSqDeg1 = new long[BF192.LIMBS];
         long[] tmp = new long[BF192.LIMBS];
         long[] tmp2 = new long[BF192.LIMBS];
+        long[] invNormT1 = new long[BF192.LIMBS];
+        long[] invNormT2 = new long[BF192.LIMBS];
 
         byte[] tmpState = new byte[Nstbits];
         long[] tmpStateTag = new long[Nstbits * BF192.LIMBS];
@@ -732,7 +740,7 @@ final class FaestAESConstraints
                     zDeg0, zOff, zDeg1, zOff, zDeg2, zOff,
                     sliceLongs(stateConj, 8 * i * BF192.LIMBS, 8 * BF192.LIMBS),
                     sliceLongs(stateConjTag, 8 * i * BF192.LIMBS, 8 * BF192.LIMBS),
-                    y, yTag);
+                    y, yTag, invNormT1, invNormT2);
 
                 for (int j = 0; j < 8; j++)
                 {
@@ -911,6 +919,7 @@ final class FaestAESConstraints
         long[] tmp = new long[BF192.LIMBS];
         long[] d2 = new long[BF192.LIMBS];
         BF192.mul(d2, 0, delta, 0, delta, 0);
+        long[] invNormT = new long[BF192.LIMBS];
 
         long[] tmpStateKey = new long[Nstbits * BF192.LIMBS];
 
@@ -928,7 +937,7 @@ final class FaestAESConstraints
                 int zOff = (3 * r * Nstbytes + i) * BF192.LIMBS;
                 FaestProofPrimitives.invNormConstraintsVerifier192(zKey, zOff,
                     sliceLongs(stateConjKey, 8 * i * BF192.LIMBS, 8 * BF192.LIMBS),
-                    yKey, delta);
+                    yKey, d2, invNormT);
 
                 for (int j = 0; j < 8; j++)
                 {
@@ -1322,6 +1331,8 @@ final class FaestAESConstraints
         long[] sSqDeg1 = new long[BF256.LIMBS];
         long[] tmp = new long[BF256.LIMBS];
         long[] tmp2 = new long[BF256.LIMBS];
+        long[] invNormT1 = new long[BF256.LIMBS];
+        long[] invNormT2 = new long[BF256.LIMBS];
 
         byte[] tmpState = new byte[Nstbits];
         long[] tmpStateTag = new long[Nstbits * BF256.LIMBS];
@@ -1345,7 +1356,7 @@ final class FaestAESConstraints
                     zDeg0, zOff, zDeg1, zOff, zDeg2, zOff,
                     sliceLongs(stateConj, 8 * i * BF256.LIMBS, 8 * BF256.LIMBS),
                     sliceLongs(stateConjTag, 8 * i * BF256.LIMBS, 8 * BF256.LIMBS),
-                    y, yTag);
+                    y, yTag, invNormT1, invNormT2);
 
                 for (int j = 0; j < 8; j++)
                 {
@@ -1524,6 +1535,7 @@ final class FaestAESConstraints
         long[] tmp = new long[BF256.LIMBS];
         long[] d2 = new long[BF256.LIMBS];
         BF256.mul(d2, 0, delta, 0, delta, 0);
+        long[] invNormT = new long[BF256.LIMBS];
 
         long[] tmpStateKey = new long[Nstbits * BF256.LIMBS];
 
@@ -1541,7 +1553,7 @@ final class FaestAESConstraints
                 int zOff = (3 * r * Nstbytes + i) * BF256.LIMBS;
                 FaestProofPrimitives.invNormConstraintsVerifier256(zKey, zOff,
                     sliceLongs(stateConjKey, 8 * i * BF256.LIMBS, 8 * BF256.LIMBS),
-                    yKey, delta);
+                    yKey, d2, invNormT);
 
                 for (int j = 0; j < 8; j++)
                 {
