@@ -143,6 +143,34 @@ public class PGPPublicKey
         init(fingerPrintCalculator);
     }
 
+    /**
+     * Return a copy of this key carrying only the underlying public-key packet
+     * &mdash; user IDs, user-attribute packets, trust packets, key certifications
+     * and subkey-binding signatures are all dropped.
+     * <p>
+     * Equivalent to {@code new PGPPublicKey(this.getPublicKeyPacket(), fingerPrintCalculator)};
+     * a one-line wrapper that makes the intent explicit and the call site less
+     * boilerplate-heavy. Master/subkey distinction is preserved through the
+     * underlying packet type ({@link PublicKeyPacket} vs its
+     * {@code PublicSubkeyPacket} subclass).
+     * <p>
+     * Typical use cases: producing a minimal key for OpenPGP v6
+     * revocation-certificate distribution, stripping irrelevant user IDs /
+     * attribute packets from a key downloaded from a key server, or wire-size
+     * reduction. Issue #1400.
+     *
+     * @param fingerPrintCalculator calculator providing the digest support to
+     *                              compute the key fingerprint of the copy.
+     * @return a new {@code PGPPublicKey} with the same key material and no
+     *         attached user IDs, attributes, trust packets, or signatures.
+     * @throws PGPException if the packet is faulty, or the required calculations fail.
+     */
+    public PGPPublicKey copyMinimal(KeyFingerPrintCalculator fingerPrintCalculator)
+        throws PGPException
+    {
+        return new PGPPublicKey(this.publicPk, fingerPrintCalculator);
+    }
+
     /*
      * Constructor for a sub-key.
      */
