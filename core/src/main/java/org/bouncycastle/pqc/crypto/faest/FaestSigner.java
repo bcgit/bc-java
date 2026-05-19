@@ -8,8 +8,21 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 
 /**
- * FAEST signer / verifier. Wraps {@link Faest#sign} and {@link Faest#verify}
- * to expose the standard {@link MessageSigner} interface.
+ * FAEST signature generation and verification engine.
+ * <p>
+ * Exposes the standard {@link MessageSigner} interface by delegating to the
+ * core {@link Faest#sign} and {@link Faest#verify} routines. For signing,
+ * a fresh salt ({@code rho}) is drawn from the supplied (or default) random
+ * source on each invocation; the OWF output needed by the signing algorithm
+ * is re‑derived internally from the private key.
+ * </p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://faest.info/">FAEST Official Website</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/faest-spec-round2-web.pdf">FAEST v2.0 Specification Document (NIST Round 2)</a></li>
+ *   <li><a href="https://github.com/faest-sign/faest-ref">FAEST Reference Implementation (C)</a></li>
+ * </ul>
  */
 public class FaestSigner
     implements MessageSigner
