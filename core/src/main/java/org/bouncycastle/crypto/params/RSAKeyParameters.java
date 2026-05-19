@@ -10,106 +10,79 @@ import org.bouncycastle.util.Properties;
 public class RSAKeyParameters
     extends AsymmetricKeyParameter
 {
+    public static BigInteger validateModulus(BigInteger modulus)
+    {
+        return validate(modulus, false);
+    }
+
     private static final BigIntegers.Cache validated = new BigIntegers.Cache();
 
-    // Hexadecimal value of the product of the 131 smallest odd primes from 3 to 743
-    private static final BigInteger SMALL_PRIMES_PRODUCT = new BigInteger(
-              "8138e8a0fcf3a4e84a771d40fd305d7f4aa59306d7251de54d98af8fe95729a1f"
-            + "73d893fa424cd2edc8636a6c3285e022b0e3866a565ae8108eed8591cd4fe8d2"
-            + "ce86165a978d719ebf647f362d33fca29cd179fb42401cbaf3df0c614056f9c8"
-            + "f3cfd51e474afb6bc6974f78db8aba8e9e517fded658591ab7502bd41849462f",
-        16);
+    private BigInteger modulus;
+    private BigInteger exponent;
 
-    private BigInteger      modulus;
-    private BigInteger      exponent;
-
-    public RSAKeyParameters(
-        boolean     isPrivate,
-        BigInteger  modulus,
-        BigInteger  exponent)
+    public RSAKeyParameters(boolean isPrivate, BigInteger modulus, BigInteger exponent)
     {
         this(isPrivate, modulus, exponent, false);
-    }   
+    }
 
-    public RSAKeyParameters(
-        boolean     isPrivate,
-        BigInteger  modulus,
-        BigInteger  exponent,
-        boolean     isInternal)
+    public RSAKeyParameters(boolean isPrivate, BigInteger modulus, BigInteger exponent, boolean isInternal)
     {
         super(isPrivate);
 
-        if (!isPrivate)
+        if (!isPrivate && !exponent.testBit(0))
         {
-            if ((exponent.intValue() & 1) == 0)
-            {
-                throw new IllegalArgumentException("RSA publicExponent is even");
-            }
+            throw new IllegalArgumentException("RSA publicExponent is even");
         }
-  
-        this.modulus = validated.contains(modulus) ? modulus : validate(modulus, isInternal);
+
+        this.modulus = validate(modulus, isInternal);
         this.exponent = exponent;
-    }
-
-    private static boolean hasAnySmallFactors(BigInteger modulus)
-    {
-        BigInteger M = modulus, X = SMALL_PRIMES_PRODUCT;
-        if (modulus.bitLength() < SMALL_PRIMES_PRODUCT.bitLength())
-        {
-            M = SMALL_PRIMES_PRODUCT;
-            X = modulus;
-        }
-
-        return !BigIntegers.modOddIsCoprimeVar(M, X);
     }
 
     private static BigInteger validate(BigInteger modulus, boolean isInternal)
     {
-        if (isInternal)
-        {
-            validated.add(modulus);
-
-            return modulus;
-        }
-
-        if ((modulus.intValue() & 1) == 0)
-        {
-            throw new IllegalArgumentException("RSA modulus is even");
-        }
-
-        // If you need to set this you need to have a serious word to whoever is generating
-        // your keys.
-        if (Properties.isOverrideSet("org.bouncycastle.rsa.allow_unsafe_mod"))
+        if (validated.contains(modulus))
         {
             return modulus;
         }
 
-        int maxBitLength = Properties.asInteger("org.bouncycastle.rsa.max_size", 16384);
-        if (maxBitLength < modulus.bitLength())
+        if (!isInternal)
         {
-            throw new IllegalArgumentException("RSA modulus out of range");
-        }
-
-        if (hasAnySmallFactors(modulus))
-        {
-            throw new IllegalArgumentException("RSA modulus has a small prime factor");
-        }
-
-        int bits = modulus.bitLength() / 2;
-        int iterations = Properties.asInteger("org.bouncycastle.rsa.max_mr_tests", getMRIterations(bits));
-
-        if (iterations > 0)
-        {
-            Primes.MROutput mr = Primes.enhancedMRProbablePrimeTest(modulus, CryptoServicesRegistrar.getSecureRandom(),
-                iterations);
-            if (!mr.isProvablyComposite())
+            if (!modulus.testBit(0))
             {
-                throw new IllegalArgumentException("RSA modulus is not composite");
+                throw new IllegalArgumentException("RSA modulus is even");
+            }
+
+            // If you need to set this you need to have a serious word to whoever is generating your keys.
+            if (Properties.isOverrideSet("org.bouncycastle.rsa.allow_unsafe_mod"))
+            {
+                return modulus;
+            }
+
+            int maxBitLength = Properties.asInteger("org.bouncycastle.rsa.max_size", 16384);
+            if (maxBitLength < modulus.bitLength())
+            {
+                throw new IllegalArgumentException("RSA modulus out of range");
+            }
+
+            if (BigIntegers.hasAnySmallFactors(modulus))
+            {
+                throw new IllegalArgumentException("RSA modulus has a small prime factor");
+            }
+
+            int defaultIterations = getMRIterations(modulus.bitLength() / 2);
+            int iterations = Properties.asInteger("org.bouncycastle.rsa.max_mr_tests", defaultIterations);
+            if (iterations > 0)
+            {
+                Primes.MROutput mr = Primes.enhancedMRProbablePrimeTest(modulus,
+                    CryptoServicesRegistrar.getSecureRandom(), iterations);
+                if (!mr.isProvablyComposite())
+                {
+                    throw new IllegalArgumentException("RSA modulus is not composite");
+                }
             }
         }
 
         validated.add(modulus);
-        
         return modulus;
     }
 
