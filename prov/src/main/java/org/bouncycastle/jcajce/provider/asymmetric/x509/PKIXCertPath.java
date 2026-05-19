@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertPath;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -204,13 +203,8 @@ public  class PKIXCertPath
             else if (encoding.equalsIgnoreCase("PKCS7") || encoding.equalsIgnoreCase("PEM"))
             {
                 inStream = new BufferedInputStream(inStream);
-                certificates = new ArrayList();
-                CertificateFactory certFactory= helper.createCertificateFactory("X.509");
-                Certificate cert;
-                while ((cert = certFactory.generateCertificate(inStream)) != null)
-                {
-                    certificates.add(cert);
-                }
+                CertificateFactory certFactory = helper.createCertificateFactory("X.509");
+                certificates = new ArrayList(certFactory.generateCertificates(inStream));
             }
             else
             {
