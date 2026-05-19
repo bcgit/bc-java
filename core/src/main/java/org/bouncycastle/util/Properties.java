@@ -46,6 +46,16 @@ public class Properties
     public static final String X509_CRL_CACHE_TTL = "org.bouncycastle.x509.crl_cache_ttl";
 
     /**
+     * If set to "true", the BC CertPath validator and X509RevocationChecker will attempt to
+     * download CRLs over the network using URIs from each certificate's CRL Distribution Points
+     * extension when no PKIXCRLStore on the supplied PKIXParameters can satisfy the lookup.
+     * Default (unset / "false") preserves the legacy behaviour of relying entirely on caller-supplied
+     * CertStore / PKIXCRLStore registrations &mdash; "No CRLs found for issuer ..." is the result
+     * when the caller hasn't registered a store and this property is off.
+     */
+    public static final String X509_ENABLE_CRLDP = "org.bouncycastle.x509.enableCRLDP";
+
+    /**
      * If set to "true", the BC PKCS#12 KeyStore will additionally accept (on load only)
      * SafeBags of type secretBag that use SunJCE's non-standard nested encoding —
      * a SecretBag whose secretTypeId is pkcs8ShroudedKeyBag and whose secretValue is
