@@ -864,140 +864,140 @@ final class FaestProofPrimitives
     // Single-element constraint that y * conjugates[1] * conjugates[4] == conjugates[0].
     // Prover splits this into degrees {0, 1, 2} by Schoenemann's product rule.
 
-    static void invNormConstraintsProver128(long[] zDeg0, long[] zDeg1, long[] zDeg2,
+    static void invNormConstraintsProver128(long[] zDeg0, int z0Off,
+                                            long[] zDeg1, int z1Off,
+                                            long[] zDeg2, int z2Off,
                                             long[] conj, long[] conjTag,
                                             long[] y, long[] yTag)
     {
         long[] t1 = new long[BF128.LIMBS];
         long[] t2 = new long[BF128.LIMBS];
-        long[] acc = new long[BF128.LIMBS];
 
         // zDeg0 = yTag * conjTag[1] * conjTag[4]
         BF128.mul(t1, 0, yTag, 0, conjTag, 1 * BF128.LIMBS);
-        BF128.mul(zDeg0, 0, t1, 0, conjTag, 4 * BF128.LIMBS);
+        BF128.mul(zDeg0, z0Off, t1, 0, conjTag, 4 * BF128.LIMBS);
 
         // zDeg1 = y*ct[1]*ct[4] + yt*ct[1]*c[4] + yt*c[1]*ct[4]
         BF128.mul(t1, 0, y, 0, conjTag, 1 * BF128.LIMBS);
-        BF128.mul(acc, 0, t1, 0, conjTag, 4 * BF128.LIMBS);
+        BF128.mul(zDeg1, z1Off, t1, 0, conjTag, 4 * BF128.LIMBS);
         BF128.mul(t1, 0, yTag, 0, conjTag, 1 * BF128.LIMBS);
         BF128.mul(t2, 0, t1, 0, conj, 4 * BF128.LIMBS);
-        BF128.addInPlace(acc, 0, t2, 0);
+        BF128.addInPlace(zDeg1, z1Off, t2, 0);
         BF128.mul(t1, 0, yTag, 0, conj, 1 * BF128.LIMBS);
         BF128.mul(t2, 0, t1, 0, conjTag, 4 * BF128.LIMBS);
-        BF128.addInPlace(acc, 0, t2, 0);
-        System.arraycopy(acc, 0, zDeg1, 0, BF128.LIMBS);
+        BF128.addInPlace(zDeg1, z1Off, t2, 0);
 
         // zDeg2 = y*c[1]*ct[4] + y*ct[1]*c[4] + yt*c[1]*c[4] + ct[0]
         BF128.mul(t1, 0, y, 0, conj, 1 * BF128.LIMBS);
-        BF128.mul(acc, 0, t1, 0, conjTag, 4 * BF128.LIMBS);
+        BF128.mul(zDeg2, z2Off, t1, 0, conjTag, 4 * BF128.LIMBS);
         BF128.mul(t1, 0, y, 0, conjTag, 1 * BF128.LIMBS);
         BF128.mul(t2, 0, t1, 0, conj, 4 * BF128.LIMBS);
-        BF128.addInPlace(acc, 0, t2, 0);
+        BF128.addInPlace(zDeg2, z2Off, t2, 0);
         BF128.mul(t1, 0, yTag, 0, conj, 1 * BF128.LIMBS);
         BF128.mul(t2, 0, t1, 0, conj, 4 * BF128.LIMBS);
-        BF128.addInPlace(acc, 0, t2, 0);
-        BF128.addInPlace(acc, 0, conjTag, 0 * BF128.LIMBS);
-        System.arraycopy(acc, 0, zDeg2, 0, BF128.LIMBS);
+        BF128.addInPlace(zDeg2, z2Off, t2, 0);
+        BF128.addInPlace(zDeg2, z2Off, conjTag, 0 * BF128.LIMBS);
     }
 
-    static void invNormConstraintsProver192(long[] zDeg0, long[] zDeg1, long[] zDeg2,
+    static void invNormConstraintsProver192(long[] zDeg0, int z0Off,
+                                            long[] zDeg1, int z1Off,
+                                            long[] zDeg2, int z2Off,
                                             long[] conj, long[] conjTag,
                                             long[] y, long[] yTag)
     {
         long[] t1 = new long[BF192.LIMBS];
         long[] t2 = new long[BF192.LIMBS];
-        long[] acc = new long[BF192.LIMBS];
 
         BF192.mul(t1, 0, yTag, 0, conjTag, 1 * BF192.LIMBS);
-        BF192.mul(zDeg0, 0, t1, 0, conjTag, 4 * BF192.LIMBS);
+        BF192.mul(zDeg0, z0Off, t1, 0, conjTag, 4 * BF192.LIMBS);
 
         BF192.mul(t1, 0, y, 0, conjTag, 1 * BF192.LIMBS);
-        BF192.mul(acc, 0, t1, 0, conjTag, 4 * BF192.LIMBS);
+        BF192.mul(zDeg1, z1Off, t1, 0, conjTag, 4 * BF192.LIMBS);
         BF192.mul(t1, 0, yTag, 0, conjTag, 1 * BF192.LIMBS);
         BF192.mul(t2, 0, t1, 0, conj, 4 * BF192.LIMBS);
-        BF192.addInPlace(acc, 0, t2, 0);
+        BF192.addInPlace(zDeg1, z1Off, t2, 0);
         BF192.mul(t1, 0, yTag, 0, conj, 1 * BF192.LIMBS);
         BF192.mul(t2, 0, t1, 0, conjTag, 4 * BF192.LIMBS);
-        BF192.addInPlace(acc, 0, t2, 0);
-        System.arraycopy(acc, 0, zDeg1, 0, BF192.LIMBS);
+        BF192.addInPlace(zDeg1, z1Off, t2, 0);
 
         BF192.mul(t1, 0, y, 0, conj, 1 * BF192.LIMBS);
-        BF192.mul(acc, 0, t1, 0, conjTag, 4 * BF192.LIMBS);
+        BF192.mul(zDeg2, z2Off, t1, 0, conjTag, 4 * BF192.LIMBS);
         BF192.mul(t1, 0, y, 0, conjTag, 1 * BF192.LIMBS);
         BF192.mul(t2, 0, t1, 0, conj, 4 * BF192.LIMBS);
-        BF192.addInPlace(acc, 0, t2, 0);
+        BF192.addInPlace(zDeg2, z2Off, t2, 0);
         BF192.mul(t1, 0, yTag, 0, conj, 1 * BF192.LIMBS);
         BF192.mul(t2, 0, t1, 0, conj, 4 * BF192.LIMBS);
-        BF192.addInPlace(acc, 0, t2, 0);
-        BF192.addInPlace(acc, 0, conjTag, 0 * BF192.LIMBS);
-        System.arraycopy(acc, 0, zDeg2, 0, BF192.LIMBS);
+        BF192.addInPlace(zDeg2, z2Off, t2, 0);
+        BF192.addInPlace(zDeg2, z2Off, conjTag, 0 * BF192.LIMBS);
     }
 
-    static void invNormConstraintsProver256(long[] zDeg0, long[] zDeg1, long[] zDeg2,
+    static void invNormConstraintsProver256(long[] zDeg0, int z0Off,
+                                            long[] zDeg1, int z1Off,
+                                            long[] zDeg2, int z2Off,
                                             long[] conj, long[] conjTag,
                                             long[] y, long[] yTag)
     {
         long[] t1 = new long[BF256.LIMBS];
         long[] t2 = new long[BF256.LIMBS];
-        long[] acc = new long[BF256.LIMBS];
 
         BF256.mul(t1, 0, yTag, 0, conjTag, 1 * BF256.LIMBS);
-        BF256.mul(zDeg0, 0, t1, 0, conjTag, 4 * BF256.LIMBS);
+        BF256.mul(zDeg0, z0Off, t1, 0, conjTag, 4 * BF256.LIMBS);
 
         BF256.mul(t1, 0, y, 0, conjTag, 1 * BF256.LIMBS);
-        BF256.mul(acc, 0, t1, 0, conjTag, 4 * BF256.LIMBS);
+        BF256.mul(zDeg1, z1Off, t1, 0, conjTag, 4 * BF256.LIMBS);
         BF256.mul(t1, 0, yTag, 0, conjTag, 1 * BF256.LIMBS);
         BF256.mul(t2, 0, t1, 0, conj, 4 * BF256.LIMBS);
-        BF256.addInPlace(acc, 0, t2, 0);
+        BF256.addInPlace(zDeg1, z1Off, t2, 0);
         BF256.mul(t1, 0, yTag, 0, conj, 1 * BF256.LIMBS);
         BF256.mul(t2, 0, t1, 0, conjTag, 4 * BF256.LIMBS);
-        BF256.addInPlace(acc, 0, t2, 0);
-        System.arraycopy(acc, 0, zDeg1, 0, BF256.LIMBS);
+        BF256.addInPlace(zDeg1, z1Off, t2, 0);
 
         BF256.mul(t1, 0, y, 0, conj, 1 * BF256.LIMBS);
-        BF256.mul(acc, 0, t1, 0, conjTag, 4 * BF256.LIMBS);
+        BF256.mul(zDeg2, z2Off, t1, 0, conjTag, 4 * BF256.LIMBS);
         BF256.mul(t1, 0, y, 0, conjTag, 1 * BF256.LIMBS);
         BF256.mul(t2, 0, t1, 0, conj, 4 * BF256.LIMBS);
-        BF256.addInPlace(acc, 0, t2, 0);
+        BF256.addInPlace(zDeg2, z2Off, t2, 0);
         BF256.mul(t1, 0, yTag, 0, conj, 1 * BF256.LIMBS);
         BF256.mul(t2, 0, t1, 0, conj, 4 * BF256.LIMBS);
-        BF256.addInPlace(acc, 0, t2, 0);
-        BF256.addInPlace(acc, 0, conjTag, 0 * BF256.LIMBS);
-        System.arraycopy(acc, 0, zDeg2, 0, BF256.LIMBS);
+        BF256.addInPlace(zDeg2, z2Off, t2, 0);
+        BF256.addInPlace(zDeg2, z2Off, conjTag, 0 * BF256.LIMBS);
     }
 
-    static void invNormConstraintsVerifier128(long[] zEval, long[] conjEval, long[] yEval, long[] delta)
+    static void invNormConstraintsVerifier128(long[] zEval, int zEvalOff,
+                                              long[] conjEval, long[] yEval, long[] delta)
     {
         long[] t = new long[BF128.LIMBS];
         long[] d2 = new long[BF128.LIMBS];
         // z = y * c[1] * c[4] + c[0] * delta^2
         BF128.mul(t, 0, yEval, 0, conjEval, 1 * BF128.LIMBS);
-        BF128.mul(zEval, 0, t, 0, conjEval, 4 * BF128.LIMBS);
+        BF128.mul(zEval, zEvalOff, t, 0, conjEval, 4 * BF128.LIMBS);
         BF128.mul(d2, 0, delta, 0, delta, 0);
         BF128.mul(t, 0, conjEval, 0 * BF128.LIMBS, d2, 0);
-        BF128.addInPlace(zEval, 0, t, 0);
+        BF128.addInPlace(zEval, zEvalOff, t, 0);
     }
 
-    static void invNormConstraintsVerifier192(long[] zEval, long[] conjEval, long[] yEval, long[] delta)
+    static void invNormConstraintsVerifier192(long[] zEval, int zEvalOff,
+                                              long[] conjEval, long[] yEval, long[] delta)
     {
         long[] t = new long[BF192.LIMBS];
         long[] d2 = new long[BF192.LIMBS];
         BF192.mul(t, 0, yEval, 0, conjEval, 1 * BF192.LIMBS);
-        BF192.mul(zEval, 0, t, 0, conjEval, 4 * BF192.LIMBS);
+        BF192.mul(zEval, zEvalOff, t, 0, conjEval, 4 * BF192.LIMBS);
         BF192.mul(d2, 0, delta, 0, delta, 0);
         BF192.mul(t, 0, conjEval, 0 * BF192.LIMBS, d2, 0);
-        BF192.addInPlace(zEval, 0, t, 0);
+        BF192.addInPlace(zEval, zEvalOff, t, 0);
     }
 
-    static void invNormConstraintsVerifier256(long[] zEval, long[] conjEval, long[] yEval, long[] delta)
+    static void invNormConstraintsVerifier256(long[] zEval, int zEvalOff,
+                                              long[] conjEval, long[] yEval, long[] delta)
     {
         long[] t = new long[BF256.LIMBS];
         long[] d2 = new long[BF256.LIMBS];
         BF256.mul(t, 0, yEval, 0, conjEval, 1 * BF256.LIMBS);
-        BF256.mul(zEval, 0, t, 0, conjEval, 4 * BF256.LIMBS);
+        BF256.mul(zEval, zEvalOff, t, 0, conjEval, 4 * BF256.LIMBS);
         BF256.mul(d2, 0, delta, 0, delta, 0);
         BF256.mul(t, 0, conjEval, 0 * BF256.LIMBS, d2, 0);
-        BF256.addInPlace(zEval, 0, t, 0);
+        BF256.addInPlace(zEval, zEvalOff, t, 0);
     }
 
     // ====== sbox_affine ======
