@@ -53,6 +53,17 @@ public class MerkleTreePrimitives
          * @return node hash
          */
         byte[] hashNode(byte[] left, byte[] right);
+
+        /**
+         * Raw hash with no domain separation prefix: HASH(data). Used for the
+         * subjectPublicKeyInfoHash in a TBSCertificateLogEntry (Section 5.3),
+         * which is computed with the log's hash function but without the
+         * leaf-node prefix.
+         *
+         * @param data the input bytes
+         * @return the hash output
+         */
+        byte[] hashRaw(byte[] data);
     }
 
     /**
@@ -91,6 +102,16 @@ public class MerkleTreePrimitives
             digest.doFinal(out, 0);
             return out;
         }
+
+        @Override
+        public byte[] hashRaw(byte[] data)
+        {
+            digest.reset();
+            digest.update(data, 0, data.length);
+            byte[] out = new byte[digest.getDigestSize()];
+            digest.doFinal(out, 0);
+            return out;
+        }
     }
 
     /**
@@ -113,8 +134,8 @@ public class MerkleTreePrimitives
         MerkleTreeHash hash)
         throws InvalidProofException
     {
-        // Validate subtree interval and index
-        if (start < 0 || index < start || index >= end)
+        // Validate subtree interval per section 4.1, plus index range per section 4.3.2 step 1.
+        if (!isValidSubtree(start, end) || index < start || index >= end)
         {
             throw new InvalidProofException("Invalid subtree interval or index");
         }
@@ -212,8 +233,8 @@ public class MerkleTreePrimitives
         List<byte[]> proof,
         MerkleTreeHash hash)
     {
-        // Validate interval
-        if (start < 0 || end <= start || end > n)
+        // Validate interval per section 4.1, plus end <= n per section 4.4.3 step 1.
+        if (!isValidSubtree(start, end) || end > n)
         {
             return false;
         }
@@ -282,8 +303,9 @@ public class MerkleTreePrimitives
                 }
                 sr = hash.hashNode(c, sr);
 
-                // Shift while LSB(sn) is set
-                while ((sn & 1) == 1 && fn < sn)
+                // Section 4.4.3 step 7.2.3: "Until LSB(sn) is set, right-shift fn, sn, and tn equally."
+                // I.e. continue shifting while LSB(sn) is unset.
+                while ((sn & 1) == 0 && fn < sn)
                 {
                     fn >>= 1;
                     sn >>= 1;
@@ -308,6 +330,35 @@ public class MerkleTreePrimitives
             return false; // proof too short
         }
         return Arrays.equals(fr, subtreeHash) && Arrays.equals(sr, rootHash);
+    }
+
+    /**
+     * Checks whether {@code [start, end)} is a valid subtree interval per
+     * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/#section-4.1">Section 4.1</a>:
+     * 0 &lt;= start &lt; end, and start is a multiple of BIT_CEIL(end - start).
+     *
+     * @param start subtree start (inclusive)
+     * @param end   subtree end (exclusive)
+     * @return true if the interval describes a valid subtree
+     */
+    public static boolean isValidSubtree(long start, long end)
+    {
+        if (start < 0 || end <= start)
+        {
+            return false;
+        }
+        if (start == 0)
+        {
+            return true;
+        }
+        long size = end - start;
+        // BIT_CEIL(size): smallest power of two greater than or equal to size.
+        long bitCeil = Long.highestOneBit(size);
+        if (bitCeil < size)
+        {
+            bitCeil <<= 1;
+        }
+        return bitCeil > 0 && (start & (bitCeil - 1)) == 0;
     }
 
     /**
