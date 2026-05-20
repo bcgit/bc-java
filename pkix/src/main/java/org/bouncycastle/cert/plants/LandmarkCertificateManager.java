@@ -1,8 +1,23 @@
 package org.bouncycastle.cert.plants;
 
-import org.bouncycastle.asn1.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.plants.CloudFlareObjectIdentifiers;
 import org.bouncycastle.asn1.plants.MTCSignature;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.TBSCertificate;
+import org.bouncycastle.asn1.x509.TBSCertificateLogEntry;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -11,28 +26,24 @@ import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.util.Arrays;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
 /**
- * Handles landmark certificates and trusted subtrees as defined in
- * draft-ietf-plants-merkle-tree-certs, Sections 6.3 and 7.4.
+ * Helpers for constructing landmark-relative certificates and for maintaining a
+ * relying party's trusted-subtree list, as described in Sections 6.3 and 7.4 of
+ * draft-ietf-plants-merkle-tree-certs.
  */
 public class LandmarkCertificateManager
 {
     /**
-     * Builds a landmark certificate for a given log entry and landmark.
+     * Builds a landmark-relative certificate (no signatures, only an inclusion
+     * proof to a predistributed landmark subtree).
      *
-     * @param index                the index of the entry in the log
-     * @param tbsCertEntry         the TBSCertificateLogEntry (ASN.1 structure)
-     * @param subjectPublicKeyInfo the actual SubjectPublicKeyInfo (DER-encoded)
-     * @param landmarkSubtree      the chosen landmark subtree that contains the entry
-     * @param inclusionProof       list of node hashes forming the inclusion proof
-     * @param hashFunc             the hash function used by the log
-     * @return an X.509 Certificate (as a byte array or holder) containing the landmark certificate
-     * @throws IOException if encoding fails
+     * @param index                the entry's index in the log (used as the certificate serial number)
+     * @param tbsCertEntry         the TBSCertificateLogEntry describing the entry
+     * @param subjectPublicKeyInfo the actual subject public key (its hash must match tbsCertEntry.subjectPublicKeyInfoHash)
+     * @param landmarkSubtree      the landmark subtree containing the entry
+     * @param inclusionProof       inclusion proof hashes from the entry to landmarkSubtree
+     * @param hashFunc             the log's hash function
+     * @return the landmark-relative certificate
      */
     public static X509CertificateHolder buildLandmarkCertificate(
         long index,
@@ -43,47 +54,20 @@ public class LandmarkCertificateManager
         MerkleTreePrimitives.MerkleTreeHash hashFunc)
         throws IOException
     {
-        // 1. Build the TBSCertificate according to Section 6.1
-        //    - version, issuer, validity, subject, etc. from tbsCertEntry
-        //    - serialNumber = index
-        //    - subjectPublicKeyInfo = provided
-        //    - signature algorithm = id-alg-mtcProof
-
-        TBSCertificate tbs = buildTBSCertificate(
-            tbsCertEntry, index, subjectPublicKeyInfo);
-
-        // 2. Construct the MTCProof for a landmark certificate (no signatures)
-        //    - start, end from landmarkSubtree
-        //    - inclusion_proof = concatenated hashes
-        //    - signatures = empty list
+        TBSCertificate tbs = buildTBSCertificate(tbsCertEntry, index, subjectPublicKeyInfo);
 
         byte[] inclusionProofBytes = concatenateHashes(inclusionProof, hashFunc.getHashSize());
         MTCProof proof = new MTCProof(
             landmarkSubtree.getStart(),
             landmarkSubtree.getEnd(),
             inclusionProofBytes,
-            Collections.emptyList() // no signatures
-        );
+            Collections.<MTCSignature>emptyList());
 
-        // 3. Encode the MTCProof as a byte array (TLS presentation)
-        byte[] proofEncoded = proof.encode();
-
-        // 4. Build the final Certificate:
-        //    - TBSCertificate as built
-        //    - signatureAlgorithm = id-alg-mtcProof (AlgorithmIdentifier with null parameters)
-        //    - signatureValue = BIT STRING containing proofEncoded
-
-        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(
-            new ASN1ObjectIdentifier(MerkleTreeCertificateValidator.ID_ALG_MTC_PROOF));
-
-        DERBitString signature = new DERBitString(proofEncoded);
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(CloudFlareObjectIdentifiers.id_alg_mtcProof);
+        DERBitString signature = new DERBitString(proof.encode());
 
         return new X509CertificateHolder(
-            new DERSequence(new ASN1Encodable[]{
-                tbs.toASN1Primitive(),
-                sigAlg,
-                signature
-            }).getEncoded());
+            new DERSequence(new ASN1Encodable[]{tbs.toASN1Primitive(), sigAlg, signature}).getEncoded());
     }
 
     private static TBSCertificate buildTBSCertificate(
@@ -91,30 +75,21 @@ public class LandmarkCertificateManager
         long index,
         SubjectPublicKeyInfo subjectPublicKeyInfo)
     {
-        // Construct TBSCertificate according to Section 6.1
-        // Fields from tbsEntry: version, issuer, validity, subject, extensions, uniqueIDs
-        // serialNumber = ASN1Integer(index)
-        // subjectPublicKeyInfo = provided
-        // signature = id-alg-mtcProof (the algorithm identifier, not the proof itself)
-        // issuerUniqueID, subjectUniqueID, extensions if present
-
-        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(
-            new ASN1ObjectIdentifier(MerkleTreeCertificateValidator.ID_ALG_MTC_PROOF));
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(CloudFlareObjectIdentifiers.id_alg_mtcProof);
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        // version (explicit tag [0]) if not default v1 (v1 = 0)
         if (tbsEntry.getVersion() != null && tbsEntry.getVersion().getValue().intValue() != 0)
         {
             v.add(new DERTaggedObject(true, 0, tbsEntry.getVersion()));
         }
 
-        v.add(new ASN1Integer(index));                     // serialNumber
-        v.add(sigAlg);                                      // signature (algorithm)
-        v.add(tbsEntry.getIssuer());                        // issuer
-        v.add(tbsEntry.getValidity());                      // validity
-        v.add(tbsEntry.getSubject());                       // subject
-        v.add(subjectPublicKeyInfo);                         // subjectPublicKeyInfo
+        v.add(new ASN1Integer(index));
+        v.add(sigAlg);
+        v.add(tbsEntry.getIssuer());
+        v.add(tbsEntry.getValidity());
+        v.add(tbsEntry.getSubject());
+        v.add(subjectPublicKeyInfo);
 
         if (tbsEntry.getIssuerUniqueID() != null)
         {
@@ -138,25 +113,30 @@ public class LandmarkCertificateManager
         int off = 0;
         for (byte[] h : hashes)
         {
+            if (h.length != hashSize)
+            {
+                throw new IllegalArgumentException("Hash size mismatch: expected " + hashSize + ", got " + h.length);
+            }
             System.arraycopy(h, 0, result, off, hashSize);
             off += hashSize;
         }
         return result;
     }
 
-    // ----------------------------------------------------------------------
-    // Trusted Subtree Management (Section 7.4)
-    // ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // Trusted subtree management (Section 7.4)
+    // ------------------------------------------------------------------------
+
     /**
-     * Represents a trusted subtree (landmark) along with the checkpoint that proves its consistency.
+     * A trusted subtree along with the reference checkpoint that proved its consistency.
      */
     public static class TrustedSubtreeEntry
     {
         private final long start;
         private final long end;
-        private final byte[] hash;                 // subtree hash
-        private final long checkpointTreeSize;      // tree size of the checkpoint that proves consistency
-        private final byte[] checkpointRootHash;    // root hash of that checkpoint
+        private final byte[] hash;
+        private final long checkpointTreeSize;
+        private final byte[] checkpointRootHash;
 
         public TrustedSubtreeEntry(long start, long end, byte[] hash,
                                    long checkpointTreeSize, byte[] checkpointRootHash)
@@ -200,8 +180,9 @@ public class LandmarkCertificateManager
     }
 
     /**
-     * Manages a list of trusted subtrees for a log. Provides methods to add new landmarks
-     * after verifying consistency with cosigned checkpoints.
+     * Maintains a relying-party-side list of trusted subtrees by accepting new
+     * landmarks that come with a cosigned reference checkpoint and a subtree
+     * consistency proof.
      */
     public static class TrustedSubtreeManager
     {
@@ -210,14 +191,13 @@ public class LandmarkCertificateManager
         private final Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys;
         private final int minCosignaturesForCheckpoint;
 
-        // Current trusted subtrees (landmarks)
-        private final List<TrustedSubtreeEntry> trustedSubtrees = new ArrayList<>();
+        private final List<TrustedSubtreeEntry> trustedSubtrees = new ArrayList<TrustedSubtreeEntry>();
 
         /**
-         * @param logId                        log ID (DER-encoded RELATIVE-OID)
+         * @param logId                        binary trust anchor ID of the log
          * @param hashFunc                     hash function used by the log
-         * @param cosignerPublicKeys           map from cosigner ID to public key
-         * @param minCosignaturesForCheckpoint minimum number of valid cosignatures required to trust a checkpoint
+         * @param cosignerPublicKeys           map from binary cosigner ID to public key
+         * @param minCosignaturesForCheckpoint minimum valid cosignatures required to trust a checkpoint
          */
         public TrustedSubtreeManager(
             byte[] logId,
@@ -231,24 +211,19 @@ public class LandmarkCertificateManager
             this.minCosignaturesForCheckpoint = minCosignaturesForCheckpoint;
         }
 
-        /**
-         * Returns an unmodifiable view of the current trusted subtrees.
-         */
         public List<TrustedSubtreeEntry> getTrustedSubtrees()
         {
             return Collections.unmodifiableList(trustedSubtrees);
         }
 
         /**
-         * Attempts to add a new landmark subtree.
+         * Attempts to add a new landmark subtree. The subtree is accepted if:
+         * <ul>
+         *   <li>The reference checkpoint carries enough valid cosignatures, and</li>
+         *   <li>The supplied subtree consistency proof relates the subtree to that checkpoint.</li>
+         * </ul>
          *
-         * @param subtreeStart         start index of the new subtree
-         * @param subtreeEnd           end index of the new subtree
-         * @param subtreeHash          hash of the subtree
-         * @param referenceCheckpoint  a checkpoint that contains the subtree (must be cosigned)
-         * @param consistencyProof     subtree consistency proof from the subtree to the checkpoint
-         * @param checkpointSignatures list of (cosignerId, signature) over the checkpoint
-         * @return true if the subtree was added successfully, false otherwise
+         * @return {@code true} if the landmark was added
          */
         public boolean addLandmarkSubtree(
             long subtreeStart,
@@ -259,35 +234,25 @@ public class LandmarkCertificateManager
             List<MTCSignature> checkpointSignatures)
             throws IOException
         {
-            // 1. Verify the checkpoint is signed by enough trusted cosigners
             if (!verifyCheckpointSignatures(referenceCheckpoint, checkpointSignatures))
             {
                 return false;
             }
 
-            // 2. Verify subtree consistency with the checkpoint
-            if (!verifySubtreeConsistency(
-                subtreeStart, subtreeEnd, subtreeHash,
-                referenceCheckpoint.treeSize, referenceCheckpoint.rootHash,
-                consistencyProof))
+            if (!MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                subtreeStart, subtreeEnd, referenceCheckpoint.treeSize,
+                subtreeHash, referenceCheckpoint.rootHash,
+                consistencyProof, hashFunc))
             {
                 return false;
             }
 
-            // 3. Add to trusted list (optionally prune old landmarks)
             trustedSubtrees.add(new TrustedSubtreeEntry(
                 subtreeStart, subtreeEnd, subtreeHash,
                 referenceCheckpoint.treeSize, referenceCheckpoint.rootHash));
-
-            // Optionally, keep only the most recent max_landmarks entries.
-            // (Not implemented here; caller can manage.)
-
             return true;
         }
 
-        /**
-         * Verifies that a checkpoint is signed by a sufficient set of trusted cosigners.
-         */
         private boolean verifyCheckpointSignatures(
             Checkpoint checkpoint,
             List<MTCSignature> signatures)
@@ -296,37 +261,30 @@ public class LandmarkCertificateManager
             int valid = 0;
             for (MTCSignature sig : signatures)
             {
-                AsymmetricKeyParameter pubKey = cosignerPublicKeys.get(new MerkleTreeCertificateValidator.ByteArrayKey(sig.getCosignerIdValue()));
+                byte[] cosignerId = sig.getCosignerId();
+                AsymmetricKeyParameter pubKey = cosignerPublicKeys.get(
+                    new MerkleTreeCertificateValidator.ByteArrayKey(cosignerId));
                 if (pubKey == null)
                 {
                     continue;
                 }
 
-                // Build checkpoint signature input
-                // For checkpoints, the draft says: "When start is zero, the resulting signature describes the checkpoint."
-                // The signature input for a checkpoint uses the same structure but with start=0.
-                // We'll reuse MTCSignatureVerifier with start=0 and the checkpoint root hash as subtreeHash.
-                byte[] signedData = buildCheckpointSignatureInput(
-                    logId,
-                    0,
-                    checkpoint.treeSize,
-                    checkpoint.rootHash,
-                    sig.getCosignerIdValue()
-                );
-
-                // Determine algorithm from key type
                 String algorithm = getAlgorithmFromKey(pubKey);
+                if (algorithm == null)
+                {
+                    continue;
+                }
 
+                // A checkpoint is a subtree with start == 0 (Section 5.4.1).
                 boolean ok = MTCSignatureVerifier.verify(
                     logId,
-                    0,
+                    0L,
                     checkpoint.treeSize,
                     checkpoint.rootHash,
-                    sig.getCosignerIdValue(),
-                    sig.getSignatureValue(),
+                    cosignerId,
+                    sig.getSignature(),
                     pubKey,
-                    algorithm
-                );
+                    algorithm);
                 if (ok)
                 {
                     valid++;
@@ -335,45 +293,7 @@ public class LandmarkCertificateManager
             return valid >= minCosignaturesForCheckpoint;
         }
 
-        /**
-         * Builds signature input for a checkpoint (start=0).
-         */
-        private byte[] buildCheckpointSignatureInput(
-            byte[] logId,
-            long start,
-            long end,
-            byte[] rootHash,
-            byte[] cosignerId)
-        {
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
-            {
-                // Fixed label (same as subtree, but domain separation is via the label itself)
-                baos.write("mtc-subtree/v1\n\0".getBytes(StandardCharsets.US_ASCII)); // 16 bytes
-
-                // cosigner_id
-                baos.write((byte)cosignerId.length);
-                baos.write(cosignerId);
-
-                // log_id
-                baos.write((byte)logId.length);
-                baos.write(logId);
-
-                // start (uint64)
-                Utils.writeUint64(baos, start);
-                // end (uint64)
-                Utils.writeUint64(baos, end);
-                // rootHash
-                baos.write(rootHash);
-
-                return baos.toByteArray();
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        private String getAlgorithmFromKey(AsymmetricKeyParameter key)
+        private static String getAlgorithmFromKey(AsymmetricKeyParameter key)
         {
             if (key instanceof ECPublicKeyParameters)
             {
@@ -387,28 +307,21 @@ public class LandmarkCertificateManager
                 {
                     return "ECDSA-P384-SHA384";
                 }
+                return null;
             }
-            else if (key instanceof Ed25519PublicKeyParameters)
+            if (key instanceof Ed25519PublicKeyParameters)
             {
                 return "Ed25519";
             }
-            // Add ML-DSA when available
+            if (key.getClass().getName().contains("MLDSAPublicKeyParameters"))
+            {
+                return "ML-DSA-65";
+            }
             return null;
         }
 
-        private boolean verifySubtreeConsistency(
-            long start, long end, byte[] subtreeHash,
-            long checkpointTreeSize, byte[] checkpointRootHash,
-            List<byte[]> consistencyProof)
-        {
-            return MerkleTreePrimitives.verifySubtreeConsistencyProof(
-                start, end, checkpointTreeSize,
-                subtreeHash, checkpointRootHash,
-                consistencyProof, hashFunc);
-        }
-
         /**
-         * Simple container for a checkpoint (tree size and root hash).
+         * A snapshot of the log: tree size and root hash.
          */
         public static class Checkpoint
         {
