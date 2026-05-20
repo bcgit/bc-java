@@ -1,14 +1,31 @@
 package org.bouncycastle.cert.plants;
 
-import org.bouncycastle.asn1.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1RelativeOID;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1String;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.plants.CloudFlareObjectIdentifiers;
 import org.bouncycastle.asn1.plants.MTCSignature;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
@@ -16,48 +33,30 @@ import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.util.Arrays;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
-
 /**
- * Validates a Merkle Tree Certificate (MTC) as defined in draft-ietf-plants-merkle-tree-certs.
- * This validator handles the custom signature algorithm id-alg-mtcProof and performs
- * inclusion proof verification and cosignature checks.
+ * Validates a Merkle Tree Certificate (MTC) as defined in
+ * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs</a>.
+ *
+ * <p>The validator performs the per-certificate signature verification step of
+ * RFC 5280 path validation (Section 6.1.3 step (a)(1)) when the issuer is a
+ * Merkle Tree CA, following Section 7.2 of the draft.</p>
  */
 public class MerkleTreeCertificateValidator
 {
-    // OID for the MTC proof signature algorithm (temporary value, will be assigned by IANA)
-    public static final String ID_ALG_MTC_PROOF = "1.3.6.1.4.1.44363.47.0";
+    /** OID of the {@code id-alg-mtcProof} signature algorithm (experimental, Section 6.1). */
+    public static final String ID_ALG_MTC_PROOF = CloudFlareObjectIdentifiers.id_alg_mtcProof.getId();
 
     /**
-     * Parameters for MTC validation, provided by the relying party.
+     * Parameters supplied by the relying party for certificate validation.
      */
     public static class ValidationParams
     {
-        // Map of cosigner ID (DER-encoded RELATIVE-OID) to its public key (as a Bouncy Castle AsymmetricKeyParameter)
         private final Map<ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys;
-
-        // List of trusted subtrees (pre‑distributed landmarks) for this log
         private final List<TrustedSubtree> trustedSubtrees;
-
-        // Revoked indices (serial numbers) – could be a set or a function
         private final Set<Long> revokedIndices;
-
-        // Policy: minimum number of valid cosignatures required (or a more complex policy)
         private final int minCosignatures;
-
-        // Hash function used by the log (must match the log's parameters)
         private final MerkleTreePrimitives.MerkleTreeHash hashFunction;
 
-        /**
-         * @param cosignerPublicKeys map from cosigner ID (DER bytes) to public key
-         * @param trustedSubtrees    list of trusted subtrees for this log
-         * @param revokedIndices     set of revoked serial numbers (indices)
-         * @param minCosignatures    minimum number of valid cosignatures required
-         * @param hashFunction       hash function used by the log (e.g., new Sha256MerkleTreeHash())
-         */
         public ValidationParams(
             Map<ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys,
             List<TrustedSubtree> trustedSubtrees,
@@ -99,13 +98,14 @@ public class MerkleTreeCertificateValidator
     }
 
     /**
-     * Represents a trusted subtree (landmark).
+     * Represents a trusted subtree (typically a landmark subtree predistributed
+     * to the relying party, per Section 7.4).
      */
     public static class TrustedSubtree
     {
         private final long start;
         private final long end;
-        private final byte[] hash; // subtree hash
+        private final byte[] hash;
 
         public TrustedSubtree(long start, long end, byte[] hash)
         {
@@ -129,131 +129,121 @@ public class MerkleTreeCertificateValidator
             return hash.clone();
         }
 
-        public boolean matches(long start, long end, byte[] hash)
+        boolean matchesInterval(long start, long end)
         {
-            return this.start == start && this.end == end && Arrays.areEqual(this.hash, hash);
+            return this.start == start && this.end == end;
+        }
+
+        boolean matchesHash(byte[] hash)
+        {
+            return Arrays.areEqual(this.hash, hash);
         }
     }
 
     /**
-     * Result of a cosignature verification.
-     */
-    private static class CosignatureResult
-    {
-        final byte[] cosignerId;
-        final boolean valid;
-
-        CosignatureResult(byte[] cosignerId, boolean valid)
-        {
-            this.cosignerId = cosignerId;
-            this.valid = valid;
-        }
-    }
-
-    /**
-     * Validates a Merkle Tree Certificate.
+     * Validates a Merkle Tree certificate per Section 7.2.
      *
-     * @param certHolder the X.509 certificate holder (may be from Bouncy Castle's X509CertificateHolder)
-     * @param params     validation parameters (cosigners, trusted subtrees, revocation, etc.)
-     * @return true if the certificate is valid according to the MTC rules and the relying party's policy
-     * @throws Exception if validation fails (with specific exception types for different failures)
+     * @param certHolder the certificate to validate
+     * @param params     validation parameters
+     * @return {@code true} if the certificate is valid
+     * @throws SecurityException        if the certificate is rejected
+     * @throws IllegalArgumentException if the certificate is not a Merkle Tree certificate
+     * @throws IOException              if the certificate cannot be parsed
      */
     public static boolean validateCertificate(
         X509CertificateHolder certHolder,
         ValidationParams params)
-        throws Exception
+        throws IOException
     {
-        // 1. Check that the TBSCertificate signature algorithm is id-alg-mtcProof
+        // Step 1: signature algorithm must be id-alg-mtcProof with absent parameters.
         AlgorithmIdentifier sigAlgId = certHolder.getSignatureAlgorithm();
-        if (!ID_ALG_MTC_PROOF.equals(sigAlgId.getAlgorithm().getId()))
+        if (!CloudFlareObjectIdentifiers.id_alg_mtcProof.equals(sigAlgId.getAlgorithm()))
         {
             throw new IllegalArgumentException("Not a Merkle Tree certificate: expected id-alg-mtcProof");
         }
-
-        // 2. Decode the signature value as an MTCProof
-        byte[] signatureValue = certHolder.getSignature();
-        // The signature value is a BIT STRING containing the raw MTCProof (TLS encoding)
-        // We need to parse it according to TLS presentation.
-        MTCProof proof = MTCProof.parse(signatureValue);
-
-        // 3. Extract the log entry index from the serial number
-        BigInteger serialBig = certHolder.getSerialNumber();
-        if (serialBig.compareTo(BigInteger.ZERO) <= 0)
+        if (sigAlgId.getParameters() != null)
         {
-            throw new IllegalArgumentException("Serial number must be positive (index > 0)");
+            throw new IllegalArgumentException("id-alg-mtcProof must have absent parameters");
         }
-        long index = serialBig.longValue(); // serial numbers are positive and fit in long
 
-        // 4. Check revocation by index
-        if (params.revokedIndices.contains(index))
+        // Step 2: decode the signatureValue as an MTCProof.
+        MTCProof proof = new MTCProof(certHolder.getSignature());
+
+        // Step 3: revocation check by index (the serial number).
+        BigInteger serialBig = certHolder.getSerialNumber();
+        if (serialBig.signum() <= 0)
+        {
+            throw new SecurityException("Serial number must be positive (index > 0)");
+        }
+        long index = serialBig.longValueExact();
+        if (params.revokedIndices.contains(Long.valueOf(index)))
         {
             throw new SecurityException("Certificate index " + index + " is revoked");
         }
 
-        // 5. Reconstruct the TBSCertificateLogEntry and compute entry hash
+        // Steps 4 and 5: derive the entry hash from the TBSCertificate.
         byte[] entryHash = computeEntryHash(certHolder, params.hashFunction);
 
-        // 6. Evaluate the inclusion proof to get expected subtree hash
+        // Step 6: evaluate the inclusion proof to recover the expected subtree hash.
         byte[] expectedSubtreeHash;
         try
         {
             expectedSubtreeHash = MerkleTreePrimitives.evaluateSubtreeInclusionProof(
                 index,
-                proof.start,
-                proof.end,
+                proof.getStart(),
+                proof.getEnd(),
                 entryHash,
                 proof.getHashList(params.hashFunction.getHashSize()),
-                params.hashFunction
-            );
+                params.hashFunction);
         }
         catch (MerkleTreePrimitives.InvalidProofException e)
         {
             throw new SecurityException("Invalid inclusion proof: " + e.getMessage());
         }
 
-        // 7. Check if the subtree matches a trusted subtree (landmark)
+        // Step 7: if any trusted subtree matches [start, end), the hash must equal it.
+        // Per Section 7.2: "Return success if it matches and failure if it does not."
         for (TrustedSubtree trusted : params.trustedSubtrees)
         {
-            if (trusted.matches(proof.start, proof.end, expectedSubtreeHash))
+            if (trusted.matchesInterval(proof.getStart(), proof.getEnd()))
             {
-                // Certificate is valid via trusted subtree
-                return true;
+                if (trusted.matchesHash(expectedSubtreeHash))
+                {
+                    return true;
+                }
+                throw new SecurityException("Inclusion proof produced a hash that does not match the trusted subtree");
             }
         }
 
-        // 8. No trusted subtree matches; verify cosignatures
-        List<CosignatureResult> cosignatureResults = new ArrayList<>();
-        for (MTCSignature sig : proof.signatures)
+        // Step 8: otherwise verify cosignatures against the relying-party policy.
+        byte[] logId = extractLogIdFromIssuer(certHolder.getIssuer());
+
+        int validCount = 0;
+        for (MTCSignature sig : proof.getSignatures())
         {
-            byte[] cosignerId = sig.getCosignerIdValue();
-            boolean valid = verifyCosignature(
-                extractLogIdFromIssuer(certHolder.getIssuer()), // log ID (DER-encoded RELATIVE-OID)
-                proof.start,
-                proof.end,
+            byte[] cosignerId = sig.getCosignerId();
+            if (verifyCosignature(
+                logId,
+                proof.getStart(),
+                proof.getEnd(),
                 expectedSubtreeHash,
                 cosignerId,
-                sig.getSignatureValue(),
-                params
-            );
-            cosignatureResults.add(new CosignatureResult(cosignerId, valid));
+                sig.getSignature(),
+                params))
+            {
+                validCount++;
+            }
         }
 
-        // Apply policy: count valid cosignatures
-        long validCount = cosignatureResults.stream().filter(r -> r.valid).count();
-        if (validCount >= params.minCosignatures)
-        {
-            return true;
-        }
-        else
+        if (validCount < params.minCosignatures)
         {
             throw new SecurityException("Insufficient valid cosignatures: " + validCount +
                 " < " + params.minCosignatures);
         }
+
+        return true;
     }
 
-    /**
-     * Verifies a single cosignature using MTCSignatureVerifier.
-     */
     private static boolean verifyCosignature(
         byte[] logId,
         long start,
@@ -267,28 +257,16 @@ public class MerkleTreeCertificateValidator
         AsymmetricKeyParameter pubKey = params.cosignerPublicKeys.get(new ByteArrayKey(cosignerId));
         if (pubKey == null)
         {
-            return false; // cosigner not trusted
+            // Unrecognized cosigners MUST be ignored (Section 7.2 step 8).
+            return false;
         }
 
-        // Determine algorithm from public key type (or from context)
-        // For simplicity, we derive algorithm from the key type.
         String algorithm = getAlgorithmFromKey(pubKey);
 
         return MTCSignatureVerifier.verify(
-            logId,
-            start,
-            end,
-            subtreeHash,
-            cosignerId,
-            signature,
-            pubKey,
-            algorithm
-        );
+            logId, start, end, subtreeHash, cosignerId, signature, pubKey, algorithm);
     }
 
-    /**
-     * Maps a Bouncy Castle AsymmetricKeyParameter to the algorithm string used by MTCSignatureVerifier.
-     */
     private static String getAlgorithmFromKey(AsymmetricKeyParameter key)
     {
         if (key instanceof ECPublicKeyParameters)
@@ -299,288 +277,158 @@ public class MerkleTreeCertificateValidator
             {
                 return "ECDSA-P256-SHA256";
             }
-            else if (fieldSize == 384)
+            if (fieldSize == 384)
             {
                 return "ECDSA-P384-SHA384";
             }
-            else
-            {
-                throw new IllegalArgumentException("Unsupported EC field size: " + fieldSize);
-            }
+            throw new IllegalArgumentException("Unsupported EC field size: " + fieldSize);
         }
-        else if (key instanceof Ed25519PublicKeyParameters)
+        if (key instanceof Ed25519PublicKeyParameters)
         {
             return "Ed25519";
         }
-        else if (key.getClass().getName().contains("MLDSAPublicKeyParameters"))
+        if (key.getClass().getName().contains("MLDSAPublicKeyParameters"))
         {
-            // We need to differentiate ML-DSA parameter sets.
-            // This is a placeholder – actual detection depends on Bouncy Castle's ML-DSA implementation.
-            return "ML-DSA-65"; // default? Better to have a mapping from key to specific algorithm.
+            // ML-DSA parameter sets share the same Signer class; the key carries the parameter set.
+            return "ML-DSA-65";
         }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported public key type: " + key.getClass().getName());
-        }
+        throw new IllegalArgumentException("Unsupported public key type: " + key.getClass().getName());
     }
 
     /**
-     * Computes the entry hash for the given certificate using the single-pass method
-     * described in Section 7.2 of the draft.
+     * Computes the entry hash for a certificate by transforming its TBSCertificate
+     * into the equivalent {@code MerkleTreeCertEntry} of type {@code tbs_cert_entry}
+     * and hashing per Section 5.3 / Section 7.2.
+     *
+     * <p>The TBSCertificate's {@code serialNumber} and {@code signature} fields are
+     * omitted (they have no counterpart in TBSCertificateLogEntry), and
+     * {@code subjectPublicKeyInfo} is replaced by the algorithm field followed by
+     * the OCTET STRING encoding of HASH(subjectPublicKeyInfo).</p>
      */
     public static byte[] computeEntryHash(
         X509CertificateHolder certHolder,
         MerkleTreePrimitives.MerkleTreeHash hashFunc)
         throws IOException
     {
-        byte[] tbsCertBytes = certHolder.getTBSCertificate().getEncoded();
+        byte[] tbsCertBytes = certHolder.getTBSCertificate().getEncoded(ASN1Encoding.DER);
+        ASN1Sequence tbsSeq = ASN1Sequence.getInstance(tbsCertBytes);
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
+        ByteArrayOutputStream entry = new ByteArrayOutputStream();
+        // MerkleTreeCertEntryType.tbs_cert_entry (= 1), big-endian uint16.
+        entry.write(0x00);
+        entry.write(0x01);
+
+        int size = tbsSeq.size();
+        int idx = 0;
+
+        // Optional [0] EXPLICIT Version.
+        if (idx < size)
         {
-            // 1. Two-byte type (big-endian) for tbs_cert_entry (type = 1)
-            baos.write(0x00);
-            baos.write(0x01);
-
-            // 2. Parse TBSCertificate sequence
-            ASN1InputStream asn1In = new ASN1InputStream(tbsCertBytes);
-            ASN1Sequence tbsSeq = (ASN1Sequence)asn1In.readObject();
-            asn1In.close();
-
-            ByteArrayOutputStream prefix = new ByteArrayOutputStream();
-            ByteArrayOutputStream spkiBytes = new ByteArrayOutputStream();
-            ByteArrayOutputStream suffix = new ByteArrayOutputStream();
-
-            boolean foundSpki = false;
-            for (int i = 0; i < tbsSeq.size(); i++)
+            ASN1Encodable obj = tbsSeq.getObjectAt(idx);
+            if (obj.toASN1Primitive() instanceof ASN1TaggedObject)
             {
-                ASN1Encodable element = tbsSeq.getObjectAt(i);
-                byte[] enc = element.toASN1Primitive().getEncoded(ASN1Encoding.DER);
-
-                if (!foundSpki)
+                ASN1TaggedObject tagged = (ASN1TaggedObject)obj.toASN1Primitive();
+                if (tagged.getTagNo() == 0)
                 {
-                    // Attempt to parse as SubjectPublicKeyInfo
-                    try
-                    {
-                        SubjectPublicKeyInfo spkiTest = SubjectPublicKeyInfo.getInstance(element);
-                        // Success – this is the SPKI
-                        foundSpki = true;
-                        spkiBytes.write(enc, 0, enc.length);
-                    }
-                    catch (Exception e)
-                    {
-                        // Not SPKI, add to prefix
-                        prefix.write(enc, 0, enc.length);
-                    }
-                }
-                else
-                {
-                    suffix.write(enc, 0, enc.length);
+                    entry.write(tagged.getEncoded(ASN1Encoding.DER));
+                    idx++;
                 }
             }
-
-            if (!foundSpki)
-            {
-                throw new IOException("Could not locate subjectPublicKeyInfo in TBSCertificate");
-            }
-
-            // Write prefix
-            baos.write(prefix.toByteArray());
-
-            // Write subjectPublicKeyInfo.algorithm (DER encoded)
-            ASN1InputStream spkiIn = new ASN1InputStream(spkiBytes.toByteArray());
-            SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(spkiIn.readObject());
-            spkiIn.close();
-            byte[] algEnc = spki.getAlgorithm().getEncoded(ASN1Encoding.DER);
-            baos.write(algEnc);
-
-            // Write OCTET STRING identifier (0x04)
-            baos.write(0x04);
-
-            // Write L (hash length, assuming <= 127)
-            int hashSize = hashFunc.getHashSize();
-            if (hashSize > 127)
-            {
-                throw new IllegalArgumentException("Hash size > 127 not supported in single-pass method");
-            }
-            baos.write((byte)hashSize);
-
-            // Compute hash of the entire subjectPublicKeyInfo
-            byte[] spkiHash = new byte[hashSize];
-            Digest digest = new SHA256Digest(); // Must match log's hash function
-            digest.update(spkiBytes.toByteArray(), 0, spkiBytes.size());
-            digest.doFinal(spkiHash, 0);
-            baos.write(spkiHash);
-
-            // Write suffix
-            baos.write(suffix.toByteArray());
-
-            // Final entry hash = HASH(0x00 || entryBytes)
-            byte[] entryBytes = baos.toByteArray();
-            return hashFunc.hashLeaf(entryBytes);
         }
+
+        // Skip serialNumber, signature.
+        idx += 2;
+
+        if (idx + 4 > size)
+        {
+            throw new IOException("TBSCertificate is missing required fields");
+        }
+
+        // issuer, validity, subject.
+        entry.write(tbsSeq.getObjectAt(idx++).toASN1Primitive().getEncoded(ASN1Encoding.DER));
+        entry.write(tbsSeq.getObjectAt(idx++).toASN1Primitive().getEncoded(ASN1Encoding.DER));
+        entry.write(tbsSeq.getObjectAt(idx++).toASN1Primitive().getEncoded(ASN1Encoding.DER));
+
+        // subjectPublicKeyInfo: emit algorithm field, then OCTET STRING(HASH(SPKI)).
+        ASN1Encodable spkiObj = tbsSeq.getObjectAt(idx++);
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(spkiObj);
+        byte[] spkiDer = spki.getEncoded(ASN1Encoding.DER);
+        entry.write(spki.getAlgorithm().getEncoded(ASN1Encoding.DER));
+
+        byte[] spkiHash = hashFunc.hashRaw(spkiDer);
+        if (spkiHash.length > 127)
+        {
+            // The TBSCertificateLogEntry definition uses an OCTET STRING, which we
+            // emit in DER. Hashes longer than 127 bytes would require multi-byte
+            // length encoding; SHA-256/384/512 are all under this limit.
+            throw new IOException("Hash size exceeds DER short-form length: " + spkiHash.length);
+        }
+        entry.write(new DEROctetString(spkiHash).getEncoded(ASN1Encoding.DER));
+
+        // Remaining tagged optionals: [1] issuerUniqueID, [2] subjectUniqueID, [3] extensions.
+        while (idx < size)
+        {
+            entry.write(tbsSeq.getObjectAt(idx++).toASN1Primitive().getEncoded(ASN1Encoding.DER));
+        }
+
+        // MTH({entry}) = HASH(0x00 || entry).
+        return hashFunc.hashLeaf(entry.toByteArray());
     }
 
-
-    public static byte[] extractLogIdFromIssuer(X500Name issuer) throws IOException
+    /**
+     * Extracts the binary trust anchor ID (log ID) from the issuer field of a
+     * Merkle Tree certificate. Per Section 5.2 the issuer name has a single RDN
+     * with a single attribute. For initial experimentation the attribute type is
+     * {@code id_rdna_trustAnchorID} ({@code 1.3.6.1.4.1.44363.47.1}) and the
+     * value is a UTF8String of the dotted-decimal trust anchor ID; for the
+     * production encoding the value is a RELATIVE-OID. Both are accepted; the
+     * return value is the binary trust anchor ID per Section 3 of
+     * draft-ietf-tls-trust-anchor-ids.
+     */
+    public static byte[] extractLogIdFromIssuer(X500Name issuer)
+        throws IOException
     {
         RDN[] rdns = issuer.getRDNs();
         if (rdns.length != 1)
+        {
             throw new IOException("Issuer must have exactly one RDN");
+        }
         AttributeTypeAndValue[] atav = rdns[0].getTypesAndValues();
         if (atav.length != 1)
+        {
             throw new IOException("RDN must have exactly one attribute");
-        AttributeTypeAndValue at = atav[0];
-        if (!at.getType().equals(X509Extension.id_rdna_trustAnchorID))
-            throw new IOException("Attribute type must be id-rdna-trustAnchorID");
-        ASN1Encodable value = at.getValue();
-        return ((DEROctetString)value).getOctets();
-    }
+        }
 
+        ASN1ObjectIdentifier type = atav[0].getType();
+        if (!CloudFlareObjectIdentifiers.id_rdna_trustAnchorID.equals(type))
+        {
+            throw new IOException("Issuer attribute is not id-rdna-trustAnchorID");
+        }
+
+        ASN1Encodable value = atav[0].getValue();
+        ASN1Primitive prim = value.toASN1Primitive();
+
+        if (prim instanceof ASN1RelativeOID)
+        {
+            return Utils.dottedDecimalToBinaryTrustAnchorID(((ASN1RelativeOID)prim).getId());
+        }
+        if (prim instanceof ASN1String)
+        {
+            return Utils.dottedDecimalToBinaryTrustAnchorID(((ASN1String)prim).getString());
+        }
+        if (prim instanceof ASN1OctetString)
+        {
+            // Tolerated for backward compatibility with very early prototypes that
+            // stored the binary trust anchor ID inside an OCTET STRING.
+            return ((ASN1OctetString)prim).getOctets();
+        }
+        throw new IOException("Unsupported attribute value type: " + prim.getClass().getName());
+    }
 
     /**
-     * In-memory representation of an MTCProof parsed from TLS encoding.
+     * Convenience wrapper around a {@code byte[]} that supports value-based
+     * equality, suitable as a {@code Map} key for cosigner-ID lookups.
      */
-    private static class MTCProof
-    {
-        final long start;
-        final long end;
-        final byte[] inclusionProof; // concatenated hashes
-        final List<MTCSignature> signatures;
-
-        MTCProof(long start, long end, byte[] inclusionProof, List<MTCSignature> signatures)
-        {
-            this.start = start;
-            this.end = end;
-            this.inclusionProof = inclusionProof;
-            this.signatures = signatures;
-        }
-
-        /**
-         * Parses a byte array (TLS presentation of MTCProof) into an MTCProof object.
-         * The format:
-         * uint64 start;           // 8 bytes
-         * uint64 end;             // 8 bytes
-         * opaque inclusion_proof<0..2^16-1>;  // 2-byte length + data
-         * MTCSignature signatures<0..2^16-1>; // 2-byte length + sequence of signatures
-         * where MTCSignature is:
-         * opaque cosigner_id<1..2^8-1>;   // 1-byte length + data
-         * opaque signature<0..2^16-1>;    // 2-byte length + data
-         */
-        static MTCProof parse(byte[] data)
-            throws IOException
-        {
-            int pos = 0;
-
-            // start (8 bytes)
-            if (pos + 8 > data.length)
-            {
-                throw new IOException("Truncated MTCProof");
-            }
-            long start = Utils.readUint64(data, pos);
-            pos += 8;
-
-            // end (8 bytes)
-            long end = Utils.readUint64(data, pos);
-            pos += 8;
-
-            // inclusion_proof length (2 bytes)
-            if (pos + 2 > data.length)
-            {
-                throw new IOException("Truncated inclusion_proof length");
-            }
-            int inclLen = ((data[pos] & 0xFF) << 8) | (data[pos + 1] & 0xFF);
-            pos += 2;
-            if (pos + inclLen > data.length)
-            {
-                throw new IOException("Truncated inclusion_proof data");
-            }
-            byte[] inclusionProof = new byte[inclLen];
-            System.arraycopy(data, pos, inclusionProof, 0, inclLen);
-            pos += inclLen;
-
-            // signatures length (2 bytes)
-            if (pos + 2 > data.length)
-            {
-                throw new IOException("Truncated signatures length");
-            }
-            int sigsLen = ((data[pos] & 0xFF) << 8) | (data[pos + 1] & 0xFF);
-            pos += 2;
-            int sigsEnd = pos + sigsLen;
-            if (sigsEnd > data.length)
-            {
-                throw new IOException("Truncated signatures data");
-            }
-
-            List<MTCSignature> signatures = new ArrayList<>();
-            while (pos < sigsEnd)
-            {
-                // cosigner_id length (1 byte)
-                if (pos + 1 > sigsEnd)
-                {
-                    throw new IOException("Truncated cosigner_id length");
-                }
-                int idLen = data[pos] & 0xFF;
-                pos += 1;
-                if (pos + idLen > sigsEnd)
-                {
-                    throw new IOException("Truncated cosigner_id data");
-                }
-                byte[] cosignerId = new byte[idLen];
-                System.arraycopy(data, pos, cosignerId, 0, idLen);
-                pos += idLen;
-
-                // signature length (2 bytes)
-                if (pos + 2 > sigsEnd)
-                {
-                    throw new IOException("Truncated signature length");
-                }
-                int sigLen = ((data[pos] & 0xFF) << 8) | (data[pos + 1] & 0xFF);
-                pos += 2;
-                if (pos + sigLen > sigsEnd)
-                {
-                    throw new IOException("Truncated signature data");
-                }
-                byte[] signature = new byte[sigLen];
-                System.arraycopy(data, pos, signature, 0, sigLen);
-                pos += sigLen;
-
-                signatures.add(new MTCSignature(cosignerId, signature));
-            }
-
-            return new MTCProof(start, end, inclusionProof, signatures);
-        }
-
-        /**
-         * Splits the concatenated inclusion proof into a list of individual hashes.
-         */
-        List<byte[]> getHashList()
-        {
-            List<byte[]> list = new ArrayList<>();
-            int hashSize = 32; // We should get this from params, but for simplicity assume 32.
-            // In practice, we need to know the hash size from the log parameters.
-            // For now, we pass it separately; we'll assume the caller provides it.
-            // This method is called from validateCertificate where we have params.hashFunction.getHashSize().
-            // We'll need to pass that size to this method.
-            throw new UnsupportedOperationException("Use getHashList(int hashSize) instead");
-        }
-
-        List<byte[]> getHashList(int hashSize)
-        {
-            List<byte[]> list = new ArrayList<>();
-            for (int i = 0; i + hashSize <= inclusionProof.length; i += hashSize)
-            {
-                byte[] hash = new byte[hashSize];
-                System.arraycopy(inclusionProof, i, hash, 0, hashSize);
-                list.add(hash);
-            }
-            if (inclusionProof.length % hashSize != 0)
-            {
-                throw new IllegalArgumentException("Inclusion proof length not a multiple of hash size");
-            }
-            return list;
-        }
-    }
-
     public static class ByteArrayKey
     {
         private final byte[] data;
@@ -606,8 +454,7 @@ public class MerkleTreeCertificateValidator
             {
                 return false;
             }
-            ByteArrayKey that = (ByteArrayKey)o;
-            return Arrays.areEqual(this.data, that.data);
+            return Arrays.areEqual(this.data, ((ByteArrayKey)o).data);
         }
 
         @Override
