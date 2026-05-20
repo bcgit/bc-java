@@ -2,6 +2,10 @@ package org.bouncycastle.pqc.crypto.mldsa;
 
 import java.security.SecureRandom;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.params.MLDSAParameters
+ */
+@Deprecated
 public class MLDSAParameters
 {
     public static final int TYPE_PURE = 0;

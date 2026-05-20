@@ -2,6 +2,10 @@ package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.kems.MLKEMExtractor
+ */
+@Deprecated
 public class MLKEMExtractor
     implements EncapsulatedSecretExtractor
 {

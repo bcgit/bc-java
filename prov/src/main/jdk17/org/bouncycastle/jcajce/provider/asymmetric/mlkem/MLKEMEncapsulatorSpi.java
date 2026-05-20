@@ -10,8 +10,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import org.bouncycastle.crypto.kems.MLKEMGenerator;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.util.Arrays;
 
 /*

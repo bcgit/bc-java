@@ -13,6 +13,11 @@ public class Integers
         return Integer.bitCount(i);
     }
 
+    public static int bitLength(int i)
+    {
+        return SIZE - numberOfLeadingZeros(i);
+    }
+
     public static int compare(int x, int y)
     {
         // @since 1.7

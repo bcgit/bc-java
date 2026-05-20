@@ -21,13 +21,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
+import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
@@ -141,7 +140,12 @@ public class PKIXCertPathValidatorSpi_8
                 throw new CertPathValidatorException("Trust anchor for certification path not found.", null, certPath, -1);
             }
 
-            checkCertificate(trust.getTrustedCert());
+            // A TrustAnchor may be supplied by name + public key only (no certificate),
+            // see github #1420; only validate the cert encoding when one is present.
+            if (trust.getTrustedCert() != null)
+            {
+                checkCertificate(trust.getTrustedCert());
+            }
         }
         catch (AnnotatedException e)
         {
@@ -293,8 +297,6 @@ public class PKIXCertPathValidatorSpi_8
             throw new ExtCertPathValidatorException(
                     "Algorithm identifier of public key of trust anchor could not be read.", e, certPath, -1);
         }
-        ASN1ObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-        ASN1Encodable workingPublicKeyParameters = workingAlgId.getParameters();
 
         //
         // (k)
@@ -305,11 +307,11 @@ public class PKIXCertPathValidatorSpi_8
         // 6.1.3
         //
 
-        if (paramsPKIX.getTargetConstraints() != null
-                && !paramsPKIX.getTargetConstraints().match((X509Certificate) certs.get(0)))
+        PKIXCertStoreSelector targetConstraints = paramsPKIX.getTargetConstraints();
+        if (targetConstraints != null && !targetConstraints.match((X509Certificate)certs.get(0)))
         {
             throw new ExtCertPathValidatorException(
-                    "Target certificate in certification path does not match targetConstraints.", null, certPath, 0);
+                "Target certificate in certification path does not match targetConstraints.", null, certPath, 0);
         }
 
         // 
@@ -452,11 +454,8 @@ public class PKIXCertPathValidatorSpi_8
                     throw new CertPathValidatorException("Next working key could not be retrieved.", e, certPath, index);
                 }
 
+                // (e), (f)
                 workingAlgId = CertPathValidatorUtilities.getAlgorithmIdentifier(workingPublicKey);
-                // (f)
-                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-                // (e)
-                workingPublicKeyParameters = workingAlgId.getParameters();
             }
         }
 

@@ -19,7 +19,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.operator.ContentSigner;
-
+import org.bouncycastle.util.Exceptions;
 /**
  * A class for creating PKCS#10 Certification requests.
  * <pre>
@@ -204,7 +204,7 @@ public class PKCS10CertificationRequestBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot produce certification request signature");
+            throw Exceptions.illegalStateException("cannot produce certification request signature", e);
         }
     }
 
@@ -252,7 +252,7 @@ public class PKCS10CertificationRequestBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot produce certification request signature");
+            throw Exceptions.illegalStateException("cannot produce certification request signature", e);
         }
 
         // create final request
@@ -268,7 +268,7 @@ public class PKCS10CertificationRequestBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot produce certification request signature");
+            throw Exceptions.illegalStateException("cannot produce certification request signature", e);
         }
     }
 }

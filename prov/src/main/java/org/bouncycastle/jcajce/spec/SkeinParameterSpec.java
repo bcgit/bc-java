@@ -14,6 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -246,7 +247,7 @@ public class SkeinParameterSpec
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("Byte I/O failed: " + e);
+                throw Exceptions.illegalStateException("Byte I/O failed", e);
             }
         }
 
@@ -281,7 +282,7 @@ public class SkeinParameterSpec
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("Byte I/O failed: " + e);
+                throw Exceptions.illegalStateException("Byte I/O failed", e);
             }
         }
 

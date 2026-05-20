@@ -7,6 +7,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import org.bouncycastle.util.Exceptions;
+
 public class MLSInputStream
 {
     public interface Readable
@@ -228,19 +230,19 @@ public class MLSInputStream
         }
         catch (NoSuchMethodException e)
         {
-            throw new IOException("Readable class does not have a public MLSInputStream constructor");
+            throw Exceptions.ioException("Readable class does not have a public MLSInputStream constructor", e);
         }
         catch (IllegalAccessException e)
         {
-            throw new IOException("Readable class does not have a public MLSInputStream constructor");
+            throw Exceptions.ioException("Readable class does not have a public MLSInputStream constructor", e);
         }
         catch (InvocationTargetException e)
         {
-            throw new IOException("InvocationTargetException: " + e.getCause().getMessage());
+            throw Exceptions.ioException("InvocationTargetException: " + e.getCause().getMessage(), e);
         }
         catch (InstantiationException e)
         {
-            throw new IOException("InstantiationException: " + e.getMessage());
+            throw Exceptions.ioException("InstantiationException: " + e.getMessage(), e);
         }
     }
 }

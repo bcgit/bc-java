@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusSigner;
+import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusSigner;
 
 public class SignatureSpi
     extends java.security.SignatureSpi

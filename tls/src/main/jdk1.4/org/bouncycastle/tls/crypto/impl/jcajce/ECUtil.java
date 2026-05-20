@@ -1,17 +1,17 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
-import java.security.PrivateKey;
+import java.math.BigInteger;
 import java.security.AlgorithmParameters;
-import java.security.KeyPairGenerator;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.spec.AlgorithmParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
-import org.bouncycastle.jce.spec.ECParameterSpec;
 
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
-
-import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
+import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.math.ec.ECCurve;
 
 class ECUtil
 {
@@ -100,6 +100,9 @@ class ECUtil
                 return ecAlgParams;
             }
         }
+        catch (AssertionError e)
+        {
+        }
         catch (Exception e)
         {
         }
@@ -114,6 +117,21 @@ class ECUtil
 
     static ECParameterSpec getECParameterSpec(JcaTlsCrypto crypto, AlgorithmParameterSpec initSpec)
     {
+        KeyPairGenerator kpGen;
+        try
+        {
+            kpGen = crypto.getHelper().createKeyPairGenerator("EC");
+            kpGen.initialize(initSpec, crypto.getSecureRandom());
+        }
+        catch (AssertionError e)
+        {
+            return null;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+
         // Try the "modern" way
         try
         {
@@ -125,6 +143,9 @@ class ECUtil
             {
                 return ecSpec;
             }
+        }
+        catch (AssertionError e)
+        {
         }
         catch (Exception e)
         {
@@ -138,10 +159,11 @@ class ECUtil
          */
         try
         {
-            KeyPairGenerator kpGen = crypto.getHelper().createKeyPairGenerator("EC");
-            kpGen.initialize(initSpec, crypto.getSecureRandom());
             KeyPair kp = kpGen.generateKeyPair();
             return ((ECKey)kp.getPrivate()).getParams();
+        }
+        catch (AssertionError e)
+        {
         }
         catch (Exception e)
         {
@@ -157,7 +179,7 @@ class ECUtil
 
     static boolean isCurveSupported(JcaTlsCrypto crypto, String curveName)
     {
-        return isCurveSupported(crypto, new ECNamedCurveGenParameterSpec(curveName));
+        return null != curveName && isCurveSupported(crypto, new ECNamedCurveGenParameterSpec(curveName));
     }
 
     static boolean isCurveSupported(JcaTlsCrypto crypto, ECNamedCurveGenParameterSpec initSpec)

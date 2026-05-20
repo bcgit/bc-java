@@ -427,7 +427,7 @@ public class BcAEADUtil
             }
             catch (InvalidCipherTextException e)
             {
-                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
+                throw Exceptions.ioException("exception processing chunk " + chunkIndex + ": " + e.getMessage(), e);
             }
 
             totalBytes += decData.length;
@@ -454,7 +454,7 @@ public class BcAEADUtil
                 }
                 catch (InvalidCipherTextException e)
                 {
-                    throw new IOException("exception processing final tag: " + e.getMessage());
+                    throw Exceptions.ioException("exception processing final tag: " + e.getMessage(), e);
                 }
             }
             else
@@ -626,7 +626,7 @@ public class BcAEADUtil
             }
             catch (InvalidCipherTextException e)
             {
-                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
+                throw Exceptions.ioException("exception processing chunk " + chunkIndex + ": " + e.getMessage(), e);
             }
 
             totalBytes += dataOff;

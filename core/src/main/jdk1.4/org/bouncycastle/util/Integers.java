@@ -1,6 +1,7 @@
 package org.bouncycastle.util;
 
 import org.bouncycastle.math.raw.Bits;
+import org.bouncycastle.math.raw.Nat;
 
 public class Integers
 {
@@ -20,6 +21,11 @@ public class Integers
         i += (i >>> 16);
         i &= 0x3f;
         return i;
+    }
+
+    public static int bitLength(int i)
+    {
+        return SIZE - numberOfLeadingZeros(i);
     }
 
     public static int compare(int x, int y)
@@ -66,7 +72,7 @@ public class Integers
     public static int numberOfTrailingZeros(int i)
     {
         int n = DEBRUIJN_TZ[((i & -i) * 0x0EF96A62) >>> 27];
-        int m = (((i & 0xFFFF) | (i >>> 16)) - 1) >> 31;
+        int m = Nat.czero(i);
         return n - m;
     }
 

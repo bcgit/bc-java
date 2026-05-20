@@ -1,6 +1,5 @@
 package org.bouncycastle.cms.jcajce;
 
-
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;

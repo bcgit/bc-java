@@ -4,6 +4,7 @@ import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
 import java.security.Principal;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
@@ -16,19 +17,45 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.x500.X500Principal;
 
-import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509Key;
+
+import junit.framework.TestCase;
 
 public class KeyManagerFactoryTest
     extends TestCase
 {
     private static final char[] PASSWORD = "fred".toCharArray();
 
+    private boolean rsaEncryptionAvailable = true;
+
     protected void setUp()
     {
         ProviderUtils.setupLowPriority(false);
+
+        /*
+         * TODO This is a quick fix to spot the presence of the entry "TLS_RSA_*" in the security property
+         * "jdk.tls.disabledAlgorithms" (usually configured in java.security). BCJSSE currently doesn't
+         * support that wild-card style, but some of the tests in this class try to test against a JDK (i.e.
+         * SunJSSE) server configured only with RSA encryption credentials. The current preference is that
+         * the "jdk.tls.disabledAlgorithms" property be suitably modified in JDKs used for testing, so that
+         * all TLS features may be tested.
+         */
+        boolean rsaEncryptionAvailable = true;
+        String disabledAlgsProp = Security.getProperty("jdk.tls.disabledAlgorithms");
+        if (disabledAlgsProp != null)
+        {
+            for (String entry : disabledAlgsProp.split(","))
+            {
+                if ("TLS_RSA_*".equals(entry.trim()))
+                {
+                    rsaEncryptionAvailable = false;
+                    break;
+                }
+            }
+        }
+        this.rsaEncryptionAvailable = rsaEncryptionAvailable;
     }
 
     public void testBasicEC()
@@ -57,11 +84,11 @@ public class KeyManagerFactoryTest
     public void testRSAServer()
         throws Exception
     {
-        // TLS_RSA is disabled in Java 25.
-        if (System.getProperty("java.version").startsWith("25"))
+        if (!rsaEncryptionAvailable)
         {
             return;
         }
+
         KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -97,11 +124,11 @@ public class KeyManagerFactoryTest
     public void testRSAServerTrustEE()
         throws Exception
     {
-        // TLS_RSA is disabled in Java 25.
-        if (System.getProperty("java.version").startsWith("25"))
+        if (!rsaEncryptionAvailable)
         {
             return;
         }
+
         KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -147,11 +174,11 @@ public class KeyManagerFactoryTest
     public void testRSAServerWithClientAuth()
         throws Exception
     {
-        // TLS_RSA is disabled in Java 25.
-        if (System.getProperty("java.version").startsWith("25"))
+        if (!rsaEncryptionAvailable)
         {
             return;
         }
+
         KeyStore clientKS = getRsaKeyStore(false);
         KeyStore serverKS = getRsaKeyStore(true);
 

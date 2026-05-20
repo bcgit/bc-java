@@ -61,13 +61,7 @@ public class SecP521R1Field
 
     public static int isZero(int[] x)
     {
-        int d = 0;
-        for (int i = 0; i < 17; ++i)
-        {
-            d |= x[i];
-        }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return Nat.equalToZero(17, x);
     }
 
     public static void multiply(int[] x, int[] y, int[] z)

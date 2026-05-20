@@ -26,6 +26,7 @@ import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class JcaITSContentVerifierProvider
     implements ITSContentVerifierProvider
@@ -77,7 +78,7 @@ public class JcaITSContentVerifierProvider
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to extract parent data: " + e.getMessage());
+            throw Exceptions.illegalStateException("unable to extract parent data", e);
         }
         ToBeSignedCertificate toBeSignedCertificate =
             issuer.toASN1Structure().getToBeSigned();

@@ -4,10 +4,7 @@ import java.io.IOException;
 
 /**
  * Parser class for DL SETs.
- * 
- * @deprecated Check for 'ASN1SetParser' instead 
  */
-@Deprecated
 public class DLSetParser
     implements ASN1SetParser
 {

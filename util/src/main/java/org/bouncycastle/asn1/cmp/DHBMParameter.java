@@ -65,6 +65,6 @@ public class DHBMParameter
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{owf, mac});
+        return new DERSequence(owf, mac);
     }
 }

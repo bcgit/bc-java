@@ -52,11 +52,6 @@ class MLDSAEngine
         return symmetric;
     }
 
-//    int getDilithiumPolyVecHPackedBytes()
-//    {
-//        return DilithiumPolyVecHPackedBytes;
-//    }
-
     int getDilithiumPolyZPackedBytes()
     {
         return DilithiumPolyZPackedBytes;
@@ -71,11 +66,6 @@ class MLDSAEngine
     {
         return DilithiumPolyEtaPackedBytes;
     }
-
-//    int getDilithiumMode()
-//    {
-//        return DilithiumMode;
-//    }
 
     int getDilithiumK()
     {
@@ -126,16 +116,6 @@ class MLDSAEngine
     {
         return CryptoPublicKeyBytes;
     }
-
-//    int getCryptoSecretKeyBytes()
-//    {
-//        return CryptoSecretKeyBytes;
-//    }
-//
-//    int getCryptoBytes()
-//    {
-//        return CryptoBytes;
-//    }
 
     int getPolyUniformGamma1NBlocks()
     {
@@ -197,14 +177,6 @@ class MLDSAEngine
         this.random = random;
         this.DilithiumPolyVecHPackedBytes = this.DilithiumOmega + this.DilithiumK;
         this.CryptoPublicKeyBytes = SeedBytes + this.DilithiumK * DilithiumPolyT1PackedBytes;
-//        this.CryptoSecretKeyBytes =
-//            (
-//                2 * SeedBytes
-//                    + TrBytes
-//                    + DilithiumL * this.DilithiumPolyEtaPackedBytes
-//                    + DilithiumK * this.DilithiumPolyEtaPackedBytes
-//                    + DilithiumK * DilithiumPolyT0PackedBytes
-//            );
         this.CryptoBytes = DilithiumCTilde + DilithiumL * this.DilithiumPolyZPackedBytes + this.DilithiumPolyVecHPackedBytes;
 
         if (this.DilithiumGamma1 == (1 << 17))

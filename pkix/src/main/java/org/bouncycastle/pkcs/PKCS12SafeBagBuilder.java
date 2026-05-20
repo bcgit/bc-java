@@ -62,6 +62,12 @@ public class PKCS12SafeBagBuilder
         this.bagValue = new CertBag(PKCSObjectIdentifiers.x509Crl, new DEROctetString(crl.getEncoded()));
     }
 
+    public PKCS12SafeBagBuilder(PKCS12SecretBag secretBag)
+    {
+        this.bagType = PKCSObjectIdentifiers.secretBag;
+        this.bagValue = secretBag.toASN1Structure();
+    }
+
     public PKCS12SafeBagBuilder addBagAttribute(ASN1ObjectIdentifier attrType, ASN1Encodable attrValue)
     {
         bagAttrs.add(new Attribute(attrType, new DERSet(attrValue)));

@@ -24,32 +24,11 @@ import org.bouncycastle.util.Arrays;
 public class JceAEADCipherImpl
     implements TlsAEADCipherImpl
 {
-//    private static boolean checkForAEAD()
-//    {
-//        return (Boolean)AccessController.doPrivileged(new PrivilegedAction()
-//        {
-//            public Object run()
-//            {
-//                try
-//                {
-//                    return Cipher.class.getMethod("updateAAD", byte[].class) != null;
-//                }
-//                catch (Exception ignore)
-//                {
-//                    // TODO[logging] Log the fact that we are falling back to BC-specific class
-//                    return Boolean.FALSE;
-//                }
-//            }
-//        });
-//    }
-
-    //  private static final boolean canDoAEAD = checkForAEAD();
-
     private static String getAlgParamsName(JcaJceHelper helper, String cipherName)
     {
         try
         {
-            String algName = cipherName.indexOf("CCM") > -1 ? "CCM" : "GCM";
+            String algName = cipherName.indexOf("CCM") >= 0 ? "CCM" : "GCM";
             helper.createAlgorithmParameters(algName);
             return algName;
         }
@@ -69,6 +48,7 @@ public class JceAEADCipherImpl
 
     private SecretKey key;
 
+    // TODO[tls] These two are only needed while the baseline is pre-Java7
     private byte[] noncePre7;
     private int macSizePre7;
 
@@ -102,47 +82,29 @@ public class JceAEADCipherImpl
 
         try
         {
-//            if (canDoAEAD && algorithmParamsName != null)
-//            {
-//                AlgorithmParameters algParams = helper.createAlgorithmParameters(algorithmParamsName);
-//    
-//                // believe it or not but there are things out there that do not support the ASN.1 encoding...
-//                if (GCMUtil.isGCMParameterSpecAvailable())
-//                {
-//                    algParams.init(GCMUtil.createGCMParameterSpec(macSize * 8, nonce));
-//                }
-//                else
-//                {
-//                    // fortunately CCM and GCM parameters have the same ASN.1 structure
-//                    algParams.init(new GCMParameters(nonce, macSize).getEncoded());
-//                }
-//    
-//                cipher.init(cipherMode, key, algParams, random);
-//            }
-//            else
-//            {
+            {
                 /*
                  * Otherwise fall back to the BC-specific AEADParameterSpec. Since updateAAD is not available, we
                  * need to use init to pass the associated data (in doFinal), but in order to call getOutputSize we
                  * technically need to init the cipher first. So we init with a dummy nonce to avoid duplicate nonce
                  * error from the init in doFinal.
                  */
-    
+
                 if (this.noncePre7 == null || this.noncePre7.length != nonce.length)
                 {
                     this.noncePre7 = new byte[nonce.length];
                 }
-    
+
                 System.arraycopy(nonce, 0, this.noncePre7, 0, nonce.length);
                 this.macSizePre7 = macSize;
-    
+
                 this.noncePre7[0] ^= 0x80;
-    
+
                 AlgorithmParameterSpec params = new AEADParameterSpec(noncePre7, macSizePre7 * 8, null);
                 cipher.init(cipherMode, key, params, random);
-    
+
                 this.noncePre7[0] ^= 0x80;
-//            }
+            }
         }
         catch (Exception e)
         {
@@ -160,12 +122,7 @@ public class JceAEADCipherImpl
     {
         if (!Arrays.isNullOrEmpty(additionalData))
         {
-//            if (canDoAEAD)
-//            {
-//                cipher.updateAAD(additionalData);
-//            }
-//            else
-//            {
+            {
                 try
                 {
                     // NOTE: Shouldn't need a SecureRandom, but this is cheaper if the provider would auto-create one
@@ -178,7 +135,7 @@ public class JceAEADCipherImpl
                 {
                     throw Exceptions.ioException(e.getMessage(), e);
                 }
-//            }
+            }
         }
 
         /*

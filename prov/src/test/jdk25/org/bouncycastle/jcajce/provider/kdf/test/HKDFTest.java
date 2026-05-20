@@ -161,8 +161,8 @@ public class HKDFTest
         try
         {
             KDF kdf = KDF.getInstance("HKDF-SHA256", "BC");
-            PBKDF2ParameterSpec pbepbkdf2ParameterSpec = new PBKDF2ParameterSpec(new char[16], new byte[16], 16);
-            kdf.deriveData(pbepbkdf2ParameterSpec);
+            PBKDF2ParameterSpec pbkdf2ParameterSpec = new PBKDF2ParameterSpec(new char[16], new byte[16], 16);
+            kdf.deriveData(pbkdf2ParameterSpec);
             fail("Exception was not thrown for invalid derivation spec");
         }
         catch (Exception e)

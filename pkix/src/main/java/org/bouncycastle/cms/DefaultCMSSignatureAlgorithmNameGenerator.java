@@ -212,6 +212,11 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         addSimpleAlg(BCObjectIdentifiers.sphincsPlus_shake_256s, "SPHINCS+-SHAKE-256s");
         addSimpleAlg(BCObjectIdentifiers.sphincsPlus_shake_256f, "SPHINCS+-SHAKE-256f");
 
+        addSimpleAlg(BCObjectIdentifiers.mayo_1, "MAYO_1");
+        addSimpleAlg(BCObjectIdentifiers.mayo_2, "MAYO_2");
+        addSimpleAlg(BCObjectIdentifiers.mayo_3, "MAYO_3");
+        addSimpleAlg(BCObjectIdentifiers.mayo_5, "MAYO_5");
+
         addSimpleAlg(NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA-44");
         addSimpleAlg(NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA-65");
         addSimpleAlg(NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA-87");

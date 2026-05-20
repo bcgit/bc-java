@@ -65,7 +65,7 @@ class Poly
 
     void convertToMont()
     {
-        final short f = (short)(((long)1 << 32) % MLKEMEngine.Q);
+        final short f = (short)((1L << 32) % MLKEMEngine.Q);
         for (int i = 0; i < MLKEMEngine.N; i++)
         {
             this.setCoeffIndex(i, Reduce.montgomeryReduce(this.getCoeffIndex(i) * f));

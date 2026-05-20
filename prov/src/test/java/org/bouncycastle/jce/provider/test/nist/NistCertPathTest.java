@@ -476,7 +476,7 @@ public class NistCertPathTest
                 "No valid policy tree found when one expected.");
     }
 
-    public void testValidinhibitPolicyMappingTest2()
+    public void testValidInhibitPolicyMappingTest2()
         throws Exception
     {
         String[] certList = new String[] { "inhibitPolicyMapping1P12CACert", "inhibitPolicyMapping1P12subCACert", "ValidinhibitPolicyMappingTest2EE" };
@@ -486,7 +486,7 @@ public class NistCertPathTest
     }
 
     // 4.12.7
-    public void testValidSelfIssuedinhibitAnyPolicyTest7()
+    public void testValidSelfIssuedInhibitAnyPolicyTest7()
         throws Exception
     {
         String[] certList = new String[] { "inhibitAnyPolicy1CACert", "inhibitAnyPolicy1SelfIssuedCACert", "inhibitAnyPolicy1subCA2Cert", "ValidSelfIssuedinhibitAnyPolicyTest7EE" };
@@ -534,9 +534,12 @@ public class NistCertPathTest
         String[] certList = new String[] { "distributionPoint1CACert", "InvaliddistributionPointTest3EE" };
         String[] crlList = new String[] { TRUST_ANCHOR_ROOT_CRL, "distributionPoint1CACRL" };
 
-        doExceptionTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, null,
+        // Exact message ends with the conflicting DP / IDP name lists (github #800),
+        // so use the prefix-matching variant.
+        doExceptionTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList,
                 0,
-                "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.",
+                "");
     }
 
     // 4.14.5
@@ -557,9 +560,10 @@ public class NistCertPathTest
         String[] certList = new String[] { "distributionPoint2CACert", "InvaliddistributionPointTest8EE" };
         String[] crlList = new String[] { TRUST_ANCHOR_ROOT_CRL, "distributionPoint2CACRL" };
 
-        doExceptionTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, null,
+        doExceptionTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList,
                 0,
-                "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.",
+                "");
     }
 
     // 4.14.9
@@ -569,9 +573,10 @@ public class NistCertPathTest
         String[] certList = new String[] { "distributionPoint2CACert", "InvaliddistributionPointTest9EE" };
         String[] crlList = new String[] { TRUST_ANCHOR_ROOT_CRL, "distributionPoint2CACRL" };
 
-        doExceptionTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, null,
+        doExceptionTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList,
                 0,
-                "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.",
+                "");
     }
 
     // 4.14.17

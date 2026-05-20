@@ -10,9 +10,7 @@ import java.security.Provider;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -25,11 +23,8 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
-import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
@@ -40,9 +35,6 @@ import org.bouncycastle.operator.OperatorCreationException;
 
 class CMSUtils
 {
-    private static final Set mqvAlgs = new HashSet();
-    private static final Set ecAlgs = new HashSet();
-    private static final Set gostAlgs = new HashSet();
     private static final Map asymmetricWrapperAlgNames = new HashMap();
 
     private static Map<ASN1ObjectIdentifier,String> wrapAlgNames = new HashMap();
@@ -59,55 +51,11 @@ class CMSUtils
 
     static
     {
-        mqvAlgs.add(X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme);
-        mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme);
-        mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha256kdf_scheme);
-        mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha384kdf_scheme);
-        mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme);
-
-        ecAlgs.add(X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme);
-        ecAlgs.add(X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme);
-        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha224kdf_scheme);
-        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha224kdf_scheme);
-        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha256kdf_scheme);
-        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha256kdf_scheme);
-        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha384kdf_scheme);
-        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha384kdf_scheme);
-        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme);
-        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme);
-
-        gostAlgs.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH);
-        gostAlgs.add(CryptoProObjectIdentifiers.gostR3410_2001);
-        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256);
-        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512);
-        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256);
-        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512);
-
         asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.rsaEncryption, "RSA/ECB/PKCS1Padding");
         asymmetricWrapperAlgNames.put(OIWObjectIdentifiers.elGamalAlgorithm, "Elgamal/ECB/PKCS1Padding");
         asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_RSAES_OAEP, "RSA/ECB/OAEPPadding");
         asymmetricWrapperAlgNames.put(CryptoProObjectIdentifiers.gostR3410_2001, "ECGOST3410");
         asymmetricWrapperAlgNames.put(ISOIECObjectIdentifiers.id_kem_rsa, "RSA-KTS-KEM-KWS");
-    }
-
-    static boolean isMQV(ASN1ObjectIdentifier algorithm)
-    {
-        return mqvAlgs.contains(algorithm);
-    }
-
-    static boolean isEC(ASN1ObjectIdentifier algorithm)
-    {
-        return ecAlgs.contains(algorithm);
-    }
-
-    static boolean isGOST(ASN1ObjectIdentifier algorithm)
-    {
-        return gostAlgs.contains(algorithm);
-    }
-
-    static boolean isRFC2631(ASN1ObjectIdentifier algorithm)
-    {
-        return algorithm.equals(PKCSObjectIdentifiers.id_alg_ESDH) || algorithm.equals(PKCSObjectIdentifiers.id_alg_SSDH);
     }
 
     static String getWrapAlgorithmName(ASN1ObjectIdentifier oid)

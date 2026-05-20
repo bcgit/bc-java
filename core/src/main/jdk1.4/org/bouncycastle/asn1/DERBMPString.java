@@ -22,7 +22,7 @@ public class DERBMPString
 
     /**
      * Basic constructor - byte encoded string.
-     * @param string the encoded BMP STRING to wrap.
+     * @param contents the encoded BMP STRING to wrap.
      */
     DERBMPString(byte[] contents)
     {

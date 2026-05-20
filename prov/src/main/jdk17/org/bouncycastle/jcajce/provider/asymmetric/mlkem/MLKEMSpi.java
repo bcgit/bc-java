@@ -10,8 +10,8 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.KEMSpi;
 
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.crypto.params.MLKEMKeyParameters;
+import org.bouncycastle.crypto.params.MLKEMParameters;
 
 public abstract class MLKEMSpi
     implements KEMSpi

@@ -930,13 +930,18 @@ class NTRUPlusEngine
         fail |= verify(buf1, buf2, polyBytes);
 
         // Copy shared secret, zeroing on failure
-        if (fail != 0)
+        cmov(ss, buf3, ssPos, SSBytes, fail);
+    }
+
+    /* b = 0 means mov, b = 1 means don't mov*/
+    static void cmov(byte[] r, byte[] x, int x_offset, int len, int b)
+    {
+        int i;
+
+        b = (b - 1) & 0xff;
+        for (i = 0; i < len; i++)
         {
-            Arrays.fill(ss, (byte)0);
-        }
-        else
-        {
-            System.arraycopy(buf3, 0, ss, ssPos, SSBytes);
+            r[i] ^= b & (x[i + x_offset] ^ r[i]);
         }
     }
 }

@@ -34,6 +34,7 @@ public class AllTests
         suite.addTestSuite(SSLServerSocketTest.class);
         suite.addTestSuite(SSLSocketTest.class);
 
+
         if (hasClass("javax.net.ssl.CertPathTrustManagerParameters"))
         {
             suite.addTestSuite(TrustManagerFactoryTest.class);
@@ -43,6 +44,7 @@ public class AllTests
         suite.addTest(CipherSuitesEngineTestSuite.suite());
         suite.addTest(FipsCipherSuitesTestSuite.suite());
         suite.addTest(FipsCipherSuitesEngineTestSuite.suite());
+
 
         return new BCTestSetup(suite);
     }

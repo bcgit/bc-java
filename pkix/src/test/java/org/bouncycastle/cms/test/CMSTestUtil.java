@@ -47,6 +47,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.encoders.Base64;
 
 public class CMSTestUtil
@@ -142,6 +143,7 @@ public class CMSTestUtil
         try
         {
             java.security.Security.addProvider(new BouncyCastleProvider());
+            java.security.Security.addProvider(new BouncyCastlePQCProvider());
 
             try
             {
@@ -185,7 +187,7 @@ public class CMSTestUtil
             ed25519Kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
             ed448Kpg = KeyPairGenerator.getInstance("Ed448", "BC");
 
-            ntruKpg = KeyPairGenerator.getInstance(BCObjectIdentifiers.ntruhps2048509.getId(), "BC");
+            ntruKpg = KeyPairGenerator.getInstance(BCObjectIdentifiers.ntruhps2048509.getId(), "BCPQC");
 
             mlDsa44Kpg = KeyPairGenerator.getInstance("ML-DSA-44", "BC");
             mlDsa65Kpg = KeyPairGenerator.getInstance("ML-DSA-65", "BC");

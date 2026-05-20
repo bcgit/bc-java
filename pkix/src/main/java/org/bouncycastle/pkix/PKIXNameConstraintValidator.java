@@ -8,7 +8,8 @@ import org.bouncycastle.asn1.x509.NameConstraintValidatorException;
 
 public class PKIXNameConstraintValidator
 {
-    ASN1PKIXNameConstraintValidator validator = new ASN1PKIXNameConstraintValidator();
+    org.bouncycastle.asn1.x509.PKIXNameConstraintValidator validator =
+        new org.bouncycastle.asn1.x509.PKIXNameConstraintValidator();
 
     public PKIXNameConstraintValidator()
     {
@@ -48,6 +49,32 @@ public class PKIXNameConstraintValidator
         try
         {
             this.validator.checkExcludedDN(X500Name.getInstance(dns));
+        }
+        catch (NameConstraintValidatorException e)
+        {
+            throw new PKIXNameConstraintValidatorException(e.getMessage(), e);
+        }
+    }
+
+    public void checkPermittedEmail(String email)
+        throws PKIXNameConstraintValidatorException
+    {
+        try
+        {
+            this.validator.checkPermittedEmail(email);
+        }
+        catch (NameConstraintValidatorException e)
+        {
+            throw new PKIXNameConstraintValidatorException(e.getMessage(), e);
+        }
+    }
+
+    public void checkExcludedEmail(String email)
+        throws PKIXNameConstraintValidatorException
+    {
+        try
+        {
+            this.validator.checkExcludedEmail(email);
         }
         catch (NameConstraintValidatorException e)
         {

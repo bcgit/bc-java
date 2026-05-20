@@ -6,10 +6,16 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.DigestInfo;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -179,6 +185,71 @@ public class SignatureTest
         kp = kpGen.generateKeyPair();
 
         checkSig(kp, "GOST3411withGOST3410");
+
+        checkStrictDigestInfoIssue2273();
+    }
+
+    private void checkStrictDigestInfoIssue2273()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+        kpGen.initialize(2048);
+        KeyPair kp = kpGen.generateKeyPair();
+
+        // Hand-built no-NULL-parameters DigestInfo (RFC 8017 sec. A.2.4 requires NULL).
+        SHA256Digest digest = (SHA256Digest)SHA256Digest.newInstance();
+        digest.update(DATA, 0, DATA.length);
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+
+        DigestInfo loose = new DigestInfo(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256), hash);
+        byte[] looseEnc = loose.getEncoded(ASN1Encoding.DER);
+
+        // Use NONEwithRSA to sign the pre-encoded no-NULL DigestInfo.
+        Signature noneSigner = Signature.getInstance("NONEwithRSA", "BC");
+        noneSigner.initSign(kp.getPrivate());
+        noneSigner.update(looseEnc);
+        byte[] looseSig = noneSigner.sign();
+
+        // Default (lenient) verification must accept the no-NULL form.
+        Signature verifier = Signature.getInstance("SHA256withRSA", "BC");
+        verifier.initVerify(kp.getPublic());
+        verifier.update(DATA);
+        if (!verifier.verify(looseSig))
+        {
+            fail("lenient (default) verification must accept no-NULL DigestInfo");
+        }
+
+        // With PKCS1_STRICT_DIGESTINFO set, the no-NULL form must be rejected.
+        System.setProperty(Properties.PKCS1_STRICT_DIGESTINFO, "true");
+        try
+        {
+            verifier = Signature.getInstance("SHA256withRSA", "BC");
+            verifier.initVerify(kp.getPublic());
+            verifier.update(DATA);
+            if (verifier.verify(looseSig))
+            {
+                fail("strict verification must reject no-NULL DigestInfo");
+            }
+
+            // The strictly-compliant form must still verify with the property set.
+            Signature strictSigner = Signature.getInstance("SHA256withRSA", "BC");
+            strictSigner.initSign(kp.getPrivate());
+            strictSigner.update(DATA);
+            byte[] strictSig = strictSigner.sign();
+
+            verifier = Signature.getInstance("SHA256withRSA", "BC");
+            verifier.initVerify(kp.getPublic());
+            verifier.update(DATA);
+            if (!verifier.verify(strictSig))
+            {
+                fail("strict verification must accept spec-compliant DigestInfo");
+            }
+        }
+        finally
+        {
+            System.clearProperty(Properties.PKCS1_STRICT_DIGESTINFO);
+        }
     }
 
     public String getName()

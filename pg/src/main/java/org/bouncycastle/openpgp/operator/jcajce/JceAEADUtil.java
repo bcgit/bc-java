@@ -409,7 +409,7 @@ class JceAEADUtil
             }
             catch (GeneralSecurityException e)
             {
-                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
+                throw Exceptions.ioException("exception processing chunk " + chunkIndex + ": " + e.getMessage(), e);
             }
 
             totalBytes += decData.length;
@@ -435,7 +435,7 @@ class JceAEADUtil
                 }
                 catch (GeneralSecurityException e)
                 {
-                    throw new IOException("exception processing final tag: " + e.getMessage());
+                    throw Exceptions.ioException("exception processing final tag: " + e.getMessage(), e);
                 }
             }
             else
@@ -593,7 +593,7 @@ class JceAEADUtil
             }
             catch (GeneralSecurityException e)
             {
-                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
+                throw Exceptions.ioException("exception processing chunk " + chunkIndex + ": " + e.getMessage(), e);
             }
 
             totalBytes += dataOff;

@@ -299,15 +299,12 @@ public class BcTlsCrypto
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+        case CryptoSignatureAlgorithm.sm2: // RFC 8998
             return true;
 
         // TODO[RFC 9189]
         case CryptoSignatureAlgorithm.gostr34102012_256:
         case CryptoSignatureAlgorithm.gostr34102012_512:
-
-        // TODO[RFC 8998]
-        case CryptoSignatureAlgorithm.sm2:
-
         default:
             return false;
         }
@@ -473,8 +470,6 @@ public class BcTlsCrypto
     {
         switch (signatureScheme)
         {
-        case SignatureScheme.sm2sig_sm3:
-            return false;
         case SignatureScheme.mldsa44:
         case SignatureScheme.mldsa65:
         case SignatureScheme.mldsa87:
@@ -490,6 +485,7 @@ public class BcTlsCrypto
         case SignatureScheme.DRAFT_slhdsa_shake_192f:
         case SignatureScheme.DRAFT_slhdsa_shake_256s:
         case SignatureScheme.DRAFT_slhdsa_shake_256f:
+        case SignatureScheme.sm2sig_sm3:
             return true;
         default:
         {

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.MessageSigner;
+import org.bouncycastle.util.Exceptions;
 
 public class LMSSigner
     implements MessageSigner
@@ -61,7 +62,7 @@ public class LMSSigner
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to encode signature: " + e.getMessage());
+            throw Exceptions.illegalStateException("unable to encode signature", e);
         }
     }
 
@@ -73,7 +74,7 @@ public class LMSSigner
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to decode signature: " + e.getMessage());
+            throw Exceptions.illegalStateException("unable to decode signature", e);
         }
     }
 }

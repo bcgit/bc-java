@@ -6,8 +6,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.naming.Binding;
 import javax.naming.Context;
+import javax.naming.NameClassPair;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -97,7 +97,6 @@ public class JndiDANEFetcherFactory
                 {
                     DirContext ctx = new InitialDirContext(env);
 
-                    NamingEnumeration bindings;
                     if (domainName.indexOf("_smimecert.") > 0)
                     {
                         // need to use fully qualified domain name if using named DNS server.
@@ -111,15 +110,23 @@ public class JndiDANEFetcherFactory
                     }
                     else
                     {
-                        bindings = ctx.listBindings("_smimecert." + domainName);
+                        // Use list() rather than listBindings() so each
+                        // NameClassPair carries only the entry's name and
+                        // class-name strings — no Java object is
+                        // materialised from the directory's reply, avoiding
+                        // the JNDI-injection / LDAP-entry-poisoning attack
+                        // surface raised in github #239. The only datum the
+                        // body needs is the fully-qualified name, which
+                        // NameClassPair.getNameInNamespace() exposes
+                        // directly.
+                        NamingEnumeration pairs = ctx.list("_smimecert." + domainName);
 
-                        while (bindings.hasMore())
+                        while (pairs.hasMore())
                         {
-                            Binding b = (Binding)bindings.next();
+                            NameClassPair p = (NameClassPair)pairs.next();
 
-                            DirContext sc = (DirContext)b.getObject();
-
-                            String name = sc.getNameInNamespace().substring(1, sc.getNameInNamespace().length() - 1);
+                            String fullName = p.getNameInNamespace();
+                            String name = fullName.substring(1, fullName.length() - 1);
 
                             // need to use fully qualified domain name if using named DNS server.
                             Attributes attrs = ctx.getAttributes(name, new String[]{DANE_TYPE});
@@ -127,10 +134,7 @@ public class JndiDANEFetcherFactory
 
                             if (smimeAttr != null)
                             {
-                                String fullName = sc.getNameInNamespace();
-                                String domainName = fullName.substring(1, fullName.length() - 1);
-
-                                addEntries(entries, domainName, smimeAttr);
+                                addEntries(entries, name, smimeAttr);
                             }
                         }
                     }

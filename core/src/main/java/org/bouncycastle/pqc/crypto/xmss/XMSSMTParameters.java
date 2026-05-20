@@ -20,6 +20,7 @@ public final class XMSSMTParameters
     {
         Map<Integer, XMSSMTParameters> pMap = new HashMap<Integer, XMSSMTParameters>();
 
+        // RFC 8391
         pMap.put(Integers.valueOf(0x00000001), new XMSSMTParameters(20, 2, NISTObjectIdentifiers.id_sha256));
         pMap.put(Integers.valueOf(0x00000002), new XMSSMTParameters(20, 4, NISTObjectIdentifiers.id_sha256));
         pMap.put(Integers.valueOf(0x00000003), new XMSSMTParameters(40, 2, NISTObjectIdentifiers.id_sha256));
@@ -52,6 +53,37 @@ public final class XMSSMTParameters
         pMap.put(Integers.valueOf(0x0000001e), new XMSSMTParameters(60, 3, NISTObjectIdentifiers.id_shake256));
         pMap.put(Integers.valueOf(0x0000001f), new XMSSMTParameters(60, 6, NISTObjectIdentifiers.id_shake256));
         pMap.put(Integers.valueOf(0x00000020), new XMSSMTParameters(60, 12, NISTObjectIdentifiers.id_shake256));
+
+        // SP 800-208: SHA-256/192 (n=24)
+        pMap.put(Integers.valueOf(0x00000021), new XMSSMTParameters(20, 2, NISTObjectIdentifiers.id_sha256, 24));
+        pMap.put(Integers.valueOf(0x00000022), new XMSSMTParameters(20, 4, NISTObjectIdentifiers.id_sha256, 24));
+        pMap.put(Integers.valueOf(0x00000023), new XMSSMTParameters(40, 2, NISTObjectIdentifiers.id_sha256, 24));
+        pMap.put(Integers.valueOf(0x00000024), new XMSSMTParameters(40, 4, NISTObjectIdentifiers.id_sha256, 24));
+        pMap.put(Integers.valueOf(0x00000025), new XMSSMTParameters(40, 8, NISTObjectIdentifiers.id_sha256, 24));
+        pMap.put(Integers.valueOf(0x00000026), new XMSSMTParameters(60, 3, NISTObjectIdentifiers.id_sha256, 24));
+        pMap.put(Integers.valueOf(0x00000027), new XMSSMTParameters(60, 6, NISTObjectIdentifiers.id_sha256, 24));
+        pMap.put(Integers.valueOf(0x00000028), new XMSSMTParameters(60, 12, NISTObjectIdentifiers.id_sha256, 24));
+
+        // SP 800-208: SHAKE256/256 (n=32)
+        pMap.put(Integers.valueOf(0x00000029), new XMSSMTParameters(20, 2, NISTObjectIdentifiers.id_shake256_len, 32));
+        pMap.put(Integers.valueOf(0x0000002a), new XMSSMTParameters(20, 4, NISTObjectIdentifiers.id_shake256_len, 32));
+        pMap.put(Integers.valueOf(0x0000002b), new XMSSMTParameters(40, 2, NISTObjectIdentifiers.id_shake256_len, 32));
+        pMap.put(Integers.valueOf(0x0000002c), new XMSSMTParameters(40, 4, NISTObjectIdentifiers.id_shake256_len, 32));
+        pMap.put(Integers.valueOf(0x0000002d), new XMSSMTParameters(40, 8, NISTObjectIdentifiers.id_shake256_len, 32));
+        pMap.put(Integers.valueOf(0x0000002e), new XMSSMTParameters(60, 3, NISTObjectIdentifiers.id_shake256_len, 32));
+        pMap.put(Integers.valueOf(0x0000002f), new XMSSMTParameters(60, 6, NISTObjectIdentifiers.id_shake256_len, 32));
+        pMap.put(Integers.valueOf(0x00000030), new XMSSMTParameters(60, 12, NISTObjectIdentifiers.id_shake256_len, 32));
+
+        // SP 800-208: SHAKE256/192 (n=24)
+        pMap.put(Integers.valueOf(0x00000031), new XMSSMTParameters(20, 2, NISTObjectIdentifiers.id_shake256_len, 24));
+        pMap.put(Integers.valueOf(0x00000032), new XMSSMTParameters(20, 4, NISTObjectIdentifiers.id_shake256_len, 24));
+        pMap.put(Integers.valueOf(0x00000033), new XMSSMTParameters(40, 2, NISTObjectIdentifiers.id_shake256_len, 24));
+        pMap.put(Integers.valueOf(0x00000034), new XMSSMTParameters(40, 4, NISTObjectIdentifiers.id_shake256_len, 24));
+        pMap.put(Integers.valueOf(0x00000035), new XMSSMTParameters(40, 8, NISTObjectIdentifiers.id_shake256_len, 24));
+        pMap.put(Integers.valueOf(0x00000036), new XMSSMTParameters(60, 3, NISTObjectIdentifiers.id_shake256_len, 24));
+        pMap.put(Integers.valueOf(0x00000037), new XMSSMTParameters(60, 6, NISTObjectIdentifiers.id_shake256_len, 24));
+        pMap.put(Integers.valueOf(0x00000038), new XMSSMTParameters(60, 12, NISTObjectIdentifiers.id_shake256_len, 24));
+
         paramsLookupTable = Collections.unmodifiableMap(pMap);
     }
 
@@ -81,10 +113,23 @@ public final class XMSSMTParameters
      */
     public XMSSMTParameters(int height, int layers, ASN1ObjectIdentifier digestOID)
     {
+        this(height, layers, digestOID, -1);
+    }
+
+    /**
+     * XMSSMT constructor with explicit security parameter n.
+     *
+     * @param height    Height of tree.
+     * @param layers    Amount of layers.
+     * @param digestOID Object identifier of digest to use.
+     * @param n         Security parameter (digest output size in bytes), or -1 to derive from digest.
+     */
+    private XMSSMTParameters(int height, int layers, ASN1ObjectIdentifier digestOID, int n)
+    {
         super();
         this.height = height;
         this.layers = layers;
-        this.xmssParams = new XMSSParameters(xmssTreeHeight(height, layers), digestOID);
+        this.xmssParams = new XMSSParameters(xmssTreeHeight(height, layers), digestOID, n);
         oid = DefaultXMSSMTOid.lookup(getTreeDigest(), getTreeDigestSize(), getWinternitzParameter(),
             getLen(), getHeight(), layers);
         /*

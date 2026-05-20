@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
 public class LMSPublicKeyParameters
@@ -170,7 +171,7 @@ public class LMSPublicKeyParameters
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot parse signature: " + e.getMessage());
+            throw Exceptions.illegalStateException("cannot parse signature", e);
         }
     }
 

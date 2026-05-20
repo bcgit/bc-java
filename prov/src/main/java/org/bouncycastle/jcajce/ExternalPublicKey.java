@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Wrapper class which returns an "ExternalValue" for the public key encoding. In this case
@@ -96,7 +97,7 @@ public class ExternalPublicKey
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to encode composite key: " + e.getMessage());
+            throw Exceptions.illegalStateException("unable to encode composite key", e);
         }
     }
 }

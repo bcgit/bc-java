@@ -92,19 +92,21 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
     private static final int    KEY_CERT_SIGN = 5;
     private static final int    CRL_SIGN = 6;
 
-    private static final String[] crlReasons = new String[] {
-                                        "unspecified",
-                                        "keyCompromise",
-                                        "cACompromise",
-                                        "affiliationChanged",
-                                        "superseded",
-                                        "cessationOfOperation",
-                                        "certificateHold",
-                                        "unknown",
-                                        "removeFromCRL",
-                                        "privilegeWithdrawn",
-                                        "aACompromise" };
-    
+    private static final String[] crlReasons = new String[]
+    {
+        "unspecified",
+        "keyCompromise",
+        "cACompromise",
+        "affiliationChanged",
+        "superseded",
+        "cessationOfOperation",
+        "certificateHold",
+        "unknown",
+        "removeFromCRL",
+        "privilegeWithdrawn",
+        "aACompromise",
+    };
+
     /**
      * extract the value of the given extension, if it exists.
      */
@@ -800,9 +802,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
         }
 
         AlgorithmIdentifier workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-        ASN1ObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-        ASN1Encodable        workingPublicKeyParameters = workingAlgId.getParameters();
-    
+
         //
         // (k)
         //
@@ -1453,20 +1453,16 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                     //
                     // (k)
                     //
-                    BasicConstraints    bc = BasicConstraints.getInstance(
-                                                getExtensionValue(cert, BASIC_CONSTRAINTS));
-                    if (bc != null)
-                    {
-                        if (!(bc.isCA()))
-                        {
-                            throw new CertPathValidatorException("Not a CA certificate");
-                        }
-                    }
-                    else
+                    BasicConstraints bc = BasicConstraints.getInstance(getExtensionValue(cert, BASIC_CONSTRAINTS));
+                    if (bc == null)
                     {
                         throw new CertPathValidatorException("Intermediate certificate lacks BasicConstraints");
                     }
-                
+                    if (!bc.isCA())
+                    {
+                        throw new CertPathValidatorException("Not a CA certificate");
+                    }
+
                     //
                     // (l)
                     //
@@ -1557,8 +1553,6 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                     throw new CertPathValidatorException(sign.getSubjectDN().getName() + " :" + ex.toString());
                 }
                 workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
-                workingPublicKeyParameters = workingAlgId.getParameters();
             }
             catch (AnnotatedException e)
             {

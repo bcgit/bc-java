@@ -3,8 +3,8 @@ package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 
 class Utils
 {

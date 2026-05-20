@@ -244,6 +244,170 @@ public class SMIMESignedParser
         }
     }
 
+   /**
+     * Internal constructor used by getSafeInstance.
+     * * @param digCalcProvider provider for digest calculators.
+     * @param message the multipart message.
+     * @param defaultEncoding default content transfer encoding.
+     * @param backingFile file to store the content in.
+     * @param sigStream the signature input stream.
+     */
+    SMIMESignedParser(DigestCalculatorProvider digCalcProvider, MimeMultipart message, 
+                      String defaultEncoding, File backingFile, InputStream sigStream) 
+        throws MessagingException, CMSException 
+    {
+        super(digCalcProvider, getSignedInputStream(message.getBodyPart(0), defaultEncoding, backingFile), sigStream);
+        this.message = message;
+        this.content = (MimeBodyPart)message.getBodyPart(0);
+        drainContent();
+    }
+
+    /**
+     * Factory method for creating a safe SMIMESignedParser instance from a MimeMultipart.
+     * Uses "7bit" as the default content transfer encoding and automatically creates
+     * a temporary file to back the signed content.
+     *
+     * @param digCalcProvider provider for digest calculators.
+     * @param message the multipart message.
+     * @return a safely constructed SMIMESignedParser instance.
+     * @throws MessagingException if there's an error accessing the message or creating the temp file.
+     * @throws CMSException if the CMS structure is malformed or cannot be parsed.
+     */
+    public static SMIMESignedParser getSafeInstance(DigestCalculatorProvider digCalcProvider, MimeMultipart message)
+    throws MessagingException, CMSException
+    {
+        try
+        {
+            File tmpFile = File.createTempFile("bcSigned", ".tmp");
+            return getSafeInstance(digCalcProvider, message, "7bit", tmpFile);
+        }
+        catch (IOException e)
+        {
+            throw new MessagingException("cannot create temp file: " + e, e);
+        }
+    }
+
+    /**
+     * Internal constructor used by getSafeInstance for Part-based (encapsulated) messages.
+     * * @param digCalcProvider provider for digest calculators.
+     * @param message the message part.
+     * @param sigStream the signature input stream.
+     */
+    SMIMESignedParser(DigestCalculatorProvider digCalcProvider, Part message, InputStream sigStream) 
+        throws MessagingException, CMSException, SMIMEException 
+    {
+        super(digCalcProvider, sigStream);
+        this.message = message;
+        CMSTypedStream cont = this.getSignedContent();
+        if (cont != null)
+        {
+            this.content = SMIMEUtil.toWriteOnceBodyPart(cont);
+        }
+    }
+
+    /**
+     * Internal constructor used by getSafeInstance for Part-based messages with a backing file.
+     * * @param digCalcProvider provider for digest calculators.
+     * @param message the message part.
+     * @param file the backing file for the content.
+     * @param sigStream the signature input stream.
+     */
+    SMIMESignedParser(DigestCalculatorProvider digCalcProvider, Part message, File file, InputStream sigStream) 
+        throws MessagingException, CMSException, SMIMEException 
+    {
+        super(digCalcProvider, sigStream);
+        this.message = message;
+        CMSTypedStream cont = this.getSignedContent();
+        if (cont != null)
+        {
+            this.content = SMIMEUtil.toMimeBodyPart(cont, file);
+        }
+    }
+
+    /**
+     * Create a new SMIMESignedParser from a MimeMultipart.
+     * <p>
+     * This method ensures that if the input stream for the signature is a PipedInputStream,
+     * it will be closed automatically if the parser fails to initialize, preventing potential thread hangs.
+     * </p>
+     * @param digCalcProvider provider for digest calculators.
+     * @param message the multipart message containing the content and signature.
+     * @param defaultEncoding the default content transfer encoding to use.
+     * @param backingFile a file to use for backing the message content.
+     * @return a new SMIMESignedParser instance.
+     * @throws MessagingException on an error extracting the signature or processing the message.
+     * @throws CMSException if an internal CMS error occurs.
+     */
+    public static SMIMESignedParser getSafeInstance(final DigestCalculatorProvider digCalcProvider, 
+                                                    final MimeMultipart message, 
+                                                    final String defaultEncoding, 
+                                                    final File backingFile) 
+        throws MessagingException, CMSException 
+    {
+        final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1));
+        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public Object create() throws Exception
+            {
+                return new SMIMESignedParser(digCalcProvider, message, defaultEncoding, backingFile, sigStream);
+            }
+        });
+    }
+
+    /**
+     * Create a new SMIMESignedParser from a Part.
+     * <p>
+     * This method ensures that if the input stream for the signature is a PipedInputStream,
+     * it will be closed automatically if the parser fails to initialize.
+     * </p>
+     * @param digCalcProvider provider for digest calculators.
+     * @param message the message part containing the signed data.
+     * @return a new SMIMESignedParser instance.
+     * @throws MessagingException on an error extracting the signature or processing the message.
+     * @throws CMSException if an internal CMS error occurs.
+     */
+    public static SMIMESignedParser getSafeInstance(final DigestCalculatorProvider digCalcProvider, 
+                                                    final Part message) 
+        throws MessagingException, CMSException 
+    {
+        final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message);
+        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public Object create() throws Exception
+            {
+                return new SMIMESignedParser(digCalcProvider, message, sigStream);
+            }
+        });
+    }
+
+    /**
+     * Create a new SMIMESignedParser from a Part with a backing file.
+     * <p>
+     * This method ensures that if the input stream for the signature is a PipedInputStream,
+     * it will be closed automatically if the parser fails to initialize.
+     * </p>
+     * @param digCalcProvider provider for digest calculators.
+     * @param message the message part containing the signed data.
+     * @param file the backing file to use for the message content.
+     * @return a new SMIMESignedParser instance.
+     * @throws MessagingException on an error extracting the signature or processing the message.
+     * @throws CMSException if an internal CMS error occurs.
+     */
+    public static SMIMESignedParser getSafeInstance(final DigestCalculatorProvider digCalcProvider, 
+                                                    final Part message, 
+                                                    final File file) 
+        throws MessagingException, CMSException 
+    {
+        final InputStream sigStream = SMIMEUtil.getInputStreamNoMultipartSigned(message);
+        return (SMIMESignedParser) SMIMEUtil.createSafe(sigStream, new SMIMEUtil.SafeCreator()
+        {
+            public Object create() throws Exception
+            {
+                return new SMIMESignedParser(digCalcProvider, message, file, sigStream);
+            }
+        });
+    }
+
     /**
      * Constructor for a signed message with encapsulated content. The encapsulated
      * content, if it exists, is written to the file represented by the File object

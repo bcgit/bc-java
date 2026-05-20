@@ -63,7 +63,7 @@ public class ToBeSignedLinkCertificate
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{expiryTime, certificateHash});
+        return new DERSequence(expiryTime, certificateHash);
     }
 
     public static Builder builder()

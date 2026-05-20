@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
+import org.bouncycastle.util.Exceptions;
 
 public abstract class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -134,11 +135,11 @@ public abstract class AlgorithmParametersSpi
             }
             catch (ClassCastException e)
             {
-                throw new IOException("Not a valid OAEP Parameter encoding.");
+                throw Exceptions.ioException("Not a valid OAEP Parameter encoding.", e);
             }
             catch (ArrayIndexOutOfBoundsException e)
             {
-                throw new IOException("Not a valid OAEP Parameter encoding.");
+                throw Exceptions.ioException("Not a valid OAEP Parameter encoding.", e);
             }
         }
 
@@ -281,11 +282,11 @@ public abstract class AlgorithmParametersSpi
             }
             catch (ClassCastException e)
             {
-                throw new IOException("Not a valid PSS Parameter encoding.");
+                throw Exceptions.ioException("Not a valid PSS Parameter encoding.", e);
             }
             catch (ArrayIndexOutOfBoundsException e)
             {
-                throw new IOException("Not a valid PSS Parameter encoding.");
+                throw Exceptions.ioException("Not a valid PSS Parameter encoding.", e);
             }
         }
     

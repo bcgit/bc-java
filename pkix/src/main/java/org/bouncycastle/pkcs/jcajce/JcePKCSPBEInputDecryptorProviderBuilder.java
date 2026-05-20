@@ -155,7 +155,7 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                         }
                         else if (encParams instanceof ASN1Sequence && isCCMorGCM(alg.getEncryptionScheme()))
                         {
-                            AlgorithmParameters params = AlgorithmParameters.getInstance(alg.getEncryptionScheme().getAlgorithm().getId());
+                            AlgorithmParameters params = helper.createAlgorithmParameters(alg.getEncryptionScheme().getAlgorithm().getId());
 
                             params.init(((ASN1Sequence)encParams).getEncoded());
 

@@ -83,6 +83,61 @@ public final class DefaultXMSSMTOid
             new DefaultXMSSMTOid(0x0000001f, "XMSSMT_SHAKE_60/6_512"));
         map.put(createKey("SHAKE256", 64, 16, 131, 60, 12),
             new DefaultXMSSMTOid(0x00000020, "XMSSMT_SHAKE_60/12_512"));
+
+        // SP 800-208: SHA-256/192 (n=24)
+        map.put(createKey("SHA-256", 24, 16, 51, 20, 2),
+            new DefaultXMSSMTOid(0x00000021, "XMSSMT_SHA2_20/2_192"));
+        map.put(createKey("SHA-256", 24, 16, 51, 20, 4),
+            new DefaultXMSSMTOid(0x00000022, "XMSSMT_SHA2_20/4_192"));
+        map.put(createKey("SHA-256", 24, 16, 51, 40, 2),
+            new DefaultXMSSMTOid(0x00000023, "XMSSMT_SHA2_40/2_192"));
+        map.put(createKey("SHA-256", 24, 16, 51, 40, 4),
+            new DefaultXMSSMTOid(0x00000024, "XMSSMT_SHA2_40/4_192"));
+        map.put(createKey("SHA-256", 24, 16, 51, 40, 8),
+            new DefaultXMSSMTOid(0x00000025, "XMSSMT_SHA2_40/8_192"));
+        map.put(createKey("SHA-256", 24, 16, 51, 60, 3),
+            new DefaultXMSSMTOid(0x00000026, "XMSSMT_SHA2_60/3_192"));
+        map.put(createKey("SHA-256", 24, 16, 51, 60, 6),
+            new DefaultXMSSMTOid(0x00000027, "XMSSMT_SHA2_60/6_192"));
+        map.put(createKey("SHA-256", 24, 16, 51, 60, 12),
+            new DefaultXMSSMTOid(0x00000028, "XMSSMT_SHA2_60/12_192"));
+
+        // SP 800-208: SHAKE256/256 (n=32)
+        map.put(createKey("SHAKE256-LEN", 32, 16, 67, 20, 2),
+            new DefaultXMSSMTOid(0x00000029, "XMSSMT_SHAKE256_20/2_256"));
+        map.put(createKey("SHAKE256-LEN", 32, 16, 67, 20, 4),
+            new DefaultXMSSMTOid(0x0000002a, "XMSSMT_SHAKE256_20/4_256"));
+        map.put(createKey("SHAKE256-LEN", 32, 16, 67, 40, 2),
+            new DefaultXMSSMTOid(0x0000002b, "XMSSMT_SHAKE256_40/2_256"));
+        map.put(createKey("SHAKE256-LEN", 32, 16, 67, 40, 4),
+            new DefaultXMSSMTOid(0x0000002c, "XMSSMT_SHAKE256_40/4_256"));
+        map.put(createKey("SHAKE256-LEN", 32, 16, 67, 40, 8),
+            new DefaultXMSSMTOid(0x0000002d, "XMSSMT_SHAKE256_40/8_256"));
+        map.put(createKey("SHAKE256-LEN", 32, 16, 67, 60, 3),
+            new DefaultXMSSMTOid(0x0000002e, "XMSSMT_SHAKE256_60/3_256"));
+        map.put(createKey("SHAKE256-LEN", 32, 16, 67, 60, 6),
+            new DefaultXMSSMTOid(0x0000002f, "XMSSMT_SHAKE256_60/6_256"));
+        map.put(createKey("SHAKE256-LEN", 32, 16, 67, 60, 12),
+            new DefaultXMSSMTOid(0x00000030, "XMSSMT_SHAKE256_60/12_256"));
+
+        // SP 800-208: SHAKE256/192 (n=24)
+        map.put(createKey("SHAKE256-LEN", 24, 16, 51, 20, 2),
+            new DefaultXMSSMTOid(0x00000031, "XMSSMT_SHAKE256_20/2_192"));
+        map.put(createKey("SHAKE256-LEN", 24, 16, 51, 20, 4),
+            new DefaultXMSSMTOid(0x00000032, "XMSSMT_SHAKE256_20/4_192"));
+        map.put(createKey("SHAKE256-LEN", 24, 16, 51, 40, 2),
+            new DefaultXMSSMTOid(0x00000033, "XMSSMT_SHAKE256_40/2_192"));
+        map.put(createKey("SHAKE256-LEN", 24, 16, 51, 40, 4),
+            new DefaultXMSSMTOid(0x00000034, "XMSSMT_SHAKE256_40/4_192"));
+        map.put(createKey("SHAKE256-LEN", 24, 16, 51, 40, 8),
+            new DefaultXMSSMTOid(0x00000035, "XMSSMT_SHAKE256_40/8_192"));
+        map.put(createKey("SHAKE256-LEN", 24, 16, 51, 60, 3),
+            new DefaultXMSSMTOid(0x00000036, "XMSSMT_SHAKE256_60/3_192"));
+        map.put(createKey("SHAKE256-LEN", 24, 16, 51, 60, 6),
+            new DefaultXMSSMTOid(0x00000037, "XMSSMT_SHAKE256_60/6_192"));
+        map.put(createKey("SHAKE256-LEN", 24, 16, 51, 60, 12),
+            new DefaultXMSSMTOid(0x00000038, "XMSSMT_SHAKE256_60/12_192"));
+
         oidLookupTable = Collections.unmodifiableMap(map);
     }
 

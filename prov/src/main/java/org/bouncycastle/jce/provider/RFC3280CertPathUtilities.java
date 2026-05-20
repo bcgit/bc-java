@@ -31,14 +31,18 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -107,8 +111,7 @@ class RFC3280CertPathUtilities
         IssuingDistributionPoint idp = null;
         try
         {
-            idp = IssuingDistributionPoint.getInstance(CertPathValidatorUtilities.getExtensionValue(crl,
-                RFC3280CertPathUtilities.ISSUING_DISTRIBUTION_POINT));
+            idp = IssuingDistributionPoint.getInstance(getExtensionValue(crl, ISSUING_DISTRIBUTION_POINT));
         }
         catch (Exception e)
         {
@@ -134,20 +137,24 @@ class RFC3280CertPathUtilities
                 }
                 if (dpName.getType() == DistributionPointName.NAME_RELATIVE_TO_CRL_ISSUER)
                 {
-                    ASN1EncodableVector vec = new ASN1EncodableVector();
+                    ASN1Sequence seq;
                     try
                     {
-                        Enumeration e = ASN1Sequence.getInstance(PrincipalUtils.getIssuerPrincipal(crl)).getObjects();
-                        while (e.hasMoreElements())
-                        {
-                            vec.add((ASN1Encodable)e.nextElement());
-                        }
+                        seq = ASN1Sequence.getInstance(PrincipalUtils.getIssuerPrincipal(crl));
                     }
                     catch (Exception e)
                     {
                         throw new AnnotatedException("Could not read CRL issuer.", e);
                     }
+
+                    int count = seq.size();
+                    ASN1EncodableVector vec = new ASN1EncodableVector(count + 1);
+                    for (int i = 0; i < count; ++i)
+                    {
+                        vec.add(seq.getObjectAt(i));
+                    }
                     vec.add(dpName.getName());
+
                     names.add(new GeneralName(X500Name.getInstance(new DERSequence(vec))));
                 }
                 boolean matches = false;
@@ -204,8 +211,12 @@ class RFC3280CertPathUtilities
                     }
                     if (!matches)
                     {
+                        // github #800: include the conflicting names so operators
+                        // can see which CRL was returned for which cert DP.
                         throw new AnnotatedException(
-                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point."
+                                + " cert DP names: " + java.util.Arrays.asList(genNames)
+                                + "; CRL IDP names: " + names);
                     }
                 }
                 // verify that one of the names in
@@ -229,16 +240,19 @@ class RFC3280CertPathUtilities
                     }
                     if (!matches)
                     {
+                        // github #800: include the conflicting names so operators
+                        // can see which CRL was returned for which cert cRLIssuer.
                         throw new AnnotatedException(
-                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point."
+                                + " cert cRLIssuer names: " + java.util.Arrays.asList(genNames)
+                                + "; CRL IDP names: " + names);
                     }
                 }
             }
-            BasicConstraints bc = null;
+            BasicConstraints bc;
             try
             {
-                bc = BasicConstraints.getInstance(CertPathValidatorUtilities.getExtensionValue((X509Extension)cert,
-                    BASIC_CONSTRAINTS));
+                bc = BasicConstraints.getInstance(getExtensionValue((X509Extension)cert, BASIC_CONSTRAINTS));
             }
             catch (Exception e)
             {
@@ -287,7 +301,7 @@ class RFC3280CertPathUtilities
         X509CRL crl)
         throws AnnotatedException
     {
-        ASN1Primitive idp = CertPathValidatorUtilities.getExtensionValue(crl, ISSUING_DISTRIBUTION_POINT);
+        ASN1Primitive idp = getExtensionValue(crl, ISSUING_DISTRIBUTION_POINT);
         boolean isIndirect = false;
         if (idp != null)
         {
@@ -360,8 +374,7 @@ class RFC3280CertPathUtilities
         IssuingDistributionPoint idp = null;
         try
         {
-            idp = IssuingDistributionPoint.getInstance(CertPathValidatorUtilities.getExtensionValue(crl,
-                RFC3280CertPathUtilities.ISSUING_DISTRIBUTION_POINT));
+            idp = IssuingDistributionPoint.getInstance(getExtensionValue(crl, ISSUING_DISTRIBUTION_POINT));
         }
         catch (Exception e)
         {
@@ -414,6 +427,8 @@ class RFC3280CertPathUtilities
 
     public static final String CRL_NUMBER = Extension.cRLNumber.getId();
 
+    public static final String REASON_CODE = Extension.reasonCode.getId();
+
     public static final String ANY_POLICY = "2.5.29.32.0";
 
     /*
@@ -422,6 +437,43 @@ class RFC3280CertPathUtilities
     protected static final int KEY_CERT_SIGN = 5;
 
     protected static final int CRL_SIGN = 6;
+
+    // Per-thread set of CRL-signer certificates currently being validated by
+    // processCRLF. Used to break cycles when multiple candidate signers cause
+    // the recursive engineBuild call inside processCRLF to re-enter for the
+    // same signer (github #2291).
+    private static final ThreadLocal<Set<X509Certificate>> crlSignersInProgress =
+        new ThreadLocal<Set<X509Certificate>>();
+
+    private static boolean crlSignerInProgress(X509Certificate cert)
+    {
+        Set<X509Certificate> set = crlSignersInProgress.get();
+        return set != null && set.contains(cert);
+    }
+
+    private static void crlSignerEnter(X509Certificate cert)
+    {
+        Set<X509Certificate> set = crlSignersInProgress.get();
+        if (set == null)
+        {
+            set = new HashSet<X509Certificate>();
+            crlSignersInProgress.set(set);
+        }
+        set.add(cert);
+    }
+
+    private static void crlSignerExit(X509Certificate cert)
+    {
+        Set<X509Certificate> set = crlSignersInProgress.get();
+        if (set != null)
+        {
+            set.remove(cert);
+            if (set.isEmpty())
+            {
+                crlSignersInProgress.remove();
+            }
+        }
+    }
 
     /**
      * Obtain and validate the certification path for the complete CRL issuer.
@@ -460,6 +512,25 @@ class RFC3280CertPathUtilities
         {
             byte[] issuerPrincipal = PrincipalUtils.getIssuerPrincipal(crl).getEncoded();
             certSelector.setSubject(issuerPrincipal);
+
+            // RFC 5280 sec. 5.2.1: when the CRL has an authorityKeyIdentifier
+            // with a keyIdentifier field, narrow the candidate signer set by
+            // SubjectKeyIdentifier. With multiple trust anchors sharing the
+            // issuer DN this prevents O(N^depth) fan-out across distinct
+            // candidates (github #2291).
+            byte[] crlAkiExt = crl.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+            if (crlAkiExt != null)
+            {
+                AuthorityKeyIdentifier akid = AuthorityKeyIdentifier.getInstance(
+                    ASN1OctetString.getInstance(crlAkiExt).getOctets());
+                byte[] keyId = akid.getKeyIdentifierOctets();
+                if (keyId != null)
+                {
+                    // X509CertSelector.setSubjectKeyIdentifier wants the DER
+                    // encoding of the OCTET STRING wrapping the keyId bytes.
+                    certSelector.setSubjectKeyIdentifier(new DEROctetString(keyId).getEncoded());
+                }
+            }
         }
         catch (IOException e)
         {
@@ -487,6 +558,7 @@ class RFC3280CertPathUtilities
 
         List validCerts = new ArrayList();
         List validKeys = new ArrayList();
+        AnnotatedException signerLastException = null;
 
         while (cert_it.hasNext())
         {
@@ -502,6 +574,21 @@ class RFC3280CertPathUtilities
                 validKeys.add(defaultCRLSignKey);
                 continue;
             }
+            /*
+             * Guard against infinite recursion when multiple candidate signers (often
+             * trust-anchor root CAs sharing a Subject DN) cause the recursive
+             * engineBuild call below to re-enter processCRLF for the same signer
+             * (github #2291). If we're already validating this cert further up the
+             * call stack, treat it as a trust anchor / self-signed root and short
+             * circuit, otherwise the iteration would loop forever.
+             */
+            if (crlSignerInProgress(signingCert))
+            {
+                validCerts.add(signingCert);
+                validKeys.add(signingCert.getPublicKey());
+                continue;
+            }
+            crlSignerEnter(signingCert);
             try
             {
                 CertPathBuilderSpi builder = (revChkClass != null)
@@ -538,16 +625,28 @@ class RFC3280CertPathUtilities
             }
             catch (CertPathBuilderException e)
             {
-                throw new AnnotatedException("CertPath for CRL signer failed to validate.", e);
+                // Candidate signer's path could not be built - skip and try the next
+                // candidate. The post-loop empty-check will surface a useful error if
+                // no valid signer is found at all.
+                signerLastException = new AnnotatedException("CertPath for CRL signer failed to validate.", e);
             }
             catch (CertPathValidatorException e)
             {
-                throw new AnnotatedException("Public key of issuer certificate of CRL could not be retrieved.", e);
+                signerLastException = new AnnotatedException("Public key of issuer certificate of CRL could not be retrieved.", e);
             }
             catch (Exception e)
             {
-                throw new AnnotatedException(e.getMessage());
+                signerLastException = new AnnotatedException(e.getMessage());
             }
+            finally
+            {
+                crlSignerExit(signingCert);
+            }
+        }
+
+        if (validCerts.isEmpty() && signerLastException != null)
+        {
+            throw signerLastException;
         }
 
         Set checkKeys = new HashSet();
@@ -557,7 +656,7 @@ class RFC3280CertPathUtilities
         {
             X509Certificate signCert = (X509Certificate)validCerts.get(i);
             boolean[] keyUsage = signCert.getKeyUsage();
-   
+
             if (keyUsage == null)
             {
                 if (Properties.isOverrideSet("org.bouncycastle.x509.allow_ca_without_crl_sign", true))
@@ -651,140 +750,107 @@ class RFC3280CertPathUtilities
      *
      * @param deltaCRL    The delta CRL.
      * @param completeCRL The complete CRL.
-     * @param pkixParams  The PKIX paramaters.
      * @throws AnnotatedException if an exception occurs.
      */
-    protected static void processCRLC(
-        X509CRL deltaCRL,
-        X509CRL completeCRL,
-        PKIXExtendedParameters pkixParams)
+    static void processCRLC(X509CRL deltaCRL, X509CRL completeCRL)
         throws AnnotatedException
     {
-        if (deltaCRL == null)
-        {
-            return;
-        }
-
-        if (deltaCRL.hasUnsupportedCriticalExtension())
-        {
-            throw new AnnotatedException("delta CRL has unsupported critical extensions");
-        }
-
-        IssuingDistributionPoint completeidp = null;
+        IssuingDistributionPoint completeidp;
         try
         {
-            completeidp = IssuingDistributionPoint.getInstance(CertPathValidatorUtilities.getExtensionValue(
-                completeCRL, RFC3280CertPathUtilities.ISSUING_DISTRIBUTION_POINT));
+            completeidp = IssuingDistributionPoint.getInstance(getExtensionValue(completeCRL, ISSUING_DISTRIBUTION_POINT));
         }
         catch (Exception e)
         {
             throw new AnnotatedException("Issuing distribution point extension could not be decoded.", e);
         }
 
-        if (pkixParams.isUseDeltasEnabled())
+        // (c) (1)
+        if (!PrincipalUtils.getIssuerPrincipal(deltaCRL).equals(PrincipalUtils.getIssuerPrincipal(completeCRL)))
         {
-            // (c) (1)
-            if (!PrincipalUtils.getIssuerPrincipal(deltaCRL).equals(PrincipalUtils.getIssuerPrincipal(completeCRL)))
-            {
-                throw new AnnotatedException("Complete CRL issuer does not match delta CRL issuer.");
-            }
+            throw new AnnotatedException("Complete CRL issuer does not match delta CRL issuer.");
+        }
 
-            // (c) (2)
-            IssuingDistributionPoint deltaidp = null;
-            try
-            {
-                deltaidp = IssuingDistributionPoint.getInstance(CertPathValidatorUtilities.getExtensionValue(
-                    deltaCRL, ISSUING_DISTRIBUTION_POINT));
-            }
-            catch (Exception e)
-            {
-                throw new AnnotatedException(
-                    "Issuing distribution point extension from delta CRL could not be decoded.", e);
-            }
+        // (c) (2)
+        IssuingDistributionPoint deltaidp;
+        try
+        {
+            deltaidp = IssuingDistributionPoint.getInstance(getExtensionValue(deltaCRL, ISSUING_DISTRIBUTION_POINT));
+        }
+        catch (Exception e)
+        {
+            throw new AnnotatedException(
+                "Issuing distribution point extension from delta CRL could not be decoded.", e);
+        }
 
-            boolean match = false;
-            if (completeidp == null)
+        boolean match = false;
+        if (completeidp == null)
+        {
+            if (deltaidp == null)
             {
-                if (deltaidp == null)
-                {
-                    match = true;
-                }
+                match = true;
             }
-            else
+        }
+        else
+        {
+            if (completeidp.equals(deltaidp))
             {
-                if (completeidp.equals(deltaidp))
-                {
-                    match = true;
-                }
+                match = true;
             }
-            if (!match)
-            {
-                throw new AnnotatedException(
-                    "Issuing distribution point extension from delta CRL and complete CRL does not match.");
-            }
+        }
+        if (!match)
+        {
+            throw new AnnotatedException(
+                "Issuing distribution point extension from delta CRL and complete CRL does not match.");
+        }
 
-            // (c) (3)
-            ASN1Primitive completeKeyIdentifier = null;
-            try
-            {
-                completeKeyIdentifier = CertPathValidatorUtilities.getExtensionValue(
-                    completeCRL, AUTHORITY_KEY_IDENTIFIER);
-            }
-            catch (AnnotatedException e)
-            {
-                throw new AnnotatedException(
-                    "Authority key identifier extension could not be extracted from complete CRL.", e);
-            }
+        // (c) (3)
+        ASN1Primitive completeKeyIdentifier;
+        try
+        {
+            completeKeyIdentifier = getExtensionValue(completeCRL, AUTHORITY_KEY_IDENTIFIER);
+        }
+        catch (AnnotatedException e)
+        {
+            throw new AnnotatedException(
+                "Authority key identifier extension could not be extracted from complete CRL.", e);
+        }
 
-            ASN1Primitive deltaKeyIdentifier = null;
-            try
-            {
-                deltaKeyIdentifier = CertPathValidatorUtilities.getExtensionValue(
-                    deltaCRL, AUTHORITY_KEY_IDENTIFIER);
-            }
-            catch (AnnotatedException e)
-            {
-                throw new AnnotatedException(
-                    "Authority key identifier extension could not be extracted from delta CRL.", e);
-            }
+        ASN1Primitive deltaKeyIdentifier;
+        try
+        {
+            deltaKeyIdentifier = getExtensionValue(deltaCRL, AUTHORITY_KEY_IDENTIFIER);
+        }
+        catch (AnnotatedException e)
+        {
+            throw new AnnotatedException(
+                "Authority key identifier extension could not be extracted from delta CRL.", e);
+        }
 
-            if (completeKeyIdentifier == null)
-            {
-                throw new AnnotatedException("CRL authority key identifier is null.");
-            }
+        if (completeKeyIdentifier == null)
+        {
+            throw new AnnotatedException("CRL authority key identifier is null.");
+        }
 
-            if (deltaKeyIdentifier == null)
-            {
-                throw new AnnotatedException("Delta CRL authority key identifier is null.");
-            }
+        if (deltaKeyIdentifier == null)
+        {
+            throw new AnnotatedException("Delta CRL authority key identifier is null.");
+        }
 
-            if (!completeKeyIdentifier.equals(deltaKeyIdentifier))
-            {
-                throw new AnnotatedException(
-                    "Delta CRL authority key identifier does not match complete CRL authority key identifier.");
-            }
+        if (!completeKeyIdentifier.equals(deltaKeyIdentifier))
+        {
+            throw new AnnotatedException(
+                "Delta CRL authority key identifier does not match complete CRL authority key identifier.");
         }
     }
 
-    protected static void processCRLI(
-        Date validDate,
-        X509CRL deltacrl,
-        Object cert,
-        CertStatus certStatus,
-        PKIXExtendedParameters pkixParams)
+    static void processCRLI(Date validDate, X509CRL deltacrl, Object cert, CertStatus certStatus)
         throws AnnotatedException
     {
-        if (pkixParams.isUseDeltasEnabled() && deltacrl != null)
-        {
-            CertPathValidatorUtilities.getCertStatus(validDate, deltacrl, cert, certStatus);
-        }
+        CertPathValidatorUtilities.getCertStatus(validDate, deltacrl, cert, certStatus);
     }
 
-    protected static void processCRLJ(
-        Date validDate,
-        X509CRL completecrl,
-        Object cert,
-        CertStatus certStatus)
+    static void processCRLJ(Date validDate, X509CRL completecrl, Object cert, CertStatus certStatus)
         throws AnnotatedException
     {
         if (certStatus.getCertStatus() == CertStatus.UNREVOKED)
@@ -793,12 +859,8 @@ class RFC3280CertPathUtilities
         }
     }
 
-    protected static PKIXPolicyNode prepareCertB(
-        CertPath certPath,
-        int index,
-        List[] policyNodes,
-        PKIXPolicyNode validPolicyTree,
-        int policyMapping)
+    static PKIXPolicyNode prepareCertB(CertPath certPath, int index, List[] policyNodes,
+        PKIXPolicyNode validPolicyTree, int policyMapping)
         throws CertPathValidatorException
     {
         List certs = certPath.getCertificates();
@@ -811,7 +873,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence mappings;
         try
         {
-            mappings = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert, POLICY_MAPPINGS));
+            mappings = ASN1Sequence.getInstance(getExtensionValue(cert, POLICY_MAPPINGS));
         }
         catch (AnnotatedException ex)
         {
@@ -897,8 +959,7 @@ class RFC3280CertPathUtilities
                 ASN1Sequence policies;
                 try
                 {
-                    policies = ASN1Sequence.getInstance(
-                        CertPathValidatorUtilities.getExtensionValue(cert, CERTIFICATE_POLICIES));
+                    policies = ASN1Sequence.getInstance(getExtensionValue(cert, CERTIFICATE_POLICIES));
                 }
                 catch (AnnotatedException e)
                 {
@@ -966,8 +1027,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pm = null;
         try
         {
-            pm = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.POLICY_MAPPINGS));
+            pm = ASN1Sequence.getInstance(getExtensionValue(cert, POLICY_MAPPINGS));
         }
         catch (AnnotatedException ex)
         {
@@ -995,15 +1055,13 @@ class RFC3280CertPathUtilities
                         e, certPath, index);
                 }
 
-                if (RFC3280CertPathUtilities.ANY_POLICY.equals(issuerDomainPolicy.getId()))
+                if (ANY_POLICY.equals(issuerDomainPolicy.getId()))
                 {
-
                     throw new CertPathValidatorException("IssuerDomainPolicy is anyPolicy", null, certPath, index);
                 }
 
-                if (RFC3280CertPathUtilities.ANY_POLICY.equals(subjectDomainPolicy.getId()))
+                if (ANY_POLICY.equals(subjectDomainPolicy.getId()))
                 {
-
                     throw new CertPathValidatorException("SubjectDomainPolicy is anyPolicy", null, certPath, index);
                 }
             }
@@ -1035,14 +1093,13 @@ class RFC3280CertPathUtilities
     {
         List certs = certPath.getCertificates();
         X509Certificate cert = (X509Certificate)certs.get(index);
-        // 
+        //
         // (e)
         //
         ASN1Sequence certPolicies = null;
         try
         {
-            certPolicies = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.CERTIFICATE_POLICIES));
+            certPolicies = ASN1Sequence.getInstance(getExtensionValue(cert, CERTIFICATE_POLICIES));
         }
         catch (AnnotatedException e)
         {
@@ -1076,90 +1133,88 @@ class RFC3280CertPathUtilities
         // as we use the validator for path CRL checking, we need to flag when the
         // certificate is self issued, but not really the last one in the path we are actually
         // checking.
-        if (!(CertPathValidatorUtilities.isSelfIssued(cert) && ((i < n) || isForCRLCheck)))
+        if ((i < n || isForCRLCheck) && CertPathValidatorUtilities.isSelfIssued(cert))
         {
-            X500Name principal = PrincipalUtils.getSubjectPrincipal(cert);
-            ASN1Sequence dns;
+            return;
+        }
 
+        X500Name principal = PrincipalUtils.getSubjectPrincipal(cert);
+        ASN1Sequence dns;
+
+        try
+        {
+            dns = ASN1Sequence.getInstance(principal);
+        }
+        catch (Exception e)
+        {
+            throw new CertPathValidatorException("Exception extracting subject name when checking subtrees.", e,
+                certPath, index);
+        }
+
+        try
+        {
+            nameConstraintValidator.checkPermittedDN(dns);
+            nameConstraintValidator.checkExcludedDN(dns);
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            throw new CertPathValidatorException("Subtree check for certificate subject failed.", e, certPath,
+                index);
+        }
+
+        GeneralNames altName = null;
+        try
+        {
+            altName = GeneralNames.getInstance(getExtensionValue(cert, SUBJECT_ALTERNATIVE_NAME));
+        }
+        catch (Exception e)
+        {
+            throw new CertPathValidatorException("Subject alternative name extension could not be decoded.", e,
+                certPath, index);
+        }
+        String[] subjectEmails = extractEmailAddressesFromSubjectDN(X500Name.getInstance(dns));
+        for (int eI = 0; eI != subjectEmails.length; eI++)
+        {
             try
             {
-                dns = ASN1Sequence.getInstance(principal);
+                nameConstraintValidator.checkPermittedEmail(subjectEmails[eI]);
+                nameConstraintValidator.checkExcludedEmail(subjectEmails[eI]);
+            }
+            catch (PKIXNameConstraintValidatorException ex)
+            {
+                throw new CertPathValidatorException(
+                    "Subtree check for certificate subject alternative email failed.", ex, certPath, index);
+            }
+        }
+        if (altName != null)
+        {
+            /*
+             * NOTE: PKIXCertPathReviewer limits the number of alternative names, to avoid a denial-of-service
+             * attack. That does not appear to be an issue for validation, so no limit is applied.
+             */
+
+            GeneralName[] genNames = null;
+            try
+            {
+                genNames = altName.getNames();
             }
             catch (Exception e)
             {
-                throw new CertPathValidatorException("Exception extracting subject name when checking subtrees.", e,
+                throw new CertPathValidatorException("Subject alternative name contents could not be decoded.", e,
                     certPath, index);
             }
+            for (int j = 0; j < genNames.length; j++)
+            {
 
-            try
-            {
-                nameConstraintValidator.checkPermittedDN(dns);
-                nameConstraintValidator.checkExcludedDN(dns);
-            }
-            catch (PKIXNameConstraintValidatorException e)
-            {
-                throw new CertPathValidatorException("Subtree check for certificate subject failed.", e, certPath,
-                    index);
-            }
-
-            GeneralNames altName = null;
-            try
-            {
-                altName = GeneralNames.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                    RFC3280CertPathUtilities.SUBJECT_ALTERNATIVE_NAME));
-            }
-            catch (Exception e)
-            {
-                throw new CertPathValidatorException("Subject alternative name extension could not be decoded.", e,
-                    certPath, index);
-            }
-            RDN[] emails = X500Name.getInstance(dns).getRDNs(BCStyle.EmailAddress);
-            for (int eI = 0; eI != emails.length; eI++)
-            {
-                // TODO: this should take into account multi-valued RDNs
-                String email = ((ASN1String)emails[eI].getFirst().getValue()).getString();
-                GeneralName emailAsGeneralName = new GeneralName(GeneralName.rfc822Name, email);
                 try
                 {
-                    nameConstraintValidator.checkPermitted(emailAsGeneralName);
-                    nameConstraintValidator.checkExcluded(emailAsGeneralName);
+                    nameConstraintValidator.checkPermitted(genNames[j]);
+                    nameConstraintValidator.checkExcluded(genNames[j]);
                 }
-                catch (PKIXNameConstraintValidatorException ex)
+                catch (PKIXNameConstraintValidatorException e)
                 {
                     throw new CertPathValidatorException(
-                        "Subtree check for certificate subject alternative email failed.", ex, certPath, index);
-                }
-            }
-            if (altName != null)
-            {
-                /*
-                 * NOTE: PKIXCertPathReviewer limits the number of alternative names, to avoid a denial-of-service
-                 * attack. That does not appear to be an issue for validation, so no limit is applied.
-                 */
-
-                GeneralName[] genNames = null;
-                try
-                {
-                    genNames = altName.getNames();
-                }
-                catch (Exception e)
-                {
-                    throw new CertPathValidatorException("Subject alternative name contents could not be decoded.", e,
-                        certPath, index);
-                }
-                for (int j = 0; j < genNames.length; j++)
-                {
-
-                    try
-                    {
-                        nameConstraintValidator.checkPermitted(genNames[j]);
-                        nameConstraintValidator.checkExcluded(genNames[j]);
-                    }
-                    catch (PKIXNameConstraintValidatorException e)
-                    {
-                        throw new CertPathValidatorException(
-                            "Subtree check for certificate subject alternative name failed.", e, certPath, index);
-                    }
+                        "Subtree check for certificate subject alternative name failed.", e, certPath, index);
                 }
             }
         }
@@ -1187,8 +1242,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence certPolicies = null;
         try
         {
-            certPolicies = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.CERTIFICATE_POLICIES));
+            certPolicies = ASN1Sequence.getInstance(getExtensionValue(cert, CERTIFICATE_POLICIES));
         }
         catch (AnnotatedException e)
         {
@@ -1210,7 +1264,7 @@ class RFC3280CertPathUtilities
 
                 pols.add(pOid.getId());
 
-                if (!RFC3280CertPathUtilities.ANY_POLICY.equals(pOid.getId()))
+                if (!ANY_POLICY.equals(pOid.getId()))
                 {
                     Set pq = null;
                     try
@@ -1219,7 +1273,7 @@ class RFC3280CertPathUtilities
                     }
                     catch (CertPathValidatorException ex)
                     {
-                        throw new ExtCertPathValidatorException("Policy qualifier info set could not be build.", ex,
+                        throw new ExtCertPathValidatorException("Policy qualifier info set could not be built.", ex,
                             certPath, index);
                     }
 
@@ -1232,7 +1286,7 @@ class RFC3280CertPathUtilities
                 }
             }
 
-            if (acceptablePolicies.isEmpty() || acceptablePolicies.contains(RFC3280CertPathUtilities.ANY_POLICY))
+            if (acceptablePolicies.isEmpty() || acceptablePolicies.contains(ANY_POLICY))
             {
                 acceptablePolicies.clear();
                 acceptablePolicies.addAll(pols);
@@ -1266,7 +1320,7 @@ class RFC3280CertPathUtilities
                 {
                     PolicyInformation pInfo = PolicyInformation.getInstance(e.nextElement());
 
-                    if (RFC3280CertPathUtilities.ANY_POLICY.equals(pInfo.getPolicyIdentifier().getId()))
+                    if (ANY_POLICY.equals(pInfo.getPolicyIdentifier().getId()))
                     {
                         Set _apq = CertPathValidatorUtilities.getQualifierSet(pInfo.getPolicyQualifiers());
                         List _nodes = policyNodes[i - 1];
@@ -1368,10 +1422,9 @@ class RFC3280CertPathUtilities
             }
         }
 
-        final Date validCertDate;
         try
         {
-            validCertDate = CertPathValidatorUtilities.getValidCertDateFromValidityModel(validityDate,
+            validityDate = CertPathValidatorUtilities.getValidCertDateFromValidityModel(validityDate,
                 paramsPKIX.getValidityModel(), certPath, index);
         }
         catch (AnnotatedException e)
@@ -1383,7 +1436,7 @@ class RFC3280CertPathUtilities
         //
         try
         {
-            cert.checkValidity(validCertDate);
+            cert.checkValidity(validityDate);
         }
         catch (CertificateExpiredException e)
         {
@@ -1399,7 +1452,7 @@ class RFC3280CertPathUtilities
         //
         if (revocationChecker != null)
         {
-            revocationChecker.initialize(new PKIXCertRevocationCheckerParameters(paramsPKIX, validCertDate, certPath,
+            revocationChecker.initialize(new PKIXCertRevocationCheckerParameters(paramsPKIX, validityDate, certPath,
                 index, sign, workingPublicKey));
 
             revocationChecker.check(cert);
@@ -1430,8 +1483,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pc = null;
         try
         {
-            pc = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.POLICY_CONSTRAINTS));
+            pc = ASN1Sequence.getInstance(getExtensionValue(cert, POLICY_CONSTRAINTS));
         }
         catch (Exception e)
         {
@@ -1484,8 +1536,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pc = null;
         try
         {
-            pc = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.POLICY_CONSTRAINTS));
+            pc = ASN1Sequence.getInstance(getExtensionValue(cert, POLICY_CONSTRAINTS));
         }
         catch (Exception e)
         {
@@ -1538,8 +1589,7 @@ class RFC3280CertPathUtilities
         NameConstraints nc = null;
         try
         {
-            ASN1Sequence ncSeq = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.NAME_CONSTRAINTS));
+            ASN1Sequence ncSeq = ASN1Sequence.getInstance(getExtensionValue(cert, NAME_CONSTRAINTS));
             if (ncSeq != null)
             {
                 nc = NameConstraints.getInstance(ncSeq);
@@ -1550,42 +1600,46 @@ class RFC3280CertPathUtilities
             throw new ExtCertPathValidatorException("Name constraints extension could not be decoded.", e, certPath,
                 index);
         }
-        if (nc != null)
+
+        if (nc == null)
         {
+            return;
+        }
 
-            //
-            // (g) (1) permitted subtrees
-            //
-            GeneralSubtree[] permitted = nc.getPermittedSubtrees();
-            if (permitted != null)
+        //
+        // (g) (1) permitted subtrees
+        //
+        GeneralSubtree[] permitted = nc.getPermittedSubtrees();
+        if (permitted != null)
+        {
+            try
             {
-                try
-                {
-                    nameConstraintValidator.intersectPermittedSubtree(permitted);
-                }
-                catch (Exception ex)
-                {
-                    throw new ExtCertPathValidatorException(
-                        "Permitted subtrees cannot be build from name constraints extension.", ex, certPath, index);
-                }
+                nameConstraintValidator.intersectPermittedSubtree(permitted);
             }
+            catch (Exception ex)
+            {
+                throw new ExtCertPathValidatorException(
+                    "Permitted subtrees could not be built from name constraints extension.", ex, certPath, index);
+            }
+        }
 
-            //
-            // (g) (2) excluded subtrees
-            //
-            GeneralSubtree[] excluded = nc.getExcludedSubtrees();
-            if (excluded != null)
+        //
+        // (g) (2) excluded subtrees
+        //
+        GeneralSubtree[] excluded = nc.getExcludedSubtrees();
+        if (excluded != null)
+        {
+            try
             {
                 for (int i = 0; i != excluded.length; i++)
-                try
                 {
-                        nameConstraintValidator.addExcludedSubtree(excluded[i]);
+                    nameConstraintValidator.addExcludedSubtree(excluded[i]);
                 }
-                catch (Exception ex)
-                {
-                    throw new ExtCertPathValidatorException(
-                        "Excluded subtrees cannot be build from name constraints extension.", ex, certPath, index);
-                }
+            }
+            catch (Exception ex)
+            {
+                throw new ExtCertPathValidatorException(
+                    "Excluded subtrees could not be built from name constraints extension.", ex, certPath, index);
             }
         }
     }
@@ -1632,10 +1686,6 @@ class RFC3280CertPathUtilities
         JcaJceHelper helper)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
-        if (currentDate == null)
-        {
-            boolean debug = true;
-        }
         if (validityDate.getTime() > currentDate.getTime())
         {
             throw new AnnotatedException("Validation time is in future.");
@@ -1660,8 +1710,11 @@ class RFC3280CertPathUtilities
             {
                 X509CRL crl = (X509CRL)crl_iter.next();
 
+                CertPathValidatorUtilities.checkCRLCriticalExtensions(crl,
+                    "CRL contains unsupported critical extensions.");
+
                 // (d)
-                ReasonsMask interimReasonsMask = RFC3280CertPathUtilities.processCRLD(crl, dp);
+                ReasonsMask interimReasonsMask = processCRLD(crl, dp);
 
                 // (e)
                 /*
@@ -1675,21 +1728,9 @@ class RFC3280CertPathUtilities
                 }
 
                 // (f)
-                Set keys = RFC3280CertPathUtilities.processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey,
-                    paramsPKIX, certPathCerts, helper);
+                Set keys = processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey, paramsPKIX, certPathCerts, helper);
                 // (g)
-                PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
-
-                X509CRL deltaCRL = null;
-
-                if (paramsPKIX.isUseDeltasEnabled())
-                {
-                    // get delta CRLs
-                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(validityDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores(), helper);
-                    // we only want one valid delta CRL
-                    // (h)
-                    deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs, key);
-                }
+                PublicKey key = processCRLG(crl, keys);
 
                 /*
                  * CRL must be be valid at the current time, not the validation
@@ -1716,20 +1757,36 @@ class RFC3280CertPathUtilities
                         throw new AnnotatedException("No valid CRL for current time found.");
                     }
                 }
-                
-                RFC3280CertPathUtilities.processCRLB1(dp, cert, crl);
+
+                processCRLB1(dp, cert, crl);
 
                 // (b) (2)
-                RFC3280CertPathUtilities.processCRLB2(dp, cert, crl);
+                processCRLB2(dp, cert, crl);
 
-                // (c)
-                RFC3280CertPathUtilities.processCRLC(deltaCRL, crl, paramsPKIX);
+                if (paramsPKIX.isUseDeltasEnabled())
+                {
+                    // get delta CRLs
+                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(validityDate, crl,
+                        paramsPKIX.getCertStores(), paramsPKIX.getCRLStores(), helper);
 
-                // (i)
-                RFC3280CertPathUtilities.processCRLI(validityDate, deltaCRL, cert, certStatus, paramsPKIX);
+                    // we only want one valid delta CRL
+                    // (h)
+                    X509CRL deltaCRL = processCRLH(deltaCRLs, key);
+                    if (deltaCRL != null)
+                    {
+                        CertPathValidatorUtilities.checkCRLCriticalExtensions(deltaCRL,
+                            "Delta CRL contains unsupported critical extensions.");
+
+                        // (c)
+                        processCRLC(deltaCRL, crl);
+
+                        // (i)
+                        processCRLI(validityDate, deltaCRL, cert, certStatus);
+                    }
+                }
 
                 // (j)
-                RFC3280CertPathUtilities.processCRLJ(validityDate, crl, cert, certStatus);
+                processCRLJ(validityDate, crl, cert, certStatus);
 
                 // (k)
                 if (certStatus.getCertStatus() == CRLReason.removeFromCRL)
@@ -1739,15 +1796,6 @@ class RFC3280CertPathUtilities
 
                 // update reasons mask
                 reasonMask.addReasons(interimReasonsMask);
-
-                CertPathValidatorUtilities.checkCRLCriticalExtensions(crl,
-                    "CRL contains unsupported critical extensions.");
-
-                if (deltaCRL != null)
-                {
-                    CertPathValidatorUtilities.checkCRLCriticalExtensions(deltaCRL,
-                        "Delta CRL contains unsupported critical extensions.");
-                }
 
                 validCrlFound = true;
             }
@@ -1795,42 +1843,45 @@ class RFC3280CertPathUtilities
         JcaJceHelper helper)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
-        AnnotatedException lastException = null;
-        CRLDistPoint crldp = null;
+        CRLDistPoint crldp;
         try
         {
-            crldp = CRLDistPoint.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.CRL_DISTRIBUTION_POINTS));
+            crldp = CRLDistPoint.getInstance(getExtensionValue(cert, CRL_DISTRIBUTION_POINTS));
         }
         catch (Exception e)
         {
             throw new AnnotatedException("CRL distribution point extension could not be read.", e);
         }
 
-        PKIXExtendedParameters.Builder paramsBldr = new PKIXExtendedParameters.Builder(paramsPKIX);
+        List additionalCRLStores;
         try
         {
-            List extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
-                paramsPKIX.getNamedCRLStoreMap(), validityDate, helper);
-            for (Iterator it = extras.iterator(); it.hasNext();)
-            {
-                paramsBldr.addCRLStore((PKIXCRLStore)it.next());
-            }
+            additionalCRLStores = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
+                paramsPKIX, validityDate, helper);
         }
         catch (AnnotatedException e)
         {
             throw new AnnotatedException(
                 "No additional CRL locations could be decoded from CRL distribution point extension.", e);
         }
+
+        // NOTE: Always create paramsPKIX_crldp as a copy of paramsPKIX, even if there are no additional stores
+        PKIXExtendedParameters.Builder builder = new PKIXExtendedParameters.Builder(paramsPKIX);
+        for (Iterator it = additionalCRLStores.iterator(); it.hasNext();)
+        {
+            builder.addCRLStore((PKIXCRLStore)it.next());
+        }
+        PKIXExtendedParameters paramsPKIX_crldp = builder.build();
+
         CertStatus certStatus = new CertStatus();
         ReasonsMask reasonsMask = new ReasonsMask();
-        PKIXExtendedParameters finalParams = paramsBldr.build();
 
+        AnnotatedException lastException = null;
         boolean validCrlFound = false;
         // for each distribution point
         if (crldp != null)
         {
-            DistributionPoint dps[] = null;
+            DistributionPoint[] dps;
             try
             {
                 dps = crldp.getDistributionPoints();
@@ -1845,8 +1896,8 @@ class RFC3280CertPathUtilities
                 {
                     try
                     {
-                        checkCRL(params, dps[i], finalParams, currentDate, validityDate, cert, sign, workingPublicKey,
-                            certStatus, reasonsMask, certPathCerts, helper);
+                        checkCRL(params, dps[i], paramsPKIX_crldp, currentDate, validityDate, cert, sign,
+                            workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
@@ -1935,8 +1986,7 @@ class RFC3280CertPathUtilities
         ASN1Integer iap = null;
         try
         {
-            iap = ASN1Integer.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.INHIBIT_ANY_POLICY));
+            iap = ASN1Integer.getInstance(getExtensionValue(cert, INHIBIT_ANY_POLICY));
         }
         catch (Exception e)
         {
@@ -1966,27 +2016,22 @@ class RFC3280CertPathUtilities
         //
         // (k)
         //
-        BasicConstraints bc = null;
+        BasicConstraints bc;
         try
         {
-            bc = BasicConstraints.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.BASIC_CONSTRAINTS));
+            bc = BasicConstraints.getInstance(getExtensionValue(cert, BASIC_CONSTRAINTS));
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Basic constraints extension cannot be decoded.", e, certPath,
-                index);
+            throw new ExtCertPathValidatorException("Basic constraints extension cannot be decoded.", e, certPath, index);
         }
-        if (bc != null)
-        {
-            if (!(bc.isCA()))
-            {
-                throw new CertPathValidatorException("Not a CA certificate", null, certPath, index);
-            }
-        }
-        else
+        if (bc == null)
         {
             throw new CertPathValidatorException("Intermediate certificate lacks BasicConstraints", null, certPath, index);
+        }
+        if (!bc.isCA())
+        {
+            throw new CertPathValidatorException("Not a CA certificate", null, certPath, index);
         }
     }
 
@@ -2013,10 +2058,7 @@ class RFC3280CertPathUtilities
         return maxPathLength;
     }
 
-    protected static int prepareNextCertM(
-        CertPath certPath,
-        int index,
-        int maxPathLength)
+    static int prepareNextCertM(CertPath certPath, int index, int maxPathLength)
         throws CertPathValidatorException
     {
         List certs = certPath.getCertificates();
@@ -2025,11 +2067,10 @@ class RFC3280CertPathUtilities
         //
         // (m)
         //
-        BasicConstraints bc = null;
+        BasicConstraints bc;
         try
         {
-            bc = BasicConstraints.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.BASIC_CONSTRAINTS));
+            bc = BasicConstraints.getInstance(getExtensionValue(cert, BASIC_CONSTRAINTS));
         }
         catch (Exception e)
         {
@@ -2096,8 +2137,8 @@ class RFC3280CertPathUtilities
         }
         if (!criticalExtensions.isEmpty())
         {
-            throw new ExtCertPathValidatorException("Certificate has unsupported critical extension: " + criticalExtensions, null, certPath,
-                index);
+            throw new ExtCertPathValidatorException(getUnsupportedCriticalExtensionMessage(criticalExtensions), null,
+                certPath, index);
         }
     }
 
@@ -2170,19 +2211,20 @@ class RFC3280CertPathUtilities
         return inhibitAnyPolicy;
     }
 
-    protected static final String[] crlReasons = new String[]
-        {
-            "unspecified",
-            "keyCompromise",
-            "cACompromise",
-            "affiliationChanged",
-            "superseded",
-            "cessationOfOperation",
-            "certificateHold",
-            "unknown",
-            "removeFromCRL",
-            "privilegeWithdrawn",
-            "aACompromise"};
+    static final String[] crlReasons = new String[]
+    {
+        "unspecified",
+        "keyCompromise",
+        "cACompromise",
+        "affiliationChanged",
+        "superseded",
+        "cessationOfOperation",
+        "certificateHold",
+        "unknown",
+        "removeFromCRL",
+        "privilegeWithdrawn",
+        "aACompromise"
+    };
 
     protected static int wrapupCertA(
         int explicitPolicy,
@@ -2213,8 +2255,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pc = null;
         try
         {
-            pc = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
-                RFC3280CertPathUtilities.POLICY_CONSTRAINTS));
+            pc = ASN1Sequence.getInstance(getExtensionValue(cert, POLICY_CONSTRAINTS));
         }
         catch (AnnotatedException e)
         {
@@ -2280,8 +2321,8 @@ class RFC3280CertPathUtilities
 
         if (!criticalExtensions.isEmpty())
         {
-            throw new ExtCertPathValidatorException("Certificate has unsupported critical extension: " + criticalExtensions, null, certPath,
-                index);
+            throw new ExtCertPathValidatorException(getUnsupportedCriticalExtensionMessage(criticalExtensions), null,
+                certPath, index);
         }
     }
 
@@ -2430,5 +2471,68 @@ class RFC3280CertPathUtilities
             intersection = validPolicyTree;
         }
         return intersection;
+    }
+
+    private static ASN1Primitive getExtensionValue(java.security.cert.X509Extension ext, String oid)
+        throws AnnotatedException
+    {
+        return CertPathValidatorUtilities.getExtensionValue(ext, oid);
+    }
+
+    /**
+     * Returns every {@code emailAddress} value present in {@code dn},
+     * including the values inside multi-valued RDNs that hold other
+     * attribute types in the same RDN.
+     * <p>
+     * Package-visible so the regression test at
+     * {@code prov/src/test/java/org/bouncycastle/jce/provider/MultiValuedRDNEmailTest.java}
+     * can call it without going through full cert-chain construction.
+     */
+    static String[] extractEmailAddressesFromSubjectDN(X500Name dn)
+    {
+        if (dn == null)
+        {
+            return new String[0];
+        }
+        List collected = new ArrayList();
+        RDN[] rdns = dn.getRDNs(BCStyle.EmailAddress);
+        for (int rI = 0; rI != rdns.length; rI++)
+        {
+            AttributeTypeAndValue[] tvs = rdns[rI].getTypesAndValues();
+            for (int tI = 0; tI != tvs.length; tI++)
+            {
+                AttributeTypeAndValue tv = tvs[tI];
+                if (!BCStyle.EmailAddress.equals(tv.getType()))
+                {
+                    continue;
+                }
+                if (tv.getValue() instanceof ASN1String)
+                {
+                    collected.add(((ASN1String)tv.getValue()).getString());
+                }
+            }
+        }
+        return (String[])collected.toArray(new String[collected.size()]);
+    }
+
+    private static String getUnsupportedCriticalExtensionMessage(Set criticalExtensions)
+    {
+        // TODO Still susceptible to sort order for stable error messages
+        StringBuilder sb = new StringBuilder("Certificate has unsupported critical extension: [");
+        Iterator it = criticalExtensions.iterator();
+        if (it.hasNext())
+        {
+            for (;;)
+            {
+                sb.append((String)it.next());
+                if (!it.hasNext())
+                {
+                    break;
+                }
+                sb.append(", ");
+            }
+        }
+        sb.append(']');
+        return sb.toString();
     }
 }

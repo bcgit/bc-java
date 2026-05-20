@@ -9,7 +9,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.util.Arrays;
 
 /*

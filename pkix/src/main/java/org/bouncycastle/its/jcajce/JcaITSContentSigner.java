@@ -24,6 +24,7 @@ import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class JcaITSContentSigner
     implements ITSContentSigner
@@ -134,7 +135,7 @@ public class JcaITSContentSigner
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("signer certificate encoding failed: " + e.getMessage());
+                throw Exceptions.illegalStateException("signer certificate encoding failed", e);
             }
         }
         else

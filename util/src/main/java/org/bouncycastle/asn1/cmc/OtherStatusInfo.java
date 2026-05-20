@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Other info implements the choice component of CMCStatusInfoV2.
@@ -59,7 +60,7 @@ public class OtherStatusInfo
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("parsing error: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("parsing error", e);
             }
         }
         throw new IllegalArgumentException("unknown object in getInstance(): " + obj.getClass().getName());

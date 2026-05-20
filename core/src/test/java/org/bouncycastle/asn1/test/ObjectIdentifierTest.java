@@ -34,7 +34,7 @@ public class ObjectIdentifierTest
         }
         catch (Exception e)
         {
-            isEquals("failed to construct object identifier from byte[]: invalid OID contents", e.getMessage());
+            isEquals("failed to construct object identifier from byte[]", e.getMessage());
         }
 
         System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "true");

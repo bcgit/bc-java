@@ -110,6 +110,11 @@ public class TBSCertificate
 
         signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(seqStart + 2));
         issuer = X500Name.getInstance(seq.getObjectAt(seqStart + 3));
+        // RFC 5280 sec. 4.1.2.4: certificate issuer MUST be a non-empty DN.
+        if (issuer.size() == 0)
+        {
+            throw new IllegalArgumentException("certificate issuer is an empty distinguished name");
+        }
         validity = Validity.getInstance(seq.getObjectAt(seqStart + 4));
         subject = X500Name.getInstance(seq.getObjectAt(seqStart + 5));
         subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(seqStart + 6));
@@ -161,6 +166,10 @@ public class TBSCertificate
         if (issuer == null)
         {
             throw new NullPointerException("'issuer' cannot be null");
+        }
+        if (issuer.size() == 0)
+        {
+            throw new IllegalArgumentException("certificate issuer is an empty distinguished name");
         }
         if (validity == null)
         {

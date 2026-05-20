@@ -52,7 +52,17 @@ public abstract class PasswordRecipientInfoGenerator
 
         if (size == null)
         {
-            throw new IllegalArgumentException("cannot find key size for algorithm: " +  kekAlgorithm);
+            // RFC 3211 sec. 2.3 (PWRI-KEK) requires the inner key encryption
+            // algorithm to be a CBC-mode block cipher. AEAD modes (e.g.
+            // AES_GCM) and key-wrap mechanisms (e.g. AES_WRAP / AES_WRAP_PAD)
+            // are not valid here — the AEAD or wrap construction is for the
+            // content encryption, not for the password-derived KEK. Use
+            // AES{128,192,256}_CBC, DES_EDE3_CBC, or CAMELLIA{128,192,256}_CBC
+            // as the kekAlgorithm and pass the AEAD / wrap algorithm to the
+            // CMSEnvelopedDataGenerator content encryptor instead.
+            throw new IllegalArgumentException(
+                "kekAlgorithm " + kekAlgorithm + " is not a supported PWRI-KEK CBC-mode block cipher; "
+                    + "see RFC 3211 sec. 2.3 (use AES_CBC, DES_EDE3_CBC or CAMELLIA_CBC variants)");
         }
 
         return size.intValue();

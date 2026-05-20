@@ -54,6 +54,7 @@ import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -402,7 +403,7 @@ abstract class X509CRLImpl
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("can't encode issuer DN");
+            throw Exceptions.illegalStateException("can't encode issuer DN", e);
         }
     }
 
@@ -680,7 +681,7 @@ abstract class X509CRLImpl
                         }
                         catch (CertificateEncodingException e)
                         {
-                            throw new IllegalArgumentException("Cannot process certificate: " + e.getMessage());
+                            throw Exceptions.illegalArgumentException("Cannot process certificate", e);
                         }
                     }
 

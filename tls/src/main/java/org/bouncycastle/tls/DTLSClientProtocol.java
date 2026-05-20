@@ -1071,10 +1071,11 @@ public class DTLSClientProtocol
                     securityParameters.statusRequestVersion = 1;
                 }
 
+                TlsCrypto crypto = clientContext.getCrypto();
                 securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension(
-                    sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+                    crypto, sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
                 securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension(
-                    sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+                    crypto, sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
 
                 state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
                     TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);

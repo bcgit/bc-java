@@ -10,6 +10,16 @@ public class Longs
     public static final int BYTES = 8;
     public static final int SIZE = Long.SIZE;
 
+    public static int bitCount(long i)
+    {
+        return Long.bitCount(i);
+    }
+
+    public static int bitLength(long i)
+    {
+        return SIZE - numberOfLeadingZeros(i);
+    }
+
     public static int compare(long x, long y)
     {
         // @since 1.7

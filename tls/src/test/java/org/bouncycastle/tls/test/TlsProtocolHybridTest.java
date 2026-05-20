@@ -65,6 +65,13 @@ public abstract class TlsProtocolHybridTest
 
     public void testCurveSM2MLKEM768() throws Exception
     {
+        if (!crypto.hasNamedGroup(NamedGroup.curveSM2))
+        {
+            // TODO Ideally this would be ignored as distinct from passing e.g. using junit's Assume, except
+            // that various junit runners seem to not display assumption violations correctly/distinctly.
+            return;
+        }
+
         implTestClientServer(NamedGroup.curveSM2MLKEM768);
     }
 

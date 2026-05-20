@@ -68,7 +68,7 @@ public class RectangularRegion
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{northWest, southEast});
+        return new DERSequence(northWest, southEast);
     }
 
     public static Builder builder()

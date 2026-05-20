@@ -21,6 +21,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -53,11 +54,13 @@ class PEMUtilities
         PKCS5_SCHEME_2.add(NISTObjectIdentifiers.id_aes128_CBC);
         PKCS5_SCHEME_2.add(NISTObjectIdentifiers.id_aes192_CBC);
         PKCS5_SCHEME_2.add(NISTObjectIdentifiers.id_aes256_CBC);
+        PKCS5_SCHEME_2.add(GMObjectIdentifiers.sms4_cbc);
 
         KEYSIZES.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), Integers.valueOf(192));
         KEYSIZES.put(NISTObjectIdentifiers.id_aes128_CBC.getId(), Integers.valueOf(128));
         KEYSIZES.put(NISTObjectIdentifiers.id_aes192_CBC.getId(), Integers.valueOf(192));
         KEYSIZES.put(NISTObjectIdentifiers.id_aes256_CBC.getId(), Integers.valueOf(256));
+        KEYSIZES.put(GMObjectIdentifiers.sms4_cbc.getId(), Integers.valueOf(128));
         KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC4.getId(), Integers.valueOf(128));
         KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC4, Integers.valueOf(40));
         KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd2_KeyTripleDES_CBC, Integers.valueOf(128));
@@ -75,6 +78,7 @@ class PEMUtilities
         PRFS.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, "PBKDF2withHMACSHA3-384");
         PRFS.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, "PBKDF2withHMACSHA3-512");
         PRFS.put(CryptoProObjectIdentifiers.gostR3411Hmac, "PBKDF2withHMACGOST3411");
+        PRFS.put(GMObjectIdentifiers.hmac_sm3, "PBKDF2withHMACSM3");
 
         PRFS_SALT.put(PKCSObjectIdentifiers.id_hmacWithSHA1, Integers.valueOf(20));
         PRFS_SALT.put(PKCSObjectIdentifiers.id_hmacWithSHA256, Integers.valueOf(32));
@@ -86,17 +90,20 @@ class PEMUtilities
         PRFS_SALT.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, Integers.valueOf(48));
         PRFS_SALT.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, Integers.valueOf(64));
         PRFS_SALT.put(CryptoProObjectIdentifiers.gostR3411Hmac, Integers.valueOf(32));
+        PRFS_SALT.put(GMObjectIdentifiers.hmac_sm3, Integers.valueOf(32));
 
         CIPHER_NAMES.put(PKCSObjectIdentifiers.des_EDE3_CBC, "DESEDE/CBC/PKCS5Padding");
         CIPHER_NAMES.put(NISTObjectIdentifiers.id_aes128_CBC, "AES/CBC/PKCS7Padding");
         CIPHER_NAMES.put(NISTObjectIdentifiers.id_aes192_CBC, "AES/CBC/PKCS7Padding");
         CIPHER_NAMES.put(NISTObjectIdentifiers.id_aes256_CBC, "AES/CBC/PKCS7Padding");
+        CIPHER_NAMES.put(GMObjectIdentifiers.sms4_cbc, "SM4/CBC/PKCS5Padding");
 
         // note: is <String,String>
         KEY_NAMES.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), "DESEDE");
         KEY_NAMES.put(NISTObjectIdentifiers.id_aes128_CBC.getId(), "AES");
         KEY_NAMES.put(NISTObjectIdentifiers.id_aes192_CBC.getId(), "AES");
         KEY_NAMES.put(NISTObjectIdentifiers.id_aes256_CBC.getId(), "AES");
+        KEY_NAMES.put(GMObjectIdentifiers.sms4_cbc.getId(), "SM4");
     }
 
     static int getKeySize(String algorithm)
@@ -272,6 +279,22 @@ class PEMUtilities
                 throw new EncryptionException("unknown AES encryption with private key");
             }
             sKey = getKey(helper, password, "AES", keyBits / 8, salt);
+        }
+        else if (dekAlgName.startsWith("SM4-"))
+        {
+            // SM4 (GM/T 0006 / RFC 8998): 128-bit block, 128-bit key. Salt
+            // derivation follows the AES path — OpenSSL's EVP_BytesToKey uses
+            // the first 8 bytes of IV as PBKDF-OpenSSL salt. Block-mode
+            // detection (-CBC/-CFB/-OFB/-ECB) earlier in this method is
+            // algorithm-agnostic; supports github #1066.
+            alg = "SM4";
+            byte[] salt = iv;
+            if (salt.length > 8)
+            {
+                salt = new byte[8];
+                System.arraycopy(iv, 0, salt, 0, 8);
+            }
+            sKey = getKey(helper, password, "SM4", 16, salt);
         }
         else
         {

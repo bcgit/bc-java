@@ -2,12 +2,10 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Exceptions;
 /**
  * Parser class for DL SEQUENCEs.
- * 
- * @deprecated Check for 'ASN1SequenceParser' instead 
  */
-@Deprecated
 public class DLSequenceParser
     implements ASN1SequenceParser
 {
@@ -55,7 +53,7 @@ public class DLSequenceParser
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage());
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 }

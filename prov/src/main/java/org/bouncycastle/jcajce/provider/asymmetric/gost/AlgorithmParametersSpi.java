@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.jce.spec.GOST3410PublicKeyParameterSetSpec;
+import org.bouncycastle.util.Exceptions;
 
 public class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -106,11 +107,11 @@ public class AlgorithmParametersSpi
         }
         catch (ClassCastException e)
         {
-            throw new IOException("Not a valid GOST3410 Parameter encoding.");
+            throw Exceptions.ioException("Not a valid GOST3410 Parameter encoding.", e);
         }
         catch (ArrayIndexOutOfBoundsException e)
         {
-            throw new IOException("Not a valid GOST3410 Parameter encoding.");
+            throw Exceptions.ioException("Not a valid GOST3410 Parameter encoding.", e);
         }
     }
 

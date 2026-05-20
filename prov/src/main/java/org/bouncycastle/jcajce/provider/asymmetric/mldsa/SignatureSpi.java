@@ -12,14 +12,14 @@ import java.security.SignatureException;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.MLDSASigner;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jcajce.MLDSAProxyPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
-import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 
 public class SignatureSpi
     extends BaseDeterministicOrRandomSignature
@@ -57,7 +57,7 @@ public class SignatureSpi
             try
             {
                 SubjectPublicKeyInfo pubKeyInfo = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
-                this.keyParams = org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(pubKeyInfo);
+                this.keyParams = PublicKeyFactory.createKey(pubKeyInfo);
                 publicKey = new BCMLDSAPublicKey((MLDSAPublicKeyParameters)this.keyParams);
             }
             catch (Exception e)

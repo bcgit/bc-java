@@ -64,7 +64,7 @@ public class ToBeSignedData
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{payload, headerInfo});
+        return new DERSequence(payload, headerInfo);
     }
 
     public static Builder builder()

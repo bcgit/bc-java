@@ -198,6 +198,12 @@ public class DefaultAlgorithmNameFinder
         addAlgorithm(NISTObjectIdentifiers.id_aes128_OFB, "AES-128/OFB");
         addAlgorithm(NISTObjectIdentifiers.id_aes192_OFB, "AES-192/OFB");
         addAlgorithm(NISTObjectIdentifiers.id_aes256_OFB, "AES-256/OFB");
+        addAlgorithm(NISTObjectIdentifiers.id_aes128_CCM, "AES-128/CCM");
+        addAlgorithm(NISTObjectIdentifiers.id_aes192_CCM, "AES-192/CCM");
+        addAlgorithm(NISTObjectIdentifiers.id_aes256_CCM, "AES-256/CCM");
+        addAlgorithm(NISTObjectIdentifiers.id_aes128_GCM, "AES-128/GCM");
+        addAlgorithm(NISTObjectIdentifiers.id_aes192_GCM, "AES-192/GCM");
+        addAlgorithm(NISTObjectIdentifiers.id_aes256_GCM, "AES-256/GCM");
         addAlgorithm(NTTObjectIdentifiers.id_camellia128_cbc, "CAMELLIA-128/CBC");
         addAlgorithm(NTTObjectIdentifiers.id_camellia192_cbc, "CAMELLIA-192/CBC");
         addAlgorithm(NTTObjectIdentifiers.id_camellia256_cbc, "CAMELLIA-256/CBC");

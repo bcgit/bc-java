@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.util.IPAddress;
+import org.bouncycastle.util.Properties;
 
 class HostnameUtil
 {
@@ -115,11 +116,22 @@ class HostnameUtil
                 }
             }
 
-            ASN1Primitive commonName = findMostSpecificCN(certificate.getSubjectX500Principal());
-            if (commonName instanceof ASN1String
-                && matchesDNSName(hostname, ((ASN1String)commonName).getString(), allWildcards))
+            // RFC 9525 sec. 6.3 deprecates CN as a TLS server identifier; the
+            // CAB Forum Baseline Requirements forbid putting hostnames in CN
+            // for publicly-trusted server certs. The fallback below is also
+            // a Name-Constraints bypass surface — see Properties.JSSE_HOSTNAME_CHECK_CN_FALLBACK
+            // javadoc for the full scenario — so it is gated behind that
+            // property, default OFF. Set the property to "true" (the current default) to restore the
+            // pre-fix SunJSSE-compatible behaviour for legacy certs that only
+            // identify the server via CN.
+            if (Properties.isOverrideSet(Properties.JSSE_HOSTNAME_CHECK_CN_FALLBACK, true))
             {
-                return;
+                ASN1Primitive commonName = findMostSpecificCN(certificate.getSubjectX500Principal());
+                if (commonName instanceof ASN1String
+                    && matchesDNSName(hostname, ((ASN1String)commonName).getString(), allWildcards))
+                {
+                    return;
+                }
             }
 
             throw new CertificateException("No name found matching " + hostname);

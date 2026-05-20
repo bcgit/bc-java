@@ -6,7 +6,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -38,6 +37,7 @@ import org.bouncycastle.cms.SignerInfoGenerator;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Store;
 
 /**
@@ -580,11 +580,11 @@ public class SMIMESignedGenerator
             }
             catch (MessagingException e)
             {
-                throw new IOException(e.toString());
+                throw Exceptions.ioException(e.toString(), e);
             }
             catch (CMSException e)
             {
-                throw new IOException(e.toString());
+                throw Exceptions.ioException(e.toString(), e);
             }
         }
     }

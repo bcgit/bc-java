@@ -47,7 +47,7 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
             // Optimization can only be used for values in the lower half of the table
             if ((n << 2) < (1 << width))
             {
-                int highest = 32 - Integers.numberOfLeadingZeros(n);
+                int highest = Integers.bitLength(n);
 
                 // TODO Get addition/doubling cost ratio from curve and compare to 'scale' to see if worth substituting?
                 int scale = width - highest;

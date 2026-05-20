@@ -27,7 +27,8 @@ public class JcaTlsMLDSASigner
         }
         if (!SignatureScheme.isMLDSA(signatureScheme))
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not ML-DSA");
         }
 
         this.crypto = crypto;
@@ -47,6 +48,6 @@ public class JcaTlsMLDSASigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        return crypto.createStreamSigner("ML-DSA", null, privateKey, false);
+        return crypto.createStreamSigner("ML-DSA", null, privateKey, true);
     }
 }

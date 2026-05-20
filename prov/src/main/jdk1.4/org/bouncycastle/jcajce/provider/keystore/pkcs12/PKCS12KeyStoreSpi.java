@@ -26,6 +26,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -92,6 +93,7 @@ import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -608,7 +610,7 @@ public class PKCS12KeyStoreSpi
                 PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(algId.getParameters());
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
-                    pbeParams.getIterations().intValue());
+                    PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
 
@@ -651,7 +653,7 @@ public class PKCS12KeyStoreSpi
             SecretKeyFactory keyFact =  helper.createSecretKeyFactory(algorithm);
             PBEParameterSpec defParams = new PBEParameterSpec(
                 pbeParams.getIV(),
-                pbeParams.getIterations().intValue());
+                PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
             Cipher cipher = helper.createCipher(algorithm);
 
@@ -687,7 +689,7 @@ public class PKCS12KeyStoreSpi
             {
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
-                    pbeParams.getIterations().intValue());
+                    PKCS12Util.validateIterationCount(pbeParams.getIterations()));
                 PKCS12Key key = new PKCS12Key(password, wrongPKCS12Zero);
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
@@ -727,21 +729,24 @@ public class PKCS12KeyStoreSpi
         AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
 
         SecretKeyFactory keyFact = helper.createSecretKeyFactory(alg.getKeyDerivationFunc().getAlgorithm().getId());
-        SecretKey key;
 
+        byte[] salt = func.getSalt();
+        int iterationCount = PKCS12Util.validateIterationCount(func.getIterationCount());
+        int keyLength = keySizeProvider.getKeySize(encScheme);
+
+        KeySpec keySpec;
         if (func.isDefaultPrf())
         {
-            key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme)));
+            keySpec = new PBEKeySpec(password, salt, iterationCount, keyLength);
         }
         else
         {
-            key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme), func.getPrf()));
+            keySpec = new PBKDF2KeySpec(password, salt, iterationCount, keyLength, func.getPrf());
         }
 
+        SecretKey key = keyFact.generateSecret(keySpec);
+
         Cipher cipher = Cipher.getInstance(alg.getEncryptionScheme().getAlgorithm().getId());
-
-        AlgorithmIdentifier encryptionAlg = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
-
         ASN1Encodable encParams = alg.getEncryptionScheme().getParameters();
         if (encParams instanceof ASN1OctetString)
         {
@@ -786,8 +791,17 @@ public class PKCS12KeyStoreSpi
         bufIn.reset();
 
         ASN1InputStream bIn = new ASN1InputStream(bufIn);
-        ASN1Sequence obj = (ASN1Sequence)bIn.readObject();
-        Pfx bag = Pfx.getInstance(obj);
+
+        Pfx bag;
+        try
+        {
+            bag = Pfx.getInstance(bIn.readObject());
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage());
+        }
+
         ContentInfo info = bag.getAuthSafe();
         Vector chain = new Vector();
         boolean unmarkedKey = false;
@@ -799,9 +813,9 @@ public class PKCS12KeyStoreSpi
             DigestInfo dInfo = mData.getMac();
             AlgorithmIdentifier algId = dInfo.getAlgorithmId();
             byte[] salt = mData.getSalt();
-            int itCount = mData.getIterationCount().intValue();
+            int itCount = PKCS12Util.validateIterationCount(mData.getIterationCount());
 
-            byte[] data = ((ASN1OctetString)info.getContent()).getOctets();
+            byte[] data = PKCS12Util.getContentOctets(info);
 
             try
             {
@@ -841,17 +855,14 @@ public class PKCS12KeyStoreSpi
 
         if (info.getContentType().equals(data))
         {
-            bIn = new ASN1InputStream(((ASN1OctetString)info.getContent()).getOctets());
-
-            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(bIn.readObject());
+            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(PKCS12Util.getContentOctets(info));
             ContentInfo[] c = authSafe.getContentInfo();
 
             for (int i = 0; i != c.length; i++)
             {
                 if (c[i].getContentType().equals(data))
                 {
-                    ASN1InputStream dIn = new ASN1InputStream(((ASN1OctetString)c[i].getContent()).getOctets());
-                    ASN1Sequence seq = (ASN1Sequence)dIn.readObject();
+                    ASN1Sequence seq = ASN1Sequence.getInstance(PKCS12Util.getContentOctets(c[i]));
 
                     for (int j = 0; j != seq.size(); j++)
                     {
@@ -942,10 +953,10 @@ public class PKCS12KeyStoreSpi
                 }
                 else if (c[i].getContentType().equals(encryptedData))
                 {
-                    EncryptedData d = EncryptedData.getInstance(c[i].getContent());
+                    EncryptedData d = EncryptedData.getInstance(PKCS12Util.getContent(c[i]));
                     byte[] octets = cryptData(false, d.getEncryptionAlgorithm(),
-                        password, wrongPKCS12Zero, d.getContent().getOctets());
-                    ASN1Sequence seq = (ASN1Sequence)ASN1Primitive.fromByteArray(octets);
+                        password, wrongPKCS12Zero, PKCS12Util.getEncryptedContent(d).getOctets());
+                    ASN1Sequence seq = ASN1Sequence.getInstance(octets);
 
                     for (int j = 0; j != seq.size(); j++)
                     {
@@ -1089,7 +1100,7 @@ public class PKCS12KeyStoreSpi
                 else
                 {
                     System.out.println("extra " + c[i].getContentType().getId());
-                    System.out.println("extra " + ASN1Dump.dumpAsString(c[i].getContent()));
+                    System.out.println("extra " + ASN1Dump.dumpAsString(PKCS12Util.getContent(c[i])));
                 }
             }
         }
@@ -1570,7 +1581,7 @@ public class PKCS12KeyStoreSpi
 
         random.nextBytes(mSalt);
 
-        byte[] data = ((ASN1OctetString)mainInfo.getContent()).getOctets();
+        byte[] data = PKCS12Util.getContentOctets(mainInfo);
 
         MacData mData;
 

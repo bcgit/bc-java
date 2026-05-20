@@ -8,7 +8,10 @@ import java.security.Provider;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.asn1.misc.ScryptParams;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
 import org.bouncycastle.asn1.pkcs.PBEParameter;
@@ -17,6 +20,7 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CharToByteConverter;
+import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.io.CipherInputStream;
@@ -73,24 +77,43 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
                         PBES2Parameters params = PBES2Parameters.getInstance(algorithm.getParameters());
                         KeyDerivationFunc func = params.getKeyDerivationFunc();
                         EncryptionScheme scheme = params.getEncryptionScheme();
-                        PBKDF2Params defParams = (PBKDF2Params)func.getParameters();
-
-                        int iterationCount = defParams.getIterationCount().intValue();
-                        byte[] salt = defParams.getSalt();
 
                         String oid = scheme.getAlgorithm().getId();
-
                         SecretKey key;
 
-                        if (PEMUtilities.isHmacSHA1(defParams.getPrf()))
+                        if (MiscObjectIdentifiers.id_scrypt.equals(func.getAlgorithm()))
                         {
-                            key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, oid, password, salt, iterationCount);
+                            // RFC 7914 / RFC 8018 scrypt KDF inside PBES2.
+                            // OpenSSL 1.1+ "openssl pkcs8 -topk8 -scrypt" produces this form;
+                            // the caller-supplied char[] password is fed as UTF-8 bytes,
+                            // matching OpenSSL's raw-bytes treatment (github #400).
+                            ScryptParams scrypt = ScryptParams.getInstance(func.getParameters());
+                            int keySizeBits = PEMUtilities.getKeySize(oid);
+                            byte[] derived = SCrypt.generate(Strings.toUTF8ByteArray(password),
+                                scrypt.getSalt(),
+                                scrypt.getCostParameter().intValue(),
+                                scrypt.getBlockSize().intValue(),
+                                scrypt.getParallelizationParameter().intValue(),
+                                (keySizeBits + 7) / 8);
+                            key = new SecretKeySpec(derived, PEMUtilities.getAlgorithmName(oid));
                         }
                         else
                         {
-                            key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, oid, password, salt, iterationCount, defParams.getPrf());
+                            PBKDF2Params defParams = (PBKDF2Params)func.getParameters();
+
+                            int iterationCount = defParams.getIterationCount().intValue();
+                            byte[] salt = defParams.getSalt();
+
+                            if (PEMUtilities.isHmacSHA1(defParams.getPrf()))
+                            {
+                                key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, oid, password, salt, iterationCount);
+                            }
+                            else
+                            {
+                                key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, oid, password, salt, iterationCount, defParams.getPrf());
+                            }
                         }
-                        
+
                         cipher = helper.createCipher(PEMUtilities.getCipherName(scheme.getAlgorithm()));
                         AlgorithmParameters algParams = helper.createAlgorithmParameters(oid);
 

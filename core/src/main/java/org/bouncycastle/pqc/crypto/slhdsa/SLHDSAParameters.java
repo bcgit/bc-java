@@ -1,7 +1,18 @@
 package org.bouncycastle.pqc.crypto.slhdsa;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.params.SLHDSAParameters
+ */
+@Deprecated
 public class SLHDSAParameters
 {
+    interface SLHDSAEngineProvider
+    {
+        int getN();
+
+        SLHDSAEngine get();
+    }
+
     public static final int TYPE_PURE = 0;
     public static final int TYPE_SHA2_256 = 1;
     public static final int TYPE_SHA2_512 = 2;
@@ -121,7 +132,7 @@ public class SLHDSAParameters
         private final int k;
         private final int h;
 
-        public Sha2EngineProvider(int n, int w, int d, int a, int k, int h)
+        Sha2EngineProvider(int n, int w, int d, int a, int k, int h)
         {
             this.n = n;
             this.w = w;
@@ -152,7 +163,7 @@ public class SLHDSAParameters
         private final int k;
         private final int h;
 
-        public Shake256EngineProvider(int n, int w, int d, int a, int k, int h)
+        Shake256EngineProvider(int n, int w, int d, int a, int k, int h)
         {
             this.n = n;
             this.w = w;

@@ -65,7 +65,7 @@ public class AuthorizationValidationRequest
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{sharedAtRequest, ecSignature});
+        return new DERSequence(sharedAtRequest, ecSignature);
     }
 
     public static Builder builder()

@@ -184,6 +184,9 @@ class ProvSSLContextSpi
         addCipherSuite(cs, "TLS_SHA256_SHA256", CipherSuite.TLS_SHA256_SHA256);
         addCipherSuite(cs, "TLS_SHA384_SHA384", CipherSuite.TLS_SHA384_SHA384);
 
+        addCipherSuite(cs, "TLS_SM4_CCM_SM3", CipherSuite.TLS_SM4_CCM_SM3);
+        addCipherSuite(cs, "TLS_SM4_GCM_SM3", CipherSuite.TLS_SM4_GCM_SM3);
+
         // TLS 1.2-
         addCipherSuite(cs, "TLS_DH_anon_WITH_AES_128_CBC_SHA", CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA);
         addCipherSuite(cs, "TLS_DH_anon_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256);

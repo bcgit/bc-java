@@ -2,6 +2,8 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Exceptions;
+
 /**
  * A NULL object - use DERNull.INSTANCE for populating structures.
  */
@@ -12,8 +14,7 @@ public abstract class ASN1Null
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            checkContentsLength(octetString.getOctetsLength());
-            return createPrimitive();
+            return createPrimitive(octetString.getOctetsLength());            
         }
     };
 
@@ -47,7 +48,7 @@ public abstract class ASN1Null
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct NULL from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct NULL from byte[]", e);
             }
         }
 
@@ -89,7 +90,7 @@ public abstract class ASN1Null
          return "NULL";
     }
 
-    static void checkContentsLength(int contentsLength)
+    private static void checkContentsLength(int contentsLength)
     {
         if (0 != contentsLength)
         {
@@ -97,8 +98,14 @@ public abstract class ASN1Null
         }
     }
 
-    static ASN1Null createPrimitive()
+    static ASN1Null createPrimitive(DefiniteLengthInputStream defIn) throws IOException
     {
-        return DERNull.INSTANCE;
+        return createPrimitive(defIn.getRemaining());
     }
+
+    private static ASN1Null createPrimitive(int contentsLength)
+    {
+        checkContentsLength(contentsLength);
+        return DERNull.INSTANCE;
+    }    
 }

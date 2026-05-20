@@ -2,6 +2,10 @@ package org.bouncycastle.pqc.jcajce.interfaces;
 
 import java.security.PrivateKey;
 
+/**
+ * @deprecated to be deleted - use SLH-DSA instead.
+ */
+@Deprecated
 public interface SPHINCSPlusPrivateKey
     extends PrivateKey, SPHINCSPlusKey
 {

@@ -19,7 +19,6 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -51,18 +50,13 @@ import org.bouncycastle.x509.X509CertStoreSelector;
 
 class RFC3281CertPathUtilities
 {
+    private static final String TARGET_INFORMATION = Extension.targetInformation.getId();
 
-    private static final String TARGET_INFORMATION = Extension.targetInformation
-        .getId();
+    private static final String NO_REV_AVAIL = Extension.noRevAvail.getId();
 
-    private static final String NO_REV_AVAIL = Extension.noRevAvail
-        .getId();
+    private static final String CRL_DISTRIBUTION_POINTS = Extension.cRLDistributionPoints.getId();
 
-    private static final String CRL_DISTRIBUTION_POINTS = Extension.cRLDistributionPoints
-        .getId();
-
-    private static final String AUTHORITY_INFO_ACCESS = Extension.authorityInfoAccess
-        .getId();
+    private static final String AUTHORITY_INFO_ACCESS = Extension.authorityInfoAccess.getId();
 
     protected static void processAttrCert7(X509AttributeCertificate attrCert,
         CertPath certPath, CertPath holderCertPath,
@@ -132,166 +126,144 @@ class RFC3281CertPathUtilities
         Date currentDate, Date validityDate, X509Certificate issuerCert, List certPathCerts, JcaJceHelper helper)
         throws CertPathValidatorException
     {
-        if (paramsPKIX.isRevocationEnabled())
+        if (!paramsPKIX.isRevocationEnabled())
         {
-            // check if revocation is available
-            if (attrCert.getExtensionValue(NO_REV_AVAIL) == null)
+            return;
+        }
+
+        // check if revocation is available
+        if (attrCert.getExtensionValue(NO_REV_AVAIL) != null)
+        {
+            if (attrCert.getExtensionValue(CRL_DISTRIBUTION_POINTS) != null ||
+                attrCert.getExtensionValue(AUTHORITY_INFO_ACCESS) != null)
             {
-                CRLDistPoint crldp = null;
-                try
-                {
-                    crldp = CRLDistPoint.getInstance(CertPathValidatorUtilities
-                        .getExtensionValue(attrCert, CRL_DISTRIBUTION_POINTS));
-                }
-                catch (AnnotatedException e)
-                {
-                    throw new CertPathValidatorException(
-                        "CRL distribution point extension could not be read.",
-                        e);
-                }
+                throw new CertPathValidatorException(
+                    "No rev avail extension is set, but also an AC revocation pointer.");
+            }
+            return;
+        }
 
-                List crlStores = new ArrayList();
+        CRLDistPoint crldp;
+        try
+        {
+            crldp = CRLDistPoint.getInstance(
+                CertPathValidatorUtilities.getExtensionValue(attrCert, CRL_DISTRIBUTION_POINTS));
+        }
+        catch (AnnotatedException e)
+        {
+            throw new CertPathValidatorException("CRL distribution point extension could not be read.", e);
+        }
 
-                try
-                {
-                    crlStores.addAll(CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
-                        paramsPKIX.getNamedCRLStoreMap(), validityDate, helper));
-                }
-                catch (AnnotatedException e)
-                {
-                    throw new CertPathValidatorException(
-                        "No additional CRL locations could be decoded from CRL distribution point extension.",
-                        e);
-                }
+        List additionalCRLStores;
+        try
+        {
+            additionalCRLStores = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
+                paramsPKIX, validityDate, helper);
+        }
+        catch (AnnotatedException e)
+        {
+            throw new CertPathValidatorException(
+                "No additional CRL locations could be decoded from CRL distribution point extension.", e);
+        }
 
-                PKIXExtendedParameters.Builder bldr = new PKIXExtendedParameters.Builder(paramsPKIX);
+        // NOTE: Always create paramsPKIX_crldp as a copy of paramsPKIX, even if there are no additional stores
+        PKIXExtendedParameters.Builder builder = new PKIXExtendedParameters.Builder(paramsPKIX);
+        for (Iterator it = additionalCRLStores.iterator(); it.hasNext(); )
+        {
+            builder.addCRLStore((PKIXCRLStore)additionalCRLStores);
+        }
+        PKIXExtendedParameters paramsPKIX_crldp = builder.build();
 
-                for (Iterator it = crlStores.iterator(); it.hasNext(); )
-                {
-                    bldr.addCRLStore((PKIXCRLStore)crlStores);
-                }
+        CertStatus certStatus = new CertStatus();
+        ReasonsMask reasonsMask = new ReasonsMask();
 
-                paramsPKIX = bldr.build();
+        AnnotatedException lastException = null;
+        boolean validCrlFound = false;
+        // for each distribution point
+        if (crldp != null)
+        {
+            DistributionPoint dps[];
+            try
+            {
+                dps = crldp.getDistributionPoints();
+            }
+            catch (Exception e)
+            {
+                throw new ExtCertPathValidatorException("Distribution points could not be read.", e);
+            }
 
-                CertStatus certStatus = new CertStatus();
-                ReasonsMask reasonsMask = new ReasonsMask();
-
-                AnnotatedException lastException = null;
-                boolean validCrlFound = false;
-                // for each distribution point
-                if (crldp != null)
-                {
-                    DistributionPoint dps[] = null;
-                    try
-                    {
-                        dps = crldp.getDistributionPoints();
-                    }
-                    catch (Exception e)
-                    {
-                        throw new ExtCertPathValidatorException(
-                            "Distribution points could not be read.", e);
-                    }
-                    try
-                    {
-                        for (int i = 0; i < dps.length
-                            && certStatus.getCertStatus() == CertStatus.UNREVOKED
-                            && !reasonsMask.isAllReasons(); i++)
-                        {
-                            PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters)paramsPKIX
-                                    .clone();
-
-                            checkCRL(dps[i], attrCert, paramsPKIXClone, currentDate, validityDate, issuerCert,
-                                certStatus, reasonsMask, certPathCerts, helper);
-                            validCrlFound = true;
-                        }
-                    }
-                    catch (AnnotatedException e)
-                    {
-                        lastException = new AnnotatedException(
-                            "No valid CRL for distribution point found.", e);
-                    }
-                }
-
-                /*
-                 * If the revocation status has not been determined, repeat the
-                 * process above with any available CRLs not specified in a
-                 * distribution point but issued by the certificate issuer.
-                 */
-
-                if (certStatus.getCertStatus() == CertStatus.UNREVOKED
-                    && !reasonsMask.isAllReasons())
+            if (dps != null)
+            {
+                for (int i = 0; i < dps.length && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons(); i++)
                 {
                     try
                     {
-                        /*
-                         * assume a DP with both the reasons and the cRLIssuer
-                         * fields omitted and a distribution point name of the
-                         * certificate issuer.
-                         */
-                        X500Name issuer;
-                        try
-                        {
-                            issuer = PrincipalUtils.getEncodedIssuerPrincipal(attrCert);
-                        }
-                        catch (Exception e)
-                        {
-                            throw new AnnotatedException(
-                                "Issuer from certificate for CRL could not be reencoded.",
-                                e);
-                        }
-                        DistributionPoint dp = new DistributionPoint(
-                            new DistributionPointName(0, new GeneralNames(
-                                new GeneralName(GeneralName.directoryName,
-                                    issuer))), null, null);
-                        PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters) paramsPKIX
-                            .clone();
- 
-                        checkCRL(dp, attrCert, paramsPKIXClone, currentDate, validityDate, issuerCert, certStatus,
+                        checkCRL(dps[i], attrCert, paramsPKIX_crldp, currentDate, validityDate, issuerCert, certStatus,
                             reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
                     {
-                        lastException = new AnnotatedException(
-                            "No valid CRL for distribution point found.", e);
+                        lastException = new AnnotatedException("No valid CRL for distribution point found.", e);
                     }
                 }
-
-                if (!validCrlFound)
-                {
-                    throw new ExtCertPathValidatorException(
-                        "No valid CRL found.", lastException);
-                }
-                if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
-                {
-                    String message = "Attribute certificate revocation after "
-                        + certStatus.getRevocationDate();
-                    message += ", reason: "
-                        + RFC3280CertPathUtilities.crlReasons[certStatus
-                            .getCertStatus()];
-                    throw new CertPathValidatorException(message);
-                }
-                if (!reasonsMask.isAllReasons()
-                    && certStatus.getCertStatus() == CertStatus.UNREVOKED)
-                {
-                    certStatus.setCertStatus(CertStatus.UNDETERMINED);
-                }
-                if (certStatus.getCertStatus() == CertStatus.UNDETERMINED)
-                {
-                    throw new CertPathValidatorException(
-                        "Attribute certificate status could not be determined.");
-                }
-
             }
-            else
+        }
+
+        /*
+         * If the revocation status has not been determined, repeat the
+         * process above with any available CRLs not specified in a
+         * distribution point but issued by the certificate issuer.
+         */
+
+        if (certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons())
+        {
+            try
             {
-                if (attrCert.getExtensionValue(CRL_DISTRIBUTION_POINTS) != null
-                    || attrCert.getExtensionValue(AUTHORITY_INFO_ACCESS) != null)
+                /*
+                 * assume a DP with both the reasons and the cRLIssuer
+                 * fields omitted and a distribution point name of the
+                 * certificate issuer.
+                 */
+                X500Name issuer;
+                try
                 {
-                    throw new CertPathValidatorException(
-                        "No rev avail extension is set, but also an AC revocation pointer.");
+                    issuer = PrincipalUtils.getIssuerPrincipal(attrCert);
                 }
+                catch (Exception e)
+                {
+                    throw new AnnotatedException("Issuer from certificate for CRL could not be reencoded.", e);
+                }
+                DistributionPoint dp = new DistributionPoint(new DistributionPointName(0, new GeneralNames(
+                    new GeneralName(GeneralName.directoryName, issuer))), null, null);
+                PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters)paramsPKIX.clone();
+                checkCRL(dp, attrCert, paramsPKIXClone, currentDate, validityDate, issuerCert, certStatus, reasonsMask,
+                    certPathCerts, helper);
+                validCrlFound = true;
             }
+            catch (AnnotatedException e)
+            {
+                lastException = new AnnotatedException("No valid CRL for distribution point found.", e);
+            }
+        }
+
+        if (!validCrlFound)
+        {
+            throw new ExtCertPathValidatorException("No valid CRL found.", lastException);
+        }
+        if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
+        {
+            String message = "Attribute certificate revocation after " + certStatus.getRevocationDate();
+            message += ", reason: " + RFC3280CertPathUtilities.crlReasons[certStatus.getCertStatus()];
+            throw new CertPathValidatorException(message);
+        }
+        if (!reasonsMask.isAllReasons() && certStatus.getCertStatus() == CertStatus.UNREVOKED)
+        {
+            certStatus.setCertStatus(CertStatus.UNDETERMINED);
+        }
+        if (certStatus.getCertStatus() == CertStatus.UNDETERMINED)
+        {
+            throw new CertPathValidatorException("Attribute certificate status could not be determined.");
         }
     }
 
@@ -540,7 +512,7 @@ class RFC3281CertPathUtilities
             catch (CertPathBuilderException e)
             {
                 lastException = new ExtCertPathValidatorException(
-                    "Certification path for public key certificate of attribute certificate could not be build.",
+                    "Certification path for public key certificate of attribute certificate could not be built.",
                     e);
             }
             catch (InvalidAlgorithmParameterException e)
@@ -623,9 +595,11 @@ class RFC3281CertPathUtilities
             {
                 X509CRL crl = (X509CRL) crl_iter.next();
 
+                CertPathValidatorUtilities.checkCRLCriticalExtensions(crl,
+                    "CRL contains unsupported critical extensions.");
+
                 // (d)
-                ReasonsMask interimReasonsMask = RFC3280CertPathUtilities
-                    .processCRLD(crl, dp);
+                ReasonsMask interimReasonsMask = RFC3280CertPathUtilities.processCRLD(crl, dp);
 
                 // (e)
                 /*
@@ -642,18 +616,6 @@ class RFC3281CertPathUtilities
                 Set keys = RFC3280CertPathUtilities.processCRLF(crl, attrCert, null, null, paramsPKIX, certPathCerts, helper);
                 // (g)
                 PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
-
-                X509CRL deltaCRL = null;
-
-                if (paramsPKIX.isUseDeltasEnabled())
-                {
-                    // get delta CRLs
-                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(currentDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores(), helper);
-                    // we only want one valid delta CRL
-                    // (h)
-                    deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs,
-                        key);
-                }
 
                 /*
                  * CRL must be be valid at the current time, not the validation
@@ -675,11 +637,9 @@ class RFC3281CertPathUtilities
                      * more in the CRL, so it would be regarded as valid if the
                      * first check is not done
                      */
-                    if (attrCert.getNotAfter().getTime() < crl.getThisUpdate()
-                        .getTime())
+                    if (attrCert.getNotAfter().getTime() < crl.getThisUpdate().getTime())
                     {
-                        throw new AnnotatedException(
-                            "No valid CRL for current time found.");
+                        throw new AnnotatedException("No valid CRL for current time found.");
                     }
                 }
 
@@ -688,11 +648,27 @@ class RFC3281CertPathUtilities
                 // (b) (2)
                 RFC3280CertPathUtilities.processCRLB2(dp, attrCert, crl);
 
-                // (c)
-                RFC3280CertPathUtilities.processCRLC(deltaCRL, crl, paramsPKIX);
+                if (paramsPKIX.isUseDeltasEnabled())
+                {
+                    // get delta CRLs
+                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(currentDate, crl,
+                        paramsPKIX.getCertStores(), paramsPKIX.getCRLStores(), helper);
 
-                // (i)
-                RFC3280CertPathUtilities.processCRLI(validityDate, deltaCRL, attrCert, certStatus, paramsPKIX);
+                    // we only want one valid delta CRL
+                    // (h)
+                    X509CRL deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs, key);
+                    if (deltaCRL != null)
+                    {
+                        CertPathValidatorUtilities.checkCRLCriticalExtensions(deltaCRL,
+                            "Delta CRL contains unsupported critical extensions.");
+
+                        // (c)
+                        RFC3280CertPathUtilities.processCRLC(deltaCRL, crl);
+
+                        // (i)
+                        RFC3280CertPathUtilities.processCRLI(validityDate, deltaCRL, attrCert, certStatus);
+                    }
+                }
 
                 // (j)
                 RFC3280CertPathUtilities.processCRLJ(validityDate, crl, attrCert, certStatus);
@@ -705,6 +681,7 @@ class RFC3281CertPathUtilities
 
                 // update reasons mask
                 reasonMask.addReasons(interimReasonsMask);
+
                 validCrlFound = true;
             }
             catch (AnnotatedException e)

@@ -188,6 +188,12 @@ public class TBSCertList
 
         signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(seqPos++));
         issuer = X500Name.getInstance(seq.getObjectAt(seqPos++));
+        // RFC 5280 sec. 5.1.2.3: the CRL issuer field MUST contain a non-empty
+        // distinguished name. (issue #2010)
+        if (issuer.size() == 0)
+        {
+            throw new IllegalArgumentException("CRL issuer is an empty distinguished name");
+        }
         thisUpdate = Time.getInstance(seq.getObjectAt(seqPos++));
 
         if (seqPos < seq.size()

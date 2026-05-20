@@ -7,31 +7,29 @@ import org.bouncycastle.util.io.Streams;
 
 /**
  * A parser for indefinite-length BIT STRINGs.
- * 
- * @deprecated Check for 'ASN1BitStringParser' instead 
  */
-@Deprecated
 public class BERBitStringParser
     implements ASN1BitStringParser
 {
-    private ASN1StreamParser _parser;
+    private final ASN1StreamParser parser;
 
     private ConstructedBitStream _bitStream;
 
-    BERBitStringParser(
-        ASN1StreamParser parser)
+    BERBitStringParser(ASN1StreamParser parser)
     {
-        _parser = parser;
+        this.parser = parser;
     }
 
     public InputStream getOctetStream() throws IOException
     {
-        return _bitStream = new ConstructedBitStream(_parser, true);
+        this._bitStream = new ConstructedBitStream(parser, true);
+        return _bitStream;
     }
 
     public InputStream getBitStream() throws IOException
     {
-        return _bitStream = new ConstructedBitStream(_parser, false);
+        this._bitStream = new ConstructedBitStream(parser, false);
+        return _bitStream;
     }
 
     public int getPadBits()
@@ -42,7 +40,7 @@ public class BERBitStringParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-        return parse(_parser);
+        return parse(parser);
     }
 
     public ASN1Primitive toASN1Primitive()

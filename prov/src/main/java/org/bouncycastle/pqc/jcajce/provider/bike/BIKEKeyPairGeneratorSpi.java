@@ -10,11 +10,11 @@ import java.util.Map;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.util.SpecUtil;
-import org.bouncycastle.pqc.crypto.bike.BIKEKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.bike.BIKEKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
-import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.spec.BIKEParameterSpec;
 import org.bouncycastle.util.Strings;
 

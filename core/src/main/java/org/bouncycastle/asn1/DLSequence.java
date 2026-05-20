@@ -153,7 +153,7 @@ public class DLSequence
 
     ASN1External toASN1External()
     {
-        return new DLExternal(this);
+        return DLExternal.fromSequence(this);
     }
 
     ASN1OctetString toASN1OctetString()

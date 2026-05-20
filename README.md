@@ -28,10 +28,18 @@ Note: the ./ is required in front of the key file name to tell gpg to look local
 
 ## Building overview
 
-This project can now be built and tested with JDK21. 
+This project can now be built and tested with JDK25.
 
-If the build script detects BC_JDK8, BC_JDK11, BC_JDK17 it will add to the usual test task a dependency on test tasks 
-that specifically use the JVMs addressed by those environmental variables. The script relies on JAVA_HOME for picking up Java 21 if it is use.
+If the build script detects BC_JDK8, BC_JDK11, BC_JDK17, BC_JDK21 it will add to the usual test task a dependency on test tasks 
+that specifically use the JVMs addressed by those environmental variables. The script relies on JAVA_HOME for picking up Java 25 if it is use.
+
+To run the tests of the project as part of the build test data is needed. Our test data can be found at the [bc-test-data](https://github.com/bcgit/bc-test-data) repository. The tests locate the bc-test-data tree using, in order:
+
+1. The system property ```bc.test.data.home```, if set.
+2. The environment variable ```BC_TEST_DATA_HOME```, if set.
+3. Otherwise the tests walk up from the working directory looking for a directory literally named ```bc-test-data```. The simplest configuration is therefore to check ```bc-test-data``` out as a sibling of ```bc-java``` and no further setup is required.
+
+When the property or environment variable is supplied, the named path is required to exist; a mistyped value fails fast with a ```FileNotFoundException``` naming whichever source supplied it, rather than silently falling through to the walk-up.
 
 We support testing on specific JVMs as it is the only way to be certain the library is compatible.
 
@@ -43,6 +51,13 @@ The following environmental variables can optionally point to the JAVA_HOME for 
 export BC_JDK8=/path/to/java8
 export BC_JDK11=/path/to/java11
 export BC_JDK17=/path/to/java17
+export BC_JDK21=/path/to/java21
+```
+
+If your ```bc-test-data``` checkout is not a sibling of ```bc-java```, set ```BC_TEST_DATA_HOME``` (or pass ```-Dbc.test.data.home=...``` on the command line) so the tests can find it:
+
+```
+export BC_TEST_DATA_HOME=/path/to/bc-test-data
 ```
 
 ## Building
@@ -52,8 +67,8 @@ The project now uses ```gradlew``` which can be invoked for example:
 ```
 # from the root of the project
 
-# Ensure JAVA_HOME points to JDK 21 or higher JAVA_HOME or that
-# gradlew can find a java 21 installation to use.
+# Ensure JAVA_HOME points to JDK 25 or higher JAVA_HOME or that
+# gradlew can find a java 25 installation to use.
 
 
 ./gradlew clean build
@@ -61,6 +76,18 @@ The project now uses ```gradlew``` which can be invoked for example:
 ```
 
 The gradle script will endeavour to verify their existence but not the correctness of their value.
+
+Each module's built jars are written to its own ```<module>/build/libs``` directory (e.g. ```prov/build/libs/bcprov-jdk18on-<version>.jar```). For convenience, a top-level ```copyJars``` task gathers the produced jars (main, sources and javadoc) for all published modules (```bccore```, ```bcutil```, ```bcprov```, ```bcpkix```, ```bcpg```, ```bctls```, ```bcmls```, ```bcmail```, ```bcjmail```) into a single ```dist``` directory at the project root:
+
+```
+./gradlew copyJars
+```
+
+A sibling ```copyMavenJars``` task produces the same set minus ```bccore``` (whose classes are already bundled into ```bcprov```), matching the artifacts published to Maven Central:
+
+```
+./gradlew copyMavenJars
+```
 
 
 ## Multi-release jars and testing
@@ -71,9 +98,10 @@ If the env vars are defined:
 export BC_JDK8=/path/to/java8
 export BC_JDK11=/path/to/java11
 export BC_JDK17=/path/to/java17
+export BC_JDK21=/path/to/java21
 ```
 
-If only a Java 21 JDK is present then the normal test task and test21 are run only.
+If only a Java 25 JDK is present then the normal test task and test25 are run only.
 
 
 ## Code Organisation

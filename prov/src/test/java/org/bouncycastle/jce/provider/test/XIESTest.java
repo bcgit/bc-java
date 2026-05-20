@@ -109,7 +109,7 @@ public class XIESTest
             catch (IllegalArgumentException e)
             {
 //                isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
-                isTrue("message ", "cannot handle supplied parameter spec: must be passed IES parameters".equals(e.getMessage()));
+                isTrue("message ", "must be passed IES parameters".equals(e.getCause().getMessage()));
             }
 
             try

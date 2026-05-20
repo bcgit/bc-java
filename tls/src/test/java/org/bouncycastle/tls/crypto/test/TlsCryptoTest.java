@@ -132,94 +132,30 @@ public abstract class TlsCryptoTest
     protected TlsCredentialedSigner loadCredentialedSigner12(TlsCryptoParameters cryptoParams,
         SignatureAndHashAlgorithm signatureAndHashAlgorithm) throws IOException
     {
-        switch (signatureAndHashAlgorithm.getSignature())
+        short signatureAlgorithm = signatureAndHashAlgorithm.getSignature();
+
+        String resourceName = TlsTestUtils.findResourceName12(signatureAlgorithm, true);
+        if (resourceName == null)
         {
-        case SignatureAlgorithm.dsa:
-            return loadCredentialedSigner(cryptoParams, "dsa", signatureAndHashAlgorithm);
-        case SignatureAlgorithm.ecdsa:
-            return loadCredentialedSigner(cryptoParams, "ecdsa", signatureAndHashAlgorithm);
-        case SignatureAlgorithm.ed25519:
-            return loadCredentialedSigner(cryptoParams, "ed25519", signatureAndHashAlgorithm);
-        case SignatureAlgorithm.ed448:
-            return loadCredentialedSigner(cryptoParams, "ed448", signatureAndHashAlgorithm);
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-            return loadCredentialedSigner(cryptoParams, "rsa_pss_256", signatureAndHashAlgorithm);
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-            return loadCredentialedSigner(cryptoParams, "rsa_pss_384", signatureAndHashAlgorithm);
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return loadCredentialedSigner(cryptoParams, "rsa_pss_512", signatureAndHashAlgorithm);
-        case SignatureAlgorithm.rsa:
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return loadCredentialedSigner(cryptoParams, "rsa-sign", signatureAndHashAlgorithm);
-
-        // TODO[RFC 9189] Add test resources for these
-        case SignatureAlgorithm.gostr34102012_256:
-        case SignatureAlgorithm.gostr34102012_512:
-
-        default:
             return null;
         }
+
+        return loadCredentialedSigner(cryptoParams, resourceName, signatureAndHashAlgorithm);
     }
 
     protected TlsCredentialedSigner loadCredentialedSigner13(TlsCryptoParameters cryptoParams, int signatureScheme)
         throws IOException
     {
+        String resourceName = TlsTestUtils.findResourceName13(signatureScheme, true);
+        if (resourceName == null)
+        {
+            return null;
+        }
+
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = SignatureScheme.getSignatureAndHashAlgorithm(
             signatureScheme);
 
-        switch (signatureScheme)
-        {
-        case SignatureScheme.ecdsa_secp256r1_sha256:
-            return loadCredentialedSigner(cryptoParams, "ecdsa", signatureAndHashAlgorithm);
-        case SignatureScheme.ed25519:
-            return loadCredentialedSigner(cryptoParams, "ed25519", signatureAndHashAlgorithm);
-        case SignatureScheme.ed448:
-            return loadCredentialedSigner(cryptoParams, "ed448", signatureAndHashAlgorithm);
-        case SignatureScheme.rsa_pss_pss_sha256:
-            return loadCredentialedSigner(cryptoParams, "rsa_pss_256", signatureAndHashAlgorithm);
-        case SignatureScheme.rsa_pss_pss_sha384:
-            return loadCredentialedSigner(cryptoParams, "rsa_pss_384", signatureAndHashAlgorithm);
-        case SignatureScheme.rsa_pss_pss_sha512:
-            return loadCredentialedSigner(cryptoParams, "rsa_pss_512", signatureAndHashAlgorithm);
-        case SignatureScheme.rsa_pss_rsae_sha256:
-        case SignatureScheme.rsa_pss_rsae_sha384:
-        case SignatureScheme.rsa_pss_rsae_sha512:
-            return loadCredentialedSigner(cryptoParams, "rsa-sign", signatureAndHashAlgorithm);
-        case SignatureScheme.mldsa44:
-            return loadCredentialedSigner(cryptoParams, "ml_dsa_44", signatureAndHashAlgorithm);
-        case SignatureScheme.mldsa65:
-            return loadCredentialedSigner(cryptoParams, "ml_dsa_65", signatureAndHashAlgorithm);
-        case SignatureScheme.mldsa87:
-            return loadCredentialedSigner(cryptoParams, "ml_dsa_87", signatureAndHashAlgorithm);
-
-        // TODO[tls] Add test resources for these
-        case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
-        case SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384:
-        case SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512:
-        case SignatureScheme.ecdsa_secp384r1_sha384:
-        case SignatureScheme.ecdsa_secp521r1_sha512:
-        case SignatureScheme.sm2sig_sm3:
-            return null;
-
-        // TODO[tls-slhdsa] Add test resources for these
-        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
-        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
-        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
-        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
-        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
-        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
-        case SignatureScheme.DRAFT_slhdsa_shake_128s:
-        case SignatureScheme.DRAFT_slhdsa_shake_128f:
-        case SignatureScheme.DRAFT_slhdsa_shake_192s:
-        case SignatureScheme.DRAFT_slhdsa_shake_192f:
-        case SignatureScheme.DRAFT_slhdsa_shake_256s:
-        case SignatureScheme.DRAFT_slhdsa_shake_256f:
-
-        default:
-            return null;
-        }
+        return loadCredentialedSigner(cryptoParams, resourceName, signatureAndHashAlgorithm);
     }
 
     public void testDHDomain() throws Exception

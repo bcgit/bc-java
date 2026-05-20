@@ -161,6 +161,18 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int addTo(int len, int[] x, int[] z, int cIn)
+    {
+        long c = cIn & M;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (x[i] & M) + (z[i] & M);
+            z[i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
     public static int addTo(int len, int[] x, int xOff, int[] z, int zOff, int cIn)
     {
         long c = cIn & M;
@@ -168,6 +180,19 @@ public abstract class Nat
         {
             c += (x[xOff + i] & M) + (z[zOff + i] & M);
             z[zOff + i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
+    public static int addToEachOther(int len, int[] u, int[] v)
+    {
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (u[i] & M) + (v[i] & M);
+            u[i] = (int)c;
+            v[i] = (int)c;
             c >>>= 32;
         }
         return (int)c;
@@ -366,6 +391,16 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int czero(int x)
+    {
+        return ((x - 1) & ~x) >> 31;
+    }
+
+    public static long czero64(long x)
+    {
+        return ((x - 1) & ~x) >> 63;
+    }
+
     public static int dec(int len, int[] z)
     {
         for (int i = 0; i < len; ++i)
@@ -458,8 +493,7 @@ public abstract class Nat
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static int equalTo(int len, int[] x, int xOff, int y)
@@ -469,8 +503,7 @@ public abstract class Nat
         {
             d |= x[xOff + i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static int equalTo(int len, int[] x, int[] y)
@@ -480,8 +513,7 @@ public abstract class Nat
         {
             d |= x[i] ^ y[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static int equalTo(int len, int[] x, int xOff, int[] y, int yOff)
@@ -491,8 +523,7 @@ public abstract class Nat
         {
             d |= x[xOff + i] ^ y[yOff + i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static long equalTo64(int len, long[] x, long y)
@@ -502,8 +533,7 @@ public abstract class Nat
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static long equalTo64(int len, long[] x, int xOff, long y)
@@ -513,8 +543,7 @@ public abstract class Nat
         {
             d |= x[xOff + i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static long equalTo64(int len, long[] x, long[] y)
@@ -524,8 +553,7 @@ public abstract class Nat
         {
             d |= x[i] ^ y[i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static long equalTo64(int len, long[] x, int xOff, long[] y, int yOff)
@@ -535,8 +563,7 @@ public abstract class Nat
         {
             d |= x[xOff + i] ^ y[yOff + i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static int equalToZero(int len, int[] x)
@@ -546,8 +573,7 @@ public abstract class Nat
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static int equalToZero(int len, int[] x, int xOff)
@@ -557,8 +583,7 @@ public abstract class Nat
         {
             d |= x[xOff + i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return czero(d);
     }
 
     public static long equalToZero64(int len, long[] x)
@@ -568,8 +593,7 @@ public abstract class Nat
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static long equalToZero64(int len, long[] x, int xOff)
@@ -579,8 +603,7 @@ public abstract class Nat
         {
             d |= x[xOff + i];
         }
-        d = (d >>> 1) | (d & 1L);
-        return (d - 1L) >> 63;
+        return czero64(d);
     }
 
     public static int[] fromBigInteger(int bits, BigInteger x)
@@ -642,7 +665,7 @@ public abstract class Nat
         {
             int x_i = x[i];
             if (x_i != 0)
-                return i * 32 + 32 - Integers.numberOfLeadingZeros(x_i);
+                return i * Integers.SIZE + Integers.bitLength(x_i);
         }
         return 0;
     }
@@ -653,7 +676,7 @@ public abstract class Nat
         {
             int x_i = x[xOff + i];
             if (x_i != 0)
-                return i * 32 + 32 - Integers.numberOfLeadingZeros(x_i);
+                return i * Integers.SIZE + Integers.bitLength(x_i);
         }
         return 0;
     }
@@ -1593,6 +1616,46 @@ public abstract class Nat
         for (int i = 0; i < len; ++i)
         {
             z[zOff + i] ^= x[xOff + i];
+        }
+    }
+
+    public static void xorToEachOther(int len, int[] u, int[] v)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            int t = u[i] ^ v[i];
+            u[i] = t;
+            v[i] = t;
+        }
+    }
+
+    public static void xorToEachOther(int len, int[] u, int uOff, int[] v, int vOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            int t = u[uOff + i] ^ v[vOff + i];
+            u[uOff + i] = t;
+            v[vOff + i] = t;
+        }
+    }
+
+    public static void xorToEachOther64(int len, long[] u, long[] v)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            long t = u[i] ^ v[i];
+            u[i] = t;
+            v[i] = t;
+        }
+    }
+
+    public static void xorToEachOther64(int len, long[] u, int uOff, long[] v, int vOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            long t = u[uOff + i] ^ v[vOff + i];
+            u[uOff + i] = t;
+            v[vOff + i] = t;
         }
     }
 

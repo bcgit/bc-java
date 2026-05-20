@@ -2,6 +2,8 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Exceptions;
+
 /**
  * Public facade of ASN.1 Boolean data.
  * <p>
@@ -30,7 +32,20 @@ public class ASN1Boolean
     public static final ASN1Boolean FALSE = new ASN1Boolean(FALSE_VALUE);
     public static final ASN1Boolean TRUE  = new ASN1Boolean(TRUE_VALUE);
 
-    private final byte value;
+    public static ASN1Boolean fromContents(byte contents)
+    {
+        return createPrimitive(contents);
+    }
+
+    public static ASN1Boolean fromContents(byte[] contents)
+    {
+        if (contents == null)
+        {
+            throw new NullPointerException("'contents' cannot be null");
+        }
+
+        return createPrimitive(contents);
+    }
 
     /**
      * Return a boolean from the passed in object.
@@ -56,7 +71,7 @@ public class ASN1Boolean
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct boolean from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct boolean from byte[]", e);
             }
         }
 
@@ -103,14 +118,21 @@ public class ASN1Boolean
         return (ASN1Boolean)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
-    private ASN1Boolean(byte value)
+    private final byte contents;
+
+    private ASN1Boolean(byte contents)
     {
-        this.value = value;
+        this.contents = contents;
+    }
+
+    public boolean isFalse()
+    {
+        return contents == FALSE_VALUE;
     }
 
     public boolean isTrue()
     {
-        return value != FALSE_VALUE;
+        return contents != FALSE_VALUE;
     }
 
     boolean encodeConstructed()
@@ -125,7 +147,7 @@ public class ASN1Boolean
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodingDL(withTag, BERTags.BOOLEAN, value);
+        out.writeEncodingDL(withTag, BERTags.BOOLEAN, contents);
     }
 
     boolean asn1Equals(ASN1Primitive other)
@@ -155,19 +177,28 @@ public class ASN1Boolean
       return isTrue() ? "TRUE" : "FALSE";
     }
 
-    static ASN1Boolean createPrimitive(byte[] contents)
+    private static void checkContentsLength(int contentsLength)
     {
-        if (contents.length != 1)
+        if (contentsLength != 1)
         {
             throw new IllegalArgumentException("BOOLEAN value should have 1 byte in it");
         }
+    }
 
-        byte b = contents[0];
-        switch (b)
-        {
-        case FALSE_VALUE:   return FALSE;
-        case TRUE_VALUE:    return TRUE;
-        default:            return new ASN1Boolean(b);
-        }
+    static ASN1Boolean createPrimitive(DefiniteLengthInputStream defIn) throws IOException
+    {
+        checkContentsLength(defIn.getRemaining());
+        return createPrimitive((byte)defIn.read());
+    }
+
+    private static ASN1Boolean createPrimitive(byte[] contents)
+    {
+        checkContentsLength(contents.length);
+        return createPrimitive(contents[0]);
+    }
+
+    private static ASN1Boolean createPrimitive(byte b)
+    {
+        return b == FALSE_VALUE ? FALSE : b == TRUE_VALUE ? TRUE : new ASN1Boolean(b);
     }
 }

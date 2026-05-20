@@ -54,7 +54,7 @@ public class V1TBSCertificateGenerator
     public void setIssuer(
         X509Name    issuer)
     {
-        this.issuer = X500Name.getInstance(issuer.toASN1Primitive());
+        setIssuer(X500Name.getInstance(issuer.toASN1Primitive()));
     }
 
     public void setIssuer(
@@ -120,6 +120,10 @@ public class V1TBSCertificateGenerator
             (subject == null) || (subjectPublicKeyInfo == null))
         {
             throw new IllegalStateException("not all mandatory fields set in V1 TBScertificate generator");
+        }
+        if (issuer.size() == 0)
+        {
+            throw new IllegalStateException("issuer is an empty distinguished name");
         }
 
         return new TBSCertificate(ASN1Integer.ZERO, serialNumber, signature, issuer,

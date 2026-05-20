@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import org.bouncycastle.util.encoders.UTF8;
-
 /**
  * String utilities.
  */
@@ -81,7 +80,7 @@ public final class Strings
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot encode string to byte array!");
+            throw Exceptions.illegalStateException("cannot encode string to byte array!", e);
         }
 
         return bOut.toByteArray();

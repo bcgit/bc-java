@@ -9,9 +9,16 @@ import java.io.InputStream;
  */
 public class ASN1StreamParser
 {
+    static ASN1StreamParser createSubParser(InputStream sub, int parentDepth, int limit, byte[] tmp)
+        throws IOException
+    {
+        return new ASN1StreamParser(sub, StreamUtil.decrementDepth(parentDepth), limit, tmp);
+    }
+
     private final InputStream _in;
+    private final int _depth;
     private final int _limit;
-    private final byte[][] tmpBuffers;
+    private final byte[] tmp;
 
     public ASN1StreamParser(InputStream in)
     {
@@ -25,14 +32,15 @@ public class ASN1StreamParser
 
     public ASN1StreamParser(InputStream in, int limit)
     {
-        this(in, limit, new byte[11][]);
+        this(in, StreamUtil.findDepth(), limit, new byte[16]);
     }
 
-    ASN1StreamParser(InputStream in, int limit, byte[][] tmpBuffers)
+    private ASN1StreamParser(InputStream in, int depth, int limit, byte[] tmp)
     {
         this._in = in;
+        this._depth = depth;
         this._limit = limit;
-        this.tmpBuffers = tmpBuffers;
+        this.tmp = tmp;
     }
 
     public ASN1Encodable readObject() throws IOException
@@ -53,17 +61,8 @@ public class ASN1StreamParser
         //
         set00Check(false);
 
-        //
-        // calculate tag number
-        //
         int tagNo = ASN1InputStream.readTagNumber(_in, tagHdr);
-
-        //
-        // calculate length
-        //
-        int length = ASN1InputStream.readLength(_in, _limit,
-            tagNo == BERTags.BIT_STRING || tagNo == BERTags.OCTET_STRING || tagNo == BERTags.SEQUENCE
-                || tagNo == BERTags.SET || tagNo == BERTags.EXTERNAL);
+        int length = ASN1InputStream.readLength(_in);
 
         if (length < 0) // indefinite-length method
         {
@@ -73,7 +72,7 @@ public class ASN1StreamParser
             }
 
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
-            ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit, tmpBuffers);
+            ASN1StreamParser sp = createSubParser(indIn, _depth, _limit, tmp);
 
             int tagClass = tagHdr & BERTags.PRIVATE;
             if (0 != tagClass)
@@ -85,14 +84,16 @@ public class ASN1StreamParser
         }
         else
         {
-            DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length, _limit);
+            // NOTE: Length can exceed the stream limit as long as we are parsing/streaming
+            int subLimit = Math.min(_limit, length);
+            DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length, subLimit);
 
             if (0 == (tagHdr & BERTags.FLAGS))
             {
                 return parseImplicitPrimitive(tagNo, defIn);
             }
 
-            ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
+            ASN1StreamParser sp = createSubParser(defIn, _depth, subLimit, tmp);
 
             int tagClass = tagHdr & BERTags.PRIVATE;
             if (0 != tagClass)
@@ -132,6 +133,7 @@ public class ASN1StreamParser
             // TODO[asn1] DLConstructedBitStringParser
             return new BERBitStringParser(this);
         case BERTags.EXTERNAL:
+            // TODO[asn1] DLExternalParser
             return new DERExternalParser(this);
         case BERTags.OCTET_STRING:
             // TODO[asn1] DLConstructedOctetStringParser
@@ -188,9 +190,11 @@ public class ASN1StreamParser
             throw new ASN1Exception("sets must use constructed encoding (see X.690 8.11.1/8.12.1)");
         }
 
+        StreamUtil.checkLength(defIn.getRemaining(), defIn.getLimit());
+
         try
         {
-            return ASN1InputStream.createPrimitiveDERObject(univTagNo, defIn, tmpBuffers);
+            return ASN1InputStream.createPrimitiveDERObject(univTagNo, defIn, tmp);
         }
         catch (IllegalArgumentException e)
         {

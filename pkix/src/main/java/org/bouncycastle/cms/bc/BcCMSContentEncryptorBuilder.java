@@ -20,6 +20,20 @@ import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 
+/**
+ * Lightweight builder for the content encryptor used in CMS {@code EnvelopedData},
+ * {@code AuthEnvelopedData} and {@code EncryptedData} structures &mdash; i.e. it
+ * encrypts the actual transmitted (or stored) content.
+ * <p>
+ * The no-arg {@link #build()} call generates a fresh content-encryption key
+ * internally, which is the right behaviour for {@code EnvelopedData} where the
+ * CEK is freshly drawn per message and wrapped per recipient. Callers that
+ * already have a key &mdash; e.g. building an {@code EncryptedData} blob over
+ * a long-lived locally-stored key (no recipients, no intermediate key wrap)
+ * &mdash; should use {@link #build(byte[])} or {@link #build(KeyParameter)}
+ * instead.
+ * </p>
+ */
 public class BcCMSContentEncryptorBuilder
 {
     private static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
@@ -102,30 +116,50 @@ public class BcCMSContentEncryptorBuilder
     public OutputEncryptor build(byte[] rawEncKey)
         throws CMSException
     {
+        return build(new KeyParameter(rawEncKey));
+    }
+
+    /**
+     * Build the OutputEncryptor using a pre-generated key in lightweight
+     * {@link KeyParameter} form. The lightweight peer of
+     * {@code JceCMSContentEncryptorBuilder.build(SecretKey)}; useful when the
+     * caller already holds a {@code KeyParameter} (e.g. derived via
+     * {@code HKDFBytesGenerator} or returned by another BC lightweight key
+     * agreement) and would otherwise round-trip the key through
+     * {@code byte[]} for no reason.
+     *
+     * @param encKey the pre-generated key to use for content encryption.
+     * @return an OutputEncryptor configured to use encKey.
+     * @throws CMSException
+     */
+    public OutputEncryptor build(KeyParameter encKey)
+        throws CMSException
+    {
         if (random == null)
         {
             random = new SecureRandom();
         }
 
         // fixed key size defined
+        byte[] keyBytes = encKey.getKey();
         if (this.keySize > 0)
         {
-            if (((this.keySize + 7) / 8) != rawEncKey.length)
+            if (((this.keySize + 7) / 8) != keyBytes.length)
             {
-                if ((this.keySize != 56 && rawEncKey.length != 8)
-                    && (this.keySize != 168 && rawEncKey.length != 24))
+                if ((this.keySize != 56 && keyBytes.length != 8)
+                    && (this.keySize != 168 && keyBytes.length != 24))
                 {
                     throw new IllegalArgumentException("attempt to create encryptor with the wrong sized key");
                 }
             }
         }
-   
+
         if (helper.isAuthEnveloped(encryptionOID))
         {
-            return new CMSAuthOutputEncryptor(encryptionOID, new KeyParameter(rawEncKey), random);
+            return new CMSAuthOutputEncryptor(encryptionOID, encKey, random);
         }
 
-        return new CMSOutputEncryptor(encryptionOID, new KeyParameter(rawEncKey), random);
+        return new CMSOutputEncryptor(encryptionOID, encKey, random);
     }
 
     private class CMSOutputEncryptor

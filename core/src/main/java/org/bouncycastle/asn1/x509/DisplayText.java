@@ -122,9 +122,9 @@ public class DisplayText
    /**
     * Creates a new <code>DisplayText</code> instance.
     * <p>Useful when reading back a <code>DisplayText</code> class
-    * from it's ASN1Encodable/DEREncodable form. 
+    * from it's ASN1String form. 
     *
-    * @param de a <code>DEREncodable</code> instance. 
+    * @param de an <code>ASN1String</code> instance. 
     */
    private DisplayText(ASN1String de)
    {

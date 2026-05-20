@@ -77,7 +77,6 @@ import org.bouncycastle.util.Arrays;
  * Uses {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
  * {@link org.bouncycastle.asn1.ASN1ObjectIdentifier ASN1ObjectIdentifier},
  * {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
- * {@link org.bouncycastle.asn1.OIDTokenizer OIDTokenizer},
  * {@link org.bouncycastle.asn1.x509.X509Name X509Name},
  * {@link org.bouncycastle.asn1.x509.X509Extensions X509Extensions},
  * {@link org.bouncycastle.asn1.x509.ExtendedKeyUsage ExtendedKeyUsage},

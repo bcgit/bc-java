@@ -22,6 +22,7 @@ import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
@@ -191,6 +192,18 @@ public class SMIMEUtil
         }
     }
 
+    /*
+     * Write the bytes between an inner multipart child's closing boundary and the
+     * next outer boundary into the digest input. When the parent body part was
+     * parsed from bytes, the raw stream is consulted so any extra postamble lines
+     * the original signer included in its digest input are preserved. When the
+     * parent was constructed in-memory (no raw stream), the signing side
+     * (SMIMESignedGenerator.ContentSigner.writeBodyPart) emits exactly one CRLF
+     * between the inner closing boundary and the next outer boundary, so the same
+     * single CRLF is emitted here. Earlier versions returned silently in the
+     * in-memory case, producing a digest input one CRLF short of what the signer
+     * hashed (github #542).
+     */
     static void outputPostamble(LineOutputStream lOut, BodyPart parent, String parentBoundary, BodyPart part)
         throws MessagingException, IOException
     {
@@ -202,7 +215,8 @@ public class SMIMEUtil
         }
         catch (MessagingException e)
         {
-            return;   // no underlying content rely on default generation
+            lOut.writeln();
+            return;
         }
 
 
@@ -285,7 +299,7 @@ public class SMIMEUtil
                         lOut.writeln();       // CRLF terminator needed
                     }
                     else
-                    {                        // output nested preamble
+                    {                        // output nested postamble
                         outputPostamble(lOut, mimePart, boundary, part);
                     }
                 }
@@ -649,6 +663,57 @@ public class SMIMEUtil
 
         outputPreamble(lOut, bodyPart, boundary);
         return lOut;
+    }
+
+    static void closeStreamSafely(InputStream sigStream)
+    {
+        try
+        {
+            if (sigStream != null)
+            {
+                sigStream.close();
+            }
+        }
+        catch (IOException ioEx)
+        {
+            // Ignore secondary exception during cleanup
+        }
+    }
+
+    /**
+     * Interface to obfuscate the repetitive constructors so that we could have only one createSafe
+     */
+    public interface SafeCreator
+    {
+        Object create() throws Exception;
+    }
+
+    /**
+     * If getInputStreamNoMultipartSigned returns PipedInputStream it will lead to
+     * resource leak as it will not be closed if not handled safely. This method will initiate
+     * SMIMESigned but if it fails, it will close PipedInputStream
+     * 
+     * @throws MessagingException an error extracting the signature or
+     * otherwise processing the message.
+     * @throws CMSException if some other problem occurs.
+     */
+    public static Object createSafe(InputStream sigStream, SafeCreator creator)
+        throws MessagingException, CMSException 
+    {
+        try
+        {
+            return creator.create();
+        }
+        catch (Exception e)
+        {
+            closeStreamSafely(sigStream);
+            
+            // Handle re-throwing consistently
+            if (e instanceof MessagingException) throw (MessagingException)e;
+            if (e instanceof CMSException) throw (CMSException)e;
+            if (e instanceof RuntimeException) throw (RuntimeException)e;
+            throw new CMSException("Exception creating safe instance: " + e.getMessage(), e);
+        }
     }
 
     static InputStream getInputStreamNoMultipartSigned(

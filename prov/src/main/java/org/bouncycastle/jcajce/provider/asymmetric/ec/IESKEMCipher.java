@@ -46,6 +46,7 @@ import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class IESKEMCipher
     extends BaseCipherSpi
@@ -275,7 +276,7 @@ public class IESKEMCipher
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            throw new IllegalArgumentException("cannot handle supplied parameter spec: " + e.getMessage());
+            throw Exceptions.illegalArgumentException("cannot handle supplied parameter spec", e);
         }
 
     }

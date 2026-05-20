@@ -8,6 +8,10 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.kems.MLKEMGenerator
+ */
+@Deprecated
 public class MLKEMGenerator
     implements EncapsulatedSecretGenerator
 {

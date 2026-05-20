@@ -137,7 +137,7 @@ public class RomulusEngine
         private int offset;
         private boolean twist = true;
 
-        public RomulusM()
+        RomulusM()
         {
         }
 
@@ -344,7 +344,7 @@ public class RomulusEngine
         private final byte[] s;
         boolean twist;
 
-        public RomulusN()
+        RomulusN()
         {
             s = new byte[AD_BLK_LEN_HALF];
         }

@@ -56,6 +56,19 @@ import org.bouncycastle.util.Arrays;
  *          CMSAuthenticatedDataParser     ep = new CMSAuthenticatedDataParser(new BufferedInputStream(inputStream, bufSize));
  *  </pre>
  * where bufSize is a suitably large buffer size.
+ * <p>
+ * <b>Stream handling note:</b>
+ * <ul>
+ *   <li>The constructor reads only enough of the supplied InputStream to expose the
+ *       CMS structure metadata (originator info, recipient infos, MAC algorithm).
+ *       The encapsulated content is drained lazily by the caller via
+ *       {@link RecipientInformation#getContentStream}; the MAC is available from
+ *       {@link #getMac()} once the content stream has been read to EOF.</li>
+ *   <li>The supplied InputStream is <b>not closed automatically</b>. Call
+ *       {@link #close()} on this parser (inherited from
+ *       {@link CMSContentInfoParser}) to close the underlying InputStream, or close
+ *       it yourself.</li>
+ * </ul>
  */
 public class CMSAuthenticatedDataParser
     extends CMSContentInfoParser

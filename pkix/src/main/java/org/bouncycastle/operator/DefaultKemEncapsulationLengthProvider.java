@@ -29,6 +29,10 @@ public class DefaultKemEncapsulationLengthProvider
         kemEncapsulationLengths.put(BCObjectIdentifiers.ntruhps40961229, Integers.valueOf(1842));
         kemEncapsulationLengths.put(BCObjectIdentifiers.ntruhrss701, Integers.valueOf(1138));
         kemEncapsulationLengths.put(BCObjectIdentifiers.ntruhrss1373, Integers.valueOf(2401));
+
+        kemEncapsulationLengths.put(BCObjectIdentifiers.hqc128, Integers.valueOf(4433));
+        kemEncapsulationLengths.put(BCObjectIdentifiers.hqc192, Integers.valueOf(8978));
+        kemEncapsulationLengths.put(BCObjectIdentifiers.hqc256, Integers.valueOf(14421));
     }
 
     public int getEncapsulationLength(AlgorithmIdentifier kemAlgorithm)

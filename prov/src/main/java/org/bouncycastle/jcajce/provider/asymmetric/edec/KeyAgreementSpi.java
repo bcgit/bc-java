@@ -336,4 +336,34 @@ public class KeyAgreementSpi
             super("X25519withSHA256HKDF", new HKDFBytesGenerator(DigestFactory.createSHA256()));
         }
     }
+
+    // RFC 8418 - dhSinglePass-stdDH-hkdf-sha256-scheme; accepts X25519 or X448 keys.
+    public final static class XDHwithSHA256HKDF
+        extends KeyAgreementSpi
+    {
+        public XDHwithSHA256HKDF()
+        {
+            super("XDH", new HKDFBytesGenerator(DigestFactory.createSHA256()));
+        }
+    }
+
+    // RFC 8418 - dhSinglePass-stdDH-hkdf-sha384-scheme; accepts X25519 or X448 keys.
+    public final static class XDHwithSHA384HKDF
+        extends KeyAgreementSpi
+    {
+        public XDHwithSHA384HKDF()
+        {
+            super("XDH", new HKDFBytesGenerator(DigestFactory.createSHA384()));
+        }
+    }
+
+    // RFC 8418 - dhSinglePass-stdDH-hkdf-sha512-scheme; accepts X25519 or X448 keys.
+    public final static class XDHwithSHA512HKDF
+        extends KeyAgreementSpi
+    {
+        public XDHwithSHA512HKDF()
+        {
+            super("XDH", new HKDFBytesGenerator(DigestFactory.createSHA512()));
+        }
+    }
 }

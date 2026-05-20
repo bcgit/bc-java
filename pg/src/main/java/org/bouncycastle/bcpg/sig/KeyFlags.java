@@ -63,7 +63,7 @@ public class KeyFlags
 
     private static byte[] flagsToData(int flags)
     {
-        int bits = 32 - Integers.numberOfLeadingZeros(flags);
+        int bits = Integers.bitLength(flags);
         int bytes = (bits + 7) / 8;
 
         byte[] data = new byte[bytes];

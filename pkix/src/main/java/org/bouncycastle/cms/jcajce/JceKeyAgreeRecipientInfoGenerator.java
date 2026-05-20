@@ -171,18 +171,18 @@ public class JceKeyAgreeRecipientInfoGenerator
                 AlgorithmParameterSpec agreementParamSpec;
                 ASN1ObjectIdentifier keyEncryptionOID = keyEncryptionAlgorithm.getAlgorithm();
 
-                if (CMSUtils.isMQV(keyAgreementOID))
+                if (isMQV(keyAgreementOID))
                 {
                     agreementParamSpec = new MQVParameterSpec(ephemeralKP, recipientPublicKey, userKeyingMaterial);
                 }
-                else if (CMSUtils.isEC(keyAgreementOID))
+                else if (isEC(keyAgreementOID))
                 {
                     byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm,
                         keySizeProvider.getKeySize(keyEncryptionOID), userKeyingMaterial);
 
                     agreementParamSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
-                else if (CMSUtils.isRFC2631(keyAgreementOID))
+                else if (isRFC2631(keyAgreementOID))
                 {
                     if (userKeyingMaterial != null)
                     {
@@ -197,7 +197,7 @@ public class JceKeyAgreeRecipientInfoGenerator
                         agreementParamSpec = null;
                     }
                 }
-                else if (CMSUtils.isGOST(keyAgreementOID))
+                else if (isGOST(keyAgreementOID))
                 {
                     if (userKeyingMaterial != null)
                     {
@@ -295,7 +295,7 @@ public class JceKeyAgreeRecipientInfoGenerator
             random = new SecureRandom();
         }
 
-        if (CMSUtils.isMQV(keyAgreementOID))
+        if (isMQV(keyAgreementOID))
         {
             if (ephemeralKP == null)
             {

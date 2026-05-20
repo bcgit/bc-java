@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * ISIS-MTT-Optional: The certificate requested by the client by inserting the
@@ -143,7 +144,7 @@ public class RequestedCertificate
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("can't decode certificate: " + e);
+                throw Exceptions.illegalStateException("can't decode certificate", e);
             }
         }
         if (publicKeyCert != null)

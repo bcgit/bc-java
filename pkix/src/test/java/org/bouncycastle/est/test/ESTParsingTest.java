@@ -6,12 +6,20 @@ import java.util.Collection;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1String;
+import org.bouncycastle.asn1.cmc.BodyPartID;
+import org.bouncycastle.asn1.cmc.CMCFailInfo;
+import org.bouncycastle.asn1.cmc.CMCObjectIdentifiers;
+import org.bouncycastle.asn1.cmc.CMCStatus;
+import org.bouncycastle.asn1.cmc.CMCStatusInfoV2;
+import org.bouncycastle.asn1.cmc.CMCStatusInfoV2Builder;
+import org.bouncycastle.asn1.cmc.TaggedAttribute;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.selector.X509CertificateHolderSelector;
+import org.bouncycastle.cmc.PKIResponseBuilder;
 import org.bouncycastle.cmc.SimplePKIResponse;
 import org.bouncycastle.est.CSRAttributesResponse;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -213,5 +221,102 @@ public class ESTParsingTest
         assertEquals(1, certs.getMatches(null).size());
 
         assertEquals(1, certs.getMatches(new X509CertificateHolderSelector(new X500Name("CN=estExampleCA NwN"), new BigInteger("21"))).size());
+    }
+
+    public void testParsingFullPKIErrorResponse()
+        throws Exception
+    {
+        // Build the unsigned Full PKI Response (RFC 7030 server-generated error) containing
+        // a CMCStatusInfoV2 attribute via PKIResponseBuilder, then round-trip it through
+        // SimplePKIResponse(byte[]) to check the structured accessors expose the same
+        // content. See github #1452.
+        BodyPartID bodyPartID = new BodyPartID(1);
+        CMCStatusInfoV2 statusInfo = new CMCStatusInfoV2Builder(CMCStatus.failed, bodyPartID)
+            .setOtherInfo(CMCFailInfo.badIdentity)
+            .setStatusString("bad identity")
+            .build();
+
+        SimplePKIResponse built = new PKIResponseBuilder()
+            .addStatusInfoV2(bodyPartID, statusInfo)
+            .build();
+
+        SimplePKIResponse response = new SimplePKIResponse(built.getEncoded());
+
+        assertNotNull("PKIResponse should be exposed", response.getPKIResponse());
+        assertEquals(1, response.getControlAttributes().length);
+        assertEquals(0, response.getCmsContents().length);
+
+        TaggedAttribute attr = response.getControlAttributes()[0];
+        assertEquals(CMCObjectIdentifiers.id_cmc_statusInfoV2, attr.getAttrType());
+
+        CMCStatusInfoV2 parsed = response.getStatusInfoV2();
+        assertNotNull("statusInfoV2 should be exposed", parsed);
+        assertEquals(CMCStatus.failed, parsed.getCMCStatus());
+        assertEquals("bad identity", parsed.getStatusStringUTF8().getString());
+        assertTrue(parsed.hasOtherInfo());
+
+        assertEquals(0, response.getCertificates().getMatches(null).size());
+    }
+
+    /**
+     * The 1-arg addStatusInfoV2 overload derives the outer TaggedAttribute
+     * bodyPartID from the first entry of statusInfo.getBodyList(). See the
+     * follow-up comment on github #1452.
+     */
+    public void testPKIResponseBuilderStatusInfoOnlyOverload()
+        throws Exception
+    {
+        BodyPartID bodyPartID = new BodyPartID(42);
+        CMCStatusInfoV2 statusInfo = new CMCStatusInfoV2Builder(CMCStatus.failed, bodyPartID)
+            .setOtherInfo(CMCFailInfo.badIdentity)
+            .setStatusString("bad identity")
+            .build();
+
+        SimplePKIResponse built = new PKIResponseBuilder()
+            .addStatusInfoV2(statusInfo)
+            .build();
+
+        SimplePKIResponse response = new SimplePKIResponse(built.getEncoded());
+
+        TaggedAttribute[] attrs = response.getControlAttributes();
+        assertEquals(1, attrs.length);
+        assertEquals(CMCObjectIdentifiers.id_cmc_statusInfoV2, attrs[0].getAttrType());
+        assertEquals(bodyPartID, attrs[0].getBodyPartID());
+
+        CMCStatusInfoV2 parsed = response.getStatusInfoV2();
+        assertEquals(CMCStatus.failed, parsed.getCMCStatus());
+        assertEquals(bodyPartID, parsed.getBodyList()[0]);
+    }
+
+    /**
+     * The cert-delivery shape: when only certificates are added, build()
+     * emits a degenerate SignedData with no encapsulated content and the
+     * certs in the certificates field (RFC 5272 Simple PKI Response, EST
+     * /simpleenroll). See the follow-up comment on github #1452.
+     */
+    public void testPKIResponseBuilderCertOnly()
+        throws Exception
+    {
+        SimplePKIResponse caResponse = new SimplePKIResponse(cacertsResponse);
+        Store<X509CertificateHolder> caCerts = caResponse.getCertificates();
+        Collection<X509CertificateHolder> caCertList = caCerts.getMatches(null);
+        assertTrue(caCertList.size() >= 1);
+        X509CertificateHolder firstCa = caCertList.iterator().next();
+
+        SimplePKIResponse built = new PKIResponseBuilder()
+            .addCertificate(firstCa)
+            .build();
+
+        SimplePKIResponse response = new SimplePKIResponse(built.getEncoded());
+
+        // No PKIResponse encap content in this shape.
+        assertNull("cert-only response must not carry id-cct-PKIResponse content",
+            response.getPKIResponse());
+        assertEquals(0, response.getControlAttributes().length);
+
+        // The cert went into the cert set.
+        Collection<X509CertificateHolder> roundTrip = response.getCertificates().getMatches(null);
+        assertEquals(1, roundTrip.size());
+        assertEquals(firstCa, roundTrip.iterator().next());
     }
 }

@@ -6,6 +6,16 @@ package org.bouncycastle.asn1;
 public class DERExternal
     extends ASN1External
 {
+    public static DERExternal fromSequence(ASN1Sequence seq)
+    {
+        return new DERExternal(seq);
+    }
+
+    public static DERExternal fromVector(ASN1EncodableVector vector)
+    {
+        return fromSequence(DERFactory.createSequence(vector));
+    }
+
     /**
      * Construct a DER EXTERNAL object, the input encoding vector must have exactly two elements on it.
      * <p>
@@ -18,12 +28,31 @@ public class DERExternal
      *
      * @throws IllegalArgumentException if input size is wrong, or input is not an acceptable format
      * 
-     * @deprecated Use {@link DERExternal#DERExternal(DERSequence)} instead.
+     * @deprecated Use {@link #fromVector(ASN1EncodableVector)} instead.
      */
     @Deprecated
     public DERExternal(ASN1EncodableVector vector)
     {
-        this(DERFactory.createSequence(vector));
+        this((ASN1Sequence)DERFactory.createSequence(vector));
+    }
+
+    /**
+     * Construct a DER EXTERNAL object, the input sequence must have exactly two elements on it.
+     * <p>
+     * Acceptable input formats are:
+     * <ul>
+     * <li> {@link ASN1ObjectIdentifier} + data {@link DERTaggedObject} (direct reference form)</li>
+     * <li> {@link ASN1Integer} + data {@link DERTaggedObject} (indirect reference form)</li>
+     * <li> Anything but {@link DERTaggedObject} + data {@link DERTaggedObject} (data value form)</li>
+     * </ul>
+     *
+     * @throws IllegalArgumentException if input size is wrong, or input is not an acceptable format
+     *
+     * @deprecated Use {@link #fromSequence(ASN1Sequence)} instead.
+     */
+    public DERExternal(DERSequence sequence)
+    {
+        super(sequence);
     }
 
     /**
@@ -38,7 +67,7 @@ public class DERExternal
      *
      * @throws IllegalArgumentException if input size is wrong, or input is not an acceptable format
      */
-    public DERExternal(DERSequence sequence)
+    public DERExternal(ASN1Sequence sequence)
     {
         super(sequence);
     }

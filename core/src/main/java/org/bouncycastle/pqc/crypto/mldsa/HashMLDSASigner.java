@@ -15,7 +15,11 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
-
+import org.bouncycastle.util.Exceptions;
+/**
+ * @deprecated use org.bouncycastle.crypto.signers.HashMLDSASigner
+ */
+@Deprecated
 public class HashMLDSASigner
     implements Signer
 {
@@ -96,7 +100,7 @@ public class HashMLDSASigner
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("oid encoding failed: " + e.getMessage());
+            throw Exceptions.illegalStateException("oid encoding failed", e);
         }
     }
 
@@ -112,16 +116,7 @@ public class HashMLDSASigner
 
     public byte[] generateSignature() throws CryptoException, DataLengthException
     {
-        SHAKEDigest msgDigest = finishPreHash();
-
-        byte[] rnd = new byte[MLDSAEngine.RndBytes];
-        if (random != null)
-        {
-            random.nextBytes(rnd);
-        }
-        byte[] mu = engine.generateMu(msgDigest);
-
-        return engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        return generateSignatureFromMsgDigest(finishPreHash());
     }
 
     public boolean verifySignature(byte[] signature)
@@ -132,6 +127,56 @@ public class HashMLDSASigner
     }
 
     /**
+     * Sign a message that has already been hashed externally. See
+     * {@link org.bouncycastle.crypto.signers.HashMLDSASigner#generateSignature(byte[])}
+     * for details.
+     */
+    public byte[] generateSignature(byte[] hash)
+        throws CryptoException, DataLengthException
+    {
+        if (privKey == null)
+        {
+            throw new IllegalStateException("HashMLDSASigner not initialised for signing");
+        }
+        if (hash == null)
+        {
+            throw new NullPointerException("hash must not be null");
+        }
+        checkHashLength(hash);
+
+        return generateSignatureFromMsgDigest(buildExternalMsgDigest(digestOIDEncoding, hash));
+    }
+
+    /**
+     * Verify a signature over a message that has already been hashed externally.
+     */
+    public boolean verifySignature(byte[] hash, byte[] signature)
+    {
+        if (pubKey == null)
+        {
+            throw new IllegalStateException("HashMLDSASigner not initialised for verification");
+        }
+        if (hash == null || signature == null)
+        {
+            throw new NullPointerException("hash and signature must not be null");
+        }
+        checkHashLength(hash);
+
+        SHAKEDigest msgDigest = buildExternalMsgDigest(digestOIDEncoding, hash);
+        return engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
+    }
+
+    private void checkHashLength(byte[] hash)
+    {
+        int expected = digest.getDigestSize();
+        if (hash.length != expected)
+        {
+            throw new IllegalArgumentException("hash length wrong for " + digest.getAlgorithmName()
+                + ": expected " + expected + " bytes, got " + hash.length);
+        }
+    }
+
+    /**
      * reset the internal state
      */
     public void reset()
@@ -139,16 +184,33 @@ public class HashMLDSASigner
         digest.reset();
     }
 
+    private byte[] generateSignatureFromMsgDigest(SHAKEDigest msgDigest)
+        throws CryptoException, DataLengthException
+    {
+        byte[] rnd = new byte[MLDSAEngine.RndBytes];
+        if (random != null)
+        {
+            random.nextBytes(rnd);
+        }
+        byte[] mu = engine.generateMu(msgDigest);
+
+        return engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+    }
+
+    private SHAKEDigest buildExternalMsgDigest(byte[] hashOidEncoding, byte[] hash)
+    {
+        SHAKEDigest msgDigest = engine.getShake256Digest();
+        msgDigest.update(hashOidEncoding, 0, hashOidEncoding.length);
+        msgDigest.update(hash, 0, hash.length);
+        return msgDigest;
+    }
+
     private SHAKEDigest finishPreHash()
     {
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
-        SHAKEDigest msgDigest = engine.getShake256Digest();
-        // TODO It should be possible to include digestOIDEncoding in the memo'ed digest
-        msgDigest.update(digestOIDEncoding, 0, digestOIDEncoding.length);
-        msgDigest.update(hash, 0, hash.length);
-        return msgDigest;
+        return buildExternalMsgDigest(digestOIDEncoding, hash);
     }
 
 //    TODO: these are probably no longer correct and also need to be marked as protected

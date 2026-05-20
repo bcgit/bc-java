@@ -9,7 +9,9 @@ import javax.crypto.spec.PBEParameterSpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.pkcs.PBMAC1Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.io.MacOutputStream;
@@ -22,6 +24,7 @@ import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilderProvider;
+import org.bouncycastle.util.BigIntegers;
 
 public class JcePKCS12MacCalculatorBuilderProvider
     implements PKCS12MacCalculatorBuilderProvider
@@ -48,6 +51,25 @@ public class JcePKCS12MacCalculatorBuilderProvider
 
     public PKCS12MacCalculatorBuilder get(final AlgorithmIdentifier algorithmIdentifier)
     {
+        if (PKCSObjectIdentifiers.id_PBMAC1.equals(algorithmIdentifier.getAlgorithm()))
+        {
+            final PBMAC1Params pbmac1Params = PBMAC1Params.getInstance(algorithmIdentifier.getParameters());
+
+            return new PKCS12MacCalculatorBuilder()
+            {
+                public MacCalculator build(char[] password)
+                    throws OperatorCreationException
+                {
+                    return new JcePBMac1CalculatorBuilder(pbmac1Params).setHelper(helper).build(password);
+                }
+
+                public AlgorithmIdentifier getDigestAlgorithmIdentifier()
+                {
+                    return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBMAC1, pbmac1Params);
+                }
+            };
+        }
+
         return new PKCS12MacCalculatorBuilder()
         {
             public MacCalculator build(final char[] password)
@@ -61,7 +83,7 @@ public class JcePKCS12MacCalculatorBuilderProvider
 
                     final Mac mac = helper.createMac(algorithm.getId());
 
-                    PBEParameterSpec defParams = new PBEParameterSpec(pbeParams.getIV(), pbeParams.getIterations().intValue());
+                    PBEParameterSpec defParams = new PBEParameterSpec(pbeParams.getIV(), BigIntegers.intValueExact(pbeParams.getIterations()));
 
                     final SecretKey key = new PKCS12Key(password);
 

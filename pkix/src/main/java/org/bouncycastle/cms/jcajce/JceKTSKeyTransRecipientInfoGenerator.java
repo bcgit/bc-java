@@ -14,6 +14,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.KeyTransRecipientInfoGenerator;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
 import org.bouncycastle.operator.jcajce.JceKTSKeyWrapper;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.encoders.Hex;
 
 public class JceKTSKeyTransRecipientInfoGenerator
@@ -65,13 +66,7 @@ public class JceKTSKeyTransRecipientInfoGenerator
         }
         catch (final IOException e)
         {
-            throw new IllegalArgumentException("Cannot process subject key identifier: " + e.getMessage())
-            {
-                public Throwable getCause()
-                {
-                    return e;
-                }
-            };
+            throw Exceptions.illegalArgumentException("Cannot process subject key identifier", e);
         }
     }
 

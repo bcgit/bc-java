@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto;
 
-
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 /**

@@ -9,6 +9,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
@@ -1464,10 +1465,11 @@ public class TlsClientProtocol
                     securityParameters.statusRequestVersion = 1;
                 }
 
+                TlsCrypto crypto = tlsClientContext.getCrypto();
                 securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension(
-                    sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+                    crypto, sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
                 securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension(
-                    sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+                    crypto, sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
 
                 this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
                     TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
@@ -1585,10 +1587,11 @@ public class TlsClientProtocol
             securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
                 ? 1 : 0;
 
+            TlsCrypto crypto = tlsClientContext.getCrypto();
             securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension13(
-                sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+                crypto, sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
             securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension13(
-                sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+                crypto, sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
         }
 
         this.expectSessionTicket = false;

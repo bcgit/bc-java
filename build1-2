@@ -351,7 +351,7 @@ then
 
         cp ../../../../core/src/test/resources/org/bouncycastle/asn1/test/*.data classes/org/bouncycastle/asn1/test
 
-        java -classpath classes -Dbc.test.data.home=../core/src/test/data org.bouncycastle.crypto.test.RegressionTest
+        java -classpath classes org.bouncycastle.crypto.test.RegressionTest
         java -classpath classes org.bouncycastle.asn1.test.RegressionTest
     )
     (2>&1 find $artifacts/lcrypto-jdk12-$base -name CVS -exec rm -rf \{\} \; ) > /dev/null

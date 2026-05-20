@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.jcajce.provider.snova;
 
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.SecureRandom;

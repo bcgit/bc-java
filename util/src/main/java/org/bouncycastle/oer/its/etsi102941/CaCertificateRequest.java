@@ -64,7 +64,7 @@ public class CaCertificateRequest
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{publicKeys, requestedSubjectAttributes});
+        return new DERSequence(publicKeys, requestedSubjectAttributes);
     }
 
     public static Builder builder()

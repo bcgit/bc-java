@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -157,14 +158,12 @@ public class GeneralName
         else if (tag == iPAddress)
         {
             byte[] enc = toGeneralNameEncoding(name);
-            if (enc != null)
-            {
-                this.obj = new DEROctetString(enc);
-            }
-            else
+            if (enc == null)
             {
                 throw new IllegalArgumentException("IP Address is invalid");
             }
+
+            this.obj = DEROctetString.withContents(enc);
         }
         else
         {
@@ -182,31 +181,40 @@ public class GeneralName
 
         if (obj instanceof ASN1TaggedObject)
         {
-            ASN1TaggedObject    tagObj = (ASN1TaggedObject)obj;
-            int                 tag = tagObj.getTagNo();
-
-            switch (tag)
+            ASN1TaggedObject tagObj = (ASN1TaggedObject)obj;
+            if (tagObj.hasContextTag())
             {
-            case ediPartyName:
-            case otherName:
-            case x400Address:
-                return new GeneralName(tag, ASN1Sequence.getInstance(tagObj, false));
+                int tag = tagObj.getTagNo();
+                switch (tag)
+                {
+                case ediPartyName:
+                {
+                    // TODO[api] Actually return EDIPartyName instead of only using it for validation
+//                    return new GeneralName(tag, EDIPartyName.getTagged(tagObj, false));
+                    ASN1Sequence seq = ASN1Sequence.getTagged(tagObj, false);
+                    EDIPartyName.getInstance(seq);
+                    return new GeneralName(tag, seq);
+                }
 
-            case dNSName:
-            case rfc822Name:
-            case uniformResourceIdentifier:
-                return new GeneralName(tag, ASN1IA5String.getInstance(tagObj, false));
+                case otherName:
+                case x400Address:
+                    return new GeneralName(tag, ASN1Sequence.getTagged(tagObj, false));
 
-            case directoryName:
-                return new GeneralName(tag, X500Name.getInstance(tagObj, true));
-            case iPAddress:
-                return new GeneralName(tag, ASN1OctetString.getInstance(tagObj, false));
-            case registeredID:
-                return new GeneralName(tag, ASN1ObjectIdentifier.getInstance(tagObj, false));
+                case dNSName:
+                case rfc822Name:
+                case uniformResourceIdentifier:
+                    return new GeneralName(tag, ASN1IA5String.getTagged(tagObj, false));
 
-            default:
-                throw new IllegalArgumentException("unknown tag: " + tag);
+                case directoryName:
+                    return new GeneralName(tag, X500Name.getTagged(tagObj, true));
+                case iPAddress:
+                    return new GeneralName(tag, ASN1OctetString.getTagged(tagObj, false));
+                case registeredID:
+                    return new GeneralName(tag, ASN1ObjectIdentifier.getTagged(tagObj, false));
+                }
             }
+
+            throw new IllegalArgumentException("unknown tag: " + ASN1Util.getTagText(tagObj));
         }
 
         if (obj instanceof byte[])
@@ -414,8 +422,13 @@ public class GeneralName
                 {
                     StringTokenizer eTok = new StringTokenizer(e, ".");
 
-                    val[index++] = (Integer.parseInt(eTok.nextToken()) << 8) | Integer.parseInt(eTok.nextToken());
-                    val[index++] = (Integer.parseInt(eTok.nextToken()) << 8) | Integer.parseInt(eTok.nextToken());
+                    String t0 = eTok.nextToken();
+                    String t1 = eTok.nextToken();
+                    String t2 = eTok.nextToken();
+                    String t3 = eTok.nextToken();
+
+                    val[index++] = Integer.parseInt(t0) << 8 | Integer.parseInt(t1);
+                    val[index++] = Integer.parseInt(t2) << 8 | Integer.parseInt(t3);
                 }
             }
         }

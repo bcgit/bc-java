@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.LocaleUtil;
+import org.bouncycastle.util.Exceptions;
 
 public class Time
     extends ASN1Object
@@ -151,7 +152,7 @@ public class Time
         }
         catch (ParseException e)
         {         // this should never happen
-            throw new IllegalStateException("invalid date string: " + e.getMessage());
+            throw Exceptions.illegalStateException("invalid date string", e);
         }
     }
 

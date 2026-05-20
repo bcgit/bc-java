@@ -133,7 +133,7 @@ public class JceTlsECDomain
             return;
         }
 
-        String curveName = NamedGroup.getName(namedGroup);
+        String curveName = NamedGroup.getCurveName(namedGroup);
         if (curveName == null)
         {
             return;

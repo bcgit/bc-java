@@ -7,17 +7,17 @@ public class HQCParameters
 {
     // 128 bits security
     public static final HQCParameters hqc128 = new HQCParameters("hqc-128", 17669, 46, 384, 16,
-        31, 15, 66, 75, 4, 243079, 2241, 2321,
+        15, 66, 75, 4, 243079, 2241, 2321,
         new int[]{89, 69, 153, 116, 176, 117, 111, 75, 73, 233, 242, 233, 65, 210, 21, 139, 103, 173, 67, 118, 105, 210, 174, 110, 74, 69, 228, 82, 255, 181, 1});
 
     // 192 bits security
     public static final HQCParameters hqc192 = new HQCParameters("hqc-192", 35851, 56, 640, 24,
-        33, 16, 100, 114, 5, 119800, 4514, 4602,
+        16, 100, 114, 5, 119800, 4514, 4602,
         new int[]{45, 216, 239, 24, 253, 104, 27, 40, 107, 50, 163, 210, 227, 134, 224, 158, 119, 13, 158, 1, 238, 164, 82, 43, 15, 232, 246, 142, 50, 189, 29, 232, 1});
 
     // 256 bits security
     public static final HQCParameters hqc256 = new HQCParameters("hqc-256", 57637, 90, 640, 32,
-        59, 29, 131, 149, 5, 74517, 7237, 7333,
+        29, 131, 149, 5, 74517, 7237, 7333,
         new int[]{49, 167, 49, 39, 200, 121, 124, 91, 240, 63, 148, 71, 150, 123, 87, 101, 32, 215, 159, 71, 201, 115, 97, 210, 186, 183, 141, 217, 123, 12, 31, 243, 180, 219, 152, 239, 99, 141, 4, 246, 191, 144, 8, 232, 47, 27, 141, 178, 130, 64, 124, 47, 39, 188, 216, 48, 199, 187, 1});
 
     static final int PARAM_M = 8;
@@ -33,7 +33,7 @@ public class HQCParameters
 
     private final HQCEngine engine;
 
-    private HQCParameters(String name, int n, int n1, int n2, int k, int g, int delta, int w, int wr, int fft, int nMu,
+    private HQCParameters(String name, int n, int n1, int n2, int k, int delta, int w, int wr, int fft, int nMu,
         int pkSize, int skSize, int[] generatorPoly)
     {
         this.name = name;
@@ -42,7 +42,7 @@ public class HQCParameters
         this.n2 = n2;
         this.publicKeyBytes = pkSize;
         this.secretKeyBytes = skSize;
-        this.engine = new HQCEngine(n, n1, n2, k, g, delta, w, wr, fft, nMu, pkSize, generatorPoly);
+        this.engine = new HQCEngine(n, n1, n2, k, delta, w, wr, fft, nMu, pkSize, generatorPoly);
     }
 
     int getSHA512_BYTES()

@@ -7,10 +7,8 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-
 
 /**
  * X.690 test example
@@ -122,7 +120,7 @@ public class OIDTest
         recodeCheck("2.100.3", req1);
         recodeCheck("1.2.54.34359733987.17", req2);
         
-        validOidCheck(PKCSObjectIdentifiers.pkcs_9_at_contentType.getId());
+        validOidCheck("1.2.840.113549.1.9.3");
         validOidCheck("0.1");
         validOidCheck("1.0");
         validOidCheck("1.0.2");
@@ -141,8 +139,20 @@ public class OIDTest
         validOidCheck("1.39.1");
         validOidCheck("2.0");
         validOidCheck("2.0.1");
+        validOidCheck("2.39");
+        validOidCheck("2.39.1");
         validOidCheck("2.40");
         validOidCheck("2.40.1");
+        validOidCheck("2.48");
+        validOidCheck("2.48.1");
+        validOidCheck("2.99");
+        validOidCheck("2.99.1");
+        validOidCheck("2.100");
+        validOidCheck("2.100.1");
+        validOidCheck("2.99999999999999999");
+        validOidCheck("2.999999999999999999");
+        validOidCheck("2.9999999999999999999");
+        validOidCheck("2.99999999999999999999");
 
         invalidOidCheck("0");
         invalidOidCheck("1");

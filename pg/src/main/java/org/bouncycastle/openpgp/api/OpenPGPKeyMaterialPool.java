@@ -1,11 +1,12 @@
 package org.bouncycastle.openpgp.api;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import org.bouncycastle.bcpg.KeyIdentifier;
 
@@ -125,8 +126,8 @@ public abstract class OpenPGPKeyMaterialPool<M extends OpenPGPCertificate>
      */
     public Collection<M> getAllItems()
     {
-        Stream<M> distinct = pool.values().stream().distinct();
-        return distinct.collect(Collectors.<M>toList());
+        Set<M> distinct = new HashSet<M>(pool.values());
+        return new ArrayList<M>(distinct);
     }
 
     /**

@@ -5,6 +5,8 @@ package org.bouncycastle.asn1;
  * java.util.StringTokenizer. We need this class as some of the
  * lightweight Java environment don't support classes like
  * StringTokenizer.
+ * 
+ * @deprecated Will be removed
  */
 public class OIDTokenizer
 {

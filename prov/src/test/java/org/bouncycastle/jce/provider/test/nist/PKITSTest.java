@@ -81,8 +81,7 @@ class PKITSTest
         policiesByName.put("NIST-test-policy-10", new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.10"));
     }
 
-
-    public static ASN1ObjectIdentifier[] resolvePolicyOid(String... nistNames)
+    private static ASN1ObjectIdentifier[] resolvePolicyOid(String... nistNames)
     {
         ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[nistNames.length];
 
@@ -156,7 +155,7 @@ class PKITSTest
 
         for (ASN1ObjectIdentifier policy : policies)
         {
-            this.policies.add(policy.toString());
+            this.policies.add(policy.getId());
         }
 
         return this;
@@ -235,6 +234,31 @@ class PKITSTest
             if (!message.equals(e.getMessage()))
             {
                 throw new RuntimeException("Message did not match: '" + message + "', got '" + e.getMessage() + "'");
+            }
+        }
+    }
+
+    void doExceptionTestStartsWith(
+        int index,
+        String messagePrefix)
+        throws Exception
+    {
+        try
+        {
+            doTest();
+
+            throw new RuntimeException("path accepted when should be rejected");
+        }
+        catch (CertPathValidatorException e)
+        {
+            if (index != e.getIndex())
+            {
+                throw new RuntimeException("Index did not match: " + index + " got " + e.getIndex());
+            }
+
+            if (e.getMessage() == null || !e.getMessage().startsWith(messagePrefix))
+            {
+                throw new RuntimeException("Message did not start with: '" + messagePrefix + "', got '" + e.getMessage() + "'");
             }
         }
     }

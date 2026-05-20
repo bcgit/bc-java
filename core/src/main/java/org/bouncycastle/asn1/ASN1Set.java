@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * ASN.1 <code>SET</code> and <code>SET OF</code> constructs.
@@ -136,7 +137,7 @@ public abstract class ASN1Set
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct set from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct set from byte[]", e);
             }
         }
 

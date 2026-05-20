@@ -39,6 +39,14 @@ public interface TlsCrypto
     boolean hasAnyStreamVerifiersLegacy(short[] clientCertificateTypes);
 
     /**
+     * Return true if this TlsCrypto can support the passed in certificate type.
+     *
+     * @param certificateType the certificate type of interest.
+     * @return true if certificateType is supported, false otherwise.
+     */
+    boolean hasCertificateType(short certificateType);
+
+    /**
      * Return true if this TlsCrypto can support the passed in hash algorithm.
      *
      * @param cryptoHashAlgorithm the algorithm of interest.

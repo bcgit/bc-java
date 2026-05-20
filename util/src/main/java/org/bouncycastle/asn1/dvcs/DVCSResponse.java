@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * <pre>
@@ -52,7 +53,7 @@ public class DVCSResponse
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalArgumentException("failed to construct sequence from byte[]: " + e.getMessage());
+                    throw Exceptions.illegalArgumentException("failed to construct sequence from byte[]", e);
                 }
             }
             if (obj instanceof ASN1Sequence)

@@ -315,7 +315,7 @@ public class CompositePrivateKey
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
+                throw Exceptions.illegalStateException("unable to encode composite public key", e);
             }
         }
 
@@ -336,7 +336,7 @@ public class CompositePrivateKey
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
+                throw Exceptions.illegalStateException("unable to encode composite private key", e);
             }
         }
         else
@@ -355,7 +355,7 @@ public class CompositePrivateKey
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
+                throw Exceptions.illegalStateException("unable to encode composite private key", e);
             }
         }
     }

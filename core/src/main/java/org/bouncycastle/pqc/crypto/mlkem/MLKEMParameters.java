@@ -2,6 +2,10 @@ package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.pqc.crypto.KEMParameters;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.params.MLKEMParameters
+ */
+@Deprecated
 public class MLKEMParameters
     implements KEMParameters
 {

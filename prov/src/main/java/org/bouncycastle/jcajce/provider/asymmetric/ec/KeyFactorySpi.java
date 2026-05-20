@@ -29,6 +29,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.util.Exceptions;
 
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
@@ -138,7 +139,7 @@ public class KeyFactorySpi
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
+                    throw Exceptions.illegalArgumentException("unable to produce encoding", e);
                 }
             }
             else
@@ -156,7 +157,7 @@ public class KeyFactorySpi
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalArgumentException("cannot encoded key: " + e.getMessage());
+                    throw Exceptions.illegalArgumentException("cannot encoded key", e);
                 }
             }
             else

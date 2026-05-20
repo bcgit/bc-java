@@ -5,6 +5,7 @@ module org.bouncycastle.pkix
     requires org.bouncycastle.provider;
     requires transitive org.bouncycastle.util;
 
+    exports org.bouncycastle.cades;
     exports org.bouncycastle.cmc;
     exports org.bouncycastle.cms;
     exports org.bouncycastle.dvcs;

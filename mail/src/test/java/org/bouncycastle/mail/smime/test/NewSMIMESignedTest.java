@@ -291,6 +291,47 @@ public class NewSMIMESignedTest
         multipartMixedTest(part1, part2);
     }
 
+    public void testNestedMultipartSignature()
+        throws Exception
+    {
+        // github #542: multipart/mixed -> [multipart/alternative(text/plain+text/html),
+        // text/plain attachment]. Built entirely in-memory and verified without round-
+        // tripping through bytes. Before the fix to SMIMEUtil.outputBodyPart, the
+        // verify side dropped the CRLF separator between the inner multipart/alternative
+        // closing boundary and the next outer boundary, producing a digest input one CRLF
+        // short of what the signer hashed.
+        MimeBodyPart textPart = new MimeBodyPart();
+        textPart.setText("Plain text body\n");
+
+        MimeBodyPart htmlPart = new MimeBodyPart();
+        htmlPart.setContent("<html><body>HTML body</body></html>\n", "text/html");
+
+        MimeMultipart alternative = new MimeMultipart("alternative");
+        alternative.addBodyPart(textPart);
+        alternative.addBodyPart(htmlPart);
+
+        MimeBodyPart altWrap = new MimeBodyPart();
+        altWrap.setContent(alternative);
+
+        MimeBodyPart attach = new MimeBodyPart();
+        attach.setDataHandler(new javax.activation.DataHandler(
+            new javax.mail.util.ByteArrayDataSource("attachment payload\n".getBytes(), "text/plain")));
+        attach.setFileName("attach.txt");
+        attach.setDisposition("attachment");
+
+        MimeMultipart mixed = new MimeMultipart("mixed");
+        mixed.addBodyPart(altWrap);
+        mixed.addBodyPart(attach);
+
+        MimeBodyPart toSign = new MimeBodyPart();
+        toSign.setContent(mixed);
+
+        MimeMultipart smm = generateMultiPartRsa("SHA256withRSA", toSign, SMIMESignedGenerator.RFC5751_MICALGS);
+        SMIMESigned s = new SMIMESigned(smm);
+
+        verifySigners(s.getCertificates(), s.getSignerInfos());
+    }
+
     public void testSHA1WithRSAPSS()
         throws Exception
     {

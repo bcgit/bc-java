@@ -1,6 +1,5 @@
 package org.bouncycastle.mail.smime.handlers;
 
-import java.awt.datatransfer.DataFlavor;
 import java.io.BufferedInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -16,9 +15,9 @@ import jakarta.mail.Multipart;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMultipart;
-
 import org.bouncycastle.mail.smime.SMIMEStreamingProcessor;
 import org.bouncycastle.mail.smime.SMIMEUtil;
+import org.bouncycastle.util.Exceptions;
 
 public class multipart_signed 
     implements DataContentHandler 
@@ -69,7 +68,7 @@ public class multipart_signed
             }
             catch (MessagingException ex)
             {
-                throw new IOException(ex.getMessage());
+                throw Exceptions.ioException(ex.getMessage(), ex);
             }
         }
         else if(obj instanceof byte[])

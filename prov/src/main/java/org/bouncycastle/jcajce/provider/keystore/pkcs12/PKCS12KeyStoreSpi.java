@@ -6,7 +6,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -29,15 +28,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collections;
+import java.security.spec.KeySpec;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -47,6 +45,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -65,7 +64,6 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.AuthenticatedSafe;
@@ -82,6 +80,7 @@ import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.pkcs.SafeBag;
+import org.bouncycastle.asn1.pkcs.SecretBag;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
@@ -105,7 +104,6 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jcajce.BCLoadStoreParameter;
 import org.bouncycastle.jcajce.PKCS12Key;
@@ -124,23 +122,75 @@ import org.bouncycastle.jce.provider.JDKPKCS12StoreParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * BC's JCA-visible {@code KeyStoreSpi} for the PKCS#12 keystore family
+ * (provider {@code "BC"}, types {@code PKCS12}, {@code PKCS12-DEF},
+ * {@code PKCS12-3DES-40RC2}, {@code PKCS12-3DES-3DES},
+ * {@code PKCS12-AES256-AES128} and the {@code -DEF-} aliases).
+ *
+ * <h2>Supported entry types</h2>
+ * <ul>
+ * <li><b>Private-key entries</b> — {@code KeyStore.PrivateKeyEntry} with a
+ *     non-empty certificate chain. Stored as a SafeBag of type
+ *     {@code pkcs8ShroudedKeyBag} per RFC 7292 sec. 4.2.2, with the
+ *     associated chain emitted as {@code certBag} entries.</li>
+ * <li><b>Trusted-certificate entries</b> — {@code KeyStore.TrustedCertificateEntry}.
+ *     Stored as a {@code certBag} per RFC 7292 sec. 4.2.3.</li>
+ * <li><b>Secret-key entries</b> — {@code KeyStore.SecretKeyEntry}, accepted
+ *     since Bouncy Castle 1.85 (github #1807). Stored as a SafeBag of type
+ *     {@code secretBag} per RFC 7292 sec. 4.2.5: the inner
+ *     {@code SecretBag} carries the algorithm OID as
+ *     {@code secretTypeId} and the {@code SecretKey.getEncoded()} bytes as
+ *     a DER {@code OCTET STRING} {@code secretValue}, placed inside the
+ *     keystore's encrypted SafeContents block. Only algorithms with a
+ *     registered OID are supported — see
+ *     {@link PKCS12Util#resolveSecretKeyOid(SecretKey)} for the current set
+ *     (AES 128 / 192 / 256, DESede / TripleDES,
+ *     HmacSHA1 / SHA-224 / SHA-256 / SHA-384 / SHA-512 / SHA3-{224,256,384,512}).
+ *     Other algorithms are rejected at {@code setKeyEntry}-time with a
+ *     pointer at BCFKS.</li>
+ * </ul>
+ *
+ * <h2>SunJCE secret-key interop (read-only, opt-in)</h2>
+ * <p>
+ * SunJCE writes secret keys using a non-standard encoding: the SafeBag is
+ * still {@code secretBag}, but the inner {@code SecretBag.secretTypeId} is
+ * {@code pkcs8ShroudedKeyBag} and the {@code secretValue} wraps an
+ * {@code EncryptedPrivateKeyInfo} whose decrypted PKCS#8 carries the raw
+ * key bytes. Setting the system or security property
+ * {@link Properties#PKCS12_ALLOW_SUN_SECRET_KEYS}
+ * ({@code "org.bouncycastle.pkcs12.allow_sun_secret_keys"}) to {@code true}
+ * lets BC additionally decode this form on load. BC always writes the
+ * standards-compliant form regardless — i.e. files BC produces are not
+ * readable by SunJCE's PKCS#12 keystore.
+ * </p>
+ *
+ * <h2>System / security properties consulted</h2>
+ * <ul>
+ * <li>{@link Properties#PKCS12_MAX_IT_COUNT} — caps the PBE iteration count
+ *     accepted on load.</li>
+ * <li>{@link Properties#PKCS12_IGNORE_USELESS_PASSWD} — accepts a password
+ *     supplied where none is needed.</li>
+ * <li>{@link Properties#PKCS12_ALLOW_SUN_SECRET_KEYS} — opt-in SunJCE
+ *     secret-key interop, see above.</li>
+ * </ul>
+ *
+ * @see Properties#PKCS12_ALLOW_SUN_SECRET_KEYS
+ */
 public class PKCS12KeyStoreSpi
     extends KeyStoreSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers, BCKeyStore
 {
-    static final String PKCS12_MAX_IT_COUNT_PROPERTY = "org.bouncycastle.pkcs12.max_it_count";
+    static final Logger LOG = Logger.getLogger(PKCS12KeyStoreSpi.class.getName());
 
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private static final int SALT_SIZE = 20;
-    private static final int MIN_ITERATIONS = 50 * 1024;
-
-    private static final DefaultSecretKeyProvider keySizeProvider = new DefaultSecretKeyProvider();
+    private static final int MIN_ITERATIONS = 600000;
 
     private IgnoresCaseHashtable keys = new IgnoresCaseHashtable();
     private IgnoresCaseHashtable localIds = new IgnoresCaseHashtable();
@@ -587,14 +637,28 @@ public class PKCS12KeyStoreSpi
         Certificate[] chain)
         throws KeyStoreException
     {
-        if (!(key instanceof PrivateKey))
+        if (key instanceof PrivateKey)
         {
-            throw new KeyStoreException("PKCS12 does not support non-PrivateKeys");
+            if (chain == null)
+            {
+                throw new KeyStoreException("no certificate chain for private key");
+            }
         }
-
-        if ((key instanceof PrivateKey) && (chain == null))
+        else if (key instanceof SecretKey)
         {
-            throw new KeyStoreException("no certificate chain for private key");
+            // RFC 7292 sec. 4.2.5 secretBag entries: only secret-key
+            // algorithms with a published OID are supported. Algorithms
+            // without one are rejected here rather than silently saved with
+            // a private/BC-specific encoding (see github #1807).
+            if (PKCS12Util.resolveSecretKeyOid((SecretKey)key) == null)
+            {
+                throw new KeyStoreException("PKCS12 secretBag entries require an algorithm with a registered OID; algorithm "
+                    + ((SecretKey)key).getAlgorithm() + " is not supported in this form - use BCFKS");
+            }
+        }
+        else
+        {
+            throw new KeyStoreException("PKCS12 does not support non-PrivateKey/non-SecretKey entries");
         }
 
         if (keys.get(alias) != null)
@@ -652,7 +716,7 @@ public class PKCS12KeyStoreSpi
                 PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(algId.getParameters());
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
-                    validateIterationCount(pbeParams.getIterations()));
+                    PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
 
@@ -699,7 +763,7 @@ public class PKCS12KeyStoreSpi
             SecretKeyFactory keyFact = helper.createSecretKeyFactory(algorithm);
             PBEParameterSpec defParams = new PBEParameterSpec(
                 pbeParams.getIV(),
-                BigIntegers.intValueExact(pbeParams.getIterations()));
+                PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
             Cipher cipher = helper.createCipher(algorithm);
 
@@ -709,7 +773,7 @@ public class PKCS12KeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException("exception encrypting data - " + e.toString());
+            throw Exceptions.ioException("exception encrypting data - " + e.toString(), e);
         }
 
         return out;
@@ -723,7 +787,7 @@ public class PKCS12KeyStoreSpi
         throws IOException
     {
         PBEKeySpec pbeSpec = new PBEKeySpec(password, pbeParams.getSalt(),
-            BigIntegers.intValueExact(pbeParams.getIterationCount()),
+            PKCS12Util.validateIterationCount(pbeParams.getIterationCount()),
             BigIntegers.intValueExact(pbeParams.getKeyLength()) * 8);
         byte[] out;
 
@@ -733,7 +797,7 @@ public class PKCS12KeyStoreSpi
 
             Cipher cipher = helper.createCipher(encAlgId.getAlgorithm().getId());
 
-            AlgorithmParameters algParams = AlgorithmParameters.getInstance(encAlgId.getAlgorithm().getId());
+            AlgorithmParameters algParams = helper.createAlgorithmParameters(encAlgId.getAlgorithm().getId());
             algParams.init(encAlgId.getParameters().toASN1Primitive().getEncoded());
 
             cipher.init(Cipher.WRAP_MODE, keyFact.generateSecret(pbeSpec), algParams);
@@ -742,7 +806,7 @@ public class PKCS12KeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException("exception encrypting data - " + e.toString());
+            throw Exceptions.ioException("exception encrypting data - " + e.toString(), e);
         }
 
         return out;
@@ -768,7 +832,7 @@ public class PKCS12KeyStoreSpi
             {
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
-                    BigIntegers.intValueExact(pbeParams.getIterations()));
+                    PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
 
@@ -777,7 +841,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new IOException("exception decrypting data - " + e.toString());
+                throw Exceptions.ioException("exception decrypting data - " + e.toString(), e);
             }
             finally
             {
@@ -794,7 +858,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new IOException("exception decrypting data - " + e.toString());
+                throw Exceptions.ioException("exception decrypting data - " + e.toString(), e);
             }
         }
         else
@@ -811,16 +875,22 @@ public class PKCS12KeyStoreSpi
         AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
 
         SecretKeyFactory keyFact = helper.createSecretKeyFactory(alg.getKeyDerivationFunc().getAlgorithm().getId());
-        SecretKey key;
 
+        byte[] salt = func.getSalt();
+        int iterationCount = PKCS12Util.validateIterationCount(func.getIterationCount());
+        int keyLength = PKCS12Util.getKeySize(encScheme);
+
+        KeySpec keySpec;
         if (func.isDefaultPrf())
         {
-            key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), validateIterationCount(func.getIterationCount()), keySizeProvider.getKeySize(encScheme)));
+            keySpec = new PBEKeySpec(password, salt, iterationCount, keyLength);
         }
         else
         {
-            key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), validateIterationCount(func.getIterationCount()), keySizeProvider.getKeySize(encScheme), func.getPrf()));
+            keySpec = new PBKDF2KeySpec(password, salt, iterationCount, keyLength, func.getPrf());
         }
+
+        SecretKey key = keyFact.generateSecret(keySpec);
 
         Cipher cipher = helper.createCipher(alg.getEncryptionScheme().getAlgorithm().getId());
         ASN1Encodable encParams = alg.getEncryptionScheme().getParameters();
@@ -841,7 +911,7 @@ public class PKCS12KeyStoreSpi
             }
             else
             {
-                AlgorithmParameters algParams = AlgorithmParameters.getInstance(encScheme.getAlgorithm().getId(), "BC");
+                AlgorithmParameters algParams = helper.createAlgorithmParameters(encScheme.getAlgorithm().getId());
 
                 try
                 {
@@ -916,7 +986,7 @@ public class PKCS12KeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException(e.getMessage());
+            throw Exceptions.ioException(e.getMessage(), e);
         }
 
         ContentInfo info = bag.getAuthSafe();
@@ -936,14 +1006,14 @@ public class PKCS12KeyStoreSpi
             DigestInfo dInfo = mData.getMac();
             macAlgorithm = dInfo.getAlgorithmId();
             byte[] salt = mData.getSalt();
-            itCount = validateIterationCount(mData.getIterationCount());
+            itCount = PKCS12Util.validateIterationCount(mData.getIterationCount());
             saltLength = salt.length;
 
-            byte[] data = ((ASN1OctetString)info.getContent()).getOctets();
+            byte[] data = PKCS12Util.getContentOctets(info);
 
             try
             {
-                byte[] res = calculatePbeMac(macAlgorithm.getAlgorithm(), salt, itCount, password, false, data);
+                byte[] res = calculatePbeMac(helper, macAlgorithm, salt, itCount, password, false, data);
                 byte[] dig = dInfo.getDigest();
 
                 if (!Arrays.constantTimeAreEqual(res, dig))
@@ -955,7 +1025,7 @@ public class PKCS12KeyStoreSpi
                     }
 
                     // Try with incorrect zero length password
-                    res = calculatePbeMac(macAlgorithm.getAlgorithm(), salt, itCount, password, true, data);
+                    res = calculatePbeMac(helper, macAlgorithm, salt, itCount, password, true, data);
 
                     if (!Arrays.constantTimeAreEqual(res, dig))
                     {
@@ -971,7 +1041,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new IOException("error constructing MAC: " + e.toString());
+                throw Exceptions.ioException("error constructing MAC: " + e.toString(), e);
             }
         }
 
@@ -980,16 +1050,14 @@ public class PKCS12KeyStoreSpi
 
         if (info.getContentType().equals(data))
         {
-            ASN1OctetString content = ASN1OctetString.getInstance(info.getContent());
-            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(content.getOctets());
+            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(PKCS12Util.getContentOctets(info));
             ContentInfo[] c = authSafe.getContentInfo();
 
             for (int i = 0; i != c.length; i++)
             {
                 if (c[i].getContentType().equals(data))
                 {
-                    ASN1OctetString authSafeContent = ASN1OctetString.getInstance(c[i].getContent());
-                    ASN1Sequence seq = ASN1Sequence.getInstance(authSafeContent.getOctets());
+                    ASN1Sequence seq = ASN1Sequence.getInstance(PKCS12Util.getContentOctets(c[i]));
 
                     for (int j = 0; j != seq.size(); j++)
                     {
@@ -1007,19 +1075,22 @@ public class PKCS12KeyStoreSpi
                         {
                             processKeyBag(b);
                         }
+                        else if (b.getBagId().equals(secretBag))
+                        {
+                            processSecretBag(b, password, wrongPKCS12Zero);
+                        }
                         else
                         {
-                            // -DM 2 System.out.println
-                            System.out.println("extra in data " + b.getBagId());
-                            System.out.println(ASN1Dump.dumpAsString(b));
+                            LOG.info("extra in data " + b.getBagId());
+                            LOG.fine(ASN1Dump.dumpAsString(b));
                         }
                     }
                 }
                 else if (c[i].getContentType().equals(encryptedData))
                 {
-                    EncryptedData d = EncryptedData.getInstance(c[i].getContent());
+                    EncryptedData d = EncryptedData.getInstance(PKCS12Util.getContent(c[i]));
                     byte[] octets = cryptData(false, d.getEncryptionAlgorithm(),
-                        password, wrongPKCS12Zero, d.getContent().getOctets());
+                        password, wrongPKCS12Zero, PKCS12Util.getEncryptedContent(d).getOctets());
                     ASN1Sequence seq = ASN1Sequence.getInstance(octets);
 
                     noEnc = false;
@@ -1038,19 +1109,21 @@ public class PKCS12KeyStoreSpi
                         {
                             processKeyBag(b);
                         }
+                        else if (b.getBagId().equals(secretBag))
+                        {
+                            processSecretBag(b, password, wrongPKCS12Zero);
+                        }
                         else
                         {
-                            // -DM 2 System.out.println
-                            System.out.println("extra in encryptedData " + b.getBagId());
-                            System.out.println(ASN1Dump.dumpAsString(b));
+                            LOG.info("extra in encrypted data " + b.getBagId());
+                            LOG.fine(ASN1Dump.dumpAsString(b));
                         }
                     }
                 }
                 else
                 {
-                    // -DM 2 System.out.println
-                    System.out.println("extra " + c[i].getContentType().getId());
-                    System.out.println("extra " + ASN1Dump.dumpAsString(c[i].getContent()));
+                    LOG.info("extra " + c[i].getContentType().getId());
+                    LOG.fine(ASN1Dump.dumpAsString(PKCS12Util.getContent(c[i])));
                 }
             }
         }
@@ -1186,7 +1259,7 @@ public class PKCS12KeyStoreSpi
         {
             if (password != null && password.length != 0)
             {
-                if (!Properties.isOverrideSet("org.bouncycastle.pkcs12.ignore_useless_passwd"))
+                if (!Properties.isOverrideSet(Properties.PKCS12_IGNORE_USELESS_PASSWD))
                 {
                     throw new IOException("password supplied for keystore that does not require one");
                 }
@@ -1341,26 +1414,96 @@ public class PKCS12KeyStoreSpi
         }
     }
 
-    private int validateIterationCount(BigInteger i)
+    /**
+     * Decode an RFC 7292 sec. 4.2.5 secretBag SafeBag and stash the
+     * resulting SecretKey under its friendlyName attribute, mirroring the
+     * private-key path.
+     * <p>
+     * Two encodings are recognised:
+     * <ul>
+     * <li>Phase 1, github #1807 — the standards-compliant form BC writes:
+     *     SecretBag.secretTypeId is one of the registered key-algorithm
+     *     OIDs handled by {@link PKCS12Util#resolveSecretKeyAlgName}, and
+     *     secretValue is the raw key bytes wrapped in a DER OCTET STRING.</li>
+     * <li>Phase 2, opt-in via Properties.PKCS12_ALLOW_SUN_SECRET_KEYS —
+     *     SunJCE's nested encoding: secretTypeId is
+     *     pkcs8ShroudedKeyBag, secretValue is a DER OCTET STRING
+     *     wrapping an EncryptedPrivateKeyInfo. On decryption the inner
+     *     PKCS#8 PrivateKeyInfo's privateKeyAlgorithm names the secret-key
+     *     algorithm and its privateKey OCTET STRING contains the raw key
+     *     bytes.</li>
+     * </ul>
+     * Unrecognised secretTypeId OIDs are reported as an IOException.
+     */
+    private void processSecretBag(SafeBag b, char[] password, boolean wrongPKCS12Zero)
+        throws IOException
     {
-        int count = BigIntegers.intValueExact(i);
+        SecretBag sBag = SecretBag.getInstance(b.getBagValue());
+        ASN1ObjectIdentifier secretTypeId = sBag.getSecretTypeId();
 
-        if (count < 0)
+        SecretKey secretKey;
+        if (PKCSObjectIdentifiers.pkcs8ShroudedKeyBag.equals(secretTypeId))
         {
-            throw new IllegalStateException("negative iteration count found");
+            // SunJCE's non-standard nested encoding (Phase 2) — only honoured
+            // when PKCS12_ALLOW_SUN_SECRET_KEYS is set; otherwise reject so
+            // the secretValue isn't misinterpreted as raw key bytes.
+            if (!Properties.isOverrideSet(Properties.PKCS12_ALLOW_SUN_SECRET_KEYS))
+            {
+                throw new IOException("unrecognised PKCS12 secretBag algorithm: " + secretTypeId);
+            }
+            secretKey = decodeSunStyleSecretBag(sBag, password, wrongPKCS12Zero);
+        }
+        else
+        {
+            String alg = PKCS12Util.resolveSecretKeyAlgName(secretTypeId);
+            byte[] keyBytes = ASN1OctetString.getInstance(sBag.getSecretValue()).getOctets();
+            secretKey = new SecretKeySpec(keyBytes, alg);
         }
 
-        BigInteger maxValue = Properties.asBigInteger(PKCS12_MAX_IT_COUNT_PROPERTY);
-        if (maxValue != null)
+        String alias = null;
+        if (b.getBagAttributes() != null)
         {
-            if (BigIntegers.intValueExact(maxValue) < count)
+            Enumeration e = b.getBagAttributes().getObjects();
+            while (e.hasMoreElements())
             {
-                throw new IllegalStateException("iteration count " + count + " greater than "
-                    + BigIntegers.intValueExact(maxValue));
+                ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
+                ASN1ObjectIdentifier aOid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
+                ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
+                if (attrSet.size() > 0 && aOid.equals(pkcs_9_at_friendlyName))
+                {
+                    alias = ((ASN1BMPString)attrSet.getObjectAt(0)).getString();
+                    keys.put(alias, secretKey);
+                }
             }
         }
 
-        return count;
+        if (alias == null)
+        {
+            keys.put("unmarked", secretKey);
+        }
+    }
+
+    /**
+     * Phase 2 of github #1807: decode a SunJCE-style secretBag, where the
+     * secretValue is a DER OCTET STRING wrapping an EncryptedPrivateKeyInfo
+     * whose decrypted PKCS#8 PrivateKeyInfo carries the raw secret-key
+     * bytes alongside a privateKeyAlgorithm OID naming the algorithm.
+     * Gated on {@link Properties#PKCS12_ALLOW_SUN_SECRET_KEYS}.
+     */
+    private SecretKey decodeSunStyleSecretBag(SecretBag sBag, char[] password, boolean wrongPKCS12Zero)
+        throws IOException
+    {
+        byte[] encInfoBytes = ASN1OctetString.getInstance(sBag.getSecretValue()).getOctets();
+        org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo encInfo =
+            org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo.getInstance(encInfoBytes);
+        byte[] pkiBytes = cryptData(false, encInfo.getEncryptionAlgorithm(),
+            password, wrongPKCS12Zero, encInfo.getEncryptedData());
+        org.bouncycastle.asn1.pkcs.PrivateKeyInfo pki =
+            org.bouncycastle.asn1.pkcs.PrivateKeyInfo.getInstance(pkiBytes);
+
+        ASN1ObjectIdentifier inner = pki.getPrivateKeyAlgorithm().getAlgorithm();
+        String alg = PKCS12Util.resolveSecretKeyAlgName(inner);
+        return new SecretKeySpec(pki.getPrivateKey().getOctets(), alg);
     }
 
     private ASN1Primitive getAlgParams(ASN1ObjectIdentifier algorithm)
@@ -1552,7 +1695,7 @@ public class PKCS12KeyStoreSpi
                     }
                     catch (CertificateEncodingException e)
                     {
-                        throw new IOException("Error encoding certificate: " + e.toString());
+                        throw Exceptions.ioException("Error encoding certificate: " + e.toString(), e);
                     }
                 }
 
@@ -1593,12 +1736,21 @@ public class PKCS12KeyStoreSpi
 
         while (ks.hasMoreElements())
         {
+            String name = (String)ks.nextElement();
+            Key entryKey = (Key)keys.get(name);
+            // SecretKey entries (RFC 7292 sec. 4.2.5 secretBag) are emitted
+            // alongside the certBag entries below, inside the encrypted
+            // SafeContents block. Skip them in this private-key pass.
+            if (!(entryKey instanceof PrivateKey))
+            {
+                continue;
+            }
+
             byte[] kSalt = new byte[SALT_SIZE];
 
             random.nextBytes(kSalt);
 
-            String name = (String)ks.nextElement();
-            PrivateKey privKey = (PrivateKey)keys.get(name);
+            PrivateKey privKey = (PrivateKey)entryKey;
             AlgorithmIdentifier kAlgId;
             byte[] kBytes;
             if (isPBKDF2(keyAlgorithm))
@@ -1717,6 +1869,13 @@ public class PKCS12KeyStoreSpi
             try
             {
                 String name = (String)cs.nextElement();
+                // SecretKey entries have no associated certificate; skip
+                // them here, they're written as SafeBags of type secretBag
+                // alongside the certBag entries below.
+                if (keys.get(name) instanceof SecretKey)
+                {
+                    continue;
+                }
                 Certificate cert = engineGetCertificate(name);
                 boolean cAttrSet = false;
                 CertBag cBag = new CertBag(
@@ -1786,7 +1945,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (CertificateEncodingException e)
             {
-                throw new IOException("Error encoding certificate: " + e.toString());
+                throw Exceptions.ioException("Error encoding certificate: " + e.toString(), e);
             }
         }
 
@@ -1811,7 +1970,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (CertificateEncodingException e)
             {
-                throw new IOException("Error encoding certificate: " + e.toString());
+                throw Exceptions.ioException("Error encoding certificate: " + e.toString(), e);
             }
         }
 
@@ -1872,8 +2031,44 @@ public class PKCS12KeyStoreSpi
             }
             catch (CertificateEncodingException e)
             {
-                throw new IOException("Error encoding certificate: " + e.toString());
+                throw Exceptions.ioException("Error encoding certificate: " + e.toString(), e);
             }
+        }
+
+        // SecretKey entries: emit RFC 7292 sec. 4.2.5 secretBag SafeBags
+        // into the same encrypted SafeContents block as the certBags. The
+        // PFX-level PBE on this block provides confidentiality for the
+        // raw key bytes; the bagValue itself carries the algorithm OID
+        // (resolveSecretKeyOid) and the encoded key as a DER OCTET STRING.
+        Enumeration sks = keys.keys();
+        while (sks.hasMoreElements())
+        {
+            String name = (String)sks.nextElement();
+            Object o = keys.get(name);
+            if (!(o instanceof SecretKey))
+            {
+                continue;
+            }
+            SecretKey secretKey = (SecretKey)o;
+            ASN1ObjectIdentifier secretTypeId = PKCS12Util.resolveSecretKeyOid(secretKey);
+            // setKeyEntry already enforces this; defence in depth.
+            if (secretTypeId == null)
+            {
+                throw new IOException("PKCS12 secretBag entries require an algorithm with a registered OID; algorithm "
+                    + secretKey.getAlgorithm() + " is not supported in this form");
+            }
+
+            SecretBag innerBag = new SecretBag(secretTypeId,
+                new DEROctetString(secretKey.getEncoded()));
+
+            ASN1EncodableVector skName = new ASN1EncodableVector();
+            ASN1EncodableVector fSeq = new ASN1EncodableVector();
+            fSeq.add(pkcs_9_at_friendlyName);
+            fSeq.add(new DERSet(new DERBMPString(name)));
+            skName.add(new DERSequence(fSeq));
+
+            SafeBag sBag = new SafeBag(secretBag, innerBag.toASN1Primitive(), new DERSet(skName));
+            certSeq.add(sBag);
         }
 
         byte[] certSeqEncoded = new DERSequence(certSeq).getEncoded(ASN1Encoding.DER);
@@ -1899,7 +2094,7 @@ public class PKCS12KeyStoreSpi
 
         random.nextBytes(mSalt);
 
-        byte[] data = ((ASN1OctetString)mainInfo.getContent()).getOctets();
+        byte[] data = PKCS12Util.getContentOctets(mainInfo);
 
         MacData mData;
 
@@ -1911,7 +2106,7 @@ public class PKCS12KeyStoreSpi
         {
             try
             {
-                byte[] res = calculatePbeMac(macAlgorithm.getAlgorithm(), mSalt, itCount, password, false, data);
+                byte[] res = calculatePbeMac(helper, macAlgorithm, mSalt, itCount, password, false, data);
 
                 DigestInfo dInfo = new DigestInfo(macAlgorithm, res);
 
@@ -1919,7 +2114,7 @@ public class PKCS12KeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new IOException("error constructing MAC: " + e.toString());
+                throw Exceptions.ioException("error constructing MAC: " + e.toString(), e);
             }
         }
 
@@ -2032,6 +2227,12 @@ public class PKCS12KeyStoreSpi
 
             Certificate[] certs = engineGetCertificateChain(alias);
 
+            if (certs == null)
+            {
+                // SecretKey alias — no associated certificate chain.
+                continue;
+            }
+
             for (int i = 0; i != certs.length; i++)
             {
                 usedSet.add(certs[i]);
@@ -2050,8 +2251,9 @@ public class PKCS12KeyStoreSpi
         return usedSet;
     }
 
-    private byte[] calculatePbeMac(
-        ASN1ObjectIdentifier oid,
+    private static byte[] calculatePbeMac(
+        JcaJceHelper helper,
+        AlgorithmIdentifier macAlgID,
         byte[] salt,
         int itCount,
         char[] password,
@@ -2059,9 +2261,11 @@ public class PKCS12KeyStoreSpi
         byte[] data)
         throws Exception
     {
+        ASN1ObjectIdentifier oid = macAlgID.getAlgorithm();
+
         if (PKCSObjectIdentifiers.id_PBMAC1.equals(oid))
         {
-            PBMAC1Params pbmac1Params = PBMAC1Params.getInstance(macAlgorithm.getParameters());
+            PBMAC1Params pbmac1Params = PBMAC1Params.getInstance(macAlgID.getParameters());
             if (pbmac1Params == null)
             {
                 throw new IOException("If the DigestAlgorithmIdentifier is id-PBMAC1, then the parameters field must contain valid PBMAC1-params parameters.");
@@ -2080,7 +2284,7 @@ public class PKCS12KeyStoreSpi
                 generator.init(
                     Strings.toUTF8ByteArray(password),
                     pbkdf2Params.getSalt(),
-                    BigIntegers.intValueExact(pbkdf2Params.getIterationCount()));
+                    PKCS12Util.validateIterationCount(pbkdf2Params.getIterationCount()));
 
                 CipherParameters key = generator.generateDerivedParameters(BigIntegers.intValueExact(pbkdf2Params.getKeyLength()) * 8);
 
@@ -2093,7 +2297,7 @@ public class PKCS12KeyStoreSpi
                 return res;
             }
         }
-        
+
         PBEParameterSpec defParams = new PBEParameterSpec(salt, itCount);
         PKCS12Key key = new PKCS12Key(password, wrongPkcs12Zero);
 
@@ -2253,48 +2457,6 @@ public class PKCS12KeyStoreSpi
         public int size()
         {
             return orig.size();
-        }
-    }
-
-    private static class DefaultSecretKeyProvider
-    {
-        private final Map KEY_SIZES;
-
-        DefaultSecretKeyProvider()
-        {
-            Map keySizes = new HashMap();
-
-            keySizes.put(new ASN1ObjectIdentifier("1.2.840.113533.7.66.10"), Integers.valueOf(128));
-
-            keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
-
-            keySizes.put(NISTObjectIdentifiers.id_aes128_CBC, Integers.valueOf(128));
-            keySizes.put(NISTObjectIdentifiers.id_aes192_CBC, Integers.valueOf(192));
-            keySizes.put(NISTObjectIdentifiers.id_aes256_CBC, Integers.valueOf(256));
-
-            keySizes.put(NISTObjectIdentifiers.id_aes128_GCM, Integers.valueOf(128));
-            keySizes.put(NISTObjectIdentifiers.id_aes256_GCM, Integers.valueOf(256));
-
-            keySizes.put(NTTObjectIdentifiers.id_camellia128_cbc, Integers.valueOf(128));
-            keySizes.put(NTTObjectIdentifiers.id_camellia192_cbc, Integers.valueOf(192));
-            keySizes.put(NTTObjectIdentifiers.id_camellia256_cbc, Integers.valueOf(256));
-
-            keySizes.put(CryptoProObjectIdentifiers.gostR28147_gcfb, Integers.valueOf(256));
-
-            KEY_SIZES = Collections.unmodifiableMap(keySizes);
-        }
-
-        public int getKeySize(AlgorithmIdentifier algorithmIdentifier)
-        {
-            // TODO: not all ciphers/oid relationships are this simple.
-            Integer keySize = (Integer)KEY_SIZES.get(algorithmIdentifier.getAlgorithm());
-
-            if (keySize != null)
-            {
-                return keySize.intValue();
-            }
-
-            return -1;
         }
     }
 }

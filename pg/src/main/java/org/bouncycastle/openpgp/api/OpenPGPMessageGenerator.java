@@ -13,6 +13,7 @@ import java.util.Set;
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
@@ -53,6 +54,7 @@ public class OpenPGPMessageGenerator
     private boolean isArmored = true;
     public boolean isAllowPadding = true;
     private final List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys = new ArrayList<OpenPGPCertificate.OpenPGPComponentKey>();
+    private final List<KeyIdentifier> anonymousRecipients = new ArrayList<KeyIdentifier>();
     private final List<char[]> messagePassphrases = new ArrayList<char[]>();
 
     // Literal Data metadata
@@ -88,7 +90,25 @@ public class OpenPGPMessageGenerator
     public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate)
         throws InvalidEncryptionKeyException
     {
-        return addEncryptionCertificate(recipientCertificate, encryptionKeySelector);
+        return addEncryptionCertificate(recipientCertificate, false);
+    }
+
+    /**
+     * Add a recipients certificate to the set of encryption keys.
+     * Subkeys will be selected using the default {@link SubkeySelector}, which can be replaced by calling
+     * {@link #setEncryptionKeySelector(SubkeySelector)}.
+     * The recipient will be able to decrypt the message using their corresponding secret key.
+     * If anonymousRecipient is true, the recipients key-identifier will be obfuscated via a wildcard key-identifier.
+     *
+     * @param recipientCertificate recipient certificate (public key)
+     * @param anonymousRecipient whether to obfuscate the recipients identity within the message
+     * @return this
+     */
+    public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate,
+                                                            boolean anonymousRecipient)
+        throws InvalidEncryptionKeyException
+    {
+        return addEncryptionCertificate(recipientCertificate, encryptionKeySelector, anonymousRecipient);
     }
 
     /**
@@ -103,15 +123,39 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate,
                                                             SubkeySelector subkeySelector)
-        throws InvalidEncryptionKeyException
+            throws InvalidEncryptionKeyException
+    {
+        return addEncryptionCertificate(recipientCertificate, subkeySelector, false);
+    }
+
+    /**
+     * Add a recipients certificate to the set of encryption keys.
+     * Subkeys will be selected using the provided {@link SubkeySelector}.
+     * The recipient will be able to decrypt the message using their corresponding secret key.
+     * If anonymous recipient is true, the identity of the recipient will be obfuscated via a wildcard key-identifier.
+     *
+     * @param recipientCertificate recipient certificate (public key)
+     * @param subkeySelector       selector for encryption subkeys
+     * @param anonymousRecipient   whether to obfuscate the recipients identity within the message
+     * @return this
+     * @throws InvalidEncryptionKeyException if the certificate is not capable of encryption
+     */
+    public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate,
+                                                            SubkeySelector subkeySelector,
+                                                            boolean anonymousRecipient)
+            throws InvalidEncryptionKeyException
     {
         List<OpenPGPCertificate.OpenPGPComponentKey> subkeys =
-            subkeySelector.select(recipientCertificate, policy);
+                subkeySelector.select(recipientCertificate, policy);
         if (subkeys.isEmpty())
         {
             throw new InvalidEncryptionKeyException(recipientCertificate);
         }
-        this.encryptionKeys.addAll(subkeys);
+
+        for (OpenPGPCertificate.OpenPGPComponentKey subkey : subkeys)
+        {
+            addEncryptionCertificate(subkey, anonymousRecipient);
+        }
         return this;
     }
 
@@ -124,13 +168,34 @@ public class OpenPGPMessageGenerator
      * @throws InvalidEncryptionKeyException if the key is not capable of encryption
      */
     public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate.OpenPGPComponentKey encryptionKey)
-        throws InvalidEncryptionKeyException
+            throws InvalidEncryptionKeyException
+    {
+        return addEncryptionCertificate(encryptionKey, false);
+    }
+
+    /**
+     * Add a (sub-)key to the set of recipient encryption keys.
+     * The recipient will be able to decrypt the message using their corresponding secret key.
+     * If anonymous recipient is true, the identity of the recipient will be obfuscated via a wildcard key-identifier.
+     *
+     * @param encryptionKey encryption capable subkey
+     * @param anonymousRecipient whether to obfuscate the recipients identity within the message
+     * @return this
+     * @throws InvalidEncryptionKeyException if the key is not capable of encryption
+     */
+    public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate.OpenPGPComponentKey encryptionKey,
+                                                            boolean anonymousRecipient)
+            throws InvalidEncryptionKeyException
     {
         if (!encryptionKey.isEncryptionKey())
         {
             throw new InvalidEncryptionKeyException(encryptionKey);
         }
         encryptionKeys.add(encryptionKey);
+        if (anonymousRecipient)
+        {
+            anonymousRecipients.add(encryptionKey.getKeyIdentifier());
+        }
         return this;
     }
 
@@ -282,6 +347,8 @@ public class OpenPGPMessageGenerator
         {
             PublicKeyKeyEncryptionMethodGenerator method = implementation.publicKeyKeyEncryptionMethodGenerator(
                 encryptionSubkey.getPGPPublicKey());
+            // optionally mark recipient as anonymous
+            method.setUseWildcardRecipient(anonymousRecipients.contains(encryptionSubkey.getKeyIdentifier()));
             encGen.addMethod(method);
         }
 
