@@ -27,7 +27,8 @@ public class JcaTlsSLHDSASigner
         }
         if (!SignatureScheme.isSLHDSA(signatureScheme))
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not SLH-DSA");
         }
 
         this.crypto = crypto;
@@ -47,6 +48,6 @@ public class JcaTlsSLHDSASigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        return crypto.createStreamSigner("SLH-DSA", null, privateKey, false);
+        return crypto.createStreamSigner("SLH-DSA", null, privateKey, true);
     }
 }

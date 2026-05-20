@@ -21,6 +21,7 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -218,7 +219,7 @@ public class HttpAuth
         }
         catch (Exception e)
         {
-            throw new IOException("unable to process URL in request: " + e.getMessage());
+            throw Exceptions.ioException("unable to process URL in request: " + e.getMessage(), e);
         }
 
         for (Iterator it = parts.keySet().iterator(); it.hasNext();)
@@ -449,7 +450,7 @@ public class HttpAuth
         }
         catch (OperatorCreationException e)
         {
-            throw new IOException("cannot create digest calculator for " + algorithm + ": " + e.getMessage());
+            throw Exceptions.ioException("cannot create digest calculator for " + algorithm + ": " + e.getMessage(), e);
         }
         return dCalc;
     }

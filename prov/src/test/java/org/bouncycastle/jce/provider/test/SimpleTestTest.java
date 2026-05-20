@@ -4,6 +4,7 @@ import java.security.Security;
 
 import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.test.SimpleTestResult;
 
 public class SimpleTestTest
@@ -16,6 +17,10 @@ public class SimpleTestTest
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastleProvider());
+        }
+        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastlePQCProvider());
         }
 
         org.bouncycastle.util.test.Test[] tests = RegressionTest.tests;

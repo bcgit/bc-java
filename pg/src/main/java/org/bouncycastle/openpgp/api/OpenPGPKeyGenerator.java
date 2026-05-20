@@ -251,7 +251,7 @@ public class OpenPGPKeyGenerator
      * @return builder
      * @throws PGPException if the key cannot be generated.
      */
-    public WithPrimaryKey singletonRSAKey(int bitStrength, String userId)
+    public WithPrimaryKey singletonRSAKey(final int bitStrength, String userId)
             throws PGPException
     {
         WithPrimaryKey builder = withPrimaryKey(
@@ -303,7 +303,7 @@ public class OpenPGPKeyGenerator
      * @return builder
      * @throws PGPException if the key cannot be generated
      */
-    public WithPrimaryKey compositeRSAKey(int bitStrength, String userId)
+    public WithPrimaryKey compositeRSAKey(final int bitStrength, String userId)
         throws PGPException
     {
         KeyPairGeneratorCallback generatorCallback = new KeyPairGeneratorCallback()

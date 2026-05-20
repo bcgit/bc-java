@@ -20,9 +20,9 @@ import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumKey;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -38,22 +38,22 @@ public class DilithiumTest
 
     public void setUp()
     {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastleProvider());
+            Security.addProvider(new BouncyCastlePQCProvider());
         }
     }
 
     public void testPrivateKeyRecovery()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
 
         kpg.initialize(DilithiumParameterSpec.dilithium3, new DilithiumTest.RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyFactory kFact = KeyFactory.getInstance("Dilithium", "BC");
+        KeyFactory kFact = KeyFactory.getInstance("Dilithium", "BCPQC");
 
         DilithiumKey privKey = (DilithiumKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
 
@@ -86,13 +86,13 @@ public class DilithiumTest
     public void testPublicKeyRecovery()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
 
         kpg.initialize(DilithiumParameterSpec.dilithium5, new DilithiumTest.RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyFactory kFact = KeyFactory.getInstance("Dilithium", "BC");
+        KeyFactory kFact = KeyFactory.getInstance("Dilithium", "BCPQC");
 
         DilithiumKey pubKey = (DilithiumKey)kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
 
@@ -127,13 +127,13 @@ public class DilithiumTest
     private void doTestRestrictedSignature(String sigName, DilithiumParameterSpec spec, DilithiumParameterSpec altSpec)
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
 
         kpg.initialize(spec, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance(sigName, "BC");
+        Signature sig = Signature.getInstance(sigName, "BCPQC");
 
         sig.initSign(kp.getPrivate(), new SecureRandom());
 
@@ -141,7 +141,7 @@ public class DilithiumTest
 
         byte[] s = sig.sign();
 
-        sig = Signature.getInstance(sigName, "BC");
+        sig = Signature.getInstance(sigName, "BCPQC");
 
         assertEquals(sigName, sig.getAlgorithm());
 
@@ -151,7 +151,7 @@ public class DilithiumTest
 
         assertTrue(sig.verify(s));
 
-        kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
 
         kpg.initialize(altSpec, new SecureRandom());
 
@@ -179,7 +179,7 @@ public class DilithiumTest
     private void doTestRestrictedKeyPairGen(DilithiumParameterSpec spec, DilithiumParameterSpec altSpec)
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
 
         kpg.initialize(spec, new SecureRandom());
 
@@ -189,7 +189,7 @@ public class DilithiumTest
         assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
         assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
 
-        kpg = KeyPairGenerator.getInstance(spec.getName(), "BC");
+        kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
 
         try
         {
@@ -205,13 +205,13 @@ public class DilithiumTest
     public void testDilithiumRandomSig()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
 
         kpg.initialize(DilithiumParameterSpec.dilithium2, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("Dilithium", "BC");
+        Signature sig = Signature.getInstance("Dilithium", "BCPQC");
 
         sig.initSign(kp.getPrivate(), new SecureRandom());
 
@@ -219,7 +219,7 @@ public class DilithiumTest
 
         byte[] s = sig.sign();
 
-        sig = Signature.getInstance("Dilithium", "BC");
+        sig = Signature.getInstance("Dilithium", "BCPQC");
 
         sig.initVerify(kp.getPublic());
 
@@ -247,7 +247,7 @@ sm = 3D7F3A26A1A6DC133D036981F7406AE0858C74121BDA303DD5DA8D9ACB68409F1051C88C4B1
         byte[] msg = Hex.decode("D81C4D8D734FCBFBEADE3D3F8A039FAA2A2C9957E835AD55B22E75BF57BB556AC8");
         byte[] s = Hex.decode("fcc4f40c043066771043d494eb13181802151a8f82c5c4e29582f6b0fa35023fa7042b68c6630fd99b8152265f4e439ff2430197e57d4195f3bdb6e92e707f964006001f748b94ed0249414226b5f439ab4daa261f9b549f40fd2c690521a5934230c808899473ce5abb67f406a020db59ead7c5eac5c53156a4bb603603b46db9c2fa5f5bf26fbb67c3a98a399ef245d30d761a1adda9d4439d1d1ce86480c2b123e984209fcc830a300b1c8108e320d34a27a752b2d0cec268de0f9f9eee7f4c7cca6f64d8a0288f6c92699cded9cacca31d80e6bb5107af87d1021fc6787d79f001e04a4aabfbaef2b172c5010e6389ab8075496f50558fba91c70e6440640f522b6a38bbe429cfd5352031eb651721823a3705514b6aebb9c3954f79fd01cb228d731d7a41b462cc1a1c855905ff17f14d7f8b71d0f17c03e4239d2881012f94466fcd1e66e62227d6812f8b81157b8954a671391c064838cb215c79fc6fc9d85ef0c891aea9e9ab16500cf06613a02ca82d25decfdbd1a81090b280b4e3213a5db5f7020d30d8169ea176975f72d1910c64684afc2516a35ec35308c4d127fd5c9f54786d2f7ff60c6110514d6bd7720507ec9ede750e4b9929b20ffa65dd714eb11e4e0865c3d2930d8170018e9eb29b72b1e66b7a65afae1617d752ea435f88db7f87dbd29e9859957eb73b766c38675e96d1be9c4404297e6e40b5009fa9adde177980d25bf3b76c130682f8105c1257bd20b9624b09157d2f6ed42dd9b080903603786a0ec3a0d8a847999eb4788f23f1a95db1f5818dadcbad60078a8b1be01d02ac3ee9ba88cf5909a4d4318d9fd2a439aa37e8da68f6208dc5ec3cd659a5aaa3362ad0ff4a3ba6ed5ea75cb710c83bda0afbc14ae4a61e19a0ab4e9597bcfdb9da986308322cd7f534b173f76e0151e693b52bd2029a7ea294bad8ced7ca0485e58c73a71eb5ddc1bfa12f2a0026aec90db969e6cea486e6628903e75275a39a1105aad7abe683660e02b6fc12bd59227358bc20a49eec69b4c03318c90bb3d9725ac1fe6f9609349b14eea21ea996cb118258035213a8fab19339cea94043667cf2ee596c3fb01d136d40450adbf9761d047e6897b975d291a53097b747bc9d6342e91b88bd0a2e7d6444973557ffae72123d84b228131951dda7a10f993f2427a9a9dc822d822363c9517dca0bfffa2f6aa66e3fe5802c05026b72c03813ef26a90855565d419d402ad1b3b1719c2d23637c425eb1cfaa6e5bb82c87735b802ffb1fdd6693385af5f96a73a8e482e9128f428571edd73c1495be9ffb2a6b5a28a1b8a30ec737f82989e328433255e53cb901764f0c0341cb67e5c6275fee34e35c3e6057cc1af790bb111b5a7a2f86de7c680f42d838ac4e8059677c9d382f167af649253f31c00120e797ec93d0a31af80b44ad2fbf0a8a1f67d1a63ee448d85442677f24c60d581555fb6c693bf8829e5062f4b3a66f028c7505600464138d4c026100e55d878434aba2d41d0e90d4dda9e2bd46c337efce479f999cb50adc080575ecebfd1ce6ad6450f9d7ec025c793493e8c11059d3fae194476efd16742fa2d1a399d6cdffc0a6cf1e4e13ec0f515c21846b9da843f2b0af70de17f7bcbc11a2f11e9cb1efa24a28477c0fc5ea4f6a644e608c028e5aab8f82109a07ce8a06e99012593f32051d865f561cfb365312ef49338ceeeb3842ce1ee2381a1641043c32c852a1add433075ddb94863749b3c7dc6ac10e681293deba2a355843a1ead7448f2af81beb5500357a81a5375355941ea2172c96e1cfb84120f93496943d344af409a8573bbf5961d1dd044bc2ce21ad2b7c5c721b324d697e786e711a8c08d358f52b96507b6d380048e4783740ff996610aa6a2b5e6788d68b065717b507bcb2df05e0af6268735bd5e929798ac5e0f12fdab6da267dab9102c6ae20451e644499c2c8408eeeac9abc7130dee6c33144819ef78905b45dbb9fef7ebc92871092a8aebaf9c754544b055fbdc52b760687b15b22d3582e3d881c5afc00b360f504c67fc90ccdb1ee8d8626f7f12596fdf9ba95621bd00a5f6331261da4340d5bc5a4cc222f60d9e220f6e1b56d1492b20d68b75d7cef20df2737821980efca83822f19cb4f5ece26665e6b07c43b65715df26632534e84d7b3d109a5fb026052bc9323a02a41a5d194ef0990713a578219b989b9a5383cb64e4cdd8ab3ca7807895272490b3cf72a01ae21615bf6af12f2283cc1cc400ed660bba87dfe9bc1e26c29c50ff3a01a14f83b52d20116f8b7b3b133810476a38c588d36f85c5c9def402b13e89201aacdacdf2c6ea8cc0e819423e86f080d6690a136ac4879c26e9a45c80a0d5d77d7ec4f0e395ac5bfb0b67d6ba617fff4f3f0bdbf50a383827db69a405590ad8bd752f55ef299800e1a5eeca7dec712b4343cd82ed6cd96c60fa0c65a960105d3717d3391ac116c868202c11b11ef2cdb2e8a3f3df1940c8f98c372c6d9989044b922f48b38e97168ce900a5af99bd9a81cd1e26109bf5de678e5c1d42b8fd29a738ee2125aca3ca9f5dc18a0e36a16bd64c04c498667e95fbc582affcdbc4ef896fcc1971352e2195d235321f750bb5ebb44bc3c411f7129518780dee0fb706ed16cc749753b8ee44ca7008a6922ab90c803002260f6f5c605436306d96c9b7c538a19cef0d35479d1dd5e5874e3b1a2ff4c1b50b942c3f166d7d9e51f870faba93a2ddf2b32b21f7552606af24772b428cf47d473f8a5cd2fab4c1bdbcbcc9abb6d017e2f0f3f18e224c4f3b1f0384021dd8d58e8b62c1f2011cf17343b0cf86774fc8b85882fbfc6e884cfc97bafb90d6381a647aef10dbcfe263863311fb30d91d885b049d41050f461b08de163cbb1b49ae1b4bcd64175bb3b96b154cd2946dd2961b629bd13beda7867c93b31242aaad973db6f92093880461a43071a62b361cff82bae2f32be33f1e36062f8f7ab7fb3c50c8c5ea6d7e0fb023ab994c45e8b43bcc6ace4e7b0529a41842b64aabf0cfa30c5d98f7897ace3074dd75f0f61f228d911def6258b3b3e95487d301ebdd9c80fe323e7929897784c04da3b52c5ff6fee1f28e309bede2ca244af7a30ae146137f472cff9ecfc2d1fb7e20f9108a6c8bcec4cbb877f3fa15820e5e21596949dd4b2d659f3e450d6f5e715cb307da9af905af6f695b519f5af28e2c3bc4c7633f1191486be9969746cc8c0b70405d9c7f77f8cadc2cacd9c492b774902cf9ced338fe612909795ae6c951258faa52b5f5a363ddedf5a10a4d4e8e253242b626f7ec8d5eff9050a393b3e44494b748397afb6cbccd4f8f9fa364955787a878a96a5acc0c6cbd9eaf6123242446e96a8b7c0d7dff1000000000000000000000000000000000000000000000000091c2c38");
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
         SecureRandom katRandom = new NISTSecureRandom(Hex.decode("061550234D158C5EC95595FE04EF7A25767F2E24CC2BC479D09D86DC9ABCFDE7056A8C266F9EF97ED08541DBD2E1FFA1"), null);
 
         kpg.initialize(DilithiumParameterSpec.dilithium2, katRandom);
@@ -265,7 +265,7 @@ sm = 3D7F3A26A1A6DC133D036981F7406AE0858C74121BDA303DD5DA8D9ACB68409F1051C88C4B1
 
         assertTrue(Arrays.areEqual(seq.getOctets(), privK));
 
-        Signature sig = Signature.getInstance("Dilithium", "BC");
+        Signature sig = Signature.getInstance("Dilithium", "BCPQC");
 
         sig.initSign(kp.getPrivate());
 
@@ -275,7 +275,7 @@ sm = 3D7F3A26A1A6DC133D036981F7406AE0858C74121BDA303DD5DA8D9ACB68409F1051C88C4B1
 
         assertTrue(Arrays.areEqual(s, genS));
         
-        sig = Signature.getInstance("Dilithium", "BC");
+        sig = Signature.getInstance("Dilithium", "BCPQC");
 
         sig.initVerify(kp.getPublic());
 
@@ -293,7 +293,7 @@ sm = 3D7F3A26A1A6DC133D036981F7406AE0858C74121BDA303DD5DA8D9ACB68409F1051C88C4B1
 
         assertFalse(Arrays.areEqual(s, genS));
 
-        sig = Signature.getInstance("Dilithium", "BC");
+        sig = Signature.getInstance("Dilithium", "BCPQC");
 
         sig.initVerify(kp.getPublic());
 

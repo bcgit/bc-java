@@ -27,6 +27,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ExtendedInvalidKeySpecException;
 import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
+import org.bouncycastle.util.Exceptions;
 
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
@@ -78,7 +79,7 @@ public class KeyFactorySpi
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("unable to produce encoding", e);
             }
         }
         else if (spec.isAssignableFrom(OpenSSHPrivateKeySpec.class) && key instanceof RSAPrivateCrtKey)
@@ -98,7 +99,7 @@ public class KeyFactorySpi
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("unable to produce encoding", e);
             }
         }
 

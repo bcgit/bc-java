@@ -66,8 +66,6 @@ public class EtsiTs102941Data
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{
-            version, content
-        });
+        return new DERSequence(version, content);
     }
 }

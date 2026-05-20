@@ -139,14 +139,12 @@ public class PKIFailureInfo
     /**
      * Basic constructor.
      */
-    public PKIFailureInfo(
-        int info)
+    public PKIFailureInfo(int info)
     {
-        super(getBytes(info), getPadBits(info));
+        super(info);
     }
 
-    public PKIFailureInfo(
-        ASN1BitString info)
+    public PKIFailureInfo(ASN1BitString info)
     {
         super(info.getBytes(), info.getPadBits());
     }

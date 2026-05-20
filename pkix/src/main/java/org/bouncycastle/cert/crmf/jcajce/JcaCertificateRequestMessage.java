@@ -15,6 +15,7 @@ import org.bouncycastle.cert.crmf.CertificateRequestMessage;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.util.Exceptions;
 
 public class JcaCertificateRequestMessage
     extends CertificateRequestMessage
@@ -62,7 +63,7 @@ public class JcaCertificateRequestMessage
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("unable to construct DER encoding of name: " + e.getMessage());
+                throw Exceptions.illegalStateException("unable to construct DER encoding of name", e);
             }
         }
 

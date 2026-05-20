@@ -5,10 +5,7 @@ import java.io.InputStream;
 
 /**
  * Parser for DER encoded OCTET STRINGS
- * 
- * @deprecated Check for 'ASN1OctetStringParser' instead 
  */
-@Deprecated
 public class DEROctetStringParser
     implements ASN1OctetStringParser
 {

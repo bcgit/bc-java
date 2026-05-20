@@ -10,9 +10,11 @@ import java.util.Date;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
@@ -61,14 +63,14 @@ public class Argon2S2KTest
 
     // https://www.rfc-editor.org/rfc/rfc9580.html#name-v4-skesk-using-argon2-with-ae
     private static final String TEST_MSG_AES256 = "-----BEGIN PGP MESSAGE-----\n" +
-            "Comment: Encrypted using AES with 256-bit key\n" +
-            "Comment: Session key: BBEDA55B9AAE63DAC45D4F49D89DACF4AF37FEF...\n" +
-            "Comment: Session key: ...C13BAB2F1F8E18FB74580D8B0\n" +
-            "\n" +
-            "wzcECQS4eJUgIG/3mcaILEJFpmJ8AQQVnZ9l7KtagdClm9UaQ/Z6M/5roklSGpGu\n" +
-            "623YmaXezGj80j4B+Ku1sgTdJo87X1Wrup7l0wJypZls21Uwd67m9koF60eefH/K\n" +
-            "95D1usliXOEm8ayQJQmZrjf6K6v9PWwqMQ==\n" +
-            "-----END PGP MESSAGE-----";
+        "Comment: Encrypted using AES with 256-bit key\n" +
+        "Comment: Session key: BBEDA55B9AAE63DAC45D4F49D89DACF4AF37FEF...\n" +
+        "Comment: Session key: ...C13BAB2F1F8E18FB74580D8B0\n" +
+        "\n" +
+        "wzcECQS4eJUgIG/3mcaILEJFpmJ8AQQVnZ9l7KtagdClm9UaQ/Z6M/5roklSGpGu\n" +
+        "623YmaXezGj80j4B+Ku1sgTdJo87X1Wrup7l0wJypZls21Uwd67m9koF60eefH/K\n" +
+        "95D1usliXOEm8ayQJQmZrjf6K6v9PWwqMQ==\n" +
+        "-----END PGP MESSAGE-----";
 
     static final String TEST_MSG_PLAIN = "Hello, world!";
 
@@ -96,6 +98,7 @@ public class Argon2S2KTest
         testDecryptAES256Message();
         // dynamic round-trip
         testEncryptAndDecryptMessageWithArgon2();
+        checkArgon2MaxMemoryExpValue();
     }
 
     public void encodingTest()
@@ -153,6 +156,27 @@ public class Argon2S2KTest
         String encrypted = encryptMessageSymmetricallyWithArgon2(TEST_MSG_PLAIN, TEST_MSG_PASSWORD);
         String plaintext = decryptSymmetricallyEncryptedMessage(encrypted, TEST_MSG_PASSWORD);
         isEquals(TEST_MSG_PLAIN, plaintext);
+    }
+
+    private void checkArgon2MaxMemoryExpValue()
+        throws Exception
+    {
+        System.setProperty("org.bouncycastle.argon2.max_memory_exp", "10");
+
+        BCPGInputStream pgpIn = new BCPGInputStream(
+            getClass().getResourceAsStream("poc_argon2_s2k.pgp"));
+        try
+        {
+            SymmetricKeyEncSessionPacket skesk =
+                (SymmetricKeyEncSessionPacket)pgpIn.readPacket();
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("memory size exponent out of range", e.getMessage());
+        }
+
+        System.setProperty("org.bouncycastle.argon2.max_memory_exp", "30");
     }
 
     private String decryptSymmetricallyEncryptedMessage(String message, String password)

@@ -575,15 +575,12 @@ public class JcaTlsCrypto
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+        case CryptoSignatureAlgorithm.sm2: // RFC 8998
             return true;
 
         // TODO[RFC 9189]
         case CryptoSignatureAlgorithm.gostr34102012_256:
         case CryptoSignatureAlgorithm.gostr34102012_512:
-
-        // TODO[RFC 8998]
-        case CryptoSignatureAlgorithm.sm2:
-
         default:
             return false;
         }
@@ -762,9 +759,6 @@ public class JcaTlsCrypto
         // TODO[RFC 9189]
         case SignatureAlgorithm.gostr34102012_256:
         case SignatureAlgorithm.gostr34102012_512:
-
-        // TODO[RFC 8998]
-//        case SignatureAlgorithm.sm2:
 
         default:
             return false;
@@ -1142,55 +1136,55 @@ public class JcaTlsCrypto
         switch (encryptionAlgorithm)
         {
         case EncryptionAlgorithm._3DES_EDE_CBC:
-            return isUsableCipher("DESede/CBC/NoPadding", 192);
+            return Boolean.valueOf(isUsableCipher("DESede/CBC/NoPadding", 192));
         case EncryptionAlgorithm.AES_128_CBC:
-            return isUsableCipher("AES/CBC/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("AES/CBC/NoPadding", 128));
         case EncryptionAlgorithm.AES_128_CCM:
         case EncryptionAlgorithm.AES_128_CCM_8:
-            return isUsableCipher("AES/CCM/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("AES/CCM/NoPadding", 128));
         case EncryptionAlgorithm.AES_128_GCM:
-            return isUsableCipher("AES/GCM/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("AES/GCM/NoPadding", 128));
         case EncryptionAlgorithm.AES_256_CBC:
-            return isUsableCipher("AES/CBC/NoPadding", 256);
+            return Boolean.valueOf(isUsableCipher("AES/CBC/NoPadding", 256));
         case EncryptionAlgorithm.AES_256_CCM:
         case EncryptionAlgorithm.AES_256_CCM_8:
-            return isUsableCipher("AES/CCM/NoPadding", 256);
+            return Boolean.valueOf(isUsableCipher("AES/CCM/NoPadding", 256));
         case EncryptionAlgorithm.AES_256_GCM:
-            return isUsableCipher("AES/GCM/NoPadding", 256);
+            return Boolean.valueOf(isUsableCipher("AES/GCM/NoPadding", 256));
         case EncryptionAlgorithm.ARIA_128_CBC:
-            return isUsableCipher("ARIA/CBC/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("ARIA/CBC/NoPadding", 128));
         case EncryptionAlgorithm.ARIA_128_GCM:
-            return isUsableCipher("ARIA/GCM/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("ARIA/GCM/NoPadding", 128));
         case EncryptionAlgorithm.ARIA_256_CBC:
-            return isUsableCipher("ARIA/CBC/NoPadding", 256);
+            return Boolean.valueOf(isUsableCipher("ARIA/CBC/NoPadding", 256));
         case EncryptionAlgorithm.ARIA_256_GCM:
-            return isUsableCipher("ARIA/GCM/NoPadding", 256);
+            return Boolean.valueOf(isUsableCipher("ARIA/GCM/NoPadding", 256));
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
-            return isUsableCipher("Camellia/CBC/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("Camellia/CBC/NoPadding", 128));
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
-            return isUsableCipher("Camellia/GCM/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("Camellia/GCM/NoPadding", 128));
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            return isUsableCipher("Camellia/CBC/NoPadding", 256);
+            return Boolean.valueOf(isUsableCipher("Camellia/CBC/NoPadding", 256));
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
-            return isUsableCipher("Camellia/GCM/NoPadding", 256);
+            return Boolean.valueOf(isUsableCipher("Camellia/GCM/NoPadding", 256));
         case EncryptionAlgorithm.CHACHA20_POLY1305:
-            return isUsableCipher("ChaCha7539", 256) && isUsableMAC("Poly1305");
+            return Boolean.valueOf(isUsableCipher("ChaCha7539", 256) && isUsableMAC("Poly1305"));
         case EncryptionAlgorithm.NULL:
             return Boolean.TRUE;
         case EncryptionAlgorithm.SEED_CBC:
-            return isUsableCipher("SEED/CBC/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("SEED/CBC/NoPadding", 128));
         case EncryptionAlgorithm.SM4_CBC:
-            return isUsableCipher("SM4/CBC/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("SM4/CBC/NoPadding", 128));
         case EncryptionAlgorithm.SM4_CCM:
-            return isUsableCipher("SM4/CCM/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("SM4/CCM/NoPadding", 128));
         case EncryptionAlgorithm.SM4_GCM:
-            return isUsableCipher("SM4/GCM/NoPadding", 128);
+            return Boolean.valueOf(isUsableCipher("SM4/GCM/NoPadding", 128));
 
         case EncryptionAlgorithm.NULL_HMAC_SHA256:
-            return hasMacAlgorithm(MACAlgorithm.hmac_sha256);
+            return Boolean.valueOf(hasMacAlgorithm(MACAlgorithm.hmac_sha256));
 
         case EncryptionAlgorithm.NULL_HMAC_SHA384:
-            return hasMacAlgorithm(MACAlgorithm.hmac_sha384);
+            return Boolean.valueOf(hasMacAlgorithm(MACAlgorithm.hmac_sha384));
 
         case EncryptionAlgorithm._28147_CNT_IMIT:
         case EncryptionAlgorithm.DES_CBC:
@@ -1279,7 +1273,10 @@ public class JcaTlsCrypto
             switch (signatureScheme)
             {
             case SignatureScheme.sm2sig_sm3:
-                return Boolean.FALSE;
+            {
+                helper.createSignature("SM3withSM2");
+                return Boolean.TRUE;
+            }
 
             default:
             {

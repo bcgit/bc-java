@@ -20,9 +20,9 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
+import org.bouncycastle.pqc.crypto.faest.FaestParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
@@ -33,14 +33,15 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
-import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
+import org.bouncycastle.pqc.legacy.picnic.PicnicParameters;
+import org.bouncycastle.pqc.legacy.rainbow.RainbowParameters;
+import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusParameters;
 
 class Utils
 {
@@ -111,6 +112,9 @@ class Utils
 
     static final Map ntruPlusOids = new HashMap<ASN1ObjectIdentifier, NTRUPlusParameters>();
     static final Map ntruPlusParams = new HashMap<NTRUPlusParameters, ASN1ObjectIdentifier>();
+
+    static final Map faestOids = new HashMap<ASN1ObjectIdentifier, FaestParameters>();
+    static final Map faestParams = new HashMap<FaestParameters, ASN1ObjectIdentifier>();
 
     static
     {
@@ -576,13 +580,39 @@ class Utils
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, SnovaParameters.SNOVA_75_33_2_SHAKE_SSK);
         snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, SnovaParameters.SNOVA_75_33_2_SHAKE_ESK);
 
-        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus768, NTRUPlusParameters.ntruplus_kem_768);
-        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus864, NTRUPlusParameters.ntruplus_kem_864);
-        ntruPlusParams.put(BCObjectIdentifiers.ntruPlus1152, NTRUPlusParameters.ntruplus_kem_1152);
+        ntruPlusParams.put(BCObjectIdentifiers.ntruplus768, NTRUPlusParameters.ntruplus_kem_768);
+        ntruPlusParams.put(BCObjectIdentifiers.ntruplus864, NTRUPlusParameters.ntruplus_kem_864);
+        ntruPlusParams.put(BCObjectIdentifiers.ntruplus1152, NTRUPlusParameters.ntruplus_kem_1152);
 
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_768, BCObjectIdentifiers.ntruPlus768);
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruPlus864);
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruPlus1152);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_768, BCObjectIdentifiers.ntruplus768);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruplus864);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruplus1152);
+
+        faestOids.put(FaestParameters.faest_128s, BCObjectIdentifiers.faest_128s);
+        faestOids.put(FaestParameters.faest_128f, BCObjectIdentifiers.faest_128f);
+        faestOids.put(FaestParameters.faest_192s, BCObjectIdentifiers.faest_192s);
+        faestOids.put(FaestParameters.faest_192f, BCObjectIdentifiers.faest_192f);
+        faestOids.put(FaestParameters.faest_256s, BCObjectIdentifiers.faest_256s);
+        faestOids.put(FaestParameters.faest_256f, BCObjectIdentifiers.faest_256f);
+        faestOids.put(FaestParameters.faest_em_128s, BCObjectIdentifiers.faest_em_128s);
+        faestOids.put(FaestParameters.faest_em_128f, BCObjectIdentifiers.faest_em_128f);
+        faestOids.put(FaestParameters.faest_em_192s, BCObjectIdentifiers.faest_em_192s);
+        faestOids.put(FaestParameters.faest_em_192f, BCObjectIdentifiers.faest_em_192f);
+        faestOids.put(FaestParameters.faest_em_256s, BCObjectIdentifiers.faest_em_256s);
+        faestOids.put(FaestParameters.faest_em_256f, BCObjectIdentifiers.faest_em_256f);
+
+        faestParams.put(BCObjectIdentifiers.faest_128s, FaestParameters.faest_128s);
+        faestParams.put(BCObjectIdentifiers.faest_128f, FaestParameters.faest_128f);
+        faestParams.put(BCObjectIdentifiers.faest_192s, FaestParameters.faest_192s);
+        faestParams.put(BCObjectIdentifiers.faest_192f, FaestParameters.faest_192f);
+        faestParams.put(BCObjectIdentifiers.faest_256s, FaestParameters.faest_256s);
+        faestParams.put(BCObjectIdentifiers.faest_256f, FaestParameters.faest_256f);
+        faestParams.put(BCObjectIdentifiers.faest_em_128s, FaestParameters.faest_em_128s);
+        faestParams.put(BCObjectIdentifiers.faest_em_128f, FaestParameters.faest_em_128f);
+        faestParams.put(BCObjectIdentifiers.faest_em_192s, FaestParameters.faest_em_192s);
+        faestParams.put(BCObjectIdentifiers.faest_em_192f, FaestParameters.faest_em_192f);
+        faestParams.put(BCObjectIdentifiers.faest_em_256s, FaestParameters.faest_em_256s);
+        faestParams.put(BCObjectIdentifiers.faest_em_256f, FaestParameters.faest_em_256f);
     }
 
     static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
@@ -905,6 +935,16 @@ class Utils
     static ASN1ObjectIdentifier ntruPlusOidLookup(NTRUPlusParameters params)
     {
         return (ASN1ObjectIdentifier)ntruPlusOids.get(params);
+    }
+
+    static ASN1ObjectIdentifier faestOidLookup(FaestParameters params)
+    {
+        return (ASN1ObjectIdentifier)faestOids.get(params);
+    }
+
+    static FaestParameters faestParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (FaestParameters)faestParams.get(oid);
     }
 
     private static boolean isRaw(byte[] data)

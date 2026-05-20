@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStrictStyle;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.X509DefaultEntryConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -42,7 +43,7 @@ public class X500NameTest
        "CN=*.canal-plus.com,OU=Provided by TBS INTERNET https://www.tbs-certificats.com/,OU=\\ CANAL \\+,O=CANAL\\+DISTRIBUTION,L=issy les moulineaux,ST=Hauts de Seine,C=FR",
        "O=Bouncy Castle,CN=www.bouncycastle.org\\ ",
        "O=Bouncy Castle,CN=c:\\\\fred\\\\bob",
-       "C=0,O=1,OU=2,T=3,CN=4,SERIALNUMBER=5,STREET=6,SERIALNUMBER=7,L=8,ST=9,SURNAME=10,GIVENNAME=11,INITIALS=12," +
+       "C=AU,O=1,OU=2,T=3,CN=4,SERIALNUMBER=5,STREET=6,SERIALNUMBER=7,L=8,ST=9,SURNAME=10,GIVENNAME=11,INITIALS=12," +
            "GENERATION=13,UniqueIdentifier=14,BusinessCategory=15,PostalCode=16,DN=17,Pseudonym=18,PlaceOfBirth=19," +
            "Gender=20,CountryOfCitizenship=21,CountryOfResidence=22,NameAtBirth=23,PostalAddress=24,2.5.4.54=25," +
            "TelephoneNumber=26,Name=27,E=28,unstructuredName=29,unstructuredAddress=30,E=31,DC=32,UID=33",
@@ -150,6 +151,7 @@ public class X500NameTest
     {
         ietfUtilsTest();
         bogusEqualsTest();
+        dnQualifierAliasParseTest();
 
         testEncodingPrintableString(BCStyle.C, "AU");
         testEncodingPrintableString(BCStyle.SERIALNUMBER, "123456");
@@ -682,12 +684,75 @@ public class X500NameTest
         IETFUtils.valueToString(new DERUTF8String(" "));
     }
 
+    /**
+     * BCStyle / RFC4519Style now accept "DN", "DNQ" and "dnQualifier"
+     * as parser aliases for the dnQualifier attribute (OID 2.5.4.46).
+     * The motivating case was that {@code java.security.cert.X509Certificate.getSubjectX500Principal().toString()}
+     * emits "DNQ=" on some JDKs (Amazon Corretto 17 observed) and
+     * "DNQUALIFIER=" on others, neither of which round-tripped through
+     * {@code new X500Name(principal.toString())} under BCStyle's
+     * historical "DN" form (issue #1622).
+     */
+    private void dnQualifierAliasParseTest()
+        throws Exception
+    {
+        String[] aliases = new String[]{ "DN", "DNQ", "dnQualifier", "dn", "dnq", "dnqualifier" };
+        for (int i = 0; i != aliases.length; ++i)
+        {
+            String alias = aliases[i];
+
+            X500Name viaBcStyle = new X500Name(BCStyle.INSTANCE,
+                "CN=Foo," + alias + "=ABC123");
+            RDN[] rdnsBc = viaBcStyle.getRDNs(BCStyle.DN_QUALIFIER);
+            if (rdnsBc.length != 1)
+            {
+                fail("BCStyle: alias '" + alias
+                    + "' did not parse to a single dnQualifier RDN");
+            }
+
+            X500Name viaRfc = new X500Name(RFC4519Style.INSTANCE,
+                "CN=Foo," + alias + "=ABC123");
+            RDN[] rdnsRfc = viaRfc.getRDNs(RFC4519Style.dnQualifier);
+            if (rdnsRfc.length != 1)
+            {
+                fail("RFC4519Style: alias '" + alias
+                    + "' did not parse to a single dnQualifier RDN");
+            }
+        }
+    }
+
     private void bogusEqualsTest()
         throws Exception
     {
+        // RFC 4514 sec. 3 allows '=' (0x3D) in stringchar without escaping;
+        // only the FIRST '=' separates attributeType from attributeValue.
+        // (issue #2226 - matches javax.security.auth.x500.X500Principal)
+        String[] subjects = new String[]
+        {
+            "CN=foo=bar",
+            "CN==^_^=",
+            "CN=a=b=c",
+            "CN=\\=^_^\\=",
+        };
+        String[] expectedValues = new String[]
+        {
+            "foo=bar",
+            "=^_^=",
+            "a=b=c",
+            "=^_^=",
+        };
+
+        for (int i = 0; i != subjects.length; i++)
+        {
+            X500Name name = new X500Name(subjects[i]);
+            String value = ((ASN1String)name.getRDNs()[0].getFirst().getValue()).getString();
+            isEquals("unexpected value for " + subjects[i], expectedValues[i], value);
+        }
+
+        // a token with no '=' at all is still a malformed RDN
         try
         {
-            new X500Name("CN=foo=bar");
+            new X500Name("CN");
             fail("no exception");
         }
         catch (IllegalArgumentException e)

@@ -15,7 +15,7 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.RecipientInfoGenerator;
 import org.bouncycastle.operator.OutputEncryptor;
-
+import org.bouncycastle.util.Exceptions;
 /**
  * Builder for a PKIArchiveControl structure.
  */
@@ -40,7 +40,7 @@ public class PKIArchiveControlBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to encode key and general name info");
+            throw Exceptions.illegalStateException("unable to encode key and general name info", e);
         }
 
         this.envGen = new CMSEnvelopedDataGenerator();

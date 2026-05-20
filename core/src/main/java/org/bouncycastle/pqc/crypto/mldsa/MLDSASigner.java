@@ -10,6 +10,10 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 
+/**
+ * @deprecated use org.bouncycastle.crypto.signers.MLDSASigner
+ */
+@Deprecated
 public class MLDSASigner
     implements Signer
 {

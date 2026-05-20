@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Properties;
 
 public class ASN1RelativeOID
@@ -64,7 +65,7 @@ public class ASN1RelativeOID
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct relative OID from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct relative OID from byte[]", e);
             }
         }
 
@@ -206,12 +207,13 @@ public class ASN1RelativeOID
         return false;
     }
 
-    static void checkContentsLength(int contentsLength)
+    private static int checkContentsLength(int contentsLength)
     {
         if (contentsLength > MAX_CONTENTS_LENGTH)
         {
             throw new IllegalArgumentException("exceeded relative OID contents length limit");
         }
+        return contentsLength;
     }
 
     static void checkIdentifier(String identifier)
@@ -230,41 +232,65 @@ public class ASN1RelativeOID
         }
     }
 
-    static ASN1RelativeOID createPrimitive(byte[] contents, boolean clone)
+    static ASN1RelativeOID createPrimitive(DefiniteLengthInputStream defIn, byte[] tmp) throws IOException
     {
-        checkContentsLength(contents.length);
+        int contentsLength = checkContentsLength(defIn.getRemaining());
 
-        final ASN1ObjectIdentifier.OidHandle hdl = new ASN1ObjectIdentifier.OidHandle(contents);
+        boolean useTmp = contentsLength <= tmp.length;
+        if (useTmp)
+        {
+            defIn.readAllIntoByteArray(tmp);
+        }
+        else
+        {
+            tmp = defIn.toByteArray();
+        }
+
+        return createPrimitive(tmp, contentsLength, useTmp);
+    }
+
+    private static ASN1RelativeOID createPrimitive(byte[] contents, boolean clone)
+    {
+        return createPrimitive(contents, checkContentsLength(contents.length), clone);
+    }
+
+    private static ASN1RelativeOID createPrimitive(byte[] contents, int contentsLength, boolean clone)
+    {
+//        assert clone || contents.length == contentsLength;
+
+        final ASN1ObjectIdentifier.OidHandle hdl = new ASN1ObjectIdentifier.OidHandle(contents, contentsLength);
         ASN1RelativeOID oid = pool.get(hdl);
         if (oid != null)
         {
             return oid;
         }
 
-        if (!isValidContents(contents))
+        if (!isValidContents(contents, contentsLength))
         {
             throw new IllegalArgumentException("invalid relative OID contents");
         }
 
-        return new ASN1RelativeOID(clone ? Arrays.clone(contents) : contents, null);
+        byte[] newContents = clone ? Arrays.copyOfRange(contents, 0, contentsLength) : contents;
+
+        return new ASN1RelativeOID(newContents, null);
     }
 
-    static boolean isValidContents(byte[] contents)
+    static boolean isValidContents(byte[] contents, int contentsLength)
     {
         if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc"))
         {
             return true;
         }
 
-        if (contents.length < 1)
+        if (contentsLength < 1)
         {
             return false;
         }
 
         boolean subIDStart = true;
-        for (int i = 0; i < contents.length; ++i)
+        for (int i = 0; i < contentsLength; ++i)
         {
-            if (subIDStart && (contents[i] & 0xff) == 0x80)
+            if (subIDStart && (contents[i] & 0xFF) == 0x80)
             {
                 return false;
             }
@@ -378,54 +404,61 @@ public class ASN1RelativeOID
 
     static byte[] parseIdentifier(String identifier)
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        OIDTokenizer tok = new OIDTokenizer(identifier);
-        while (tok.hasMoreTokens())
+        int contentsLimit = (identifier.length() + 1) / 2;
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(contentsLimit);
+
+        int i = 0, j = 0;
+        while (++j < identifier.length())
         {
-            String token = tok.nextToken();
-            if (token.length() <= 18)
+            if (identifier.charAt(j) == '.')
             {
-                writeField(bOut, Long.parseLong(token));
-            }
-            else
-            {
-                writeField(bOut, new BigInteger(token));
+                writeField(buf, identifier, i, j);
+                i = j + 1;
+                j = i;
             }
         }
-        return bOut.toByteArray();
+        writeField(buf, identifier, i, j);
+
+        return buf.toByteArray();
     }
 
-    static void writeField(ByteArrayOutputStream out, long fieldValue)
+    static void writeField(ByteArrayOutputStream buf, String identifier, int from, int to)
+    {
+        String token = identifier.substring(from, to);
+        if (token.length() <= 18)
+        {
+            writeField(buf, Long.parseLong(token));
+        }
+        else
+        {
+            writeField(buf, new BigInteger(token));
+        }
+    }
+
+    static void writeField(ByteArrayOutputStream buf, long fieldValue)
     {
         byte[] result = new byte[9];
-        int pos = 8;
+        int pos = result.length - 1;
         result[pos] = (byte)((int)fieldValue & 0x7F);
         while (fieldValue >= (1L << 7))
         {
             fieldValue >>= 7;
             result[--pos] = (byte)((int)fieldValue | 0x80);
         }
-        out.write(result, pos, 9 - pos);
+        buf.write(result, pos, result.length - pos);
     }
 
-    static void writeField(ByteArrayOutputStream out, BigInteger fieldValue)
+    static void writeField(ByteArrayOutputStream buf, BigInteger fieldValue)
     {
+//        assert fieldValue.signum() > 0;
         int byteCount = (fieldValue.bitLength() + 6) / 7;
-        if (byteCount == 0)
+        byte[] tmp = new byte[byteCount];
+        for (int i = byteCount - 1; i >= 0; i--)
         {
-            out.write(0);
+            tmp[i] = (byte)(fieldValue.intValue() | 0x80);
+            fieldValue = fieldValue.shiftRight(7);
         }
-        else
-        {
-            BigInteger tmpValue = fieldValue;
-            byte[] tmp = new byte[byteCount];
-            for (int i = byteCount - 1; i >= 0; i--)
-            {
-                tmp[i] = (byte)(tmpValue.intValue() | 0x80);
-                tmpValue = tmpValue.shiftRight(7);
-            }
-            tmp[byteCount - 1] &= 0x7F;
-            out.write(tmp, 0, tmp.length);
-        }
+        tmp[byteCount - 1] &= 0x7F;
+        buf.write(tmp, 0, tmp.length);
     }
 }

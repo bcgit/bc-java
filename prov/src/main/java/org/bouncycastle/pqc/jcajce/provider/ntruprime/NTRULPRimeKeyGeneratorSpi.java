@@ -16,6 +16,7 @@ import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class NTRULPRimeKeyGeneratorSpi
         extends KeyGeneratorSpi
@@ -71,7 +72,7 @@ public class NTRULPRimeKeyGeneratorSpi
             }
             catch (DestroyFailedException e)
             {
-                throw new IllegalStateException("key cleanup failed");
+                throw Exceptions.illegalStateException("key cleanup failed", e);
             }
 
             return rv;

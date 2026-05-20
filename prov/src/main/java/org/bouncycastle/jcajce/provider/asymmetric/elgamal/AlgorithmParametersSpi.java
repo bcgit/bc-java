@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
+import org.bouncycastle.util.Exceptions;
 
 public class AlgorithmParametersSpi
     extends BaseAlgorithmParameters
@@ -99,11 +100,11 @@ public class AlgorithmParametersSpi
         }
         catch (ClassCastException e)
         {
-            throw new IOException("Not a valid ElGamal Parameter encoding.");
+            throw Exceptions.ioException("Not a valid ElGamal Parameter encoding.", e);
         }
         catch (ArrayIndexOutOfBoundsException e)
         {
-            throw new IOException("Not a valid ElGamal Parameter encoding.");
+            throw Exceptions.ioException("Not a valid ElGamal Parameter encoding.", e);
         }
     }
 

@@ -293,7 +293,7 @@ public class SignatureSpi
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            throw new IllegalStateException("unable to set context on ML-DSA");
+            throw Exceptions.illegalStateException("unable to set context on ML-DSA", e);
         }
 
         this.unprimed = false;

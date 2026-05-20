@@ -251,7 +251,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         }
 
         return Utils.getPgpSignatureGenerator(implementation, signingKey.getPGPPublicKey(),
-            unlockedKey.getPrivateKey(), parameters, null, null);
+            unlockedKey.getPrivateKey(), parameters, parameters.getSignatureCreationTime(), null);
     }
 
     private int getPreferredHashAlgorithm(OpenPGPCertificate.OpenPGPComponentKey key)

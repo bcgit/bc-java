@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * The Parameters ASN.1 CHOICE from X9.62.
@@ -37,7 +38,7 @@ public class X962Parameters
             }
             catch (Exception e)
             {
-                throw new IllegalArgumentException("unable to parse encoded data: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("unable to parse encoded data", e);
             }
         }
 

@@ -22,8 +22,8 @@ import org.bouncycastle.asn1.cryptopro.Gost2814789EncryptedKey;
 import org.bouncycastle.asn1.cryptopro.GostR3410KeyTransport;
 import org.bouncycastle.asn1.cryptopro.GostR3410TransportParameters;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cms.AbstractKeyTransRecipient;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.KeyTransRecipient;
 import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.operator.OperatorException;
@@ -31,7 +31,7 @@ import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 import org.bouncycastle.util.Arrays;
 
 public abstract class JceKeyTransRecipient
-    implements KeyTransRecipient
+    extends AbstractKeyTransRecipient
 {
     private PrivateKey recipientKey;
 
@@ -158,7 +158,7 @@ public abstract class JceKeyTransRecipient
     protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedEncryptionKey)
         throws CMSException
     {
-        if (CMSUtils.isGOST(keyEncryptionAlgorithm.getAlgorithm()))
+        if (isGOST(keyEncryptionAlgorithm.getAlgorithm()))
         {
             try
             {

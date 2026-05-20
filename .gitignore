@@ -14,6 +14,7 @@
 bin/
 build/
 */build/
+dist/
 libs/*.jar
 out/
 */out/

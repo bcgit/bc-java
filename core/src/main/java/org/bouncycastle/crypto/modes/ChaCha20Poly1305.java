@@ -32,7 +32,6 @@ public class ChaCha20Poly1305
 
     private static final int BUF_SIZE = 64;
     private static final int KEY_SIZE = 32;
-    private static final int NONCE_SIZE = 12;
     private static final int MAC_SIZE = 16;
     private static final byte[] ZEROES = new byte[MAC_SIZE - 1];
 
@@ -41,9 +40,10 @@ public class ChaCha20Poly1305
 
     private final ChaCha7539Engine chacha20;
     private final Mac poly1305;
+    private final int nonceSize;
 
     private final byte[] key = new byte[KEY_SIZE];
-    private final byte[] nonce = new byte[NONCE_SIZE];
+    private final byte[] nonce;
     private final byte[] buf = new byte[BUF_SIZE + MAC_SIZE];
     private final byte[] mac = new byte[MAC_SIZE];
 
@@ -61,6 +61,17 @@ public class ChaCha20Poly1305
 
     public ChaCha20Poly1305(Mac poly1305)
     {
+        this(poly1305, new ChaCha7539Engine(), 12);
+    }
+
+    /**
+     * Subclass-only constructor allowing the underlying ChaCha20 engine and
+     * nonce size to be supplied (used by XChaCha20-Poly1305, which swaps in
+     * an XChaCha20Engine and a 24-byte nonce while reusing the rest of the
+     * AEAD construction unchanged).
+     */
+    protected ChaCha20Poly1305(Mac poly1305, ChaCha7539Engine chacha20, int nonceSize)
+    {
         if (null == poly1305)
         {
             throw new NullPointerException("'poly1305' cannot be null");
@@ -70,8 +81,10 @@ public class ChaCha20Poly1305
             throw new IllegalArgumentException("'poly1305' must be a 128-bit MAC");
         }
 
-        this.chacha20 = new ChaCha7539Engine();
+        this.chacha20 = chacha20;
         this.poly1305 = poly1305;
+        this.nonceSize = nonceSize;
+        this.nonce = new byte[nonceSize];
     }
 
     public String getAlgorithmName()
@@ -113,7 +126,7 @@ public class ChaCha20Poly1305
         }
         else
         {
-            throw new IllegalArgumentException("invalid parameters passed to ChaCha20Poly1305");
+            throw new IllegalArgumentException("invalid parameters passed to " + getAlgorithmName());
         }
 
         // Validate key
@@ -133,9 +146,9 @@ public class ChaCha20Poly1305
         }
 
         // Validate nonce
-        if (null == initNonce || NONCE_SIZE != initNonce.length)
+        if (null == initNonce || nonceSize != initNonce.length)
         {
-            throw new IllegalArgumentException("Nonce must be 96 bits");
+            throw new IllegalArgumentException("Nonce must be " + (nonceSize * 8) + " bits");
         }
 
         // Check for encryption with reused nonce
@@ -143,7 +156,7 @@ public class ChaCha20Poly1305
         {
             if (null == initKeyParam || Arrays.areEqual(key, initKeyParam.getKey()))
             {
-                throw new IllegalArgumentException("cannot reuse nonce for ChaCha20Poly1305 encryption");
+                throw new IllegalArgumentException("cannot reuse nonce for " + getAlgorithmName() + " encryption");
             }
         }
 
@@ -152,7 +165,7 @@ public class ChaCha20Poly1305
             initKeyParam.copyTo(key, 0, KEY_SIZE);
         }
 
-        System.arraycopy(initNonce, 0, nonce, 0, NONCE_SIZE);
+        System.arraycopy(initNonce, 0, nonce, 0, nonceSize);
 
         chacha20.init(true, chacha20Params);
 
@@ -422,7 +435,7 @@ public class ChaCha20Poly1305
 
             if (!Arrays.constantTimeAreEqual(MAC_SIZE, mac, 0, buf, resultLen))
             {
-                throw new InvalidCipherTextException("mac check in ChaCha20Poly1305 failed");
+                throw new InvalidCipherTextException("mac check in " + getAlgorithmName() + " failed");
             }
 
             break;
@@ -480,7 +493,7 @@ public class ChaCha20Poly1305
         case State.ENC_AAD:
             break;
         case State.ENC_FINAL:
-            throw new IllegalStateException("ChaCha20Poly1305 cannot be reused for encryption");
+            throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
         default:
             throw new IllegalStateException();
         }
@@ -502,7 +515,7 @@ public class ChaCha20Poly1305
         case State.ENC_DATA:
             break;
         case State.ENC_FINAL:
-            throw new IllegalStateException("ChaCha20Poly1305 cannot be reused for encryption");
+            throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
         default:
             throw new IllegalStateException();
         }

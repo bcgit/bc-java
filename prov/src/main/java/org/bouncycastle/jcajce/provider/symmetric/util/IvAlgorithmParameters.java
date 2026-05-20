@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class IvAlgorithmParameters
     extends BaseAlgorithmParameters
@@ -96,7 +97,7 @@ public class IvAlgorithmParameters
             }
             catch (Exception e)
             {
-                throw new IOException("Exception decoding: " + e);
+                throw Exceptions.ioException("Exception decoding: " + e, e);
             }
 
             return;

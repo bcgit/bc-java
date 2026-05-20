@@ -193,7 +193,7 @@ class TestUtils
                 {
                     continue;
                 }
-                if (line.isEmpty())
+                if (line.length() != 0)
                 {
                     if (!buf.isEmpty())
                     {

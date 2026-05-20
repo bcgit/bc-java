@@ -49,8 +49,7 @@ public abstract class X448Field
         {
             d |= x[i] ^ y[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return ((d - 1) & ~d) >> 31;
     }
 
     public static boolean areEqualVar(int[] x, int[] y)
@@ -360,8 +359,7 @@ public abstract class X448Field
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return ((d - 1) & ~d) >> 31;
     }
 
     public static boolean isOneVar(int[] x)
@@ -376,8 +374,7 @@ public abstract class X448Field
         {
             d |= x[i];
         }
-        d = (d >>> 1) | (d & 1);
-        return (d - 1) >> 31;
+        return ((d - 1) & ~d) >> 31;
     }
 
     public static boolean isZeroVar(int[] x)

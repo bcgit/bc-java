@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.operator.OutputEncryptor;
-
+import org.bouncycastle.util.Exceptions;
 /**
  * A class for creating EncryptedPrivateKeyInfo structures.
  * <pre>
@@ -53,7 +53,7 @@ public class PKCS8EncryptedPrivateKeyInfoBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot encode privateKeyInfo");
+            throw Exceptions.illegalStateException("cannot encode privateKeyInfo", e);
         }
     }
 }

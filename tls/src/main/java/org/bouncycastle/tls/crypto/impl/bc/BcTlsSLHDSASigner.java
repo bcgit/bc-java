@@ -1,9 +1,9 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.SLHDSASigner;
 import org.bouncycastle.pqc.crypto.MessageSignerAdapter;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSASigner;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -30,7 +30,8 @@ public class BcTlsSLHDSASigner
 
         if (!SignatureScheme.isSLHDSA(signatureScheme))
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not SLH-DSA");
         }
 
         this.signatureScheme = signatureScheme;

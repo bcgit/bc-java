@@ -16,7 +16,6 @@ import java.util.regex.Pattern;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -35,9 +34,11 @@ import org.bouncycastle.mime.MimeParserListener;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * ESTService provides unified access to an EST server which is defined as implementing
@@ -404,6 +405,36 @@ public class ESTService
         ESTAuth auth, boolean certGen)
         throws IOException
     {
+        return enrollPop(reEnroll, builder, contentSigner, auth, certGen, null);
+    }
+
+    /**
+     * Implements Enroll with PoP and RFC 7894-aware tls-unique attribute selection.
+     * <p>
+     * When {@code csrAttrs} advertises {@link PKCSObjectIdentifiers#id_aa_estIdentityLinking}
+     * the tls-unique value is conveyed in an {@code id-aa-estIdentityLinking}
+     * attribute (RFC 7894 §3.3 / §4); otherwise the legacy
+     * {@code pkcs_9_at_challengePassword} attribute is used (RFC 7030 §3.5).
+     * </p>
+     *
+     * @param reEnroll      True = re enroll.
+     * @param builder       The request builder.
+     * @param contentSigner The content signer.
+     * @param auth          Auth modes.
+     * @param certGen       if true will request server key generation.
+     * @param csrAttrs      the CSR-Attributes response previously fetched from the
+     *                      server, or {@code null} if none is available.
+     * @return Enrollment response.
+     * @throws IOException
+     */
+    public EnrollmentResponse enrollPop(
+        boolean reEnroll,
+        final PKCS10CertificationRequestBuilder builder,
+        final ContentSigner contentSigner,
+        ESTAuth auth, boolean certGen,
+        final CSRAttributesResponse csrAttrs)
+        throws IOException
+    {
         if (!clientProvider.isTrusted())
         {
             throw new IllegalStateException("No trust anchors.");
@@ -425,7 +456,9 @@ public class ESTService
                     throws IOException
                 {
                     //
-                    // Add challenge password from tls unique
+                    // Add the tls-unique value either as estIdentityLinking (RFC 7894)
+                    // or as the legacy challengePassword (RFC 7030 §3.5), per the
+                    // CSR-Attributes response.
                     //
 
                     if (source instanceof TLSUniqueProvider && ((TLSUniqueProvider)source).isTLSUniqueAvailable())
@@ -435,8 +468,7 @@ public class ESTService
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
 
-                        // -DM Base64.toBase64String
-                        localBuilder.setAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
+                        TlsUniqueAttributeUtil.setTlsUniqueAttribute(localBuilder, tlsUnique, csrAttrs);
                         bos.write(annotateRequest(localBuilder.build(contentSigner).getEncoded()).getBytes());
                         bos.flush();
 
@@ -501,7 +533,31 @@ public class ESTService
     public EnrollmentResponse simpleEnrollPoP(boolean reEnroll, final PKCS10CertificationRequestBuilder builder, final ContentSigner contentSigner, ESTAuth auth)
         throws IOException
     {
-        return enrollPop(reEnroll, builder, contentSigner, auth, false);
+        return enrollPop(reEnroll, builder, contentSigner, auth, false, null);
+    }
+
+    /**
+     * Simple enrollment with PoP and RFC 7894-aware tls-unique attribute selection.
+     *
+     * @param reEnroll      True = re enroll.
+     * @param builder       The request builder.
+     * @param contentSigner The content signer.
+     * @param auth          Auth modes.
+     * @param csrAttrs      the CSR-Attributes response previously fetched from the
+     *                      server, or {@code null} for the legacy
+     *                      {@code challengePassword} attribute.
+     * @return Enrollment response.
+     * @throws IOException
+     */
+    public EnrollmentResponse simpleEnrollPoP(
+        boolean reEnroll,
+        final PKCS10CertificationRequestBuilder builder,
+        final ContentSigner contentSigner,
+        ESTAuth auth,
+        CSRAttributesResponse csrAttrs)
+        throws IOException
+    {
+        return enrollPop(reEnroll, builder, contentSigner, auth, false, csrAttrs);
     }
 
 
@@ -520,7 +576,30 @@ public class ESTService
         ESTAuth auth)
         throws IOException
     {
-        return enrollPop(false, builder, contentSigner, auth, true);
+        return enrollPop(false, builder, contentSigner, auth, true, null);
+    }
+
+    /**
+     * Simple enrollment with PoP, server-side key creation, and RFC 7894-aware
+     * tls-unique attribute selection.
+     *
+     * @param builder       The request builder.
+     * @param contentSigner The content signer.
+     * @param auth          Auth modes.
+     * @param csrAttrs      the CSR-Attributes response previously fetched from the
+     *                      server, or {@code null} for the legacy
+     *                      {@code challengePassword} attribute.
+     * @return Enrollment response.
+     * @throws IOException
+     */
+    public EnrollmentResponse simpleEnrollPopWithServersideCreation(
+        final PKCS10CertificationRequestBuilder builder,
+        final ContentSigner contentSigner,
+        ESTAuth auth,
+        CSRAttributesResponse csrAttrs)
+        throws IOException
+    {
+        return enrollPop(false, builder, contentSigner, auth, true, csrAttrs);
     }
 
 
@@ -615,7 +694,7 @@ public class ESTService
                         }
                         catch (CMCException e)
                         {
-                            throw new IOException(e.getMessage());
+                            throw Exceptions.ioException(e.getMessage(), e);
                         }
 
                         // We want to check we got what we expected in terms of responses,
@@ -704,9 +783,15 @@ public class ESTService
 
                 break;
             case 204:
-                response = null;
-                break;
             case 404:
+                // RFC 7030 sec. 4.5: a 204 has no body and a 404 SHOULD be empty.
+                // Some servers nevertheless attach an error body (e.g. a JSON
+                // message) to a 404. Drain whatever is there so the subsequent
+                // resp.close() in the finally block doesn't trip the
+                // LimitedInputStream's "Stream closed before limit fully read"
+                // guard and obscure the actual 404 status with a useless wrapper
+                // exception (github #781).
+                Streams.drain(resp.getInputStream());
                 response = null;
                 break;
             default:

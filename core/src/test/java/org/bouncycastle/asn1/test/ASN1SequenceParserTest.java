@@ -5,17 +5,22 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Exception;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.DERSequenceGenerator;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class ASN1SequenceParserTest 
     extends TestCase 
@@ -327,6 +332,34 @@ public class ASN1SequenceParserTest
        seqGen.close();
       
        assertTrue("explicit BER tag writing test failed.", Arrays.equals(berExpTagSeqData, bOut.toByteArray()));
+    }
+
+    public void testHeavilyDLNestedSequence()
+        throws Exception
+    {
+        try
+        {
+            ASN1Sequence seq = ASN1Sequence.getInstance(new ASN1InputStream(TestResourceFinder.findTestResource("asn1", "nested_seq.der")).readObject());
+            fail("no exception");
+        }
+        catch (ASN1Exception e)
+        {
+            assertEquals("maximum nested construction level reached", e.getMessage());
+        }
+    }
+
+    public void testHeavilyBERNestedSequence()
+        throws Exception
+    {
+        try
+        {
+            ASN1Sequence seq = ASN1Sequence.getInstance(new ASN1InputStream(TestResourceFinder.findTestResource("asn1", "nested_seq_indef.ber")).readObject());
+            fail("no exception");
+        }
+        catch (ASN1Exception e)
+        {
+            assertEquals("maximum nested construction level reached", e.getMessage());
+        }
     }
 
     public void testSequenceWithDERNullReading()

@@ -5,7 +5,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
-import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
@@ -19,7 +18,6 @@ import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
@@ -172,8 +170,10 @@ public final class SM4
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("AlgorithmParameters.SM4", PREFIX + "$AlgParams");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + GMObjectIdentifiers.sms4_cbc, "SM4");
 
             provider.addAlgorithm("AlgorithmParameterGenerator.SM4", PREFIX + "$AlgParamGen");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + GMObjectIdentifiers.sms4_cbc, "SM4");
 
             provider.addAlgorithm("Cipher.SM4", PREFIX + "$ECB");
 

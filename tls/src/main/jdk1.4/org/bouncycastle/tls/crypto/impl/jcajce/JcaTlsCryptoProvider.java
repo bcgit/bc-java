@@ -11,8 +11,8 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 
 /**
  * Basic builder class for constructing standard JcaTlsCrypto classes.
@@ -62,6 +62,8 @@ public class JcaTlsCryptoProvider
     {
         try
         {
+            JcaJceHelper helper = getHelper();
+
             if (random == null)
             {
                 if (helper instanceof DefaultJcaJceHelper)
@@ -91,7 +93,7 @@ public class JcaTlsCryptoProvider
      */
     public TlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
-        return new JcaTlsCrypto(helper, keyRandom, nonceRandom);
+        return new JcaTlsCrypto(getHelper(), keyRandom, nonceRandom);
     }
 
     public JcaJceHelper getHelper()

@@ -53,6 +53,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeOutputStream;
@@ -352,7 +353,7 @@ public class BcKeyStoreSpi
         }
         catch (CertificateEncodingException ex)
         {
-            throw new IOException(ex.toString());
+            throw Exceptions.ioException(ex.toString(), ex);
         }
     }
 
@@ -374,11 +375,11 @@ public class BcKeyStoreSpi
         }
         catch (NoSuchProviderException ex)
         {
-            throw new IOException(ex.toString());
+            throw Exceptions.ioException(ex.toString(), ex);
         }
         catch (CertificateException ex)
         {
-            throw new IOException(ex.toString());
+            throw Exceptions.ioException(ex.toString(), ex);
         }
     }
 
@@ -458,7 +459,7 @@ public class BcKeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException("Exception creating key: " + e.toString());
+            throw Exceptions.ioException("Exception creating key: " + e.toString(), e);
         }
     }
 
@@ -484,7 +485,7 @@ public class BcKeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException("Error initialising store of key store: " + e);
+            throw Exceptions.ioException("Error initialising store of key store: " + e, e);
         }
     }
 

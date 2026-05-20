@@ -36,6 +36,12 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 
+/**
+ * The Diffie-Hellman-based KEMs registered by RFC 9180 &sect;7.1: DHKEM(P-256, HKDF-SHA256),
+ * DHKEM(P-384, HKDF-SHA384), DHKEM(P-521, HKDF-SHA512), DHKEM(X25519, HKDF-SHA256),
+ * DHKEM(X448, HKDF-SHA512). Concrete {@link KEM} subclass selected by the {@code kemId}
+ * passed to the {@link HPKE} constructor.
+ */
 class DHKEM
     extends KEM
 {

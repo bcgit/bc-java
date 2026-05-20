@@ -20,6 +20,37 @@ import org.bouncycastle.util.Integers;
  * "extensible coordinates" (for accumulators). Standard
  * <a href="https://hyperelliptic.org/EFD/g1p/auto-twisted-extended.html">extended coordinates</a> are used
  * during precomputations, needing only a single extra point addition formula.
+ * <p>
+ * <b>Algorithm map.</b>
+ * <ul>
+ *   <li>Key generation &mdash; {@code generatePrivateKey} returns a 32-byte seed;
+ *       {@code generatePublicKey} (via {@code scalarMultBaseEncoded}) computes
+ *       {@code A = s * B} where {@code s} is the SHA-512-expanded clamped secret scalar (RFC 8032
+ *       sec. 5.1.5), using the constant-time signed multi-comb {@code scalarMultBase}.</li>
+ *   <li>Signing &mdash; {@code sign} computes {@code R = r * B} (signed multi-comb) where
+ *       {@code r = SHA-512(prefix || M) mod L}, then {@code S = (r + k * s) mod L} (RFC 8032
+ *       sec. 5.1.6). Reduction modulo {@code L} uses {@code Scalar25519.reduce512} (Barrett-style,
+ *       straight-line). No variable-base scalar multiplication is performed.</li>
+ *   <li>Verification &mdash; {@code verify} uses the basis reduction algorithm of
+ *       <a href="https://ia.cr/2020/454">Pornin</a> via {@code Scalar25519.reduceBasisVar} then evaluates the
+ *       combined relation with Strauss-Shamir's trick in {@code scalarMultStraus128Var}. Both routines are
+ *       deliberately variable-time and operate only on public material (signature, message, public key).</li>
+ *   <li>Coordinates &mdash; the precomputed base-point comb table lives in
+ *       <a href="https://ia.cr/2012/309">half-Niels</a> form; signing-side accumulators use extensible
+ *       (twisted Edwards) coordinates so each step needs only one extra point-addition formula.
+ *       Verification re-uses projective extended coordinates throughout.</li>
+ * </ul>
+ * <p>
+ * <b>Side-channel scope.</b> The signing path (which operates on the secret seed, the derived secret
+ * scalar, and the secret per-message nonce) is written to be constant-time at the Java level: the comb
+ * {@code scalarMultBase} walks all precomputed entries via mask-based {@code cmov} rather than a
+ * secret-indexed array load, conditional sign application uses XOR-with-mask {@code cnegate}, scalar
+ * recoding via {@code toSignedDigits} uses mask-driven {@code caddTo}, and {@code Scalar25519.reduce512}
+ * is fully unrolled straight-line arithmetic. This is sufficient against a remote network timing attacker
+ * but is not a substitute for a constant-time native implementation against a co-located
+ * cache-line-resolution adversary &mdash; JVM-level timing variance from JIT, GC and cache eviction is not
+ * addressable in pure Java. Verification routines (those suffixed {@code Var}) are deliberately
+ * variable-time and operate only on public material.
  */
 public abstract class Ed25519
 {
@@ -938,14 +969,18 @@ public abstract class Ed25519
     {
 //        assert pointsLen > 0;
 
-        pointCopy(p, points[pointsOff] = new PointExtended());
+        PointExtended q = new PointExtended();
+        pointCopy(p, q);
+        points[pointsOff] = q;
 
         PointExtended d = new PointExtended();
-        pointAdd(points[pointsOff], points[pointsOff], d, t);
+        pointAdd(q, q, d, t);
 
         for (int i = 1; i < pointsLen; ++i)
         {
-            pointAdd(points[pointsOff + i - 1], d, points[pointsOff + i] = new PointExtended(), t);
+            PointExtended r = new PointExtended();
+            pointAdd(points[pointsOff + i - 1], d, r, t);
+            points[pointsOff + i] = r;
         }
     }
 
@@ -997,8 +1032,9 @@ public abstract class Ed25519
         int i = 0;
         for (;;)
         {
-            PointPrecompZ r = points[i] = new PointPrecompZ();
+            PointPrecompZ r = new PointPrecompZ();
             pointCopy(q, r);
+            points[i] = r;
 
             if (++i == count)
             {
@@ -1063,7 +1099,7 @@ public abstract class Ed25519
             PointExtended u = new PointExtended();
             for (int block = 0; block < PRECOMP_BLOCKS; ++block)
             {
-                PointExtended sum = points[pointsIndex++] = new PointExtended();
+                PointExtended sum = new PointExtended();
 
                 for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
                 {
@@ -1092,6 +1128,8 @@ public abstract class Ed25519
                 F.negate(sum.x, sum.x);
                 F.negate(sum.t, sum.t);
 
+                points[pointsIndex++] = sum;
+                
                 for (int tooth = 0; tooth < (PRECOMP_TEETH - 1); ++tooth)
                 {
                     int size = 1 << tooth;
@@ -1111,7 +1149,7 @@ public abstract class Ed25519
             for (int i = 0; i < wnafPoints; ++i)
             {
                 PointExtended q = points[i];
-                PointPrecomp r = PRECOMP_BASE_WNAF[i] = new PointPrecomp();
+                PointPrecomp r = new PointPrecomp();
 
                 // Calculate x/2 and y/2 (because the z value holds half the inverse; see above).
                 F.mul(q.x, q.z, q.x);
@@ -1127,13 +1165,15 @@ public abstract class Ed25519
                 F.normalize(r.ymx_h);
                 F.normalize(r.ypx_h);
                 F.normalize(r.xyd);
+
+                PRECOMP_BASE_WNAF[i] = r;
             }
 
             PRECOMP_BASE128_WNAF = new PointPrecomp[wnafPoints];
             for (int i = 0; i < wnafPoints; ++i)
             {
                 PointExtended q = points[wnafPoints + i];
-                PointPrecomp r = PRECOMP_BASE128_WNAF[i] = new PointPrecomp();
+                PointPrecomp r = new PointPrecomp();
 
                 // Calculate x/2 and y/2 (because the z value holds half the inverse; see above).
                 F.mul(q.x, q.z, q.x);
@@ -1149,6 +1189,8 @@ public abstract class Ed25519
                 F.normalize(r.ymx_h);
                 F.normalize(r.ypx_h);
                 F.normalize(r.xyd);
+
+                PRECOMP_BASE128_WNAF[i] = r;
             }
 
             PRECOMP_BASE_COMB = F.createTable(combPoints * 3);

@@ -1,6 +1,5 @@
 package org.bouncycastle.est;
 
-
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Iterator;

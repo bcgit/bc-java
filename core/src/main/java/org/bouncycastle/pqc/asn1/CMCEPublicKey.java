@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.asn1;
 
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;

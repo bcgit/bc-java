@@ -29,6 +29,18 @@ public class FalconPrivateKeyParameters
         return Arrays.clone(pk);
     }
 
+    /**
+     * Return the matching {@link FalconPublicKeyParameters} for this private
+     * key — equivalent to {@code new FalconPublicKeyParameters(getParameters(),
+     * getPublicKey())}. Mirrors {@code MLDSAPrivateKeyParameters.getPublicKeyParameters()}
+     * and lets wallet / HSM code recover the public key from a stored
+     * private key without re-running keygen (github #2297).
+     */
+    public FalconPublicKeyParameters getPublicKeyParameters()
+    {
+        return new FalconPublicKeyParameters(getParameters(), pk);
+    }
+
     public byte[] getSpolyf()
     {
         return Arrays.clone(f);

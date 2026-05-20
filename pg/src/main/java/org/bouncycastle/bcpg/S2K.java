@@ -6,7 +6,9 @@ import java.io.InputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Properties;
 
 
 /**
@@ -157,6 +159,11 @@ public class S2K
             passes = dIn.read();
             parallelism = dIn.read();
             memorySizeExponent = dIn.read();
+            // TODO: should really be 3 + log2(parallelism)
+            if (memorySizeExponent < 3 || memorySizeExponent > Properties.asInteger(Argon2Parameters.MAX_MEMORY_EXP, 30))
+            {
+                throw new IOException("memory size exponent out of range");
+            }
             break;
 
         case GNU_DUMMY_S2K:
@@ -550,7 +557,7 @@ public class S2K
              * Memory size (i.e. 1 << memorySizeExponent) MUST be an integer number of kibibytes from 8*p to 2^32-1.
              * Max here is 30 because we are treating memory size as a signed 32-bit value.
              */
-            int minExp = 35 - Integers.numberOfLeadingZeros(parallelism - 1);
+            int minExp = 3 + Integers.bitLength(parallelism - 1);
             int maxExp = 30;
             if (memSizeExp < minExp || memSizeExp > maxExp)
             {

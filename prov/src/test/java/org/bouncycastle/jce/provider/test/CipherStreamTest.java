@@ -291,7 +291,8 @@ public class CipherStreamTest
                     (byte)137, (byte)138, (byte)140, (byte)143 };
 
             byte[] keyBytes;
-            if (name.equals("HC256") || name.equals("XSalsa20") || name.equals("ChaCha7539") || name.equals("ChaCha20"))
+            if (name.equals("HC256") || name.equals("XSalsa20") || name.equals("ChaCha7539") || name.equals("ChaCha20")
+                || name.equals("XChaCha20"))
             {
                 keyBytes = key256;
             }
@@ -415,6 +416,8 @@ public class CipherStreamTest
         runTest("ChaCha20");
         testException("ChaCha20");
         testAlgorithm("ChaCha20", CHA7539K, CHA7539IV, CHA7539IN, CHA7539OUT);
+        runTest("XChaCha20");
+        testException("XChaCha20");
         runTest("HC128");
         testException("HC128");
         testAlgorithm("HC128", HCK128A, HC128IV, HCIN, HC128A);

@@ -165,15 +165,7 @@ configure(allprojects.findAll {it.name != 'bom'}) {
 
 }
 
-task printProperties {
-    doLast {
-        println bcTestDataHome
-    }
-}
-
 ext {
-    bcTestDataHome = file('core/src/test/data').absolutePath
-
     JavaVersion current = JavaVersion.current();
     if (current.compareTo(JavaVersion.VERSION_1_8) <= 0) {
         ext.vmrange = 'jdk15to18'
@@ -205,10 +197,8 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 
     task testFull(type: Test) {
         systemProperties = [
-                'bc.test.data.home': bcTestDataHome,
                 'test.full'        : 'true'
         ]
-        systemProperty 'bc.test.data.home', bcTestDataHome
         maxHeapSize = "1536m"
 
         finalizedBy jacocoTestReport
@@ -221,7 +211,6 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     test {
         forkEvery = 1;
         maxParallelForks = 1;
-        systemProperty 'bc.test.data.home', bcTestDataHome
         maxHeapSize = "1536m"
         testLogging.showStandardStreams = false
 
@@ -252,18 +241,29 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     nohttp {
-        source.exclude '**/*.asc'
-        source.exclude '**/*.class'
+        source.exclude '*/*.asc'
+        source.exclude '*/*.bpg'
+        source.exclude '*/*.class'
+        source.exclude '*/*.crl'
+        source.exclude '*/*.eml'
+        source.exclude '*/*.gen'
+        source.exclude '*/*.gpg'
+        source.exclude '*/*.jar'
+        source.exclude '*/*.message'
+        source.exclude '*/*.pub'
+        source.exclude '*/*.rsp'
+        source.exclude '.*'
+        source.exclude 'out'
+        source.exclude 'build'
+        source.exclude '**/build'
+        source.exclude '**/src/test'
+        source.exclude '**/*.cnf'
         source.exclude '**/*.crt'
-        source.exclude '**/*.crl'
-        source.exclude '**/*.eml'
-        source.exclude '**/*.gpg'
-        source.exclude '**/*.jar'
-        source.exclude '**/*.message'
+        source.exclude '**/*.iml'
+        source.exclude '**/*.key'
+        source.exclude '**/*.txt'
         source.exclude '**/*.pem'
-        source.exclude '**/*.*pub'
-        source.exclude '**/*.rsp'
-        source.exclude 'out/*'
+        source.exclude '**/legacy'
     }
 
     jacocoTestReport {
@@ -289,8 +289,69 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 
 test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test17', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
 
-apply from: "publish.gradle"
+// Aggregate all published jars (main, sources, javadoc) into a top-level dist/
+// directory so consumers have a single place to pick up the build outputs.
+def distModules = ['core', 'util', 'prov', 'pkix', 'pg', 'tls', 'mls', 'mail', 'jmail']
 
+distModules.each { evaluationDependsOn(":$it") }
+
+task copyJars(type: Copy) {
+    description = 'Bundles produced jars (main, sources, javadoc) into the top-level dist/ directory.'
+    group = 'distribution'
+
+    distModules.each { name ->
+        def sp = project(":$name")
+        from(sp.tasks.named('jar'))
+        from(sp.tasks.named('sourcesJar'))
+        from(sp.tasks.named('javadocJar'))
+    }
+
+    into layout.projectDirectory.dir('dist')
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    doFirst {
+        delete fileTree(destinationDir).matching { include '*.jar' }
+    }
+
+    doLast {
+        logger.lifecycle("Copied ${didWork ? source.files.size() : 0} jar(s) to ${destinationDir}")
+    }
+}
+
+// As copyJars but omits bccore, whose classes are already bundled into the
+// published bcprov jar via the core-into-prov srcDirs trick. Matches the set
+// of artifacts published to Maven Central.
+task copyMavenJars(type: Copy) {
+    description = 'Bundles the Maven publication set of jars (everything except bccore) into the top-level dist/ directory.'
+    group = 'distribution'
+
+    (distModules - 'core').each { name ->
+        def sp = project(":$name")
+        from(sp.tasks.named('jar'))
+        from(sp.tasks.named('sourcesJar'))
+        from(sp.tasks.named('javadocJar'))
+    }
+
+    into layout.projectDirectory.dir('dist')
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    doFirst {
+        delete fileTree(destinationDir).matching { include '*.jar' }
+    }
+
+    doLast {
+        logger.lifecycle("Copied ${didWork ? source.files.size() : 0} jar(s) to ${destinationDir}")
+    }
+}
+
+//apply from: "publish.gradle"
+
+//tasks.named('checkstyleNohttp') {
+//    doFirst {
+//        println "NoHttp is scanning the following files:"
+//        source.each { file -> println file }
+//    }
+//}
 
 
 

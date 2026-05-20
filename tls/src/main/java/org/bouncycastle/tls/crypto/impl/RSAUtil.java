@@ -17,6 +17,7 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class RSAUtil
 {
@@ -66,7 +67,7 @@ public class RSAUtil
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage());
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 

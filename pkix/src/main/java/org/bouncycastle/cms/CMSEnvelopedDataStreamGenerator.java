@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.EnvelopedData;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 
@@ -32,6 +31,17 @@ import org.bouncycastle.operator.OutputEncryptor;
  *
  *      out.close();
  * </pre>
+ * <p>
+ * <b>Stream handling note:</b>
+ * <ul>
+ *   <li>The returned OutputStream must be closed to finalize the CMS structure.</li>
+ *   <li>Closing the returned stream <b>does not close</b> the underlying OutputStream
+ *       passed to {@code open()}.</li>
+ *   <li>Callers are responsible for closing the underlying OutputStream separately.
+ *       If the underlying OutputStream is a buffering encoder whose tail state
+ *       only flushes on close (e.g. Apache Commons {@code Base64OutputStream}),
+ *       failing to close it will cause the encoded output to be truncated.</li>
+ * </ul>
  */
 public class CMSEnvelopedDataStreamGenerator
     extends CMSEnvelopedGenerator

@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
 public class HSSPublicKeyParameters
@@ -117,7 +118,7 @@ public class HSSPublicKeyParameters
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot parse signature: " + e.getMessage());
+            throw Exceptions.illegalStateException("cannot parse signature", e);
         }
      
         LMSSignedPubKey[] signedPubKeys = signature.getSignedPubKey();

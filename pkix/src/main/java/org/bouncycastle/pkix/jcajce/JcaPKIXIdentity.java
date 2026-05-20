@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.pkix.PKIXIdentity;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Holder class for public/private key based identity information.
@@ -45,7 +46,7 @@ public class JcaPKIXIdentity
         }
         catch (CertificateEncodingException e)
         {
-            throw new IllegalArgumentException("Unable to process certificates: " + e.getMessage());
+            throw Exceptions.illegalArgumentException("Unable to process certificates", e);
         }
     }
 

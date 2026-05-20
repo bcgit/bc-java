@@ -1,6 +1,5 @@
 package org.bouncycastle.est;
 
-
 import java.io.IOException;
 
 /**

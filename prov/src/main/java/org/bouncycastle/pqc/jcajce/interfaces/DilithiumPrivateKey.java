@@ -2,6 +2,11 @@ package org.bouncycastle.pqc.jcajce.interfaces;
 
 import java.security.PrivateKey;
 
+
+/**
+ * @deprecated to be deleted - use ML-DSA instead.
+ */
+@Deprecated
 public interface DilithiumPrivateKey
     extends PrivateKey, DilithiumKey
 {

@@ -38,6 +38,15 @@ import org.bouncycastle.util.io.TeeOutputStream;
  *
  *      out.close();
  * </pre>
+ * <p>
+ * <b>Stream handling note:</b>
+ * <ul>
+ *   <li>The returned OutputStream must be closed to finalize the CMS structure and
+ *       emit the MAC.</li>
+ *   <li>Closing the returned stream <b>does not close</b> the underlying OutputStream
+ *       passed to {@code open()}.</li>
+ *   <li>Callers are responsible for closing the underlying OutputStream separately.</li>
+ * </ul>
  */
 public class CMSAuthenticatedDataStreamGenerator
     extends CMSAuthenticatedGenerator

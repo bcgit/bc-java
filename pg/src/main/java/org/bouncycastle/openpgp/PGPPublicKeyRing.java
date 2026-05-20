@@ -26,6 +26,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Longs;
 
@@ -136,7 +137,7 @@ public class PGPPublicKeyRing
         }
         catch (PGPException e)
         {
-            throw new IOException("processing exception: " + e.toString());
+            throw Exceptions.ioException("processing exception: " + e.toString(), e);
         }
     }
 
@@ -351,6 +352,36 @@ public class PGPPublicKeyRing
 
             k.encode(outStream, forTransfer);
         }
+    }
+
+    /**
+     * Return a copy of this key ring carrying only the underlying public-key
+     * packets &mdash; user IDs, user-attribute packets, trust packets, key
+     * certifications and subkey-binding signatures are all dropped from every
+     * key in the ring.
+     * <p>
+     * Convenience wrapper that walks the ring and calls
+     * {@link PGPPublicKey#copyMinimal} on each entry. Typical use cases:
+     * producing a minimal key ring for OpenPGP v6 revocation-certificate
+     * distribution, stripping irrelevant data from a key downloaded from a
+     * key server, GDPR-style stripping of user identity data, or wire-size
+     * reduction. Issue #1400.
+     *
+     * @param fingerPrintCalculator calculator providing the digest support to
+     *                              compute the key fingerprints of the copies.
+     * @return a new {@code PGPPublicKeyRing} containing minimal copies of every
+     *         key in the original ring, in the same order.
+     * @throws PGPException if any packet is faulty, or the required calculations fail.
+     */
+    public PGPPublicKeyRing copyMinimal(KeyFingerPrintCalculator fingerPrintCalculator)
+        throws PGPException
+    {
+        List<PGPPublicKey> minimal = new ArrayList<PGPPublicKey>(this.keys.size());
+        for (int i = 0; i != this.keys.size(); i++)
+        {
+            minimal.add(((PGPPublicKey)this.keys.get(i)).copyMinimal(fingerPrintCalculator));
+        }
+        return new PGPPublicKeyRing(minimal);
     }
 
     /**
