@@ -1,130 +1,62 @@
 package org.bouncycastle.asn1.plants;
 
-import java.io.IOException;
-import java.util.Arrays;
-
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.util.Arrays;
 
 /**
- * ASN.1 representation of a cosigner signature used in {@link MTCProof}.
+ * A single cosigner signature, as it appears inside the TLS-encoded MTCProof
+ * defined by
+ * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/#section-6.1">draft-ietf-plants-merkle-tree-certs, Section 6.1</a>:
  *
  * <pre>
- * MTCSignature ::= SEQUENCE {
- *     cosigner_id   ASN1RelativeOID,
- *     signature     OCTET STRING
- * }
+ * struct {
+ *     TrustAnchorID cosigner_id;
+ *     opaque signature&lt;0..2^16-1&gt;;
+ * } MTCSignature;
+ *
+ * opaque TrustAnchorID&lt;1..2^8-1&gt;;
  * </pre>
+ *
+ * <p>This is not an ASN.1 type, despite living under {@code org.bouncycastle.asn1.plants}
+ * alongside the OID constants. The cosigner ID is the <em>binary</em> trust
+ * anchor ID per Section 3 of draft-ietf-tls-trust-anchor-ids &mdash; the base-128
+ * OID-component bytes only, without the ASN.1 RELATIVE-OID tag or length octets.</p>
  */
 public class MTCSignature
-    extends ASN1Object
 {
-    private final ASN1RelativeOID cosignerId;
-    private final ASN1OctetString signature;
+    private final byte[] cosignerId;
+    private final byte[] signature;
 
-    public static MTCSignature getInstance(Object obj)
-    {
-        if (obj instanceof MTCSignature)
-        {
-            return (MTCSignature)obj;
-        }
-        else if (obj != null)
-        {
-            return new MTCSignature(ASN1Sequence.getInstance(obj));
-        }
-
-        return null;
-    }
-
-    private MTCSignature(ASN1Sequence seq)
-    {
-        if (seq.size() != 2)
-        {
-            throw new IllegalArgumentException("Invalid MTCSignature sequence size");
-        }
-
-        this.cosignerId = ASN1RelativeOID.getInstance(seq.getObjectAt(0));
-        this.signature = ASN1OctetString.getInstance(seq.getObjectAt(1));
-    }
-
+    /**
+     * @param cosignerId binary trust anchor ID (1..255 bytes)
+     * @param signature  raw signature value (0..65535 bytes)
+     */
     public MTCSignature(byte[] cosignerId, byte[] signature)
     {
-        this.cosignerId = ASN1RelativeOID.fromContents(cosignerId);
-        this.signature = DEROctetString.fromContents(signature);
-    }
-
-    public MTCSignature(ASN1RelativeOID cosignerId, ASN1OctetString signature)
-    {
-        this.cosignerId = cosignerId;
-        this.signature = signature;
-    }
-
-    public ASN1RelativeOID getCosignerId()
-    {
-        return cosignerId;
-    }
-
-    public ASN1OctetString getSignature()
-    {
-        return signature;
+        if (cosignerId == null || cosignerId.length < 1 || cosignerId.length > 255)
+        {
+            throw new IllegalArgumentException("cosigner_id length must be 1..255 bytes");
+        }
+        if (signature == null || signature.length > 0xFFFF)
+        {
+            throw new IllegalArgumentException("signature length must be 0..65535 bytes");
+        }
+        this.cosignerId = Arrays.clone(cosignerId);
+        this.signature = Arrays.clone(signature);
     }
 
     /**
-     * Returns the raw value bytes of the RELATIVE‑OID (the OID components without the tag and length).
-     * This is the internal encoding of the OID value.
-     *
-     * @return the OID value bytes
-     * @throws IOException if DER encoding fails
+     * @return the binary trust anchor ID of the cosigner
      */
-    public byte[] getCosignerIdValue()
-        throws IOException
+    public byte[] getCosignerId()
     {
-        ASN1RelativeOID relativeOID = new ASN1RelativeOID(cosignerId.getId());
-        byte[] full = relativeOID.getEncoded(ASN1Encoding.DER);
-
-        int offset = 1; // skip tag (0x0D)
-
-        int lengthByte = full[offset] & 0xFF;
-
-        int length;
-        int headerLength;
-
-        if ((lengthByte & 0x80) == 0)
-        {
-            // short form length
-            length = lengthByte;
-            headerLength = 2;
-        }
-        else
-        {
-            // long form length
-            int numLengthBytes = lengthByte & 0x7F;
-            length = 0;
-            for (int i = 0; i < numLengthBytes; i++)
-            {
-                length = (length << 8) | (full[offset + 1 + i] & 0xFF);
-            }
-            headerLength = 2 + numLengthBytes;
-        }
-
-        return Arrays.copyOfRange(full, headerLength, headerLength + length);
+        return Arrays.clone(cosignerId);
     }
 
     /**
-     * Returns the ASN.1 OCTET STRING containing the signature.
+     * @return the raw signature value
      */
-    public byte[] getSignatureValue()
+    public byte[] getSignature()
     {
-        return signature.getOctets();
-    }
-
-    @Override
-    public ASN1Primitive toASN1Primitive()
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(cosignerId);
-        v.add(signature);
-
-        return new DERSequence(v);
+        return Arrays.clone(signature);
     }
 }

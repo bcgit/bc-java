@@ -13,6 +13,8 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1RelativeOID;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.plants.CloudFlareObjectIdentifiers;
 import org.bouncycastle.asn1.plants.MTCSignature;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
@@ -23,7 +25,6 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificateLogEntry;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.Validity;
-import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.plants.LandmarkCertificateManager;
@@ -40,19 +41,21 @@ import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.test.SimpleTest;
 
-public class LandmarkCertificateManagerTest extends SimpleTest
+public class LandmarkCertificateManagerTest
+    extends SimpleTest
 {
+    private static final String LOG_TAID_STRING = "32473.1";
+
     private MerkleTreePrimitives.MerkleTreeHash hashFunc;
     private AsymmetricCipherKeyPair ecdsaKeyPair;
     private AsymmetricCipherKeyPair ed25519KeyPair;
     private byte[] logId;
-    private ASN1ObjectIdentifier baseId;
 
-    public void setUp() throws Exception
+    public void setUp()
+        throws Exception
     {
         hashFunc = new MerkleTreePrimitives.Sha256MerkleTreeHash();
 
-        // Generate keys (same as in main test)
         ECKeyPairGenerator ecGen = new ECKeyPairGenerator();
         X9ECParameters ecP = SECNamedCurves.getByName("secp256r1");
         ECNamedDomainParameters ecParams = new ECNamedDomainParameters(
@@ -64,82 +67,76 @@ public class LandmarkCertificateManagerTest extends SimpleTest
         Ed25519PublicKeyParameters edPub = edPriv.generatePublicKey();
         ed25519KeyPair = new AsymmetricCipherKeyPair(edPub, edPriv);
 
-        logId = new ASN1RelativeOID("1.2.3").getEncoded();
-        baseId = new ASN1ObjectIdentifier("1.2.3.100"); // dummy base for landmarks
+        logId = binaryTrustAnchorID(LOG_TAID_STRING);
     }
 
-    @Override
     public String getName()
     {
         return "LandmarkCertificateManagerTest";
     }
 
-    @Override
-    public void performTest() throws Exception
+    public void performTest()
+        throws Exception
     {
         setUp();
         testBuildLandmarkCertificate();
         testTrustedSubtreeManager();
     }
 
-    private void testBuildLandmarkCertificate() throws Exception
+    private void testBuildLandmarkCertificate()
+        throws Exception
     {
-        // Create a dummy TBSCertificateLogEntry and SPKI
         TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
-        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
-            ecdsaKeyPair.getPublic());
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
 
         long index = 42;
-        long start = 41;
-        long end = 43;
+        long start = 40;
+        long end = 44;
 
-        // Compute entry hash using validator's method (simplified)
-        // In a real test, we'd build a full TBSCertificate first.
-        // For simplicity, we'll just create a dummy entry hash.
-        byte[] entryHash = hashFunc.hashLeaf("dummy".getBytes());
-
-        // Inclusion proof for two‑leaf subtree
+        // Two-leaf inclusion proof (the certificate's entry plus one sibling),
+        // wrapped up into the SubtreeInfo passed through to the builder.
         byte[] siblingHash = hashFunc.hashLeaf("sibling".getBytes());
         List<byte[]> inclusionProof = Collections.singletonList(siblingHash);
-        byte[] subtreeHash = hashFunc.hashNode(siblingHash, entryHash);
 
         MerkleTreePrimitives.SubtreeInfo landmarkSubtree = new MerkleTreePrimitives.SubtreeInfo(start, end);
 
-        // Build landmark certificate
         X509CertificateHolder cert = LandmarkCertificateManager.buildLandmarkCertificate(
-            index, tbsEntry, spki, landmarkSubtree, inclusionProof, hashFunc
-        );
+            index, tbsEntry, spki, landmarkSubtree, inclusionProof, hashFunc);
 
-        // Verify it's a valid X.509 structure with our OID
         AlgorithmIdentifier sigAlg = cert.getSignatureAlgorithm();
-        isTrue("Signature algorithm must be id-alg-mtcProof",
-            MerkleTreeCertificateValidator.ID_ALG_MTC_PROOF.equals(sigAlg.getAlgorithm().getId()));
+        isTrue("Signature algorithm is id-alg-mtcProof",
+            CloudFlareObjectIdentifiers.id_alg_mtcProof.equals(sigAlg.getAlgorithm()));
+        isTrue("Signature algorithm parameters are absent", sigAlg.getParameters() == null);
 
-        // Check that serial number equals index
         isEquals(index, cert.getSerialNumber().longValue());
 
-        // Optionally, decode MTCProof and verify it contains no signatures
-        // (This would require making MTCProof parsing accessible)
+        // Decode the MTCProof from the signatureValue and confirm it carries no signatures.
+        org.bouncycastle.cert.plants.MTCProof decoded =
+            new org.bouncycastle.cert.plants.MTCProof(cert.getSignature());
+        isEquals(start, decoded.getStart());
+        isEquals(end, decoded.getEnd());
+        isEquals(0, decoded.getSignatures().size());
+        isTrue("Inclusion proof bytes preserved",
+            areEqual(siblingHash, decoded.getInclusionProof()));
     }
 
-    private void testTrustedSubtreeManager() throws Exception
+    private void testTrustedSubtreeManager()
+        throws Exception
     {
-        // Setup cosigners
-        Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosigners = new HashMap<>();
-        byte[] cosignerId = new ASN1RelativeOID("1.2.3.7").getEncoded();
+        byte[] cosignerId = binaryTrustAnchorID("32473.7");
+
+        Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosigners =
+            new HashMap<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter>();
         cosigners.put(new MerkleTreeCertificateValidator.ByteArrayKey(cosignerId), ed25519KeyPair.getPublic());
 
         LandmarkCertificateManager.TrustedSubtreeManager manager = new LandmarkCertificateManager.TrustedSubtreeManager(
-            logId, hashFunc, cosigners, 1 // min 1 cosignature
-        );
+            logId, hashFunc, cosigners, 1);
 
-        // Create a dummy checkpoint (tree size 100)
         long checkpointSize = 100;
         byte[] checkpointRoot = hashFunc.hashLeaf("checkpointRoot".getBytes());
         LandmarkCertificateManager.TrustedSubtreeManager.Checkpoint checkpoint =
             new LandmarkCertificateManager.TrustedSubtreeManager.Checkpoint(checkpointSize, checkpointRoot);
 
-        // Sign checkpoint with Ed25519
         byte[] signedData = buildCheckpointSignatureInput(logId, checkpointSize, checkpointRoot, cosignerId);
         Ed25519Signer signer = new Ed25519Signer();
         signer.init(true, ed25519KeyPair.getPrivate());
@@ -148,19 +145,17 @@ public class LandmarkCertificateManagerTest extends SimpleTest
         List<MTCSignature> checkpointSigs =
             Collections.singletonList(new MTCSignature(cosignerId, signature));
 
-        // Define a subtree that exactly matches the checkpoint (start=0, end=checkpointSize, hash=checkpointRoot)
+        // The trivial case: a subtree that exactly equals the checkpoint can be
+        // accepted with an empty consistency proof.
         long subStart = 0;
         long subEnd = checkpointSize;
-        byte[] subHash = checkpointRoot; // same hash
-
-        // Consistency proof is empty because subtree equals checkpoint
+        byte[] subHash = checkpointRoot;
         List<byte[]> consistencyProof = Collections.emptyList();
 
-        // Add landmark subtree – should succeed
-        boolean added = manager.addLandmarkSubtree(subStart, subEnd, subHash, checkpoint, consistencyProof, checkpointSigs);
-        isTrue("Landmark subtree should be added", added);
+        boolean added = manager.addLandmarkSubtree(
+            subStart, subEnd, subHash, checkpoint, consistencyProof, checkpointSigs);
+        isTrue("Landmark subtree added", added);
 
-        // Verify it appears in trusted list
         List<LandmarkCertificateManager.TrustedSubtreeEntry> trusted = manager.getTrustedSubtrees();
         isEquals(1, trusted.size());
         LandmarkCertificateManager.TrustedSubtreeEntry entry = trusted.get(0);
@@ -168,30 +163,59 @@ public class LandmarkCertificateManagerTest extends SimpleTest
         isEquals(subEnd, entry.getEnd());
         isTrue("Subtree hash matches", areEqual(subHash, entry.getHash()));
 
-        // Try adding with invalid cosignature (tamper signature)
+        // A tampered cosignature must be rejected.
         byte[] badSignature = signature.clone();
         badSignature[0] ^= 0x01;
-        List<MTCSignature> badSigs =
-            Collections.singletonList(new MTCSignature(cosignerId, badSignature));
+        List<MTCSignature> badSigs = Collections.singletonList(new MTCSignature(cosignerId, badSignature));
         added = manager.addLandmarkSubtree(subStart, subEnd, subHash, checkpoint, consistencyProof, badSigs);
-        isTrue("Addition should fail with invalid cosignature", !added);
+        isTrue("Tampered cosignature rejected", !added);
     }
 
-    private byte[] buildCheckpointSignatureInput(byte[] logId, long treeSize, byte[] rootHash, byte[] cosignerId) throws IOException
+    // ----- Helpers ----------------------------------------------------------
+
+    private static byte[] binaryTrustAnchorID(String dotted)
+        throws IOException
+    {
+        byte[] encoded = new ASN1RelativeOID(dotted).getEncoded();
+        int lengthByte = encoded[1] & 0xFF;
+        int contentOff;
+        int contentLen;
+        if ((lengthByte & 0x80) == 0)
+        {
+            contentLen = lengthByte;
+            contentOff = 2;
+        }
+        else
+        {
+            int n = lengthByte & 0x7F;
+            contentLen = 0;
+            for (int i = 0; i < n; i++)
+            {
+                contentLen = (contentLen << 8) | (encoded[2 + i] & 0xFF);
+            }
+            contentOff = 2 + n;
+        }
+        byte[] out = new byte[contentLen];
+        System.arraycopy(encoded, contentOff, out, 0, contentLen);
+        return out;
+    }
+
+    private byte[] buildCheckpointSignatureInput(byte[] logId, long treeSize, byte[] rootHash, byte[] cosignerId)
+        throws IOException
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         baos.write("mtc-subtree/v1\n\0".getBytes("ASCII"));
-        baos.write((byte) cosignerId.length);
+        baos.write((byte)cosignerId.length);
         baos.write(cosignerId);
-        baos.write((byte) logId.length);
+        baos.write((byte)logId.length);
         baos.write(logId);
-        writeUint64(baos, 0); // start = 0 for checkpoint
+        writeUint64(baos, 0L); // checkpoint: start == 0
         writeUint64(baos, treeSize);
         baos.write(rootHash);
         return baos.toByteArray();
     }
 
-    private void writeUint64(ByteArrayOutputStream baos, long v)
+    private static void writeUint64(ByteArrayOutputStream baos, long v)
     {
         baos.write((byte)(v >>> 56));
         baos.write((byte)(v >>> 48));
@@ -203,11 +227,12 @@ public class LandmarkCertificateManagerTest extends SimpleTest
         baos.write((byte)v);
     }
 
-    private TBSCertificateLogEntry createDummyTBSCertificateLogEntry() throws IOException
+    private TBSCertificateLogEntry createDummyTBSCertificateLogEntry()
+        throws IOException
     {
-        ASN1ObjectIdentifier trustAnchorOid = X509Extension.id_rdna_trustAnchorID;
-        ASN1RelativeOID logIdRelOid = new ASN1RelativeOID("1.2.3");
-        AttributeTypeAndValue attr = new AttributeTypeAndValue(trustAnchorOid, logIdRelOid);
+        AttributeTypeAndValue attr = new AttributeTypeAndValue(
+            CloudFlareObjectIdentifiers.id_rdna_trustAnchorID,
+            new DERUTF8String(LOG_TAID_STRING));
         X500Name issuer = new X500Name(new RDN[]{new RDN(attr)});
 
         Time notBefore = new Time(new Date());
@@ -220,13 +245,12 @@ public class LandmarkCertificateManagerTest extends SimpleTest
 
         byte[] dummyKey = new byte[10];
         new SecureRandom().nextBytes(dummyKey);
-        byte[] spkiHash = hashFunc.hashLeaf(dummyKey);
+        byte[] spkiHash = hashFunc.hashRaw(dummyKey);
 
         return new TBSCertificateLogEntry(
             new ASN1Integer(0), issuer, validity, subject,
             subjectPublicKeyAlgorithm, new DEROctetString(spkiHash),
-            null, null, null
-        );
+            null, null, null);
     }
 
     public static void main(String[] args)
