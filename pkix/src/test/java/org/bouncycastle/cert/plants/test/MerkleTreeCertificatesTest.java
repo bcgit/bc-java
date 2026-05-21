@@ -303,12 +303,17 @@ public class MerkleTreeCertificatesTest
 
         // [42, 44) is a valid subtree per Section 4.1: start (42) is a multiple
         // of BIT_CEIL(end - start) = BIT_CEIL(2) = 2.
+        final long logNumber = 1;
         final long index = 42;
+        final long serial = (logNumber << 48) | index;  // Section 6.1 of draft-04
         long start = 42;
         long end = 44;
+        // Construct the log ID by appending OID components 0 and logNumber to
+        // the CA ID, matching what the validator will compute.
+        byte[] cosignedLogId = binaryLogId(LOG_TAID_STRING, logNumber);
 
         AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(CloudFlareObjectIdentifiers.id_alg_mtcProof);
-        TBSCertificate tbs = buildTBSCertificate(tbsEntry, index, sigAlg, spki);
+        TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial, sigAlg, spki);
 
         // Compute the entry hash from the TBS by way of a synthetic certificate (we
         // do not have an MTCProof yet, so use an empty BIT STRING placeholder).
@@ -322,7 +327,7 @@ public class MerkleTreeCertificatesTest
         byte[] subtreeHash = hashFunc.hashNode(entryHash, siblingHash);
 
         byte[] cosignerId = binaryTrustAnchorID("32473.4");
-        byte[] signedData = buildSignatureInput(logId, start, end, subtreeHash, cosignerId);
+        byte[] signedData = buildSignatureInput(cosignedLogId, start, end, subtreeHash, cosignerId);
         Ed25519Signer signer = new Ed25519Signer();
         signer.init(true, ed25519KeyPair.getPrivate());
         signer.update(signedData, 0, signedData.length);
@@ -369,7 +374,7 @@ public class MerkleTreeCertificatesTest
 
         // Revoking the index must fail validation.
         Set<Long> revoked = new HashSet<Long>();
-        revoked.add(Long.valueOf(index));
+        revoked.add(Long.valueOf(index));   // the lower 48 bits of the serial
         final MerkleTreeCertificateValidator.ValidationParams revokedParams =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
@@ -393,12 +398,14 @@ public class MerkleTreeCertificatesTest
         TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
         SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
 
+        final long logNumber = 1;
         long index = 42;
+        long serial = (logNumber << 48) | index;
         long start = 42;
         long end = 44;
 
         AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(CloudFlareObjectIdentifiers.id_alg_mtcProof);
-        TBSCertificate tbs = buildTBSCertificate(tbsEntry, index, sigAlg, spki);
+        TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial, sigAlg, spki);
 
         X509CertificateHolder dummyHolder = new X509CertificateHolder(
             new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(new byte[0])}).getEncoded());
@@ -479,6 +486,89 @@ public class MerkleTreeCertificatesTest
         isTrue("two-leaf inclusion proof", areEqual(root, computedRoot));
     }
 
+    /**
+     * Draft-04 §6.1: signatures in an MTCProof MUST be ordered by cosigner_id
+     * (shorter byte strings before longer; same-length lexicographic), and
+     * duplicate cosigner_ids MUST be rejected. The constructor must validate
+     * this and the parser must reject malformed encodings.
+     */
+    public void testMTCProofCosignerOrdering()
+        throws Exception
+    {
+        byte[] cosignerShort = binaryTrustAnchorID("32473.1");  // 4 bytes
+        byte[] cosignerLong = binaryTrustAnchorID("32473.1.1"); // 5 bytes
+        byte[] sigBytes = new byte[64];
+
+        // Correctly ordered: shorter cosigner_id first.
+        List<MTCSignature> good = new ArrayList<MTCSignature>();
+        good.add(new MTCSignature(cosignerShort, sigBytes));
+        good.add(new MTCSignature(cosignerLong, sigBytes));
+        org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
+            0L, 2L, hashFunc.hashLeaf("x".getBytes()), good);
+        isTrue("ordered MTCProof accepted", proof.getSignatures().size() == 2);
+
+        // Wrong order: longer first must be rejected by the constructor.
+        final List<MTCSignature> swapped = new ArrayList<MTCSignature>();
+        swapped.add(new MTCSignature(cosignerLong, sigBytes));
+        swapped.add(new MTCSignature(cosignerShort, sigBytes));
+        testException("not in canonical order", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new org.bouncycastle.cert.plants.MTCProof(0L, 2L, hashFunc.hashLeaf("x".getBytes()), swapped);
+            }
+        });
+
+        // Duplicate cosigner_id must also be rejected by the constructor.
+        final List<MTCSignature> dup = new ArrayList<MTCSignature>();
+        dup.add(new MTCSignature(cosignerShort, sigBytes));
+        dup.add(new MTCSignature(cosignerShort, sigBytes));
+        testException("Duplicate cosigner_id", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new org.bouncycastle.cert.plants.MTCProof(0L, 2L, hashFunc.hashLeaf("x".getBytes()), dup);
+            }
+        });
+
+        // The parser must reject a hand-crafted out-of-order encoding.
+        // Encode an MTCProof manually with longer cosigner_id first.
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(new byte[6]);                  // start = 0 (uint48)
+        baos.write(0); baos.write(0); baos.write(0); baos.write(0); baos.write(0); baos.write(2); // end = 2
+
+        byte[] inclProofBytes = hashFunc.hashLeaf("x".getBytes());
+        baos.write((byte)(inclProofBytes.length >>> 8));
+        baos.write((byte)inclProofBytes.length);
+        baos.write(inclProofBytes);
+
+        ByteArrayOutputStream sigsBaos = new ByteArrayOutputStream();
+        // longer first
+        sigsBaos.write((byte)cosignerLong.length);
+        sigsBaos.write(cosignerLong);
+        sigsBaos.write((byte)0); sigsBaos.write((byte)sigBytes.length);
+        sigsBaos.write(sigBytes);
+        sigsBaos.write((byte)cosignerShort.length);
+        sigsBaos.write(cosignerShort);
+        sigsBaos.write((byte)0); sigsBaos.write((byte)sigBytes.length);
+        sigsBaos.write(sigBytes);
+        byte[] sigsBytes = sigsBaos.toByteArray();
+        baos.write((byte)(sigsBytes.length >>> 8));
+        baos.write((byte)sigsBytes.length);
+        baos.write(sigsBytes);
+        final byte[] outOfOrder = baos.toByteArray();
+        testException("not in canonical order", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new org.bouncycastle.cert.plants.MTCProof(outOfOrder);
+            }
+        });
+    }
+
     // ----- Helpers ----------------------------------------------------------
 
     /**
@@ -536,22 +626,48 @@ public class MerkleTreeCertificatesTest
     }
 
     private static final byte[] SUBTREE_LABEL = new byte[]{
-        'm', 't', 'c', '-', 's', 'u', 'b', 't', 'r', 'e', 'e', '/', 'v', '1', '\n', 0
+        's', 'u', 'b', 't', 'r', 'e', 'e', '/', 'v', '1', (byte)0x0A, (byte)0x00
     };
 
+    /**
+     * Builds a CosignedMessage per Section 5.3.1 of draft-04 for the MTCProof
+     * use case (timestamp == 0).
+     */
     private byte[] buildSignatureInput(byte[] logId, long start, long end, byte[] subtreeHash, byte[] cosignerId)
         throws IOException
     {
+        byte[] cosignerName = asciiName(cosignerId);
+        byte[] logOrigin = asciiName(logId);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(SUBTREE_LABEL);
-        baos.write((byte)cosignerId.length);
-        baos.write(cosignerId);
-        baos.write((byte)logId.length);
-        baos.write(logId);
+        baos.write(SUBTREE_LABEL);                  // 12 bytes
+        baos.write((byte)cosignerName.length);
+        baos.write(cosignerName);
+        writeUint64(baos, 0L);                       // timestamp
+        baos.write((byte)logOrigin.length);
+        baos.write(logOrigin);
         writeUint64(baos, start);
         writeUint64(baos, end);
         baos.write(subtreeHash);
         return baos.toByteArray();
+    }
+
+    /**
+     * The ASCII cosigner_name/log_origin form: "oid/1.3.6.1.4.1." + dotted decimal.
+     */
+    private static byte[] asciiName(byte[] binaryTrustAnchorID)
+    {
+        String dotted = new ASN1ObjectIdentifier("1.3.6.1.4.1").branch(
+            ASN1RelativeOID.fromContents(binaryTrustAnchorID).getId()).getId();
+        // dotted is now "1.3.6.1.4.1.<orig>" -- prefix with "oid/" and emit.
+        try
+        {
+            return ("oid/" + dotted).getBytes("US-ASCII");
+        }
+        catch (java.io.UnsupportedEncodingException e)
+        {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static void writeUint64(ByteArrayOutputStream baos, long v)
@@ -568,18 +684,33 @@ public class MerkleTreeCertificatesTest
 
     private TBSCertificate buildTBSCertificate(
         TBSCertificateLogEntry tbsEntry,
-        long index,
+        long serialNumber,
         AlgorithmIdentifier sigAlg,
         SubjectPublicKeyInfo spki)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
-        v.add(new ASN1Integer(index));   // serialNumber (TBSCertificate fields skip [0] version when default v1)
-        v.add(sigAlg);                    // signature
-        v.add(tbsEntry.getIssuer());      // issuer
-        v.add(tbsEntry.getValidity());    // validity
-        v.add(tbsEntry.getSubject());     // subject
-        v.add(spki);                      // subjectPublicKeyInfo
+        v.add(new ASN1Integer(serialNumber));  // serialNumber per Section 6.1: (log_number << 48) | index
+        v.add(sigAlg);                          // signature
+        v.add(tbsEntry.getIssuer());            // issuer
+        v.add(tbsEntry.getValidity());          // validity
+        v.add(tbsEntry.getSubject());           // subject
+        v.add(spki);                            // subjectPublicKeyInfo
         return TBSCertificate.getInstance(new DERSequence(v));
+    }
+
+    /**
+     * Build the binary trust anchor ID of an issuance log: the CA's binary
+     * trust anchor ID followed by base-128(0) and base-128(logNumber).
+     */
+    private static byte[] binaryLogId(String caDotted, long logNumber)
+        throws IOException
+    {
+        byte[] caId = binaryTrustAnchorID(caDotted);
+        byte[] logComponents = binaryTrustAnchorID("0." + logNumber);
+        byte[] out = new byte[caId.length + logComponents.length];
+        System.arraycopy(caId, 0, out, 0, caId.length);
+        System.arraycopy(logComponents, 0, out, caId.length, logComponents.length);
+        return out;
     }
 
     private TBSCertificateLogEntry createDummyTBSCertificateLogEntry()
@@ -634,6 +765,7 @@ public class MerkleTreeCertificatesTest
         testStandaloneCertificateValidation();
         testLandmarkCertificateValidation();
         testInclusionProofTwoLeaf();
+        testMTCProofCosignerOrdering();
     }
 
     public static void main(String[] args)

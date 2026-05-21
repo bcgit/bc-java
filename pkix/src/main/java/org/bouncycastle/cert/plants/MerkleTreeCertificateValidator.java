@@ -169,13 +169,24 @@ public class MerkleTreeCertificateValidator
         // Step 2: decode the signatureValue as an MTCProof.
         MTCProof proof = new MTCProof(certHolder.getSignature());
 
-        // Step 3: revocation check by index (the serial number).
+        // Step 3: decompose the serial number per Section 6.1 of draft-04:
+        //   serial = (log_number << 48) | index
+        // and check revocation.
         BigInteger serialBig = certHolder.getSerialNumber();
         if (serialBig.signum() <= 0)
         {
-            throw new SecurityException("Serial number must be positive (index > 0)");
+            throw new SecurityException("Serial number must be positive");
         }
-        long index = serialBig.longValueExact();
+        if (serialBig.bitLength() > 64)
+        {
+            throw new SecurityException("Serial number exceeds uint64");
+        }
+        long index = serialBig.and(BigInteger.valueOf(0xFFFFFFFFFFFFL)).longValue();
+        long logNumber = serialBig.shiftRight(48).longValueExact();
+        if (logNumber < 1 || logNumber > 0xFFFF)
+        {
+            throw new SecurityException("Invalid log_number " + logNumber + " in serial");
+        }
         if (params.revokedIndices.contains(Long.valueOf(index)))
         {
             throw new SecurityException("Certificate index " + index + " is revoked");
@@ -216,7 +227,10 @@ public class MerkleTreeCertificateValidator
         }
 
         // Step 8: otherwise verify cosignatures against the relying-party policy.
-        byte[] logId = extractLogIdFromIssuer(certHolder.getIssuer());
+        // The issuer field carries the CA ID; the log ID is the CA ID concatenated
+        // with the OID components 0 and the log_number from the serial number.
+        byte[] caId = extractCaIdFromIssuer(certHolder.getIssuer());
+        byte[] logId = Utils.buildLogId(caId, logNumber);
 
         int validCount = 0;
         for (MTCSignature sig : proof.getSignatures())
@@ -376,16 +390,16 @@ public class MerkleTreeCertificateValidator
     }
 
     /**
-     * Extracts the binary trust anchor ID (log ID) from the issuer field of a
-     * Merkle Tree certificate. Per Section 5.2 the issuer name has a single RDN
-     * with a single attribute. For initial experimentation the attribute type is
-     * {@code id_rdna_trustAnchorID} ({@code 1.3.6.1.4.1.44363.47.1}) and the
-     * value is a UTF8String of the dotted-decimal trust anchor ID; for the
+     * Extracts the binary CA trust anchor ID from the issuer field of a Merkle
+     * Tree certificate. Per Section 5.1 of draft-04 the issuer name has a single
+     * RDN with a single attribute. For initial experimentation the attribute
+     * type is {@code id_rdna_trustAnchorID} ({@code 1.3.6.1.4.1.44363.47.1})
+     * with a UTF8String value of the dotted-decimal trust anchor ID; for the
      * production encoding the value is a RELATIVE-OID. Both are accepted; the
      * return value is the binary trust anchor ID per Section 3 of
      * draft-ietf-tls-trust-anchor-ids.
      */
-    public static byte[] extractLogIdFromIssuer(X500Name issuer)
+    public static byte[] extractCaIdFromIssuer(X500Name issuer)
         throws IOException
     {
         RDN[] rdns = issuer.getRDNs();

@@ -37,6 +37,35 @@ class Utils
             (buf[7] & 0xFFL);
     }
 
+    static void writeUint48(ByteArrayOutputStream baos, long v)
+    {
+        if (v < 0 || v > 0xFFFFFFFFFFFFL)
+        {
+            throw new IllegalArgumentException("uint48 out of range: " + v);
+        }
+        baos.write((byte)(v >>> 40));
+        baos.write((byte)(v >>> 32));
+        baos.write((byte)(v >>> 24));
+        baos.write((byte)(v >>> 16));
+        baos.write((byte)(v >>> 8));
+        baos.write((byte)v);
+    }
+
+    static long readUint48(ByteArrayInputStream in) throws IOException
+    {
+        byte[] buf = new byte[6];
+        if (in.read(buf) != 6)
+        {
+            throw new IOException("Truncated uint48");
+        }
+        return ((buf[0] & 0xFFL) << 40) |
+            ((buf[1] & 0xFFL) << 32) |
+            ((buf[2] & 0xFFL) << 24) |
+            ((buf[3] & 0xFFL) << 16) |
+            ((buf[4] & 0xFFL) << 8) |
+            (buf[5] & 0xFFL);
+    }
+
     static int readUint16(ByteArrayInputStream in) throws IOException
     {
         int b1 = in.read();
@@ -88,6 +117,60 @@ class Utils
             throw new IllegalStateException("unable to encode RELATIVE-OID for " + dotted, e);
         }
         return stripDerHeader(encoded);
+    }
+
+    /**
+     * Encodes a non-negative integer as base-128 OID component bytes (the
+     * encoding used inside ASN.1 RELATIVE-OID contents). For zero, a single
+     * zero byte is emitted. Values use minimal continuation bits.
+     */
+    static byte[] encodeBase128OidComponent(long value)
+    {
+        if (value < 0)
+        {
+            throw new IllegalArgumentException("OID component cannot be negative");
+        }
+        if (value == 0)
+        {
+            return new byte[]{0};
+        }
+        int n = 0;
+        long t = value;
+        while (t > 0)
+        {
+            n++;
+            t >>>= 7;
+        }
+        byte[] out = new byte[n];
+        for (int i = n - 1; i >= 0; i--)
+        {
+            int b = (int)((value >>> (7 * i)) & 0x7F);
+            if (i > 0)
+            {
+                b |= 0x80;
+            }
+            out[n - 1 - i] = (byte)b;
+        }
+        return out;
+    }
+
+    /**
+     * Builds the binary trust anchor ID of an issuance log from a CA's binary
+     * trust anchor ID and a log number, per Section 5.2 of
+     * draft-ietf-plants-merkle-tree-certs-04: {@code CA_ID || base128(0) || base128(log_number)}.
+     */
+    static byte[] buildLogId(byte[] caId, long logNumber)
+    {
+        byte[] zero = encodeBase128OidComponent(0);
+        byte[] logNumBytes = encodeBase128OidComponent(logNumber);
+        byte[] out = new byte[caId.length + zero.length + logNumBytes.length];
+        int pos = 0;
+        System.arraycopy(caId, 0, out, pos, caId.length);
+        pos += caId.length;
+        System.arraycopy(zero, 0, out, pos, zero.length);
+        pos += zero.length;
+        System.arraycopy(logNumBytes, 0, out, pos, logNumBytes.length);
+        return out;
     }
 
     /**

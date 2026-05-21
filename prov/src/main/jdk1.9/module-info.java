@@ -27,6 +27,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.asn1.nist;
     exports org.bouncycastle.asn1.ocsp;
     exports org.bouncycastle.asn1.pkcs;
+    exports org.bouncycastle.asn1.plants;
     exports org.bouncycastle.asn1.sec;
     exports org.bouncycastle.asn1.teletrust;
     exports org.bouncycastle.asn1.ua;
@@ -61,6 +62,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.paddings;
     exports org.bouncycastle.crypto.params;
     exports org.bouncycastle.crypto.parsers;
+    exports org.bouncycastle.asn1.plants;
     exports org.bouncycastle.crypto.prng;
     exports org.bouncycastle.crypto.prng.drbg;
     exports org.bouncycastle.crypto.signers;

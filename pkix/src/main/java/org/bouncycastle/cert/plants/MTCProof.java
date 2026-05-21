@@ -11,7 +11,8 @@ import org.bouncycastle.asn1.plants.MTCSignature;
 
 /**
  * The MTCProof structure encoded in the X.509 certificate signatureValue per
- * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/#section-6.1">draft-ietf-plants-merkle-tree-certs, Section 6.1</a>.
+ * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs-04</a>,
+ * Section 6.1.
  *
  * <pre>
  * opaque HashValue[HASH_SIZE];
@@ -22,26 +23,48 @@ import org.bouncycastle.asn1.plants.MTCSignature;
  * } MTCSignature;
  *
  * struct {
- *     uint64 start;
- *     uint64 end;
+ *     uint48 start;
+ *     uint48 end;
  *     HashValue inclusion_proof&lt;0..2^16-1&gt;;
  *     MTCSignature signatures&lt;0..2^16-1&gt;;
  * } MTCProof;
  * </pre>
  *
- * <p>The structure uses the TLS presentation language (Section 3 of RFC 8446)
- * and is encoded directly into the signatureValue BIT STRING with no ASN.1
- * wrapping.</p>
+ * <p>{@code start} and {@code end} are 6-byte unsigned big-endian integers
+ * (draft-04 shrank these from {@code uint64}). Entries of {@code signatures}
+ * MUST have unique {@code cosigner_id}s and MUST be ordered first by length
+ * (shorter byte strings before longer) and then lexicographically.</p>
  */
 public class MTCProof
 {
+    /** Maximum value of a uint48 (2^48 - 1). */
+    public static final long UINT48_MAX = 0xFFFFFFFFFFFFL;
+
     private final long start;
     private final long end;
     private final byte[] inclusionProof;
     private final List<MTCSignature> signatures;
 
+    /**
+     * Constructs an MTCProof, validating uint48 range and canonical ordering of
+     * the signatures list.
+     *
+     * @throws IllegalArgumentException if start or end exceeds 2^48-1, or if
+     *                                  the supplied signatures contain a
+     *                                  duplicate cosigner_id or are not in
+     *                                  canonical order
+     */
     public MTCProof(long start, long end, byte[] inclusionProof, List<MTCSignature> signatures)
     {
+        if (start < 0 || start > UINT48_MAX)
+        {
+            throw new IllegalArgumentException("start out of uint48 range: " + start);
+        }
+        if (end < 0 || end > UINT48_MAX)
+        {
+            throw new IllegalArgumentException("end out of uint48 range: " + end);
+        }
+        checkSignatureOrder(signatures);
         this.start = start;
         this.end = end;
         this.inclusionProof = inclusionProof.clone();
@@ -53,15 +76,16 @@ public class MTCProof
      *
      * @param data the encoded bytes (the full BIT STRING value from the
      *             certificate's signatureValue)
-     * @throws IOException if parsing fails
+     * @throws IOException if parsing fails or if the signatures list violates
+     *                     the canonical-ordering rules in Section 6.1
      */
     public MTCProof(byte[] data)
         throws IOException
     {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
 
-        this.start = Utils.readUint64(in);
-        this.end = Utils.readUint64(in);
+        this.start = Utils.readUint48(in);
+        this.end = Utils.readUint48(in);
 
         int inclLen = Utils.readUint16(in);
         this.inclusionProof = new byte[inclLen];
@@ -83,6 +107,7 @@ public class MTCProof
 
         List<MTCSignature> sigList = new ArrayList<MTCSignature>();
         ByteArrayInputStream sigsIn = new ByteArrayInputStream(sigsData);
+        byte[] prevCosignerId = null;
         while (sigsIn.available() > 0)
         {
             int idLen = sigsIn.read();
@@ -107,7 +132,20 @@ public class MTCProof
                 throw new IOException("Truncated signature");
             }
 
+            if (prevCosignerId != null)
+            {
+                int cmp = compareCosignerIds(prevCosignerId, cosignerId);
+                if (cmp == 0)
+                {
+                    throw new IOException("Duplicate cosigner_id in MTCProof.signatures");
+                }
+                if (cmp > 0)
+                {
+                    throw new IOException("MTCProof.signatures not in canonical order");
+                }
+            }
             sigList.add(new MTCSignature(cosignerId, signature));
+            prevCosignerId = cosignerId;
         }
         this.signatures = Collections.unmodifiableList(sigList);
     }
@@ -121,8 +159,8 @@ public class MTCProof
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        Utils.writeUint64(baos, start);
-        Utils.writeUint64(baos, end);
+        Utils.writeUint48(baos, start);
+        Utils.writeUint48(baos, end);
 
         if (inclusionProof.length > 0xFFFF)
         {
@@ -137,7 +175,6 @@ public class MTCProof
             byte[] cosignerId = sig.getCosignerId();
             byte[] signature = sig.getSignature();
 
-            // Constructor checks already enforce the length ranges, but be defensive.
             if (cosignerId.length < 1 || cosignerId.length > 255)
             {
                 throw new IOException("Invalid cosigner_id length: " + cosignerId.length);
@@ -187,9 +224,6 @@ public class MTCProof
     /**
      * Splits the concatenated {@link #getInclusionProof() inclusion proof} into
      * individual hash values of the given size.
-     *
-     * @param hashSize the size of each hash in bytes
-     * @return ordered list of hashes
      */
     public List<byte[]> getHashList(int hashSize)
     {
@@ -205,6 +239,50 @@ public class MTCProof
             list.add(hash);
         }
         return list;
+    }
+
+    /**
+     * The canonical comparator on cosigner_id byte strings, per Section 6.1:
+     * shorter byte strings come first, ties are broken lexicographically
+     * (unsigned).
+     */
+    public static int compareCosignerIds(byte[] a, byte[] b)
+    {
+        if (a.length != b.length)
+        {
+            return Integer.compare(a.length, b.length);
+        }
+        for (int i = 0; i < a.length; i++)
+        {
+            int diff = (a[i] & 0xFF) - (b[i] & 0xFF);
+            if (diff != 0)
+            {
+                return diff;
+            }
+        }
+        return 0;
+    }
+
+    private static void checkSignatureOrder(List<MTCSignature> sigs)
+    {
+        byte[] prev = null;
+        for (MTCSignature sig : sigs)
+        {
+            byte[] id = sig.getCosignerId();
+            if (prev != null)
+            {
+                int cmp = compareCosignerIds(prev, id);
+                if (cmp == 0)
+                {
+                    throw new IllegalArgumentException("Duplicate cosigner_id in MTCProof.signatures");
+                }
+                if (cmp > 0)
+                {
+                    throw new IllegalArgumentException("MTCProof.signatures not in canonical order");
+                }
+            }
+            prev = id;
+        }
     }
 
     private static int readFully(ByteArrayInputStream in, byte[] b)
