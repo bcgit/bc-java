@@ -200,19 +200,35 @@ public class LandmarkCertificateManagerTest
         return out;
     }
 
+    /**
+     * Builds a CosignedMessage for a checkpoint (start==0) per Section 5.3.1
+     * of draft-04. The validator's TrustedSubtreeManager invokes the verifier
+     * with {@code timestamp == 0}.
+     */
     private byte[] buildCheckpointSignatureInput(byte[] logId, long treeSize, byte[] rootHash, byte[] cosignerId)
         throws IOException
     {
+        byte[] cosignerName = asciiName(cosignerId);
+        byte[] logOrigin = asciiName(logId);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write("mtc-subtree/v1\n\0".getBytes("ASCII"));
-        baos.write((byte)cosignerId.length);
-        baos.write(cosignerId);
-        baos.write((byte)logId.length);
-        baos.write(logId);
-        writeUint64(baos, 0L); // checkpoint: start == 0
-        writeUint64(baos, treeSize);
+        baos.write("subtree/v1\n\0".getBytes("ASCII"));   // 12-byte label
+        baos.write((byte)cosignerName.length);
+        baos.write(cosignerName);
+        writeUint64(baos, 0L);                            // timestamp
+        baos.write((byte)logOrigin.length);
+        baos.write(logOrigin);
+        writeUint64(baos, 0L);                            // start (checkpoint)
+        writeUint64(baos, treeSize);                       // end
         baos.write(rootHash);
         return baos.toByteArray();
+    }
+
+    private static byte[] asciiName(byte[] binaryTrustAnchorID)
+        throws IOException
+    {
+        String dotted = ASN1RelativeOID.fromContents(binaryTrustAnchorID).getId();
+        return ("oid/1.3.6.1.4.1." + dotted).getBytes("US-ASCII");
     }
 
     private static void writeUint64(ByteArrayOutputStream baos, long v)
