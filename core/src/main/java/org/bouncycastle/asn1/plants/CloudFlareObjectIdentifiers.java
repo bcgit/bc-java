@@ -20,4 +20,11 @@ public interface CloudFlareObjectIdentifiers
 
     /** id-rdna-trustAnchorID RDN attribute OID for the certificate issuer field. */
     ASN1ObjectIdentifier id_rdna_trustAnchorID = cloudFlare.branch("47.1");
+
+    /**
+     * id-pe-mtcCertificationAuthority extension OID for the CA certificate
+     * representation (Section 5.5 of draft-04).
+     */
+    ASN1ObjectIdentifier id_pe_mtcCertificationAuthority = cloudFlare.branch("47.2");
 }
+

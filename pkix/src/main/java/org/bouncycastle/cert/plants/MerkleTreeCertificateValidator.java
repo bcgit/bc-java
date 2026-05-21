@@ -230,7 +230,7 @@ public class MerkleTreeCertificateValidator
         // The issuer field carries the CA ID; the log ID is the CA ID concatenated
         // with the OID components 0 and the log_number from the serial number.
         byte[] caId = extractCaIdFromIssuer(certHolder.getIssuer());
-        byte[] logId = Utils.buildLogId(caId, logNumber);
+        byte[] logId = TrustAnchorIDs.logId(caId, logNumber);
 
         int validCount = 0;
         for (MTCSignature sig : proof.getSignatures())
