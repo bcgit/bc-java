@@ -155,25 +155,6 @@ class Utils
     }
 
     /**
-     * Builds the binary trust anchor ID of an issuance log from a CA's binary
-     * trust anchor ID and a log number, per Section 5.2 of
-     * draft-ietf-plants-merkle-tree-certs-04: {@code CA_ID || base128(0) || base128(log_number)}.
-     */
-    static byte[] buildLogId(byte[] caId, long logNumber)
-    {
-        byte[] zero = encodeBase128OidComponent(0);
-        byte[] logNumBytes = encodeBase128OidComponent(logNumber);
-        byte[] out = new byte[caId.length + zero.length + logNumBytes.length];
-        int pos = 0;
-        System.arraycopy(caId, 0, out, pos, caId.length);
-        pos += caId.length;
-        System.arraycopy(zero, 0, out, pos, zero.length);
-        pos += zero.length;
-        System.arraycopy(logNumBytes, 0, out, pos, logNumBytes.length);
-        return out;
-    }
-
-    /**
      * Strips the leading tag and length octets from a DER encoding, returning
      * just the contents octets.
      */
