@@ -278,6 +278,8 @@ public class BCStyle
         DefaultLookUp.put("unstructuredname", UnstructuredName);
         DefaultLookUp.put("uniqueidentifier", UNIQUE_IDENTIFIER);
         DefaultLookUp.put("dn", DN_QUALIFIER);
+        DefaultLookUp.put("dnq", DN_QUALIFIER);
+        DefaultLookUp.put("dnqualifier", DN_QUALIFIER);
         DefaultLookUp.put("pseudonym", PSEUDONYM);
         DefaultLookUp.put("postaladdress", POSTAL_ADDRESS);
         DefaultLookUp.put("nameatbirth", NAME_AT_BIRTH);
@@ -323,7 +325,31 @@ public class BCStyle
         else if (oid.equals(C) || oid.equals(SERIALNUMBER) || oid.equals(DN_QUALIFIER)
             || oid.equals(TELEPHONE_NUMBER) || oid.equals(JURISDICTION_C))
         {
+            if ((oid.equals(C) || oid.equals(JURISDICTION_C)) && value.length() != 2)
+            {
+                // RFC 5280 sec. 4.1.2.4 / X.520: countryName is
+                // PrintableString (SIZE (2)). CAB Forum Baseline
+                // Requirements 7.1.4.2.1 narrows this to a valid ISO 3166-1
+                // alpha-2 code. Reject obvious-wrong-length input at
+                // build time rather than encode a non-spec value that
+                // will be rejected downstream (github #2011).
+                throw new IllegalArgumentException("country code attribute "
+                    + oid.getId() + " must be exactly 2 characters per ISO 3166-1 / X.520, got "
+                    + value.length() + ": '" + value + "'");
+            }
             return new DERPrintableString(value);
+        }
+        else if (oid.equals(CN) && value.length() > 64)
+        {
+            // RFC 5280 sec. A.1 / X.520: commonName is DirectoryString
+            // { ub-common-name } with ub-common-name = 64. OpenSSL and most
+            // validators reject longer values, so reject at build time
+            // rather than emit a cert that won't verify downstream.
+            // Existing DER-encoded names with longer CNs still parse
+            // because the parse path does not route through this method
+            // (github #750).
+            throw new IllegalArgumentException("commonName length "
+                + value.length() + " exceeds RFC 5280 ub-common-name (64): '" + value + "'");
         }
 
         return super.encodeStringValue(oid, value);

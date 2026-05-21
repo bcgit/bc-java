@@ -64,7 +64,7 @@ public class AaEntry
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{aaCertificate, accessPoint});
+        return new DERSequence(aaCertificate, accessPoint);
     }
 
     public static Builder builder()

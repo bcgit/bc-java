@@ -11,7 +11,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.cert.X509CertificateHolder;
-
+import org.bouncycastle.util.Exceptions;
 class OCSPUtils
 {
     static final X509CertificateHolder[] EMPTY_CERTS = new X509CertificateHolder[0];
@@ -27,7 +27,7 @@ class OCSPUtils
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("exception processing GeneralizedTime: " + e.getMessage());
+            throw Exceptions.illegalStateException("exception processing GeneralizedTime", e);
         }
     }
 

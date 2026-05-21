@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.sphincs;
 
-
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Strings;
 

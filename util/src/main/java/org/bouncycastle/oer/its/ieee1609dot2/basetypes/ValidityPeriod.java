@@ -72,7 +72,7 @@ public class ValidityPeriod
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{start, duration});
+        return new DERSequence(start, duration);
     }
 
     public static class Builder

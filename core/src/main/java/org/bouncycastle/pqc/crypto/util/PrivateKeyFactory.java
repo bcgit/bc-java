@@ -33,6 +33,8 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.faest.FaestParameters;
+import org.bouncycastle.pqc.crypto.faest.FaestPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -80,6 +82,7 @@ import org.bouncycastle.pqc.legacy.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -450,7 +453,7 @@ public class PrivateKeyFactory
             }
             catch (ClassNotFoundException e)
             {
-                throw new IOException("ClassNotFoundException processing BDS state: " + e.getMessage());
+                throw Exceptions.ioException("ClassNotFoundException processing BDS state: " + e.getMessage(), e);
             }
         }
         else if (algOID.equals(PQCObjectIdentifiers.xmss_mt))
@@ -485,7 +488,7 @@ public class PrivateKeyFactory
             }
             catch (ClassNotFoundException e)
             {
-                throw new IOException("ClassNotFoundException processing BDS state: " + e.getMessage());
+                throw Exceptions.ioException("ClassNotFoundException processing BDS state: " + e.getMessage(), e);
             }
         }
         else if (BCObjectIdentifiers.mayo1.equals(algOID)
@@ -508,6 +511,12 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             NTRUPlusParameters ntruPlusParams = Utils.ntruPlusParamsLookup(algOID);
             return new NTRUPlusPrivateKeyParameters(ntruPlusParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.faest))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            FaestParameters faestParams = Utils.faestParamsLookup(algOID);
+            return new FaestPrivateKeyParameters(faestParams, keyEnc);
         }
         else
         {

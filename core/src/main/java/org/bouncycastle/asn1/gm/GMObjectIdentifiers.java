@@ -96,4 +96,14 @@ public interface GMObjectIdentifiers
     ASN1ObjectIdentifier sm2sign_with_whirlpool = sm_scheme.branch("520");
     ASN1ObjectIdentifier sm2sign_with_blake2b512 = sm_scheme.branch("521");
     ASN1ObjectIdentifier sm2sign_with_blake2s256 = sm_scheme.branch("522");
+
+    // GM/T 0010-2012 SM2 cryptography application content types (mirrors PKCS#7 / CMS).
+    // Base arc 1.2.156.10197.6.1.4.2.
+    ASN1ObjectIdentifier sm2_pkcs7 = new ASN1ObjectIdentifier("1.2.156.10197.6.1.4.2");
+    ASN1ObjectIdentifier sm2_pkcs7_data = sm2_pkcs7.branch("1");
+    ASN1ObjectIdentifier sm2_pkcs7_signedData = sm2_pkcs7.branch("2");
+    ASN1ObjectIdentifier sm2_pkcs7_envelopedData = sm2_pkcs7.branch("3");
+    ASN1ObjectIdentifier sm2_pkcs7_signedAndEnvelopedData = sm2_pkcs7.branch("4");
+    ASN1ObjectIdentifier sm2_pkcs7_encryptedData = sm2_pkcs7.branch("5");
+    ASN1ObjectIdentifier sm2_pkcs7_keyAgreementInfoData = sm2_pkcs7.branch("6");
 }

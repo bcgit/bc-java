@@ -1,6 +1,5 @@
 package org.bouncycastle.tls.crypto;
 
-
 import java.security.SecureRandom;
 
 /**

@@ -2,6 +2,7 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Objects;
 
 /**
@@ -41,7 +42,7 @@ public abstract class ASN1External
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct external from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct external from byte[]", e);
             }
         }
 

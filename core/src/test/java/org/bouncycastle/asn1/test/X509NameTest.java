@@ -22,7 +22,9 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.X500NameStyle;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.X509DefaultEntryConverter;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.util.Arrays;
@@ -295,6 +297,10 @@ public class X509NameTest
         }
 
         compositeTest();
+
+        countryCodeLengthTest();
+
+        commonNameLengthTest();
 
         ByteArrayOutputStream bOut;
         ASN1OutputStream aOut;
@@ -606,6 +612,131 @@ public class X509NameTest
         }
 
         return true;
+    }
+
+    private void countryCodeLengthTest()
+        throws IOException
+    {
+        // Positive cases: 2-character codes are accepted.
+        new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.C, "US").build();
+        new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.JURISDICTION_C, "US").build();
+        new X500NameBuilder(RFC4519Style.INSTANCE).addRDN(RFC4519Style.c, "US").build();
+        new X500Name("C=AU");
+
+        X500NameStyle[] styles = new X500NameStyle[]
+            { BCStyle.INSTANCE, BCStyle.INSTANCE, RFC4519Style.INSTANCE };
+        ASN1ObjectIdentifier[] countryOids = new ASN1ObjectIdentifier[]
+            { BCStyle.C, BCStyle.JURISDICTION_C, RFC4519Style.c };
+        String[] badValues = new String[] { "USA", "U", "" };
+
+        for (int i = 0; i != countryOids.length; ++i)
+        {
+            for (int j = 0; j != badValues.length; ++j)
+            {
+                try
+                {
+                    new X500NameBuilder(styles[i])
+                        .addRDN(countryOids[i], badValues[j]).build();
+                    fail("country code attribute " + countryOids[i].getId()
+                        + " accepted '" + badValues[j] + "'");
+                }
+                catch (IllegalArgumentException expected)
+                {
+                    // expected
+                }
+            }
+        }
+
+        try
+        {
+            new X500Name("C=USA");
+            fail("X500Name(\"C=USA\") accepted 3-character country code");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        // Parsing existing DER with a non-conforming country code is
+        // deliberately still permitted (leniency boundary): we don't want
+        // to block reading already-issued certificates in the wild.
+        ASN1EncodableVector atav = new ASN1EncodableVector();
+        atav.add(BCStyle.C);
+        atav.add(new org.bouncycastle.asn1.DERPrintableString("USA"));
+        ASN1EncodableVector rdn = new ASN1EncodableVector();
+        rdn.add(new DERSet(new DERSequence(atav)));
+        X500Name parsed = X500Name.getInstance(new DERSequence(rdn));
+        if (!"USA".equals(parsed.getRDNs(BCStyle.C)[0].getFirst().getValue().toString()))
+        {
+            fail("lenient parse of 3-character C failed: " + parsed);
+        }
+    }
+
+    private void commonNameLengthTest()
+        throws IOException
+    {
+        // 64 chars: at the boundary, must be accepted.
+        String cn64 = repeat("A", 64);
+        new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, cn64).build();
+        new X500NameBuilder(RFC4519Style.INSTANCE).addRDN(RFC4519Style.cn, cn64).build();
+        new X500Name("CN=" + cn64);
+
+        // 65 chars: just over, must be rejected by both styles + the string constructor.
+        String cn65 = repeat("A", 65);
+
+        try
+        {
+            new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, cn65).build();
+            fail("BCStyle accepted 65-char CN");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        try
+        {
+            new X500NameBuilder(RFC4519Style.INSTANCE).addRDN(RFC4519Style.cn, cn65).build();
+            fail("RFC4519Style accepted 65-char CN");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        try
+        {
+            new X500Name("CN=" + cn65);
+            fail("X500Name(\"CN=...\") accepted 65-char CN");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        // Parsing existing DER with an over-length CN is deliberately
+        // still permitted: don't block reading already-issued certificates
+        // in the wild (leniency boundary, matches the country-code split).
+        ASN1EncodableVector atav = new ASN1EncodableVector();
+        atav.add(BCStyle.CN);
+        atav.add(new org.bouncycastle.asn1.DERUTF8String(cn65));
+        ASN1EncodableVector rdn = new ASN1EncodableVector();
+        rdn.add(new DERSet(new DERSequence(atav)));
+        X500Name parsed = X500Name.getInstance(new DERSequence(rdn));
+        if (!cn65.equals(parsed.getRDNs(BCStyle.CN)[0].getFirst().getValue().toString()))
+        {
+            fail("lenient parse of 65-char CN failed: " + parsed);
+        }
+    }
+
+    private static String repeat(String s, int n)
+    {
+        StringBuilder sb = new StringBuilder(s.length() * n);
+        for (int i = 0; i < n; i++)
+        {
+            sb.append(s);
+        }
+        return sb.toString();
     }
 
     private void compositeTest()

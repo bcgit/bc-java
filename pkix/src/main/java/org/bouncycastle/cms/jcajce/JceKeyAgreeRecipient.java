@@ -32,18 +32,19 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.cms.AbstractKeyAgreeRecipient;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.KeyAgreeRecipient;
 import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 public abstract class JceKeyAgreeRecipient
-    implements KeyAgreeRecipient
+    extends AbstractKeyAgreeRecipient
 {
     private static final Set possibleOldMessages = new HashSet();
 
@@ -169,7 +170,7 @@ public abstract class JceKeyAgreeRecipient
     {
         receiverPrivateKey = CMSUtils.cleanPrivateKey(receiverPrivateKey);
 
-        if (CMSUtils.isMQV(keyEncAlg.getAlgorithm()))
+        if (isMQV(keyEncAlg.getAlgorithm()))
         {
             MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(userKeyingMaterial.getOctets());
 
@@ -200,7 +201,7 @@ public abstract class JceKeyAgreeRecipient
 
             UserKeyingMaterialSpec userKeyingMaterialSpec = null;
 
-            if (CMSUtils.isEC(keyEncAlg.getAlgorithm()))
+            if (isEC(keyEncAlg.getAlgorithm()))
             {
                 byte[] ukmKeyingMaterial;
                 if (userKeyingMaterial != null)
@@ -213,14 +214,14 @@ public abstract class JceKeyAgreeRecipient
                 }
                 userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
             }
-            else if (CMSUtils.isRFC2631(keyEncAlg.getAlgorithm()))
+            else if (isRFC2631(keyEncAlg.getAlgorithm()))
             {
                 if (userKeyingMaterial != null)
                 {
                     userKeyingMaterialSpec = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
                 }
             }
-            else if (CMSUtils.isGOST(keyEncAlg.getAlgorithm()))
+            else if (isGOST(keyEncAlg.getAlgorithm()))
             {
                 if (userKeyingMaterial != null)
                 {
@@ -362,7 +363,7 @@ public abstract class JceKeyAgreeRecipient
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("Unable to create KDF material: " + e);
+                throw Exceptions.illegalStateException("Unable to create KDF material", e);
             }
         }
     };

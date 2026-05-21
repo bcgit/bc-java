@@ -69,7 +69,7 @@ public class PsidSspRange
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{psid, OEROptional.getInstance(sspRange)});
+        return new DERSequence(psid, OEROptional.getInstance(sspRange));
     }
 
     public static class Builder

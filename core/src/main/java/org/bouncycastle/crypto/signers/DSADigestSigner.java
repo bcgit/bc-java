@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.util.Exceptions;
 
 public class DSADigestSigner
     implements Signer
@@ -111,7 +112,7 @@ public class DSADigestSigner
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("unable to encode signature");
+            throw Exceptions.illegalStateException("unable to encode signature", e);
         }
     }
 

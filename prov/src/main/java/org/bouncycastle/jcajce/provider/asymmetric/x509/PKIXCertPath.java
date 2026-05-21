@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertPath;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -95,6 +94,15 @@ public  class PKIXCertPath
         }
         
         // find end-entity cert
+        // The inner "is anyone's issuer == subject?" scan iterates orig (the
+        // unchanging snapshot) rather than certs (the working list we remove
+        // from), and i-- restores the outer index after a remove. Scanning
+        // the mutating certs would misclassify an intermediary as an end-
+        // entity once its child end-entity had already been removed in an
+        // earlier iteration; advancing the outer index past a shifted-down
+        // element would skip it entirely. Either alone produces the github
+        // #1269 false multi-EE detection that falls back to the unsorted
+        // input.
         List retList = new ArrayList(certs.size());
         List orig = new ArrayList(certs);
 
@@ -102,26 +110,27 @@ public  class PKIXCertPath
         {
             X509Certificate cert = (X509Certificate)certs.get(i);
             boolean         found = false;
-            
+
             X500Principal subject = cert.getSubjectX500Principal();
-            
-            for (int j = 0; j != certs.size(); j++)
+
+            for (int j = 0; j != orig.size(); j++)
             {
-                X509Certificate c = (X509Certificate)certs.get(j);
+                X509Certificate c = (X509Certificate)orig.get(j);
                 if (c.getIssuerX500Principal().equals(subject))
                 {
                     found = true;
                     break;
                 }
             }
-            
+
             if (!found)
             {
                 retList.add(cert);
                 certs.remove(i);
+                i--;
             }
         }
-        
+
         // can only have one end entity cert - something's wrong, give up.
         if (retList.size() > 1)
         {
@@ -194,13 +203,8 @@ public  class PKIXCertPath
             else if (encoding.equalsIgnoreCase("PKCS7") || encoding.equalsIgnoreCase("PEM"))
             {
                 inStream = new BufferedInputStream(inStream);
-                certificates = new ArrayList();
-                CertificateFactory certFactory= helper.createCertificateFactory("X.509");
-                Certificate cert;
-                while ((cert = certFactory.generateCertificate(inStream)) != null)
-                {
-                    certificates.add(cert);
-                }
+                CertificateFactory certFactory = helper.createCertificateFactory("X.509");
+                certificates = new ArrayList(certFactory.generateCertificates(inStream));
             }
             else
             {

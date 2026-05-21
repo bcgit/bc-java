@@ -1,6 +1,5 @@
 package org.bouncycastle.est.jcajce;
 
-
 import java.net.Socket;
 import java.security.NoSuchProviderException;
 import java.security.Provider;

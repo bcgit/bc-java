@@ -1,6 +1,5 @@
 package org.bouncycastle.est.jcajce;
 
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;

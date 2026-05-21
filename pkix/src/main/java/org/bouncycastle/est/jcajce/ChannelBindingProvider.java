@@ -1,6 +1,5 @@
 package org.bouncycastle.est.jcajce;
 
-
 import java.net.Socket;
 
 /**

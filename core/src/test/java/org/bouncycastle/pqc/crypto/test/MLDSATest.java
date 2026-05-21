@@ -617,6 +617,96 @@ public class MLDSATest
         assertTrue("HashML-DSA pubInfo verification fails", signer.verifySignature(sig));
     }
 
+    public void testHashExternalMu()
+        throws Exception
+    {
+        // github #2198: HashML-DSA must accept a pre-computed message digest plus
+        // the digest algorithm's OID encoding, in addition to the streaming
+        // update(...) form. Both paths must produce signatures that interoperate.
+        MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+        kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(),
+            MLDSAParameters.ml_dsa_44_with_sha512));
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+        MLDSAPublicKeyParameters pubKey = (MLDSAPublicKeyParameters)kp.getPublic();
+        MLDSAPrivateKeyParameters privKey = (MLDSAPrivateKeyParameters)kp.getPrivate();
+
+        byte[] msg = Strings.toByteArray("the quick brown fox jumps over the lazy dog");
+
+        // Pre-compute the digest the way an external caller would. The OID
+        // encoding for the digest is implied by the parameter set the signer
+        // was initialised with, so the caller doesn't need to supply it.
+        org.bouncycastle.crypto.digests.SHA512Digest md =
+            new org.bouncycastle.crypto.digests.SHA512Digest();
+        md.update(msg, 0, msg.length);
+        byte[] hash = new byte[md.getDigestSize()];
+        md.doFinal(hash, 0);
+
+        // Use the new external-hash entry point with a deterministic random so the
+        // signature is byte-identical to the streaming form.
+        byte[] fixedRnd = Hex.decode(
+            "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f");
+
+        HashMLDSASigner extSigner = new HashMLDSASigner();
+        extSigner.init(true, new ParametersWithRandom(privKey, new FixedSecureRandom(fixedRnd)));
+        byte[] extSig = extSigner.generateSignature(hash);
+
+        HashMLDSASigner streamSigner = new HashMLDSASigner();
+        streamSigner.init(true, new ParametersWithRandom(privKey, new FixedSecureRandom(fixedRnd)));
+        streamSigner.update(msg, 0, msg.length);
+        byte[] streamSig = streamSigner.generateSignature();
+
+        assertTrue("external-hash and streaming signatures must match",
+            Arrays.areEqual(streamSig, extSig));
+
+        // External-hash signature verifies under the streaming verifier and vice versa.
+        HashMLDSASigner v1 = new HashMLDSASigner();
+        v1.init(false, pubKey);
+        v1.update(msg, 0, msg.length);
+        assertTrue("streaming verify of external-hash signature failed", v1.verifySignature(extSig));
+
+        HashMLDSASigner v2 = new HashMLDSASigner();
+        v2.init(false, pubKey);
+        assertTrue("external-hash verify of streaming signature failed",
+            v2.verifySignature(hash, streamSig));
+
+        // Mismatched signing/verifying state must be rejected.
+        HashMLDSASigner notInited = new HashMLDSASigner();
+        notInited.init(true, privKey);
+        try
+        {
+            notInited.verifySignature(hash, extSig);
+            fail("verifySignature on a sign-init'd signer should have thrown");
+        }
+        catch (IllegalStateException expected)
+        {
+            // expected
+        }
+
+        // Wrong-length hash inputs must be rejected (SHA-512 is 64 bytes for ml_dsa_*_with_sha512).
+        HashMLDSASigner sizeChecker = new HashMLDSASigner();
+        sizeChecker.init(true, privKey);
+        try
+        {
+            sizeChecker.generateSignature(new byte[hash.length - 1]);
+            fail("generateSignature with too-short hash should have thrown");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+
+        sizeChecker.init(false, pubKey);
+        try
+        {
+            sizeChecker.verifySignature(new byte[hash.length + 1], extSig);
+            fail("verifySignature with too-long hash should have thrown");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            // expected
+        }
+    }
+
     public void testMLDSARejection()
         throws Exception
     {

@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.SpecUtil;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 public class MLKEMKeyPairGeneratorSpi
@@ -64,7 +65,7 @@ public class MLKEMKeyPairGeneratorSpi
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new IllegalStateException("unable to find DEFAULT DRBG");
+            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
         }
     }
 

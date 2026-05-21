@@ -53,6 +53,7 @@ import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 public class IESCipher
@@ -343,7 +344,7 @@ public class IESCipher
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            throw new IllegalArgumentException("cannot handle supplied parameter spec: " + e.getMessage());
+            throw Exceptions.illegalArgumentException("cannot handle supplied parameter spec", e);
         }
 
     }

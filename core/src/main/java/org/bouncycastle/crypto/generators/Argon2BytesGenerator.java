@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.generators;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
 import org.bouncycastle.crypto.params.Argon2Parameters;
@@ -37,6 +39,8 @@ public class Argon2BytesGenerator
     private static final byte[] ZERO_BYTES = new byte[4];
 
     private Argon2Parameters parameters;
+    private BlockPool pool;
+    private int memoryBlocks;
     private Block[] memory;
     private int segmentLength;
     private int laneLength;
@@ -88,13 +92,11 @@ public class Argon2BytesGenerator
 
         // Ensure that all segments have equal length
         memoryBlocks = parameters.getLanes() * laneLength;
+        this.memoryBlocks = memoryBlocks;
 
-        this.memory = new Block[memoryBlocks];
-
-        for (int i = 0; i < memory.length; i++)
-        {
-            memory[i] = new Block();
-        }
+        BlockPool configured = parameters.getBlockPool();
+        // if no pool is provided hold on to enough blocks for the primary memory
+        this.pool = (configured != null) ? configured : new FixedBlockPool(memoryBlocks);
     }
 
     public int generateBytes(char[] password, byte[] out)
@@ -121,6 +123,7 @@ public class Argon2BytesGenerator
 
         byte[] tmpBlockBytes = new byte[ARGON2_BLOCK_SIZE];
 
+        allocateMemory();
         initialize(tmpBlockBytes, password, outLen);
         fillMemoryBlocks();
         digest(tmpBlockBytes, out, outOff, outLen);
@@ -130,10 +133,20 @@ public class Argon2BytesGenerator
         return outLen;
     }
 
-    // Clear memory.
+    // Allocate primary memory from the configured BlockPool.
+    private void allocateMemory()
+    {
+        this.memory = new Block[memoryBlocks];
+
+        for (int i = 0; i < memory.length; i++)
+        {
+            memory[i] = pool.allocate();
+        }
+    }
+
+    // Return primary memory to the BlockPool.
     private void reset()
     {
-        // Reset memory.
         if (null != memory)
         {
             for (int i = 0; i < memory.length; i++)
@@ -141,15 +154,16 @@ public class Argon2BytesGenerator
                 Block b = memory[i];
                 if (null != b)
                 {
-                    b.clear();
+                    pool.deallocate(b);
                 }
             }
         }
+        memory = null;
     }
 
     private void fillMemoryBlocks()
     {
-        FillBlock filler = new FillBlock();
+        FillBlock filler = new FillBlock(pool);
         Position position = new Position();
         for (int pass = 0; pass < parameters.getIterations(); ++pass)
         {
@@ -167,6 +181,7 @@ public class Argon2BytesGenerator
                 }
             }
         }
+        filler.deallocate(pool);
     }
 
     private void fillSegment(FillBlock filler, Position position)
@@ -546,11 +561,27 @@ public class Argon2BytesGenerator
 
     private static class FillBlock
     {
-        Block R = new Block();
-        Block Z = new Block();
+        final Block R;
+        final Block Z;
 
-        Block addressBlock = new Block();
-        Block inputBlock = new Block();
+        final Block addressBlock;
+        final Block inputBlock;
+
+        FillBlock(BlockPool pool)
+        {
+            R = pool.allocate();
+            Z = pool.allocate();
+            addressBlock = pool.allocate();
+            inputBlock = pool.allocate();
+        }
+
+        void deallocate(BlockPool pool)
+        {
+            pool.deallocate(addressBlock);
+            pool.deallocate(inputBlock);
+            pool.deallocate(R);
+            pool.deallocate(Z);
+        }
 
         private void applyBlake()
         {
@@ -611,14 +642,19 @@ public class Argon2BytesGenerator
         }
     }
 
-    private static class Block
+    /**
+     * A single 1024-byte memory block used by the Argon2 mixing function.
+     * Made public so callers can supply their own {@link BlockPool}
+     * implementations - see {@link Argon2Parameters.Builder#withBlockPool}.
+     */
+    public static class Block
     {
         private static final int SIZE = ARGON2_QWORDS_IN_BLOCK;
 
         /* 128 * 8 Byte QWords */
         private final long[] v;
 
-        private Block()
+        public Block()
         {
             v = new long[SIZE];
         }
@@ -690,6 +726,60 @@ public class Argon2BytesGenerator
 
         Position()
         {
+        }
+    }
+
+    /**
+     * Strategy for allocating and recycling Argon2 {@link Block} objects.
+     * <p>
+     * An implementation may simply return fresh blocks from
+     * {@link #allocate()} (the default behaviour) or pool them so the
+     * underlying {@code long[]} buffers can be reused across successive
+     * {@code generateBytes} calls. Implementations must accept matching
+     * allocate/deallocate pairs - the generator does not guard against
+     * double-deallocation of the same block.
+     */
+    public static interface BlockPool
+    {
+        Block allocate();
+
+        void deallocate(Block block);
+    }
+
+    /**
+     * Bounded pool that recycles up to {@code maxBlocks} {@link Block} objects.
+     * Excess blocks returned via {@link #deallocate(Block)} are dropped and
+     * left for the garbage collector. Returned blocks are zeroised both on
+     * deallocation and again on allocation, so a recycled block is never
+     * observed with stale data.
+     */
+    public static class FixedBlockPool
+        implements BlockPool
+    {
+        private final LinkedBlockingQueue<Block> blocks;
+
+        public FixedBlockPool(int maxBlocks)
+        {
+            this.blocks = new LinkedBlockingQueue<Block>(maxBlocks);
+        }
+
+        public Block allocate()
+        {
+            Block block = blocks.poll();
+            if (block == null)
+            {
+                return new Block();
+            }
+            // a deallocate() in another thread may not have published its clear()
+            // - re-clear here so callers see a zeroised block.
+            block.clear();
+            return block;
+        }
+
+        public void deallocate(Block block)
+        {
+            block.clear();
+            blocks.offer(block);
         }
     }
 }

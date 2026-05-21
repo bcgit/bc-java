@@ -3,6 +3,8 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.Exceptions;
+
 /**
  * Base class for ASN.1 primitive objects. These are the actual objects used to generate byte encodings.
  */
@@ -52,7 +54,7 @@ public abstract class ASN1Primitive
         }
         catch (ClassCastException e)
         {
-            throw new IOException("cannot recognise object in stream");
+            throw Exceptions.ioException("cannot recognise object in stream", e);
         }
     }
 

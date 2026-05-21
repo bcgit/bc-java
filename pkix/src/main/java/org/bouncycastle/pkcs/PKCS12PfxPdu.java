@@ -141,6 +141,15 @@ public class PKCS12PfxPdu
 
             MacData mData = mdGen.build(password, pfxContents);
 
+            // RFC 9579 sec. 6: for PBMAC1 the MacData salt and iterations fields are
+            // unused, so producers (e.g. OpenSSL) may write arbitrary placeholders.
+            // Compare only the inner MAC digest bytes in that case.
+            if (PKCSObjectIdentifiers.id_PBMAC1.equals(macAlgOid))
+            {
+                return Arrays.constantTimeAreEqual(
+                    mData.getMac().getDigest(), pfxmData.getMac().getDigest());
+            }
+
             return Arrays.constantTimeAreEqual(mData.getEncoded(), pfxmData.getEncoded());
         }
         catch (IOException e)

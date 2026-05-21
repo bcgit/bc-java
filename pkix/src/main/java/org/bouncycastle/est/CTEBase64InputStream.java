@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.encoders.Base64;
 
 
@@ -87,7 +88,7 @@ class CTEBase64InputStream
             }
             catch (Exception ex)
             {
-                throw new IOException("Decode Base64 Content-Transfer-Encoding: " + ex);
+                throw Exceptions.ioException("Decode Base64 Content-Transfer-Encoding: " + ex, ex);
             }
         }
         else

@@ -311,6 +311,27 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier id_alg_AEADChaCha20Poly1305 = smime_alg.branch("18");
 
     /**
+     * RFC 8418: dhSinglePass-stdDH-hkdf-sha256-scheme OBJECT IDENTIFIER ::= { smime-alg 19 }
+     * <p>
+     * 1.2.840.113549.1.9.16.3.19
+     */
+    ASN1ObjectIdentifier dhSinglePass_stdDH_hkdf_sha256_scheme = smime_alg.branch("19");
+
+    /**
+     * RFC 8418: dhSinglePass-stdDH-hkdf-sha384-scheme OBJECT IDENTIFIER ::= { smime-alg 20 }
+     * <p>
+     * 1.2.840.113549.1.9.16.3.20
+     */
+    ASN1ObjectIdentifier dhSinglePass_stdDH_hkdf_sha384_scheme = smime_alg.branch("20");
+
+    /**
+     * RFC 8418: dhSinglePass-stdDH-hkdf-sha512-scheme OBJECT IDENTIFIER ::= { smime-alg 21 }
+     * <p>
+     * 1.2.840.113549.1.9.16.3.21
+     */
+    ASN1ObjectIdentifier dhSinglePass_stdDH_hkdf_sha512_scheme = smime_alg.branch("21");
+
+    /**
      * <pre>
      *    id-alg-hkdf-with-sha256 OBJECT IDENTIFIER ::= { iso(1) member-body(2)
      *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 28 }
@@ -433,6 +454,13 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier id_aa_implCompressAlgs = id_aa.branch("43");
     /** PKCS#9: 1.2.840.113549.1.9.16.2.40   <a href="https://tools.ietf.org/html/rfc7030">RFC7030</a>*/
     ASN1ObjectIdentifier id_aa_communityIdentifiers = id_aa.branch("40");
+
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.56 - <a href="https://tools.ietf.org/html/rfc7894#section-3.1">RFC 7894 §3.1</a>: EST otpChallenge attribute, conveys a one-time password as part of a CSR. DirectoryString, length 1..255. */
+    ASN1ObjectIdentifier id_aa_otpChallenge = id_aa.branch("56");
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.57 - <a href="https://tools.ietf.org/html/rfc7894#section-3.2">RFC 7894 §3.2</a>: EST revocationChallenge attribute, unambiguous replacement for the overloaded PKCS#9 challengePassword used for certificate revocation. DirectoryString, length 1..255. */
+    ASN1ObjectIdentifier id_aa_revocationChallenge = id_aa.branch("57");
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.58 - <a href="https://tools.ietf.org/html/rfc7894#section-3.3">RFC 7894 §3.3</a>: EST estIdentityLinking attribute, unambiguous replacement for the overloaded PKCS#9 challengePassword used for transport-identity linking per <a href="https://tools.ietf.org/html/rfc7030#section-3.5">RFC 7030 §3.5</a>. DirectoryString, length 1..255. */
+    ASN1ObjectIdentifier id_aa_estIdentityLinking = id_aa.branch("58");
 
     /** @deprecated use id_aa_ets_sigPolicyId instead */
     @Deprecated

@@ -17,6 +17,38 @@ import org.bouncycastle.util.Integers;
  * <a href="https://ia.cr/2012/309">Mike Hamburg, "Fast and compact elliptic-curve cryptography"</a>. Standard
  * <a href="https://hyperelliptic.org/EFD/g1p/auto-edwards-projective.html">projective coordinates</a> are
  * used for most point arithmetic.
+ * <p>
+ * <b>Algorithm map.</b>
+ * <ul>
+ *   <li>Key generation &mdash; {@code generatePrivateKey} returns a 57-byte seed;
+ *       {@code generatePublicKey} (via {@code scalarMultBaseEncoded}) computes
+ *       {@code A = s * B} where {@code s} is the SHAKE-256-expanded clamped secret scalar
+ *       (RFC 8032 sec. 5.2.5), using the constant-time signed multi-comb {@code scalarMultBase}.</li>
+ *   <li>Signing &mdash; {@code sign} computes {@code R = r * B} (signed multi-comb) where
+ *       {@code r = SHAKE-256(dom4(F, C) || prefix || M, 912 bits) mod L}, then
+ *       {@code S = (r + k * s) mod L} (RFC 8032 sec. 5.2.6). Reduction modulo {@code L} uses
+ *       {@code Scalar448.reduce912} (Barrett-style, straight-line). No variable-base scalar
+ *       multiplication is performed.</li>
+ *   <li>Verification &mdash; {@code verify} uses the basis reduction algorithm of
+ *       <a href="https://ia.cr/2020/454">Pornin</a> via {@code Scalar448.reduceBasisVar} then evaluates the
+ *       combined relation with Strauss-Shamir's trick in {@code scalarMultStraus225Var}. Both routines are
+ *       deliberately variable-time and operate only on public material (signature, message, public key).</li>
+ *   <li>Coordinates &mdash; the precomputed base-point comb table lives in
+ *       <a href="https://hyperelliptic.org/EFD/g1p/auto-edwards-projective.html">affine</a> form
+ *       (matching {@code PointAffine} in {@code pointLookup}); the signing-side accumulator is
+ *       projective (X : Y : Z). Verification uses projective coordinates throughout.</li>
+ * </ul>
+ * <p>
+ * <b>Side-channel scope.</b> The signing path (which operates on the secret seed, the derived secret
+ * scalar, and the secret per-message nonce) is written to be constant-time at the Java level: the comb
+ * {@code scalarMultBase} walks all precomputed entries via mask-based {@code cmov} rather than a
+ * secret-indexed array load, conditional sign application uses XOR-with-mask {@code cnegate}, scalar
+ * recoding via {@code toSignedDigits} uses mask-driven {@code caddTo}, and {@code Scalar448.reduce912}
+ * is fully unrolled straight-line arithmetic. This is sufficient against a remote network timing attacker
+ * but is not a substitute for a constant-time native implementation against a co-located
+ * cache-line-resolution adversary &mdash; JVM-level timing variance from JIT, GC and cache eviction is not
+ * addressable in pure Java. Verification routines (those suffixed {@code Var}) are deliberately
+ * variable-time and operate only on public material.
  */
 public abstract class Ed448
 {

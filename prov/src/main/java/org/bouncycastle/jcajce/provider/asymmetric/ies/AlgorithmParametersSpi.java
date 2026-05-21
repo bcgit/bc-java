@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.jce.spec.IESParameterSpec;
+import org.bouncycastle.util.Exceptions;
 
 public class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -181,11 +182,11 @@ public class AlgorithmParametersSpi
         }
         catch (ClassCastException e)
         {
-            throw new IOException("Not a valid IES Parameter encoding.");
+            throw Exceptions.ioException("Not a valid IES Parameter encoding.", e);
         }
         catch (ArrayIndexOutOfBoundsException e)
         {
-            throw new IOException("Not a valid IES Parameter encoding.");
+            throw Exceptions.ioException("Not a valid IES Parameter encoding.", e);
         }
     }
 

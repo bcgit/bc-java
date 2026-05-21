@@ -36,6 +36,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 public final class GOST28147
@@ -232,7 +233,7 @@ public final class GOST28147
                 }
                 catch (Exception e)
                 {
-                    throw new IOException("Parameter parsing failed: " + e.getMessage());
+                    throw Exceptions.ioException("Parameter parsing failed: " + e.getMessage(), e);
                 }
             }
             else

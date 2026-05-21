@@ -66,7 +66,7 @@ public class RootCaEntry
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{selfsignedRootCa, OEROptional.getInstance(successorTo)});
+        return new DERSequence(selfsignedRootCa, OEROptional.getInstance(successorTo));
     }
 
     public static Builder builder()

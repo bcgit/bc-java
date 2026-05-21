@@ -1,6 +1,5 @@
 package org.bouncycastle.operator.jcajce;
 
-
 import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;

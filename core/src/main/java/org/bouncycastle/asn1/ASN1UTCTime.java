@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.SimpleTimeZone;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -120,7 +121,7 @@ public class ASN1UTCTime
         }
         catch (ParseException e)
         {
-            throw new IllegalArgumentException("invalid date string: " + e.getMessage());
+            throw Exceptions.illegalArgumentException("invalid date string", e);
         }
     }
 

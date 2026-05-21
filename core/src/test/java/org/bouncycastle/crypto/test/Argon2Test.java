@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator.Block;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator.BlockPool;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator.FixedBlockPool;
 import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -36,6 +39,9 @@ public class Argon2Test
         testPermutations();
         testVectorsFromInternetDraft();
         checkArgon2MaxMemoryExpValue();
+        testCustomBlockPoolMatchesDefault();
+        testCustomBlockPoolReusesBlocks();
+        testCustomBlockPoolBoundedDropsOverflow();
         
         int version = Argon2Parameters.ARGON2_VERSION_10;
 
@@ -358,6 +364,105 @@ public class Argon2Test
         isTrue("Argon 2id Failed", areEqual(result, Hex.decode("0d640df58d78766c08c037a34a8b53c9d01ef0452" +
             "d75b65eb52520e96b01e659")));
 
+    }
+
+    // Tests for issue #1646 / PR #1647 - configurable block pool.
+
+    private static byte[] hashWithPool(BlockPool pool)
+    {
+        byte[] salt = Hex.decode("02020202020202020202020202020202");
+        byte[] password = Hex.decode("0101010101010101010101010101010101010101010101010101010101010101");
+
+        Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+            .withVersion(Argon2Parameters.ARGON2_VERSION_13)
+            .withIterations(3)
+            .withMemoryAsKB(32)
+            .withParallelism(4)
+            .withSalt(salt);
+
+        if (pool != null)
+        {
+            builder.withBlockPool(pool);
+        }
+
+        Argon2BytesGenerator gen = new Argon2BytesGenerator();
+        gen.init(builder.build());
+
+        byte[] out = new byte[32];
+        gen.generateBytes(password, out);
+        return out;
+    }
+
+    // A user-supplied pool must produce identical output to the default
+    // (per-call FixedBlockPool) - no leftover state from prior calls.
+    private void testCustomBlockPoolMatchesDefault()
+    {
+        byte[] expected = hashWithPool(null);
+
+        FixedBlockPool pool = new FixedBlockPool(64);
+        byte[] first = hashWithPool(pool);
+        byte[] second = hashWithPool(pool);
+        byte[] third = hashWithPool(pool);
+
+        isTrue("first hash with custom pool differs from default",  Arrays.areEqual(expected, first));
+        isTrue("second hash with custom pool differs from default", Arrays.areEqual(expected, second));
+        isTrue("third hash with custom pool differs from default",  Arrays.areEqual(expected, third));
+    }
+
+    // A correctly-sized custom pool should never need to allocate fresh blocks
+    // after the first call - subsequent calls only recycle.
+    private void testCustomBlockPoolReusesBlocks()
+    {
+        CountingBlockPool pool = new CountingBlockPool();
+
+        hashWithPool(pool);
+        int afterFirst = pool.fresh;
+        isTrue("pool produced no fresh blocks on first call", afterFirst > 0);
+
+        hashWithPool(pool);
+        isTrue("pool allocated extra blocks on a recycled run: fresh=" + pool.fresh + " expected=" + afterFirst,
+            pool.fresh == afterFirst);
+
+        hashWithPool(pool);
+        isTrue("pool allocated extra blocks on a recycled run: fresh=" + pool.fresh + " expected=" + afterFirst,
+            pool.fresh == afterFirst);
+    }
+
+    // A FixedBlockPool with capacity smaller than the working set must still
+    // produce correct output - excess deallocations are silently dropped.
+    private void testCustomBlockPoolBoundedDropsOverflow()
+    {
+        byte[] expected = hashWithPool(null);
+
+        // capacity of 1 forces all but a single deallocate to be dropped
+        byte[] result = hashWithPool(new FixedBlockPool(1));
+
+        isTrue("undersized pool produced wrong hash", Arrays.areEqual(expected, result));
+    }
+
+    private static class CountingBlockPool
+        implements BlockPool
+    {
+        private final java.util.ArrayDeque<Block> available = new java.util.ArrayDeque<Block>();
+        int fresh;
+        int recycled;
+
+        public Block allocate()
+        {
+            Block b = available.pollLast();
+            if (b == null)
+            {
+                fresh++;
+                return new Block();
+            }
+            recycled++;
+            return b;
+        }
+
+        public void deallocate(Block block)
+        {
+            available.add(block);
+        }
     }
 
     private static int getJvmVersion()

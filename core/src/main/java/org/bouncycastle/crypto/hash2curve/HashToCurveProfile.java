@@ -15,7 +15,15 @@ public enum HashToCurveProfile
     P256_XMD_SHA_256(BigInteger.valueOf(-10), 48, 128, 1, null, null),
     P384_XMD_SHA_384(BigInteger.valueOf(-12), 72, 192, 1, null, null),
     P521_XMD_SHA_512(BigInteger.valueOf(-4), 98, 256, 1, null, null),
-    CURVE25519W_XMD_SHA_512_ELL2(BigInteger.valueOf(2), 48, 128, 8, 486662, 1);
+    CURVE25519W_XMD_SHA_512_ELL2(BigInteger.valueOf(2), 48, 128, 8, 486662, 1),
+    /**
+     * BLS12381G1_XMD:SHA-256_SSWU_RO_ from RFC 9380 sec. 8.8.1. The Z and h
+     * fields are not used directly here: Z is fixed inside
+     * {@code BLS12_381G1MapToCurve} (the SSWU map runs on the 11-isogenous
+     * curve E', not on E), and cofactor clearing uses h_eff rather than the
+     * raw cofactor.
+     */
+    BLS12_381_G1_XMD_SHA_256_SSWU_RO(BigInteger.valueOf(11), 64, 128, 1, null, null);
     // For future considerations
     // curve448_XOF_SHAKE256_ELL2_RO_(BigInteger.valueOf(-1), 84, 224, 4, 156326, 1),
     // edwards25519_XMD_SHA_512_ELL2_RO_(BigInteger.valueOf(2), 48, 224, 8, 486662, 1),

@@ -24,6 +24,109 @@ public class Properties
      */
     public static final String EMULATE_ORACLE = "org.bouncycastle.emulate.oracle";
 
+    /**
+     * A PKCS12 file which does not require a password will normally throw an exception if a password
+     * is provided. Setting PKCS12_IGNORE_USELESS_PASSWD to "true" will result in the provider ignoring a
+     * password if one is provided and not required.
+     */
+    public static final String PKCS12_IGNORE_USELESS_PASSWD = "org.bouncycastle.pkcs12.ignore_useless_passwd";
+
+    /**
+     * If set, a PKCS12 file with a larger iteration count on PBE processing will rejected.
+     */
+    public static final String PKCS12_MAX_IT_COUNT = "org.bouncycastle.pkcs12.max_it_count";
+
+    /**
+     * Maximum time, in seconds, that a downloaded CRL is cached by the internal CrlCache used
+     * by the CertPath validator and X509RevocationChecker. When set to a positive value, cached
+     * entries are evicted whichever expires sooner: the configured TTL or the CRL's own
+     * {@code nextUpdate}. Default (or 0) preserves the legacy behaviour of evicting only when
+     * {@code nextUpdate} has passed.
+     */
+    public static final String X509_CRL_CACHE_TTL = "org.bouncycastle.x509.crl_cache_ttl";
+
+    /**
+     * If set to "true", the BC CertPath validator and X509RevocationChecker will attempt to
+     * download CRLs over the network using URIs from each certificate's CRL Distribution Points
+     * extension when no PKIXCRLStore on the supplied PKIXParameters can satisfy the lookup.
+     * Default (unset / "false") preserves the legacy behaviour of relying entirely on caller-supplied
+     * CertStore / PKIXCRLStore registrations &mdash; "No CRLs found for issuer ..." is the result
+     * when the caller hasn't registered a store and this property is off.
+     */
+    public static final String X509_ENABLE_CRLDP = "org.bouncycastle.x509.enableCRLDP";
+
+    /**
+     * If set to "true", the BC PKCS#12 KeyStore will additionally accept (on load only)
+     * SafeBags of type secretBag that use SunJCE's non-standard nested encoding —
+     * a SecretBag whose secretTypeId is pkcs8ShroudedKeyBag and whose secretValue is
+     * an EncryptedPrivateKeyInfo wrapping a PKCS#8 PrivateKeyInfo carrying the raw
+     * secret-key bytes. Off by default; the BC keystore always writes the standards
+     * compliant RFC 7292 sec. 4.2.5 form regardless.
+     */
+    public static final String PKCS12_ALLOW_SUN_SECRET_KEYS = "org.bouncycastle.pkcs12.allow_sun_secret_keys";
+
+    /**
+     * If set to "true", RSA PKCS#1 v1.5 signature verification rejects DigestInfo
+     * encodings whose AlgorithmIdentifier omits the {@code NULL} parameters octets
+     * required by RFC 8017 sec. 9.2 / Appendix A.2.4. By default (or "false") the
+     * verifier falls back to accepting that two-byte-shorter encoding for compatibility
+     * with implementations that have historically produced it; setting this property
+     * to "true" disables the fallback so only strictly RFC-compliant signatures verify
+     * (github #2273). Affects both the BC JCE provider's
+     * {@code DigestSignatureSpi} and the lightweight {@code RSADigestSigner}.
+     */
+    public static final String PKCS1_STRICT_DIGESTINFO = "org.bouncycastle.pkcs1.strict_digestinfo";
+
+    /**
+     * Opt-in to the legacy "use the subject CN as a fallback identifier" behaviour
+     * in the BC JSSE provider's hostname verifier. When the property is set to
+     * "true", a TLS server certificate that carries no SAN dNSName entries falls
+     * back to the most specific {@code commonName} attribute of the subject DN —
+     * this matches SunJSSE and historical OpenSSL behaviour.
+     * <p>
+     * Default ("false" / unset) follows RFC 9525 sec. 6.3 (which deprecates CN-based
+     * identity for TLS) and CAB Forum Baseline Requirements 7.1.4.2 (which requires
+     * SAN dNSName entries for publicly-trusted TLS server certs). It also closes a
+     * Name-Constraint bypass surface (the 2026-03 cross-implementation X.509 audit):
+     * a constrained intermediate CA can omit dNSName SAN entries entirely so the
+     * path validator's Name-Constraint dNSName checks never fire, then embed an
+     * attacker-controlled hostname in CN — the JSSE verifier would have accepted
+     * the connection. Setting the property "false" (or leaving it unset) disables
+     * this fallback path and the JSSE verifier rejects any cert that doesn't carry
+     * a matching SAN identifier.
+     */
+    public static final String JSSE_HOSTNAME_CHECK_CN_FALLBACK = "org.bouncycastle.jsse.hostname_check_cn_fallback";
+
+    /**
+     * Effective bits-of-entropy assumed per real bit when the BC DRBG provider seeds for
+     * a 256-bit security level — used to compute the byte-oriented samples requested from
+     * the underlying entropy source. Defaults to 282 bits (about 0.9 effective bits per
+     * raw bit) and is rounded up to the next whole byte.
+     */
+    public static final String DRBG_EFFECTIVE_256BITS_ENTROPY = "org.bouncycastle.drbg.effective_256bits_entropy";
+
+    /**
+     * Fully-qualified name of an {@code EntropySourceProvider} class to use as the BC DRBG
+     * provider's seed source. When set, the named class is loaded reflectively and
+     * instantiated in place of the platform default. When unset, the BC DRBG falls back
+     * to the configured {@code securerandom.source} or its own background entropy thread.
+     */
+    public static final String DRBG_ENTROPY_SOURCE = "org.bouncycastle.drbg.entropysource";
+
+    /**
+     * If set to "true", the BC DRBG provider runs a background thread that samples the
+     * platform entropy source on a fixed schedule and feeds the DRBG, rather than
+     * blocking on a fresh sample at each reseed.
+     */
+    public static final String DRBG_ENTROPY_THREAD = "org.bouncycastle.drbg.entropy_thread";
+
+    /**
+     * Pause, in seconds, between background entropy-thread samples (see
+     * {@link #DRBG_ENTROPY_THREAD}). Parsed as an integer; absent or non-positive values
+     * use the implementation default.
+     */
+    public static final String DRBG_GATHER_PAUSE_SECS = "org.bouncycastle.drbg.gather_pause_secs";
+
     private Properties()
     {
     }

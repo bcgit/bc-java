@@ -287,8 +287,8 @@ public class FalconTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
-        assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
+        assertEquals(spec.getName(), Strings.toLowerCase(kp.getPublic().getAlgorithm()));
+        assertEquals(spec.getName(), Strings.toLowerCase(kp.getPrivate().getAlgorithm()));
 
         kpg = KeyPairGenerator.getInstance(spec.getName(), "BC");
 
@@ -299,7 +299,7 @@ public class FalconTest
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
+            assertEquals("key pair generator locked to " + Strings.toUpperCase(spec.getName()), e.getMessage());
         }
     }
 

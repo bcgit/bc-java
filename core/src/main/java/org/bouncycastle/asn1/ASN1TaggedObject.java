@@ -3,6 +3,7 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * ASN.1 TaggedObject - in ASN.1 notation this is any object preceded by
@@ -72,7 +73,7 @@ public abstract class ASN1TaggedObject
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct tagged object from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct tagged object from byte[]", e);
             }
         }
 

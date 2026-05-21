@@ -75,6 +75,8 @@ public class SM2CipherTest
         
         testAlgorithm(aKp, "SM2", GMObjectIdentifiers.sm2encrypt_with_sm3);
         testAlgorithm(aKp, "SM2withSM3", GMObjectIdentifiers.sm2encrypt_with_sm3);
+
+        testMode(aKp);
         testAlgorithm(aKp, "SM2withBlake2b", GMObjectIdentifiers.sm2encrypt_with_blake2b512);
         testAlgorithm(aKp, "SM2withBlake2s", GMObjectIdentifiers.sm2encrypt_with_blake2s256);
         testAlgorithm(aKp, "SM2withMD5", GMObjectIdentifiers.sm2encrypt_with_md5);
@@ -85,6 +87,50 @@ public class SM2CipherTest
         testAlgorithm(aKp, "SM2withSHA256", GMObjectIdentifiers.sm2encrypt_with_sha256);
         testAlgorithm(aKp, "SM2withSHA384", GMObjectIdentifiers.sm2encrypt_with_sha384);
         testAlgorithm(aKp, "SM2withSHA512", GMObjectIdentifiers.sm2encrypt_with_sha512);
+    }
+
+    private void testMode(KeyPair kp)
+        throws Exception
+    {
+        byte[] m = Strings.toByteArray("encryption standard");
+
+        Cipher c1c3c2Enc = Cipher.getInstance("SM2/C1C3C2/NoPadding", "BC");
+        c1c3c2Enc.init(Cipher.ENCRYPT_MODE, kp.getPublic());
+        byte[] enc = c1c3c2Enc.doFinal(m);
+
+        Cipher c1c3c2Dec = Cipher.getInstance("SM2/C1C3C2/NoPadding", "BC");
+        c1c3c2Dec.init(Cipher.DECRYPT_MODE, kp.getPrivate());
+        isTrue("C1C3C2 round-trip wrong", Arrays.areEqual(m, c1c3c2Dec.doFinal(enc)));
+
+        Cipher c1c2c3Enc = Cipher.getInstance("SM2/NONE/NoPadding", "BC");
+        c1c2c3Enc.init(Cipher.ENCRYPT_MODE, kp.getPublic());
+        byte[] enc2 = c1c2c3Enc.doFinal(m);
+
+        Cipher c1c2c3Dec = Cipher.getInstance("SM2/C1C2C3/NoPadding", "BC");
+        c1c2c3Dec.init(Cipher.DECRYPT_MODE, kp.getPrivate());
+        isTrue("C1C2C3 round-trip wrong", Arrays.areEqual(m, c1c2c3Dec.doFinal(enc2)));
+
+        Cipher wrongMode = Cipher.getInstance("SM2/C1C2C3/NoPadding", "BC");
+        wrongMode.init(Cipher.DECRYPT_MODE, kp.getPrivate());
+        try
+        {
+            wrongMode.doFinal(enc);
+            fail("expected decrypt failure across modes");
+        }
+        catch (Exception expected)
+        {
+            // expected
+        }
+
+        try
+        {
+            Cipher.getInstance("SM2/CBC/NoPadding", "BC");
+            fail("expected NoSuchAlgorithmException for unsupported mode");
+        }
+        catch (java.security.NoSuchAlgorithmException expected)
+        {
+            // expected
+        }
     }
 
     private void testAlgorithm(KeyPair kp, String name, ASN1ObjectIdentifier oid)

@@ -275,7 +275,7 @@ public class TimeStampResponseGenerator
 
         try
         {
-            return new TimeStampResponse(new DLSequence(new ASN1Encodable[] { pkiStatusInfo.toASN1Primitive(), tstTokenContentInfo.toASN1Primitive() }));
+            return new TimeStampResponse(new DLSequence(pkiStatusInfo.toASN1Primitive(), tstTokenContentInfo.toASN1Primitive()));
         }
         catch (IOException e)
         {

@@ -51,7 +51,7 @@ public class TwoDLocation
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{latitude, longitude});
+        return new DERSequence(latitude, longitude);
     }
 
     public Latitude getLatitude()

@@ -122,6 +122,8 @@ public class RFC4519Style
         DefaultLookUp.put("destinationindicator", destinationIndicator);
         DefaultLookUp.put("distinguishedname", distinguishedName);
         DefaultLookUp.put("dnqualifier", dnQualifier);
+        DefaultLookUp.put("dn", dnQualifier);
+        DefaultLookUp.put("dnq", dnQualifier);
         DefaultLookUp.put("enhancedsearchguide", enhancedSearchGuide);
         DefaultLookUp.put("facsimiletelephonenumber", facsimileTelephoneNumber);
         DefaultLookUp.put("generationqualifier", generationQualifier);
@@ -184,7 +186,29 @@ public class RFC4519Style
         else if (oid.equals(c) || oid.equals(serialNumber) || oid.equals(dnQualifier)
             || oid.equals(telephoneNumber))
         {
+            if (oid.equals(c) && value.length() != 2)
+            {
+                // RFC 5280 sec. 4.1.2.4 / X.520: countryName is
+                // PrintableString (SIZE (2)). CAB Forum Baseline
+                // Requirements 7.1.4.2.1 narrows this to a valid ISO 3166-1
+                // alpha-2 code (github #2011).
+                throw new IllegalArgumentException("country code attribute "
+                    + oid.getId() + " must be exactly 2 characters per ISO 3166-1 / X.520, got "
+                    + value.length() + ": '" + value + "'");
+            }
             return new DERPrintableString(value);
+        }
+        else if (oid.equals(cn) && value.length() > 64)
+        {
+            // RFC 5280 sec. A.1 / X.520: commonName is DirectoryString
+            // { ub-common-name } with ub-common-name = 64. OpenSSL and most
+            // validators reject longer values, so reject at build time
+            // rather than emit a cert that won't verify downstream.
+            // Existing DER-encoded names with longer CNs still parse
+            // because the parse path does not route through this method
+            // (github #750).
+            throw new IllegalArgumentException("commonName length "
+                + value.length() + " exceeds RFC 5280 ub-common-name (64): '" + value + "'");
         }
 
         return super.encodeStringValue(oid, value);

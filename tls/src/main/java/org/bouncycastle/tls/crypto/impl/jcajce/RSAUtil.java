@@ -6,7 +6,6 @@ import java.security.spec.PSSParameterSpec;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
-
 class RSAUtil
 {
     static String getDigestSigAlgName(
@@ -44,11 +43,11 @@ class RSAUtil
 //        }
 //        catch (IOException e)
 //        {   // this should never happen!
-//            throw new IllegalStateException("cannot encode RSASSAPSSparams: " + e.getMessage());
+//            throw Exceptions.illegalStateException("cannot encode RSASSAPSSparams", e);
 //        }
 //        catch (GeneralSecurityException e)
 //        {
-//            throw new IllegalStateException("cannot recover PSS paramSpec: " + e.getMessage());
+//            throw Exceptions.illegalStateException("cannot recover PSS paramSpec", e);
 //        }
 
         MGF1ParameterSpec mgf1Spec = new MGF1ParameterSpec(digestName);

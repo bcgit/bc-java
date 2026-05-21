@@ -84,6 +84,19 @@ import org.bouncycastle.util.io.Streams;
  *          CMSSignedDataParser     ep = new CMSSignedDataParser(new BufferedInputStream(encapSigData, bufSize));
  *  </pre>
  *  where bufSize is a suitably large buffer size.
+ * <p>
+ * <b>Stream handling note:</b>
+ * <ul>
+ *   <li>The constructor reads only enough of the supplied InputStream to expose the
+ *       digest algorithms and signed-content metadata. The encapsulated content
+ *       must be drained by the caller (e.g.
+ *       {@link #getSignedContent()}.{@link CMSTypedStream#drain drain()}) before
+ *       calling {@link #getSignerInfos()} so the running digests can be finalized.</li>
+ *   <li>The supplied InputStream is <b>not closed automatically</b>. Call
+ *       {@link #close()} on this parser (inherited from
+ *       {@link CMSContentInfoParser}) to close the underlying InputStream, or close
+ *       it yourself.</li>
+ * </ul>
  */
 public class CMSSignedDataParser
     extends CMSContentInfoParser
@@ -356,6 +369,38 @@ public class CMSSignedDataParser
         populateCertCrlSets();
 
         return HELPER.getOtherRevocationInfo(otherRevocationInfoFormat, _crlSet);
+    }
+
+    /**
+     * Return the raw <code>certificates</code> field as parsed from the wire,
+     * preserving every choice (X.509 SEQUENCE, attribute certificate
+     * <code>[1]</code>, other <code>[2]</code>) in original encoding order.
+     * Null if the field was absent. Forces a populate of the cert/CRL sets
+     * (which is harmless to call multiple times). Use this when the wire
+     * order or non-X.509 choices matter; otherwise prefer {@link #getCertificates()}.
+     */
+    public ASN1Set getCertificateSet()
+        throws CMSException
+    {
+        populateCertCrlSets();
+
+        return _certSet;
+    }
+
+    /**
+     * Return the raw <code>crls</code> field as parsed from the wire,
+     * preserving every choice (CertificateList, other revocation info
+     * <code>[1]</code>) in original encoding order. Null if the field was
+     * absent. Forces a populate of the cert/CRL sets. Use this when the
+     * wire order or non-CertificateList choices matter; otherwise prefer
+     * {@link #getCRLs()} or {@link #getOtherRevocationInfo}.
+     */
+    public ASN1Set getCRLSet()
+        throws CMSException
+    {
+        populateCertCrlSets();
+
+        return _crlSet;
     }
 
     private void populateCertCrlSets()

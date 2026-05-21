@@ -16,7 +16,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
-
+import org.bouncycastle.util.Exceptions;
 /**
  * SLH-DSA signer - prehash version.
  * @deprecated use org.bouncycastle.crypto.signers.HashSLHDSASigner
@@ -98,7 +98,7 @@ public class HashSLHDSASigner
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("oid encoding failed: " + e.getMessage());
+            throw Exceptions.illegalStateException("oid encoding failed", e);
         }
 
         int ctxLength = withContext == null ? 0 : withContext.getContextLength();

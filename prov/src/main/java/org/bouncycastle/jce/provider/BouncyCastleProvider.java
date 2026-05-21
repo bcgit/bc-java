@@ -32,6 +32,7 @@ import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.faest.FaestKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
@@ -76,7 +77,7 @@ public final class BouncyCastleProvider extends Provider
 {
     private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
 
-    private static String info = "BouncyCastle Security Provider v1.85b";
+    private static String info = "BouncyCastle Security Provider v1.85-SNAPSHOT";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -107,10 +108,10 @@ public final class BouncyCastleProvider extends Provider
             service("AES", 256), service("ARC4", 20), service("ARIA", 256), service("Blowfish", 128), service("Camellia", 256),
             service("CAST5", 128), service("CAST6", 256), service("ChaCha", 128), service("DES", 56),  service("DESede", 112),
             service("GOST28147", 128), service("Grainv1", 128), service("Grain128", 128), service("HC128", 128), service("HC256", 256),
-            service("IDEA", 128), service("Noekeon", 128), service("RC2", 128), service("RC5", 128), service("RC6", 256),
+            service("IDEA", 128), service("LEA", 256), service("Noekeon", 128), service("RC2", 128), service("RC5", 128), service("RC6", 256),
             service("Rijndael", 256), service("Salsa20", 128), service("SEED", 128), service("Serpent", 256), service("Shacal2", 128),
             service("Skipjack", 80), service("SM4", 128), service("TEA", 128), service("Twofish", 256), service("Threefish", 128),
-            service("VMPC", 128), service("VMPCKSA3", 128), service("XTEA", 128), service("XSalsa20", 128), service("OpenSSLPBKDF", 128),
+            service("VMPC", 128), service("VMPCKSA3", 128), service("XTEA", 128), service("XSalsa20", 128), service("XChaCha", 128), service("OpenSSLPBKDF", 128),
             service("DSTU7624", 256), service("GOST3412_2015", 256), service("Zuc", 128)
         };
 
@@ -496,6 +497,19 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_esk, new SnovaKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.faest_128s, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_128f, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_192s, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_192f, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_256s, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_256f, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_em_128s, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_em_128f, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_em_192s, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_em_192f, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_em_256s, new FaestKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.faest_em_256f, new FaestKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)

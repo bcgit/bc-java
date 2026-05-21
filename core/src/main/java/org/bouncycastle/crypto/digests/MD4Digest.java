@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.digests;
 
-
 import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;

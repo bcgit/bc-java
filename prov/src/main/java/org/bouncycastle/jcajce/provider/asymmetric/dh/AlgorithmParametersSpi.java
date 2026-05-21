@@ -8,6 +8,7 @@ import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.pkcs.DHParameter;
+import org.bouncycastle.util.Exceptions;
 
 public class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -112,11 +113,11 @@ public class AlgorithmParametersSpi
             }
             catch (ClassCastException e)
             {
-                throw new IOException("Not a valid DH Parameter encoding.");
+                throw Exceptions.ioException("Not a valid DH Parameter encoding.", e);
             }
             catch (ArrayIndexOutOfBoundsException e)
             {
-                throw new IOException("Not a valid DH Parameter encoding.");
+                throw Exceptions.ioException("Not a valid DH Parameter encoding.", e);
             }
         }
 

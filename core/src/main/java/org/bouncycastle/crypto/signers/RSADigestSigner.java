@@ -23,6 +23,8 @@ import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Properties;
 
 public class RSADigestSigner
     implements Signer
@@ -211,7 +213,8 @@ public class RSADigestSigner
         {
             return Arrays.constantTimeAreEqual(sig, expected);
         }
-        else if (sig.length == expected.length - 2)  // NULL left out
+        else if (sig.length == expected.length - 2
+            && !Properties.isOverrideSet(Properties.PKCS1_STRICT_DIGESTINFO))  // NULL left out
         {
             int sigOffset = sig.length - hash.length - 2;
             int expectedOffset = expected.length - hash.length - 2;
@@ -260,7 +263,7 @@ public class RSADigestSigner
             }
             catch (IllegalArgumentException e)
             {
-                throw new IOException("malformed DigestInfo for NONEwithRSA hash: " + e.getMessage());
+                throw Exceptions.ioException("malformed DigestInfo for NONEwithRSA hash: " + e.getMessage(), e);
             }
         }
 

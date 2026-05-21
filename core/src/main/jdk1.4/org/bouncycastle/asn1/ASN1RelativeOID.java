@@ -205,12 +205,13 @@ public class ASN1RelativeOID
         return false;
     }
 
-    static void checkContentsLength(int contentsLength)
+    private static int checkContentsLength(int contentsLength)
     {
         if (contentsLength > MAX_CONTENTS_LENGTH)
         {
             throw new IllegalArgumentException("exceeded relative OID contents length limit");
         }
+        return contentsLength;
     }
 
     static void checkIdentifier(String identifier)
@@ -229,11 +230,33 @@ public class ASN1RelativeOID
         }
     }
 
-    static ASN1RelativeOID createPrimitive(byte[] contents, boolean clone)
+    static ASN1RelativeOID createPrimitive(DefiniteLengthInputStream defIn, byte[] tmp) throws IOException
     {
-        checkContentsLength(contents.length);
+        int contentsLength = checkContentsLength(defIn.getRemaining());
 
-        final ASN1ObjectIdentifier.OidHandle hdl = new ASN1ObjectIdentifier.OidHandle(contents);
+        boolean useTmp = contentsLength <= tmp.length;
+        if (useTmp)
+        {
+            defIn.readAllIntoByteArray(tmp);
+        }
+        else
+        {
+            tmp = defIn.toByteArray();
+        }
+
+        return createPrimitive(tmp, contentsLength, useTmp);
+    }
+
+    private static ASN1RelativeOID createPrimitive(byte[] contents, boolean clone)
+    {
+        return createPrimitive(contents, checkContentsLength(contents.length), clone);
+    }
+
+    private static ASN1RelativeOID createPrimitive(byte[] contents, int contentsLength, boolean clone)
+    {
+//        assert clone || contents.length == contentsLength;
+
+        final ASN1ObjectIdentifier.OidHandle hdl = new ASN1ObjectIdentifier.OidHandle(contents, contentsLength);
         synchronized (pool)
         {
             ASN1RelativeOID oid = (ASN1RelativeOID)pool.get(hdl);
@@ -243,30 +266,32 @@ public class ASN1RelativeOID
             }
         }
 
-        if (!isValidContents(contents))
+        if (!isValidContents(contents, contentsLength))
         {
             throw new IllegalArgumentException("invalid relative OID contents");
         }
 
-        return new ASN1RelativeOID(clone ? Arrays.clone(contents) : contents, null);
+        byte[] newContents = clone ? Arrays.copyOfRange(contents, 0, contentsLength) : contents;
+
+        return new ASN1RelativeOID(newContents, null);
     }
 
-    static boolean isValidContents(byte[] contents)
+    static boolean isValidContents(byte[] contents, int contentsLength)
     {
         if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc"))
         {
             return true;
         }
 
-        if (contents.length < 1)
+        if (contentsLength < 1)
         {
             return false;
         }
 
         boolean subIDStart = true;
-        for (int i = 0; i < contents.length; ++i)
+        for (int i = 0; i < contentsLength; ++i)
         {
-            if (subIDStart && (contents[i] & 0xff) == 0x80)
+            if (subIDStart && (contents[i] & 0xFF) == 0x80)
             {
                 return false;
             }

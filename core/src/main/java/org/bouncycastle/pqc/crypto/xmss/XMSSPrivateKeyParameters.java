@@ -89,7 +89,7 @@ public final class XMSSPrivateKeyParameters
                 {
                     throw new IllegalStateException("serialized BDS has wrong index");
                 }
-                bdsState = bdsImport.withWOTSDigest(builder.params.getTreeDigestOID());
+                bdsState = bdsImport.withWOTSDigest(builder.params.getTreeDigestOID(), builder.params.getTreeDigestSize());
             }
             catch (IOException e)
             {
@@ -241,7 +241,7 @@ public final class XMSSPrivateKeyParameters
                     .withPublicSeed(publicSeed).withRoot(root)
                     .withIndex(getIndex())
                     .withBDSState(bdsState.withMaxIndex(bdsState.getIndex() + usageCount - 1,
-                        params.getTreeDigestOID())).build();
+                        params.getTreeDigestOID(), params.getTreeDigestSize())).build();
 
                 if (usageCount == this.getUsagesRemaining())
                 {

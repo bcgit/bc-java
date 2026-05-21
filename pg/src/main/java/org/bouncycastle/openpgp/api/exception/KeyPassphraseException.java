@@ -1,6 +1,5 @@
 package org.bouncycastle.openpgp.api.exception;
 
-
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 
 public class KeyPassphraseException

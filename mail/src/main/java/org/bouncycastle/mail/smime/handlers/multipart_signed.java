@@ -17,6 +17,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.mail.smime.SMIMEUtil;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 public class multipart_signed
@@ -61,7 +62,7 @@ public class multipart_signed
             }
             catch (MessagingException ex)
             {
-                throw new IOException(ex.getMessage());
+                throw Exceptions.ioException(ex.getMessage(), ex);
             }
         }
         else

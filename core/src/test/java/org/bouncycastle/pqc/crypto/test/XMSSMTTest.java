@@ -17684,4 +17684,145 @@ public class XMSSMTTest
         {
         }
     }
+
+    public void testSignVerifySP800208_SHA256_192()
+        throws Exception
+    {
+        XMSSMTParameters params = XMSSMTParameters.lookupByOID(0x00000021);
+        assertNotNull(params);
+        assertEquals(24, params.getTreeDigestSize());
+        assertEquals(20, params.getHeight());
+        assertEquals(2, params.getLayers());
+
+        XMSSMT xmssMT = new XMSSMT(params, new SecureRandom());
+        xmssMT.generateKeys();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        byte[] publicKey = xmssMT.exportPublicKey();
+        byte[] signature = xmssMT.sign(msg);
+
+        assertEquals(true, xmssMT.verifySignature(msg, signature, publicKey));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, xmssMT.verifySignature(msg, signature, publicKey));
+    }
+
+    public void testSignVerifySP800208_SHAKE256_256()
+        throws Exception
+    {
+        XMSSMTParameters params = XMSSMTParameters.lookupByOID(0x00000029);
+        assertNotNull(params);
+        assertEquals(32, params.getTreeDigestSize());
+        assertEquals(20, params.getHeight());
+        assertEquals(2, params.getLayers());
+
+        XMSSMT xmssMT = new XMSSMT(params, new SecureRandom());
+        xmssMT.generateKeys();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        byte[] publicKey = xmssMT.exportPublicKey();
+        byte[] signature = xmssMT.sign(msg);
+
+        assertEquals(true, xmssMT.verifySignature(msg, signature, publicKey));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, xmssMT.verifySignature(msg, signature, publicKey));
+    }
+
+    public void testSignVerifySP800208_SHAKE256_192()
+        throws Exception
+    {
+        XMSSMTParameters params = XMSSMTParameters.lookupByOID(0x00000031);
+        assertNotNull(params);
+        assertEquals(24, params.getTreeDigestSize());
+        assertEquals(20, params.getHeight());
+        assertEquals(2, params.getLayers());
+
+        XMSSMT xmssMT = new XMSSMT(params, new SecureRandom());
+        xmssMT.generateKeys();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        byte[] publicKey = xmssMT.exportPublicKey();
+        byte[] signature = xmssMT.sign(msg);
+
+        assertEquals(true, xmssMT.verifySignature(msg, signature, publicKey));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, xmssMT.verifySignature(msg, signature, publicKey));
+    }
+
+    public void testSignerSP800208_SHA256_192()
+        throws Exception
+    {
+        XMSSMTParameters params = XMSSMTParameters.lookupByOID(0x00000021);
+        XMSSMTKeyPairGenerator kpGen = new XMSSMTKeyPairGenerator();
+        kpGen.init(new XMSSMTKeyGenerationParameters(params, new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        XMSSMTSigner signer = new XMSSMTSigner();
+        signer.init(true, kp.getPrivate());
+        byte[] signature = signer.generateSignature(msg);
+
+        signer.init(false, kp.getPublic());
+        assertEquals(true, signer.verifySignature(msg, signature));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, signer.verifySignature(msg, signature));
+    }
+
+    public void testSignerSP800208_SHAKE256_256()
+        throws Exception
+    {
+        XMSSMTParameters params = XMSSMTParameters.lookupByOID(0x00000029);
+        XMSSMTKeyPairGenerator kpGen = new XMSSMTKeyPairGenerator();
+        kpGen.init(new XMSSMTKeyGenerationParameters(params, new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        XMSSMTSigner signer = new XMSSMTSigner();
+        signer.init(true, kp.getPrivate());
+        byte[] signature = signer.generateSignature(msg);
+
+        signer.init(false, kp.getPublic());
+        assertEquals(true, signer.verifySignature(msg, signature));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, signer.verifySignature(msg, signature));
+    }
+
+    public void testSignerSP800208_SHAKE256_192()
+        throws Exception
+    {
+        XMSSMTParameters params = XMSSMTParameters.lookupByOID(0x00000031);
+        XMSSMTKeyPairGenerator kpGen = new XMSSMTKeyPairGenerator();
+        kpGen.init(new XMSSMTKeyGenerationParameters(params, new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        byte[] msg = new byte[1024];
+        new SecureRandom().nextBytes(msg);
+
+        XMSSMTSigner signer = new XMSSMTSigner();
+        signer.init(true, kp.getPrivate());
+        byte[] signature = signer.generateSignature(msg);
+
+        signer.init(false, kp.getPublic());
+        assertEquals(true, signer.verifySignature(msg, signature));
+
+        msg[0] ^= 0xff;
+        assertEquals(false, signer.verifySignature(msg, signature));
+    }
 }

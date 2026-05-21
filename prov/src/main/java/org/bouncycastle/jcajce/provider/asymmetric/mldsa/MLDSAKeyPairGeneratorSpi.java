@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.SpecUtil;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 public class MLDSAKeyPairGeneratorSpi
@@ -65,7 +66,7 @@ public class MLDSAKeyPairGeneratorSpi
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new IllegalStateException("unable to find DEFAULT DRBG");
+            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
         }
     }
 

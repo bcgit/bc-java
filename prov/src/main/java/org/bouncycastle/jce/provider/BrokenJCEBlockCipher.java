@@ -42,6 +42,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.RC2Parameters;
 import org.bouncycastle.crypto.params.RC5Parameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 public class BrokenJCEBlockCipher
@@ -371,7 +372,7 @@ public class BrokenJCEBlockCipher
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            throw new IllegalArgumentException(e.getMessage());
+            throw Exceptions.illegalArgumentException(e.getMessage(), e);
         }
     }
 

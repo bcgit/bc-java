@@ -26,6 +26,7 @@ import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.jce.spec.GOST3410PrivateKeySpec;
 import org.bouncycastle.jce.spec.GOST3410PublicKeyParameterSetSpec;
+import org.bouncycastle.util.Exceptions;
 
 public class BCGOST3410PrivateKey
     implements GOST3410PrivateKey, PKCS12BagAttributeCarrier
@@ -212,7 +213,7 @@ public class BCGOST3410PrivateKey
         }
         catch (InvalidKeyException e)
         {
-            throw new IllegalStateException(e.getMessage()); // should not be possible
+            throw Exceptions.illegalStateException(e.getMessage(), e); // should not be possible
         }
     }
 

@@ -8,6 +8,7 @@ import java.security.spec.InvalidParameterSpecException;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.DSAParameter;
+import org.bouncycastle.util.Exceptions;
 
 public class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -101,11 +102,11 @@ public class AlgorithmParametersSpi
         }
         catch (ClassCastException e)
         {
-            throw new IOException("Not a valid DSA Parameter encoding.");
+            throw Exceptions.ioException("Not a valid DSA Parameter encoding.", e);
         }
         catch (ArrayIndexOutOfBoundsException e)
         {
-            throw new IOException("Not a valid DSA Parameter encoding.");
+            throw Exceptions.ioException("Not a valid DSA Parameter encoding.", e);
         }
     }
 

@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;

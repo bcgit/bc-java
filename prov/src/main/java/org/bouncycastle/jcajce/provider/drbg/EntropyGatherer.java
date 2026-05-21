@@ -44,7 +44,7 @@ class EntropyGatherer
 
     private static long getPause()
     {
-        String pauseSetting = Properties.getPropertyValue("org.bouncycastle.drbg.gather_pause_secs");
+        String pauseSetting = Properties.getPropertyValue(Properties.DRBG_GATHER_PAUSE_SECS);
 
         if (pauseSetting != null)
         {

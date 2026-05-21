@@ -17,6 +17,7 @@ import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * {@link PGPDataEncryptorBuilder} implementation that uses the Bouncy Castle lightweight API to
@@ -262,7 +263,7 @@ public class BcPGPDataEncryptorBuilder
             }
             catch (Exception e)
             {
-                throw new IllegalStateException("unable to process stream: " + e.getMessage());
+                throw Exceptions.illegalStateException("unable to process stream", e);
             }
         }
 

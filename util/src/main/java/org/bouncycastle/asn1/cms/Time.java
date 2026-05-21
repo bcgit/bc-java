@@ -15,7 +15,7 @@ import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.LocaleUtil;
-
+import org.bouncycastle.util.Exceptions;
 /**
  * <a href="https://tools.ietf.org/html/rfc5652#section-11.3">RFC 5652</a>:
  * Dual-mode timestamp format producing either UTCTIme or GeneralizedTime.
@@ -187,7 +187,7 @@ public class Time
         }
         catch (ParseException e)
         {         // this should never happen
-            throw new IllegalStateException("invalid date string: " + e.getMessage());
+            throw Exceptions.illegalStateException("invalid date string", e);
         }
     }
 

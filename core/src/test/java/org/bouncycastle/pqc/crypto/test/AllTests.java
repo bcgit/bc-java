@@ -51,6 +51,8 @@ public class AllTests
         suite.addTestSuite(SLHDSATest.class);
         suite.addTestSuite(MayoTest.class);
         suite.addTestSuite(SnovaTest.class);
+        suite.addTestSuite(FaestKeyPairAndSignerTest.class);
+        suite.addTestSuite(FaestKatTest.class);
         return new BCTestSetup(suite);
     }
 

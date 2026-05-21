@@ -20,7 +20,8 @@ public class BcTlsSM2Signer
 
         if (SignatureScheme.sm2sig_sm3 != signatureScheme)
         {
-            throw new IllegalArgumentException("signatureScheme");
+            throw new IllegalArgumentException(
+                "'signatureScheme' " + SignatureScheme.getText(signatureScheme) + " is not SM2");
         }
 
         this.identifier = Strings.toByteArray("TLSv1.3+GM+Cipher+Suite");

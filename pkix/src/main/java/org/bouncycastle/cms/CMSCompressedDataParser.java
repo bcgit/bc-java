@@ -25,6 +25,18 @@ import org.bouncycastle.operator.InputExpanderProvider;
  *      CMSCompressedDataParser     ep = new CMSCompressedDataParser(new BufferedInputStream(inputStream, bufSize));
  *  </pre>
  *  where bufSize is a suitably large buffer size.
+ * <p>
+ * <b>Stream handling note:</b>
+ * <ul>
+ *   <li>The constructor reads only the outer CMS ContentInfo header from the
+ *       supplied InputStream. The compressed content is drained lazily by the
+ *       caller via {@link #getContent(InputExpanderProvider)} and reading from the
+ *       returned {@link CMSTypedStream}.</li>
+ *   <li>The supplied InputStream is <b>not closed automatically</b>. Call
+ *       {@link #close()} on this parser (inherited from
+ *       {@link CMSContentInfoParser}) to close the underlying InputStream, or close
+ *       it yourself.</li>
+ * </ul>
  */
 public class CMSCompressedDataParser
     extends CMSContentInfoParser
