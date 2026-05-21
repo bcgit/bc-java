@@ -1,5 +1,10 @@
 package org.bouncycastle.crypto.plants;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+
+import org.bouncycastle.asn1.ASN1RelativeOID;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
@@ -12,37 +17,42 @@ import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.crypto.signers.PlainDSAEncoding;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
 /**
- * Verifies cosignatures over MTCSubtrees as defined in draft-ietf-plants-merkle-tree-certs,
- * Section 5.4.1.
+ * Verifies cosignatures over a CosignedMessage as defined in
+ * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs-04</a>,
+ * Section 5.3.1.
+ *
+ * <pre>
+ * struct {
+ *     uint8 label[12] = "subtree/v1\n\0";
+ *     opaque cosigner_name&lt;1..2^8-1&gt;;
+ *     uint64 timestamp;
+ *     opaque log_origin&lt;1..2^8-1&gt;;
+ *     uint64 start;
+ *     uint64 end;
+ *     HashValue subtree_hash;
+ * } CosignedMessage;
+ * </pre>
+ *
+ * <p>{@code cosigner_name} and {@code log_origin} are the ASCII strings
+ * {@code "oid/1.3.6.1.4.1." + <dotted-decimal trust anchor ID>}. The verifier
+ * constructs them from the binary trust anchor IDs supplied by the caller via
+ * the BC ASN1RelativeOID conversion.</p>
  */
 public class MTCSignatureVerifier
 {
-    /**
-     * The fixed label for subtree signatures (16 bytes).
-     */
+    /** The fixed 12-byte label for CosignedMessage: "subtree/v1" + LF + NUL. */
     private static final byte[] SUBTREE_LABEL = new byte[]{
-        'm', 't', 'c', '-', 's', 'u', 'b', 't', 'r', 'e', 'e', '/', 'v', '1', '\n', 0
+        's', 'u', 'b', 't', 'r', 'e', 'e', '/', 'v', '1', (byte)0x0A, (byte)0x00
     };
 
+    /** Fixed ASCII prefix prepended to dotted-decimal trust anchor IDs. */
+    private static final byte[] OID_PREFIX = "oid/1.3.6.1.4.1.".getBytes(Charset.forName("US-ASCII"));
+
     /**
-     * Verifies a cosignature.
-     *
-     * @param logId       DER-encoded RELATIVE-OID of the log (without length prefix)
-     * @param start       subtree start index
-     * @param end         subtree end index
-     * @param subtreeHash hash of the subtree (size determined by the log's hash function)
-     * @param cosignerId  DER-encoded RELATIVE-OID of the cosigner (without length prefix)
-     * @param signature   the signature bytes (as produced by the algorithm's standard encoding)
-     * @param publicKey   the cosigner's public key (must match the algorithm)
-     * @param algorithm   algorithm identifier, one of:
-     *                    "ECDSA-P256-SHA256", "ECDSA-P384-SHA384", "Ed25519",
-     *                    "ML-DSA-44", "ML-DSA-65", "ML-DSA-87"
-     * @return true if the signature is valid, false otherwise
-     * @throws IllegalArgumentException if the algorithm is unsupported or parameters are invalid
+     * Verifies an MTCProof cosignature. Equivalent to a {@link #verify(byte[], long, long, long, byte[], byte[], byte[], AsymmetricKeyParameter, String)}
+     * call with {@code timestamp == 0}, which is the only value allowed inside
+     * an MTCProof per Section 6.1 of draft-04.
      */
     public static boolean verify(
         byte[] logId,
@@ -55,62 +65,99 @@ public class MTCSignatureVerifier
         String algorithm)
         throws IOException
     {
-        // Build the signed data
-        byte[] signedData = buildSignatureInput(logId, start, end, subtreeHash, cosignerId);
+        return verify(logId, 0L, start, end, subtreeHash, cosignerId, signature, publicKey, algorithm);
+    }
 
-        // Obtain a Signer for the given algorithm
+    /**
+     * Verifies a cosignature over a CosignedMessage.
+     *
+     * @param logId       binary trust anchor ID of the log (the CA's OID prefix
+     *                    followed by {@code 0x00} and the base-128 encoding of
+     *                    the log number, per Section 5.2)
+     * @param timestamp   POSIX timestamp; MUST be zero for MTCProof signatures
+     *                    (Section 6.1)
+     * @param start       subtree start index
+     * @param end         subtree end index
+     * @param subtreeHash hash of the subtree
+     * @param cosignerId  binary trust anchor ID of the cosigner
+     * @param signature   signature bytes
+     * @param publicKey   the cosigner's public key
+     * @param algorithm   algorithm identifier, one of
+     *                    {@code "ECDSA-P256-SHA256"}, {@code "ECDSA-P384-SHA384"},
+     *                    {@code "Ed25519"}, {@code "ML-DSA-44"}, {@code "ML-DSA-65"},
+     *                    {@code "ML-DSA-87"}
+     * @return true if the signature is valid
+     */
+    public static boolean verify(
+        byte[] logId,
+        long timestamp,
+        long start,
+        long end,
+        byte[] subtreeHash,
+        byte[] cosignerId,
+        byte[] signature,
+        AsymmetricKeyParameter publicKey,
+        String algorithm)
+        throws IOException
+    {
+        byte[] signedData = buildCosignedMessage(logId, timestamp, start, end, subtreeHash, cosignerId);
+
         Signer signer = createSigner(algorithm, publicKey);
-
-        // Initialize for verification
         signer.init(false, publicKey);
-
-        // Feed the signed data
         signer.update(signedData, 0, signedData.length);
-
-        // Verify
         return signer.verifySignature(signature);
     }
 
     /**
-     * Constructs the MTCSubtreeSignatureInput bytes as per Section 5.4.1.
-     *
-     * @param logId       DER-encoded RELATIVE-OID of the log (without length prefix)
-     * @param start       start index
-     * @param end         end index
-     * @param subtreeHash subtree hash
-     * @param cosignerId  DER-encoded RELATIVE-OID of the cosigner (without length prefix)
-     * @return the byte array to be signed
+     * Constructs the CosignedMessage bytes per Section 5.3.1 of draft-04.
      */
-    private static byte[] buildSignatureInput(byte[] logId, long start, long end, byte[] subtreeHash, byte[] cosignerId) throws IOException
+    static byte[] buildCosignedMessage(
+        byte[] logId,
+        long timestamp,
+        long start,
+        long end,
+        byte[] subtreeHash,
+        byte[] cosignerId)
+        throws IOException
     {
+        byte[] cosignerName = asciiName(cosignerId);
+        byte[] logOrigin = asciiName(logId);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(SUBTREE_LABEL);                    // fixed 16-byte label
-        baos.write((byte) cosignerId.length);         // cosigner_id length
-        baos.write(cosignerId);                        // cosigner_id value
-        baos.write((byte) logId.length);               // log_id length
-        baos.write(logId);                              // log_id value
-        writeUint64(baos, start);                       // start
-        writeUint64(baos, end);                         // end
-        baos.write(subtreeHash);                         // subtree hash (fixed size)
+        baos.write(SUBTREE_LABEL);          // 12 bytes
+        writeOpaque1(baos, cosignerName);    // cosigner_name
+        writeUint64(baos, timestamp);        // timestamp
+        writeOpaque1(baos, logOrigin);       // log_origin
+        writeUint64(baos, start);
+        writeUint64(baos, end);
+        baos.write(subtreeHash);             // fixed-size HashValue
         return baos.toByteArray();
     }
 
     /**
-     * Writes an opaque vector (length-prefixed with a single byte).
+     * Builds the ASCII name {@code "oid/1.3.6.1.4.1." + dotted-decimal} for a
+     * binary trust anchor ID.
      */
-    private static void writeOpaque(ByteArrayOutputStream baos, byte[] data)
+    private static byte[] asciiName(byte[] binaryTrustAnchorID)
+    {
+        String dotted = ASN1RelativeOID.fromContents(binaryTrustAnchorID).getId();
+        byte[] dottedBytes = dotted.getBytes(Charset.forName("US-ASCII"));
+        byte[] out = new byte[OID_PREFIX.length + dottedBytes.length];
+        System.arraycopy(OID_PREFIX, 0, out, 0, OID_PREFIX.length);
+        System.arraycopy(dottedBytes, 0, out, OID_PREFIX.length, dottedBytes.length);
+        return out;
+    }
+
+    private static void writeOpaque1(ByteArrayOutputStream baos, byte[] data)
     {
         if (data.length < 1 || data.length > 255)
         {
-            throw new IllegalArgumentException("TrustAnchorID length must be 1..255 bytes");
+            throw new IllegalArgumentException("opaque<1..255> length must be 1..255 bytes, got " + data.length);
         }
-        baos.write((byte)data.length);
+        baos.write(data.length);
         baos.write(data, 0, data.length);
     }
 
-    /**
-     * Writes a 64-bit integer in big-endian order.
-     */
     private static void writeUint64(ByteArrayOutputStream baos, long value)
     {
         baos.write((byte)(value >>> 56));
@@ -123,26 +170,20 @@ public class MTCSignatureVerifier
         baos.write((byte)value);
     }
 
-    /**
-     * Creates a Bouncy Castle Signer for the given algorithm and public key.
-     */
     private static Signer createSigner(String algorithm, AsymmetricKeyParameter publicKey)
     {
         switch (algorithm)
         {
         case "ECDSA-P256-SHA256":
-            // Deterministic ECDSA (RFC 6979) with SHA-256 and plain (r||s) encoding
             return new DSADigestSigner(
                 new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest())),
                 new SHA256Digest(),
-                PlainDSAEncoding.INSTANCE
-            );
+                PlainDSAEncoding.INSTANCE);
         case "ECDSA-P384-SHA384":
             return new DSADigestSigner(
                 new ECDSASigner(new HMacDSAKCalculator(new SHA384Digest())),
                 new SHA384Digest(),
-                PlainDSAEncoding.INSTANCE
-            );
+                PlainDSAEncoding.INSTANCE);
         case "Ed25519":
             if (!(publicKey instanceof Ed25519PublicKeyParameters))
             {
@@ -152,9 +193,7 @@ public class MTCSignatureVerifier
         case "ML-DSA-44":
         case "ML-DSA-65":
         case "ML-DSA-87":
-            // Assuming Bouncy Castle provides MLDSASigner for these parameter sets
-            // The actual class name may vary; adapt as needed.
-            return new MLDSASigner(); // Placeholder – replace with actual ML-DSA signer
+            return new MLDSASigner();
         default:
             throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
         }
