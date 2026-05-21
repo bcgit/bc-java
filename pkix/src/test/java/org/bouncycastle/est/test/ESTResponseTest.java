@@ -202,6 +202,44 @@ public class ESTResponseTest
         }
     }
 
+    // Regression test for issue #781: ESTService.getCSRAttributes received a
+    // 404 response with a body and silently turned it into an obscure wrapper
+    // exception ("Stream closed before limit fully read") instead of the actual
+    // 404 status. Root cause: the body was never drained before resp.close(),
+    // so the LimitedInputStream's "Content-Length not fully consumed" guard
+    // tripped. Draining before close is sufficient and the fix in ESTService.
+    public void testESTResponseCloseAfterDrain404WithBody()
+        throws IOException
+    {
+        String body = "{\"error\":\"resource not found\"}";  // typical 55-byte JSON body
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Content-Length", String.valueOf(body.length()));
+
+        // Pre-fix symptom: close without reading throws because the
+        // LimitedInputStream has read 0 of N declared bytes.
+        InputStream rawData = buildHttp11Response("404 Not Found", headers, false, body);
+        ESTResponse undrained = new ESTResponse(null, getMockSource(rawData));
+        assertEquals(404, undrained.getStatusCode());
+        assertEquals(Long.valueOf(body.length()), undrained.getContentLength());
+        try
+        {
+            undrained.close();
+            fail("close() must complain when the body wasn't drained — that's the original bug");
+        }
+        catch (IOException expected)
+        {
+            assertTrue("expected limit-not-fully-read error, got: " + expected.getMessage(),
+                expected.getMessage().contains("Stream closed before limit fully read"));
+        }
+
+        // Post-fix path: drain before close (what ESTService.getCSRAttributes
+        // now does in its 204/404 branches) — close completes cleanly.
+        InputStream rawData2 = buildHttp11Response("404 Not Found", headers, false, body);
+        ESTResponse drained = new ESTResponse(null, getMockSource(rawData2));
+        Streams.drain(drained.getInputStream());
+        drained.close();   // must not throw
+    }
+
     // Regression test for issue #1324: NullPointerException on HTTP/1.1 Transfer-Encoding chunked with Content-Transfer-Encoding base64
     public void testESTResponseMustNotThrowOnChunkedTransferEncodingWithContentTransferEncodingBase64()
         throws IOException

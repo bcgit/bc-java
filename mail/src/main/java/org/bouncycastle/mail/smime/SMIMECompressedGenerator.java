@@ -14,6 +14,7 @@ import javax.mail.internet.MimeMessage;
 import org.bouncycastle.cms.CMSCompressedDataGenerator;
 import org.bouncycastle.cms.CMSCompressedDataStreamGenerator;
 import org.bouncycastle.operator.OutputCompressor;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * General class for generating a pkcs7-mime compressed message.
@@ -143,7 +144,7 @@ public class SMIMECompressedGenerator
             }
             catch (MessagingException e)
             {
-                throw new IOException(e.toString());
+                throw Exceptions.ioException(e.toString(), e);
             }
         }
     }

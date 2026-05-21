@@ -13,7 +13,6 @@ import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.MD2Digest;
 import org.bouncycastle.crypto.digests.MD4Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
@@ -31,6 +30,7 @@ import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -93,6 +93,63 @@ public class RSADigestSignerTest
         catch (CryptoException e)
         {
             isTrue(e.getMessage().startsWith("unable to encode signature: "));
+        }
+
+        checkStrictDigestInfoIssue2273(rsaPublic, rsaPrivate);
+    }
+
+    private void checkStrictDigestInfoIssue2273(RSAKeyParameters rsaPublic, RSAPrivateCrtKeyParameters rsaPrivate)
+        throws Exception
+    {
+        byte[] msg = new byte[] { 1, 6, 3, 32, 7, 43, 2, 5, 7, 78, 4, 23 };
+
+        // Hand-built no-NULL-parameters DigestInfo (RFC 8017 sec. A.2.4 requires NULL).
+        Digest digest = SHA256Digest.newInstance();
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.update(msg, 0, msg.length);
+        digest.doFinal(hash, 0);
+
+        // AlgorithmIdentifier(oid) with no parameters yields the non-compliant form.
+        DigestInfo loose = new DigestInfo(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256), hash);
+        byte[] looseEnc = loose.getEncoded(ASN1Encoding.DER);
+
+        RSADigestSigner looseSigner = createPrehashSigner();
+        looseSigner.init(true, rsaPrivate);
+        looseSigner.update(looseEnc, 0, looseEnc.length);
+        byte[] looseSig = looseSigner.generateSignature();
+
+        // Default (lenient) verification must accept the no-NULL form.
+        RSADigestSigner verifier = new RSADigestSigner(SHA256Digest.newInstance(), NISTObjectIdentifiers.id_sha256);
+        verifier.init(false, rsaPublic);
+        verifier.update(msg, 0, msg.length);
+        isTrue("lenient (default) verification must accept no-NULL DigestInfo",
+            verifier.verifySignature(looseSig));
+
+        // With PKCS1_STRICT_DIGESTINFO set, the no-NULL form must be rejected.
+        System.setProperty(Properties.PKCS1_STRICT_DIGESTINFO, "true");
+        try
+        {
+            verifier = new RSADigestSigner(SHA256Digest.newInstance(), NISTObjectIdentifiers.id_sha256);
+            verifier.init(false, rsaPublic);
+            verifier.update(msg, 0, msg.length);
+            isTrue("strict verification must reject no-NULL DigestInfo",
+                !verifier.verifySignature(looseSig));
+
+            // The strictly-compliant form must still verify with the property set.
+            RSADigestSigner strictSigner = new RSADigestSigner(SHA256Digest.newInstance(), NISTObjectIdentifiers.id_sha256);
+            strictSigner.init(true, rsaPrivate);
+            strictSigner.update(msg, 0, msg.length);
+            byte[] strictSig = strictSigner.generateSignature();
+
+            verifier = new RSADigestSigner(SHA256Digest.newInstance(), NISTObjectIdentifiers.id_sha256);
+            verifier.init(false, rsaPublic);
+            verifier.update(msg, 0, msg.length);
+            isTrue("strict verification must accept spec-compliant DigestInfo",
+                verifier.verifySignature(strictSig));
+        }
+        finally
+        {
+            System.clearProperty(Properties.PKCS1_STRICT_DIGESTINFO);
         }
     }
 

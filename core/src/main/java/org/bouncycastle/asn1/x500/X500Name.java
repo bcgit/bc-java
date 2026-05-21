@@ -55,12 +55,18 @@ public class X500Name
      * @param explicit true if explicitly tagged false otherwise.
      * @return the X500Name
      */
-    public static X500Name getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+    public static X500Name getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        // must be true as choice item
-        return getInstance(ASN1Sequence.getInstance(obj, true));
+        // TODO[api] Actually validate declaredExplicit is true (because this is a CHOICE)
+//        return getInstance(ASN1Util.getInstanceChoiceBaseObject(taggedObject, declaredExplicit, "X500Name"));
+        return getInstance(ASN1Sequence.getInstance(taggedObject, true));
+    }
+
+    public static X500Name getTagged(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        // TODO[api] Actually validate declaredExplicit is true (because this is a CHOICE)
+//        return getInstance(ASN1Util.getTaggedChoiceBaseObject(taggedObject, declaredExplicit, "X500Name"));
+        return getInstance(ASN1Sequence.getTagged(taggedObject, true));
     }
 
     public static X500Name getInstance(

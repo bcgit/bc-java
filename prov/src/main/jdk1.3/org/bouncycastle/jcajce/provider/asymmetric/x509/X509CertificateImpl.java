@@ -388,7 +388,8 @@ abstract class X509CertificateImpl
                         Extension.policyConstraints.equals(oid) ||
                         Extension.basicConstraints.equals(oid) ||
                         Extension.subjectAlternativeName.equals(oid) ||
-                        Extension.nameConstraints.equals(oid))
+                        Extension.nameConstraints.equals(oid) ||
+                        Extension.extendedKeyUsage.equals(oid))
                     {
                         continue;
                     }

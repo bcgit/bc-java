@@ -561,13 +561,67 @@ public class PEMParser
         public Object parseObject(PemObject obj)
             throws IOException
         {
+            // Some tooling emits a PKCS#8 PrivateKeyInfo wrapped in OpenSSL's legacy
+            // Proc-Type/DEK-Info encryption headers under a "PRIVATE KEY" label
+            // (e.g. github #1238). Honour those headers and return a
+            // PEMEncryptedKeyPair that decrypts to a PrivateKeyInfo.
+            boolean isEncrypted = false;
+            String dekInfo = null;
+
+            for (Iterator it = obj.getHeaders().iterator(); it.hasNext();)
+            {
+                PemHeader hdr = (PemHeader)it.next();
+
+                if (hdr.getName().equals("Proc-Type") && hdr.getValue().equals("4,ENCRYPTED"))
+                {
+                    isEncrypted = true;
+                }
+                else if (hdr.getName().equals("DEK-Info"))
+                {
+                    dekInfo = hdr.getValue();
+                }
+            }
+
+            byte[] keyBytes = obj.getContent();
+
             try
             {
-                return PrivateKeyInfo.getInstance(obj.getContent());
+                if (isEncrypted)
+                {
+                    StringTokenizer tknz = new StringTokenizer(dekInfo, ",");
+                    String dekAlgName = tknz.nextToken();
+                    byte[] iv = Hex.decode(tknz.nextToken());
+
+                    return new PEMEncryptedKeyPair(dekAlgName, iv, keyBytes,
+                        new PrivateKeyInfoKeyPairParser());
+                }
+
+                return PrivateKeyInfo.getInstance(keyBytes);
             }
             catch (Exception e)
             {
+                if (isEncrypted)
+                {
+                    throw new PEMException("exception decoding - please check password and data.", e);
+                }
                 throw new PEMException("problem parsing PRIVATE KEY: " + e.toString(), e);
+            }
+        }
+    }
+
+    private static class PrivateKeyInfoKeyPairParser
+        implements PEMKeyPairParser
+    {
+        public PEMKeyPair parse(byte[] encoding)
+            throws IOException
+        {
+            try
+            {
+                return new PEMKeyPair(null, PrivateKeyInfo.getInstance(encoding));
+            }
+            catch (Exception e)
+            {
+                throw new PEMException("problem creating private key: " + e.toString(), e);
             }
         }
     }

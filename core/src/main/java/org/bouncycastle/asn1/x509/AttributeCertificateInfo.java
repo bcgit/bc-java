@@ -67,6 +67,12 @@ public class AttributeCertificateInfo
 
         this.holder = Holder.getInstance(seq.getObjectAt(start));
         this.issuer = AttCertIssuer.getInstance(seq.getObjectAt(start + 1));
+        // RFC 3281 sec. 4.2.3: the attribute certificate issuer MUST identify
+        // the issuer; an empty AttCertIssuer is not a valid identifier.
+        if (isEmptyIssuer(this.issuer))
+        {
+            throw new IllegalArgumentException("attribute certificate issuer is empty");
+        }
         this.signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(start + 2));
         this.serialNumber = ASN1Integer.getInstance(seq.getObjectAt(start + 3));
         this.attrCertValidityPeriod = AttCertValidityPeriod.getInstance(seq.getObjectAt(start + 4));
@@ -130,6 +136,32 @@ public class AttributeCertificateInfo
     public Extensions getExtensions()
     {
         return extensions;
+    }
+
+    /**
+     * Return true when the AttCertIssuer carries no identifying information:
+     * an empty v1 GeneralNames sequence, or a v2 V2Form whose issuerName,
+     * baseCertificateID and objectDigestInfo are all absent (or whose
+     * issuerName, when present, is itself empty).
+     */
+    static boolean isEmptyIssuer(AttCertIssuer issuer)
+    {
+        ASN1Encodable inner = issuer.getIssuer();
+        if (inner instanceof GeneralNames)
+        {
+            return ((GeneralNames)inner).getNames().length == 0;
+        }
+        if (inner instanceof V2Form)
+        {
+            V2Form v2 = (V2Form)inner;
+            GeneralNames issuerName = v2.getIssuerName();
+            if (issuerName != null)
+            {
+                return issuerName.getNames().length == 0;
+            }
+            return v2.getBaseCertificateID() == null && v2.getObjectDigestInfo() == null;
+        }
+        return false;
     }
 
     /**

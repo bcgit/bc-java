@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.io.DigestOutputStream;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -91,7 +92,7 @@ public class DHKEKGenerator
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("unable to encode parameter info: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("unable to encode parameter info", e);
             }
 
             if (len < digestSize)

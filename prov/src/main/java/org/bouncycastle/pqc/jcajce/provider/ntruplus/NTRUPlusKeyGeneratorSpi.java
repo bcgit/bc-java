@@ -18,6 +18,7 @@ import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
 import org.bouncycastle.pqc.jcajce.spec.NTRUPlusParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class NTRUPlusKeyGeneratorSpi
     extends KeyGeneratorSpi
@@ -100,7 +101,7 @@ public class NTRUPlusKeyGeneratorSpi
             }
             catch (DestroyFailedException e)
             {
-                throw new IllegalStateException("key cleanup failed");
+                throw Exceptions.illegalStateException("key cleanup failed", e);
             }
 
             return rv;

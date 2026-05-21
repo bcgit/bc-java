@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 
+import java.io.ByteArrayOutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -16,7 +17,7 @@ import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 public class HashSignatureSpi
     extends BaseDeterministicOrRandomSignature
 {
-    private HashMLDSASigner signer;
+    protected final HashMLDSASigner signer;
     private MLDSAParameters parameters;
 
     protected HashSignatureSpi(HashMLDSASigner signer)
@@ -159,4 +160,103 @@ public class HashSignatureSpi
             super(new HashMLDSASigner(), MLDSAParameters.ml_dsa_87_with_sha512);
         }
     }
+
+    /**
+     * External-hash form of HashML-DSA: bytes passed to Signature.update(...) are
+     * treated as the pre-computed message digest, dispatched to
+     * {@link HashMLDSASigner#generateSignature(byte[])} /
+     * {@link HashMLDSASigner#verifySignature(byte[], byte[])}. Counterpart to
+     * SignatureSpi.MLDSAExtMu (see github #2198).
+     */
+    public static class MLDSAExtHash
+        extends HashSignatureSpi
+    {
+        private final ByteArrayOutputStream bOut = new ByteArrayOutputStream(64);
+
+        public MLDSAExtHash()
+        {
+            super(new HashMLDSASigner());
+        }
+
+        protected MLDSAExtHash(MLDSAParameters parameters)
+        {
+            super(new HashMLDSASigner(), parameters);
+        }
+
+        @Override
+        protected void updateEngine(byte b)
+        {
+            bOut.write(b);
+        }
+
+        @Override
+        protected void updateEngine(byte[] buf, int off, int len)
+        {
+            bOut.write(buf, off, len);
+        }
+
+        @Override
+        protected byte[] engineSign()
+            throws SignatureException
+        {
+            byte[] hash = bOut.toByteArray();
+            bOut.reset();
+            try
+            {
+                return signer.generateSignature(hash);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new SignatureException(e.getMessage());
+            }
+            catch (Exception e)
+            {
+                throw new SignatureException(e.toString());
+            }
+        }
+
+        @Override
+        protected boolean engineVerify(byte[] sigBytes)
+            throws SignatureException
+        {
+            byte[] hash = bOut.toByteArray();
+            bOut.reset();
+            try
+            {
+                return signer.verifySignature(hash, sigBytes);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new SignatureException(e.getMessage());
+            }
+        }
+    }
+
+    public static class MLDSA44ExtHash
+        extends MLDSAExtHash
+    {
+        public MLDSA44ExtHash()
+        {
+            super(MLDSAParameters.ml_dsa_44_with_sha512);
+        }
+    }
+
+    public static class MLDSA65ExtHash
+        extends MLDSAExtHash
+    {
+        public MLDSA65ExtHash()
+        {
+            super(MLDSAParameters.ml_dsa_65_with_sha512);
+        }
+    }
+
+    public static class MLDSA87ExtHash
+        extends MLDSAExtHash
+    {
+        public MLDSA87ExtHash()
+        {
+            super(MLDSAParameters.ml_dsa_87_with_sha512);
+        }
+    }
+
 }

@@ -20,6 +20,7 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.tsp.TimeStampToken;
+import org.bouncycastle.util.Exceptions;
 
 public class CMSTimeStampedData
 {
@@ -41,11 +42,11 @@ public class CMSTimeStampedData
         }
         catch (ClassCastException e)
         {
-            throw new IOException("Malformed content: " + e);
+            throw Exceptions.ioException("Malformed content: " + e, e);
         }
         catch (IllegalArgumentException e)
         {
-            throw new IOException("Malformed content: " + e);
+            throw Exceptions.ioException("Malformed content: " + e, e);
         }
     }
 

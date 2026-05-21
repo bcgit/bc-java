@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
 * A SecureRandom that maintains a journal of its output.
@@ -100,7 +101,7 @@ public class JournalingSecureRandom
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to record transcript: " + e.getMessage());
+            throw Exceptions.illegalStateException("unable to record transcript", e);
         }
     }
 

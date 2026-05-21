@@ -14,7 +14,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
-
+import org.bouncycastle.util.Exceptions;
 /**
  * Utility class for EC Keys.
  */
@@ -95,7 +95,7 @@ public class ECKeyUtil
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("unable to encode EC public key: " + e.getMessage());
+                throw Exceptions.illegalStateException("unable to encode EC public key", e);
             }
         }
 

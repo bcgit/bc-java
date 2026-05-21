@@ -16,6 +16,7 @@ import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.pqc.crypto.saber.SABERKEMExtractor;
 import org.bouncycastle.pqc.crypto.saber.SABERKEMGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class SABERKeyGeneratorSpi
         extends KeyGeneratorSpi
@@ -71,7 +72,7 @@ public class SABERKeyGeneratorSpi
             }
             catch (DestroyFailedException e)
             {
-                throw new IllegalStateException("key cleanup failed");
+                throw Exceptions.illegalStateException("key cleanup failed", e);
             }
 
             return rv;

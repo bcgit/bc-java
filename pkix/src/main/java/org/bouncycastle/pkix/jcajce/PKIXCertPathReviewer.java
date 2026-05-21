@@ -37,7 +37,6 @@ import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1IA5String;
@@ -74,6 +73,7 @@ import org.bouncycastle.pkix.util.LocaleString;
 import org.bouncycastle.pkix.util.filter.TrustedInput;
 import org.bouncycastle.pkix.util.filter.UntrustedInput;
 import org.bouncycastle.pkix.util.filter.UntrustedUrlInput;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Objects;
 
@@ -169,7 +169,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (GeneralSecurityException e)
             {
-                throw new IllegalStateException("unable to rebuild certpath");
+                throw Exceptions.illegalStateException("unable to rebuild certpath", e);
             }
             this.certs = certs;
         }

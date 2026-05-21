@@ -150,7 +150,7 @@ abstract class X509CertificateImpl
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("can't encode issuer DN");
+            throw Exceptions.illegalStateException("can't encode issuer DN", e);
         }
     }
 
@@ -169,7 +169,7 @@ abstract class X509CertificateImpl
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("can't encode subject DN");
+            throw Exceptions.illegalStateException("can't encode subject DN", e);
         }
     }
 
@@ -410,7 +410,8 @@ abstract class X509CertificateImpl
                         Extension.policyConstraints.equals(oid) ||
                         Extension.basicConstraints.equals(oid) ||
                         Extension.subjectAlternativeName.equals(oid) ||
-                        Extension.nameConstraints.equals(oid))
+                        Extension.nameConstraints.equals(oid) ||
+                        Extension.extendedKeyUsage.equals(oid))
                     {
                         continue;
                     }

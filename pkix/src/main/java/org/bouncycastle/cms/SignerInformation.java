@@ -343,7 +343,6 @@ public class SignerInformation
     {
         // TODO[cms] For pure signature algorithms, restrict digest algorithm to permitted set
 
-        String encName = CMSSignedHelper.INSTANCE.getEncryptionAlgName(this.getEncryptionAlgOID());
         AlgorithmIdentifier realDigestAlgorithm = signedAttributeSet != null ?
             info.getDigestAlgorithm() : translateBrokenRSAPkcs7(encryptionAlgorithm, info.getDigestAlgorithm());
         ContentVerifier contentVerifier;
@@ -451,7 +450,7 @@ public class SignerInformation
                 {
                     RawContentVerifier rawVerifier = (RawContentVerifier)contentVerifier;
 
-                    if (encName.equals("RSA"))
+                    if (CMSSignedHelper.INSTANCE.isRSASigAlg(encryptionAlgorithm))
                     {
                         DigestInfo digInfo = new DigestInfo(new AlgorithmIdentifier(realDigestAlgorithm.getAlgorithm(), DERNull.INSTANCE), resultDigest);
 
@@ -749,7 +748,10 @@ public class SignerInformation
 
     /**
      * Return a signer information object with passed in SignerInformationStore representing counter
-     * signatures attached as an unsigned attribute.
+     * signatures attached as an unsigned attribute. The supplied counter-signers become peers of any
+     * counter-signers already attached to <code>signerInformation</code> &mdash; to nest a counter-
+     * signature underneath an existing counter-signer (a counter-counter-signature) use the
+     * three-argument overload that takes a target SignerId.
      *
      * @param signerInformation the signerInfo to be used as the basis.
      * @param counterSigners    signer info objects carrying counter signature.
@@ -787,6 +789,113 @@ public class SignerInformation
             new SignerInfo(sInfo.getSID(), sInfo.getDigestAlgorithm(),
                 sInfo.getAuthenticatedAttributes(), sInfo.getDigestEncryptionAlgorithm(), sInfo.getEncryptedDigest(), new DERSet(v)),
             signerInformation.contentType, signerInformation.content, null);
+    }
+
+    /**
+     * Return a signer information object with the supplied counter-signers attached as an unsigned
+     * attribute of the counter-signer (anywhere in the counter-signature subtree of
+     * <code>signerInformation</code>) whose SID matches <code>targetCounterSigner</code>. The
+     * containing SignerInfos are rebuilt on the way back up; counter-signatures live in
+     * unsignedAttributes which is not covered by the enclosing signer's signature, so no
+     * re-signing is performed and all existing signatures remain valid.
+     * <p>
+     * If multiple counter-signers in the subtree match the SID, the supplied counter-signers are
+     * appended to each of them.
+     *
+     * @param signerInformation   the signerInfo whose counter-signature subtree is to be enriched.
+     * @param targetCounterSigner SID identifying the counter-signer to attach to.
+     * @param counterSigners      signer info objects carrying counter-signatures to nest under the target.
+     * @return a copy of <code>signerInformation</code> with the change applied.
+     * @throws IllegalArgumentException if no counter-signer in the subtree matches <code>targetCounterSigner</code>.
+     */
+    public static SignerInformation addCounterSigners(
+        SignerInformation signerInformation,
+        SignerId targetCounterSigner,
+        SignerInformationStore counterSigners)
+    {
+        SignerInformation result = rewriteCounterSignatures(signerInformation, targetCounterSigner, counterSigners);
+        if (result == null)
+        {
+            throw new IllegalArgumentException("no counter-signer matches the supplied SignerId");
+        }
+        return result;
+    }
+
+    private static SignerInformation rewriteCounterSignatures(
+        SignerInformation signer,
+        SignerId target,
+        SignerInformationStore newCounterSigners)
+    {
+        SignerInformationStore existing = signer.getCounterSignatures();
+        if (existing.size() == 0)
+        {
+            return null;
+        }
+
+        List rebuilt = new ArrayList();
+        boolean modified = false;
+        for (Iterator it = existing.getSigners().iterator(); it.hasNext();)
+        {
+            SignerInformation cs = (SignerInformation)it.next();
+            if (target.match(cs))
+            {
+                rebuilt.add(addCounterSigners(cs, newCounterSigners));
+                modified = true;
+            }
+            else
+            {
+                SignerInformation deeper = rewriteCounterSignatures(cs, target, newCounterSigners);
+                if (deeper != null)
+                {
+                    rebuilt.add(deeper);
+                    modified = true;
+                }
+                else
+                {
+                    rebuilt.add(cs);
+                }
+            }
+        }
+        if (!modified)
+        {
+            return null;
+        }
+
+        return replaceCounterSignatures(signer, rebuilt);
+    }
+
+    private static SignerInformation replaceCounterSignatures(
+        SignerInformation signer,
+        List newCounterSigners)
+    {
+        SignerInfo sInfo = signer.info;
+        AttributeTable unsignedAttr = signer.getUnsignedAttributes();
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        if (unsignedAttr != null)
+        {
+            ASN1EncodableVector all = unsignedAttr.toASN1EncodableVector();
+            for (int i = 0; i < all.size(); i++)
+            {
+                Attribute attr = (Attribute)all.get(i);
+                if (!CMSAttributes.counterSignature.equals(attr.getAttrType()))
+                {
+                    v.add(attr);
+                }
+            }
+        }
+
+        ASN1EncodableVector sigs = new ASN1EncodableVector();
+        for (Iterator it = newCounterSigners.iterator(); it.hasNext();)
+        {
+            sigs.add(((SignerInformation)it.next()).toASN1Structure());
+        }
+        v.add(new Attribute(CMSAttributes.counterSignature, new DERSet(sigs)));
+
+        return new SignerInformation(
+            new SignerInfo(sInfo.getSID(), sInfo.getDigestAlgorithm(),
+                sInfo.getAuthenticatedAttributes(), sInfo.getDigestEncryptionAlgorithm(), sInfo.getEncryptedDigest(), new DERSet(v)),
+            signer.contentType, signer.content, null);
     }
 
     private static AlgorithmIdentifier translateBrokenRSAPkcs7(AlgorithmIdentifier encryptionAlgorithm, AlgorithmIdentifier digestAlgorithm)

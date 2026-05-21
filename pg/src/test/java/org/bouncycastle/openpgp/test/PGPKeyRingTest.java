@@ -3466,7 +3466,7 @@ public class PGPKeyRingTest
 
         long validSeconds = publicKey.getValidSeconds();
 
-        isEquals(81129600L, validSeconds);
+        isEquals("got " + validSeconds, 0L, validSeconds);
     }
 
     private void testApacheRings()
@@ -3522,12 +3522,94 @@ public class PGPKeyRingTest
         isTrue(signature.verifyCertification(secretKeys.getPublicKey()));
     }
 
+    /**
+     * Verify {@link PGPPublicKey#copyMinimal} / {@link PGPPublicKeyRing#copyMinimal}:
+     * the minimal copy must preserve all the keys' fingerprints / IDs / packet
+     * data but drop every user ID, user-attribute packet and signature
+     * (github #1400).
+     */
+    public void testCopyMinimal()
+        throws Exception
+    {
+        JcaKeyFingerprintCalculator fpCalc = new JcaKeyFingerprintCalculator();
+        JcaPGPPublicKeyRingCollection pubRings = new JcaPGPPublicKeyRingCollection(pub1);
+        Iterator rIt = pubRings.getKeyRings();
+        isTrue("pub1 must contain at least one keyring", rIt.hasNext());
+        PGPPublicKeyRing original = (PGPPublicKeyRing)rIt.next();
+
+        // Sanity check: the original must actually have user IDs and signatures,
+        // otherwise the test wouldn't prove anything.
+        int origKeyCount = 0;
+        int origUserIdTotal = 0;
+        int origSignatureTotal = 0;
+        for (Iterator it = original.getPublicKeys(); it.hasNext(); )
+        {
+            origKeyCount++;
+            PGPPublicKey key = (PGPPublicKey)it.next();
+            for (Iterator uIt = key.getUserIDs(); uIt.hasNext(); uIt.next())
+            {
+                origUserIdTotal++;
+            }
+            for (Iterator sIt = key.getSignatures(); sIt.hasNext(); sIt.next())
+            {
+                origSignatureTotal++;
+            }
+        }
+        isTrue("pub1 must have at least one user ID to make this test meaningful",
+            origUserIdTotal > 0);
+        isTrue("pub1 must have at least one signature to make this test meaningful",
+            origSignatureTotal > 0);
+
+        PGPPublicKeyRing minimal = original.copyMinimal(fpCalc);
+
+        // Same number of keys, in the same order, with the same key material.
+        int minimalKeyCount = 0;
+        Iterator origIt = original.getPublicKeys();
+        Iterator minIt = minimal.getPublicKeys();
+        while (origIt.hasNext() && minIt.hasNext())
+        {
+            PGPPublicKey origKey = (PGPPublicKey)origIt.next();
+            PGPPublicKey minKey  = (PGPPublicKey)minIt.next();
+            minimalKeyCount++;
+
+            isTrue("key " + minimalKeyCount + ": fingerprints must match",
+                org.bouncycastle.util.Arrays.areEqual(origKey.getFingerprint(), minKey.getFingerprint()));
+            isEquals("key " + minimalKeyCount + ": key IDs must match",
+                origKey.getKeyID(), minKey.getKeyID());
+            isEquals("key " + minimalKeyCount + ": isMasterKey must match",
+                origKey.isMasterKey(), minKey.isMasterKey());
+
+            // No user IDs / signatures / attribute packets on the minimal copy.
+            isTrue("key " + minimalKeyCount + ": minimal copy must have no user IDs",
+                !minKey.getUserIDs().hasNext());
+            isTrue("key " + minimalKeyCount + ": minimal copy must have no signatures",
+                !minKey.getSignatures().hasNext());
+            isTrue("key " + minimalKeyCount + ": minimal copy must have no user-attribute packets",
+                !minKey.getUserAttributes().hasNext());
+        }
+        isTrue("iterators must exhaust together", !origIt.hasNext() && !minIt.hasNext());
+        isEquals("minimal ring must contain the same number of keys",
+            origKeyCount, minimalKeyCount);
+
+        // The minimal ring must re-encode and re-parse cleanly.
+        byte[] enc = minimal.getEncoded();
+        PGPPublicKeyRing reparsed = new PGPPublicKeyRing(enc, fpCalc);
+        int reparsedCount = 0;
+        for (Iterator it = reparsed.getPublicKeys(); it.hasNext(); it.next())
+        {
+            reparsedCount++;
+        }
+        isEquals("re-parsed minimal ring must contain the same number of keys",
+            origKeyCount, reparsedCount);
+    }
+
     public void performTest()
         throws Exception
     {
         try
         {
             testExpiryDate();
+            testCopyMinimal();
             test1();
             test2();
             test3();

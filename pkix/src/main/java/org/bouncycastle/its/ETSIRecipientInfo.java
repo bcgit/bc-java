@@ -1,6 +1,5 @@
 package org.bouncycastle.its;
 
-
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
 import org.bouncycastle.oer.its.ieee1609dot2.AesCcmCiphertext;
 import org.bouncycastle.oer.its.ieee1609dot2.EncryptedData;

@@ -26,12 +26,14 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
+import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
+import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 
@@ -139,6 +141,34 @@ public class PGPPublicKey
         this.idSigs = new ArrayList<List<PGPSignature>>();
 
         init(fingerPrintCalculator);
+    }
+
+    /**
+     * Return a copy of this key carrying only the underlying public-key packet
+     * &mdash; user IDs, user-attribute packets, trust packets, key certifications
+     * and subkey-binding signatures are all dropped.
+     * <p>
+     * Equivalent to {@code new PGPPublicKey(this.getPublicKeyPacket(), fingerPrintCalculator)};
+     * a one-line wrapper that makes the intent explicit and the call site less
+     * boilerplate-heavy. Master/subkey distinction is preserved through the
+     * underlying packet type ({@link PublicKeyPacket} vs its
+     * {@code PublicSubkeyPacket} subclass).
+     * <p>
+     * Typical use cases: producing a minimal key for OpenPGP v6
+     * revocation-certificate distribution, stripping irrelevant user IDs /
+     * attribute packets from a key downloaded from a key server, or wire-size
+     * reduction. Issue #1400.
+     *
+     * @param fingerPrintCalculator calculator providing the digest support to
+     *                              compute the key fingerprint of the copy.
+     * @return a new {@code PGPPublicKey} with the same key material and no
+     *         attached user IDs, attributes, trust packets, or signatures.
+     * @throws PGPException if the packet is faulty, or the required calculations fail.
+     */
+    public PGPPublicKey copyMinimal(KeyFingerPrintCalculator fingerPrintCalculator)
+        throws PGPException
+    {
+        return new PGPPublicKey(this.publicPk, fingerPrintCalculator);
     }
 
     /*
@@ -342,46 +372,44 @@ public class PGPPublicKey
         }
     }
 
-    private long getExpirationTimeFromSig(
-        boolean selfSigned,
-        int signatureType)
+    private long getExpirationTimeFromSig(boolean selfSigned, int signatureType)
     {
-        Iterator<PGPSignature> signatures = this.getSignaturesOfType(signatureType);
+        long keyID = getKeyID();
         long expiryTime = -1;
         long lastDate = -1;
 
+        Iterator<PGPSignature> signatures = this.getSignaturesOfType(signatureType);
         while (signatures.hasNext())
         {
             PGPSignature sig = (PGPSignature)signatures.next();
 
-            if (!selfSigned || sig.getKeyID() == this.getKeyID())
+            if (sig.getKeyID() == keyID)
+            {
+                // RFC 4880 5.2.4.1: the most recent self-signature wins, even if
+                // it omits the Key Expiration Time subpacket (which removes any
+                // previously asserted expiry).
+                long thisDate = sig.getCreationTime().getTime();
+                if (thisDate > lastDate)
+                {
+                    lastDate = thisDate;
+
+                    PGPSignatureSubpacketVector hashed = sig.getHashedSubPackets();
+                    expiryTime = hashed == null ? 0L : hashed.getKeyExpirationTime();
+                }
+            }
+            else if (!selfSigned)
             {
                 PGPSignatureSubpacketVector hashed = sig.getHashedSubPackets();
-                if (hashed == null)
+                if (hashed != null)
                 {
-                    continue;
-                }
-
-                if (!hashed.hasSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME))
-                {
-                    continue;
-                }
-
-                long current = hashed.getKeyExpirationTime();
-
-                if (sig.getKeyID() == this.getKeyID())
-                {
-                    if (sig.getCreationTime().getTime() > lastDate)
+                    SignatureSubpacket keyExpireTime = hashed.getSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME);
+                    if (keyExpireTime != null)
                     {
-                        lastDate = sig.getCreationTime().getTime();
-                        expiryTime = current;
-                    }
-                }
-                else
-                {
-                    if (current == 0 || current > expiryTime)
-                    {
-                        expiryTime = current;
+                        long current = ((KeyExpirationTime)keyExpireTime).getTime();
+                        if (current == 0 || current > expiryTime)
+                        {
+                            expiryTime = current;
+                        }
                     }
                 }
             }

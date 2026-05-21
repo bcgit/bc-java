@@ -246,7 +246,7 @@ public class Challenge
 
         public ASN1Primitive toASN1Primitive()
         {
-            return new DERSequence(new ASN1Encodable[]{integer, sender});
+            return new DERSequence(integer, sender);
         }
     }
 }

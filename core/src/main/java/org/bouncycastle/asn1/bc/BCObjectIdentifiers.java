@@ -737,6 +737,41 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier snova_75_33_2_shake_esk = snova.branch("44");
 
     /**
+     * FAEST &mdash; symmetric-primitive signature scheme based on AES and the
+     * VOLE-in-the-Head proof system. See
+     * <a href="https://csrc.nist.gov/projects/pqc-dig-sig/round-3-additional-signatures">
+     * NIST PQC additional signatures Round 3</a> and the FAEST team's specification
+     * (<a href="https://faest.info/faest-spec-v2.0.pdf">FAEST v2.0</a>).
+     * <p>
+     * Twelve parameter sets per the v2.0 spec: six base FAEST variants ({128,192,256}-bit
+     * security in "small signature" (s) and "fast signing" (f) trade-offs) and six
+     * FAEST-EM (Even-Mansour) variants over the same security/trade-off matrix.
+     * <p>
+     * No OQS-tracked OIDs are defined here because the upstream
+     * <a href="https://github.com/open-quantum-safe/liboqs">liboqs</a> /
+     * <a href="https://github.com/open-quantum-safe/oqs-provider">oqs-provider</a> did
+     * not have FAEST integrated as of the bcjava 1.85 cycle. If OQS publishes
+     * 1.3.9999.* identifiers for FAEST, add them as additional commented constants
+     * alongside the BC-arc identifiers below (cf. the {@link #mayo_1} / {@link #mayo1}
+     * dual-arc precedent in the Mayo block).
+     */
+    ASN1ObjectIdentifier faest = bc_sig.branch("12");
+
+    ASN1ObjectIdentifier faest_128s = faest.branch("1");
+    ASN1ObjectIdentifier faest_128f = faest.branch("2");
+    ASN1ObjectIdentifier faest_192s = faest.branch("3");
+    ASN1ObjectIdentifier faest_192f = faest.branch("4");
+    ASN1ObjectIdentifier faest_256s = faest.branch("5");
+    ASN1ObjectIdentifier faest_256f = faest.branch("6");
+
+    ASN1ObjectIdentifier faest_em_128s = faest.branch("7");
+    ASN1ObjectIdentifier faest_em_128f = faest.branch("8");
+    ASN1ObjectIdentifier faest_em_192s = faest.branch("9");
+    ASN1ObjectIdentifier faest_em_192f = faest.branch("10");
+    ASN1ObjectIdentifier faest_em_256s = faest.branch("11");
+    ASN1ObjectIdentifier faest_em_256f = faest.branch("12");
+
+    /**
      * NTRU+
      * */
     ASN1ObjectIdentifier pqc_kem_ntruplus = bc_kem.branch("10");

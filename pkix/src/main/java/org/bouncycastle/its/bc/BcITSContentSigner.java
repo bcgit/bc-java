@@ -19,6 +19,7 @@ import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class BcITSContentSigner
     implements ITSContentSigner
@@ -85,7 +86,7 @@ public class BcITSContentSigner
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("signer certificate encoding failed: " + e.getMessage());
+                throw Exceptions.illegalStateException("signer certificate encoding failed", e);
             }
         }
         else

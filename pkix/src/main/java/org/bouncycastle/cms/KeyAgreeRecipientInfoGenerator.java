@@ -62,6 +62,26 @@ public abstract class KeyAgreeRecipientInfoGenerator
         return new OriginatorPublicKey(originatorKeyInfo.getAlgorithm(), originatorKeyInfo.getPublicKeyData());
     }
 
+    protected boolean isEC(ASN1ObjectIdentifier algorithmOID)
+    {
+        return CMSUtils.isEC(algorithmOID);
+    }
+
+    protected boolean isMQV(ASN1ObjectIdentifier algorithmOID)
+    {
+        return CMSUtils.isMQV(algorithmOID);
+    }
+
+    protected boolean isRFC2631(ASN1ObjectIdentifier algorithmOID)
+    {
+        return CMSUtils.isRFC2631(algorithmOID);
+    }
+
+    protected boolean isGOST(ASN1ObjectIdentifier algorithmOID)
+    {
+        return CMSUtils.isGOST(algorithmOID);
+    }
+
     protected abstract ASN1Sequence generateRecipientEncryptedKeys(AlgorithmIdentifier keyAgreeAlgorithm,
         AlgorithmIdentifier keyEncAlgorithm, GenericKey contentEncryptionKey) throws CMSException;
 

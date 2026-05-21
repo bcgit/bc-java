@@ -2,6 +2,24 @@ package org.bouncycastle.crypto.hpke;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
+/**
+ * An HPKE encryption / decryption context produced by one of the
+ * {@code HPKE.setup*R} (recipient) factory methods, or &mdash; via the
+ * {@link HPKEContextWithEncapsulation} subclass &mdash; by one of the
+ * {@code HPKE.setup*S} (sender) factories.
+ * <p>
+ * The context is stateful: each {@link #seal(byte[], byte[])} /
+ * {@link #open(byte[], byte[])} call advances an internal sequence number that
+ * is XOR-mixed into the AEAD nonce per RFC 9180 &sect;5.2, allowing a single
+ * context to encrypt or decrypt many messages in order without nonce reuse.
+ * {@link #export(byte[], int)} derives auxiliary key material from the
+ * exporter secret and is deterministic &mdash; repeated calls with the same
+ * {@code (exporterContext, L)} return the same bytes.
+ * <p>
+ * Senders should use {@link HPKEContextWithEncapsulation#getEncapsulation}
+ * to obtain the {@code enc} octet string that must be transmitted alongside
+ * the first ciphertext so the receiver can run the matching {@code setup*R}.
+ */
 public class HPKEContext
 {
     protected final AEAD aead;

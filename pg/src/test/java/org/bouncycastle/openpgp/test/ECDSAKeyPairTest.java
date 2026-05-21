@@ -34,7 +34,7 @@ public class ECDSAKeyPairTest
 
     private static final String PRIME256v1 = "" +
             "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
-            "Version: BCPG v@RELEASE_NAME@\n" +
+            "Version: BCPG v1.85-SNAPSHOT\n" +
             "\n" +
             "lHcEZkH7VRMIKoZIzj0DAQcCAwQee5wkHVVrG7u7CcrHoZOaC+reK0wn2Y5XPJoU\n" +
             "O6geh1j2qXHj4+f+a6lav5hzKIJZHkgBYcS0aeABgWNjKsHbAAD/b4K93MJF7c2l\n" +
@@ -43,7 +43,7 @@ public class ECDSAKeyPairTest
             "-----END PGP PRIVATE KEY BLOCK-----";
     private static final String SECP384r1 = "" +
             "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
-            "Version: BCPG v@RELEASE_NAME@\n" +
+            "Version: BCPG v1.85-SNAPSHOT\n" +
             "\n" +
             "lKQEZkH7VhMFK4EEACIDAwQgkKs+EzJaFLgMZH5Fp1S8DCXZC0OildnuQX6F7Jzt\n" +
             "BgkYyfDZ/F2KNistCqfsmxWnwAxtdRuuY2PfehWktQBQaID0OfXUnOC2E5961b3/\n" +
@@ -53,7 +53,7 @@ public class ECDSAKeyPairTest
             "-----END PGP PRIVATE KEY BLOCK-----";
     private static final String SECP521r1 = "" +
             "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
-            "Version: BCPG v@RELEASE_NAME@\n" +
+            "Version: BCPG v1.85-SNAPSHOT\n" +
             "\n" +
             "lNkEZkH7VhMFK4EEACMEIwQBxt7DenSWrjuJGR0ouSwylW3ZC6mX4S+A5Cav7nz3\n" +
             "DninA8Rdt3Cd5sHQ1IWea+J05NUZDKbOL417lUSPkAVLot0B/Qis90wODcGnAXbc\n" +
@@ -64,7 +64,7 @@ public class ECDSAKeyPairTest
             "-----END PGP PRIVATE KEY BLOCK-----";
     private static final String BRAINPOOLP256r1 = "" +
             "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
-            "Version: BCPG v@RELEASE_NAME@\n" +
+            "Version: BCPG v1.85-SNAPSHOT\n" +
             "\n" +
             "lHgEZkH7VhMJKyQDAwIIAQEHAgMEj7YxVg4/2p4uuhcpRqGl2i+vDhjx8YhUUNJX\n" +
             "RNFozBuIWJ6zkW3wRKdD/7Y7tzKNwyHmZ4FBFCcUoLliLeD4SAABAIkEm4iT1g0B\n" +
@@ -73,7 +73,7 @@ public class ECDSAKeyPairTest
             "-----END PGP PRIVATE KEY BLOCK-----";
     private static final String BRAINPOOLP384r1 = "" +
             "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
-            "Version: BCPG v@RELEASE_NAME@\n" +
+            "Version: BCPG v1.85-SNAPSHOT\n" +
             "\n" +
             "lKgEZkH7VhMJKyQDAwIIAQELAwMEYm1fhilklF53Pj91awsoO0aZsppmPk9KNESD\n" +
             "H7/gSK86gl+yhf4/oKSxeOFDHCU2es6Iijq/TCIaAjeFH3ITEyQ4tPdnDqQSz2xq\n" +
@@ -83,7 +83,7 @@ public class ECDSAKeyPairTest
             "-----END PGP PRIVATE KEY BLOCK-----";
     private static final String BRAINPOOLP521r1 = "" +
             "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
-            "Version: BCPG v@RELEASE_NAME@\n" +
+            "Version: BCPG v1.85-SNAPSHOT\n" +
             "\n" +
             "lNgEZkH7VhMJKyQDAwIIAQENBAMEbSjn4lQKNnC50PzeUtenikvF62KR7HfOLJTA\n" +
             "r/T17tFx3Qb6Ek/xQWIJ5nIHroOrduZjLigPOXqQ+GNhCgdNPGUqAWw1sfQ86nrx\n" +

@@ -83,6 +83,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 
     static
     {
+        addAlgorithm("COMPOSITE", MiscObjectIdentifiers.id_alg_composite);
+
         addAlgorithm("MD2WITHRSAENCRYPTION", PKCSObjectIdentifiers.md2WithRSAEncryption);
         addAlgorithm("MD2WITHRSA", PKCSObjectIdentifiers.md2WithRSAEncryption);
         addAlgorithm("MD5WITHRSAENCRYPTION", PKCSObjectIdentifiers.md5WithRSAEncryption);
@@ -376,6 +378,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_384);
         noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
 
+        noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA1);
         noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA224);
         noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA256);
         noParams.add(BSIObjectIdentifiers.ecdsa_plain_SHA384);

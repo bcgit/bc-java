@@ -7,7 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-
+import org.bouncycastle.util.Exceptions;
 class SHA1PGPDigestCalculator
     implements PGPDigestCalculator
 {
@@ -21,7 +21,7 @@ class SHA1PGPDigestCalculator
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new IllegalStateException("cannot find SHA-1: " + e.getMessage());
+            throw Exceptions.illegalStateException("cannot find SHA-1", e);
         }
     }
 

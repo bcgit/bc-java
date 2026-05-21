@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -1182,7 +1183,7 @@ public class X509Name
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unknown encoding in name: " + e);
+            throw Exceptions.illegalStateException("unknown encoding in name", e);
         }
     }
 

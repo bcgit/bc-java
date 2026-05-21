@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -161,7 +162,7 @@ public abstract class ASN1OctetString
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct OCTET STRING from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct OCTET STRING from byte[]", e);
             }
         }
 

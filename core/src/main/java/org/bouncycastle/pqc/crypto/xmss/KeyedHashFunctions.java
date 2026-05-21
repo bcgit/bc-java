@@ -38,6 +38,12 @@ final class KeyedHashFunctions
         {
             ((Xof)digest).doFinal(out, 0, digestSize);
         }
+        else if (digestSize < digest.getDigestSize())
+        {
+            byte[] full = new byte[digest.getDigestSize()];
+            digest.doFinal(full, 0);
+            System.arraycopy(full, 0, out, 0, digestSize);
+        }
         else
         {
             digest.doFinal(out, 0);

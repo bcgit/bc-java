@@ -18,6 +18,7 @@ import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class HQCKeyGeneratorSpi
     extends KeyGeneratorSpi
@@ -100,7 +101,7 @@ public class HQCKeyGeneratorSpi
             }
             catch (DestroyFailedException e)
             {
-                throw new IllegalStateException("key cleanup failed");
+                throw Exceptions.illegalStateException("key cleanup failed", e);
             }
 
             return rv;

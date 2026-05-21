@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
@@ -44,6 +45,9 @@ public class JceOpenSSLPKCS8EncryptorBuilder
     public static final String AES_256_CBC = NISTObjectIdentifiers.id_aes256_CBC.getId();
 
     public static final String DES3_CBC = PKCSObjectIdentifiers.des_EDE3_CBC.getId();
+
+    /** SM4-CBC content encryption per GM/T 0006 / RFC 8998. 128-bit key, PBES2 with PBKDF2. */
+    public static final String SM4_CBC = GMObjectIdentifiers.sms4_cbc.getId();
 
     public static final String PBE_SHA1_RC4_128 = PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC4.getId();
     public static final String PBE_SHA1_RC4_40 = PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC4.getId();

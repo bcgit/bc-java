@@ -26,6 +26,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.util.Exceptions;
 
 public class BaseStreamCipher
     extends BaseWrapCipher
@@ -384,7 +385,7 @@ public class BaseStreamCipher
         catch (DataLengthException e)
         {
             // should never happen
-            throw new IllegalStateException(e.getMessage());
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 

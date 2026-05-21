@@ -7,6 +7,29 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 
+/**
+ * Hybrid Public Key Encryption (HPKE) per
+ * <a href="https://www.rfc-editor.org/rfc/rfc9180.html">RFC 9180</a>.
+ * <p>
+ * Top-level facade. A single instance pins a (mode, KEM, KDF, AEAD) suite via
+ * the constructor and exposes:
+ * <ul>
+ *   <li>{@code setupBaseS} / {@code setupBaseR} / {@code SetupPSKS} /
+ *       {@code setupPSKR} / {@code setupAuthS} / {@code setupAuthR} /
+ *       {@code setupAuthPSKS} / {@code setupAuthPSKR} — return a stateful
+ *       {@link HPKEContext} (recipient) or {@link HPKEContextWithEncapsulation}
+ *       (sender, also carries the {@code enc} octet string).</li>
+ *   <li>{@link #seal seal(pkR, info, aad, pt)} / {@link #open open(enc, skR, info, aad, ct)} —
+ *       single-message conveniences that do setup + seal/open in one call.</li>
+ *   <li>{@link #sendExport sendExport} / {@link #receiveExport receiveExport} —
+ *       export-only operation (no AEAD seal); pair with the
+ *       {@link #aead_EXPORT_ONLY} sentinel suite when seal/open aren't needed.</li>
+ *   <li>{@link #serializePublicKey} / {@link #deserializePublicKey} /
+ *       {@link #serializePrivateKey} — KEM-aware key encoding helpers.</li>
+ * </ul>
+ * The package <a href="package-summary.html">package overview</a> covers the
+ * typical sender/receiver caller flow and the supported algorithm matrix.
+ */
 public class HPKE
 {
     // modes

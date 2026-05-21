@@ -20,8 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
@@ -134,7 +132,12 @@ public class PKIXCertPathValidatorSpi
                 throw new CertPathValidatorException("Trust anchor for certification path not found.", null, certPath, -1);
             }
 
-            checkCertificate(trust.getTrustedCert());
+            // A TrustAnchor may be supplied by name + public key only (no certificate),
+            // see github #1420; only validate the cert encoding when one is present.
+            if (trust.getTrustedCert() != null)
+            {
+                checkCertificate(trust.getTrustedCert());
+            }
         }
         catch (AnnotatedException e)
         {

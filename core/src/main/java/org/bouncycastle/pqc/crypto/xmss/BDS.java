@@ -169,9 +169,9 @@ public final class BDS
         this.nextAuthenticationPath(publicSeed, secretKeySeed, otsHashAddress);
     }
 
-    private BDS(BDS last, ASN1ObjectIdentifier digest)
+    private BDS(BDS last, ASN1ObjectIdentifier digest, int digestSize)
     {
-        this.wotsPlus = new WOTSPlus(new WOTSPlusParameters(digest));
+        this.wotsPlus = new WOTSPlus(digestSize > 0 ? new WOTSPlusParameters(digest, digestSize) : new WOTSPlusParameters(digest));
         this.treeHeight = last.treeHeight;
         this.k = last.k;
         this.root = last.root;
@@ -197,9 +197,9 @@ public final class BDS
         this.validate();
     }
 
-    private BDS(BDS last, int maxIndex, ASN1ObjectIdentifier digest)
+    private BDS(BDS last, int maxIndex, ASN1ObjectIdentifier digest, int digestSize)
     {
-        this.wotsPlus = new WOTSPlus(new WOTSPlusParameters(digest));
+        this.wotsPlus = new WOTSPlus(digestSize > 0 ? new WOTSPlusParameters(digest, digestSize) : new WOTSPlusParameters(digest));
         this.treeHeight = last.treeHeight;
         this.k = last.k;
         this.root = last.root;
@@ -525,12 +525,22 @@ public final class BDS
 
     public BDS withWOTSDigest(ASN1ObjectIdentifier digestName)
     {
-        return new BDS(this, digestName);
+        return new BDS(this, digestName, -1);
+    }
+
+    public BDS withWOTSDigest(ASN1ObjectIdentifier digestName, int digestSize)
+    {
+        return new BDS(this, digestName, digestSize);
     }
 
     public BDS withMaxIndex(int maxIndex, ASN1ObjectIdentifier digestName)
     {
-        return new BDS(this, maxIndex, digestName);
+        return new BDS(this, maxIndex, digestName, -1);
+    }
+
+    public BDS withMaxIndex(int maxIndex, ASN1ObjectIdentifier digestName, int digestSize)
+    {
+        return new BDS(this, maxIndex, digestName, digestSize);
     }
 
     private void readObject(

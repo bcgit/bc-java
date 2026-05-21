@@ -31,6 +31,7 @@ import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * An implementation of a version 2 X.509 Attribute Certificate.
@@ -56,7 +57,7 @@ public class X509V2AttributeCertificate
         }
         catch (Exception e)
         {
-            throw new IOException("exception decoding certificate structure: " + e.toString());
+            throw Exceptions.ioException("exception decoding certificate structure: " + e.toString(), e);
         }
     }
 
@@ -87,7 +88,7 @@ public class X509V2AttributeCertificate
         }
         catch (ParseException e)
         {
-            throw new IOException("invalid data structure in certificate!");
+            throw Exceptions.ioException("invalid data structure in certificate!", e);
         }
     }
     

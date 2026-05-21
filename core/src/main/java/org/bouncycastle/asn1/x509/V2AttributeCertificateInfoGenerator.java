@@ -125,6 +125,10 @@ public class V2AttributeCertificateInfoGenerator
         {
             throw new IllegalStateException("not all mandatory fields set in V2 AttributeCertificateInfo generator");
         }
+        if (AttributeCertificateInfo.isEmptyIssuer(issuer))
+        {
+            throw new IllegalStateException("issuer is empty");
+        }
 
         ASN1EncodableVector  v = new ASN1EncodableVector(9);
 

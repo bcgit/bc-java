@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.jcajce.provider.util;
 
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;

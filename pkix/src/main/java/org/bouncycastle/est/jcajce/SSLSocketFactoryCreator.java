@@ -1,6 +1,5 @@
 package org.bouncycastle.est.jcajce;
 
-
 import javax.net.ssl.SSLSocketFactory;
 
 /**

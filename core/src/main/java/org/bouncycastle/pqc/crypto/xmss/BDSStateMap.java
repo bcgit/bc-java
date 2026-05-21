@@ -121,15 +121,20 @@ public class BDSStateMap
 
     public BDSStateMap withWOTSDigest(ASN1ObjectIdentifier digestName)
     {
+        return withWOTSDigest(digestName, -1);
+    }
+
+    public BDSStateMap withWOTSDigest(ASN1ObjectIdentifier digestName, int digestSize)
+    {
         BDSStateMap newStateMap = new BDSStateMap(this.maxIndex);
 
         for (Iterator<Integer> keys = bdsState.keySet().iterator(); keys.hasNext();)
         {
             Integer key = keys.next();
 
-            newStateMap.bdsState.put(key, bdsState.get(key).withWOTSDigest(digestName));
+            newStateMap.bdsState.put(key, bdsState.get(key).withWOTSDigest(digestName, digestSize));
         }
-        
+
         return newStateMap;
     }
 

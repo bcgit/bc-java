@@ -42,7 +42,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.ec;
     exports org.bouncycastle.crypto.encodings;
     exports org.bouncycastle.crypto.engines;
-    exports org.bouncycastle.crypto.examples;
     exports org.bouncycastle.crypto.fpe;
     exports org.bouncycastle.crypto.generators;
     exports org.bouncycastle.crypto.hpke;
@@ -129,6 +128,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.sphincs;
     exports org.bouncycastle.pqc.legacy.sphincsplus;
     exports org.bouncycastle.pqc.crypto.snova;
+    exports org.bouncycastle.pqc.crypto.faest;
     exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
     exports org.bouncycastle.pqc.math.ntru;

@@ -34,6 +34,7 @@ public abstract class BcAsymmetricKeyUnwrapper
 
             if (encryptedKeyAlgorithm.getAlgorithm().equals(PKCSObjectIdentifiers.des_EDE3_CBC))
             {
+                // TODO: should parity bits be getting checked here?
                 return new GenericKey(encryptedKeyAlgorithm, key);
             }
             else

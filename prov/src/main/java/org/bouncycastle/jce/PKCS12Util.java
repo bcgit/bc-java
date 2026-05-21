@@ -31,16 +31,21 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Properties;
 
 /**
  * Utility class for re-encoding PKCS#12 files to definite length.
+ *
+ * @deprecated Replaced by {@link org.bouncycastle.pkcs.util.PKCS12Util}; this class
+ * does not understand RFC 9579 PBMAC1-protected PKCS#12 files (it throws
+ * UnsupportedOperationException for them) and will be removed in a future
+ * release.
  */
+@Deprecated
 public class PKCS12Util
 {
     private static final BigInteger DEFAULT_MAX_IT_COUNT = BigInteger.valueOf(5000000);
-
-    static final String PKCS12_MAX_IT_COUNT_PROPERTY = "org.bouncycastle.pkcs12.max_it_count";
 
     /**
      * Just re-encode the outer layer of the PKCS#12 file to definite length encoding.
@@ -143,7 +148,7 @@ public class PKCS12Util
         }
         catch (Exception e)
         {
-            throw new IOException("error constructing MAC: " + e.toString());
+            throw Exceptions.ioException("error constructing MAC: " + e.toString(), e);
         }
 
         pfx = new Pfx(info, mData);
@@ -189,7 +194,7 @@ public class PKCS12Util
             throw new IllegalStateException("iteration counts >= 2^31 are not suppported");
         }
 
-        BigInteger max = Properties.asBigInteger(PKCS12_MAX_IT_COUNT_PROPERTY);
+        BigInteger max = Properties.asBigInteger(Properties.PKCS12_MAX_IT_COUNT);
         if (max == null)
         {
             max = DEFAULT_MAX_IT_COUNT;

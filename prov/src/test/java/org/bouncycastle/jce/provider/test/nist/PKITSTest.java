@@ -238,6 +238,31 @@ class PKITSTest
         }
     }
 
+    void doExceptionTestStartsWith(
+        int index,
+        String messagePrefix)
+        throws Exception
+    {
+        try
+        {
+            doTest();
+
+            throw new RuntimeException("path accepted when should be rejected");
+        }
+        catch (CertPathValidatorException e)
+        {
+            if (index != e.getIndex())
+            {
+                throw new RuntimeException("Index did not match: " + index + " got " + e.getIndex());
+            }
+
+            if (e.getMessage() == null || !e.getMessage().startsWith(messagePrefix))
+            {
+                throw new RuntimeException("Message did not start with: '" + messagePrefix + "', got '" + e.getMessage() + "'");
+            }
+        }
+    }
+
     X509Certificate pathCert(int index)
     {
         List<? extends Certificate> certificates = certPath.getCertificates();

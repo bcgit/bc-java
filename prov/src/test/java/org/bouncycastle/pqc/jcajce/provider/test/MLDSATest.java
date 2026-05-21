@@ -949,4 +949,94 @@ public class MLDSATest
             return context;
         }
     }
+
+    /**
+     * github #2198 - the BC provider exposes external-hash variants of HashML-DSA
+     * that accept a pre-computed digest via Signature.update(...). The signatures
+     * must interoperate with the streaming form, and a wrong-length digest must be
+     * rejected via SignatureException.
+     */
+    public void testExternalHashSignatureService()
+        throws Exception
+    {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        String[] paramSets = new String[]{
+            "ML-DSA-44-WITH-SHA512",
+            "ML-DSA-65-WITH-SHA512",
+            "ML-DSA-87-WITH-SHA512"
+        };
+
+        for (int i = 0; i < paramSets.length; i++)
+        {
+            String streamName = paramSets[i];
+            String extHashName = streamName + "-EXTERNAL-HASH";
+
+            KeyPair kp = KeyPairGenerator.getInstance(streamName, "BC").generateKeyPair();
+
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-512", "BC").digest(msg);
+
+            // Sign via external-hash, verify via external-hash.
+            Signature signer = Signature.getInstance(extHashName, "BC");
+            signer.initSign(kp.getPrivate());
+            signer.update(hash);
+            byte[] sig = signer.sign();
+
+            Signature verifier = Signature.getInstance(extHashName, "BC");
+            verifier.initVerify(kp.getPublic());
+            verifier.update(hash);
+            assertTrue(extHashName + " round-trip", verifier.verify(sig));
+
+            // External-hash signature must also verify under the streaming HashML-DSA.
+            Signature streamVerifier = Signature.getInstance(streamName, "BC");
+            streamVerifier.initVerify(kp.getPublic());
+            streamVerifier.update(msg);
+            assertTrue(streamName + " streaming verify of " + extHashName + " signature",
+                streamVerifier.verify(sig));
+
+            // Streaming signature must verify under the external-hash verifier too.
+            Signature streamSigner = Signature.getInstance(streamName, "BC");
+            streamSigner.initSign(kp.getPrivate());
+            streamSigner.update(msg);
+            byte[] streamSig = streamSigner.sign();
+
+            Signature extVerifier = Signature.getInstance(extHashName, "BC");
+            extVerifier.initVerify(kp.getPublic());
+            extVerifier.update(hash);
+            assertTrue(extHashName + " verify of " + streamName + " signature",
+                extVerifier.verify(streamSig));
+
+            // Wrong-length hash must surface as a SignatureException.
+            Signature badLen = Signature.getInstance(extHashName, "BC");
+            badLen.initSign(kp.getPrivate());
+            badLen.update(new byte[hash.length - 1]);
+            try
+            {
+                badLen.sign();
+                fail(extHashName + " accepted a too-short digest");
+            }
+            catch (SignatureException expected)
+            {
+                // expected
+            }
+        }
+
+        // The parameter-set-agnostic alias accepts a key whose parameters dictate
+        // the digest size.
+        KeyPair kp = KeyPairGenerator.getInstance("ML-DSA-44-WITH-SHA512", "BC").generateKeyPair();
+        byte[] hash = java.security.MessageDigest.getInstance("SHA-512", "BC").digest(msg);
+
+        Signature genSigner = Signature.getInstance("HASH-ML-DSA-EXTERNAL-HASH", "BC");
+        genSigner.initSign(kp.getPrivate());
+        genSigner.update(hash);
+        byte[] genSig = genSigner.sign();
+
+        Signature genVerifier = Signature.getInstance("HASH-ML-DSA-EXTERNAL-HASH", "BC");
+        genVerifier.initVerify(kp.getPublic());
+        genVerifier.update(hash);
+        assertTrue("HASH-ML-DSA-EXTERNAL-HASH round-trip", genVerifier.verify(genSig));
+    }
 }

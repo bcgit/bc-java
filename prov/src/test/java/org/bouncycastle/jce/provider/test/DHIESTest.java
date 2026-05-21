@@ -23,7 +23,6 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.jcajce.provider.asymmetric.dh.IESCipher;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.IESParameterSpec;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -174,7 +173,7 @@ public class DHIESTest
         catch (IllegalArgumentException e)
         {
 //            isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
-            isTrue("message ", "cannot handle supplied parameter spec: must be passed IES parameters".equals(e.getMessage()));
+            isTrue("message ", "must be passed IES parameters".equals(e.getCause().getMessage()));
         }
 
         try

@@ -105,9 +105,9 @@ public  class PKIXCertPath
             
             X509Principal subject = PrincipalUtil.getSubjectX509Principal(cert);
             
-            for (int j = 0; j != certs.size(); j++)
+            for (int j = 0; j != orig.size(); j++)
             {
-                X509Certificate c = (X509Certificate)certs.get(j);
+                X509Certificate c = (X509Certificate)orig.get(j);
                 if (PrincipalUtil.getIssuerX509Principal(c).equals(subject))
                 {
                     found = true;
@@ -119,9 +119,10 @@ public  class PKIXCertPath
             {
                 retList.add(cert);
                 certs.remove(i);
+                i--;
             }
         }
-        
+
         // can only have one end entity cert - something's wrong, give up.
         if (retList.size() > 1)
         {

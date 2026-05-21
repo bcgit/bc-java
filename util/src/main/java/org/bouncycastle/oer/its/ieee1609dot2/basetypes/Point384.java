@@ -83,9 +83,7 @@ public class Point384
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{
-            x, y
-        });
+        return new DERSequence(x, y);
     }
 
     public static Builder builder()
