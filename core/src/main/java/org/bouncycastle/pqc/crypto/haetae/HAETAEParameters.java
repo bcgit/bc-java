@@ -728,8 +728,10 @@ public class HAETAEParameters
         this.dsyms_h = dsyms_h;
         this.esyms_hb_z1 = esyms_hb_z1;
         this.dsyms_hb_z1 = dsyms_hb_z1;
-        this.symbolH = symbolH;
-        this.symbolHbZ1 = symbolHbZ1;
+        // Derive inverse bucket->symbol lookup tables from dsyms; the
+        // tables passed in were copy-paste mismatches and are ignored.
+        this.symbolH = buildSymbolTable(dsyms_h);
+        this.symbolHbZ1 = buildSymbolTable(dsyms_hb_z1);
 
         // Derived values (matching the C macros)
         this.halfAlphaHint = alphaHint >> 1;
@@ -739,6 +741,22 @@ public class HAETAEParameters
         this.polyveckHighbitsPackedBytes = POLY_HIGHBITS_PACKED_BYTES * k;
         this.publicKeyBytes = SEED_BYTES + k * polyqPackedBytes;
         this.secretKeyBytes = publicKeyBytes + m * POLYETA_PACKED_BYTES + k * poly2etaPackedBytes + SEED_BYTES;
+    }
+
+    private static short[] buildSymbolTable(RansDecSymbol[] dsyms)
+    {
+        final int scale = 1 << 10; // SCALE_BITS
+        short[] table = new short[scale];
+        for (int s = 0; s < dsyms.length; s++)
+        {
+            int start = dsyms[s].start & 0xFFFF;
+            int freq = dsyms[s].freq & 0xFFFF;
+            for (int j = 0; j < freq; j++)
+            {
+                table[start + j] = (short)s;
+            }
+        }
+        return table;
     }
 
     // ==================== Getters ====================

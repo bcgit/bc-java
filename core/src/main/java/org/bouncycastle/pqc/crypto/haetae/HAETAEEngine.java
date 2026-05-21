@@ -1372,8 +1372,10 @@ public class HAETAEEngine
             while (squaredSingularValue > params.getGamma() * params.getGamma() * HAETAEParameters.N);
 
             // b = A * NTT(s1) + NTT(s2)   (in Montgomery domain)
-            int[][] s1hat = s1.clone();
-            int[][] s2hat = s2.clone();
+            // deep-copy: cloning the outer array would alias each row's int[]
+            // with s1/s2, and the NTT below would corrupt the secret key.
+            int[][] s1hat = deepCopy(s1);
+            int[][] s2hat = deepCopy(s2);
             polyvecmNtt(s1hat);
             polyveckNtt(s2hat);
 
@@ -1445,12 +1447,11 @@ public class HAETAEEngine
      */
     public void polyveckDoubleNegate(int[][] v)
     {
-        long factor = ((long)MONT * -2) & 0xFFFFFFFFL; // treat as unsigned 32‑bit
         for (int i = 0; i < params.getK(); i++)
         {
             for (int j = 0; j < HAETAEParameters.N; j++)
             {
-                v[i][j] = montgomeryReduce(v[i][j] * factor);
+                v[i][j] = montgomeryReduce((long)v[i][j] * MONT * -2);
             }
         }
     }
@@ -3322,35 +3323,37 @@ public class HAETAEEngine
             reject2 &= 1;
             reject2 &= (b[0] & 0x02) >>> 1;
 
-            if ((reject1 | reject2) == 0)
+            if ((reject1 | reject2) != 0)
             {
-                break;
+                continue;
             }
+
+            // 12. Make hint
+            polyfixveclRound(z1rnd, z1);
+            polyfixveckRound(z2rnd, z2);
+
+            polyveckDouble(z2rnd);
+            int[][] htmp = new int[params.getK()][HAETAEParameters.N];
+            polyveckSub(htmp, Ay, z2rnd);
+            polyveckFreeze2q(htmp);
+            polyveckHighbitsHint(htmp, htmp);
+            polyveckSub(h, highbits, htmp);
+            polyveckCaddDQ2ALPHA(h);
+
+            // 13. Decompose z1rnd and pack signature
+            polyveclLowbits(lb_z1, z1rnd);
+            polyveclHighbits(hb_z1, z1rnd);
+
+            // Reset sig buffer before each packSig attempt (it ORs the
+            // challenge bits and the previous attempt's bytes would linger).
+            java.util.Arrays.fill(sig, (byte)0);
+
+            if (packSig(sig, c, lb_z1, hb_z1, h) == 0)
+            {
+                return params.getCryptoBytes();
+            }
+            // Packing failed (signature too big); retry with new sample.
         }
-
-        // 12. Make hint
-        polyfixveclRound(z1rnd, z1);
-        polyfixveckRound(z2rnd, z2);
-
-        polyveckDouble(z2rnd);
-        int[][] htmp = new int[params.getK()][HAETAEParameters.N];
-        polyveckSub(htmp, Ay, z2rnd);
-        polyveckFreeze2q(htmp);
-        polyveckHighbitsHint(htmp, htmp);
-        polyveckSub(h, highbits, htmp);
-        polyveckCaddDQ2ALPHA(h);
-
-        // 13. Decompose z1rnd and pack signature
-        polyveclLowbits(lb_z1, z1rnd);
-        polyveclHighbits(hb_z1, z1rnd);
-
-        if (packSig(sig, c, lb_z1, hb_z1, h) != 0)
-        {
-            // Packing failed (should restart, but for simplicity return 0)
-            return 0;
-        }
-
-        return params.getCryptoBytes();
     }
 
     /**
@@ -3425,7 +3428,7 @@ public class HAETAEEngine
         x = freq * (x >>> scaleBits) + (x & mask) - start;
 
         // Renormalize: read bytes while x < RANS_BYTE_L
-        if (x < RANS_BYTE_L && buf[ptr[0]] < endIdx)
+        if (x < RANS_BYTE_L && ptr[0] < endIdx)
         {
             int p = ptr[0];
             do
@@ -3487,7 +3490,7 @@ public class HAETAEEngine
                 return 1;
             }
             hbZ1[i] = s - params.getOffset_hb_z1();
-            ransDecAdvanceSymbol(state, ptr, buf, endIdx, params.getDsyms_h()[s], SCALE_BITS);
+            ransDecAdvanceSymbol(state, ptr, buf, endIdx, params.getDsyms_hb_z1()[s], SCALE_BITS);
         }
 
         if (ransDecVerify(state[0]) != 0)
