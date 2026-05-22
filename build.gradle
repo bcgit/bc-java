@@ -318,6 +318,32 @@ task copyJars(type: Copy) {
     }
 }
 
+// As copyJars but omits bccore, whose classes are already bundled into the
+// published bcprov jar via the core-into-prov srcDirs trick. Matches the set
+// of artifacts published to Maven Central.
+task copyMavenJars(type: Copy) {
+    description = 'Bundles the Maven publication set of jars (everything except bccore) into the top-level dist/ directory.'
+    group = 'distribution'
+
+    (distModules - 'core').each { name ->
+        def sp = project(":$name")
+        from(sp.tasks.named('jar'))
+        from(sp.tasks.named('sourcesJar'))
+        from(sp.tasks.named('javadocJar'))
+    }
+
+    into layout.projectDirectory.dir('dist')
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    doFirst {
+        delete fileTree(destinationDir).matching { include '*.jar' }
+    }
+
+    doLast {
+        logger.lifecycle("Copied ${didWork ? source.files.size() : 0} jar(s) to ${destinationDir}")
+    }
+}
+
 //apply from: "publish.gradle"
 
 //tasks.named('checkstyleNohttp') {
