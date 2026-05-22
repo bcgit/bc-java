@@ -83,6 +83,12 @@ Each module's built jars are written to its own ```<module>/build/libs``` direct
 ./gradlew copyJars
 ```
 
+A sibling ```copyMavenJars``` task produces the same set minus ```bccore``` (whose classes are already bundled into ```bcprov```), matching the artifacts published to Maven Central:
+
+```
+./gradlew copyMavenJars
+```
+
 
 ## Multi-release jars and testing
 Some subprojects produce multi-release jars and these jars are can be tested on different jvm versions specifically.
