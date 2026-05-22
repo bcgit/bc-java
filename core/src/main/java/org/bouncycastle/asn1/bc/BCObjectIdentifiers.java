@@ -771,6 +771,75 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier faest_em_256s = faest.branch("11");
     ASN1ObjectIdentifier faest_em_256f = faest.branch("12");
 
+
+    /**
+     * MQOM v2.1 ("MQ on my Mind"). BC-allocated arc pending NIST OID assignment.
+     * 36 child OIDs follow the canonical naming
+     * {@code mqom2_&lt;category&gt;_&lt;base-field&gt;_&lt;trade-off&gt;_&lt;variant&gt;}
+     * with category in {cat1, cat3, cat5}, base-field in {gf2, gf16, gf256},
+     * trade-off in {fast, short}, variant in {r3, r5}.
+     */
+    ASN1ObjectIdentifier mqom = bc_sig.branch("13");
+    ASN1ObjectIdentifier mqom2_cat1_gf2_fast_r3      = mqom.branch("1");
+    ASN1ObjectIdentifier mqom2_cat1_gf2_fast_r5      = mqom.branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf2_short_r3     = mqom.branch("3");
+    ASN1ObjectIdentifier mqom2_cat1_gf2_short_r5     = mqom.branch("4");
+    ASN1ObjectIdentifier mqom2_cat1_gf16_fast_r3     = mqom.branch("5");
+    ASN1ObjectIdentifier mqom2_cat1_gf16_fast_r5     = mqom.branch("6");
+    ASN1ObjectIdentifier mqom2_cat1_gf16_short_r3    = mqom.branch("7");
+    ASN1ObjectIdentifier mqom2_cat1_gf16_short_r5    = mqom.branch("8");
+    ASN1ObjectIdentifier mqom2_cat1_gf256_fast_r3    = mqom.branch("9");
+    ASN1ObjectIdentifier mqom2_cat1_gf256_fast_r5    = mqom.branch("10");
+    ASN1ObjectIdentifier mqom2_cat1_gf256_short_r3   = mqom.branch("11");
+    ASN1ObjectIdentifier mqom2_cat1_gf256_short_r5   = mqom.branch("12");
+    ASN1ObjectIdentifier mqom2_cat3_gf2_fast_r3      = mqom.branch("13");
+    ASN1ObjectIdentifier mqom2_cat3_gf2_fast_r5      = mqom.branch("14");
+    ASN1ObjectIdentifier mqom2_cat3_gf2_short_r3     = mqom.branch("15");
+    ASN1ObjectIdentifier mqom2_cat3_gf2_short_r5     = mqom.branch("16");
+    ASN1ObjectIdentifier mqom2_cat3_gf16_fast_r3     = mqom.branch("17");
+    ASN1ObjectIdentifier mqom2_cat3_gf16_fast_r5     = mqom.branch("18");
+    ASN1ObjectIdentifier mqom2_cat3_gf16_short_r3    = mqom.branch("19");
+    ASN1ObjectIdentifier mqom2_cat3_gf16_short_r5    = mqom.branch("20");
+    ASN1ObjectIdentifier mqom2_cat3_gf256_fast_r3    = mqom.branch("21");
+    ASN1ObjectIdentifier mqom2_cat3_gf256_fast_r5    = mqom.branch("22");
+    ASN1ObjectIdentifier mqom2_cat3_gf256_short_r3   = mqom.branch("23");
+    ASN1ObjectIdentifier mqom2_cat3_gf256_short_r5   = mqom.branch("24");
+    ASN1ObjectIdentifier mqom2_cat5_gf2_fast_r3      = mqom.branch("25");
+    ASN1ObjectIdentifier mqom2_cat5_gf2_fast_r5      = mqom.branch("26");
+    ASN1ObjectIdentifier mqom2_cat5_gf2_short_r3     = mqom.branch("27");
+    ASN1ObjectIdentifier mqom2_cat5_gf2_short_r5     = mqom.branch("28");
+    ASN1ObjectIdentifier mqom2_cat5_gf16_fast_r3     = mqom.branch("29");
+    ASN1ObjectIdentifier mqom2_cat5_gf16_fast_r5     = mqom.branch("30");
+    ASN1ObjectIdentifier mqom2_cat5_gf16_short_r3    = mqom.branch("31");
+    ASN1ObjectIdentifier mqom2_cat5_gf16_short_r5    = mqom.branch("32");
+    ASN1ObjectIdentifier mqom2_cat5_gf256_fast_r3    = mqom.branch("33");
+    ASN1ObjectIdentifier mqom2_cat5_gf256_fast_r5    = mqom.branch("34");
+    ASN1ObjectIdentifier mqom2_cat5_gf256_short_r3   = mqom.branch("35");
+    ASN1ObjectIdentifier mqom2_cat5_gf256_short_r5   = mqom.branch("36");
+
+    /**
+     * UOV (Unbalanced Oil and Vinegar). BC-allocated arc pending NIST OID
+     * assignment from the additional-signatures round of NIST's PQC
+     * standardisation. Twelve child OIDs follow the canonical naming
+     * {@code uov_&lt;security-level&gt;_&lt;encoding-variant&gt;} where
+     * security-level is in {Is, Ip, III, V} and encoding-variant is in
+     * {classic, pkc, pkc_skc}. See pqov reference implementation
+     * (https://github.com/pqov/pqov) for the algorithm definitions.
+     */
+    ASN1ObjectIdentifier uov = bc_sig.branch("14");
+    ASN1ObjectIdentifier uov_Is_classic   = uov.branch("1");
+    ASN1ObjectIdentifier uov_Is_pkc       = uov.branch("2");
+    ASN1ObjectIdentifier uov_Is_pkc_skc   = uov.branch("3");
+    ASN1ObjectIdentifier uov_Ip_classic   = uov.branch("4");
+    ASN1ObjectIdentifier uov_Ip_pkc       = uov.branch("5");
+    ASN1ObjectIdentifier uov_Ip_pkc_skc   = uov.branch("6");
+    ASN1ObjectIdentifier uov_III_classic  = uov.branch("7");
+    ASN1ObjectIdentifier uov_III_pkc      = uov.branch("8");
+    ASN1ObjectIdentifier uov_III_pkc_skc  = uov.branch("9");
+    ASN1ObjectIdentifier uov_V_classic    = uov.branch("10");
+    ASN1ObjectIdentifier uov_V_pkc        = uov.branch("11");
+    ASN1ObjectIdentifier uov_V_pkc_skc    = uov.branch("12");
+
     /**
      * NTRU+
      * */
