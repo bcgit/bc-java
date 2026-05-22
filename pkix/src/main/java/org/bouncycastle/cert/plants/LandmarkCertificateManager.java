@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -19,10 +18,6 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.TBSCertificateLogEntry;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.util.Arrays;
 
@@ -188,7 +183,7 @@ public class LandmarkCertificateManager
     {
         private final byte[] logId;
         private final MerkleTreePrimitives.MerkleTreeHash hashFunc;
-        private final Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys;
+        private final MTCCosignerVerifierProvider cosignerVerifierProvider;
         private final int minCosignaturesForCheckpoint;
 
         private final List<TrustedSubtreeEntry> trustedSubtrees = new ArrayList<TrustedSubtreeEntry>();
@@ -196,18 +191,18 @@ public class LandmarkCertificateManager
         /**
          * @param logId                        binary trust anchor ID of the log
          * @param hashFunc                     hash function used by the log
-         * @param cosignerPublicKeys           map from binary cosigner ID to public key
+         * @param cosignerVerifierProvider     provider that hands back a verifier per known cosigner ID
          * @param minCosignaturesForCheckpoint minimum valid cosignatures required to trust a checkpoint
          */
         public TrustedSubtreeManager(
             byte[] logId,
             MerkleTreePrimitives.MerkleTreeHash hashFunc,
-            Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys,
+            MTCCosignerVerifierProvider cosignerVerifierProvider,
             int minCosignaturesForCheckpoint)
         {
             this.logId = logId.clone();
             this.hashFunc = hashFunc;
-            this.cosignerPublicKeys = cosignerPublicKeys;
+            this.cosignerVerifierProvider = cosignerVerifierProvider;
             this.minCosignaturesForCheckpoint = minCosignaturesForCheckpoint;
         }
 
@@ -262,62 +257,22 @@ public class LandmarkCertificateManager
             for (MTCSignature sig : signatures)
             {
                 byte[] cosignerId = sig.getCosignerId();
-                AsymmetricKeyParameter pubKey = cosignerPublicKeys.get(
-                    new MerkleTreeCertificateValidator.ByteArrayKey(cosignerId));
-                if (pubKey == null)
-                {
-                    continue;
-                }
-
-                String algorithm = getAlgorithmFromKey(pubKey);
-                if (algorithm == null)
+                MTCCosignerVerifier verifier = cosignerVerifierProvider.get(cosignerId);
+                if (verifier == null)
                 {
                     continue;
                 }
 
                 // A checkpoint is a subtree with start == 0 (Section 5.4.1).
-                boolean ok = MTCSignatureVerifier.verify(
-                    logId,
-                    0L,
-                    checkpoint.treeSize,
-                    checkpoint.rootHash,
-                    cosignerId,
-                    sig.getSignature(),
-                    pubKey,
-                    algorithm);
-                if (ok)
+                byte[] cosignedMessage = MTCCosignedMessage.encode(
+                    logId, 0L, checkpoint.treeSize, checkpoint.rootHash, cosignerId);
+
+                if (verifier.verify(cosignedMessage, sig.getSignature()))
                 {
                     valid++;
                 }
             }
             return valid >= minCosignaturesForCheckpoint;
-        }
-
-        private static String getAlgorithmFromKey(AsymmetricKeyParameter key)
-        {
-            if (key instanceof ECPublicKeyParameters)
-            {
-                ECPublicKeyParameters ec = (ECPublicKeyParameters)key;
-                int fieldSize = ec.getParameters().getCurve().getFieldSize();
-                if (fieldSize == 256)
-                {
-                    return "ECDSA-P256-SHA256";
-                }
-                if (fieldSize == 384)
-                {
-                    return "ECDSA-P384-SHA384";
-                }
-                return null;
-            }
-            if (key instanceof Ed25519PublicKeyParameters)
-            {
-                return "Ed25519";
-            }
-            if (key.getClass().getName().contains("MLDSAPublicKeyParameters"))
-            {
-                return "ML-DSA-65";
-            }
-            return null;
         }
 
         /**

@@ -9,10 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -39,10 +37,10 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
+import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -341,9 +339,9 @@ public class MerkleTreeCertificatesTest
         final X509CertificateHolder cert = new X509CertificateHolder(
             new DERSequence(new ASN1Encodable[]{tbs, sigAlg, signatureValue}).getEncoded());
 
-        Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosigners =
-            new HashMap<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter>();
-        cosigners.put(new MerkleTreeCertificateValidator.ByteArrayKey(cosignerId), ed25519KeyPair.getPublic());
+        BcMTCCosignerVerifierProvider cosigners = new BcMTCCosignerVerifierProvider.Builder()
+            .addCosigner(cosignerId, ed25519KeyPair.getPublic())
+            .build();
 
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
@@ -426,7 +424,7 @@ public class MerkleTreeCertificatesTest
 
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
-                Collections.<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter>emptyMap(),
+                new BcMTCCosignerVerifierProvider.Builder().build(),
                 trusted,
                 new HashSet<Long>(),
                 1,
@@ -437,7 +435,7 @@ public class MerkleTreeCertificatesTest
         // No matching trusted subtree => fall through to cosignature checks (none here) => fail.
         final MerkleTreeCertificateValidator.ValidationParams noTrusted =
             new MerkleTreeCertificateValidator.ValidationParams(
-                Collections.<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter>emptyMap(),
+                new BcMTCCosignerVerifierProvider.Builder().build(),
                 Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
                 new HashSet<Long>(),
                 1,
@@ -459,7 +457,7 @@ public class MerkleTreeCertificatesTest
             start, end, hashFunc.hashLeaf("not the right hash".getBytes())));
         final MerkleTreeCertificateValidator.ValidationParams badHash =
             new MerkleTreeCertificateValidator.ValidationParams(
-                Collections.<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter>emptyMap(),
+                new BcMTCCosignerVerifierProvider.Builder().build(),
                 badHashTrusted,
                 new HashSet<Long>(),
                 1,

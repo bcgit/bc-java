@@ -3,9 +3,7 @@ package org.bouncycastle.cert.plants;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -26,10 +24,6 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.util.Arrays;
 
@@ -51,29 +45,29 @@ public class MerkleTreeCertificateValidator
      */
     public static class ValidationParams
     {
-        private final Map<ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys;
+        private final MTCCosignerVerifierProvider cosignerVerifierProvider;
         private final List<TrustedSubtree> trustedSubtrees;
         private final Set<Long> revokedIndices;
         private final int minCosignatures;
         private final MerkleTreePrimitives.MerkleTreeHash hashFunction;
 
         public ValidationParams(
-            Map<ByteArrayKey, AsymmetricKeyParameter> cosignerPublicKeys,
+            MTCCosignerVerifierProvider cosignerVerifierProvider,
             List<TrustedSubtree> trustedSubtrees,
             Set<Long> revokedIndices,
             int minCosignatures,
             MerkleTreePrimitives.MerkleTreeHash hashFunction)
         {
-            this.cosignerPublicKeys = cosignerPublicKeys;
+            this.cosignerVerifierProvider = cosignerVerifierProvider;
             this.trustedSubtrees = trustedSubtrees;
             this.revokedIndices = revokedIndices;
             this.minCosignatures = minCosignatures;
             this.hashFunction = hashFunction;
         }
 
-        public Map<ByteArrayKey, AsymmetricKeyParameter> getCosignerPublicKeys()
+        public MTCCosignerVerifierProvider getCosignerVerifierProvider()
         {
-            return cosignerPublicKeys;
+            return cosignerVerifierProvider;
         }
 
         public List<TrustedSubtree> getTrustedSubtrees()
@@ -236,14 +230,17 @@ public class MerkleTreeCertificateValidator
         for (MTCSignature sig : proof.getSignatures())
         {
             byte[] cosignerId = sig.getCosignerId();
-            if (verifyCosignature(
-                logId,
-                proof.getStart(),
-                proof.getEnd(),
-                expectedSubtreeHash,
-                cosignerId,
-                sig.getSignature(),
-                params))
+            MTCCosignerVerifier verifier = params.cosignerVerifierProvider.get(cosignerId);
+            if (verifier == null)
+            {
+                // Unrecognized cosigners MUST be ignored (Section 7.2 step 8).
+                continue;
+            }
+
+            byte[] cosignedMessage = MTCCosignedMessage.encode(
+                logId, proof.getStart(), proof.getEnd(), expectedSubtreeHash, cosignerId);
+
+            if (verifier.verify(cosignedMessage, sig.getSignature()))
             {
                 validCount++;
             }
@@ -256,57 +253,6 @@ public class MerkleTreeCertificateValidator
         }
 
         return true;
-    }
-
-    private static boolean verifyCosignature(
-        byte[] logId,
-        long start,
-        long end,
-        byte[] subtreeHash,
-        byte[] cosignerId,
-        byte[] signature,
-        ValidationParams params)
-        throws IOException
-    {
-        AsymmetricKeyParameter pubKey = params.cosignerPublicKeys.get(new ByteArrayKey(cosignerId));
-        if (pubKey == null)
-        {
-            // Unrecognized cosigners MUST be ignored (Section 7.2 step 8).
-            return false;
-        }
-
-        String algorithm = getAlgorithmFromKey(pubKey);
-
-        return MTCSignatureVerifier.verify(
-            logId, start, end, subtreeHash, cosignerId, signature, pubKey, algorithm);
-    }
-
-    private static String getAlgorithmFromKey(AsymmetricKeyParameter key)
-    {
-        if (key instanceof ECPublicKeyParameters)
-        {
-            ECPublicKeyParameters ec = (ECPublicKeyParameters)key;
-            int fieldSize = ec.getParameters().getCurve().getFieldSize();
-            if (fieldSize == 256)
-            {
-                return "ECDSA-P256-SHA256";
-            }
-            if (fieldSize == 384)
-            {
-                return "ECDSA-P384-SHA384";
-            }
-            throw new IllegalArgumentException("Unsupported EC field size: " + fieldSize);
-        }
-        if (key instanceof Ed25519PublicKeyParameters)
-        {
-            return "Ed25519";
-        }
-        if (key.getClass().getName().contains("MLDSAPublicKeyParameters"))
-        {
-            // ML-DSA parameter sets share the same Signer class; the key carries the parameter set.
-            return "ML-DSA-65";
-        }
-        throw new IllegalArgumentException("Unsupported public key type: " + key.getClass().getName());
     }
 
     /**
@@ -437,44 +383,5 @@ public class MerkleTreeCertificateValidator
             return ((ASN1OctetString)prim).getOctets();
         }
         throw new IOException("Unsupported attribute value type: " + prim.getClass().getName());
-    }
-
-    /**
-     * Convenience wrapper around a {@code byte[]} that supports value-based
-     * equality, suitable as a {@code Map} key for cosigner-ID lookups.
-     */
-    public static class ByteArrayKey
-    {
-        private final byte[] data;
-
-        public ByteArrayKey(byte[] data)
-        {
-            this.data = data.clone();
-        }
-
-        public byte[] getData()
-        {
-            return data.clone();
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o)
-            {
-                return true;
-            }
-            if (!(o instanceof ByteArrayKey))
-            {
-                return false;
-            }
-            return Arrays.areEqual(this.data, ((ByteArrayKey)o).data);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Arrays.hashCode(data);
-        }
     }
 }
