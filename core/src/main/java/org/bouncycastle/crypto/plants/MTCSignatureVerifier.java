@@ -102,9 +102,29 @@ public class MTCSignatureVerifier
     {
         byte[] signedData = buildCosignedMessage(logId, timestamp, start, end, subtreeHash, cosignerId);
 
+        return verify(signedData, signature, publicKey, algorithm);
+    }
+
+    /**
+     * Verifies a signature against a pre-encoded CosignedMessage. Used by
+     * higher-level adapters that build the CosignedMessage independently
+     * (e.g. {@code org.bouncycastle.cert.plants.MTCCosignedMessage}).
+     *
+     * @param cosignedMessage the encoded CosignedMessage bytes
+     * @param signature       the candidate signature
+     * @param publicKey       the cosigner's public key
+     * @param algorithm       algorithm identifier; see the eight-argument overload
+     * @return true if the signature is valid
+     */
+    public static boolean verify(
+        byte[] cosignedMessage,
+        byte[] signature,
+        AsymmetricKeyParameter publicKey,
+        String algorithm)
+    {
         Signer signer = createSigner(algorithm, publicKey);
         signer.init(false, publicKey);
-        signer.update(signedData, 0, signedData.length);
+        signer.update(cosignedMessage, 0, cosignedMessage.length);
         return signer.verifySignature(signature);
     }
 

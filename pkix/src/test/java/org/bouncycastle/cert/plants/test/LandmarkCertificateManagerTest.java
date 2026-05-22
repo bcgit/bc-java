@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -28,10 +26,9 @@ import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.plants.LandmarkCertificateManager;
-import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
+import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -125,9 +122,9 @@ public class LandmarkCertificateManagerTest
     {
         byte[] cosignerId = binaryTrustAnchorID("32473.7");
 
-        Map<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter> cosigners =
-            new HashMap<MerkleTreeCertificateValidator.ByteArrayKey, AsymmetricKeyParameter>();
-        cosigners.put(new MerkleTreeCertificateValidator.ByteArrayKey(cosignerId), ed25519KeyPair.getPublic());
+        BcMTCCosignerVerifierProvider cosigners = new BcMTCCosignerVerifierProvider.Builder()
+            .addCosigner(cosignerId, ed25519KeyPair.getPublic())
+            .build();
 
         LandmarkCertificateManager.TrustedSubtreeManager manager = new LandmarkCertificateManager.TrustedSubtreeManager(
             logId, hashFunc, cosigners, 1);
