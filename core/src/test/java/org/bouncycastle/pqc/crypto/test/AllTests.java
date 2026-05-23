@@ -53,6 +53,11 @@ public class AllTests
         suite.addTestSuite(SnovaTest.class);
         suite.addTestSuite(FaestKeyPairAndSignerTest.class);
         suite.addTestSuite(FaestKatTest.class);
+        suite.addTestSuite(UOVTest.class);
+        suite.addTestSuite(MQOMTest.class);
+        suite.addTestSuite(MQOMKatTest.class);
+        suite.addTestSuite(HAETAETest.class);
+
         return new BCTestSetup(suite);
     }
 

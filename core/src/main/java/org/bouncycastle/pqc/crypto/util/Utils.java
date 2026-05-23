@@ -18,6 +18,8 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
+import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
@@ -119,6 +121,12 @@ class Utils
 
     static final Map haetaeOids = new HashMap<ASN1ObjectIdentifier, HAETAEParameters>();
     static final Map haetaeParams = new HashMap<HAETAEParameters, ASN1ObjectIdentifier>();
+
+    static final Map mqomOids = new HashMap<ASN1ObjectIdentifier, MQOMParameters>();
+    static final Map mqomParams = new HashMap<MQOMParameters, ASN1ObjectIdentifier>();
+
+    static final Map uovOids = new HashMap<UOVParameters, ASN1ObjectIdentifier>();
+    static final Map uovParams = new HashMap<ASN1ObjectIdentifier, UOVParameters>();
 
     static
     {
@@ -625,6 +633,70 @@ class Utils
         haetaeParams.put(BCObjectIdentifiers.haetae2, HAETAEParameters.haetae2);
         haetaeParams.put(BCObjectIdentifiers.haetae3, HAETAEParameters.haetae3);
         haetaeParams.put(BCObjectIdentifiers.haetae5, HAETAEParameters.haetae5);
+
+        MQOMParameters[] mqomAll = new MQOMParameters[]{
+            MQOMParameters.mqom2_cat1_gf2_fast_r3, MQOMParameters.mqom2_cat1_gf2_fast_r5,
+            MQOMParameters.mqom2_cat1_gf2_short_r3, MQOMParameters.mqom2_cat1_gf2_short_r5,
+            MQOMParameters.mqom2_cat1_gf16_fast_r3, MQOMParameters.mqom2_cat1_gf16_fast_r5,
+            MQOMParameters.mqom2_cat1_gf16_short_r3, MQOMParameters.mqom2_cat1_gf16_short_r5,
+            MQOMParameters.mqom2_cat1_gf256_fast_r3, MQOMParameters.mqom2_cat1_gf256_fast_r5,
+            MQOMParameters.mqom2_cat1_gf256_short_r3, MQOMParameters.mqom2_cat1_gf256_short_r5,
+            MQOMParameters.mqom2_cat3_gf2_fast_r3, MQOMParameters.mqom2_cat3_gf2_fast_r5,
+            MQOMParameters.mqom2_cat3_gf2_short_r3, MQOMParameters.mqom2_cat3_gf2_short_r5,
+            MQOMParameters.mqom2_cat3_gf16_fast_r3, MQOMParameters.mqom2_cat3_gf16_fast_r5,
+            MQOMParameters.mqom2_cat3_gf16_short_r3, MQOMParameters.mqom2_cat3_gf16_short_r5,
+            MQOMParameters.mqom2_cat3_gf256_fast_r3, MQOMParameters.mqom2_cat3_gf256_fast_r5,
+            MQOMParameters.mqom2_cat3_gf256_short_r3, MQOMParameters.mqom2_cat3_gf256_short_r5,
+            MQOMParameters.mqom2_cat5_gf2_fast_r3, MQOMParameters.mqom2_cat5_gf2_fast_r5,
+            MQOMParameters.mqom2_cat5_gf2_short_r3, MQOMParameters.mqom2_cat5_gf2_short_r5,
+            MQOMParameters.mqom2_cat5_gf16_fast_r3, MQOMParameters.mqom2_cat5_gf16_fast_r5,
+            MQOMParameters.mqom2_cat5_gf16_short_r3, MQOMParameters.mqom2_cat5_gf16_short_r5,
+            MQOMParameters.mqom2_cat5_gf256_fast_r3, MQOMParameters.mqom2_cat5_gf256_fast_r5,
+            MQOMParameters.mqom2_cat5_gf256_short_r3, MQOMParameters.mqom2_cat5_gf256_short_r5
+        };
+        ASN1ObjectIdentifier[] mqomOidArr = new ASN1ObjectIdentifier[]{
+            BCObjectIdentifiers.mqom2_cat1_gf2_fast_r3, BCObjectIdentifiers.mqom2_cat1_gf2_fast_r5,
+            BCObjectIdentifiers.mqom2_cat1_gf2_short_r3, BCObjectIdentifiers.mqom2_cat1_gf2_short_r5,
+            BCObjectIdentifiers.mqom2_cat1_gf16_fast_r3, BCObjectIdentifiers.mqom2_cat1_gf16_fast_r5,
+            BCObjectIdentifiers.mqom2_cat1_gf16_short_r3, BCObjectIdentifiers.mqom2_cat1_gf16_short_r5,
+            BCObjectIdentifiers.mqom2_cat1_gf256_fast_r3, BCObjectIdentifiers.mqom2_cat1_gf256_fast_r5,
+            BCObjectIdentifiers.mqom2_cat1_gf256_short_r3, BCObjectIdentifiers.mqom2_cat1_gf256_short_r5,
+            BCObjectIdentifiers.mqom2_cat3_gf2_fast_r3, BCObjectIdentifiers.mqom2_cat3_gf2_fast_r5,
+            BCObjectIdentifiers.mqom2_cat3_gf2_short_r3, BCObjectIdentifiers.mqom2_cat3_gf2_short_r5,
+            BCObjectIdentifiers.mqom2_cat3_gf16_fast_r3, BCObjectIdentifiers.mqom2_cat3_gf16_fast_r5,
+            BCObjectIdentifiers.mqom2_cat3_gf16_short_r3, BCObjectIdentifiers.mqom2_cat3_gf16_short_r5,
+            BCObjectIdentifiers.mqom2_cat3_gf256_fast_r3, BCObjectIdentifiers.mqom2_cat3_gf256_fast_r5,
+            BCObjectIdentifiers.mqom2_cat3_gf256_short_r3, BCObjectIdentifiers.mqom2_cat3_gf256_short_r5,
+            BCObjectIdentifiers.mqom2_cat5_gf2_fast_r3, BCObjectIdentifiers.mqom2_cat5_gf2_fast_r5,
+            BCObjectIdentifiers.mqom2_cat5_gf2_short_r3, BCObjectIdentifiers.mqom2_cat5_gf2_short_r5,
+            BCObjectIdentifiers.mqom2_cat5_gf16_fast_r3, BCObjectIdentifiers.mqom2_cat5_gf16_fast_r5,
+            BCObjectIdentifiers.mqom2_cat5_gf16_short_r3, BCObjectIdentifiers.mqom2_cat5_gf16_short_r5,
+            BCObjectIdentifiers.mqom2_cat5_gf256_fast_r3, BCObjectIdentifiers.mqom2_cat5_gf256_fast_r5,
+            BCObjectIdentifiers.mqom2_cat5_gf256_short_r3, BCObjectIdentifiers.mqom2_cat5_gf256_short_r5
+        };
+        for (int i = 0; i < mqomAll.length; i++)
+        {
+            mqomOids.put(mqomAll[i], mqomOidArr[i]);
+            mqomParams.put(mqomOidArr[i], mqomAll[i]);
+        }
+
+        UOVParameters[] uovAll = new UOVParameters[]{
+            UOVParameters.uov_Is, UOVParameters.uov_Is_pkc, UOVParameters.uov_Is_pkc_skc,
+            UOVParameters.uov_Ip, UOVParameters.uov_Ip_pkc, UOVParameters.uov_Ip_pkc_skc,
+            UOVParameters.uov_III, UOVParameters.uov_III_pkc, UOVParameters.uov_III_pkc_skc,
+            UOVParameters.uov_V, UOVParameters.uov_V_pkc, UOVParameters.uov_V_pkc_skc
+        };
+        ASN1ObjectIdentifier[] uovOidArr = new ASN1ObjectIdentifier[]{
+            BCObjectIdentifiers.uov_Is_classic, BCObjectIdentifiers.uov_Is_pkc, BCObjectIdentifiers.uov_Is_pkc_skc,
+            BCObjectIdentifiers.uov_Ip_classic, BCObjectIdentifiers.uov_Ip_pkc, BCObjectIdentifiers.uov_Ip_pkc_skc,
+            BCObjectIdentifiers.uov_III_classic, BCObjectIdentifiers.uov_III_pkc, BCObjectIdentifiers.uov_III_pkc_skc,
+            BCObjectIdentifiers.uov_V_classic, BCObjectIdentifiers.uov_V_pkc, BCObjectIdentifiers.uov_V_pkc_skc
+        };
+        for (int i = 0; i < uovAll.length; i++)
+        {
+            uovOids.put(uovAll[i], uovOidArr[i]);
+            uovParams.put(uovOidArr[i], uovAll[i]);
+        }
     }
 
     static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
@@ -967,6 +1039,26 @@ class Utils
     static HAETAEParameters haetaeParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (HAETAEParameters)haetaeParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier mqomOidLookup(MQOMParameters params)
+    {
+        return (ASN1ObjectIdentifier)mqomOids.get(params);
+    }
+
+    static MQOMParameters mqomParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (MQOMParameters)mqomParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier uovOidLookup(UOVParameters params)
+    {
+        return (ASN1ObjectIdentifier)uovOids.get(params);
+    }
+
+    static UOVParameters uovParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (UOVParameters)uovParams.get(oid);
     }
 
     private static boolean isRaw(byte[] data)
