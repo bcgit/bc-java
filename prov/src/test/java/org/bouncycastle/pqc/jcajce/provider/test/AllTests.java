@@ -79,6 +79,7 @@ public class AllTests
         suite.addTestSuite(MayoTest.class);
         suite.addTestSuite(SnovaTest.class);
         suite.addTestSuite(FaestTest.class);
+        suite.addTestSuite(HaetaeTest.class);
 
         return new BCTestSetup(suite);
     }
