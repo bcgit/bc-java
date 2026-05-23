@@ -144,18 +144,21 @@ The high-level modules (`pkix`, `pg`, `mail`/`jmail`, `tls`, `mls`) split their 
 
 - **`.bc` subpackages** — lightweight implementations using `org.bouncycastle.crypto.*` engines / signers / digests directly. Examples: `org.bouncycastle.cms.bc`, `org.bouncycastle.openpgp.bc`, `org.bouncycastle.operator.bc`.
 - **`.jcajce` subpackages** — JCA/JCE implementations that call `java.security.*` / `javax.crypto.*` classes (typically through a `JcaJceHelper` so the provider is overridable). Examples: `org.bouncycastle.cms.jcajce`, `org.bouncycastle.openpgp.operator.jcajce`, `org.bouncycastle.operator.jcajce`.
-- **Top-level packages** (e.g. `org.bouncycastle.cms`, `org.bouncycastle.openpgp`, `org.bouncycastle.cades`, `org.bouncycastle.cert`) — JCA-free abstractions. They may take `DigestCalculatorProvider` / `ContentSigner` / `X509CertificateHolder` etc., but must not import `java.security.MessageDigest`, `java.security.Signature`, `javax.crypto.Cipher`, or `java.security.cert.X509Certificate`.
+- **Top-level packages** (e.g. `org.bouncycastle.cms`, `org.bouncycastle.openpgp`, `org.bouncycastle.cades`, `org.bouncycastle.cert`) — abstractions over BOTH stacks. They may take `DigestCalculatorProvider` / `ContentSigner` / `ContentVerifier` / `X509CertificateHolder` etc. from `org.bouncycastle.operator`, `org.bouncycastle.cert`, and `org.bouncycastle.asn1`, but must not import:
+    - `java.security.MessageDigest`, `java.security.Signature`, `javax.crypto.Cipher`, `java.security.cert.X509Certificate` (or any other `java.security.*` / `javax.crypto.*` class) — those belong in `.jcajce`;
+    - `org.bouncycastle.crypto.*` (engines, signers, digests, params, generators) — those belong in `.bc`.
 
-The only JCA class allowed to be referenced from a non-`.jcajce` package is `java.security.SecureRandom`. Everything else must be in a `.jcajce` package.
+The only `java.security` class allowed to be referenced from a non-`.jcajce` package is `java.security.SecureRandom`. There is **no** equivalent exception for `org.bouncycastle.crypto.*`: any direct lightweight import means the class belongs in a `.bc` subpackage, full stop.
 
 Practical implications when adding code:
 
-- Need an algorithm digest in a top-level utility? Take a `DigestCalculatorProvider` parameter and call `provider.get(algId).getOutputStream().write(...)` — never `MessageDigest.getInstance(...)`.
-- Need to verify a signature in a top-level utility? Take a `SignerInfoVerifier` (or similar operator) — never `Signature.getInstance(...)`.
+- Need an algorithm digest in a top-level utility? Take a `DigestCalculatorProvider` parameter and call `provider.get(algId).getOutputStream().write(...)` — never `MessageDigest.getInstance(...)` and never `new SHA256Digest()`.
+- Need to verify a signature in a top-level utility? Take a `ContentVerifierProvider` / `SignerInfoVerifier` (or similar operator) — never `Signature.getInstance(...)` and never `new Ed25519Signer()`. If no existing operator fits, define one in `org.bouncycastle.operator` (or a module-local equivalent like `org.bouncycastle.cert.plants.MTCCosignerVerifierProvider`) and ship lightweight and JCA implementations as `.bc` / `.jcajce` peers.
+- Need a `Signer` or `AsymmetricKeyParameter` parameter? That's a `.bc` signature — push the class into the `.bc` subpackage.
 - Need to wrap an existing `Jca*` builder? Either (a) wrap the JCA-free parent (e.g. wrap `SignerInfoGeneratorBuilder` instead of `JcaSignerInfoGeneratorBuilder`) so the class can stay at the top, or (b) move the class into the `.jcajce` subpackage.
-- A top-level class that does need to expose a JCA-friendly factory method should ship the factory in its `.jcajce` peer instead of pulling JCA into the top package.
+- A top-level class that does need to expose a JCA-friendly or lightweight-friendly factory method should ship the factory in its `.jcajce` or `.bc` peer instead of pulling JCA/lightweight imports into the top package.
 
-The rule applies uniformly to `pkix` (`cms`, `cades`, `tsp`, `cert`, `operator`, ...), `pg`, `mail`/`jmail`, `tls`, and `mls`. When adding a new package under any of these modules, decide on the split up-front: if any class needs `java.security` / `javax.crypto` beyond `SecureRandom`, the package should be a `.jcajce` subpackage, with a JCA-free top-level parent if appropriate.
+The rule applies uniformly to `pkix` (`cms`, `cades`, `tsp`, `cert`, `operator`, ...), `pg`, `mail`/`jmail`, `tls`, and `mls`. When adding a new package under any of these modules, decide on the split up-front: if any class needs `java.security` / `javax.crypto` beyond `SecureRandom`, the package should be a `.jcajce` subpackage; if any class needs `org.bouncycastle.crypto.*`, the package should be a `.bc` subpackage. A JCA-free, lightweight-free top-level parent is usually still appropriate to host the operator interfaces both flavours adapt to.
 
 ### Test conventions
 
