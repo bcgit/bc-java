@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * The published landmark sequence for a single issuance log, as defined by
@@ -115,7 +115,7 @@ public final class LandmarkSequence
         }
         catch (NumberFormatException e)
         {
-            throw new IOException("landmark header is not parseable: " + lines[0]);
+            throw Exceptions.ioException("landmark header is not parseable: " + lines[0], e);
         }
         if (numActive < 0)
         {
@@ -139,7 +139,7 @@ public final class LandmarkSequence
             }
             catch (NumberFormatException e)
             {
-                throw new IOException("tree size on line " + (2 + i) + " is not parseable: " + lines[1 + i]);
+                throw Exceptions.ioException("tree size on line " + (2 + i) + " is not parseable: " + lines[1 + i], e);
             }
         }
 

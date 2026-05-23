@@ -12,8 +12,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1RelativeOID;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.plants.CloudFlareObjectIdentifiers;
-import org.bouncycastle.asn1.plants.MTCSignature;
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
@@ -26,14 +25,17 @@ import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.plants.LandmarkCertificateManager;
+import org.bouncycastle.cert.plants.MTCSignature;
+import org.bouncycastle.cert.plants.MerkleTreeHash;
+import org.bouncycastle.cert.plants.MerkleTreePrimitives;
 import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
+import org.bouncycastle.cert.plants.bc.BcSha256MerkleTreeHash;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.test.SimpleTest;
@@ -43,7 +45,7 @@ public class LandmarkCertificateManagerTest
 {
     private static final String LOG_TAID_STRING = "32473.1";
 
-    private MerkleTreePrimitives.MerkleTreeHash hashFunc;
+    private MerkleTreeHash hashFunc;
     private AsymmetricCipherKeyPair ecdsaKeyPair;
     private AsymmetricCipherKeyPair ed25519KeyPair;
     private byte[] logId;
@@ -51,7 +53,7 @@ public class LandmarkCertificateManagerTest
     public void setUp()
         throws Exception
     {
-        hashFunc = new MerkleTreePrimitives.Sha256MerkleTreeHash();
+        hashFunc = new BcSha256MerkleTreeHash();
 
         ECKeyPairGenerator ecGen = new ECKeyPairGenerator();
         X9ECParameters ecP = SECNamedCurves.getByName("secp256r1");
@@ -102,7 +104,7 @@ public class LandmarkCertificateManagerTest
 
         AlgorithmIdentifier sigAlg = cert.getSignatureAlgorithm();
         isTrue("Signature algorithm is id-alg-mtcProof",
-            CloudFlareObjectIdentifiers.id_alg_mtcProof.equals(sigAlg.getAlgorithm()));
+            MTCObjectIdentifiers.id_alg_mtcProof.equals(sigAlg.getAlgorithm()));
         isTrue("Signature algorithm parameters are absent", sigAlg.getParameters() == null);
 
         isEquals(index, cert.getSerialNumber().longValue());
@@ -244,7 +246,7 @@ public class LandmarkCertificateManagerTest
         throws IOException
     {
         AttributeTypeAndValue attr = new AttributeTypeAndValue(
-            CloudFlareObjectIdentifiers.id_rdna_trustAnchorID,
+            MTCObjectIdentifiers.id_rdna_trustAnchorID,
             new DERUTF8String(LOG_TAID_STRING));
         X500Name issuer = new X500Name(new RDN[]{new RDN(attr)});
 

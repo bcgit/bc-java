@@ -2,9 +2,9 @@ package org.bouncycastle.cert.plants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 
 import org.bouncycastle.asn1.ASN1RelativeOID;
+import org.bouncycastle.util.Strings;
 
 /**
  * Wire encoder for the CosignedMessage struct defined by Section 5.3.1 of
@@ -32,7 +32,7 @@ public final class MTCCosignedMessage
         's', 'u', 'b', 't', 'r', 'e', 'e', '/', 'v', '1', (byte)0x0A, (byte)0x00
     };
 
-    private static final byte[] OID_PREFIX = "oid/1.3.6.1.4.1.".getBytes(Charset.forName("US-ASCII"));
+    private static final byte[] OID_PREFIX = Strings.toByteArray("oid/1.3.6.1.4.1.");
 
     private MTCCosignedMessage()
     {
@@ -91,7 +91,7 @@ public final class MTCCosignedMessage
     private static byte[] asciiName(byte[] binaryTrustAnchorID)
     {
         String dotted = ASN1RelativeOID.fromContents(binaryTrustAnchorID).getId();
-        byte[] dottedBytes = dotted.getBytes(Charset.forName("US-ASCII"));
+        byte[] dottedBytes = Strings.toByteArray(dotted);
         byte[] out = new byte[OID_PREFIX.length + dottedBytes.length];
         System.arraycopy(OID_PREFIX, 0, out, 0, OID_PREFIX.length);
         System.arraycopy(dottedBytes, 0, out, OID_PREFIX.length, dottedBytes.length);

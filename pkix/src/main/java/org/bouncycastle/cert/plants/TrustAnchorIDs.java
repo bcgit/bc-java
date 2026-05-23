@@ -1,6 +1,9 @@
 package org.bouncycastle.cert.plants;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1RelativeOID;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Utilities for constructing and parsing the binary trust anchor IDs reserved
@@ -103,11 +106,25 @@ public final class TrustAnchorIDs
 
     /**
      * Converts a dotted-decimal trust anchor ID (e.g. {@code "32473.1.0.1"})
-     * into its binary form.
+     * into its binary form: the base-128 encoded OID-component bytes with no
+     * ASN.1 tag or length prefix (Section 3 of draft-ietf-tls-trust-anchor-ids).
      */
     public static byte[] fromDottedDecimal(String dotted)
     {
-        return Utils.dottedDecimalToBinaryTrustAnchorID(dotted);
+        // Reuse ASN1RelativeOID for the per-component base-128 encoding, then
+        // strip its DER tag and length header so only the contents octets remain.
+        ASN1RelativeOID relOid = new ASN1RelativeOID(dotted);
+        byte[] encoded;
+        try
+        {
+            encoded = relOid.getEncoded();
+        }
+        catch (IOException e)
+        {
+            // Encoding a RELATIVE-OID we just constructed in memory should not fail.
+            throw Exceptions.illegalStateException("unable to encode RELATIVE-OID for " + dotted, e);
+        }
+        return stripDerHeader(encoded);
     }
 
     /**
@@ -117,7 +134,69 @@ public final class TrustAnchorIDs
      */
     public static byte[] encodeComponent(long value)
     {
-        return Utils.encodeBase128OidComponent(value);
+        if (value < 0)
+        {
+            throw new IllegalArgumentException("OID component cannot be negative");
+        }
+        if (value == 0)
+        {
+            return new byte[]{0};
+        }
+        int n = 0;
+        long t = value;
+        while (t > 0)
+        {
+            n++;
+            t >>>= 7;
+        }
+        byte[] out = new byte[n];
+        for (int i = n - 1; i >= 0; i--)
+        {
+            int b = (int)((value >>> (7 * i)) & 0x7F);
+            if (i > 0)
+            {
+                b |= 0x80;
+            }
+            out[n - 1 - i] = (byte)b;
+        }
+        return out;
+    }
+
+    private static byte[] stripDerHeader(byte[] der)
+    {
+        if (der.length < 2)
+        {
+            throw new IllegalArgumentException("DER encoding too short");
+        }
+        int lengthByte = der[1] & 0xFF;
+        int contentLength;
+        int headerLength;
+        if ((lengthByte & 0x80) == 0)
+        {
+            contentLength = lengthByte;
+            headerLength = 2;
+        }
+        else
+        {
+            int numLengthBytes = lengthByte & 0x7F;
+            if (numLengthBytes == 0 || der.length < 2 + numLengthBytes)
+            {
+                throw new IllegalArgumentException("Invalid DER length encoding");
+            }
+            contentLength = 0;
+            for (int i = 0; i < numLengthBytes; i++)
+            {
+                contentLength = (contentLength << 8) | (der[2 + i] & 0xFF);
+            }
+            headerLength = 2 + numLengthBytes;
+        }
+        if (headerLength + contentLength != der.length)
+        {
+            throw new IllegalArgumentException("DER content length does not match");
+        }
+        byte[] out = new byte[contentLength];
+        System.arraycopy(der, headerLength, out, 0, contentLength);
+        return out;
     }
 
     private static byte[] concat(byte[]... parts)

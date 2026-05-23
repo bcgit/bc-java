@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1RelativeOID;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.plants.CloudFlareObjectIdentifiers;
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -51,7 +51,7 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 public final class MTCCertificationAuthorityCertificate
 {
     /** OID for the {@code id-pe-mtcCertificationAuthority} certificate extension. */
-    public static final ASN1ObjectIdentifier EXTENSION_OID = CloudFlareObjectIdentifiers.id_pe_mtcCertificationAuthority;
+    public static final ASN1ObjectIdentifier EXTENSION_OID = MTCObjectIdentifiers.id_pe_mtcCertificationAuthority;
 
     private MTCCertificationAuthorityCertificate()
     {
@@ -66,7 +66,7 @@ public final class MTCCertificationAuthorityCertificate
     {
         String dotted = TrustAnchorIDs.toDottedDecimal(caId);
         AttributeTypeAndValue attr = new AttributeTypeAndValue(
-            CloudFlareObjectIdentifiers.id_rdna_trustAnchorID,
+            MTCObjectIdentifiers.id_rdna_trustAnchorID,
             new DERUTF8String(dotted));
         return new X500Name(new RDN[]{new RDN(attr)});
     }
@@ -141,7 +141,7 @@ public final class MTCCertificationAuthorityCertificate
         {
             throw new IOException("CA certificate RDN must have exactly one attribute");
         }
-        if (!CloudFlareObjectIdentifiers.id_rdna_trustAnchorID.equals(atav[0].getType()))
+        if (!MTCObjectIdentifiers.id_rdna_trustAnchorID.equals(atav[0].getType()))
         {
             throw new IOException("Subject attribute is not id-rdna-trustAnchorID");
         }

@@ -16,15 +16,13 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.plants.CloudFlareObjectIdentifiers;
-import org.bouncycastle.asn1.plants.MTCSignature;
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -38,7 +36,7 @@ import org.bouncycastle.util.Arrays;
 public class MerkleTreeCertificateValidator
 {
     /** OID of the {@code id-alg-mtcProof} signature algorithm (experimental, Section 6.1). */
-    public static final String ID_ALG_MTC_PROOF = CloudFlareObjectIdentifiers.id_alg_mtcProof.getId();
+    public static final String ID_ALG_MTC_PROOF = MTCObjectIdentifiers.id_alg_mtcProof.getId();
 
     /**
      * Parameters supplied by the relying party for certificate validation.
@@ -49,14 +47,14 @@ public class MerkleTreeCertificateValidator
         private final List<TrustedSubtree> trustedSubtrees;
         private final Set<Long> revokedIndices;
         private final int minCosignatures;
-        private final MerkleTreePrimitives.MerkleTreeHash hashFunction;
+        private final MerkleTreeHash hashFunction;
 
         public ValidationParams(
             MTCCosignerVerifierProvider cosignerVerifierProvider,
             List<TrustedSubtree> trustedSubtrees,
             Set<Long> revokedIndices,
             int minCosignatures,
-            MerkleTreePrimitives.MerkleTreeHash hashFunction)
+            MerkleTreeHash hashFunction)
         {
             this.cosignerVerifierProvider = cosignerVerifierProvider;
             this.trustedSubtrees = trustedSubtrees;
@@ -85,7 +83,7 @@ public class MerkleTreeCertificateValidator
             return minCosignatures;
         }
 
-        public MerkleTreePrimitives.MerkleTreeHash getHashFunction()
+        public MerkleTreeHash getHashFunction()
         {
             return hashFunction;
         }
@@ -151,7 +149,7 @@ public class MerkleTreeCertificateValidator
     {
         // Step 1: signature algorithm must be id-alg-mtcProof with absent parameters.
         AlgorithmIdentifier sigAlgId = certHolder.getSignatureAlgorithm();
-        if (!CloudFlareObjectIdentifiers.id_alg_mtcProof.equals(sigAlgId.getAlgorithm()))
+        if (!MTCObjectIdentifiers.id_alg_mtcProof.equals(sigAlgId.getAlgorithm()))
         {
             throw new IllegalArgumentException("Not a Merkle Tree certificate: expected id-alg-mtcProof");
         }
@@ -201,9 +199,9 @@ public class MerkleTreeCertificateValidator
                 proof.getHashList(params.hashFunction.getHashSize()),
                 params.hashFunction);
         }
-        catch (MerkleTreePrimitives.InvalidProofException e)
+        catch (InvalidProofException e)
         {
-            throw new SecurityException("Invalid inclusion proof: " + e.getMessage());
+            throw new SecurityException("Invalid inclusion proof: " + e.getMessage(), e);
         }
 
         // Step 7: if any trusted subtree matches [start, end), the hash must equal it.
@@ -267,7 +265,7 @@ public class MerkleTreeCertificateValidator
      */
     public static byte[] computeEntryHash(
         X509CertificateHolder certHolder,
-        MerkleTreePrimitives.MerkleTreeHash hashFunc)
+        MerkleTreeHash hashFunc)
         throws IOException
     {
         byte[] tbsCertBytes = certHolder.getTBSCertificate().getEncoded(ASN1Encoding.DER);
@@ -360,7 +358,7 @@ public class MerkleTreeCertificateValidator
         }
 
         ASN1ObjectIdentifier type = atav[0].getType();
-        if (!CloudFlareObjectIdentifiers.id_rdna_trustAnchorID.equals(type))
+        if (!MTCObjectIdentifiers.id_rdna_trustAnchorID.equals(type))
         {
             throw new IOException("Issuer attribute is not id-rdna-trustAnchorID");
         }
@@ -370,11 +368,11 @@ public class MerkleTreeCertificateValidator
 
         if (prim instanceof ASN1RelativeOID)
         {
-            return Utils.dottedDecimalToBinaryTrustAnchorID(((ASN1RelativeOID)prim).getId());
+            return TrustAnchorIDs.fromDottedDecimal(((ASN1RelativeOID)prim).getId());
         }
         if (prim instanceof ASN1String)
         {
-            return Utils.dottedDecimalToBinaryTrustAnchorID(((ASN1String)prim).getString());
+            return TrustAnchorIDs.fromDottedDecimal(((ASN1String)prim).getString());
         }
         if (prim instanceof ASN1OctetString)
         {
