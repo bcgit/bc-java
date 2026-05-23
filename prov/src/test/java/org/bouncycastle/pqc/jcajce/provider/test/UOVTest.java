@@ -191,7 +191,7 @@ public class UOVTest
         }
         catch (InvalidKeyException e)
         {
-            assertEquals("signature configured for " + spec.getName(), e.getMessage());
+            assertEquals("signature configured for " + Strings.toUpperCase(spec.getName()), e.getMessage());
         }
     }
 
