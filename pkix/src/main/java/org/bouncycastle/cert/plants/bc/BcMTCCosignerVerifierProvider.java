@@ -1,54 +1,61 @@
 package org.bouncycastle.cert.plants.bc;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifierProvider;
+import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 /**
  * Lightweight-side {@link MTCCosignerVerifierProvider} that holds a table of
- * cosigner trust anchor IDs mapped to {@link AsymmetricKeyParameter} public
- * keys.
+ * cosigner trust anchor IDs mapped to {@link MTCSignatureVerifier} instances.
  *
- * <p>Construct via {@link Builder}; each cosigner's signature algorithm is
- * derived from its key type (EC field size, Ed25519, ML-DSA) at build time.
- * The returned {@link MTCCosignerVerifier} instances delegate to
- * {@link MTCSignatureVerifier} for the actual signature primitive.</p>
- *
- * <p>Supported key types and the resulting algorithm identifiers:</p>
+ * <p>The convenience {@link Builder#addCosigner(byte[], AsymmetricKeyParameter)}
+ * overload wraps a lightweight {@link AsymmetricKeyParameter} in a
+ * {@link BcMTCSignatureVerifier}, auto-detecting the draft-04 algorithm
+ * identifier from the key type:</p>
  * <ul>
  *   <li>{@link ECPublicKeyParameters} with a 256-bit field &rarr; {@code ECDSA-P256-SHA256}</li>
  *   <li>{@link ECPublicKeyParameters} with a 384-bit field &rarr; {@code ECDSA-P384-SHA384}</li>
  *   <li>{@link Ed25519PublicKeyParameters} &rarr; {@code Ed25519}</li>
- *   <li>{@code MLDSAPublicKeyParameters} (detected by class name to avoid a
- *       hard {@code pqc} dependency at compile time) &rarr; {@code ML-DSA-65}</li>
+ *   <li>{@link MLDSAPublicKeyParameters} &rarr; {@code ML-DSA-65}</li>
  * </ul>
+ *
+ * <p>Callers needing a different algorithm string for the same key type, or a
+ * key flavour from another module (e.g. a future JCA {@code java.security.PublicKey}
+ * wrapped in {@code JcaMTCSignatureVerifier}), can use
+ * {@link Builder#addCosigner(byte[], MTCSignatureVerifier)} directly.</p>
  */
 public class BcMTCCosignerVerifierProvider
     implements MTCCosignerVerifierProvider
 {
-    private final Map<ByteArrayKey, ResolvedCosigner> cosigners;
+    private final Map<ByteArrayKey, MTCSignatureVerifier> cosigners;
 
-    private BcMTCCosignerVerifierProvider(Map<ByteArrayKey, ResolvedCosigner> cosigners)
+    private BcMTCCosignerVerifierProvider(Map<ByteArrayKey, MTCSignatureVerifier> cosigners)
     {
         this.cosigners = cosigners;
     }
 
     public MTCCosignerVerifier get(byte[] cosignerId)
     {
-        ResolvedCosigner resolved = cosigners.get(new ByteArrayKey(cosignerId));
-        if (resolved == null)
+        final MTCSignatureVerifier verifier = cosigners.get(new ByteArrayKey(cosignerId));
+        if (verifier == null)
         {
             return null;
         }
-        return new BcCosignerVerifier(resolved.publicKey, resolved.algorithm);
+        return new MTCCosignerVerifier()
+        {
+            public boolean verify(byte[] cosignedMessage, byte[] signature)
+            {
+                return verifier.verify(cosignedMessage, signature);
+            }
+        };
     }
 
     /**
@@ -58,25 +65,34 @@ public class BcMTCCosignerVerifierProvider
      */
     public static class Builder
     {
-        private final Map<ByteArrayKey, ResolvedCosigner> cosigners = new HashMap<ByteArrayKey, ResolvedCosigner>();
+        private final Map<ByteArrayKey, MTCSignatureVerifier> cosigners
+            = new HashMap<ByteArrayKey, MTCSignatureVerifier>();
 
         /**
-         * Register a cosigner.
+         * Register a cosigner with a pre-built signature verifier (either a
+         * {@link BcMTCSignatureVerifier} or any other {@link MTCSignatureVerifier}
+         * implementation such as a future {@code JcaMTCSignatureVerifier}).
+         */
+        public Builder addCosigner(byte[] cosignerId, MTCSignatureVerifier verifier)
+        {
+            cosigners.put(new ByteArrayKey(cosignerId), verifier);
+            return this;
+        }
+
+        /**
+         * Register a cosigner with a lightweight public key; the draft-04
+         * algorithm identifier is detected from the key type.
          *
-         * @param cosignerId the binary trust anchor ID
-         * @param publicKey  the cosigner's public key
          * @throws IllegalArgumentException if the public key type is unsupported
          */
         public Builder addCosigner(byte[] cosignerId, AsymmetricKeyParameter publicKey)
         {
-            String algorithm = detectAlgorithm(publicKey);
-            cosigners.put(new ByteArrayKey(cosignerId), new ResolvedCosigner(publicKey, algorithm));
-            return this;
+            return addCosigner(cosignerId, new BcMTCSignatureVerifier(publicKey, detectAlgorithm(publicKey)));
         }
 
         public BcMTCCosignerVerifierProvider build()
         {
-            return new BcMTCCosignerVerifierProvider(new HashMap<ByteArrayKey, ResolvedCosigner>(cosigners));
+            return new BcMTCCosignerVerifierProvider(new HashMap<ByteArrayKey, MTCSignatureVerifier>(cosigners));
         }
     }
 
@@ -99,42 +115,11 @@ public class BcMTCCosignerVerifierProvider
         {
             return "Ed25519";
         }
-        if (key.getClass().getName().contains("MLDSAPublicKeyParameters"))
+        if (key instanceof MLDSAPublicKeyParameters)
         {
             return "ML-DSA-65";
         }
         throw new IllegalArgumentException("Unsupported public key type: " + key.getClass().getName());
-    }
-
-    private static class BcCosignerVerifier
-        implements MTCCosignerVerifier
-    {
-        private final AsymmetricKeyParameter publicKey;
-        private final String algorithm;
-
-        BcCosignerVerifier(AsymmetricKeyParameter publicKey, String algorithm)
-        {
-            this.publicKey = publicKey;
-            this.algorithm = algorithm;
-        }
-
-        public boolean verify(byte[] cosignedMessage, byte[] signature)
-            throws IOException
-        {
-            return MTCSignatureVerifier.verify(cosignedMessage, signature, publicKey, algorithm);
-        }
-    }
-
-    private static class ResolvedCosigner
-    {
-        final AsymmetricKeyParameter publicKey;
-        final String algorithm;
-
-        ResolvedCosigner(AsymmetricKeyParameter publicKey, String algorithm)
-        {
-            this.publicKey = publicKey;
-            this.algorithm = algorithm;
-        }
     }
 
     private static class ByteArrayKey

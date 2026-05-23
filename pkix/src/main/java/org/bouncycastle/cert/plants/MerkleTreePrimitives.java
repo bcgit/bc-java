@@ -1,119 +1,22 @@
-package org.bouncycastle.crypto.plants;
-
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
+package org.bouncycastle.cert.plants;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+
+import org.bouncycastle.util.Arrays;
 
 /**
  * Merkle Tree primitives for Merkle Tree Certificates (PLANTS).
  * Implements subtree inclusion proofs, consistency proofs, and interval covering.
  *
+ * <p>All algorithms are expressed against the {@link MerkleTreeHash} operator,
+ * which the caller supplies; there are no direct {@code org.bouncycastle.crypto.*}
+ * or {@code java.security.*} dependencies in this class.</p>
+ *
  * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs, Section 4</a>
  */
 public class MerkleTreePrimitives
 {
-    /**
-     * Exception thrown when a proof fails validation.
-     */
-    public static class InvalidProofException
-        extends Exception
-    {
-        public InvalidProofException(String message)
-        {
-            super(message);
-        }
-    }
-
-    /**
-     * Interface for the hash function used in the Merkle tree.
-     */
-    public interface MerkleTreeHash
-    {
-        /**
-         * @return the hash output size in bytes
-         */
-        int getHashSize();
-
-        /**
-         * Hash of a leaf entry: HASH(0x00 || entry).
-         *
-         * @param entry the raw entry bytes
-         * @return leaf hash
-         */
-        byte[] hashLeaf(byte[] entry);
-
-        /**
-         * Hash of an internal node: HASH(0x01 || left || right).
-         *
-         * @param left  left child hash
-         * @param right right child hash
-         * @return node hash
-         */
-        byte[] hashNode(byte[] left, byte[] right);
-
-        /**
-         * Raw hash with no domain separation prefix: HASH(data). Used for the
-         * subjectPublicKeyInfoHash in a TBSCertificateLogEntry (Section 5.3),
-         * which is computed with the log's hash function but without the
-         * leaf-node prefix.
-         *
-         * @param data the input bytes
-         * @return the hash output
-         */
-        byte[] hashRaw(byte[] data);
-    }
-
-    /**
-     * SHA-256 implementation of MerkleTreeHash.
-     */
-    public static class Sha256MerkleTreeHash
-        implements MerkleTreeHash
-    {
-        private final Digest digest = new SHA256Digest();
-
-        @Override
-        public int getHashSize()
-        {
-            return digest.getDigestSize();
-        }
-
-        @Override
-        public byte[] hashLeaf(byte[] entry)
-        {
-            digest.reset();
-            digest.update((byte)0x00);
-            digest.update(entry, 0, entry.length);
-            byte[] out = new byte[digest.getDigestSize()];
-            digest.doFinal(out, 0);
-            return out;
-        }
-
-        @Override
-        public byte[] hashNode(byte[] left, byte[] right)
-        {
-            digest.reset();
-            digest.update((byte)0x01);
-            digest.update(left, 0, left.length);
-            digest.update(right, 0, right.length);
-            byte[] out = new byte[digest.getDigestSize()];
-            digest.doFinal(out, 0);
-            return out;
-        }
-
-        @Override
-        public byte[] hashRaw(byte[] data)
-        {
-            digest.reset();
-            digest.update(data, 0, data.length);
-            byte[] out = new byte[digest.getDigestSize()];
-            digest.doFinal(out, 0);
-            return out;
-        }
-    }
-
     /**
      * Evaluates a subtree inclusion proof, returning the expected subtree hash.
      *
@@ -205,7 +108,7 @@ public class MerkleTreePrimitives
         try
         {
             byte[] computed = evaluateSubtreeInclusionProof(index, start, end, entryHash, proof, hash);
-            return Arrays.equals(computed, subtreeHash);
+            return Arrays.areEqual(computed, subtreeHash);
         }
         catch (InvalidProofException e)
         {
@@ -329,7 +232,7 @@ public class MerkleTreePrimitives
         {
             return false; // proof too short
         }
-        return Arrays.equals(fr, subtreeHash) && Arrays.equals(sr, rootHash);
+        return Arrays.areEqual(fr, subtreeHash) && Arrays.areEqual(sr, rootHash);
     }
 
     /**
@@ -378,7 +281,7 @@ public class MerkleTreePrimitives
             throw new IllegalArgumentException("Invalid interval: start must be less than end");
         }
 
-        List<long[]> result = new ArrayList<>();
+        List<long[]> result = new ArrayList<long[]>();
 
         if (end - start == 1)
         {

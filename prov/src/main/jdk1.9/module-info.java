@@ -64,7 +64,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.paddings;
     exports org.bouncycastle.crypto.params;
     exports org.bouncycastle.crypto.parsers;
-    exports org.bouncycastle.crypto.plants;
     exports org.bouncycastle.crypto.prng;
     exports org.bouncycastle.crypto.prng.drbg;
     exports org.bouncycastle.crypto.signers;

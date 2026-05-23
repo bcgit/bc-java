@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.plants;
+package org.bouncycastle.cert.plants;
 
 import org.bouncycastle.util.Arrays;
 
@@ -16,10 +16,9 @@ import org.bouncycastle.util.Arrays;
  * opaque TrustAnchorID&lt;1..2^8-1&gt;;
  * </pre>
  *
- * <p>This is not an ASN.1 type, despite living under {@code org.bouncycastle.asn1.plants}
- * alongside the OID constants. The cosigner ID is the <em>binary</em> trust
- * anchor ID per Section 3 of draft-ietf-tls-trust-anchor-ids &mdash; the base-128
- * OID-component bytes only, without the ASN.1 RELATIVE-OID tag or length octets.</p>
+ * <p>The cosigner ID is the <em>binary</em> trust anchor ID per Section 3 of
+ * draft-ietf-tls-trust-anchor-ids &mdash; the base-128 OID-component bytes
+ * only, without the ASN.1 RELATIVE-OID tag or length octets.</p>
  */
 public class MTCSignature
 {

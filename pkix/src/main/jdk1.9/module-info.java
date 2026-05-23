@@ -32,6 +32,7 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.cert.path.validations;
     exports org.bouncycastle.cert.plants;
     exports org.bouncycastle.cert.plants.bc;
+    exports org.bouncycastle.cert.plants.jcajce;
     exports org.bouncycastle.cert.selector;
     exports org.bouncycastle.cert.selector.jcajce;
     exports org.bouncycastle.cms.bc;

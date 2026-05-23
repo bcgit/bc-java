@@ -23,8 +23,7 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.plants.CloudFlareObjectIdentifiers;
-import org.bouncycastle.asn1.plants.MTCSignature;
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
@@ -36,8 +35,14 @@ import org.bouncycastle.asn1.x509.TBSCertificateLogEntry;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.plants.MTCCosignedMessage;
+import org.bouncycastle.cert.plants.MTCSignature;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
+import org.bouncycastle.cert.plants.MerkleTreeHash;
+import org.bouncycastle.cert.plants.MerkleTreePrimitives;
 import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
+import org.bouncycastle.cert.plants.bc.BcMTCSignatureVerifier;
+import org.bouncycastle.cert.plants.bc.BcSha256MerkleTreeHash;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
@@ -45,8 +50,6 @@ import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.crypto.plants.MTCSignatureVerifier;
-import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
@@ -65,7 +68,7 @@ public class MerkleTreeCertificatesTest
 {
     private static final String LOG_TAID_STRING = "32473.1";
 
-    private MerkleTreePrimitives.MerkleTreeHash hashFunc;
+    private MerkleTreeHash hashFunc;
     private AsymmetricCipherKeyPair ecdsaKeyPair;
     private AsymmetricCipherKeyPair ed25519KeyPair;
     private byte[] logId;
@@ -75,7 +78,7 @@ public class MerkleTreeCertificatesTest
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        hashFunc = new MerkleTreePrimitives.Sha256MerkleTreeHash();
+        hashFunc = new BcSha256MerkleTreeHash();
 
         ECKeyPairGenerator ecGen = new ECKeyPairGenerator();
         ECNamedDomainParameters ecParams = new ECNamedDomainParameters(
@@ -119,7 +122,7 @@ public class MerkleTreeCertificatesTest
         isTrue("Inclusion proof produces the correct root", areEqual(root, computedRoot));
 
         final List<byte[]> shortProof = Arrays.asList(leaf2, node01);
-        testException(null, "MerkleTreePrimitives$InvalidProofException", new TestExceptionOperation()
+        testException(null, "InvalidProofException", new TestExceptionOperation()
         {
             public void operation()
                 throws Exception
@@ -129,7 +132,7 @@ public class MerkleTreeCertificatesTest
         });
 
         final List<byte[]> longProof = Arrays.asList(leaf2, node01, node47, node47);
-        testException(null, "MerkleTreePrimitives$InvalidProofException", new TestExceptionOperation()
+        testException(null, "InvalidProofException", new TestExceptionOperation()
         {
             public void operation()
                 throws Exception
@@ -144,7 +147,7 @@ public class MerkleTreeCertificatesTest
         isTrue("Single-leaf subtree hash equals leaf hash", areEqual(leaves.get(3), singleRoot));
 
         // [start, end) with start not a multiple of BIT_CEIL(end - start) must fail Section 4.1.
-        testException(null, "MerkleTreePrimitives$InvalidProofException", new TestExceptionOperation()
+        testException(null, "InvalidProofException", new TestExceptionOperation()
         {
             public void operation()
                 throws Exception
@@ -258,14 +261,14 @@ public class MerkleTreeCertificatesTest
         System.arraycopy(r, 0, signature, 0, 32);
         System.arraycopy(s, 0, signature, 32, 32);
 
-        isTrue("ECDSA cosignature verifies", MTCSignatureVerifier.verify(
-            logId, start, end, subtreeHash, cosignerId, signature,
-            ecdsaKeyPair.getPublic(), "ECDSA-P256-SHA256"));
+        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        BcMTCSignatureVerifier ecdsaVerifier = new BcMTCSignatureVerifier(
+            ecdsaKeyPair.getPublic(), "ECDSA-P256-SHA256");
+
+        isTrue("ECDSA cosignature verifies", ecdsaVerifier.verify(cosignedMessage, signature));
 
         signature[0] ^= 0x01;
-        isTrue("Tampered ECDSA signature rejected", !MTCSignatureVerifier.verify(
-            logId, start, end, subtreeHash, cosignerId, signature,
-            ecdsaKeyPair.getPublic(), "ECDSA-P256-SHA256"));
+        isTrue("Tampered ECDSA signature rejected", !ecdsaVerifier.verify(cosignedMessage, signature));
     }
 
     public void testCosignatureVerificationEd25519()
@@ -283,14 +286,14 @@ public class MerkleTreeCertificatesTest
         signer.update(signedData, 0, signedData.length);
         byte[] signature = signer.generateSignature();
 
-        isTrue("Ed25519 cosignature verifies", MTCSignatureVerifier.verify(
-            logId, start, end, subtreeHash, cosignerId, signature,
-            ed25519KeyPair.getPublic(), "Ed25519"));
+        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        BcMTCSignatureVerifier ed25519Verifier = new BcMTCSignatureVerifier(
+            ed25519KeyPair.getPublic(), "Ed25519");
+
+        isTrue("Ed25519 cosignature verifies", ed25519Verifier.verify(cosignedMessage, signature));
 
         signature[0] ^= 0x01;
-        isTrue("Tampered Ed25519 signature rejected", !MTCSignatureVerifier.verify(
-            logId, start, end, subtreeHash, cosignerId, signature,
-            ed25519KeyPair.getPublic(), "Ed25519"));
+        isTrue("Tampered Ed25519 signature rejected", !ed25519Verifier.verify(cosignedMessage, signature));
     }
 
     public void testStandaloneCertificateValidation()
@@ -310,7 +313,7 @@ public class MerkleTreeCertificatesTest
         // the CA ID, matching what the validator will compute.
         byte[] cosignedLogId = binaryLogId(LOG_TAID_STRING, logNumber);
 
-        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(CloudFlareObjectIdentifiers.id_alg_mtcProof);
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
         TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial, sigAlg, spki);
 
         // Compute the entry hash from the TBS by way of a synthetic certificate (we
@@ -402,7 +405,7 @@ public class MerkleTreeCertificatesTest
         long start = 42;
         long end = 44;
 
-        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(CloudFlareObjectIdentifiers.id_alg_mtcProof);
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
         TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial, sigAlg, spki);
 
         X509CertificateHolder dummyHolder = new X509CertificateHolder(
@@ -600,7 +603,7 @@ public class MerkleTreeCertificatesTest
         return out;
     }
 
-    private static byte[] computeMTH(List<byte[]> leaves, int start, int end, MerkleTreePrimitives.MerkleTreeHash hashFunc)
+    private static byte[] computeMTH(List<byte[]> leaves, int start, int end, MerkleTreeHash hashFunc)
     {
         int len = end - start;
         if (len == 1)
@@ -718,7 +721,7 @@ public class MerkleTreeCertificatesTest
         // RDN with attribute type id_rdna_trustAnchorID and a UTF8String value
         // containing the dotted-decimal trust anchor ID.
         AttributeTypeAndValue attr = new AttributeTypeAndValue(
-            CloudFlareObjectIdentifiers.id_rdna_trustAnchorID,
+            MTCObjectIdentifiers.id_rdna_trustAnchorID,
             new DERUTF8String(LOG_TAID_STRING));
         X500Name issuer = new X500Name(new RDN[]{new RDN(attr)});
 

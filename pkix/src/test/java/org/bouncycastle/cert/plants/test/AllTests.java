@@ -18,7 +18,8 @@ public class AllTests
         org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] {
             new MerkleTreeCertificatesTest(),
             new LandmarkCertificateManagerTest(),
-            new MTCNewFeaturesTest() };
+            new MTCNewFeaturesTest(),
+            new JcajceOperatorsTest() };
 
         for (int i = 0; i != tests.length; i++)
         {

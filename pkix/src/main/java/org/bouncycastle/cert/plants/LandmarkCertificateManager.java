@@ -11,14 +11,12 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.plants.CloudFlareObjectIdentifiers;
-import org.bouncycastle.asn1.plants.MTCSignature;
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.TBSCertificateLogEntry;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.crypto.plants.MerkleTreePrimitives;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -46,7 +44,7 @@ public class LandmarkCertificateManager
         SubjectPublicKeyInfo subjectPublicKeyInfo,
         MerkleTreePrimitives.SubtreeInfo landmarkSubtree,
         List<byte[]> inclusionProof,
-        MerkleTreePrimitives.MerkleTreeHash hashFunc)
+        MerkleTreeHash hashFunc)
         throws IOException
     {
         TBSCertificate tbs = buildTBSCertificate(tbsCertEntry, index, subjectPublicKeyInfo);
@@ -58,7 +56,7 @@ public class LandmarkCertificateManager
             inclusionProofBytes,
             Collections.<MTCSignature>emptyList());
 
-        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(CloudFlareObjectIdentifiers.id_alg_mtcProof);
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
         DERBitString signature = new DERBitString(proof.encode());
 
         return new X509CertificateHolder(
@@ -70,7 +68,7 @@ public class LandmarkCertificateManager
         long index,
         SubjectPublicKeyInfo subjectPublicKeyInfo)
     {
-        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(CloudFlareObjectIdentifiers.id_alg_mtcProof);
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -182,7 +180,7 @@ public class LandmarkCertificateManager
     public static class TrustedSubtreeManager
     {
         private final byte[] logId;
-        private final MerkleTreePrimitives.MerkleTreeHash hashFunc;
+        private final MerkleTreeHash hashFunc;
         private final MTCCosignerVerifierProvider cosignerVerifierProvider;
         private final int minCosignaturesForCheckpoint;
 
@@ -196,7 +194,7 @@ public class LandmarkCertificateManager
          */
         public TrustedSubtreeManager(
             byte[] logId,
-            MerkleTreePrimitives.MerkleTreeHash hashFunc,
+            MerkleTreeHash hashFunc,
             MTCCosignerVerifierProvider cosignerVerifierProvider,
             int minCosignaturesForCheckpoint)
         {

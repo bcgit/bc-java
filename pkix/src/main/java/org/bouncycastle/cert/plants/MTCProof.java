@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.bouncycastle.asn1.plants.MTCSignature;
-
 /**
  * The MTCProof structure encoded in the X.509 certificate signatureValue per
  * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs-04</a>,
@@ -84,17 +82,17 @@ public class MTCProof
     {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
 
-        this.start = Utils.readUint48(in);
-        this.end = Utils.readUint48(in);
+        this.start = MTCEncoding.readUint48(in);
+        this.end = MTCEncoding.readUint48(in);
 
-        int inclLen = Utils.readUint16(in);
+        int inclLen = MTCEncoding.readUint16(in);
         this.inclusionProof = new byte[inclLen];
         if (readFully(in, inclusionProof) != inclLen)
         {
             throw new IOException("Truncated inclusion_proof");
         }
 
-        int sigsLen = Utils.readUint16(in);
+        int sigsLen = MTCEncoding.readUint16(in);
         byte[] sigsData = new byte[sigsLen];
         if (readFully(in, sigsData) != sigsLen)
         {
@@ -159,14 +157,14 @@ public class MTCProof
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        Utils.writeUint48(baos, start);
-        Utils.writeUint48(baos, end);
+        MTCEncoding.writeUint48(baos, start);
+        MTCEncoding.writeUint48(baos, end);
 
         if (inclusionProof.length > 0xFFFF)
         {
             throw new IOException("inclusion_proof too long: " + inclusionProof.length);
         }
-        Utils.writeUint16(baos, inclusionProof.length);
+        MTCEncoding.writeUint16(baos, inclusionProof.length);
         baos.write(inclusionProof);
 
         ByteArrayOutputStream sigsBaos = new ByteArrayOutputStream();
@@ -186,7 +184,7 @@ public class MTCProof
 
             sigsBaos.write(cosignerId.length);
             sigsBaos.write(cosignerId);
-            Utils.writeUint16(sigsBaos, signature.length);
+            MTCEncoding.writeUint16(sigsBaos, signature.length);
             sigsBaos.write(signature);
         }
         byte[] sigsBytes = sigsBaos.toByteArray();
@@ -195,7 +193,7 @@ public class MTCProof
             throw new IOException("signatures total length too long: " + sigsBytes.length);
         }
 
-        Utils.writeUint16(baos, sigsBytes.length);
+        MTCEncoding.writeUint16(baos, sigsBytes.length);
         baos.write(sigsBytes);
 
         return baos.toByteArray();
