@@ -18,7 +18,7 @@ import org.bouncycastle.util.Arrays;
  *
  * <p>The convenience {@link Builder#addCosigner(byte[], AsymmetricKeyParameter)}
  * overload wraps a lightweight {@link AsymmetricKeyParameter} in a
- * {@link BcMTCSignatureVerifier}, auto-detecting the draft-04 algorithm
+ * {@link BcMTCSignatureVerifier}, auto-detecting the the draft algorithm
  * identifier from the key type:</p>
  * <ul>
  *   <li>{@link ECPublicKeyParameters} with a 256-bit field &rarr; {@code ECDSA-P256-SHA256}</li>
@@ -81,7 +81,7 @@ public class BcMTCCosignerVerifierProvider
         }
 
         /**
-         * Register a cosigner with a lightweight public key; the draft-04
+         * Register a cosigner with a lightweight public key; the the draft
          * algorithm identifier is detected from the key type.
          *
          * @throws IllegalArgumentException if the public key type is unsupported

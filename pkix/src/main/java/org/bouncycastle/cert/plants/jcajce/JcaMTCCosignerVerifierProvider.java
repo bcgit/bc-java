@@ -21,7 +21,7 @@ import org.bouncycastle.util.Arrays;
  *
  * <p>The convenience {@link Builder#addCosigner(byte[], PublicKey)} overload
  * wraps a JCA {@link PublicKey} in a {@link JcaMTCSignatureVerifier},
- * auto-detecting the draft-04 algorithm identifier from the key type:</p>
+ * auto-detecting the the draft algorithm identifier from the key type:</p>
  * <ul>
  *   <li>{@link ECPublicKey} with a 256-bit field &rarr; {@code ECDSA-P256-SHA256}</li>
  *   <li>{@link ECPublicKey} with a 384-bit field &rarr; {@code ECDSA-P384-SHA384}</li>
@@ -90,7 +90,7 @@ public class JcaMTCCosignerVerifierProvider
         }
 
         /**
-         * Register a cosigner with a JCA public key; the draft-04 algorithm
+         * Register a cosigner with a JCA public key; the the draft algorithm
          * identifier is detected from the key type.
          *
          * @throws IllegalArgumentException if the public key type is unsupported

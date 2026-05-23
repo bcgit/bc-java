@@ -8,7 +8,7 @@ import org.bouncycastle.util.Strings;
 
 /**
  * Wire encoder for the CosignedMessage struct defined by Section 5.3.1 of
- * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs-04</a>:
+ * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs</a>:
  *
  * <pre>
  * struct {
@@ -44,7 +44,7 @@ public final class MTCCosignedMessage
     /**
      * Equivalent to {@link #encode(byte[], long, long, long, byte[], byte[])} with
      * {@code timestamp == 0}, which is the only value permitted inside an MTCProof
-     * cosigner signature per Section 6.1 of draft-04.
+     * cosigner signature per Section 6.1 of the draft.
      */
     public static byte[] encode(
         byte[] logId,

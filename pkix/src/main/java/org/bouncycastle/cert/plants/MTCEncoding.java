@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * Package-private TLS-wire encoding helpers for the fixed-width unsigned
  * integers used by the MTCProof / LandmarkSequence / CosignedMessage formats
- * defined in draft-ietf-plants-merkle-tree-certs-04.
+ * defined in draft-ietf-plants-merkle-tree-certs.
  */
 class MTCEncoding
 {

@@ -7,7 +7,7 @@ import org.bouncycastle.util.Exceptions;
 
 /**
  * Utilities for constructing and parsing the binary trust anchor IDs reserved
- * by Section 5.1 of draft-ietf-plants-merkle-tree-certs-04 under each CA ID:
+ * by Section 5.1 of draft-ietf-plants-merkle-tree-certs under each CA ID:
  *
  * <ul>
  *   <li>{@code {caID 0 N}} &mdash; issuance log {@code N} (Section 5.2)</li>

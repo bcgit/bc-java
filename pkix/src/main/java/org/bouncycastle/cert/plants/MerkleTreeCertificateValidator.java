@@ -168,7 +168,7 @@ public class MerkleTreeCertificateValidator
         // Step 2: decode the signatureValue as an MTCProof.
         MTCProof proof = new MTCProof(certHolder.getSignature());
 
-        // Step 3: decompose the serial number per Section 6.1 of draft-04:
+        // Step 3: decompose the serial number per Section 6.1 of the draft:
         //   serial = (log_number << 48) | index
         // and check revocation.
         BigInteger serialBig = certHolder.getSerialNumber();
@@ -191,8 +191,10 @@ public class MerkleTreeCertificateValidator
             throw new SecurityException("Certificate index " + index + " is revoked");
         }
 
-        // Steps 4 and 5: derive the entry hash from the TBSCertificate.
-        byte[] entryHash = computeEntryHash(certHolder, params.hashFunction);
+        // Steps 4 and 5: derive the entry hash from the TBSCertificate. The
+        // MTCProof's extensions list is prepended (per Section 7.2 step 5.2)
+        // so that the leaf hash matches the log's view of the MerkleTreeCertEntry.
+        byte[] entryHash = computeEntryHash(certHolder, proof.getExtensionsWire(), params.hashFunction);
 
         // Step 6: evaluate the inclusion proof to recover the expected subtree hash.
         byte[] expectedSubtreeHash;
@@ -261,17 +263,47 @@ public class MerkleTreeCertificateValidator
     }
 
     /**
-     * Computes the entry hash for a certificate by transforming its TBSCertificate
-     * into the equivalent {@code MerkleTreeCertEntry} of type {@code tbs_cert_entry}
-     * and hashing per Section 5.3 / Section 7.2.
-     *
-     * <p>The TBSCertificate's {@code serialNumber} and {@code signature} fields are
-     * omitted (they have no counterpart in TBSCertificateLogEntry), and
-     * {@code subjectPublicKeyInfo} is replaced by the algorithm field followed by
-     * the OCTET STRING encoding of HASH(subjectPublicKeyInfo).</p>
+     * Convenience overload of
+     * {@link #computeEntryHash(X509CertificateHolder, byte[], MerkleTreeHash)}
+     * with an empty extensions list (the wire form is two zero bytes, the
+     * uint16 length prefix). Use this when the certificate has no log-entry
+     * extensions.
      */
     public static byte[] computeEntryHash(
         X509CertificateHolder certHolder,
+        MerkleTreeHash hashFunc)
+        throws IOException
+    {
+        return computeEntryHash(certHolder, EMPTY_EXTENSIONS_WIRE, hashFunc);
+    }
+
+    /** Wire encoding of an empty {@code MerkleTreeCertEntryExtension extensions<0..2^16-1>} (the uint16 length prefix 0x0000). */
+    private static final byte[] EMPTY_EXTENSIONS_WIRE = new byte[]{0, 0};
+
+    /**
+     * Computes the entry hash for a certificate by transforming its TBSCertificate
+     * into the equivalent {@code MerkleTreeCertEntry} of type {@code tbs_cert_entry}
+     * and hashing per Section 5.2.1 / Section 7.2.
+     *
+     * <p>The single-pass procedure (Section 7.2):</p>
+     * <ol>
+     *   <li>Write the {@code extensions} field from the MTCProof (the on-wire bytes
+     *       including the 2-byte length prefix) to the hash.</li>
+     *   <li>Write the big-endian, two-byte {@code tbs_cert_entry} value (0x0001).</li>
+     *   <li>Write the TBSCertificate contents octets up to {@code subjectPublicKeyInfo}.</li>
+     *   <li>Write the {@code subjectPublicKeyInfo}'s algorithm field.</li>
+     *   <li>Write {@code 0x04 L H} where L is the hash length and H is HASH(SPKI).</li>
+     *   <li>Write the remaining TBSCertificate contents octets.</li>
+     *   <li>Finalize.</li>
+     * </ol>
+     *
+     * @param extensionsWire the {@code extensions<0..2^16-1>} field exactly as it
+     *                       appears at the start of the corresponding MTCProof
+     *                       (use {@link MTCProof#getExtensionsWire()})
+     */
+    public static byte[] computeEntryHash(
+        X509CertificateHolder certHolder,
+        byte[] extensionsWire,
         MerkleTreeHash hashFunc)
         throws IOException
     {
@@ -279,6 +311,9 @@ public class MerkleTreeCertificateValidator
         ASN1Sequence tbsSeq = ASN1Sequence.getInstance(tbsCertBytes);
 
         ByteArrayOutputStream entry = new ByteArrayOutputStream();
+        // Step 1 of the single-pass procedure: write the extensions wire bytes
+        // (the uint16 length prefix plus each extension's bytes).
+        entry.write(extensionsWire);
         // MerkleTreeCertEntryType.tbs_cert_entry (= 1), big-endian uint16.
         entry.write(0x00);
         entry.write(0x01);
@@ -342,7 +377,7 @@ public class MerkleTreeCertificateValidator
 
     /**
      * Extracts the binary CA trust anchor ID from the issuer field of a Merkle
-     * Tree certificate. Per Section 5.1 of draft-04 the issuer name has a single
+     * Tree certificate. Per Section 5.1 of the draft the issuer name has a single
      * RDN with a single attribute. For initial experimentation the attribute
      * type is {@code id_rdna_trustAnchorID} ({@code 1.3.6.1.4.1.44363.47.1})
      * with a UTF8String value of the dotted-decimal trust anchor ID; for the

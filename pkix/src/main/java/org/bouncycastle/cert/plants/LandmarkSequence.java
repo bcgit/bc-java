@@ -9,7 +9,7 @@ import org.bouncycastle.util.Exceptions;
 
 /**
  * The published landmark sequence for a single issuance log, as defined by
- * Section 6.3 of draft-ietf-plants-merkle-tree-certs-04.
+ * Section 6.3 of draft-ietf-plants-merkle-tree-certs.
  *
  * <p>A {@code LandmarkSequence} captures the {@code num_active_landmarks + 1}
  * most recent landmarks (numbered {@code last_landmark - num_active_landmarks}

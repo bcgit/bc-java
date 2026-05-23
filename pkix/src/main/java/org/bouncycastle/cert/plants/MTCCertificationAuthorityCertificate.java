@@ -26,7 +26,7 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 
 /**
  * Helpers for the CA certificate representation defined by Section 5.5 of
- * draft-ietf-plants-merkle-tree-certs-04.
+ * draft-ietf-plants-merkle-tree-certs.
  *
  * <p>A Merkle Tree CA is represented as an X.509 certificate whose:</p>
  * <ul>

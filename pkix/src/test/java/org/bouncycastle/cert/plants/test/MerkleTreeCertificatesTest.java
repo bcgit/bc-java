@@ -37,6 +37,7 @@ import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.plants.MTCCosignedMessage;
 import org.bouncycastle.cert.plants.MTCSignature;
+import org.bouncycastle.cert.plants.MerkleTreeCertEntryExtension;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.MerkleTreePrimitives;
@@ -537,6 +538,7 @@ public class MerkleTreeCertificatesTest
         // The parser must reject a hand-crafted out-of-order encoding.
         // Encode an MTCProof manually with longer cosigner_id first.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(0); baos.write(0);             // extensions length = 0 (empty list)
         baos.write(new byte[6]);                  // start = 0 (uint48)
         baos.write(0); baos.write(0); baos.write(0); baos.write(0); baos.write(0); baos.write(2); // end = 2
 
@@ -568,6 +570,164 @@ public class MerkleTreeCertificatesTest
                 new org.bouncycastle.cert.plants.MTCProof(outOfOrder);
             }
         });
+    }
+
+    /**
+     * MTCProof wire format (Section 6.1): the {@code extensions<0..2^16-1>}
+     * field precedes {@code start}. An empty list is just the uint16 length
+     * prefix 0x0000; a non-empty list round-trips through encode/decode and
+     * is reflected in {@link org.bouncycastle.cert.plants.MTCProof#getExtensionsWire()}.
+     */
+    public void testMTCProofExtensionsEncoding()
+        throws Exception
+    {
+        // Empty extensions list: encode begins with 0x00 0x00 followed by start.
+        org.bouncycastle.cert.plants.MTCProof emptyExt = new org.bouncycastle.cert.plants.MTCProof(
+            0L, 2L, hashFunc.hashLeaf("x".getBytes()), Collections.<MTCSignature>emptyList());
+        byte[] emptyBytes = emptyExt.encode();
+        isTrue("extensions length prefix is 2 bytes 0x0000",
+            emptyBytes[0] == 0 && emptyBytes[1] == 0);
+        isTrue("getExtensionsWire returns just the 2-byte zero prefix for empty",
+            Arrays.equals(new byte[]{0, 0}, emptyExt.getExtensionsWire()));
+        org.bouncycastle.cert.plants.MTCProof emptyReparsed = new org.bouncycastle.cert.plants.MTCProof(emptyBytes);
+        isTrue("empty extensions round-trip", emptyReparsed.getExtensions().isEmpty());
+        isTrue("empty extensions wire round-trip",
+            Arrays.equals(new byte[]{0, 0}, emptyReparsed.getExtensionsWire()));
+
+        // Non-empty: two extensions in ascending type order.
+        List<MerkleTreeCertEntryExtension> exts = new ArrayList<MerkleTreeCertEntryExtension>();
+        exts.add(new MerkleTreeCertEntryExtension(1, new byte[]{1, 2, 3}));
+        exts.add(new MerkleTreeCertEntryExtension(42, new byte[0]));
+        org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
+            exts, 0L, 2L, hashFunc.hashLeaf("x".getBytes()), Collections.<MTCSignature>emptyList());
+
+        // extensions wire = 2-byte total-length + per-extension (uint16 type + uint16 data_len + data).
+        // type=1, data=[1,2,3] → 2 + 2 + 3 = 7 bytes
+        // type=42, data=[]   → 2 + 2 + 0 = 4 bytes
+        // total body = 11 bytes; wire = 0x000B (11) || body
+        byte[] expectedWire = new byte[]{
+            0, 11,                          // length prefix
+            0, 1,  0, 3,  1, 2, 3,          // extension(1, [1,2,3])
+            0, 42, 0, 0                     // extension(42, [])
+        };
+        isTrue("non-empty extensions wire encoding",
+            Arrays.equals(expectedWire, proof.getExtensionsWire()));
+
+        byte[] encoded = proof.encode();
+        // Leading bytes of encode() must match getExtensionsWire().
+        byte[] leading = new byte[expectedWire.length];
+        System.arraycopy(encoded, 0, leading, 0, expectedWire.length);
+        isTrue("encode() begins with extensionsWire", Arrays.equals(expectedWire, leading));
+
+        // Round-trip through parser.
+        org.bouncycastle.cert.plants.MTCProof reparsed = new org.bouncycastle.cert.plants.MTCProof(encoded);
+        isTrue("reparsed extensions list size", reparsed.getExtensions().size() == 2);
+        isTrue("reparsed extension[0] type", reparsed.getExtensions().get(0).getExtensionType() == 1);
+        isTrue("reparsed extension[0] data",
+            Arrays.equals(new byte[]{1, 2, 3}, reparsed.getExtensions().get(0).getExtensionData()));
+        isTrue("reparsed extension[1] type", reparsed.getExtensions().get(1).getExtensionType() == 42);
+        isTrue("reparsed extension[1] data is empty",
+            reparsed.getExtensions().get(1).getExtensionData().length == 0);
+    }
+
+    /**
+     * MTCProof.extensions MUST be ascending by extension_type with no duplicates;
+     * both the constructor and the parser MUST reject violations.
+     */
+    public void testMTCProofExtensionsOrdering()
+        throws Exception
+    {
+        // Constructor rejects descending order.
+        final List<MerkleTreeCertEntryExtension> descending = new ArrayList<MerkleTreeCertEntryExtension>();
+        descending.add(new MerkleTreeCertEntryExtension(5, new byte[]{1}));
+        descending.add(new MerkleTreeCertEntryExtension(1, new byte[]{2}));
+        testException("not in ascending order", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new org.bouncycastle.cert.plants.MTCProof(
+                    descending, 0L, 2L, hashFunc.hashLeaf("x".getBytes()),
+                    Collections.<MTCSignature>emptyList());
+            }
+        });
+
+        // Constructor rejects duplicate extension_type.
+        final List<MerkleTreeCertEntryExtension> dup = new ArrayList<MerkleTreeCertEntryExtension>();
+        dup.add(new MerkleTreeCertEntryExtension(7, new byte[]{1}));
+        dup.add(new MerkleTreeCertEntryExtension(7, new byte[]{2}));
+        testException("Duplicate extension_type", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new org.bouncycastle.cert.plants.MTCProof(
+                    dup, 0L, 2L, hashFunc.hashLeaf("x".getBytes()),
+                    Collections.<MTCSignature>emptyList());
+            }
+        });
+
+        // Parser rejects descending: hand-craft bytes with (type=5, []) before (type=1, []).
+        // Each extension is 4 bytes header (type uint16, data_len uint16) with empty data,
+        // so body = 4 + 4 = 8 bytes, length prefix = 0x0008.
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write(0); out.write(8);                       // extensions length = 8
+        out.write(0); out.write(5); out.write(0); out.write(0);   // type=5, len=0
+        out.write(0); out.write(1); out.write(0); out.write(0);   // type=1, len=0
+        out.write(new byte[6]);                           // start = 0
+        out.write(new byte[6]);                           // end = 0 (invalid as a subtree but parser accepts)
+        out.write(0); out.write(0);                       // inclusion_proof length = 0
+        out.write(0); out.write(0);                       // signatures length = 0
+        final byte[] bytes = out.toByteArray();
+        testException("not in ascending order", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new org.bouncycastle.cert.plants.MTCProof(bytes);
+            }
+        });
+    }
+
+    /**
+     * Section 7.2 step 5.2: {@code computeEntryHash} writes the MTCProof's
+     * {@code extensions} wire bytes (including the uint16 length prefix) to the
+     * hash before the {@code tbs_cert_entry} type. So the entry hash with an
+     * empty extensions list differs from one computed with a non-empty list,
+     * and the no-extensions overload matches an explicit empty wire.
+     */
+    public void testEntryHashHonoursExtensionsWire()
+        throws Exception
+    {
+        TBSCertificateLogEntry dummyEntry = createDummyTBSCertificateLogEntry();
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
+            ecdsaKeyPair.getPublic());
+
+        // Build a stand-in certificate so computeEntryHash has something to walk.
+        org.bouncycastle.cert.plants.MTCProof emptyProof = new org.bouncycastle.cert.plants.MTCProof(
+            0L, 1L, new byte[0], Collections.<MTCSignature>emptyList());
+        X509CertificateHolder cert = org.bouncycastle.cert.plants.LandmarkCertificateManager.buildLandmarkCertificate(
+            0, dummyEntry, spki,
+            new MerkleTreePrimitives.SubtreeInfo(0, 1),
+            Collections.<byte[]>emptyList(),
+            hashFunc);
+
+        // No-arg overload matches the empty-wire form (0x0000).
+        byte[] hashDefault = MerkleTreeCertificateValidator.computeEntryHash(cert, hashFunc);
+        byte[] hashEmptyWire = MerkleTreeCertificateValidator.computeEntryHash(
+            cert, emptyProof.getExtensionsWire(), hashFunc);
+        isTrue("default overload == empty-wire overload",
+            Arrays.equals(hashDefault, hashEmptyWire));
+
+        // A different wire (a single extension) must produce a different hash.
+        List<MerkleTreeCertEntryExtension> oneExt = Collections.singletonList(
+            new MerkleTreeCertEntryExtension(99, new byte[]{(byte)0xAA, (byte)0xBB}));
+        org.bouncycastle.cert.plants.MTCProof withExt = new org.bouncycastle.cert.plants.MTCProof(
+            oneExt, 0L, 1L, new byte[0], Collections.<MTCSignature>emptyList());
+        byte[] hashWithExt = MerkleTreeCertificateValidator.computeEntryHash(
+            cert, withExt.getExtensionsWire(), hashFunc);
+        isTrue("entry hash changes with non-empty extensions",
+            !Arrays.equals(hashDefault, hashWithExt));
     }
 
     // ----- Helpers ----------------------------------------------------------
@@ -767,6 +927,9 @@ public class MerkleTreeCertificatesTest
         testLandmarkCertificateValidation();
         testInclusionProofTwoLeaf();
         testMTCProofCosignerOrdering();
+        testMTCProofExtensionsEncoding();
+        testMTCProofExtensionsOrdering();
+        testEntryHashHonoursExtensionsWire();
     }
 
     public static void main(String[] args)

@@ -28,21 +28,21 @@ public class UOVParameters
     public static final int PK_SEED_BYTES = 16;
     public static final int SALT_BYTES = 16;
 
-    public static final UOVParameters uov_Is = new UOVParameters("uov-Is", GF_16, 160, 64, 32, VARIANT_CLASSIC);
-    public static final UOVParameters uov_Is_pkc = new UOVParameters("uov-Is-pkc", GF_16, 160, 64, 32, VARIANT_PKC);
-    public static final UOVParameters uov_Is_pkc_skc = new UOVParameters("uov-Is-pkc-skc", GF_16, 160, 64, 32, VARIANT_PKC_SKC);
+    public static final UOVParameters uov_Is = new UOVParameters("uov-is", GF_16, 160, 64, 32, VARIANT_CLASSIC);
+    public static final UOVParameters uov_Is_pkc = new UOVParameters("uov-is-pkc", GF_16, 160, 64, 32, VARIANT_PKC);
+    public static final UOVParameters uov_Is_pkc_skc = new UOVParameters("uov-is-pkc-skc", GF_16, 160, 64, 32, VARIANT_PKC_SKC);
 
-    public static final UOVParameters uov_Ip = new UOVParameters("uov-Ip", GF_256, 112, 44, 32, VARIANT_CLASSIC);
-    public static final UOVParameters uov_Ip_pkc = new UOVParameters("uov-Ip-pkc", GF_256, 112, 44, 32, VARIANT_PKC);
-    public static final UOVParameters uov_Ip_pkc_skc = new UOVParameters("uov-Ip-pkc-skc", GF_256, 112, 44, 32, VARIANT_PKC_SKC);
+    public static final UOVParameters uov_Ip = new UOVParameters("uov-ip", GF_256, 112, 44, 32, VARIANT_CLASSIC);
+    public static final UOVParameters uov_Ip_pkc = new UOVParameters("uov-ip-pkc", GF_256, 112, 44, 32, VARIANT_PKC);
+    public static final UOVParameters uov_Ip_pkc_skc = new UOVParameters("uov-ip-pkc-skc", GF_256, 112, 44, 32, VARIANT_PKC_SKC);
 
-    public static final UOVParameters uov_III = new UOVParameters("uov-III", GF_256, 184, 72, 48, VARIANT_CLASSIC);
-    public static final UOVParameters uov_III_pkc = new UOVParameters("uov-III-pkc", GF_256, 184, 72, 48, VARIANT_PKC);
-    public static final UOVParameters uov_III_pkc_skc = new UOVParameters("uov-III-pkc-skc", GF_256, 184, 72, 48, VARIANT_PKC_SKC);
+    public static final UOVParameters uov_III = new UOVParameters("uov-iii", GF_256, 184, 72, 48, VARIANT_CLASSIC);
+    public static final UOVParameters uov_III_pkc = new UOVParameters("uov-iii-pkc", GF_256, 184, 72, 48, VARIANT_PKC);
+    public static final UOVParameters uov_III_pkc_skc = new UOVParameters("uov-iii-pkc-skc", GF_256, 184, 72, 48, VARIANT_PKC_SKC);
 
-    public static final UOVParameters uov_V = new UOVParameters("uov-V", GF_256, 244, 96, 64, VARIANT_CLASSIC);
-    public static final UOVParameters uov_V_pkc = new UOVParameters("uov-V-pkc", GF_256, 244, 96, 64, VARIANT_PKC);
-    public static final UOVParameters uov_V_pkc_skc = new UOVParameters("uov-V-pkc-skc", GF_256, 244, 96, 64, VARIANT_PKC_SKC);
+    public static final UOVParameters uov_V = new UOVParameters("uov-v", GF_256, 244, 96, 64, VARIANT_CLASSIC);
+    public static final UOVParameters uov_V_pkc = new UOVParameters("uov-v-pkc", GF_256, 244, 96, 64, VARIANT_PKC);
+    public static final UOVParameters uov_V_pkc_skc = new UOVParameters("uov-v-pkc-skc", GF_256, 244, 96, 64, VARIANT_PKC_SKC);
 
     private final String name;
     private final int gfSize;
