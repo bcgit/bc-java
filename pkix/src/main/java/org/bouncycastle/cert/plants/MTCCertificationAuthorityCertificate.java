@@ -30,13 +30,13 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
  *
  * <p>A Merkle Tree CA is represented as an X.509 certificate whose:</p>
  * <ul>
- *   <li>{@code subject} is the CA ID encoded as a single-RDN distinguished name
- *       (using the experimental {@code id_rdna_trustAnchorID} OID with a
- *       UTF8String value of the dotted-decimal trust anchor ID)</li>
+ *   <li>{@code subject} is the CA ID encoded as a single-RDN distinguished name,
+ *       using {@link MTCObjectIdentifiers#id_rdna_trustAnchorID} with a
+ *       UTF8String value of the dotted-decimal trust anchor ID</li>
  *   <li>{@code subjectPublicKeyInfo} is the CA cosigner's public key</li>
  *   <li>{@code extensions} carries a critical
- *       {@code id-pe-mtcCertificationAuthority} extension whose value is the
- *       {@link MTCCertificationAuthority} structure</li>
+ *       {@link MTCObjectIdentifiers#id_pe_mtcCertificationAuthority}
+ *       extension whose value is the {@link MTCCertificationAuthority} structure</li>
  *   <li>{@code keyUsage} (critical) asserts at least {@code keyCertSign}</li>
  *   <li>{@code basicConstraints} (critical) sets {@code cA=true}</li>
  *   <li>{@code subjectKeyIdentifier} (when present) SHOULD be the binary CA ID</li>
@@ -124,8 +124,10 @@ public final class MTCCertificationAuthorityCertificate
 
     /**
      * Extracts the binary CA trust anchor ID from the {@code subject} field of
-     * a CA certificate, mirroring
-     * {@link MerkleTreeCertificateValidator#extractCaIdFromIssuer}.
+     * a CA certificate. The encoding rules mirror
+     * {@link MerkleTreeCertificateValidator#extractCaIdFromIssuer}, which reads
+     * the equivalent attribute from the {@code issuer} field of a Merkle Tree
+     * end-entity certificate.
      */
     public static byte[] extractCaId(X509CertificateHolder cert)
         throws IOException

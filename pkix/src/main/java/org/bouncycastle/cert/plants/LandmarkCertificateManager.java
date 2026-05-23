@@ -20,9 +20,16 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Helpers for constructing landmark-relative certificates and for maintaining a
- * relying party's trusted-subtree list, as described in Sections 6.3 and 7.4 of
- * draft-ietf-plants-merkle-tree-certs.
+ * Issuance- and relying-party-side helpers for landmark subtrees, per
+ * Sections 6.3 and 7.4 of draft-ietf-plants-merkle-tree-certs.
+ *
+ * <p>{@link #buildLandmarkCertificate} produces a landmark-relative
+ * certificate (an X.509 wrapper around an {@link MTCProof} whose inclusion
+ * proof targets a predistributed landmark subtree). The nested
+ * {@link TrustedSubtreeManager} maintains a relying party's set of
+ * {@link TrustedSubtreeEntry trusted landmarks}, accepting a new landmark
+ * once it has been related to a sufficiently-cosigned reference checkpoint
+ * via a subtree consistency proof.</p>
  */
 public class LandmarkCertificateManager
 {
@@ -116,12 +123,9 @@ public class LandmarkCertificateManager
         return result;
     }
 
-    // ------------------------------------------------------------------------
-    // Trusted subtree management (Section 7.4)
-    // ------------------------------------------------------------------------
-
     /**
-     * A trusted subtree along with the reference checkpoint that proved its consistency.
+     * A trusted subtree along with the reference checkpoint that proved its
+     * consistency, per Section 7.4.
      */
     public static class TrustedSubtreeEntry
     {

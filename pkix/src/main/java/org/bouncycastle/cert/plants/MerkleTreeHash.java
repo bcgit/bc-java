@@ -4,10 +4,9 @@ package org.bouncycastle.cert.plants;
  * Operator interface for the hash function used in the Merkle tree, as defined
  * by Section 4 of draft-ietf-plants-merkle-tree-certs.
  *
- * <p>JCA-free and lightweight-crypto-free: the lightweight SHA-256 binding
- * lives in {@code org.bouncycastle.cert.plants.bc.BcSha256MerkleTreeHash}.
- * A JCA-side binding is expected to live under
- * {@code org.bouncycastle.cert.plants.jcajce}.</p>
+ * <p>JCA-free and lightweight-crypto-free. Concrete SHA-256 bindings:
+ * {@code org.bouncycastle.cert.plants.bc.BcSha256MerkleTreeHash} (lightweight)
+ * and {@code org.bouncycastle.cert.plants.jcajce.JcaSha256MerkleTreeHash} (JCA).</p>
  */
 public interface MerkleTreeHash
 {

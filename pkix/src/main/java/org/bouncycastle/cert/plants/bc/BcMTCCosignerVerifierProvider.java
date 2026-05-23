@@ -28,9 +28,9 @@ import org.bouncycastle.util.Arrays;
  * </ul>
  *
  * <p>Callers needing a different algorithm string for the same key type, or a
- * key flavour from another module (e.g. a future JCA {@code java.security.PublicKey}
- * wrapped in {@code JcaMTCSignatureVerifier}), can use
- * {@link Builder#addCosigner(byte[], MTCSignatureVerifier)} directly.</p>
+ * key flavour from another module (e.g. a JCA {@code java.security.PublicKey}
+ * wrapped in {@code org.bouncycastle.cert.plants.jcajce.JcaMTCSignatureVerifier}),
+ * can use {@link Builder#addCosigner(byte[], MTCSignatureVerifier)} directly.</p>
  */
 public class BcMTCCosignerVerifierProvider
     implements MTCCosignerVerifierProvider
@@ -71,7 +71,8 @@ public class BcMTCCosignerVerifierProvider
         /**
          * Register a cosigner with a pre-built signature verifier (either a
          * {@link BcMTCSignatureVerifier} or any other {@link MTCSignatureVerifier}
-         * implementation such as a future {@code JcaMTCSignatureVerifier}).
+         * implementation such as
+         * {@code org.bouncycastle.cert.plants.jcajce.JcaMTCSignatureVerifier}).
          */
         public Builder addCosigner(byte[] cosignerId, MTCSignatureVerifier verifier)
         {

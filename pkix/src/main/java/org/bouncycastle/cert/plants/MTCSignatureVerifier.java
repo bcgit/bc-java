@@ -10,9 +10,10 @@ package org.bouncycastle.cert.plants;
  * {@link MTCCosignedMessage#encode}) and the candidate signature, and the
  * implementation returns whether the signature is valid.</p>
  *
- * <p>JCA-free and lightweight-crypto-free: the lightweight binding lives in
- * {@code org.bouncycastle.cert.plants.bc.BcMTCSignatureVerifier}; a JCA-side
- * binding is expected to live under {@code org.bouncycastle.cert.plants.jcajce}.</p>
+ * <p>JCA-free and lightweight-crypto-free. Concrete bindings:
+ * {@code org.bouncycastle.cert.plants.bc.BcMTCSignatureVerifier} (lightweight)
+ * and
+ * {@code org.bouncycastle.cert.plants.jcajce.JcaMTCSignatureVerifier} (JCA).</p>
  */
 public interface MTCSignatureVerifier
 {

@@ -18,7 +18,8 @@ import org.bouncycastle.util.Arrays;
  *
  * <p>The cosigner ID is the <em>binary</em> trust anchor ID per Section 3 of
  * draft-ietf-tls-trust-anchor-ids &mdash; the base-128 OID-component bytes
- * only, without the ASN.1 RELATIVE-OID tag or length octets.</p>
+ * only, without the ASN.1 RELATIVE-OID tag or length octets. See
+ * {@link TrustAnchorIDs} for converting to/from the dotted-decimal form.</p>
  */
 public class MTCSignature
 {

@@ -26,16 +26,22 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Validates a Merkle Tree Certificate (MTC) as defined in
+ * Validates a Merkle Tree Certificate (MTC) per Section 7.2 of
  * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs</a>.
  *
- * <p>The validator performs the per-certificate signature verification step of
- * RFC 5280 path validation (Section 6.1.3 step (a)(1)) when the issuer is a
- * Merkle Tree CA, following Section 7.2 of the draft.</p>
+ * <p>The validator stands in for the per-certificate signature verification
+ * step of RFC 5280 path validation (Section 6.1.3 step (a)(1)) when the issuer
+ * is a Merkle Tree CA. {@link #validateCertificate} decodes the
+ * {@link MTCProof} carried in the certificate's {@code signatureValue},
+ * recomputes the entry hash from the TBSCertificate, evaluates the inclusion
+ * proof against the supplied {@link MerkleTreeHash}, and then either matches
+ * the resulting subtree hash against a {@link ValidationParams.TrustedSubtree}
+ * or counts valid cosignatures against the relying party's
+ * {@link MTCCosignerVerifierProvider} until {@code minCosignatures} is met.</p>
  */
 public class MerkleTreeCertificateValidator
 {
-    /** OID of the {@code id-alg-mtcProof} signature algorithm (experimental, Section 6.1). */
+    /** Dotted-decimal form of {@link MTCObjectIdentifiers#id_alg_mtcProof}, the signatureAlgorithm of an MTC certificate. */
     public static final String ID_ALG_MTC_PROOF = MTCObjectIdentifiers.id_alg_mtcProof.getId();
 
     /**
@@ -133,11 +139,12 @@ public class MerkleTreeCertificateValidator
     }
 
     /**
-     * Validates a Merkle Tree certificate per Section 7.2.
+     * Validates a Merkle Tree certificate per Section 7.2. Always returns
+     * {@code true} on success; any validation failure is signalled as a
+     * {@link SecurityException}.
      *
      * @param certHolder the certificate to validate
      * @param params     validation parameters
-     * @return {@code true} if the certificate is valid
      * @throws SecurityException        if the certificate is rejected
      * @throws IllegalArgumentException if the certificate is not a Merkle Tree certificate
      * @throws IOException              if the certificate cannot be parsed
