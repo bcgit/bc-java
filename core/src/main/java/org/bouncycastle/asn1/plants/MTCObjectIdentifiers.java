@@ -35,7 +35,7 @@ public interface MTCObjectIdentifiers
 
     /**
      * id-pe-mtcCertificationAuthority extension OID for the CA certificate
-     * representation (Section 5.5 of draft-04). To be deleted when IANA assigns
+     * representation (Section 5.5 of the draft). To be deleted when IANA assigns
      * the production OID.
      */
     ASN1ObjectIdentifier id_pe_mtcCertificationAuthority = cloudFlare.branch("47.2");

@@ -16,11 +16,11 @@ import org.bouncycastle.util.Exceptions;
  * JCA-side implementation of {@link MTCSignatureVerifier}.
  *
  * <p>Bound to a {@link PublicKey} and one of the algorithm identifiers defined
- * by Section 6.1 of draft-ietf-plants-merkle-tree-certs-04:
+ * by Section 6.1 of draft-ietf-plants-merkle-tree-certs:
  * {@code "ECDSA-P256-SHA256"}, {@code "ECDSA-P384-SHA384"}, {@code "Ed25519"},
  * {@code "ML-DSA-44"}, {@code "ML-DSA-65"}, {@code "ML-DSA-87"}.</p>
  *
- * <p>The draft-04 identifiers are mapped to JCA Signature names internally —
+ * <p>The the draft identifiers are mapped to JCA Signature names internally —
  * the plain (r||s) ECDSA encoding used by MTCProof requires
  * {@code SHA256WITHPLAIN-ECDSA} / {@code SHA384WITHPLAIN-ECDSA}, which BC's
  * JCE provider registers (DER-encoded {@code SHA256withECDSA} is wire-incompatible
@@ -72,7 +72,7 @@ public class JcaMTCSignatureVerifier
     }
 
     /**
-     * Maps a draft-04 algorithm identifier to the JCA Signature algorithm name.
+     * Maps a the draft algorithm identifier to the JCA Signature algorithm name.
      */
     static String jcaAlgorithm(String mtcAlgorithm)
     {

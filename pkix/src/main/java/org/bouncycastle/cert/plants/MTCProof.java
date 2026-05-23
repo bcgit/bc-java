@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * The MTCProof structure encoded in the X.509 certificate signatureValue per
- * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs-04</a>,
+ * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">draft-ietf-plants-merkle-tree-certs</a>,
  * Section 6.1.
  *
  * <pre>
@@ -21,6 +21,7 @@ import java.util.List;
  * } MTCSignature;
  *
  * struct {
+ *     MerkleTreeCertEntryExtension extensions&lt;0..2^16-1&gt;;
  *     uint48 start;
  *     uint48 end;
  *     HashValue inclusion_proof&lt;0..2^16-1&gt;;
@@ -28,31 +29,48 @@ import java.util.List;
  * } MTCProof;
  * </pre>
  *
- * <p>{@code start} and {@code end} are 6-byte unsigned big-endian integers
- * (draft-04 shrank these from {@code uint64}). Entries of {@code signatures}
- * MUST have unique {@code cosigner_id}s and MUST be ordered first by length
- * (shorter byte strings before longer) and then lexicographically.</p>
+ * <p>{@code extensions} carries the log entry's extension list, ordered by
+ * {@code extension_type} ascending with no duplicates. {@code start} and
+ * {@code end} are 6-byte unsigned big-endian integers (the draft shrank these
+ * from {@code uint64}). Entries of {@code signatures} MUST have unique
+ * {@code cosigner_id}s and MUST be ordered first by length (shorter byte
+ * strings before longer) and then lexicographically.</p>
  */
 public class MTCProof
 {
     /** Maximum value of a uint48 (2^48 - 1). */
     public static final long UINT48_MAX = 0xFFFFFFFFFFFFL;
 
+    private final List<MerkleTreeCertEntryExtension> extensions;
+    private final byte[] extensionsWire;
     private final long start;
     private final long end;
     private final byte[] inclusionProof;
     private final List<MTCSignature> signatures;
 
     /**
-     * Constructs an MTCProof, validating uint48 range and canonical ordering of
-     * the signatures list.
+     * Constructs an MTCProof with an empty extensions list.
      *
-     * @throws IllegalArgumentException if start or end exceeds 2^48-1, or if
-     *                                  the supplied signatures contain a
-     *                                  duplicate cosigner_id or are not in
-     *                                  canonical order
+     * @see #MTCProof(List, long, long, byte[], List)
      */
     public MTCProof(long start, long end, byte[] inclusionProof, List<MTCSignature> signatures)
+    {
+        this(Collections.<MerkleTreeCertEntryExtension>emptyList(), start, end, inclusionProof, signatures);
+    }
+
+    /**
+     * Constructs an MTCProof, validating uint48 range, ordering of the
+     * extensions list (ascending by extension_type, no duplicates) and
+     * canonical ordering of the signatures list.
+     *
+     * @throws IllegalArgumentException if start or end exceeds 2^48-1, if the
+     *                                  extensions are unordered or duplicate,
+     *                                  or if the signatures contain a duplicate
+     *                                  cosigner_id or are not in canonical order
+     */
+    public MTCProof(
+        List<MerkleTreeCertEntryExtension> extensions,
+        long start, long end, byte[] inclusionProof, List<MTCSignature> signatures)
     {
         if (start < 0 || start > UINT48_MAX)
         {
@@ -62,7 +80,21 @@ public class MTCProof
         {
             throw new IllegalArgumentException("end out of uint48 range: " + end);
         }
+        checkExtensionOrder(extensions);
         checkSignatureOrder(signatures);
+
+        this.extensions = Collections.unmodifiableList(
+            new ArrayList<MerkleTreeCertEntryExtension>(extensions));
+        try
+        {
+            this.extensionsWire = encodeExtensionsWire(this.extensions);
+        }
+        catch (IOException e)
+        {
+            // Length constraints were checked on construction of each extension;
+            // the total list length is constrained by checkExtensionOrder.
+            throw new IllegalStateException("unable to encode extensions: " + e.getMessage(), e);
+        }
         this.start = start;
         this.end = end;
         this.inclusionProof = inclusionProof.clone();
@@ -74,13 +106,26 @@ public class MTCProof
      * certificate's {@code signatureValue} BIT STRING, byte-aligned, with no
      * unused-bits prefix).
      *
-     * @throws IOException if parsing fails or if the signatures list violates
-     *                     the canonical-ordering rules in Section 6.1
+     * @throws IOException if parsing fails or if the extensions / signatures
+     *                     lists violate the ordering rules in Section 6.1
      */
     public MTCProof(byte[] data)
         throws IOException
     {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
+
+        int extensionsLen = MTCEncoding.readUint16(in);
+        byte[] extensionsData = new byte[extensionsLen];
+        if (readFully(in, extensionsData) != extensionsLen)
+        {
+            throw new IOException("Truncated extensions");
+        }
+        this.extensions = Collections.unmodifiableList(parseExtensions(extensionsData));
+        // Preserve the on-wire bytes (length prefix + body) for hashing.
+        ByteArrayOutputStream extWireOut = new ByteArrayOutputStream();
+        MTCEncoding.writeUint16(extWireOut, extensionsLen);
+        extWireOut.write(extensionsData);
+        this.extensionsWire = extWireOut.toByteArray();
 
         this.start = MTCEncoding.readUint48(in);
         this.end = MTCEncoding.readUint48(in);
@@ -157,6 +202,7 @@ public class MTCProof
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
+        baos.write(extensionsWire);
         MTCEncoding.writeUint48(baos, start);
         MTCEncoding.writeUint48(baos, end);
 
@@ -219,6 +265,22 @@ public class MTCProof
         return signatures;
     }
 
+    public List<MerkleTreeCertEntryExtension> getExtensions()
+    {
+        return extensions;
+    }
+
+    /**
+     * @return the on-wire encoding of the {@code extensions} field, including
+     *         the 2-byte length prefix; equal to the leading bytes of
+     *         {@link #encode()}. Section 7.2 step (5.2) requires these bytes to
+     *         be written into the leaf-entry hash unchanged.
+     */
+    public byte[] getExtensionsWire()
+    {
+        return extensionsWire.clone();
+    }
+
     /**
      * Splits the concatenated {@link #getInclusionProof() inclusion proof} into
      * individual hash values of the given size.
@@ -261,6 +323,26 @@ public class MTCProof
         return 0;
     }
 
+    private static void checkExtensionOrder(List<MerkleTreeCertEntryExtension> exts)
+    {
+        int prev = -1;
+        for (MerkleTreeCertEntryExtension ext : exts)
+        {
+            int type = ext.getExtensionType();
+            if (type == prev)
+            {
+                throw new IllegalArgumentException(
+                    "Duplicate extension_type in MTCProof.extensions: " + type);
+            }
+            if (type < prev)
+            {
+                throw new IllegalArgumentException(
+                    "MTCProof.extensions not in ascending order by extension_type");
+            }
+            prev = type;
+        }
+    }
+
     private static void checkSignatureOrder(List<MTCSignature> sigs)
     {
         byte[] prev = null;
@@ -281,6 +363,61 @@ public class MTCProof
             }
             prev = id;
         }
+    }
+
+    private static byte[] encodeExtensionsWire(List<MerkleTreeCertEntryExtension> exts)
+        throws IOException
+    {
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        for (MerkleTreeCertEntryExtension ext : exts)
+        {
+            MTCEncoding.writeUint16(body, ext.getExtensionType());
+            byte[] data = ext.getExtensionData();
+            MTCEncoding.writeUint16(body, data.length);
+            body.write(data);
+        }
+        byte[] bodyBytes = body.toByteArray();
+        if (bodyBytes.length > 0xFFFF)
+        {
+            throw new IOException("extensions total length too long: " + bodyBytes.length);
+        }
+        ByteArrayOutputStream wire = new ByteArrayOutputStream();
+        MTCEncoding.writeUint16(wire, bodyBytes.length);
+        wire.write(bodyBytes);
+        return wire.toByteArray();
+    }
+
+    private static List<MerkleTreeCertEntryExtension> parseExtensions(byte[] data)
+        throws IOException
+    {
+        ByteArrayInputStream in = new ByteArrayInputStream(data);
+        List<MerkleTreeCertEntryExtension> exts = new ArrayList<MerkleTreeCertEntryExtension>();
+        int prevType = -1;
+        while (in.available() > 0)
+        {
+            if (in.available() < 4)
+            {
+                throw new IOException("Truncated MerkleTreeCertEntryExtension header");
+            }
+            int extType = MTCEncoding.readUint16(in);
+            int extDataLen = MTCEncoding.readUint16(in);
+            byte[] extData = new byte[extDataLen];
+            if (readFully(in, extData) != extDataLen)
+            {
+                throw new IOException("Truncated extension_data");
+            }
+            if (extType == prevType)
+            {
+                throw new IOException("Duplicate extension_type in MTCProof.extensions: " + extType);
+            }
+            if (extType < prevType)
+            {
+                throw new IOException("MTCProof.extensions not in ascending order by extension_type");
+            }
+            exts.add(new MerkleTreeCertEntryExtension(extType, extData));
+            prevType = extType;
+        }
+        return exts;
     }
 
     private static int readFully(ByteArrayInputStream in, byte[] b)

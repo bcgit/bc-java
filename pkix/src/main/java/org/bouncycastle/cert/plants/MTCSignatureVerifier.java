@@ -3,7 +3,7 @@ package org.bouncycastle.cert.plants;
 /**
  * Operator interface for verifying a single cosigner signature over a
  * pre-encoded CosignedMessage, per Section 5.3.1 of
- * draft-ietf-plants-merkle-tree-certs-04.
+ * draft-ietf-plants-merkle-tree-certs.
  *
  * <p>An implementation is bound to a specific public key and algorithm at
  * construction; callers feed it the CosignedMessage bytes (built via

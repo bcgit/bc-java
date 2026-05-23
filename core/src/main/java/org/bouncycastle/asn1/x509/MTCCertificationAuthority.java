@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.DERSequence;
 
 /**
  * ASN.1 structure for the {@code id-pe-mtcCertificationAuthority} extension
- * defined in Section 5.5 of draft-ietf-plants-merkle-tree-certs-04:
+ * defined in Section 5.5 of draft-ietf-plants-merkle-tree-certs:
  *
  * <pre>
  * MTCCertificationAuthority ::= SEQUENCE {
@@ -24,7 +24,7 @@ import org.bouncycastle.asn1.DERSequence;
  * <p>{@code logHash} is the hash algorithm used by all issuance logs operated
  * by this CA. {@code sigAlg} is the CA cosigner's signature algorithm.
  * {@code minSerial} is the minimum allowed serial number from this CA; per
- * Section 6.1 of draft-04 a serial encodes the log number in its upper 16 bits
+ * Section 6.1 of the draft a serial encodes the log number in its upper 16 bits
  * and the entry index in the lower 48 bits, so {@code minSerial} can constrain
  * either.</p>
  */
