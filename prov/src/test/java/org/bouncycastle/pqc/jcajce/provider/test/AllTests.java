@@ -80,6 +80,8 @@ public class AllTests
         suite.addTestSuite(SnovaTest.class);
         suite.addTestSuite(FaestTest.class);
         suite.addTestSuite(HaetaeTest.class);
+        suite.addTestSuite(UOVTest.class);
+        suite.addTestSuite(MQOMTest.class);
 
         return new BCTestSetup(suite);
     }

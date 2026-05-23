@@ -18,6 +18,10 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.uov.UOVParameters;
+import org.bouncycastle.pqc.crypto.uov.UOVPrivateKeyParameters;
 import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
 import org.bouncycastle.pqc.asn1.FalconPrivateKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
@@ -507,6 +511,16 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             SnovaParameters snovaParams = Utils.snovaParamsLookup(algOID);
             return new SnovaPrivateKeyParameters(snovaParams, keyEnc);
+        }
+        else if (Utils.mqomParams.containsKey(algOID))
+        {
+            MQOMParameters mqomParameters = Utils.mqomParamsLookup(algOID);
+            return new MQOMPrivateKeyParameters(mqomParameters, keyInfo.getPrivateKey().getOctets());
+        }
+        else if (Utils.uovParams.containsKey(algOID))
+        {
+            UOVParameters uovParameters = Utils.uovParamsLookup(algOID);
+            return new UOVPrivateKeyParameters(uovParameters, keyInfo.getPrivateKey().getOctets());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntruplus))
         {
