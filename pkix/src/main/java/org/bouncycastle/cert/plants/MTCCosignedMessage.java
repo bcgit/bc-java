@@ -25,6 +25,9 @@ import org.bouncycastle.util.Strings;
  * <p>{@code cosigner_name} and {@code log_origin} are the ASCII strings
  * {@code "oid/1.3.6.1.4.1." + <dotted-decimal trust anchor ID>}, constructed
  * from the binary trust anchor IDs supplied by the caller.</p>
+ *
+ * @see MTCSignatureVerifier
+ * @see MTCCosignerVerifier
  */
 public final class MTCCosignedMessage
 {

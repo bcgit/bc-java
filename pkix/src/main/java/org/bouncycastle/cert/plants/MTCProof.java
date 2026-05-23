@@ -70,10 +70,10 @@ public class MTCProof
     }
 
     /**
-     * Parses an MTCProof from its TLS wire encoding.
+     * Parses an MTCProof from its TLS wire encoding (the contents of the
+     * certificate's {@code signatureValue} BIT STRING, byte-aligned, with no
+     * unused-bits prefix).
      *
-     * @param data the encoded bytes (the full BIT STRING value from the
-     *             certificate's signatureValue)
      * @throws IOException if parsing fails or if the signatures list violates
      *                     the canonical-ordering rules in Section 6.1
      */
