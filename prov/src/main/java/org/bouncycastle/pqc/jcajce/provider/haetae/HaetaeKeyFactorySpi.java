@@ -18,6 +18,13 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 
+/**
+ * {@link java.security.KeyFactorySpi} for HAETAE. The unparameterised form
+ * accepts encoded keys for any HAETAE parameter set; the nested
+ * {@link HAETAE2} / {@link HAETAE3} / {@link HAETAE5} subclasses restrict
+ * decoding to a single OID for use as the per-parameter-set
+ * {@code KeyFactory.<spec.getName()>} registrations.
+ */
 public class HaetaeKeyFactorySpi
     extends BaseKeyFactorySpi
 {

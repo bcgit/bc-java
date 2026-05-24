@@ -15,6 +15,13 @@ import org.bouncycastle.pqc.jcajce.spec.HaetaeParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * JCA private key wrapper for HAETAE. Round-trips through PKCS#8
+ * {@link PrivateKeyInfo} via the lightweight {@code PrivateKeyFactory}.
+ * Equality uses {@link Arrays#constantTimeAreEqual} on the encoded private
+ * key bytes to avoid leaking secret material through timing-distinguishable
+ * comparisons.
+ */
 public class BCHaetaePrivateKey
     implements PrivateKey, HaetaeKey
 {

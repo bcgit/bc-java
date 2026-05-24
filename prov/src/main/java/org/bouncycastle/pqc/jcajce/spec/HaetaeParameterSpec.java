@@ -7,6 +7,14 @@ import java.util.Map;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.util.Strings;
 
+/**
+ * {@link AlgorithmParameterSpec} for the HAETAE PQC signature scheme (KpqC).
+ * One constant per supported parameter set ({@link #haetae2}, {@link #haetae3},
+ * {@link #haetae5}); {@link #fromName(String)} looks up a spec by its
+ * canonical name (case-insensitive) for use with
+ * {@code Signature.getInstance(name, "BCPQC")} and
+ * {@code KeyPairGenerator.getInstance(name, "BCPQC")}.
+ */
 public class HaetaeParameterSpec
     implements AlgorithmParameterSpec
 {
