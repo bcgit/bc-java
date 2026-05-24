@@ -10,8 +10,14 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
-import org.bouncycastle.pqc.crypto.mqom.MQOMEngine;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.mqom.MQOMKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMSigner;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -64,8 +70,6 @@ public class MQOMKatTest
             in.close();
             assertFalse("KAT file empty for " + params.getName(), entries.isEmpty());
 
-            MQOMEngine engine = MQOMEngine.getInstance(params);
-
             for (int k = 0; k < entries.size(); k++)
             {
                 Map<String, String> e = entries.get(k);
@@ -75,30 +79,37 @@ public class MQOMKatTest
                 byte[] expectedSk = Hex.decode(e.get("sk"));
                 byte[] expectedSm = Hex.decode(e.get("sm"));
 
+                // The KAT generator drives the NIST CTR-DRBG with the recorded
+                // 48-byte seed, then reads (in order) 2*seedSize bytes for the
+                // key generation seed, seedSize bytes for the message seed and
+                // saltSize bytes for the salt. MQOMKeyPairGenerator and
+                // MQOMSigner draw the same byte counts in the same order, so a
+                // single shared DRBG drives the full pipeline through the
+                // public API.
                 NISTSecureRandom drbg = new NISTSecureRandom(seed, null);
-                byte[] seedKey = new byte[2 * params.getSeedSize()];
-                drbg.nextBytes(seedKey);
-                byte[] pk = new byte[params.getPublicKeySize()];
-                byte[] sk = new byte[params.getPrivateKeySize()];
-                engine.keyGen(seedKey, sk, pk);
+
+                MQOMKeyPairGenerator kpg = new MQOMKeyPairGenerator();
+                kpg.init(new MQOMKeyGenerationParameters(drbg, params));
+                AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+                byte[] pk = ((MQOMPublicKeyParameters)kp.getPublic()).getEncoded();
+                byte[] sk = ((MQOMPrivateKeyParameters)kp.getPrivate()).getEncoded();
 
                 String tag = params.getName() + " #" + e.get("count");
                 assertTrue(tag + " pk", Arrays.areEqual(expectedPk, pk));
                 assertTrue(tag + " sk", Arrays.areEqual(expectedSk, sk));
 
-                byte[] mseed = new byte[params.getSeedSize()];
-                drbg.nextBytes(mseed);
-                byte[] salt = new byte[params.getSaltSize()];
-                drbg.nextBytes(salt);
-                byte[] sig = engine.sign(sk, msg, salt, mseed);
+                MQOMSigner signer = new MQOMSigner();
+                signer.init(true, new ParametersWithRandom(kp.getPrivate(), drbg));
+                byte[] sig = signer.generateSignature(msg);
 
                 byte[] sm = new byte[msg.length + sig.length];
                 System.arraycopy(msg, 0, sm, 0, msg.length);
                 System.arraycopy(sig, 0, sm, msg.length, sig.length);
                 assertTrue(tag + " sm", Arrays.areEqual(expectedSm, sm));
 
-                // Verification should accept the signed message.
-                assertTrue(tag + " verify", engine.verify(pk, msg, sig));
+                MQOMSigner verifier = new MQOMSigner();
+                verifier.init(false, kp.getPublic());
+                assertTrue(tag + " verify", verifier.verifySignature(msg, sig));
             }
         }
     }

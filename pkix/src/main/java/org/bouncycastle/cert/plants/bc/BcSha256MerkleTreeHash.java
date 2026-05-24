@@ -1,5 +1,7 @@
 package org.bouncycastle.cert.plants.bc;
 
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -10,7 +12,14 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 public class BcSha256MerkleTreeHash
     implements MerkleTreeHash
 {
+    private static final AlgorithmIdentifier ALG_ID = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+
     private final Digest digest = new SHA256Digest();
+
+    public AlgorithmIdentifier getAlgorithmIdentifier()
+    {
+        return ALG_ID;
+    }
 
     public int getHashSize()
     {

@@ -1,5 +1,6 @@
 package org.bouncycastle.cert.plants.bc;
 
+import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -43,21 +44,21 @@ public class BcMTCSignatureVerifier
 
     private static Signer createSigner(String algorithm, AsymmetricKeyParameter publicKey)
     {
-        if ("ECDSA-P256-SHA256".equals(algorithm))
+        if (MTCSignatureAlgorithm.ECDSA_P256_SHA256.equals(algorithm))
         {
             return new DSADigestSigner(
                 new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest())),
                 new SHA256Digest(),
                 PlainDSAEncoding.INSTANCE);
         }
-        if ("ECDSA-P384-SHA384".equals(algorithm))
+        if (MTCSignatureAlgorithm.ECDSA_P384_SHA384.equals(algorithm))
         {
             return new DSADigestSigner(
                 new ECDSASigner(new HMacDSAKCalculator(new SHA384Digest())),
                 new SHA384Digest(),
                 PlainDSAEncoding.INSTANCE);
         }
-        if ("Ed25519".equals(algorithm))
+        if (MTCSignatureAlgorithm.ED25519.equals(algorithm))
         {
             if (!(publicKey instanceof Ed25519PublicKeyParameters))
             {
@@ -65,9 +66,9 @@ public class BcMTCSignatureVerifier
             }
             return new Ed25519Signer();
         }
-        if ("ML-DSA-44".equals(algorithm)
-            || "ML-DSA-65".equals(algorithm)
-            || "ML-DSA-87".equals(algorithm))
+        if (MTCSignatureAlgorithm.ML_DSA_44.equals(algorithm)
+            || MTCSignatureAlgorithm.ML_DSA_65.equals(algorithm)
+            || MTCSignatureAlgorithm.ML_DSA_87.equals(algorithm))
         {
             return new MLDSASigner();
         }

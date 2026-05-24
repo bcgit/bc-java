@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifierProvider;
+import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -18,7 +19,7 @@ import org.bouncycastle.util.Arrays;
  *
  * <p>The convenience {@link Builder#addCosigner(byte[], AsymmetricKeyParameter)}
  * overload wraps a lightweight {@link AsymmetricKeyParameter} in a
- * {@link BcMTCSignatureVerifier}, auto-detecting the the draft algorithm
+ * {@link BcMTCSignatureVerifier}, auto-detecting the draft algorithm
  * identifier from the key type:</p>
  * <ul>
  *   <li>{@link ECPublicKeyParameters} with a 256-bit field &rarr; {@code ECDSA-P256-SHA256}</li>
@@ -81,7 +82,7 @@ public class BcMTCCosignerVerifierProvider
         }
 
         /**
-         * Register a cosigner with a lightweight public key; the the draft
+         * Register a cosigner with a lightweight public key; the draft
          * algorithm identifier is detected from the key type.
          *
          * @throws IllegalArgumentException if the public key type is unsupported
@@ -104,21 +105,22 @@ public class BcMTCCosignerVerifierProvider
             int fieldSize = ((ECPublicKeyParameters)key).getParameters().getCurve().getFieldSize();
             if (fieldSize == 256)
             {
-                return "ECDSA-P256-SHA256";
+                return MTCSignatureAlgorithm.ECDSA_P256_SHA256;
             }
             if (fieldSize == 384)
             {
-                return "ECDSA-P384-SHA384";
+                return MTCSignatureAlgorithm.ECDSA_P384_SHA384;
             }
             throw new IllegalArgumentException("Unsupported EC field size: " + fieldSize);
         }
         if (key instanceof Ed25519PublicKeyParameters)
         {
-            return "Ed25519";
+            return MTCSignatureAlgorithm.ED25519;
         }
         if (key instanceof MLDSAPublicKeyParameters)
         {
-            return "ML-DSA-65";
+            // Always resolves to simple MLDSASigner(), sig type ultimately taken from public key.
+            return MTCSignatureAlgorithm.ML_DSA_65;
         }
         throw new IllegalArgumentException("Unsupported public key type: " + key.getClass().getName());
     }
