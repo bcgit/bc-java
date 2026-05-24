@@ -598,7 +598,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mayo2 = mayo_2;
     ASN1ObjectIdentifier mayo3 = mayo_3;
     ASN1ObjectIdentifier mayo5 = mayo_5;
-    
+
     /**
      * cross
      */
@@ -847,4 +847,13 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier ntruplus768 = pqc_kem_ntruplus.branch("1");
     ASN1ObjectIdentifier ntruplus864 = pqc_kem_ntruplus.branch("2");
     ASN1ObjectIdentifier ntruplus1152 = pqc_kem_ntruplus.branch("3");
+
+    /**
+     * Hawk PQC signature scheme — parent arc and the three parameter-set OIDs
+     * (hawk-256, hawk-512, hawk-1024).
+     */
+    ASN1ObjectIdentifier hawk = bc_sig.branch("15");
+    ASN1ObjectIdentifier hawk256 = hawk.branch("1");
+    ASN1ObjectIdentifier hawk512 = hawk.branch("2");
+    ASN1ObjectIdentifier hawk1024 = hawk.branch("3");
 }

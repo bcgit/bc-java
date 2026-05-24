@@ -27,6 +27,7 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
+import org.bouncycastle.pqc.crypto.hawk.HawkParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
@@ -117,6 +118,9 @@ class Utils
 
     static final Map faestOids = new HashMap<ASN1ObjectIdentifier, FaestParameters>();
     static final Map faestParams = new HashMap<FaestParameters, ASN1ObjectIdentifier>();
+
+    static final Map hawkOids = new HashMap<ASN1ObjectIdentifier, HawkParameters>();
+    static final Map hawkParams = new HashMap<HawkParameters, ASN1ObjectIdentifier>();
 
     static final Map mqomOids = new HashMap<ASN1ObjectIdentifier, MQOMParameters>();
     static final Map mqomParams = new HashMap<MQOMParameters, ASN1ObjectIdentifier>();
@@ -622,6 +626,18 @@ class Utils
         faestParams.put(BCObjectIdentifiers.faest_em_256s, FaestParameters.faest_em_256s);
         faestParams.put(BCObjectIdentifiers.faest_em_256f, FaestParameters.faest_em_256f);
 
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_768, BCObjectIdentifiers.ntruplus768);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruplus864);
+        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruplus1152);
+
+        hawkOids.put(HawkParameters.Hawk_256, BCObjectIdentifiers.hawk256);
+        hawkOids.put(HawkParameters.Hawk_512, BCObjectIdentifiers.hawk512);
+        hawkOids.put(HawkParameters.Hawk_1024, BCObjectIdentifiers.hawk1024);
+
+        hawkParams.put(BCObjectIdentifiers.hawk256, HawkParameters.Hawk_256);
+        hawkParams.put(BCObjectIdentifiers.hawk512, HawkParameters.Hawk_512);
+        hawkParams.put(BCObjectIdentifiers.hawk1024, HawkParameters.Hawk_1024);
+
         MQOMParameters[] mqomAll = new MQOMParameters[]{
             MQOMParameters.mqom2_cat1_gf2_fast_r3, MQOMParameters.mqom2_cat1_gf2_fast_r5,
             MQOMParameters.mqom2_cat1_gf2_short_r3, MQOMParameters.mqom2_cat1_gf2_short_r5,
@@ -1008,6 +1024,17 @@ class Utils
     {
         return (ASN1ObjectIdentifier)ntruPlusOids.get(params);
     }
+
+    public static ASN1ObjectIdentifier hawkOidLookup(HawkParameters params)
+    {
+        return (ASN1ObjectIdentifier)hawkOids.get(params);
+    }
+
+    static HawkParameters hawkParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (HawkParameters)hawkParams.get(oid);
+    }
+
 
     static ASN1ObjectIdentifier faestOidLookup(FaestParameters params)
     {
