@@ -29,6 +29,32 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.util.Strings;
 
+/**
+ * Default implementation of {@link SignatureAlgorithmIdentifierFinder},
+ * returning the {@code AlgorithmIdentifier} (algorithm OID plus any
+ * algorithm-specific parameters) used to name a signature scheme in
+ * X.509 certificates, CMS SignedData, OCSP responses and related PKIX
+ * structures.
+ *
+ * <p><b>Parameter-field convention for RSA-PSS:</b> when this finder builds
+ * the {@code RSASSA-PSS-params} structure for {@code SHA*WITHRSAANDMGF1}
+ * names, the hash sub-identifier inside the {@code hashAlgorithm} field (and
+ * the inner hash inside {@code MGF1}) is emitted with {@code NULL}
+ * parameters, following
+ * <a href="https://www.rfc-editor.org/rfc/rfc4055#section-2.1">RFC 4055 §2.1</a>
+ * which defines {@code sha256Identifier ::= { id-sha256, NULL }} (and the same
+ * pattern for SHA-1 / SHA-224 / SHA-384 / SHA-512). SHA-3 inside PSS follows
+ * the same NULL-parameter convention here for consistency.</p>
+ *
+ * <p>This is a different convention from
+ * {@link DefaultDigestAlgorithmIdentifierFinder}, which (for the CMS contexts
+ * it serves) follows RFC 5754 §2 and emits SHA-2 / SHA-3 digest identifiers
+ * with the {@code parameters} field <em>absent</em>. Both forms are
+ * standards-compliant in their respective slots; the practical consequence is
+ * that a single CMS SignedData with a PSS SignerInfo will validly contain the
+ * same SHA-2 OID encoded both ways. See the class-level javadoc on
+ * {@link DefaultDigestAlgorithmIdentifierFinder} for the cross-reference.</p>
+ */
 public class DefaultSignatureAlgorithmIdentifierFinder
     implements SignatureAlgorithmIdentifierFinder
 {
