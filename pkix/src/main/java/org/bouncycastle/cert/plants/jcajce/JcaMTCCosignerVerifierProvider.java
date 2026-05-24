@@ -1,11 +1,13 @@
 package org.bouncycastle.cert.plants.jcajce;
 
+import java.io.OutputStream;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifierProvider;
 import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
@@ -53,9 +55,19 @@ public class JcaMTCCosignerVerifierProvider
         }
         return new MTCCosignerVerifier()
         {
-            public boolean verify(byte[] cosignedMessage, byte[] signature)
+            public AlgorithmIdentifier getAlgorithmIdentifier()
             {
-                return verifier.verify(cosignedMessage, signature);
+                return verifier.getAlgorithmIdentifier();
+            }
+
+            public OutputStream getOutputStream()
+            {
+                return verifier.getOutputStream();
+            }
+
+            public boolean verify(byte[] expected)
+            {
+                return verifier.verify(expected);
             }
         };
     }

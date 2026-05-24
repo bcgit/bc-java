@@ -1,7 +1,9 @@
 package org.bouncycastle.cert.plants.examples;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Security;
 import java.util.Date;
 
 import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
@@ -16,35 +18,29 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.plants.MTCCertAuth;
 import org.bouncycastle.cert.plants.MTCContentSigner;
 import org.bouncycastle.cert.plants.MTCLog;
-import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.TrustAnchorIDs;
-import org.bouncycastle.cert.plants.bc.BcMTCCosigner;
-import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
-import org.bouncycastle.cert.plants.bc.BcMTCSignatureVerifier;
-import org.bouncycastle.cert.plants.bc.BcSha256MerkleTreeHash;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
-import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
-import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.cert.plants.jcajce.JcaMTCCosignerBuilder;
+import org.bouncycastle.cert.plants.jcajce.JcaMTCCosignerVerifierProvider;
+import org.bouncycastle.cert.plants.jcajce.JcaSha256MerkleTreeHash;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 
 /**
- * End-to-end Merkle Tree Certificate walkthrough using a single CA cosigner.
- *
- * <p>The example builds a two-leaf log in-memory, issues a Merkle Tree
- * certificate for entry index 0, then has a relying party validate it through
- * {@link MerkleTreeCertificateValidator}. The whole flow is exercised against
- * the lightweight bindings in {@code org.bouncycastle.cert.plants.bc} so no
- * JCA provider needs to be registered.</p>
+ * End-to-end Merkle Tree Certificate walkthrough using a single CA cosigner —
+ * JCA-backed counterpart of {@link MerkleTreeCertificateExample}. The flow is
+ * identical; only the building blocks change. Hash, cosigner and cosigner
+ * verifier come from {@code org.bouncycastle.cert.plants.jcajce} and are
+ * driven through {@link java.security.Signature} / {@link java.security.KeyPair}
+ * etc. via {@link BouncyCastleProvider}.
  *
  * <p>The walkthrough is illustrative — production callers should rotate
  * checkpoints, fetch landmark sequences and use multiple cosigners as
  * described in Section 7.3 of the draft. Here we use a single CA cosigner
  * with {@code minCosignatures = 1} for clarity.</p>
  */
-public class MerkleTreeCertificateExample
+public class MerkleTreeCertificateJcaExample
 {
     /** Trust anchor ID assigned to our example CA. */
     private static final String CA_TRUST_ANCHOR_ID = "32473.1";
@@ -52,28 +48,33 @@ public class MerkleTreeCertificateExample
     /** Log number used in the cert's 64-bit serial (top 16 bits). */
     private static final long LOG_NUMBER = 1L;
 
+    /** Provider name used for all JCA lookups in this example. */
+    private static final String PROVIDER = BouncyCastleProvider.PROVIDER_NAME;
+
     public static void main(String[] args)
         throws Exception
     {
-        SecureRandom random = new SecureRandom();
+        Security.addProvider(new BouncyCastleProvider());
 
         // 1. CA keypair and identity bundle. MTCCertAuth carries the CA's
         //    trust anchor ID plus its hash + cosigner-signature algorithm
         //    OIDs, so the same object serves both the issuer side (issuer
         //    name, serial, log ID derivation) and the relying-party side
         //    (the MTCCertificationAuthority value the validator needs).
-        AsymmetricCipherKeyPair caKp = generateEd25519KeyPair(random);
+        KeyPair caKp = generateEd25519KeyPair();
         MTCCertAuth ca = new MTCCertAuth(
             CA_TRUST_ANCHOR_ID,
-            new BcSha256MerkleTreeHash(),
+            new JcaSha256MerkleTreeHash(),
             MTCObjectIdentifiers.id_alg_mtcProof);
         MerkleTreeHash hashFunc = ca.getHashFunc();
         System.out.println("CA trust anchor ID:    " + ca.getDottedCaId());
         System.out.println("Issuance log ID:       " + TrustAnchorIDs.toDottedDecimal(ca.logId(LOG_NUMBER)));
 
-        // 2. End-entity keypair.
-        AsymmetricCipherKeyPair eeKp = generateEd25519KeyPair(random);
-        SubjectPublicKeyInfo eeSpki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(eeKp.getPublic());
+        // 2. End-entity keypair. A JCA PublicKey already encodes as a DER
+        //    SubjectPublicKeyInfo, so SubjectPublicKeyInfo.getInstance(...)
+        //    on its encoding gives us what the X509v3CertificateBuilder wants.
+        KeyPair eeKp = generateEd25519KeyPair();
+        SubjectPublicKeyInfo eeSpki = SubjectPublicKeyInfo.getInstance(eeKp.getPublic().getEncoded());
 
         // 3. Issue the EE certificate. The cert's issuer carries the CA's
         //    trust anchor ID; the validator recovers the issuance log ID by
@@ -88,7 +89,9 @@ public class MerkleTreeCertificateExample
         MTCLog log = new MTCLog(ca, LOG_NUMBER, /*start=*/ 0L, /*end=*/ 2L);
         ContentSigner mtcSigner = new MTCContentSigner(
             log, siblingHash,
-            new BcMTCCosigner(ca.getCaId(), caKp.getPrivate()));
+            new JcaMTCCosignerBuilder()
+                .setProvider(PROVIDER)
+                .build(ca.getCaId(), caKp.getPrivate()));
 
         X509CertificateHolder cert = buildEECert(
             ca.issuerName(),
@@ -101,10 +104,10 @@ public class MerkleTreeCertificateExample
         // 4. Relying-party side: build a cosigner verifier provider that maps
         //    the CA's trust anchor ID to the CA's public key + Ed25519
         //    algorithm, then assemble ValidationParams and validate.
-        BcMTCSignatureVerifier caVerifier = new BcMTCSignatureVerifier(
-            caKp.getPublic(), MTCSignatureAlgorithm.ED25519);
-        BcMTCCosignerVerifierProvider cosigners =
-            BcMTCCosignerVerifierProvider.singleCosigner(ca.getCaId(), caVerifier);
+        JcaMTCCosignerVerifierProvider cosigners = new JcaMTCCosignerVerifierProvider.Builder()
+            .setProvider(PROVIDER)
+            .addCosigner(ca.getCaId(), caKp.getPublic())
+            .build();
 
         // Lift the MTCCertificationAuthority info from our identity bundle —
         // in production the relying party would parse it out of the CA
@@ -121,11 +124,10 @@ public class MerkleTreeCertificateExample
 
     // --- Builders -----------------------------------------------------------
 
-    private static AsymmetricCipherKeyPair generateEd25519KeyPair(SecureRandom random)
+    private static KeyPair generateEd25519KeyPair()
+        throws Exception
     {
-        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
-        gen.init(new Ed25519KeyGenerationParameters(random));
-        return gen.generateKeyPair();
+        return KeyPairGenerator.getInstance("Ed25519", PROVIDER).generateKeyPair();
     }
 
     /**

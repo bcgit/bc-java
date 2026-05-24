@@ -1,5 +1,6 @@
 package org.bouncycastle.cert.plants.test;
 
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
@@ -17,6 +18,7 @@ import org.bouncycastle.cert.plants.jcajce.JcaMTCCosignerVerifierProvider;
 import org.bouncycastle.cert.plants.jcajce.JcaMTCSignatureVerifier;
 import org.bouncycastle.cert.plants.jcajce.JcaSha256MerkleTreeHash;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -92,10 +94,10 @@ public class JcajceOperatorsTest
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
             kp.getPublic(), "ECDSA-P256-SHA256", "BC");
-        isTrue("ECDSA-P256 cosignature verifies", v.verify(message, signature));
+        isTrue("ECDSA-P256 cosignature verifies", verifyMessage(v, message, signature));
 
         signature[0] ^= 0x01;
-        isTrue("ECDSA-P256 tampered signature rejected", !v.verify(message, signature));
+        isTrue("ECDSA-P256 tampered signature rejected", !verifyMessage(v, message, signature));
     }
 
     private void testJcaSignatureVerifierEcdsaP384()
@@ -108,10 +110,10 @@ public class JcajceOperatorsTest
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
             kp.getPublic(), "ECDSA-P384-SHA384", "BC");
-        isTrue("ECDSA-P384 cosignature verifies", v.verify(message, signature));
+        isTrue("ECDSA-P384 cosignature verifies", verifyMessage(v, message, signature));
 
         signature[signature.length - 1] ^= 0x55;
-        isTrue("ECDSA-P384 tampered signature rejected", !v.verify(message, signature));
+        isTrue("ECDSA-P384 tampered signature rejected", !verifyMessage(v, message, signature));
     }
 
     private void testJcaSignatureVerifierEd25519()
@@ -124,10 +126,10 @@ public class JcajceOperatorsTest
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
             kp.getPublic(), "Ed25519", "BC");
-        isTrue("Ed25519 cosignature verifies", v.verify(message, signature));
+        isTrue("Ed25519 cosignature verifies", verifyMessage(v, message, signature));
 
         signature[10] ^= 0x80;
-        isTrue("Ed25519 tampered signature rejected", !v.verify(message, signature));
+        isTrue("Ed25519 tampered signature rejected", !verifyMessage(v, message, signature));
     }
 
     private void testJcaSignatureVerifierMlDsa65()
@@ -140,10 +142,10 @@ public class JcajceOperatorsTest
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
             kp.getPublic(), "ML-DSA-65", "BC");
-        isTrue("ML-DSA-65 cosignature verifies", v.verify(message, signature));
+        isTrue("ML-DSA-65 cosignature verifies", verifyMessage(v, message, signature));
 
         signature[signature.length / 2] ^= 0x01;
-        isTrue("ML-DSA-65 tampered signature rejected", !v.verify(message, signature));
+        isTrue("ML-DSA-65 tampered signature rejected", !verifyMessage(v, message, signature));
     }
 
     private void testJcaSignatureVerifierUnsupportedAlgorithmRejected()
@@ -155,7 +157,7 @@ public class JcajceOperatorsTest
             public void operation()
             {
                 new JcaMTCSignatureVerifier(kp.getPublic(), "BOGUS", "BC")
-                    .verify(new byte[0], new byte[0]);
+                    .getOutputStream();
             }
         });
     }
@@ -219,7 +221,7 @@ public class JcajceOperatorsTest
         MTCCosignerVerifier verifier = provider.get(cosignerId);
         isTrue("cosigner verifier present for " + jcaSignatureAlg, verifier != null);
         isTrue("cosignature verifies via provider for " + jcaSignatureAlg,
-            verifier.verify(message, signature));
+            verifyMessage(verifier, message, signature));
     }
 
     private static KeyPair generateEcKeyPair(String curveName)
@@ -237,6 +239,13 @@ public class JcajceOperatorsTest
         sig.initSign(kp.getPrivate());
         sig.update(message);
         return sig.sign();
+    }
+
+    private static boolean verifyMessage(ContentVerifier v, byte[] message, byte[] signature)
+        throws IOException
+    {
+        v.getOutputStream().write(message);
+        return v.verify(signature);
     }
 
     private static byte[] buildCosignedMessage(

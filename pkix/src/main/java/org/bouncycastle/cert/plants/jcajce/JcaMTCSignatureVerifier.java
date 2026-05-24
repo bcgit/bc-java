@@ -1,10 +1,15 @@
 package org.bouncycastle.cert.plants.jcajce;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -30,9 +35,20 @@ import org.bouncycastle.util.Exceptions;
 public class JcaMTCSignatureVerifier
     implements MTCSignatureVerifier
 {
+    /**
+     * Placeholder algorithm identifier returned by {@link #getAlgorithmIdentifier()}.
+     * MTC's cosigner signature scheme is identified at the MTCProof / cert level
+     * by {@code id-alg-mtcProof}; the underlying cosigner-specific signature
+     * algorithm is bound at construction.
+     */
+    private static final AlgorithmIdentifier MTC_SIG_ALG =
+        new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+
     private final PublicKey publicKey;
     private final String algorithm;
     private final JcaJceHelper helper;
+
+    private Signature activeSignature;
 
     public JcaMTCSignatureVerifier(PublicKey publicKey, String algorithm)
     {
@@ -56,16 +72,65 @@ public class JcaMTCSignatureVerifier
         this.helper = helper;
     }
 
-    public boolean verify(byte[] cosignedMessage, byte[] signature)
+    public AlgorithmIdentifier getAlgorithmIdentifier()
+    {
+        return MTC_SIG_ALG;
+    }
+
+    public OutputStream getOutputStream()
     {
         try
         {
-            Signature sig = helper.createSignature(jcaAlgorithm(algorithm));
+            final Signature sig = helper.createSignature(jcaAlgorithm(algorithm));
             sig.initVerify(publicKey);
-            sig.update(cosignedMessage);
-            return sig.verify(signature);
+            this.activeSignature = sig;
+            return new OutputStream()
+            {
+                public void write(int b)
+                    throws IOException
+                {
+                    try
+                    {
+                        sig.update((byte)b);
+                    }
+                    catch (SignatureException e)
+                    {
+                        throw new IOException(e.getMessage(), e);
+                    }
+                }
+
+                public void write(byte[] buf, int off, int len)
+                    throws IOException
+                {
+                    try
+                    {
+                        sig.update(buf, off, len);
+                    }
+                    catch (SignatureException e)
+                    {
+                        throw new IOException(e.getMessage(), e);
+                    }
+                }
+            };
         }
         catch (GeneralSecurityException e)
+        {
+            throw Exceptions.illegalStateException(
+                "unable to initialise MTC signature with algorithm " + algorithm + ": " + e.getMessage(), e);
+        }
+    }
+
+    public boolean verify(byte[] expected)
+    {
+        if (activeSignature == null)
+        {
+            throw new IllegalStateException("getOutputStream() must be called before verify()");
+        }
+        try
+        {
+            return activeSignature.verify(expected);
+        }
+        catch (SignatureException e)
         {
             throw Exceptions.illegalStateException(
                 "unable to verify MTC signature with algorithm " + algorithm + ": " + e.getMessage(), e);

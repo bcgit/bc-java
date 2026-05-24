@@ -1,11 +1,12 @@
 package org.bouncycastle.cert.plants.bc;
 
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifierProvider;
-import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -43,6 +44,30 @@ public class BcMTCCosignerVerifierProvider
         this.cosigners = cosigners;
     }
 
+    /**
+     * Convenience factory for the single-cosigner case — wraps
+     * {@code Builder().addCosigner(cosignerId, verifier).build()}. Suitable
+     * when the relying party trusts exactly one cosigner (e.g. the CA itself,
+     * per Section 5.3 of draft-ietf-plants-merkle-tree-certs).
+     */
+    public static BcMTCCosignerVerifierProvider singleCosigner(
+        byte[] cosignerId, MTCSignatureVerifier verifier)
+    {
+        return new Builder().addCosigner(cosignerId, verifier).build();
+    }
+
+    /**
+     * Convenience factory for the single-cosigner case taking a lightweight
+     * public key; the draft algorithm identifier is detected from the key type.
+     *
+     * @throws IllegalArgumentException if the public key type is unsupported
+     */
+    public static BcMTCCosignerVerifierProvider singleCosigner(
+        byte[] cosignerId, AsymmetricKeyParameter publicKey)
+    {
+        return new Builder().addCosigner(cosignerId, publicKey).build();
+    }
+
     public MTCCosignerVerifier get(byte[] cosignerId)
     {
         final MTCSignatureVerifier verifier = cosigners.get(new ByteArrayKey(cosignerId));
@@ -52,9 +77,19 @@ public class BcMTCCosignerVerifierProvider
         }
         return new MTCCosignerVerifier()
         {
-            public boolean verify(byte[] cosignedMessage, byte[] signature)
+            public AlgorithmIdentifier getAlgorithmIdentifier()
             {
-                return verifier.verify(cosignedMessage, signature);
+                return verifier.getAlgorithmIdentifier();
+            }
+
+            public OutputStream getOutputStream()
+            {
+                return verifier.getOutputStream();
+            }
+
+            public boolean verify(byte[] expected)
+            {
+                return verifier.verify(expected);
             }
         };
     }
@@ -89,40 +124,13 @@ public class BcMTCCosignerVerifierProvider
          */
         public Builder addCosigner(byte[] cosignerId, AsymmetricKeyParameter publicKey)
         {
-            return addCosigner(cosignerId, new BcMTCSignatureVerifier(publicKey, detectAlgorithm(publicKey)));
+            return addCosigner(cosignerId, new BcMTCSignatureVerifier(publicKey, BcMTCSigners.detectAlgorithm(publicKey)));
         }
 
         public BcMTCCosignerVerifierProvider build()
         {
             return new BcMTCCosignerVerifierProvider(new HashMap<ByteArrayKey, MTCSignatureVerifier>(cosigners));
         }
-    }
-
-    private static String detectAlgorithm(AsymmetricKeyParameter key)
-    {
-        if (key instanceof ECPublicKeyParameters)
-        {
-            int fieldSize = ((ECPublicKeyParameters)key).getParameters().getCurve().getFieldSize();
-            if (fieldSize == 256)
-            {
-                return MTCSignatureAlgorithm.ECDSA_P256_SHA256;
-            }
-            if (fieldSize == 384)
-            {
-                return MTCSignatureAlgorithm.ECDSA_P384_SHA384;
-            }
-            throw new IllegalArgumentException("Unsupported EC field size: " + fieldSize);
-        }
-        if (key instanceof Ed25519PublicKeyParameters)
-        {
-            return MTCSignatureAlgorithm.ED25519;
-        }
-        if (key instanceof MLDSAPublicKeyParameters)
-        {
-            // Always resolves to simple MLDSASigner(), sig type ultimately taken from public key.
-            return MTCSignatureAlgorithm.ML_DSA_65;
-        }
-        throw new IllegalArgumentException("Unsupported public key type: " + key.getClass().getName());
     }
 
     private static class ByteArrayKey
