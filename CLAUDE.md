@@ -122,7 +122,7 @@ The bridge is `BouncyCastleProvider.loadPQCKeys()` in `prov/src/main/java/org/bo
 
 Practical checklist when porting a new PQC algorithm — easy to leave any of these out and end up with a half-wired addition:
 
-- `core/src/main/java/org/bouncycastle/asn1/bc/BCObjectIdentifiers.java` (or `NISTObjectIdentifiers.java` for NIST-standardised schemes) — one OID per parameter set.
+- `core/src/main/java/org/bouncycastle/asn1/bc/BCObjectIdentifiers.java` (or `NISTObjectIdentifiers.java` for NIST-standardised schemes) — one OID per parameter set. **Grep the existing `bc_sig.branch(...)` / `bc_kem.branch(...)` arcs before picking a number.** A collision with another algorithm's parent arc is silent at compile time and only fires when `BouncyCastlePQCProvider.<init>` runs the second `Mappings.configure`, where it throws `IllegalStateException: duplicate provider key (Alg.Alias.KeyFactory.<oid>)` — diagnosable but not until provider load.
 - `core/src/main/java/org/bouncycastle/pqc/crypto/<alg>/` — lightweight classes: `*Parameters`, `*PublicKeyParameters`, `*PrivateKeyParameters`, `*KeyGenerationParameters`, `*KeyPairGenerator`, `*Signer` (or KEM equivalents).
 - `core/src/main/java/org/bouncycastle/pqc/crypto/util/Utils.java` — `<alg>Oids` / `<alg>Params` maps plus `<alg>OidLookup` / `<alg>ParamsLookup` helpers.
 - `core/src/main/java/org/bouncycastle/pqc/crypto/util/PublicKeyFactory.java` — `<Alg>Converter` inner class + one `converters.put(oid, new <Alg>Converter())` per OID.
@@ -137,6 +137,19 @@ Practical checklist when porting a new PQC algorithm — easy to leave any of th
 - `prov/src/main/jdk1.9/module-info.java` — `opens org.bouncycastle.pqc.jcajce.provider.<alg> to java.base;` plus `exports org.bouncycastle.pqc.crypto.<alg>;` plus `exports org.bouncycastle.pqc.jcajce.provider.<alg>;`. Mirror `pqc.crypto.<alg>` into `prov/src/main/ext-jdk1.9/module-info.java` (the legacy distribution does not export the JCE-side `provider.<alg>` packages).
 - Tests in `prov/src/test/java/org/bouncycastle/pqc/jcajce/provider/test/<Alg>Test.java` plus an entry in `AllTests.java`. Include a `testBcProviderKeyInfoConverter`-style case that exercises `BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo)` and `getPrivateKey(PrivateKeyInfo)` against every parameter set, proving the `loadPQCKeys()` registration works.
 - `docs/releasenotes.html` — one `<li>` under the current unreleased version's "Additional Features and Functionality" block.
+
+### PQC engines should stay package-private — drive KATs through the public API
+
+The lightweight `<Alg>Engine` produced when porting a reference C/Rust implementation tends to expose low-level entry points (`engine.keyGen(seedKey, sk, pk)`, `engine.sign(sk, msg, salt, mseed)`) that KAT vectors need but legitimate callers never touch. Resist the urge to make `<Alg>Engine` public just so `<Alg>KatTest` can poke at internals — that leaks the engine into the published `bcprov` API surface where it becomes load-bearing, and any future internal refactor has to preserve the engine signature too.
+
+The standard pattern is to keep the engine package-private and drive `<Alg>KeyPairGenerator` / `<Alg>Signer` with a deterministic `SecureRandom` that emits exactly the bytes the KAT prescribes:
+
+- `org.bouncycastle.util.test.FixedSecureRandom(bytes)` — emits a pre-baked byte sequence, single-shot (reconstruct it for each call site that needs the same seed). Use when the test wants a specific seed.
+- `org.bouncycastle.pqc.crypto.test.NISTSecureRandom(seed, personalization)` — the NIST CTR-DRBG upstream KAT generators use to derive per-vector randomness from a 48-byte seed. The same DRBG instance can be reused across keygen + sign because the public-API call sites consume from it in the same order the reference C harness did.
+
+Concrete: `MQOMKeyPairGenerator.generateKeyPair` reads `2 * seedSize` bytes via `random.nextBytes`; `MQOMSigner.generateSignature` then reads `mseed` (`seedSize`) followed by `salt` (`saltSize`). A single `NISTSecureRandom drbg = new NISTSecureRandom(seed, null)` shared between both calls reproduces the upstream KAT byte-for-byte without any engine reference. `UOVKeyPairGenerator` and `HawkKeyPairGenerator` follow the same shape (32-byte `SK_SEED_BYTES` for UOV, `SALT_BYTES` from `<Alg>Parameters` etc.). The rewritten `MQOMTest` / `MQOMKatTest` / `UOVTest` and the already-conforming `HawkTest` are the worked examples.
+
+If you find yourself unable to demote `<Alg>Engine` to package-private without breaking tests, that is the symptom — rewrite the tests against the public `<Alg>KeyPairGenerator` / `<Alg>Signer` with `FixedSecureRandom` / `NISTSecureRandom` first, then demote.
 
 ### Package layering: `.bc` (lightweight) vs `.jcajce` (JCA/JCE)
 
