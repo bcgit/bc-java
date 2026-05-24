@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.crypto.hawk;
 
-public class Fxc
+class Fxc
 {
-    public long re;  // Real part (fixed-point representation)
-    public long im;  // Imaginary part (fixed-point representation)
+    long re;  // Real part (fixed-point representation)
+    long im;  // Imaginary part (fixed-point representation)
 
     // Default constructor
     public Fxc()

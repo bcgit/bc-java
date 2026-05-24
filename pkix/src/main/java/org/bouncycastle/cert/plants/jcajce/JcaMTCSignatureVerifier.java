@@ -5,6 +5,7 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Signature;
 
+import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -72,25 +73,25 @@ public class JcaMTCSignatureVerifier
     }
 
     /**
-     * Maps a the draft algorithm identifier to the JCA Signature algorithm name.
+     * Maps a draft algorithm identifier to the JCA Signature algorithm name.
      */
     static String jcaAlgorithm(String mtcAlgorithm)
     {
-        if ("ECDSA-P256-SHA256".equals(mtcAlgorithm))
+        if (MTCSignatureAlgorithm.ECDSA_P256_SHA256.equals(mtcAlgorithm))
         {
             return "SHA256WITHPLAIN-ECDSA";
         }
-        if ("ECDSA-P384-SHA384".equals(mtcAlgorithm))
+        if (MTCSignatureAlgorithm.ECDSA_P384_SHA384.equals(mtcAlgorithm))
         {
             return "SHA384WITHPLAIN-ECDSA";
         }
-        if ("Ed25519".equals(mtcAlgorithm))
+        if (MTCSignatureAlgorithm.ED25519.equals(mtcAlgorithm))
         {
             return "Ed25519";
         }
-        if ("ML-DSA-44".equals(mtcAlgorithm)
-            || "ML-DSA-65".equals(mtcAlgorithm)
-            || "ML-DSA-87".equals(mtcAlgorithm))
+        if (MTCSignatureAlgorithm.ML_DSA_44.equals(mtcAlgorithm)
+            || MTCSignatureAlgorithm.ML_DSA_65.equals(mtcAlgorithm)
+            || MTCSignatureAlgorithm.ML_DSA_87.equals(mtcAlgorithm))
         {
             return mtcAlgorithm;
         }

@@ -28,7 +28,10 @@ import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.MTCCertificationAuthority;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.TBSCertificateLogEntry;
@@ -730,6 +733,278 @@ public class MerkleTreeCertificatesTest
             !Arrays.equals(hashDefault, hashWithExt));
     }
 
+    /**
+     * Section 5.2.1 MerkleTreeCertEntryType enum: {@code null_entry(0)} and
+     * {@code tbs_cert_entry(1)}. Lock the values so computeEntryHash's wire
+     * output stays in sync with the spec.
+     */
+    public void testMerkleTreeCertEntryTypeConstants()
+        throws Exception
+    {
+        isTrue("null_entry constant",
+            org.bouncycastle.cert.plants.MerkleTreeCertEntryType.NULL_ENTRY == 0);
+        isTrue("tbs_cert_entry constant",
+            org.bouncycastle.cert.plants.MerkleTreeCertEntryType.TBS_CERT_ENTRY == 1);
+    }
+
+    /**
+     * Section 7.1: "The log hash algorithm is determined from the
+     * id-pe-mtcCertificationAuthority extension." When {@code authorityInfo}
+     * is supplied, the validator must reject a {@link MerkleTreeHash} whose
+     * {@link MerkleTreeHash#getAlgorithmIdentifier() algorithm} doesn't match
+     * the CA's published {@code logHash}.
+     */
+    public void testValidatorEnforcesLogHash()
+        throws Exception
+    {
+        // Build a minimal valid Merkle Tree cert + provider, then run two
+        // validations differing only in whether the CA's logHash matches.
+        final long logNumber = 1;
+        final long index = 42;
+        final long serial = (logNumber << 48) | index;
+
+        TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+        TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial, sigAlg, spki);
+        X509CertificateHolder dummyHolder = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(new byte[0])}).getEncoded());
+        byte[] entryHash = MerkleTreeCertificateValidator.computeEntryHash(dummyHolder, hashFunc);
+        byte[] siblingHash = hashFunc.hashLeaf("leaf43".getBytes());
+        byte[] subtreeHash = hashFunc.hashNode(entryHash, siblingHash);
+
+        byte[] cosignedLogId = binaryLogId(LOG_TAID_STRING, logNumber);
+        byte[] cosignerId = binaryTrustAnchorID("32473.4");
+        byte[] signedData = buildSignatureInput(cosignedLogId, 42, 44, subtreeHash, cosignerId);
+        Ed25519Signer signer = new Ed25519Signer();
+        signer.init(true, ed25519KeyPair.getPrivate());
+        signer.update(signedData, 0, signedData.length);
+        byte[] signature = signer.generateSignature();
+        List<MTCSignature> sigs = Collections.singletonList(new MTCSignature(cosignerId, signature));
+        org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
+            42L, 44L, siblingHash, sigs);
+        DERBitString signatureValue = new DERBitString(proof.encode());
+        final X509CertificateHolder cert = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, signatureValue}).getEncoded());
+
+        BcMTCCosignerVerifierProvider cosigners = new BcMTCCosignerVerifierProvider.Builder()
+            .addCosigner(cosignerId, ed25519KeyPair.getPublic())
+            .build();
+
+        // Matching authority info: sha256 logHash, supplied hashFunction is also SHA-256.
+        MTCCertificationAuthority matchingAuthority = new MTCCertificationAuthority(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+            new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
+            BigInteger.ZERO);
+        MerkleTreeCertificateValidator.ValidationParams matching =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                new HashSet<Long>(),
+                1,
+                hashFunc,
+                matchingAuthority);
+        isTrue("matching logHash accepted",
+            MerkleTreeCertificateValidator.validateCertificate(cert, matching));
+
+        // Mismatching authority info: sha384 logHash but the test runs SHA-256.
+        final MTCCertificationAuthority mismatching = new MTCCertificationAuthority(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384),
+            new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
+            BigInteger.ZERO);
+        final MerkleTreeCertificateValidator.ValidationParams strict =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                new HashSet<Long>(),
+                1,
+                hashFunc,
+                mismatching);
+        testException("does not match CA logHash", "SecurityException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(cert, strict);
+            }
+        });
+    }
+
+    /**
+     * Section 5.5: {@code minSerial} sets a lower bound the CA undertakes not to
+     * have issued below. The validator rejects any cert whose serial is below
+     * {@code authorityInfo.getMinSerial()} when the authority info is supplied.
+     */
+    public void testValidatorEnforcesMinSerial()
+        throws Exception
+    {
+        // Build a Merkle Tree cert with serial = (logNumber=1, index=10) = 0x0001_0000000000_0A.
+        final long logNumber = 1;
+        final long index = 10;
+        final BigInteger serial = BigInteger.valueOf((logNumber << 48) | index);
+
+        TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+        TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial.longValueExact(), sigAlg, spki);
+
+        // The MTCProof has [10, 11) — a single-leaf subtree, so no inclusion siblings.
+        org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
+            10L, 11L, new byte[0], Collections.<MTCSignature>emptyList());
+        DERBitString signatureValue = new DERBitString(proof.encode());
+        final X509CertificateHolder cert = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, signatureValue}).getEncoded());
+
+        BcMTCCosignerVerifierProvider cosigners = new BcMTCCosignerVerifierProvider.Builder().build();
+
+        // minSerial above the cert's serial — must be rejected.
+        final MTCCertificationAuthority strictMinSerial = new MTCCertificationAuthority(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+            new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
+            serial.add(BigInteger.ONE));
+        final MerkleTreeCertificateValidator.ValidationParams tooHigh =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                new HashSet<Long>(),
+                0,
+                hashFunc,
+                strictMinSerial);
+        testException("below CA minSerial", "SecurityException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(cert, tooHigh);
+            }
+        });
+
+        // minSerial equal to the cert's serial — accepted (boundary).
+        // (Validation will then fail on the cosignature requirement, but only
+        // after the minSerial check; testing the minSerial gate in isolation
+        // here would require a passing-everything-else cert, which the previous
+        // logHash test already covers. Instead, check minSerial=0 with the
+        // same throw-it-away cosignature policy: 0 cosignatures required and
+        // the subtree is single-leaf so the inclusion-proof step succeeds.)
+        MTCCertificationAuthority openMinSerial = new MTCCertificationAuthority(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+            new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
+            BigInteger.ZERO);
+        MerkleTreeCertificateValidator.ValidationParams permissive =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                new HashSet<Long>(),
+                0,
+                hashFunc,
+                openMinSerial);
+        isTrue("minSerial = 0 admits any positive serial",
+            MerkleTreeCertificateValidator.validateCertificate(cert, permissive));
+    }
+
+    /**
+     * MTCSignatureAlgorithm constants must match the on-wire algorithm
+     * identifiers in Section 5.3.2. A typo here silently breaks cosignature
+     * dispatch in both Bc and Jca verifiers.
+     */
+    public void testSignatureAlgorithmConstants()
+        throws Exception
+    {
+        isTrue("ECDSA-P256-SHA256",
+            "ECDSA-P256-SHA256".equals(
+                org.bouncycastle.cert.plants.MTCSignatureAlgorithm.ECDSA_P256_SHA256));
+        isTrue("ECDSA-P384-SHA384",
+            "ECDSA-P384-SHA384".equals(
+                org.bouncycastle.cert.plants.MTCSignatureAlgorithm.ECDSA_P384_SHA384));
+        isTrue("Ed25519",
+            "Ed25519".equals(org.bouncycastle.cert.plants.MTCSignatureAlgorithm.ED25519));
+        isTrue("ML-DSA-44",
+            "ML-DSA-44".equals(org.bouncycastle.cert.plants.MTCSignatureAlgorithm.ML_DSA_44));
+        isTrue("ML-DSA-65",
+            "ML-DSA-65".equals(org.bouncycastle.cert.plants.MTCSignatureAlgorithm.ML_DSA_65));
+        isTrue("ML-DSA-87",
+            "ML-DSA-87".equals(org.bouncycastle.cert.plants.MTCSignatureAlgorithm.ML_DSA_87));
+    }
+
+    /**
+     * MerkleTreeCertEntry should round-trip through encode/parse, and the
+     * tbs_cert_entry body must decode into the same TBSCertificateLogEntry the
+     * encoder started from.
+     */
+    public void testMerkleTreeCertEntryRoundTrip()
+        throws Exception
+    {
+        TBSCertificateLogEntry original = createDummyTBSCertificateLogEntry();
+
+        // tbs_cert_entry_data = DER body of the TBSCertificateLogEntry (no SEQUENCE wrapper).
+        byte[] tbsDer = original.getEncoded(ASN1Encoding.DER);
+        // Skip the leading SEQUENCE tag + length (DER tag 0x30 then minimum-length octets).
+        int contentOff;
+        int lenByte = tbsDer[1] & 0xFF;
+        if ((lenByte & 0x80) == 0)
+        {
+            contentOff = 2;
+        }
+        else
+        {
+            contentOff = 2 + (lenByte & 0x7F);
+        }
+        byte[] tbsBody = new byte[tbsDer.length - contentOff];
+        System.arraycopy(tbsDer, contentOff, tbsBody, 0, tbsBody.length);
+
+        // Empty extensions, type = tbs_cert_entry.
+        org.bouncycastle.cert.plants.MerkleTreeCertEntry entry =
+            new org.bouncycastle.cert.plants.MerkleTreeCertEntry(
+                Collections.<MerkleTreeCertEntryExtension>emptyList(),
+                org.bouncycastle.cert.plants.MerkleTreeCertEntryType.TBS_CERT_ENTRY,
+                tbsBody);
+
+        byte[] encoded = entry.encode();
+        // Leading bytes: 0x00 0x00 (empty extensions length) || 0x00 0x01 (type=tbs_cert_entry).
+        isTrue("entry encoding starts with empty extensions + tbs_cert_entry type",
+            encoded[0] == 0 && encoded[1] == 0 && encoded[2] == 0 && encoded[3] == 1);
+
+        org.bouncycastle.cert.plants.MerkleTreeCertEntry parsed =
+            new org.bouncycastle.cert.plants.MerkleTreeCertEntry(encoded);
+        isTrue("type round-trips",
+            parsed.getType() == org.bouncycastle.cert.plants.MerkleTreeCertEntryType.TBS_CERT_ENTRY);
+        isTrue("extensions round-trip empty", parsed.getExtensions().isEmpty());
+        isTrue("body round-trips", Arrays.equals(tbsBody, parsed.getBody()));
+
+        // getTbsCertEntry() reattaches the SEQUENCE wrapper and decodes successfully.
+        TBSCertificateLogEntry decoded = parsed.getTbsCertEntry();
+        isTrue("TBSCertificateLogEntry round-trips through SEQUENCE wrapping",
+            Arrays.equals(original.getEncoded(ASN1Encoding.DER), decoded.getEncoded(ASN1Encoding.DER)));
+    }
+
+    /**
+     * The streaming {@code writeEntryHashInput} helper must produce the exact
+     * byte sequence that {@code computeEntryHash} hashes — otherwise the
+     * single-pass option in Section 7.2 would diverge from the buffered path.
+     */
+    public void testWriteEntryHashInputMatchesComputeEntryHash()
+        throws Exception
+    {
+        TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
+            ecdsaKeyPair.getPublic());
+        X509CertificateHolder cert = org.bouncycastle.cert.plants.LandmarkCertificateManager.buildLandmarkCertificate(
+            0, tbsEntry, spki,
+            new MerkleTreePrimitives.SubtreeInfo(0, 1),
+            Collections.<byte[]>emptyList(),
+            hashFunc);
+
+        byte[] extensionsWire = new byte[]{0, 0};
+        ByteArrayOutputStream streamed = new ByteArrayOutputStream();
+        MerkleTreeCertificateValidator.writeEntryHashInput(cert, extensionsWire, hashFunc, streamed);
+        byte[] streamedHash = hashFunc.hashLeaf(streamed.toByteArray());
+
+        byte[] bufferedHash = MerkleTreeCertificateValidator.computeEntryHash(
+            cert, extensionsWire, hashFunc);
+        isTrue("streamed entry-hash input matches buffered computeEntryHash output",
+            Arrays.equals(bufferedHash, streamedHash));
+    }
+
     // ----- Helpers ----------------------------------------------------------
 
     /**
@@ -930,6 +1205,12 @@ public class MerkleTreeCertificatesTest
         testMTCProofExtensionsEncoding();
         testMTCProofExtensionsOrdering();
         testEntryHashHonoursExtensionsWire();
+        testMerkleTreeCertEntryTypeConstants();
+        testValidatorEnforcesLogHash();
+        testValidatorEnforcesMinSerial();
+        testSignatureAlgorithmConstants();
+        testMerkleTreeCertEntryRoundTrip();
+        testWriteEntryHashInputMatchesComputeEntryHash();
     }
 
     public static void main(String[] args)

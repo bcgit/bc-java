@@ -4,12 +4,15 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.mqom.MQOMEngine;
 import org.bouncycastle.pqc.crypto.mqom.MQOMKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mqom.MQOMKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mqom.MQOMSigner;
+import org.bouncycastle.util.test.FixedSecureRandom;
 
 public class MQOMTest
     extends TestCase
@@ -30,20 +33,24 @@ public class MQOMTest
 
     public void testKeyGenDeterministic()
     {
-        byte[] seedKey = new byte[32];
-        for (int i = 0; i < 32; i++)
+        MQOMParameters params = MQOMParameters.mqom2_cat1_gf256_fast_r3;
+
+        // MQOMKeyPairGenerator draws 2*seedSize bytes from its SecureRandom.
+        // Feeding the same bytes through two FixedSecureRandoms must produce
+        // identical key pairs.
+        byte[] seedKey = new byte[2 * params.getSeedSize()];
+        for (int i = 0; i < seedKey.length; i++)
         {
             seedKey[i] = (byte)i;
         }
 
-        MQOMEngine engine = MQOMEngine.getInstance(MQOMParameters.mqom2_cat1_gf256_fast_r3);
-        byte[] pk1 = new byte[80];
-        byte[] sk1 = new byte[128];
-        engine.keyGen(seedKey, sk1, pk1);
+        AsymmetricCipherKeyPair kp1 = generateKeyPair(params, new FixedSecureRandom(seedKey));
+        AsymmetricCipherKeyPair kp2 = generateKeyPair(params, new FixedSecureRandom(seedKey));
 
-        byte[] pk2 = new byte[80];
-        byte[] sk2 = new byte[128];
-        engine.keyGen(seedKey, sk2, pk2);
+        byte[] pk1 = ((MQOMPublicKeyParameters)kp1.getPublic()).getEncoded();
+        byte[] sk1 = ((MQOMPrivateKeyParameters)kp1.getPrivate()).getEncoded();
+        byte[] pk2 = ((MQOMPublicKeyParameters)kp2.getPublic()).getEncoded();
+        byte[] sk2 = ((MQOMPrivateKeyParameters)kp2.getPrivate()).getEncoded();
 
         for (int i = 0; i < pk1.length; i++)
         {
@@ -53,6 +60,9 @@ public class MQOMTest
         {
             assertEquals("sk byte " + i, sk1[i], sk2[i]);
         }
+        // MQOM's secret-key layout starts with the same pk_seed-derived bytes
+        // as the public key; this invariant is what the byte-by-byte check
+        // below records.
         for (int i = 0; i < pk1.length; i++)
         {
             assertEquals("sk[i] vs pk[i] " + i, pk1[i], sk1[i]);
@@ -126,38 +136,64 @@ public class MQOMTest
 
     public void testSignVerifyDeterministicSign()
     {
-        MQOMParameters parameters = MQOMParameters.mqom2_cat1_gf256_fast_r3;
-        MQOMEngine engine = MQOMEngine.getInstance(parameters);
+        MQOMParameters params = MQOMParameters.mqom2_cat1_gf256_fast_r3;
 
-        byte[] seedKey = new byte[32];
-        for (int i = 0; i < 32; i++)
+        byte[] seedKey = new byte[2 * params.getSeedSize()];
+        for (int i = 0; i < seedKey.length; i++)
         {
             seedKey[i] = (byte)(i + 1);
         }
-        byte[] pk = new byte[parameters.getPublicKeySize()];
-        byte[] sk = new byte[parameters.getPrivateKeySize()];
-        engine.keyGen(seedKey, sk, pk);
+        AsymmetricCipherKeyPair kp = generateKeyPair(params, new FixedSecureRandom(seedKey));
 
-        byte[] mseed = new byte[parameters.getSeedSize()];
-        byte[] salt = new byte[parameters.getSaltSize()];
+        // MQOMSigner draws first mseed (seedSize bytes) then salt (saltSize)
+        // from the SecureRandom. Concatenating mseed || salt into a
+        // FixedSecureRandom reproduces the engine's deterministic signing.
+        byte[] mseed = new byte[params.getSeedSize()];
         for (int i = 0; i < mseed.length; i++)
         {
             mseed[i] = (byte)(0xA0 + i);
         }
+        byte[] salt = new byte[params.getSaltSize()];
         for (int i = 0; i < salt.length; i++)
         {
             salt[i] = (byte)(0x50 + i);
         }
+        byte[] mseedAndSalt = concat(mseed, salt);
 
         byte[] msg = new byte[]{ 0x01, 0x02, 0x03, 0x04 };
-        byte[] sig = engine.sign(sk, msg, salt, mseed);
 
-        assertTrue("verify should succeed", engine.verify(pk, msg, sig));
+        byte[] sig = sign(kp.getPrivate(), msg, new FixedSecureRandom(mseedAndSalt));
+        byte[] sig2 = sign(kp.getPrivate(), msg, new FixedSecureRandom(mseedAndSalt));
 
-        byte[] sig2 = engine.sign(sk, msg, salt, mseed);
         for (int i = 0; i < sig.length; i++)
         {
             assertEquals("deterministic sig byte " + i, sig[i], sig2[i]);
         }
+
+        MQOMSigner verifier = new MQOMSigner();
+        verifier.init(false, kp.getPublic());
+        assertTrue("verify should succeed", verifier.verifySignature(msg, sig));
+    }
+
+    private static AsymmetricCipherKeyPair generateKeyPair(MQOMParameters params, SecureRandom random)
+    {
+        MQOMKeyPairGenerator kpg = new MQOMKeyPairGenerator();
+        kpg.init(new MQOMKeyGenerationParameters(random, params));
+        return kpg.generateKeyPair();
+    }
+
+    private static byte[] sign(CipherParameters privKey, byte[] msg, SecureRandom random)
+    {
+        MQOMSigner signer = new MQOMSigner();
+        signer.init(true, new ParametersWithRandom(privKey, random));
+        return signer.generateSignature(msg);
+    }
+
+    private static byte[] concat(byte[] a, byte[] b)
+    {
+        byte[] out = new byte[a.length + b.length];
+        System.arraycopy(a, 0, out, 0, a.length);
+        System.arraycopy(b, 0, out, a.length, b.length);
+        return out;
     }
 }

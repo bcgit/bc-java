@@ -26,7 +26,7 @@ import org.bouncycastle.util.Pack;
  * (V×O matrix, column-major) || P1 (same bytes as in pk) || S (= F2, the
  * linear-system matrix used during signing).
  */
-public class UOVEngine
+final class UOVEngine
 {
     private final UOVParameters params;
     private final boolean gf16;
