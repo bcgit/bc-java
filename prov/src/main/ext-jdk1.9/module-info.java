@@ -130,6 +130,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.legacy.sphincsplus;
     exports org.bouncycastle.pqc.crypto.snova;
     exports org.bouncycastle.pqc.crypto.faest;
+    exports org.bouncycastle.pqc.crypto.hawk;
     exports org.bouncycastle.pqc.crypto.mqom;
     exports org.bouncycastle.pqc.crypto.uov;
     exports org.bouncycastle.pqc.crypto.util;
