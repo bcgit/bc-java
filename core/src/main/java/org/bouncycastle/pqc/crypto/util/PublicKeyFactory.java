@@ -38,6 +38,8 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.hawk.HawkParameters;
+import org.bouncycastle.pqc.crypto.hawk.HawkPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
@@ -311,6 +313,13 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaConverter());
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaConverter());
 
+        converters.put(BCObjectIdentifiers.ntruplus768, new NTRUPlusConverter());
+        converters.put(BCObjectIdentifiers.ntruplus864, new NTRUPlusConverter());
+        converters.put(BCObjectIdentifiers.ntruplus1152, new NTRUPlusConverter());
+
+        converters.put(BCObjectIdentifiers.hawk256, new HawkConverter());
+        converters.put(BCObjectIdentifiers.hawk512, new HawkConverter());
+        converters.put(BCObjectIdentifiers.hawk1024, new HawkConverter());
         converters.put(BCObjectIdentifiers.ntruplus768, new NTRUPlusConverter());
         converters.put(BCObjectIdentifiers.ntruplus864, new NTRUPlusConverter());
         converters.put(BCObjectIdentifiers.ntruplus1152, new NTRUPlusConverter());
@@ -994,6 +1003,20 @@ public class PublicKeyFactory
             NTRUPlusParameters ntruPlusParams = Utils.ntruPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new NTRUPlusPublicKeyParameters(ntruPlusParams, keyEnc);
+        }
+    }
+
+    private static class HawkConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            HawkParameters hawkParams = Utils.hawkParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new HawkPublicKeyParameters(hawkParams, keyEnc, 0, keyEnc.length);
         }
     }
 

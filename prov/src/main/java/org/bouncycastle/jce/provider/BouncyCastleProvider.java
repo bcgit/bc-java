@@ -33,6 +33,7 @@ import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.faest.FaestKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.hawk.HawkKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
@@ -562,6 +563,10 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_fast_r5,   new MQOMKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_short_r3,  new MQOMKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_short_r5,  new MQOMKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.hawk256,  new HawkKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.hawk512,  new HawkKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.hawk1024, new HawkKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)
