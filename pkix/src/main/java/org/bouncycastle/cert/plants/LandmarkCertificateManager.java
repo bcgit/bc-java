@@ -269,7 +269,8 @@ public class LandmarkCertificateManager
                 byte[] cosignedMessage = MTCCosignedMessage.encode(
                     logId, 0L, checkpoint.treeSize, checkpoint.rootHash, cosignerId);
 
-                if (verifier.verify(cosignedMessage, sig.getSignature()))
+                verifier.getOutputStream().write(cosignedMessage);
+                if (verifier.verify(sig.getSignature()))
                 {
                     valid++;
                 }

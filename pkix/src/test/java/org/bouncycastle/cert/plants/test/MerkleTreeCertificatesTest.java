@@ -16,6 +16,7 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1RelativeOID;
@@ -23,13 +24,12 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.MTCCertificationAuthority;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -59,6 +59,7 @@ import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -269,10 +270,10 @@ public class MerkleTreeCertificatesTest
         BcMTCSignatureVerifier ecdsaVerifier = new BcMTCSignatureVerifier(
             ecdsaKeyPair.getPublic(), "ECDSA-P256-SHA256");
 
-        isTrue("ECDSA cosignature verifies", ecdsaVerifier.verify(cosignedMessage, signature));
+        isTrue("ECDSA cosignature verifies", verifyMessage(ecdsaVerifier, cosignedMessage, signature));
 
         signature[0] ^= 0x01;
-        isTrue("Tampered ECDSA signature rejected", !ecdsaVerifier.verify(cosignedMessage, signature));
+        isTrue("Tampered ECDSA signature rejected", !verifyMessage(ecdsaVerifier, cosignedMessage, signature));
     }
 
     public void testCosignatureVerificationEd25519()
@@ -294,10 +295,10 @@ public class MerkleTreeCertificatesTest
         BcMTCSignatureVerifier ed25519Verifier = new BcMTCSignatureVerifier(
             ed25519KeyPair.getPublic(), "Ed25519");
 
-        isTrue("Ed25519 cosignature verifies", ed25519Verifier.verify(cosignedMessage, signature));
+        isTrue("Ed25519 cosignature verifies", verifyMessage(ed25519Verifier, cosignedMessage, signature));
 
         signature[0] ^= 0x01;
-        isTrue("Tampered Ed25519 signature rejected", !ed25519Verifier.verify(cosignedMessage, signature));
+        isTrue("Tampered Ed25519 signature rejected", !verifyMessage(ed25519Verifier, cosignedMessage, signature));
     }
 
     public void testStandaloneCertificateValidation()
@@ -1211,6 +1212,13 @@ public class MerkleTreeCertificatesTest
         testSignatureAlgorithmConstants();
         testMerkleTreeCertEntryRoundTrip();
         testWriteEntryHashInputMatchesComputeEntryHash();
+    }
+
+    private static boolean verifyMessage(ContentVerifier v, byte[] message, byte[] signature)
+        throws IOException
+    {
+        v.getOutputStream().write(message);
+        return v.verify(signature);
     }
 
     public static void main(String[] args)

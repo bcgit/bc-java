@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -106,6 +107,31 @@ public class TBSCertificateLogEntry
                 throw new IllegalArgumentException("Unknown tag in TBSCertificateLogEntry: " + tagged.getTagNo());
             }
         }
+    }
+
+    /**
+     * Convenience constructor that mirrors the per-entry fields of an existing
+     * {@link TBSCertificate}, substituting the SubjectPublicKeyInfo with the
+     * supplied hash. Version, issuer, validity, subject, the public-key
+     * algorithm, unique IDs and extensions are copied from {@code tbsCert};
+     * the serial number and outer signature algorithm carried by the
+     * TBSCertificate are intentionally not represented here.
+     *
+     * @param tbsCert TBSCertificate to copy the shared fields from.
+     * @param subjectPublicKeyInfoHash hash of the encoded SubjectPublicKeyInfo.
+     */
+    public TBSCertificateLogEntry(TBSCertificate tbsCert, byte[] subjectPublicKeyInfoHash)
+    {
+        this(
+            tbsCert.getVersion(),
+            tbsCert.getIssuer(),
+            tbsCert.getValidity(),
+            tbsCert.getSubject(),
+            tbsCert.getSubjectPublicKeyInfo().getAlgorithm(),
+            new DEROctetString(subjectPublicKeyInfoHash),
+            tbsCert.getIssuerUniqueId(),
+            tbsCert.getSubjectUniqueId(),
+            tbsCert.getExtensions());
     }
 
     public TBSCertificateLogEntry(

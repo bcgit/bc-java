@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -56,6 +57,27 @@ public class MTCProof
     public MTCProof(long start, long end, byte[] inclusionProof, List<MTCSignature> signatures)
     {
         this(Collections.<MerkleTreeCertEntryExtension>emptyList(), start, end, inclusionProof, signatures);
+    }
+
+    /**
+     * Varargs convenience for the common case of constructing an MTCProof from
+     * a small fixed set of cosigner signatures (typically just one). Equivalent
+     * to {@link #MTCProof(long, long, byte[], List)} with the signatures wrapped
+     * in a list; the same ordering rules in Section 6.1 apply.
+     */
+    public MTCProof(long start, long end, byte[] inclusionProof, MTCSignature... signatures)
+    {
+        this(start, end, inclusionProof, Arrays.asList(signatures));
+    }
+
+    /**
+     * Convenience overload taking an {@link MTCLog} — equivalent to
+     * {@link #MTCProof(long, long, byte[], MTCSignature...)} with
+     * {@code start = log.getStart()} and {@code end = log.getEnd()}.
+     */
+    public MTCProof(MTCLog log, byte[] inclusionProof, MTCSignature... signatures)
+    {
+        this(log.getStart(), log.getEnd(), inclusionProof, signatures);
     }
 
     /**

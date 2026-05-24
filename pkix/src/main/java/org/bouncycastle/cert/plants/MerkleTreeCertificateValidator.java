@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -24,6 +25,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.MTCCertificationAuthority;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Arrays;
 
@@ -83,6 +85,24 @@ public class MerkleTreeCertificateValidator
         {
             this(cosignerVerifierProvider, trustedSubtrees, revokedIndices,
                 minCosignatures, hashFunction, null);
+        }
+
+        /**
+         * Convenience constructor for the common case where the relying party
+         * has no pre-distributed trusted subtrees and no revocations to apply.
+         * Defaults {@code trustedSubtrees} to an empty list and
+         * {@code revokedIndices} to an empty set.
+         */
+        public ValidationParams(
+            MTCCosignerVerifierProvider cosignerVerifierProvider,
+            int minCosignatures,
+            MerkleTreeHash hashFunction,
+            MTCCertificationAuthority authorityInfo)
+        {
+            this(cosignerVerifierProvider,
+                Collections.<TrustedSubtree>emptyList(),
+                Collections.<Long>emptySet(),
+                minCosignatures, hashFunction, authorityInfo);
         }
 
         public ValidationParams(
@@ -304,7 +324,8 @@ public class MerkleTreeCertificateValidator
             byte[] cosignedMessage = MTCCosignedMessage.encode(
                 logId, proof.getStart(), proof.getEnd(), expectedSubtreeHash, cosignerId);
 
-            if (verifier.verify(cosignedMessage, sig.getSignature()))
+            verifier.getOutputStream().write(cosignedMessage);
+            if (verifier.verify(sig.getSignature()))
             {
                 validCount++;
             }
@@ -332,6 +353,52 @@ public class MerkleTreeCertificateValidator
         throws IOException
     {
         return computeEntryHash(certHolder, EMPTY_EXTENSIONS_WIRE, hashFunc);
+    }
+
+    /**
+     * Convenience overload of
+     * {@link #computeEntryHash(TBSCertificate, byte[], MerkleTreeHash)} with an
+     * empty extensions list. Useful when the caller has a {@link TBSCertificate}
+     * in hand (for instance during issuance, before the signature is computed)
+     * and doesn't want to build a placeholder {@link X509CertificateHolder}
+     * solely to satisfy the holder-based overload.
+     */
+    public static byte[] computeEntryHash(
+        TBSCertificate tbsCert,
+        MerkleTreeHash hashFunc)
+        throws IOException
+    {
+        return computeEntryHash(tbsCert, EMPTY_EXTENSIONS_WIRE, hashFunc);
+    }
+
+    /**
+     * Convenience overload of
+     * {@link #computeEntryHash(byte[], byte[], MerkleTreeHash)} with an empty
+     * extensions list. Use this when the DER encoding of the TBSCertificate is
+     * already in hand (e.g. captured from a streaming
+     * {@link org.bouncycastle.operator.ContentSigner}) to avoid the parse +
+     * re-encode round trip via {@link TBSCertificate}.
+     */
+    public static byte[] computeEntryHash(
+        byte[] tbsCertDer,
+        MerkleTreeHash hashFunc)
+        throws IOException
+    {
+        return computeEntryHash(tbsCertDer, EMPTY_EXTENSIONS_WIRE, hashFunc);
+    }
+
+    /**
+     * Combined "leaf hash + climb one level" for the simple-case 2-leaf log
+     * where the EE has exactly one sibling leaf. Equivalent to
+     * {@code hashFunc.hashNode(computeEntryHash(tbsCertDer, hashFunc), inclusionProof)}.
+     * The extensions list is empty.
+     */
+    public static byte[] computeSubtreeHash(
+        byte[] tbsCertDer, byte[] inclusionProof, MerkleTreeHash hashFunc)
+        throws IOException
+    {
+        return hashFunc.hashNode(
+            computeEntryHash(tbsCertDer, EMPTY_EXTENSIONS_WIRE, hashFunc), inclusionProof);
     }
 
     /** Wire encoding of an empty {@code MerkleTreeCertEntryExtension extensions<0..2^16-1>} (the uint16 length prefix 0x0000). */
@@ -364,8 +431,39 @@ public class MerkleTreeCertificateValidator
         MerkleTreeHash hashFunc)
         throws IOException
     {
+        return computeEntryHash(certHolder.getTBSCertificate(), extensionsWire, hashFunc);
+    }
+
+    /**
+     * TBSCertificate variant of
+     * {@link #computeEntryHash(X509CertificateHolder, byte[], MerkleTreeHash)}.
+     * The hash depends only on the to-be-signed structure, so callers that
+     * haven't yet wrapped the TBSCertificate in a signed
+     * {@link X509CertificateHolder} can compute the entry hash directly.
+     */
+    public static byte[] computeEntryHash(
+        TBSCertificate tbsCert,
+        byte[] extensionsWire,
+        MerkleTreeHash hashFunc)
+        throws IOException
+    {
+        return computeEntryHash(tbsCert.getEncoded(ASN1Encoding.DER), extensionsWire, hashFunc);
+    }
+
+    /**
+     * Raw-DER variant of
+     * {@link #computeEntryHash(TBSCertificate, byte[], MerkleTreeHash)} — skips
+     * the parse + re-encode round trip when the TBSCertificate is already in
+     * hand as DER bytes.
+     */
+    public static byte[] computeEntryHash(
+        byte[] tbsCertDer,
+        byte[] extensionsWire,
+        MerkleTreeHash hashFunc)
+        throws IOException
+    {
         ByteArrayOutputStream entry = new ByteArrayOutputStream();
-        writeEntryHashInput(certHolder, extensionsWire, hashFunc, entry);
+        writeEntryHashInput(tbsCertDer, extensionsWire, hashFunc, entry);
         // MTH({entry}) = HASH(0x00 || entry).
         return hashFunc.hashLeaf(entry.toByteArray());
     }
@@ -401,8 +499,38 @@ public class MerkleTreeCertificateValidator
         OutputStream out)
         throws IOException
     {
-        byte[] tbsCertBytes = certHolder.getTBSCertificate().getEncoded(ASN1Encoding.DER);
-        ASN1Sequence tbsSeq = ASN1Sequence.getInstance(tbsCertBytes);
+        writeEntryHashInput(certHolder.getTBSCertificate(), extensionsWire, hashFunc, out);
+    }
+
+    /**
+     * TBSCertificate variant of
+     * {@link #writeEntryHashInput(X509CertificateHolder, byte[], MerkleTreeHash, OutputStream)}.
+     */
+    public static void writeEntryHashInput(
+        TBSCertificate tbsCert,
+        byte[] extensionsWire,
+        MerkleTreeHash hashFunc,
+        OutputStream out)
+        throws IOException
+    {
+        writeEntryHashInput(tbsCert.getEncoded(ASN1Encoding.DER), extensionsWire, hashFunc, out);
+    }
+
+    /**
+     * Raw-DER variant of
+     * {@link #writeEntryHashInput(TBSCertificate, byte[], MerkleTreeHash, OutputStream)} —
+     * skips the parse + re-encode round trip when the TBSCertificate is already
+     * in hand as DER bytes (e.g. captured from a streaming
+     * {@link org.bouncycastle.operator.ContentSigner}).
+     */
+    public static void writeEntryHashInput(
+        byte[] tbsCertDer,
+        byte[] extensionsWire,
+        MerkleTreeHash hashFunc,
+        OutputStream out)
+        throws IOException
+    {
+        ASN1Sequence tbsSeq = ASN1Sequence.getInstance(tbsCertDer);
 
         // Step 1 of the single-pass procedure: write the extensions wire bytes
         // (the uint16 length prefix plus each extension's bytes).
