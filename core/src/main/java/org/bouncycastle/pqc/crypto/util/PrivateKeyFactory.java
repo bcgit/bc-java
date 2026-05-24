@@ -45,6 +45,8 @@ import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.hawk.HawkParameters;
+import org.bouncycastle.pqc.crypto.hawk.HawkPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
@@ -511,6 +513,12 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             SnovaParameters snovaParams = Utils.snovaParamsLookup(algOID);
             return new SnovaPrivateKeyParameters(snovaParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.hawk))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            HawkParameters hawkParams = Utils.hawkParamsLookup(algOID);
+            return new HawkPrivateKeyParameters(hawkParams, keyEnc, 0, keyEnc.length);
         }
         else if (Utils.mqomParams.containsKey(algOID))
         {

@@ -16,10 +16,10 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jcajce.provider.asymmetric.util.BasePQCKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 
 public class UOVKeyFactorySpi
-        extends BasePQCKeyFactorySpi
+    extends BaseKeyFactorySpi
 {
     private static final Set<ASN1ObjectIdentifier> keyOids = new HashSet<ASN1ObjectIdentifier>();
 

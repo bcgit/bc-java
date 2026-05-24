@@ -22,7 +22,7 @@ import org.bouncycastle.util.Strings;
  * accepts whatever variant the supplied key carries.
  */
 public class SignatureSpi
-        extends java.security.Signature
+    extends java.security.Signature
 {
     private final ByteArrayOutputStream bOut;
     private final UOVSigner signer;

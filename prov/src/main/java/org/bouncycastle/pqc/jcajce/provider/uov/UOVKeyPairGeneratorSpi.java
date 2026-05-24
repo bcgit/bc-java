@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.jcajce.provider.uov;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -18,7 +17,7 @@ import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Strings;
 
 public class UOVKeyPairGeneratorSpi
-        extends java.security.KeyPairGenerator
+    extends java.security.KeyPairGenerator
 {
     private final UOVParameters lockedParameters;
     private UOVKeyGenerationParameters param;
@@ -100,13 +99,13 @@ public class UOVKeyPairGeneratorSpi
             return ((UOVParameterSpec) paramSpec).getName();
         }
         String byUtil = SpecUtil.getNameFrom(paramSpec);
-        return byUtil == null ? null : Strings.toUpperCase(byUtil);
+        return byUtil == null ? null : Strings.toLowerCase(byUtil);
     }
 
     // -------------- per-parameter-set factory classes --------------------
     public static class Generic extends UOVKeyPairGeneratorSpi
     {
-        public Generic() throws NoSuchAlgorithmException
+        public Generic()
         {
             super("UOV");
         }
@@ -114,7 +113,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class Is extends UOVKeyPairGeneratorSpi
     {
-        public Is() throws NoSuchAlgorithmException
+        public Is()
         {
             super(UOVParameterSpec.uov_Is);
         }
@@ -122,7 +121,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class IsPkc extends UOVKeyPairGeneratorSpi
     {
-        public IsPkc() throws NoSuchAlgorithmException
+        public IsPkc()
         {
             super(UOVParameterSpec.uov_Is_pkc);
         }
@@ -130,7 +129,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class IsPkcSkc extends UOVKeyPairGeneratorSpi
     {
-        public IsPkcSkc() throws NoSuchAlgorithmException
+        public IsPkcSkc()
         {
             super(UOVParameterSpec.uov_Is_pkc_skc);
         }
@@ -138,7 +137,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class Ip extends UOVKeyPairGeneratorSpi
     {
-        public Ip() throws NoSuchAlgorithmException
+        public Ip()
         {
             super(UOVParameterSpec.uov_Ip);
         }
@@ -146,7 +145,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class IpPkc extends UOVKeyPairGeneratorSpi
     {
-        public IpPkc() throws NoSuchAlgorithmException
+        public IpPkc()
         {
             super(UOVParameterSpec.uov_Ip_pkc);
         }
@@ -154,7 +153,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class IpPkcSkc extends UOVKeyPairGeneratorSpi
     {
-        public IpPkcSkc() throws NoSuchAlgorithmException
+        public IpPkcSkc()
         {
             super(UOVParameterSpec.uov_Ip_pkc_skc);
         }
@@ -162,7 +161,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class III extends UOVKeyPairGeneratorSpi
     {
-        public III() throws NoSuchAlgorithmException
+        public III()
         {
             super(UOVParameterSpec.uov_III);
         }
@@ -170,7 +169,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class IIIPkc extends UOVKeyPairGeneratorSpi
     {
-        public IIIPkc() throws NoSuchAlgorithmException
+        public IIIPkc()
         {
             super(UOVParameterSpec.uov_III_pkc);
         }
@@ -178,7 +177,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class IIIPkcSkc extends UOVKeyPairGeneratorSpi
     {
-        public IIIPkcSkc() throws NoSuchAlgorithmException
+        public IIIPkcSkc()
         {
             super(UOVParameterSpec.uov_III_pkc_skc);
         }
@@ -186,7 +185,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class V extends UOVKeyPairGeneratorSpi
     {
-        public V() throws NoSuchAlgorithmException
+        public V()
         {
             super(UOVParameterSpec.uov_V);
         }
@@ -194,7 +193,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class VPkc extends UOVKeyPairGeneratorSpi
     {
-        public VPkc() throws NoSuchAlgorithmException
+        public VPkc()
         {
             super(UOVParameterSpec.uov_V_pkc);
         }
@@ -202,7 +201,7 @@ public class UOVKeyPairGeneratorSpi
 
     public static class VPkcSkc extends UOVKeyPairGeneratorSpi
     {
-        public VPkcSkc() throws NoSuchAlgorithmException
+        public VPkcSkc()
         {
             super(UOVParameterSpec.uov_V_pkc_skc);
         }
