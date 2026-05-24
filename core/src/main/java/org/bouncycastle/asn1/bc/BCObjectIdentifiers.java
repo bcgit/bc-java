@@ -598,7 +598,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mayo2 = mayo_2;
     ASN1ObjectIdentifier mayo3 = mayo_3;
     ASN1ObjectIdentifier mayo5 = mayo_5;
-    
+
     /**
      * cross
      */
@@ -849,7 +849,7 @@ public interface BCObjectIdentifiers
      * Three parameter sets are provided: HAETAE-2 (NIST level 2), HAETAE-3
      * (NIST level 3) and HAETAE-5 (NIST level 5).
      */
-    ASN1ObjectIdentifier haetae = bc_sig.branch("15");
+    ASN1ObjectIdentifier haetae = bc_sig.branch("16");
 
     ASN1ObjectIdentifier haetae2 = haetae.branch("1");
     ASN1ObjectIdentifier haetae3 = haetae.branch("2");
@@ -862,4 +862,13 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier ntruplus768 = pqc_kem_ntruplus.branch("1");
     ASN1ObjectIdentifier ntruplus864 = pqc_kem_ntruplus.branch("2");
     ASN1ObjectIdentifier ntruplus1152 = pqc_kem_ntruplus.branch("3");
+
+    /**
+     * Hawk PQC signature scheme — parent arc and the three parameter-set OIDs
+     * (hawk-256, hawk-512, hawk-1024).
+     */
+    ASN1ObjectIdentifier hawk = bc_sig.branch("15");
+    ASN1ObjectIdentifier hawk256 = hawk.branch("1");
+    ASN1ObjectIdentifier hawk512 = hawk.branch("2");
+    ASN1ObjectIdentifier hawk1024 = hawk.branch("3");
 }
