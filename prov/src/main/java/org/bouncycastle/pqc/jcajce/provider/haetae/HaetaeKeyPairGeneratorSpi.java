@@ -18,6 +18,14 @@ import org.bouncycastle.pqc.crypto.haetae.HAETAEPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.spec.HaetaeParameterSpec;
 import org.bouncycastle.util.Strings;
 
+/**
+ * {@link java.security.KeyPairGenerator} SPI for HAETAE. Construct with the
+ * default constructor and call {@link #initialize(AlgorithmParameterSpec, SecureRandom)}
+ * with a {@link HaetaeParameterSpec} to pick a parameter set; or use one of
+ * the nested {@link HAETAE2} / {@link HAETAE3} / {@link HAETAE5} subclasses
+ * which hard-pin a parameter set so callers can reach a specific variant via
+ * {@code KeyPairGenerator.getInstance(spec.getName(), "BCPQC")}.
+ */
 public class HaetaeKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {

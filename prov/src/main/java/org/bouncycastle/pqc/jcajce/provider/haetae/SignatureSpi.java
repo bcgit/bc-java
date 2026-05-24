@@ -15,6 +15,15 @@ import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAESigner;
 import org.bouncycastle.util.Strings;
 
+/**
+ * {@link java.security.Signature} SPI for HAETAE. The unparameterised
+ * {@link Base} form accepts any {@link BCHaetaePublicKey} /
+ * {@link BCHaetaePrivateKey} and verifies / signs against whatever parameter
+ * set the key carries; the nested {@link HAETAE2} / {@link HAETAE3} /
+ * {@link HAETAE5} subclasses pin the SPI to one parameter set and reject keys
+ * for a different variant with
+ * {@code "signature configured for " + canonicalName}.
+ */
 public class SignatureSpi
     extends java.security.Signature
 {

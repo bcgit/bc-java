@@ -5,6 +5,13 @@ import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.pqc.jcajce.provider.haetae.HaetaeKeyFactorySpi;
 
+/**
+ * BCPQC registration for HAETAE: {@link Mappings#configure} populates the
+ * provider's KeyFactory, KeyPairGenerator and Signature service tables with
+ * the unparameterised {@code "Haetae"} form plus per-parameter-set aliases
+ * ({@code HAETAE-2} / {@code HAETAE-3} / {@code HAETAE-5}) and their OID
+ * aliases.
+ */
 public class Haetae
 {
     private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider.haetae.";

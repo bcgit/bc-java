@@ -14,6 +14,12 @@ import org.bouncycastle.pqc.jcajce.spec.HaetaeParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * JCA public key wrapper for HAETAE. Round-trips through X.509
+ * {@link SubjectPublicKeyInfo} via the lightweight {@code PublicKeyFactory}
+ * (the BC provider's BCPQC key-info-converter chain reaches this class for
+ * every HAETAE OID).
+ */
 public class BCHaetaePublicKey
     implements PublicKey, HaetaeKey
 {
