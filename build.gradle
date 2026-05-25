@@ -284,6 +284,13 @@ configure(subprojects.findAll {it.name != 'bom'}) {
         }
     }
 
+    // Bundle the project LICENSE into META-INF/ of every jar produced.
+    tasks.withType(Jar).configureEach {
+        from(rootProject.file('LICENSE.md')) {
+            into 'META-INF'
+        }
+    }
+
 }
 
 
