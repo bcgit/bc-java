@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.crypto.haetae;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 
-public class HAETAEEngine
+class HAETAEEngine
 {
     private final HAETAEParameters params;
     private static final int SHAKE128_RATE = 168; // bytes per block
@@ -352,7 +352,7 @@ public class HAETAEEngine
         roots[255] = new ComplexFp32_16(-65531, -804);
     }
 
-    public HAETAEEngine(HAETAEParameters params)
+    HAETAEEngine(HAETAEParameters params)
     {
         this.params = params;
         this.H_CUT = ((params.getM_h() - 1) >> 1);
