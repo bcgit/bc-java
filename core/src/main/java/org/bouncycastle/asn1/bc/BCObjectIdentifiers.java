@@ -849,7 +849,7 @@ public interface BCObjectIdentifiers
      * Three parameter sets are provided: HAETAE-2 (NIST level 2), HAETAE-3
      * (NIST level 3) and HAETAE-5 (NIST level 5).
      */
-    ASN1ObjectIdentifier haetae = bc_sig.branch("16");
+    ASN1ObjectIdentifier haetae = bc_sig.branch("18");
 
     ASN1ObjectIdentifier haetae2 = haetae.branch("1");
     ASN1ObjectIdentifier haetae3 = haetae.branch("2");
