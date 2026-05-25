@@ -1,17 +1,10 @@
 package org.bouncycastle.cert.plants.bc;
 
+import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.crypto.signers.DSADigestSigner;
-import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.Ed25519Signer;
-import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
-import org.bouncycastle.crypto.signers.PlainDSAEncoding;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 
 /**
  * Lightweight implementation of {@link MTCSignatureVerifier}.
@@ -29,48 +22,20 @@ public class BcMTCSignatureVerifier
 
     public BcMTCSignatureVerifier(AsymmetricKeyParameter publicKey, String algorithm)
     {
+        if (MTCSignatureAlgorithm.ED25519.equals(algorithm)
+            && !(publicKey instanceof Ed25519PublicKeyParameters))
+        {
+            throw new IllegalArgumentException("Public key not Ed25519");
+        }
         this.publicKey = publicKey;
         this.algorithm = algorithm;
     }
 
     public boolean verify(byte[] cosignedMessage, byte[] signature)
     {
-        Signer signer = createSigner(algorithm, publicKey);
+        Signer signer = BcMTCSigners.createSigner(algorithm);
         signer.init(false, publicKey);
         signer.update(cosignedMessage, 0, cosignedMessage.length);
         return signer.verifySignature(signature);
-    }
-
-    private static Signer createSigner(String algorithm, AsymmetricKeyParameter publicKey)
-    {
-        if ("ECDSA-P256-SHA256".equals(algorithm))
-        {
-            return new DSADigestSigner(
-                new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest())),
-                new SHA256Digest(),
-                PlainDSAEncoding.INSTANCE);
-        }
-        if ("ECDSA-P384-SHA384".equals(algorithm))
-        {
-            return new DSADigestSigner(
-                new ECDSASigner(new HMacDSAKCalculator(new SHA384Digest())),
-                new SHA384Digest(),
-                PlainDSAEncoding.INSTANCE);
-        }
-        if ("Ed25519".equals(algorithm))
-        {
-            if (!(publicKey instanceof Ed25519PublicKeyParameters))
-            {
-                throw new IllegalArgumentException("Public key not Ed25519");
-            }
-            return new Ed25519Signer();
-        }
-        if ("ML-DSA-44".equals(algorithm)
-            || "ML-DSA-65".equals(algorithm)
-            || "ML-DSA-87".equals(algorithm))
-        {
-            return new MLDSASigner();
-        }
-        throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
     }
 }

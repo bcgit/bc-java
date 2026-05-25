@@ -17,7 +17,6 @@ import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVSigner;
-import org.bouncycastle.pqc.crypto.uov.UOVEngine;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -171,19 +170,26 @@ public class UOVTest
         byte[] expectedSk = Hex.decode(kv.get("sk"));
         byte[] expectedSig = Hex.decode(kv.get("sig"));
 
-        UOVEngine engine = new UOVEngine(params);
-        byte[][] kp = engine.generateKeyPair(skSeed);
-        assertTrue(resource + " pk mismatch", Arrays.areEqual(expectedPk, kp[0]));
-        assertTrue(resource + " sk mismatch", Arrays.areEqual(expectedSk, kp[1]));
+        // UOVKeyPairGenerator pulls UOVParameters.SK_SEED_BYTES (32) bytes
+        // from the supplied SecureRandom for the sk_seed; UOVSigner pulls
+        // UOVParameters.SALT_BYTES from the signer-side random. Both inputs
+        // are injected via FixedSecureRandom for KAT reproducibility.
+        UOVKeyPairGenerator kpg = new UOVKeyPairGenerator();
+        kpg.init(new UOVKeyGenerationParameters(new FixedSecureRandom(skSeed), params));
+        AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+        UOVPublicKeyParameters pub = (UOVPublicKeyParameters)kp.getPublic();
+        UOVPrivateKeyParameters priv = (UOVPrivateKeyParameters)kp.getPrivate();
+
+        assertTrue(resource + " pk mismatch", Arrays.areEqual(expectedPk, pub.getEncoded()));
+        assertTrue(resource + " sk mismatch", Arrays.areEqual(expectedSk, priv.getEncoded()));
 
         UOVSigner signer = new UOVSigner();
-        signer.init(true,
-            new ParametersWithRandom(new UOVPrivateKeyParameters(params, kp[1]), new FixedSecureRandom(salt)));
+        signer.init(true, new ParametersWithRandom(priv, new FixedSecureRandom(salt)));
         byte[] sig = signer.generateSignature(msg);
         assertTrue(resource + " sig mismatch", Arrays.areEqual(expectedSig, sig));
 
         UOVSigner verifier = new UOVSigner();
-        verifier.init(false, new UOVPublicKeyParameters(params, kp[0]));
+        verifier.init(false, pub);
         assertTrue(resource + " verify(own)", verifier.verifySignature(msg, sig));
         assertTrue(resource + " verify(ref)", verifier.verifySignature(msg, expectedSig));
     }

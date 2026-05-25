@@ -1,5 +1,7 @@
 package org.bouncycastle.cert.plants;
 
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+
 /**
  * Operator interface for the hash function used in the Merkle tree, as defined
  * by Section 4 of draft-ietf-plants-merkle-tree-certs.
@@ -10,6 +12,14 @@ package org.bouncycastle.cert.plants;
  */
 public interface MerkleTreeHash
 {
+    /**
+     * @return the X.509 {@code AlgorithmIdentifier} that names this hash
+     *         function. Used by {@link MerkleTreeCertificateValidator} to
+     *         cross-check the supplied hash against the {@code logHash} field
+     *         of the CA's {@code id-pe-mtcCertificationAuthority} extension.
+     */
+    AlgorithmIdentifier getAlgorithmIdentifier();
+
     /**
      * @return the hash output size in bytes
      */

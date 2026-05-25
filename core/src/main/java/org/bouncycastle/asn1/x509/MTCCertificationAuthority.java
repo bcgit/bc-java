@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
@@ -46,6 +47,24 @@ public class MTCCertificationAuthority
             return new MTCCertificationAuthority(ASN1Sequence.getInstance(obj));
         }
         return null;
+    }
+
+    /**
+     * Convenience constructor that wraps each algorithm OID in a parameterless
+     * {@link AlgorithmIdentifier}. Equivalent to
+     * {@link #MTCCertificationAuthority(AlgorithmIdentifier, AlgorithmIdentifier, BigInteger)}
+     * with {@code new AlgorithmIdentifier(logHashOid)} and
+     * {@code new AlgorithmIdentifier(sigAlgOid)}.
+     */
+    public MTCCertificationAuthority(
+        ASN1ObjectIdentifier logHashOid,
+        ASN1ObjectIdentifier sigAlgOid,
+        BigInteger minSerial)
+    {
+        this(
+            logHashOid != null ? new AlgorithmIdentifier(logHashOid) : null,
+            sigAlgOid != null ? new AlgorithmIdentifier(sigAlgOid) : null,
+            minSerial);
     }
 
     public MTCCertificationAuthority(

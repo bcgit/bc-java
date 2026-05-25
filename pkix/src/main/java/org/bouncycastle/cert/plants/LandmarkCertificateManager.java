@@ -1,6 +1,7 @@
 package org.bouncycastle.cert.plants;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -269,7 +270,10 @@ public class LandmarkCertificateManager
                 byte[] cosignedMessage = MTCCosignedMessage.encode(
                     logId, 0L, checkpoint.treeSize, checkpoint.rootHash, cosignerId);
 
-                if (verifier.verify(cosignedMessage, sig.getSignature()))
+                OutputStream sOut = verifier.getOutputStream();
+                sOut.write(cosignedMessage);
+                sOut.close();
+                if (verifier.verify(sig.getSignature()))
                 {
                     valid++;
                 }

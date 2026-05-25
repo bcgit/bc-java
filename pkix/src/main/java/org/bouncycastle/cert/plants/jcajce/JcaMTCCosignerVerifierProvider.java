@@ -1,13 +1,18 @@
 package org.bouncycastle.cert.plants.jcajce;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifierProvider;
+import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -21,7 +26,7 @@ import org.bouncycastle.util.Arrays;
  *
  * <p>The convenience {@link Builder#addCosigner(byte[], PublicKey)} overload
  * wraps a JCA {@link PublicKey} in a {@link JcaMTCSignatureVerifier},
- * auto-detecting the the draft algorithm identifier from the key type:</p>
+ * auto-detecting the draft algorithm identifier from the key type:</p>
  * <ul>
  *   <li>{@link ECPublicKey} with a 256-bit field &rarr; {@code ECDSA-P256-SHA256}</li>
  *   <li>{@link ECPublicKey} with a 384-bit field &rarr; {@code ECDSA-P384-SHA384}</li>
@@ -52,9 +57,22 @@ public class JcaMTCCosignerVerifierProvider
         }
         return new MTCCosignerVerifier()
         {
-            public boolean verify(byte[] cosignedMessage, byte[] signature)
+            private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+            public AlgorithmIdentifier getAlgorithmIdentifier()
             {
-                return verifier.verify(cosignedMessage, signature);
+                return new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+            }
+
+            public OutputStream getOutputStream()
+            {
+                buf.reset();
+                return buf;
+            }
+
+            public boolean verify(byte[] expected)
+            {
+                return verifier.verify(buf.toByteArray(), expected);
             }
         };
     }
@@ -90,7 +108,7 @@ public class JcaMTCCosignerVerifierProvider
         }
 
         /**
-         * Register a cosigner with a JCA public key; the the draft algorithm
+         * Register a cosigner with a JCA public key; the draft algorithm
          * identifier is detected from the key type.
          *
          * @throws IllegalArgumentException if the public key type is unsupported
@@ -113,20 +131,22 @@ public class JcaMTCCosignerVerifierProvider
             int bits = ((ECPublicKey)key).getParams().getOrder().bitLength();
             if (bits >= 252 && bits <= 256)
             {
-                return "ECDSA-P256-SHA256";
+                return MTCSignatureAlgorithm.ECDSA_P256_SHA256;
             }
             if (bits >= 380 && bits <= 384)
             {
-                return "ECDSA-P384-SHA384";
+                return MTCSignatureAlgorithm.ECDSA_P384_SHA384;
             }
             throw new IllegalArgumentException("Unsupported EC field size: " + bits);
         }
         String algName = key.getAlgorithm();
         if ("Ed25519".equals(algName) || "EdDSA".equals(algName))
         {
-            return "Ed25519";
+            return MTCSignatureAlgorithm.ED25519;
         }
-        if ("ML-DSA-44".equals(algName) || "ML-DSA-65".equals(algName) || "ML-DSA-87".equals(algName))
+        if (MTCSignatureAlgorithm.ML_DSA_44.equals(algName)
+            || MTCSignatureAlgorithm.ML_DSA_65.equals(algName)
+            || MTCSignatureAlgorithm.ML_DSA_87.equals(algName))
         {
             return algName;
         }

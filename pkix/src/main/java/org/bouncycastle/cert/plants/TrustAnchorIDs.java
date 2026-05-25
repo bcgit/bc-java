@@ -1,8 +1,14 @@
 package org.bouncycastle.cert.plants;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1RelativeOID;
+import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.util.Exceptions;
 
 /**
@@ -49,6 +55,41 @@ public final class TrustAnchorIDs
     }
 
     /**
+     * Composes the 64-bit certificate serial number per Section 6.1 of
+     * draft-ietf-plants-merkle-tree-certs:
+     * <pre>
+     *     serial = (log_number &lt;&lt; 48) | index
+     * </pre>
+     * The validator decodes the same encoding in
+     * {@link MerkleTreeCertificateValidator#validateCertificate}; this method
+     * is the issuer-side counterpart.
+     *
+     * @param logNumber log number ({@code 1 <= logNumber <= 2^16-1}, Section 5.2)
+     * @param index     entry index in the log ({@code 0 <= index <= 2^48-1})
+     */
+    public static BigInteger certSerial(long logNumber, long index)
+    {
+        if (logNumber < 1 || logNumber > 0xFFFFL)
+        {
+            throw new IllegalArgumentException("log_number out of range [1, 65535]: " + logNumber);
+        }
+        if (index < 0 || index > 0xFFFFFFFFFFFFL)
+        {
+            throw new IllegalArgumentException("index out of uint48 range: " + index);
+        }
+        return BigInteger.valueOf((logNumber << 48) | index);
+    }
+
+    /**
+     * Equivalent to {@link #certSerial(long, long)} with the log number taken
+     * from {@code log.getLogNumber()}.
+     */
+    public static BigInteger certSerial(MTCLog log, long index)
+    {
+        return certSerial(log.getLogNumber(), index);
+    }
+
+    /**
      * Builds the binary trust anchor ID of a landmark (Section 8.2).
      *
      * @param caId           binary trust anchor ID of the CA
@@ -92,6 +133,29 @@ public final class TrustAnchorIDs
             encodeComponent(LANDMARK_GROUPS_ARC),
             encodeComponent(logNumber),
             encodeComponent(landmarkNumber));
+    }
+
+    /**
+     * Builds the issuer {@link X500Name} for a Merkle Tree certificate, using
+     * the experimental {@code id_rdna_trustAnchorID} attribute with a
+     * UTF8String value of the CA's dotted-decimal trust anchor ID (Section 5.1
+     * of draft-ietf-plants-merkle-tree-certs). The validator concatenates this
+     * with the cert serial's {@code log_number} to recover the issuance log's
+     * full trust anchor ID.
+     *
+     * <p>For the production encoding the attribute value is a RELATIVE-OID
+     * rather than a UTF8String; both are accepted on the verifier side by
+     * {@link MerkleTreeCertificateValidator#extractCaIdFromIssuer(X500Name)}.</p>
+     *
+     * @param caTrustAnchorIdDotted dotted-decimal form of the CA's trust
+     *                              anchor ID (e.g. {@code "32473.1"})
+     */
+    public static X500Name issuerName(String caTrustAnchorIdDotted)
+    {
+        AttributeTypeAndValue attr = new AttributeTypeAndValue(
+            MTCObjectIdentifiers.id_rdna_trustAnchorID,
+            new DERUTF8String(caTrustAnchorIdDotted));
+        return new X500Name(new RDN[]{new RDN(attr)});
     }
 
     /**
