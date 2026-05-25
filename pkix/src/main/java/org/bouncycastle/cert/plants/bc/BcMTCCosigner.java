@@ -64,8 +64,7 @@ public class BcMTCCosigner
     public MTCSignature cosignSubtree(MTCLog log, byte[] subtreeHash)
         throws IOException
     {
-        byte[] msg = MTCCosignedMessage.encode(
-            log.getLogId(), log.getStart(), log.getEnd(), subtreeHash, cosignerId);
+        byte[] msg = MTCCosignedMessage.encode(log, subtreeHash, cosignerId);
         Signer signer = BcMTCSigners.createSigner(algorithm);
         signer.init(true, privateKey);
         signer.update(msg, 0, msg.length);

@@ -37,19 +37,31 @@ import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.TBSCertificateLogEntry;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.Validity;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.plants.MTCCertAuth;
+import org.bouncycastle.cert.plants.MTCContentSigner;
 import org.bouncycastle.cert.plants.MTCCosignedMessage;
+import org.bouncycastle.cert.plants.MTCCosignerVerifier;
+import org.bouncycastle.cert.plants.MTCLog;
 import org.bouncycastle.cert.plants.MTCSignature;
+import org.bouncycastle.cert.plants.MTCSignatureVerifierProvider;
 import org.bouncycastle.cert.plants.MerkleTreeCertEntryExtension;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.MerkleTreePrimitives;
+import org.bouncycastle.cert.plants.bc.BcMTCCosigner;
 import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
 import org.bouncycastle.cert.plants.bc.BcMTCSignatureVerifier;
 import org.bouncycastle.cert.plants.bc.BcSha256MerkleTreeHash;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
+import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -58,8 +70,14 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifier;
+import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -270,10 +288,10 @@ public class MerkleTreeCertificatesTest
         BcMTCSignatureVerifier ecdsaVerifier = new BcMTCSignatureVerifier(
             ecdsaKeyPair.getPublic(), "ECDSA-P256-SHA256");
 
-        isTrue("ECDSA cosignature verifies", verifyMessage(ecdsaVerifier, cosignedMessage, signature));
+        isTrue("ECDSA cosignature verifies", ecdsaVerifier.verify(cosignedMessage, signature));
 
         signature[0] ^= 0x01;
-        isTrue("Tampered ECDSA signature rejected", !verifyMessage(ecdsaVerifier, cosignedMessage, signature));
+        isTrue("Tampered ECDSA signature rejected", !ecdsaVerifier.verify(cosignedMessage, signature));
     }
 
     public void testCosignatureVerificationEd25519()
@@ -295,10 +313,187 @@ public class MerkleTreeCertificatesTest
         BcMTCSignatureVerifier ed25519Verifier = new BcMTCSignatureVerifier(
             ed25519KeyPair.getPublic(), "Ed25519");
 
-        isTrue("Ed25519 cosignature verifies", verifyMessage(ed25519Verifier, cosignedMessage, signature));
+        isTrue("Ed25519 cosignature verifies", ed25519Verifier.verify(cosignedMessage, signature));
 
         signature[0] ^= 0x01;
-        isTrue("Tampered Ed25519 signature rejected", !verifyMessage(ed25519Verifier, cosignedMessage, signature));
+        isTrue("Tampered Ed25519 signature rejected", !ed25519Verifier.verify(cosignedMessage, signature));
+    }
+
+    public void testCosignatureVerificationEcdsaP384()
+        throws Exception
+    {
+        ECKeyPairGenerator ecGen = new ECKeyPairGenerator();
+        ECNamedDomainParameters ecParams = new ECNamedDomainParameters(
+            new ASN1ObjectIdentifier("1.3.132.0.34"),
+            SECNamedCurves.getByName("secp384r1"));
+        ecGen.init(new ECKeyGenerationParameters(ecParams, new SecureRandom()));
+        AsymmetricCipherKeyPair p384KeyPair = ecGen.generateKeyPair();
+
+        long start = 100;
+        long end = 200;
+        byte[] subtreeHash = hashFunc.hashLeaf("dummy subtree".getBytes());
+        byte[] cosignerId = binaryTrustAnchorID("32473.4");
+
+        byte[] signedData = buildSignatureInput(logId, start, end, subtreeHash, cosignerId);
+
+        ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA384Digest()));
+        signer.init(true, p384KeyPair.getPrivate());
+
+        SHA384Digest digest = new SHA384Digest();
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.update(signedData, 0, signedData.length);
+        digest.doFinal(hash, 0);
+
+        BigInteger[] rs = signer.generateSignature(hash);
+        byte[] r = BigIntegers.asUnsignedByteArray(48, rs[0]);
+        byte[] s = BigIntegers.asUnsignedByteArray(48, rs[1]);
+        byte[] signature = new byte[96];
+        System.arraycopy(r, 0, signature, 0, 48);
+        System.arraycopy(s, 0, signature, 48, 48);
+
+        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        BcMTCSignatureVerifier verifier = new BcMTCSignatureVerifier(
+            p384KeyPair.getPublic(), "ECDSA-P384-SHA384");
+
+        isTrue("ECDSA-P384 cosignature verifies", verifier.verify(cosignedMessage, signature));
+
+        signature[0] ^= 0x01;
+        isTrue("Tampered ECDSA-P384 signature rejected", !verifier.verify(cosignedMessage, signature));
+    }
+
+    public void testCosignatureVerificationMlDsa44()
+        throws Exception
+    {
+        verifyMlDsaCosignature(MLDSAParameters.ml_dsa_44, "ML-DSA-44", "32473.5");
+    }
+
+    public void testCosignatureVerificationMlDsa65()
+        throws Exception
+    {
+        verifyMlDsaCosignature(MLDSAParameters.ml_dsa_65, "ML-DSA-65", "32473.6");
+    }
+
+    public void testCosignatureVerificationMlDsa87()
+        throws Exception
+    {
+        verifyMlDsaCosignature(MLDSAParameters.ml_dsa_87, "ML-DSA-87", "32473.7");
+    }
+
+    private void verifyMlDsaCosignature(MLDSAParameters params, String alg, String cosignerIdDotted)
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        MLDSAKeyPairGenerator gen = new MLDSAKeyPairGenerator();
+        gen.init(new MLDSAKeyGenerationParameters(random, params));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+
+        long start = 100;
+        long end = 200;
+        byte[] subtreeHash = hashFunc.hashLeaf("dummy subtree".getBytes());
+        byte[] cosignerId = binaryTrustAnchorID(cosignerIdDotted);
+
+        byte[] signedData = buildSignatureInput(logId, start, end, subtreeHash, cosignerId);
+
+        MLDSASigner signer = new MLDSASigner();
+        signer.init(true, kp.getPrivate());
+        signer.update(signedData, 0, signedData.length);
+        byte[] signature = signer.generateSignature();
+
+        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        BcMTCSignatureVerifier verifier = new BcMTCSignatureVerifier(kp.getPublic(), alg);
+
+        isTrue(alg + " cosignature verifies", verifier.verify(cosignedMessage, signature));
+
+        signature[signature.length / 2] ^= 0x01;
+        isTrue("Tampered " + alg + " signature rejected", !verifier.verify(cosignedMessage, signature));
+    }
+
+    public void testMTCSignatureVerifierProviderManualMode()
+        throws Exception
+    {
+        // Build a CosignedMessage and sign it directly with Ed25519, then drive
+        // verification through the ContentVerifier exposed by the provider's
+        // manual-mode constructor.
+        long start = 100;
+        long end = 200;
+        byte[] subtreeHash = hashFunc.hashLeaf("dummy subtree".getBytes());
+        byte[] cosignerId = binaryTrustAnchorID("32473.8");
+
+        byte[] signedData = buildSignatureInput(logId, start, end, subtreeHash, cosignerId);
+        Ed25519Signer signer = new Ed25519Signer();
+        signer.init(true, ed25519KeyPair.getPrivate());
+        signer.update(signedData, 0, signedData.length);
+        byte[] signature = signer.generateSignature();
+
+        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+
+        MTCCosignerVerifier cosignerVerifier =
+            BcMTCCosignerVerifierProvider.singleCosigner(cosignerId, ed25519KeyPair.getPublic())
+                .get(cosignerId);
+        MTCSignatureVerifierProvider provider = new MTCSignatureVerifierProvider(cosignerVerifier);
+        AlgorithmIdentifier algId = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+
+        ContentVerifier cv = provider.get(algId);
+        java.io.OutputStream sOut = cv.getOutputStream();
+        sOut.write(cosignedMessage);
+        sOut.close();
+        isTrue("manual-mode cosignature verifies", cv.verify(signature));
+
+        signature[0] ^= 0x01;
+        cv = provider.get(algId);
+        sOut = cv.getOutputStream();
+        sOut.write(cosignedMessage);
+        sOut.close();
+        isTrue("manual-mode tampered signature rejected", !cv.verify(signature));
+    }
+
+    public void testMTCSignatureVerifierProviderCertificateMode()
+        throws Exception
+    {
+        // Issue an MTC cert end-to-end using the high-level builder so we have
+        // a realistic certificate to validate via X509CertificateHolder.isSignatureValid.
+        SecureRandom random = new SecureRandom();
+        Ed25519KeyPairGenerator caGen = new Ed25519KeyPairGenerator();
+        caGen.init(new Ed25519KeyGenerationParameters(random));
+        AsymmetricCipherKeyPair certCaKp = caGen.generateKeyPair();
+
+        Ed25519KeyPairGenerator eeGen = new Ed25519KeyPairGenerator();
+        eeGen.init(new Ed25519KeyGenerationParameters(random));
+        AsymmetricCipherKeyPair eeKp = eeGen.generateKeyPair();
+        SubjectPublicKeyInfo eeSpki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(eeKp.getPublic());
+
+        MTCCertAuth ca = new MTCCertAuth(
+            LOG_TAID_STRING,
+            new BcSha256MerkleTreeHash(),
+            MTCObjectIdentifiers.id_alg_mtcProof);
+        MTCLog log = new MTCLog(ca, 1L, 0L, 2L);
+        byte[] siblingHash = hashFunc.hashLeaf("sibling".getBytes());
+
+        ContentSigner mtcSigner = new MTCContentSigner(
+            log, siblingHash,
+            new BcMTCCosigner(ca.getCaId(), certCaKp.getPrivate()));
+
+        long now = System.currentTimeMillis();
+        X509v3CertificateBuilder builder = new X509v3CertificateBuilder(
+            ca.issuerName(), ca.certSerial(log, 0L),
+            new Date(now), new Date(now + 24L * 60 * 60 * 1000),
+            new org.bouncycastle.asn1.x500.X500Name("CN=mtc-test-ee"), eeSpki);
+        builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        X509CertificateHolder cert = builder.build(mtcSigner);
+
+        MTCCosignerVerifier cosignerVerifier =
+            BcMTCCosignerVerifierProvider.singleCosigner(ca.getCaId(), certCaKp.getPublic())
+                .get(ca.getCaId());
+        ContentVerifierProvider provider = new MTCSignatureVerifierProvider(ca, cosignerVerifier);
+
+        isTrue("certificate-mode isSignatureValid passes", cert.isSignatureValid(provider));
+
+        // Flip a bit in the encoded cert — lands inside the cosigner signature
+        // in the MTCProof — and confirm the adapter rejects it.
+        byte[] tamperedBytes = cert.getEncoded();
+        tamperedBytes[tamperedBytes.length - 1] ^= 0x01;
+        X509CertificateHolder tamperedCert = new X509CertificateHolder(tamperedBytes);
+        isTrue("certificate-mode rejects tampered cert", !tamperedCert.isSignatureValid(provider));
     }
 
     public void testStandaloneCertificateValidation()
@@ -354,10 +549,10 @@ public class MerkleTreeCertificatesTest
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
-                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
                 new HashSet<Long>(),
-                1,
-                hashFunc);
+                1
+            );
 
         isTrue("Standalone certificate validates", MerkleTreeCertificateValidator.validateCertificate(cert, params));
 
@@ -365,10 +560,10 @@ public class MerkleTreeCertificatesTest
         final MerkleTreeCertificateValidator.ValidationParams strict =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
-                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
                 new HashSet<Long>(),
-                2,
-                hashFunc);
+                2
+            );
         testException("Insufficient valid cosignatures", "SecurityException", new TestExceptionOperation()
         {
             public void operation()
@@ -384,10 +579,10 @@ public class MerkleTreeCertificatesTest
         final MerkleTreeCertificateValidator.ValidationParams revokedParams =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
-                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
                 revoked,
-                1,
-                hashFunc);
+                1
+            );
         testException("revoked", "SecurityException", new TestExceptionOperation()
         {
             public void operation()
@@ -433,10 +628,10 @@ public class MerkleTreeCertificatesTest
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
                 new BcMTCCosignerVerifierProvider.Builder().build(),
-                trusted,
+                hashFunc, trusted,
                 new HashSet<Long>(),
-                1,
-                hashFunc);
+                1
+            );
 
         isTrue("Landmark certificate validates", MerkleTreeCertificateValidator.validateCertificate(cert, params));
 
@@ -444,10 +639,10 @@ public class MerkleTreeCertificatesTest
         final MerkleTreeCertificateValidator.ValidationParams noTrusted =
             new MerkleTreeCertificateValidator.ValidationParams(
                 new BcMTCCosignerVerifierProvider.Builder().build(),
-                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
                 new HashSet<Long>(),
-                1,
-                hashFunc);
+                1
+            );
         testException("Insufficient", "SecurityException", new TestExceptionOperation()
         {
             public void operation()
@@ -466,10 +661,10 @@ public class MerkleTreeCertificatesTest
         final MerkleTreeCertificateValidator.ValidationParams badHash =
             new MerkleTreeCertificateValidator.ValidationParams(
                 new BcMTCCosignerVerifierProvider.Builder().build(),
-                badHashTrusted,
+                hashFunc, badHashTrusted,
                 new HashSet<Long>(),
-                1,
-                hashFunc);
+                1
+            );
         testException("does not match the trusted subtree", "SecurityException", new TestExceptionOperation()
         {
             public void operation()
@@ -1198,7 +1393,13 @@ public class MerkleTreeCertificatesTest
         testFindCoveringSubtrees();
         testValidSubtreeCheck();
         testCosignatureVerificationECDSA();
+        testCosignatureVerificationEcdsaP384();
         testCosignatureVerificationEd25519();
+        testCosignatureVerificationMlDsa44();
+        testCosignatureVerificationMlDsa65();
+        testCosignatureVerificationMlDsa87();
+        testMTCSignatureVerifierProviderManualMode();
+        testMTCSignatureVerifierProviderCertificateMode();
         testStandaloneCertificateValidation();
         testLandmarkCertificateValidation();
         testInclusionProofTwoLeaf();
@@ -1212,13 +1413,6 @@ public class MerkleTreeCertificatesTest
         testSignatureAlgorithmConstants();
         testMerkleTreeCertEntryRoundTrip();
         testWriteEntryHashInputMatchesComputeEntryHash();
-    }
-
-    private static boolean verifyMessage(ContentVerifier v, byte[] message, byte[] signature)
-        throws IOException
-    {
-        v.getOutputStream().write(message);
-        return v.verify(signature);
     }
 
     public static void main(String[] args)

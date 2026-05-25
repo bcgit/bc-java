@@ -58,6 +58,35 @@ public final class MTCCosignedMessage
     }
 
     /**
+     * Equivalent to {@link #encode(byte[], long, long, byte[], byte[])} taking
+     * the log ID and subtree window from an {@link MTCLog}. Convenient for
+     * issuer-side code that already carries an MTCLog object.
+     */
+    public static byte[] encode(
+        MTCLog log,
+        byte[] subtreeHash,
+        byte[] cosignerId)
+        throws IOException
+    {
+        return encode(log.getLogId(), 0L, log.getStart(), log.getEnd(), subtreeHash, cosignerId);
+    }
+
+    /**
+     * Equivalent to {@link #encode(byte[], long, long, long, byte[], byte[])}
+     * taking the log ID and subtree window from an {@link MTCLog}. Use the
+     * non-MTCProof case where a non-zero timestamp is required.
+     */
+    public static byte[] encode(
+        MTCLog log,
+        long timestamp,
+        byte[] subtreeHash,
+        byte[] cosignerId)
+        throws IOException
+    {
+        return encode(log.getLogId(), timestamp, log.getStart(), log.getEnd(), subtreeHash, cosignerId);
+    }
+
+    /**
      * Encodes a CosignedMessage in the wire format defined by Section 5.3.1.
      *
      * @param logId       binary trust anchor ID of the log

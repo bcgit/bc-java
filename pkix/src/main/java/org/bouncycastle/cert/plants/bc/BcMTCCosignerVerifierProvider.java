@@ -1,9 +1,11 @@
 package org.bouncycastle.cert.plants.bc;
 
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifierProvider;
@@ -77,19 +79,22 @@ public class BcMTCCosignerVerifierProvider
         }
         return new MTCCosignerVerifier()
         {
+            private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
             public AlgorithmIdentifier getAlgorithmIdentifier()
             {
-                return verifier.getAlgorithmIdentifier();
+                return new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
             }
 
             public OutputStream getOutputStream()
             {
-                return verifier.getOutputStream();
+                buf.reset();
+                return buf;
             }
 
             public boolean verify(byte[] expected)
             {
-                return verifier.verify(expected);
+                return verifier.verify(buf.toByteArray(), expected);
             }
         };
     }
