@@ -9,7 +9,7 @@ import org.bouncycastle.util.Arrays;
  * key generation, signing, and verification. Pick the parameter set via
  * {@link #getInstance(MQOMParameters)}.
  */
-public final class MQOMEngine
+final class MQOMEngine
 {
     private final MQOMParameters params;
     private final MQOMSymmetric sym;

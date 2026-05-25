@@ -1,5 +1,6 @@
 package org.bouncycastle.cert.plants.test;
 
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
@@ -17,6 +18,7 @@ import org.bouncycastle.cert.plants.jcajce.JcaMTCCosignerVerifierProvider;
 import org.bouncycastle.cert.plants.jcajce.JcaMTCSignatureVerifier;
 import org.bouncycastle.cert.plants.jcajce.JcaSha256MerkleTreeHash;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -49,7 +51,9 @@ public class JcajceOperatorsTest
         testJcaSignatureVerifierEcdsaP256();
         testJcaSignatureVerifierEcdsaP384();
         testJcaSignatureVerifierEd25519();
+        testJcaSignatureVerifierMlDsa44();
         testJcaSignatureVerifierMlDsa65();
+        testJcaSignatureVerifierMlDsa87();
         testJcaSignatureVerifierUnsupportedAlgorithmRejected();
         testJcaCosignerVerifierProviderAutoDetect();
         testJcaCosignerVerifierProviderMissingCosignerReturnsNull();
@@ -130,20 +134,38 @@ public class JcajceOperatorsTest
         isTrue("Ed25519 tampered signature rejected", !v.verify(message, signature));
     }
 
+    private void testJcaSignatureVerifierMlDsa44()
+        throws Exception
+    {
+        testJcaSignatureVerifierMlDsa("ML-DSA-44", "32473.5");
+    }
+
     private void testJcaSignatureVerifierMlDsa65()
         throws Exception
     {
-        KeyPair kp = KeyPairGenerator.getInstance("ML-DSA-65", "BC").generateKeyPair();
+        testJcaSignatureVerifierMlDsa("ML-DSA-65", "32473.6");
+    }
 
-        byte[] message = buildCosignedMessage("32473.1.0.1", "32473.5", 0, 100, 32);
-        byte[] signature = signJca(kp, "ML-DSA-65", message);
+    private void testJcaSignatureVerifierMlDsa87()
+        throws Exception
+    {
+        testJcaSignatureVerifierMlDsa("ML-DSA-87", "32473.7");
+    }
+
+    private void testJcaSignatureVerifierMlDsa(String alg, String cosignerDotted)
+        throws Exception
+    {
+        KeyPair kp = KeyPairGenerator.getInstance(alg, "BC").generateKeyPair();
+
+        byte[] message = buildCosignedMessage("32473.1.0.1", cosignerDotted, 0, 100, 32);
+        byte[] signature = signJca(kp, alg, message);
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            kp.getPublic(), "ML-DSA-65", "BC");
-        isTrue("ML-DSA-65 cosignature verifies", v.verify(message, signature));
+            kp.getPublic(), alg, "BC");
+        isTrue(alg + " cosignature verifies", v.verify(message, signature));
 
         signature[signature.length / 2] ^= 0x01;
-        isTrue("ML-DSA-65 tampered signature rejected", !v.verify(message, signature));
+        isTrue(alg + " tampered signature rejected", !v.verify(message, signature));
     }
 
     private void testJcaSignatureVerifierUnsupportedAlgorithmRejected()
@@ -219,7 +241,7 @@ public class JcajceOperatorsTest
         MTCCosignerVerifier verifier = provider.get(cosignerId);
         isTrue("cosigner verifier present for " + jcaSignatureAlg, verifier != null);
         isTrue("cosignature verifies via provider for " + jcaSignatureAlg,
-            verifier.verify(message, signature));
+            verifyMessage(verifier, message, signature));
     }
 
     private static KeyPair generateEcKeyPair(String curveName)
@@ -237,6 +259,13 @@ public class JcajceOperatorsTest
         sig.initSign(kp.getPrivate());
         sig.update(message);
         return sig.sign();
+    }
+
+    private static boolean verifyMessage(ContentVerifier v, byte[] message, byte[] signature)
+        throws IOException
+    {
+        v.getOutputStream().write(message);
+        return v.verify(signature);
     }
 
     private static byte[] buildCosignedMessage(

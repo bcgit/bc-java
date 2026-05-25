@@ -329,12 +329,6 @@ public class HawkSigner
         return HawkVerifier.verifyInner(logn, signature, 0, sc, pubKey.getEncoded());
     }
 
-    // Interface for RNG function
-    public interface RNG
-    {
-        void generate(byte[] dst, int offset, int len);
-    }
-
     // Start signing process
     public static SHAKEDigest hawkSignStart()
     {
@@ -965,14 +959,14 @@ public class HawkSigner
     }
 
     // Utility class to get tables based on logn
-    public static class GaussianTable
+    private static class GaussianTable
     {
-        public final short[] hiTable;
-        public final long[] loTable;
-        public final int hiLength;
-        public final int loLength;
+        final short[] hiTable;
+        final long[] loTable;
+        final int hiLength;
+        final int loLength;
 
-        public GaussianTable(short[] hiTable, long[] loTable)
+        GaussianTable(short[] hiTable, long[] loTable)
         {
             this.hiTable = hiTable;
             this.loTable = loTable;

@@ -4,6 +4,8 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.Provider;
 
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -18,7 +20,14 @@ import org.bouncycastle.util.Exceptions;
 public class JcaSha256MerkleTreeHash
     implements MerkleTreeHash
 {
+    private static final AlgorithmIdentifier ALG_ID = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+
     private final MessageDigest digest;
+
+    public AlgorithmIdentifier getAlgorithmIdentifier()
+    {
+        return ALG_ID;
+    }
 
     public JcaSha256MerkleTreeHash()
     {
