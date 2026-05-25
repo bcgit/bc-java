@@ -143,6 +143,25 @@ public class ECIESKeyEncapsulationTest
         {
             fail("failed old cofactor and single hash test");
         }
+
+        // An encapsulation of {0x00} is the SEC1 / X9.62 encoding for the
+        // point at infinity. The unfixed code path triggered NPE inside
+        // hTilde.getAffineXCoord().getEncoded(); the fix routes infinity to
+        // an all-zero implicit-rejection key.
+        byte[] infinityEnc = new byte[]{ 0x00 };
+        byte[] zeroKey = new byte[128 / 8];
+
+        kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)keys.getPrivate(), 128 / 8, kdf);
+        if (!areEqual(zeroKey, kemExt.extractSecret(infinityEnc)))
+        {
+            fail("infinity encapsulation should return zero key (basic mode)");
+        }
+
+        kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)keys.getPrivate(), 128 / 8, kdf, true, false, false);
+        if (!areEqual(zeroKey, kemExt.extractSecret(infinityEnc)))
+        {
+            fail("infinity encapsulation should return zero key (cofactor mode)");
+        }
     }
 
     public static void main(
