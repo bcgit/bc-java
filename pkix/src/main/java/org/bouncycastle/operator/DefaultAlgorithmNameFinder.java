@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -56,6 +57,11 @@ public class DefaultAlgorithmNameFinder
         addAlgorithm(EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA");
         addAlgorithm(BCObjectIdentifiers.falcon_512, "FALCON");
         addAlgorithm(BCObjectIdentifiers.falcon_1024, "FALCON");
+
+        addAlgorithm(EdECObjectIdentifiers.id_Ed25519, "ED25519");
+        addAlgorithm(EdECObjectIdentifiers.id_Ed448, "ED448");
+        addAlgorithm(EdECObjectIdentifiers.id_X25519, "X25519");
+        addAlgorithm(EdECObjectIdentifiers.id_X448, "X448");
 
         addAlgorithm(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, "LMS");
 
