@@ -116,7 +116,7 @@ public class MerkleTreeCertificateJcaExample
 
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
-                cosigners, /*minCosignatures=*/ 1, hashFunc, authority);
+                cosigners, hashFunc, /*minCosignatures=*/ 1, authority);
 
         boolean valid = MerkleTreeCertificateValidator.validateCertificate(cert, params);
         System.out.println("Validation result:     " + (valid ? "PASS" : "FAIL"));

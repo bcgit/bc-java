@@ -69,8 +69,7 @@ public class JcaMTCCosigner
     public MTCSignature cosignSubtree(MTCLog log, byte[] subtreeHash)
         throws IOException
     {
-        byte[] msg = MTCCosignedMessage.encode(
-            log.getLogId(), log.getStart(), log.getEnd(), subtreeHash, cosignerId);
+        byte[] msg = MTCCosignedMessage.encode(log, subtreeHash, cosignerId);
         try
         {
             Signature sig = helper.createSignature(JcaMTCSignatureVerifier.jcaAlgorithm(algorithm));

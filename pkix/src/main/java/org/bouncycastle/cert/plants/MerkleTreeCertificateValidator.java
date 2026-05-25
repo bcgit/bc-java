@@ -78,10 +78,10 @@ public class MerkleTreeCertificateValidator
 
         public ValidationParams(
             MTCCosignerVerifierProvider cosignerVerifierProvider,
+            MerkleTreeHash hashFunction,
             List<TrustedSubtree> trustedSubtrees,
             Set<Long> revokedIndices,
-            int minCosignatures,
-            MerkleTreeHash hashFunction)
+            int minCosignatures)
         {
             this(cosignerVerifierProvider, trustedSubtrees, revokedIndices,
                 minCosignatures, hashFunction, null);
@@ -95,8 +95,8 @@ public class MerkleTreeCertificateValidator
          */
         public ValidationParams(
             MTCCosignerVerifierProvider cosignerVerifierProvider,
-            int minCosignatures,
             MerkleTreeHash hashFunction,
+            int minCosignatures,
             MTCCertificationAuthority authorityInfo)
         {
             this(cosignerVerifierProvider,
@@ -324,7 +324,9 @@ public class MerkleTreeCertificateValidator
             byte[] cosignedMessage = MTCCosignedMessage.encode(
                 logId, proof.getStart(), proof.getEnd(), expectedSubtreeHash, cosignerId);
 
-            verifier.getOutputStream().write(cosignedMessage);
+            OutputStream sOut = verifier.getOutputStream();
+            sOut.write(cosignedMessage);
+            sOut.close();
             if (verifier.verify(sig.getSignature()))
             {
                 validCount++;
