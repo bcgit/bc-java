@@ -215,6 +215,19 @@ The streaming classes under `pkix/src/main/java/org/bouncycastle/cms/CMS*{Parser
 
 When updating CMS class-level javadoc, verify by tracing rather than paraphrasing aspirational behaviour: between Aug–Dec 2025 the `CMSAuthEnvelopedDataParser` doc claimed the constructor "fully drains and closes" the InputStream and that "plaintext content is buffered in memory" — both were wrong (the constructor reads ~84% of the input, no buffering happens), and the doc was corrected as part of github #2133. The model `<b>Stream handling note:</b>` blocks added across the package under that issue are the template to follow.
 
+### Operator OutputStream close discipline
+
+When writing data to a `ContentSigner.getOutputStream()` (or the symmetric `ContentVerifier.getOutputStream()`), **always call `close()` on the returned stream before calling `getSignature()` / `verify(...)`**. Many implementations finalise digest / signature state inside `close()` — feeding bytes without closing can produce truncated input, missing trailing-block computations, or a downstream JCA `Signature.SignatureException`. The canonical pattern (see `X509v3CertificateBuilder.generateSig`):
+
+```java
+OutputStream sOut = signer.getOutputStream();
+tbsObj.encodeTo(sOut, ASN1Encoding.DER);
+sOut.close();
+return signer.getSignature();
+```
+
+Same applies on the verifier side — `X509CertificateHolder.isSignatureValid` follows this pattern. The chained one-liner `signer.getOutputStream().write(bytes)` skips the close and is a latent bug; introduce a named local for the stream so the close is unmistakable.
+
 ### Two locations for the same OID-table class
 
 A handful of less-common arc OID classes are duplicated in the tree:
