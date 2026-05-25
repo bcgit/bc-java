@@ -2,6 +2,11 @@ package org.bouncycastle.pqc.crypto.haetae;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Lightweight public key parameters for HAETAE. Wraps the raw encoded public
+ * key bytes produced by {@link HAETAEKeyPairGenerator} for the parameter set
+ * carried on the superclass.
+ */
 public class HAETAEPublicKeyParameters
     extends HAETAEKeyParameters
 {
