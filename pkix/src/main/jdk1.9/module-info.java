@@ -23,6 +23,7 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.cert.crmf;
     exports org.bouncycastle.cert.crmf.bc;
     exports org.bouncycastle.cert.crmf.jcajce;
+    exports org.bouncycastle.cert.ct;
     exports org.bouncycastle.cert.dane;
     exports org.bouncycastle.cert.dane.fetcher;
     exports org.bouncycastle.cert.jcajce;
@@ -54,6 +55,7 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.pkcs;
     exports org.bouncycastle.pkcs.bc;
     exports org.bouncycastle.pkcs.jcajce;
+    exports org.bouncycastle.pkcs.util;
     exports org.bouncycastle.pkix;
     exports org.bouncycastle.pkix.jcajce;
     exports org.bouncycastle.pkix.util;

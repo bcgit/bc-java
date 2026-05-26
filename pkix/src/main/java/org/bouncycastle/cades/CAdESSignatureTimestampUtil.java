@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -23,7 +24,9 @@ import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampToken;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Helpers for upgrading a CAdES B-B signature to B-T by attaching an
@@ -140,6 +143,104 @@ public final class CAdESSignatureTimestampUtil
         }
 
         return CMSSignedData.replaceSigners(signedData, new SignerInformationStore(rebuilt));
+    }
+
+    /**
+     * Return the RFC&nbsp;3161 tokens carried by the signer's
+     * {@code id-aa-signatureTimeStampToken} unsigned attribute, in
+     * attribute-value order. The attribute is multi-valued (RFC&nbsp;5126
+     * sec. 6.1.1), so the list typically has one entry but may have more
+     * when multiple timestamps from different TSAs have been attached.
+     *
+     * @param signer the signer to inspect.
+     * @return an unmodifiable list of timestamp tokens, empty when the
+     *         attribute is absent (signer has not been upgraded to B-T).
+     * @throws CAdESException if an attribute value cannot be parsed as a
+     *                       {@link TimeStampToken}.
+     */
+    public static List<TimeStampToken> getSignatureTimestamps(SignerInformation signer)
+        throws CAdESException
+    {
+        if (signer == null)
+        {
+            throw new NullPointerException("signer");
+        }
+        AttributeTable unsigned = signer.getUnsignedAttributes();
+        if (unsigned == null)
+        {
+            return Collections.emptyList();
+        }
+        Attribute attr = unsigned.get(PKCSObjectIdentifiers.id_aa_signatureTimeStampToken);
+        if (attr == null)
+        {
+            return Collections.emptyList();
+        }
+        ASN1Set vals = attr.getAttrValues();
+        List<TimeStampToken> out = new ArrayList<TimeStampToken>(vals.size());
+        for (int i = 0; i != vals.size(); ++i)
+        {
+            try
+            {
+                ContentInfo ci = ContentInfo.getInstance(vals.getObjectAt(i));
+                out.add(new TimeStampToken(ci));
+            }
+            catch (IOException e)
+            {
+                throw new CAdESException(
+                    "unable to parse id-aa-signatureTimeStampToken value at index "
+                        + i + ": " + e.getMessage(), e);
+            }
+            catch (TSPException e)
+            {
+                throw new CAdESException(
+                    "unable to parse id-aa-signatureTimeStampToken value at index "
+                        + i + ": " + e.getMessage(), e);
+            }
+        }
+        return Collections.unmodifiableList(out);
+    }
+
+    /**
+     * Self-consistency check on B-T material: for every
+     * {@code id-aa-signatureTimeStampToken} attached to the signer, verify
+     * the token's {@code MessageImprint} equals
+     * {@link #computeSignatureImprint computeSignatureImprint} run under
+     * the token's own hash algorithm.
+     * <p>What this method does <i>not</i> do: validate the TSA's signature
+     * on the token, walk the TSA cert chain to a trust anchor, or check
+     * that the timestamp falls within the signer cert's validity window.
+     * Those steps are the caller's responsibility, built on
+     * {@link #getSignatureTimestamps} plus the {@code tsp} module's token
+     * validators.</p>
+     *
+     * @param signer      the signer to validate. Must carry at least one
+     *                    {@code id-aa-signatureTimeStampToken}.
+     * @param digCalcProv source of digest calculators.
+     * @throws CAdESException if the attribute is absent, a token cannot be
+     *                       parsed, or any token's imprint does not match
+     *                       the signer's signature value.
+     */
+    public static void validateSignatureTimestamps(SignerInformation signer,
+                                                   DigestCalculatorProvider digCalcProv)
+        throws CAdESException, OperatorCreationException, IOException
+    {
+        List<TimeStampToken> tokens = getSignatureTimestamps(signer);
+        if (tokens.isEmpty())
+        {
+            throw new CAdESException("id-aa-signatureTimeStampToken attribute is missing");
+        }
+        for (int i = 0; i != tokens.size(); ++i)
+        {
+            TimeStampToken token = tokens.get(i);
+            AlgorithmIdentifier alg = token.getTimeStampInfo().getHashAlgorithm();
+            byte[] embedded = token.getTimeStampInfo().getMessageImprintDigest();
+            byte[] recomputed = computeSignatureImprint(signer, alg, digCalcProv);
+            if (!Arrays.constantTimeAreEqual(embedded, recomputed))
+            {
+                throw new CAdESException(
+                    "id-aa-signatureTimeStampToken imprint mismatch at index " + i);
+            }
+        }
     }
 
     private static SignerInformation addSignatureTimestamp(SignerInformation signer,
