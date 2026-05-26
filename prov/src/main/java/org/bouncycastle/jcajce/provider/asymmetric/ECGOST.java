@@ -56,6 +56,12 @@ public class ECGOST
                     "ECGOST3410", PREFIX + "SignatureSpi",
                     CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001);
 
+            provider.addAlgorithm("Signature.NONEWITHECGOST3410",
+                    PREFIX + "SignatureSpi$noneEcGost3410");
+            provider.addAlgorithm("Alg.Alias.Signature.NONEwithECGOST3410", "NONEWITHECGOST3410");
+            provider.addAlgorithm("Alg.Alias.Signature.NONEWithECGOST3410", "NONEWITHECGOST3410");
+            provider.addAlgorithm("Alg.Alias.Signature.NONEWITHGOST-3410-2001", "NONEWITHECGOST3410");
+
             // ========= GOST34.10 2012 256|512
 
             provider.addAlgorithm("KeyFactory.ECGOST3410-2012", PREFIX_GOST_2012 + "KeyFactorySpi");
@@ -98,6 +104,11 @@ public class ECGOST
                     PREFIX_GOST_2012 + "ECGOST2012SignatureSpi256",
                     RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256);
 
+            provider.addAlgorithm("Signature.NONEWITHECGOST3410-2012-256",
+                    PREFIX_GOST_2012 + "ECGOST2012SignatureSpi256$noneGost2012_256");
+            provider.addAlgorithm("Alg.Alias.Signature.NONEwithECGOST3410-2012-256", "NONEWITHECGOST3410-2012-256");
+            provider.addAlgorithm("Alg.Alias.Signature.NONEWithECGOST3410-2012-256", "NONEWITHECGOST3410-2012-256");
+
             // 512 signature
 
             provider.addAlgorithm("Signature.ECGOST3410-2012-512",
@@ -112,6 +123,11 @@ public class ECGOST
             addSignatureAlgorithm(provider, "GOST3411-2012-512", "ECGOST3410-2012-512",
                     PREFIX_GOST_2012 + "ECGOST2012SignatureSpi512",
                     RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512);
+
+            provider.addAlgorithm("Signature.NONEWITHECGOST3410-2012-512",
+                    PREFIX_GOST_2012 + "ECGOST2012SignatureSpi512$noneGost2012_512");
+            provider.addAlgorithm("Alg.Alias.Signature.NONEwithECGOST3410-2012-512", "NONEWITHECGOST3410-2012-512");
+            provider.addAlgorithm("Alg.Alias.Signature.NONEWithECGOST3410-2012-512", "NONEWITHECGOST3410-2012-512");
 
             // KeyAgreement
 
