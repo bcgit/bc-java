@@ -462,6 +462,18 @@ public interface PKCSObjectIdentifiers
     /** PKCS#9: 1.2.840.113549.1.9.16.2.58 - <a href="https://tools.ietf.org/html/rfc7894#section-3.3">RFC 7894 §3.3</a>: EST estIdentityLinking attribute, unambiguous replacement for the overloaded PKCS#9 challengePassword used for transport-identity linking per <a href="https://tools.ietf.org/html/rfc7030#section-3.5">RFC 7030 §3.5</a>. DirectoryString, length 1..255. */
     ASN1ObjectIdentifier id_aa_estIdentityLinking = id_aa.branch("58");
 
+    /**
+     * PKCS#9: 1.2.840.113549.1.9.16.2.60 - RFC 9763 sec. 4:
+     * {@code id-aa-relatedCertRequest} attribute identifying a previously issued certificate
+     * that should be bound to the CSR being processed (hybrid PQ migration). The attribute
+     * value is a {@code RequesterCertificate} SEQUENCE carrying the
+     * IssuerAndSerialNumber of the related certificate, a BinaryTime freshness
+     * stamp, one or more URIs from which the related certificate can be fetched,
+     * and a signature over the concatenation of the DER-encoded certID and
+     * requestTime computed with the related certificate's private key.
+     */
+    ASN1ObjectIdentifier id_aa_relatedCertRequest = id_aa.branch("60");
+
     /** @deprecated use id_aa_ets_sigPolicyId instead */
     @Deprecated
     ASN1ObjectIdentifier id_aa_sigPolicyId    = id_aa_ets_sigPolicyId;
