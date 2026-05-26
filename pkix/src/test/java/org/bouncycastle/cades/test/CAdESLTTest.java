@@ -277,6 +277,131 @@ public class CAdESLTTest
             Hex.toHexString(ocspRespIds[0].getOcspRepHash().getHashValue()));
     }
 
+    /**
+     * Round-trip the LT material via the getters and run the self-consistency
+     * validator on a freshly built B-LT signature.
+     */
+    public void testGettersAndSelfConsistencyValidator()
+        throws Exception
+    {
+        byte[] payload = "CAdES B-LT self-consistency".getBytes("UTF-8");
+
+        DigestCalculatorProvider digProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        ContentSigner signerBuilder = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(signKP.getPrivate());
+        X509CertificateHolder signCh = new JcaX509CertificateHolder(signCert);
+        X509CertificateHolder caCh = new JcaX509CertificateHolder(caCert);
+        X509CRLHolder crlHolder = new JcaX509CRLHolder(caCrl);
+
+        CAdESSignerInfoGeneratorBuilder cb = new CAdESSignerInfoGeneratorBuilder(digProv);
+        CAdESSignedDataGenerator gen = new CAdESSignedDataGenerator();
+        gen.addSignerInfoGenerator(cb.build(signerBuilder, signCh));
+        gen.addCertificates(new JcaCertStore(java.util.Collections.singletonList(signCert)));
+        CMSSignedData signed = gen.generate(new CMSProcessableByteArray(payload), true);
+        SignerInformation signer = (SignerInformation)signed.getSignerInfos().getSigners().iterator().next();
+
+        BasicOCSPResp ocsp = mintOcspResponse(caCh, signCh, digProv);
+
+        CMSSignedData lt = CAdESLongTermValuesUtil.applyLongTermValues(
+            signed, signer.getSID(),
+            java.util.Collections.singletonList(caCh),
+            java.util.Collections.singletonList(crlHolder),
+            java.util.Collections.singletonList(ocsp),
+            SHA256, digProv);
+        SignerInformation ltSigner = (SignerInformation)lt.getSignerInfos().getSigners().iterator().next();
+
+        // --- getters ---
+        java.util.List<X509CertificateHolder> certs =
+            CAdESLongTermValuesUtil.getCertificateValues(ltSigner);
+        assertEquals(1, certs.size());
+        assertEquals(caCh.getSubject(), certs.get(0).getSubject());
+
+        java.util.List<X509CRLHolder> crls =
+            CAdESLongTermValuesUtil.getCertificateRevocationLists(ltSigner);
+        assertEquals(1, crls.size());
+        assertEquals(crlHolder.getIssuer(), crls.get(0).getIssuer());
+
+        java.util.List<BasicOCSPResp> ocsps =
+            CAdESLongTermValuesUtil.getOcspResponses(ltSigner);
+        assertEquals(1, ocsps.size());
+
+        // --- validator ---
+        CAdESLongTermValuesUtil.validateLongTermValues(ltSigner, digProv);
+
+        // Empty / pre-LT signer returns empty lists for each getter.
+        assertEquals(0, CAdESLongTermValuesUtil.getCertificateValues(signer).size());
+        assertEquals(0, CAdESLongTermValuesUtil.getCertificateRevocationLists(signer).size());
+        assertEquals(0, CAdESLongTermValuesUtil.getOcspResponses(signer).size());
+    }
+
+    /**
+     * Tampering the certValues bytes after the fact breaks the
+     * certificateRefs hash check; validateLongTermValues must throw.
+     */
+    public void testSelfConsistencyValidatorCatchesTampering()
+        throws Exception
+    {
+        byte[] payload = "tamper detection".getBytes("UTF-8");
+
+        DigestCalculatorProvider digProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        ContentSigner signerBuilder = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(signKP.getPrivate());
+        X509CertificateHolder signCh = new JcaX509CertificateHolder(signCert);
+        X509CertificateHolder caCh = new JcaX509CertificateHolder(caCert);
+        X509CRLHolder crlHolder = new JcaX509CRLHolder(caCrl);
+
+        CAdESSignerInfoGeneratorBuilder cb = new CAdESSignerInfoGeneratorBuilder(digProv);
+        CAdESSignedDataGenerator gen = new CAdESSignedDataGenerator();
+        gen.addSignerInfoGenerator(cb.build(signerBuilder, signCh));
+        gen.addCertificates(new JcaCertStore(java.util.Collections.singletonList(signCert)));
+        CMSSignedData signed = gen.generate(new CMSProcessableByteArray(payload), true);
+        SignerInformation signer = (SignerInformation)signed.getSignerInfos().getSigners().iterator().next();
+
+        CMSSignedData lt = CAdESLongTermValuesUtil.applyLongTermValues(
+            signed, signer.getSID(),
+            java.util.Collections.singletonList(caCh),
+            java.util.Collections.singletonList(crlHolder),
+            SHA256, digProv);
+
+        // Splice a *different* cert into certValues (the signer cert
+        // standing in for the CA cert) — the certificateRefs hash, computed
+        // against the original CA cert, will no longer match.
+        SignerInformation ltSigner = (SignerInformation)lt.getSignerInfos().getSigners().iterator().next();
+        AttributeTable unsigned = ltSigner.getUnsignedAttributes();
+        Attribute origCertValues = unsigned.get(PKCSObjectIdentifiers.id_aa_ets_certValues);
+        Attribute substituted = new Attribute(
+            PKCSObjectIdentifiers.id_aa_ets_certValues,
+            new org.bouncycastle.asn1.DERSet(
+                new org.bouncycastle.asn1.DERSequence(signCh.toASN1Structure())));
+        org.bouncycastle.asn1.ASN1EncodableVector original = unsigned.toASN1EncodableVector();
+        org.bouncycastle.asn1.ASN1EncodableVector v = new org.bouncycastle.asn1.ASN1EncodableVector();
+        for (int i = 0; i != original.size(); i++)
+        {
+            Attribute a = (Attribute)original.get(i);
+            if (a.getAttrType().equals(PKCSObjectIdentifiers.id_aa_ets_certValues))
+            {
+                v.add(substituted);
+            }
+            else
+            {
+                v.add(a);
+            }
+        }
+        final SignerInformation tampered = SignerInformation.replaceUnsignedAttributes(
+            ltSigner, new AttributeTable(v));
+        assertNotNull(origCertValues);
+
+        try
+        {
+            CAdESLongTermValuesUtil.validateLongTermValues(tampered, digProv);
+            fail("expected CAdESException for tampered certValues");
+        }
+        catch (org.bouncycastle.cades.CAdESException e)
+        {
+            // expected — message should mention the cert that no longer
+            // has a matching ref.
+            assertTrue(e.getMessage(), e.getMessage().contains("certificateRefs"));
+        }
+    }
+
     private static BasicOCSPResp mintOcspResponse(X509CertificateHolder caCh,
                                                   X509CertificateHolder signCh,
                                                   DigestCalculatorProvider digProv)

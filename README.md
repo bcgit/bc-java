@@ -10,6 +10,49 @@ Except where otherwise stated, this software is distributed under a license base
 
 **Note**: this source tree is not the FIPS version of the APIs - if you are interested in our FIPS version please contact us directly at  [office@bouncycastle.org](mailto:office@bouncycastle.org).
 
+## Using Bouncy Castle in your project
+
+The Bouncy Castle artifacts are published to [Maven Central](https://central.sonatype.com/search?q=g%3Aorg.bouncycastle) under the `org.bouncycastle` group. Pick the artifacts you need, then add them to your build using the latest released version.
+
+For the lightweight crypto API plus the JCA/JCE provider — the most common starting point — add `bcprov-jdk18on`:
+
+**Maven**:
+
+```xml
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcprov-jdk18on</artifactId>
+    <version>1.84</version>
+</dependency>
+```
+
+**Gradle**:
+
+```groovy
+implementation 'org.bouncycastle:bcprov-jdk18on:1.84'
+```
+
+If you need functionality beyond what `bcprov` provides, add the appropriate companion artifacts. They all share the same `org.bouncycastle` group, the same `-jdk18on` suffix, and the same version — pull each one in the same way as the snippets above:
+
+| Artifact | What it covers |
+| -------- | -------------- |
+| `bcprov-jdk18on`   | Lightweight crypto API plus the `BC` / `BCPQC` JCA/JCE providers. Required by every other module. |
+| `bcpkix-jdk18on`   | X.509 / PKCS#10 / PKCS#12, CMS, S/MIME helpers (top-level only), TSP, OCSP, CMP / CRMF, certificate path validation. |
+| `bcpg-jdk18on`     | OpenPGP (RFC 4880 / RFC 9580). |
+| `bctls-jdk18on`    | Standalone TLS 1.0 – 1.3 implementation plus the BCJSSE provider. |
+| `bcmail-jdk18on`   | S/MIME built on top of `bcpkix`, targeting the legacy `javax.mail` / `javax.activation` 1.x runtimes. |
+| `bcjmail-jdk18on`  | S/MIME for the Jakarta runtimes (`jakarta.mail` / `jakarta.activation` 2.x). Pick this for modern Spring Boot / Quarkus / Jakarta EE apps, and use `bcmail-jdk18on` for the older `javax.*` stack. |
+| `bcmls-jdk18on`    | Messaging Layer Security (RFC 9420). |
+| `bcutil-jdk18on`   | Shared ASN.1 utility classes used by `bcpkix`. Pulled in transitively. |
+
+### Suffix history
+
+The `-jdk18on` suffix means "JDK 1.8 and newer." Pre-1.71 releases shipped under a `-jdk15on` suffix (JDK 1.5 and newer); those artifacts are end-of-life and should not be used for new development. The `15to18` suffix you may see in this repository's local Gradle outputs reflects a transitional build flavour and is **not** what is published to Maven Central.
+
+### FIPS distribution
+
+The FIPS-certified BC distribution lives in a separate source tree with separate Maven coordinates and a separate licence — it is not what this repository builds. See [the BC FIPS page](https://www.bouncycastle.org/fips-java/) or contact [office@bouncycastle.org](mailto:office@bouncycastle.org) for additional details.
+
 ## Maven Public Key
 
 The file [bc_maven_public_key.asc](bc_maven_public_key.asc) contains the public key used to sign our artifacts on Maven Central. You will need to use 

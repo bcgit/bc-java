@@ -128,6 +128,76 @@ public interface X509ObjectIdentifiers
     static final ASN1ObjectIdentifier id_ce = new ASN1ObjectIdentifier("2.5.29");
 
     /**
+     * Google's Certificate Transparency arc, the parent of the OIDs defined
+     * by RFC 6962. Not under the standard PKIX id-pe / id-ce trees because
+     * the values predate RFC 6962's transition to IETF process.
+     * <p>
+     * OID: 1.3.6.1.4.1.11129.2.4
+     */
+    static final ASN1ObjectIdentifier id_ct = new ASN1ObjectIdentifier("1.3.6.1.4.1.11129.2.4");
+
+    /**
+     * RFC 6962 sec. 3.3 / RFC 9162 sec. 4.1 — certificate extension carrying
+     * the TLS-encoded {@code SignedCertificateTimestampList} for a server
+     * certificate.
+     * <p>
+     * OID: 1.3.6.1.4.1.11129.2.4.2
+     */
+    static final ASN1ObjectIdentifier id_ce_ct_embeddedSCTList = id_ct.branch("2");
+
+    /**
+     * RFC 6962 sec. 3.1 / RFC 9162 sec. 4.2 — the precertificate-poison
+     * critical extension that marks a CMS as a precertificate (i.e. not a
+     * valid TLS certificate, used only for CT log submission).
+     * <p>
+     * OID: 1.3.6.1.4.1.11129.2.4.3
+     */
+    static final ASN1ObjectIdentifier id_ce_ct_precertPoison = id_ct.branch("3");
+
+    /**
+     * RFC 6962 sec. 3.1 — Extended Key Usage identifier for an intermediate
+     * CA delegated to sign precertificates.
+     * <p>
+     * OID: 1.3.6.1.4.1.11129.2.4.4
+     */
+    static final ASN1ObjectIdentifier id_kp_ct_precertSigning = id_ct.branch("4");
+
+    /**
+     * RFC 6962 sec. 3.3 — OCSP response extension carrying a TLS-encoded
+     * {@code SignedCertificateTimestampList} when SCTs are delivered through
+     * an OCSP stapling response rather than embedded in the certificate.
+     * <p>
+     * OID: 1.3.6.1.4.1.11129.2.4.5
+     */
+    static final ASN1ObjectIdentifier id_ocsp_ct_sctList = id_ct.branch("5");
+
+    /**
+     * RFC 9162 sec. 7.1 — the Transparency Information X.509v3 extension,
+     * the CT v2 replacement for {@link #id_ce_ct_embeddedSCTList}. Carries a
+     * TLS-encoded {@code TransItemList} whose entries are typed under the
+     * {@code VersionedTransType} registry. RFC 9162 deliberately drops the
+     * poison extension and precertificate-signing EKU concepts from v1;
+     * those constants ({@link #id_ce_ct_precertPoison} and
+     * {@link #id_kp_ct_precertSigning}) have no v2 counterpart.
+     * <p>
+     * OID: 1.3.101.75
+     */
+    static final ASN1ObjectIdentifier id_ce_ct_transparencyInformation
+        = new ASN1ObjectIdentifier("1.3.101.75").intern();
+
+    /**
+     * RFC 9162 sec. 3.2 — the CMS {@code eContentType} for a CT v2
+     * precertificate. The v2 precertificate is wrapped as a CMS SignedData
+     * object whose encapContentInfo carries this content type, replacing
+     * the v1 approach of issuing a separate precertificate with a critical
+     * poison extension.
+     * <p>
+     * OID: 1.3.101.78
+     */
+    static final ASN1ObjectIdentifier id_ct_precertificate
+        = new ASN1ObjectIdentifier("1.3.101.78").intern();
+
+    /**
      *  id-PasswordBasedMac OBJECT IDENTIFIER ::= { iso(1) member-body(2)
      *          us(840) nt(113533) nsn(7) algorithms(66) 13 }
      *  @deprecated Use CRMFObjectIdentifiers.passwordBasedMac instead 
