@@ -901,4 +901,26 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier hawk256 = hawk.branch("1");
     ASN1ObjectIdentifier hawk512 = hawk.branch("2");
     ASN1ObjectIdentifier hawk1024 = hawk.branch("3");
+
+    /**
+     * SDitH (Syndrome-Decoding-in-the-Head). BC-allocated arc pending NIST OID
+     * assignment. The Round-2 submission defines 12 variants formed from the
+     * cross of {hypercube, threshold} × {cat1, cat3, cat5} × {gf256, p251};
+     * all 12 are wired in. Branches are assigned in canonical order:
+     * hypercube cat1/3/5 gf256 = .1/.2/.3, hypercube cat1/3/5 p251 = .4/.5/.6,
+     * threshold cat1/3/5 gf256 = .7/.8/.9, threshold cat1/3/5 p251 = .10/.11/.12.
+     */
+    ASN1ObjectIdentifier sdith = bc_sig.branch("16");
+    ASN1ObjectIdentifier sdith_hypercube_cat1_gf256 = sdith.branch("1");
+    ASN1ObjectIdentifier sdith_hypercube_cat3_gf256 = sdith.branch("2");
+    ASN1ObjectIdentifier sdith_hypercube_cat5_gf256 = sdith.branch("3");
+    ASN1ObjectIdentifier sdith_hypercube_cat1_p251  = sdith.branch("4");
+    ASN1ObjectIdentifier sdith_hypercube_cat3_p251  = sdith.branch("5");
+    ASN1ObjectIdentifier sdith_hypercube_cat5_p251  = sdith.branch("6");
+    ASN1ObjectIdentifier sdith_threshold_cat1_gf256 = sdith.branch("7");
+    ASN1ObjectIdentifier sdith_threshold_cat3_gf256 = sdith.branch("8");
+    ASN1ObjectIdentifier sdith_threshold_cat5_gf256 = sdith.branch("9");
+    ASN1ObjectIdentifier sdith_threshold_cat1_p251  = sdith.branch("10");
+    ASN1ObjectIdentifier sdith_threshold_cat3_p251  = sdith.branch("11");
+    ASN1ObjectIdentifier sdith_threshold_cat5_p251  = sdith.branch("12");
 }
