@@ -23,6 +23,7 @@ public class AllTests
         suite.addTestSuite(CheckerTest.class);
         suite.addTestSuite(RevocationTest.class);
         suite.addTestSuite(CheckNameConstraintsTest.class);
+        suite.addTestSuite(IDPRelativeNameTest.class);
 
         return new BCTestSetup(suite);
     }
