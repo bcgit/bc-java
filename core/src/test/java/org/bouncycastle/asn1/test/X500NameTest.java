@@ -152,6 +152,7 @@ public class X500NameTest
         ietfUtilsTest();
         bogusEqualsTest();
         dnQualifierAliasParseTest();
+        hexEscapedUTF8ParseTest();
 
         testEncodingPrintableString(BCStyle.C, "AU");
         testEncodingPrintableString(BCStyle.SERIALNUMBER, "123456");
@@ -758,6 +759,53 @@ public class X500NameTest
         catch (IllegalArgumentException e)
         {
             isEquals("badly formatted directory string", e.getMessage());
+        }
+    }
+
+    /**
+     * RFC 4514 sec. 2.4 lets any byte be escaped as \HH, and the underlying
+     * directoryString is UTF-8 (RFC 5280 sec. 4.1.2.4). A run of consecutive
+     * \HH escapes is therefore a UTF-8 byte sequence, never one Java char per
+     * pair (issue #1061).
+     */
+    private void hexEscapedUTF8ParseTest()
+        throws Exception
+    {
+        String[] subjects = new String[]
+        {
+            "CN=Lu\\C4\\8Di\\C4\\87",        // Lučić
+            "CN=M\\C3\\B6rsky",              // Mörsky
+            "CN=\\E6\\97\\A5\\E6\\9C\\AC",   // 日本 (three-byte UTF-8)
+            "CN=Lu\\C4\\8Di\\C4\\87,O=Acme", // RDN separator flushes the run
+        };
+        String[] expectedValues = new String[]
+        {
+            "Lučić",
+            "Mörsky",
+            "日本",
+            "Lučić",
+        };
+
+        for (int i = 0; i != subjects.length; i++)
+        {
+            X500Name name = new X500Name(subjects[i]);
+            String value = ((ASN1String)name.getRDNs()[0].getFirst().getValue()).getString();
+            isEquals("unexpected value for " + subjects[i], expectedValues[i], value);
+
+            X500Name reparsed = fromBytes(name.getEncoded());
+            String reValue = ((ASN1String)reparsed.getRDNs()[0].getFirst().getValue()).getString();
+            isEquals("round-trip lost data for " + subjects[i], expectedValues[i], reValue);
+        }
+
+        // A lone leading byte without its continuation byte is malformed UTF-8.
+        try
+        {
+            new X500Name("CN=Lu\\C4");
+            fail("malformed UTF-8 escape sequence not rejected");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
         }
     }
 
