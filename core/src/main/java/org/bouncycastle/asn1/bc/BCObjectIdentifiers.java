@@ -439,6 +439,51 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier external_value = bc_ext.branch("2");
 
     /**
+     * Placeholder for the id-ad-certDiscovery access method defined by
+     * draft-ietf-lamps-certdiscovery-03 (registered as TBD2 against the SMI
+     * Security for PKIX Access Descriptor registry). Used as the
+     * AccessDescription.accessMethod inside a SubjectInfoAccess extension to
+     * advertise that the accessLocation points at a related certificate.
+     * <p>
+     * 1.3.6.1.4.1.22554.4.3 (BC private placeholder; replace with the
+     * IANA-assigned id-ad.N once the draft progresses to RFC)
+     */
+    ASN1ObjectIdentifier id_ad_certDiscovery = bc_ext.branch("3");
+
+    /**
+     * Placeholder for the id-on-relatedCertificateDescriptor otherName type
+     * defined by draft-ietf-lamps-certdiscovery-03 (registered as TBD3
+     * against the SMI Security for PKIX Other Name Forms registry). Used as
+     * the OtherName.type-id wrapping the RelatedCertificateDescriptor
+     * carried inside the SIA extension's accessLocation GeneralName.
+     * <p>
+     * 1.3.6.1.4.1.22554.4.4 (BC private placeholder; replace with the
+     * IANA-assigned id-on.N once the draft progresses to RFC)
+     */
+    ASN1ObjectIdentifier id_on_relatedCertificateDescriptor = bc_ext.branch("4");
+
+    /**
+     * Placeholder for the id-rcd discovery-intent arc defined by
+     * draft-ietf-lamps-certdiscovery-03 (registered as TBD4). Parent of the
+     * five DiscoveryIntentId values below.
+     * <p>
+     * 1.3.6.1.4.1.22554.4.5 (BC private placeholder; replace with the
+     * IANA-assigned id-rcd once the draft progresses to RFC)
+     */
+    ASN1ObjectIdentifier id_rcd = bc_ext.branch("5");
+
+    /** id-rcd-agility: secondary certificate provides cryptographic agility. */
+    ASN1ObjectIdentifier id_rcd_agility       = id_rcd.branch("1");
+    /** id-rcd-redundancy: secondary certificate is a backup (different CA / validity). */
+    ASN1ObjectIdentifier id_rcd_redundancy    = id_rcd.branch("2");
+    /** id-rcd-dual: secondary certificate provides the complementary key usage (sign/encrypt split). */
+    ASN1ObjectIdentifier id_rcd_dual          = id_rcd.branch("3");
+    /** id-rcd-priv-key-stmt: secondary certificate carries a proof-of-possession statement signed for the primary. */
+    ASN1ObjectIdentifier id_rcd_priv_key_stmt = id_rcd.branch("4");
+    /** id-rcd-self: descriptor points at the location of the current certificate itself. */
+    ASN1ObjectIdentifier id_rcd_self          = id_rcd.branch("5");
+
+    /**
      * KEM(5) algorithms
      */
     ASN1ObjectIdentifier bc_kem = bc.branch("5");
