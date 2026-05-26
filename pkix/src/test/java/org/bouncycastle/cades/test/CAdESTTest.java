@@ -161,6 +161,114 @@ public class CAdESTTest
         assertEquals("both tokens must be present", 2, tsAttr.getAttrValues().size());
     }
 
+    /**
+     * Round-trip the timestamp tokens via the getter and run the
+     * self-consistency validator on a freshly built B-T signature.
+     */
+    public void testGettersAndSelfConsistencyValidator()
+        throws Exception
+    {
+        byte[] payload = "CAdES B-T self-consistency".getBytes("UTF-8");
+
+        DigestCalculatorProvider digProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        ContentSigner cs = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(signKP.getPrivate());
+        X509CertificateHolder ch = new JcaX509CertificateHolder(signCert);
+
+        CAdESSignerInfoGeneratorBuilder cb = new CAdESSignerInfoGeneratorBuilder(digProv);
+        CAdESSignedDataGenerator gen = new CAdESSignedDataGenerator();
+        gen.addSignerInfoGenerator(cb.build(cs, ch));
+        gen.addCertificates(new JcaCertStore(java.util.Collections.singletonList(signCert)));
+        CMSSignedData bb = gen.generate(new CMSProcessableByteArray(payload), true);
+
+        SignerInformation bbSigner = (SignerInformation)bb.getSignerInfos().getSigners().iterator().next();
+
+        // Pre-upgrade: getter returns empty, validator throws.
+        assertEquals(0,
+            CAdESSignatureTimestampUtil.getSignatureTimestamps(bbSigner).size());
+        try
+        {
+            CAdESSignatureTimestampUtil.validateSignatureTimestamps(bbSigner, digProv);
+            fail("expected CAdESException for missing signature-time-stamp");
+        }
+        catch (org.bouncycastle.cades.CAdESException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().contains("missing"));
+        }
+
+        AlgorithmIdentifier sha256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+        byte[] imprint = CAdESSignatureTimestampUtil.computeSignatureImprint(bbSigner, sha256, digProv);
+        TimeStampToken first = mintTsaToken(imprint);
+        CMSSignedData bt = CAdESSignatureTimestampUtil.applySignatureTimestamp(
+            bb, bbSigner.getSID(), first);
+        SignerInformation btSigner = (SignerInformation)bt.getSignerInfos().getSigners().iterator().next();
+
+        java.util.List<TimeStampToken> tokens =
+            CAdESSignatureTimestampUtil.getSignatureTimestamps(btSigner);
+        assertEquals(1, tokens.size());
+        assertEquals(Hex.toHexString(imprint),
+            Hex.toHexString(tokens.get(0).getTimeStampInfo().getMessageImprintDigest()));
+
+        // The self-consistency validator passes.
+        CAdESSignatureTimestampUtil.validateSignatureTimestamps(btSigner, digProv);
+
+        // After appending a second token both should still validate.
+        TimeStampToken second = mintTsaToken(imprint);
+        bt = CAdESSignatureTimestampUtil.applySignatureTimestamp(bt, btSigner.getSID(), second);
+        btSigner = (SignerInformation)bt.getSignerInfos().getSigners().iterator().next();
+        assertEquals(2, CAdESSignatureTimestampUtil.getSignatureTimestamps(btSigner).size());
+        CAdESSignatureTimestampUtil.validateSignatureTimestamps(btSigner, digProv);
+    }
+
+    /**
+     * Timestamping a fresh imprint and then attaching it to a *different*
+     * signer must cause validateSignatureTimestamps to throw &mdash; the
+     * imprint covers the first signer's signature value, not the second's.
+     */
+    public void testSelfConsistencyValidatorCatchesImprintMismatch()
+        throws Exception
+    {
+        DigestCalculatorProvider digProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        ContentSigner cs = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(signKP.getPrivate());
+        X509CertificateHolder ch = new JcaX509CertificateHolder(signCert);
+
+        // Two independent B-B signatures over different payloads (so the
+        // SignerInfo.signature values differ).
+        CAdESSignerInfoGeneratorBuilder cb = new CAdESSignerInfoGeneratorBuilder(digProv);
+
+        CAdESSignedDataGenerator g1 = new CAdESSignedDataGenerator();
+        g1.addSignerInfoGenerator(cb.build(cs, ch));
+        g1.addCertificates(new JcaCertStore(java.util.Collections.singletonList(signCert)));
+        CMSSignedData sd1 = g1.generate(new CMSProcessableByteArray("payload one".getBytes("UTF-8")), true);
+        SignerInformation s1 = (SignerInformation)sd1.getSignerInfos().getSigners().iterator().next();
+
+        CAdESSignedDataGenerator g2 = new CAdESSignedDataGenerator();
+        g2.addSignerInfoGenerator(cb.build(cs, ch));
+        g2.addCertificates(new JcaCertStore(java.util.Collections.singletonList(signCert)));
+        CMSSignedData sd2 = g2.generate(new CMSProcessableByteArray("payload two".getBytes("UTF-8")), true);
+        SignerInformation s2 = (SignerInformation)sd2.getSignerInfos().getSigners().iterator().next();
+
+        // Mint a token over s1's signature.
+        AlgorithmIdentifier sha256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+        byte[] imprintForS1 = CAdESSignatureTimestampUtil.computeSignatureImprint(s1, sha256, digProv);
+        TimeStampToken token = mintTsaToken(imprintForS1);
+
+        // Attach it to s2 instead.
+        CMSSignedData tampered = CAdESSignatureTimestampUtil.applySignatureTimestamp(
+            sd2, s2.getSID(), token);
+        SignerInformation tamperedSigner =
+            (SignerInformation)tampered.getSignerInfos().getSigners().iterator().next();
+
+        try
+        {
+            CAdESSignatureTimestampUtil.validateSignatureTimestamps(tamperedSigner, digProv);
+            fail("expected CAdESException for imprint mismatch");
+        }
+        catch (org.bouncycastle.cades.CAdESException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().contains("imprint mismatch"));
+        }
+    }
+
     private TimeStampToken mintTsaToken(byte[] imprint)
         throws Exception
     {
