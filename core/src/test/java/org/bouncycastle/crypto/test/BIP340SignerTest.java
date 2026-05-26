@@ -89,7 +89,7 @@ public class BIP340SignerTest
         byte[] message = Hex.decode(messageHex);
         byte[] signature = Hex.decode(signatureHex);
 
-        ECPublicKeyParameters pub = BIP340Signer.liftXOnlyPublicKey(pubX);
+        ECPublicKeyParameters pub = BIP340Signer.decodePublicKey(pubX);
 
         if (secretHex.length() > 0)
         {
@@ -125,7 +125,7 @@ public class BIP340SignerTest
     private byte[] sign(byte[] secret, byte[] auxRand, byte[] message)
     {
         BigInteger d = new BigInteger(1, secret);
-        ECPrivateKeyParameters priv = new ECPrivateKeyParameters(d, BIP340Signer.getDomainParameters());
+        ECPrivateKeyParameters priv = new ECPrivateKeyParameters(d, BIP340Signer.getDomain());
         BIP340Signer signer = new BIP340Signer();
         signer.init(true, new ParametersWithRandom(priv, new FixedBytesRandom(auxRand)));
         signer.update(message, 0, message.length);
@@ -136,7 +136,7 @@ public class BIP340SignerTest
     {
         BigInteger d = new BigInteger(
             "B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFEF", 16);
-        ECPrivateKeyParameters priv = new ECPrivateKeyParameters(d, BIP340Signer.getDomainParameters());
+        ECPrivateKeyParameters priv = new ECPrivateKeyParameters(d, BIP340Signer.getDomain());
         byte[] msg = Hex.decode("243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89");
 
         BIP340Signer signer = new BIP340Signer();
@@ -147,10 +147,10 @@ public class BIP340SignerTest
 
         byte[] pubX = BigIntegers.asUnsignedByteArray(32,
             new FixedPointCombMultiplier()
-                .multiply(BIP340Signer.getDomainParameters().getG(), d).normalize()
+                .multiply(BIP340Signer.getDomain().getG(), d).normalize()
                 .getAffineXCoord().toBigInteger());
 
-        ECPublicKeyParameters pub = BIP340Signer.liftXOnlyPublicKey(pubX);
+        ECPublicKeyParameters pub = BIP340Signer.decodePublicKey(pubX);
         isTrue("liftX produced a key", pub != null);
 
         BIP340Signer verifier = new BIP340Signer();

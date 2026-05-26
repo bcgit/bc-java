@@ -15,66 +15,38 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.math.ec.ECAlgorithms;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Strings;
 
 /**
- * Schnorr signatures for secp256k1 per BIP-340 (and the BIP-340bis variable-length-message extension).
+ * Schnorr signatures for secp256k1 per
+ * <a href="https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki">BIP-340</a> (with the
+ * BIP-340bis variable-length-message extension).
  * <p>
- * Reference: <a href="https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki">BIP-340</a>.
+ * Public keys are the 32-byte big-endian X coordinate of the unique even-Y curve point with that X.
+ * Signatures are the fixed 64-byte concatenation {@code bytes(R) || bytes(s)} — neither encoding
+ * matches BC's ECDSA defaults.
  * <p>
- * Public keys are x-only (the 32-byte big-endian X coordinate of the unique even-Y curve point with that X).
- * Signatures are the fixed 64-byte concatenation {@code bytes(R) || bytes(s)} where R is an x-only point and s is a
- * scalar in {@code [0, n)}. Both keys and signature deviate from BC's usual ECDSA encoding: signatures are not DER and
- * public points are not SEC1.
- * <pre>
- *   Sign(sk, m, a):
- *     d' = int(sk); fail if d' = 0 or d' &gt;= n
- *     P  = d' * G
- *     d  = d' if has_even_y(P) else n - d'
- *     t  = bytes(d) XOR H_aux(a)
- *     k' = int(H_nonce(t || bytes(P) || m)) mod n; fail if k' = 0
- *     R  = k' * G
- *     k  = k' if has_even_y(R) else n - k'
- *     e  = int(H_challenge(bytes(R) || bytes(P) || m)) mod n
- *     return bytes(R) || bytes((k + e * d) mod n)
- *
- *   Verify(pk_x, m, sig):
- *     P = lift_x(int(pk_x)); fail if None
- *     r = int(sig[0:32]);  fail if r &gt;= p
- *     s = int(sig[32:64]); fail if s &gt;= n
- *     e = int(H_challenge(bytes(r) || bytes(P) || m)) mod n
- *     R = s*G - e*P
- *     accept iff R is finite, has_even_y(R), and x(R) = r
- * </pre>
- * The three tagged-hash domain separators are {@code BIP0340/aux}, {@code BIP0340/nonce} and
- * {@code BIP0340/challenge}; {@code H_tag(x) = SHA256(SHA256(tag) || SHA256(tag) || x)}.
- * <p>
- * <b>Auxiliary randomness.</b> Pass a {@link ParametersWithRandom} wrapping the private key to draw a fresh
- * 32-byte {@code aux_rand} per call to {@link #generateSignature()} (RFC-recommended). Initialising with the bare
- * {@link ECPrivateKeyParameters} produces deterministic Schnorr signatures (aux_rand = 0^32), still spec-compliant
- * but without the side-channel hardening BIP-340 §3.2 calls out.
- * <p>
- * <b>Public-key supply.</b> Verification keys come in as {@link ECPublicKeyParameters}; only the X coordinate is
- * used, and the verifier internally re-lifts to the even-Y point. Callers may therefore pass either the lifted
- * point or any point sharing the X — the result is the same.
+ * Auxiliary randomness: passing a {@link ParametersWithRandom} on {@link #init} draws a fresh 32-byte
+ * {@code aux_rand} per {@link #generateSignature} call (BIP-340 §3.2). Initialising with the bare
+ * {@link ECPrivateKeyParameters} produces deterministic Schnorr signatures (aux_rand = 0^32).
  */
 public class BIP340Signer
     implements Signer
 {
-    private static final int SIGNATURE_SIZE = 64;
     private static final int X_SIZE = 32;
     private static final int AUX_RAND_SIZE = 32;
+    private static final int SIGNATURE_SIZE = 64;
 
     private static final ECDomainParameters SECP256K1;
     private static final BigInteger P;
 
+    // Pre-hashed tag bytes per BIP-340 sec. 3.2: T = SHA256(tag), H_tag(x) = SHA256(T || T || x).
     private static final byte[] TAG_HASH_AUX;
     private static final byte[] TAG_HASH_NONCE;
     private static final byte[] TAG_HASH_CHALLENGE;
@@ -85,9 +57,9 @@ public class BIP340Signer
         SECP256K1 = new ECDomainParameters(x9);
         P = SECP256K1.getCurve().getField().getCharacteristic();
 
-        TAG_HASH_AUX = precomputedTagHash("BIP0340/aux");
-        TAG_HASH_NONCE = precomputedTagHash("BIP0340/nonce");
-        TAG_HASH_CHALLENGE = precomputedTagHash("BIP0340/challenge");
+        TAG_HASH_AUX = tagHash("BIP0340/aux");
+        TAG_HASH_NONCE = tagHash("BIP0340/nonce");
+        TAG_HASH_CHALLENGE = tagHash("BIP0340/challenge");
     }
 
     private final Buffer buffer = new Buffer();
@@ -102,52 +74,53 @@ public class BIP340Signer
     }
 
     /**
-     * Return the secp256k1 domain parameters BIP-340 is locked to. Suitable for constructing
-     * {@link ECPrivateKeyParameters} for {@link #init(boolean, CipherParameters) init}.
+     * secp256k1 domain parameters. Use to construct {@link ECPrivateKeyParameters} / call an
+     * {@link org.bouncycastle.crypto.generators.ECKeyPairGenerator} for BIP-340.
      */
-    public static ECDomainParameters getDomainParameters()
+    public static ECDomainParameters getDomain()
     {
         return SECP256K1;
     }
 
     /**
-     * Lift a 32-byte x-only BIP-340 public key encoding to an {@link ECPublicKeyParameters} carrying the unique
-     * even-Y secp256k1 point with that X. Returns {@code null} when the encoding is not 32 bytes, when X is
-     * outside {@code [0, p)}, or when no curve point exists with that X — matching the cases BIP-340 §3.1
-     * defines as verification failures, so the caller can treat a null return as an a-priori-invalid public key.
+     * Lift a 32-byte x-only BIP-340 public key to an {@link ECPublicKeyParameters} carrying the unique
+     * even-Y secp256k1 point with that X. Returns {@code null} for the cases BIP-340 §3.1 defines as
+     * verification failures: wrong length, X out of {@code [0, p)}, or no curve point with that X.
      */
-    public static ECPublicKeyParameters liftXOnlyPublicKey(byte[] xOnly)
+    public static ECPublicKeyParameters decodePublicKey(byte[] xOnly)
     {
-        if (xOnly == null || xOnly.length != X_SIZE)
+        if (xOnly != null && xOnly.length == X_SIZE)
         {
-            return null;
+            try
+            {
+                ECPoint q = SECP256K1.getCurve().decodePoint(Arrays.prepend(xOnly, (byte)0x02));
+                return new ECPublicKeyParameters(q, SECP256K1);
+            }
+            catch (RuntimeException e)
+            {
+            }
         }
-        ECPoint q = liftX(new BigInteger(1, xOnly));
-        if (q == null)
-        {
-            return null;
-        }
-        return new ECPublicKeyParameters(q, SECP256K1);
+        return null;
     }
 
     public void init(boolean forSigning, CipherParameters parameters)
     {
-        this.forSigning = forSigning;
-        this.auxRandSource = null;
-
+        SecureRandom providedRandom = null;
         if (parameters instanceof ParametersWithRandom)
         {
             ParametersWithRandom withRandom = (ParametersWithRandom)parameters;
             parameters = withRandom.getParameters();
-            this.auxRandSource = withRandom.getRandom();
+            providedRandom = withRandom.getRandom();
         }
 
+        this.forSigning = forSigning;
         if (forSigning)
         {
             ECPrivateKeyParameters ecPrivateKey = (ECPrivateKeyParameters)parameters;
             checkSecp256k1(ecPrivateKey.getParameters());
             this.privateKey = ecPrivateKey;
             this.publicKey = null;
+            this.auxRandSource = providedRandom;
         }
         else
         {
@@ -155,6 +128,7 @@ public class BIP340Signer
             checkSecp256k1(ecPublicKey.getParameters());
             this.privateKey = null;
             this.publicKey = ecPublicKey;
+            this.auxRandSource = null;
         }
 
         CryptoServicesRegistrar.checkConstraints(
@@ -204,118 +178,113 @@ public class BIP340Signer
         buffer.reset();
     }
 
-    private static byte[] sign(ECPrivateKeyParameters privateKey, byte[] message, byte[] auxRand)
+    // BIP-340 sec. 3.3 Default Signing.
+    private static byte[] sign(ECPrivateKeyParameters privateKey, byte[] m, byte[] auxRand)
     {
         BigInteger n = SECP256K1.getN();
-        BigInteger dPrime = privateKey.getD();
 
-        if (dPrime.signum() <= 0 || dPrime.compareTo(n) >= 0)
+        // Step 1: d' = int(sk); fail if d' = 0 or d' >= n.
+        BigInteger d = privateKey.getD();
+        if (d.signum() <= 0 || d.compareTo(n) >= 0)
         {
             throw new IllegalArgumentException("BIP-340 private key out of range");
         }
 
-        ECMultiplier multiplier = new FixedPointCombMultiplier();
-        ECPoint pubPoint = multiplier.multiply(SECP256K1.getG(), dPrime).normalize();
-        BigInteger d = hasEvenY(pubPoint) ? dPrime : n.subtract(dPrime);
+        ECMultiplier mult = new FixedPointCombMultiplier();
 
-        byte[] pBytes = xBytes(pubPoint);
+        // Steps 4-5: P = d' * G; d = d' if has_even_y(P) else n - d'.
+        ECPoint P_pt = mult.multiply(SECP256K1.getG(), d).normalize();
+        if (!hasEvenY(P_pt))
+        {
+            d = n.subtract(d);
+        }
+        byte[] pBytes = xBytes(P_pt);
 
-        byte[] t = xor(BigIntegers.asUnsignedByteArray(X_SIZE, d), taggedHash(TAG_HASH_AUX, auxRand));
+        // Steps 6-8: t = bytes(d) XOR H_aux(a); k' = int(H_nonce(t || bytes(P) || m)) mod n; fail if k' = 0.
+        byte[] t = BigIntegers.asUnsignedByteArray(X_SIZE, d);
+        Bytes.xorTo(X_SIZE, taggedHash(TAG_HASH_AUX, auxRand), t);
 
-        SHA256Digest nonceHash = taggedDigest(TAG_HASH_NONCE);
-        nonceHash.update(t, 0, t.length);
-        nonceHash.update(pBytes, 0, pBytes.length);
-        nonceHash.update(message, 0, message.length);
+        SHA256Digest h = taggedDigest(TAG_HASH_NONCE);
+        h.update(t, 0, X_SIZE);
+        h.update(pBytes, 0, X_SIZE);
+        h.update(m, 0, m.length);
         byte[] rand = new byte[X_SIZE];
-        nonceHash.doFinal(rand, 0);
+        h.doFinal(rand, 0);
 
-        BigInteger kPrime = new BigInteger(1, rand).mod(n);
-        if (kPrime.signum() == 0)
+        BigInteger k = BigIntegers.fromUnsignedByteArray(rand).mod(n);
+        if (k.signum() == 0)
         {
             throw new IllegalStateException("BIP-340 nonce derivation produced zero");
         }
 
-        ECPoint rPoint = multiplier.multiply(SECP256K1.getG(), kPrime).normalize();
-        BigInteger k = hasEvenY(rPoint) ? kPrime : n.subtract(kPrime);
+        // Steps 9-10: R = k' * G; k = k' if has_even_y(R) else n - k'.
+        ECPoint R_pt = mult.multiply(SECP256K1.getG(), k).normalize();
+        if (!hasEvenY(R_pt))
+        {
+            k = n.subtract(k);
+        }
+        byte[] rBytes = xBytes(R_pt);
 
-        byte[] rBytes = xBytes(rPoint);
-        BigInteger e = challengeScalar(rBytes, pBytes, message);
+        // Steps 11-12: e = int(H_challenge(bytes(R) || bytes(P) || m)) mod n; sig = bytes(R) || bytes((k + e*d) mod n).
+        BigInteger e = challengeScalar(rBytes, pBytes, m);
         BigInteger s = k.add(e.multiply(d)).mod(n);
 
         byte[] sig = new byte[SIGNATURE_SIZE];
         System.arraycopy(rBytes, 0, sig, 0, X_SIZE);
-        byte[] sBytes = BigIntegers.asUnsignedByteArray(X_SIZE, s);
-        System.arraycopy(sBytes, 0, sig, X_SIZE, X_SIZE);
+        BigIntegers.asUnsignedByteArray(s, sig, X_SIZE, X_SIZE);
         return sig;
     }
 
-    private static boolean verify(ECPublicKeyParameters publicKey, byte[] message, byte[] signature)
+    // BIP-340 sec. 3.4 Verification.
+    private static boolean verify(ECPublicKeyParameters publicKey, byte[] m, byte[] sig)
     {
-        if (signature == null || signature.length != SIGNATURE_SIZE)
+        if (sig == null || sig.length != SIGNATURE_SIZE)
         {
             return false;
         }
 
-        BigInteger r = new BigInteger(1, Arrays.copyOfRange(signature, 0, X_SIZE));
-        BigInteger s = new BigInteger(1, Arrays.copyOfRange(signature, X_SIZE, SIGNATURE_SIZE));
-        if (r.compareTo(P) >= 0 || s.compareTo(SECP256K1.getN()) >= 0)
+        BigInteger n = SECP256K1.getN();
+
+        // Steps 2-3: r = int(sig[0:32]); s = int(sig[32:64]); fail if r >= p or s >= n.
+        BigInteger r = BigIntegers.fromUnsignedByteArray(sig, 0, X_SIZE);
+        BigInteger s = BigIntegers.fromUnsignedByteArray(sig, X_SIZE, X_SIZE);
+        if (r.compareTo(P) >= 0 || s.compareTo(n) >= 0)
         {
             return false;
         }
 
-        BigInteger publicX = publicKey.getQ().normalize().getAffineXCoord().toBigInteger();
-        ECPoint P_lift = liftX(publicX);
-        if (P_lift == null)
+        // Step 1: P = lift_x(int(pk)). The key arrived through a validating decode, so just normalise parity.
+        ECPoint P_lift = publicKey.getQ(); // Guaranteed normalized and validated already
+        if (!hasEvenY(P_lift))
         {
-            return false;
+            P_lift = P_lift.negate();
         }
-
-        byte[] pBytes = BigIntegers.asUnsignedByteArray(X_SIZE, publicX);
+        byte[] pBytes = xBytes(P_lift);
         byte[] rBytes = BigIntegers.asUnsignedByteArray(X_SIZE, r);
-        BigInteger e = challengeScalar(rBytes, pBytes, message);
 
-        ECPoint R = ECAlgorithms.sumOfTwoMultiplies(
+        // Steps 4-5: e = int(H_challenge(bytes(r) || bytes(P) || m)) mod n; R = s*G - e*P.
+        BigInteger e = challengeScalar(rBytes, pBytes, m);
+        ECPoint R_pt = ECAlgorithms.sumOfTwoMultiplies(
             SECP256K1.getG(), s,
-            P_lift, SECP256K1.getN().subtract(e)).normalize();
+            P_lift, n.subtract(e)).normalize();
 
-        if (R.isInfinity() || !hasEvenY(R))
+        // Steps 6-8: accept iff R is finite, has_even_y(R), x(R) = r.
+        if (R_pt.isInfinity() || !hasEvenY(R_pt))
         {
             return false;
         }
-        return R.getAffineXCoord().toBigInteger().equals(r);
+        return R_pt.getAffineXCoord().toBigInteger().equals(r);
     }
 
-    private static BigInteger challengeScalar(byte[] rBytes, byte[] pBytes, byte[] message)
+    private static BigInteger challengeScalar(byte[] rBytes, byte[] pBytes, byte[] m)
     {
         SHA256Digest h = taggedDigest(TAG_HASH_CHALLENGE);
-        h.update(rBytes, 0, rBytes.length);
-        h.update(pBytes, 0, pBytes.length);
-        h.update(message, 0, message.length);
+        h.update(rBytes, 0, X_SIZE);
+        h.update(pBytes, 0, X_SIZE);
+        h.update(m, 0, m.length);
         byte[] out = new byte[X_SIZE];
         h.doFinal(out, 0);
-        return new BigInteger(1, out).mod(SECP256K1.getN());
-    }
-
-    private static ECPoint liftX(BigInteger x)
-    {
-        if (x.signum() < 0 || x.compareTo(P) >= 0)
-        {
-            return null;
-        }
-        ECCurve curve = SECP256K1.getCurve();
-        ECFieldElement xFe = curve.fromBigInteger(x);
-        // y^2 = x^3 + a*x + b; secp256k1 has a = 0, but the general form costs nothing extra.
-        ECFieldElement ySq = xFe.square().add(curve.getA()).multiply(xFe).add(curve.getB());
-        ECFieldElement y = ySq.sqrt();
-        if (y == null)
-        {
-            return null;
-        }
-        if (y.testBitZero())
-        {
-            y = y.negate();
-        }
-        return curve.createPoint(x, y.toBigInteger());
+        return BigIntegers.fromUnsignedByteArray(out).mod(SECP256K1.getN());
     }
 
     private static boolean hasEvenY(ECPoint point)
@@ -325,37 +294,27 @@ public class BIP340Signer
 
     private static byte[] xBytes(ECPoint point)
     {
-        return BigIntegers.asUnsignedByteArray(X_SIZE, point.getAffineXCoord().toBigInteger());
+        return point.getAffineXCoord().getEncoded();
     }
 
-    private static byte[] xor(byte[] a, byte[] b)
-    {
-        byte[] out = new byte[a.length];
-        for (int i = 0; i < a.length; i++)
-        {
-            out[i] = (byte)(a[i] ^ b[i]);
-        }
-        return out;
-    }
-
-    private static SHA256Digest taggedDigest(byte[] precomputedTagHash)
+    private static SHA256Digest taggedDigest(byte[] tagHash)
     {
         SHA256Digest h = new SHA256Digest();
-        h.update(precomputedTagHash, 0, precomputedTagHash.length);
-        h.update(precomputedTagHash, 0, precomputedTagHash.length);
+        h.update(tagHash, 0, X_SIZE);
+        h.update(tagHash, 0, X_SIZE);
         return h;
     }
 
-    private static byte[] taggedHash(byte[] precomputedTagHash, byte[] data)
+    private static byte[] taggedHash(byte[] tagHash, byte[] data)
     {
-        SHA256Digest h = taggedDigest(precomputedTagHash);
+        SHA256Digest h = taggedDigest(tagHash);
         h.update(data, 0, data.length);
         byte[] out = new byte[X_SIZE];
         h.doFinal(out, 0);
         return out;
     }
 
-    private static byte[] precomputedTagHash(String tag)
+    private static byte[] tagHash(String tag)
     {
         byte[] tagBytes = Strings.toUTF8ByteArray(tag);
         SHA256Digest h = new SHA256Digest();

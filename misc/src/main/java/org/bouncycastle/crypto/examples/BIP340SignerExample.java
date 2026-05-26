@@ -30,7 +30,7 @@ public class BIP340SignerExample
         SecureRandom random = new SecureRandom();
 
         ECKeyPairGenerator kpg = new ECKeyPairGenerator();
-        kpg.init(new ECKeyGenerationParameters(BIP340Signer.getDomainParameters(), random));
+        kpg.init(new ECKeyGenerationParameters(BIP340Signer.getDomain(), random));
         AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
         ECPrivateKeyParameters priv = (ECPrivateKeyParameters)kp.getPrivate();
         ECPublicKeyParameters pub = (ECPublicKeyParameters)kp.getPublic();
@@ -46,7 +46,7 @@ public class BIP340SignerExample
         byte[] signature = signer.generateSignature();
 
         BIP340Signer verifier = new BIP340Signer();
-        verifier.init(false, BIP340Signer.liftXOnlyPublicKey(xOnlyPub));
+        verifier.init(false, BIP340Signer.decodePublicKey(xOnlyPub));
         verifier.update(message, 0, message.length);
         boolean ok = verifier.verifySignature(signature);
 
