@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410Signer;
@@ -34,7 +35,12 @@ public class SignatureSpi
 
     public SignatureSpi()
     {
-        this.digest = new GOST3411Digest();
+        this(new GOST3411Digest());
+    }
+
+    protected SignatureSpi(Digest digest)
+    {
+        this.digest = digest;
         this.signer = new ECGOST3410Signer();
     }
 
@@ -221,5 +227,14 @@ public class SignatureSpi
     throws InvalidKeyException
     {
         return (key instanceof BCECGOST3410PublicKey) ? ((BCECGOST3410PublicKey)key).engineGetKeyParameters() : ECUtil.generatePublicKeyParameter(key);
+    }
+
+    static public class noneEcGost3410
+        extends SignatureSpi
+    {
+        public noneEcGost3410()
+        {
+            super(new NullDigest());
+        }
     }
 }

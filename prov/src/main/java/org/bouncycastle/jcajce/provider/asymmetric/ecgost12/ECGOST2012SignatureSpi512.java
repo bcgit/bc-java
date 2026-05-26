@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411_2012_512Digest;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -39,7 +40,12 @@ public class ECGOST2012SignatureSpi512
 
     public ECGOST2012SignatureSpi512()
     {
-        this.digest = new GOST3411_2012_512Digest();
+        this(new GOST3411_2012_512Digest());
+    }
+
+    protected ECGOST2012SignatureSpi512(Digest digest)
+    {
+        this.digest = digest;
         this.signer = new ECGOST3410Signer();
     }
 
@@ -232,5 +238,14 @@ public class ECGOST2012SignatureSpi512
         throws InvalidKeyException
     {
         return (key instanceof BCECGOST3410_2012PublicKey) ? ((BCECGOST3410_2012PublicKey)key).engineGetKeyParameters() : ECUtil.generatePublicKeyParameter(key);
+    }
+
+    static public class noneGost2012_512
+        extends ECGOST2012SignatureSpi512
+    {
+        public noneGost2012_512()
+        {
+            super(new NullDigest());
+        }
     }
 }

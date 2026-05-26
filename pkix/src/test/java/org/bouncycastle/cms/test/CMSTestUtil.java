@@ -14,6 +14,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAParameterSpec;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 
 import javax.crypto.KeyGenerator;
@@ -60,6 +61,7 @@ public class CMSTestUtil
     public static KeyPairGenerator dsaKpg;
     public static KeyPairGenerator dhKpg;
     public static KeyPairGenerator ecGostKpg;
+    public static KeyPairGenerator ecGost2012_256Kpg;
     public static KeyPairGenerator ecDsaKpg;
     public static KeyPairGenerator ed25519Kpg;
     public static KeyPairGenerator ed448Kpg;
@@ -180,6 +182,9 @@ public class CMSTestUtil
 
             ecGostKpg = KeyPairGenerator.getInstance("ECGOST3410", "BC");
             ecGostKpg.initialize(ECGOST3410NamedCurveTable.getParameterSpec("GostR3410-2001-CryptoPro-A"), new SecureRandom());
+
+            ecGost2012_256Kpg = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
+            ecGost2012_256Kpg.initialize(new ECGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"), new SecureRandom());
 
             ecDsaKpg = KeyPairGenerator.getInstance("ECDSA", "BC");
             ecDsaKpg.initialize(239, new SecureRandom());
@@ -319,6 +324,11 @@ public class CMSTestUtil
     public static KeyPair makeEcGostKeyPair()
     {
         return ecGostKpg.generateKeyPair();
+    }
+
+    public static KeyPair makeEcGost2012_256KeyPair()
+    {
+        return ecGost2012_256Kpg.generateKeyPair();
     }
 
     public static KeyPair makeNtruKeyPair()
