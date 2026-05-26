@@ -43,6 +43,7 @@ import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mqom.MQOMKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.sdith.SDitHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.snova.SnovaKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.uov.UOVKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
@@ -500,6 +501,19 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_esk, new SnovaKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_hypercube_cat1_gf256, new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_hypercube_cat3_gf256, new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_hypercube_cat5_gf256, new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_hypercube_cat1_p251,  new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_hypercube_cat3_p251,  new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_hypercube_cat5_p251,  new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_threshold_cat1_gf256, new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_threshold_cat3_gf256, new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_threshold_cat5_gf256, new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_threshold_cat1_p251,  new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_threshold_cat3_p251,  new SDitHKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sdith_threshold_cat5_p251,  new SDitHKeyFactorySpi());
 
         addKeyInfoConverter(BCObjectIdentifiers.faest_128s, new FaestKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.faest_128f, new FaestKeyFactorySpi());
