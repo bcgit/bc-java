@@ -34,7 +34,6 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
-import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
@@ -74,7 +73,7 @@ public class IDPRelativeNameTest
         X500Name expandedDn = new X500Name("CN=Root,O=BC,O=Bouncy+OU=Test");
 
         KeyPair caKp = generateRsaKp();
-        X509Certificate caCert = makeRootCa(caKp, crlIssuerDn);
+        X509Certificate caCert = TestUtil.makeTrustAnchor(caKp, "CN=Root,O=BC");
         X509Certificate eeCert = makeEe(caCert, caKp, expandedDn);
 
         X509CRL matchingCrl = makeCrlWithRelativeIdp(crlIssuerDn, caKp.getPrivate(), relativeRdn);
@@ -88,7 +87,7 @@ public class IDPRelativeNameTest
         X500Name expandedDn = new X500Name("CN=Root,O=BC,O=Bouncy+OU=Test");
 
         KeyPair caKp = generateRsaKp();
-        X509Certificate caCert = makeRootCa(caKp, crlIssuerDn);
+        X509Certificate caCert = TestUtil.makeTrustAnchor(caKp, "CN=Root,O=BC");
         X509Certificate eeCert = makeEe(caCert, caKp, expandedDn);
 
         ASN1Set wrongRdn = (ASN1Set)new X500Name("O=Wrong+OU=Other").getRDNs()[0].toASN1Primitive();
@@ -121,25 +120,6 @@ public class IDPRelativeNameTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
         kpg.initialize(2048);
         return kpg.generateKeyPair();
-    }
-
-    private static X509Certificate makeRootCa(KeyPair caKp, X500Name subjectDn)
-        throws Exception
-    {
-        long now = System.currentTimeMillis();
-        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
-            new X500Principal(subjectDn.getEncoded()),
-            BigInteger.valueOf(1),
-            new Date(now - 60000L),
-            new Date(now + 365L * 24 * 60 * 60 * 1000),
-            new X500Principal(subjectDn.getEncoded()),
-            caKp.getPublic());
-        builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
-        builder.addExtension(Extension.keyUsage, true,
-            new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
-
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").build(caKp.getPrivate());
-        return new JcaX509CertificateConverter().setProvider("BC").getCertificate(builder.build(signer));
     }
 
     private static X509Certificate makeEe(X509Certificate ca, KeyPair caKp, X500Name expandedDn)
