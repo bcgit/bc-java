@@ -152,6 +152,7 @@ public class X500NameTest
         ietfUtilsTest();
         bogusEqualsTest();
         dnQualifierAliasParseTest();
+        stateOrProvinceAliasParseTest();
         hexEscapedUTF8ParseTest();
 
         testEncodingPrintableString(BCStyle.C, "AU");
@@ -722,6 +723,50 @@ public class X500NameTest
         }
     }
 
+    /**
+     * BCStyle / RFC4519Style now accept "S" as a parser alias for the
+     * stateOrProvinceName attribute (OID 2.5.4.8), in addition to the
+     * RFC 2253/4514 short form "ST". Microsoft's CertNameToStr emits "S="
+     * for 2.5.4.8 ("This value is different from the RFC 1779 X.500 key
+     * name ('ST')."), so DN strings produced by Windows tooling did not
+     * round-trip through {@code new X500Name(...)}. Output still uses the
+     * canonical "ST" symbol (issue #1301).
+     */
+    private void stateOrProvinceAliasParseTest()
+        throws Exception
+    {
+        String[] aliases = new String[]{"ST", "st", "S", "s"};
+        for (int i = 0; i != aliases.length; ++i)
+        {
+            String alias = aliases[i];
+
+            X500Name viaBcStyle = new X500Name(BCStyle.INSTANCE,
+                "CN=Foo," + alias + "=California");
+            RDN[] rdnsBc = viaBcStyle.getRDNs(BCStyle.ST);
+            if (rdnsBc.length != 1)
+            {
+                fail("BCStyle: alias '" + alias
+                    + "' did not parse to a single stateOrProvinceName RDN");
+            }
+
+            X500Name viaRfc = new X500Name(RFC4519Style.INSTANCE,
+                "CN=Foo," + alias + "=California");
+            RDN[] rdnsRfc = viaRfc.getRDNs(RFC4519Style.st);
+            if (rdnsRfc.length != 1)
+            {
+                fail("RFC4519Style: alias '" + alias
+                    + "' did not parse to a single stateOrProvinceName RDN");
+            }
+        }
+
+        // output uses the canonical "ST" symbol regardless of the input alias
+        X500Name fromS = new X500Name(BCStyle.INSTANCE, "CN=Foo,S=California");
+        if (!fromS.toString().equals("CN=Foo,ST=California"))
+        {
+            fail("BCStyle: 'S' alias did not normalise to ST on output, got: " + fromS);
+        }
+    }
+
     private void bogusEqualsTest()
         throws Exception
     {
@@ -729,8 +774,8 @@ public class X500NameTest
         // only the FIRST '=' separates attributeType from attributeValue.
         // (issue #2226 - matches javax.security.auth.x500.X500Principal)
         String[] subjects = new String[]
-        {
-            "CN=foo=bar",
+            {
+                "CN=foo=bar",
             "CN==^_^=",
             "CN=a=b=c",
             "CN=\\=^_^\\=",
