@@ -313,7 +313,7 @@ public class BcKeyStoreSpi
                 }
                 catch (Exception e)
                 {
-                    throw new UnrecoverableKeyException("no match");
+                    throw new UnrecoverableKeyException("no match: " + e);
                 }
             }
             else
@@ -459,7 +459,7 @@ public class BcKeyStoreSpi
         }
         catch (Exception e)
         {
-            throw Exceptions.ioException("Exception creating key: " + e.toString(), e);
+            throw Exceptions.ioException("Exception creating key: " + e, e);
         }
     }
 
