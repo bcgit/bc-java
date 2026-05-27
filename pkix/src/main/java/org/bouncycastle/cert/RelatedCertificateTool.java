@@ -5,9 +5,11 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.BinaryTime;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.RequesterCertificate;
+import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.RelatedCertificate;
 import org.bouncycastle.operator.ContentSigner;
@@ -139,7 +141,7 @@ public class RelatedCertificateTool
         relatedCert.toASN1Structure().encodeTo(dOut, ASN1Encoding.DER);
         dOut.close();
 
-        return Arrays.constantTimeAreEqual(extensionValue.getHashValueOctets(), digester.getDigest());
+        return Arrays.constantTimeAreEqual(extensionValue.getHashValue().getOctets(), digester.getDigest());
     }
 
     // =====================================================================
@@ -224,6 +226,52 @@ public class RelatedCertificateTool
         writeSignatureInput(vOut, value.getCertID(), value.getRequestTime());
         vOut.close();
 
-        return verifier.verify(value.getSignature());
+        return verifier.verify(value.getSignature().getOctets());
+    }
+
+    // =====================================================================
+    // PKCS#9 attribute wrapping
+    // =====================================================================
+
+    /**
+     * Wrap a {@code RequesterCertificate} value as a PKCS#9 {@link Attribute}
+     * carrying {@link PKCSObjectIdentifiers#id_aa_relatedCertRequest}, ready to
+     * drop into a {@code CertificationRequestInfo} attributes set.
+     */
+    public static Attribute toAttribute(RequesterCertificate value)
+    {
+        if (value == null)
+        {
+            throw new NullPointerException("'value' cannot be null");
+        }
+        return new Attribute(PKCSObjectIdentifiers.id_aa_relatedCertRequest, new DERSet(value));
+    }
+
+    /**
+     * Extract a {@code RequesterCertificate} value from a PKCS#9
+     * {@link Attribute}.
+     *
+     * @throws IllegalArgumentException if the attribute is not of type
+     *         {@link PKCSObjectIdentifiers#id_aa_relatedCertRequest} or does
+     *         not carry exactly one value.
+     */
+    public static RequesterCertificate fromAttribute(Attribute attribute)
+    {
+        if (attribute == null)
+        {
+            throw new NullPointerException("'attribute' cannot be null");
+        }
+        if (!PKCSObjectIdentifiers.id_aa_relatedCertRequest.equals(attribute.getAttrType()))
+        {
+            throw new IllegalArgumentException(
+                "'attribute' type expected id-aa-relatedCertRequest but got " + attribute.getAttrType());
+        }
+        if (attribute.getAttributeValues().length != 1)
+        {
+            throw new IllegalArgumentException(
+                "'attribute' for id-aa-relatedCertRequest must carry exactly one value, got "
+                    + attribute.getAttributeValues().length);
+        }
+        return RequesterCertificate.getInstance(attribute.getAttributeValues()[0]);
     }
 }

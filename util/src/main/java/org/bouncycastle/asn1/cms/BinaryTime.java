@@ -74,7 +74,7 @@ public class BinaryTime
 
     private BinaryTime(ASN1Integer time)
     {
-        if (time.getValue().signum() < 0)
+        if (time.isNegative())
         {
             throw new IllegalArgumentException("'time' cannot be negative");
         }
