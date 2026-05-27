@@ -1,5 +1,6 @@
 package org.bouncycastle.cert.test;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -9,6 +10,7 @@ import java.util.Date;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.BinaryTime;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
@@ -115,11 +117,11 @@ public class RelatedCertificateTest
         byte[] hash = new byte[32];
         new SecureRandom().nextBytes(hash);
 
-        RelatedCertificate ext = new RelatedCertificate(sha256, hash);
+        RelatedCertificate ext = new RelatedCertificate(sha256, new DEROctetString(hash));
         RelatedCertificate reparsed = RelatedCertificate.getInstance(ext.getEncoded());
 
         assertEquals(sha256, reparsed.getHashAlgorithm());
-        assertTrue(Arrays.areEqual(hash, reparsed.getHashValue()));
+        assertTrue(Arrays.areEqual(hash, reparsed.getHashValueOctets()));
     }
 
     // =====================================================================
@@ -138,7 +140,7 @@ public class RelatedCertificateTest
         RelatedCertificate ext = RelatedCertificateTool.createRelatedCertificate(relatedCert, sha256);
 
         assertEquals(DigestCalculator.SHA_256, ext.getHashAlgorithm());
-        assertEquals(32, ext.getHashValue().length);
+        assertEquals(32, ext.getHashValueOctets().length);
 
         assertTrue(RelatedCertificateTool.isRelatedCertificate(ext, relatedCert, digestProv));
         assertFalse("extension should not match an unrelated cert",
@@ -191,7 +193,7 @@ public class RelatedCertificateTest
     }
 
     // =====================================================================
-    // signatureInput pinning — RFC 9763 §4.1 says "concatenation of
+    // signature-input pinning — RFC 9763 sec. 4.1 says "concatenation of
     // DER-encoded IssuerAndSerialNumber and BinaryTime", NOT a SEQUENCE.
     // =====================================================================
 
@@ -205,10 +207,12 @@ public class RelatedCertificateTest
         byte[] expected = concat(
             certID.getEncoded(ASN1Encoding.DER),
             ts.getEncoded(ASN1Encoding.DER));
-        byte[] actual = RelatedCertificateTool.signatureInput(certID, ts);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        RelatedCertificateTool.writeSignatureInput(bOut, certID, ts);
 
         assertTrue("signature input must be DER(certID)||DER(requestTime), no SEQUENCE wrapper",
-            Arrays.areEqual(expected, actual));
+            Arrays.areEqual(expected, bOut.toByteArray()));
     }
 
     // =====================================================================

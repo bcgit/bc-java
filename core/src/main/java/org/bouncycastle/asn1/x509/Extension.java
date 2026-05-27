@@ -179,7 +179,7 @@ public class Extension
      * that a traditional and a post-quantum end-entity certificate belong
      * to the same subject.
      */
-    public static final ASN1ObjectIdentifier relatedCertificate = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.1.36").intern();
+    public static final ASN1ObjectIdentifier relatedCertificate = X509ObjectIdentifiers.id_pe_relatedCert;
 
     /**
      * TargetInformation extension in attribute certificates.
