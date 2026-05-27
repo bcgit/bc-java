@@ -77,11 +77,6 @@ public class RelatedCertificate
         return hashValue;
     }
 
-    public byte[] getHashValueOctets()
-    {
-        return hashValue.getOctets();
-    }
-
     public ASN1Primitive toASN1Primitive()
     {
         return new DERSequence(hashAlgorithm, hashValue);

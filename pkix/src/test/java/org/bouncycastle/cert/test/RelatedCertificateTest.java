@@ -121,7 +121,7 @@ public class RelatedCertificateTest
         RelatedCertificate reparsed = RelatedCertificate.getInstance(ext.getEncoded());
 
         assertEquals(sha256, reparsed.getHashAlgorithm());
-        assertTrue(Arrays.areEqual(hash, reparsed.getHashValueOctets()));
+        assertTrue(Arrays.areEqual(hash, reparsed.getHashValue().getOctets()));
     }
 
     // =====================================================================
@@ -140,7 +140,7 @@ public class RelatedCertificateTest
         RelatedCertificate ext = RelatedCertificateTool.createRelatedCertificate(relatedCert, sha256);
 
         assertEquals(DigestCalculator.SHA_256, ext.getHashAlgorithm());
-        assertEquals(32, ext.getHashValueOctets().length);
+        assertEquals(32, ext.getHashValue().getOctets().length);
 
         assertTrue(RelatedCertificateTool.isRelatedCertificate(ext, relatedCert, digestProv));
         assertFalse("extension should not match an unrelated cert",
@@ -175,7 +175,7 @@ public class RelatedCertificateTest
         assertEquals(certID, parsed.getCertID());
         assertEquals(ts, parsed.getRequestTime());
         assertTrue(Arrays.areEqual(uris, parsed.getLocationInfo()));
-        assertTrue(Arrays.areEqual(sig, parsed.getSignature()));
+        assertTrue(Arrays.areEqual(sig, parsed.getSignature().getOctets()));
     }
 
     public void testRequesterCertificateRejectsEmptyUriList()
@@ -245,7 +245,7 @@ public class RelatedCertificateTest
 
         // And the verify must reject a tampered request time.
         RequesterCertificate tampered = new RequesterCertificate(
-            certID, new BinaryTime(ts.getTime().longValue() + 1), uris, value.getSignature());
+            certID, new BinaryTime(ts.getTime().longValue() + 1), uris, value.getSignature().getOctets());
         ContentVerifier verifier2 = verifierProv.get(signer.getAlgorithmIdentifier());
         assertFalse("tampered requestTime should fail signature verification",
             RelatedCertificateTool.verifyRequesterCertificate(tampered, verifier2));
@@ -264,11 +264,11 @@ public class RelatedCertificateTest
             new String[] { "https://example.com/x.cer" },
             new byte[16]);
 
-        Attribute attr = value.toAttribute();
+        Attribute attr = RelatedCertificateTool.toAttribute(value);
         assertEquals(PKCSObjectIdentifiers.id_aa_relatedCertRequest, attr.getAttrType());
         assertEquals(1, attr.getAttributeValues().length);
 
-        RequesterCertificate parsed = RequesterCertificate.fromAttribute(attr);
+        RequesterCertificate parsed = RelatedCertificateTool.fromAttribute(attr);
         assertTrue(Arrays.areEqual(value.getEncoded(), parsed.getEncoded()));
     }
 
@@ -282,7 +282,7 @@ public class RelatedCertificateTest
                 new byte[16])));
         try
         {
-            RequesterCertificate.fromAttribute(wrong);
+            RelatedCertificateTool.fromAttribute(wrong);
             fail("fromAttribute accepted wrong OID");
         }
         catch (IllegalArgumentException expected) {}
