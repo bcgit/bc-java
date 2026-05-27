@@ -78,6 +78,7 @@ public class AllTests
         suite.addTestSuite(MayoKeyPairGeneratorTest.class);
         suite.addTestSuite(MayoTest.class);
         suite.addTestSuite(SnovaTest.class);
+        suite.addTestSuite(SDitHTest.class);
         suite.addTestSuite(FaestTest.class);
         suite.addTestSuite(UOVTest.class);
         suite.addTestSuite(MQOMTest.class);
