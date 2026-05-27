@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -154,6 +155,7 @@ public class X500NameTest
         dnQualifierAliasParseTest();
         stateOrProvinceAliasParseTest();
         hexEscapedUTF8ParseTest();
+        turkishLocaleCanonicalizeTest();
 
         testEncodingPrintableString(BCStyle.C, "AU");
         testEncodingPrintableString(BCStyle.SERIALNUMBER, "123456");
@@ -764,6 +766,48 @@ public class X500NameTest
         if (!fromS.toString().equals("CN=Foo,ST=California"))
         {
             fail("BCStyle: 'S' alias did not normalise to ST on output, got: " + fromS);
+        }
+    }
+
+    /**
+     * IETFUtils.canonicalize — and hence X500Name equality / hashCode — folds
+     * case through the locale-independent Strings.toLowerCase, not
+     * String.toLowerCase(). Under the Turkish locale String.toLowerCase("IT")
+     * yields "ıt" (dotless i), which would make c=IT and c=it canonicalize
+     * differently and compare unequal. This pins the behaviour to ASCII
+     * case-folding regardless of the default locale (issue #1103).
+     */
+    private void turkishLocaleCanonicalizeTest()
+        throws Exception
+    {
+        Locale defaultLocale = Locale.getDefault();
+        try
+        {
+            Locale.setDefault(new Locale("tr", "TR"));
+
+            // Precondition: confirm the JVM's Turkish locale really does the
+            // dotless-i fold (String.toLowerCase("IT") -> "ıt", not "it"),
+            // otherwise the test would pass vacuously.
+            isTrue("Turkish locale dotless-i fold not active",
+                !"IT".toLowerCase().equals("it"));
+
+            isTrue("canonicalize must ASCII-fold under Turkish locale",
+                "it".equals(IETFUtils.canonicalize("IT")));
+
+            X500Name upper = new X500Name("CN=ITALY,C=IT");
+            X500Name lower = new X500Name("CN=italy,C=it");
+            if (!upper.equals(lower))
+            {
+                fail("X500Name equality is locale-sensitive under Turkish locale");
+            }
+            if (upper.hashCode() != lower.hashCode())
+            {
+                fail("X500Name hashCode is locale-sensitive under Turkish locale");
+            }
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
         }
     }
 
