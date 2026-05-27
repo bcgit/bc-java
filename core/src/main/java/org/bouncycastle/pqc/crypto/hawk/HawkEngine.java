@@ -1301,74 +1301,6 @@ class HawkEngine
         return z0 + z1 + z2 + z3;
     }
 
-    // Fixed-point complex multiplication
-    private static long[] fxcMul(long[] x, long[] y)
-    {
-        long a = x[0], b = x[1]; // x = a + i*b
-        long c = y[0], d = y[1]; // y = c + i*d
-
-        // z0 = a*c, z1 = b*d
-        long z0 = fxrMul(a, c);
-        long z1 = fxrMul(b, d);
-
-        // z2 = (a + b)*(c + d)
-        long z2 = fxrMul(fxrAdd(a, b), fxrAdd(c, d));
-
-        // Result: (z0 - z1) + i*(z2 - (z0 + z1))
-        return new long[]{
-            fxrSub(z0, z1),
-            fxrSub(z2, fxrAdd(z0, z1))
-        };
-    }
-
-    // Fixed-point multiplication (64-bit implementation)
-    private static long fxrMul(long x, long y)
-    {
-        // Extract high and low parts
-        int xh = (int)(x >>> 32);
-        int yh = (int)(y >>> 32);
-        long xl = x & 0xFFFFFFFFL;
-        long yl = y & 0xFFFFFFFFL;
-
-        // Compute partial products
-        long z0 = (xl * yl) >>> 32;
-        long z1 = xl * yh;
-        long z2 = yl * xh;
-        long z3 = ((long)xh * yh) << 32;
-
-        return z0 + z1 + z2 + z3;
-    }
-
-    // Fixed-point addition
-    private static long fxrAdd(long x, long y)
-    {
-        return x + y;
-    }
-
-    // Fixed-point subtraction
-    private static long fxrSub(long x, long y)
-    {
-        return x - y;
-    }
-
-    // Fixed-point complex addition
-    private static long[] fxcAdd(long[] x, long[] y)
-    {
-        return new long[]{
-            fxrAdd(x[0], y[0]),
-            fxrAdd(x[1], y[1])
-        };
-    }
-
-    // Fixed-point complex subtraction
-    private static long[] fxcSub(long[] x, long[] y)
-    {
-        return new long[]{
-            fxrSub(x[0], y[0]),
-            fxrSub(x[1], y[1])
-        };
-    }
-
     // Inverse Fast Fourier Transform
     public static void vectIFFT(int logn, long[] f, int fOff)
     {
@@ -1414,64 +1346,6 @@ class HawkEngine
             }
             ht = t;
         }
-    }
-
-    // Negate a fixed-point value
-    public static long fxrNeg(long x)
-    {
-        return -x;
-    }
-
-    // Complex conjugate
-    public static Fxc fxcConj(Fxc x)
-    {
-        return new Fxc(x.re, fxrNeg(x.im));
-    }
-
-    // Halve both components of a complex number
-    public static Fxc fxcHalf(Fxc x)
-    {
-        return new Fxc(fxrDiv2e(x.re, 1), fxrDiv2e(x.im, 1));
-    }
-
-    // Divide by 2^n with rounding
-    public static long fxrDiv2e(long x, int n)
-    {
-        // Add half of the divisor for rounding
-        long round = (1L << n) >> 1;
-        return (x + round) >> n;
-    }
-
-    // Complex addition
-    public static Fxc fxcAdd(Fxc x, Fxc y)
-    {
-        return new Fxc(x.re + y.re, x.im + y.im);
-    }
-
-    // Complex subtraction
-    public static Fxc fxcSub(Fxc x, Fxc y)
-    {
-        return new Fxc(x.re - y.re, x.im - y.im);
-    }
-
-    // Complex multiplication
-    public static Fxc fxcMul(Fxc x, Fxc y)
-    {
-        /*
-         * We are computing r = (a + i*b)*(c + i*d) with:
-         *   z0 = a*c
-         *   z1 = b*d
-         *   z2 = (a + b)*(c + d)
-         *   r = (z0 - z1) + i*(z2 - (z0 + z1))
-         */
-        long z0 = fxrMul(x.re, y.re);
-        long z1 = fxrMul(x.im, y.im);
-        long z2 = fxrMul(x.re + x.im, y.re + y.im);
-
-        return new Fxc(
-            z0 - z1,                    // Real part
-            z2 - (z0 + z1)              // Imaginary part
-        );
     }
 
     // Error codes
@@ -2205,10 +2079,16 @@ class HawkEngine
         scale_t ^= (scale_t ^ scale_x) & tbmask(scale_x - scale_t);
         int scdiff = scale_x - scale_t;
 
+        /*
+         * rt is the 64-bit fixed-point view that the reference C aliases over
+         * tmp (fxr *rt = (fxr *)tmp). We keep it as a persistent scratch array:
+         * poly_big_to_fixed() writes it directly from the int[] data and the
+         * fxr_round() loop reads it back into int[] tmp[k_offset], so the two
+         * domains never need a bulk re-sync (the FFT scratch region and the
+         * int F/G/f/g region are disjoint in the buffer layout).
+         */
         long[] rt = new long[(tmp.length - tmpOff) >>> 1];
-        fromByte32ArrayToLongArray(rt, tmp, tmpOff, rt.length << 1);
 
-        //TODO
         poly_big_to_fixed(logn, rt, rt3, tmp, tmpOff + ftb, rlen, scdiff);
         poly_big_to_fixed(logn, rt, rt4, tmp, tmpOff + gtb, rlen, scdiff);
 
@@ -2230,7 +2110,6 @@ class HawkEngine
             rt[rt4 + u] = fxr_div(rt[rt4 + u], rt[rt1 + u]);
             rt[rt4 + u + hn] = fxr_div(fxr_neg(rt[rt4 + u + hn]), rt[rt1 + u]);
         }
-        fromLongArrayToByte32Array(tmp, tmpOff, rt);
 
         /*
          * New layout:
@@ -2255,7 +2134,6 @@ class HawkEngine
             t1 = ft;
             int nrt3 = t1 / 2;
             System.arraycopy(rt, rt3, rt, nrt3, 2 * n);
-            fromLongArrayToByte32Array(tmp, tmpOff, rt);
             rt3 = nrt3;
             rt4 = rt3 + n;
             rt1 = rt4 + n;
@@ -2321,7 +2199,6 @@ class HawkEngine
             }
 
             System.arraycopy(tmp, tmpOff + gm_offset + n, tmp, tmpOff + gt, (slen + 1) * n);
-            fromByte32ArrayToLongArray(rt, tmp, tmpOff, rt.length << 1);
         }
 
         /*
@@ -2351,12 +2228,10 @@ class HawkEngine
             vect_mul_fft(logn, rt, rt2, rt, rt4);
             vect_add(logn, rt, rt2, rt, rt1);
             vectIFFT(logn, rt, rt2);
-            fromLongArrayToByte32Array(tmp, tmpOff, rt);
             for (int u = 0; u < n; u++)
             {
                 tmp[tmpOff + k_offset + u] = fxr_round(rt[rt2 + u]);
             }
-            fromByte32ArrayToLongArray(rt, tmp, tmpOff, rt.length << 1);
 
             // Apply reduction
             int scale_k = scale_FG - scale_fg;
@@ -2374,7 +2249,6 @@ class HawkEngine
                 poly_sub_scaled(logn, tmp, tmpOff + Ft, FGlen, tmp, tmpOff + ft, slen, tmp, tmpOff + k_offset, scale_k);
                 poly_sub_scaled(logn, tmp, tmpOff + Gt, FGlen, tmp, tmpOff + gt, slen, tmp, tmpOff + k_offset, scale_k);
             }
-            fromByte32ArrayToLongArray(rt, tmp, tmpOff, rt.length << 1);
             // Check if reduction is complete
             if (scale_FG <= scale_fg)
             {
@@ -2393,7 +2267,6 @@ class HawkEngine
                 FGlen--;
             }
         }
-        fromLongArrayToByte32Array(tmp, tmpOff, rt);
 // Move G to final position
         System.arraycopy(tmp, tmpOff + Gt, tmp, tmpOff + slen * n, slen * n);
         int Gt_final = slen * n;
@@ -2677,15 +2550,6 @@ class HawkEngine
         return 31 * tk + 32 - Integer.numberOfLeadingZeros(t);
     }
 
-    static void fromByte32ArrayToLongArray(long[] out, int[] in, int inOff, int len)
-    {
-        for (int i = 0; i < len; i += 2)
-        {
-            out[i / 2] = in[inOff + i] & 0xffffffffL;
-            out[i / 2] |= ((long)in[inOff + i + 1] & 0xffffffffL) << 32;
-        }
-    }
-
     static void fromLongArrayToByte32Array(int[] out, int outOff, long[] in)
     {
         for (int i = 0; i != in.length; i++)
@@ -2703,16 +2567,6 @@ class HawkEngine
             out[outOff + 2 * i + 1] = (short)(in[i + inOff] >>> 16);
         }
     }
-
-    static void fromShortArrayToByte32Array(int[] out, int outOff, short[] in, int inOff, int len)
-    {
-        for (int i = 0; i < len; i+=2)
-        {
-            out[outOff + i/2] = in[inOff + i] & 0xffff;
-            out[outOff + i/2] |= (in[inOff + i + 1] & 0xffff) << 16;
-        }
-    }
-
 
     public static long fxr_sqr(long x)
     {
@@ -3697,8 +3551,9 @@ class HawkEngine
          * We first convert f*adj(f) + g*adj(g), which is auto-adjoint;
          * thus, its FFT representation only has half-size.
          */
+        // Persistent fixed-point scratch (the C aliases this over tmp); the int
+        // data and FFT scratch occupy disjoint regions, so no bulk sync is needed.
         long[] rt = new long[(tmp.length - tmpOffset) >>> 1];
-        fromByte32ArrayToLongArray(rt, tmp, tmpOffset, rt.length << 1);
         int rt3 = t3 >>> 1;
         for (int u = 0; u < n; u++)
         {
@@ -3721,7 +3576,6 @@ class HawkEngine
         /*
          * Convert F*adj(f) + G*adj(g) to FFT (scaled by 2^10) (into rt3).
          */
-        fromLongArrayToByte32Array(tmp, tmpOffset, rt);
         for (int u = 0; u < n; u++)
         {
             long x = (long)tmp[t1 + u] << 22;
@@ -3735,7 +3589,6 @@ class HawkEngine
          */
         vectDivAutoAdjFFT(logn, rt, rt3, rt, rt2);
         vectIFFT(logn, rt, rt3);
-        fromLongArrayToByte32Array(tmp, tmpOffset, rt);
         for (int u = 0; u < n; u++)
         {
             tmp[t1 + u] = mp_set(fxr_round(rt[rt3 + u]), p);
@@ -4138,14 +3991,15 @@ class HawkEngine
         mpINTT(logn, tmp, t4, tmp, t1, p, p0i);
         mpINTT(logn, tmp, t5, tmp, t1, p, p0i);
 
-        // Store results in output arrays (q00, q01, q11)
-        // Using the beginning of tmp buffer for output
-
-        int q00Offset = tmpOffset << 1;
-        int q01Offset = q00Offset + n;
-        int q11Offset = (q01Offset + n) >>> 1;
-        short[] tmpShorts = new short[tmp.length << 1];
-        fromByte32ArrayToShortArray(tmpShorts, 0, tmp, 0, tmp.length);
+        // Store results in output arrays (q00, q01, q11).
+        // q00, q01 are 16-bit, stored packed two-per-int starting at tmp[tmpOffset];
+        // q11 is 32-bit, stored at tmp[tmpOffset + n]. These output regions are
+        // disjoint from the source regions t3/t4/t5 (at tmpOffset + 2n..5n), so we
+        // can pack each coefficient in place rather than round-tripping the whole
+        // buffer through a short[] view per iteration (the C code aliases tmp).
+        int q00ShortIdx = tmpOffset << 1;        // short index of q00[0]
+        int q01ShortIdx = q00ShortIdx + n;       // short index of q01[0]
+        int q11Offset = tmpOffset + n;           // int index of q11[0]
         // Check coefficient bounds and store results
         for (int u = 0; u < n; u++)
         {
@@ -4182,13 +4036,29 @@ class HawkEngine
             }
 
             // Store results (convert to appropriate types)
-            tmpShorts[q00Offset + u] = (short)xq00;  // Store as int16_t equivalent
-            tmpShorts[q01Offset + u] = (short)xq01;  // Store as int16_t equivalent
-            fromShortArrayToByte32Array(tmp, 0, tmpShorts, 0, tmp.length);
+            setPackedShort(tmp, q00ShortIdx + u, (short)xq00);
+            setPackedShort(tmp, q01ShortIdx + u, (short)xq01);
             tmp[q11Offset + u] = xq11;          // Store as int32_t
-            fromByte32ArrayToShortArray(tmpShorts, 0, tmp, 0, tmp.length);
         }
 
         return true;
+    }
+
+    /*
+     * Store a 16-bit value at logical short index 'shortIdx' into the int[] buffer,
+     * using little-endian two-shorts-per-int packing: short 2k -> low half of int k,
+     * short 2k+1 -> high half. This matches the short view the caller reads back.
+     */
+    private static void setPackedShort(int[] buf, int shortIdx, short val)
+    {
+        int i = shortIdx >>> 1;
+        if ((shortIdx & 1) == 0)
+        {
+            buf[i] = (buf[i] & 0xFFFF0000) | (val & 0xFFFF);
+        }
+        else
+        {
+            buf[i] = (buf[i] & 0x0000FFFF) | (val << 16);
+        }
     }
 }
