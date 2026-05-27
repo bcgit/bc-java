@@ -32,9 +32,13 @@ import org.bouncycastle.util.Strings;
  * Signatures are the fixed 64-byte concatenation {@code bytes(R) || bytes(s)} — neither encoding
  * matches BC's ECDSA defaults.
  * <p>
- * Auxiliary randomness: passing a {@link ParametersWithRandom} on {@link #init} draws a fresh 32-byte
- * {@code aux_rand} per {@link #generateSignature} call (BIP-340 §3.2). Initialising with the bare
- * {@link ECPrivateKeyParameters} produces deterministic Schnorr signatures (aux_rand = 0^32).
+ * Auxiliary randomness follows the usual BC low-level signer convention: the signer is randomized by
+ * default. A {@link ParametersWithRandom} on {@link #init} supplies the source for the fresh 32-byte
+ * {@code aux_rand} drawn per {@link #generateSignature} call (BIP-340 §3.2, recommended for side-channel
+ * hardening); when none is supplied the default {@link CryptoServicesRegistrar} source is substituted, as
+ * for {@link SM2Signer} / {@link ECDSASigner}. Deterministic Schnorr (aux_rand = 0^32) is BIP-340 compliant
+ * but must be requested explicitly via {@link #BIP340Signer(boolean)} — the absence of a supplied
+ * SecureRandom does not silently select it.
  */
 public class BIP340Signer
     implements Signer
@@ -64,13 +68,32 @@ public class BIP340Signer
 
     private final Buffer buffer = new Buffer();
 
+    private final boolean deterministic;
+
     private boolean forSigning;
     private ECPrivateKeyParameters privateKey;
     private ECPublicKeyParameters publicKey;
     private SecureRandom auxRandSource;
 
+    /**
+     * Create a randomized BIP-340 signer: a per-signature {@code aux_rand} is drawn from the supplied
+     * {@link ParametersWithRandom} source, or the default {@link CryptoServicesRegistrar} source when none
+     * is supplied.
+     */
     public BIP340Signer()
     {
+        this(false);
+    }
+
+    /**
+     * @param deterministic when {@code true}, sign deterministically with {@code aux_rand = 0^32} (BIP-340
+     *                      §3.3 default signing with empty auxiliary randomness) and ignore any supplied
+     *                      SecureRandom; when {@code false} (the usual case) draw a per-signature 32-byte
+     *                      {@code aux_rand} from the supplied or default SecureRandom.
+     */
+    public BIP340Signer(boolean deterministic)
+    {
+        this.deterministic = deterministic;
     }
 
     /**
@@ -120,7 +143,7 @@ public class BIP340Signer
             checkSecp256k1(ecPrivateKey.getParameters());
             this.privateKey = ecPrivateKey;
             this.publicKey = null;
-            this.auxRandSource = providedRandom;
+            this.auxRandSource = deterministic ? null : CryptoServicesRegistrar.getSecureRandom(providedRandom);
         }
         else
         {
