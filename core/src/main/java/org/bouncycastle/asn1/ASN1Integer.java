@@ -188,8 +188,8 @@ public class ASN1Integer
     }
 
     /**
-     * in some cases positive values get crammed into a space,
-     * that's not quite big enough...
+     * Force the ASN.1 INTEGER encoding to be interpreted as unsigned; in some cases positive values get
+     * crammed into a space that's not quite big enough...)
      *
      * @return the BigInteger that results from treating this ASN.1 INTEGER as unsigned.
      */
@@ -223,6 +223,12 @@ public class ASN1Integer
             && getValue().equals(x);
     }
 
+    /**
+     * Force the ASN.1 INTEGER encoding to be interpreted as unsigned; in some cases positive values get
+     * crammed into a space that's not quite big enough...)
+     *
+     * @return the int that results from treating this ASN.1 INTEGER as unsigned.
+     */
     public int intPositiveValueExact()
     {
         int count = bytes.length - start;
