@@ -1,7 +1,9 @@
 package org.bouncycastle.asn1.x509;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -74,8 +76,46 @@ public class Extensions
      * The extensions are a list of constructed sequences, either with (OID, OctetString) or (OID, Boolean, OctetString)
      * </p>
      */
+    private Extensions()
+    {
+        // used by reviewStructure() to drive parse() in collect-all mode;
+        // the resulting instance is never published.
+    }
+
     private Extensions(
         ASN1Sequence seq)
+    {
+        parse(seq, null);
+    }
+
+    /**
+     * Re-run the parse of a candidate Extensions SEQUENCE collecting every problem the strict
+     * {@code getInstance(...)} path would have thrown (e.g. repeated extensions), instead of
+     * stopping at the first. The strict path and this share one parse method (see
+     * {@link #parse}); only the error sink differs. Intended for diagnostic/reporting tooling
+     * (github #1508); it does not relax the repeated-extension rule (the
+     * "org.bouncycastle.x509.ignore_repeated_extensions" property still governs whether a
+     * repeat is a problem at all).
+     *
+     * @param seq the candidate Extensions SEQUENCE.
+     * @return the exceptions the strict path would have thrown, one per problem, in parse
+     *         order (empty if none).
+     */
+    public static List reviewStructure(ASN1Sequence seq)
+    {
+        List errors = new ArrayList();
+        try
+        {
+            new Extensions().parse(seq, errors);
+        }
+        catch (RuntimeException e)
+        {
+            errors.add(e);
+        }
+        return errors;
+    }
+
+    private void parse(ASN1Sequence seq, List errors)
     {
         // it's tempting to check there's at least one entry in the sequence. Don't!
         // It turns out there's quite a few empty extension blocks out there...
@@ -90,13 +130,25 @@ public class Extensions
             {
                 if (!Properties.isOverrideSet("org.bouncycastle.x509.ignore_repeated_extensions"))
                 {
-                    throw new IllegalArgumentException("repeated extension found: " + ext.getExtnId());
+                    reportProblem(errors, "repeated extension found: " + ext.getExtnId());
+                    // collecting only: skip the duplicate, keeping the first occurrence.
+                    continue;
                 }
             }
-            
+
             extensions.put(ext.getExtnId(), ext);
             ordering.addElement(ext.getExtnId());
         }
+    }
+
+    private static void reportProblem(List errors, String message)
+    {
+        IllegalArgumentException problem = new IllegalArgumentException(message);
+        if (errors == null)
+        {
+            throw problem;
+        }
+        errors.add(problem);
     }
 
     /**
