@@ -46,6 +46,8 @@ public class BIP340SignerTest
     {
         runOfficialVectors();
         roundTripWithAuxRand();
+        deterministicMode();
+        defaultModeSubstitutesSecureRandom();
     }
 
     private void runOfficialVectors()
@@ -171,6 +173,59 @@ public class BIP340SignerTest
         verifier.init(false, pub);
         verifier.update(msg, 0, msg.length);
         isTrue("tampered signature rejected", !verifier.verifySignature(badSig));
+    }
+
+    // Deterministic mode (explicit constructor) with no supplied random reproduces vector 0 (aux_rand = 0^32).
+    private void deterministicMode()
+    {
+        BigInteger d = new BigInteger(
+            "0000000000000000000000000000000000000000000000000000000000000003", 16);
+        ECPrivateKeyParameters priv = new ECPrivateKeyParameters(d, BIP340Signer.getDomain());
+        byte[] msg = Hex.decode("0000000000000000000000000000000000000000000000000000000000000000");
+        byte[] expected = Hex.decode(
+            "E907831F80848D1069A5371B402410364BDF1C5F8307B0084C55F1CE2DCA8215"
+                + "25F66A4A85EA8B71E482A74F382D2CE5EBEEE8FDB2172F477DF4900D310536C0");
+
+        BIP340Signer signer = new BIP340Signer(true);
+        signer.init(true, priv);
+        signer.update(msg, 0, msg.length);
+        isTrue("deterministic mode matches aux_rand=0 vector", Arrays.areEqual(expected, signer.generateSignature()));
+    }
+
+    // Default (randomized) mode with no ParametersWithRandom substitutes a default SecureRandom rather than
+    // signing deterministically: two signatures over the same message differ, and both verify.
+    private void defaultModeSubstitutesSecureRandom()
+    {
+        BigInteger d = new BigInteger(
+            "B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFEF", 16);
+        ECPrivateKeyParameters priv = new ECPrivateKeyParameters(d, BIP340Signer.getDomain());
+        byte[] msg = Hex.decode("243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89");
+
+        BIP340Signer signer = new BIP340Signer();
+        signer.init(true, priv);
+        signer.update(msg, 0, msg.length);
+        byte[] sig1 = signer.generateSignature();
+
+        signer.init(true, priv);
+        signer.update(msg, 0, msg.length);
+        byte[] sig2 = signer.generateSignature();
+
+        isTrue("default mode is randomized (aux_rand drawn from substituted SecureRandom)",
+            !Arrays.areEqual(sig1, sig2));
+
+        byte[] pubX = BigIntegers.asUnsignedByteArray(32,
+            new FixedPointCombMultiplier()
+                .multiply(BIP340Signer.getDomain().getG(), d).normalize()
+                .getAffineXCoord().toBigInteger());
+        ECPublicKeyParameters pub = BIP340Signer.decodePublicKey(pubX);
+
+        BIP340Signer verifier = new BIP340Signer();
+        verifier.init(false, pub);
+        verifier.update(msg, 0, msg.length);
+        isTrue("randomized signature 1 verifies", verifier.verifySignature(sig1));
+        verifier.init(false, pub);
+        verifier.update(msg, 0, msg.length);
+        isTrue("randomized signature 2 verifies", verifier.verifySignature(sig2));
     }
 
     private static List<String> splitCsv(String line)
