@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cms.BinaryTime;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.RequesterCertificate;
@@ -91,10 +92,12 @@ public class RelatedCertificateTool
         }
 
         OutputStream dOut = digestCalculator.getOutputStream();
-        dOut.write(relatedCert.getEncoded());
+        relatedCert.toASN1Structure().encodeTo(dOut, ASN1Encoding.DER);
         dOut.close();
 
-        return new RelatedCertificate(digestCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest());
+        return new RelatedCertificate(
+            digestCalculator.getAlgorithmIdentifier(),
+            DEROctetString.fromContents(digestCalculator.getDigest()));
     }
 
     /**
@@ -133,10 +136,10 @@ public class RelatedCertificateTool
         DigestCalculator digester = digestProvider.get(extensionValue.getHashAlgorithm());
 
         OutputStream dOut = digester.getOutputStream();
-        dOut.write(relatedCert.getEncoded());
+        relatedCert.toASN1Structure().encodeTo(dOut, ASN1Encoding.DER);
         dOut.close();
 
-        return Arrays.constantTimeAreEqual(extensionValue.getHashValue(), digester.getDigest());
+        return Arrays.constantTimeAreEqual(extensionValue.getHashValueOctets(), digester.getDigest());
     }
 
     // =====================================================================
@@ -144,16 +147,23 @@ public class RelatedCertificateTool
     // =====================================================================
 
     /**
-     * Assemble the bytes the {@link RequesterCertificate#getSignature()
-     * signature} field must cover: the DER encoding of {@code certID}
-     * concatenated with the DER encoding of {@code requestTime}, per RFC 9763
-     * sec. 4.1 ("concatenation of DER-encoded IssuerAndSerialNumber and
-     * BinaryTime"). This is NOT wrapped in an outer SEQUENCE — implementations
-     * that hash a SEQUENCE will fail to interoperate.
+     * Write the bytes the {@link RequesterCertificate#getSignature() signature}
+     * field must cover straight into {@code out}: the DER encoding of
+     * {@code certID} followed by the DER encoding of {@code requestTime}, per
+     * RFC 9763 sec. 4.1 ("concatenation of DER-encoded IssuerAndSerialNumber
+     * and BinaryTime"). This is NOT wrapped in an outer SEQUENCE —
+     * implementations that hash a SEQUENCE will fail to interoperate. The two
+     * structures are streamed directly so no intermediate {@code byte[]} is
+     * materialised; pass a {@link ContentSigner} / {@link ContentVerifier}
+     * output stream (or a {@code ByteArrayOutputStream} if you need the bytes).
      */
-    public static byte[] signatureInput(IssuerAndSerialNumber certID, BinaryTime requestTime)
+    public static void writeSignatureInput(OutputStream out, IssuerAndSerialNumber certID, BinaryTime requestTime)
         throws IOException
     {
+        if (out == null)
+        {
+            throw new NullPointerException("'out' cannot be null");
+        }
         if (certID == null)
         {
             throw new NullPointerException("'certID' cannot be null");
@@ -162,9 +172,8 @@ public class RelatedCertificateTool
         {
             throw new NullPointerException("'requestTime' cannot be null");
         }
-        return Arrays.concatenate(
-            certID.getEncoded(ASN1Encoding.DER),
-            requestTime.getEncoded(ASN1Encoding.DER));
+        certID.encodeTo(out, ASN1Encoding.DER);
+        requestTime.encodeTo(out, ASN1Encoding.DER);
     }
 
     /**
@@ -184,10 +193,8 @@ public class RelatedCertificateTool
             throw new NullPointerException("'signer' cannot be null");
         }
 
-        byte[] toSign = signatureInput(certID, requestTime);
-
         OutputStream sOut = signer.getOutputStream();
-        sOut.write(toSign);
+        writeSignatureInput(sOut, certID, requestTime);
         sOut.close();
 
         return new RequesterCertificate(certID, requestTime, locationInfo, signer.getSignature());
@@ -213,10 +220,8 @@ public class RelatedCertificateTool
             throw new NullPointerException("'verifier' cannot be null");
         }
 
-        byte[] toVerify = signatureInput(value.getCertID(), value.getRequestTime());
-
         OutputStream vOut = verifier.getOutputStream();
-        vOut.write(toVerify);
+        writeSignatureInput(vOut, value.getCertID(), value.getRequestTime());
         vOut.close();
 
         return verifier.verify(value.getSignature());

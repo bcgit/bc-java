@@ -108,7 +108,7 @@ public class RequesterCertificate
     {
         if (seq.size() != 4)
         {
-            throw new IllegalArgumentException("RequesterCertificate must be a SEQUENCE of 4 elements");
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
         this.certID = IssuerAndSerialNumber.getInstance(seq.getObjectAt(0));
         this.requestTime = BinaryTime.getInstance(seq.getObjectAt(1));
