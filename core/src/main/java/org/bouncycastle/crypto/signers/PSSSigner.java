@@ -21,24 +21,71 @@ import org.bouncycastle.util.Arrays;
  * <p>
  * Note: the usual value for the salt length is the number of
  * bytes in the hash function.
+ * <p>
+ * The {@link #createRawSigner(AsymmetricBlockCipher, Digest)} family builds a signer that
+ * operates on a <b>pre-computed</b> message hash (mHash) rather than the message itself.
+ * RFC 8017 (PKCS#1 v2.2) sec. 9.1 EMSA-PSS first hashes the message M to mHash and then
+ * salts and re-hashes; these factories replace only that first hash with a
+ * {@link org.bouncycastle.crypto.digests.Prehash} pass-through, so the caller supplies
+ * mHash via {@code update(...)} and the signer still performs the salt / M' / second-hash /
+ * masking steps. The bytes supplied must be exactly the content digest's output length,
+ * otherwise signing or verification fails with "Incorrect prehash size". This is the
+ * lightweight-API equivalent of a "sign/verify pre-computed hash" entry point
+ * (github #1145). See {@code org.bouncycastle.crypto.examples.RSAPSSPreComputedHashExample}.
  */
 public class PSSSigner
     implements Signer
 {
     public static final byte TRAILER_IMPLICIT = (byte)0xBC;
 
+    /**
+     * Create a PSS signer/verifier that consumes a pre-computed message hash. The caller
+     * feeds exactly {@code digest.getDigestSize()} bytes (the hash of the message under
+     * {@code digest}) through {@code update(...)} before {@code generateSignature()} /
+     * {@code verifySignature(...)}; {@code digest} is also used for the EMSA-PSS second
+     * hash and the MGF1 mask, and the salt length defaults to the digest output length
+     * with the implicit (0xBC) trailer.
+     *
+     * @param cipher the asymmetric cipher to use (e.g. a configured RSAEngine).
+     * @param digest the digest the supplied hash was produced with.
+     */
     public static PSSSigner createRawSigner(AsymmetricBlockCipher cipher, Digest digest)
     {
         return new PSSSigner(cipher, Prehash.forDigest(digest), digest, digest, digest.getDigestSize(),
             TRAILER_IMPLICIT);
     }
 
+    /**
+     * Create a PSS signer/verifier that consumes a pre-computed message hash, with the MGF
+     * digest, salt length and trailer specified explicitly. The caller feeds exactly
+     * {@code contentDigest.getDigestSize()} bytes (the pre-computed hash) through
+     * {@code update(...)}; {@code contentDigest} performs the EMSA-PSS second hash and
+     * {@code mgfDigest} drives the MGF1 mask.
+     *
+     * @param cipher the asymmetric cipher to use.
+     * @param contentDigest the digest the supplied hash was produced with, also used for the second hash.
+     * @param mgfDigest the digest to use for the MGF1 mask generation function.
+     * @param sLen the length of the salt to use (in bytes).
+     * @param trailer the trailer byte (usually {@link #TRAILER_IMPLICIT}).
+     */
     public static PSSSigner createRawSigner(AsymmetricBlockCipher cipher, Digest contentDigest, Digest mgfDigest,
         int sLen, byte trailer)
     {
         return new PSSSigner(cipher, Prehash.forDigest(contentDigest), contentDigest, mgfDigest, sLen, trailer);
     }
 
+    /**
+     * Create a PSS signer/verifier that consumes a pre-computed message hash, using a fixed
+     * salt (chiefly for known-answer testing where the salt must be reproducible). The caller
+     * feeds exactly {@code contentDigest.getDigestSize()} bytes (the pre-computed hash) through
+     * {@code update(...)}.
+     *
+     * @param cipher the asymmetric cipher to use.
+     * @param contentDigest the digest the supplied hash was produced with, also used for the second hash.
+     * @param mgfDigest the digest to use for the MGF1 mask generation function.
+     * @param salt the fixed salt to use.
+     * @param trailer the trailer byte (usually {@link #TRAILER_IMPLICIT}).
+     */
     public static PSSSigner createRawSigner(AsymmetricBlockCipher cipher, Digest contentDigest, Digest mgfDigest,
         byte[] salt, byte trailer)
     {
