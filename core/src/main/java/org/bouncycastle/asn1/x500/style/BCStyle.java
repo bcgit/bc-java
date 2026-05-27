@@ -261,6 +261,9 @@ public class BCStyle
         DefaultLookUp.put("cn", CN);
         DefaultLookUp.put("l", L);
         DefaultLookUp.put("st", ST);
+        // Microsoft CertNameToStr emits "S" for stateOrProvinceName (2.5.4.8),
+        // differing from the RFC 2253/4514 short form "ST"; accept it on parse.
+        DefaultLookUp.put("s", ST);
         DefaultLookUp.put("sn", SURNAME);
         DefaultLookUp.put("serialnumber", SERIALNUMBER);
         DefaultLookUp.put("street", STREET);
