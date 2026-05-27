@@ -168,6 +168,7 @@ public class RegressionTest
             new X448Test(),
             new Ed25519Test(),
             new Ed448Test(),
+            new BIP340SignerTest(),
             new CSHAKETest(),
             new Argon2Test(),
             new OpenSSHKeyParsingTests(),
