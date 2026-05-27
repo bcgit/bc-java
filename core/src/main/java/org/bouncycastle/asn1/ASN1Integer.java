@@ -226,7 +226,7 @@ public class ASN1Integer
     public int intPositiveValueExact()
     {
         int count = bytes.length - start;
-        if (count > 4 || (count == 4 && 0 != (bytes[start] & 0x80)))
+        if (count > 4 || (count == 4 && isNegative()))
         {
             throw new ArithmeticException("ASN.1 Integer out of positive int range");
         }
@@ -254,6 +254,11 @@ public class ASN1Integer
         }
 
         return longValue(bytes, start, SIGN_EXT_SIGNED);
+    }
+
+    public boolean isNegative()
+    {
+        return (bytes[start] & 0x80) != 0;
     }
 
     boolean encodeConstructed()
