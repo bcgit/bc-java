@@ -2260,10 +2260,10 @@ public class NewSignedDataTest
 
         byte[] encoded = signedData.getEncoded();
 
-        // Non-parser verify - separate from the parser path, this has always worked.
+        // control: the non-parser path was never affected
         assertTrue(verifyAllSigners(new CMSSignedData(encoded)));
 
-        // Parser path - the bug case.
+        // regression: the parser path leaves content == null with resultDigest pre-computed
         CMSSignedDataParser parser = new CMSSignedDataParser(
             new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(),
             new ByteArrayInputStream(encoded));
