@@ -53,6 +53,12 @@ public class LocaleUtil
 
             if (adj == null)
             {
+                // The SimpleDateFormat is intentionally constructed without an explicit
+                // Locale: this method's job is to detect a per-locale calendar offset
+                // (e.g. Thai Buddhist year + 543, Japanese Imperial era) and the only way
+                // to do that is to parse "1970-01-01" under the default locale's calendar.
+                // Forcing LocaleUtil.EN_Locale here would always return epoch and disable
+                // the detection entirely. Do not "fix" by adding a Locale argument.
                 SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
                 long v = dateF.parse("19700101000000GMT+00:00").getTime();
 
