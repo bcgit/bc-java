@@ -68,7 +68,6 @@ class HQCEngine
         byte[] seedKem = new byte[SEED_BYTES]; // seedKem
         byte[] keypairSeed = new byte[SEED_BYTES << 1];
         long[] xLongBytes = gf2x.create();
-        long[] yLongBytes = gf2x.create();
         long[] h = gf2x.create(); // s
 
         secureRandom.nextBytes(seedKem);
@@ -81,19 +80,19 @@ class HQCEngine
         hashHI(keypairSeed, 512, seedKem, seedKem.length, (byte)2);
         ctxKem.init(keypairSeed, 0, SEED_BYTES, (byte)1);
 
-        vectSampleFixedWeight1(yLongBytes, ctxKem, w);
+        int[] ySupport = sampleSupport1(ctxKem, w);
         vectSampleFixedWeight1(xLongBytes, ctxKem, w);
         System.arraycopy(keypairSeed, SEED_BYTES, pk, 0, SEED_BYTES);
         ctxKem.init(keypairSeed, SEED_BYTES, SEED_BYTES, (byte)1);
         gf2x.random(ctxKem, h);
-        gf2x.mul(h, yLongBytes, h); // h is s as the output
+        gf2x.sparseMul(ySupport, w, h, h); // h is s as the output
         gf2x.addTo(xLongBytes, h); // h is s
         Utils.fromLongArrayToByteArray(pk, SEED_BYTES, pk.length - SEED_BYTES, h);
         System.arraycopy(keypairSeed, 0, sk, pkSize, SEED_BYTES);
         System.arraycopy(pk, 0, sk, 0, pkSize);
         Arrays.clear(keypairSeed);
+        Arrays.clear(ySupport);
         gf2x.clear(xLongBytes);
-        gf2x.clear(yLongBytes);
         gf2x.clear(h);
     }
 
@@ -141,7 +140,7 @@ class HQCEngine
         long[] u64 = gf2x.create();
         long[] v64 = gf2x.create();
         long[] cKemPrimeU64 = gf2x.create(); // tmpLong
-        long[] cKemPrimeV64 = gf2x.create(); // y
+        long[] cKemPrimeV64 = gf2x.create(); // re-encryption v scratch
         byte[] hashEkKem = new byte[SEED_BYTES];
         byte[] kThetaPrime = new byte[32 + SEED_BYTES];
         byte[] mPrime = new byte[k];
@@ -149,14 +148,14 @@ class HQCEngine
         byte[] tmp = new byte[n1];
 
         Shake256RandomGenerator generator = new Shake256RandomGenerator(sk, pkSize, SEED_BYTES, (byte)1);
-        vectSampleFixedWeight1(cKemPrimeV64, generator, w); // cKemPrimeV64 is y
+        int[] ySupport = sampleSupport1(generator, w);
 
         // Extract u, v, d from ciphertext
         Utils.fromByteArrayToLongArray(u64, ct, 0, N_BYTE);
         Utils.fromByteArrayToLongArray(v64, ct, N_BYTE, N1N2_BYTE);
 
         // cKemPrimeU64 is tmpLong
-        gf2x.mul(cKemPrimeV64, u64, cKemPrimeU64);
+        gf2x.sparseMul(ySupport, w, u64, cKemPrimeU64);
         vectTruncate(cKemPrimeU64);
         gf2x.addTo(v64, cKemPrimeU64);
 
@@ -182,6 +181,7 @@ class HQCEngine
         gf2x.clear(v64);
         gf2x.clear(cKemPrimeU64);
         gf2x.clear(cKemPrimeV64);
+        Arrays.clear(ySupport);
         Arrays.clear(hashEkKem);
         Arrays.clear(kThetaPrime);
         Arrays.clear(mPrime);
@@ -192,7 +192,7 @@ class HQCEngine
 
     private void pkeEncrypt(long[] u, long[] v, byte[] ekPke, byte[] m, byte[] theta, int thetaOff)
     {
-        long[] e = gf2x.create(); // r2
+        long[] e = gf2x.create(); // r2 (dense form, used as 'e' below)
         long[] tmp = gf2x.create(); // s, h1, h
         byte[] res = new byte[n1];
 
@@ -203,10 +203,10 @@ class HQCEngine
         gf2x.random(randomGenerator, tmp);
 
         randomGenerator.init(theta, thetaOff, SEED_BYTES, (byte)1);
-        vectSampleFixedWeights2(randomGenerator, e, wr); // e is r2
-        gf2x.mul(tmp, e, u); // e is r2
+        int[] r2Support = sampleSupport2(randomGenerator, wr);
+        gf2x.sparseMul(r2Support, wr, tmp, u);
         Utils.fromByteArrayToLongArray(tmp, ekPke, SEED_BYTES, pkSize - SEED_BYTES);
-        gf2x.mul(tmp, e, tmp);
+        gf2x.sparseMul(r2Support, wr, tmp, tmp);
         vectSampleFixedWeights2(randomGenerator, e, wr);
         gf2x.addTo(e, tmp);
         vectTruncate(tmp);
@@ -214,6 +214,7 @@ class HQCEngine
 
         vectSampleFixedWeights2(randomGenerator, tmp, wr);// tmp is r1
         gf2x.addTo(tmp, u);
+        Arrays.clear(r2Support);
         gf2x.clear(e);
         gf2x.clear(tmp);
         Arrays.clear(res);
@@ -286,14 +287,20 @@ class HQCEngine
         }
     }
 
-    private void vectSampleFixedWeight1(long[] output, Shake256RandomGenerator random, int weight)
+    private int[] sampleSupport1(Shake256RandomGenerator random, int weight)
     {
         int[] support = new int[wr];
         generateRandomSupport(support, weight, random);
+        return support;
+    }
+
+    private void vectSampleFixedWeight1(long[] output, Shake256RandomGenerator random, int weight)
+    {
+        int[] support = sampleSupport1(random, weight);
         writeSupportToVector(output, support, weight);
     }
 
-    private void vectSampleFixedWeights2(Shake256RandomGenerator generator, long[] v, int weight)
+    private int[] sampleSupport2(Shake256RandomGenerator generator, int weight)
     {
         byte[] rand = new byte[wr << 2];
         generator.xofGetBytes(rand, rand.length);
@@ -312,7 +319,12 @@ class HQCEngine
             }
             support[i] = (~notFound & i) ^ (notFound & support_i);
         }
+        return support;
+    }
 
+    private void vectSampleFixedWeights2(Shake256RandomGenerator generator, long[] v, int weight)
+    {
+        int[] support = sampleSupport2(generator, weight);
         writeSupportToVector(v, support, weight);
     }
 
