@@ -1,5 +1,8 @@
 package org.bouncycastle.asn1.x509;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -10,6 +13,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.util.AggregateRuntimeException;
 import org.bouncycastle.util.Properties;
 
 /**
@@ -70,8 +74,47 @@ public class TBSCertificate
         return null;
     }
 
+    private TBSCertificate()
+    {
+        // used by reviewStructure() to drive parse() in collect-all mode;
+        // the resulting (possibly invalid) instance is never published.
+    }
+
     private TBSCertificate(
         ASN1Sequence seq)
+    {
+        parse(seq, null);
+    }
+
+    /**
+     * Re-run the parse of a candidate tbsCertificate SEQUENCE collecting every problem the
+     * strict {@code getInstance(...)} path would have thrown, instead of stopping at the
+     * first. The strict path and this share one parse method (see {@link #parse}); the only
+     * difference is the error sink. Intended for diagnostic/reporting tooling
+     * (e.g. {@code org.bouncycastle.cert.X509CertificateReviewer}, github #1508); it does
+     * not relax any rule and does not publish a partially-parsed certificate.
+     *
+     * @param seq the candidate tbsCertificate SEQUENCE.
+     * @return the exceptions the strict path would have thrown, one per problem, in parse
+     *         order (empty if none).
+     */
+    public static List reviewStructure(ASN1Sequence seq)
+    {
+        List errors = new ArrayList();
+        try
+        {
+            new TBSCertificate().parse(seq, errors);
+        }
+        catch (RuntimeException e)
+        {
+            // a structural sub-field failure (e.g. a field of the wrong ASN.1 type) aborts
+            // enumeration; surface the exception so the caller still learns something went wrong.
+            errors.add(e);
+        }
+        return errors;
+    }
+
+    private void parse(ASN1Sequence seq, List errors)
     {
         int         seqStart = 0;
 
@@ -92,7 +135,7 @@ public class TBSCertificate
 
         boolean isV1 = false;
         boolean isV2 = false;
- 
+
         if (version.hasValue(0))
         {
             isV1 = true;
@@ -103,7 +146,9 @@ public class TBSCertificate
         }
         else if (!version.hasValue(2))
         {
-            throw new IllegalArgumentException("version number not recognised");
+            reportProblem(errors, "version number not recognised");
+            // collecting only: treat an unrecognised version as v3 so the v1/v2 profile
+            // checks below are not spuriously reported on top of the bad-version one.
         }
 
         serialNumber = ASN1Integer.getInstance(seq.getObjectAt(seqStart + 1));
@@ -113,7 +158,7 @@ public class TBSCertificate
         // RFC 5280 sec. 4.1.2.4: certificate issuer MUST be a non-empty DN.
         if (issuer.size() == 0)
         {
-            throw new IllegalArgumentException("certificate issuer is an empty distinguished name");
+            reportProblem(errors, "certificate issuer is an empty distinguished name");
         }
         validity = Validity.getInstance(seq.getObjectAt(seqStart + 4));
         subject = X500Name.getInstance(seq.getObjectAt(seqStart + 5));
@@ -122,9 +167,9 @@ public class TBSCertificate
         int extras = seq.size() - (seqStart + 6) - 1;
         if (extras != 0 && isV1)
         {
-            throw new IllegalArgumentException("version 1 certificate contains extra data");
+            reportProblem(errors, "version 1 certificate contains extra data");
         }
-        
+
         while (extras > 0)
         {
             ASN1TaggedObject extra = (ASN1TaggedObject)seq.getObjectAt(seqStart + 6 + extras);
@@ -138,17 +183,49 @@ public class TBSCertificate
                 subjectUniqueId = ASN1BitString.getInstance(extra, false);
                 break;
             case 3:
+            {
                 if (isV2)
                 {
-                    throw new IllegalArgumentException("version 2 certificate cannot contain extensions");
+                    reportProblem(errors, "version 2 certificate cannot contain extensions");
                 }
-                extensions = Extensions.getInstance(ASN1Sequence.getInstance(extra, true));
+                ASN1Sequence extSeq = ASN1Sequence.getInstance(extra, true);
+                if (errors == null)
+                {
+                    extensions = Extensions.getInstance(extSeq);
+                }
+                else
+                {
+                    // collecting: enumerate every repeated/malformed extension rather than
+                    // aborting on the first, using Extensions' own shared checks.
+                    List extProblems = Extensions.reviewStructure(extSeq);
+                    if (!extProblems.isEmpty())
+                    {
+                        errors.add(new AggregateRuntimeException("invalid extension(s)", extProblems));
+                    }
+                }
                 break;
+            }
             default:
-                throw new IllegalArgumentException("Unknown tag encountered in structure: " + extra.getTagNo());
+                reportProblem(errors, "Unknown tag encountered in structure: " + extra.getTagNo());
             }
             extras--;
         }
+    }
+
+    /**
+     * Report a parse problem: in strict mode ({@code errors == null}) throw immediately as
+     * the legacy parse always has; in collect mode record the exception and continue. Because
+     * the strict sink throws here, no statement after a call site executes in strict mode, so
+     * strict parsing behaviour and messages are unchanged.
+     */
+    private static void reportProblem(List errors, String message)
+    {
+        IllegalArgumentException problem = new IllegalArgumentException(message);
+        if (errors == null)
+        {
+            throw problem;
+        }
+        errors.add(problem);
     }
 
     public TBSCertificate(ASN1Integer version, ASN1Integer serialNumber, AlgorithmIdentifier signature,

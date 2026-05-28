@@ -149,6 +149,9 @@ public class RFC4519Style
         DefaultLookUp.put("serialnumber", serialNumber);
         DefaultLookUp.put("sn", sn);
         DefaultLookUp.put("st", st);
+        // Microsoft CertNameToStr emits "S" for stateOrProvinceName (2.5.4.8)
+        // rather than the RFC 2253/4514 short form "ST"; accept it on parse.
+        DefaultLookUp.put("s", st);
         DefaultLookUp.put("street", street);
         DefaultLookUp.put("telephonenumber", telephoneNumber);
         DefaultLookUp.put("teletexterminalidentifier", teletexTerminalIdentifier);

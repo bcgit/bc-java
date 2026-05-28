@@ -15,9 +15,20 @@ import org.bouncycastle.util.Strings;
  * <pre>
  * DistributionPointName ::= CHOICE {
  *     fullName                 [0] GeneralNames,
- *     nameRelativeToCRLIssuer  [1] RDN
+ *     nameRelativeToCRLIssuer  [1] RelativeDistinguishedName
  * }
+ *
+ * RelativeDistinguishedName ::= SET SIZE (1..MAX) OF AttributeTypeAndValue
  * </pre>
+ * Per RFC 5280 sec. 4.2.1.13, {@code nameRelativeToCRLIssuer} is a single
+ * RelativeDistinguishedName (a SET of one or more attribute-type-and-value
+ * pairs) — never a sequence of RDNs. When two attributes need to be carried
+ * here they share one multi-valued RDN (e.g. {@code O=Bouncy+OU=Test}), not
+ * two adjacent RDNs (e.g. {@code O=Bouncy,OU=Test}); the CHOICE branch is
+ * decoded as an {@link org.bouncycastle.asn1.ASN1Set} and a sequence-shaped
+ * input is rejected. The full DN of the distribution point is formed by
+ * appending this single RDN to the CRL issuer's RDNSequence (RFC 5280
+ * sec. 5.2.5).
  */
 public class DistributionPointName
     extends ASN1Object

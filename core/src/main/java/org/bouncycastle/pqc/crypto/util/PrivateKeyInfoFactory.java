@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.sdith.SDitHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPrivateKeyParameters;
 import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
 import org.bouncycastle.pqc.asn1.CMCEPublicKey;
@@ -381,6 +382,14 @@ public class PrivateKeyInfoFactory
             UOVPrivateKeyParameters params = (UOVPrivateKeyParameters)privateKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.uovOidLookup(params.getParameters()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
+        }
+        else if (privateKey instanceof SDitHPrivateKeyParameters)
+        {
+            SDitHPrivateKeyParameters params = (SDitHPrivateKeyParameters)privateKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sdithOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
         }

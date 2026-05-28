@@ -86,20 +86,7 @@ public class CramerShoupParametersGenerator
          */
         static BigInteger[] generateSafePrimes(int size, int certainty, SecureRandom random)
         {
-            BigInteger p, q;
-            int qLength = size - 1;
-
-            for (; ; )
-            {
-                q = BigIntegers.createRandomPrime(qLength, 2, random);
-                p = q.shiftLeft(1).add(ONE);
-                if (p.isProbablePrime(certainty) && (certainty <= 2 || q.isProbablePrime(certainty)))
-                {
-                    break;
-                }
-            }
-
-            return new BigInteger[]{p, q};
+            return DHParametersHelper.generateSafePrimes(size, certainty, random, false);
         }
 
         static BigInteger selectGenerator(BigInteger p, SecureRandom random)
