@@ -141,11 +141,17 @@ public class ASN1UTCTime
     }
 
     /**
-     * Base constructor from a java.util.date and Locale - you may need to use this if the default locale
-     * doesn't use a Gregorian calender so that the GeneralizedTime produced is compatible with other ASN.1 implementations.
+     * Base constructor from a {@link Date} and an explicit {@link Locale}. The {@code locale}
+     * selects the calendar used by the underlying {@link SimpleDateFormat}. Most callers
+     * should prefer the simple {@link #ASN1UTCTime(Date)} form, which always formats under an
+     * English Gregorian locale (so the encoded year is the spec-mandated Gregorian one
+     * regardless of {@link Locale#getDefault()}, including on JVMs whose default uses a
+     * non-Gregorian calendar such as Thai Buddhist {@code th_TH_TH_#u-nu-thai} or Japanese
+     * Imperial {@code ja_JP_JP_#u-ca-japanese}). Reach for this {@code (Date, Locale)} form
+     * only when you need explicit control over the formatter's calendar.
      *
      * @param time a date object representing the time of interest.
-     * @param locale an appropriate Locale for producing an ASN.1 UTCTime value.
+     * @param locale the Locale whose calendar the underlying SimpleDateFormat should use.
      */
     public ASN1UTCTime(
         Date time,
