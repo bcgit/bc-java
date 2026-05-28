@@ -10,6 +10,7 @@ import java.util.TimeZone;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -465,6 +466,16 @@ public class ASN1GeneralizedTime
 
     ASN1Primitive toDERObject()
     {
+        // BC stays lenient on read - non-DER GeneralizedTime (e.g. missing seconds, a fraction
+        // with trailing zeros, '+hhmm' offset in place of 'Z') is parsed without complaint.
+        // When emitting DER, however, the primitive's contents must conform to X.690 sec. 11.7
+        // / RFC 5280 sec. 4.1.2.5.2. Setting Properties.ASN1_ALLOW_NON_DER_TIME to "false"
+        // enforces that on write to a DEROutputStream (default "true"/unset preserves the
+        // historical pass-through).
+        if (!Properties.isOverrideSet(Properties.ASN1_ALLOW_NON_DER_TIME, true) && !isDERGeneralizedTime(contents))
+        {
+            throw new DEREncodingException("cannot emit GeneralizedTime as DER: not in DER format (see Properties.ASN1_ALLOW_NON_DER_TIME)");
+        }
         return new DERGeneralizedTime(contents);
     }
 
@@ -486,5 +497,44 @@ public class ASN1GeneralizedTime
     static ASN1GeneralizedTime createPrimitive(byte[] contents)
     {
         return new ASN1GeneralizedTime(contents);
+    }
+
+    /**
+     * DER GeneralizedTime (X.690 sec. 11.7): the seconds element is always present, the value
+     * is terminated by "Z", and any fractional-seconds component uses a "." separator with no
+     * trailing zeros, i.e. "YYYYMMDDHHMMSSZ" or "YYYYMMDDHHMMSS.f...Z".
+     */
+    private static boolean isDERGeneralizedTime(byte[] contents)
+    {
+        int len = contents.length;
+        if (len < 15 || contents[len - 1] != 'Z')
+        {
+            return false;
+        }
+        // YYYYMMDDHHMMSS - 14 digits, seconds always present
+        for (int i = 0; i != 14; i++)
+        {
+            if (contents[i] < '0' || contents[i] > '9')
+            {
+                return false;
+            }
+        }
+        if (len == 15)
+        {
+            return true;
+        }
+        // fractional seconds: '.' then one or more digits with no trailing zero, then 'Z'
+        if (contents[14] != '.' || len < 17)
+        {
+            return false;
+        }
+        for (int i = 15; i != len - 1; i++)
+        {
+            if (contents[i] < '0' || contents[i] > '9')
+            {
+                return false;
+            }
+        }
+        return contents[len - 2] != '0';
     }
 }

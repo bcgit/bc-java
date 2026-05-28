@@ -127,6 +127,26 @@ public class Properties
      */
     public static final String DRBG_GATHER_PAUSE_SECS = "org.bouncycastle.drbg.gather_pause_secs";
 
+    /**
+     * Controls whether an ASN.1 {@code UTCTime} / {@code GeneralizedTime} carrying non-DER
+     * contents may be serialized through a {@code DEROutputStream}. Reading is always
+     * lenient: a wire value that is valid ASN.1 but not valid DER - for example a UTCTime
+     * without the seconds element ("YYMMDDHHMMZ"), a time terminated with a "+hhmm"/"-hhmm"
+     * offset rather than "Z", or a GeneralizedTime fraction carrying trailing zeros - parses
+     * without complaint into a usable {@code ASN1UTCTime} / {@code ASN1GeneralizedTime}.
+     * <p>
+     * Default (unset or "true") preserves BC's historical pass-through: such a primitive may
+     * be re-emitted unchanged via either BER or DER. Setting this property to "false"
+     * enforces the DER restrictions of X.690 sec. 11.7 / 11.8 (and hence the RFC 5280
+     * sec. 4.1.2.5 profile, which requires seconds and Zulu) on the DER write side: the
+     * primitive's {@code toDERObject()} throws an {@code IllegalStateException} if it would
+     * emit non-conformant content, so any attempt to write it to a {@code DEROutputStream}
+     * fails (github #1973 / #1986). BER serialization is unaffected. Programmatically
+     * constructing a time from a {@code Date} always produces DER content, so this setting
+     * only matters for primitives whose contents arrived non-conformant from the wire.
+     */
+    public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
+
     private Properties()
     {
     }

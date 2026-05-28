@@ -9,6 +9,7 @@ import java.util.SimpleTimeZone;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -323,5 +324,39 @@ public class ASN1UTCTime
     static ASN1UTCTime createPrimitive(byte[] contents)
     {
         return new ASN1UTCTime(contents);
+    }
+
+    ASN1Primitive toDERObject()
+    {
+        // BC stays lenient on read - non-DER UTCTime (e.g. missing seconds, '+hhmm' offset
+        // in place of 'Z') is parsed without complaint. When emitting DER, however, the
+        // primitive's contents must conform to X.690 sec. 11.8 / RFC 5280 sec. 4.1.2.5.1.
+        // Setting Properties.ASN1_ALLOW_NON_DER_TIME to "false" enforces that on write to a
+        // DEROutputStream (default "true"/unset preserves the historical pass-through).
+        if (!Properties.isOverrideSet(Properties.ASN1_ALLOW_NON_DER_TIME, true) && !isDERUTCTime(contents))
+        {
+            throw new DEREncodingException("cannot emit UTCTime as DER: not in DER format (see Properties.ASN1_ALLOW_NON_DER_TIME)");
+        }
+        return this;
+    }
+
+    /**
+     * DER UTCTime (X.690 sec. 11.8): the seconds element is always present and the value is
+     * terminated by "Z", i.e. exactly "YYMMDDHHMMSSZ".
+     */
+    private static boolean isDERUTCTime(byte[] contents)
+    {
+        if (contents.length != 13 || contents[12] != 'Z')
+        {
+            return false;
+        }
+        for (int i = 0; i != 12; i++)
+        {
+            if (contents[i] < '0' || contents[i] > '9')
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
