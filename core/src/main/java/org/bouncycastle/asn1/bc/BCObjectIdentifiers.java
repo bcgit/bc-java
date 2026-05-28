@@ -439,6 +439,51 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier external_value = bc_ext.branch("2");
 
     /**
+     * Placeholder for the id-ad-certDiscovery access method defined by
+     * draft-ietf-lamps-certdiscovery-03 (registered as TBD2 against the SMI
+     * Security for PKIX Access Descriptor registry). Used as the
+     * AccessDescription.accessMethod inside a SubjectInfoAccess extension to
+     * advertise that the accessLocation points at a related certificate.
+     * <p>
+     * 1.3.6.1.4.1.22554.4.3 (BC private placeholder; replace with the
+     * IANA-assigned id-ad.N once the draft progresses to RFC)
+     */
+    ASN1ObjectIdentifier id_ad_certDiscovery = bc_ext.branch("3");
+
+    /**
+     * Placeholder for the id-on-relatedCertificateDescriptor otherName type
+     * defined by draft-ietf-lamps-certdiscovery-03 (registered as TBD3
+     * against the SMI Security for PKIX Other Name Forms registry). Used as
+     * the OtherName.type-id wrapping the RelatedCertificateDescriptor
+     * carried inside the SIA extension's accessLocation GeneralName.
+     * <p>
+     * 1.3.6.1.4.1.22554.4.4 (BC private placeholder; replace with the
+     * IANA-assigned id-on.N once the draft progresses to RFC)
+     */
+    ASN1ObjectIdentifier id_on_relatedCertificateDescriptor = bc_ext.branch("4");
+
+    /**
+     * Placeholder for the id-rcd discovery-intent arc defined by
+     * draft-ietf-lamps-certdiscovery-03 (registered as TBD4). Parent of the
+     * five DiscoveryIntentId values below.
+     * <p>
+     * 1.3.6.1.4.1.22554.4.5 (BC private placeholder; replace with the
+     * IANA-assigned id-rcd once the draft progresses to RFC)
+     */
+    ASN1ObjectIdentifier id_rcd = bc_ext.branch("5");
+
+    /** id-rcd-agility: secondary certificate provides cryptographic agility. */
+    ASN1ObjectIdentifier id_rcd_agility       = id_rcd.branch("1");
+    /** id-rcd-redundancy: secondary certificate is a backup (different CA / validity). */
+    ASN1ObjectIdentifier id_rcd_redundancy    = id_rcd.branch("2");
+    /** id-rcd-dual: secondary certificate provides the complementary key usage (sign/encrypt split). */
+    ASN1ObjectIdentifier id_rcd_dual          = id_rcd.branch("3");
+    /** id-rcd-priv-key-stmt: secondary certificate carries a proof-of-possession statement signed for the primary. */
+    ASN1ObjectIdentifier id_rcd_priv_key_stmt = id_rcd.branch("4");
+    /** id-rcd-self: descriptor points at the location of the current certificate itself. */
+    ASN1ObjectIdentifier id_rcd_self          = id_rcd.branch("5");
+
+    /**
      * KEM(5) algorithms
      */
     ASN1ObjectIdentifier bc_kem = bc.branch("5");
@@ -856,4 +901,26 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier hawk256 = hawk.branch("1");
     ASN1ObjectIdentifier hawk512 = hawk.branch("2");
     ASN1ObjectIdentifier hawk1024 = hawk.branch("3");
+
+    /**
+     * SDitH (Syndrome-Decoding-in-the-Head). BC-allocated arc pending NIST OID
+     * assignment. The Round-2 submission defines 12 variants formed from the
+     * cross of {hypercube, threshold} × {cat1, cat3, cat5} × {gf256, p251};
+     * all 12 are wired in. Branches are assigned in canonical order:
+     * hypercube cat1/3/5 gf256 = .1/.2/.3, hypercube cat1/3/5 p251 = .4/.5/.6,
+     * threshold cat1/3/5 gf256 = .7/.8/.9, threshold cat1/3/5 p251 = .10/.11/.12.
+     */
+    ASN1ObjectIdentifier sdith = bc_sig.branch("16");
+    ASN1ObjectIdentifier sdith_hypercube_cat1_gf256 = sdith.branch("1");
+    ASN1ObjectIdentifier sdith_hypercube_cat3_gf256 = sdith.branch("2");
+    ASN1ObjectIdentifier sdith_hypercube_cat5_gf256 = sdith.branch("3");
+    ASN1ObjectIdentifier sdith_hypercube_cat1_p251  = sdith.branch("4");
+    ASN1ObjectIdentifier sdith_hypercube_cat3_p251  = sdith.branch("5");
+    ASN1ObjectIdentifier sdith_hypercube_cat5_p251  = sdith.branch("6");
+    ASN1ObjectIdentifier sdith_threshold_cat1_gf256 = sdith.branch("7");
+    ASN1ObjectIdentifier sdith_threshold_cat3_gf256 = sdith.branch("8");
+    ASN1ObjectIdentifier sdith_threshold_cat5_gf256 = sdith.branch("9");
+    ASN1ObjectIdentifier sdith_threshold_cat1_p251  = sdith.branch("10");
+    ASN1ObjectIdentifier sdith_threshold_cat3_p251  = sdith.branch("11");
+    ASN1ObjectIdentifier sdith_threshold_cat5_p251  = sdith.branch("12");
 }

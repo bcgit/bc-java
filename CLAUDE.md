@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & test
 
-The build is Gradle multi-module. JDK 21+ is required to drive Gradle. Optional environment variables `BC_JDK8`, `BC_JDK11`, `BC_JDK17`, `BC_JDK21`, `BC_JDK25` opt in version-specific test tasks (compiled against MR-jar overlays). The default `:test` aggregates `:core:test :prov:test :prov:test11 :prov:test15 :prov:test17 :pkix:test :pg:test :tls:test :mls:test :mail:test :jmail:test`.
+The build is Gradle multi-module. JDK 21+ is required to drive Gradle — the Error Prone compiler plugin is compiled for Java 21 (class file 65), so a Gradle daemon launched under an older JDK fails `:core:compileJava` with `UnsupportedClassVersionError: …ErrorProneJavacPlugin … class file version 65.0 … up to <NN>.0`, and that failed compile can leave `core/build/classes/java/main` empty (cascading into confusing "package does not exist" errors on the next step). If you see this, point `JAVA_HOME` at a 21+ JDK for the Gradle invocation and recompile. Optional environment variables `BC_JDK8`, `BC_JDK11`, `BC_JDK17`, `BC_JDK21`, `BC_JDK25` opt in version-specific test tasks (compiled against MR-jar overlays). The default `:test` aggregates `:core:test :prov:test :prov:test11 :prov:test15 :prov:test17 :pkix:test :pg:test :tls:test :mls:test :mail:test :jmail:test`.
 
 ```
 ./gradlew clean build                                # full build + all tests
@@ -102,6 +102,12 @@ When you add a class, ask which case applies:
 
 Symmetrically, if you delete or merge away an entire package, remove its `exports` entry from both the `jdk1.9` and (where it exists) `ext-jdk1.9` descriptors. The compile-time signal that catches a missed entry — `module org.bouncycastle.provider does not export org.bouncycastle.crypto.foo` — only fires for modular downstream consumers, so a class-path-only test run won't surface it.
 
+### Every new package ships a `package-info.java`
+
+When you introduce a new package, drop a `package-info.java` alongside the first class. A one-sentence Javadoc above the `package …;` declaration is enough — name what the package is for, point at the relevant RFC / spec / sibling package when it helps a reader orient. Mirror the style of the existing files (e.g. `pkix/.../cms/package-info.java`, `core/.../asn1/package-info.java`): brief, factual, no boilerplate. The package-info is what shows up in the generated Javadoc package list, so a missing one shows up as an unnamed bucket in the consumer-facing API docs.
+
+This is symmetric with the `module-info.java` rule above: a new package that's exported but undocumented is half-wired the same way one that's documented but unexported is half-wired. Add both files in the same change.
+
 ### Examples live in `misc/`, not in the Gradle modules
 
 `misc/` is a non-Gradle source tree (not in `settings.gradle`, no `build.gradle`) used as the canonical home for example / demo code. Existing example packages: `misc/src/main/java/org/bouncycastle/{asn1,crypto,jcajce,openpgp,pqc/crypto}/examples/`. New example code should land here, not under `core/.../examples`, `prov/.../examples`, `pg/.../openpgp/examples`, etc. — putting it inside a Gradle module would force it into the published `bc*` jars and make it part of the JPMS-exported API surface. `pg/src/main/java/org/bouncycastle/openpgp/examples/` already exists as a legacy quirk and is published; the rule applies symmetrically — new OpenPGP example code goes under `misc/.../openpgp/examples/` instead (the package was added there for github #1414's `PublicKeyByteArrayHandler`, complementing the older PBE-only `ByteArrayHandler` in pg).
@@ -193,6 +199,17 @@ When the RFC contains a "MUST" / "MUST NOT" that the existing code doesn't enfor
 
 For X.509 / WebPKI work specifically, the **CAB Forum** Baseline Requirements (<https://cabforum.org/>) layer additional constraints on top of RFC 5280 — key sizes, signature algorithm sets, extension presence/criticality, profile-specific name encodings, etc. Where a CAB Forum BR or guideline narrows what RFC 5280 allows and the change makes sense for general-purpose BC users (not just publicly-trusted CAs), follow the BR rather than the looser RFC. Cite the BR section alongside the RFC in the commit message / javadoc, and call out in the PR when a change is BR-driven so reviewers know it's deliberately stricter than the RFC.
 
+### Certificate parse stays strict — diagnostics go through a separate reviewer
+
+The cert-parse path deliberately **fails fast**: `org.bouncycastle.asn1.x509.Certificate` / `TBSCertificate` / `Extensions` throw on the first problem and never hand back a partially-parsed object. Do not make them permissive to "report more" — that request (github #1508, PR #1511 — which proposed a permissive parse returning partial objects) was rejected in favour of keeping the parser strict and adding a *reporting* layer on top. The reporting layer is `org.bouncycastle.cert.X509CertificateReviewer` (pkix) — a JCA-free, top-level `cert` class whose `reviewStructure(byte[])` / `reviewStructure(ASN1Sequence)` return a `Review` (a list of `Finding`s plus the recovered `X509CertificateHolder` when, and only when, the strict path would also accept it). It is the parse-side analogue of `PKIXCertPathReviewer`.
+
+`TBSCertificate` and `Extensions` single-source their checks so the strict path and the reviewer apply *exactly* the same rules. The trick is a null-sink: the real work lives in `private void parse(ASN1Sequence seq, List errors)`, and each check calls `reportProblem(errors, msg)` instead of `throw`:
+
+- `errors == null` (the strict `getInstance(...)` path) — `reportProblem` throws `new IllegalArgumentException(msg)`, exactly as the legacy code did. Because it throws, no statement after a call site runs in strict mode, so strict behaviour and messages are provably unchanged; the "continue with a sensible default" branches are reachable only when collecting.
+- `errors != null` (the public `reviewStructure(ASN1Sequence)` collector) — `reportProblem` adds the exception to the list and parsing continues, so every problem is enumerated.
+
+So when you add a new structural check to one of these classes, route it through `reportProblem(errors, msg)` — a bare `throw new IllegalArgumentException(...)` in `parse` would be invisible to the reviewer, and duplicating the check in the reviewer would drift. `reviewStructure` returns a `List` of the *exceptions* the strict path would have thrown (not strings), in parse order. `Extensions.reviewStructure`'s list is grouped by `TBSCertificate` under one `org.bouncycastle.util.AggregateRuntimeException` (a `RuntimeException` carrying a `List` of underlying exceptions); `X509CertificateReviewer` expands that into per-extension `Finding`s at location `tbsCertificate.extensions`. Keep the strict `getInstance` and the `reviewStructure` collector in lockstep, and exercise both with the stash-the-fix discipline plus the existing cert batteries (`core` `asn1.test.AllTests`, pkix `cert.test.AllTests`, prov `CertTest`).
+
 ### Exception messages are part of the test contract
 
 Many tests assert on exact exception message text (e.g. `isTrue(e.getMessage().equals("..."))` or `getCause().getMessage()` checks). Changing the wording of a thrown exception — even something as small as adding a colon, rewording for clarity, or wrapping with `Exceptions.illegalArgumentException(...)` — will silently break tests in another module. Before modifying any exception message, grep the whole tree for the existing string and update every matching assertion in lockstep.
@@ -244,6 +261,16 @@ Defects fixed and additional features go into `docs/releasenotes.html` under the
 ### Commit messages
 
 Existing convention: a short imperative sentence ending with `relates to github #NNNN.` for issue-driven work (e.g. `Corrected casing of Falcon naming when used with NamedParameterSpec, relates to github #2194`). Multi-line bodies are unusual — keep the headline self-contained.
+
+### URLs in source, docs, and Javadoc must be checked before they ship
+
+Any URL you add to a source file, Javadoc, `releasenotes.html`, `README.md`, or any other tracked document has to actually resolve to the page you're citing — and the page has to still say what you're citing it for. Hallucinated paths, rotted spec URLs, and "I made up an OID page on iana.org" all read identically when reviewed by eye; the only way to catch them is to fetch the URL and confirm. The model fetches I have available are good enough to do this — use them, before committing.
+
+Two non-obvious failure modes worth pre-empting:
+- **The URL works but the cited section number is wrong.** When citing "RFC 5280 sec. 4.2.1.12" or "RFC 9162 sec. 7.1", confirm the linked section actually contains the wording you're paraphrasing. RFC errata, RFC obsoletions, and section-number drift in IETF drafts all surface here.
+- **Internal / authenticated URLs in public files.** A `https://internal.example.com/...` or a private-Confluence link in a Javadoc block ships to Maven Central along with the source — sometimes for years before a reader notices. If a URL needs auth to fetch, it doesn't belong in published source.
+
+The rule applies symmetrically to URLs you delete: if you're removing the only citation of a spec the surrounding code depends on, leave a textual hint behind so the next reader knows what document to look at.
 
 ### Code style
 

@@ -4,14 +4,13 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.util.BigIntegers;
 
 public class DHParametersGenerator
 {
     private int             size;
     private int             certainty;
     private SecureRandom    random;
-
-    private static final BigInteger TWO = BigInteger.valueOf(2);
 
     /**
      * Initialise the parameters generator.
@@ -42,12 +41,20 @@ public class DHParametersGenerator
         //
         // find a safe prime p where p = 2*q + 1, where p and q are prime.
         //
-        BigInteger[] safePrimes = DHParametersHelper.generateSafePrimes(size, certainty, random);
+//        BigInteger[] safePrimes = DHParametersHelper.generateSafePrimes(size, certainty, random, false);
+//
+//        BigInteger p = safePrimes[0];
+//        BigInteger q = safePrimes[1];
+//        BigInteger g = DHParametersHelper.selectGenerator(p, q, random);
 
+        // Generate a safe prime p (p == 2.q + 1) for which 2 has order q
+        BigInteger[] safePrimes = DHParametersHelper.generateSafePrimes(size, certainty, random, true);
         BigInteger p = safePrimes[0];
         BigInteger q = safePrimes[1];
-        BigInteger g = DHParametersHelper.selectGenerator(p, q, random);
 
-        return new DHParameters(p, g, q, TWO, null);
+//        assert (p.intValue() & 7) == 7;
+        BigInteger g = BigIntegers.TWO;
+
+        return new DHParameters(p, g, q, BigIntegers.TWO, null);
     }
 }

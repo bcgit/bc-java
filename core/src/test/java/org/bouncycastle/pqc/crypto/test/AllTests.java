@@ -57,6 +57,7 @@ public class AllTests
         suite.addTestSuite(UOVTest.class);
         suite.addTestSuite(MQOMTest.class);
         suite.addTestSuite(MQOMKatTest.class);
+        suite.addTestSuite(SDitHTest.class);
 
         return new BCTestSetup(suite);
     }
