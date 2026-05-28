@@ -1326,17 +1326,19 @@ public class HawkSigner
     }
 
     /**
-     * Montgomery reduction
+     * Montgomery reduction. The Hawk protocol never feeds x == 0 here (NTT/INTT
+     * butterfly products in [1..Q] representation, where Q itself represents 0),
+     * but the original short-circuit `if (x == 0) return 0;` is a data-dependent
+     * branch on a secret-derived intermediate — replaced with a branchless mask
+     * to preserve byte-identity while removing the L1 timing channel.
      */
     public int mq18433MontyRed(int x)
     {
-        if (x == 0)
-        {
-            return 0;
-        }
         int step1 = (int)((long)x * Q0I);
         int step2 = (step1 >>> 16) * Q;
-        return (step2 >>> 16) + 1;
+        int result = (step2 >>> 16) + 1;
+        int nonzero = -((x | -x) >>> 31);  // -1 if x != 0, 0 if x == 0
+        return result & nonzero;
     }
 
     /**
@@ -1481,20 +1483,15 @@ public class HawkSigner
     }
 
     /**
-     * Compute half: x/2 mod Q
+     * Compute half: x/2 mod Q. Constant-time: x is a secret-derived INTT
+     * butterfly intermediate (each butterfly calls this O(n log n) per signing
+     * INTT), so the "is x odd" branch must not be data-dependent. Same pattern
+     * as HawkEngine.mpHalf — fold the conditional `+ Q` (only applied when x is
+     * odd, to keep the result an integer) into a branchless mask.
      */
     public int mq18433Half(int x)
     {
-        // If x is even: x/2
-        // If x is odd: (x + Q)/2
-        if ((x & 1) == 0)
-        {
-            return x >> 1;
-        }
-        else
-        {
-            return (x + Q) >> 1;
-        }
+        return (x + (Q & -(x & 1))) >> 1;
     }
 
     /**
@@ -1530,19 +1527,17 @@ public class HawkSigner
     }
 
     /**
-     * Signed normalization: convert to range [-floor((Q-1)/2), floor((Q-1)/2)]
+     * Signed normalization: convert to range [-floor((Q-1)/2), floor((Q-1)/2)].
+     * Constant-time: x is a secret-derived NTT coefficient (signing computes
+     * f*x1 - g*x0 over secret f, g and sampled x), so the "is x > Q/2" branch
+     * must not be data-dependent. We compute a -1/0 mask from the sign of
+     * (Q/2 - x) and apply it; byte-identical to the original on all inputs in
+     * the polynomial's range.
      */
     public static int mq18433Snorm(int x)
     {
-        // Convert to signed representation around 0
-        if (x > Q / 2)
-        {
-            return x - Q;
-        }
-        else
-        {
-            return x;
-        }
+        int mask = ((Q >> 1) - x) >> 31;  // -1 if x > Q/2, 0 otherwise
+        return x - (Q & mask);
     }
 
     /**
@@ -1978,21 +1973,28 @@ public class HawkSigner
             byte[] h1buf = new byte[n >> 3];
             System.arraycopy(ww, h1Offset, h1buf, 0, n >> 3);
 
+            // Per-coefficient bounds check is constant-time across all u: an
+            // early-exit break would leak (via timing) the index of the first
+            // out-of-range coefficient on rejected signing attempts. We scan
+            // every coefficient unconditionally and accumulate the reject flag
+            // via mask. On the accepted path s1[] ends with the same bytes as
+            // the early-exit version; on a rejected path s1[] is overwritten
+            // beyond the original break point but then discarded by the retry,
+            // so the released signature is byte-identical.
+            int reject = 0;
             for (int u = 0; u < n; u++)
             {
                 int z = s1[u];
                 z = ((z ^ nm) - nm) + ((h1buf[u >> 3] >> (u & 7)) & 1);
                 int y = z >> 1;
 
-                if (y < -lim || y >= lim)
-                {
-                    lim = 0;
-                    break;
-                }
+                // -1 if y < -lim or y >= lim, 0 otherwise
+                int outOfRange = ((y + lim) >> 31) | ((lim - 1 - y) >> 31);
+                reject |= outOfRange;
                 s1[u] = (short)y;
             }
 
-            if (lim == 0)
+            if (reject != 0)
             {
                 if (!privDecoded)
                 {
