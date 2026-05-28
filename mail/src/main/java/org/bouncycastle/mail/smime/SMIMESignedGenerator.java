@@ -75,6 +75,25 @@ import org.bouncycastle.util.Store;
  * RFC 5751. In the event you are dealing with an older style system you will also need
  * to use a constructor that sets the micalgs table and call it with RFC3851_MICALGS.
  * </p>
+ * <p>
+ * Note 3: the {@link MimeMultipart} returned by {@link #generate(MimeMessage)} /
+ * {@link #generate(MimeBodyPart)} sources the signature body part's content through a
+ * JavaMail {@link javax.activation.DataHandler} backed by an internal streaming signer.
+ * JavaMail invokes that callback on every {@link MimeMessage#writeTo(java.io.OutputStream)},
+ * so each serialisation re-runs the CMS signing pipeline from scratch. The cryptographic
+ * signature still verifies on every call, but the wire bytes are <b>not</b> stable across
+ * calls when the signature scheme is non-deterministic (ECDSA, DSA and RSA-PSS each pick
+ * fresh randomness per call) or whenever a fresh {@code signing-time} signed attribute is
+ * captured per call. Deterministic schemes such as Ed25519, Ed448 and RSA PKCS#1 v1.5
+ * produce stable bytes only when no time-based signed attribute is rebuilt per call.
+ * </p>
+ * <p>
+ * Callers needing byte-for-byte stable serialisation should serialise the message once
+ * (e.g. into a {@link java.io.ByteArrayOutputStream}) and reuse the captured bytes, or use
+ * {@link org.bouncycastle.mime.smime.SMIMESignedWriter} from the {@code pkix} module &mdash;
+ * the push-style writer captures the signature once into a buffer and emits the inline
+ * body part directly, so it does not re-sign per read.
+ * </p>
  */
 public class SMIMESignedGenerator
     extends SMIMEGenerator
@@ -469,6 +488,13 @@ public class SMIMESignedGenerator
         }
     }
 
+    /**
+     * Streaming-signer adapter exposed to JavaMail as the signature body part's content.
+     * JavaMail invokes {@link #write(OutputStream)} on every
+     * {@link MimeMessage#writeTo(OutputStream)} of the enclosing message, so each call
+     * rebuilds the {@link CMSSignedDataStreamGenerator} and emits a fresh CMS signature
+     * &mdash; see Note 3 on {@link SMIMESignedGenerator} for the wire-stability consequences.
+     */
     private class ContentSigner
         implements SMIMEStreamingProcessor
     {
