@@ -67,7 +67,6 @@ class HQCEngine
         // Randomly generate seeds for secret keys and public keys
         byte[] seedKem = new byte[SEED_BYTES]; // seedKem
         byte[] keypairSeed = new byte[SEED_BYTES << 1];
-        long[] xLongBytes = gf2x.create();
         long[] h = gf2x.create(); // s
 
         secureRandom.nextBytes(seedKem);
@@ -81,18 +80,18 @@ class HQCEngine
         ctxKem.init(keypairSeed, 0, SEED_BYTES, (byte)1);
 
         int[] ySupport = sampleSupport1(ctxKem, w);
-        vectSampleFixedWeight1(xLongBytes, ctxKem, w);
+        int[] xSupport = sampleSupport1(ctxKem, w);
         System.arraycopy(keypairSeed, SEED_BYTES, pk, 0, SEED_BYTES);
         ctxKem.init(keypairSeed, SEED_BYTES, SEED_BYTES, (byte)1);
         gf2x.random(ctxKem, h);
         gf2x.sparseMul(ySupport, w, h, h); // h is s as the output
-        gf2x.addTo(xLongBytes, h); // h is s
+        addSupportTo(h, xSupport, w); // h ^= x
         Utils.fromLongArrayToByteArray(pk, SEED_BYTES, pk.length - SEED_BYTES, h);
         System.arraycopy(keypairSeed, 0, sk, pkSize, SEED_BYTES);
         System.arraycopy(pk, 0, sk, 0, pkSize);
         Arrays.clear(keypairSeed);
         Arrays.clear(ySupport);
-        gf2x.clear(xLongBytes);
+        Arrays.clear(xSupport);
         gf2x.clear(h);
     }
 
@@ -166,7 +165,6 @@ class HQCEngine
         hashHI(hashEkKem, 256, sk, pkSize, (byte)1);
         hashGJ(kThetaPrime, 512, hashEkKem, mPrime, 0, mPrime.length, ct, N_BYTE + N1N2_BYTE, SALT_BYTES, (byte)0);
         System.arraycopy(kThetaPrime, 0, ss, 0, 32);
-        Arrays.fill(cKemPrimeV64, 0L);
         pkeEncrypt(cKemPrimeU64, cKemPrimeV64, sk, mPrime, kThetaPrime, 32);
         hashGJ(kBar, 256, hashEkKem, sk, pkSize + SEED_BYTES, k, ct, 0, ct.length, (byte)3);
 
@@ -192,7 +190,6 @@ class HQCEngine
 
     private void pkeEncrypt(long[] u, long[] v, byte[] ekPke, byte[] m, byte[] theta, int thetaOff)
     {
-        long[] e = gf2x.create(); // r2 (dense form, used as 'e' below)
         long[] tmp = gf2x.create(); // s, h1, h
         byte[] res = new byte[n1];
 
@@ -207,15 +204,16 @@ class HQCEngine
         gf2x.sparseMul(r2Support, wr, tmp, u);
         Utils.fromByteArrayToLongArray(tmp, ekPke, SEED_BYTES, pkSize - SEED_BYTES);
         gf2x.sparseMul(r2Support, wr, tmp, tmp);
-        vectSampleFixedWeights2(randomGenerator, e, wr);
-        gf2x.addTo(e, tmp);
+        int[] eSupport = sampleSupport2(randomGenerator, wr);
+        addSupportTo(tmp, eSupport, wr); // tmp ^= e
         vectTruncate(tmp);
         Nat.xorTo64(N1N2_BYTE_64, tmp, v);
 
-        vectSampleFixedWeights2(randomGenerator, tmp, wr);// tmp is r1
-        gf2x.addTo(tmp, u);
+        int[] r1Support = sampleSupport2(randomGenerator, wr);
+        addSupportTo(u, r1Support, wr); // u ^= r1
         Arrays.clear(r2Support);
-        gf2x.clear(e);
+        Arrays.clear(eSupport);
+        Arrays.clear(r1Support);
         gf2x.clear(tmp);
         Arrays.clear(res);
     }
@@ -266,7 +264,14 @@ class HQCEngine
         }
     }
 
-    private void writeSupportToVector(long[] v, int[] support, int weight)
+    /**
+     * Constant-time XOR of a fixed-weight sparse vector (given as its support indices) into a
+     * dense long[] target. Equivalent to materialising the sparse vector to a dense long[] and
+     * then XORing it into {@code out}, but in a single pass without the dense intermediate.
+     * The (i, j) iteration pattern matches {@code writeSupportToVector}'s constant-time
+     * branchless mask-OR, so timing and cache-access do not leak the secret support indices.
+     */
+    private void addSupportTo(long[] out, int[] support, int weight)
     {
         int[] indexTab = new int[wr];
         long[] bitTab = new long[wr];
@@ -275,15 +280,15 @@ class HQCEngine
             indexTab[i] = support[i] >>> 6;
             bitTab[i] = 1L << (support[i] & 0x3F);
         }
-        for (int i = 0; i < v.length; i++)
+        for (int i = 0; i < out.length; i++)
         {
-            long val = 0;
+            long val = out[i];
             for (int j = 0; j < weight; j++)
             {
                 int tmp = i - indexTab[j];
-                val |= bitTab[j] & ~((tmp | -tmp) >> 31);
+                val ^= bitTab[j] & ~((tmp | -tmp) >> 31);
             }
-            v[i] = val;
+            out[i] = val;
         }
     }
 
@@ -292,12 +297,6 @@ class HQCEngine
         int[] support = new int[wr];
         generateRandomSupport(support, weight, random);
         return support;
-    }
-
-    private void vectSampleFixedWeight1(long[] output, Shake256RandomGenerator random, int weight)
-    {
-        int[] support = sampleSupport1(random, weight);
-        writeSupportToVector(output, support, weight);
     }
 
     private int[] sampleSupport2(Shake256RandomGenerator generator, int weight)
@@ -320,12 +319,6 @@ class HQCEngine
             support[i] = (~notFound & i) ^ (notFound & support_i);
         }
         return support;
-    }
-
-    private void vectSampleFixedWeights2(Shake256RandomGenerator generator, long[] v, int weight)
-    {
-        int[] support = sampleSupport2(generator, weight);
-        writeSupportToVector(v, support, weight);
     }
 
     private void vectTruncate(long[] v)
