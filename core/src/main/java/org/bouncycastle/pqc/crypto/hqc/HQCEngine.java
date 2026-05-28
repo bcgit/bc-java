@@ -67,6 +67,7 @@ class HQCEngine
         // Randomly generate seeds for secret keys and public keys
         byte[] seedKem = new byte[SEED_BYTES]; // seedKem
         byte[] keypairSeed = new byte[SEED_BYTES << 1];
+        long[] yLongBytes = gf2x.create();
         long[] h = gf2x.create(); // s
 
         secureRandom.nextBytes(seedKem);
@@ -81,10 +82,11 @@ class HQCEngine
 
         int[] ySupport = sampleSupport1(ctxKem, w);
         int[] xSupport = sampleSupport1(ctxKem, w);
+        writeSupportToVector(yLongBytes, ySupport, w);
         System.arraycopy(keypairSeed, SEED_BYTES, pk, 0, SEED_BYTES);
         ctxKem.init(keypairSeed, SEED_BYTES, SEED_BYTES, (byte)1);
         gf2x.random(ctxKem, h);
-        gf2x.sparseMul(ySupport, w, h, h); // h is s as the output
+        gf2x.mul(h, yLongBytes, h); // h is s as the output
         addSupportTo(h, xSupport, w); // h ^= x
         Utils.fromLongArrayToByteArray(pk, SEED_BYTES, pk.length - SEED_BYTES, h);
         System.arraycopy(keypairSeed, 0, sk, pkSize, SEED_BYTES);
@@ -92,6 +94,7 @@ class HQCEngine
         Arrays.clear(keypairSeed);
         Arrays.clear(ySupport);
         Arrays.clear(xSupport);
+        gf2x.clear(yLongBytes);
         gf2x.clear(h);
     }
 
@@ -148,13 +151,14 @@ class HQCEngine
 
         Shake256RandomGenerator generator = new Shake256RandomGenerator(sk, pkSize, SEED_BYTES, (byte)1);
         int[] ySupport = sampleSupport1(generator, w);
+        writeSupportToVector(cKemPrimeV64, ySupport, w); // cKemPrimeV64 holds dense y for the multiply
 
         // Extract u, v, d from ciphertext
         Utils.fromByteArrayToLongArray(u64, ct, 0, N_BYTE);
         Utils.fromByteArrayToLongArray(v64, ct, N_BYTE, N1N2_BYTE);
 
         // cKemPrimeU64 is tmpLong
-        gf2x.sparseMul(ySupport, w, u64, cKemPrimeU64);
+        gf2x.mul(cKemPrimeV64, u64, cKemPrimeU64);
         vectTruncate(cKemPrimeU64);
         gf2x.addTo(v64, cKemPrimeU64);
 
@@ -165,6 +169,7 @@ class HQCEngine
         hashHI(hashEkKem, 256, sk, pkSize, (byte)1);
         hashGJ(kThetaPrime, 512, hashEkKem, mPrime, 0, mPrime.length, ct, N_BYTE + N1N2_BYTE, SALT_BYTES, (byte)0);
         System.arraycopy(kThetaPrime, 0, ss, 0, 32);
+        Arrays.fill(cKemPrimeV64, 0L); // clear y before reusing cKemPrimeV64 for the re-encryption v
         pkeEncrypt(cKemPrimeU64, cKemPrimeV64, sk, mPrime, kThetaPrime, 32);
         hashGJ(kBar, 256, hashEkKem, sk, pkSize + SEED_BYTES, k, ct, 0, ct.length, (byte)3);
 
@@ -190,6 +195,7 @@ class HQCEngine
 
     private void pkeEncrypt(long[] u, long[] v, byte[] ekPke, byte[] m, byte[] theta, int thetaOff)
     {
+        long[] r2Dense = gf2x.create();
         long[] tmp = gf2x.create(); // s, h1, h
         byte[] res = new byte[n1];
 
@@ -201,9 +207,10 @@ class HQCEngine
 
         randomGenerator.init(theta, thetaOff, SEED_BYTES, (byte)1);
         int[] r2Support = sampleSupport2(randomGenerator, wr);
-        gf2x.sparseMul(r2Support, wr, tmp, u);
+        writeSupportToVector(r2Dense, r2Support, wr);
+        gf2x.mul(tmp, r2Dense, u);
         Utils.fromByteArrayToLongArray(tmp, ekPke, SEED_BYTES, pkSize - SEED_BYTES);
-        gf2x.sparseMul(r2Support, wr, tmp, tmp);
+        gf2x.mul(tmp, r2Dense, tmp);
         int[] eSupport = sampleSupport2(randomGenerator, wr);
         addSupportTo(tmp, eSupport, wr); // tmp ^= e
         vectTruncate(tmp);
@@ -214,6 +221,7 @@ class HQCEngine
         Arrays.clear(r2Support);
         Arrays.clear(eSupport);
         Arrays.clear(r1Support);
+        gf2x.clear(r2Dense);
         gf2x.clear(tmp);
         Arrays.clear(res);
     }
@@ -265,10 +273,36 @@ class HQCEngine
     }
 
     /**
+     * Constant-time materialisation of a fixed-weight sparse vector (given as its support
+     * indices) into a freshly-zeroed dense long[] target. Branchless mask-OR over every
+     * (i, j) pair, so neither timing nor cache-access patterns leak the secret support.
+     */
+    private void writeSupportToVector(long[] v, int[] support, int weight)
+    {
+        int[] indexTab = new int[wr];
+        long[] bitTab = new long[wr];
+        for (int i = 0; i < weight; i++)
+        {
+            indexTab[i] = support[i] >>> 6;
+            bitTab[i] = 1L << (support[i] & 0x3F);
+        }
+        for (int i = 0; i < v.length; i++)
+        {
+            long val = 0;
+            for (int j = 0; j < weight; j++)
+            {
+                int tmp = i - indexTab[j];
+                val |= bitTab[j] & ~((tmp | -tmp) >> 31);
+            }
+            v[i] = val;
+        }
+    }
+
+    /**
      * Constant-time XOR of a fixed-weight sparse vector (given as its support indices) into a
      * dense long[] target. Equivalent to materialising the sparse vector to a dense long[] and
      * then XORing it into {@code out}, but in a single pass without the dense intermediate.
-     * The (i, j) iteration pattern matches {@code writeSupportToVector}'s constant-time
+     * The (i, j) iteration pattern matches {@link #writeSupportToVector}'s constant-time
      * branchless mask-OR, so timing and cache-access do not leak the secret support indices.
      */
     private void addSupportTo(long[] out, int[] support, int weight)
