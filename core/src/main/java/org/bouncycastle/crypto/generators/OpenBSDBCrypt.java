@@ -368,7 +368,8 @@ public class OpenBSDBCrypt
         sb.append('$');
         encodeData(sb, salt);
 
-        byte[] key = BCrypt.generate(password, salt, cost);
+        // password is already terminated by doGenerate / doCheckPassword above, so pass false.
+        byte[] key = BCrypt.generate(password, salt, cost, false);
 
         encodeData(sb, key);
 

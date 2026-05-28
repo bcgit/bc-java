@@ -615,8 +615,12 @@ public final class BCrypt
     }
 
     /**
-     * Calculates the <b>bcrypt</b> hash of an input - note for processing general passwords you want to
-     * make sure the password is terminated in a manner similar to what is done by {@link #passwordToByteArray(char[])}.
+     * Calculates the <b>bcrypt</b> hash of an input, passing the password bytes through to the
+     * EksBlowfishSetup password schedule unchanged. The bcrypt specification requires the password
+     * input to be null-terminated; this overload does not append the terminator, so the caller must
+     * supply {@code pwInput} already terminated (for example via {@link #passwordToByteArray(char[])}).
+     * Without a trailing 0x00 byte, distinct passwords whose encodings differ only by repetition
+     * (e.g. {@code "abc"} and {@code "abcabc"}) collide and produce identical hashes.
      * <p>
      * This implements the raw <b>bcrypt</b> function as defined in the bcrypt specification, not
      * the crypt encoded version implemented in OpenBSD, see {@link OpenBSDBCrypt} for that.
@@ -626,8 +630,52 @@ public final class BCrypt
      * @param cost     the bcrypt cost parameter. The cost of the bcrypt function grows as
      *                 <code>2^cost</code>. Legal values are 4..31 inclusive.
      * @return the output of the raw bcrypt operation: a 192 bit (24 byte) hash.
+     * @deprecated as a direct replacement use {@link #generate(byte[], byte[], int, boolean)} so
+     *             the terminator choice is explicit at the call site &mdash; pass {@code true} to
+     *             have the spec-required 0x00 terminator appended (equivalent to feeding
+     *             {@code pwInput} through {@link #passwordToByteArray(char[])}), {@code false}
+     *             when the supplied bytes already include it. For general password hashing prefer
+     *             {@link OpenBSDBCrypt}, which handles termination, salt formatting and the
+     *             modular crypt output line; this raw primitive remains available for test-vector
+     *             validation and interop with implementations that emit the 24-byte hash directly
+     *             (issue #1741).
      */
     public static byte[] generate(byte[] pwInput, byte[] salt, int cost)
+    {
+        return generate(pwInput, salt, cost, false);
+    }
+
+    /**
+     * Calculates the <b>bcrypt</b> hash of an input, optionally appending the bcrypt password
+     * terminator (a single 0x00 byte) to {@code pwInput} before the EksBlowfishSetup password
+     * schedule. For general password hashing use {@link OpenBSDBCrypt} rather than this primitive;
+     * this entry point is intended for callers driving the raw bcrypt function against published
+     * test vectors or interoperating with another implementation that produces the 24-byte raw
+     * hash directly.
+     * <p>
+     * Setting {@code addTerminator} {@code true} is equivalent to feeding bytes produced by
+     * {@link #passwordToByteArray(char[])} and is the right choice for any caller that has not
+     * already terminated the input. Setting it {@code false} passes {@code pwInput} through
+     * unchanged &mdash; appropriate when the supplied bytes are already terminated, or when
+     * reproducing a test vector that fixes the exact input.
+     * </p>
+     * <p>
+     * When {@code pwInput.length} is exactly {@value #MAX_PASSWORD_BYTES} (the bcrypt 72-byte
+     * input limit), {@code addTerminator} is ignored and the input is used as-is &mdash; there is
+     * no room for an additional byte without exceeding the limit. Two 72-byte inputs sharing a
+     * common prefix may therefore collide in the same way an unterminated shorter input does.
+     * </p>
+     *
+     * @param pwInput       the password bytes (up to 72 bytes) to use for this invocation.
+     * @param salt          the 128 bit salt to use for this invocation.
+     * @param cost          the bcrypt cost parameter. The cost of the bcrypt function grows as
+     *                      <code>2^cost</code>. Legal values are 4..31 inclusive.
+     * @param addTerminator whether to append the bcrypt password-terminator byte (0x00) to
+     *                      {@code pwInput} before the password schedule. Ignored when
+     *                      {@code pwInput.length} is exactly 72.
+     * @return the output of the raw bcrypt operation: a 192 bit (24 byte) hash.
+     */
+    public static byte[] generate(byte[] pwInput, byte[] salt, int cost, boolean addTerminator)
     {
         if (pwInput == null || salt == null)
         {
@@ -646,6 +694,12 @@ public final class BCrypt
             throw new IllegalArgumentException("BCrypt cost must be from 4..31");
         }
 
-        return new BCrypt().deriveRawKey(cost, salt, pwInput);
+        byte[] effective = pwInput;
+        if (addTerminator && pwInput.length < MAX_PASSWORD_BYTES)
+        {
+            effective = Arrays.append(pwInput, (byte)0);
+        }
+
+        return new BCrypt().deriveRawKey(cost, salt, effective);
     }
 }
