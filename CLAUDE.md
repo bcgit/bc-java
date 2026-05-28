@@ -210,9 +210,41 @@ The cert-parse path deliberately **fails fast**: `org.bouncycastle.asn1.x509.Cer
 
 So when you add a new structural check to one of these classes, route it through `reportProblem(errors, msg)` — a bare `throw new IllegalArgumentException(...)` in `parse` would be invisible to the reviewer, and duplicating the check in the reviewer would drift. `reviewStructure` returns a `List` of the *exceptions* the strict path would have thrown (not strings), in parse order. `Extensions.reviewStructure`'s list is grouped by `TBSCertificate` under one `org.bouncycastle.util.AggregateRuntimeException` (a `RuntimeException` carrying a `List` of underlying exceptions); `X509CertificateReviewer` expands that into per-extension `Finding`s at location `tbsCertificate.extensions`. Keep the strict `getInstance` and the `reviewStructure` collector in lockstep, and exercise both with the stash-the-fix discipline plus the existing cert batteries (`core` `asn1.test.AllTests`, pkix `cert.test.AllTests`, prov `CertTest`).
 
+### ASN.1 DER strictness: lenient read, strict write
+
+ASN.1 primitives that have multiple legal wire encodings (e.g. `UTCTime` / `GeneralizedTime` — with or without seconds, with `Z` or a `+hhmm` offset, with or without a fractional component) are **always parsed leniently** — `createPrimitive(byte[])` does not enforce DER restrictions. When DER conformance matters (e.g. for downstream interop with OpenSSL or other strict consumers), gate the enforcement at the **write** side: in `toDERObject()`, check the in-memory contents and throw `DEREncodingException` (`org.bouncycastle.asn1`, extends `IllegalStateException`) when emitting them would produce non-DER bytes. The gate goes behind a `Properties.*` flag **defaulting to `"true"`** — i.e. `Properties.isOverrideSet(name, true)` — so the strict mode is opt-in; flipping the property to `"false"` makes any attempt to write the primitive through a `DEROutputStream` fail without changing default behaviour for anyone else.
+
+`DEROutputStream`'s three write call sites — `writeElements`, `writePrimitive`, `writePrimitives` — catch `DEREncodingException` and bridge it to `IOException` via `Exceptions.ioException(msg, cause)`, so `getEncoded(ASN1Encoding.DER)` surfaces the failure as a checked `IOException` whose `getCause()` is the original `DEREncodingException`. BER serialization is unaffected. Programmatic construction from a `Date` (or any other in-memory value) is expected to produce DER content, so the gate only matters for primitives whose contents arrived non-conformant from the wire and the caller then tries to re-emit them as DER.
+
+The worked example is `Properties.ASN1_ALLOW_NON_DER_TIME` for time fields (`ASN1UTCTime` / `ASN1GeneralizedTime`, github #1973 / #1986 / #2040). Reuse the same shape — `toDERObject` gate + `DEREncodingException` + default-on `Properties.*` flag — for any future DER-strictness opt-in on a primitive type, so the lenient-on-read convention is preserved and a single property name conveys the same semantic regardless of which primitive flips. This complements "Non-standard format interop" below: that section covers *read-side* concessions that default off; this one covers *write-side* DER restrictions that default off.
+
 ### Exception messages are part of the test contract
 
 Many tests assert on exact exception message text (e.g. `isTrue(e.getMessage().equals("..."))` or `getCause().getMessage()` checks). Changing the wording of a thrown exception — even something as small as adding a colon, rewording for clarity, or wrapping with `Exceptions.illegalArgumentException(...)` — will silently break tests in another module. Before modifying any exception message, grep the whole tree for the existing string and update every matching assertion in lockstep.
+
+### Cause-chaining via `SecurityExceptions` for cause-less JDK exceptions
+
+A handful of `java.security` / `javax.crypto` exceptions ship only a `(String)` constructor — no `(String, Throwable)` form — including `UnrecoverableKeyException`, `IllegalBlockSizeException`, `BadPaddingException`, `NoSuchPaddingException`, `NoSuchProviderException`, `CertificateExpiredException`, `CertificateNotYetValidException`, `InvalidParameterSpecException`, `ShortBufferException`, and `AEADBadTagException`. When wrapping a caught exception with one of these inside a `catch (… e)` block, do not fold the underlying text into the new exception's string and discard the cause:
+
+```java
+catch (Exception e)
+{
+    throw new UnrecoverableKeyException("unable to recover key: " + e.getMessage()); // anti-pattern: cause is dropped
+}
+```
+
+Route the throw through `org.bouncycastle.jcajce.provider.util.SecurityExceptions` — a `prov` utility class carrying `(String message, Throwable cause)` factories that attach the cause via `initCause`:
+
+```java
+catch (Exception e)
+{
+    throw SecurityExceptions.unrecoverableKeyException("unable to recover key: " + e.getMessage(), e);
+}
+```
+
+Factories exist today for `unrecoverableKeyException`, `illegalBlockSizeException` and `badPaddingException`. Add a new factory there (same one-line shape — `return (X) new X(message).initCause(cause);`) when migrating throws of any other cause-less class above; do **not** roll `new X(msg).initCause(e)` ad-hoc at the throw site. The migration is purely additive: keep the existing message text verbatim (it is almost certainly under test assertions per the previous section) and add `e` as the second argument — callers that do not care still see the same exception type and message, while callers that do can walk `getCause()`.
+
+Throw sites *outside* a `catch` block — value-check branches like `if (x.size() == 0) throw new UnrecoverableKeyException("…")` — have nothing to chain and stay as plain `new X(msg)`. The audit grep when adding a factory is `grep -rnE "new $Cls\(" prov/src/main/java` filtered by which lines contain `e.getMessage()` / `e.toString()` (the cause-folding pattern); pure-literal throws are not candidates.
 
 ### System / security property constants
 
