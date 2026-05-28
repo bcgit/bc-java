@@ -42,7 +42,7 @@ public class JsseDefaultHostnameAuthorizer
     /**
      * Base constructor.
      * <p>
-     * The authorizer attempts to perform matching (including the use of the wildcard) in accordance with RFC 6125.
+     * The authorizer attempts to perform matching (including the use of the wildcard) in accordance with RFC 9525 (formerly RFC 6125).
      * </p>
      * <p>
      * Known suffixes is a list of public domain suffixes that can't be used as wild cards for
@@ -224,58 +224,40 @@ public class JsseDefaultHostnameAuthorizer
         //
         if (dnsName.contains("*"))
         {
-            // Only one astrix 
+            // RFC 9525 sec. 6.3 (obsoletes RFC 6125): a wildcard match is only valid when there
+            // is exactly one '*' and it is the complete content of the left-most label (i.e.
+            // dnsName has the form "*.<rest>"), and it matches exactly one label. Partial
+            // wildcards ("x*", "*x", "f*o") and wildcards in any other label are rejected; this
+            // also stops a wildcard from matching across an internationalized A-label such as
+            // "xn--..." (the name-confusion case in github #1495).
             int wildIndex = dnsName.indexOf('*');
-            if (wildIndex == dnsName.lastIndexOf("*"))
+
+            if (wildIndex != dnsName.lastIndexOf('*')    // more than one '*'
+                || wildIndex != 0                        // '*' is not at the start of the name
+                || dnsName.length() < 2
+                || dnsName.charAt(1) != '.'              // '*' is not the whole left-most label
+                || dnsName.contains(".."))
             {
-                if (dnsName.contains("..") || dnsName.charAt(dnsName.length() - 1) == '*')
-                {
-                    return false;
-                }
-
-                int dnsDotIndex = dnsName.indexOf('.', wildIndex);
-
-                if (suffixes != null && suffixes.contains(Strings.toLowerCase(dnsName.substring(dnsDotIndex))))
-                {
-                    throw new IOException("Wildcard `" + dnsName + "` matches known public suffix.");
-                }
-
-                String end = Strings.toLowerCase(dnsName.substring(wildIndex + 1));
-                String loweredName = Strings.toLowerCase(name);
-
-                if (loweredName.equals(end))
-                {
-                    return false; // Must not match wild card exactly there must content to the left of the wildcard.
-                }
-
-                if (end.length() > loweredName.length())
-                {
-                    return false;
-                }
-
-                if (wildIndex > 0)
-                {
-                    if (loweredName.startsWith(dnsName.substring(0, wildIndex)) && loweredName.endsWith(end))
-                    {
-                        return loweredName.substring(wildIndex, loweredName.length() - end.length()).indexOf('.') < 0;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                // Must be only one '*' and it must be at position 0.
-                String prefix = loweredName.substring(0, loweredName.length() - end.length());
-                if (prefix.indexOf('.') > 0)
-                {
-                    return false;
-                }
-
-                return loweredName.endsWith(end);
+                return false;
             }
 
-            return false;
+            int dnsDotIndex = dnsName.indexOf('.', wildIndex);
+            if (suffixes != null && suffixes.contains(Strings.toLowerCase(dnsName.substring(dnsDotIndex))))
+            {
+                throw new IOException("Wildcard `" + dnsName + "` matches known public suffix.");
+            }
+
+            String end = Strings.toLowerCase(dnsName.substring(1));   // ".<rest>"
+            String loweredName = Strings.toLowerCase(name);
+
+            if (!loweredName.endsWith(end))
+            {
+                return false;
+            }
+
+            // the '*' must stand in for exactly one non-empty label (no embedded dot, not empty).
+            String matched = loweredName.substring(0, loweredName.length() - end.length());
+            return matched.length() > 0 && matched.indexOf('.') < 0;
         }
 
         //
