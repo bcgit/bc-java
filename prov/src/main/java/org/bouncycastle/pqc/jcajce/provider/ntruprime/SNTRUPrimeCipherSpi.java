@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.provider.asymmetric.util.WrapUtil;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
@@ -249,11 +250,11 @@ class SNTRUPrimeCipherSpi
         }
         catch (IllegalArgumentException e)
         {
-            throw new IllegalBlockSizeException("unable to generate KTS secret: " + e.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException("unable to generate KTS secret: " + e.getMessage(), e);
         }
         catch (DestroyFailedException e)
         {
-            throw new IllegalBlockSizeException("unable to destroy interim values: " + e.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException("unable to destroy interim values: " + e.getMessage(), e);
         }
     }
 
