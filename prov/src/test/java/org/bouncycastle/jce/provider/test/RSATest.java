@@ -797,6 +797,44 @@ public class RSATest
         PrivateKeyInfo privKey = PrivateKeyInfo.getInstance(privateKey.getEncoded());
 
         isTrue(null == privKey.getPrivateKeyAlgorithm().getParameters());
+
+        // GitHub #1474: keys built from raw RSA key specs through the RSASSA-PSS KeyFactory
+        // should also carry the id-RSASSA-PSS algorithm identifier, not rsaEncryption.
+        RSAPublicKey rsaPub = (RSAPublicKey)kp.getPublic();
+        RSAPrivateCrtKey rsaPriv = (RSAPrivateCrtKey)kp.getPrivate();
+
+        PublicKey specPublicKey = kFact.generatePublic(
+            new RSAPublicKeySpec(rsaPub.getModulus(), rsaPub.getPublicExponent()));
+
+        isTrue("RSASSA-PSS".equals(specPublicKey.getAlgorithm()));
+        isTrue(PKCSObjectIdentifiers.id_RSASSA_PSS.equals(
+            SubjectPublicKeyInfo.getInstance(specPublicKey.getEncoded()).getAlgorithm().getAlgorithm()));
+
+        PrivateKey specCrtKey = kFact.generatePrivate(new RSAPrivateCrtKeySpec(
+            rsaPriv.getModulus(), rsaPriv.getPublicExponent(), rsaPriv.getPrivateExponent(),
+            rsaPriv.getPrimeP(), rsaPriv.getPrimeQ(), rsaPriv.getPrimeExponentP(),
+            rsaPriv.getPrimeExponentQ(), rsaPriv.getCrtCoefficient()));
+
+        isTrue("RSASSA-PSS".equals(specCrtKey.getAlgorithm()));
+        isTrue(PKCSObjectIdentifiers.id_RSASSA_PSS.equals(
+            PrivateKeyInfo.getInstance(specCrtKey.getEncoded()).getPrivateKeyAlgorithm().getAlgorithm()));
+
+        PrivateKey specPrivateKey = kFact.generatePrivate(
+            new RSAPrivateKeySpec(rsaPriv.getModulus(), rsaPriv.getPrivateExponent()));
+
+        isTrue("RSASSA-PSS".equals(specPrivateKey.getAlgorithm()));
+        isTrue(PKCSObjectIdentifiers.id_RSASSA_PSS.equals(
+            PrivateKeyInfo.getInstance(specPrivateKey.getEncoded()).getPrivateKeyAlgorithm().getAlgorithm()));
+
+        // the plain RSA KeyFactory must still stamp rsaEncryption on raw key specs.
+        KeyFactory rsaFact = KeyFactory.getInstance("RSA", "BC");
+
+        PublicKey rsaSpecPublicKey = rsaFact.generatePublic(
+            new RSAPublicKeySpec(rsaPub.getModulus(), rsaPub.getPublicExponent()));
+
+        isTrue("RSA".equals(rsaSpecPublicKey.getAlgorithm()));
+        isTrue(PKCSObjectIdentifiers.rsaEncryption.equals(
+            SubjectPublicKeyInfo.getInstance(rsaSpecPublicKey.getEncoded()).getAlgorithm().getAlgorithm()));
     }
 
     public void oaepDigestCheck(String digest, ASN1ObjectIdentifier oid, PublicKey pubKey, PrivateKey privKey, SecureRandom rand, byte[] expected)
