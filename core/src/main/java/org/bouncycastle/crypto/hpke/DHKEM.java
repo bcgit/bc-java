@@ -288,7 +288,7 @@ class DHKEM
         }
     }
 
-    int getEncryptionSize()
+    protected int getEncryptionSize()
     {
         return Nenc;
     }
