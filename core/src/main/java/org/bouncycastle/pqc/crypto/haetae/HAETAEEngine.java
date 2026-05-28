@@ -2521,8 +2521,10 @@ class HAETAEEngine
             int cond = 128 - hwt;
             int mask = 0xFF & (cond >> 8); // 0xFF if cond < 0, else 0
             int w0 = -(buf[0] & 1);        // -1 if LSB set, else 0
-            // mask = (cond != 0) ? mask : w0
-            mask = w0 ^ ((-(cond != 0 ? 1 : 0)) & (mask ^ w0));
+            // Branchless select: mask = (cond != 0) ? mask : w0
+            // condNonZero is -1 if cond != 0 (any bit set), else 0.
+            int condNonZero = -((cond | -cond) >>> 31);
+            mask = w0 ^ (condNonZero & (mask ^ w0));
 
             for (int i = 0; i < 32; i++)
             {
@@ -2807,13 +2809,13 @@ class HAETAEEngine
         int offset = 0;
 
 
-        // 1. Pack challenge c (N bits -> N/8 bytes)
+        // 1. Pack challenge c (N bits -> N/8 bytes). Branchless: c[i] in {-1, 0, +1},
+        // so ((c[i] | -c[i]) >>> 31) is 1 iff c[i] != 0, else 0.
         for (int i = 0; i < HAETAEParameters.N; i++)
         {
-            if (c[i] != 0)
-            {
-                sig[offset + i / 8] |= (byte)(1 << (i % 8));
-            }
+            int ci = c[i];
+            int nonzero = (ci | -ci) >>> 31;
+            sig[offset + i / 8] |= (byte)(nonzero << (i % 8));
         }
         offset += HAETAEParameters.N / 8;
 
@@ -2931,6 +2933,20 @@ class HAETAEEngine
 
     /**
      * Instance version using HAETAEParameters.
+     * <p>
+     * <b>Constant-time note (matches reference C, not regressed):</b> the rANS
+     * encoder is inherently variable-time — {@code ransEncPutSymbol}'s
+     * normalisation do-while loop iterates a data-dependent number of times,
+     * and the symbol-table lookup {@code params.getEsyms_h()[s]} indexes by a
+     * secret-derived hint coefficient (L3 leak via cache-line side channel).
+     * The early-return at the out-of-range check is a validity check that
+     * triggers a rejection-sampling retry; it leaks "this attempt failed",
+     * which is also leaked by the surrounding loop iteration count. The hint
+     * coefficients themselves are fully recoverable from a released signature,
+     * so the cache-timing leak is information-equivalent to the signature.
+     * Making this routine fully L3 would require constant-time table read
+     * (mask-and-fold over all 256 entries) and an unconditional full traversal
+     * — both substantial perf costs not in the reference C either.
      */
     public int encodeH(byte[] buf, int[][] h)
     {
@@ -2953,9 +2969,12 @@ class HAETAEEngine
             {
                 return 0;
             }
-            // Map to dense symbol index
-            tmp = (tmp > (H_CUT + params.getOffset_h())) ? tmp - params.getOffset_h() : tmp;
-            int s = tmp; // s is in 0..255
+            // Map to dense symbol index (branchless: subtract offset iff tmp > H_CUT+offset_h)
+            // diff = (H_CUT + offset_h) - tmp;  sign bit set (-1) iff tmp > H_CUT+offset_h.
+            int diff = (H_CUT + params.getOffset_h()) - tmp;
+            int over = diff >> 31;
+            tmp -= over & params.getOffset_h();
+            int s = tmp; // s is in 0..255 for valid inputs
 
             ptr = ransEncPutSymbol(state, encoding, ptr, params.getEsyms_h()[s]);
             if (ptr < 4)
@@ -2972,6 +2991,13 @@ class HAETAEEngine
 
     /**
      * Encodes the high‑bits of z1 (size L×N).
+     * <p>
+     * <b>Constant-time note:</b> same caveats as {@link #encodeH} — the rANS
+     * encoder and {@code getEsyms_hb_z1()[s]} table lookup are inherently
+     * variable-time / L3-leaking, matching the reference C implementation. The
+     * encoded hbZ1 coefficients are fully recoverable from a released
+     * signature, so the cache-timing leak is information-equivalent to the
+     * eventual signature output.
      */
     public int encodeHbZ1(byte[] buf, int[][] hbZ1)
     {
