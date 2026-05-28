@@ -48,6 +48,7 @@ import org.bouncycastle.crypto.io.MacOutputStream;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.io.CipherInputStream;
 import org.bouncycastle.jcajce.io.CipherOutputStream;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
@@ -313,7 +314,7 @@ public class BcKeyStoreSpi
                 }
                 catch (Exception e)
                 {
-                    throw new UnrecoverableKeyException("no match");
+                    throw SecurityExceptions.unrecoverableKeyException("no match: " + e, e);
                 }
             }
             else

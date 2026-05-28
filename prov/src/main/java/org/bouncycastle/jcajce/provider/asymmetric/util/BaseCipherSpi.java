@@ -26,6 +26,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -128,7 +129,7 @@ public abstract class BaseCipherSpi
         }
         catch (BadPaddingException e)
         {
-            throw new IllegalBlockSizeException(e.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException(e.getMessage(), e);
         }
     }
 

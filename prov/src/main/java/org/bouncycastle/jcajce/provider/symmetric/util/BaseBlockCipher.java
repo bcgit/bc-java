@@ -73,6 +73,7 @@ import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.params.RC2Parameters;
 import org.bouncycastle.crypto.params.RC5Parameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PBKDF2Key;
@@ -1264,7 +1265,7 @@ public class BaseBlockCipher
         }
         catch (DataLengthException e)
         {
-            throw new IllegalBlockSizeException(e.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException(e.getMessage(), e);
         }
 
         if (len == tmp.length)
@@ -1310,11 +1311,11 @@ public class BaseBlockCipher
         }
         catch (OutputLengthException e)
         {
-            throw new IllegalBlockSizeException(e.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException(e.getMessage(), e);
         }
         catch (DataLengthException e)
         {
-            throw new IllegalBlockSizeException(e.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException(e.getMessage(), e);
         }
     }
 
@@ -1433,7 +1434,7 @@ public class BaseBlockCipher
             }
             catch (InvalidCipherTextException e)
             {
-                throw new BadPaddingException(e.getMessage());
+                throw SecurityExceptions.badPaddingException(e.getMessage(), e);
             }
         }
     }
@@ -1636,7 +1637,7 @@ public class BaseBlockCipher
                         throw aeadBadTag;
                     }
                 }
-                throw new BadPaddingException(e.getMessage());
+                throw SecurityExceptions.badPaddingException(e.getMessage(), e);
             }
         }
     }

@@ -112,6 +112,7 @@ import org.bouncycastle.jcajce.PKCS12LoadStoreParameter;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jcajce.provider.keystore.util.AdaptingKeyStoreSpi;
 import org.bouncycastle.jcajce.provider.keystore.util.ParameterUtil;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
@@ -736,7 +737,7 @@ public class PKCS12PBMAC1KeyStoreSpi
         }
         catch (InvalidKeyException e)
         {
-            throw Exceptions.ioException("exception unwrapping private key:" + e.getMessage(), new UnrecoverableKeyException(e.toString()));
+            throw Exceptions.ioException("exception unwrapping private key:" + e.getMessage(), SecurityExceptions.unrecoverableKeyException(e.toString(), e));
         }
         catch (Exception e)
         {
