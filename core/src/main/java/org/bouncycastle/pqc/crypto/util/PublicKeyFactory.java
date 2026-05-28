@@ -19,6 +19,8 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
+import org.bouncycastle.pqc.crypto.sdith.SDitHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPublicKeyParameters;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
@@ -392,6 +394,19 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.uov_V_classic,    new UOVConverter());
         converters.put(BCObjectIdentifiers.uov_V_pkc,        new UOVConverter());
         converters.put(BCObjectIdentifiers.uov_V_pkc_skc,    new UOVConverter());
+
+        converters.put(BCObjectIdentifiers.sdith_hypercube_cat1_gf256, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_hypercube_cat3_gf256, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_hypercube_cat5_gf256, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_hypercube_cat1_p251, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_hypercube_cat3_p251, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_hypercube_cat5_p251, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_threshold_cat1_gf256, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_threshold_cat3_gf256, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_threshold_cat5_gf256, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_threshold_cat1_p251, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_threshold_cat3_p251, new SDitHConverter());
+        converters.put(BCObjectIdentifiers.sdith_threshold_cat5_p251, new SDitHConverter());
     }
 
     /**
@@ -1058,6 +1073,17 @@ public class PublicKeyFactory
         {
             UOVParameters params = Utils.uovParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
             return new UOVPublicKeyParameters(params, keyInfo.getPublicKeyData().getOctets());
+        }
+    }
+
+    static class SDitHConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            SDitHParameters params = Utils.sdithParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            return new SDitHPublicKeyParameters(params, keyInfo.getPublicKeyData().getOctets());
         }
     }
 }

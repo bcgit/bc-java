@@ -16,6 +16,7 @@ module org.bouncycastle.provider
     opens org.bouncycastle.pqc.jcajce.provider.falcon to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.dilithium to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.mayo to java.base;
+    opens org.bouncycastle.pqc.jcajce.provider.sdith to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.snova to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.ntruplus to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.faest to java.base;
@@ -158,6 +159,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.haetae;
     exports org.bouncycastle.pqc.crypto.hawk;
     exports org.bouncycastle.pqc.crypto.mqom;
+    exports org.bouncycastle.pqc.crypto.sdith;
     exports org.bouncycastle.pqc.crypto.uov;
     exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
@@ -182,6 +184,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.saber;
     exports org.bouncycastle.pqc.jcajce.provider.mqom;
     exports org.bouncycastle.pqc.jcajce.provider.uov;
+    exports org.bouncycastle.pqc.jcajce.provider.sdith;
     exports org.bouncycastle.pqc.jcajce.provider.snova;
     exports org.bouncycastle.pqc.jcajce.provider.faest;
     exports org.bouncycastle.pqc.jcajce.provider.haetae;

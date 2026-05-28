@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.params.ElGamalParameters;
+import org.bouncycastle.util.BigIntegers;
 
 public class ElGamalParametersGenerator
 {
@@ -34,11 +35,19 @@ public class ElGamalParametersGenerator
         //
         // find a safe prime p where p = 2*q + 1, where p and q are prime.
         //
-        BigInteger[] safePrimes = DHParametersHelper.generateSafePrimes(size, certainty, random);
+//        BigInteger[] safePrimes = DHParametersHelper.generateSafePrimes(size, certainty, random, false);
+//
+//        BigInteger p = safePrimes[0];
+//        BigInteger q = safePrimes[1];
+//        BigInteger g = DHParametersHelper.selectGenerator(p, q, random);
 
+        // Generate a safe prime p (p == 2.q + 1) for which 2 has order q
+        BigInteger[] safePrimes = DHParametersHelper.generateSafePrimes(size, certainty, random, true);
         BigInteger p = safePrimes[0];
-        BigInteger q = safePrimes[1];
-        BigInteger g = DHParametersHelper.selectGenerator(p, q, random);
+//        BigInteger q = safePrimes[1];
+
+//        assert (p.intValue() & 7) == 7;
+        BigInteger g = BigIntegers.TWO;
 
         return new ElGamalParameters(p, g);
     }

@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -152,6 +153,9 @@ public class X500NameTest
         ietfUtilsTest();
         bogusEqualsTest();
         dnQualifierAliasParseTest();
+        stateOrProvinceAliasParseTest();
+        hexEscapedUTF8ParseTest();
+        turkishLocaleCanonicalizeTest();
 
         testEncodingPrintableString(BCStyle.C, "AU");
         testEncodingPrintableString(BCStyle.SERIALNUMBER, "123456");
@@ -721,6 +725,92 @@ public class X500NameTest
         }
     }
 
+    /**
+     * BCStyle / RFC4519Style now accept "S" as a parser alias for the
+     * stateOrProvinceName attribute (OID 2.5.4.8), in addition to the
+     * RFC 2253/4514 short form "ST". Microsoft's CertNameToStr emits "S="
+     * for 2.5.4.8 ("This value is different from the RFC 1779 X.500 key
+     * name ('ST')."), so DN strings produced by Windows tooling did not
+     * round-trip through {@code new X500Name(...)}. Output still uses the
+     * canonical "ST" symbol (issue #1301).
+     */
+    private void stateOrProvinceAliasParseTest()
+        throws Exception
+    {
+        String[] aliases = new String[]{"ST", "st", "S", "s"};
+        for (int i = 0; i != aliases.length; ++i)
+        {
+            String alias = aliases[i];
+
+            X500Name viaBcStyle = new X500Name(BCStyle.INSTANCE,
+                "CN=Foo," + alias + "=California");
+            RDN[] rdnsBc = viaBcStyle.getRDNs(BCStyle.ST);
+            if (rdnsBc.length != 1)
+            {
+                fail("BCStyle: alias '" + alias
+                    + "' did not parse to a single stateOrProvinceName RDN");
+            }
+
+            X500Name viaRfc = new X500Name(RFC4519Style.INSTANCE,
+                "CN=Foo," + alias + "=California");
+            RDN[] rdnsRfc = viaRfc.getRDNs(RFC4519Style.st);
+            if (rdnsRfc.length != 1)
+            {
+                fail("RFC4519Style: alias '" + alias
+                    + "' did not parse to a single stateOrProvinceName RDN");
+            }
+        }
+
+        // output uses the canonical "ST" symbol regardless of the input alias
+        X500Name fromS = new X500Name(BCStyle.INSTANCE, "CN=Foo,S=California");
+        if (!fromS.toString().equals("CN=Foo,ST=California"))
+        {
+            fail("BCStyle: 'S' alias did not normalise to ST on output, got: " + fromS);
+        }
+    }
+
+    /**
+     * IETFUtils.canonicalize — and hence X500Name equality / hashCode — folds
+     * case through the locale-independent Strings.toLowerCase, not
+     * String.toLowerCase(). Under the Turkish locale String.toLowerCase("IT")
+     * yields "ıt" (dotless i), which would make c=IT and c=it canonicalize
+     * differently and compare unequal. This pins the behaviour to ASCII
+     * case-folding regardless of the default locale (issue #1103).
+     */
+    private void turkishLocaleCanonicalizeTest()
+        throws Exception
+    {
+        Locale defaultLocale = Locale.getDefault();
+        try
+        {
+            Locale.setDefault(new Locale("tr", "TR"));
+
+            // Precondition: confirm the JVM's Turkish locale really does the
+            // dotless-i fold (String.toLowerCase("IT") -> "ıt", not "it"),
+            // otherwise the test would pass vacuously.
+            isTrue("Turkish locale dotless-i fold not active",
+                !"IT".toLowerCase().equals("it"));
+
+            isTrue("canonicalize must ASCII-fold under Turkish locale",
+                "it".equals(IETFUtils.canonicalize("IT")));
+
+            X500Name upper = new X500Name("CN=ITALY,C=IT");
+            X500Name lower = new X500Name("CN=italy,C=it");
+            if (!upper.equals(lower))
+            {
+                fail("X500Name equality is locale-sensitive under Turkish locale");
+            }
+            if (upper.hashCode() != lower.hashCode())
+            {
+                fail("X500Name hashCode is locale-sensitive under Turkish locale");
+            }
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
+        }
+    }
+
     private void bogusEqualsTest()
         throws Exception
     {
@@ -728,8 +818,8 @@ public class X500NameTest
         // only the FIRST '=' separates attributeType from attributeValue.
         // (issue #2226 - matches javax.security.auth.x500.X500Principal)
         String[] subjects = new String[]
-        {
-            "CN=foo=bar",
+            {
+                "CN=foo=bar",
             "CN==^_^=",
             "CN=a=b=c",
             "CN=\\=^_^\\=",
@@ -758,6 +848,53 @@ public class X500NameTest
         catch (IllegalArgumentException e)
         {
             isEquals("badly formatted directory string", e.getMessage());
+        }
+    }
+
+    /**
+     * RFC 4514 sec. 2.4 lets any byte be escaped as \HH, and the underlying
+     * directoryString is UTF-8 (RFC 5280 sec. 4.1.2.4). A run of consecutive
+     * \HH escapes is therefore a UTF-8 byte sequence, never one Java char per
+     * pair (issue #1061).
+     */
+    private void hexEscapedUTF8ParseTest()
+        throws Exception
+    {
+        String[] subjects = new String[]
+        {
+            "CN=Lu\\C4\\8Di\\C4\\87",        // Lučić
+            "CN=M\\C3\\B6rsky",              // Mörsky
+            "CN=\\E6\\97\\A5\\E6\\9C\\AC",   // 日本 (three-byte UTF-8)
+            "CN=Lu\\C4\\8Di\\C4\\87,O=Acme", // RDN separator flushes the run
+        };
+        String[] expectedValues = new String[]
+        {
+            "Lučić",
+            "Mörsky",
+            "日本",
+            "Lučić",
+        };
+
+        for (int i = 0; i != subjects.length; i++)
+        {
+            X500Name name = new X500Name(subjects[i]);
+            String value = ((ASN1String)name.getRDNs()[0].getFirst().getValue()).getString();
+            isEquals("unexpected value for " + subjects[i], expectedValues[i], value);
+
+            X500Name reparsed = fromBytes(name.getEncoded());
+            String reValue = ((ASN1String)reparsed.getRDNs()[0].getFirst().getValue()).getString();
+            isEquals("round-trip lost data for " + subjects[i], expectedValues[i], reValue);
+        }
+
+        // A lone leading byte without its continuation byte is malformed UTF-8.
+        try
+        {
+            new X500Name("CN=Lu\\C4");
+            fail("malformed UTF-8 escape sequence not rejected");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
         }
     }
 

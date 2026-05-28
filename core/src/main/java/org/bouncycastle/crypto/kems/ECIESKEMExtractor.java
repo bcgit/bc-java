@@ -111,6 +111,15 @@ public class ECIESKEMExtractor
 
         ECPoint hTilde = gHat.multiply(xHat).normalize();
 
+        // Implicit rejection: an infinity hTilde (e.g. a 0x00 encapsulation,
+        // or a low-order ephemeral) yields an all-zero key rather than
+        // throwing, so the rejection path is indistinguishable to the caller
+        // from a valid encapsulation under the wrong private key.
+        if (hTilde.isInfinity())
+        {
+            return new byte[keyLen];
+        }
+
         // Encode the shared secret value
         byte[] PEH = hTilde.getAffineXCoord().getEncoded();
 

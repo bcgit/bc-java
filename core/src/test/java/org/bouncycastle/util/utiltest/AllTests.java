@@ -20,6 +20,7 @@ public class AllTests
         suite.addTestSuite(BigIntegersTest.class);
         suite.addTestSuite(ArraysTest.class);
         suite.addTestSuite(StringsTest.class);
+        suite.addTestSuite(AggregateRuntimeExceptionTest.class);
         return new BCTestSetup(suite);
     }
 

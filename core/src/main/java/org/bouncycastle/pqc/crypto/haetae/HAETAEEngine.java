@@ -680,16 +680,11 @@ class HAETAEEngine
      */
     private void polyvecmPointwiseAccMontgomery(int[] w, int[][] u, int[][] v)
     {
-        // w = u[0] ∘ v[0]
         polyPointwiseMontgomery(w, u[0], v[0]);
-
-        // temporary polynomial for intermediate results
-        int[] t = new int[HAETAEParameters.N];
 
         for (int j = 1; j < params.getM(); j++)
         {
-            polyPointwiseMontgomery(t, u[j], v[j]);
-            polyAdd(w, w, t);
+            polyAccPointwiseMontgomery(w, u[j], v[j]);
         }
     }
 
@@ -706,6 +701,14 @@ class HAETAEEngine
         for (int i = 0; i < HAETAEParameters.N; i++)
         {
             c[i] = montgomeryReduce((long)a[i] * b[i]);
+        }
+    }
+
+    private void polyAccPointwiseMontgomery(int[] w, int[] a, int[] b)
+    {
+        for (int i = 0; i < HAETAEParameters.N; i++)
+        {
+            w[i] += montgomeryReduce((long)a[i] * b[i]);
         }
     }
 
@@ -841,32 +844,15 @@ class HAETAEEngine
     /**
      * Decomposes a coefficient into high and low parts.
      * <p>
-     * The low part {@code a0} is in {-1, 0, 1} and satisfies:
-     * {@code a = 2 * result + a0}.
+     * The low part is in {-1, 0, 1} and satisfies: {@code a = 2 * high + low}.
+     * Returned packed as {@code ((high &amp; 0xFFFFFFFFL) &lt;&lt; 32) | (low &amp; 0xFFFFFFFFL)}.
      * </p>
-     *
-     * @param a0 output array of length 1 to hold the low part
-     * @param a  input coefficient
-     * @return the high part
      */
-    private static int decomposeVk(int[] a0, int a)
+    private static long decomposeVkPacked(int a)
     {
         int low = a & 1;
         low -= (((a >> 1) & low) << 1);
-        a0[0] = low;
-        return (a - low) >> 1;
-    }
-
-    /**
-     * Overloaded version that returns the high part and stores the low part in a single-element array.
-     * (Convenience for in-place updates.)
-     */
-    private static int decomposeVk(int a, int[] lowHolder)
-    {
-        int low = a & 1;
-        low -= (((a >> 1) & low) << 1);
-        lowHolder[0] = low;
-        return (a - low) >> 1;
+        return (((long)((a - low) >> 1)) << 32) | (low & 0xFFFFFFFFL);
     }
 
     /**
@@ -880,13 +866,15 @@ class HAETAEEngine
      */
     public void polyveckDecomposeVk(int[][] v0, int[][] v)
     {
-        int[] lowHolder = new int[1];
         for (int i = 0; i < params.getK(); i++)
         {
+            int[] vi = v[i];
+            int[] v0i = v0[i];
             for (int j = 0; j < HAETAEParameters.N; j++)
             {
-                v[i][j] = decomposeVk(v[i][j], lowHolder);
-                v0[i][j] = lowHolder[0];
+                long packed = decomposeVkPacked(vi[j]);
+                vi[j] = (int)(packed >>> 32);
+                v0i[j] = (int)packed;
             }
         }
     }
@@ -1022,17 +1010,18 @@ class HAETAEEngine
 
     // ---------- Branchless min/max swap (djbsort) ----------
 
-    private static void minmax(int[] x, int[] y)
+    /**
+     * Branchless min/max swap (djbsort). Returns packed
+     * {@code (max &lt;&lt; 32) | (min &amp; 0xFFFFFFFFL)}.
+     */
+    private static long minmaxPacked(int a, int b)
     {
-        int a = x[0];
-        int b = y[0];
         int ab = b ^ a;
         int c = b - a;
         c ^= ab & (c ^ b);
         c >>= 31;
         c &= ab;
-        x[0] = a ^ c;
-        y[0] = b ^ c;
+        return ((long)(b ^ c) << 32) | ((a ^ c) & 0xFFFFFFFFL);
     }
 
     // ---------- Singular Value Computation ----------
@@ -1084,12 +1073,12 @@ class HAETAEEngine
         System.arraycopy(sum, 0, bestm, 0, bestmSize);
         for (int i = bestmSize; i < HAETAEParameters.N; i++)
         {
-            int[] val = new int[]{sum[i]};
+            int val = sum[i];
             for (int j = 0; j < bestmSize; j++)
             {
-                int[] bj = new int[]{bestm[j]};
-                minmax(val, bj);
-                bestm[j] = bj[0];
+                long packed = minmaxPacked(val, bestm[j]);
+                val = (int)packed;
+                bestm[j] = (int)(packed >>> 32);
             }
         }
 
@@ -1097,11 +1086,7 @@ class HAETAEEngine
         int min = bestm[0];
         for (int i = 1; i < bestmSize; i++)
         {
-            int tmp = bestm[i];
-            int[] minArr = new int[]{min};
-            int[] tmpArr = new int[]{tmp};
-            minmax(minArr, tmpArr);
-            min = minArr[0];
+            min = (int)minmaxPacked(min, bestm[i]);
         }
 
         // Multiply by appropriate factor and accumulate result
@@ -1935,7 +1920,6 @@ class HAETAEEngine
 
             sqsum[0] += sqr[0] & -accepted;
             sqsum[1] += sqr[1] & -accepted;
-            //System.out.println("coefcnt: " + coefcnt + " " + accepted + " sqr[0]: " + sqr[0] + " sqr[1]: " + sqr[1] + " sqsum[0]: " + sqsum[0] + " sqsum[1]: " + sqsum[1]);
         }
 
         renormalize(sqsum);
@@ -2233,14 +2217,11 @@ class HAETAEEngine
      */
     private void polyveclPointwiseAccMontgomery(int[] w, int[][] u, int[][] v)
     {
-        // w = u[0] ∘ v[0]
         polyPointwiseMontgomery(w, u[0], v[0]);
 
-        int[] t = new int[HAETAEParameters.N];
         for (int j = 1; j < params.getL(); j++)
         {
-            polyPointwiseMontgomery(t, u[j], v[j]);
-            polyAdd(w, w, t);
+            polyAccPointwiseMontgomery(w, u[j], v[j]);
         }
     }
 
@@ -2341,14 +2322,13 @@ class HAETAEEngine
      * Decomposes a coefficient r into its high bits (hint).
      * highbits = (r + half_alpha) >> log_alpha, capped at max value.
      */
-    private void decomposeHint(int[] highbits, int r)
+    private int decomposeHint(int r)
     {
         int hb = (r + params.getHalfAlphaHint()) >> params.getLogAlphaHint();
-        // if hb == maxHint, set to 0 (edge case)
         int maxHint = (HAETAEParameters.DQ - 2) / params.getAlphaHint();
         int edgecase = (maxHint - (hb + 1)) >> 31;
         hb -= maxHint & edgecase;
-        highbits[0] = hb;
+        return hb;
     }
 
     /**
@@ -2358,11 +2338,11 @@ class HAETAEEngine
     {
         for (int i = 0; i < params.getK(); i++)
         {
+            int[] wi = w[i];
+            int[] vi = v[i];
             for (int j = 0; j < HAETAEParameters.N; j++)
             {
-                int[] hb = new int[1];
-                decomposeHint(hb, v[i][j]);
-                w[i][j] = hb[0];
+                wi[j] = decomposeHint(vi[j]);
             }
         }
     }
@@ -2761,39 +2741,19 @@ class HAETAEEngine
     }
 
     // ---------- Decomposition for z1 ----------
-
-    /**
-     * Decomposes a coefficient into high and low parts for z1.
-     * lowbits is in range [-128, 127] and highbits = round(r / 256).
-     *
-     * @param highbits output high part (1-element array)
-     * @param lowbits  output low part (1-element array)
-     * @param r        input coefficient
-     */
-    private void decomposeZ1(int[] highbits, int[] lowbits, int r)
-    {
-        int alpha = 256; // TODO magic numbers!
-        int logAlpha = 8;
-        int alphaMask = alpha - 1;
-
-        int lb = r & alphaMask;
-        int center = ((alpha >> 1) - (lb + 1)) >> 31; // 0xFFFFFFFF if lb >= 128
-        lb -= alpha & center;
-        lowbits[0] = lb;
-        highbits[0] = (r + (alpha >> 1)) >> logAlpha;
-    }
+    // z1 decompose uses alpha=256: lowbits = r mod 256 centred to [-128, 127];
+    // highbits = round(r/256). Inlined into polyLowbits / polyHighbits.
 
     /**
      * Extracts the low bits of a polynomial (z1 part).
      */
     public void polyLowbits(int[] a1, int[] a)
     {
-        int[] highTmp = new int[1];
-        int[] lowTmp = new int[1];
         for (int i = 0; i < HAETAEParameters.N; i++)
         {
-            decomposeZ1(highTmp, lowTmp, a[i]);
-            a1[i] = lowTmp[0];
+            int lb = a[i] & 0xFF;
+            int center = (128 - (lb + 1)) >> 31;
+            a1[i] = lb - (256 & center);
         }
     }
 
@@ -2813,12 +2773,9 @@ class HAETAEEngine
      */
     public void polyHighbits(int[] a2, int[] a)
     {
-        int[] highTmp = new int[1];
-        int[] lowTmp = new int[1];
         for (int i = 0; i < HAETAEParameters.N; i++)
         {
-            decomposeZ1(highTmp, lowTmp, a[i]);
-            a2[i] = highTmp[0];
+            a2[i] = (a[i] + 128) >> 8;
         }
     }
 

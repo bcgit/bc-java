@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -33,7 +34,9 @@ import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampToken;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -236,6 +239,128 @@ public final class CAdESArchiveTimestampUtil
             }
         }
         return CMSSignedData.replaceSigners(signed, new SignerInformationStore(rebuilt));
+    }
+
+    /**
+     * Return the archive-time-stamp tokens carried by the signer, drawn from
+     * both the {@code id-aa-ets-archiveTimestampV2} attribute and the legacy
+     * {@code id-aa-ets-archiveTimestamp} (RFC&nbsp;5126 sec. 6.4.1) attribute,
+     * in attribute-value order (v2 first when both are present).
+     * <p>
+     * The list reflects the v2 chain: each entry independently covers the
+     * canonical archive-time-stamp input (with all archive-time-stamps
+     * stripped), so a chain of N tokens gives N independent integrity
+     * witnesses over the same canonical bytes &mdash; chain renewability
+     * relies on the most-recent token's TSA cert still being fresh.</p>
+     *
+     * @param signer the signer to inspect.
+     * @return an unmodifiable list of timestamp tokens, empty when neither
+     *         archive-time-stamp attribute is present (signer has not been
+     *         upgraded to B-LTA).
+     * @throws CAdESException if an attribute value cannot be parsed as a
+     *                       {@link TimeStampToken}.
+     */
+    public static List<TimeStampToken> getArchiveTimestamps(SignerInformation signer)
+        throws CAdESException
+    {
+        if (signer == null)
+        {
+            throw new NullPointerException("signer");
+        }
+        AttributeTable unsigned = signer.getUnsignedAttributes();
+        if (unsigned == null)
+        {
+            return Collections.emptyList();
+        }
+        List<TimeStampToken> out = new ArrayList<TimeStampToken>();
+        readTokensInto(unsigned.get(id_aa_ets_archiveTimestampV2), out);
+        readTokensInto(unsigned.get(PKCSObjectIdentifiers.id_aa_ets_archiveTimestamp), out);
+        return Collections.unmodifiableList(out);
+    }
+
+    /**
+     * Self-consistency check on B-LTA material: for every archive-time-stamp
+     * attached to the signer, verify the token's {@code MessageImprint}
+     * equals {@link #computeArchiveTimestampImprint} run over the
+     * canonical-stripped {@code signed} structure under the token's own
+     * hash algorithm.
+     * <p>The {@code signed} argument must be the {@link CMSSignedData} the
+     * tokens were attached to (after {@code applyArchiveTimestamp}); a
+     * different SignedData with the same signer will not produce matching
+     * canonical bytes.</p>
+     * <p>What this method does <i>not</i> do: validate the TSA's signature
+     * on each token, walk the TSA cert chain to a trust anchor, or check
+     * the archive-time-stamp dates against the signer cert's validity
+     * window. Those steps are the caller's responsibility, built on
+     * {@link #getArchiveTimestamps} plus the {@code tsp} module's token
+     * validators.</p>
+     *
+     * @param signed      the SignedData carrying {@code signer}.
+     * @param signer      the signer to validate. Must carry at least one
+     *                    archive-time-stamp.
+     * @param digCalcProv source of digest calculators.
+     * @throws CAdESException if no archive-time-stamp is present, a token
+     *                       cannot be parsed, or any token's imprint does
+     *                       not match the canonical input.
+     */
+    public static void validateArchiveTimestamps(CMSSignedData signed,
+                                                 SignerInformation signer,
+                                                 DigestCalculatorProvider digCalcProv)
+        throws CAdESException, OperatorCreationException, IOException
+    {
+        if (signed == null)
+        {
+            throw new NullPointerException("signed");
+        }
+        List<TimeStampToken> tokens = getArchiveTimestamps(signer);
+        if (tokens.isEmpty())
+        {
+            throw new CAdESException(
+                "no archive-time-stamp attribute (id-aa-ets-archiveTimestampV2 / "
+                    + "id-aa-ets-archiveTimestamp) is present");
+        }
+        for (int i = 0; i != tokens.size(); ++i)
+        {
+            TimeStampToken token = tokens.get(i);
+            AlgorithmIdentifier alg = token.getTimeStampInfo().getHashAlgorithm();
+            byte[] embedded = token.getTimeStampInfo().getMessageImprintDigest();
+            byte[] recomputed = computeArchiveTimestampImprint(signed, alg, digCalcProv);
+            if (!Arrays.constantTimeAreEqual(embedded, recomputed))
+            {
+                throw new CAdESException(
+                    "archive-time-stamp imprint mismatch at index " + i);
+            }
+        }
+    }
+
+    private static void readTokensInto(Attribute attr, List<TimeStampToken> out)
+        throws CAdESException
+    {
+        if (attr == null)
+        {
+            return;
+        }
+        ASN1Set vals = attr.getAttrValues();
+        for (int i = 0; i != vals.size(); ++i)
+        {
+            try
+            {
+                ContentInfo ci = ContentInfo.getInstance(vals.getObjectAt(i));
+                out.add(new TimeStampToken(ci));
+            }
+            catch (IOException e)
+            {
+                throw new CAdESException(
+                    "unable to parse " + attr.getAttrType() + " value at index "
+                        + i + ": " + e.getMessage(), e);
+            }
+            catch (TSPException e)
+            {
+                throw new CAdESException(
+                    "unable to parse " + attr.getAttrType() + " value at index "
+                        + i + ": " + e.getMessage(), e);
+            }
+        }
     }
 
     private static SignerInformation appendArchiveTimestamp(SignerInformation signer,
