@@ -53,44 +53,6 @@ class GF2x
         reduce(tt, z);
     }
 
-    /**
-     * Sparse-times-dense multiply in GF(2)[X]/(X^n - 1).
-     * <p>
-     * Computes {@code out = (X^{support[0]} + X^{support[1]} + ... + X^{support[weight-1]}) * dense mod (X^n - 1)}.
-     * Each X^s factor is realised as a left bit-shift of {@code dense} by {@code s} positions; the cumulative
-     * non-circular result is accumulated in a 2*size scratch buffer and folded back to size words by
-     * the same {@link #reduce(long[], long[])} the dense path uses.
-     * <p>
-     * Asymptotically O(weight * size) word-XORs, versus O(size^1.58) for the dense Karatsuba path; for the
-     * HQC parameter sets (weight ~ 66 / 100 / 131 versus size ~ 277 / 561 / 901 long-words) this is the
-     * single-largest pure-Java performance lever, since every {@code GF2x.mul} call in HQC has a sparse operand.
-     * Byte-identical to the dense path by the algebraic identity {@code a * b = XOR over i in supp(a) of (X^i * b)}.
-     */
-    void sparseMul(int[] support, int weight, long[] dense, long[] out)
-    {
-        long[] tt = createExt();
-
-        for (int j = 0; j < weight; ++j)
-        {
-            int s = support[j];
-            int sw = s >>> 6;
-            int sb = s & 63;
-            int sbn = -sb & 63; // 64 - sb when sb != 0, else 0; matches Java's shift-count mask
-            long carryMask = -(long)((sb + 63) >>> 6); // 0 if sb == 0, else -1
-            long carry = 0L;
-
-            for (int i = 0; i < size; ++i)
-            {
-                long w = dense[i];
-                tt[i + sw] ^= (w << sb) | carry;
-                carry = (w >>> sbn) & carryMask;
-            }
-            tt[size + sw] ^= carry;
-        }
-
-        reduce(tt, out);
-    }
-
     void random(Shake256RandomGenerator generator, long[] z)
     {
         byte[] tmp = new byte[size << 3];
