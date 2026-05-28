@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
@@ -35,6 +36,7 @@ import org.bouncycastle.asn1.ocsp.ResponderID;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
@@ -49,6 +51,7 @@ import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Helpers for upgrading a CAdES B-T signature to B-LT (RFC&nbsp;5126 X-L /
@@ -78,6 +81,26 @@ import org.bouncycastle.operator.OperatorCreationException;
  * The caller is responsible for fetching the long-term material out-of-band
  * (BC stays out of HTTP / OCSP transport); this helper only assembles the
  * attributes and attaches them.
+ *
+ * <p><b>Level detector ordering:</b>
+ * {@link CAdESLevelDetector#attainedLevel} only reports {@link CAdESLevel#B_LT}
+ * when a signature time-stamp ({@link CAdESLevel#B_T}) is also present on the
+ * signer; without it the detector keeps reporting {@link CAdESLevel#B_B}
+ * regardless of the four LT attributes being attached. Apply the signature
+ * time-stamp via {@link CAdESSignatureTimestampUtil#applySignatureTimestamp}
+ * first if you want the detector to advance.</p>
+ *
+ * <p><b>Reading LT material back:</b>
+ * {@link #getCertificateValues(SignerInformation)},
+ * {@link #getCertificateRevocationLists(SignerInformation)} and
+ * {@link #getOcspResponses(SignerInformation)} expose the embedded trust
+ * material as the corresponding holder / response types so a relying party
+ * can plug them into JCA {@code CertPathValidator} / OCSP verification
+ * directly. {@link #validateLongTermValues(SignerInformation, DigestCalculatorProvider)}
+ * checks the LT bundle is internally self-consistent (every reference's hash
+ * matches the corresponding value bytes); a full chain / revocation
+ * validation at the timestamp's {@code genTime} is the caller's
+ * responsibility and is built on top of those holders.</p>
  */
 public final class CAdESLongTermValuesUtil
 {
@@ -421,6 +444,302 @@ public final class CAdESLongTermValuesUtil
         catch (IOException e)
         {
             throw new CAdESException("cannot encode OCSP response: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Extract the cert chain bundled into the signer's
+     * {@code id-aa-ets-certValues} attribute. Returns an empty list when the
+     * attribute is absent — the signer is not (yet) B-LT.
+     */
+    public static List<X509CertificateHolder> getCertificateValues(SignerInformation signer)
+    {
+        Attribute attr = unsignedAttribute(signer, PKCSObjectIdentifiers.id_aa_ets_certValues);
+        if (attr == null)
+        {
+            return Collections.emptyList();
+        }
+        ASN1Sequence seq = (ASN1Sequence)attr.getAttrValues().getObjectAt(0);
+        List<X509CertificateHolder> out = new ArrayList<X509CertificateHolder>(seq.size());
+        for (int i = 0; i != seq.size(); ++i)
+        {
+            out.add(new X509CertificateHolder(Certificate.getInstance(seq.getObjectAt(i))));
+        }
+        return out;
+    }
+
+    /**
+     * Extract the CRLs bundled into the signer's
+     * {@code id-aa-ets-revocationValues} attribute. Returns an empty list when
+     * the attribute is absent or carries only OCSP responses.
+     */
+    public static List<X509CRLHolder> getCertificateRevocationLists(SignerInformation signer)
+    {
+        Attribute attr = unsignedAttribute(signer, PKCSObjectIdentifiers.id_aa_ets_revocationValues);
+        if (attr == null)
+        {
+            return Collections.emptyList();
+        }
+        RevocationValues rv = RevocationValues.getInstance(attr.getAttrValues().getObjectAt(0));
+        CertificateList[] crlVals = rv.getCrlVals();
+        if (crlVals == null || crlVals.length == 0)
+        {
+            return Collections.emptyList();
+        }
+        List<X509CRLHolder> out = new ArrayList<X509CRLHolder>(crlVals.length);
+        for (int i = 0; i != crlVals.length; ++i)
+        {
+            out.add(new X509CRLHolder(crlVals[i]));
+        }
+        return out;
+    }
+
+    /**
+     * Extract the OCSP responses bundled into the signer's
+     * {@code id-aa-ets-revocationValues} attribute. Returns an empty list when
+     * the attribute is absent or carries only CRLs.
+     */
+    public static List<BasicOCSPResp> getOcspResponses(SignerInformation signer)
+    {
+        Attribute attr = unsignedAttribute(signer, PKCSObjectIdentifiers.id_aa_ets_revocationValues);
+        if (attr == null)
+        {
+            return Collections.emptyList();
+        }
+        RevocationValues rv = RevocationValues.getInstance(attr.getAttrValues().getObjectAt(0));
+        BasicOCSPResponse[] ocspVals = rv.getOcspVals();
+        if (ocspVals == null || ocspVals.length == 0)
+        {
+            return Collections.emptyList();
+        }
+        List<BasicOCSPResp> out = new ArrayList<BasicOCSPResp>(ocspVals.length);
+        for (int i = 0; i != ocspVals.length; ++i)
+        {
+            out.add(new BasicOCSPResp(ocspVals[i]));
+        }
+        return out;
+    }
+
+    /**
+     * Self-consistency check across the four B-LT attributes on the signer:
+     * <ul>
+     *   <li>All four attributes ({@code id-aa-ets-certificateRefs},
+     *       {@code id-aa-ets-certValues},
+     *       {@code id-aa-ets-revocationRefs},
+     *       {@code id-aa-ets-revocationValues}) must be present.</li>
+     *   <li>For each cert in {@code certValues}, an {@code OtherCertID} entry
+     *       under {@code certificateRefs} must reference the same
+     *       {@code (issuer, serialNumber)} and its hash must match the digest
+     *       of the cert under the ref's hash algorithm.</li>
+     *   <li>For each CRL / OCSP response under {@code revocationValues}, a
+     *       reference must exist under {@code revocationRefs} with a matching
+     *       hash (CRLs are matched positionally; OCSP responses are matched by
+     *       {@code OcspIdentifier}).</li>
+     * </ul>
+     *
+     * <p>What this method does <i>not</i> do: walk the cert chain to a trust
+     * anchor, check signing-time validity windows, verify the embedded CRL /
+     * OCSP signatures, or look up revocation status. Those steps are the
+     * caller's responsibility, built on {@link #getCertificateValues},
+     * {@link #getCertificateRevocationLists} and {@link #getOcspResponses}
+     * plus a standard JCA {@code CertPathValidator}.</p>
+     *
+     * @throws CAdESException if the LT attributes are inconsistent, or any
+     *                       required attribute is missing.
+     */
+    public static void validateLongTermValues(SignerInformation signer,
+                                              DigestCalculatorProvider digCalcProv)
+        throws CAdESException, OperatorCreationException, IOException
+    {
+        Attribute certRefsAttr = unsignedAttribute(signer, PKCSObjectIdentifiers.id_aa_ets_certificateRefs);
+        Attribute certValsAttr = unsignedAttribute(signer, PKCSObjectIdentifiers.id_aa_ets_certValues);
+        Attribute revRefsAttr = unsignedAttribute(signer, PKCSObjectIdentifiers.id_aa_ets_revocationRefs);
+        Attribute revValsAttr = unsignedAttribute(signer, PKCSObjectIdentifiers.id_aa_ets_revocationValues);
+
+        if (certRefsAttr == null)
+        {
+            throw new CAdESException("id-aa-ets-certificateRefs attribute is missing");
+        }
+        if (certValsAttr == null)
+        {
+            throw new CAdESException("id-aa-ets-certValues attribute is missing");
+        }
+        if (revRefsAttr == null)
+        {
+            throw new CAdESException("id-aa-ets-revocationRefs attribute is missing");
+        }
+        if (revValsAttr == null)
+        {
+            throw new CAdESException("id-aa-ets-revocationValues attribute is missing");
+        }
+
+        validateCertRefs(certRefsAttr, getCertificateValues(signer), digCalcProv);
+
+        CompleteRevocationRefs revRefs = CompleteRevocationRefs.getInstance(
+            revRefsAttr.getAttrValues().getObjectAt(0));
+        CrlOcspRef[] crlOcspRefs = revRefs.getCrlOcspRefs();
+        if (crlOcspRefs.length != 1)
+        {
+            throw new CAdESException(
+                "revocationRefs must contain exactly one CrlOcspRef, found " + crlOcspRefs.length);
+        }
+
+        validateCrlRefs(crlOcspRefs[0].getCrlids(),
+            getCertificateRevocationLists(signer), digCalcProv);
+        validateOcspRefs(crlOcspRefs[0].getOcspids(),
+            getOcspResponses(signer), digCalcProv);
+    }
+
+    private static void validateCertRefs(Attribute certRefsAttr,
+                                         List<X509CertificateHolder> certValues,
+                                         DigestCalculatorProvider digCalcProv)
+        throws CAdESException, OperatorCreationException
+    {
+        ASN1Sequence refSeq = (ASN1Sequence)certRefsAttr.getAttrValues().getObjectAt(0);
+        if (refSeq.size() != certValues.size())
+        {
+            throw new CAdESException(
+                "certificateRefs / certValues size mismatch: "
+                    + refSeq.size() + " refs vs " + certValues.size() + " values");
+        }
+        for (X509CertificateHolder cert : certValues)
+        {
+            OtherCertID ref = findCertRefByIssuerSerial(refSeq, cert);
+            if (ref == null)
+            {
+                throw new CAdESException(
+                    "no certificateRefs entry matches certValues cert " + cert.getSubject());
+            }
+            byte[] computed = digest(digCalcProv, ref.getAlgorithmHash(), encode(cert));
+            if (!Arrays.areEqual(ref.getCertHash(), computed))
+            {
+                throw new CAdESException(
+                    "certificateRefs hash mismatch for cert " + cert.getSubject());
+            }
+        }
+    }
+
+    private static OtherCertID findCertRefByIssuerSerial(ASN1Sequence refSeq,
+                                                         X509CertificateHolder cert)
+    {
+        for (int i = 0; i != refSeq.size(); ++i)
+        {
+            OtherCertID ref = OtherCertID.getInstance(refSeq.getObjectAt(i));
+            IssuerSerial is = ref.getIssuerSerial();
+            if (is == null)
+            {
+                continue;
+            }
+            if (is.getIssuer().equals(new GeneralNames(new GeneralName(cert.getIssuer())))
+                && is.getSerial().getValue().equals(cert.getSerialNumber()))
+            {
+                return ref;
+            }
+        }
+        return null;
+    }
+
+    private static void validateCrlRefs(CrlListID crlids,
+                                        List<X509CRLHolder> crlValues,
+                                        DigestCalculatorProvider digCalcProv)
+        throws CAdESException, OperatorCreationException
+    {
+        CrlValidatedID[] refs = crlids == null ? new CrlValidatedID[0] : crlids.getCrls();
+        if (refs.length != crlValues.size())
+        {
+            throw new CAdESException(
+                "revocationRefs CrlListID / revocationValues CRL size mismatch: "
+                    + refs.length + " refs vs " + crlValues.size() + " values");
+        }
+        // CrlValidatedID carries no other identifier besides the hash, so
+        // positional matching (the order applyLongTermValues writes them in)
+        // is the only option.
+        for (int i = 0; i != refs.length; ++i)
+        {
+            X509CRLHolder crl = crlValues.get(i);
+            OtherHash hash = refs[i].getCrlHash();
+            byte[] computed = digest(digCalcProv, hash.getHashAlgorithm(), encode(crl));
+            if (!Arrays.areEqual(hash.getHashValue(), computed))
+            {
+                throw new CAdESException(
+                    "revocationRefs CRL hash mismatch at position " + i);
+            }
+        }
+    }
+
+    private static void validateOcspRefs(OcspListID ocspids,
+                                         List<BasicOCSPResp> ocspValues,
+                                         DigestCalculatorProvider digCalcProv)
+        throws CAdESException, OperatorCreationException
+    {
+        OcspResponsesID[] refs = ocspids == null ? new OcspResponsesID[0] : ocspids.getOcspResponses();
+        if (refs.length != ocspValues.size())
+        {
+            throw new CAdESException(
+                "revocationRefs OcspListID / revocationValues OCSP size mismatch: "
+                    + refs.length + " refs vs " + ocspValues.size() + " values");
+        }
+        for (BasicOCSPResp resp : ocspValues)
+        {
+            OcspResponsesID ref = findOcspRefByIdentifier(refs, resp);
+            if (ref == null)
+            {
+                throw new CAdESException(
+                    "no revocationRefs OcspResponsesID entry matches a producedAt "
+                        + resp.getProducedAt());
+            }
+            OtherHash hash = ref.getOcspRepHash();
+            byte[] computed = digest(digCalcProv, hash.getHashAlgorithm(), encode(resp));
+            if (!Arrays.areEqual(hash.getHashValue(), computed))
+            {
+                throw new CAdESException(
+                    "revocationRefs OCSP hash mismatch for producedAt " + resp.getProducedAt());
+            }
+        }
+    }
+
+    private static OcspResponsesID findOcspRefByIdentifier(OcspResponsesID[] refs,
+                                                           BasicOCSPResp resp)
+    {
+        ResponderID responderID = resp.getResponderId().toASN1Primitive();
+        ASN1GeneralizedTime producedAt = new ASN1GeneralizedTime(resp.getProducedAt());
+        for (int i = 0; i != refs.length; ++i)
+        {
+            OcspIdentifier id = refs[i].getOcspIdentifier();
+            if (id == null)
+            {
+                continue;
+            }
+            if (id.getOcspResponderID().equals(responderID)
+                && id.getProducedAt().equals(producedAt))
+            {
+                return refs[i];
+            }
+        }
+        return null;
+    }
+
+    private static Attribute unsignedAttribute(SignerInformation signer, ASN1ObjectIdentifier oid)
+    {
+        AttributeTable unsigned = signer.getUnsignedAttributes();
+        return unsigned == null ? null : unsigned.get(oid);
+    }
+
+    private static byte[] digest(DigestCalculatorProvider digCalcProv,
+                                 AlgorithmIdentifier alg, byte[] data)
+        throws OperatorCreationException, CAdESException
+    {
+        DigestCalculator dc = digCalcProv.get(alg);
+        try
+        {
+            OutputStream out = dc.getOutputStream();
+            out.write(data);
+            out.close();
+            return dc.getDigest();
+        }
+        catch (IOException e)
+        {
+            throw new CAdESException("digest failed: " + e.getMessage(), e);
         }
     }
 }

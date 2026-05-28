@@ -73,7 +73,6 @@ public class HawkKeyPairGenerator
         short[] q01 = new short[n];
         int[] q11 = new int[n];
         byte[] seed = new byte[seedLen];
-        short[] tmpShorts = null;
         byte[] tmpBytes = null;
         while (true)
         {
@@ -86,8 +85,6 @@ public class HawkKeyPairGenerator
                 tmp, 0, tmp.length - (0 - alignedOffset));
 
             tmpBytes = Pack.intToLittleEndian(tmp); //tt8
-            tmpShorts = new short[tmpBytes.length >> 1];
-            Pack.littleEndianToShort(tmpBytes, 0, tmpShorts, 0, tmpShorts.length);
 
             // Encode public key
             if (encodePublic(logn, tmpBytes, tpubOffset, pubLen, q00, 0, q01, 0))

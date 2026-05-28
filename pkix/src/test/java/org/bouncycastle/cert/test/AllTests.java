@@ -29,12 +29,14 @@ public class AllTests
             new AttrCertTest(),
             new CertPathLoopTest(),
             new CertTest(),
+            new org.bouncycastle.cert.ct.test.CertificateTransparencyTest(),
             new DANETest(),
             new ExternalKeyTest(),
             new GOST3410_2012CMSTest(),
             new GOSTR3410_2012_256GenerateCertificate(),
             new MLDSACredentialsTest(),
             new PKCS10Test(),
+            new RelatedCertificateDescriptorTest(),
             new SLHDSACredentialsTest(),
             new X509ExtensionUtilsTest(),
         };
@@ -75,6 +77,7 @@ public class AllTests
         suite.addTestSuite(BcCertTest.class);
         suite.addTestSuite(BcPKCS10Test.class);
         suite.addTestSuite(PQCPKCS10Test.class);
+        suite.addTestSuite(X509CertificateReviewerTest.class);
         suite.addTest(ConverterTest.suite());
 
         return new BCTestSetup(suite);

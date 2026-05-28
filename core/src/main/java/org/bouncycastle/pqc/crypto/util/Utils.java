@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
+import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
@@ -121,6 +122,9 @@ class Utils
 
     static final Map hawkOids = new HashMap<ASN1ObjectIdentifier, HawkParameters>();
     static final Map hawkParams = new HashMap<HawkParameters, ASN1ObjectIdentifier>();
+
+    static final Map sdithOids = new HashMap<SDitHParameters, ASN1ObjectIdentifier>();
+    static final Map sdithParams = new HashMap<ASN1ObjectIdentifier, SDitHParameters>();
 
     static final Map mqomOids = new HashMap<ASN1ObjectIdentifier, MQOMParameters>();
     static final Map mqomParams = new HashMap<MQOMParameters, ASN1ObjectIdentifier>();
@@ -701,6 +705,32 @@ class Utils
             uovOids.put(uovAll[i], uovOidArr[i]);
             uovParams.put(uovOidArr[i], uovAll[i]);
         }
+
+        sdithOids.put(SDitHParameters.sdith_hypercube_cat1_gf256, BCObjectIdentifiers.sdith_hypercube_cat1_gf256);
+        sdithOids.put(SDitHParameters.sdith_hypercube_cat3_gf256, BCObjectIdentifiers.sdith_hypercube_cat3_gf256);
+        sdithOids.put(SDitHParameters.sdith_hypercube_cat5_gf256, BCObjectIdentifiers.sdith_hypercube_cat5_gf256);
+        sdithOids.put(SDitHParameters.sdith_hypercube_cat1_p251, BCObjectIdentifiers.sdith_hypercube_cat1_p251);
+        sdithOids.put(SDitHParameters.sdith_hypercube_cat3_p251, BCObjectIdentifiers.sdith_hypercube_cat3_p251);
+        sdithOids.put(SDitHParameters.sdith_hypercube_cat5_p251, BCObjectIdentifiers.sdith_hypercube_cat5_p251);
+        sdithParams.put(BCObjectIdentifiers.sdith_hypercube_cat1_gf256, SDitHParameters.sdith_hypercube_cat1_gf256);
+        sdithParams.put(BCObjectIdentifiers.sdith_hypercube_cat3_gf256, SDitHParameters.sdith_hypercube_cat3_gf256);
+        sdithParams.put(BCObjectIdentifiers.sdith_hypercube_cat5_gf256, SDitHParameters.sdith_hypercube_cat5_gf256);
+        sdithParams.put(BCObjectIdentifiers.sdith_hypercube_cat1_p251, SDitHParameters.sdith_hypercube_cat1_p251);
+        sdithParams.put(BCObjectIdentifiers.sdith_hypercube_cat3_p251, SDitHParameters.sdith_hypercube_cat3_p251);
+        sdithParams.put(BCObjectIdentifiers.sdith_hypercube_cat5_p251, SDitHParameters.sdith_hypercube_cat5_p251);
+
+        sdithOids.put(SDitHParameters.sdith_threshold_cat1_gf256, BCObjectIdentifiers.sdith_threshold_cat1_gf256);
+        sdithOids.put(SDitHParameters.sdith_threshold_cat3_gf256, BCObjectIdentifiers.sdith_threshold_cat3_gf256);
+        sdithOids.put(SDitHParameters.sdith_threshold_cat5_gf256, BCObjectIdentifiers.sdith_threshold_cat5_gf256);
+        sdithOids.put(SDitHParameters.sdith_threshold_cat1_p251, BCObjectIdentifiers.sdith_threshold_cat1_p251);
+        sdithOids.put(SDitHParameters.sdith_threshold_cat3_p251, BCObjectIdentifiers.sdith_threshold_cat3_p251);
+        sdithOids.put(SDitHParameters.sdith_threshold_cat5_p251, BCObjectIdentifiers.sdith_threshold_cat5_p251);
+        sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat1_gf256, SDitHParameters.sdith_threshold_cat1_gf256);
+        sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat3_gf256, SDitHParameters.sdith_threshold_cat3_gf256);
+        sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat5_gf256, SDitHParameters.sdith_threshold_cat5_gf256);
+        sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat1_p251, SDitHParameters.sdith_threshold_cat1_p251);
+        sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat3_p251, SDitHParameters.sdith_threshold_cat3_p251);
+        sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat5_p251, SDitHParameters.sdith_threshold_cat5_p251);
     }
 
     static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
@@ -1064,6 +1094,16 @@ class Utils
     static UOVParameters uovParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (UOVParameters)uovParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier sdithOidLookup(SDitHParameters params)
+    {
+        return (ASN1ObjectIdentifier)sdithOids.get(params);
+    }
+
+    static SDitHParameters sdithParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SDitHParameters)sdithParams.get(oid);
     }
 
     private static boolean isRaw(byte[] data)

@@ -20,6 +20,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
+import org.bouncycastle.pqc.crypto.sdith.SDitHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPrivateKeyParameters;
 import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
@@ -527,6 +529,11 @@ public class PrivateKeyFactory
         {
             UOVParameters uovParameters = Utils.uovParamsLookup(algOID);
             return new UOVPrivateKeyParameters(uovParameters, keyInfo.getPrivateKey().getOctets());
+        }
+        else if (Utils.sdithParams.containsKey(algOID))
+        {
+            SDitHParameters sdithParameters = Utils.sdithParamsLookup(algOID);
+            return new SDitHPrivateKeyParameters(sdithParameters, keyInfo.getPrivateKey().getOctets());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntruplus))
         {
