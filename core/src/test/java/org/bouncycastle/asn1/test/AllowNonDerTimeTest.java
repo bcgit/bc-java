@@ -37,6 +37,7 @@ public class AllowNonDerTimeTest
         byte[] genDer = generalizedTime("20020122122220Z");           // valid DER
         byte[] genNoSeconds = generalizedTime("200201221222Z");       // no seconds
         byte[] genTrailingZero = generalizedTime("20020122122220.50Z"); // trailing zero in fraction
+        byte[] genIssue2040 = generalizedTime("240123000000Z");       // github #2040: 13-char (2-digit year) GeneralizedTime
 
         // reading is always lenient, regardless of the property
         ASN1UTCTime utcDerObj = (ASN1UTCTime)ASN1Primitive.fromByteArray(utcDer);
@@ -45,6 +46,7 @@ public class AllowNonDerTimeTest
         ASN1GeneralizedTime genDerObj = (ASN1GeneralizedTime)ASN1Primitive.fromByteArray(genDer);
         ASN1GeneralizedTime genNoSecondsObj = (ASN1GeneralizedTime)ASN1Primitive.fromByteArray(genNoSeconds);
         ASN1GeneralizedTime genTrailingZeroObj = (ASN1GeneralizedTime)ASN1Primitive.fromByteArray(genTrailingZero);
+        ASN1GeneralizedTime genIssue2040Obj = (ASN1GeneralizedTime)ASN1Primitive.fromByteArray(genIssue2040);
 
         // default (property unset / "true"): non-DER may still be re-emitted as DER (lenient pass-through)
         isTrue("default: DER UTCTime round-trip", utcDerObj.getEncoded(ASN1Encoding.DER).length > 0);
@@ -69,6 +71,7 @@ public class AllowNonDerTimeTest
             shouldRejectDER("UTCTime offset not Z", utcOffsetObj);
             shouldRejectDER("GeneralizedTime missing seconds", genNoSecondsObj);
             shouldRejectDER("GeneralizedTime trailing-zero fraction", genTrailingZeroObj);
+            shouldRejectDER("GeneralizedTime 2-digit year (github #2040)", genIssue2040Obj);
 
             // BER serialization is unaffected by the property
             isTrue("strict: BER write of non-DER UTCTime", utcNoSecondsObj.getEncoded(ASN1Encoding.BER).length > 0);
