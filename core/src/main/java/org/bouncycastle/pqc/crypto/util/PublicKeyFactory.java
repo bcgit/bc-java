@@ -40,6 +40,8 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
+import org.bouncycastle.pqc.crypto.haetae.HAETAEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hawk.HawkParameters;
 import org.bouncycastle.pqc.crypto.hawk.HawkPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
@@ -338,6 +340,10 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.faest_em_192f, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_em_256s, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_em_256f, new FaestConverter());
+
+        converters.put(BCObjectIdentifiers.haetae2, new HaetaeConverter());
+        converters.put(BCObjectIdentifiers.haetae3, new HaetaeConverter());
+        converters.put(BCObjectIdentifiers.haetae5, new HaetaeConverter());
 
         converters.put(BCObjectIdentifiers.mqom2_cat1_gf2_fast_r3,     new MQOMConverter());
         converters.put(BCObjectIdentifiers.mqom2_cat1_gf2_fast_r5,     new MQOMConverter());
@@ -1003,6 +1009,20 @@ public class PublicKeyFactory
             FaestParameters faestParams = Utils.faestParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new FaestPublicKeyParameters(faestParams, keyEnc);
+        }
+    }
+
+    private static class HaetaeConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            HAETAEParameters haetaeParams = Utils.haetaeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new HAETAEPublicKeyParameters(haetaeParams, keyEnc);
         }
     }
 

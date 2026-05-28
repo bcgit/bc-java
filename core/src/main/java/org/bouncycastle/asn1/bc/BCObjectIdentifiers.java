@@ -886,6 +886,21 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier uov_V_pkc_skc    = uov.branch("12");
 
     /**
+     * HAETAE &mdash; lattice-based signature scheme submitted to the
+     * KpqC (Korean Post-Quantum Cryptography) standardisation effort. See
+     * <a href="https://kpqc.or.kr">KpqC</a> and the HAETAE team's
+     * specification document.
+     * <p>
+     * Three parameter sets are provided: HAETAE-2 (NIST level 2), HAETAE-3
+     * (NIST level 3) and HAETAE-5 (NIST level 5).
+     */
+    ASN1ObjectIdentifier haetae = bc_sig.branch("18");
+
+    ASN1ObjectIdentifier haetae2 = haetae.branch("1");
+    ASN1ObjectIdentifier haetae3 = haetae.branch("2");
+    ASN1ObjectIdentifier haetae5 = haetae.branch("3");
+
+    /**
      * NTRU+
      * */
     ASN1ObjectIdentifier pqc_kem_ntruplus = bc_kem.branch("10");
