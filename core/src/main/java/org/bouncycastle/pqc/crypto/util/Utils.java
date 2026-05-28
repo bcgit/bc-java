@@ -28,6 +28,7 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
+import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.pqc.crypto.hawk.HawkParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
@@ -119,6 +120,9 @@ class Utils
 
     static final Map faestOids = new HashMap<ASN1ObjectIdentifier, FaestParameters>();
     static final Map faestParams = new HashMap<FaestParameters, ASN1ObjectIdentifier>();
+
+    static final Map haetaeOids = new HashMap<ASN1ObjectIdentifier, HAETAEParameters>();
+    static final Map haetaeParams = new HashMap<HAETAEParameters, ASN1ObjectIdentifier>();
 
     static final Map hawkOids = new HashMap<ASN1ObjectIdentifier, HawkParameters>();
     static final Map hawkParams = new HashMap<HawkParameters, ASN1ObjectIdentifier>();
@@ -630,6 +634,14 @@ class Utils
         faestParams.put(BCObjectIdentifiers.faest_em_256s, FaestParameters.faest_em_256s);
         faestParams.put(BCObjectIdentifiers.faest_em_256f, FaestParameters.faest_em_256f);
 
+        haetaeOids.put(HAETAEParameters.haetae2, BCObjectIdentifiers.haetae2);
+        haetaeOids.put(HAETAEParameters.haetae3, BCObjectIdentifiers.haetae3);
+        haetaeOids.put(HAETAEParameters.haetae5, BCObjectIdentifiers.haetae5);
+
+        haetaeParams.put(BCObjectIdentifiers.haetae2, HAETAEParameters.haetae2);
+        haetaeParams.put(BCObjectIdentifiers.haetae3, HAETAEParameters.haetae3);
+        haetaeParams.put(BCObjectIdentifiers.haetae5, HAETAEParameters.haetae5);
+
         ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_768, BCObjectIdentifiers.ntruplus768);
         ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruplus864);
         ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruplus1152);
@@ -1074,6 +1086,16 @@ class Utils
     static FaestParameters faestParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (FaestParameters)faestParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier haetaeOidLookup(HAETAEParameters params)
+    {
+        return (ASN1ObjectIdentifier)haetaeOids.get(params);
+    }
+
+    static HAETAEParameters haetaeParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (HAETAEParameters)haetaeParams.get(oid);
     }
 
     static ASN1ObjectIdentifier mqomOidLookup(MQOMParameters params)
