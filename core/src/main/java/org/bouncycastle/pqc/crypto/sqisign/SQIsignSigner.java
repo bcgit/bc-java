@@ -23,6 +23,20 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
  * variable-time. No constant-time guarantee can be made for signing or key
  * generation; verification operates only on public values.
  * </p>
+ * <p>
+ * <b>Deployment guidance:</b> the long-term private key participates in the
+ * variable-time response / ideal-to-isogeny computation, so per-signature
+ * timing depends on secret material and can in principle accumulate toward the
+ * static key over many signatures. SQIsign signing therefore should not be
+ * exposed in settings where an adversary can measure the timing of signing
+ * operations performed under the same key — e.g. a remote timing oracle that
+ * signs attacker-influenced messages on demand, or a co-located / shared-host
+ * environment open to micro-architectural timing observation. This is an
+ * algorithmic property of SQIsign (the reference implementation shares it), not
+ * a limitation specific to this port, and there is no known practical
+ * constant-time formulation of the KLPT / lattice steps; treat it as a usage
+ * constraint until constant-time SQIsign techniques mature.
+ * </p>
  */
 public class SQIsignSigner
     implements MessageSigner
