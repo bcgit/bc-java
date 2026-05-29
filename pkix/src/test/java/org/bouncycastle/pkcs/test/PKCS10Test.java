@@ -15,8 +15,11 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -246,6 +249,113 @@ public class PKCS10Test
         assertTrue(DeltaCertAttributeUtils.isDeltaRequestSignatureValid(request, new JcaContentVerifierProviderBuilder().setProvider("BC").build(dilKp.getPublic())));
 
         assertTrue(request.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(p256Kp.getPublic())));
+    }
+
+    public void testTrimDeltaCertificateRequest()
+        throws Exception
+    {
+        KeyPairGenerator p256Kpg = KeyPairGenerator.getInstance("EC", "BC");
+        p256Kpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+        KeyPair p256Kp = p256Kpg.generateKeyPair();
+
+        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        dilKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
+        KeyPair dilKp = dilKpg.generateKeyPair();
+
+        X500Name baseSubject = new X500Name("CN=Base");
+        GeneralNames sharedSan = new GeneralNames(new GeneralName(GeneralName.dNSName, "shared.example"));
+        Extension sharedExt = new Extension(Extension.subjectAlternativeName, false, new DEROctetString(sharedSan.getEncoded()));
+        GeneralNames baseAki = new GeneralNames(new GeneralName(GeneralName.dNSName, "base.example"));
+        Extension baseAkiExt = new Extension(Extension.authorityKeyIdentifier, false, new DEROctetString(baseAki.getEncoded()));
+        Extensions baseExtensions = new Extensions(new Extension[]{sharedExt, baseAkiExt});
+
+        JcaPKCS10CertificationRequestBuilder baseBuilder = new JcaPKCS10CertificationRequestBuilder(baseSubject, dilKp.getPublic());
+        baseBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, baseExtensions);
+        ContentSigner baseSigner = new JcaContentSignerBuilder("ML-DSA-44").setProvider("BC").build(dilKp.getPrivate());
+        PKCS10CertificationRequest baseCsr = baseBuilder.build(baseSigner);
+
+        // Delta whose subject matches base (-> trimmed), whose signature algorithm differs
+        // (-> retained), and whose extensions partially overlap base: sharedExt is identical
+        // and must be dropped; deltaAkiExt has the same OID but a different value and must
+        // be retained; novelExt has an OID absent from base and must be dropped per the
+        // cert-side rule.
+        GeneralNames deltaAki = new GeneralNames(new GeneralName(GeneralName.dNSName, "delta.example"));
+        Extension deltaAkiExt = new Extension(Extension.authorityKeyIdentifier, false, new DEROctetString(deltaAki.getEncoded()));
+        Extension novelExt = new Extension(Extension.basicConstraints, false, new DEROctetString(new byte[]{0x30, 0x00}));
+        Extensions deltaExtensions = new Extensions(new Extension[]{sharedExt, deltaAkiExt, novelExt});
+
+        // SHA256withECDSA so the delta sig alg differs from the base CSR's ML-DSA-44.
+        AlgorithmIdentifier deltaSigAlg = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(p256Kp.getPrivate()).getAlgorithmIdentifier();
+
+        DeltaCertificateRequestAttributeValue full = new DeltaCertificateRequestAttributeValueBuilder(
+            SubjectPublicKeyInfo.getInstance(dilKp.getPublic().getEncoded()))
+            .setSubject(baseSubject)
+            .setSignatureAlgorithm(deltaSigAlg)
+            .setExtensions(deltaExtensions)
+            .build();
+
+        DeltaCertificateRequestAttributeValue trimmed = DeltaCertAttributeUtils.trimDeltaCertificateRequest(full, baseCsr);
+
+        assertNull("subject equal to base must be trimmed", trimmed.getSubject());
+        assertEquals(deltaSigAlg, trimmed.getSignatureAlgorithm());
+
+        Extensions trimmedExtensions = trimmed.getExtensions();
+        assertNotNull(trimmedExtensions);
+        ASN1ObjectIdentifier[] retained = trimmedExtensions.getExtensionOIDs();
+        assertEquals(1, retained.length);
+        assertEquals(Extension.authorityKeyIdentifier, retained[0]);
+        assertEquals(deltaAkiExt, trimmedExtensions.getExtension(Extension.authorityKeyIdentifier));
+    }
+
+    public void testTrimDeltaCertificateRequestDropsRecursiveDcdOid()
+        throws Exception
+    {
+        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        dilKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
+        KeyPair dilKp = dilKpg.generateKeyPair();
+
+        ASN1ObjectIdentifier dcdReqOid = new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.2");
+        Extension dcdReqExt = new Extension(dcdReqOid, false, new DEROctetString(new byte[]{0x01}));
+        Extensions baseExtensions = new Extensions(new Extension[]{dcdReqExt});
+
+        JcaPKCS10CertificationRequestBuilder baseBuilder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Base"), dilKp.getPublic());
+        baseBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, baseExtensions);
+        PKCS10CertificationRequest baseCsr = baseBuilder.build(new JcaContentSignerBuilder("ML-DSA-44").setProvider("BC").build(dilKp.getPrivate()));
+
+        Extension dcdReqDifferent = new Extension(dcdReqOid, false, new DEROctetString(new byte[]{0x02}));
+        DeltaCertificateRequestAttributeValue full = new DeltaCertificateRequestAttributeValueBuilder(
+            SubjectPublicKeyInfo.getInstance(dilKp.getPublic().getEncoded()))
+            .setExtensions(new Extensions(new Extension[]{dcdReqDifferent}))
+            .build();
+
+        DeltaCertificateRequestAttributeValue trimmed = DeltaCertAttributeUtils.trimDeltaCertificateRequest(full, baseCsr);
+
+        assertNull("DCD-request OID must never appear inside a delta extensions field", trimmed.getExtensions());
+    }
+
+    public void testTrimDeltaCertificateRequestDropsExtensionsWhenBaseHasNone()
+        throws Exception
+    {
+        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        dilKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
+        KeyPair dilKp = dilKpg.generateKeyPair();
+
+        // Base CSR carries no requested extensions.
+        JcaPKCS10CertificationRequestBuilder baseBuilder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Base"), dilKp.getPublic());
+        PKCS10CertificationRequest baseCsr = baseBuilder.build(new JcaContentSignerBuilder("ML-DSA-44").setProvider("BC").build(dilKp.getPrivate()));
+
+        GeneralNames deltaGns = new GeneralNames(new GeneralName(GeneralName.dNSName, "delta.example"));
+        Extension deltaExt = new Extension(Extension.subjectAlternativeName, false, new DEROctetString(deltaGns.getEncoded()));
+        DeltaCertificateRequestAttributeValue full = new DeltaCertificateRequestAttributeValueBuilder(
+            SubjectPublicKeyInfo.getInstance(dilKp.getPublic().getEncoded()))
+            .setExtensions(new Extensions(new Extension[]{deltaExt}))
+            .build();
+
+        DeltaCertificateRequestAttributeValue trimmed = DeltaCertAttributeUtils.trimDeltaCertificateRequest(full, baseCsr);
+
+        // A delta extension may only replace an extension present in the base; with no base
+        // extensions there is nothing to replace, so the extensions field is dropped entirely.
+        assertNull(trimmed.getExtensions());
     }
 
 

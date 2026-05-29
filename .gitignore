@@ -26,6 +26,12 @@ pg/*.bpg
 pg/*.txt
 
 .idea/
+.claude/
+
+.DS_Store
+
+mail/*.message
+mail/id.p12
 
 codesigning.jks
 
