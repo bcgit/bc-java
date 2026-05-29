@@ -8,11 +8,11 @@ import java.math.BigInteger;
  * level-1 entries in {@code src/precomp/ref/lvl1/}.
  *
  * <p>This class holds only the scalar / integer constants. The larger
- * tables (endomorphism action matrices, extremal-order data, basis-change
- * matrices for the gluing isomorphism) — which the C reference stores in
- * Montgomery 5×51-bit limb form — are not yet regenerated; they need a
- * one-off script to convert the C constants to canonical {@link BigInteger}
- * form before they can be encoded here.</p>
+ * tables — endomorphism action matrices, extremal-order data and the
+ * basis-change matrices for the gluing isomorphism, which the C reference
+ * stores in Montgomery 5×51-bit limb form — live in their own dedicated
+ * classes (e.g. {@link EndomorphismActionLvl1}) in canonical
+ * {@link BigInteger} form.</p>
  */
 final class PrecompLvl1
 {

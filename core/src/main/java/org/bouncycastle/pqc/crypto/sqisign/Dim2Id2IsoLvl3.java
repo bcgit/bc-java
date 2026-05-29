@@ -33,12 +33,6 @@ final class Dim2Id2IsoLvl3
     }
 
     public static int arbitraryIsogenyEvaluation(EcBasis basis, EcCurve codomain,
-                                                 QuatLeftIdeal lideal)
-    {
-        return arbitraryIsogenyEvaluation(basis, codomain, lideal, new SecureRandom());
-    }
-
-    public static int arbitraryIsogenyEvaluation(EcBasis basis, EcCurve codomain,
                                                  QuatLeftIdeal lideal, SecureRandom random)
     {
         Dim2Id2IsoClapotis.Result result =
