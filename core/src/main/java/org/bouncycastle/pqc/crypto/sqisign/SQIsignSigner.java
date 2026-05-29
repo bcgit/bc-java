@@ -11,16 +11,17 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
  * SQIsign signer. Wired for all three NIST parameter sets (lvl1/lvl3/lvl5)
  * via the polymorphic GfField-based dispatch in the EC/HD/theta layer.
  * <p>
- * <b>Side-channel note:</b> signing is <em>not</em> constant-time. The
- * secret-key-dependent quaternion / ideal / lattice arithmetic (commitment,
- * challenge ideal, response sampling and the auxiliary isogeny) runs on
- * {@link java.math.BigInteger} and includes secret-dependent rejection loops
- * and variable-iteration Euclidean / lattice-reduction (LLL, HNF, Cornacchia)
- * steps. This matches the SQIsign reference implementation, whose KLPT /
- * Clapotis layer is likewise variable-time. The leaf base-field and
- * elliptic-curve arithmetic is constant-time (Montgomery form, masked
- * conditional swap/select), but no constant-time guarantee can be made for the
- * signing operation as a whole. Verification operates only on public values.
+ * <b>Side-channel note:</b> signing is <em>not</em> constant-time. SQIsign's
+ * arithmetic is implemented over {@link java.math.BigInteger} throughout — the
+ * GF(p) / GF(p&sup2;) base-field and elliptic-curve layer as well as the
+ * secret-key-dependent quaternion / ideal / lattice layer (commitment,
+ * challenge ideal, response sampling and the auxiliary isogeny). BigInteger
+ * operations are inherently variable-time, and the signing path additionally
+ * contains secret-dependent rejection loops and variable-iteration Euclidean /
+ * lattice-reduction (LLL, HNF, Cornacchia) steps. This matches the SQIsign
+ * reference implementation, whose KLPT / Clapotis layer is likewise
+ * variable-time. No constant-time guarantee can be made for signing or key
+ * generation; verification operates only on public values.
  * </p>
  */
 public class SQIsignSigner

@@ -77,14 +77,6 @@ final class GfFieldLvl1
 
     public void fp2Mul(Fp2 x, Fp2 y, Fp2 z)
     {
-        if (FpMontHelper.USE_LAZY_FP2)
-        {
-            // Phase J #4: lazy-reduction Karatsuba (3 products, 2 reductions)
-            // on the 64-bit limb kernel — ~17% fewer limb-multiplies than the
-            // reduce-per-product path Fp2Lvl1.mul takes.
-            FpLvl1.fp2MulLazy(x.re, x.im, y.re, y.im, z.re, z.im);
-            return;
-        }
         Fp2Lvl1.mul(x, y, z);
     }
 
