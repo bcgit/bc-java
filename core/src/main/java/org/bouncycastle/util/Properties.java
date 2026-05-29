@@ -128,6 +128,19 @@ public class Properties
     public static final String DRBG_GATHER_PAUSE_SECS = "org.bouncycastle.drbg.gather_pause_secs";
 
     /**
+     * If set to "true", SQIsign GF(p) arithmetic for the lvl1 prime
+     * {@code p = 5*2^248 - 1} dispatches multiply / square through a limb-array
+     * CIOS Montgomery implementation ({@code FpLvl1Mont}) instead of the default
+     * BigInteger-Barrett path. Opt-in for A/B testing — the limb path produces
+     * byte-identical results to the BigInteger path. Until storage-level
+     * Montgomery form is plumbed through Fp / Fp2, the dispatch pays a
+     * to-/from-Montgomery conversion per operation, so this property is not yet
+     * a performance win — its purpose is to gate the integration plumbing while
+     * KAT byte-identity is verified. Default off.
+     */
+    public static final String SQISIGN_FP_LIMBS = "org.bouncycastle.sqisign.fp.limbs";
+
+    /**
      * Controls whether an ASN.1 {@code UTCTime} / {@code GeneralizedTime} carrying non-DER
      * contents may be serialized through a {@code DEROutputStream}. Reading is always
      * lenient: a wire value that is valid ASN.1 but not valid DER - for example a UTCTime

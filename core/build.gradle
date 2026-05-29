@@ -20,6 +20,44 @@ compileJava {
     options.release = 8
 }
 
+// ---------------------------------------------------------------------------
+// Multi-Release JAR overlay (JEP 238) for the SQIsign Phase I 64-bit-limb
+// Montgomery kernel. The base src/main/java compiles against Java 8 and
+// carries a pure-Java software fallback for the 64×64→128 high-half multiply
+// (FpMul64.umulHi via 32-bit splits, FpMul64.HARDWARE=false → the 64-bit
+// path stays disabled, so Java 8 keeps the 32-bit-limb Phase F/G kernel).
+//
+// src/main/jdk1.9 overrides FpMul64 with a version that uses Math.multiplyHigh
+// (Java 9+, JIT-intrinsified to MULX/UMULH) and sets HARDWARE=true, enabling
+// the ~1.85× steady-state 64-bit-limb path. Packaged under
+// META-INF/versions/9/ so the JVM auto-selects it on Java 9+.
+// ---------------------------------------------------------------------------
+sourceSets {
+    java9 {
+        java {
+            srcDirs = ['src/main/jdk1.9']
+        }
+    }
+}
+
+dependencies {
+    java9Implementation files([sourceSets.main.output.classesDirs]) {
+        builtBy compileJava
+    }
+}
+
+compileJava9Java {
+    options.release = 9
+    options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
+}
+
+jar {
+    into('META-INF/versions/9') {
+        from sourceSets.java9.output
+    }
+    manifest.attributes('Multi-Release': 'true')
+}
+
 task sourcesJar(type: Jar) {
     archiveBaseName="bccore"
     archiveAppendix="${vmrange}"

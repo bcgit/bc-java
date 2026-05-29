@@ -46,6 +46,7 @@ import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mqom.MQOMKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sdith.SDitHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.snova.SnovaKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.sqisign.SQIsignKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.uov.UOVKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi;
@@ -582,6 +583,10 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_fast_r5,   new MQOMKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_short_r3,  new MQOMKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_short_r5,  new MQOMKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.sqisign_lvl1, new SQIsignKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sqisign_lvl3, new SQIsignKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sqisign_lvl5, new SQIsignKeyFactorySpi());
 
         addKeyInfoConverter(BCObjectIdentifiers.hawk256,  new HawkKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hawk512,  new HawkKeyFactorySpi());
