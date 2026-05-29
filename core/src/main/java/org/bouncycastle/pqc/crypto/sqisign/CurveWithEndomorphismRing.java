@@ -13,10 +13,9 @@ package org.bouncycastle.pqc.crypto.sqisign;
  * generators of the maximal order O₀).</p>
  *
  * <p>The published table {@code CURVES_WITH_ENDOMORPHISMS[7]} contains the
- * primary curve E₀ at index 0 plus six alternate starting curves; only the
- * first entry is populated here in the initial scaffold, since the remaining
- * six entries require mechanical translation of ~1000 lines of constants
- * from {@code precomp/ref/lvl1/endomorphism_action.c}.</p>
+ * primary curve E₀ at index 0 plus six alternate starting curves; all seven
+ * entries are populated, translated from the constants in
+ * {@code precomp/ref/lvl1/endomorphism_action.c}.</p>
  */
 final class CurveWithEndomorphismRing
 {

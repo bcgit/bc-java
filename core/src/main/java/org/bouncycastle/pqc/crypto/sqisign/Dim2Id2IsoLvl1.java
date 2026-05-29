@@ -12,18 +12,18 @@ import java.security.SecureRandom;
  * the (2,2)-chain, endomorphism action) is in {@link Dim2Id2IsoClapotis}.
  * This class supplies the level-1 precomp bundle and delegates.</p>
  *
- * <p>The lvl1 precomp transcription is incomplete:</p>
- * <ul>
- *   <li>{@link EndomorphismActionLvl1#CURVES_WITH_ENDOMORPHISMS} entries
- *       1..6 (~2.8K LOC of C constants)</li>
- *   <li>{@code ALTERNATE_CONNECTING_IDEALS[0..5]} (~1.7K LOC)</li>
- *   <li>{@code CONNECTING_IDEALS[1..6]} (~960 LOC)</li>
- *   <li>{@code EXTREMAL_ORDERS[1..6]} → {@code QuatRepresentIntegerParamsLvl1.INSTANCES[1..6]}</li>
- * </ul>
+ * <p>The level-1 precomp bundle is fully populated:
+ * {@link EndomorphismActionLvl1#CURVES_WITH_ENDOMORPHISMS} (the primary curve
+ * E&#8320; plus six alternate starting curves and their endomorphism-action
+ * matrices), {@code ALTERNATE_CONNECTING_IDEALS}, {@code CONNECTING_IDEALS} and
+ * {@code QuatRepresentIntegerParamsLvl1.INSTANCES}. {@link #buildPrecomp()}
+ * assembles it and the evaluation calls straight through to
+ * {@link Dim2Id2IsoClapotis#idealToIsogenyClapotis}.</p>
  *
- * <p>The method throws {@link UnsupportedOperationException} citing the
- * missing pieces while any of them is null. Once the data lands the body
- * will call straight through to {@link Dim2Id2IsoClapotis#idealToIsogenyClapotis}.</p>
+ * <p>As a defensive invariant, {@code buildPrecomp} returns {@code null} — and
+ * the evaluation throws {@link UnsupportedOperationException} — if any
+ * alternate-curve table is ever found unpopulated. Under normal operation that
+ * path is unreachable.</p>
  */
 final class Dim2Id2IsoLvl1
 {
@@ -77,25 +77,21 @@ final class Dim2Id2IsoLvl1
      * canonical 2^TORSION_EVEN_POWER-torsion basis on E_A that is the image
      * of the standard basis on E₀ under the secret isogeny.
      *
-     * <p>The algorithmic body is in {@link Dim2Id2IsoClapotis#idealToIsogenyClapotis}.
-     * The lvl1 precomp tables this body consumes are partially missing — see
-     * class-level javadoc.</p>
+     * <p>The algorithmic body is in {@link Dim2Id2IsoClapotis#idealToIsogenyClapotis};
+     * the lvl1 precomp tables it consumes are assembled by {@link #buildPrecomp()}.</p>
      *
      * @param basis     output: the canonical 2-power torsion basis on the
      *                  codomain curve.
      * @param codomain  output: the codomain curve E_A.
      * @param lideal    input: the secret left ideal.
-     * @return 1 on success.
-     * @throws UnsupportedOperationException while the lvl1 precomp transcription
-     *         is incomplete.
+     * @param random    source of randomness for the rejection-sampling steps;
+     *                  callers thread their own {@code SecureRandom} here (KAT
+     *                  replay supplies a deterministic one).
+     * @return 1 on success, 0 if the isogeny evaluation rejects.
+     * @throws UnsupportedOperationException defensive guard, normally
+     *         unreachable: only if the lvl1 precomp tables are unexpectedly
+     *         unpopulated.
      */
-    public static int arbitraryIsogenyEvaluation(EcBasis basis, EcCurve codomain,
-                                                 QuatLeftIdeal lideal)
-    {
-        return arbitraryIsogenyEvaluation(basis, codomain, lideal, new SecureRandom());
-    }
-
-    /** Variant with explicit RNG, used by tests / KAT replay. */
     public static int arbitraryIsogenyEvaluation(EcBasis basis, EcCurve codomain,
                                                  QuatLeftIdeal lideal, SecureRandom random)
     {
@@ -103,12 +99,10 @@ final class Dim2Id2IsoLvl1
         if (precomp == null)
         {
             throw new UnsupportedOperationException(
-                "dim2id2iso_arbitrary_isogeny_evaluation requires precomp tables not yet"
-                + " ported to Java: CURVES_WITH_ENDOMORPHISMS[1..6] (action matrices for"
-                + " alternate starting curves), ALTERNATE_CONNECTING_IDEALS,"
-                + " CONNECTING_IDEALS, and QuatRepresentIntegerParamsLvl1.INSTANCES[1..6]."
-                + " The clapotis algorithm body in Dim2Id2IsoClapotis is wired and"
-                + " unit-tested; once the precomp lands it will call through.");
+                "dim2id2iso_arbitrary_isogeny_evaluation: lvl1 precomp tables are"
+                + " unpopulated (CURVES_WITH_ENDOMORPHISMS alternate entries,"
+                + " ALTERNATE_CONNECTING_IDEALS, CONNECTING_IDEALS, or"
+                + " QuatRepresentIntegerParamsLvl1.INSTANCES) - this should not happen.");
         }
 
         Dim2Id2IsoClapotis.Result result =
