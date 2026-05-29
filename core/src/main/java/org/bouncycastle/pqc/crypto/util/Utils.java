@@ -41,6 +41,7 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
@@ -120,6 +121,9 @@ class Utils
 
     static final Map faestOids = new HashMap<ASN1ObjectIdentifier, FaestParameters>();
     static final Map faestParams = new HashMap<FaestParameters, ASN1ObjectIdentifier>();
+
+    static final Map sqisignOids = new HashMap<ASN1ObjectIdentifier, SQIsignParameters>();
+    static final Map sqisignParams = new HashMap<SQIsignParameters, ASN1ObjectIdentifier>();
 
     static final Map haetaeOids = new HashMap<ASN1ObjectIdentifier, HAETAEParameters>();
     static final Map haetaeParams = new HashMap<HAETAEParameters, ASN1ObjectIdentifier>();
@@ -634,6 +638,14 @@ class Utils
         faestParams.put(BCObjectIdentifiers.faest_em_256s, FaestParameters.faest_em_256s);
         faestParams.put(BCObjectIdentifiers.faest_em_256f, FaestParameters.faest_em_256f);
 
+        sqisignOids.put(SQIsignParameters.sqisign_lvl1, BCObjectIdentifiers.sqisign_lvl1);
+        sqisignOids.put(SQIsignParameters.sqisign_lvl3, BCObjectIdentifiers.sqisign_lvl3);
+        sqisignOids.put(SQIsignParameters.sqisign_lvl5, BCObjectIdentifiers.sqisign_lvl5);
+
+        sqisignParams.put(BCObjectIdentifiers.sqisign_lvl1, SQIsignParameters.sqisign_lvl1);
+        sqisignParams.put(BCObjectIdentifiers.sqisign_lvl3, SQIsignParameters.sqisign_lvl3);
+        sqisignParams.put(BCObjectIdentifiers.sqisign_lvl5, SQIsignParameters.sqisign_lvl5);
+
         haetaeOids.put(HAETAEParameters.haetae2, BCObjectIdentifiers.haetae2);
         haetaeOids.put(HAETAEParameters.haetae3, BCObjectIdentifiers.haetae3);
         haetaeOids.put(HAETAEParameters.haetae5, BCObjectIdentifiers.haetae5);
@@ -641,10 +653,6 @@ class Utils
         haetaeParams.put(BCObjectIdentifiers.haetae2, HAETAEParameters.haetae2);
         haetaeParams.put(BCObjectIdentifiers.haetae3, HAETAEParameters.haetae3);
         haetaeParams.put(BCObjectIdentifiers.haetae5, HAETAEParameters.haetae5);
-
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_768, BCObjectIdentifiers.ntruplus768);
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruplus864);
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruplus1152);
 
         hawkOids.put(HawkParameters.Hawk_256, BCObjectIdentifiers.hawk256);
         hawkOids.put(HawkParameters.Hawk_512, BCObjectIdentifiers.hawk512);
@@ -1086,6 +1094,16 @@ class Utils
     static FaestParameters faestParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (FaestParameters)faestParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier sqisignOidLookup(SQIsignParameters params)
+    {
+        return (ASN1ObjectIdentifier)sqisignOids.get(params);
+    }
+
+    static SQIsignParameters sqisignParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SQIsignParameters)sqisignParams.get(oid);
     }
 
     static ASN1ObjectIdentifier haetaeOidLookup(HAETAEParameters params)

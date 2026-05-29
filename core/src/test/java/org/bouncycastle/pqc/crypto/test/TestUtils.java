@@ -74,6 +74,86 @@ class TestUtils
         int getSessionKeySize();
     }
 
+    /**
+     * TEMPORARY (SQIsign port): keygen-only variant. Runs the same KAT-parsing
+     * loop as the full {@link #testTestVector(boolean, boolean, boolean, String,
+     * String[], SignerOperation)} but stops after the pk/sk equality check.
+     * Used while the SQIsign sign / verify engine is being ported piece by
+     * piece. Once the engine is complete, callers should switch to the full
+     * variant and this method can be removed.
+     */
+    public static void testTestVectorKeygenOnly(boolean sampleOnly, boolean enableFactory, String homeDir, String[] files, SignerOperation operation)
+        throws Exception
+    {
+        for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
+        {
+            String name = files[fileIndex];
+
+            InputStream src = TestResourceFinder.findTestResource(homeDir, name);
+            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+
+            String line;
+            HashMap<String, String> buf = new HashMap<String, String>();
+            TestSampler sampler = sampleOnly ? new TestSampler() : null;
+            while ((line = bin.readLine()) != null)
+            {
+                line = line.trim();
+
+                if (line.startsWith("#"))
+                {
+                    continue;
+                }
+                if (line.length() == 0)
+                {
+                    if (buf.size() > 0)
+                    {
+                        String count = (String)buf.get("count");
+                        if (sampler != null && sampler.skipTest(count))
+                        {
+                            continue;
+                        }
+
+                        byte[] seed = Hex.decode((String)buf.get("seed"));
+                        byte[] pk = Hex.decode((String)buf.get("pk"));
+                        byte[] sk = Hex.decode((String)buf.get("sk"));
+
+                        SecureRandom random = operation.getSecureRandom(seed);
+
+                        AsymmetricCipherKeyPairGenerator kpGen = operation.getAsymmetricCipherKeyPairGenerator(fileIndex, random);
+
+                        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+                        AsymmetricKeyParameter pubParams;
+                        CipherParameters privParams;
+                        if (enableFactory)
+                        {
+                            pubParams = PublicKeyFactory.createKey(
+                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
+                            privParams = PrivateKeyFactory.createKey(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
+                        }
+                        else
+                        {
+                            pubParams = kp.getPublic();
+                            privParams = kp.getPrivate();
+                        }
+
+                        Assert.assertTrue(name + ": public key", Arrays.areEqual(pk, operation.getPublicKeyEncoded(pubParams)));
+                        Assert.assertTrue(name + ": secret key", Arrays.areEqual(sk, operation.getPrivateKeyEncoded(privParams)));
+                        System.out.println("Count " + count + " keygen pass");
+                    }
+                    buf.clear();
+                    continue;
+                }
+
+                int a = line.indexOf("=");
+                if (a > -1)
+                {
+                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                }
+            }
+        }
+    }
+
     public static void testTestVector(boolean sampleOnly, boolean enableFactory, boolean isSigner, String homeDir, String[] files, SignerOperation operation)
         throws Exception
     {

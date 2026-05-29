@@ -83,6 +83,7 @@ public class AllTests
         suite.addTestSuite(HaetaeTest.class);
         suite.addTestSuite(UOVTest.class);
         suite.addTestSuite(MQOMTest.class);
+        suite.addTestSuite(SQIsignTest.class);
         suite.addTestSuite(HawkTest.class);
 
         return new BCTestSetup(suite);

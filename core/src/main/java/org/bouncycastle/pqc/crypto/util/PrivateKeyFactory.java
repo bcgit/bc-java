@@ -75,6 +75,8 @@ import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.BDS;
 import org.bouncycastle.pqc.crypto.xmss.BDSStateMap;
@@ -548,6 +550,12 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             FaestParameters faestParams = Utils.faestParamsLookup(algOID);
             return new FaestPrivateKeyParameters(faestParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.sqisign))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            SQIsignParameters sqisignParams = Utils.sqisignParamsLookup(algOID);
+            return new SQIsignPrivateKeyParameters(sqisignParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.haetae))
         {
