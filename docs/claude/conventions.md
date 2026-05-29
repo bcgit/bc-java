@@ -128,3 +128,10 @@ The rule applies symmetrically to URLs you delete: if you're removing the only c
 ## Code style
 
 Match the surrounding file: Allman braces (open brace on its own line for class / method / control structures), 4-space indentation, no tabs. Don't reformat untouched code while editing — diffs that include unrelated whitespace changes are noisy and slow review.
+
+The brace convention is **machine-enforced** on every module's `src/main` by the Gradle `checkstyle` plugin against `config/checkstyle/checkstyle.xml`:
+
+- `LeftCurly option="nl"` — every opening `{` on its own new line. This uses checkstyle's default token set, so it covers not just classes / methods / control structures (`if` / `for` / `while` / `try` / `switch` / …) but also **lambda bodies** — an inline `{` on a lambda trips it too. (Array initializers are *not* in the default set.)
+- `RightCurly option="alone"` — every closing `}` alone on its own line.
+
+It's scoped to `sourceSets = [project.sourceSets.main]` (test sources are not checked) at toolVersion 9.0. A violation reads like `[ERROR] …Foo.java:913:114: '{' at column 114 should be on a new line. [LeftCurly]`. Run `./gradlew checkstyleMain` (or `:<module>:checkstyleMain`) before pushing to catch these locally — CI fails the build on any violation. The legacy Ant builds (`ant/jdk18+.xml` etc.) run the same shared config and report with an `[ant:checkstyle]` prefix.

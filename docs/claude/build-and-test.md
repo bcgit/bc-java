@@ -7,7 +7,10 @@ The build is Gradle multi-module. JDK 21+ is required to drive Gradle — the Er
 ./gradlew :prov:compileJava :prov:compileTestJava    # quick compile-only check
 ./gradlew :prov:test --tests <fqcn>                  # one JUnit class
 ./gradlew -PexcludeTests=<glob> :prov:test           # exclude pattern
+./gradlew :prov:checkstyleMain                       # brace/style check (see conventions.md)
 ```
+
+Style (Allman braces etc.) is machine-enforced on `src/main` by checkstyle and fails CI — run `checkstyleMain` before pushing. See the Code style section in `conventions.md` for what the config enforces.
 
 `bc-test-data` (separate repo `bcgit/bc-test-data`) must be checked out for the full suite to pass. `TestResourceFinder.findTestResource(homeDir, fileName)` (six per-module copies under `<module>/src/test/java/org/bouncycastle/test/`) resolves the bc-test-data root in this order:
 
