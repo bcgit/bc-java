@@ -1,6 +1,7 @@
 package org.bouncycastle.cms.test;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -142,6 +143,9 @@ public class NewSignedDataTest
 
     private static KeyPair         _signEcGostKP;
     private static X509Certificate _signEcGostCert;
+
+    private static KeyPair         _signEcGost2012_256KP;
+    private static X509Certificate _signEcGost2012_256Cert;
 
     private static KeyPair         _signDsaKP;
     private static X509Certificate _signDsaCert;
@@ -867,6 +871,9 @@ public class NewSignedDataTest
 
             _signEcGostKP = CMSTestUtil.makeEcGostKeyPair();
             _signEcGostCert = CMSTestUtil.makeCertificate(_signEcGostKP, _signDN, _origKP, _origDN);
+
+            _signEcGost2012_256KP = CMSTestUtil.makeEcGost2012_256KeyPair();
+            _signEcGost2012_256Cert = CMSTestUtil.makeCertificate(_signEcGost2012_256KP, _signDN, _origKP, _origDN);
 
             _signEd25519KP   = CMSTestUtil.makeEd25519KeyPair();
             _signEd25519Cert = CMSTestUtil.makeCertificate(_signEd25519KP, _signDN, _origKP, _origDN);
@@ -2217,6 +2224,72 @@ public class NewSignedDataTest
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert)));
         }
+    }
+
+    /**
+     * Regression test for https://github.com/bcgit/bc-java/issues/1501 - a
+     * GOST3411-2012-256WITHECGOST3410-2012-256 direct signature (no signed
+     * attributes) read back through CMSSignedDataParser must verify. The
+     * parser path leaves SignerInformation with resultDigest pre-computed
+     * and content == null, so doVerify can only succeed via the
+     * RawContentVerifier branch — exercises the BC registration of
+     * NONEWITHECGOST3410-2012-256.
+     */
+    public void testEcGost2012_256NoAttributesEncapsulatedViaParser()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        certList.add(_signEcGost2012_256Cert);
+        Store certStore = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        ContentSigner signer = new JcaContentSignerBuilder("GOST3411-2012-256WITHECGOST3410-2012-256")
+            .setProvider(BC).build(_signEcGost2012_256KP.getPrivate());
+        gen.addSignerInfoGenerator(
+            new JcaSignerInfoGeneratorBuilder(
+                new JcaDigestCalculatorProviderBuilder().setProvider(BC).build())
+                .setDirectSignature(true)
+                .build(signer, _signEcGost2012_256Cert));
+        gen.addCertificates(certStore);
+
+        CMSSignedData signedData = gen.generate(new CMSProcessableByteArray(new byte[]{1, 2, 3, 4, 5}), true);
+
+        // Sanity: signed-attribute set must be absent on the direct signature.
+        SignerInformation built = (SignerInformation)signedData.getSignerInfos().getSigners().iterator().next();
+        assertNull(built.getSignedAttributes());
+
+        byte[] encoded = signedData.getEncoded();
+
+        // control: the non-parser path was never affected
+        assertTrue(verifyAllSigners(new CMSSignedData(encoded)));
+
+        // regression: the parser path leaves content == null with resultDigest pre-computed
+        CMSSignedDataParser parser = new CMSSignedDataParser(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(),
+            new ByteArrayInputStream(encoded));
+        parser.getSignedContent().drain();
+        assertTrue(verifyAllSigners(parser.getSignerInfos(), parser.getCertificates()));
+    }
+
+    private boolean verifyAllSigners(CMSSignedData data)
+        throws Exception
+    {
+        return verifyAllSigners(data.getSignerInfos(), data.getCertificates());
+    }
+
+    private boolean verifyAllSigners(SignerInformationStore signers, Store certs)
+        throws Exception
+    {
+        for (Iterator it = signers.getSigners().iterator(); it.hasNext();)
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            X509CertificateHolder holder = (X509CertificateHolder)certs.getMatches(signer.getSID()).iterator().next();
+            if (!signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(holder)))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void testSHA1WithRSACounterSignature()
