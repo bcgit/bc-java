@@ -2,8 +2,6 @@ package org.bouncycastle.pqc.crypto.sqisign;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.util.Properties;
-
 /**
  * GF(p) arithmetic for SQIsign level 1, where p = 5 * 2^248 - 1 (251-bit
  * prime). Java-side mirror of {@code src/gf/ref/lvl1/fp_p5248_64.c} from the
@@ -20,17 +18,6 @@ import org.bouncycastle.util.Properties;
  * representation that flows through the SQIsign serialised secret key and
  * signature, so any caller observing field elements only at the encoding
  * boundary is identical to the C reference.
- * </p>
- * <p>
- * <b>Opt-in limb-Montgomery dispatch.</b> When the system property
- * {@link Properties#SQISIGN_FP_LIMBS} is set to {@code "true"}, the hot
- * operations {@link #mul} and {@link #sqr} dispatch through
- * {@link FpLvl1Mont}'s limb-array CIOS Montgomery implementation, with
- * to-/from-Montgomery conversion at each call site. Output is byte-identical
- * to the BigInteger path. The per-call conversion overhead currently dominates
- * the limb-Mont speedup; the path is wired here so that KAT byte-identity can
- * be verified end-to-end before the storage representation is migrated to
- * Montgomery form across {@code Fp} / {@code Fp2} (Phase C). Default off.
  * </p>
  */
 final class FpLvl1
@@ -54,9 +41,6 @@ final class FpLvl1
 
     /** Exponent (p-3)/4 used in {@code progenitor} (modpro). */
     private static final BigInteger P_MINUS_3_DIV_4 = P.subtract(BigInteger.valueOf(3)).shiftRight(2);
-
-    /** Exponent p-2 used by Fermat-based inversion: {@code a^(p-2) ≡ a^{-1} mod p}. */
-    private static final BigInteger P_MINUS_2 = P.subtract(BigInteger.valueOf(2));
 
     // Barrett reduction precomputations. For x in [0, p^2), one Barrett step
     // gives q = (x * BARRETT_MU) >> BARRETT_SHIFT, r = x - q*p ∈ [0, 2p).
@@ -98,15 +82,6 @@ final class FpLvl1
         return r;
     }
 
-    /**
-     * Read at class-init from {@link Properties#SQISIGN_FP_LIMBS}. When
-     * {@code true}, {@link #mul} and {@link #sqr} dispatch through
-     * {@link FpLvl1Mont}'s limb-array CIOS path; otherwise the existing
-     * BigInteger-Barrett path is used. Static-final-once read keeps the
-     * dispatch branch predictable for the JIT.
-     */
-    static final boolean LIMBS_ENABLED = Properties.isOverrideSet(Properties.SQISIGN_FP_LIMBS);
-
     private FpLvl1()
     {
     }
@@ -146,91 +121,16 @@ final class FpLvl1
         Fp.copy(out, a);
     }
 
-    /**
-     * Phase I dispatch: true on Java 9+ when limbs mode is on. Routes
-     * {@link #mul} / {@link #sqr} / {@link #add} / {@link #sub} / {@link #neg}
-     * and {@link #ensureMont} through the 64-bit {@link FpLvl1Mont64} kernel
-     * (Math.multiplyHigh-based CIOS) instead of the 32-bit {@link FpLvl1Mont}.
-     */
-    private static final boolean USE_64 = FpMontHelper.USE_HW_MONT64;
-
-    /**
-     * Write a canonical {@link BigInteger} result into {@code out.v} for
-     * a BigInteger-path op and mark the Montgomery cache stale. The
-     * result is canonical, so {@code vInSync=true}; mont needs a fresh
-     * toMont next time it's consumed by a Mont-domain op.
-     */
+    /** Store a canonical reduced result into {@code out}. */
     private static void writeV(Fp out, BigInteger r)
     {
         out.v = r;
-        out.vInSync = true;
-        if (LIMBS_ENABLED)
-        {
-            out.montInSync = false;
-            out.level = 1;
-        }
-    }
-
-    /**
-     * Mark a Mont-domain result. Cell's truth is in {@code mont}; v will
-     * be materialised lazily by {@link Fp#ensureV} when read by
-     * level-independent code (or by another FpLvl1 op that needs the
-     * BigInteger).
-     */
-    private static void writeMont(Fp out)
-    {
-        out.montInSync = true;
-        out.vInSync = false;
-        out.level = 1;
-    }
-
-    /**
-     * Re-Montgomery-ify {@code x.mont} from {@code x.v} if the cache is
-     * stale. By invariant, when {@code montInSync} is false the v is in
-     * sync (some BigInteger-path op produced it). No-op when
-     * {@link #LIMBS_ENABLED} is {@code false}.
-     */
-    private static void ensureMont(Fp x)
-    {
-        if (LIMBS_ENABLED && !x.montInSync)
-        {
-            // v is canonical here by the dual-rep invariant. Convert to
-            // whichever mont representation the Phase I path is using.
-            if (USE_64)
-            {
-                FpLvl1Mont64.toLimbs(x.v, x.canonScratch64);
-                FpLvl1Mont64.toMont(x.mont64, x.canonScratch64);
-            }
-            else
-            {
-                FpLvl1Mont.toLimbs(x.v, x.canonScratch);
-                FpLvl1Mont.toMont(x.mont, x.canonScratch);
-            }
-            x.montInSync = true;
-            x.level = 1;
-        }
     }
 
     // ---- arithmetic ---------------------------------------------------------
 
     public static void add(Fp out, Fp a, Fp b)
     {
-        if (LIMBS_ENABLED)
-        {
-            // (aR + bR) mod p = (a+b)R mod p — addModP works on Mont form too.
-            ensureMont(a);
-            ensureMont(b);
-            if (USE_64)
-            {
-                FpLvl1Mont64.addModP(out.mont64, a.mont64, b.mont64);
-            }
-            else
-            {
-                FpLvl1Mont.addModP(out.mont, a.mont, b.mont);
-            }
-            writeMont(out);
-            return;
-        }
         BigInteger r = a.v.add(b.v);
         if (r.compareTo(P) >= 0)
         {
@@ -241,21 +141,6 @@ final class FpLvl1
 
     public static void sub(Fp out, Fp a, Fp b)
     {
-        if (LIMBS_ENABLED)
-        {
-            ensureMont(a);
-            ensureMont(b);
-            if (USE_64)
-            {
-                FpLvl1Mont64.subModP(out.mont64, a.mont64, b.mont64);
-            }
-            else
-            {
-                FpLvl1Mont.subModP(out.mont, a.mont, b.mont);
-            }
-            writeMont(out);
-            return;
-        }
         BigInteger r = a.v.subtract(b.v);
         if (r.signum() < 0)
         {
@@ -266,108 +151,37 @@ final class FpLvl1
 
     public static void neg(Fp out, Fp a)
     {
-        if (LIMBS_ENABLED)
-        {
-            // -a in Mont domain: subModP(ZEROS, a).
-            ensureMont(a);
-            if (USE_64)
-            {
-                FpLvl1Mont64.subModP(out.mont64, FpMontHelper64.ZEROS_LONG, a.mont64);
-            }
-            else
-            {
-                FpLvl1Mont.subModP(out.mont, FpMontHelper.ZEROS, a.mont);
-            }
-            writeMont(out);
-            return;
-        }
-        Fp.ensureV(a);
         writeV(out, a.v.signum() == 0 ? BigInteger.ZERO : P.subtract(a.v));
     }
 
     public static void mul(Fp out, Fp a, Fp b)
     {
-        if (LIMBS_ENABLED)
-        {
-            ensureMont(a);
-            ensureMont(b);
-            if (USE_64)
-            {
-                FpLvl1Mont64.mulMont(out.mont64, a.mont64, b.mont64);
-            }
-            else
-            {
-                FpLvl1Mont.mulMont(out.mont, a.mont, b.mont);
-            }
-            writeMont(out);
-            return;
-        }
-        out.v = barrettMod(a.v.multiply(b.v));
-        out.vInSync = true;
+        writeV(out, barrettMod(a.v.multiply(b.v)));
     }
 
     public static void sqr(Fp out, Fp a)
     {
-        if (LIMBS_ENABLED)
-        {
-            ensureMont(a);
-            if (USE_64)
-            {
-                FpLvl1Mont64.sqrMont(out.mont64, a.mont64);
-            }
-            else
-            {
-                FpLvl1Mont.sqrMont(out.mont, a.mont);
-            }
-            writeMont(out);
-            return;
-        }
-        out.v = barrettMod(a.v.multiply(a.v));
-        out.vInSync = true;
-    }
-
-    /**
-     * Phase J #4: lazy-reduction GF(p²) multiply for the 64-bit path. Drives
-     * {@link FpLvl1Mont64#fp2Mul} on the cells' Mont-form limb arrays, doing
-     * the whole Karatsuba with only two Montgomery reductions instead of the
-     * three that {@code Fp2Lvl1.mul}'s separate {@code FpLvl1.mul}s incur.
-     * Output cells may alias input cells (the kernel forms all products before
-     * writing either output). Only called when {@link #USE_64} holds.
-     */
-    static void fp2MulLazy(Fp xRe, Fp xIm, Fp yRe, Fp yIm, Fp zRe, Fp zIm)
-    {
-        ensureMont(yRe);
-        ensureMont(yIm);
-        ensureMont(zRe);
-        ensureMont(zIm);
-        FpLvl1Mont64.fp2Mul(xRe.mont64, xIm.mont64,
-            yRe.mont64, yIm.mont64, zRe.mont64, zIm.mont64);
-        writeMont(xRe);
-        writeMont(xIm);
+        writeV(out, barrettMod(a.v.multiply(a.v)));
     }
 
     /** Multiply by a small (unsigned) integer. */
     public static void mulSmall(Fp out, Fp a, long val)
     {
-        Fp.ensureV(a);
         writeV(out, barrettMod(a.v.multiply(BigInteger.valueOf(val))));
     }
 
     public static void half(Fp out, Fp a)
     {
-        Fp.ensureV(a);
         writeV(out, barrettMod(a.v.multiply(TWO_INV)));
     }
 
     public static void div3(Fp out, Fp a)
     {
-        Fp.ensureV(a);
         writeV(out, barrettMod(a.v.multiply(THREE_INV)));
     }
 
     public static void inv(Fp x)
     {
-        Fp.ensureV(x);
         if (x.v.signum() == 0)
         {
             // C reference returns 0; modPow with negative exponent throws.
@@ -380,27 +194,9 @@ final class FpLvl1
         writeV(x, x.v.modInverse(P));
     }
 
-    /*
-      Compute a^((p+1)/4) mod p. For lvl1, p = 5·2^248 − 1 with p ≡ 3 (mod 4)
-      (since 5·2^248 ≡ 0 (mod 4), so p ≡ -1 ≡ 3 (mod 4)), so a^((p+1)/4) is the
-      square root of a when a is a quadratic residue. This mirrors the
-      "progenitor" used by {@code fp_exp3div4}, but our concrete form differs
-      from C's progenitor (which is a^((p-3)/4)). The C code feeds the
-      progenitor into {@code modsqrt}, which multiplies it by a to recover
-      a^((p+1)/4) — so this function returns the same square-root candidate
-      directly. Callers downstream of {@code fp_exp3div4} relying on the raw
-      progenitor will need to follow up with {@link #mul} by a if migrating
-      one-to-one, but in practice all consumers of progenitor + a square root.
-
-      <p>The interpretation here follows the public-API contract documented
-      in {@code fp.h}; if a bytecode-equal port of the progenitor itself is
-      needed (e.g. for an intermediate-state comparison against the C
-      reference) use {@link #progenitor} instead.</p>
-     */
     /** C reference {@code modpro} — exponent (p - 3)/4. */
     public static void progenitor(Fp out, Fp a)
     {
-        Fp.ensureV(a);
         writeV(out, a.v.modPow(P_MINUS_3_DIV_4, P));
     }
 
@@ -411,7 +207,6 @@ final class FpLvl1
      */
     public static void sqrt(Fp a)
     {
-        Fp.ensureV(a);
         writeV(a, a.v.modPow(P_PLUS_1_DIV_4, P));
     }
 
@@ -424,7 +219,6 @@ final class FpLvl1
      */
     public static int isSquare(Fp a)
     {
-        Fp.ensureV(a);
         if (a.v.signum() == 0)
         {
             return 0xFFFFFFFF;
@@ -436,8 +230,7 @@ final class FpLvl1
     /**
      * @return {@code 0xFFFFFFFF} when {@code a == b}, {@code 0} otherwise.
      *         Matches C {@code fp_is_equal}. Delegates to the
-     *         level-independent {@link Fp#isEqual} which uses the
-     *         representation already in sync.
+     *         level-independent {@link Fp#isEqual}.
      */
     public static int isEqual(Fp a, Fp b)
     {
@@ -484,7 +277,6 @@ final class FpLvl1
      */
     public static void encode(byte[] dst, int off, Fp a)
     {
-        Fp.ensureV(a);
         BigInteger v = a.v;
         for (int i = 0; i < ENCODED_BYTES; i++)
         {

@@ -72,11 +72,6 @@ final class GfFieldLvl3
 
     public void fp2Mul(Fp2 x, Fp2 y, Fp2 z)
     {
-        if (FpMontHelper.USE_LAZY_FP2)
-        {
-            FpLvl3.fp2MulLazy(x.re, x.im, y.re, y.im, z.re, z.im);
-            return;
-        }
         Fp2Lvl3.mul(x, y, z);
     }
 

@@ -102,8 +102,6 @@ final class Fp2
     /** 0xFFFFFFFF if {@code a == 1}, else 0. */
     public static int isOne(Fp2 a)
     {
-        Fp.ensureV(a.re);
-        Fp.ensureV(a.im);
         return (a.re.v.equals(BigInteger.ONE) && a.im.v.signum() == 0) ? 0xFFFFFFFF : 0;
     }
 }
