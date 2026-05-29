@@ -131,6 +131,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.sdith;
     exports org.bouncycastle.pqc.crypto.snova;
     exports org.bouncycastle.pqc.crypto.faest;
+    exports org.bouncycastle.pqc.crypto.sqisign;
     exports org.bouncycastle.pqc.crypto.haetae;
     exports org.bouncycastle.pqc.crypto.hawk;
     exports org.bouncycastle.pqc.crypto.mqom;

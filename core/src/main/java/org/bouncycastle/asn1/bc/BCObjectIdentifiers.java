@@ -886,6 +886,18 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier uov_V_pkc_skc    = uov.branch("12");
 
     /**
+     * SQIsign (Short Quaternion and Isogeny Signature). BC-allocated arc
+     * pending NIST OID assignment from the additional-signatures round of
+     * NIST's PQC standardisation. Three child OIDs follow the canonical
+     * NIST-API parameter-set naming {@code sqisign_lvl&lt;n&gt;} with
+     * n in {1, 3, 5}.
+     */
+    ASN1ObjectIdentifier sqisign       = bc_sig.branch("19");
+    ASN1ObjectIdentifier sqisign_lvl1  = sqisign.branch("1");
+    ASN1ObjectIdentifier sqisign_lvl3  = sqisign.branch("2");
+    ASN1ObjectIdentifier sqisign_lvl5  = sqisign.branch("3");
+
+    /**
      * HAETAE &mdash; lattice-based signature scheme submitted to the
      * KpqC (Korean Post-Quantum Cryptography) standardisation effort. See
      * <a href="https://kpqc.or.kr">KpqC</a> and the HAETAE team's

@@ -69,6 +69,8 @@ import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
@@ -340,6 +342,10 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.faest_em_192f, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_em_256s, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_em_256f, new FaestConverter());
+
+        converters.put(BCObjectIdentifiers.sqisign_lvl1, new SQIsignConverter());
+        converters.put(BCObjectIdentifiers.sqisign_lvl3, new SQIsignConverter());
+        converters.put(BCObjectIdentifiers.sqisign_lvl5, new SQIsignConverter());
 
         converters.put(BCObjectIdentifiers.haetae2, new HaetaeConverter());
         converters.put(BCObjectIdentifiers.haetae3, new HaetaeConverter());
@@ -995,6 +1001,20 @@ public class PublicKeyFactory
             SnovaParameters snovaParams = Utils.snovaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new SnovaPublicKeyParameters(snovaParams, keyEnc);
+        }
+    }
+
+    private static class SQIsignConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            SQIsignParameters sqisignParams = Utils.sqisignParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new SQIsignPublicKeyParameters(sqisignParams, keyEnc);
         }
     }
 
