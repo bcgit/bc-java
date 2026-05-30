@@ -33,6 +33,7 @@ import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.faest.FaestKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.qruov.QRUOVKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.haetae.HaetaeKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hawk.HawkKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
@@ -529,6 +530,19 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.faest_em_192f, new FaestKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.faest_em_256s, new FaestKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.faest_em_256f, new FaestKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.qruov1q127L3v156m54, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov1q31L3v165m60, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov1q31L10v600m70, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov1q7L10v740m100, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov3q127L3v228m78, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov3q31L3v246m87, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov3q31L10v890m100, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov3q7L10v1100m140, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov5q127L3v306m105, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov5q31L3v324m114, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov5q31L10v1120m120, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov5q7L10v1490m190, new QRUOVKeyFactorySpi());
 
         addKeyInfoConverter(BCObjectIdentifiers.haetae2, new HaetaeKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.haetae3, new HaetaeKeyFactorySpi());

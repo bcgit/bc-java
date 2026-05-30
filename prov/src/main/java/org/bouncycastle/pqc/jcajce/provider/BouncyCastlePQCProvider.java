@@ -41,7 +41,7 @@ public class BouncyCastlePQCProvider
             "CMCE", "Frodo", "SABER", "Picnic", "NTRU", "Falcon", "Kyber",
             "Dilithium", "NTRUPrime", "BIKE", "HQC", "Rainbow",
             "Mayo", "Snova",
-            "NTRUPlus", "Faest", "Haetae", "UOV", "MQOM", "SQIsign", "Hawk", "SDitH"
+            "NTRUPlus", "Faest",  "QRUOV", "Haetae", "UOV", "MQOM", "SQIsign", "Hawk", "SDitH"
         };
 
     /**
