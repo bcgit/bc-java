@@ -14,6 +14,13 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.spec.ECGenParameterSpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.jcajce.provider.asymmetric.ecgost12.BCECGOST3410_2012PublicKey;
+import org.bouncycastle.jcajce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -58,6 +65,53 @@ public class GOST3410KeyPairTest
         kp = keyPair.generateKeyPair();
 
         testWrong512(kp);
+    }
+
+    /**
+     * github #611: an ECGOST3410-2012 key generated on one of the (256-bit) GOST R 34.10-2001
+     * curves must carry the GOST R 34.11-2012-256 digest OID, not the legacy GOST R 34.11-94 one.
+     */
+    private void gost2012DigestOidTest()
+        throws Exception
+    {
+        // 2001-named curves are valid for GOST-2012-256 and must report the 2012-256 digest.
+        checkDigestOid(new GOST3410ParameterSpec("GostR3410-2001-CryptoPro-A"),
+            RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+        checkDigestOid(new ECGenParameterSpec("GostR3410-2001-CryptoPro-A"),
+            RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+        checkDigestOid(new ECGenParameterSpec("GostR3410-2001-CryptoPro-XchA"),
+            RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+
+        // the native 2012 curves must keep reporting their own digest OIDs unchanged.
+        checkDigestOid(new ECGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"),
+            RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+        checkDigestOid(new ECGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"),
+            RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
+    }
+
+    private void checkDigestOid(java.security.spec.AlgorithmParameterSpec spec, ASN1ObjectIdentifier expected)
+        throws Exception
+    {
+        KeyPairGenerator keyPair = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
+
+        keyPair.initialize(spec);
+
+        KeyPair kp = keyPair.generateKeyPair();
+
+        ASN1ObjectIdentifier pubDigest = ((BCECGOST3410_2012PublicKey)kp.getPublic())
+            .getGostParams().getDigestParamSet();
+        isTrue("public key digest OID mismatch for " + spec + ": " + pubDigest, expected.equals(pubDigest));
+
+        // the digest OID must also survive encoding of both the public and the private key.
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
+        ASN1ObjectIdentifier encPubDigest = GOST3410PublicKeyAlgParameters.getInstance(
+            spki.getAlgorithm().getParameters()).getDigestParamSet();
+        isTrue("encoded public key digest OID mismatch: " + encPubDigest, expected.equals(encPubDigest));
+
+        PrivateKeyInfo pki = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
+        ASN1ObjectIdentifier encPrivDigest = GOST3410PublicKeyAlgParameters.getInstance(
+            pki.getPrivateKeyAlgorithm().getParameters()).getDigestParamSet();
+        isTrue("encoded private key digest OID mismatch: " + encPrivDigest, expected.equals(encPrivDigest));
     }
 
     private void testWrong512(KeyPair kp)
@@ -155,6 +209,7 @@ public class GOST3410KeyPairTest
         throws Exception
     {
         gost2012MismatchTest();
+        gost2012DigestOidTest();
     }
 
     protected byte[] toByteArray(String input)
