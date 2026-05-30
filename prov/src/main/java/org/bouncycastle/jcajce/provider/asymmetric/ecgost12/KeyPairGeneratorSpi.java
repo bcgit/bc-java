@@ -9,6 +9,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -169,10 +170,20 @@ public class KeyPairGeneratorSpi
             ecP.getH(),
             ecP.getSeed());
 
+        // An ECGOST3410-2012 key must use a GOST R 34.11-2012 digest. The GOST3410ParameterSpec(String)
+        // constructor defaults the (256-bit) GOST R 34.10-2001 curves to the legacy GOST R 34.11-94 digest
+        // OID, which is incorrect for a 2012 key - those curves are valid for GOST-2012-256, so remap the
+        // 94 digest to id-tc26-gost3411-12-256 here (github #611).
+        ASN1ObjectIdentifier digestParamSet = gostParams.getDigestParamSet();
+        if (CryptoProObjectIdentifiers.gostR3411_94_CryptoProParamSet.equals(digestParamSet))
+        {
+            digestParamSet = RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256;
+        }
+
         param = new ECKeyGenerationParameters(
             new ECGOST3410Parameters(
                 new ECNamedDomainParameters(gostParams.getPublicKeyParamSet(), ecP),
-                gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(), gostParams.getEncryptionParamSet()), random);
+                gostParams.getPublicKeyParamSet(), digestParamSet, gostParams.getEncryptionParamSet()), random);
 
         engine.init(param);
         initialised = true;

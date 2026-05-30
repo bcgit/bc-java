@@ -24,6 +24,7 @@ public class AllTests
         suite.addTestSuite(RevocationTest.class);
         suite.addTestSuite(CheckNameConstraintsTest.class);
         suite.addTestSuite(IDPRelativeNameTest.class);
+        suite.addTestSuite(QcStatementReviewerTest.class);
 
         return new BCTestSetup(suite);
     }
