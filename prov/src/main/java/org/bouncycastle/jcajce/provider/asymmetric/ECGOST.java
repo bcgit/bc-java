@@ -138,6 +138,28 @@ public class ECGOST
             provider.addAlgorithm("Alg.Alias.KeyAgreement." + RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512, "ECGOST3410-2012-512");
             provider.addAlgorithm("Alg.Alias.KeyAgreement." + RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256, "ECGOST3410-2012-256");
             provider.addAlgorithm("Alg.Alias.KeyAgreement." + RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512, "ECGOST3410-2012-512");
+
+            // ========= GOST34.10 2018 aliases
+            //
+            // GOST 34.10-2018 is the interstate (CIS/EAEU) re-adoption of GOST R 34.10-2012;
+            // it is algorithmically identical and uses the same TC26 OIDs, so the "-2018" names
+            // are registered purely as aliases onto the existing 2012 implementations.
+
+            provider.addAlgorithm("Alg.Alias.KeyFactory.GOST-3410-2018", "ECGOST3410-2012");
+            provider.addAlgorithm("Alg.Alias.KeyFactory.ECGOST-3410-2018", "ECGOST3410-2012");
+            provider.addAlgorithm("Alg.Alias.KeyFactory.ECGOST3410-2018", "ECGOST3410-2012");
+
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.GOST-3410-2018", "ECGOST3410-2012");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.ECGOST3410-2018", "ECGOST3410-2012");
+
+            provider.addAlgorithm("Alg.Alias.Signature.ECGOST3410-2018-256", "ECGOST3410-2012-256");
+            provider.addAlgorithm("Alg.Alias.Signature.GOST-3410-2018-256", "ECGOST3410-2012-256");
+
+            provider.addAlgorithm("Alg.Alias.Signature.ECGOST3410-2018-512", "ECGOST3410-2012-512");
+            provider.addAlgorithm("Alg.Alias.Signature.GOST-3410-2018-512", "ECGOST3410-2012-512");
+
+            provider.addAlgorithm("Alg.Alias.KeyAgreement.ECGOST3410-2018-256", "ECGOST3410-2012-256");
+            provider.addAlgorithm("Alg.Alias.KeyAgreement.ECGOST3410-2018-512", "ECGOST3410-2012-512");
         }
     }
 }
