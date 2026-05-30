@@ -38,3 +38,17 @@ codesigning.jks
 /prov/src/main/core/
 
 bc-build.user.properties
+
+# macOS Finder metadata
+.DS_Store
+
+# Local Claude Code tooling state (skills, settings, etc.)
+.claude/
+.claude 2/
+
+# Stray test-run output left at the top of modules
+/example.p12
+/mail/*.p12
+/mail/*.message
+/prov/ells
+/tls/ells
