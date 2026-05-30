@@ -53,6 +53,7 @@ public class AllTests
         suite.addTestSuite(SnovaTest.class);
         suite.addTestSuite(FaestKeyPairAndSignerTest.class);
         suite.addTestSuite(FaestKatTest.class);
+        suite.addTestSuite(QRUOVTest.class);
         suite.addTestSuite(HawkTest.class);
         suite.addTestSuite(UOVTest.class);
         suite.addTestSuite(MQOMTest.class);
