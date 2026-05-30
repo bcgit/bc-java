@@ -161,11 +161,9 @@ public abstract class SLHDSAEngine
 
         public byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1)
         {
-            byte[] compressedADRS = compressedADRS(adrs);
-
             ((Memoable)sha256).reset(sha256Memo);
 
-            sha256.update(compressedADRS, 0, compressedADRS.length);
+            updateCompressedADRS(sha256, adrs);
             sha256.update(m1, 0, m1.length);
             sha256.doFinal(sha256Buf, 0);
 
@@ -174,11 +172,9 @@ public abstract class SLHDSAEngine
 
         public byte[] H(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2)
         {
-            byte[] compressedADRS = compressedADRS(adrs);
-
             ((Memoable)msgDigest).reset(msgMemo);
 
-            msgDigest.update(compressedADRS, 0, compressedADRS.length);
+            updateCompressedADRS(msgDigest, adrs);
 
             msgDigest.update(m1, 0, m1.length);
             msgDigest.update(m2, 0, m2.length);
@@ -229,11 +225,9 @@ public abstract class SLHDSAEngine
 
         public byte[] T_l(byte[] pkSeed, ADRS adrs, byte[] m)
         {
-            byte[] compressedADRS = compressedADRS(adrs);
-
             ((Memoable)msgDigest).reset(msgMemo);
 
-            msgDigest.update(compressedADRS, 0, compressedADRS.length);
+            updateCompressedADRS(msgDigest, adrs);
             msgDigest.update(m, 0, m.length);
             msgDigest.doFinal(msgDigestBuf, 0);
 
@@ -246,9 +240,7 @@ public abstract class SLHDSAEngine
 
             ((Memoable)sha256).reset(sha256Memo);
 
-            byte[] compressedADRS = compressedADRS(adrs);
-
-            sha256.update(compressedADRS, 0, compressedADRS.length);
+            updateCompressedADRS(sha256, adrs);
             sha256.update(skSeed, 0, skSeed.length);
             sha256.doFinal(sha256Buf, 0);
 
@@ -269,15 +261,16 @@ public abstract class SLHDSAEngine
             return Arrays.copyOfRange(hmacBuf, 0, N);
         }
 
-        private byte[] compressedADRS(ADRS adrs)
+        // Absorbs the 22-byte compressed ADRS directly into the digest, avoiding the
+        // per-call byte[22] scratch + arraycopies the explicit compressedADRS() build used.
+        // Byte-identical: the same four ranges are absorbed in the same order.
+        private void updateCompressedADRS(Digest digest, ADRS adrs)
         {
-            byte[] rv = new byte[22];
-            System.arraycopy(adrs.value, ADRS.OFFSET_LAYER + 3, rv, 0, 1); // LSB layer address
-            System.arraycopy(adrs.value, ADRS.OFFSET_TREE + 4, rv, 1, 8); // LS 8 bytes Tree address
-            System.arraycopy(adrs.value, ADRS.OFFSET_TYPE + 3, rv, 9, 1); // LSB type
-            System.arraycopy(adrs.value, 20, rv, 10, 12);
-
-            return rv;
+            byte[] value = adrs.value;
+            digest.update(value, ADRS.OFFSET_LAYER + 3, 1); // LSB layer address
+            digest.update(value, ADRS.OFFSET_TREE + 4, 8);  // LS 8 bytes Tree address
+            digest.update(value, ADRS.OFFSET_TYPE + 3, 1);  // LSB type
+            digest.update(value, 20, 12);
         }
 
         protected byte[] bitmask(byte[] key, byte[] m)
