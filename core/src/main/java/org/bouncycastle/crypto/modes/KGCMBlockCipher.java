@@ -19,7 +19,16 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
- * Implementation of DSTU7624 GCM mode
+ * Implementation of DSTU7624 GCM mode.
+ * <p>
+ * <b>Partial-block / interop caveat:</b> associated data and payload whose length is not a multiple
+ * of the underlying block size are authenticated following the generic GCM/GMAC construction
+ * (NIST SP 800-38D): the trailing partial block is zero-padded for the GF(2^n) multiplication, and
+ * the true bit-length is bound by the trailing lambda field. DSTU 7624:2014 does not publish a
+ * partial-block GCM/GMAC test vector, so this behaviour is verified by round-trip self-consistency
+ * only and has <b>not</b> been confirmed against an independent conformant DSTU 7624 implementation.
+ * See github #287.
+ * </p>
  */
 public class KGCMBlockCipher
     implements AEADBlockCipher
@@ -165,11 +174,19 @@ public class KGCMBlockCipher
     private void processAAD(byte[] authText, int authOff, int len)
     {
         int pos = authOff, end = authOff + len;
-        while (pos < end)
+        while (end - pos >= blockSize)
         {
             xorWithInput(b, authText, pos);
             multiplier.multiplyH(b);
             pos += blockSize;
+        }
+        if (pos < end)
+        {
+            // trailing partial block: zero-pad to a full block (the message length is bound by the
+            // lambda field in calculateMac, so the padding is unambiguous). See the interop caveat
+            // in the class javadoc (github #287).
+            xorPartialWithInput(b, authText, pos, end - pos);
+            multiplier.multiplyH(b);
         }
     }
 
@@ -326,11 +343,18 @@ public class KGCMBlockCipher
     private void calculateMac(byte[] input, int inOff, int len, int lenAAD)
     {
         int pos = inOff, end = inOff + len;
-        while (pos < end)
+        while (end - pos >= blockSize)
         {
             xorWithInput(b, input, pos);
             multiplier.multiplyH(b);
             pos += blockSize;
+        }
+        if (pos < end)
+        {
+            // trailing partial block: zero-pad to a full block (length bound by lambda_c below).
+            // See the interop caveat in the class javadoc (github #287).
+            xorPartialWithInput(b, input, pos, end - pos);
+            multiplier.multiplyH(b);
         }
 
         long lambda_o = (lenAAD & 0xFFFFFFFFL) << 3;
@@ -355,6 +379,15 @@ public class KGCMBlockCipher
             z[i] ^= Pack.littleEndianToLong(buf, off);
             off += 8;
         }
+    }
+
+    private void xorPartialWithInput(long[] z, byte[] buf, int off, int len)
+    {
+        // copy the trailing len (< blockSize) bytes into a zeroed full block so the read never
+        // overruns the supplied buffer (which is not guaranteed zero past its valid length).
+        byte[] block = new byte[blockSize];
+        System.arraycopy(buf, off, block, 0, len);
+        xorWithInput(z, block, 0);
     }
 
     private static class ExposedByteArrayOutputStream

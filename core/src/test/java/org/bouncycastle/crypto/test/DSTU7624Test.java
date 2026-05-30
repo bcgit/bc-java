@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.engines.DSTU7624WrapEngine;
 import org.bouncycastle.crypto.macs.DSTU7624Mac;
@@ -601,6 +602,72 @@ public class DSTU7624Test
         }
 
         doFinalTest(new KCCMBlockCipher(new DSTU7624Engine(512), 8), key, iv, authText, input, expectedEncrypted);
+
+        CCMModePartialBlockTests();
+    }
+
+    /*
+     * Round-trip (self-consistency) tests for non-block-aligned KCCM input. DSTU 7624:2014 does
+     * not publish a partial-block CCM test vector, so these confirm only that encrypt-then-decrypt
+     * recovers the plaintext and that tampering is detected -- the produced bytes are NOT verified
+     * against an independent conformant implementation. See github #287 and the interop caveat on
+     * KCCMBlockCipher.
+     */
+    private void CCMModePartialBlockTests()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] iv = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] authText = Hex.decode("202122232425262728292A2B2C2D2E2F");
+
+        // 20 bytes against a 16-byte block: one full block plus a 4-byte partial block
+        byte[] input = Hex.decode("303132333435363738393A3B3C3D3E3F40414243");
+
+        AEADParameters param = new AEADParameters(new KeyParameter(key), 128, iv);
+        KCCMBlockCipher ccm = new KCCMBlockCipher(new DSTU7624Engine(128));
+
+        // encrypt
+        ccm.init(true, param);
+        ccm.processAADBytes(authText, 0, authText.length);
+        byte[] encrypted = new byte[ccm.getOutputSize(input.length)];
+        int len = ccm.processBytes(input, 0, input.length, encrypted, 0);
+        len += ccm.doFinal(encrypted, len);
+
+        if (len != input.length + ccm.getUnderlyingCipher().getBlockSize())
+        {
+            fail("Failed CCM partial-block ciphertext length - got " + len);
+        }
+
+        // decrypt and confirm round-trip
+        ccm.init(false, param);
+        ccm.processAADBytes(authText, 0, authText.length);
+        byte[] decrypted = new byte[ccm.getOutputSize(len)];
+        int decLen = ccm.processBytes(encrypted, 0, len, decrypted, 0);
+        decLen += ccm.doFinal(decrypted, decLen);
+
+        if (decLen != input.length || !Arrays.areEqual(input, Arrays.copyOfRange(decrypted, 0, input.length)))
+        {
+            fail("Failed CCM partial-block round-trip - expected "
+                + Hex.toHexString(input)
+                + " got " + Hex.toHexString(Arrays.copyOfRange(decrypted, 0, decLen)));
+        }
+
+        // tampering with the partial ciphertext must fail the MAC check
+        encrypted[input.length - 1] ^= 0x01;
+        ccm.init(false, param);
+        ccm.processAADBytes(authText, 0, authText.length);
+        byte[] tampered = new byte[ccm.getOutputSize(len)];
+        try
+        {
+            int l = ccm.processBytes(encrypted, 0, len, tampered, 0);
+            ccm.doFinal(tampered, l);
+
+            fail("Failed CCM partial-block tamper detection - no exception thrown");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            // expected
+        }
     }
 
     private void XTSModeTests()
@@ -1422,6 +1489,55 @@ public class DSTU7624Test
             fail("Failed GCM/GMAC test 11 (mac) - expected mac: "
                 + Hex.toHexString(expectedMac)
                 + " got mac: " + Hex.toHexString(mac));
+        }
+
+        KGMacPartialBlockTests();
+    }
+
+    /*
+     * Regression test for the KGMac (KGCM/GMAC) partial-block path. A message whose length is not a
+     * multiple of the block size used to be authenticated by reading the trailing partial block out
+     * of the backing buffer, whose bytes past the message length are not zeroed on reset(); the MAC
+     * therefore depended on the instance's history. After zero-padding the trailing block it must be
+     * deterministic regardless of what the instance processed previously. DSTU 7624:2014 publishes no
+     * partial-block GMAC vector, so this is a self-consistency check only -- see github #287 and the
+     * interop caveat on KGCMBlockCipher.
+     */
+    private void KGMacPartialBlockTests()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] iv = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        ParametersWithIV param = new ParametersWithIV(new KeyParameter(key), iv);
+
+        // 20 bytes against a 16-byte block: one full block plus a 4-byte partial block
+        byte[] message = Hex.decode("303132333435363738393A3B3C3D3E3F40414243");
+
+        // a fresh instance that only ever sees the partial message
+        KGMac fresh = new KGMac(new KGCMBlockCipher(new DSTU7624Engine(128)));
+        fresh.init(param);
+        fresh.update(message, 0, message.length);
+        byte[] freshMac = new byte[fresh.getMacSize()];
+        fresh.doFinal(freshMac, 0);
+
+        // a reused instance: process a longer message, reset, then the same partial message
+        KGMac reused = new KGMac(new KGCMBlockCipher(new DSTU7624Engine(128)));
+        reused.init(param);
+        byte[] filler = new byte[48];
+        Arrays.fill(filler, (byte)0xFF);
+        reused.update(filler, 0, filler.length);
+        byte[] discard = new byte[reused.getMacSize()];
+        reused.doFinal(discard, 0);
+        reused.reset();
+        reused.update(message, 0, message.length);
+        byte[] reusedMac = new byte[reused.getMacSize()];
+        reused.doFinal(reusedMac, 0);
+
+        if (!Arrays.areEqual(freshMac, reusedMac))
+        {
+            fail("Failed KGMac partial-block determinism - fresh "
+                + Hex.toHexString(freshMac)
+                + " but reused " + Hex.toHexString(reusedMac));
         }
     }
 
