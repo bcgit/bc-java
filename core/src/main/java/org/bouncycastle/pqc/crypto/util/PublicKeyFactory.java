@@ -36,6 +36,8 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.qruov.QRUOVParameters;
+import org.bouncycastle.pqc.crypto.qruov.QRUOVPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -342,6 +344,18 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.faest_em_192f, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_em_256s, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_em_256f, new FaestConverter());
+        converters.put(BCObjectIdentifiers.qruov1q127L3v156m54, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov1q31L3v165m60, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov1q31L10v600m70, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov1q7L10v740m100, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov3q127L3v228m78, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov3q31L3v246m87, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov3q31L10v890m100, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov3q7L10v1100m140, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov5q127L3v306m105, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov5q31L3v324m114, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov5q31L10v1120m120, new QRUOVConverter());
+        converters.put(BCObjectIdentifiers.qruov5q7L10v1490m190, new QRUOVConverter());
 
         converters.put(BCObjectIdentifiers.sqisign_lvl1, new SQIsignConverter());
         converters.put(BCObjectIdentifiers.sqisign_lvl3, new SQIsignConverter());
@@ -1029,6 +1043,20 @@ public class PublicKeyFactory
             FaestParameters faestParams = Utils.faestParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new FaestPublicKeyParameters(faestParams, keyEnc);
+        }
+    }
+
+    private static class QRUOVConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            QRUOVParameters qruovParams = Utils.qruovParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new QRUOVPublicKeyParameters(qruovParams, keyEnc);
         }
     }
 
