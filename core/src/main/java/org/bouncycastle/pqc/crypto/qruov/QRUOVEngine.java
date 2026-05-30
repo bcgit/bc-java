@@ -82,6 +82,27 @@ class QRUOVEngine
     private final int prgType;
     private final byte[] fqInv;
 
+    // Reusable accumulators for the polynomial-multiply kernels. The engine is
+    // single-threaded per operation and these kernels are leaves (never nested
+    // or reentrant), so a per-engine buffer avoids allocating a fresh
+    // length-(2L-1) array on every one of the O(m*(V+M)) kernel invocations.
+    // Each kernel clears its buffer on entry since it accumulates with '+='.
+    private final long[] dotScratchV;
+    private final long[] dotScratchM;
+    private final int[] fqlScratch;
+
+    // Reusable scratch for the matrix kernels. expandPk's r1/r2 hold public
+    // (seedPk-derived) PRG output and are fully overwritten on each of the m
+    // calls; the transpose buffer ([M][L][V]) and the MxM product buffer
+    // ([M][L][M]) are likewise overwritten before use and are never live in two
+    // overlapping calls. matrixTranspose / the matrix multiplies touch every
+    // element in a fixed, value-independent order, so reusing these buffers
+    // does not change any data-dependent branch or memory-access pattern.
+    private final byte[] pkExpandR1;
+    private final byte[] pkExpandR2;
+    private final byte[][][] tmpMLV;
+    private final byte[][][] tmpMLM;
+
     QRUOVEngine(QRUOVParameters params)
     {
         this.params = params;
@@ -105,6 +126,13 @@ class QRUOVEngine
         this.tau4 = params.getTau4();
         this.prgType = params.getPrgType();
         this.fqInv = buildInverseTable(q);
+        this.dotScratchV = new long[2 * L - 1];
+        this.dotScratchM = new long[2 * L - 1];
+        this.fqlScratch = new int[2 * L - 1];
+        this.pkExpandR1 = new byte[tau1];
+        this.pkExpandR2 = new byte[tau2];
+        this.tmpMLV = new byte[M][L][V];
+        this.tmpMLM = new byte[M][L][M];
     }
 
     private static byte[] buildInverseTable(int q)
@@ -491,8 +519,10 @@ class QRUOVEngine
     {
         int n1 = L * V * (V + 1) / 2;
         int n2 = L * V * M;
-        byte[] r1 = new byte[tau1];
-        byte[] r2 = new byte[tau2];
+        // r1/r2 hold public seedPk-derived bytes and are fully rewritten by each
+        // rejSamp call, so the per-engine buffers can be reused across the m calls.
+        byte[] r1 = pkExpandR1;
+        byte[] r2 = pkExpandR2;
 
         PRG ctx1 = ctx0.copy();
         ctx1.rejSamp(2L * index, n1, tau1, r1, 0);
@@ -501,9 +531,6 @@ class QRUOVEngine
         PRG ctx2 = ctx0.copy();
         ctx2.rejSamp(2L * index + 1L, n2, tau2, r2, 0);
         expandMatrixVxM(r2, 0, Pi2);
-
-        Arrays.fill(r1, (byte)0);
-        Arrays.fill(r2, (byte)0);
     }
 
     private void expandY(byte[] seedY, byte[][] y)
@@ -548,7 +575,8 @@ class QRUOVEngine
 
     void fqlMul(byte[] X, byte[] Y, byte[] Z)
     {
-        int[] T = new int[2 * L - 1];
+        int[] T = fqlScratch;
+        Arrays.fill(T, 0);
         for (int i = 0; i < L; i++)
         {
             int xi = X[i] & 0xFF;
@@ -749,7 +777,8 @@ class QRUOVEngine
 
     private void vectorVdotVectorV(byte[][] A, byte[][] B, byte[] C)
     {
-        long[] T = new long[2 * L - 1];
+        long[] T = dotScratchV;
+        Arrays.fill(T, 0L);
         for (int i = 0; i < L; i++)
         {
             byte[] ai = A[i];
@@ -780,7 +809,8 @@ class QRUOVEngine
 
     private void vectorMdotVectorM(byte[][] A, byte[][] B, byte[] C)
     {
-        long[] T = new long[2 * L - 1];
+        long[] T = dotScratchM;
+        Arrays.fill(T, 0L);
         for (int i = 0; i < L; i++)
         {
             byte[] ai = A[i];
@@ -839,9 +869,8 @@ class QRUOVEngine
 
     private void vectorVmulMatrixVxM(byte[][] A, byte[][][] B, byte[][] C)
     {
-        byte[][][] BT = new byte[M][L][V];
-        matrixTransposeVxM(B, BT);
-        vectorVmulMatrixVxMTransposed(A, BT, C);
+        matrixTransposeVxM(B, tmpMLV);
+        vectorVmulMatrixVxMTransposed(A, tmpMLV, C);
     }
 
     // BT is B already transposed to [M][L][V]; hoisting the transpose to the
@@ -869,10 +898,16 @@ class QRUOVEngine
 
     private void matrixMulMxVVxM(byte[][][] A, byte[][][] B, byte[][][] C)
     {
-        // B is constant across the M rows, so transpose it once here rather
-        // than re-transposing (and re-allocating) inside each row's multiply.
-        byte[][][] BT = new byte[M][L][V];
-        matrixTransposeVxM(B, BT);
+        // B is constant across the M rows, so transpose it once here (into the
+        // reusable scratch) rather than re-transposing inside each row's multiply.
+        matrixTransposeVxM(B, tmpMLV);
+        matrixMulMxVVxMTransposed(A, tmpMLV, C);
+    }
+
+    // BT is B already transposed to [M][L][V]; lets a caller holding a
+    // loop-invariant transpose (e.g. SdT) skip the per-call transpose+allocation.
+    private void matrixMulMxVVxMTransposed(byte[][][] A, byte[][][] BT, byte[][][] C)
+    {
         for (int i = 0; i < M; i++)
         {
             vectorVmulMatrixVxMTransposed(A[i], BT, C[i]);
@@ -895,9 +930,10 @@ class QRUOVEngine
 
     private void matrixMulAddMxVVxM(byte[][][] A, byte[][][] B, byte[][][] C)
     {
-        byte[][][] T = new byte[M][L][M];
-        matrixMulMxVVxM(A, B, T);
-        matrixAddMxM(C, T, C);
+        // tmpMLM is fully written by the multiply before matrixAddMxM reads it;
+        // tmpMLV (used inside matrixMulMxVVxM) is a distinct buffer.
+        matrixMulMxVVxM(A, B, tmpMLM);
+        matrixAddMxM(C, tmpMLM, C);
     }
 
     private void matrixSubMxV(byte[][][] A, byte[][][] B, byte[][][] C)
@@ -1187,7 +1223,8 @@ class QRUOVEngine
             matrixTransposeVxM(Pi2, Pi2T);
             matrixMxVmulSymmetricMatrixVxV(SdT, Pi1, TMP);
             matrixSubMxV(Pi2T, TMP, TMP);
-            matrixMulMxVVxM(TMP, Sd, P3[i]);
+            // Sd is loop-invariant; SdT already holds its transpose.
+            matrixMulMxVVxMTransposed(TMP, SdT, P3[i]);
             matrixMulAddMxVVxM(SdT, Pi2, P3[i]);
         }
     }
@@ -1212,13 +1249,19 @@ class QRUOVEngine
         expandSk(seedSk, Sd, SdT);
         expandY(seedY, y);
 
+        byte[] yTFi1j = new byte[L];
+        byte[] yj = new byte[L];
+        byte[] prod = new byte[L];
+
         PRG ctxPk = initPkPrg(seedPk);
         for (int i = 0; i < m; i++)
         {
             expandPk(ctxPk, i, Pi1, Pi2);
 
             vectorVmulSymmetricMatrixVxV(y, Pi1, yTPi1);
-            vectorVmulMatrixVxM(yTPi1, Sd, yTPi1Sd);
+            // Sd is loop-invariant; reuse the transpose expandSk already computed
+            // into SdT rather than re-transposing (and re-allocating) it per row.
+            vectorVmulMatrixVxMTransposed(yTPi1, SdT, yTPi1Sd);
             vectorVmulMatrixVxM(y, Pi2, yTPi2);
             vectorMSub(yTPi2, yTPi1Sd, yTFi2);
 
@@ -1232,9 +1275,6 @@ class QRUOVEngine
             }
 
             long ci = 0;
-            byte[] yTFi1j = new byte[L];
-            byte[] yj = new byte[L];
-            byte[] prod = new byte[L];
             for (int j = 0; j < V; j++)
             {
                 for (int k = 0; k < L; k++)
