@@ -114,6 +114,62 @@ public class GOST3410KeyPairTest
         isTrue("encoded private key digest OID mismatch: " + encPrivDigest, expected.equals(encPrivDigest));
     }
 
+    /**
+     * GOST 34.10-2018 is the interstate re-adoption of GOST R 34.10-2012 and is registered
+     * purely as a set of "-2018" aliases onto the existing 2012 implementations. Prove the
+     * aliases resolve and that a signature made through a "-2018" name verifies through the
+     * matching "-2012" name (and vice versa) since they are the same algorithm.
+     */
+    private void gost2018AliasTest()
+        throws Exception
+    {
+        gost2018AliasRoundtrip("Tc26-Gost-3410-12-256-paramSetA", "ECGOST3410-2018-256", "ECGOST3410-2012-256");
+        gost2018AliasRoundtrip("Tc26-Gost-3410-12-512-paramSetA", "ECGOST3410-2018-512", "ECGOST3410-2012-512");
+
+        // dotted "GOST-3410-2018-NNN" spellings must resolve to the same Signature too.
+        isTrue("GOST-3410-2018-256 alias", Signature.getInstance("GOST-3410-2018-256", "BC") != null);
+        isTrue("GOST-3410-2018-512 alias", Signature.getInstance("GOST-3410-2018-512", "BC") != null);
+
+        // KeyAgreement aliases must resolve.
+        isTrue("KeyAgreement ECGOST3410-2018-256 alias",
+            javax.crypto.KeyAgreement.getInstance("ECGOST3410-2018-256", "BC") != null);
+        isTrue("KeyAgreement ECGOST3410-2018-512 alias",
+            javax.crypto.KeyAgreement.getInstance("ECGOST3410-2018-512", "BC") != null);
+    }
+
+    private void gost2018AliasRoundtrip(String paramSet, String name2018, String name2012)
+        throws Exception
+    {
+        byte[] msg = toByteArray("the quick brown fox jumps over the lazy dog");
+
+        // the KeyPairGenerator "-2018" alias must produce a usable 2012 key pair.
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECGOST3410-2018", "BC");
+        kpg.initialize(new ECGenParameterSpec(paramSet));
+        KeyPair kp = kpg.generateKeyPair();
+
+        // sign through the 2018 name, verify through the 2012 name.
+        Signature sign2018 = Signature.getInstance(name2018, "BC");
+        sign2018.initSign(kp.getPrivate());
+        sign2018.update(msg);
+        byte[] sig2018 = sign2018.sign();
+
+        Signature verify2012 = Signature.getInstance(name2012, "BC");
+        verify2012.initVerify(kp.getPublic());
+        verify2012.update(msg);
+        isTrue(name2018 + " signature did not verify under " + name2012, verify2012.verify(sig2018));
+
+        // sign through the 2012 name, verify through the 2018 name.
+        Signature sign2012 = Signature.getInstance(name2012, "BC");
+        sign2012.initSign(kp.getPrivate());
+        sign2012.update(msg);
+        byte[] sig2012 = sign2012.sign();
+
+        Signature verify2018 = Signature.getInstance(name2018, "BC");
+        verify2018.initVerify(kp.getPublic());
+        verify2018.update(msg);
+        isTrue(name2012 + " signature did not verify under " + name2018, verify2018.verify(sig2012));
+    }
+
     private void testWrong512(KeyPair kp)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
@@ -210,6 +266,7 @@ public class GOST3410KeyPairTest
     {
         gost2012MismatchTest();
         gost2012DigestOidTest();
+        gost2018AliasTest();
     }
 
     protected byte[] toByteArray(String input)
