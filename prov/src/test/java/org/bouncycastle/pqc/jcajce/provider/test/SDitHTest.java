@@ -134,6 +134,44 @@ public class SDitHTest
         assertTrue(sig.verify(s));
     }
 
+    public void testThresholdKeyFactory()
+        throws Exception
+    {
+        // Regression for github #2312: SDitHKeyFactorySpi only registered the hypercube OIDs in
+        // its keyOids set, so KeyFactory.generatePublic / generatePrivate from an encoded spec
+        // rejected every threshold variant with "incorrect algorithm OID for key: ...". Exercise
+        // the KeyFactory + EncodedKeySpec round-trip (the path the BC->BCPQC converter bridge does
+        // not cover) for all six threshold parameter sets.
+        SDitHParameterSpec[] thresholdSpecs =
+        {
+            SDitHParameterSpec.sdith_threshold_cat1_gf256,
+            SDitHParameterSpec.sdith_threshold_cat3_gf256,
+            SDitHParameterSpec.sdith_threshold_cat5_gf256,
+            SDitHParameterSpec.sdith_threshold_cat1_p251,
+            SDitHParameterSpec.sdith_threshold_cat3_p251,
+            SDitHParameterSpec.sdith_threshold_cat5_p251,
+        };
+
+        KeyFactory kFact = KeyFactory.getInstance("SDitH", "BCPQC");
+
+        for (int i = 0; i != thresholdSpecs.length; i++)
+        {
+            SDitHParameterSpec spec = thresholdSpecs[i];
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("SDitH", "BCPQC");
+            kpg.initialize(spec, new SecureRandom());
+            KeyPair kp = kpg.generateKeyPair();
+
+            java.security.PublicKey pub = kFact.generatePublic(
+                new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+            java.security.PrivateKey priv = kFact.generatePrivate(
+                new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+            assertEquals(spec.getName(), kp.getPublic(), pub);
+            assertEquals(spec.getName(), kp.getPrivate(), priv);
+        }
+    }
+
     public void testThresholdBCBridge()
         throws Exception
     {
