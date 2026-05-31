@@ -37,6 +37,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -378,7 +379,7 @@ public abstract class BaseWrapCipher
                 }
                 catch (Exception e)
                 {
-                    throw new IllegalBlockSizeException(e.getMessage());
+                    throw SecurityExceptions.illegalBlockSizeException(e.getMessage(), e);
                 }
             }
             else
@@ -389,7 +390,7 @@ public abstract class BaseWrapCipher
                 }
                 catch (InvalidCipherTextException e)
                 {
-                    throw new BadPaddingException(e.getMessage());
+                    throw SecurityExceptions.badPaddingException(e.getMessage(), e);
                 }
             }
         }
@@ -426,7 +427,7 @@ public abstract class BaseWrapCipher
                 }
                 catch (Exception e)
                 {
-                    throw new IllegalBlockSizeException(e.getMessage());
+                    throw SecurityExceptions.illegalBlockSizeException(e.getMessage(), e);
                 }
             }
             else
@@ -437,7 +438,7 @@ public abstract class BaseWrapCipher
                 }
                 catch (InvalidCipherTextException e)
                 {
-                    throw new BadPaddingException(e.getMessage());
+                    throw SecurityExceptions.badPaddingException(e.getMessage(), e);
                 }
             }
 
@@ -479,7 +480,7 @@ public abstract class BaseWrapCipher
         }
         catch (BadPaddingException e)
         {
-            throw new IllegalBlockSizeException(e.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException(e.getMessage(), e);
         }
     }
 

@@ -31,6 +31,12 @@ public class SDitHKeyFactorySpi
         keyOids.add(BCObjectIdentifiers.sdith_hypercube_cat1_p251);
         keyOids.add(BCObjectIdentifiers.sdith_hypercube_cat3_p251);
         keyOids.add(BCObjectIdentifiers.sdith_hypercube_cat5_p251);
+        keyOids.add(BCObjectIdentifiers.sdith_threshold_cat1_gf256);
+        keyOids.add(BCObjectIdentifiers.sdith_threshold_cat3_gf256);
+        keyOids.add(BCObjectIdentifiers.sdith_threshold_cat5_gf256);
+        keyOids.add(BCObjectIdentifiers.sdith_threshold_cat1_p251);
+        keyOids.add(BCObjectIdentifiers.sdith_threshold_cat3_p251);
+        keyOids.add(BCObjectIdentifiers.sdith_threshold_cat5_p251);
     }
 
     public SDitHKeyFactorySpi()

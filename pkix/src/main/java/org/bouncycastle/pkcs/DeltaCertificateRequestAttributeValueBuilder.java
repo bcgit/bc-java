@@ -8,14 +8,33 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
+/**
+ * Builder for the delta certificate request attribute defined in
+ * draft-bonnell-lamps-chameleon-certs §5.
+ * <pre>
+ * DeltaCertificateRequestValue ::= SEQUENCE {
+ *   subject               [0] EXPLICIT Name OPTIONAL,
+ *   subjectPKInfo         SubjectPublicKeyInfo,
+ *   extensions            [1] EXPLICIT Extensions OPTIONAL,
+ *   signatureAlgorithm    [2] EXPLICIT AlgorithmIdentifier OPTIONAL
+ * }
+ * </pre>
+ * The builder emits every field the caller set; to encode only the fields that
+ * differ from a base CSR (§5.1), pass the result through
+ * {@link DeltaCertAttributeUtils#trimDeltaCertificateRequest}.
+ */
 public class DeltaCertificateRequestAttributeValueBuilder
 {
+    static final ASN1ObjectIdentifier deltaCertificateRequest = new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.2");
+
     private final SubjectPublicKeyInfo subjectPublicKey;
 
     private AlgorithmIdentifier signatureAlgorithm;
     private X500Name subject;
+    private Extensions extensions;
 
     public DeltaCertificateRequestAttributeValueBuilder(SubjectPublicKeyInfo subjectPublicKey)
     {
@@ -24,34 +43,44 @@ public class DeltaCertificateRequestAttributeValueBuilder
 
     public DeltaCertificateRequestAttributeValueBuilder setSignatureAlgorithm(AlgorithmIdentifier signatureAlgorithm)
     {
-       this.signatureAlgorithm = signatureAlgorithm;
+        this.signatureAlgorithm = signatureAlgorithm;
 
-       return this;
+        return this;
     }
 
     public DeltaCertificateRequestAttributeValueBuilder setSubject(X500Name subject)
     {
-       this.subject = subject;
+        this.subject = subject;
 
-       return this;
+        return this;
+    }
+
+    public DeltaCertificateRequestAttributeValueBuilder setExtensions(Extensions extensions)
+    {
+        this.extensions = extensions;
+
+        return this;
     }
 
     public DeltaCertificateRequestAttributeValue build()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(4);
 
         if (subject != null)
         {
             v.add(new DERTaggedObject(true, 0, subject));
         }
         v.add(subjectPublicKey);
+        if (extensions != null)
+        {
+            v.add(new DERTaggedObject(true, 1, extensions));
+        }
         if (signatureAlgorithm != null)
         {
             v.add(new DERTaggedObject(true, 2, signatureAlgorithm));
         }
 
-        
-        return new DeltaCertificateRequestAttributeValue(new Attribute(new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.2"),
-                        new DERSet(new DERSequence(v))));
+        return new DeltaCertificateRequestAttributeValue(
+            new Attribute(deltaCertificateRequest, new DERSet(new DERSequence(v))));
     }
 }

@@ -1,0 +1,59 @@
+# Build & test
+
+The build is Gradle multi-module. JDK 21+ is required to drive Gradle — the Error Prone compiler plugin is compiled for Java 21 (class file 65), so a Gradle daemon launched under an older JDK fails `:core:compileJava` with `UnsupportedClassVersionError: …ErrorProneJavacPlugin … class file version 65.0 … up to <NN>.0`, and that failed compile can leave `core/build/classes/java/main` empty (cascading into confusing "package does not exist" errors on the next step). If you see this, point `JAVA_HOME` at a 21+ JDK for the Gradle invocation and recompile. Optional environment variables `BC_JDK8`, `BC_JDK11`, `BC_JDK17`, `BC_JDK21`, `BC_JDK25` opt in version-specific test tasks (compiled against MR-jar overlays). The default `:test` aggregates `:core:test :prov:test :prov:test11 :prov:test15 :prov:test17 :pkix:test :pg:test :tls:test :mls:test :mail:test :jmail:test`.
+
+```
+./gradlew clean build                                # full build + all tests
+./gradlew :prov:compileJava :prov:compileTestJava    # quick compile-only check
+./gradlew :prov:test --tests <fqcn>                  # one JUnit class
+./gradlew -PexcludeTests=<glob> :prov:test           # exclude pattern
+./gradlew :prov:checkstyleMain                       # brace/style check (see conventions.md)
+```
+
+Style (Allman braces etc.) is machine-enforced on `src/main` by checkstyle and fails CI — run `checkstyleMain` before pushing. See the Code style section in `conventions.md` for what the config enforces.
+
+`bc-test-data` (separate repo `bcgit/bc-test-data`) must be checked out for the full suite to pass. `TestResourceFinder.findTestResource(homeDir, fileName)` (six per-module copies under `<module>/src/test/java/org/bouncycastle/test/`) resolves the bc-test-data root in this order:
+
+1. The system property `bc.test.data.home`, if set.
+2. The environment variable `BC_TEST_DATA_HOME`, if set.
+3. Walk up from the working directory looking for a directory literally named `bc-test-data` — the default that makes `./gradlew :prov:test` work when bc-test-data is checked out as a sibling of `bc-java`.
+
+When the property or environment variable is supplied, the named path is required to exist; a mistyped value fails fast with a `FileNotFoundException` naming both the source (`-Dbc.test.data.home` or `$BC_TEST_DATA_HOME`) and the bad path, rather than silently falling through. The Gradle build no longer sets the property itself; supply `-Dbc.test.data.home=/path/to/bc-test-data` (or export `BC_TEST_DATA_HOME` once in your shell) only when the sibling-checkout convention doesn't fit your layout. Direct `java -cp ... junit.textui.TestRunner ...` invocations follow the same rule.
+
+## Running an individual test fast
+
+Two conventions coexist:
+
+- `org.bouncycastle.util.test.SimpleTest` subclasses (~half of the suite) override `performTest()` and call `fail(msg)` / `isTrue(msg, cond)` / `areEqual(a, b)`. They have a `main()` that registers `BouncyCastleProvider` and prints `<TestName>: Okay` on success or `<TestName>: <message>` on failure.
+- `junit.framework.TestCase` subclasses (the other half, especially in `pkix/.../pkcs/test`, `pkix/.../cms/test`, etc.) use plain JUnit assertions and are aggregated by an `AllTests` suite class. Run one via `junit.textui.TestRunner`:
+  ```
+  java -cp ... junit.textui.TestRunner org.bouncycastle.pkcs.test.PKCS12UtilTest
+  ```
+
+To iterate quickly on either flavour, run directly without Gradle. The full classpath you need:
+
+```
+java -cp pkix/build/classes/java/main:pkix/build/classes/java/test:pkix/src/test/resources:\
+        prov/build/classes/java/main:prov/build/classes/java/test:prov/build/resources/main:\
+        prov/src/test/resources:\
+        core/build/classes/java/main:core/build/classes/java/test:core/build/resources/main:\
+        core/src/test/resources:\
+        util/build/classes/java/main:\
+        $(find ~/.gradle -name 'junit-*.jar' | head -1):\
+        $(find ~/.gradle -name 'hamcrest-core-1*.jar' | head -1) \
+     org.bouncycastle.openssl.test.ParserTest
+```
+
+If your bc-test-data checkout isn't a sibling of `bc-java`, add `-Dbc.test.data.home=/abs/path/to/bc-test-data` to the command. Otherwise the walk-up search picks it up automatically.
+
+Common gotchas:
+- `*/build/resources/main` directories are required — some tests pull resource files (e.g. `lowmcL1.bin.properties` for Picnic, GOST tables) that fail with cryptic `NullPointerException` if missing.
+- `prov/src/test/resources` and `core/src/test/resources` carry test fixtures referenced by `TestResourceFinder` and direct classpath lookups.
+- IDE-built classes under `out/production/...` (IntelliJ) are NOT on the Gradle classpath — don't reference them, and beware that they can drift from Gradle's outputs.
+- After deleting or renaming a test method (e.g. when rolling back an edit), the stale `.class` file lingers under `<module>/build/classes/java/test/`. JUnit's `TestSuite.class` reflection-walk will still find and run the stale method, surfacing confusing `ClassNotFoundException` / `NoClassDefFoundError` for inner-class artifacts that were removed. Run `./gradlew :<module>:compileTestJava --rerun-tasks` (or `:<module>:clean`) after a rollback to flush.
+
+## Verifying a fix actually catches the bug
+
+The repo's working norm for any defect-fix patch is: write the test that reproduces the bug, then **stash the fix** (`git stash push <fix-files>`), recompile (`./gradlew :<module>:compileJava`), rerun the test to confirm it now fails on the original symptom, then `git stash pop` and rerun to confirm it now passes. This catches tests that pass for the wrong reason. Use it whenever you add a regression test alongside a fix.
+
+When the fix is in `core/`, remember to recompile `prov` too (the `core`-into-`prov` trap below) so the test JVM picks up the updated bytecode rather than a stale `prov/build/classes` shadow.

@@ -77,12 +77,17 @@ public class Time
 
     /**
      * Creates a time object from a given date and locale - if the date is between 1950
-     * and 2049 a UTCTime object is generated, otherwise a GeneralizedTime
-     * is used. You may need to use this constructor if the default locale
-     * doesn't use a Gregorian calender so that the GeneralizedTime produced is compatible with other ASN.1 implementations.
+     * and 2049 a UTCTime object is generated, otherwise a GeneralizedTime is used. The
+     * {@code locale} selects the calendar used by the underlying {@link SimpleDateFormat}.
+     * Most callers should prefer the simple {@link #Time(Date)} form, which always formats
+     * under an English Gregorian locale (so the encoded year is the spec-mandated Gregorian
+     * one regardless of {@link Locale#getDefault()}, including on JVMs whose default uses
+     * a non-Gregorian calendar such as Thai Buddhist {@code th_TH_TH_#u-nu-thai} or
+     * Japanese Imperial {@code ja_JP_JP_#u-ca-japanese}). Reach for this {@code (Date, Locale)}
+     * form only when you need explicit control over the formatter's calendar.
      *
      * @param time a date object representing the time of interest.
-     * @param locale an appropriate Locale for producing an ASN.1 GeneralizedTime value.
+     * @param locale the Locale whose calendar the underlying SimpleDateFormat should use.
      */
     public Time(
         Date    time,

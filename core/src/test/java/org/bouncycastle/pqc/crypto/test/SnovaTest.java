@@ -6,7 +6,6 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.snova.SnovaKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaKeyPairGenerator;
@@ -145,7 +144,7 @@ public class SnovaTest
             }
 
             @Override
-            public byte[] getPublicKeyEncoded(AsymmetricKeyParameter pubParams)
+            public byte[] getPublicKeyEncoded(CipherParameters pubParams)
             {
                 return ((SnovaPublicKeyParameters)pubParams).getEncoded();
             }
