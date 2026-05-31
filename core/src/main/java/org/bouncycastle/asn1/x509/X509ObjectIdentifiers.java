@@ -64,6 +64,22 @@ public interface X509ObjectIdentifiers
      */
     static final ASN1ObjectIdentifier  id_pe   = id_pkix.branch("1");
 
+    /**
+     * id-pe-relatedCert OBJECT IDENTIFIER ::= { iso(1)
+     *        identified-organization(3) dod(6) internet(1)
+     *        security(5) mechanisms(5) pkix(7) pe(1) 36 }
+     * <p>
+     * Per RFC 9763 sec. 3, the {@code RelatedCertificate} certificate
+     * extension. The extension MUST
+     * appear in an end-entity certificate only, SHOULD NOT be marked critical,
+     * and carries a digest of one previously-issued certificate (the "related
+     * certificate") that the CA is asserting belongs to the same end entity —
+     * the mechanism that lets a verifier link a classical and a post-quantum
+     * certificate during hybrid PQ migration without requiring composite
+     * signature algorithms.
+     */
+    ASN1ObjectIdentifier id_pe_relatedCert = id_pe.branch("36");
+
     /** 1.3.6.1.5.5.7.6 */
     static final ASN1ObjectIdentifier pkix_algorithms = id_pkix.branch("6");
 
