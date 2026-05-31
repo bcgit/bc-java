@@ -79,9 +79,21 @@ public abstract class SLHDSAEngine
                 throw new IllegalArgumentException("cannot precompute SPX_WOTS_LEN2 for n outside {2, .., 256}");
             }
         }
+        else if (w == 4)
+        {
+            WOTS_LOGW = 2;
+            WOTS_LEN1 = (8 * N / WOTS_LOGW);
+            WOTS_LEN2 = (int)(Math.log(WOTS_LEN1 * (w - 1)) / Math.log(w)) + 1;
+        }
+        else if (w == 8)
+        {
+            WOTS_LOGW = 3;
+            WOTS_LEN1 = (8 * N / WOTS_LOGW);
+            WOTS_LEN2 = (int)(Math.log(WOTS_LEN1 * (w - 1)) / Math.log(w)) + 1;
+        }
         else
         {
-            throw new IllegalArgumentException("wots_w assumed 16 or 256");
+            throw new IllegalArgumentException("wots_w assumed 4, 8, 16 or 256");
         }
         this.WOTS_W = w;
         this.WOTS_LEN = WOTS_LEN1 + WOTS_LEN2;
