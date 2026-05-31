@@ -9,7 +9,21 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Implementation of DSTU7624 MAC mode
+ * Implementation of DSTU7624 MAC mode.
+ * <p>
+ * This is a CBC-MAC variant (a CBC chain whose final block is masked with kDelta = E(0) before the
+ * last encryption) and, like raw CBC-MAC, it is defined only for input that is a whole number of
+ * blocks: {@link #doFinal} rejects a trailing partial block with "input must be a multiple of
+ * blocksize". The restriction is deliberate and is <b>not</b> relaxed by zero-padding the final
+ * block. The MAC binds no message length, so zero-padding a partial block would make the tag of an
+ * N-byte message collide with that of a longer message sharing the same final block once padded
+ * (the documented ambiguity of ISO/IEC 9797-1 padding method 1). DSTU 7624:2014 specifies no
+ * partial-block padding for this MAC and publishes no vector for one, so any padding scheme BC chose
+ * (zero-pad, or the unambiguous 10* / ISO 9797-1 method 2 that CMAC uses) would be non-conformant
+ * and non-interoperable. Callers needing to authenticate arbitrary-length input should pad to a
+ * block boundary with an agreed scheme before calling update, or use a length-binding MAC such as
+ * KGMac. See github #287.
+ * </p>
  */
 public class DSTU7624Mac
     implements Mac
@@ -121,6 +135,8 @@ public class DSTU7624Mac
     {
         if (bufOff % buf.length != 0)
         {
+            // Deliberately strict: see the class javadoc for why partial blocks are not zero-padded
+            // here (no DSTU 7624 padding spec, no vector, and this MAC binds no length). github #287.
             throw new DataLengthException("input must be a multiple of blocksize");
         }
 

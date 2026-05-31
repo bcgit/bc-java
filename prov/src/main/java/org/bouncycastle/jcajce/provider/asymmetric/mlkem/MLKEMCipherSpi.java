@@ -26,6 +26,7 @@ import org.bouncycastle.crypto.kems.MLKEMExtractor;
 import org.bouncycastle.crypto.kems.MLKEMGenerator;
 import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.WrapUtil;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -266,7 +267,7 @@ public class MLKEMCipherSpi
         }
         catch (IllegalArgumentException e)
         {
-            throw new IllegalBlockSizeException("unable to generate KTS secret: " + e.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException("unable to generate KTS secret: " + e.getMessage(), e);
         }
         finally
         {

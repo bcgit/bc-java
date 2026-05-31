@@ -29,8 +29,10 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.qruov.QRUOVPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.haetae.HAETAEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hawk.HawkPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.Composer;
@@ -47,6 +49,7 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.BDS;
 import org.bouncycastle.pqc.crypto.xmss.BDSStateMap;
@@ -351,6 +354,27 @@ public class PrivateKeyInfoFactory
         {
             FaestPrivateKeyParameters params = (FaestPrivateKeyParameters)privateKey;
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.faestOidLookup(params.getParameters()));
+            byte[] encoding = params.getEncoded();
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+        }
+        else if (privateKey instanceof QRUOVPrivateKeyParameters)
+        {
+            QRUOVPrivateKeyParameters params = (QRUOVPrivateKeyParameters)privateKey;
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.qruovOidLookup(params.getParameters()));
+            byte[] encoding = params.getEncoded();
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+        }
+        else if (privateKey instanceof SQIsignPrivateKeyParameters)
+        {
+            SQIsignPrivateKeyParameters params = (SQIsignPrivateKeyParameters)privateKey;
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sqisignOidLookup(params.getParameters()));
+            byte[] encoding = params.getEncoded();
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+        }
+        else if (privateKey instanceof HAETAEPrivateKeyParameters)
+        {
+            HAETAEPrivateKeyParameters params = (HAETAEPrivateKeyParameters)privateKey;
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.haetaeOidLookup(params.getParameters()));
             byte[] encoding = params.getEncoded();
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }

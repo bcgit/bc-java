@@ -23,7 +23,11 @@ sourceSets {
 
     java9 {
         java {
-            srcDirs = ['src/main/jdk1.9']
+            // Include core's jdk1.9 overlay (FpMul64 with Math.multiplyHigh for
+            // the SQIsign 64-bit-limb Montgomery kernel) so the bundled-core
+            // bcprov MR-jar also ships the Phase I fast path under
+            // META-INF/versions/9/. core itself stays release=8.
+            srcDirs = ['src/main/jdk1.9', '../core/src/main/jdk1.9']
         }
     }
     java11 {
@@ -173,7 +177,7 @@ compileJava {
 
 compileJava9Java {
     options.release = 9
-    options.sourcepath = files(['../core/src/main/java', 'src/main/java', 'src/main/jdk1.9'])
+    options.sourcepath = files(['../core/src/main/java', '../core/src/main/jdk1.9', 'src/main/java', 'src/main/jdk1.9'])
 }
 
 compileJava11Java {

@@ -12,7 +12,18 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Implementation of DSTU7624 CCM mode
+ * Implementation of DSTU7624 CCM mode.
+ * <p>
+ * <b>Partial-block / interop caveat:</b> messages whose length is not a multiple of the
+ * underlying block size are handled following the generic CCM construction
+ * (NIST SP 800-38C / RFC 3610): the CBC-MAC zero-pads the trailing partial block and the
+ * counter (gamma) keystream is truncated for the trailing partial block. DSTU 7624:2014
+ * does not publish a partial-block CCM test vector, so this behaviour is verified by
+ * round-trip self-consistency only and has <b>not</b> been confirmed against an independent
+ * conformant DSTU 7624 implementation. Callers requiring guaranteed interoperability with
+ * other DSTU 7624 CCM implementations should restrict input to whole blocks until such a
+ * vector is available. See github #287.
+ * </p>
  */
 public class KCCMBlockCipher
     implements AEADBlockCipher
@@ -269,21 +280,19 @@ public class KCCMBlockCipher
 
         if (forEncryption)
         {
-            if ((len % engine.getBlockSize()) != 0)
-            {
-                throw new DataLengthException("partial blocks not supported");
-            }
-
+            // Partial trailing block permitted: CalculateMac zero-pads it and the gamma
+            // keystream is truncated below. See the interop caveat in the class javadoc (github #287).
             CalculateMac(in, inOff, len);
             engine.processBlock(nonce, 0, s, 0);
 
             int totalLength = len;
             while (totalLength > 0)
             {
-                ProcessBlock(in, inOff, len, out, outOff);
-                totalLength -= engine.getBlockSize();
-                inOff += engine.getBlockSize();
-                outOff += engine.getBlockSize();
+                int blockLen = Math.min(totalLength, engine.getBlockSize());
+                ProcessBlock(in, inOff, blockLen, out, outOff);
+                totalLength -= blockLen;
+                inOff += blockLen;
+                outOff += blockLen;
             }
 
             for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
@@ -306,39 +315,26 @@ public class KCCMBlockCipher
         }
         else
         {
-            if ((len - macSize) % engine.getBlockSize() != 0)
-            {
-                throw new DataLengthException("partial blocks not supported");
-            }
+            // A partial trailing data block is permitted: the gamma keystream is truncated for
+            // the trailing block and CalculateMac zero-pads it when recomputing the tag below.
+            // See the interop caveat in the class javadoc (github #287).
+            int outStart = outOff;
+            int dataLen = len - macSize;
 
             engine.processBlock(nonce, 0, s, 0);
 
-            int blocks = len / engine.getBlockSize();
-
-            for (int blockNum = 0; blockNum < blocks; blockNum++)
+            // recover the plaintext payload (gamma/counter mode, trailing block truncated)
+            int totalLength = dataLen;
+            while (totalLength > 0)
             {
-                ProcessBlock(in, inOff, len, out, outOff);
-
-                inOff += engine.getBlockSize();
-                outOff += engine.getBlockSize();
+                int blockLen = Math.min(totalLength, engine.getBlockSize());
+                ProcessBlock(in, inOff, blockLen, out, outOff);
+                totalLength -= blockLen;
+                inOff += blockLen;
+                outOff += blockLen;
             }
 
-            if (len > inOff)
-            {
-                for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
-                {
-                    s[byteIndex] += counter[byteIndex];
-                }
-
-                engine.processBlock(s, 0, buffer, 0);
-
-                for (int byteIndex = 0; byteIndex < macSize; byteIndex++)
-                {
-                    out[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ in[inOff + byteIndex]);
-                }
-                outOff += macSize;
-            }
-
+            // recover the appended (masked) MAC using the next keystream block
             for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
             {
                 s[byteIndex] += counter[byteIndex];
@@ -346,9 +342,16 @@ public class KCCMBlockCipher
 
             engine.processBlock(s, 0, buffer, 0);
 
+            for (int byteIndex = 0; byteIndex < macSize; byteIndex++)
+            {
+                out[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ in[inOff + byteIndex]);
+            }
+            outOff += macSize;
+
+            // recompute the MAC over the recovered plaintext and compare
             System.arraycopy(out, outOff - macSize, buffer, 0, macSize);
 
-            CalculateMac(out, 0, outOff - macSize);
+            CalculateMac(out, outStart, dataLen);
 
             System.arraycopy(macBlock, 0, mac, 0, macSize);
 
@@ -363,11 +366,11 @@ public class KCCMBlockCipher
 
             reset();
 
-            return len - macSize;
+            return dataLen;
         }
     }
 
-    private void ProcessBlock(byte[] input, int inOff, int len, byte[] output, int outOff)
+    private void ProcessBlock(byte[] input, int inOff, int blockLen, byte[] output, int outOff)
     {
 
         for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
@@ -377,7 +380,9 @@ public class KCCMBlockCipher
 
         engine.processBlock(s, 0, buffer, 0);
 
-        for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
+        // blockLen == engine.getBlockSize() for a full block; a shorter value truncates the
+        // gamma keystream for a trailing partial block.
+        for (int byteIndex = 0; byteIndex < blockLen; byteIndex++)
         {
             output[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ input[inOff + byteIndex]);
         }
@@ -388,15 +393,18 @@ public class KCCMBlockCipher
         int totalLen = len;
         while (totalLen > 0)
         {
-            for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
+            // A trailing partial block is XORed in over its actual length only; the remaining
+            // bytes of macBlock are left unchanged, i.e. the block is zero-padded.
+            int blockLen = Math.min(totalLen, engine.getBlockSize());
+            for (int byteIndex = 0; byteIndex < blockLen; byteIndex++)
             {
                 macBlock[byteIndex] ^= authText[authOff + byteIndex];
             }
 
             engine.processBlock(macBlock, 0, macBlock, 0);
 
-            totalLen -= engine.getBlockSize();
-            authOff += engine.getBlockSize();
+            totalLen -= blockLen;
+            authOff += blockLen;
         }
     }
 

@@ -886,6 +886,33 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier uov_V_pkc_skc    = uov.branch("12");
 
     /**
+     * SQIsign (Short Quaternion and Isogeny Signature). BC-allocated arc
+     * pending NIST OID assignment from the additional-signatures round of
+     * NIST's PQC standardisation. Three child OIDs follow the canonical
+     * NIST-API parameter-set naming {@code sqisign_lvl&lt;n&gt;} with
+     * n in {1, 3, 5}.
+     */
+    ASN1ObjectIdentifier sqisign       = bc_sig.branch("19");
+    ASN1ObjectIdentifier sqisign_lvl1  = sqisign.branch("1");
+    ASN1ObjectIdentifier sqisign_lvl3  = sqisign.branch("2");
+    ASN1ObjectIdentifier sqisign_lvl5  = sqisign.branch("3");
+
+    /**
+     * HAETAE &mdash; lattice-based signature scheme submitted to the
+     * KpqC (Korean Post-Quantum Cryptography) standardisation effort. See
+     * <a href="https://kpqc.or.kr">KpqC</a> and the HAETAE team's
+     * specification document.
+     * <p>
+     * Three parameter sets are provided: HAETAE-2 (NIST level 2), HAETAE-3
+     * (NIST level 3) and HAETAE-5 (NIST level 5).
+     */
+    ASN1ObjectIdentifier haetae = bc_sig.branch("18");
+
+    ASN1ObjectIdentifier haetae2 = haetae.branch("1");
+    ASN1ObjectIdentifier haetae3 = haetae.branch("2");
+    ASN1ObjectIdentifier haetae5 = haetae.branch("3");
+
+    /**
      * NTRU+
      * */
     ASN1ObjectIdentifier pqc_kem_ntruplus = bc_kem.branch("10");
@@ -923,4 +950,26 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sdith_threshold_cat1_p251  = sdith.branch("10");
     ASN1ObjectIdentifier sdith_threshold_cat3_p251  = sdith.branch("11");
     ASN1ObjectIdentifier sdith_threshold_cat5_p251  = sdith.branch("12");
+
+    /**
+     * QR-UOV &mdash; multivariate signature scheme based on quotient-ring UOV.
+     * Round 2 submission to the NIST PQC additional signatures process.
+     * <p>
+     * Twelve parameter sets covering NIST security categories 1/3/5 with various
+     * (q, L, v, m) combinations.
+     */
+    ASN1ObjectIdentifier qruov = bc_sig.branch("17");
+
+    ASN1ObjectIdentifier qruov1q127L3v156m54 = qruov.branch("1");
+    ASN1ObjectIdentifier qruov1q31L3v165m60 = qruov.branch("2");
+    ASN1ObjectIdentifier qruov1q31L10v600m70 = qruov.branch("3");
+    ASN1ObjectIdentifier qruov1q7L10v740m100 = qruov.branch("4");
+    ASN1ObjectIdentifier qruov3q127L3v228m78 = qruov.branch("5");
+    ASN1ObjectIdentifier qruov3q31L3v246m87 = qruov.branch("6");
+    ASN1ObjectIdentifier qruov3q31L10v890m100 = qruov.branch("7");
+    ASN1ObjectIdentifier qruov3q7L10v1100m140 = qruov.branch("8");
+    ASN1ObjectIdentifier qruov5q127L3v306m105 = qruov.branch("9");
+    ASN1ObjectIdentifier qruov5q31L3v324m114 = qruov.branch("10");
+    ASN1ObjectIdentifier qruov5q31L10v1120m120 = qruov.branch("11");
+    ASN1ObjectIdentifier qruov5q7L10v1490m190 = qruov.branch("12");
 }

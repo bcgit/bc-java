@@ -28,6 +28,7 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
+import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.pqc.crypto.hawk.HawkParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
@@ -39,7 +40,9 @@ import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.pqc.crypto.qruov.QRUOVParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
@@ -119,6 +122,14 @@ class Utils
 
     static final Map faestOids = new HashMap<ASN1ObjectIdentifier, FaestParameters>();
     static final Map faestParams = new HashMap<FaestParameters, ASN1ObjectIdentifier>();
+
+    static final Map qruovOids = new HashMap<ASN1ObjectIdentifier, QRUOVParameters>();
+    static final Map qruovParams = new HashMap<QRUOVParameters, ASN1ObjectIdentifier>();
+    static final Map sqisignOids = new HashMap<ASN1ObjectIdentifier, SQIsignParameters>();
+    static final Map sqisignParams = new HashMap<SQIsignParameters, ASN1ObjectIdentifier>();
+
+    static final Map haetaeOids = new HashMap<ASN1ObjectIdentifier, HAETAEParameters>();
+    static final Map haetaeParams = new HashMap<HAETAEParameters, ASN1ObjectIdentifier>();
 
     static final Map hawkOids = new HashMap<ASN1ObjectIdentifier, HawkParameters>();
     static final Map hawkParams = new HashMap<HawkParameters, ASN1ObjectIdentifier>();
@@ -630,9 +641,48 @@ class Utils
         faestParams.put(BCObjectIdentifiers.faest_em_256s, FaestParameters.faest_em_256s);
         faestParams.put(BCObjectIdentifiers.faest_em_256f, FaestParameters.faest_em_256f);
 
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_768, BCObjectIdentifiers.ntruplus768);
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruplus864);
-        ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruplus1152);
+        // QR-UOV — SHAKE-PRG variants are the OID-mapped canonical form.
+        qruovOids.put(QRUOVParameters.qruov_1_q127_L3_v156_m54_shake, BCObjectIdentifiers.qruov1q127L3v156m54);
+        qruovOids.put(QRUOVParameters.qruov_1_q31_L3_v165_m60_shake, BCObjectIdentifiers.qruov1q31L3v165m60);
+        qruovOids.put(QRUOVParameters.qruov_1_q31_L10_v600_m70_shake, BCObjectIdentifiers.qruov1q31L10v600m70);
+        qruovOids.put(QRUOVParameters.qruov_1_q7_L10_v740_m100_shake, BCObjectIdentifiers.qruov1q7L10v740m100);
+        qruovOids.put(QRUOVParameters.qruov_3_q127_L3_v228_m78_shake, BCObjectIdentifiers.qruov3q127L3v228m78);
+        qruovOids.put(QRUOVParameters.qruov_3_q31_L3_v246_m87_shake, BCObjectIdentifiers.qruov3q31L3v246m87);
+        qruovOids.put(QRUOVParameters.qruov_3_q31_L10_v890_m100_shake, BCObjectIdentifiers.qruov3q31L10v890m100);
+        qruovOids.put(QRUOVParameters.qruov_3_q7_L10_v1100_m140_shake, BCObjectIdentifiers.qruov3q7L10v1100m140);
+        qruovOids.put(QRUOVParameters.qruov_5_q127_L3_v306_m105_shake, BCObjectIdentifiers.qruov5q127L3v306m105);
+        qruovOids.put(QRUOVParameters.qruov_5_q31_L3_v324_m114_shake, BCObjectIdentifiers.qruov5q31L3v324m114);
+        qruovOids.put(QRUOVParameters.qruov_5_q31_L10_v1120_m120_shake, BCObjectIdentifiers.qruov5q31L10v1120m120);
+        qruovOids.put(QRUOVParameters.qruov_5_q7_L10_v1490_m190_shake, BCObjectIdentifiers.qruov5q7L10v1490m190);
+
+        qruovParams.put(BCObjectIdentifiers.qruov1q127L3v156m54, QRUOVParameters.qruov_1_q127_L3_v156_m54_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov1q31L3v165m60, QRUOVParameters.qruov_1_q31_L3_v165_m60_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov1q31L10v600m70, QRUOVParameters.qruov_1_q31_L10_v600_m70_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov1q7L10v740m100, QRUOVParameters.qruov_1_q7_L10_v740_m100_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov3q127L3v228m78, QRUOVParameters.qruov_3_q127_L3_v228_m78_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov3q31L3v246m87, QRUOVParameters.qruov_3_q31_L3_v246_m87_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov3q31L10v890m100, QRUOVParameters.qruov_3_q31_L10_v890_m100_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov3q7L10v1100m140, QRUOVParameters.qruov_3_q7_L10_v1100_m140_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov5q127L3v306m105, QRUOVParameters.qruov_5_q127_L3_v306_m105_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov5q31L3v324m114, QRUOVParameters.qruov_5_q31_L3_v324_m114_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov5q31L10v1120m120, QRUOVParameters.qruov_5_q31_L10_v1120_m120_shake);
+        qruovParams.put(BCObjectIdentifiers.qruov5q7L10v1490m190, QRUOVParameters.qruov_5_q7_L10_v1490_m190_shake);
+
+        sqisignOids.put(SQIsignParameters.sqisign_lvl1, BCObjectIdentifiers.sqisign_lvl1);
+        sqisignOids.put(SQIsignParameters.sqisign_lvl3, BCObjectIdentifiers.sqisign_lvl3);
+        sqisignOids.put(SQIsignParameters.sqisign_lvl5, BCObjectIdentifiers.sqisign_lvl5);
+
+        sqisignParams.put(BCObjectIdentifiers.sqisign_lvl1, SQIsignParameters.sqisign_lvl1);
+        sqisignParams.put(BCObjectIdentifiers.sqisign_lvl3, SQIsignParameters.sqisign_lvl3);
+        sqisignParams.put(BCObjectIdentifiers.sqisign_lvl5, SQIsignParameters.sqisign_lvl5);
+
+        haetaeOids.put(HAETAEParameters.haetae2, BCObjectIdentifiers.haetae2);
+        haetaeOids.put(HAETAEParameters.haetae3, BCObjectIdentifiers.haetae3);
+        haetaeOids.put(HAETAEParameters.haetae5, BCObjectIdentifiers.haetae5);
+
+        haetaeParams.put(BCObjectIdentifiers.haetae2, HAETAEParameters.haetae2);
+        haetaeParams.put(BCObjectIdentifiers.haetae3, HAETAEParameters.haetae3);
+        haetaeParams.put(BCObjectIdentifiers.haetae5, HAETAEParameters.haetae5);
 
         hawkOids.put(HawkParameters.Hawk_256, BCObjectIdentifiers.hawk256);
         hawkOids.put(HawkParameters.Hawk_512, BCObjectIdentifiers.hawk512);
@@ -1074,6 +1124,36 @@ class Utils
     static FaestParameters faestParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (FaestParameters)faestParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier qruovOidLookup(QRUOVParameters params)
+    {
+        return (ASN1ObjectIdentifier)qruovOids.get(params);
+    }
+
+    static QRUOVParameters qruovParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (QRUOVParameters)qruovParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier sqisignOidLookup(SQIsignParameters params)
+    {
+        return (ASN1ObjectIdentifier)sqisignOids.get(params);
+    }
+
+    static SQIsignParameters sqisignParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SQIsignParameters)sqisignParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier haetaeOidLookup(HAETAEParameters params)
+    {
+        return (ASN1ObjectIdentifier)haetaeOids.get(params);
+    }
+
+    static HAETAEParameters haetaeParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (HAETAEParameters)haetaeParams.get(oid);
     }
 
     static ASN1ObjectIdentifier mqomOidLookup(MQOMParameters params)

@@ -33,6 +33,8 @@ import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.faest.FaestKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.qruov.QRUOVKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.haetae.HaetaeKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hawk.HawkKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
@@ -45,6 +47,7 @@ import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mqom.MQOMKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sdith.SDitHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.snova.SnovaKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.sqisign.SQIsignKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.uov.UOVKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi;
@@ -528,6 +531,23 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.faest_em_256s, new FaestKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.faest_em_256f, new FaestKeyFactorySpi());
 
+        addKeyInfoConverter(BCObjectIdentifiers.qruov1q127L3v156m54, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov1q31L3v165m60, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov1q31L10v600m70, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov1q7L10v740m100, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov3q127L3v228m78, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov3q31L3v246m87, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov3q31L10v890m100, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov3q7L10v1100m140, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov5q127L3v306m105, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov5q31L3v324m114, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov5q31L10v1120m120, new QRUOVKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.qruov5q7L10v1490m190, new QRUOVKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.haetae2, new HaetaeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.haetae3, new HaetaeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.haetae5, new HaetaeKeyFactorySpi());
+
         addKeyInfoConverter(BCObjectIdentifiers.uov_Is_classic,   new UOVKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.uov_Is_pkc,       new UOVKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.uov_Is_pkc_skc,   new UOVKeyFactorySpi());
@@ -577,6 +597,10 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_fast_r5,   new MQOMKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_short_r3,  new MQOMKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mqom2_cat5_gf256_short_r5,  new MQOMKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.sqisign_lvl1, new SQIsignKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sqisign_lvl3, new SQIsignKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sqisign_lvl5, new SQIsignKeyFactorySpi());
 
         addKeyInfoConverter(BCObjectIdentifiers.hawk256,  new HawkKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hawk512,  new HawkKeyFactorySpi());
