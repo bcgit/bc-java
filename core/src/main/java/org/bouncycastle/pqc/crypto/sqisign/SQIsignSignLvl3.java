@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.sqisign;
 
+import java.math.BigInteger;
 import java.security.SecureRandom;
 
 
@@ -27,10 +28,38 @@ final class SQIsignSignLvl3
         CurvesWithEndomorphismsLvl3.CURVES_WITH_ENDOMORPHISMS[0].actionGen2,
         CurvesWithEndomorphismsLvl3.CURVES_WITH_ENDOMORPHISMS[0].actionGen3,
         CurvesWithEndomorphismsLvl3.CURVES_WITH_ENDOMORPHISMS[0].actionGen4,
-        Dim2Id2IsoLvl3::arbitraryIsogenyEvaluation,
-        EcBasisLvl3::toHint,
-        ThetaChainLvl3::chainComputeAndEvalRandomized,
-        SQIsignHashLvl3::hashToChallenge);
+        new SQIsignSign.IdealToIsogeny()
+        {
+            public int arbitraryIsogenyEvaluation(EcBasis basis, EcCurve codomain,
+                                                  QuatLeftIdeal lideal, SecureRandom random)
+            {
+                return Dim2Id2IsoLvl3.arbitraryIsogenyEvaluation(basis, codomain, lideal, random);
+            }
+        },
+        new SQIsignSign.ToHint()
+        {
+            public int toHint(EcBasis basis, EcCurve curve, int torsionEvenPower)
+            {
+                return EcBasisLvl3.toHint(basis, curve, torsionEvenPower);
+            }
+        },
+        new SQIsignSign.ChainComputeAndEvalRandomized()
+        {
+            public int chainComputeAndEvalRandomized(int n, ThetaCoupleCurve E12,
+                                                     ThetaKernelCouplePoints ker, boolean extraTorsion,
+                                                     ThetaCoupleCurve E34, ThetaCouplePoint[] P12, int numP,
+                                                     SecureRandom random)
+            {
+                return ThetaChainLvl3.chainComputeAndEvalRandomized(n, E12, ker, extraTorsion, E34, P12, numP, random);
+            }
+        },
+        new SQIsignSign.HashToChallenge()
+        {
+            public BigInteger hashToChallenge(EcCurve pkCurve, EcCurve comCurve, byte[] message)
+            {
+                return SQIsignHashLvl3.hashToChallenge(pkCurve, comCurve, message);
+            }
+        });
 
     private SQIsignSignLvl3()
     {

@@ -61,8 +61,8 @@ final class CAdESTestHelpers
     static X509Certificate makeTsaCert(KeyPair kp, String dn)
         throws Exception
     {
-        Date notBefore = new Date(System.currentTimeMillis() - 60_000L);
-        Date notAfter = new Date(System.currentTimeMillis() + 60L * 60_000L);
+        Date notBefore = new Date(System.currentTimeMillis() - 60000L);
+        Date notAfter = new Date(System.currentTimeMillis() + 60L * 60000L);
 
         JcaX509v3CertificateBuilder b = new JcaX509v3CertificateBuilder(
             new X500Name(dn), BigInteger.valueOf(1),
