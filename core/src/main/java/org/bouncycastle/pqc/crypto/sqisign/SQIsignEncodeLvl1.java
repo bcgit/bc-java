@@ -29,7 +29,13 @@ final class SQIsignEncodeLvl1
         PrecompLvl1.TORSION_EVEN_POWER,
         ExtremalOrdersLvl1.MAXORD_O0,
         PrecompLvl1.QUATALG_PINFTY,
-        EcBasisLvl1::fromHint);
+        new SQIsignEncode.FromHint()
+        {
+            public int fromHint(EcBasis basis, EcCurve curve, int torsionEvenPower, int hint)
+            {
+                return EcBasisLvl1.fromHint(basis, curve, torsionEvenPower, hint);
+            }
+        });
 
     private SQIsignEncodeLvl1()
     {

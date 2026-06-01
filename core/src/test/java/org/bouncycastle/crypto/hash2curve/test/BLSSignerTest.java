@@ -258,7 +258,7 @@ public class BLSSignerTest
         throws CryptoException
     {
         AsymmetricCipherKeyPair kp = makeKeyPair(12);
-        byte[] msg = new byte[100_000];
+        byte[] msg = new byte[100000];
         for (int i = 0; i < msg.length; ++i)
         {
             msg[i] = (byte)(i * 31 + 7);

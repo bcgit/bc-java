@@ -139,7 +139,7 @@ public class MerkleTreeCertificatesTest
         byte[] node47 = hashFunc.hashNode(node45, node67);
         List<byte[]> proof = Arrays.asList(leaf2, node01, node47);
 
-        byte[] entryHash = leaves.get(3);
+        final byte[] entryHash = leaves.get(3);
         byte[] computedRoot = MerkleTreePrimitives.evaluateSubtreeInclusionProof(
             3, 0, 8, entryHash, proof, hashFunc);
         isTrue("Inclusion proof produces the correct root", areEqual(root, computedRoot));
