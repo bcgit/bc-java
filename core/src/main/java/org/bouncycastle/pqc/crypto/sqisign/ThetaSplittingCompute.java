@@ -37,7 +37,7 @@ final class ThetaSplittingCompute
                 | ((buf[1] & 0xffL) << 8)
                 | ((buf[2] & 0xffL) << 16)
                 | ((buf[3] & 0xffL) << 24);
-        } while (seed >= 4_294_967_292L);
+        } while (seed >= 4294967292L);
         return (int)(seed % 6);
     }
 

@@ -290,7 +290,7 @@ final class Dim2Id2IsoHelpers
      * <p>Sorts in place. Only the first {@code count} entries of each array
      * are touched; the rest are left as-is.</p>
      */
-    public static void sortByNorm(Ibz[][] vecs, Ibz[] norms, int count)
+    public static void sortByNorm(Ibz[][] vecs, final Ibz[] norms, int count)
     {
         if (count <= 1)
         {
