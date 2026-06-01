@@ -37,8 +37,21 @@ final class SQIsignKeyGenLvl1
             PrecompLvl1.QUAT_EQUIV_BOUND_COEFF,
             PrecompLvl1.TORSION_EVEN_POWER,
             PrecompLvl1.P_COFACTOR_FOR_2F.longValueExact(),
-            Dim2Id2IsoLvl1::arbitraryIsogenyEvaluation,
-            EcBasisLvl1::toHint,
+            new SQIsignKeyGen.IdealToIsogeny()
+            {
+                public int arbitraryIsogenyEvaluation(EcBasis canonicalBasis, EcCurve codomain,
+                                                      QuatLeftIdeal lideal, SecureRandom rnd)
+                {
+                    return Dim2Id2IsoLvl1.arbitraryIsogenyEvaluation(canonicalBasis, codomain, lideal, rnd);
+                }
+            },
+            new SQIsignKeyGen.ToHint()
+            {
+                public int toHint(EcBasis basis, EcCurve curve, int torsionEvenPower)
+                {
+                    return EcBasisLvl1.toHint(basis, curve, torsionEvenPower);
+                }
+            },
             random);
         return new KeyPair(r.sk, r.hintPk);
     }

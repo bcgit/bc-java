@@ -52,7 +52,7 @@ public class MTCNewFeaturesTest
     private void testTrustAnchorIDs()
         throws Exception
     {
-        byte[] caId = TrustAnchorIDs.fromDottedDecimal("32473.1");
+        final byte[] caId = TrustAnchorIDs.fromDottedDecimal("32473.1");
 
         // Round-trip via dotted decimal.
         isTrue("CA ID dotted-decimal round-trip",
