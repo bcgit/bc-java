@@ -137,6 +137,14 @@ public class KeyPurposeId
     public static final KeyPurposeId id_kp_documentSigning = new KeyPurposeId(id_kp.branch("36"));
 
     /**
+     * RFC 9734 sec. 3 - proving the identity of an Instant Messaging (IM) client,
+     * whose IM URI (RFC 3860) or XMPP URI (RFC 6121) appears in the subjectAltName.
+     * <p>
+     * id-kp-imUri OBJECT IDENTIFIER ::= { id-kp 40 }
+     */
+    public static final KeyPurposeId id_kp_imUri = new KeyPurposeId(id_kp.branch("40"));
+
+    /**
      * RFC 9809 sec. 3 - signing general-purpose configuration files.
      * <p>
      * id-kp-configSigning OBJECT IDENTIFIER ::= { id-kp 41 }
