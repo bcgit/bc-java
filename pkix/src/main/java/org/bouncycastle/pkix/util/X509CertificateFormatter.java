@@ -104,6 +104,7 @@ public class X509CertificateFormatter
         extUsageMap.put(KeyPurposeId.id_kp_cmcRA, "id_kp_cmcRA");
         extUsageMap.put(KeyPurposeId.id_kp_cmKGA, "id_kp_cmKGA");
         extUsageMap.put(KeyPurposeId.id_kp_documentSigning, "id_kp_documentSigning");
+        extUsageMap.put(KeyPurposeId.id_kp_imUri, "id_kp_imUri");
         extUsageMap.put(KeyPurposeId.id_kp_configSigning, "id_kp_configSigning");
         extUsageMap.put(KeyPurposeId.id_kp_trustAnchorConfigSigning, "id_kp_trustAnchorConfigSigning");
         extUsageMap.put(KeyPurposeId.id_kp_updatePackageSigning, "id_kp_updatePackageSigning");
