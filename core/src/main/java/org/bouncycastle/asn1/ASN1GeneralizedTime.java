@@ -502,6 +502,16 @@ public class ASN1GeneralizedTime
 
     static ASN1GeneralizedTime createPrimitive(byte[] contents)
     {
+        // Parse path (ASN1InputStream / getInstance(byte[]) / implicit-tag decode): reject
+        // structurally malformed content - non-digit or out-of-range fields, illegal lengths,
+        // missing/garbage terminators - that the lenient constructor would otherwise accept and
+        // that getDate() would turn into a nonsensical Date or fail on. Programmatic construction
+        // (String/Date constructors) and DER re-encoding (toDERObject) do not pass through here.
+        // The message deliberately omits the raw content (it may carry control characters).
+        if (!ASN1TimeFormat.isValidGeneralizedTime(contents))
+        {
+            throw new IllegalArgumentException("invalid GeneralizedTime format");
+        }
         return new ASN1GeneralizedTime(contents);
     }
 
