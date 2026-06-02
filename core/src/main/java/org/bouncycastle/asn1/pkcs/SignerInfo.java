@@ -65,9 +65,14 @@ public class SignerInfo
     public SignerInfo(
         ASN1Sequence seq)
     {
+        if (seq.size() < 5 || seq.size() > 7)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         Enumeration     e = seq.getObjects();
 
-        version = (ASN1Integer)e.nextElement();
+        version = ASN1Integer.getInstance(e.nextElement());
         issuerAndSerialNumber = IssuerAndSerialNumber.getInstance(e.nextElement());
         digAlgorithm = AlgorithmIdentifier.getInstance(e.nextElement());
 
@@ -89,7 +94,7 @@ public class SignerInfo
 
         if (e.hasMoreElements())
         {
-            unauthenticatedAttributes = ASN1Set.getInstance((ASN1TaggedObject)e.nextElement(), false);
+            unauthenticatedAttributes = ASN1Set.getInstance(ASN1TaggedObject.getInstance(e.nextElement()), false);
         }
         else
         {
