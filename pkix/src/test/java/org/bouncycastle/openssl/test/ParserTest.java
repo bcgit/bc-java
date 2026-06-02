@@ -44,6 +44,7 @@ import org.bouncycastle.openssl.CertificateTrustBlock;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMEncryptor;
+import org.bouncycastle.openssl.PEMException;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.X509TrustedCertificateBlock;
@@ -388,6 +389,7 @@ public class ParserTest
         doLegacyEncryptedPkcs8PemTest();
         doLegacyEncryptedPkcs8GenPemTest();
         doLegacyEncryptedEcPemSm4CbcTest();
+        doMalformedEncryptionHeaderTest();
     }
 
     private void doLegacyEncryptedPkcs8PemTest()
@@ -560,6 +562,64 @@ public class ParserTest
         if (!trustBlock.getProhibitions().contains(KeyPurposeId.id_kp_clientAuth.toOID()))
         {
             fail("key purpose prohibition not found");
+        }
+    }
+
+    private void doMalformedEncryptionHeaderTest()
+        throws Exception
+    {
+        // Proc-Type marks the body as encrypted, but the DEK-Info header is
+        // missing entirely. The KeyPairParser path used to dereference a null
+        // dekInfo (NullPointerException) instead of reporting a PEMException.
+        checkMalformedPEMException("-----BEGIN RSA PRIVATE KEY-----\n"
+            + "Proc-Type: 4,ENCRYPTED\n"
+            + "\n"
+            + "QmysBFzoMkgvVTM39kvHjg==\n"
+            + "-----END RSA PRIVATE KEY-----\n", "missing DEK-Info");
+
+        // DEK-Info present but malformed (cipher name, no IV) - the second
+        // StringTokenizer.nextToken() used to throw an uncaught
+        // NoSuchElementException.
+        checkMalformedPEMException("-----BEGIN RSA PRIVATE KEY-----\n"
+            + "Proc-Type: 4,ENCRYPTED\n"
+            + "DEK-Info: AES-128-CBC\n"
+            + "\n"
+            + "QmysBFzoMkgvVTM39kvHjg==\n"
+            + "-----END RSA PRIVATE KEY-----\n", "malformed DEK-Info");
+
+        // Same handling on the PKCS#8 "PRIVATE KEY" path (PrivateKeyParser).
+        checkMalformedPEMException("-----BEGIN PRIVATE KEY-----\n"
+            + "Proc-Type: 4,ENCRYPTED\n"
+            + "\n"
+            + "QmysBFzoMkgvVTM39kvHjg==\n"
+            + "-----END PRIVATE KEY-----\n", "missing DEK-Info (PKCS#8)");
+
+        // Malformed base64 in the body should surface as an IOException, not a
+        // DecoderException (a RuntimeException) escaping PemReader.
+        try
+        {
+            new PEMParser(new StringReader("-----BEGIN CERTIFICATE-----\n"
+                + "!!! not base64 !!!\n"
+                + "-----END CERTIFICATE-----\n")).readObject();
+            fail("expected IOException for malformed base64 body");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+    }
+
+    private void checkMalformedPEMException(String pem, String label)
+        throws IOException
+    {
+        try
+        {
+            new PEMParser(new StringReader(pem)).readObject();
+            fail("expected PEMException for " + label);
+        }
+        catch (PEMException e)
+        {
+            // expected
         }
     }
 

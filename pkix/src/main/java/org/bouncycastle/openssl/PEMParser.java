@@ -174,6 +174,11 @@ public class PEMParser
             //
             byte[] keyBytes = obj.getContent();
 
+            if (isEncrypted && (dekInfo == null || new StringTokenizer(dekInfo, ",").countTokens() != 2))
+            {
+                throw new PEMException("malformed PEM data: missing or invalid DEK-Info header");
+            }
+
             try
             {
                 if (isEncrypted)
@@ -583,6 +588,11 @@ public class PEMParser
             }
 
             byte[] keyBytes = obj.getContent();
+
+            if (isEncrypted && (dekInfo == null || new StringTokenizer(dekInfo, ",").countTokens() != 2))
+            {
+                throw new PEMException("malformed PEM data: missing or invalid DEK-Info header");
+            }
 
             try
             {

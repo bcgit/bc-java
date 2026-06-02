@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.DecoderException;
 
 /**
  * A generic PEM reader, based on the format outlined in RFC 1421
@@ -103,7 +105,14 @@ public class PemReader
             throw new IOException(endMarker + " not found");
         }
 
-        return new PemObject(type, headers, Base64.decode(buf.toString()));
+        try
+        {
+            return new PemObject(type, headers, Base64.decode(buf.toString()));
+        }
+        catch (DecoderException e)
+        {
+            throw Exceptions.ioException("malformed PEM data: " + e.getMessage(), e);
+        }
     }
 
 }
