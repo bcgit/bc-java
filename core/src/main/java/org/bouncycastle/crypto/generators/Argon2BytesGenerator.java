@@ -765,7 +765,7 @@ public class Argon2BytesGenerator
 
         public Block allocate()
         {
-            Block block = blocks.poll();
+            Block block = (Block)blocks.poll();
             if (block == null)
             {
                 return new Block();

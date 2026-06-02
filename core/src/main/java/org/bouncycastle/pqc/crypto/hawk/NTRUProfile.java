@@ -19,12 +19,12 @@ class NTRUProfile
         this.q = q;
         this.minLogn = minLogn;
         this.maxLogn = maxLogn;
-        this.maxBlSmall = maxBlSmall.clone();
-        this.maxBlLarge = maxBlLarge.clone();
-        this.wordWin = wordWin.clone();
+        this.maxBlSmall = (int[])maxBlSmall.clone();
+        this.maxBlLarge = (int[])maxBlLarge.clone();
+        this.wordWin = (int[])wordWin.clone();
         this.reduceBits = reduceBits;
-        this.coeffFGLimit = coeffFGLimit.clone();
-        this.minSaveFg = minSaveFg.clone();
+        this.coeffFGLimit = (int[])coeffFGLimit.clone();
+        this.minSaveFg = (int[])minSaveFg.clone();
     }
 
     // Validation method to ensure profile follows the rules

@@ -28,6 +28,6 @@ class Utils
 
     static UOVParameters getParameters(String name)
     {
-        return parameters.get(name);
+        return (UOVParameters)parameters.get(name);
     }
 }

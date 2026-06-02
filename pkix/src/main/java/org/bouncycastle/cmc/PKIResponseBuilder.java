@@ -122,8 +122,9 @@ public class PKIResponseBuilder
         if (!certificates.isEmpty())
         {
             certVec = new ASN1EncodableVector();
-            for (X509CertificateHolder ch : certificates)
+            for (int i = 0; i < certificates.size(); i++)
             {
+                X509CertificateHolder ch = (X509CertificateHolder)certificates.get(i);
                 certVec.add(ch.toASN1Structure());
             }
         }
@@ -132,9 +133,9 @@ public class PKIResponseBuilder
         if (hasPayload)
         {
             PKIResponse pkiResponse = new PKIResponse(
-                controlAttributes.toArray(new TaggedAttribute[0]),
-                cmsContents.toArray(new TaggedContentInfo[0]),
-                otherMsgs.toArray(new OtherMsg[0]));
+                (TaggedAttribute[])controlAttributes.toArray(new TaggedAttribute[0]),
+                (TaggedContentInfo[])cmsContents.toArray(new TaggedContentInfo[0]),
+                (OtherMsg[])otherMsgs.toArray(new OtherMsg[0]));
 
             try
             {

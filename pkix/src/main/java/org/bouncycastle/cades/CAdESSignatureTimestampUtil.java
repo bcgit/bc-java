@@ -131,7 +131,7 @@ public final class CAdESSignatureTimestampUtil
         List<SignerInformation> rebuilt = new ArrayList<SignerInformation>(signers.size());
         for (Iterator<SignerInformation> it = signers.getSigners().iterator(); it.hasNext(); )
         {
-            SignerInformation cur = it.next();
+            SignerInformation cur = (SignerInformation)it.next();
             if (matched.contains(cur))
             {
                 rebuilt.add(addSignatureTimestamp(cur, token));
@@ -231,7 +231,7 @@ public final class CAdESSignatureTimestampUtil
         }
         for (int i = 0; i != tokens.size(); ++i)
         {
-            TimeStampToken token = tokens.get(i);
+            TimeStampToken token = (TimeStampToken)tokens.get(i);
             AlgorithmIdentifier alg = token.getTimeStampInfo().getHashAlgorithm();
             byte[] embedded = token.getTimeStampInfo().getMessageImprintDigest();
             byte[] recomputed = computeSignatureImprint(signer, alg, digCalcProv);

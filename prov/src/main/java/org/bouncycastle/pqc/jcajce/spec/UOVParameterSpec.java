@@ -69,6 +69,6 @@ public class UOVParameterSpec
         {
             return null;
         }
-        return parameters.get(Strings.toLowerCase(name));
+        return (UOVParameterSpec)parameters.get(Strings.toLowerCase(name));
     }
 }

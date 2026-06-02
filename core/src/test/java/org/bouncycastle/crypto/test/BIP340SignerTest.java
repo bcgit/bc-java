@@ -79,13 +79,13 @@ public class BIP340SignerTest
     private void runVectorRow(List<String> cols)
         throws Exception
     {
-        String index = cols.get(0);
-        String secretHex = cols.get(1);
-        String publicHex = cols.get(2);
-        String auxRandHex = cols.get(3);
-        String messageHex = cols.get(4);
-        String signatureHex = cols.get(5);
-        boolean expected = "TRUE".equalsIgnoreCase(cols.get(6));
+        String index = (String)cols.get(0);
+        String secretHex = (String)cols.get(1);
+        String publicHex = (String)cols.get(2);
+        String auxRandHex = (String)cols.get(3);
+        String messageHex = (String)cols.get(4);
+        String signatureHex = (String)cols.get(5);
+        boolean expected = "TRUE".equalsIgnoreCase((String)cols.get(6));
 
         byte[] pubX = Hex.decode(publicHex);
         byte[] message = Hex.decode(messageHex);

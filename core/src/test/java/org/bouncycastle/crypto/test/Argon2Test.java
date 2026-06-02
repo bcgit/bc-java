@@ -449,7 +449,7 @@ public class Argon2Test
 
         public Block allocate()
         {
-            Block b = available.pollLast();
+            Block b = (Block)available.pollLast();
             if (b == null)
             {
                 fresh++;

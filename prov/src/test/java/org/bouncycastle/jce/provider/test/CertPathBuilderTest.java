@@ -451,9 +451,9 @@ public class CertPathBuilderTest
         });
         try
         {
-            Future<PKIXCertPathBuilderResult> fut = exec.submit(new Callable<PKIXCertPathBuilderResult>()
+            Future fut = exec.submit(new Callable()
             {
-                public PKIXCertPathBuilderResult call()
+                public Object call()
                     throws Exception
                 {
                     CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
@@ -465,7 +465,7 @@ public class CertPathBuilderTest
             PKIXCertPathBuilderResult result;
             try
             {
-                result = fut.get(30, TimeUnit.SECONDS);
+                result = (PKIXCertPathBuilderResult)fut.get(30, TimeUnit.SECONDS);
             }
             catch (TimeoutException e)
             {

@@ -20,7 +20,7 @@ class Fxc
     @Override
     public String toString()
     {
-        return String.format("(%f, %f)", re / (double)(1L << 32), im / (double)(1L << 32));
+        return "(" + (re / (double)(1L << 32)) + ", " + (im / (double)(1L << 32)) + ")";
     }
 
     @Override

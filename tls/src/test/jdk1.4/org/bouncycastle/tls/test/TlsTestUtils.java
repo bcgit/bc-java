@@ -587,4 +587,103 @@ public class TlsTestUtils
             this.buffer = new byte[size];
         }
     }
+
+    public static String findResourceName12(short signatureAlgorithm, boolean forServer)
+    {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.dsa:
+            return "dsa";
+        case SignatureAlgorithm.ecdsa:
+            return "ecdsa";
+        case SignatureAlgorithm.ed25519:
+            return "ed25519";
+        case SignatureAlgorithm.ed448:
+            return "ed448";
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+            return "rsa_pss_256";
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+            return "rsa_pss_384";
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return "rsa_pss_512";
+        case SignatureAlgorithm.rsa:
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return forServer ? "rsa-sign" : "rsa";
+
+        // TODO[RFC 9189] Choose names here and apply reverse mappings in getCACertResource(String)
+        case SignatureAlgorithm.gostr34102012_256:
+        case SignatureAlgorithm.gostr34102012_512:
+
+        default:
+            return null;
+        }
+    }
+
+    public static String findResourceName13(int signatureScheme, boolean forServer)
+    {
+        switch (signatureScheme)
+        {
+        case SignatureScheme.ecdsa_secp256r1_sha256:
+            return "ecdsa";
+        case SignatureScheme.ed25519:
+            return "ed25519";
+        case SignatureScheme.ed448:
+            return "ed448";
+        case SignatureScheme.rsa_pss_pss_sha256:
+            return "rsa_pss_256";
+        case SignatureScheme.rsa_pss_pss_sha384:
+            return "rsa_pss_384";
+        case SignatureScheme.rsa_pss_pss_sha512:
+            return "rsa_pss_512";
+        case SignatureScheme.rsa_pss_rsae_sha256:
+        case SignatureScheme.rsa_pss_rsae_sha384:
+        case SignatureScheme.rsa_pss_rsae_sha512:
+            return forServer ? "rsa-sign" : "rsa";
+        case SignatureScheme.mldsa44:
+            return "ml_dsa_44";
+        case SignatureScheme.mldsa65:
+            return "ml_dsa_65";
+        case SignatureScheme.mldsa87:
+            return "ml_dsa_87";
+        case SignatureScheme.DRAFT_slhdsa_sha2_128s:
+            return "slh_dsa_sha2_128s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_128f:
+            return "slh_dsa_sha2_128f";
+        case SignatureScheme.DRAFT_slhdsa_sha2_192s:
+            return "slh_dsa_sha2_192s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_192f:
+            return "slh_dsa_sha2_192f";
+        case SignatureScheme.DRAFT_slhdsa_sha2_256s:
+            return "slh_dsa_sha2_256s";
+        case SignatureScheme.DRAFT_slhdsa_sha2_256f:
+            return "slh_dsa_sha2_256f";
+        case SignatureScheme.DRAFT_slhdsa_shake_128s:
+            return "slh_dsa_shake_128s";
+        case SignatureScheme.DRAFT_slhdsa_shake_128f:
+            return "slh_dsa_shake_128f";
+        case SignatureScheme.DRAFT_slhdsa_shake_192s:
+            return "slh_dsa_shake_192s";
+        case SignatureScheme.DRAFT_slhdsa_shake_192f:
+            return "slh_dsa_shake_192f";
+        case SignatureScheme.DRAFT_slhdsa_shake_256s:
+            return "slh_dsa_shake_256s";
+        case SignatureScheme.DRAFT_slhdsa_shake_256f:
+            return "slh_dsa_shake_256f";
+
+        // TODO[tls] Add test resources for these
+        case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512:
+        case SignatureScheme.ecdsa_secp384r1_sha384:
+        case SignatureScheme.ecdsa_secp521r1_sha512:
+
+        // TODO[RFC 8998]
+        case SignatureScheme.sm2sig_sm3:
+
+        default:
+            return null;
+        }
+    }
 }
