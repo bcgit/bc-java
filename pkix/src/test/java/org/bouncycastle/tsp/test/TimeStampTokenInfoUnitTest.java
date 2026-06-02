@@ -1,5 +1,6 @@
 package org.bouncycastle.tsp.test;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
@@ -132,9 +133,15 @@ public class TimeStampTokenInfoUnitTest
 
             fail("dud date not detected.");
         }
+        catch (IOException e)
+        {
+            // strict read rejects the malformed GeneralizedTime ("2000V101081721Z", non-digit
+            // month) at parse, before the TSTInfo is built - earlier than the legacy TSPException
+            // path below, which detected it only when the leniently-parsed date was interpreted.
+        }
         catch (TSPException e)
         {
-            // expected
+            // expected (legacy detection point)
         }
     }
 
