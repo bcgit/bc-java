@@ -22,6 +22,21 @@ public class Properties
      */
     public static final String EMULATE_ORACLE = "org.bouncycastle.emulate.oracle";
 
+    // Mirrored from the base org.bouncycastle.util.Properties so the down-ported
+    // classes that reference them compile in the jdk1.4 build. Keep in step with base.
+    public static final String PKCS12_IGNORE_USELESS_PASSWD = "org.bouncycastle.pkcs12.ignore_useless_passwd";
+    public static final String PKCS12_MAX_IT_COUNT = "org.bouncycastle.pkcs12.max_it_count";
+    public static final String X509_CRL_CACHE_TTL = "org.bouncycastle.x509.crl_cache_ttl";
+    public static final String X509_ENABLE_CRLDP = "org.bouncycastle.x509.enableCRLDP";
+    public static final String PKCS12_ALLOW_SUN_SECRET_KEYS = "org.bouncycastle.pkcs12.allow_sun_secret_keys";
+    public static final String PKCS1_STRICT_DIGESTINFO = "org.bouncycastle.pkcs1.strict_digestinfo";
+    public static final String JSSE_HOSTNAME_CHECK_CN_FALLBACK = "org.bouncycastle.jsse.hostname_check_cn_fallback";
+    public static final String DRBG_EFFECTIVE_256BITS_ENTROPY = "org.bouncycastle.drbg.effective_256bits_entropy";
+    public static final String DRBG_ENTROPY_SOURCE = "org.bouncycastle.drbg.entropysource";
+    public static final String DRBG_ENTROPY_THREAD = "org.bouncycastle.drbg.entropy_thread";
+    public static final String DRBG_GATHER_PAUSE_SECS = "org.bouncycastle.drbg.gather_pause_secs";
+    public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
+
     private Properties()
     {
     }

@@ -1386,7 +1386,7 @@ class HAETAEEngine
         int[][] dst = new int[src.length][];
         for (int i = 0; i < src.length; i++)
         {
-            dst[i] = src[i].clone();
+            dst[i] = (int[])src[i].clone();
         }
         return dst;
     }
@@ -3246,7 +3246,7 @@ class HAETAEEngine
             polyfixveckRound(z2rnd, y2);
 
             // 3. Compute Ay = A1 * NTT(z1rnd) + 2 * z2rnd (mod Q)
-            int[] z1rnd0 = z1rnd[0].clone();
+            int[] z1rnd0 = (int[])z1rnd[0].clone();
             polyveclNtt(z1rnd);
             polymatklPointwiseMontgomery(Ay, A1, z1rnd);
             polyveckInvnttTomont(Ay);
@@ -3271,8 +3271,8 @@ class HAETAEEngine
             polyChallenge(c, buf, mu);
 
             // 9. Compute cs = c * s
-            cs1[0] = c.clone();
-            chat = c.clone();
+            cs1[0] = (int[])c.clone();
+            chat = (int[])c.clone();
             polyNtt(chat);
 
             for (int i = 1; i < params.getL(); i++)

@@ -78,7 +78,7 @@ class PKCS12Util
      */
     static int getKeySize(AlgorithmIdentifier algorithmIdentifier)
     {
-        Integer keySize = KEY_SIZES.get(algorithmIdentifier.getAlgorithm());
+        Integer keySize = (Integer)KEY_SIZES.get(algorithmIdentifier.getAlgorithm());
         return keySize == null ? -1 : keySize.intValue();
     }
 

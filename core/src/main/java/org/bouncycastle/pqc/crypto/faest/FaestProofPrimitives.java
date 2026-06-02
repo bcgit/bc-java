@@ -692,7 +692,7 @@ final class FaestProofPrimitives
     {
         long[] beta4 = new long[BF128.LIMBS];
         BF128.add(beta4, 0, BF128.ALPHA[5], 0, BF128.ALPHA[3], 0);
-        long[] betaSq = beta4.clone();
+        long[] betaSq = (long[])beta4.clone();
         long[] betaSq1 = new long[BF128.LIMBS];
         BF128.mul(betaSq1, 0, beta4, 0, beta4, 0);
         long[] betaCube = new long[BF128.LIMBS];
@@ -726,7 +726,7 @@ final class FaestProofPrimitives
     {
         long[] beta4 = new long[BF192.LIMBS];
         BF192.add(beta4, 0, BF192.ALPHA[5], 0, BF192.ALPHA[3], 0);
-        long[] betaSq = beta4.clone();
+        long[] betaSq = (long[])beta4.clone();
         long[] betaSq1 = new long[BF192.LIMBS];
         BF192.mul(betaSq1, 0, beta4, 0, beta4, 0);
         long[] betaCube = new long[BF192.LIMBS];
@@ -757,7 +757,7 @@ final class FaestProofPrimitives
     {
         long[] beta4 = new long[BF256.LIMBS];
         BF256.add(beta4, 0, BF256.ALPHA[5], 0, BF256.ALPHA[3], 0);
-        long[] betaSq = beta4.clone();
+        long[] betaSq = (long[])beta4.clone();
         long[] betaSq1 = new long[BF256.LIMBS];
         BF256.mul(betaSq1, 0, beta4, 0, beta4, 0);
         long[] betaCube = new long[BF256.LIMBS];
@@ -787,7 +787,7 @@ final class FaestProofPrimitives
     {
         long[] beta4 = new long[BF128.LIMBS];
         BF128.add(beta4, 0, BF128.ALPHA[5], 0, BF128.ALPHA[3], 0);
-        long[] betaSq = beta4.clone();
+        long[] betaSq = (long[])beta4.clone();
         long[] betaSq1 = new long[BF128.LIMBS];
         BF128.mul(betaSq1, 0, beta4, 0, beta4, 0);
         long[] betaCube = new long[BF128.LIMBS];
@@ -812,7 +812,7 @@ final class FaestProofPrimitives
     {
         long[] beta4 = new long[BF192.LIMBS];
         BF192.add(beta4, 0, BF192.ALPHA[5], 0, BF192.ALPHA[3], 0);
-        long[] betaSq = beta4.clone();
+        long[] betaSq = (long[])beta4.clone();
         long[] betaSq1 = new long[BF192.LIMBS];
         BF192.mul(betaSq1, 0, beta4, 0, beta4, 0);
         long[] betaCube = new long[BF192.LIMBS];
@@ -837,7 +837,7 @@ final class FaestProofPrimitives
     {
         long[] beta4 = new long[BF256.LIMBS];
         BF256.add(beta4, 0, BF256.ALPHA[5], 0, BF256.ALPHA[3], 0);
-        long[] betaSq = beta4.clone();
+        long[] betaSq = (long[])beta4.clone();
         long[] betaSq1 = new long[BF256.LIMBS];
         BF256.mul(betaSq1, 0, beta4, 0, beta4, 0);
         long[] betaCube = new long[BF256.LIMBS];

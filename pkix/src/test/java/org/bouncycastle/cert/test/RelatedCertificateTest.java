@@ -75,7 +75,7 @@ public class RelatedCertificateTest
         throws Exception
     {
         // Pick a fixed epoch-second value to anchor the wire encoding.
-        long sec = 1_700_000_000L;
+        long sec = 1700000000L;
         BinaryTime t = new BinaryTime(sec);
         assertEquals(BigInteger.valueOf(sec), t.getTime());
 
@@ -161,7 +161,7 @@ public class RelatedCertificateTest
     {
         IssuerAndSerialNumber certID = new IssuerAndSerialNumber(
             new X500Name("CN=Issuer"), BigInteger.valueOf(0x1234567890L));
-        BinaryTime ts = new BinaryTime(1_700_000_000L);
+        BinaryTime ts = new BinaryTime(1700000000L);
         String[] uris = new String[] {
             "https://example.com/certs/abc.cer",
             "data:application/pkix-cert;base64,Zm9v"
@@ -202,7 +202,7 @@ public class RelatedCertificateTest
     {
         IssuerAndSerialNumber certID = new IssuerAndSerialNumber(
             new X500Name("CN=Issuer"), BigInteger.valueOf(0x42));
-        BinaryTime ts = new BinaryTime(1_700_000_000L);
+        BinaryTime ts = new BinaryTime(1700000000L);
 
         byte[] expected = concat(
             certID.getEncoded(ASN1Encoding.DER),
@@ -305,7 +305,7 @@ public class RelatedCertificateTest
     {
         KeyPair kp = ecKeyPair();
         X500Name name = new X500Name(dn);
-        Date notBefore = new Date(System.currentTimeMillis() - 60_000L);
+        Date notBefore = new Date(System.currentTimeMillis() - 60000L);
         Date notAfter = new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000L);
         JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
             name, BigInteger.valueOf(System.nanoTime() & 0x7fffffffL),

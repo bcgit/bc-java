@@ -2,8 +2,6 @@ package org.bouncycastle.pqc.crypto.sqisign;
 
 
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Comparator;
 
 /**
  * Level-independent helpers from {@code src/id2iso/ref/lvlx/dim2id2iso.c}:
@@ -283,31 +281,36 @@ final class Dim2Id2IsoHelpers
      * Stable sort over (vecs, norms) by ascending norm, mirroring
      * {@code compare_vec_by_norm} + {@code qsort} from
      * {@code src/id2iso/ref/lvlx/dim2id2iso.c}. The original C comparator ties
-     * on norm-equal entries by their original index (which is the stable-sort
-     * convention) — we get that for free from {@link Arrays#sort(Object[], Comparator)},
-     * documented as stable since JDK 1.4.
+     * on norm-equal entries by their original index (the stable-sort
+     * convention); the insertion sort below is stable — it shifts only on a
+     * strict {@code >}, so norm-equal entries keep their original index order.
      *
      * <p>Sorts in place. Only the first {@code count} entries of each array
      * are touched; the rest are left as-is.</p>
      */
-    public static void sortByNorm(Ibz[][] vecs, final Ibz[] norms, int count)
+    public static void sortByNorm(Ibz[][] vecs, Ibz[] norms, int count)
     {
         if (count <= 1)
         {
             return;
         }
-        Integer[] idx = new Integer[count];
+        int[] idx = new int[count];
         for (int i = 0; i < count; i++)
         {
             idx[i] = i;
         }
-        Arrays.sort(idx, new Comparator<Integer>()
+        // Stable insertion sort of idx by ascending norm; ties keep original order.
+        for (int i = 1; i < count; i++)
         {
-            public int compare(Integer a, Integer b)
+            int cur = idx[i];
+            int j = i - 1;
+            while (j >= 0 && Ibz.cmp(norms[idx[j]], norms[cur]) > 0)
             {
-                return Ibz.cmp(norms[a], norms[b]);
+                idx[j + 1] = idx[j];
+                j--;
             }
-        });
+            idx[j + 1] = cur;
+        }
 
         // Materialize the permutation back into vecs / norms.
         Ibz[][] vecsCopy = new Ibz[count][];

@@ -433,9 +433,9 @@ final class Ibz
             181, 191, 193, 197, 199, 211, 223, 227, 229, 233
         };
         BigInteger p = BigInteger.ONE;
-        for (int q : smallPrimes)
+        for (int i = 0; i < smallPrimes.length; i++)
         {
-            p = p.multiply(BigInteger.valueOf(q));
+            p = p.multiply(BigInteger.valueOf(smallPrimes[i]));
         }
         SMALL_PRIME_PRODUCT = p;
     }

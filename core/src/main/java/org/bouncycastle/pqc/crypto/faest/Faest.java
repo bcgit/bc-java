@@ -304,14 +304,14 @@ final class Faest
         else if (lambda == 192)
         {
             FaestAES.aes192EncryptBlock(key, 0, input, 0, output, 0);
-            byte[] in2 = input.clone();
+            byte[] in2 = (byte[])input.clone();
             in2[0] ^= 0x01;
             FaestAES.aes192EncryptBlock(key, 0, in2, 0, output, 16);
         }
         else
         {
             FaestAES.aes256EncryptBlock(key, 0, input, 0, output, 0);
-            byte[] in2 = input.clone();
+            byte[] in2 = (byte[])input.clone();
             in2[0] ^= 0x01;
             FaestAES.aes256EncryptBlock(key, 0, in2, 0, output, 16);
         }

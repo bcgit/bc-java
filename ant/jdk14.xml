@@ -29,6 +29,11 @@
                 <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/gemss/*.java"/>
                 <exclude name="**/crypto/hash2curve/**/*.java"/>
+                <exclude name="**/crypto/bls/**/*.java"/>
+                <exclude name="**/crypto/signers/BLSSigner.java"/>
+                <exclude name="**/crypto/generators/BLSKeyPairGenerator.java"/>
+                <exclude name="**/crypto/params/BLSPublicKeyParameters.java"/>
+                <exclude name="**/crypto/params/BLSPrivateKeyParameters.java"/>
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/PhotonBeetle*.java"/>
@@ -53,6 +58,12 @@
 		<exclude name="**/its/**/*.java"/>
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/jcajce/*.java"/>
+                <exclude name="**/cert/plants/**/*.java"/>
+                <exclude name="**/cert/X509CertificateReviewer.java"/>
+                <exclude name="**/cades/CAdESLevel.java"/>
+                <exclude name="**/cades/CAdESLevelDetector.java"/>
+                <exclude name="**/cades/CAdESLongTermValuesUtil.java"/>
+                <exclude name="**/cades/CAdESArchiveTimestampUtil.java"/>
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <include name="**/pkix/jcajce/Jca*.java" />
@@ -120,6 +131,13 @@
                 <exclude name="**/pqc/math/**/*.java"/>
                 <exclude name="**/pqc/rainbow/*.java"/>
                 <exclude name="**/pqc/gemss/*.java"/>
+                <exclude name="**/pqc/crypto/faest/**/*.java"/>
+                <exclude name="**/pqc/crypto/test/FaestKatTest.java"/>
+                <exclude name="**/pqc/crypto/test/FaestKeyPairAndSignerTest.java"/>
+                <exclude name="**/pqc/crypto/test/HawkTest.java"/>
+                <exclude name="**/pqc/crypto/test/MQOMTest.java"/>
+                <exclude name="**/pqc/crypto/test/MQOMKatTest.java"/>
+                <exclude name="**/pqc/crypto/test/UOVTest.java"/>
                 <exclude name="**/pqc/**/BitStringTest.java"/>
                 <exclude name="**/pqc/**/XMS*.java"/>
                 <exclude name="**/pqc/**/LMS*.java"/>
@@ -150,6 +168,14 @@
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
+                <exclude name="**/tsp/test/ERSTest.java"/>
+                <exclude name="**/cades/test/CAdESTTest.java"/>
+                <exclude name="**/cades/test/CAdESLTTest.java"/>
+                <exclude name="**/cades/test/CAdESLTATest.java"/>
+                <exclude name="**/cades/test/AllTests.java"/>
+                <exclude name="**/cert/plants/**/*.java"/>
+                <exclude name="**/cert/test/X509CertificateReviewerTest.java"/>
+                <exclude name="**/pkix/test/QcStatementReviewerTest.java"/>
                 <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
                 <exclude name="**/cms/test/AnnotatedKeyTest.java"/>

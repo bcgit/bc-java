@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -155,7 +156,7 @@ public class BIP340Signer
         }
 
         CryptoServicesRegistrar.checkConstraints(
-            Utils.getDefaultProperties("BIP340", forSigning ? privateKey : publicKey, forSigning));
+            Utils.getDefaultProperties("BIP340", forSigning ? (ECKeyParameters)privateKey : publicKey, forSigning));
 
         reset();
     }
