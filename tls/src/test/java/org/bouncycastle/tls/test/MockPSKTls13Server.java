@@ -75,7 +75,7 @@ class MockPSKTls13Server
         return serverVersion;
     }
 
-    public TlsPSKExternal getExternalPSK(Vector identities)
+    public TlsPSKExternal getExternalPSK(Vector identities) throws IOException
     {
         byte[] identity = Strings.toUTF8ByteArray("client");
         long obfuscatedTicketAge = 0L;
