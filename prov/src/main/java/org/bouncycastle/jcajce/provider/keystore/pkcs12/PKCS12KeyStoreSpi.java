@@ -1363,55 +1363,65 @@ public class PKCS12KeyStoreSpi
         {
             PKCS12BagAttributeCarrier bagAttr = (PKCS12BagAttributeCarrier)privKey;
 
-            Enumeration e = b.getBagAttributes().getObjects();
-            while (e.hasMoreElements())
+            if (b.getBagAttributes() != null)
             {
-                ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
-                ASN1ObjectIdentifier aOid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
-                ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
-                ASN1Primitive attr = null;
-
-                if (attrSet.size() > 0)
+                Enumeration e = b.getBagAttributes().getObjects();
+                while (e.hasMoreElements())
                 {
-                    attr = (ASN1Primitive)attrSet.getObjectAt(0);
+                    ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
+                    ASN1ObjectIdentifier aOid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
+                    ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
+                    ASN1Primitive attr = null;
 
-                    ASN1Encodable existing = bagAttr.getBagAttribute(aOid);
-                    if (existing != null)
+                    if (attrSet.size() > 0)
                     {
-                        // OK, but the value has to be the same
-                        if (!existing.toASN1Primitive().equals(attr))
+                        attr = (ASN1Primitive)attrSet.getObjectAt(0);
+
+                        ASN1Encodable existing = bagAttr.getBagAttribute(aOid);
+                        if (existing != null)
                         {
-                            throw new IOException(
-                                "attempt to add existing attribute with different value");
+                            // OK, but the value has to be the same
+                            if (!existing.toASN1Primitive().equals(attr))
+                            {
+                                throw new IOException(
+                                    "attempt to add existing attribute with different value");
+                            }
                         }
-                    }
-                    else
-                    {
-                        bagAttr.setBagAttribute(aOid, attr);
-                    }
+                        else
+                        {
+                            bagAttr.setBagAttribute(aOid, attr);
+                        }
 
-                    if (aOid.equals(pkcs_9_at_friendlyName))
-                    {
-                        alias = ((ASN1BMPString)attr).getString();
-                        keys.put(alias, privKey);
-                    }
-                    else if (aOid.equals(pkcs_9_at_localKeyId))
-                    {
-                        localId = (ASN1OctetString)attr;
+                        if (aOid.equals(pkcs_9_at_friendlyName))
+                        {
+                            alias = ((ASN1BMPString)attr).getString();
+                            keys.put(alias, privKey);
+                        }
+                        else if (aOid.equals(pkcs_9_at_localKeyId))
+                        {
+                            localId = (ASN1OctetString)attr;
+                        }
                     }
                 }
             }
         }
 
-        String name = new String(Hex.encode(localId.getOctets()));
-
-        if (alias == null)
+        if (localId != null)
         {
-            keys.put(name, privKey);
+            String name = new String(Hex.encode(localId.getOctets()));
+
+            if (alias == null)
+            {
+                keys.put(name, privKey);
+            }
+            else
+            {
+                localIds.put(alias, name);
+            }
         }
         else
         {
-            localIds.put(alias, name);
+            keys.put("unmarked", privKey);
         }
     }
 
