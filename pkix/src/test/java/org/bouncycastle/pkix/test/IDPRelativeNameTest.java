@@ -118,7 +118,7 @@ public class IDPRelativeNameTest
         throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-        kpg.initialize(2048);
+        kpg.initialize(1024);
         return kpg.generateKeyPair();
     }
 
