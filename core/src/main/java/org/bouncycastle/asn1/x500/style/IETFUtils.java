@@ -75,6 +75,7 @@ public class IETFUtils
                 }
                 else
                 {
+                    checkCompleteHexPair(hex1);
                     flushHexBytes(buf, hexBytes, lastEscapedHolder);
                     buf.append(c);
                     escaped = false;
@@ -106,11 +107,17 @@ public class IETFUtils
             }
             else
             {
+                // A '\' followed by a single hex digit and then a non-hex char is an
+                // incomplete hexpair (RFC 4514 sec. 2.4 requires two), not a literal.
+                checkCompleteHexPair(hex1);
                 flushHexBytes(buf, hexBytes, lastEscapedHolder);
                 buf.append(c);
                 escaped = false;
             }
         }
+
+        // A '\' followed by a single hex digit at end of input is likewise incomplete.
+        checkCompleteHexPair(hex1);
 
         flushHexBytes(buf, hexBytes, lastEscapedHolder);
 
@@ -135,6 +142,14 @@ public class IETFUtils
         hexBytes.reset();
         buf.append(decoded);
         lastEscapedHolder[0] = buf.length() - 1;
+    }
+
+    private static void checkCompleteHexPair(int hex1)
+    {
+        if (hex1 >= 0)
+        {
+            throw new IllegalArgumentException("invalid hex escape in directory string");
+        }
     }
 
     private static boolean isHexDigit(char c)
