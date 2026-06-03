@@ -41,7 +41,7 @@ public class IETFUtils
         // is the UTF-8 encoding of the character — so a run of pairs must be
         // decoded as UTF-8 (RFC 5280 sec. 4.1.2.4), not one Java char per pair.
         ByteArrayOutputStream hexBytes = new ByteArrayOutputStream();
-        int[] lastEscapedHolder = new int[1];
+        int[] lastEscapedHolder = new int[]{ -1 };
         int start = 0;
 
         // if it's an escaped hash string and not an actual encoding in string form
@@ -56,7 +56,7 @@ public class IETFUtils
         }
 
         boolean nonWhiteSpaceEncountered = false;
-        char hex1 = 0;
+        int hex1 = -1;
 
         for (int i = start; i != elt.length(); i++)
         {
@@ -83,26 +83,29 @@ public class IETFUtils
             else if (c == '\\' && !(escaped || quoted))
             {
                 escaped = true;
-                lastEscapedHolder[0] = buf.length() + hexBytes.size();
+                // In case hexBytes is not empty, lastEscapedHolder will get updated when hexBytes is flushed
+                lastEscapedHolder[0] = buf.length();
+            }
+            else if (c == ' ' && !escaped && !nonWhiteSpaceEncountered)
+            {
+                // Skip leading spaces
+            }
+            else if (escaped && isHexDigit(c))
+            {
+                int hexDigit = convertHex(c);
+                if (hex1 < 0)
+                {
+                    hex1 = hexDigit;
+                }
+                else
+                {
+                    hexBytes.write(hex1 * 16 + hexDigit);
+                    escaped = false;
+                    hex1 = -1;
+                }
             }
             else
             {
-                if (c == ' ' && !escaped && !nonWhiteSpaceEncountered)
-                {
-                    continue;
-                }
-                if (escaped && isHexDigit(c))
-                {
-                    if (hex1 != 0)
-                    {
-                        hexBytes.write(convertHex(hex1) * 16 + convertHex(c));
-                        escaped = false;
-                        hex1 = 0;
-                        continue;
-                    }
-                    hex1 = c;
-                    continue;
-                }
                 flushHexBytes(buf, hexBytes, lastEscapedHolder);
                 buf.append(c);
                 escaped = false;
@@ -113,7 +116,7 @@ public class IETFUtils
 
         if (buf.length() > 0)
         {
-            while (buf.charAt(buf.length() - 1) == ' ' && lastEscapedHolder[0] != (buf.length() - 1))
+            while (buf.charAt(buf.length() - 1) == ' ' && lastEscapedHolder[0] < buf.length() - 1)
             {
                 buf.setLength(buf.length() - 1);
             }
