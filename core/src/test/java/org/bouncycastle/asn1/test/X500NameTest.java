@@ -959,17 +959,17 @@ public class X500NameTest
         // into a later escape); it must throw.
         String[] malformed = new String[]
         {
-//            "CN=a\\Cz",     // single hex digit then a letter
-//            "CN=a\\C,O=x",  // single hex digit then the RDN separator
-//            "CN=a\\C b",    // single hex digit then a space
-//            "CN=ab\\C",     // single hex digit at end of input
-//            "CN=a\\C\"b\"", // single hex digit then a quote
-//            "CN=\\Cz\\AB",  // partial digit must not corrupt a following valid escape
+            "CN=a\\Cz",     // single hex digit then a letter
+            "CN=a\\C,O=x",  // single hex digit then the RDN separator
+            "CN=a\\C b",    // single hex digit then a space
+            "CN=ab\\C",     // single hex digit at end of input
+            "CN=a\\C\"b\"", // single hex digit then a quote
+            "CN=\\Cz\\AB",  // partial digit must not corrupt a following valid escape
             "CN=abc\\",     // dangling bare backslash at end of input (tokenizer)
-//            "O=x,CN=abc\\", // dangling bare backslash after a prior RDN (tokenizer)
-//            "CN=\"abc",     // unterminated quote at end of input (tokenizer)
-//            "CN=\"abc,O=x", // unterminated quote spanning the RDN separator (tokenizer)
-//            "CN=\"",        // lone opening quote (tokenizer)
+            "O=x,CN=abc\\", // dangling bare backslash after a prior RDN (tokenizer)
+            "CN=\"abc",     // unterminated quote at end of input (tokenizer)
+            "CN=\"abc,O=x", // unterminated quote spanning the RDN separator (tokenizer)
+            "CN=\"",        // lone opening quote (tokenizer)
 
         };
         for (int i = 0; i != malformed.length; i++)
