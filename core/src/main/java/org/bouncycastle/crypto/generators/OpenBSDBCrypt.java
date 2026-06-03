@@ -185,23 +185,12 @@ public class OpenBSDBCrypt
 
         // 0 termination:
 
-        byte[] tmp = new byte[psw.length >= 72 ? 72 : psw.length + 1];
-
-        if (tmp.length > psw.length)
-        {
-            System.arraycopy(psw, 0, tmp, 0, psw.length);
-        }
-        else
-        {
-            System.arraycopy(psw, 0, tmp, 0, tmp.length);
-        }
-
-        Arrays.fill(psw, (byte)0);
+        int tmpLen = Math.min(BCrypt.MAX_PASSWORD_BYTES, psw.length + 1);
+        byte[] tmp = Arrays.copyOf(psw, tmpLen);
+        Arrays.clear(psw);
 
         String rv = createBcryptString(version, tmp, salt, cost);
-
-        Arrays.fill(tmp, (byte)0);
-
+        Arrays.clear(tmp);
         return rv;
     }
 
