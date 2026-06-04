@@ -3,6 +3,7 @@ package org.bouncycastle.openssl.test;
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
@@ -22,6 +23,9 @@ import java.util.Date;
 import java.util.List;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -52,6 +56,7 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -325,6 +330,58 @@ public class CompositeKeyTest
 //        doOutput("/tmp/comp_cert_1.pem", certKeyStr);
 //        doOutput("/tmp/comp_priv_1.pem", privKeyStr);
 //        doOutput("/tmp/comp_pub_1.pem", pubKeyStr);
+    }
+
+
+    public void testCompositeSignatureStripping()
+        throws Exception
+    {
+        // CVE-2026-5588 follow-up: the legacy id_alg_composite ContentVerifier
+        // accepted a composite signature truncated to a single verifiable
+        // component. The empty-sequence case was fixed; an under-length sequence
+        // still passed. A composite signature MUST carry every component.
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        ecKpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        KeyPairGenerator rsaKpg = KeyPairGenerator.getInstance("RSA", "BC");
+        rsaKpg.initialize(new RSAKeyGenParameterSpec(3072, RSAKeyGenParameterSpec.F4));
+        KeyPair rsaKp = rsaKpg.generateKeyPair();
+
+        // component 0 = ECDSA, component 1 = RSA
+        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
+            .add("SHA256withECDSA")
+            .add("SHA256withRSA")
+            .build();
+        CompositePublicKey compPub = new CompositePublicKey(ecKp.getPublic(), rsaKp.getPublic());
+        CompositePrivateKey compPriv = new CompositePrivateKey(ecKp.getPrivate(), rsaKp.getPrivate());
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).build(compPriv);
+
+        X500Name name = new X500Name("CN=Composite Strip Test");
+        X509CertificateHolder certHldr = new JcaX509v3CertificateBuilder(
+            name, BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000),
+            name, compPub).build(sigGen);
+
+        // the genuine 2-of-2 composite signature verifies
+        assertTrue("genuine composite signature should verify",
+            certHldr.isSignatureValid(new JcaContentVerifierProviderBuilder().build(compPub)));
+
+        AlgorithmIdentifier sigAlgId = certHldr.getSignatureAlgorithm();
+        byte[] tbs = certHldr.toASN1Structure().getTBSCertificate().getEncoded(ASN1Encoding.DER);
+        ASN1Sequence sigSeq = ASN1Sequence.getInstance(certHldr.getSignature());
+        assertTrue("expected a two-component composite signature", sigSeq.size() == 2);
+
+        // strip the RSA component, leaving only the (genuine) ECDSA component
+        byte[] strippedSig = new DERSequence(sigSeq.getObjectAt(0)).getEncoded(ASN1Encoding.DER);
+
+        ContentVerifier cv = new JcaContentVerifierProviderBuilder().build(compPub).get(sigAlgId);
+        OutputStream sOut = cv.getOutputStream();
+        sOut.write(tbs);
+        sOut.close();
+
+        assertFalse("composite signature stripped of a component must not verify", cv.verify(strippedSig));
     }
 
     public void testRSAAndECCompositeSignedDataGen()
