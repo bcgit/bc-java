@@ -61,10 +61,10 @@ public class ISAACEngine
                     
     public byte returnByte(byte in)
     {
-        if (index == 0) 
+        if (index == 0)
         {
             isaac();
-            keyStream = Pack.intToBigEndian(results);
+            Pack.intToBigEndian(results, keyStream, 0);
         }
         byte out = (byte)(keyStream[index]^in);
         index = (index + 1) & 1023;
@@ -96,10 +96,10 @@ public class ISAACEngine
         
         for (int i = 0; i < len; i++)
         {
-            if (index == 0) 
+            if (index == 0)
             {
                 isaac();
-                keyStream = Pack.intToBigEndian(results);
+                Pack.intToBigEndian(results, keyStream, 0);
             }
             out[i+outOff] = (byte)(keyStream[index]^in[i+inOff]);
             index = (index + 1) & 1023;
