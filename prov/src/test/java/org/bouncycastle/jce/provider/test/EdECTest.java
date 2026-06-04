@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
 import java.security.Key;
@@ -179,6 +180,8 @@ public class EdECTest
         x25519AgreementTest();
         ed448SignatureTest();
         ed25519SignatureTest();
+        bcEdDSAParameterSpecTest();
+        edDSAAlgorithmParametersTest();
         x448withCKDFTest();
         x25519withCKDFTest();
         x448withKDFTest();
@@ -599,6 +602,206 @@ public class EdECTest
         throws Exception
     {
         signatureTest("Ed25519");
+    }
+
+    /**
+     * Exercise the RFC 8032 instance selectors (prehash / context) carried by the BC
+     * {@link EdDSAParameterSpec} through the standard Signature API (github #2313). This is the
+     * JDK-version-independent path; the SunEC-interop check using the JDK 15+
+     * java.security.spec.EdDSAParameterSpec lives in the MR-jar EdDSA15Test.
+     */
+    private void bcEdDSAParameterSpecTest()
+        throws Exception
+    {
+        implBcSpecModes("Ed25519");
+        implBcSpecModes("Ed448");
+        implBcSpecContext();
+        implBcSpecNegative();
+    }
+
+    private byte[] signWith(String alg, PrivateKey key, byte[] msg, AlgorithmParameterSpec spec)
+        throws Exception
+    {
+        Signature signature = Signature.getInstance(alg, "BC");
+        if (spec != null)
+        {
+            signature.setParameter(spec);
+        }
+        signature.initSign(key);
+        signature.update(msg);
+        return signature.sign();
+    }
+
+    private boolean verifyWith(String alg, PublicKey key, byte[] msg, byte[] sig, AlgorithmParameterSpec spec)
+        throws Exception
+    {
+        Signature signature = Signature.getInstance(alg, "BC");
+        if (spec != null)
+        {
+            signature.setParameter(spec);
+        }
+        signature.initVerify(key);
+        signature.update(msg);
+        return signature.verify(sig);
+    }
+
+    private void implBcSpecModes(String alg)
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("the BC EdDSAParameterSpec round trips");
+        KeyPair kp = generateKP(alg, new EdDSAParameterSpec(alg));
+
+        EdDSAParameterSpec pure = new EdDSAParameterSpec(alg);
+        EdDSAParameterSpec ph = new EdDSAParameterSpec(alg, true);
+
+        // pure round-trips, with and without an explicit pure spec
+        byte[] pureSig = signWith(alg, kp.getPrivate(), msg, null);
+        isTrue(alg + " pure verify", verifyWith(alg, kp.getPublic(), msg, pureSig, null));
+        isTrue(alg + " pure spec verify", verifyWith(alg, kp.getPublic(), msg, pureSig, pure));
+
+        // prehash round-trips
+        byte[] phSig = signWith(alg, kp.getPrivate(), msg, ph);
+        isTrue(alg + " ph verify", verifyWith(alg, kp.getPublic(), msg, phSig, ph));
+
+        // the prehash flag actually changes the operation: the bytes differ and cross-mode fails
+        isTrue(alg + " ph differs from pure", !Arrays.areEqual(pureSig, phSig));
+        isTrue(alg + " ph sig rejected as pure", !verifyWith(alg, kp.getPublic(), msg, phSig, pure));
+        isTrue(alg + " pure sig rejected as ph", !verifyWith(alg, kp.getPublic(), msg, pureSig, ph));
+    }
+
+    private void implBcSpecContext()
+        throws Exception
+    {
+        String alg = "Ed25519";
+        byte[] msg = Strings.toByteArray("Ed25519ctx via BC spec");
+        KeyPair kp = generateKP(alg, new EdDSAParameterSpec(alg));
+
+        EdDSAParameterSpec specA = new EdDSAParameterSpec(alg, false, Strings.toByteArray("context-A"));
+        EdDSAParameterSpec specB = new EdDSAParameterSpec(alg, false, Strings.toByteArray("context-B"));
+
+        byte[] sigA = signWith(alg, kp.getPrivate(), msg, specA);
+        isTrue("ctx A verify", verifyWith(alg, kp.getPublic(), msg, sigA, specA));
+        isTrue("ctx mismatch rejected", !verifyWith(alg, kp.getPublic(), msg, sigA, specB));
+
+        // an empty context is the pure variant; a non-empty context is not
+        byte[] pureSig = signWith(alg, kp.getPrivate(), msg, null);
+        EdDSAParameterSpec emptyCtx = new EdDSAParameterSpec(alg, false, new byte[0]);
+        isTrue("empty ctx == pure", verifyWith(alg, kp.getPublic(), msg, pureSig, emptyCtx));
+        isTrue("non-empty ctx != pure", !verifyWith(alg, kp.getPublic(), msg, pureSig, specA));
+    }
+
+    private void implBcSpecNegative()
+        throws Exception
+    {
+        String alg = "Ed25519";
+        KeyPair kp = generateKP(alg, new EdDSAParameterSpec(alg));
+
+        // setParameter after init must fail (parameters must precede initSign / initVerify)
+        Signature signature = Signature.getInstance(alg, "BC");
+        signature.initSign(kp.getPrivate());
+        try
+        {
+            signature.setParameter(new EdDSAParameterSpec(alg, true));
+            fail("setParameter after init not rejected");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            // expected
+        }
+
+        // a context longer than 255 bytes is rejected at spec construction
+        try
+        {
+            new EdDSAParameterSpec(alg, false, new byte[256]);
+            fail("oversized context not rejected");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+
+        // a spec naming the wrong curve for a single-algorithm Signature must fail
+        Signature ed25519 = Signature.getInstance("Ed25519", "BC");
+        try
+        {
+            ed25519.setParameter(new EdDSAParameterSpec("Ed448", true));
+            fail("wrong-curve spec not rejected");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            // expected
+        }
+    }
+
+    /**
+     * AlgorithmParameters support for the RFC 8032 instance selectors (github #2313): Signature
+     * reports the selected instance through getParameters(), and AlgorithmParameters round-trips the
+     * BC EdDSAParameterSpec. There is no standard encoded form (RFC 8410), so getEncoded / init(byte[])
+     * fail.
+     */
+    private void edDSAAlgorithmParametersTest()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("params");
+        KeyPair kp = generateKP("Ed25519", new EdDSAParameterSpec("Ed25519"));
+
+        // Signature.getParameters() reports the selected instance once parameters are set...
+        Signature withParams = Signature.getInstance("Ed25519", "BC");
+        withParams.setParameter(new EdDSAParameterSpec("Ed25519", true, Strings.toByteArray("ctx")));
+        withParams.initSign(kp.getPrivate());
+        withParams.update(msg);
+        withParams.sign();
+
+        AlgorithmParameters ap = withParams.getParameters();
+        isTrue("getParameters non-null", ap != null);
+        EdDSAParameterSpec out = ap.getParameterSpec(EdDSAParameterSpec.class);
+        isTrue("ph reported", out.isPrehash());
+        isTrue("ctx reported", Arrays.areEqual(Strings.toByteArray("ctx"), out.getContext()));
+        isTrue("curve reported", "Ed25519".equals(out.getCurveName()));
+
+        // ...and is null when no parameters were set (pure default), matching SunEC.
+        Signature noParams = Signature.getInstance("Ed25519", "BC");
+        noParams.initSign(kp.getPrivate());
+        noParams.update(msg);
+        noParams.sign();
+        isTrue("no params => null", noParams.getParameters() == null);
+
+        implAlgParamsRoundTrip("Ed25519");
+        implAlgParamsRoundTrip("Ed448");
+    }
+
+    private void implAlgParamsRoundTrip(String alg)
+        throws Exception
+    {
+        byte[] ctx = Strings.toByteArray("ctx-" + alg);
+        AlgorithmParameters ap = AlgorithmParameters.getInstance(alg, "BC");
+        ap.init(new EdDSAParameterSpec(alg, true, ctx));
+
+        EdDSAParameterSpec spec = ap.getParameterSpec(EdDSAParameterSpec.class);
+        isTrue(alg + " ph round-trip", spec.isPrehash());
+        isTrue(alg + " ctx round-trip", Arrays.areEqual(ctx, spec.getContext()));
+        isTrue(alg + " curve round-trip", alg.equals(spec.getCurveName()));
+
+        // no standard encoded form (RFC 8410)
+        try
+        {
+            ap.getEncoded();
+            fail(alg + " getEncoded should fail");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+
+        try
+        {
+            AlgorithmParameters.getInstance(alg, "BC").init(new byte[]{ 0x05, 0x00 });
+            fail(alg + " init(byte[]) should fail");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
     }
 
     private void agreementTest(String algorithm)
