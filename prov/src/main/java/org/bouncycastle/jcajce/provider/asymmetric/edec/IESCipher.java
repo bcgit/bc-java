@@ -134,7 +134,7 @@ public class IESCipher
             }
             catch (Exception e)
             {
-                throw new RuntimeException(e.toString());
+                throw Exceptions.illegalStateException(e.getMessage(), e);
             }
         }
 
