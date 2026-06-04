@@ -27,8 +27,7 @@ public class ISAACEngine
     
     // Engine state
     private int     index         = 0;
-    private byte[]  keyStream     = new byte[stateArraySize<<2], // results expanded into bytes
-                    workingKey    = null;
+    private byte[]  workingKey    = null;
     private boolean initialised   = false;
     
     /**
@@ -64,11 +63,10 @@ public class ISAACEngine
         if (index == 0)
         {
             isaac();
-            Pack.intToBigEndian(results, keyStream, 0);
         }
-        byte out = (byte)(keyStream[index]^in);
+        byte out = (byte)(keyStreamByte(index)^in);
         index = (index + 1) & 1023;
-        
+
         return out;
     }
     
@@ -99,9 +97,8 @@ public class ISAACEngine
             if (index == 0)
             {
                 isaac();
-                Pack.intToBigEndian(results, keyStream, 0);
             }
-            out[i+outOff] = (byte)(keyStream[index]^in[i+inOff]);
+            out[i+outOff] = (byte)(keyStreamByte(index)^in[i+inOff]);
             index = (index + 1) & 1023;
         }
 
@@ -189,6 +186,16 @@ public class ISAACEngine
         initialised = true;
     }    
     
+    /*
+     * Extract byte idx (0..1023) of the current keystream block directly from the
+     * generated words, in the same big-endian order Pack.intToBigEndian produces:
+     * byte j of results[w] is results[w] >>> (24 - 8*j).
+     */
+    private byte keyStreamByte(int idx)
+    {
+        return (byte)(results[idx >>> 2] >>> (24 - ((idx & 3) << 3)));
+    }
+
     private void isaac()
     {
         int i, x, y;
