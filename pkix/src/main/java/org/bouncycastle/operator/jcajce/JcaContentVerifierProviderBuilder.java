@@ -430,9 +430,18 @@ public class JcaContentVerifierProviderBuilder
             try
             {
                 ASN1Sequence sigSeq = ASN1Sequence.getInstance(expected);
+
+                // A composite signature MUST carry exactly one component for every
+                // component key; reject a signature that has had components removed
+                // (e.g. stripped to a single verifiable component) or added.
+                if (sigSeq.size() != sigs.length)
+                {
+                    return false;
+                }
+
                 boolean failed = false;
                 boolean atLeastOneChecked = false;
-            
+
                 for (int i = 0; i != sigSeq.size(); i++)
                 {
                     if (sigs[i] != null)
