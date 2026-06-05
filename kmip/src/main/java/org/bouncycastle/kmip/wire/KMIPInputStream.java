@@ -64,7 +64,10 @@ public class KMIPInputStream
     public KMIPInputStream(InputStream stream)
         throws XMLStreamException
     {
-        this.eventReader = XMLInputFactory.newInstance().createXMLEventReader(stream);
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+        this.eventReader = factory.createXMLEventReader(stream);
     }
 
     public KMIPMessage[] parse()
