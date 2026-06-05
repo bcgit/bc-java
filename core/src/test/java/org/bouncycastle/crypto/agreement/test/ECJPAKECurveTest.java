@@ -85,6 +85,30 @@ public class ECJPAKECurveTest
             new ECJPAKECurve(q, a, b, BigInteger.valueOf(15), h, g_x, g_y);
             fail();
         }
+            catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+
+        // n * h is outside the Hasse bound (n is the P-384 order, q the P-256 field)
+        try
+        {
+            BigInteger wrongN = new BigInteger(
+                "ffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973", 16);
+            new ECJPAKECurve(q, a, b, wrongN, h, g_x, g_y);
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+
+        // n * h is outside the Hasse bound (cofactor wrong: 2 instead of 1)
+        try
+        {
+            new ECJPAKECurve(q, a, b, n, BigInteger.valueOf(2), g_x, g_y);
+            fail();
+        }
         catch (IllegalArgumentException e)
         {
             // pass
