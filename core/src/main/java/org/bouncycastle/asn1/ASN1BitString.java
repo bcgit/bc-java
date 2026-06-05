@@ -3,6 +3,7 @@ package org.bouncycastle.asn1;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -249,6 +250,55 @@ public abstract class ASN1BitString
         }
 
         this.contents = contents;
+    }
+
+    /**
+     * Build the contents octets for a BIT STRING holding the DER encoding of 'obj' - the
+     * pad-count octet (zero) followed by the encoding - in a single allocation.
+     */
+    static byte[] derEncodedContents(ASN1Encodable obj) throws IOException
+    {
+        ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+
+        byte[] contents = new byte[1 + primitive.encodedLength(true)];
+
+        ContentsOutputStream cOut = new ContentsOutputStream(contents, 1);
+        primitive.encodeTo(cOut, ASN1Encoding.DER);
+        if (cOut.getPosition() != contents.length)
+        {
+            throw new IllegalStateException("encoded length did not match actual encoding");
+        }
+
+        return contents;
+    }
+
+    private static final class ContentsOutputStream
+        extends OutputStream
+    {
+        private final byte[] buf;
+        private int pos;
+
+        ContentsOutputStream(byte[] buf, int pos)
+        {
+            this.buf = buf;
+            this.pos = pos;
+        }
+
+        public void write(int b)
+        {
+            buf[pos++] = (byte)b;
+        }
+
+        public void write(byte[] b, int off, int len)
+        {
+            System.arraycopy(b, off, buf, pos, len);
+            pos += len;
+        }
+
+        int getPosition()
+        {
+            return pos;
+        }
     }
 
     public InputStream getBitStream() throws IOException
