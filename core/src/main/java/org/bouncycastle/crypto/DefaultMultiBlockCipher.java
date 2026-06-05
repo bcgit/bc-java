@@ -15,9 +15,6 @@ public abstract class DefaultMultiBlockCipher
     public int processBlocks(byte[] in, int inOff, int blockCount, byte[] out, int outOff)
         throws DataLengthException, IllegalStateException
     {
-
-        // TODO check if the underlying cipher supports the multiblock interface and call it directly?
-
         int resultLen = 0;
         int blockSize = this.getBlockSize();
         int len = blockCount * blockSize;
