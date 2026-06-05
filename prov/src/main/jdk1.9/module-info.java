@@ -49,6 +49,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.agreement;
     exports org.bouncycastle.crypto.agreement.jpake;
     exports org.bouncycastle.crypto.agreement.kdf;
+    exports org.bouncycastle.crypto.agreement.owl;
     exports org.bouncycastle.crypto.agreement.srp;
     exports org.bouncycastle.crypto.commitments;
     exports org.bouncycastle.crypto.constraints;
