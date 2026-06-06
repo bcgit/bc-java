@@ -20,7 +20,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 public class GMac implements Mac
 {
     private final GCMModeCipher cipher;
-    private final int macSizeBits;
+    private int macSizeBits;
 
     /**
      * Creates a GMAC based on the operation of a block cipher in GCM mode.
@@ -53,12 +53,24 @@ public class GMac implements Mac
     }
 
     /**
-     * Initialises the GMAC - requires a {@link ParametersWithIV} providing a {@link KeyParameter}
-     * and a nonce.
+     * Initialises the GMAC - requires either a {@link ParametersWithIV} providing a
+     * {@link KeyParameter} and a nonce, or an {@link AEADParameters} carrying the key, nonce and
+     * desired MAC size. When {@link AEADParameters} are supplied the MAC size they carry overrides
+     * the one passed to the constructor (this is the form used by RFC 9044 AES-GMAC, whose
+     * GMACParameters allow a 12 to 16 octet tag).
      */
     public void init(final CipherParameters params) throws IllegalArgumentException
     {
-        if (params instanceof ParametersWithIV)
+        if (params instanceof AEADParameters)
+        {
+            final AEADParameters param = (AEADParameters)params;
+
+            this.macSizeBits = param.getMacSize();
+
+            // GCM is always operated in encrypt mode to calculate MAC
+            cipher.init(true, param);
+        }
+        else if (params instanceof ParametersWithIV)
         {
             final ParametersWithIV param = (ParametersWithIV)params;
 
@@ -70,7 +82,7 @@ public class GMac implements Mac
         }
         else
         {
-            throw new IllegalArgumentException("GMAC requires ParametersWithIV");
+            throw new IllegalArgumentException("GMAC requires ParametersWithIV or AEADParameters");
         }
     }
 

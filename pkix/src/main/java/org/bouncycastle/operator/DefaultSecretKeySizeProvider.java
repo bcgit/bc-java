@@ -43,6 +43,9 @@ public class DefaultSecretKeySizeProvider
         keySizes.put(NISTObjectIdentifiers.id_aes128_CCM, Integers.valueOf(128));
         keySizes.put(NISTObjectIdentifiers.id_aes192_CCM, Integers.valueOf(192));
         keySizes.put(NISTObjectIdentifiers.id_aes256_CCM, Integers.valueOf(256));
+        keySizes.put(NISTObjectIdentifiers.id_aes128_GMAC, Integers.valueOf(128));
+        keySizes.put(NISTObjectIdentifiers.id_aes192_GMAC, Integers.valueOf(192));
+        keySizes.put(NISTObjectIdentifiers.id_aes256_GMAC, Integers.valueOf(256));
         keySizes.put(NISTObjectIdentifiers.id_aes128_wrap, Integers.valueOf(128));
         keySizes.put(NISTObjectIdentifiers.id_aes192_wrap, Integers.valueOf(192));
         keySizes.put(NISTObjectIdentifiers.id_aes256_wrap, Integers.valueOf(256));
