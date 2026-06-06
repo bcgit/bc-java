@@ -1281,6 +1281,22 @@ public final class AES
 
             addGMacAlgorithm(provider, "AES", PREFIX + "$AESGMAC", PREFIX + "$KeyGen128");
             addPoly1305Algorithm(provider, "AES", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
+
+            // RFC 9044: AES-GMAC for use as the macAlgorithm in CMS AuthenticatedData.
+            // GMACParameters shares the GCMParameters wire format, so the parameter handling
+            // is aliased to the GCM AlgorithmParameters/AlgorithmParameterGenerator.
+            provider.addAlgorithm("Mac", NISTObjectIdentifiers.id_aes128_GMAC, PREFIX + "$AESGMAC");
+            provider.addAlgorithm("Mac", NISTObjectIdentifiers.id_aes192_GMAC, PREFIX + "$AESGMAC");
+            provider.addAlgorithm("Mac", NISTObjectIdentifiers.id_aes256_GMAC, PREFIX + "$AESGMAC");
+            provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes128_GMAC, PREFIX + "$KeyGen128");
+            provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes192_GMAC, PREFIX + "$KeyGen192");
+            provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes256_GMAC, PREFIX + "$KeyGen256");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NISTObjectIdentifiers.id_aes128_GMAC, "GCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NISTObjectIdentifiers.id_aes192_GMAC, "GCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NISTObjectIdentifiers.id_aes256_GMAC, "GCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes128_GMAC, "GCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes192_GMAC, "GCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes256_GMAC, "GCM");
         }
     }
 }

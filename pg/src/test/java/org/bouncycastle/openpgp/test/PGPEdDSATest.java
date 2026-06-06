@@ -11,8 +11,10 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
@@ -447,10 +449,56 @@ public class PGPEdDSATest
 
         isTrue(sig.verifyCertification(pubKeyRing.getPublicKey()));
 
+        rfc9580V4Ed25519LegacySampleVerification();
+
         keyringTest();
         keyringBcTest();
         sksKeyTest();
         aliceBcKeyTest();
+    }
+
+    /**
+     * RFC 9580 Appendix A.1 + A.2 known-answer test: load the sample v4
+     * Ed25519Legacy public key (A.1), confirm its fingerprint matches the
+     * RFC, and verify the sample detached signature (A.2) over the literal
+     * data "OpenPGP" through both the lightweight and JCA verifier stacks.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-v4-ed25519legacy-key">
+     *     RFC 9580 - A.1 Sample Version 4 Ed25519Legacy Key</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-v4-ed25519legacy-sig">
+     *     RFC 9580 - A.2 Sample Version 4 Ed25519Legacy Signature</a>
+     */
+    private void rfc9580V4Ed25519LegacySampleVerification()
+        throws Exception
+    {
+        // A.1 - the entire Public-Key packet.
+        byte[] keyPacket = Hex.decode(
+            "98330453f35f0b16092b06010401da470f0101074" +
+            "03f098994bdd916ed4053197934e4a87c80733a1280d62f8010992e43ee3b2406");
+        // A.2 - the entire Signature packet (binary document signature over "OpenPGP").
+        byte[] sigPacket = Hex.decode(
+            "885e040016080006050255f95f95000a09108cfde12197965a9af62200ff56f9" +
+            "0cca98e2102637bd983fdb16c131dfd27ed82bf4dde5606e0d756aed33660100" +
+            "d09c4fa11527f038e0f57f2201d82f2ea2c9033265fa6ceb489e854bae61b404");
+        byte[] signedData = Strings.toByteArray("OpenPGP");
+
+        PublicKeyPacket pkPacket = (PublicKeyPacket)new BCPGInputStream(new ByteArrayInputStream(keyPacket)).readPacket();
+        PGPPublicKey pubKey = new PGPPublicKey(pkPacket, new BcKeyFingerprintCalculator());
+
+        isTrue("A.1 fingerprint mismatch",
+            areEqual(pubKey.getFingerprint(), Hex.decode("C959 BDBA FA32 A2F8 9A15 3B67 8CFD E121 9796 5A9A")));
+
+        // Verify A.2 with the lightweight (Bc) verifier stack.
+        PGPSignature bcSig = new PGPSignature(new BCPGInputStream(new ByteArrayInputStream(sigPacket)));
+        bcSig.init(new BcPGPContentVerifierBuilderProvider(), pubKey);
+        bcSig.update(signedData);
+        isTrue("A.2 signature failed to verify (Bc verifier)", bcSig.verify());
+
+        // Verify A.2 with the JCA verifier stack.
+        PGPSignature jcaSig = new PGPSignature(new BCPGInputStream(new ByteArrayInputStream(sigPacket)));
+        jcaSig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);
+        jcaSig.update(signedData);
+        isTrue("A.2 signature failed to verify (Jca verifier)", jcaSig.verify());
     }
 
     private void aliceBcKeyTest()
