@@ -33,6 +33,9 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  AES128_GCM      = NISTObjectIdentifiers.id_aes128_GCM.intern();
     public static final ASN1ObjectIdentifier  AES192_GCM      = NISTObjectIdentifiers.id_aes192_GCM.intern();
     public static final ASN1ObjectIdentifier  AES256_GCM      = NISTObjectIdentifiers.id_aes256_GCM.intern();
+    public static final ASN1ObjectIdentifier  AES128_GMAC     = NISTObjectIdentifiers.id_aes128_GMAC.intern();
+    public static final ASN1ObjectIdentifier  AES192_GMAC     = NISTObjectIdentifiers.id_aes192_GMAC.intern();
+    public static final ASN1ObjectIdentifier  AES256_GMAC     = NISTObjectIdentifiers.id_aes256_GMAC.intern();
 
 //    public static final ASN1ObjectIdentifier  AES128_CBC_CMAC      = BSIObjectIdentifiers.id_aes128_CBC_CMAC;
 //    public static final ASN1ObjectIdentifier  AES192_CBC_CMAC      = BSIObjectIdentifiers.id_aes192_CBC_CMAC;
