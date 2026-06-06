@@ -25,6 +25,7 @@ import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
@@ -386,6 +387,104 @@ public class NewAuthenticatedDataTest
             assertTrue(Arrays.equals(data, recData));
 
             assertEquals(PKCSObjectIdentifiers.safeContentsBag, recipient.getContentStream(rec).getContentType());
+        }
+    }
+
+    public void testKeyTransAES128GMAC()
+        throws Exception
+    {
+        tryKeyTransGMAC(CMSAlgorithm.AES128_GMAC);
+    }
+
+    public void testKeyTransAES192GMAC()
+        throws Exception
+    {
+        tryKeyTransGMAC(CMSAlgorithm.AES192_GMAC);
+    }
+
+    public void testKeyTransAES256GMAC()
+        throws Exception
+    {
+        tryKeyTransGMAC(CMSAlgorithm.AES256_GMAC);
+    }
+
+    private void tryKeyTransGMAC(ASN1ObjectIdentifier macAlg)
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSMacCalculatorBuilder(macAlg).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ad.getRecipientInfos();
+
+        assertEquals(macAlg.getId(), ad.getMacAlgOID());
+
+        // RFC 9044: macAlgorithm carries GMACParameters (nonce + tag length).
+        GCMParameters gmacParams = GCMParameters.getInstance(ad.getMacAlgorithm().getParameters());
+        assertEquals(12, gmacParams.getNonce().length);
+        assertEquals(16, gmacParams.getIcvLen());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            assertTrue(Arrays.equals(data, recData));
+            assertEquals(16, ad.getMac().length);
+            assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
+        }
+    }
+
+    public void testKeyTransAES128GMACShortTag()
+        throws Exception
+    {
+        // RFC 9044 permits a tag length of 12 to 16 octets; exercise the shortest.
+        byte[] data = "Eric H. Echidna".getBytes();
+        ASN1ObjectIdentifier macAlg = CMSAlgorithm.AES128_GMAC;
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance("GCM", BC);
+
+        algParams.init(new GCMParameters(Hex.decode("000102030405060708090a0b"), 12).getEncoded());
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSMacCalculatorBuilder(macAlg).setAlgorithmParameters(algParams).setProvider(BC).build());
+
+        assertEquals(macAlg.getId(), ad.getMacAlgOID());
+
+        Collection c = ad.getRecipientInfos().getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            byte[] recData = recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            assertTrue(Arrays.equals(data, recData));
+            assertEquals(12, ad.getMac().length);
+            assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
         }
     }
 
