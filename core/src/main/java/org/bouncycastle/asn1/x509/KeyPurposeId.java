@@ -130,6 +130,13 @@ public class KeyPurposeId
     public static final KeyPurposeId id_kp_cmKGA = new KeyPurposeId(id_kp.branch("32"));
 
     /**
+     * RFC 9336 sec. 3.1 - signing documents (e.g. PDF, XML, JSON) for human consumption.
+     * <p>
+     * id-kp-documentSigning OBJECT IDENTIFIER ::= { id-kp 36 }
+     */
+    public static final KeyPurposeId id_kp_documentSigning = new KeyPurposeId(id_kp.branch("36"));
+
+    /**
      * RFC 9809 sec. 3 - signing general-purpose configuration files.
      * <p>
      * id-kp-configSigning OBJECT IDENTIFIER ::= { id-kp 41 }
