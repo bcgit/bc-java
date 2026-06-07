@@ -175,24 +175,38 @@ class ASN1TimeFormat
     }
 
     /**
-     * A {@code Z}-less numeric zone offset {@code (+|-)HHMM} occupying exactly the
+     * A {@code Z}-less numeric zone offset {@code (+|-)HH} or {@code (+|-)HHMM} occupying exactly the
      * remainder of the content.
      */
     private static boolean isZoneOffset(byte[] c, int off)
     {
-        if (off + 5 != c.length)
+        if (off + 3 == c.length)
         {
-            return false;
+            if (c[off] != '+' && c[off] != '-')
+            {
+                return false;
+            }
+            if (!twoDigitsAt(c, off + 1))
+            {
+                return false;
+            }
+            return twoDigit(c, off + 1) <= 14;
         }
-        if (c[off] != '+' && c[off] != '-')
+
+        if (off + 5 == c.length)
         {
-            return false;
+            if (c[off] != '+' && c[off] != '-')
+            {
+                return false;
+            }
+            if (!isDigits(c, off + 1, 4))
+            {
+                return false;
+            }
+            return twoDigit(c, off + 1) <= 14 && twoDigit(c, off + 3) <= 59;
         }
-        if (!isDigits(c, off + 1, 4))
-        {
-            return false;
-        }
-        return twoDigit(c, off + 1) <= 23 && twoDigit(c, off + 3) <= 59;
+
+        return false;
     }
 
     private static boolean twoDigitsAt(byte[] c, int off)
