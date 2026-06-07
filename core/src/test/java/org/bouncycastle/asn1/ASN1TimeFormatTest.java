@@ -71,7 +71,9 @@ public class ASN1TimeFormatTest
         assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000Z")));      // second, Z
         assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000.5Z")));    // fractional '.'
         assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000,123Z")));  // fractional ','
+        assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000+05")));    // numeric offset (no minutes)
         assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000+0500")));  // numeric offset
+        assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000+0530")));  // numeric offset
         assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000")));       // local, full
         assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("2024010100")));           // local, hour only
         assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("19500101000000Z")));
@@ -93,7 +95,8 @@ public class ASN1TimeFormatTest
         assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000.")));     // decimal mark, no digits
         assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("2024010100ZZ")));        // trailing junk after Z
         assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000X")));     // bad trailing
-        assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000+24")));   // truncated offset
+        assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000+1")));    // truncated offset (no minutes)
+        assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("20240101000000+123")));  // truncated offset
 
         byte[] ctrl = b("20240101000000Z");
         ctrl[6] = 0x00;
