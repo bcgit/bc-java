@@ -431,9 +431,9 @@ class FalconFFT
     }
 
     /* see inner.h */
-    static void poly_add_muladj_fft(double[] srcd,
-                                    double[] srcF, double[] srcG,
-                                    double[] srcf, double[] srcg, int logn)
+    static void poly_add_muladj_fft(double[] srcd, int doff,
+                                    double[] srcF, int Foff, double[] srcG, int Goff,
+                                    double[] srcf, int foff, double[] srcg, int goff, int logn)
     {
         int n, hn, u;
         double F_re, F_im, G_re, G_im;
@@ -444,21 +444,21 @@ class FalconFFT
         for (u = 0; u < hn; u++)
         {
             int uhn = u + hn;
-            F_re = srcF[u];
-            F_im = srcF[uhn];
-            G_re = srcG[u];
-            G_im = srcG[uhn];
-            f_re = srcf[u];
-            f_im = srcf[uhn];
-            g_re = srcg[u];
-            g_im = srcg[uhn];
+            F_re = srcF[Foff + u];
+            F_im = srcF[Foff + uhn];
+            G_re = srcG[Goff + u];
+            G_im = srcG[Goff + uhn];
+            f_re = srcf[foff + u];
+            f_im = srcf[foff + uhn];
+            g_re = srcg[goff + u];
+            g_im = srcg[goff + uhn];
 
             a_re = F_re * f_re + F_im * f_im;
             a_im = F_im * f_re - F_re * f_im;
             b_re = G_re * g_re + G_im * g_im;
             b_im = G_im * g_re - G_re * g_im;
-            srcd[u] = a_re + b_re;
-            srcd[uhn] = a_im + b_im;
+            srcd[doff + u] = a_re + b_re;
+            srcd[doff + uhn] = a_im + b_im;
         }
     }
 
