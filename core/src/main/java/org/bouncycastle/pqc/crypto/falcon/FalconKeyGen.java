@@ -1435,7 +1435,7 @@ class FalconKeyGen
      * they should be "trimmed" by pointing not to the lowest word of each,
      * but upper.
      */
-    private static void poly_big_to_fp(double[] srcd, int[] srcf, int f, int flen, int fstride,
+    private static void poly_big_to_fp(double[] srcd, int doff, int[] srcf, int f, int flen, int fstride,
                                        int logn)
     {
         int n, u;
@@ -1445,7 +1445,7 @@ class FalconKeyGen
         {
             for (u = 0; u < n; u++)
             {
-                srcd[u] = FPREngine.fpr_zero;
+                srcd[doff + u] = FPREngine.fpr_zero;
             }
             return;
         }
@@ -1473,7 +1473,7 @@ class FalconKeyGen
                 w -= (w << 1) & neg;
                 x += w * fsc;
             }
-            srcd[u] = x;
+            srcd[doff + u] = x;
         }
     }
 
@@ -1630,25 +1630,16 @@ class FalconKeyGen
      * ensures consistent interpretation of the SHAKE output so that
      * the same values will be obtained over different platforms, in case
      * a known seed is used.
+     *
+     * The caller supplies an 8-byte scratch buffer; mkgauss reads f and g
+     * coefficient-by-coefficient (2 calls per Gaussian sample, ~16K calls
+     * per Falcon-1024 keygen attempt) so a per-call allocation here would
+     * be the dominant byte[] allocator in the keygen path.
      */
-    private static long get_rng_u64(SHAKEDigest rng)
+    private static long get_rng_u64(SHAKEDigest rng, byte[] tmp8)
     {
-        /*
-         * We enforce little-endian representation.
-         */
-
-        byte[] tmp = new byte[8];
-
-        rng.doOutput(tmp, 0, tmp.length);
-        return Pack.littleEndianToLong(tmp, 0);
-//        return (tmp[0] & 0xffL)
-//            | ((tmp[1] & 0xffL) << 8)
-//            | ((tmp[2] & 0xffL) << 16)
-//            | ((tmp[3] & 0xffL) << 24)
-//            | ((tmp[4] & 0xffL) << 32)
-//            | ((tmp[5] & 0xffL) << 40)
-//            | ((tmp[6] & 0xffL) << 48)
-//            | ((tmp[7] & 0xffL) << 56);
+        rng.doOutput(tmp8, 0, 8);
+        return Pack.littleEndianToLong(tmp8, 0);
     }
 
 
@@ -1682,7 +1673,7 @@ class FalconKeyGen
      * sigma*sqrt(2), then we can just generate more values and add them
      * together for lower dimensions.
      */
-    private static int mkgauss(SHAKEDigest rng, int logn)
+    private static int mkgauss(SHAKEDigest rng, int logn, byte[] rngBuf8)
     {
         int u, g;
         int val;
@@ -1714,7 +1705,7 @@ class FalconKeyGen
              *  - flag 'f' is set to 1 if the generated value is zero,
              *    or set to 0 otherwise.
              */
-            r = get_rng_u64(rng);
+            r = get_rng_u64(rng, rngBuf8);
             neg = (int)(r >>> 63);
             r &= ~(1L << 63);
             f = (int)((r - gauss_1024_12289[0]) >>> 63);
@@ -1726,7 +1717,7 @@ class FalconKeyGen
              * than r, unless the flag f was already 1.
              */
             v = 0;
-            r = get_rng_u64(rng);
+            r = get_rng_u64(rng, rngBuf8);
             r &= ~(1L << 63);
             for (k = 1; k < gauss_1024_12289.length; k++)
             {
@@ -2168,7 +2159,8 @@ class FalconKeyGen
      * Returned value: 1 on success, 0 on error.
      */
     private static int solve_NTRU_intermediate(int logn_top,
-                                               byte[] srcf, byte[] srcg, int depth, int[] srctmp)
+                                               byte[] srcf, byte[] srcg, int depth, int[] srctmp,
+                                               double[] fprBuf, int[] kBuf)
     {
         /*
          * In this function, 'logn' is the log2 of the degree for
@@ -2180,9 +2172,13 @@ class FalconKeyGen
         int logn;
         int n, hn, slen, dlen, llen, rlen, FGlen, u;
         int Fd, Gd, Ft, Gt, ft, gt, t1;
-        double[] rt1, rt2, rt3, rt4, rt5;
+        // rt1..rt5 are offsets into the caller-supplied fprBuf scratch,
+        // so the recursion does not re-allocate these doubles per call.
+        // rt1..rt4 are size n; rt5 is size n/2.
+        int rt1, rt2, rt3, rt4, rt5;
         int scale_fg, minbl_fg, maxbl_fg, maxbl_FG, scale_k;
         int x, y;
+        // k is the caller-supplied kBuf scratch (size n).
         int[] k;
         //FalconSmallPrime[] primes;
 
@@ -2467,12 +2463,14 @@ class FalconKeyGen
          * We ensure that the base is at a properly aligned offset (the
          * source array tmp[] is supposed to be already aligned).
          */
-        rt1 = new double[n];
-        rt2 = new double[n];
-        rt3 = new double[n];
-        rt4 = new double[n];
-        rt5 = new double[n >> 1];
-        k = new int[n];
+        // Carve the 5 FFT regions out of the persistent fprBuf scratch.
+        // rt1..rt4 each occupy n doubles; rt5 occupies n/2 doubles.
+        rt1 = 0;
+        rt2 = rt1 + n;
+        rt3 = rt2 + n;
+        rt4 = rt3 + n;
+        rt5 = rt4 + n;
+        k = kBuf;
 
         /*
          * Get f and g into rt3 and rt4 as floating-point approximations.
@@ -2485,8 +2483,8 @@ class FalconKeyGen
          * middle or the upper half of these top 10 words.
          */
         rlen = Math.min(slen, 10);
-        poly_big_to_fp(rt3, srctmp, ft + slen - rlen, rlen, slen, logn);
-        poly_big_to_fp(rt4, srctmp, gt + slen - rlen, rlen, slen, logn);
+        poly_big_to_fp(fprBuf, rt3, srctmp, ft + slen - rlen, rlen, slen, logn);
+        poly_big_to_fp(fprBuf, rt4, srctmp, gt + slen - rlen, rlen, slen, logn);
 
         /*
          * Values in rt3 and rt4 are downscaled by 2^(scale_fg).
@@ -2506,11 +2504,11 @@ class FalconKeyGen
          * Compute 1/(f*adj(f)+g*adj(g)) in rt5. We also keep adj(f)
          * and adj(g) in rt3 and rt4, respectively.
          */
-        FalconFFT.FFT(rt3, 0, logn);
-        FalconFFT.FFT(rt4, 0, logn);
-        FalconFFT.poly_invnorm2_fft(rt5, 0, rt3, 0, rt4, 0, logn);
-        FalconFFT.poly_adj_fft(rt3, 0, logn);
-        FalconFFT.poly_adj_fft(rt4, 0, logn);
+        FalconFFT.FFT(fprBuf, rt3, logn);
+        FalconFFT.FFT(fprBuf, rt4, logn);
+        FalconFFT.poly_invnorm2_fft(fprBuf, rt5, fprBuf, rt3, fprBuf, rt4, logn);
+        FalconFFT.poly_adj_fft(fprBuf, rt3, logn);
+        FalconFFT.poly_adj_fft(fprBuf, rt4, logn);
 
         /*
          * Reduce F and G repeatedly.
@@ -2561,19 +2559,19 @@ class FalconKeyGen
              */
             rlen = Math.min(FGlen, 10);
             scale_FG = 31 * (FGlen - rlen);
-            poly_big_to_fp(rt1, srctmp, Ft + FGlen - rlen, rlen, llen, logn);
-            poly_big_to_fp(rt2, srctmp, Gt + FGlen - rlen, rlen, llen, logn);
+            poly_big_to_fp(fprBuf, rt1, srctmp, Ft + FGlen - rlen, rlen, llen, logn);
+            poly_big_to_fp(fprBuf, rt2, srctmp, Gt + FGlen - rlen, rlen, llen, logn);
 
             /*
              * Compute (F*adj(f)+G*adj(g))/(f*adj(f)+g*adj(g)) in rt2.
              */
-            FalconFFT.FFT(rt1, 0, logn);
-            FalconFFT.FFT(rt2, 0, logn);
-            FalconFFT.poly_mul_fft(rt1, 0, rt3, 0, logn);
-            FalconFFT.poly_mul_fft(rt2, 0, rt4, 0, logn);
-            FalconFFT.poly_add(rt2, 0, rt1, 0, logn);
-            FalconFFT.poly_mul_autoadj_fft(rt2, 0, rt5, 0, logn);
-            FalconFFT.iFFT(rt2, 0, logn);
+            FalconFFT.FFT(fprBuf, rt1, logn);
+            FalconFFT.FFT(fprBuf, rt2, logn);
+            FalconFFT.poly_mul_fft(fprBuf, rt1, fprBuf, rt3, logn);
+            FalconFFT.poly_mul_fft(fprBuf, rt2, fprBuf, rt4, logn);
+            FalconFFT.poly_add(fprBuf, rt2, fprBuf, rt1, logn);
+            FalconFFT.poly_mul_autoadj_fft(fprBuf, rt2, fprBuf, rt5, logn);
+            FalconFFT.iFFT(fprBuf, rt2, logn);
 
             /*
              * (f,g) are scaled by 'scale_fg', meaning that the
@@ -2620,7 +2618,7 @@ class FalconKeyGen
 
             for (u = 0; u < n; u++)
             {
-                double xv = rt2[u] * pdc;
+                double xv = fprBuf[rt2 + u] * pdc;
 
                 /*
                  * Sometimes the values can be out-of-bounds if
@@ -2739,7 +2737,8 @@ class FalconKeyGen
      * Returned value: 1 on success, 0 on error.
      */
     private static int solve_NTRU_binary_depth1(int logn_top,
-                                                byte[] srcf, byte[] srcg, int[] srctmp)
+                                                byte[] srcf, byte[] srcg, int[] srctmp,
+                                                double[] fprBuf)
     {
         /*
          * The first half of this function is a copy of the corresponding
@@ -2752,7 +2751,9 @@ class FalconKeyGen
         int depth, logn;
         int n_top, n, hn, slen, dlen, llen, u;
         int Fd, Gd, Ft, Gt, ft, gt, t1;
-        double[] rt1, rt2, rt3, rt4, rt5, rt6;
+        // rt1..rt6 are offsets into the caller-supplied fprBuf scratch.
+        // rt1..rt5 are size n; rt6 is size n/2.
+        int rt1, rt2, rt3, rt4, rt5, rt6;
         int x, y;
 
         depth = 1;
@@ -3010,13 +3011,21 @@ class FalconKeyGen
          */
 
         /*
+         * Carve rt1..rt6 from the persistent fprBuf scratch.
+         * rt1..rt5 each size n; rt6 size n/2.
+         */
+        rt1 = 0;
+        rt2 = rt1 + n;
+        rt3 = rt2 + n;
+        rt4 = rt3 + n;
+        rt5 = rt4 + n;
+        rt6 = rt5 + n;
+
+        /*
          * Convert F and G into floating point (rt1 and rt2).
          */
-//        rt1 = align_fpr(tmp, gt + slen * n);
-        rt1 = new double[n];
-        rt2 = new double[n];
-        poly_big_to_fp(rt1, srctmp, Ft, llen, llen, logn);
-        poly_big_to_fp(rt2, srctmp, Gt, llen, llen, logn);
+        poly_big_to_fp(fprBuf, rt1, srctmp, Ft, llen, llen, logn);
+        poly_big_to_fp(fprBuf, rt2, srctmp, Gt, llen, llen, logn);
 
         /*
          * Integer representation of F and G is no longer needed, we
@@ -3026,27 +3035,12 @@ class FalconKeyGen
         System.arraycopy(srctmp, ft, srctmp, 0, 2 * slen * n);
         ft = 0;
         gt = ft + slen * n;
-//        rt3 = align_fpr(tmp, gt + slen * n);
-//        memmove(rt3, rt1, 2 * n * sizeof *rt1);
-//        rt1 = rt3;
-//        rt2 = rt1 + n;
-        rt3 = new double[n];
-        rt4 = new double[n];
 
         /*
          * Convert f and g into floating point (rt3 and rt4).
          */
-        poly_big_to_fp(rt3, srctmp, ft, slen, slen, logn);
-        poly_big_to_fp(rt4, srctmp, gt, slen, slen, logn);
-
-        /*
-         * Remove unneeded ft and gt. - not required as we have rt_ in separate array
-         */
-//        memmove(tmp, rt1, 4 * n * sizeof *rt1);
-//        rt1 = (fpr *)tmp;
-//        rt2 = rt1 + n;
-//        rt3 = rt2 + n;
-//        rt4 = rt3 + n;
+        poly_big_to_fp(fprBuf, rt3, srctmp, ft, slen, slen, logn);
+        poly_big_to_fp(fprBuf, rt4, srctmp, gt, slen, slen, logn);
 
         /*
          * We now have:
@@ -3056,10 +3050,10 @@ class FalconKeyGen
          *   rt4 = g
          * in that order in RAM. We convert all of them to FFT.
          */
-        FalconFFT.FFT(rt1, 0, logn);
-        FalconFFT.FFT(rt2, 0, logn);
-        FalconFFT.FFT(rt3, 0, logn);
-        FalconFFT.FFT(rt4, 0, logn);
+        FalconFFT.FFT(fprBuf, rt1, logn);
+        FalconFFT.FFT(fprBuf, rt2, logn);
+        FalconFFT.FFT(fprBuf, rt3, logn);
+        FalconFFT.FFT(fprBuf, rt4, logn);
 
         /*
          * Compute:
@@ -3067,16 +3061,14 @@ class FalconKeyGen
          *   rt6 = 1 / (f*adj(f) + g*adj(g))
          * (Note that rt6 is half-length.)
          */
-        rt5 = new double[n];
-        rt6 = new double[n >> 1];
-        FalconFFT.poly_add_muladj_fft(rt5, rt1, rt2, rt3, rt4, logn);
-        FalconFFT.poly_invnorm2_fft(rt6, 0, rt3, 0, rt4, 0, logn);
+        FalconFFT.poly_add_muladj_fft(fprBuf, rt5, fprBuf, rt1, fprBuf, rt2, fprBuf, rt3, fprBuf, rt4, logn);
+        FalconFFT.poly_invnorm2_fft(fprBuf, rt6, fprBuf, rt3, fprBuf, rt4, logn);
 
         /*
          * Compute:
          *   rt5 = (F*adj(f)+G*adj(g)) / (f*adj(f)+g*adj(g))
          */
-        FalconFFT.poly_mul_autoadj_fft(rt5, 0, rt6, 0, logn);
+        FalconFFT.poly_mul_autoadj_fft(fprBuf, rt5, fprBuf, rt6, logn);
 
         /*
          * Compute k as the rounded version of rt5. Check that none of
@@ -3085,44 +3077,38 @@ class FalconKeyGen
          * note that any out-of-bounds value here implies a failure and
          * (f,g) will be discarded, so we can make a simple test.
          */
-        FalconFFT.iFFT(rt5, 0, logn);
+        FalconFFT.iFFT(fprBuf, rt5, logn);
         for (u = 0; u < n; u++)
         {
             double z;
 
-            z = rt5[u];
-//            if (!FPREngine.fpr_lt(z, FPREngine.fpr_ptwo63m1) || !FPREngine.fpr_lt(FPREngine.fpr_mtwo63m1, z))
+            z = fprBuf[rt5 + u];
             if (z >= FPREngine.fpr_ptwo63m1 || FPREngine.fpr_mtwo63m1 >= z)
             {
                 return 0;
             }
-            rt5[u] = FPREngine.fpr_rint(z);
+            fprBuf[rt5 + u] = FPREngine.fpr_rint(z);
         }
-        FalconFFT.FFT(rt5, 0, logn);
+        FalconFFT.FFT(fprBuf, rt5, logn);
 
         /*
          * Subtract k*f from F, and k*g from G.
          */
-        FalconFFT.poly_mul_fft(rt3, 0, rt5, 0, logn);
-        FalconFFT.poly_mul_fft(rt4, 0, rt5, 0, logn);
-        FalconFFT.poly_sub(rt1, 0, rt3, 0, logn);
-        FalconFFT.poly_sub(rt2, 0, rt4, 0, logn);
-        FalconFFT.iFFT(rt1, 0, logn);
-        FalconFFT.iFFT(rt2, 0, logn);
+        FalconFFT.poly_mul_fft(fprBuf, rt3, fprBuf, rt5, logn);
+        FalconFFT.poly_mul_fft(fprBuf, rt4, fprBuf, rt5, logn);
+        FalconFFT.poly_sub(fprBuf, rt1, fprBuf, rt3, logn);
+        FalconFFT.poly_sub(fprBuf, rt2, fprBuf, rt4, logn);
+        FalconFFT.iFFT(fprBuf, rt1, logn);
+        FalconFFT.iFFT(fprBuf, rt2, logn);
 
         /*
          * Convert back F and G to integers, and return.
          */
-        //Ft = 0;
         Gt = Ft + n;
-//        rt3 = align_fpr(tmp, Gt + n);
-//        memmove(rt3, rt1, 2 * n * sizeof *rt1);
-//        rt1 = rt3;
-//        rt2 = rt1 + n;
         for (u = 0; u < n; u++)
         {
-            srctmp[Ft + u] = (int)FPREngine.fpr_rint(rt1[u]);
-            srctmp[Gt + u] = (int)FPREngine.fpr_rint(rt2[u]);
+            srctmp[Ft + u] = (int)FPREngine.fpr_rint(fprBuf[rt1 + u]);
+            srctmp[Gt + u] = (int)FPREngine.fpr_rint(fprBuf[rt2 + u]);
         }
 
         return 1;
@@ -3135,7 +3121,8 @@ class FalconKeyGen
      * Returned value: 1 on success, 0 on error.
      */
     private static int solve_NTRU_binary_depth0(int logn,
-                                                byte[] srcf, byte[] srcg, int[] srctmp)
+                                                byte[] srcf, byte[] srcg, int[] srctmp,
+                                                double[] fprBuf)
     {
         int n, hn, u;
         int p, p0i, R2;
@@ -3333,19 +3320,17 @@ class FalconKeyGen
          * representation are actually real, so we can truncate off
          * the imaginary parts.
          */
-        double[] tmp2 = new double[3 * n];
-//        rt3 = align_fpr(tmp, t3);
+        // rt1..rt3 are offsets into the caller-supplied fprBuf scratch.
+        // fprBuf is sized in keygen() to at least 3*n (in fact 5*n) doubles.
         rt1 = 0;
         rt2 = rt1 + n;
         rt3 = rt2 + n;
         for (u = 0; u < n; u++)
         {
-            tmp2[rt3 + u] = srctmp[t2 + u];
+            fprBuf[rt3 + u] = srctmp[t2 + u];
         }
-        FalconFFT.FFT(tmp2, rt3, logn);
-//        rt2 = align_fpr(tmp, t2);
-//        memmove(rt2, rt3, hn * sizeof *rt3);
-        System.arraycopy(tmp2, rt3, tmp2, rt2, hn);
+        FalconFFT.FFT(fprBuf, rt3, logn);
+        System.arraycopy(fprBuf, rt3, fprBuf, rt2, hn);
 
         /*
          * Convert F*adj(f)+G*adj(g) in FFT representation.
@@ -3353,19 +3338,19 @@ class FalconKeyGen
         rt3 = rt2 + hn;
         for (u = 0; u < n; u++)
         {
-            tmp2[rt3 + u] = srctmp[t1 + u];
+            fprBuf[rt3 + u] = srctmp[t1 + u];
         }
-        FalconFFT.FFT(tmp2, rt3, logn);
+        FalconFFT.FFT(fprBuf, rt3, logn);
 
         /*
          * Compute (F*adj(f)+G*adj(g))/(f*adj(f)+g*adj(g)) and get
          * its rounded normal representation in t1.
          */
-        FalconFFT.poly_div_autoadj_fft(tmp2, rt3, tmp2, rt2, logn);
-        FalconFFT.iFFT(tmp2, rt3, logn);
+        FalconFFT.poly_div_autoadj_fft(fprBuf, rt3, fprBuf, rt2, logn);
+        FalconFFT.iFFT(fprBuf, rt3, logn);
         for (u = 0; u < n; u++)
         {
-            srctmp[t1 + u] = modp_set((int)FPREngine.fpr_rint(tmp2[rt3 + u]), p);
+            srctmp[t1 + u] = modp_set((int)FPREngine.fpr_rint(fprBuf[rt3 + u]), p);
         }
 
         /*
@@ -3418,7 +3403,8 @@ class FalconKeyGen
      * then 0 is returned.
      */
     private static int solve_NTRU(int logn, byte[] srcF, //byte[] srcG,
-                                  byte[] srcf, byte[] srcg, int lim, int[] srctmp)
+                                  byte[] srcf, byte[] srcg, int lim, int[] srctmp,
+                                  double[] fprBuf, int[] kBuf)
     {
         int n, u;
         int ft, gt, Ft, Gt, gm;
@@ -3443,7 +3429,7 @@ class FalconKeyGen
             depth = logn;
             while (depth-- > 0)
             {
-                if (solve_NTRU_intermediate(logn, srcf, srcg, depth, srctmp) == 0)
+                if (solve_NTRU_intermediate(logn, srcf, srcg, depth, srctmp, fprBuf, kBuf) == 0)
                 {
                     return 0;
                 }
@@ -3454,16 +3440,16 @@ class FalconKeyGen
             int depth = logn;
             while (depth-- > 2)
             {
-                if (solve_NTRU_intermediate(logn, srcf, srcg, depth, srctmp) == 0)
+                if (solve_NTRU_intermediate(logn, srcf, srcg, depth, srctmp, fprBuf, kBuf) == 0)
                 {
                     return 0;
                 }
             }
-            if (solve_NTRU_binary_depth1(logn, srcf, srcg, srctmp) == 0)
+            if (solve_NTRU_binary_depth1(logn, srcf, srcg, srctmp, fprBuf) == 0)
             {
                 return 0;
             }
-            if (solve_NTRU_binary_depth0(logn, srcf, srcg, srctmp) == 0)
+            if (solve_NTRU_binary_depth0(logn, srcf, srcg, srctmp, fprBuf) == 0)
             {
                 return 0;
             }
@@ -3540,7 +3526,7 @@ class FalconKeyGen
      * Generate a random polynomial with a Gaussian distribution. This function
      * also makes sure that the resultant of the polynomial with phi is odd.
      */
-    private static void poly_small_mkgauss(SHAKEDigest rng, byte[] srcf, int logn)
+    private static void poly_small_mkgauss(SHAKEDigest rng, byte[] srcf, int logn, byte[] rngBuf8)
     {
         int n, u;
         int mod2;
@@ -3553,7 +3539,7 @@ class FalconKeyGen
 
             for (; ; )
             {
-                s = mkgauss(rng, logn);
+                s = mkgauss(rng, logn, rngBuf8);
 
                 /*
                  * We need the coefficient to fit within -127..+127;
@@ -3624,6 +3610,35 @@ class FalconKeyGen
         //rc = rng;
 
         /*
+         * Allocate the per-keygen scratch buffers once, outside the
+         * retry loop. Falcon expects ~4 retries on average per keygen
+         * (norm check, b-norm check, NTRU-solve failure can each force
+         * a restart), so a per-retry alloc was 3-4x redundant. None of
+         * these buffers carry state across retries; every retry
+         * overwrites them from scratch.
+         */
+        ftmp = new double[3 * n];
+        stmp = new short[2 * n];
+        itmp = logn > 2 ? new int[28 * n] : new int[28 * n * 3];
+        byte[] rngBuf8 = new byte[8];
+        /*
+         * Persistent FFT/k scratch threaded through solve_NTRU* so the
+         * recursive solver does not re-allocate rt1..rt5/rt6/k per call.
+         * Sizing rules (max-by-callee, with n meaning the local degree):
+         *   - solve_NTRU_intermediate: 5 regions of size n_depth, used
+         *     as rt1..rt4 (size n) + rt5 (size n/2) + k stored in kBuf;
+         *     needs 4.5 * n_depth doubles. n_depth <= top_n/4 for the
+         *     realistic logn >= 3 path, <= top_n for logn <= 2.
+         *   - solve_NTRU_binary_depth1: rt1..rt5 (size n=top_n/2) + rt6
+         *     (size n/2); needs 5.5 * top_n/2 = 2.75 * top_n.
+         *   - solve_NTRU_binary_depth0: rt1, rt2, rt3 in a single
+         *     double[3*n] (n = top_n); needs 3 * top_n.
+         * Pick 5*n to cover all of the above with headroom.
+         */
+        double[] fprBuf = new double[5 * n];
+        int[] kBuf = new int[n];
+
+        /*
          * We need to generate f and g randomly, until we find values
          * such that the norm of (g,-f), and of the orthogonalized
          * vector, are satisfying. The orthogonalized vector is:
@@ -3644,7 +3659,6 @@ class FalconKeyGen
          */
         for (; ; )
         {
-            ftmp = new double[3 * n];
             int rt1, rt2, rt3;
             double bnorm;
             int normf, normg, norm;
@@ -3656,8 +3670,8 @@ class FalconKeyGen
              * (i.e. the resultant of the polynomial with phi
              * will be odd).
              */
-            poly_small_mkgauss(rc, srcf, logn);
-            poly_small_mkgauss(rc, srcg, logn);
+            poly_small_mkgauss(rc, srcf, logn, rngBuf8);
+            poly_small_mkgauss(rc, srcg, logn, rngBuf8);
 
             /*
              * Verify that all coefficients are within the bounds
@@ -3733,7 +3747,6 @@ class FalconKeyGen
              * Compute public key h = g/f mod X^N+1 mod q. If this
              * fails, we must restart.
              */
-            stmp = new short[2 * n];
             if (srch == null)
             {
                 h2 = 0;
@@ -3753,9 +3766,8 @@ class FalconKeyGen
             /*
              * Solve the NTRU equation to get F and G.
              */
-            itmp = logn > 2 ? new int[28 * n] : new int[28 * n * 3];
             lim = (1 << (FalconCodec.max_FG_bits[logn] - 1)) - 1;
-            if (solve_NTRU(logn, srcF, srcf, srcg, lim, itmp) == 0)
+            if (solve_NTRU(logn, srcF, srcf, srcg, lim, itmp, fprBuf, kBuf) == 0)
             {
                 continue;
             }
