@@ -82,6 +82,13 @@ public class EnvelopedDataHelper
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES128_CBC,  "AES");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES192_CBC,  "AES");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES256_CBC,  "AES");
+        // AES-GCM as a CMS content cipher: without these the unwrapped CEK is
+        // labelled with the raw GCM OID, which strict providers (JSL) reject on
+        // content-cipher init. CBC entries above cover the common case; GCM is
+        // needed for the ML-KEM/KEMRecipientInfo + AES-GCM path.
+        BASE_CIPHER_NAMES.put(CMSAlgorithm.AES128_GCM,  "AES");
+        BASE_CIPHER_NAMES.put(CMSAlgorithm.AES192_GCM,  "AES");
+        BASE_CIPHER_NAMES.put(CMSAlgorithm.AES256_GCM,  "AES");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.CAST5_CBC, "CAST5");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.CAMELLIA128_CBC, "Camellia");
