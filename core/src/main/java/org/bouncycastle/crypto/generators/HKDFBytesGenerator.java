@@ -74,7 +74,9 @@ public class HKDFBytesGenerator
     {
         if (salt == null)
         {
-            // TODO check if hashLen is indeed same as HMAC size
+            // RFC 5869 sec. 2.2: when no salt is provided it defaults to HashLen zero octets,
+            // where HashLen is the hash output length. hashLen is exactly that length
+            // (hash.getDigestSize()), which for an HMac also equals its getMacSize().
             hMacHash.init(new KeyParameter(new byte[hashLen]));
         }
         else
