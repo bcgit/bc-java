@@ -358,7 +358,7 @@ public class EnvelopedDataHelper
 
         try
         {
-             return helper.createCipher(cipherName);
+            return helper.createCipher(cipherName);
         }
         catch (GeneralSecurityException e)
         {
@@ -398,7 +398,10 @@ public class EnvelopedDataHelper
     {
         String algorithmName = (String)BASE_CIPHER_NAMES.get(algorithm);
 
-        if (algorithmName != null)
+        // See createAlgorithmParameters: AEAD algorithms must resolve their parameter generator by
+        // OID so the algorithm-specific parameters (e.g. RFC 5084 GCMParameters) are produced rather
+        // than a bare IV from the base cipher name.
+        if (algorithmName != null && !isAuthEnveloped(algorithm))
         {
             try
             {
@@ -527,7 +530,11 @@ public class EnvelopedDataHelper
     {
         String algorithmName = (String)BASE_CIPHER_NAMES.get(algorithm);
 
-        if (algorithmName != null)
+        // AEAD algorithms (GCM/CCM/ChaCha20Poly1305) carry algorithm-specific parameters - e.g. the
+        // RFC 5084 GCMParameters SEQUENCE - so they must be resolved by OID. The base cipher name
+        // (e.g. "AES") only yields a bare IV OCTET STRING, which is wrong for the content algorithm
+        // identifier; the base-name mapping exists for the cipher/key, not the parameters.
+        if (algorithmName != null && !isAuthEnveloped(algorithm))
         {
             try
             {
@@ -748,7 +755,7 @@ public class EnvelopedDataHelper
             if (effKeyBits != -1)
             {
                 int parameterVersion;
-                            
+
                 if (effKeyBits < 256)
                 {
                     parameterVersion = rc2Table[effKeyBits];
@@ -797,7 +804,7 @@ public class EnvelopedDataHelper
         }
         catch (GeneralSecurityException e)
         {
-             throw new CMSException("Unable to calculate derived key from password: " + e.getMessage(), e);
+            throw new CMSException("Unable to calculate derived key from password: " + e.getMessage(), e);
         }
     }
 
