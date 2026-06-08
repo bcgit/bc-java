@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
@@ -319,6 +320,36 @@ public class AESWrapTest
         }
 
         heapIssueTest();
+        badParameterTest();
+    }
+
+    private void badParameterTest()
+    {
+        // a CipherParameters that is neither KeyParameter nor ParametersWithIV
+        CipherParameters bad = new CipherParameters()
+        {
+        };
+
+        // AESWrapEngine -> RFC3394WrapEngine.init
+        badParameterTest(new AESWrapEngine(), bad);
+        // AESWrapPadEngine -> RFC5649WrapEngine.init
+        badParameterTest(new AESWrapPadEngine(), bad);
+    }
+
+    private void badParameterTest(Wrapper wrapper, CipherParameters bad)
+    {
+        String expected = "invalid parameter passed to AES init - " + bad.getClass().getName();
+
+        try
+        {
+            wrapper.init(true, bad);
+
+            fail("bad parameter not rejected by " + wrapper.getAlgorithmName() + " wrap engine");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exception message: " + e.getMessage(), expected.equals(e.getMessage()));
+        }
     }
 
     public static void main(

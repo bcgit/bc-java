@@ -83,7 +83,7 @@ public class RFC3394WrapEngine
         }
         else
         {
-            // TODO Throw an exception for bad parameters?
+            throw new IllegalArgumentException("invalid parameter passed to " + getAlgorithmName() + " init - " + param.getClass().getName());
         }
     }
 
