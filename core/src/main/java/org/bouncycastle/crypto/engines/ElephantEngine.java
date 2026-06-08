@@ -213,7 +213,7 @@ public class ElephantEngine
             }
             for (x = 0; x < 5; x++)
             {
-                tempA[x + 5] = (byte)(ROL8(tempA[(x + 1) % 5], 1) ^ tempA[(x + 4) % 5]);
+                tempA[x + 5] = (byte)(Bytes.rotateLeft(tempA[(x + 1) % 5], 1) ^ tempA[(x + 4) % 5]);
             }
             for (x = 0; x < 5; x++)
             {
@@ -227,7 +227,7 @@ public class ElephantEngine
             {
                 for (y = 0; y < 5; y++)
                 {
-                    tempA[index(x, y)] = ROL8(state[index(x, y)], KeccakRhoOffsets[index(x, y)]);
+                    tempA[index(x, y)] = Bytes.rotateLeft(state[index(x, y)], KeccakRhoOffsets[index(x, y)]);
                 }
             }
             //pi
@@ -252,13 +252,6 @@ public class ElephantEngine
             }
             //iota
             state[0] ^= KeccakRoundConstants[indexRound];//index(0,0)
-        }
-
-        //TODO: search for " >>> (8 - " merge with with CamelliaLightEngine.lRot8,
-        // code in OCBBlockCipher.init, DualECSP800DRBG.pad8,
-        private byte ROL8(byte a, int offset)
-        {
-            return (byte)((a << offset) | ((a & 0xff) >>> (8 - offset)));
         }
 
         private int index(int x, int y)

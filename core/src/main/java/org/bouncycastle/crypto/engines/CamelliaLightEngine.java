@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Bytes;
 
 /**
  * Camellia - based on RFC 3713, smaller implementation, about half the size of CamelliaEngine.
@@ -188,24 +189,19 @@ public class CamelliaLightEngine
         }
     }
 
-    private byte lRot8(byte v, int rot)
-    {
-        return (byte)((v << rot) | ((v & 0xff) >>> (8 - rot)));
-    }
-
     private int sbox2(int x)
     {
-        return (lRot8(SBOX1[x], 1) & MASK8);
+        return (Bytes.rotateLeft(SBOX1[x], 1) & MASK8);
     }
 
     private int sbox3(int x)
     {
-        return (lRot8(SBOX1[x], 7) & MASK8);
+        return (Bytes.rotateLeft(SBOX1[x], 7) & MASK8);
     }
 
     private int sbox4(int x)
     {
-        return (SBOX1[((int)lRot8((byte)x, 1) & MASK8)] & MASK8);
+        return (SBOX1[((int)Bytes.rotateLeft((byte)x, 1) & MASK8)] & MASK8);
     }
 
     private void camelliaF2(int[] s, int[] skey, int keyoff)
