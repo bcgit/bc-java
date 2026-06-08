@@ -396,7 +396,9 @@ public class EnvelopedDataHelper
     AlgorithmParameterGenerator createAlgorithmParameterGenerator(ASN1ObjectIdentifier algorithm)
         throws GeneralSecurityException
     {
-        String algorithmName = (String)BASE_CIPHER_NAMES.get(algorithm);
+        // See createAlgorithmParameters: AEAD algorithms need OID-resolved parameters (e.g. the
+        // GCMParameters SEQUENCE), not the "AES" base-name parameters, so skip the shortcut.
+        String algorithmName = isAuthEnveloped(algorithm) ? null : (String)BASE_CIPHER_NAMES.get(algorithm);
 
         if (algorithmName != null)
         {
@@ -525,7 +527,12 @@ public class EnvelopedDataHelper
     AlgorithmParameters createAlgorithmParameters(ASN1ObjectIdentifier algorithm)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        String algorithmName = (String)BASE_CIPHER_NAMES.get(algorithm);
+        // AEAD algorithms (GCM / CCM / ChaCha20Poly1305) carry structured AlgorithmParameters
+        // (for AES-GCM a GCMParameters SEQUENCE of nonce + icvLen) that must be resolved via the
+        // algorithm OID. The BASE_CIPHER_NAMES base name ("AES" for AES-GCM) would instead produce
+        // a bare IV OCTET STRING and corrupt the AuthEnvelopedData encoding, so skip the base-name
+        // shortcut for them and fall through to the OID lookup.
+        String algorithmName = isAuthEnveloped(algorithm) ? null : (String)BASE_CIPHER_NAMES.get(algorithm);
 
         if (algorithmName != null)
         {
