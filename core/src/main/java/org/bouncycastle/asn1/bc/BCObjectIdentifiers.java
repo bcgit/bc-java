@@ -820,7 +820,7 @@ public interface BCObjectIdentifiers
     /**
      * MQOM v2.1 ("MQ on my Mind"). BC-allocated arc pending NIST OID assignment.
      * 36 child OIDs follow the canonical naming
-     * {@code mqom2_&lt;category&gt;_&lt;base-field&gt;_&lt;trade-off&gt;_&lt;variant&gt;}
+     * {@code mqom2_<category>_<base-field>_<trade-off>_<variant>}
      * with category in {cat1, cat3, cat5}, base-field in {gf2, gf16, gf256},
      * trade-off in {fast, short}, variant in {r3, r5}.
      */
@@ -866,7 +866,7 @@ public interface BCObjectIdentifiers
      * UOV (Unbalanced Oil and Vinegar). BC-allocated arc pending NIST OID
      * assignment from the additional-signatures round of NIST's PQC
      * standardisation. Twelve child OIDs follow the canonical naming
-     * {@code uov_&lt;security-level&gt;_&lt;encoding-variant&gt;} where
+     * {@code uov_<security-level>_<encoding-variant>} where
      * security-level is in {Is, Ip, III, V} and encoding-variant is in
      * {classic, pkc, pkc_skc}. See pqov reference implementation
      * (https://github.com/pqov/pqov) for the algorithm definitions.
@@ -889,7 +889,7 @@ public interface BCObjectIdentifiers
      * SQIsign (Short Quaternion and Isogeny Signature). BC-allocated arc
      * pending NIST OID assignment from the additional-signatures round of
      * NIST's PQC standardisation. Three child OIDs follow the canonical
-     * NIST-API parameter-set naming {@code sqisign_lvl&lt;n&gt;} with
+     * NIST-API parameter-set naming {@code sqisign_lvl<n>} with
      * n in {1, 3, 5}.
      */
     ASN1ObjectIdentifier sqisign       = bc_sig.branch("19");

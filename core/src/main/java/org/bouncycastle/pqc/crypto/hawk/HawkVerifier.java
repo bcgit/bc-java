@@ -281,8 +281,10 @@ final class HawkVerifier
     }
 
     // ---- GM table generation: gm[i] = R * g^rev(i) mod p (Montgomery form) ----
-    private static int[] gmP1Cache;
-    private static int[] gmP2Cache;
+    // volatile so the double-checked locking in getGmP1()/getGmP2() safely publishes the fully
+    // built table: a reader that sees a non-null reference is guaranteed to see its contents too.
+    private static volatile int[] gmP1Cache;
+    private static volatile int[] gmP2Cache;
     private static final Object GM_LOCK = new Object();
 
     /**
