@@ -217,7 +217,7 @@ public class JcePGPDataEncryptorBuilder
             SymmetricEncIntegrityPacket.VERSION_2, encAlgorithm, aeadAlgorithm, chunkSize);
         int keyLen = SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm);
         int ivLen = AEADUtils.getIVLength(aeadAlgorithm);
-        byte[] messageKeyAndIv = JceAEADUtil.generateHKDFBytes(key, salt, hkdfInfo, keyLen + ivLen - 8);
+        byte[] messageKeyAndIv = aeadHelper.generateHKDFBytes(key, salt, hkdfInfo, keyLen + ivLen - 8);
 
         return new MyAeadDataEncryptor(messageKeyAndIv);
     }

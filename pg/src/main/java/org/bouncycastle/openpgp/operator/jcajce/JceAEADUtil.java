@@ -7,6 +7,7 @@ import java.security.GeneralSecurityException;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
@@ -15,9 +16,7 @@ import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.jcajce.spec.HKDFParameterSpec;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPUtil;
@@ -51,10 +50,9 @@ class JceAEADUtil
      * @return message key and separate IV
      * @throws PGPException
      */
-    static byte[][] deriveMessageKeyAndIv(int aeadAlgo, int cipherAlgo, byte[] sessionKey, byte[] salt, byte[] hkdfInfo)
+    byte[][] deriveMessageKeyAndIv(int aeadAlgo, int cipherAlgo, byte[] sessionKey, byte[] salt, byte[] hkdfInfo)
         throws PGPException
     {
-        // TODO: needs to be JCA based. KeyGenerator
         int keyLen = SymmetricKeyUtils.getKeyLengthInOctets(cipherAlgo);
         int ivLen = AEADUtils.getIVLength(aeadAlgo);
         byte[] messageKeyAndIv = generateHKDFBytes(sessionKey, salt, hkdfInfo, keyLen + ivLen - 8);
@@ -62,15 +60,21 @@ class JceAEADUtil
         return new byte[][]{Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen)};
     }
 
-    static byte[] generateHKDFBytes(byte[] sessionKey, byte[] salt, byte[] hkdfInfo, int len)
+    byte[] generateHKDFBytes(byte[] sessionKey, byte[] salt, byte[] hkdfInfo, int len)
+        throws PGPException
     {
-        HKDFParameters hkdfParameters = new HKDFParameters(sessionKey, salt, hkdfInfo);
-        HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest());
-
-        hkdfGen.init(hkdfParameters);
-        byte[] messageKeyAndIv = new byte[len];
-        hkdfGen.generateBytes(messageKeyAndIv, 0, messageKeyAndIv.length);
-        return messageKeyAndIv;
+        // RFC 9580 uses HKDF with SHA-256; derive through the provider's SecretKeyFactory so the
+        // KDF runs on the configured provider rather than the lightweight engine.
+        try
+        {
+            SecretKeyFactory hkdfFact = helper.createSecretKeyFactory("HKDF-SHA256");
+            SecretKey derived = hkdfFact.generateSecret(new HKDFParameterSpec(sessionKey, salt, hkdfInfo, len));
+            return derived.getEncoded();
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new PGPException("cannot derive key: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -234,8 +238,7 @@ class JceAEADUtil
     static byte[] processAeadKeyData(JceAEADUtil aeadUtil, int mode, int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv, int packetTag, int keyVersion, byte[] keyData, int keyOff, int keyLen, byte[] pubkeyData)
         throws PGPException
     {
-        // TODO: Replace HDKF code with JCE based implementation
-        byte[] key = generateHKDFBytes(s2kKey, null,
+        byte[] key = aeadUtil.generateHKDFBytes(s2kKey, null,
             new byte[]{(byte)(0xC0 | packetTag), (byte)keyVersion, (byte)encAlgorithm, (byte)aeadAlgorithm},
             SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm));
 

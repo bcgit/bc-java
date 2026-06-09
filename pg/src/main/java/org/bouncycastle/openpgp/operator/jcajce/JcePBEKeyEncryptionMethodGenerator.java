@@ -151,8 +151,9 @@ public class JcePBEKeyEncryptionMethodGenerator
     }
 
     protected byte[] generateV6KEK(int kekAlgorithm, byte[] ikm, byte[] info)
+        throws PGPException
     {
-        return JceAEADUtil.generateHKDFBytes(ikm, null, info, SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm));
+        return new JceAEADUtil(helper).generateHKDFBytes(ikm, null, info, SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm));
     }
 
     protected byte[] getEskAndTag(int kekAlgorithm, int aeadAlgorithm, byte[] sessionKey, byte[] key, byte[] iv, byte[] info)
