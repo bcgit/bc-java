@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
@@ -96,6 +98,79 @@ public class CompositeMLKEMTest
         throws Exception
     {
         runTestVectors("testvectors_wrapped.json");
+    }
+
+    /**
+     * Exercises the composite ML-KEM KeyPairGenerator for every registered composite parameter set:
+     * the generated key pair must be a CompositePublicKey / CompositePrivateKey carrying the
+     * expected OID and two components, must round-trip through X.509/PKCS#8 encoding, and must
+     * support encapsulate/decapsulate (proving the freshly generated components interoperate with
+     * the composite KEM engine). Both the OID and the algorithm-name registrations are exercised.
+     */
+    public void testKeyPairGenerator()
+        throws Exception
+    {
+        Provider bc = Security.getProvider("BC");
+
+        for (Map.Entry<String, String> entry : OIDS.entrySet())
+        {
+            String label = entry.getKey();
+            if (isPureMLKEM(label))
+            {
+                continue;   // pure ML-KEM has its own KeyPairGenerator, not the composite one
+            }
+
+            ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier(entry.getValue());
+            String algorithmName = algorithmNameFor(label);
+
+            // generate once by OID and once by algorithm name to cover both registrations
+            assertNotNull(label + ": no KeyPairGenerator by name", KeyPairGenerator.getInstance(algorithmName, bc));
+            KeyPair kp = KeyPairGenerator.getInstance(oid.getId(), bc).generateKeyPair();
+
+            assertTrue(label + ": public key is not a CompositePublicKey", kp.getPublic() instanceof CompositePublicKey);
+            assertTrue(label + ": private key is not a CompositePrivateKey", kp.getPrivate() instanceof CompositePrivateKey);
+
+            CompositePublicKey pub = (CompositePublicKey)kp.getPublic();
+            CompositePrivateKey priv = (CompositePrivateKey)kp.getPrivate();
+
+            assertEquals(label + ": unexpected public key OID", oid, pub.getAlgorithmIdentifier().getAlgorithm());
+            assertEquals(label + ": expected two public components", 2, pub.getPublicKeys().size());
+            assertEquals(label + ": expected two private components", 2, priv.getPrivateKeys().size());
+
+            // CompositePublicKey.builder(String)/CompositePrivateKey.builder(String) must resolve the
+            // composite-KEM name via CompositeUtil to the same OID.
+            CompositePublicKey byName = CompositePublicKey.builder(algorithmName)
+                .addPublicKey(pub.getPublicKeys().get(0))
+                .addPublicKey(pub.getPublicKeys().get(1))
+                .build();
+            assertEquals(label + ": builder(name) resolved the wrong OID", oid, byName.getAlgorithmIdentifier().getAlgorithm());
+
+            // keys must round-trip through their encoded form
+            KeyFactory kf = KeyFactory.getInstance(oid.getId(), bc);
+            PublicKey pub2 = kf.generatePublic(new X509EncodedKeySpec(pub.getEncoded()));
+            PrivateKey priv2 = kf.generatePrivate(new PKCS8EncodedKeySpec(priv.getEncoded()));
+            assertTrue(label + ": public key did not round-trip", Arrays.areEqual(pub.getEncoded(), pub2.getEncoded()));
+            assertTrue(label + ": private key did not round-trip", Arrays.areEqual(priv.getEncoded(), priv2.getEncoded()));
+
+            // the generated key pair must support encapsulate/decapsulate
+            KeyGenerator gen = KeyGenerator.getInstance(oid.getId(), bc);
+            gen.init(new KEMGenerateSpec.Builder(pub2, "AES", 256).withKdfAlgorithm(null).build(), new SecureRandom());
+            SecretKeyWithEncapsulation enc = (SecretKeyWithEncapsulation)gen.generateKey();
+
+            byte[] decapsulated = decapsulate(oid, bc, priv2, enc.getEncapsulation());
+            assertTrue(label + ": generated key pair failed encapsulate/decapsulate round-trip",
+                Arrays.areEqual(enc.getEncoded(), decapsulated));
+        }
+    }
+
+    // The registered algorithm name is the tcId with the "id-" prefix dropped and the
+    // "brainpoolPNNNr1" component spelled "BPNNN", matching CompositeIndex.
+    private static String algorithmNameFor(String tcId)
+    {
+        String name = tcId.substring("id-".length());
+        name = name.replace("ECDH-brainpoolP256r1", "ECDH-BP256");
+        name = name.replace("ECDH-brainpoolP384r1", "ECDH-BP384");
+        return name;
     }
 
     private void runTestVectors(String fileName)
