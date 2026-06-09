@@ -28,6 +28,7 @@ public class ASN1TimeFormatTest
         assertTrue(ASN1TimeFormat.isValidUTCTime(b("5001010000Z")));        // no seconds, Z
         assertTrue(ASN1TimeFormat.isValidUTCTime(b("500101000000Z")));      // seconds, Z
         assertTrue(ASN1TimeFormat.isValidUTCTime(b("5001010000+0500")));    // no seconds, offset
+        assertTrue(ASN1TimeFormat.isValidUTCTime(b("5001010000+0530")));    // no seconds, offset
         assertTrue(ASN1TimeFormat.isValidUTCTime(b("500101000000-0830")));  // seconds, offset
         assertTrue(ASN1TimeFormat.isValidUTCTime(b("991231235959Z")));      // boundary fields
         assertTrue(ASN1TimeFormat.isValidUTCTime(b("000101120000Z")));      // year 00 is fine
@@ -42,7 +43,9 @@ public class ASN1TimeFormatTest
         assertFalse(ASN1TimeFormat.isValidUTCTime(b("240101240000Z")));     // hour 24
         assertFalse(ASN1TimeFormat.isValidUTCTime(b("240101006000Z")));     // minute 60
         assertFalse(ASN1TimeFormat.isValidUTCTime(b("240101000060Z")));     // second 60
-        assertFalse(ASN1TimeFormat.isValidUTCTime(b("240101000000+2460")));// offset minute 60
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("240101000000+2460"))); // offset minute 60
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("5001010000+05")));     // no seconds, offset (no minutes)
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("500101000000+05")));   // seconds, offset (no minutes)
     }
 
     public void testInvalidUTCTimeStructure()
