@@ -122,6 +122,11 @@ public class PGPPBEEncryptedData
         return keyData.getEncAlgorithm();
     }
 
+    public SymmetricKeyEncSessionPacket getKeyData()
+    {
+        return keyData;
+    }
+
     /**
      * Return the symmetric key algorithm required to decrypt the data protected by this object.
      *
