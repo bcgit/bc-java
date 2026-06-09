@@ -13,6 +13,7 @@ import java.security.Signature;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -66,6 +67,12 @@ class OperatorHelper
         throws GeneralSecurityException, PGPException
     {
         return helper.createKeyFactory(algorithm);
+    }
+
+    SecretKeyFactory createSecretKeyFactory(String algorithm)
+        throws GeneralSecurityException
+    {
+        return helper.createSecretKeyFactory(algorithm);
     }
 
     public KeyAgreement createKeyAgreement(String algorithm)

@@ -188,34 +188,20 @@ public class PGPEncryptedDataGenerator
 
         byte[] sessionKey;  // session key, either protected by - or directly derived from session key encryption mechanism.
         byte[] sessionInfo = null; // sessionKey with prepended alg-id, appended checksum, null indicates direct use of S2K output as sessionKey/messageKey
-        byte[] messageKey;          // key used to encrypt the message. In OpenPGP v6 this is derived from sessionKey + salt.
 
         boolean directS2K = !forceSessionKey && methods.size() == 1 &&
             methods.get(0) instanceof PBEKeyEncryptionMethodGenerator; // not public key
         boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD(); //v5
-        if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD)
-        {
-            sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
-            // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
-            // Since we cannot inject the IV into the data encryptor, we append it to the message key.
-            byte[] info = SymmetricEncIntegrityPacket.createAAData(
-                SymmetricEncIntegrityPacket.VERSION_2,
-                defAlgorithm,
-                dataEncryptorBuilder.getAeadAlgorithm(),
-                dataEncryptorBuilder.getChunkSize());
-            // messageKey = key and IV, will be separated in the data encryptor
-            messageKey = AEADUtil.deriveMessageKeyAndIv(
-                dataEncryptorBuilder.getAeadAlgorithm(), defAlgorithm, sessionKey, salt, info);
-        }
-        else if (directS2K)
+        // OpenPGP v2 SEIPD (a.k.a. v6 AEAD): the message key and IV are derived from the session
+        // key and salt rather than using the session key directly.
+        boolean isV6StyleAEAD = dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD;
+        if (directS2K && !isV6StyleAEAD)
         {
             sessionKey = ((PBEKeyEncryptionMethodGenerator)methods.get(0)).getKey(defAlgorithm);
-            messageKey = sessionKey;
         }
         else
         {
             sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
-            messageKey = sessionKey;
         }
 
         if (sessionKeyExtractionCallback != null)
@@ -223,7 +209,12 @@ public class PGPEncryptedDataGenerator
             sessionKeyExtractionCallback.extractSessionKey(new PGPSessionKey(defAlgorithm, sessionKey));
         }
 
-        PGPDataEncryptor dataEncryptor = dataEncryptorBuilder.build(messageKey);
+        // For v2 SEIPD the data encryptor derives the message key and IV from the session key and
+        // salt through its own crypto stack (RFC 9580 sec. 5.13.2); otherwise the session key is
+        // used directly.
+        PGPDataEncryptor dataEncryptor = isV6StyleAEAD
+            ? dataEncryptorBuilder.build(sessionKey, salt)
+            : dataEncryptorBuilder.build(sessionKey);
         digestCalc = dataEncryptor.getIntegrityCalculator();
         BCPGHeaderObject encOut;
         for (int i = 0; i < methods.size(); i++)

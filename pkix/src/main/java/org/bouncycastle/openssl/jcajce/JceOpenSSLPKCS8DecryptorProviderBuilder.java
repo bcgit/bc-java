@@ -8,6 +8,7 @@ import java.security.Provider;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -20,10 +21,10 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CharToByteConverter;
-import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.io.CipherInputStream;
+import org.bouncycastle.jcajce.spec.ScryptKeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -86,16 +87,20 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
                             // RFC 7914 / RFC 8018 scrypt KDF inside PBES2.
                             // OpenSSL 1.1+ "openssl pkcs8 -topk8 -scrypt" produces this form;
                             // the caller-supplied char[] password is fed as UTF-8 bytes,
-                            // matching OpenSSL's raw-bytes treatment (github #400).
+                            // matching OpenSSL's raw-bytes treatment (github #400). The derivation
+                            // is driven through the provider's "SCRYPT" SecretKeyFactory (which
+                            // applies the same UTF-8 conversion) so the provider stays overridable
+                            // via setProvider(...), rather than calling the lightweight engine.
                             ScryptParams scrypt = ScryptParams.getInstance(func.getParameters());
                             int keySizeBits = PEMUtilities.getKeySize(oid);
-                            byte[] derived = SCrypt.generate(Strings.toUTF8ByteArray(password),
+                            SecretKeyFactory scryptFact = helper.createSecretKeyFactory("SCRYPT");
+                            SecretKey derived = scryptFact.generateSecret(new ScryptKeySpec(password,
                                 scrypt.getSalt(),
                                 scrypt.getCostParameter().intValue(),
                                 scrypt.getBlockSize().intValue(),
                                 scrypt.getParallelizationParameter().intValue(),
-                                (keySizeBits + 7) / 8);
-                            key = new SecretKeySpec(derived, PEMUtilities.getAlgorithmName(oid));
+                                keySizeBits));
+                            key = new SecretKeySpec(derived.getEncoded(), PEMUtilities.getAlgorithmName(oid));
                         }
                         else
                         {
