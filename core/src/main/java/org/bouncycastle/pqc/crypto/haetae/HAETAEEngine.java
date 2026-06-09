@@ -845,7 +845,7 @@ class HAETAEEngine
      * Decomposes a coefficient into high and low parts.
      * <p>
      * The low part is in {-1, 0, 1} and satisfies: {@code a = 2 * high + low}.
-     * Returned packed as {@code ((high &amp; 0xFFFFFFFFL) &lt;&lt; 32) | (low &amp; 0xFFFFFFFFL)}.
+     * Returned packed as {@code ((high & 0xFFFFFFFFL) << 32) | (low & 0xFFFFFFFFL)}.
      * </p>
      */
     private static long decomposeVkPacked(int a)
@@ -1012,7 +1012,7 @@ class HAETAEEngine
 
     /**
      * Branchless min/max swap (djbsort). Returns packed
-     * {@code (max &lt;&lt; 32) | (min &amp; 0xFFFFFFFFL)}.
+     * {@code (max << 32) | (min & 0xFFFFFFFFL)}.
      */
     private static long minmaxPacked(int a, int b)
     {
@@ -3088,7 +3088,7 @@ class HAETAEEngine
         long[] sqsum = new long[2];
         long[] invsqrt = new long[2];
 
-        long b0SqLn2 = (long)(params.getB0() * params.getB0()) *
+        long b0SqLn2 = ((long)(params.getB0() * params.getB0())) *
             params.getLn() * params.getLn();
 
         do
@@ -3233,8 +3233,8 @@ class HAETAEEngine
         int[][] hb_z1 = new int[params.getL()][HAETAEParameters.N];
 
         long reject1, reject2;
-        long b0SqLn2 = (long)(params.getB0() * params.getB0()) * params.getLn() * params.getLn();
-        long b1SqLn2 = (long)(params.getB1() * params.getB1()) * params.getLn() * params.getLn();
+        long b0SqLn2 = ((long)(params.getB0() * params.getB0())) * params.getLn() * params.getLn();
+        long b1SqLn2 = ((long)(params.getB1() * params.getB1())) * params.getLn() * params.getLn();
 
         while (true)
         {

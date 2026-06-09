@@ -10,11 +10,11 @@ package org.bouncycastle.pqc.crypto.faest;
  * <p>
  * Two flavours, six concrete OWFs:
  * <ul>
- *   <li><b>FAEST</b> (key-keyed AES): {@code output = AES&lt;lambda&gt;(key).encrypt(input)}.
+ *   <li><b>FAEST</b> (key-keyed AES): {@code output = AES<lambda>(key).encrypt(input)}.
  *       For 192- and 256-bit security, two blocks are produced &mdash; the second uses
  *       {@code input XOR (0x01 at byte 0)} as plaintext &mdash; so the output absorbs
  *       the full {@code lambda} bits.</li>
- *   <li><b>FAEST-EM</b> (Even-Mansour): {@code output = AES&lt;lambda&gt;(input).encrypt(key) XOR key}.
+ *   <li><b>FAEST-EM</b> (Even-Mansour): {@code output = AES<lambda>(input).encrypt(key) XOR key}.
  *       The roles of key and plaintext are swapped, and the output is XORed with
  *       the input key &mdash; the canonical EM construction. For lambda=192,256
  *       Rijndael with matching block size is used.</li>

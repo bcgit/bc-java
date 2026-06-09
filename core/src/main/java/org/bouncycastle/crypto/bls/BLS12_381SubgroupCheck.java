@@ -12,10 +12,10 @@ import org.bouncycastle.math.ec.ECPoint;
  * For G1: the GLV endomorphism &sigma;(x, y) = (&beta;&middot;x, y), where
  * &beta; is a primitive cube root of unity in Fp, has eigenvalue
  * &lambda; = x&sup2; - 1 on G1 (a primitive cube root of unity in Z/r). The
- * test {@code &sigma;(P) == [&lambda;] P} reduces the scalar to ~128 bits.
+ * test {@code σ(P) == [λ] P} reduces the scalar to ~128 bits.
  * <p>
  * For G2: the untwist-Frobenius-twist endomorphism &psi; has eigenvalue
- * x (the BLS parameter) on G2. The test {@code &psi;(P) == [x] P} reduces
+ * x (the BLS parameter) on G2. The test {@code ψ(P) == [x] P} reduces
  * the scalar to ~64 bits, and &psi; itself is essentially free
  * (one Fp&sup2; conjugation + one Fp&sup2; multiplication per coordinate).
  * <p>
@@ -31,8 +31,8 @@ public class BLS12_381SubgroupCheck
 
     /**
      * Eigenvalue of &sigma; on G1: a primitive cube root of unity in Z/r.
-     * The two candidates are {@code x&sup2; - 1} and its square (which equals
-     * {@code -x&sup2; mod r}); the static initialiser picks whichever
+     * The two candidates are {@code x² - 1} and its square (which equals
+     * {@code -x² mod r}); the static initialiser picks whichever
      * matches our chosen &sigma; direction by probing on the canonical
      * generator.
      */
@@ -144,7 +144,7 @@ public class BLS12_381SubgroupCheck
     /**
      * Test G1 prime-order subgroup membership.
      * <p>
-     * Returns {@code true} iff {@code &sigma;(P) == [x&sup2; - 1] P}, which is
+     * Returns {@code true} iff {@code σ(P) == [x² - 1] P}, which is
      * equivalent to {@code [r] P == 0} for any P on E(Fp).
      */
     public static boolean isInG1Subgroup(ECPoint p)
@@ -165,7 +165,7 @@ public class BLS12_381SubgroupCheck
     /**
      * Test G2 prime-order subgroup membership.
      * <p>
-     * Returns {@code true} iff {@code &psi;(P) == [x] P}, which is
+     * Returns {@code true} iff {@code ψ(P) == [x] P}, which is
      * equivalent to {@code [r] P == 0} for any P on E'(Fp&sup2;).
      */
     public static boolean isInG2Subgroup(BLS12_381G2Point p)

@@ -1,4 +1,4 @@
-package org.bouncycastle.mail.smime.test;
+package org.bouncycastle.mail.smime.examples.test;
 
 import java.io.FileOutputStream;
 import java.math.BigInteger;

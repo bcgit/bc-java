@@ -24,8 +24,8 @@ import org.bouncycastle.util.BigIntegers;
  * part first.
  * <p>
  * The y-sign flag uses the lexicographic ordering of the encoded
- * {@code y} versus {@code -y}: for Fp this reduces to {@code y &gt; (p-1)/2},
- * for Fp&sup2; to "{@code y.c1 &gt; (p-1)/2}, or {@code y.c0 &gt; (p-1)/2} when
+ * {@code y} versus {@code -y}: for Fp this reduces to {@code y > (p-1)/2},
+ * for Fp&sup2; to "{@code y.c1 > (p-1)/2}, or {@code y.c0 > (p-1)/2} when
  * {@code y.c1 == 0}".
  * <p>
  * Decompression validates the curve equation and the flag combinations but

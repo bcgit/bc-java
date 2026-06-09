@@ -7,7 +7,7 @@ package org.bouncycastle.pqc.crypto.sqisign;
  * NIST-API reference: {@code sqisign_lvl1}, {@code sqisign_lvl3},
  * {@code sqisign_lvl5} for NIST security categories I, III and V.
  * <p>
- * Byte sizes are taken from {@code src/nistapi/lvl&lt;n&gt;/api.h} of the
+ * Byte sizes are taken from {@code src/nistapi/lvl<n>/api.h} of the
  * reference C implementation.
  * </p>
  */
