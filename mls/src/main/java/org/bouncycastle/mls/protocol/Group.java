@@ -624,7 +624,7 @@ public class Group
 
         // Verify confirmation tag
         byte[] confirmationTag = keySchedule.confirmationTag(transcriptHash.getConfirmed());
-        if (!Arrays.equals(confirmationTag, groupInfo.getConfirmationTag()))
+        if (!org.bouncycastle.util.Arrays.constantTimeAreEqual(confirmationTag, groupInfo.getConfirmationTag()))
         {
             throw new Exception("Confirmation failed to verify");
         }
@@ -820,7 +820,7 @@ public class Group
         // Verify the confirmation MAC
         byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.getConfirmed());
 
-        if (!Arrays.equals(auth.getConfirmationTag(), confirmationTag))
+        if (!org.bouncycastle.util.Arrays.constantTimeAreEqual(confirmationTag, auth.getConfirmationTag()))
         {
             throw new Exception("Confirmation failed to verify");
         }
