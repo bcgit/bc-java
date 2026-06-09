@@ -71,9 +71,9 @@ class ASN1TimeFormat
         case 13:
             return validSeconds(contents, 10) && contents[12] == 'Z';
         case 15:
-            return isZoneOffset(contents, 10);
+            return isZoneOffsetHHMM(contents, 10);
         case 17:
-            return validSeconds(contents, 10) && isZoneOffset(contents, 12);
+            return validSeconds(contents, 10) && isZoneOffsetHHMM(contents, 12);
         default:
             return false;
         }
@@ -149,7 +149,8 @@ class ASN1TimeFormat
         {
             return idx + 1 == len;
         }
-        return isZoneOffset(contents, idx);
+        return isZoneOffsetHHMM(contents, idx)
+            || isZoneOffsetHH(contents, idx);
     }
 
     /**
@@ -175,10 +176,9 @@ class ASN1TimeFormat
     }
 
     /**
-     * A {@code Z}-less numeric zone offset {@code (+|-)HH} or {@code (+|-)HHMM} occupying exactly the
-     * remainder of the content.
+     * A {@code Z}-less numeric zone offset {@code (+|-)HH} occupying exactly the remainder of the content.
      */
-    private static boolean isZoneOffset(byte[] c, int off)
+    private static boolean isZoneOffsetHH(byte[] c, int off)
     {
         if (off + 3 == c.length)
         {
@@ -193,6 +193,14 @@ class ASN1TimeFormat
             return twoDigit(c, off + 1) <= 14;
         }
 
+        return false;
+    }
+
+    /**
+     * A {@code Z}-less numeric zone offset {@code {@code (+|-)HHMM} occupying exactly the remainder of the content.
+     */
+    private static boolean isZoneOffsetHHMM(byte[] c, int off)
+    {
         if (off + 5 == c.length)
         {
             if (c[off] != '+' && c[off] != '-')
