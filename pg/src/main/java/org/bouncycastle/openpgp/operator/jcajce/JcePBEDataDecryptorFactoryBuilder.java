@@ -152,7 +152,7 @@ public class JcePBEDataDecryptorFactoryBuilder
                     // HKDF
                     // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
                     int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
-                    byte[] kek = JceAEADUtil.generateHKDFBytes(ikm, null, hkdfInfo, kekLen);
+                    byte[] kek = aeadHelper.generateHKDFBytes(ikm, null, hkdfInfo, kekLen);
                     secretKey = new SecretKeySpec(kek, PGPUtil.getSymmetricCipherName(keyData.getEncAlgorithm()));
                 }
                 else
