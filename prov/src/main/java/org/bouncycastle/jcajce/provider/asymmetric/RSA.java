@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -78,6 +79,18 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.Cipher.RSA//PKCS1PADDING", "RSA/PKCS1");
             provider.addAlgorithm("Alg.Alias.Cipher.RSA//OAEPPADDING", "RSA/OAEP");
             provider.addAlgorithm("Alg.Alias.Cipher.RSA//ISO9796-1PADDING", "RSA/ISO9796-1");
+
+            // RFC 9690 RSA-KEM in CMS: keyed off ISO 18033-2 id-kem-rsa (1.0.18033.2.2.4)
+            // in KEMRecipientInfo.kem, and PKCS-arc id-rsa-kem (1.2.840.113549.1.9.16.3.14)
+            // when an RSA-KEM SubjectPublicKeyInfo names the cipher directly (RFC 9690 §3.3).
+            // Both aliases mirror BC-FJA 2.0.X ProvRSA so a JCA call site that resolves the
+            // cipher by either OID hits the same SPI.
+            provider.addAttributes("Cipher.RSA-KTS-KEM-KWS", generalRsaAttributes);
+            provider.addAlgorithm("Cipher.RSA-KTS-KEM-KWS", PREFIX + "RSAKEMCipherSpi");
+            provider.addAlgorithm("Alg.Alias.Cipher." + ISOIECObjectIdentifiers.id_kem_rsa, "RSA-KTS-KEM-KWS");
+            provider.addAlgorithm("Alg.Alias.Cipher.OID." + ISOIECObjectIdentifiers.id_kem_rsa, "RSA-KTS-KEM-KWS");
+            provider.addAlgorithm("Alg.Alias.Cipher." + PKCSObjectIdentifiers.id_rsa_KEM, "RSA-KTS-KEM-KWS");
+            provider.addAlgorithm("Alg.Alias.Cipher.OID." + PKCSObjectIdentifiers.id_rsa_KEM, "RSA-KTS-KEM-KWS");
 
             provider.addAlgorithm("KeyFactory.RSA", PREFIX + "KeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.RSA", PREFIX + "KeyPairGeneratorSpi");
