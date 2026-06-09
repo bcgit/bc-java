@@ -43,6 +43,9 @@ public class CompositeKEMs
                 provider.addAlgorithm("Alg.Alias.KeyFactory", oid, "COMPOSITE");
                 provider.addAlgorithm("Alg.Alias.KeyFactory." + algorithmName, "COMPOSITE");
 
+                provider.addAlgorithm("KeyPairGenerator." + algorithmName, PREFIX + "KeyPairGeneratorSpi$" + className);
+                provider.addAlgorithm("Alg.Alias.KeyPairGenerator", oid, algorithmName);
+
                 provider.addAlgorithm("KeyGenerator." + algorithmName, PREFIX + "CompositeKeyGeneratorSpi$" + className);
                 provider.addAlgorithm("Alg.Alias.KeyGenerator", oid, algorithmName);
 

@@ -1,11 +1,14 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositekem;
 
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -21,6 +24,7 @@ public class CompositeIndex
     private static final Map<ASN1ObjectIdentifier, String[]> pairings = new HashMap<ASN1ObjectIdentifier, String[]>();
     private static final Map<ASN1ObjectIdentifier, String> algorithmNames = new HashMap<ASN1ObjectIdentifier, String>();
     private static final Map<ASN1ObjectIdentifier, byte[]> kemLabels = new HashMap<ASN1ObjectIdentifier, byte[]>();
+    private static final Map<ASN1ObjectIdentifier, AlgorithmParameterSpec[]> kpgInitSpecs = new HashMap<ASN1ObjectIdentifier, AlgorithmParameterSpec[]>();
 
     static
     {
@@ -114,6 +118,32 @@ public class CompositeIndex
             Strings.toByteArray("MLKEM1024-P521"),
             new String[]{"ML-KEM-1024", "EC"}
         );
+
+        // Per-component KeyPairGenerator init specs (in pairing order: ML-KEM first, traditional
+        // second). The ML-KEM component is generated through its parameter-set-specific
+        // KeyPairGenerator name ("ML-KEM-768" / "ML-KEM-1024") so it needs no spec.
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM768_RSA2048_SHA3_256, new AlgorithmParameterSpec[]{null, new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4)});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM768_RSA3072_SHA3_256, new AlgorithmParameterSpec[]{null, new RSAKeyGenParameterSpec(3072, RSAKeyGenParameterSpec.F4)});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM768_RSA4096_SHA3_256, new AlgorithmParameterSpec[]{null, new RSAKeyGenParameterSpec(4096, RSAKeyGenParameterSpec.F4)});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM768_X25519_SHA3_256, new AlgorithmParameterSpec[]{null, null});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P256_SHA3_256, new AlgorithmParameterSpec[]{null, new ECNamedCurveGenParameterSpec("P-256")});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P384_SHA3_256, new AlgorithmParameterSpec[]{null, new ECNamedCurveGenParameterSpec("P-384")});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_BP256_SHA3_256, new AlgorithmParameterSpec[]{null, new ECNamedCurveGenParameterSpec("brainpoolP256r1")});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM1024_RSA3072_SHA3_256, new AlgorithmParameterSpec[]{null, new RSAKeyGenParameterSpec(3072, RSAKeyGenParameterSpec.F4)});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P384_SHA3_256, new AlgorithmParameterSpec[]{null, new ECNamedCurveGenParameterSpec("P-384")});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_BP384_SHA3_256, new AlgorithmParameterSpec[]{null, new ECNamedCurveGenParameterSpec("brainpoolP384r1")});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM1024_X448_SHA3_256, new AlgorithmParameterSpec[]{null, null});
+        kpgInitSpecs.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P521_SHA3_256, new AlgorithmParameterSpec[]{null, new ECNamedCurveGenParameterSpec("P-521")});
+    }
+
+    /**
+     * Per-component {@link AlgorithmParameterSpec}s used to initialise the component
+     * KeyPairGenerators, in pairing order. An entry may be {@code null} when the component's
+     * KeyPairGenerator name already fixes the parameter set (ML-KEM, X25519, X448).
+     */
+    public static AlgorithmParameterSpec[] getKeyPairSpecs(ASN1ObjectIdentifier algorithm)
+    {
+        return kpgInitSpecs.get(algorithm);
     }
 
     public static Set<ASN1ObjectIdentifier> getSupportedIdentifiers()
