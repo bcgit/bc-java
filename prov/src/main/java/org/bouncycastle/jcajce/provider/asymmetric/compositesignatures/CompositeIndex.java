@@ -43,7 +43,7 @@ public class CompositeIndex
         pairings.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new String[]{"ML-DSA-87", "RSASSA-PSS"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new String[]{"ML-DSA-87", "RSASSA-PSS"});
         pairings.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new String[]{"ML-DSA-87", "SHA512withECDSA"});
-        
+
         kpgInitSpecs.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256, new AlgorithmParameterSpec[]{null, new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4)});
         kpgInitSpecs.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256, new AlgorithmParameterSpec[]{null, new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4)});
         kpgInitSpecs.put(MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512, new AlgorithmParameterSpec[]{null, null});
