@@ -829,7 +829,7 @@ public class CompositeSignaturesTest
     }
 
 
-    public List<Map<String, Object>> readTestVectorsFromJson(String homeDire, String fileName)
+    public static List<Map<String, Object>> readTestVectorsFromJson(String homeDire, String fileName)
         throws Exception
     {
         InputStream src = TestResourceFinder.findTestResource(homeDire, fileName);
