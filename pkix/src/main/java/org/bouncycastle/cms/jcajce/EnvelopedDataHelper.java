@@ -429,6 +429,10 @@ public class EnvelopedDataHelper
                 NoSuchPaddingException, NoSuchProviderException
             {
                 AlgorithmIdentifier encAlgId;
+                // RFC 9709: the EncryptedContentInfo carries an outer id-alg-cek-hkdf-sha256
+                // wrapping the real inner content-encryption AlgorithmIdentifier. The HKDF
+                // derivation of the CEK happens upstream in getJceKey(AlgorithmIdentifier, ...);
+                // here we only need to unwrap to the inner algId to select the right cipher.
                 if (encryptionAlgID.getAlgorithm().equals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256))
                 {
                     encAlgId = AlgorithmIdentifier.getInstance(encryptionAlgID.getParameters());
