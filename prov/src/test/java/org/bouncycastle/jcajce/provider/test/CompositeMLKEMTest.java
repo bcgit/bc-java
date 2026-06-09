@@ -203,6 +203,12 @@ public class CompositeMLKEMTest
         generator.init(new KEMGenerateSpec.Builder(pubKey, "AES", 256).withKdfAlgorithm(null).build(), new SecureRandom());
         SecretKeyWithEncapsulation enc = (SecretKeyWithEncapsulation)generator.generateKey();
 
+        // the freshly produced ciphertext must be byte-length conformant with the published vector
+        // (the component encodings are fixed length), so a non-conformant component encoding -
+        // e.g. an SPKI-wrapped X25519/X448 ciphertext instead of the raw RFC 7748 key - is rejected.
+        assertEquals(label + ": fresh encapsulation length does not match the draft ciphertext length",
+            vectorCt.length, enc.getEncapsulation().length);
+
         byte[] roundTrip = decapsulate(oid, bc, privKey, enc.getEncapsulation());
         assertTrue(label + ": encapsulate/decapsulate produced different secrets", Arrays.areEqual(enc.getEncoded(), roundTrip));
 

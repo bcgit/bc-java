@@ -201,7 +201,8 @@ class CompositeMLKEMEngine
             {
                 KeyPair ephemPair = getXDHKeyPair(tradProv, 255, "X25519");
                 PrivateKey ephemPriv = ephemPair.getPrivate();
-                tradCT = ephemPair.getPublic().getEncoded();
+                // draft sec. 4: the ciphertext is the raw RFC 7748 public key, not the SPKI wrapper.
+                tradCT = getSubjectPublicKeyBytes(ephemPair.getPublic());
                 tradPKBytes = getSubjectPublicKeyBytes(tradPK);
                 tradSS = getTradSS(tradProv, tradPKBytes, "X25519", EdECObjectIdentifiers.id_X25519, 32, ephemPriv);
             }
@@ -209,7 +210,8 @@ class CompositeMLKEMEngine
             {
                 KeyPair ephemPair = getXDHKeyPair(tradProv, 448, "X448");
                 PrivateKey ephemPriv = ephemPair.getPrivate();
-                tradCT = ephemPair.getPublic().getEncoded();
+                // draft sec. 4: the ciphertext is the raw RFC 7748 public key, not the SPKI wrapper.
+                tradCT = getSubjectPublicKeyBytes(ephemPair.getPublic());
                 tradPKBytes = getSubjectPublicKeyBytes(tradPK);
                 tradSS = getTradSS(tradProv, tradPKBytes, "X448", EdECObjectIdentifiers.id_X448, 56, ephemPriv);
             }
