@@ -52,6 +52,18 @@ public class ASN1InputStream
     }
 
     /**
+     * Continue a lazily-deferred parse at a specific remaining nesting depth, so that forcing a
+     * LazyEncodedSequence keeps decrementing the nested-construction guard instead of resetting it
+     * to the configured maximum. Without this a deeply nested SEQUENCE captured lazily would parse
+     * one level per force() with the depth reset each time, defeating the StreamUtil depth limit
+     * and allowing a StackOverflowError on a whole-tree walk of crafted input.
+     */
+    ASN1InputStream(byte[] input, boolean lazyEvaluate, int depth)
+    {
+        this(new ByteArrayInputStream(input), depth, input.length, lazyEvaluate, new byte[16]);
+    }
+
+    /**
      * Create an ASN1InputStream where no DER object will be longer than limit.
      * 
      * @param input stream containing ASN.1 encoded data.
@@ -187,7 +199,11 @@ public class ASN1InputStream
             }
             else if (lazyEvaluate)
             {
-                return new LazyEncodedSequence(defIn.toByteArray());
+                // Record the remaining depth budget for the captured contents so that forcing the
+                // lazy sequence later continues to decrement the nested-construction guard rather
+                // than resetting it. decrementDepth throws here for an over-deep SEQUENCE, exactly
+                // as the eager path would when descending into its contents.
+                return new LazyEncodedSequence(defIn.toByteArray(), StreamUtil.decrementDepth(depth));
             }
             else
             {
