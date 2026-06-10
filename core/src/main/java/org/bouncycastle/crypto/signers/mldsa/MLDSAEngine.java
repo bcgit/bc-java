@@ -6,6 +6,39 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Lightweight ML-DSA (FIPS 204) engine — key generation, signing and verification.
+ * <p>
+ * <b>Constant-time note.</b> ML-DSA is designed to admit a constant-time implementation,
+ * and this engine keeps the secret-sensitive arithmetic branchless and free of
+ * secret-indexed memory access: the NTT ({@link Ntt}), the Montgomery/Barrett reductions
+ * and {@code conditionalAddQ} ({@link Reduce}), {@link Rounding#decompose} and
+ * {@code power2RoundAll} all operate over public loop bounds with mask-select rather than
+ * data-dependent branches, and ML-DSA uses no secret-indexed table lookups.
+ * <p>
+ * The following operations are deliberately <i>variable-time</i>. Each matches the
+ * FIPS 204 / pq-crystals reference and its accepted side-channel model — do not "simplify"
+ * them into a shape that leaks more:
+ * <ul>
+ * <li><b>Rejection sampling of {@code s1}/{@code s2}</b> ({@link Poly#uniformEta}): the number
+ * of SHAKE bytes consumed depends on the secret seed, but only the reject <i>count</i> between
+ * accepted coefficients leaks — never an accepted coefficient value. Matches reference {@code rej_eta}.</li>
+ * <li><b>The Fiat-Shamir-with-aborts loop</b> ({@link #generateSignature}): the iteration count
+ * and which {@code checkNorm}/{@code makeHint} bound triggered the restart leak through timing.
+ * A rejected attempt discards {@code y} and resamples, so this reveals nothing about the long-term key.</li>
+ * <li><b>{@link Poly#checkNorm}</b> early-returns on the first out-of-bound coefficient. The absolute
+ * value is computed <i>branchlessly first</i> so a secret coefficient's sign never leaks — only the
+ * rejection event does, exactly as the reference {@code poly_chknorm} intends.</li>
+ * <li><b>{@link Rounding#makeHint}</b> branches on its inputs, but the result is the hint bit that
+ * ships in the signature — information-equivalent to public output.</li>
+ * <li><b>{@link Poly#challenge} (SampleInBall)</b> has a data-dependent rejection loop and {@code c[b]}
+ * access, but {@code b} derives from the public commitment hash c~ (part of the signature / recomputed
+ * by the verifier), so no secret is involved.</li>
+ * </ul>
+ * The performance refactor of this package (in-place NTT, fused pointwise-accumulate, direct
+ * coefficient access, packed {@code decompose}) preserves all of the above: it adds no
+ * secret-dependent branch, memory index, or variable-latency operation.
+ */
 public class MLDSAEngine
 {
     private final SecureRandom random;
@@ -211,8 +244,8 @@ public class MLDSAEngine
 
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
 
-        PolyVecL s1 = new PolyVecL(this), s1hat;
-        PolyVecK s2 = new PolyVecK(this), t1 = new PolyVecK(this), t0 = new PolyVecK(this);
+        PolyVec s1 = new PolyVec(this, DilithiumL), s1hat;
+        PolyVec s2 = new PolyVec(this, DilithiumK), t1 = new PolyVec(this, DilithiumK), t0 = new PolyVec(this, DilithiumK);
 
 
         shake256Digest.update(seed, 0, SeedBytes);
@@ -241,22 +274,17 @@ public class MLDSAEngine
 
         s2.uniformEta(rhoPrime, (short)DilithiumL);
 
-        s1hat = new PolyVecL(this);
+        s1hat = new PolyVec(this, DilithiumL);
 
         s1.copyTo(s1hat);
         s1hat.polyVecNtt();
 
-        // System.out.println(s1hat.toString("s1hat"));
-
         aMatrix.pointwiseMontgomery(t1, s1hat);
-        // System.out.println(t1.toString("t1"));
 
         t1.reduce();
         t1.invNttToMont();
 
-        t1.addPolyVecK(s2);
-        // System.out.println(s2.toString("s2"));
-        // System.out.println(t1.toString("t1"));
+        t1.addPolyVec(s2);
         t1.conditionalAddQ();
         t1.power2Round(t0);
 
@@ -281,8 +309,8 @@ public class MLDSAEngine
     {
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
 
-        PolyVecL s1 = new PolyVecL(this), s1hat;
-        PolyVecK s2 = new PolyVecK(this), t1 = new PolyVecK(this), t0 = new PolyVecK(this);
+        PolyVec s1 = new PolyVec(this, DilithiumL), s1hat;
+        PolyVec s2 = new PolyVec(this, DilithiumK), t1 = new PolyVec(this, DilithiumK), t0 = new PolyVec(this, DilithiumK);
 
         Packing.unpackSecretKey(t0, s1, s2, t0Enc, s1Enc, s2Enc, this);
 
@@ -293,29 +321,20 @@ public class MLDSAEngine
         // Helper.printByteArray(key);
 
         aMatrix.expandMatrix(rho);
-        // System.out.print(aMatrix.toString("aMatrix"));
 
-        s1hat = new PolyVecL(this);
+        s1hat = new PolyVec(this, DilithiumL);
 
         s1.copyTo(s1hat);
         s1hat.polyVecNtt();
 
-        // System.out.println(s1hat.toString("s1hat"));
-
         aMatrix.pointwiseMontgomery(t1, s1hat);
-        // System.out.println(t1.toString("t1"));
 
         t1.reduce();
         t1.invNttToMont();
 
-        t1.addPolyVecK(s2);
-        // System.out.println(s2.toString("s2"));
-        // System.out.println(t1.toString("t1"));
+        t1.addPolyVec(s2);
         t1.conditionalAddQ();
         t1.power2Round(t0);
-
-        // System.out.println(t1.toString("t1"));
-        // System.out.println(t0.toString("t0"));
 
         byte[] encT1 = Packing.packPublicKey(t1, this);
         // System.out.println("enc t1 = ");
@@ -378,8 +397,8 @@ public class MLDSAEngine
         byte[] outSig = new byte[CryptoBytes];
         byte[] rhoPrime = new byte[CrhBytes];
         short nonce = 0;
-        PolyVecL s1 = new PolyVecL(this), y = new PolyVecL(this), z = new PolyVecL(this);
-        PolyVecK t0 = new PolyVecK(this), s2 = new PolyVecK(this), w1 = new PolyVecK(this), w0 = new PolyVecK(this), h = new PolyVecK(this);
+        PolyVec s1 = new PolyVec(this, DilithiumL), y = new PolyVec(this, DilithiumL), z = new PolyVec(this, DilithiumL);
+        PolyVec t0 = new PolyVec(this, DilithiumK), s2 = new PolyVec(this, DilithiumK), w1 = new PolyVec(this, DilithiumK), w0 = new PolyVec(this, DilithiumK), h = new PolyVec(this, DilithiumK);
         Poly cp = new Poly(this);
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
 
@@ -429,7 +448,7 @@ public class MLDSAEngine
             // Compute z, reject if it reveals secret
             z.pointwisePolyMontgomery(cp, s1);
             z.invNttToMont();
-            z.addPolyVecL(y);
+            z.addPolyVec(y);
             z.reduce();
             if (z.checkNorm(DilithiumGamma1 - DilithiumBeta))
             {
@@ -453,7 +472,7 @@ public class MLDSAEngine
                 continue;
             }
 
-            w0.addPolyVecK(h);
+            w0.addPolyVec(h);
             w0.conditionalAddQ();
             int n = h.makeHint(w0, w1);
             if (n > DilithiumOmega)
@@ -505,8 +524,8 @@ public class MLDSAEngine
             return false;
         }
 
-        PolyVecK h = new PolyVecK(this);
-        PolyVecL z = new PolyVecL(this);
+        PolyVec h = new PolyVec(this, DilithiumK);
+        PolyVec z = new PolyVec(this, DilithiumL);
 
         if (!Packing.unpackSignature(z, h, sig, this))
         {
@@ -520,7 +539,7 @@ public class MLDSAEngine
 
         Poly cp = new Poly(this);
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
-        PolyVecK t1 = new PolyVecK(this), w1 = new PolyVecK(this);
+        PolyVec t1 = new PolyVec(this, DilithiumK), w1 = new PolyVec(this, DilithiumK);
 
         t1 = Packing.unpackPublicKey(t1, encT1, this);
 
