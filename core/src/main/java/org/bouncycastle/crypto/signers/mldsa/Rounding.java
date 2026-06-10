@@ -19,7 +19,7 @@ class Rounding
         }
     }
     
-    public static int[] decompose(int a, int gamma2)
+    public static long decompose(int a, int gamma2)
     {
         int a1, a0;
 
@@ -41,9 +41,11 @@ class Rounding
 
         a0 = a - a1 * 2 * gamma2;
         a0 -= (((MLDSAEngine.DilithiumQ - 1) / 2 - a0) >> 31) & MLDSAEngine.DilithiumQ;
-        return new int[]{a0, a1};
+        return ((long)a0 << 32) | (a1 & 0xFFFFFFFFL);
     }
 
+    // Constant-time note: this branches on its inputs, but the returned value is the hint bit that
+    // ships in the signature — information-equivalent to public output. Matches reference make_hint.
     public static int makeHint(int a0, int a1, MLDSAEngine engine)
     {
         int g2 = engine.getDilithiumGamma2(), q = MLDSAEngine.DilithiumQ;
@@ -56,12 +58,9 @@ class Rounding
 
     public static int useHint(int a, int hint, int gamma2)
     {
-        int a0, a1;
-
-        int[] intArray = decompose(a, gamma2);
-        a0 = intArray[0];
-        a1 = intArray[1];
-        // System.out.printf("a0: %d, a1: %d\n", a0, a1);
+        long packed = decompose(a, gamma2);
+        int a0 = (int)(packed >> 32);
+        int a1 = (int)packed;
 
         if (hint == 0)
         {
