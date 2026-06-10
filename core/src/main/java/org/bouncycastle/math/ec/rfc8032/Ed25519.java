@@ -1701,6 +1701,7 @@ public abstract class Ed25519
         public static void generatePrivateKey(SecureRandom random, byte[] xk, int xkOff)
         {
             byte[] k = new byte[SECRET_KEY_SIZE];
+            Ed25519.generatePrivateKey(random, k);
             expandPrivateKey(k, 0, xk, xkOff);
         }
 
