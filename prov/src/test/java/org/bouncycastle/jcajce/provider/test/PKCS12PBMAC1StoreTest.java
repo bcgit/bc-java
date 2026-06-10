@@ -14,6 +14,8 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ParsingException;
+import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -231,6 +233,36 @@ public class PKCS12PBMAC1StoreTest
         catch (IOException e)
         {
             assertTrue(e.getMessage().contains("Key length must be present when using PBMAC1."));
+        }
+    }
+
+    //
+    // CVE-2024-0727 sibling: a crafted PKCS#12 with no MacData and an authSafe ContentInfo
+    // whose OPTIONAL [0] content field is absent must fail with a diagnosable exception, not a
+    // bare NullPointerException. The legacy PKCS12KeyStoreSpi routes the outer content access
+    // through PKCS12Util.getContentOctets (which throws ASN1ParsingException on missing content);
+    // this SPI must do the same rather than dereference a null ASN1OctetString.
+    //
+    public void testMissingContentInfoContent()
+        throws Exception
+    {
+        Pfx pfx = new Pfx(new ContentInfo(PKCSObjectIdentifiers.data, null), null);
+        byte[] crafted = pfx.getEncoded();
+
+        KeyStore ks = KeyStore.getInstance("PKCS12-PBMAC1", "BC");
+
+        try
+        {
+            ks.load(new ByteArrayInputStream(crafted), passwd);
+            fail("no exception");
+        }
+        catch (NullPointerException e)
+        {
+            fail("missing ContentInfo content surfaced as NullPointerException");
+        }
+        catch (ASN1ParsingException e)
+        {
+            assertEquals("ContentInfo content missing", e.getMessage());
         }
     }
 
