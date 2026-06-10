@@ -3,6 +3,7 @@ package org.bouncycastle.cert.plants.test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -81,6 +82,44 @@ public class LandmarkCertificateManagerTest
         setUp();
         testBuildLandmarkCertificate();
         testTrustedSubtreeManager();
+        testCosignatureReplayThreshold();
+    }
+
+    private void testCosignatureReplayThreshold()
+        throws Exception
+    {
+        byte[] cosignerId = binaryTrustAnchorID("32473.7");
+
+        BcMTCCosignerVerifierProvider cosigners = new BcMTCCosignerVerifierProvider.Builder()
+            .addCosigner(cosignerId, ed25519KeyPair.getPublic())
+            .build();
+
+        // Require two distinct trusted cosigners.
+        LandmarkCertificateManager.TrustedSubtreeManager manager = new LandmarkCertificateManager.TrustedSubtreeManager(
+            logId, hashFunc, cosigners, 2);
+
+        long checkpointSize = 100;
+        byte[] checkpointRoot = hashFunc.hashLeaf("checkpointRoot".getBytes());
+        LandmarkCertificateManager.TrustedSubtreeManager.Checkpoint checkpoint =
+            new LandmarkCertificateManager.TrustedSubtreeManager.Checkpoint(checkpointSize, checkpointRoot);
+
+        byte[] signedData = buildCheckpointSignatureInput(logId, checkpointSize, checkpointRoot, cosignerId);
+        Ed25519Signer signer = new Ed25519Signer();
+        signer.init(true, ed25519KeyPair.getPrivate());
+        signer.update(signedData, 0, signedData.length);
+        byte[] signature = signer.generateSignature();
+
+        // One valid cosignature from a single trusted cosigner, replayed to fill the list. A 2-of-N
+        // threshold must not be satisfied by one distinct cosigner.
+        List<MTCSignature> replayed = new ArrayList<MTCSignature>();
+        replayed.add(new MTCSignature(cosignerId, signature));
+        replayed.add(new MTCSignature(cosignerId, signature));
+
+        boolean added = manager.addLandmarkSubtree(
+            0, checkpointSize, checkpointRoot, checkpoint, Collections.<byte[]>emptyList(), replayed);
+
+        isTrue("Replayed cosignature must not satisfy the M-of-N threshold", !added);
+        isEquals(0, manager.getTrustedSubtrees().size());
     }
 
     private void testBuildLandmarkCertificate()
