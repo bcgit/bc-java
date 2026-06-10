@@ -39,7 +39,8 @@ public class ChaCha7539Engine extends Salsa20Engine
 
         engineState[12] += lo;
 
-        if (oldState != 0 && engineState[12] < oldState)
+        // unsigned overflow: the 32-bit counter wrapped past 2^32 iff its unsigned value decreased
+        if ((engineState[12] & 0xffffffffL) < (oldState & 0xffffffffL))
         {
             throw new IllegalStateException("attempt to increase counter past 2^32.");
         }
