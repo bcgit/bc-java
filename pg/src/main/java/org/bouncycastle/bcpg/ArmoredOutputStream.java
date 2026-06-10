@@ -664,7 +664,7 @@ public class ArmoredOutputStream
             else
             {
                 String trimmed = value.trim();
-                if (trimmed.contains("\n"))
+                if (trimmed.indexOf('\n') >= 0 || trimmed.indexOf('\r') >= 0)
                 {
                     throw new IllegalArgumentException("Armor header value for key " + key + " cannot contain newlines.");
                 }
@@ -694,9 +694,10 @@ public class ArmoredOutputStream
                 headers.put(key, values);
             }
 
-            // handle multi-line values
+            // handle multi-line values; split on CR, LF and CRLF so an embedded bare CR cannot
+            // survive into a single header line and forge structure for a lenient armor reader
             String trimmed = value.trim();
-            for (String line : trimmed.split("\n"))
+            for (String line : trimmed.split("\r\n|\r|\n"))
             {
                 String lineTrim = line.trim();
                 if (lineTrim.length() == 0)
@@ -726,9 +727,10 @@ public class ArmoredOutputStream
 
             List<String> values = new ArrayList<String>();
 
-            // handle multi-line values
+            // handle multi-line values; split on CR, LF and CRLF so an embedded bare CR cannot
+            // survive into a single header line and forge structure for a lenient armor reader
             String trimmed = value.trim();
-            for (String line : trimmed.split("\n"))
+            for (String line : trimmed.split("\r\n|\r|\n"))
             {
                 String lineTrim = line.trim();
                 if (lineTrim.length() == 0)
