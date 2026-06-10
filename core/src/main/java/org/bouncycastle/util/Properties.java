@@ -183,6 +183,23 @@ public class Properties
      */
     public static final String BCFKS_MAX_SCRYPT_MEMORY = "org.bouncycastle.bcfks.max_scrypt_memory";
 
+    /**
+     * Upper bound on the PBKDF2 iteration count honoured when decrypting a PBES2-protected
+     * PKCS#8 / PEM private key. The key-derivation parameters travel inside the (unauthenticated)
+     * encrypted-key container, so an unbounded count makes decrypting attacker-supplied key
+     * material a CPU-exhaustion vector. Default 10,000,000, generous enough for deliberately
+     * strong settings. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String PBE_MAX_ITERATION_COUNT = "org.bouncycastle.pbe.max_iteration_count";
+
+    /**
+     * Upper bound, in bytes, on the scrypt working memory (~128 * N * r) honoured when decrypting
+     * a PBES2-protected PKCS#8 / PEM private key. As with {@link #PBE_MAX_ITERATION_COUNT} the
+     * scrypt cost travels in the unauthenticated container, so an unbounded cost is a
+     * memory-exhaustion vector. Default 1073741824 (1 GiB). Read via {@link #asInteger(String, int)}.
+     */
+    public static final String PBE_MAX_SCRYPT_MEMORY = "org.bouncycastle.pbe.max_scrypt_memory";
+
     private Properties()
     {
     }
