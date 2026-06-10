@@ -40,7 +40,7 @@ public abstract class BERGenerator
 
     private void writeHdr(int flags, int tagNo) throws IOException
     {
-        ASN1OutputStream.create(_out).writeIdentifier(true, flags, tagNo);
+        ASN1OutputStream.writeIdentifier(_out, flags, tagNo);
         _out.write(0x80);
     }
 
