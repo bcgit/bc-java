@@ -53,6 +53,7 @@ public class RegressionTest
             new IDEATest(),
             new RSATest(),
             new RSABlindedTest(),
+            new RSABlindSignatureTest(),
             new RSADigestSignerTest(),
             new PSSBlindTest(),
             new ISO9796Test(),
