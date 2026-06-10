@@ -63,7 +63,7 @@ public class BCSLHDSAPrivateKey
         {
             BCSLHDSAPrivateKey otherKey = (BCSLHDSAPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
