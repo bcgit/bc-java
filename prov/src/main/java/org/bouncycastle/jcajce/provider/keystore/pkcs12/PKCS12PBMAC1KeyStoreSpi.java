@@ -1056,8 +1056,7 @@ public class PKCS12PBMAC1KeyStoreSpi
 
         if (info.getContentType().equals(data))
         {
-            ASN1OctetString content = ASN1OctetString.getInstance(info.getContent());
-            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(content.getOctets());
+            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(PKCS12Util.getContentOctets(info));
             ContentInfo[] c = authSafe.getContentInfo();
 
             for (int i = 0; i != c.length; i++)
