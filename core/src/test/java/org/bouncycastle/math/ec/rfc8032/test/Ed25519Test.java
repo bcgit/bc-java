@@ -78,7 +78,64 @@ public class Ed25519Test
             }
         }
     }
-    
+
+//    @Test
+    public void testEd25519ConsistencyExpandedKey()
+    {
+        byte[] xk = new byte[Ed25519.ExpandedKey.EXPANDED_KEY_SIZE];
+        byte[] pk = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] pk2 = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] m = new byte[255];
+        byte[] sig1 = new byte[Ed25519.SIGNATURE_SIZE];
+        byte[] sig2 = new byte[Ed25519.SIGNATURE_SIZE];
+
+        RANDOM.nextBytes(m);
+
+        for (int i = 0; i < 10; ++i)
+        {
+            Ed25519.ExpandedKey.generatePrivateKey(RANDOM, xk, 0);
+            Ed25519.PublicPoint publicPoint = Ed25519.ExpandedKey.generatePublicKey(xk, 0);
+            Ed25519.encodePublicPoint(publicPoint, pk, 0);
+
+            {
+                Ed25519.ExpandedKey.generatePublicKey(xk, 0, pk2, 0);
+
+                assertTrue("Ed25519.ExpandedKey consistent generation #" + i, Arrays.areEqual(pk, pk2));
+            }
+
+            int mLen = RANDOM.nextInt() & 255;
+
+            Ed25519.ExpandedKey.sign(xk, 0, m, 0, mLen, sig1, 0);
+            Ed25519.ExpandedKey.sign(xk, 0, pk, 0, m, 0, mLen, sig2, 0);
+
+            assertTrue("Ed25519.ExpandedKey consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+
+            {
+                boolean shouldVerify = Ed25519.verify(sig1, 0, pk, 0, m, 0, mLen);
+
+                assertTrue("Ed25519.ExpandedKey consistent sign/verify #" + i, shouldVerify);
+            }
+            {
+                boolean shouldVerify = Ed25519.verify(sig1, 0, publicPoint, m, 0, mLen);
+
+                assertTrue("Ed25519.ExpandedKey consistent sign/verify #" + i, shouldVerify);
+            }
+
+            sig1[Ed25519.PUBLIC_KEY_SIZE - 1] ^= 0x80;
+
+            {
+                boolean shouldNotVerify = Ed25519.verify(sig1, 0, pk, 0, m, 0, mLen);
+
+                assertFalse("Ed25519.ExpandedKey consistent verification failure #" + i, shouldNotVerify);
+            }
+            {
+                boolean shouldNotVerify = Ed25519.verify(sig1, 0, publicPoint, m, 0, mLen);
+
+                assertFalse("Ed25519.ExpandedKey consistent verification failure #" + i, shouldNotVerify);
+            }
+        }
+    }
+
 //    @Test
     public void testEd25519ctxConsistency()
     {
