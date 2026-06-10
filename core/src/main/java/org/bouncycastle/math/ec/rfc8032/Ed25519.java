@@ -80,7 +80,8 @@ public abstract class Ed25519
     private static final int SCALAR_INTS = 8;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4;
 
-    public static final int PREHASH_SIZE = 64;
+    public static final int DIGEST_SIZE = 64;
+    public static final int PREHASH_SIZE = DIGEST_SIZE;
     public static final int PUBLIC_KEY_SIZE = POINT_BYTES;
     public static final int SECRET_KEY_SIZE = 32;
     public static final int SIGNATURE_SIZE = POINT_BYTES + SCALAR_BYTES;
@@ -307,7 +308,7 @@ public abstract class Ed25519
     private static Digest createDigest()
     {
         Digest d = new SHA512Digest();
-        if (d.getDigestSize() != 64)
+        if (d.getDigestSize() != DIGEST_SIZE)
         {
             throw new IllegalStateException();
         }
@@ -413,7 +414,7 @@ public abstract class Ed25519
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0);
@@ -427,7 +428,7 @@ public abstract class Ed25519
     public static PublicPoint generatePublicKey(byte[] sk, int skOff)
     {
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0);
@@ -448,7 +449,7 @@ public abstract class Ed25519
 
         return exportPoint(q);
     }
-
+    
     private static int getWindow4(int[] x, int n)
     {
         int w = n >>> 3, b = (n & 7) << 2;
@@ -507,7 +508,7 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0);
@@ -530,7 +531,7 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0);
@@ -580,7 +581,7 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
         if (ctx != null)
         {
@@ -647,7 +648,7 @@ public abstract class Ed25519
         encodePublicPoint(publicPoint, A, 0);
 
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
         if (ctx != null)
         {
