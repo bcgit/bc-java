@@ -863,9 +863,11 @@ class NTRUPlusEngine
             acc |= (a[i] ^ b[i]) & 0xFF;
         }
 
-        // Return 0 if equal, 1 otherwise
-        // Equivalent to: (-(uint64_t)acc) >> 63
-        return (acc != 0) ? 1 : 0;
+        // Return 0 if equal, 1 otherwise, without branching on the (secret-derived) comparison
+        // result: the decapsulation fail flag feeds a constant-time cmov, so a branch here would
+        // reintroduce a Fujisaki-Okamoto decryption-failure timing oracle. acc is in [0,255], so
+        // -acc has its sign bit set iff acc != 0 (the 32-bit form of the C trick (-acc) >> 63).
+        return (-acc) >>> 31;
     }
 
     /**
