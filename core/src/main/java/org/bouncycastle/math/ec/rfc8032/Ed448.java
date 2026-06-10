@@ -77,7 +77,7 @@ public abstract class Ed448
     private static final int SCALAR_INTS = 14;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4 + 1;
 
-    public static final int XOF_SIZE = SCALAR_BYTES * 2;
+    private static final int XOF_SIZE = SCALAR_BYTES * 2;
     public static final int PREHASH_SIZE = 64;
     public static final int PUBLIC_KEY_SIZE = POINT_BYTES;
     public static final int SECRET_KEY_SIZE = 57;
