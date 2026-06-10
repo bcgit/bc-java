@@ -200,6 +200,19 @@ public class Properties
      */
     public static final String PBE_MAX_SCRYPT_MEMORY = "org.bouncycastle.pbe.max_scrypt_memory";
 
+    /**
+     * Upper bound on the total number of valid-policy-tree nodes retained (across all depth
+     * levels) during PKIX certification-path validation. Certificate policy mapping combined with
+     * the anyPolicy expansion of RFC 5280 6.1.3/6.1.4 can grow the tree multiplicatively per
+     * certificate, so a crafted chain that still chains to a trust anchor could drive the validator
+     * into exponential memory/CPU consumption -- a denial of service of the class of CVE-2023-0464.
+     * The tree size is checked once per certificate and validation is aborted with a
+     * CertPathValidatorException once it exceeds this bound. The default (8192) is far above any
+     * legitimate policy tree (a real chain produces a handful of nodes) and is configurable for
+     * unusual deployments. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String X509_MAX_POLICY_NODES = "org.bouncycastle.x509.max_policy_nodes";
+
     private Properties()
     {
     }
