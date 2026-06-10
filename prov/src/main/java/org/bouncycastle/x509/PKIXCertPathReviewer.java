@@ -78,6 +78,7 @@ import org.bouncycastle.jce.provider.PKIXPolicyNode;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Objects;
+import org.bouncycastle.util.Properties;
 
 /**
  * PKIXCertPathReviewer<br>
@@ -1341,8 +1342,24 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         }
                     }
 
+                    // Bound the valid-policy-tree: policy mapping plus anyPolicy expansion can
+                    // grow it multiplicatively per certificate, so a crafted chain could drive an
+                    // exponential blow-up (CVE-2023-0464 class). Checked once per certificate.
+                    {
+                        int maxPolicyNodes = Properties.asInteger(Properties.X509_MAX_POLICY_NODES, 8192);
+                        int policyNodeCount = 0;
+                        for (int pj = 0; pj != policyNodes.length; pj++)
+                        {
+                            policyNodeCount += policyNodes[pj].size();
+                            if (policyNodeCount > maxPolicyNodes)
+                            {
+                                throw new CertPathReviewerException(
+                                    new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.policyTreeTooLarge"));
+                            }
+                        }
+                    }
                 }
-                
+
                 // e)
                 
                 if (certPolicies == null) 
