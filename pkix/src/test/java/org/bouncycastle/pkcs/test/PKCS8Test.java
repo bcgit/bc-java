@@ -18,9 +18,11 @@ import org.bouncycastle.crypto.util.ScryptConfig;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfoBuilder;
+import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 
 public class PKCS8Test
@@ -164,6 +166,44 @@ public class PKCS8Test
         RSAPrivateKey k = RSAPrivateKey.getInstance(pkInfo.parsePrivateKey());
 
         assertEquals(modulus, k.getModulus());
+    }
+
+    public void testPbkdf2IterationCountBound()
+        throws Exception
+    {
+        // The PBES2/PBKDF2 iteration count travels in the unauthenticated encrypted-key container,
+        // so it must be bounded before the key-derivation runs. Encrypt with the writer's default
+        // count, then decrypt with the bound lowered below it: decryption must be rejected before
+        // the derivation rather than honouring an attacker-chosen cost.
+        PKCS8EncryptedPrivateKeyInfo encInfo = new PKCS8EncryptedPrivateKeyInfoBuilder(pkInfo).build(
+            new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_CBC)
+                .setPRF(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256, DERNull.INSTANCE))
+                .setProvider("BC")
+                .build("hello".toCharArray()));
+
+        String old = System.getProperty(Properties.PBE_MAX_ITERATION_COUNT);
+        System.setProperty(Properties.PBE_MAX_ITERATION_COUNT, "1");
+        try
+        {
+            encInfo.decryptPrivateKeyInfo(
+                new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build("hello".toCharArray()));
+            fail("excessive PBKDF2 iteration count accepted");
+        }
+        catch (PKCSException e)
+        {
+            assertTrue("unexpected message: " + e.getMessage(), e.getMessage().indexOf("greater than 1") >= 0);
+        }
+        finally
+        {
+            if (old == null)
+            {
+                System.clearProperty(Properties.PBE_MAX_ITERATION_COUNT);
+            }
+            else
+            {
+                System.setProperty(Properties.PBE_MAX_ITERATION_COUNT, old);
+            }
+        }
     }
 
     public void testSHA3_256Encryption()

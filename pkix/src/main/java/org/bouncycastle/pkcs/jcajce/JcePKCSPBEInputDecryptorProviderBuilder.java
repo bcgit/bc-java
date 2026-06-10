@@ -1,6 +1,8 @@
 package org.bouncycastle.pkcs.jcajce;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.Provider;
 
@@ -40,6 +42,7 @@ import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.InputDecryptor;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 
 public class JcePKCSPBEInputDecryptorProviderBuilder
@@ -122,6 +125,10 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                             ScryptParams params = ScryptParams.getInstance(alg.getKeyDerivationFunc().getParameters());
                             AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
 
+                            // The KDF cost travels in the unauthenticated container, so bound it
+                            // before deriving the key to cap the memory-exhaustion vector.
+                            checkScryptCost(params);
+
                             SecretKeyFactory keyFact = helper.createSecretKeyFactory("SCRYPT");
 
                             key = keyFact.generateSecret(new ScryptKeySpec(password,
@@ -134,13 +141,16 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                             PBKDF2Params func = PBKDF2Params.getInstance(alg.getKeyDerivationFunc().getParameters());
                             AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
 
+                            // Bound the unauthenticated iteration count before deriving the key.
+                            int iterationCount = checkIterationCount(func.getIterationCount());
+
                             if (func.isDefaultPrf())
                             {
-                                key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme)));
+                                key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), iterationCount, keySizeProvider.getKeySize(encScheme)));
                             }
                             else
                             {
-                                key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme), func.getPrf()));
+                                key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), iterationCount, keySizeProvider.getKeySize(encScheme), func.getPrf()));
                             }
                         }
 
@@ -224,5 +234,52 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
         }
 
         return false;
+    }
+
+    // The KDF cost parameters of a PBES2-protected key arrive in an unauthenticated container, so
+    // they are bounded before the (memory/CPU intensive) derivation to cap a decryption-time DoS.
+    private static final int MAX_SCRYPT_BLOCK_SIZE = 1024;
+
+    private static void checkScryptCost(ScryptParams params)
+        throws IOException
+    {
+        BigInteger n = params.getCostParameter();
+        BigInteger r = params.getBlockSize();
+
+        if (n == null || r == null
+            || n.signum() <= 0 || r.signum() <= 0
+            || n.bitLength() > 31 || r.bitLength() > 31)
+        {
+            throw new IOException("invalid scrypt parameters");
+        }
+
+        long blockSize = r.longValue();
+        if (blockSize > MAX_SCRYPT_BLOCK_SIZE)
+        {
+            throw new IOException("scrypt block size (" + blockSize + ") greater than " + MAX_SCRYPT_BLOCK_SIZE);
+        }
+
+        long maxMemory = Properties.asInteger(Properties.PBE_MAX_SCRYPT_MEMORY, 1 << 30);
+        if (n.longValue() > maxMemory / (128L * blockSize))
+        {
+            throw new IOException("scrypt cost parameters require more than " + maxMemory + " bytes");
+        }
+    }
+
+    private static int checkIterationCount(BigInteger ic)
+        throws IOException
+    {
+        if (ic == null || ic.signum() < 0 || ic.bitLength() > 31)
+        {
+            throw new IOException("invalid iteration count");
+        }
+
+        long max = Properties.asInteger(Properties.PBE_MAX_ITERATION_COUNT, 10000000);
+        if (ic.longValue() > max)
+        {
+            throw new IOException("iteration count (" + ic + ") greater than " + max);
+        }
+
+        return ic.intValue();
     }
 }
