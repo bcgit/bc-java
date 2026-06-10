@@ -165,6 +165,24 @@ public class Properties
      */
     public static final String DSA_MAX_SIZE = "org.bouncycastle.dsa.max_size";
 
+    /**
+     * Upper bound on the PBKDF2 iteration count honoured when deriving the integrity-MAC key of a
+     * BCFKS keystore during load. The KDF runs on parameters taken from the (not-yet-verified)
+     * keystore, so an unbounded iteration count is a pre-integrity CPU-exhaustion vector. Default
+     * 5,000,000 (the BCFKS writer uses ~51,200). Read via {@link #asInteger(String, int)}.
+     */
+    public static final String BCFKS_MAX_IT_COUNT = "org.bouncycastle.bcfks.max_it_count";
+
+    /**
+     * Upper bound, in bytes, on the working memory (~128 * N * r) of the scrypt KDF honoured when
+     * deriving the integrity-MAC key of a BCFKS keystore during load. As with
+     * {@link #BCFKS_MAX_IT_COUNT} the scrypt cost parameters are taken from the not-yet-verified
+     * keystore, so an unbounded cost is a pre-integrity memory-exhaustion vector. Default
+     * 1073741824 (1 GiB); the BCFKS writer uses N=16384, r=8 (~16 MiB). Read via
+     * {@link #asInteger(String, int)}.
+     */
+    public static final String BCFKS_MAX_SCRYPT_MEMORY = "org.bouncycastle.bcfks.max_scrypt_memory";
+
     private Properties()
     {
     }
