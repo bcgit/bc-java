@@ -147,6 +147,24 @@ public class Properties
      */
     public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
 
+    /**
+     * Upper bound (in bits) on the prime modulus p accepted when validating an imported
+     * Diffie-Hellman public key. Validation performs a modular exponentiation / Legendre
+     * computation whose cost is super-linear in the size of p, so an unbounded p taken from a
+     * crafted key encoding would turn key import into a CPU-exhaustion denial of service. The
+     * default (16384) is the analogue of {@code org.bouncycastle.rsa.max_size} and is well above
+     * any standardised DH group. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String DH_MAX_SIZE = "org.bouncycastle.dh.max_size";
+
+    /**
+     * Upper bound (in bits) on the prime modulus p accepted when validating an imported DSA
+     * public key. As with {@link #DH_MAX_SIZE}, validation runs a modular exponentiation whose
+     * cost grows super-linearly in the size of p, so an unbounded p from a crafted encoding is an
+     * import-time CPU-exhaustion vector. Default 16384. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String DSA_MAX_SIZE = "org.bouncycastle.dsa.max_size";
+
     private Properties()
     {
     }

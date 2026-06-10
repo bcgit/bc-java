@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.util.Properties;
+
 public class DSAPublicKeyParameters
     extends DSAKeyParameters
 {
@@ -23,6 +25,14 @@ public class DSAPublicKeyParameters
     {
         if (params != null)
         {
+            // Bound the modulus size before the super-linear modPow below, so a crafted oversized
+            // p cannot turn key import into a CPU-exhaustion DoS (cf. RSA modulus cap).
+            int maxBitLength = Properties.asInteger(Properties.DSA_MAX_SIZE, 16384);
+            if (params.getP().bitLength() > maxBitLength)
+            {
+                throw new IllegalArgumentException("DSA modulus out of range");
+            }
+
             if (TWO.compareTo(y) <= 0 && params.getP().subtract(TWO).compareTo(y) >= 0
                 && ONE.equals(y.modPow(params.getQ(), params.getP())))
             {

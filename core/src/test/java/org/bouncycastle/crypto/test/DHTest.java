@@ -437,6 +437,28 @@ public class DHTest
         return null;
     }
     
+    private void testModulusSizeBound()
+    {
+        // An oversized prime modulus must be rejected at import before the super-linear validation
+        // exponentiation, capping the import-time CPU-exhaustion vector. The value is not prime --
+        // only its bit length matters to the guard, which fires before any modPow/legendre.
+        BigInteger hugeP = BigInteger.ONE.shiftLeft(20000);
+
+        try
+        {
+            new DHPublicKeyParameters(BigInteger.valueOf(2), new DHParameters(hugeP, BigInteger.valueOf(2)));
+            fail("oversized DH modulus accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("unexpected DH message: " + e.getMessage(), "DH modulus out of range".equals(e.getMessage()));
+        }
+
+        // A normally-sized modulus is still accepted (q == null, so validation returns after the
+        // cheap range check) -- the cap must not reject ordinary keys.
+        new DHPublicKeyParameters(BigInteger.valueOf(2), new DHParameters(p512, g512));
+    }
+
     public void performTest()
     {
         testDHBasic(512, 0, g512, p512);
@@ -452,6 +474,8 @@ public class DHTest
         testDH(1024, g1024, p1024);
 
         testBounds();
+
+        testModulusSizeBound();
 
         testCombinedTestVector1();
         testCombinedTestVector2();
