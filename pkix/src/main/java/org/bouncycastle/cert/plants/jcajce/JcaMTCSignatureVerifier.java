@@ -21,7 +21,7 @@ import org.bouncycastle.util.Exceptions;
  * {@code "ECDSA-P256-SHA256"}, {@code "ECDSA-P384-SHA384"}, {@code "Ed25519"},
  * {@code "ML-DSA-44"}, {@code "ML-DSA-65"}, {@code "ML-DSA-87"}.</p>
  *
- * <p>The the draft identifiers are mapped to JCA Signature names internally —
+ * <p>The draft identifiers are mapped to JCA Signature names internally —
  * the plain (r||s) ECDSA encoding used by MTCProof requires
  * {@code SHA256WITHPLAIN-ECDSA} / {@code SHA384WITHPLAIN-ECDSA}, which BC's
  * JCE provider registers (DER-encoded {@code SHA256withECDSA} is wire-incompatible
@@ -34,22 +34,22 @@ public class JcaMTCSignatureVerifier
     private final String algorithm;
     private final JcaJceHelper helper;
 
-    public JcaMTCSignatureVerifier(PublicKey publicKey, String algorithm)
+    public JcaMTCSignatureVerifier(String algorithm, PublicKey publicKey)
     {
-        this(publicKey, algorithm, new DefaultJcaJceHelper());
+        this(algorithm, publicKey, new DefaultJcaJceHelper());
     }
 
-    public JcaMTCSignatureVerifier(PublicKey publicKey, String algorithm, String providerName)
+    public JcaMTCSignatureVerifier(String algorithm, PublicKey publicKey, String providerName)
     {
-        this(publicKey, algorithm, new NamedJcaJceHelper(providerName));
+        this(algorithm, publicKey, new NamedJcaJceHelper(providerName));
     }
 
-    public JcaMTCSignatureVerifier(PublicKey publicKey, String algorithm, Provider provider)
+    public JcaMTCSignatureVerifier(String algorithm, PublicKey publicKey, Provider provider)
     {
-        this(publicKey, algorithm, new ProviderJcaJceHelper(provider));
+        this(algorithm, publicKey, new ProviderJcaJceHelper(provider));
     }
 
-    public JcaMTCSignatureVerifier(PublicKey publicKey, String algorithm, JcaJceHelper helper)
+    public JcaMTCSignatureVerifier(String algorithm, PublicKey publicKey, JcaJceHelper helper)
     {
         this.publicKey = publicKey;
         this.algorithm = algorithm;

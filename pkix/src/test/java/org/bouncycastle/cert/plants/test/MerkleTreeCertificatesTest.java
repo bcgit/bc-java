@@ -286,7 +286,7 @@ public class MerkleTreeCertificatesTest
 
         byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier ecdsaVerifier = new BcMTCSignatureVerifier(
-            ecdsaKeyPair.getPublic(), "ECDSA-P256-SHA256");
+            "ECDSA-P256-SHA256", ecdsaKeyPair.getPublic());
 
         isTrue("ECDSA cosignature verifies", ecdsaVerifier.verify(cosignedMessage, signature));
 
@@ -311,7 +311,7 @@ public class MerkleTreeCertificatesTest
 
         byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier ed25519Verifier = new BcMTCSignatureVerifier(
-            ed25519KeyPair.getPublic(), "Ed25519");
+            "Ed25519", ed25519KeyPair.getPublic());
 
         isTrue("Ed25519 cosignature verifies", ed25519Verifier.verify(cosignedMessage, signature));
 
@@ -353,7 +353,7 @@ public class MerkleTreeCertificatesTest
 
         byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier verifier = new BcMTCSignatureVerifier(
-            p384KeyPair.getPublic(), "ECDSA-P384-SHA384");
+            "ECDSA-P384-SHA384", p384KeyPair.getPublic());
 
         isTrue("ECDSA-P384 cosignature verifies", verifier.verify(cosignedMessage, signature));
 
@@ -400,7 +400,7 @@ public class MerkleTreeCertificatesTest
         byte[] signature = signer.generateSignature();
 
         byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
-        BcMTCSignatureVerifier verifier = new BcMTCSignatureVerifier(kp.getPublic(), alg);
+        BcMTCSignatureVerifier verifier = new BcMTCSignatureVerifier(alg, kp.getPublic());
 
         isTrue(alg + " cosignature verifies", verifier.verify(cosignedMessage, signature));
 

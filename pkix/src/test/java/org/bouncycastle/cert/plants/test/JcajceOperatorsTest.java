@@ -7,6 +7,8 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bouncycastle.cert.plants.MTCCosignedMessage;
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
@@ -48,6 +50,7 @@ public class JcajceOperatorsTest
         }
 
         testJcaSha256MerkleTreeHashAgainstBc();
+        testMerkleTreeHashSharedInstanceThreadSafety();
         testJcaSignatureVerifierEcdsaP256();
         testJcaSignatureVerifierEcdsaP384();
         testJcaSignatureVerifierEd25519();
@@ -86,6 +89,72 @@ public class JcajceOperatorsTest
             Arrays.areEqual(jca.hashLeaf(entry), defaultHelper.hashLeaf(entry)));
     }
 
+    private void testMerkleTreeHashSharedInstanceThreadSafety()
+        throws Exception
+    {
+        checkHashThreadSafety("Bc", new BcSha256MerkleTreeHash());
+        checkHashThreadSafety("Jca", new JcaSha256MerkleTreeHash("BC"));
+    }
+
+    /**
+     * Regression test: a single MerkleTreeHash instance ends up shared via
+     * MTCCertAuth / ValidationParams, so the bindings must not carry digest
+     * state between calls. Hammers one instance from several threads and
+     * checks every output against the single-threaded result.
+     */
+    private void checkHashThreadSafety(String flavour, final MerkleTreeHash hash)
+        throws Exception
+    {
+        final byte[] entry = "shared instance leaf entry".getBytes();
+        final byte[] left = hash.hashLeaf("left".getBytes());
+        final byte[] right = hash.hashLeaf("right".getBytes());
+        final byte[] expectedLeaf = hash.hashLeaf(entry);
+        final byte[] expectedNode = hash.hashNode(left, right);
+        final byte[] expectedRaw = hash.hashRaw(entry);
+
+        final CountDownLatch start = new CountDownLatch(1);
+        final AtomicInteger failures = new AtomicInteger();
+
+        Thread[] threads = new Thread[4];
+        for (int i = 0; i != threads.length; i++)
+        {
+            threads[i] = new Thread(new Runnable()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        start.await();
+                        for (int j = 0; j != 2000; j++)
+                        {
+                            if (!Arrays.areEqual(expectedLeaf, hash.hashLeaf(entry))
+                                || !Arrays.areEqual(expectedNode, hash.hashNode(left, right))
+                                || !Arrays.areEqual(expectedRaw, hash.hashRaw(entry)))
+                            {
+                                failures.incrementAndGet();
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        // A corrupted shared digest can also surface as an exception;
+                        // count it rather than letting the thread die silently.
+                        failures.incrementAndGet();
+                    }
+                }
+            });
+            threads[i].start();
+        }
+        start.countDown();
+        for (int i = 0; i != threads.length; i++)
+        {
+            threads[i].join();
+        }
+
+        isTrue(flavour + " hash binding corrupted output when shared across threads",
+            failures.get() == 0);
+    }
+
     private void testJcaSignatureVerifierEcdsaP256()
         throws Exception
     {
@@ -95,7 +164,7 @@ public class JcajceOperatorsTest
         byte[] signature = signJca(kp, "SHA256WITHPLAIN-ECDSA", message);
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            kp.getPublic(), "ECDSA-P256-SHA256", "BC");
+            "ECDSA-P256-SHA256", kp.getPublic(), "BC");
         isTrue("ECDSA-P256 cosignature verifies", v.verify(message, signature));
 
         signature[0] ^= 0x01;
@@ -111,7 +180,7 @@ public class JcajceOperatorsTest
         byte[] signature = signJca(kp, "SHA384WITHPLAIN-ECDSA", message);
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            kp.getPublic(), "ECDSA-P384-SHA384", "BC");
+            "ECDSA-P384-SHA384", kp.getPublic(), "BC");
         isTrue("ECDSA-P384 cosignature verifies", v.verify(message, signature));
 
         signature[signature.length - 1] ^= 0x55;
@@ -127,7 +196,7 @@ public class JcajceOperatorsTest
         byte[] signature = signJca(kp, "Ed25519", message);
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            kp.getPublic(), "Ed25519", "BC");
+            "Ed25519", kp.getPublic(), "BC");
         isTrue("Ed25519 cosignature verifies", v.verify(message, signature));
 
         signature[10] ^= 0x80;
@@ -161,7 +230,7 @@ public class JcajceOperatorsTest
         byte[] signature = signJca(kp, alg, message);
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            kp.getPublic(), alg, "BC");
+            alg, kp.getPublic(), "BC");
         isTrue(alg + " cosignature verifies", v.verify(message, signature));
 
         signature[signature.length / 2] ^= 0x01;
@@ -176,7 +245,7 @@ public class JcajceOperatorsTest
         {
             public void operation()
             {
-                new JcaMTCSignatureVerifier(kp.getPublic(), "BOGUS", "BC")
+                new JcaMTCSignatureVerifier("BOGUS", kp.getPublic(), "BC")
                     .verify(new byte[0], new byte[0]);
             }
         });
