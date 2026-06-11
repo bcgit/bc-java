@@ -175,6 +175,18 @@ public class LandmarkCertificateManager
         {
             return this.start == start && this.end == end && Arrays.areEqual(this.hash, hash);
         }
+
+        /**
+         * Bridges this accepted landmark into the validator's representation.
+         * The {@link TrustedSubtreeManager} is bound to a single log ID, so the
+         * caller supplies the log number that ID denotes.
+         *
+         * @param logNumber log number of the containing log ({@code 1 <= logNumber <= 2^16-1})
+         */
+        public MerkleTreeCertificateValidator.TrustedSubtree toTrustedSubtree(long logNumber)
+        {
+            return new MerkleTreeCertificateValidator.TrustedSubtree(logNumber, start, end, hash);
+        }
     }
 
     /**

@@ -88,6 +88,19 @@ public class MTCNewFeaturesTest
                 TrustAnchorIDs.logId(caId, 0x10000L);
             }
         });
+
+        // Serial composition per Section 6.1: serial = (log_number << 48) | index,
+        // "positive and at most 2^64-1". log_number >= 32768 overflows a signed
+        // long shift, so the composition must be done in BigInteger.
+        isTrue("small serial",
+            BigInteger.valueOf((1L << 48) | 42).equals(TrustAnchorIDs.certSerial(1, 42)));
+        BigInteger highSerial = TrustAnchorIDs.certSerial(32768, 5);
+        isTrue("high-log-number serial is positive", highSerial.signum() > 0);
+        isTrue("high-log-number serial value",
+            new BigInteger("8000000000000005", 16).equals(highSerial));
+        isTrue("maximum serial is 2^64-1",
+            new BigInteger("ffffffffffffffff", 16).equals(
+                TrustAnchorIDs.certSerial(0xFFFF, 0xFFFFFFFFFFFFL)));
     }
 
     private void testCaCertificateBuildAndParse()

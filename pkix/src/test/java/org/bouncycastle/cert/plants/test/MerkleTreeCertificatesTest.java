@@ -9,10 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -218,6 +216,23 @@ public class MerkleTreeCertificatesTest
         isTrue("Consistency proof for partial subtree valid",
             MerkleTreePrimitives.verifySubtreeConsistencyProof(
                 8, 13, 14, subtreeHash813, root14, proof813, hashFunc));
+
+        // Subtree [4, 6) inside a tree of size 6. After Section 4.4.3 step 3 the
+        // f- and s-paths have already merged at an even node index (fn == sn == 2),
+        // so step 7.2.3's "until LSB(sn) is set" shift must still apply with
+        // fn == sn -- a guard that stopped shifting once the paths merged
+        // rejected this spec-valid proof.
+        byte[] root6 = computeMTH(leaves, 0, 6, hashFunc);
+        byte[] subtreeHash46 = computeMTH(leaves, 4, 6, hashFunc);
+        List<byte[]> proof46 = Collections.singletonList(computeMTH(leaves, 0, 4, hashFunc));
+
+        isTrue("Consistency proof valid when f- and s-paths merge at an even node",
+            MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                4, 6, 6, subtreeHash46, root6, proof46, hashFunc));
+
+        isTrue("Tampered merged-path consistency proof rejected",
+            !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                4, 6, 6, subtreeHash46, root6, Collections.singletonList(badHash), hashFunc));
     }
 
     public void testFindCoveringSubtrees()
@@ -550,7 +565,7 @@ public class MerkleTreeCertificatesTest
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
                 hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 1
             );
 
@@ -561,7 +576,7 @@ public class MerkleTreeCertificatesTest
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
                 hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 2
             );
         testException("Insufficient valid cosignatures", "SecurityException", new TestExceptionOperation()
@@ -573,14 +588,14 @@ public class MerkleTreeCertificatesTest
             }
         });
 
-        // Revoking the index must fail validation.
-        Set<Long> revoked = new HashSet<Long>();
-        revoked.add(Long.valueOf(index));   // the lower 48 bits of the serial
+        // Revoking a range containing the serial must fail validation. The
+        // range is over full serials (Section 7.5), so it is log-scoped.
         final MerkleTreeCertificateValidator.ValidationParams revokedParams =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
                 hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                revoked,
+                Collections.singletonList(
+                    MerkleTreeCertificateValidator.RevokedRange.ofIndices(logNumber, index, index + 1)),
                 1
             );
         testException("revoked", "SecurityException", new TestExceptionOperation()
@@ -591,6 +606,66 @@ public class MerkleTreeCertificatesTest
                 MerkleTreeCertificateValidator.validateCertificate(cert, revokedParams);
             }
         });
+
+        // Ranges are over full serials, so revoking all of log 2 must leave
+        // this log-1 certificate valid, while revoking all of log 1 must not.
+        final MerkleTreeCertificateValidator.ValidationParams otherLogRevoked =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                Collections.singletonList(MerkleTreeCertificateValidator.RevokedRange.ofLog(2)),
+                1
+            );
+        isTrue("Revoking another log leaves this certificate valid",
+            MerkleTreeCertificateValidator.validateCertificate(cert, otherLogRevoked));
+
+        final MerkleTreeCertificateValidator.ValidationParams wholeLogRevoked =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                Collections.singletonList(MerkleTreeCertificateValidator.RevokedRange.ofLog(logNumber)),
+                1
+            );
+        testException("revoked", "SecurityException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(cert, wholeLogRevoked);
+            }
+        });
+
+        // Distrust-after (the SCTNotAfter analogue from Section 7.5): the
+        // half-open range [serial, 2^64) catches this certificate.
+        final MerkleTreeCertificateValidator.ValidationParams distrustAfter =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                Collections.singletonList(
+                    MerkleTreeCertificateValidator.RevokedRange.from(BigInteger.valueOf(serial))),
+                1
+            );
+        testException("revoked", "SecurityException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(cert, distrustAfter);
+            }
+        });
+
+        // [0, serial) does not contain serial, so a minSerial-shaped floor at
+        // exactly this serial leaves the certificate valid.
+        final MerkleTreeCertificateValidator.ValidationParams floorAtSerial =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                Collections.singletonList(
+                    MerkleTreeCertificateValidator.RevokedRange.before(BigInteger.valueOf(serial))),
+                1
+            );
+        isTrue("Floor at exactly this serial leaves the certificate valid",
+            MerkleTreeCertificateValidator.validateCertificate(cert, floorAtSerial));
     }
 
     public void testMalformedInclusionProofLengthRejected()
@@ -615,7 +690,7 @@ public class MerkleTreeCertificatesTest
             new MerkleTreeCertificateValidator.ValidationParams(
                 new BcMTCCosignerVerifierProvider.Builder().build(),
                 hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 1
             );
 
@@ -673,13 +748,13 @@ public class MerkleTreeCertificatesTest
             new DERSequence(new ASN1Encodable[]{tbs, sigAlg, signatureValue}).getEncoded());
 
         List<MerkleTreeCertificateValidator.TrustedSubtree> trusted = new ArrayList<MerkleTreeCertificateValidator.TrustedSubtree>();
-        trusted.add(new MerkleTreeCertificateValidator.TrustedSubtree(start, end, subtreeHash));
+        trusted.add(new MerkleTreeCertificateValidator.TrustedSubtree(logNumber, start, end, subtreeHash));
 
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(
                 new BcMTCCosignerVerifierProvider.Builder().build(),
                 hashFunc, trusted,
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 1
             );
 
@@ -690,7 +765,7 @@ public class MerkleTreeCertificatesTest
             new MerkleTreeCertificateValidator.ValidationParams(
                 new BcMTCCosignerVerifierProvider.Builder().build(),
                 hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 1
             );
         testException("Insufficient", "SecurityException", new TestExceptionOperation()
@@ -707,12 +782,12 @@ public class MerkleTreeCertificatesTest
         List<MerkleTreeCertificateValidator.TrustedSubtree> badHashTrusted =
             new ArrayList<MerkleTreeCertificateValidator.TrustedSubtree>();
         badHashTrusted.add(new MerkleTreeCertificateValidator.TrustedSubtree(
-            start, end, hashFunc.hashLeaf("not the right hash".getBytes())));
+            logNumber, start, end, hashFunc.hashLeaf("not the right hash".getBytes())));
         final MerkleTreeCertificateValidator.ValidationParams badHash =
             new MerkleTreeCertificateValidator.ValidationParams(
                 new BcMTCCosignerVerifierProvider.Builder().build(),
                 hashFunc, badHashTrusted,
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 1
             );
         testException("does not match the trusted subtree", "SecurityException", new TestExceptionOperation()
@@ -721,6 +796,32 @@ public class MerkleTreeCertificatesTest
                 throws Exception
             {
                 MerkleTreeCertificateValidator.validateCertificate(cert, badHash);
+            }
+        });
+
+        // A certificate whose serial claims a different log must not match the
+        // log-1 trusted subtree (Section 7.2 step 11 matches on log_number as
+        // well as [start, end)). The entry hash excludes the serial, so the
+        // log-1 inclusion proof still evaluates to the trusted hash -- only the
+        // log binding stops the re-labelled certificate; with no cosignatures
+        // it then fails at step 12.
+        long otherLogSerial = (2L << 48) | index;
+        TBSCertificate otherLogTbs = buildTBSCertificate(tbsEntry, otherLogSerial, sigAlg, spki);
+        final X509CertificateHolder otherLogCert = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{otherLogTbs, sigAlg, signatureValue}).getEncoded());
+        final MerkleTreeCertificateValidator.ValidationParams log1Trusted =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                new BcMTCCosignerVerifierProvider.Builder().build(),
+                hashFunc, trusted,
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
+                1
+            );
+        testException("Insufficient", "SecurityException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(otherLogCert, log1Trusted);
             }
         });
     }
@@ -1046,7 +1147,7 @@ public class MerkleTreeCertificatesTest
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
                 Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 1,
                 hashFunc,
                 matchingAuthority);
@@ -1062,7 +1163,7 @@ public class MerkleTreeCertificatesTest
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
                 Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 1,
                 hashFunc,
                 mismatching);
@@ -1112,7 +1213,7 @@ public class MerkleTreeCertificatesTest
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
                 Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 0,
                 hashFunc,
                 strictMinSerial);
@@ -1140,7 +1241,7 @@ public class MerkleTreeCertificatesTest
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
                 Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                new HashSet<Long>(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
                 0,
                 hashFunc,
                 openMinSerial);
