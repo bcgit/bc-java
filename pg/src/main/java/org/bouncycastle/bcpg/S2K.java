@@ -159,11 +159,6 @@ public class S2K
             passes = dIn.read();
             parallelism = dIn.read();
             memorySizeExponent = dIn.read();
-            // TODO: should really be 3 + log2(parallelism)
-            if (memorySizeExponent < 3 || memorySizeExponent > Properties.asInteger(Argon2Parameters.MAX_MEMORY_EXP, 30))
-            {
-                throw new IOException("memory size exponent out of range");
-            }
             break;
 
         case GNU_DUMMY_S2K:

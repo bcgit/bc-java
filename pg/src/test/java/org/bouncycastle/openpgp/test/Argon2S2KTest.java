@@ -10,11 +10,9 @@ import java.util.Date;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
@@ -163,15 +161,12 @@ public class Argon2S2KTest
     {
         System.setProperty("org.bouncycastle.argon2.max_memory_exp", "10");
 
-        BCPGInputStream pgpIn = new BCPGInputStream(
-            getClass().getResourceAsStream("poc_argon2_s2k.pgp"));
         try
         {
-            SymmetricKeyEncSessionPacket skesk =
-                (SymmetricKeyEncSessionPacket)pgpIn.readPacket();
+            decryptSymmetricallyEncryptedMessage(TEST_MSG_AES256, TEST_MSG_PASSWORD);
             fail("no exception");
         }
-        catch (IOException e)
+        catch (PGPException e)
         {
             isEquals("memory size exponent out of range", e.getMessage());
         }
