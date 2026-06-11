@@ -14,7 +14,6 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
@@ -237,11 +236,12 @@ public class PKCS12PBMAC1StoreTest
     }
 
     //
-    // CVE-2024-0727 sibling: a crafted PKCS#12 with no MacData and an authSafe ContentInfo
-    // whose OPTIONAL [0] content field is absent must fail with a diagnosable exception, not a
-    // bare NullPointerException. The legacy PKCS12KeyStoreSpi routes the outer content access
-    // through PKCS12Util.getContentOctets (which throws ASN1ParsingException on missing content);
-    // this SPI must do the same rather than dereference a null ASN1OctetString.
+    // CVE-2024-0727 sibling: a crafted PKCS#12 with no MacData and an authSafe ContentInfo whose
+    // OPTIONAL [0] content field is absent must fail with the declared IOException carrying a
+    // diagnosable message -- not a bare NullPointerException, and not an uncaught RuntimeException.
+    // The SPI routes the outer content access through PKCS12Util.getContentOctets (which raises an
+    // ASN1ParsingException "ContentInfo content missing" on absent content); engineLoad's
+    // safe-contents wrapper surfaces that as the declared IOException.
     //
     public void testMissingContentInfoContent()
         throws Exception
@@ -260,9 +260,9 @@ public class PKCS12PBMAC1StoreTest
         {
             fail("missing ContentInfo content surfaced as NullPointerException");
         }
-        catch (ASN1ParsingException e)
+        catch (IOException e)
         {
-            assertEquals("ContentInfo content missing", e.getMessage());
+            assertTrue(e.getMessage().contains("ContentInfo content missing"));
         }
     }
 
