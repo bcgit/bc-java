@@ -102,7 +102,7 @@ public class MerkleTreeCertificateExample
         //    the CA's trust anchor ID to the CA's public key + Ed25519
         //    algorithm, then assemble ValidationParams and validate.
         BcMTCSignatureVerifier caVerifier = new BcMTCSignatureVerifier(
-            caKp.getPublic(), MTCSignatureAlgorithm.ED25519);
+            MTCSignatureAlgorithm.ED25519, caKp.getPublic());
         BcMTCCosignerVerifierProvider cosigners =
             BcMTCCosignerVerifierProvider.singleCosigner(ca.getCaId(), caVerifier);
 

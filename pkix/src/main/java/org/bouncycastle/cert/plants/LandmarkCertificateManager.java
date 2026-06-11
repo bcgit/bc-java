@@ -256,12 +256,21 @@ public class LandmarkCertificateManager
             List<MTCSignature> signatures)
             throws IOException
         {
-            int valid = 0;
+            // Count each distinct trusted cosigner at most once. The signature list arrives
+            // directly from the caller (it is not parsed through MTCProof, which already rejects
+            // duplicate cosigner_ids), so without this a single valid cosignature replayed N times
+            // would satisfy an M-of-N threshold with one cosigner -- defeating the threshold.
+            List<byte[]> countedCosignerIds = new ArrayList<byte[]>();
             for (MTCSignature sig : signatures)
             {
                 byte[] cosignerId = sig.getCosignerId();
                 MTCCosignerVerifier verifier = cosignerVerifierProvider.get(cosignerId);
                 if (verifier == null)
+                {
+                    continue;
+                }
+
+                if (containsCosignerId(countedCosignerIds, cosignerId))
                 {
                     continue;
                 }
@@ -275,10 +284,22 @@ public class LandmarkCertificateManager
                 sOut.close();
                 if (verifier.verify(sig.getSignature()))
                 {
-                    valid++;
+                    countedCosignerIds.add(cosignerId);
                 }
             }
-            return valid >= minCosignaturesForCheckpoint;
+            return countedCosignerIds.size() >= minCosignaturesForCheckpoint;
+        }
+
+        private static boolean containsCosignerId(List<byte[]> ids, byte[] cosignerId)
+        {
+            for (int i = 0; i != ids.size(); i++)
+            {
+                if (Arrays.areEqual(ids.get(i), cosignerId))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**

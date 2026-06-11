@@ -129,7 +129,7 @@ public class BcMTCCosignerVerifierProvider
          */
         public Builder addCosigner(byte[] cosignerId, AsymmetricKeyParameter publicKey)
         {
-            return addCosigner(cosignerId, new BcMTCSignatureVerifier(publicKey, BcMTCSigners.detectAlgorithm(publicKey)));
+            return addCosigner(cosignerId, new BcMTCSignatureVerifier(BcMTCSigners.detectAlgorithm(publicKey), publicKey));
         }
 
         public BcMTCCosignerVerifierProvider build()

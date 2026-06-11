@@ -21,7 +21,7 @@ import org.bouncycastle.cert.plants.MTCLog;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.TrustAnchorIDs;
-import org.bouncycastle.cert.plants.jcajce.JcaMTCCosignerBuilder;
+import org.bouncycastle.cert.plants.jcajce.JcaMTCCosigner;
 import org.bouncycastle.cert.plants.jcajce.JcaMTCCosignerVerifierProvider;
 import org.bouncycastle.cert.plants.jcajce.JcaSha256MerkleTreeHash;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -89,7 +89,7 @@ public class MerkleTreeCertificateJcaExample
         MTCLog log = new MTCLog(ca, LOG_NUMBER, /*start=*/ 0L, /*end=*/ 2L);
         ContentSigner mtcSigner = new MTCContentSigner(
             log, siblingHash,
-            new JcaMTCCosignerBuilder()
+            new JcaMTCCosigner.Builder()
                 .setProvider(PROVIDER)
                 .build(ca.getCaId(), caKp.getPrivate()));
 

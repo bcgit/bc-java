@@ -115,7 +115,7 @@ public class JcaMTCCosignerVerifierProvider
          */
         public Builder addCosigner(byte[] cosignerId, PublicKey publicKey)
         {
-            return addCosigner(cosignerId, new JcaMTCSignatureVerifier(publicKey, detectAlgorithm(publicKey), helper));
+            return addCosigner(cosignerId, new JcaMTCSignatureVerifier(detectAlgorithm(publicKey), publicKey, helper));
         }
 
         public JcaMTCCosignerVerifierProvider build()
