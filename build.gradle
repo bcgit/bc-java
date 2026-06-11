@@ -1,7 +1,7 @@
 buildscript {
     repositories {
         maven {
-            url "https://plugins.gradle.org/m2/"
+            url = "https://plugins.gradle.org/m2/"
         }
     }
 
@@ -235,8 +235,8 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     checkstyle {
-        configFile file("$rootDir/config/checkstyle/checkstyle.xml");
-        toolVersion '9.0'; // your choice here
+        configFile = file("$rootDir/config/checkstyle/checkstyle.xml");
+        toolVersion = '9.0'; // your choice here
         sourceSets = [project.sourceSets.main]
     }
 
