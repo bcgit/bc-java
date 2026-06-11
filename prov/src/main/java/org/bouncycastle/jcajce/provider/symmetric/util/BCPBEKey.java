@@ -240,6 +240,19 @@ public class BCPBEKey
             {
                 Arrays.fill(salt, (byte)0);
             }
+            clearKey(param);
+        }
+    }
+
+    private static void clearKey(CipherParameters param)
+    {
+        if (param instanceof ParametersWithIV)
+        {
+            clearKey(((ParametersWithIV)param).getParameters());
+        }
+        else if (param instanceof KeyParameter)
+        {
+            Arrays.fill(((KeyParameter)param).getKey(), (byte)0);
         }
     }
 
