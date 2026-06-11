@@ -339,5 +339,31 @@ public class MerkleTreePrimitives
         {
             return end;
         }
+
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (!(o instanceof SubtreeInfo))
+            {
+                return false;
+            }
+            SubtreeInfo other = (SubtreeInfo)o;
+            return start == other.start && end == other.end;
+        }
+
+        public int hashCode()
+        {
+            int h = (int)(start ^ (start >>> 32));
+            h = 31 * h + (int)(end ^ (end >>> 32));
+            return h;
+        }
+
+        public String toString()
+        {
+            return "[" + start + ", " + end + ")";
+        }
     }
 }

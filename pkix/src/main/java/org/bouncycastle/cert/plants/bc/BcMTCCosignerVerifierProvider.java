@@ -28,7 +28,8 @@ import org.bouncycastle.util.Arrays;
  *   <li>{@link ECPublicKeyParameters} with a 256-bit field &rarr; {@code ECDSA-P256-SHA256}</li>
  *   <li>{@link ECPublicKeyParameters} with a 384-bit field &rarr; {@code ECDSA-P384-SHA384}</li>
  *   <li>{@link Ed25519PublicKeyParameters} &rarr; {@code Ed25519}</li>
- *   <li>{@link MLDSAPublicKeyParameters} &rarr; {@code ML-DSA-65}</li>
+ *   <li>{@link MLDSAPublicKeyParameters} &rarr; {@code ML-DSA-44} / {@code ML-DSA-65} /
+ *       {@code ML-DSA-87} per the key's parameter set</li>
  * </ul>
  *
  * <p>Callers needing a different algorithm string for the same key type, or a

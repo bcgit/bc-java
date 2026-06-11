@@ -274,6 +274,17 @@ public class MerkleTreeCertificateValidator
         byte[] entryHash = computeEntryHash(certHolder, proof.getExtensionsWire(), params.hashFunction);
 
         // Step 6: evaluate the inclusion proof to recover the expected subtree hash.
+        List<byte[]> proofHashes;
+        try
+        {
+            proofHashes = proof.getHashList(params.hashFunction.getHashSize());
+        }
+        catch (IllegalArgumentException e)
+        {
+            // The inclusion_proof length is attacker-controlled; a bad length is
+            // a rejection of the certificate, not a caller error.
+            throw new SecurityException("Invalid inclusion proof: " + e.getMessage(), e);
+        }
         byte[] expectedSubtreeHash;
         try
         {
@@ -282,7 +293,7 @@ public class MerkleTreeCertificateValidator
                 proof.getStart(),
                 proof.getEnd(),
                 entryHash,
-                proof.getHashList(params.hashFunction.getHashSize()),
+                proofHashes,
                 params.hashFunction);
         }
         catch (InvalidProofException e)
