@@ -67,7 +67,7 @@ public class BCSphincs256PrivateKey
         {
             BCSphincs256PrivateKey otherKey = (BCSphincs256PrivateKey)o;
 
-            return treeDigest.equals(otherKey.treeDigest) && Arrays.areEqual(params.getKeyData(), otherKey.params.getKeyData());
+            return treeDigest.equals(otherKey.treeDigest) && Arrays.constantTimeAreEqual(params.getKeyData(), otherKey.params.getKeyData());
         }
 
         return false;
