@@ -77,7 +77,9 @@ public final class TrustAnchorIDs
         {
             throw new IllegalArgumentException("index out of uint48 range: " + index);
         }
-        return BigInteger.valueOf((logNumber << 48) | index);
+        // (logNumber << 48) overflows a signed long for log_number >= 32768; the
+        // draft requires serials to be positive and at most 2^64-1 (Section 6.1).
+        return BigInteger.valueOf(logNumber).shiftLeft(48).or(BigInteger.valueOf(index));
     }
 
     /**
