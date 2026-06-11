@@ -146,7 +146,10 @@ public class BouncyCastlePQCProvider
 
     public AsymmetricKeyInfoConverter getKeyInfoConverter(ASN1ObjectIdentifier oid)
     {
-        return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
+        synchronized (keyInfoConverters)
+        {
+            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
+        }
     }
 
     public void addAttributes(String key, Map<String, String> attributeMap)
