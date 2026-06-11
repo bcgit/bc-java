@@ -44,6 +44,11 @@ public class JcaMTCSignatureVerifier
         this.helper = helper;
     }
 
+    public String getAlgorithm()
+    {
+        return algorithm;
+    }
+
     public boolean verify(byte[] cosignedMessage, byte[] signature)
     {
         try

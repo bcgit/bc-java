@@ -304,6 +304,7 @@ public class MerkleTreeCertificatesTest
             "ECDSA-P256-SHA256", ecdsaKeyPair.getPublic());
 
         isTrue("ECDSA cosignature verifies", ecdsaVerifier.verify(cosignedMessage, signature));
+        isTrue("bound algorithm surfaced", "ECDSA-P256-SHA256".equals(ecdsaVerifier.getAlgorithm()));
 
         signature[0] ^= 0x01;
         isTrue("Tampered ECDSA signature rejected", !ecdsaVerifier.verify(cosignedMessage, signature));
@@ -509,6 +510,22 @@ public class MerkleTreeCertificatesTest
         tamperedBytes[tamperedBytes.length - 1] ^= 0x01;
         X509CertificateHolder tamperedCert = new X509CertificateHolder(tamperedBytes);
         isTrue("certificate-mode rejects tampered cert", !tamperedCert.isSignatureValid(provider));
+
+        // A cosignature attributed to a foreign cosigner_id must be ignored
+        // (Section 7.2 step 12) even when it cryptographically verifies under
+        // the wrapped key — here the CA's key signs under another identity.
+        byte[] foreignId = binaryTrustAnchorID("32473.99");
+        ContentSigner foreignSigner = new MTCContentSigner(
+            log, siblingHash,
+            new BcMTCCosigner(foreignId, certCaKp.getPrivate()));
+        X509v3CertificateBuilder foreignBuilder = new X509v3CertificateBuilder(
+            ca.issuerName(), ca.certSerial(log, 0L),
+            new Date(now), new Date(now + 24L * 60 * 60 * 1000),
+            new org.bouncycastle.asn1.x500.X500Name("CN=mtc-test-ee"), eeSpki);
+        foreignBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        X509CertificateHolder foreignCert = foreignBuilder.build(foreignSigner);
+        isTrue("certificate-mode ignores cosignature with foreign cosigner_id",
+            !foreignCert.isSignatureValid(provider));
     }
 
     public void testStandaloneCertificateValidation()
@@ -835,7 +852,7 @@ public class MerkleTreeCertificatesTest
         List<byte[]> proof = Collections.singletonList(leaf0);
         byte[] computedRoot = MerkleTreePrimitives.evaluateSubtreeInclusionProof(
             1, 0, 2, leaf1, proof, hashFunc);
-        isTrue("two-leaf inclusion proof", areEqual(root, computedRoot));
+        isTrue("subtree [0, 2) inclusion proof", areEqual(root, computedRoot));
     }
 
     /**
@@ -1057,7 +1074,7 @@ public class MerkleTreeCertificatesTest
         org.bouncycastle.cert.plants.MTCProof emptyProof = new org.bouncycastle.cert.plants.MTCProof(
             0L, 1L, new byte[0], Collections.<MTCSignature>emptyList());
         X509CertificateHolder cert = org.bouncycastle.cert.plants.LandmarkCertificateManager.buildLandmarkCertificate(
-            0, dummyEntry, spki,
+            1, 0, dummyEntry, spki,
             new MerkleTreePrimitives.SubtreeInfo(0, 1),
             Collections.<byte[]>emptyList(),
             hashFunc);
@@ -1336,7 +1353,7 @@ public class MerkleTreeCertificatesTest
         SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
             ecdsaKeyPair.getPublic());
         X509CertificateHolder cert = org.bouncycastle.cert.plants.LandmarkCertificateManager.buildLandmarkCertificate(
-            0, tbsEntry, spki,
+            1, 0, tbsEntry, spki,
             new MerkleTreePrimitives.SubtreeInfo(0, 1),
             Collections.<byte[]>emptyList(),
             hashFunc);

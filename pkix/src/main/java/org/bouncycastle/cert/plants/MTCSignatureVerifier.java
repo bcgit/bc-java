@@ -18,6 +18,14 @@ package org.bouncycastle.cert.plants;
 public interface MTCSignatureVerifier
 {
     /**
+     * @return the MTC signature algorithm this verifier is bound to — one of
+     *         the {@link MTCSignatureAlgorithm} constants. Lets callers check
+     *         a registered verifier against the algorithm a CA publishes for
+     *         its cosigner (Section 5.5 {@code sigAlg}).
+     */
+    String getAlgorithm();
+
+    /**
      * @param cosignedMessage the encoded CosignedMessage bytes
      * @param signature       the candidate signature
      * @return true if the signature is valid for the bound public key and algorithm
