@@ -64,12 +64,12 @@ public class X509CRLHolder
             }
             return CertificateList.getInstance(obj);
         }
-        catch (ClassCastException e)
+        catch (RuntimeException e)
         {
-            throw new CertIOException("malformed data: " + e.getMessage(), e);
-        }
-        catch (IllegalArgumentException e)
-        {
+            // any RuntimeException here (ClassCastException, IllegalArgumentException,
+            // IllegalStateException/ASN1ParsingException, NullPointerException, ...) means the
+            // bytes were malformed; surface it as the declared IOException rather than letting it
+            // escape the constructor's contract.
             throw new CertIOException("malformed data: " + e.getMessage(), e);
         }
     }
