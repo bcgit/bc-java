@@ -8,6 +8,7 @@ import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
 import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat256;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -469,7 +470,7 @@ public abstract class Ed25519
     {
         /*
          * Because we are using 4 teeth and 8 spacing, each limb of n corresponds to one of the 8 blocks.
-         * Therefore we can efficiently group the bits for each comb position using a (double) shuffle. 
+         * Therefore we can efficiently group the bits for each comb position using a (double) shuffle.
          */
         for (int i = 0; i < n.length; ++i)
         {
@@ -1703,10 +1704,13 @@ public abstract class Ed25519
             byte[] k = new byte[SECRET_KEY_SIZE];
             Ed25519.generatePrivateKey(random, k);
             expandPrivateKey(k, 0, xk, xkOff);
+            Arrays.clear(k);
         }
 
         public static void generatePublicKey(byte[] xk, int xkOff, byte[] pk, int pkOff)
         {
+            Arrays.validateSegment(xk,  xkOff, EXPANDED_KEY_SIZE);
+
             byte[] s = new byte[SCALAR_BYTES];
             pruneScalar(xk, xkOff, s);
 
@@ -1715,11 +1719,15 @@ public abstract class Ed25519
 
         public static PublicPoint generatePublicKey(byte[] xk, int xkOff)
         {
+            Arrays.validateSegment(xk,  xkOff, EXPANDED_KEY_SIZE);
+
             return Ed25519.generatePublicPoint(xk, xkOff);
         }
 
         public static void prune(byte[] xk, int xkOff)
         {
+            Arrays.validateSegment(xk,  xkOff, EXPANDED_KEY_SIZE);
+
             pruneScalar(xk, xkOff);
         }
 
