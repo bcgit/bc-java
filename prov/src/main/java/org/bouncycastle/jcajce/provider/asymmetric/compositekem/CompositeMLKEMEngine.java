@@ -305,11 +305,11 @@ class CompositeMLKEMEngine
             {
                 ECPrivateKey ecPriv = (ECPrivateKey)tradSK;
                 ECParameterSpec params = ecPriv.getParams();
-                if (tradCT[0] != 0x04)
-                {
-                    throw new IllegalArgumentException("Point is not uncompressed");
-                }
                 int len = (params.getCurve().getField().getFieldSize() + 7) >>> 3;
+                if (tradCT.length != 1 + 2 * len || tradCT[0] != 0x04)
+                {
+                    throw new IllegalArgumentException("malformed EC point in composite ciphertext");
+                }
                 byte[] xBytes = new byte[len];
                 byte[] yBytes = new byte[len];
                 System.arraycopy(tradCT, 1, xBytes, 0, len);

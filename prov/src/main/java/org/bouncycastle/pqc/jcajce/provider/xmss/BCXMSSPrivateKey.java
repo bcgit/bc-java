@@ -102,7 +102,7 @@ public class BCXMSSPrivateKey
         {
             BCXMSSPrivateKey otherKey = (BCXMSSPrivateKey)o;
 
-            return treeDigest.equals(otherKey.treeDigest) && Arrays.areEqual(keyParams.toByteArray(), otherKey.keyParams.toByteArray());
+            return treeDigest.equals(otherKey.treeDigest) && Arrays.constantTimeAreEqual(keyParams.toByteArray(), otherKey.keyParams.toByteArray());
         }
 
         return false;
