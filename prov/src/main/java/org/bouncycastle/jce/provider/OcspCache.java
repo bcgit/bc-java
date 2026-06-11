@@ -51,7 +51,7 @@ class OcspCache
     private static Map<URI, WeakReference<Map<CertID, OCSPResponse>>> cache
         = Collections.synchronizedMap(new WeakHashMap<URI, WeakReference<Map<CertID, OCSPResponse>>>());
 
-    static OCSPResponse getOcspResponse(
+    static synchronized OCSPResponse getOcspResponse(
         CertID certID, PKIXCertRevocationCheckerParameters parameters,
         URI ocspResponder, X509Certificate responderCert, List<Extension> ocspExtensions,
         JcaJceHelper helper)
