@@ -137,6 +137,55 @@ public class Ed25519Test
     }
 
 //    @Test
+    public void testEd25519CrossConsistencyExpandedKey()
+    {
+        byte[] sk = new byte[Ed25519.SECRET_KEY_SIZE];
+        byte[] xk = new byte[Ed25519.ExpandedKey.EXPANDED_KEY_SIZE];
+        byte[] pk = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] pk2 = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] m = new byte[255];
+        byte[] sig1 = new byte[Ed25519.SIGNATURE_SIZE];
+        byte[] sig2 = new byte[Ed25519.SIGNATURE_SIZE];
+
+        RANDOM.nextBytes(m);
+
+        for (int i = 0; i < 10; ++i)
+        {
+            Ed25519.generatePrivateKey(RANDOM, sk);
+            Ed25519.ExpandedKey.expandPrivateKey(sk, 0, xk, 0);
+
+            Ed25519.generatePublicKey(sk, 0, pk, 0);
+
+            {
+                Ed25519.ExpandedKey.generatePublicKey(xk, 0, pk2, 0);
+
+                assertTrue("Ed25519.ExpandedKey cross-consistent generation #" + i, Arrays.areEqual(pk, pk2));
+            }
+            {
+                Ed25519.PublicPoint publicPoint = Ed25519.ExpandedKey.generatePublicKey(xk, 0);
+                Ed25519.encodePublicPoint(publicPoint, pk2, 0);
+
+                assertTrue("Ed25519.ExpandedKey cross-consistent generation #" + i, Arrays.areEqual(pk, pk2));
+            }
+
+            int mLen = RANDOM.nextInt() & 255;
+
+            Ed25519.sign(sk, 0, m, 0, mLen, sig1, 0);
+
+            {
+                Ed25519.ExpandedKey.sign(xk, 0, m, 0, mLen, sig2, 0);
+
+                assertTrue("Ed25519.ExpandedKey cross-consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+            }
+            {
+                Ed25519.ExpandedKey.sign(xk, 0, pk, 0, m, 0, mLen, sig2, 0);
+
+                assertTrue("Ed25519.ExpandedKey cross-consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+            }
+        }
+    }
+
+//    @Test
     public void testEd25519ctxConsistency()
     {
         byte[] sk = new byte[Ed25519.SECRET_KEY_SIZE];
@@ -799,6 +848,18 @@ public class Ed25519Test
 
         boolean shouldNotVerify = Ed25519.verify(badsig, 0, pk, 0, m, 0, m.length);
         assertFalse(text, shouldNotVerify);
+
+        byte[] xk = new byte[Ed25519.ExpandedKey.EXPANDED_KEY_SIZE];
+        Ed25519.ExpandedKey.expandPrivateKey(sk, 0, xk, 0);
+
+        Ed25519.ExpandedKey.generatePublicKey(xk, 0, pkGen, 0);
+        assertTrue(text, Arrays.areEqual(pk, pkGen));
+
+        Ed25519.ExpandedKey.sign(xk, 0, m, 0, m.length, sigGen, 0);
+        assertTrue(text, Arrays.areEqual(sig, sigGen));
+
+        Ed25519.ExpandedKey.sign(xk, 0, pk, 0, m, 0, m.length, sigGen, 0);
+        assertTrue(text, Arrays.areEqual(sig, sigGen));        
     }
 
     private static void checkEd25519ctxVector(String sSK, String sPK, String sM, String sCTX, String sSig, String text)
