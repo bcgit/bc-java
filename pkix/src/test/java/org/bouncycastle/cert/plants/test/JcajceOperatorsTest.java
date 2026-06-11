@@ -163,9 +163,14 @@ public class JcajceOperatorsTest
         byte[] message = buildCosignedMessage("32473.1.0.1", "32473.2", 100, 200, 32);
         byte[] signature = signJca(kp, "SHA256WITHPLAIN-ECDSA", message);
 
-        MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            "ECDSA-P256-SHA256", kp.getPublic(), "BC");
+        MTCSignatureVerifier v = new JcaMTCSignatureVerifier.Builder()
+            .setProvider("BC").build("ECDSA-P256-SHA256", kp.getPublic());
         isTrue("ECDSA-P256 cosignature verifies", v.verify(message, signature));
+
+        // The detect-based build overload must arrive at the same algorithm.
+        MTCSignatureVerifier detected = new JcaMTCSignatureVerifier.Builder()
+            .setProvider("BC").build(kp.getPublic());
+        isTrue("ECDSA-P256 detect-based verifier verifies", detected.verify(message, signature));
 
         signature[0] ^= 0x01;
         isTrue("ECDSA-P256 tampered signature rejected", !v.verify(message, signature));
@@ -179,8 +184,8 @@ public class JcajceOperatorsTest
         byte[] message = buildCosignedMessage("32473.1.0.1", "32473.3", 0, 1024, 32);
         byte[] signature = signJca(kp, "SHA384WITHPLAIN-ECDSA", message);
 
-        MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            "ECDSA-P384-SHA384", kp.getPublic(), "BC");
+        MTCSignatureVerifier v = new JcaMTCSignatureVerifier.Builder()
+            .setProvider("BC").build("ECDSA-P384-SHA384", kp.getPublic());
         isTrue("ECDSA-P384 cosignature verifies", v.verify(message, signature));
 
         signature[signature.length - 1] ^= 0x55;
@@ -195,8 +200,8 @@ public class JcajceOperatorsTest
         byte[] message = buildCosignedMessage("32473.1.0.1", "32473.4", 5, 50, 32);
         byte[] signature = signJca(kp, "Ed25519", message);
 
-        MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            "Ed25519", kp.getPublic(), "BC");
+        MTCSignatureVerifier v = new JcaMTCSignatureVerifier.Builder()
+            .setProvider("BC").build("Ed25519", kp.getPublic());
         isTrue("Ed25519 cosignature verifies", v.verify(message, signature));
 
         signature[10] ^= 0x80;
@@ -229,8 +234,8 @@ public class JcajceOperatorsTest
         byte[] message = buildCosignedMessage("32473.1.0.1", cosignerDotted, 0, 100, 32);
         byte[] signature = signJca(kp, alg, message);
 
-        MTCSignatureVerifier v = new JcaMTCSignatureVerifier(
-            alg, kp.getPublic(), "BC");
+        MTCSignatureVerifier v = new JcaMTCSignatureVerifier.Builder()
+            .setProvider("BC").build(alg, kp.getPublic());
         isTrue(alg + " cosignature verifies", v.verify(message, signature));
 
         signature[signature.length / 2] ^= 0x01;
@@ -245,7 +250,7 @@ public class JcajceOperatorsTest
         {
             public void operation()
             {
-                new JcaMTCSignatureVerifier("BOGUS", kp.getPublic(), "BC")
+                new JcaMTCSignatureVerifier.Builder().setProvider("BC").build("BOGUS", kp.getPublic())
                     .verify(new byte[0], new byte[0]);
             }
         });

@@ -593,6 +593,56 @@ public class MerkleTreeCertificatesTest
         });
     }
 
+    public void testMalformedInclusionProofLengthRejected()
+        throws Exception
+    {
+        TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
+
+        final long serial = (1L << 48) | 42;
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+        TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial, sigAlg, spki);
+
+        // 31 bytes — not a multiple of the SHA-256 hash size, so the proof's
+        // hash list cannot be reconstructed.
+        org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
+            42, 44, new byte[31], Collections.<MTCSignature>emptyList());
+
+        final X509CertificateHolder cert = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(proof.encode())}).getEncoded());
+
+        final MerkleTreeCertificateValidator.ValidationParams params =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                new BcMTCCosignerVerifierProvider.Builder().build(),
+                hashFunc, Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                new HashSet<Long>(),
+                1
+            );
+
+        // An attacker-controlled inclusion_proof of bad length is a certificate
+        // rejection (SecurityException), not an IllegalArgumentException.
+        testException("Invalid inclusion proof", "SecurityException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(cert, params);
+            }
+        });
+    }
+
+    public void testSubtreeInfoEquality()
+    {
+        MerkleTreePrimitives.SubtreeInfo a = new MerkleTreePrimitives.SubtreeInfo(8, 12);
+        MerkleTreePrimitives.SubtreeInfo b = new MerkleTreePrimitives.SubtreeInfo(8, 12);
+        MerkleTreePrimitives.SubtreeInfo c = new MerkleTreePrimitives.SubtreeInfo(8, 16);
+
+        isTrue("equal intervals compare equal", a.equals(b) && b.equals(a));
+        isTrue("equal intervals share a hash code", a.hashCode() == b.hashCode());
+        isTrue("different intervals compare unequal", !a.equals(c));
+        isTrue("toString names the interval", "[8, 12)".equals(a.toString()));
+    }
+
     public void testLandmarkCertificateValidation()
         throws Exception
     {
@@ -1401,6 +1451,8 @@ public class MerkleTreeCertificatesTest
         testMTCSignatureVerifierProviderManualMode();
         testMTCSignatureVerifierProviderCertificateMode();
         testStandaloneCertificateValidation();
+        testMalformedInclusionProofLengthRejected();
+        testSubtreeInfoEquality();
         testLandmarkCertificateValidation();
         testInclusionProofTwoLeaf();
         testMTCProofCosignerOrdering();
