@@ -60,10 +60,12 @@ public class MerkleTreeCertificateValidator
      *       (Section 7.1).</li>
      * </ul>
      * <p>{@code authorityInfo.getSigAlg()} is the CA cosigner's published signature
-     * algorithm; enforcing it requires the {@link MTCCosignerVerifierProvider}
-     * to expose its bound algorithm, which the operator interface does not
-     * currently surface. Callers building the provider for the CA cosigner are
-     * responsible for ensuring the verifier they register uses
+     * algorithm. {@link MTCSignatureVerifier#getAlgorithm()} surfaces the MTC
+     * algorithm string a registered verifier is bound to, but the draft does
+     * not pin OID identifiers for the plain (r||s) ECDSA forms, so the
+     * validator does not map {@code sigAlg} to that string itself. Callers
+     * building the provider for the CA cosigner remain responsible for
+     * checking the verifier they register against
      * {@code authorityInfo.getSigAlg()}.</p>
      */
     public static class ValidationParams
@@ -558,8 +560,9 @@ public class MerkleTreeCertificateValidator
     }
 
     /**
-     * Combined "leaf hash + climb one level" for the simple-case 2-leaf log
-     * where the EE has exactly one sibling leaf. Equivalent to
+     * Combined "leaf hash + climb one level" for the simple case of a
+     * size-two subtree {@code [0, 2)} where the EE has exactly one sibling
+     * leaf. Equivalent to
      * {@code hashFunc.hashNode(computeEntryHash(tbsCertDer, hashFunc), inclusionProof)}.
      * The extensions list is empty.
      */

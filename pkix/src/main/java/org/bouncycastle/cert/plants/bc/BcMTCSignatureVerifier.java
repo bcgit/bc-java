@@ -31,6 +31,11 @@ public class BcMTCSignatureVerifier
         this.algorithm = algorithm;
     }
 
+    public String getAlgorithm()
+    {
+        return algorithm;
+    }
+
     public boolean verify(byte[] cosignedMessage, byte[] signature)
     {
         Signer signer = BcMTCSigners.createSigner(algorithm);

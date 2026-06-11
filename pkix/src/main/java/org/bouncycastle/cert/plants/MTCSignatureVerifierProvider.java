@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Single-cosigner {@link ContentVerifierProvider} adapter for MTC verification.
@@ -39,9 +40,11 @@ import org.bouncycastle.operator.ContentVerifierProvider;
  *             bytes (the cert's {@code signatureValue}), reparses them,
  *             recomputes the subtree hash via
  *             {@link MerkleTreeCertificateValidator#computeSubtreeHash},
- *             builds the {@link MTCCosignedMessage} for each MTCSignature in
- *             the proof, and returns {@code true} as soon as any cosignature
- *             verifies against the wrapped cosigner verifier. This matches
+ *             builds the {@link MTCCosignedMessage} for the MTCSignature whose
+ *             {@code cosigner_id} matches the wrapped verifier's
+ *             {@link MTCCosignerVerifier#getCosignerId()} (signatures naming
+ *             any other cosigner are unrecognized and ignored), and returns
+ *             {@code true} if that cosignature verifies. This matches
  *             single-cosigner deployments — a multi-cosigner /
  *             {@code minCosignatures > 1} policy should continue to use
  *             {@link MerkleTreeCertificateValidator}.</li>
@@ -142,8 +145,17 @@ public class MTCSignatureVerifierProvider
                 byte[] subtreeHash = MerkleTreeCertificateValidator.computeSubtreeHash(
                     tbsDer, proof.getInclusionProof(), ca.getHashFunc());
 
+                byte[] boundCosignerId = verifier.getCosignerId();
                 for (MTCSignature sig : proof.getSignatures())
                 {
+                    // Only the signature attributed to the wrapped verifier's
+                    // cosigner counts; signatures naming any other cosigner_id
+                    // are unrecognized and ignored (Section 7.2 step 12), even
+                    // if the wrapped key would verify them.
+                    if (!Arrays.areEqual(boundCosignerId, sig.getCosignerId()))
+                    {
+                        continue;
+                    }
                     byte[] cosignedMessage = MTCCosignedMessage.encode(
                         log, subtreeHash, sig.getCosignerId());
                     OutputStream sOut = verifier.getOutputStream();

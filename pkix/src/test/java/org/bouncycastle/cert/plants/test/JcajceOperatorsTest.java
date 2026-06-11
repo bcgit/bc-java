@@ -166,6 +166,7 @@ public class JcajceOperatorsTest
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier.Builder()
             .setProvider("BC").build("ECDSA-P256-SHA256", kp.getPublic());
         isTrue("ECDSA-P256 cosignature verifies", v.verify(message, signature));
+        isTrue("bound algorithm surfaced", "ECDSA-P256-SHA256".equals(v.getAlgorithm()));
 
         // The detect-based build overload must arrive at the same algorithm.
         MTCSignatureVerifier detected = new JcaMTCSignatureVerifier.Builder()
@@ -295,6 +296,8 @@ public class JcajceOperatorsTest
             .build();
 
         isTrue("registered cosigner is found", provider.get(registeredId) != null);
+        isTrue("bound cosigner ID surfaced",
+            Arrays.areEqual(registeredId, provider.get(registeredId).getCosignerId()));
         isTrue("unknown cosigner returns null", provider.get(missingId) == null);
     }
 

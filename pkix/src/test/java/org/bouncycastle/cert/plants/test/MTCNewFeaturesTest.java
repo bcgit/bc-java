@@ -89,6 +89,23 @@ public class MTCNewFeaturesTest
             }
         });
 
+        // Section 5.1 allocates landmark / landmark-group OIDs for positive
+        // landmark numbers only; landmark 0 has no subtrees and needs no ID.
+        testException("must be positive", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                TrustAnchorIDs.landmarkId(caId, 8, 0);
+            }
+        });
+        testException("must be positive", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                TrustAnchorIDs.landmarkGroupId(caId, 8, 0);
+            }
+        });
+
         // Serial composition per Section 6.1: serial = (log_number << 48) | index,
         // "positive and at most 2^64-1". log_number >= 32768 overflows a signed
         // long shift, so the composition must be done in BigInteger.

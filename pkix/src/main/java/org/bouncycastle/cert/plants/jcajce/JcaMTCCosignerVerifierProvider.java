@@ -54,9 +54,15 @@ public class JcaMTCCosignerVerifierProvider
         {
             return null;
         }
+        final byte[] boundCosignerId = cosignerId.clone();
         return new MTCCosignerVerifier()
         {
             private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+            public byte[] getCosignerId()
+            {
+                return boundCosignerId.clone();
+            }
 
             public AlgorithmIdentifier getAlgorithmIdentifier()
             {
