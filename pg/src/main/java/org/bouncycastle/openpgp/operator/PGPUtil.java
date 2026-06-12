@@ -9,6 +9,7 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -63,6 +64,13 @@ class PGPUtil
         {
             if (s2k.getType() == S2K.ARGON_2)
             {
+                int memorySizeExponent = s2k.getMemorySizeExponent();
+                // TODO: should really be 3 + log2(parallelism)
+                if (memorySizeExponent < 3 || memorySizeExponent > Properties.asInteger(Argon2Parameters.MAX_MEMORY_EXP, 30))
+                {
+                    throw new PGPException("memory size exponent out of range");
+                }
+
                 Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
                     .withSalt(s2k.getIV())
                     .withIterations(s2k.getPasses())

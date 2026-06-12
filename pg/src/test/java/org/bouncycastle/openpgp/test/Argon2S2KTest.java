@@ -8,25 +8,37 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Date;
 
+import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
+import org.bouncycastle.crypto.params.Argon2Parameters;
+import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
@@ -99,6 +111,7 @@ public class Argon2S2KTest
         // dynamic round-trip
         testEncryptAndDecryptMessageWithArgon2();
         checkArgon2MaxMemoryExpValue();
+        checkArgon2MaxMemoryExpValueOnSecretKey();
     }
 
     public void encodingTest()
@@ -161,22 +174,62 @@ public class Argon2S2KTest
     private void checkArgon2MaxMemoryExpValue()
         throws Exception
     {
-        System.setProperty("org.bouncycastle.argon2.max_memory_exp", "10");
+        System.setProperty(Argon2Parameters.MAX_MEMORY_EXP, "10");
 
-        BCPGInputStream pgpIn = new BCPGInputStream(
-            getClass().getResourceAsStream("poc_argon2_s2k.pgp"));
         try
         {
-            SymmetricKeyEncSessionPacket skesk =
-                (SymmetricKeyEncSessionPacket)pgpIn.readPacket();
+            decryptSymmetricallyEncryptedMessage(TEST_MSG_AES256, TEST_MSG_PASSWORD);
             fail("no exception");
         }
-        catch (IOException e)
+        catch (PGPException e)
         {
             isEquals("memory size exponent out of range", e.getMessage());
         }
+        finally
+        {
+            System.clearProperty(Argon2Parameters.MAX_MEMORY_EXP);
+        }
+    }
 
-        System.setProperty("org.bouncycastle.argon2.max_memory_exp", "30");
+    private void checkArgon2MaxMemoryExpValueOnSecretKey()
+        throws Exception
+    {
+        // lock a v6 key with Argon2 (memory size exponent 16), then lower the cap and
+        // check the bounds check also fires on the secret key decryption path
+        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+        gen.init(new Ed25519KeyGenerationParameters(RANDOM));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+
+        PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, new Date());
+
+        BcAEADSecretKeyEncryptorBuilder encBuilder = new BcAEADSecretKeyEncryptorBuilder(
+            AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+            S2K.Argon2Params.memoryConstrainedParameters());
+
+        PGPDigestCalculatorProvider digestProv = new BcPGPDigestCalculatorProvider();
+
+        PGPSecretKey sk = new PGPSecretKey(
+            keyPair.getPrivateKey(),
+            keyPair.getPublicKey(),
+            digestProv.get(HashAlgorithmTags.SHA1),
+            true,
+            encBuilder.build(TEST_MSG_PASSWORD.toCharArray(), keyPair.getPublicKey().getPublicKeyPacket()));
+
+        System.setProperty(Argon2Parameters.MAX_MEMORY_EXP, "10");
+
+        try
+        {
+            sk.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(digestProv).build(TEST_MSG_PASSWORD.toCharArray()));
+            fail("no exception");
+        }
+        catch (PGPException e)
+        {
+            isEquals("memory size exponent out of range", e.getMessage());
+        }
+        finally
+        {
+            System.clearProperty(Argon2Parameters.MAX_MEMORY_EXP);
+        }
     }
 
     private String decryptSymmetricallyEncryptedMessage(String message, String password)
