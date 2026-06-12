@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCCosignerVerifierProvider;
-import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -55,9 +54,15 @@ public class JcaMTCCosignerVerifierProvider
         {
             return null;
         }
+        final byte[] boundCosignerId = cosignerId.clone();
         return new MTCCosignerVerifier()
         {
             private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+            public byte[] getCosignerId()
+            {
+                return boundCosignerId.clone();
+            }
 
             public AlgorithmIdentifier getAlgorithmIdentifier()
             {
@@ -115,42 +120,14 @@ public class JcaMTCCosignerVerifierProvider
          */
         public Builder addCosigner(byte[] cosignerId, PublicKey publicKey)
         {
-            return addCosigner(cosignerId, new JcaMTCSignatureVerifier(publicKey, detectAlgorithm(publicKey), helper));
+            return addCosigner(cosignerId,
+                new JcaMTCSignatureVerifier(JcaMTCSignatureVerifier.detectAlgorithm(publicKey), publicKey, helper));
         }
 
         public JcaMTCCosignerVerifierProvider build()
         {
             return new JcaMTCCosignerVerifierProvider(new HashMap<ByteArrayKey, MTCSignatureVerifier>(cosigners));
         }
-    }
-
-    private static String detectAlgorithm(PublicKey key)
-    {
-        if (key instanceof ECPublicKey)
-        {
-            int bits = ((ECPublicKey)key).getParams().getOrder().bitLength();
-            if (bits >= 252 && bits <= 256)
-            {
-                return MTCSignatureAlgorithm.ECDSA_P256_SHA256;
-            }
-            if (bits >= 380 && bits <= 384)
-            {
-                return MTCSignatureAlgorithm.ECDSA_P384_SHA384;
-            }
-            throw new IllegalArgumentException("Unsupported EC field size: " + bits);
-        }
-        String algName = key.getAlgorithm();
-        if ("Ed25519".equals(algName) || "EdDSA".equals(algName))
-        {
-            return MTCSignatureAlgorithm.ED25519;
-        }
-        if (MTCSignatureAlgorithm.ML_DSA_44.equals(algName)
-            || MTCSignatureAlgorithm.ML_DSA_65.equals(algName)
-            || MTCSignatureAlgorithm.ML_DSA_87.equals(algName))
-        {
-            return algName;
-        }
-        throw new IllegalArgumentException("Unsupported public key type: " + algName);
     }
 
     private static class ByteArrayKey

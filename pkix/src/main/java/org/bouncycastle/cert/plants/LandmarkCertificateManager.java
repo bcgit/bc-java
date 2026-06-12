@@ -2,6 +2,7 @@ package org.bouncycastle.cert.plants;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,9 +37,13 @@ public class LandmarkCertificateManager
 {
     /**
      * Builds a landmark-relative certificate (no signatures, only an inclusion
-     * proof to a predistributed landmark subtree).
+     * proof to a predistributed landmark subtree, Section 6.3.4). The
+     * certificate serial number is packed from the log number and the entry's
+     * index per Section 6.1: {@code serial = (log_number << 48) | index}.
      *
-     * @param index                the entry's index in the log (used as the certificate serial number)
+     * @param logNumber            number of the issuance log containing the entry
+     *                             ({@code 1 <= logNumber <= 2^16-1})
+     * @param index                the entry's index in the log ({@code 0 <= index <= 2^48-1})
      * @param tbsCertEntry         the TBSCertificateLogEntry describing the entry
      * @param subjectPublicKeyInfo the actual subject public key (its hash must match tbsCertEntry.subjectPublicKeyInfoHash)
      * @param landmarkSubtree      the landmark subtree containing the entry
@@ -47,6 +52,7 @@ public class LandmarkCertificateManager
      * @return the landmark-relative certificate
      */
     public static X509CertificateHolder buildLandmarkCertificate(
+        long logNumber,
         long index,
         TBSCertificateLogEntry tbsCertEntry,
         SubjectPublicKeyInfo subjectPublicKeyInfo,
@@ -55,7 +61,8 @@ public class LandmarkCertificateManager
         MerkleTreeHash hashFunc)
         throws IOException
     {
-        TBSCertificate tbs = buildTBSCertificate(tbsCertEntry, index, subjectPublicKeyInfo);
+        TBSCertificate tbs = buildTBSCertificate(
+            tbsCertEntry, TrustAnchorIDs.certSerial(logNumber, index), subjectPublicKeyInfo);
 
         byte[] inclusionProofBytes = concatenateHashes(inclusionProof, hashFunc.getHashSize());
         MTCProof proof = new MTCProof(
@@ -71,9 +78,29 @@ public class LandmarkCertificateManager
             new DERSequence(new ASN1Encodable[]{tbs.toASN1Primitive(), sigAlg, signature}).getEncoded());
     }
 
+    /**
+     * Convenience overload of
+     * {@link #buildLandmarkCertificate(long, long, TBSCertificateLogEntry, SubjectPublicKeyInfo, MerkleTreePrimitives.SubtreeInfo, List, MerkleTreeHash)}
+     * taking the log number, landmark subtree window and hash function from an
+     * {@link MTCLog} whose {@code [start, end)} is the landmark subtree.
+     */
+    public static X509CertificateHolder buildLandmarkCertificate(
+        MTCLog log,
+        long index,
+        TBSCertificateLogEntry tbsCertEntry,
+        SubjectPublicKeyInfo subjectPublicKeyInfo,
+        List<byte[]> inclusionProof)
+        throws IOException
+    {
+        return buildLandmarkCertificate(
+            log.getLogNumber(), index, tbsCertEntry, subjectPublicKeyInfo,
+            new MerkleTreePrimitives.SubtreeInfo(log.getStart(), log.getEnd()),
+            inclusionProof, log.getCa().getHashFunc());
+    }
+
     private static TBSCertificate buildTBSCertificate(
         TBSCertificateLogEntry tbsEntry,
-        long index,
+        BigInteger serial,
         SubjectPublicKeyInfo subjectPublicKeyInfo)
     {
         AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
@@ -85,7 +112,7 @@ public class LandmarkCertificateManager
             v.add(new DERTaggedObject(true, 0, tbsEntry.getVersion()));
         }
 
-        v.add(new ASN1Integer(index));
+        v.add(new ASN1Integer(serial));
         v.add(sigAlg);
         v.add(tbsEntry.getIssuer());
         v.add(tbsEntry.getValidity());
@@ -175,6 +202,18 @@ public class LandmarkCertificateManager
         {
             return this.start == start && this.end == end && Arrays.areEqual(this.hash, hash);
         }
+
+        /**
+         * Bridges this accepted landmark into the validator's representation.
+         * The {@link TrustedSubtreeManager} is bound to a single log ID, so the
+         * caller supplies the log number that ID denotes.
+         *
+         * @param logNumber log number of the containing log ({@code 1 <= logNumber <= 2^16-1})
+         */
+        public MerkleTreeCertificateValidator.TrustedSubtree toTrustedSubtree(long logNumber)
+        {
+            return new MerkleTreeCertificateValidator.TrustedSubtree(logNumber, start, end, hash);
+        }
     }
 
     /**
@@ -256,12 +295,21 @@ public class LandmarkCertificateManager
             List<MTCSignature> signatures)
             throws IOException
         {
-            int valid = 0;
+            // Count each distinct trusted cosigner at most once. The signature list arrives
+            // directly from the caller (it is not parsed through MTCProof, which already rejects
+            // duplicate cosigner_ids), so without this a single valid cosignature replayed N times
+            // would satisfy an M-of-N threshold with one cosigner -- defeating the threshold.
+            List<byte[]> countedCosignerIds = new ArrayList<byte[]>();
             for (MTCSignature sig : signatures)
             {
                 byte[] cosignerId = sig.getCosignerId();
                 MTCCosignerVerifier verifier = cosignerVerifierProvider.get(cosignerId);
                 if (verifier == null)
+                {
+                    continue;
+                }
+
+                if (containsCosignerId(countedCosignerIds, cosignerId))
                 {
                     continue;
                 }
@@ -275,10 +323,22 @@ public class LandmarkCertificateManager
                 sOut.close();
                 if (verifier.verify(sig.getSignature()))
                 {
-                    valid++;
+                    countedCosignerIds.add(cosignerId);
                 }
             }
-            return valid >= minCosignaturesForCheckpoint;
+            return countedCosignerIds.size() >= minCosignaturesForCheckpoint;
+        }
+
+        private static boolean containsCosignerId(List<byte[]> ids, byte[] cosignerId)
+        {
+            for (int i = 0; i != ids.size(); i++)
+            {
+                if (Arrays.areEqual(ids.get(i), cosignerId))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**

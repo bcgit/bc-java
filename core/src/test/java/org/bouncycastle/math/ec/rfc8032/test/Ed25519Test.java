@@ -78,7 +78,113 @@ public class Ed25519Test
             }
         }
     }
-    
+
+//    @Test
+    public void testEd25519ConsistencyExpandedKey()
+    {
+        byte[] xk = new byte[Ed25519.ExpandedKey.EXPANDED_KEY_SIZE];
+        byte[] pk = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] pk2 = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] m = new byte[255];
+        byte[] sig1 = new byte[Ed25519.SIGNATURE_SIZE];
+        byte[] sig2 = new byte[Ed25519.SIGNATURE_SIZE];
+
+        RANDOM.nextBytes(m);
+
+        for (int i = 0; i < 10; ++i)
+        {
+            Ed25519.ExpandedKey.generatePrivateKey(RANDOM, xk, 0);
+            Ed25519.PublicPoint publicPoint = Ed25519.ExpandedKey.generatePublicKey(xk, 0);
+            Ed25519.encodePublicPoint(publicPoint, pk, 0);
+
+            {
+                Ed25519.ExpandedKey.generatePublicKey(xk, 0, pk2, 0);
+
+                assertTrue("Ed25519.ExpandedKey consistent generation #" + i, Arrays.areEqual(pk, pk2));
+            }
+
+            int mLen = RANDOM.nextInt() & 255;
+
+            Ed25519.ExpandedKey.sign(xk, 0, m, 0, mLen, sig1, 0);
+            Ed25519.ExpandedKey.sign(xk, 0, pk, 0, m, 0, mLen, sig2, 0);
+
+            assertTrue("Ed25519.ExpandedKey consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+
+            {
+                boolean shouldVerify = Ed25519.verify(sig1, 0, pk, 0, m, 0, mLen);
+
+                assertTrue("Ed25519.ExpandedKey consistent sign/verify #" + i, shouldVerify);
+            }
+            {
+                boolean shouldVerify = Ed25519.verify(sig1, 0, publicPoint, m, 0, mLen);
+
+                assertTrue("Ed25519.ExpandedKey consistent sign/verify #" + i, shouldVerify);
+            }
+
+            sig1[Ed25519.PUBLIC_KEY_SIZE - 1] ^= 0x80;
+
+            {
+                boolean shouldNotVerify = Ed25519.verify(sig1, 0, pk, 0, m, 0, mLen);
+
+                assertFalse("Ed25519.ExpandedKey consistent verification failure #" + i, shouldNotVerify);
+            }
+            {
+                boolean shouldNotVerify = Ed25519.verify(sig1, 0, publicPoint, m, 0, mLen);
+
+                assertFalse("Ed25519.ExpandedKey consistent verification failure #" + i, shouldNotVerify);
+            }
+        }
+    }
+
+//    @Test
+    public void testEd25519CrossConsistencyExpandedKey()
+    {
+        byte[] sk = new byte[Ed25519.SECRET_KEY_SIZE];
+        byte[] xk = new byte[Ed25519.ExpandedKey.EXPANDED_KEY_SIZE];
+        byte[] pk = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] pk2 = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] m = new byte[255];
+        byte[] sig1 = new byte[Ed25519.SIGNATURE_SIZE];
+        byte[] sig2 = new byte[Ed25519.SIGNATURE_SIZE];
+
+        RANDOM.nextBytes(m);
+
+        for (int i = 0; i < 10; ++i)
+        {
+            Ed25519.generatePrivateKey(RANDOM, sk);
+            Ed25519.ExpandedKey.expandPrivateKey(sk, 0, xk, 0);
+
+            Ed25519.generatePublicKey(sk, 0, pk, 0);
+
+            {
+                Ed25519.ExpandedKey.generatePublicKey(xk, 0, pk2, 0);
+
+                assertTrue("Ed25519.ExpandedKey cross-consistent generation #" + i, Arrays.areEqual(pk, pk2));
+            }
+            {
+                Ed25519.PublicPoint publicPoint = Ed25519.ExpandedKey.generatePublicKey(xk, 0);
+                Ed25519.encodePublicPoint(publicPoint, pk2, 0);
+
+                assertTrue("Ed25519.ExpandedKey cross-consistent generation #" + i, Arrays.areEqual(pk, pk2));
+            }
+
+            int mLen = RANDOM.nextInt() & 255;
+
+            Ed25519.sign(sk, 0, m, 0, mLen, sig1, 0);
+
+            {
+                Ed25519.ExpandedKey.sign(xk, 0, m, 0, mLen, sig2, 0);
+
+                assertTrue("Ed25519.ExpandedKey cross-consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+            }
+            {
+                Ed25519.ExpandedKey.sign(xk, 0, pk, 0, m, 0, mLen, sig2, 0);
+
+                assertTrue("Ed25519.ExpandedKey cross-consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+            }
+        }
+    }
+
 //    @Test
     public void testEd25519ctxConsistency()
     {
@@ -449,46 +555,46 @@ public class Ed25519Test
         }
 
         // Small order points (canonical encodings)
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("0000000000000000000000000000000000000000000000000000000000000000"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("0000000000000000000000000000000000000000000000000000000000000080"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("0100000000000000000000000000000000000000000000000000000000000000"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("ECFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("C7176A703D4DD84FBA3C0B760D10670F2A2053FA2C39CCC64EC7FD7792AC037A"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("C7176A703D4DD84FBA3C0B760D10670F2A2053FA2C39CCC64EC7FD7792AC03FA"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("26E8958FC2B227B045C3F489F2EF98F0D5DFAC05D3C63339B13802886D53FC05"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("26E8958FC2B227B045C3F489F2EF98F0D5DFAC05D3C63339B13802886D53FC85"), 0));
+        invalidPublicKeyFull("0000000000000000000000000000000000000000000000000000000000000000");
+        invalidPublicKeyFull("0000000000000000000000000000000000000000000000000000000000000080");
+        invalidPublicKeyFull("0100000000000000000000000000000000000000000000000000000000000000");
+        invalidPublicKeyFull("ECFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F");
+        invalidPublicKeyFull("C7176A703D4DD84FBA3C0B760D10670F2A2053FA2C39CCC64EC7FD7792AC037A");
+        invalidPublicKeyFull("C7176A703D4DD84FBA3C0B760D10670F2A2053FA2C39CCC64EC7FD7792AC03FA");
+        invalidPublicKeyFull("26E8958FC2B227B045C3F489F2EF98F0D5DFAC05D3C63339B13802886D53FC05");
+        invalidPublicKeyFull("26E8958FC2B227B045C3F489F2EF98F0D5DFAC05D3C63339B13802886D53FC85");
 
         // Small order points (non-canonical encodings)
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("0100000000000000000000000000000000000000000000000000000000000080"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("ECFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), 0));
+        invalidPublicKeyFull("0100000000000000000000000000000000000000000000000000000000000080");
+        invalidPublicKeyFull("ECFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
         // Non-canonical encodings
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("EDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("EDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), 0));
+        invalidPublicKeyFull("EDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F");
+        invalidPublicKeyFull("EDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        invalidPublicKeyFull("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F");
+        invalidPublicKeyFull("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("D73D6044821BD0DF4068AE1792F0851170F53062150AA70A87E2A58A05A26115"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("F9D557BE0F3C700571CD8AD9CFDE0A2C67F88EE71830073C7756A0599311AD94"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("7A772BBC08D53BF381B150D8411B9AF134BBF24B90A038EFD8DA4A17B32606A1"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("DC6EF81316C08B91209A73FE8E208DD319F56C6A47956A03AF7D6D826A88AC87"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("6EEDF105177868C9AD48DAF2C36EE3B169D892A02A3BF83101B1D50D86BFB19E"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("4BAAB5711F22FF7479E6D9BD2C5BC4DCD3CFC9F36921971496907B1F2B62C6BA"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("D96A46432581A80085F978F7FC0977E228C5A3FD2E64D588BB5F5E5A84E4ABAE"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("10C326AE15FA5BA89EDDAB89C860797385298F4C7750BAEB94A5AAC9A876B538"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("7808F3F6EB858E9BBD2570F20A9F7502175F312FA2DBE4C96EB5C683B384AA60"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("0DE943C51E91AA3ED9FFA82D39A9813D94F59246452F6A7780D067BC61342FE1"), 0));
+        invalidPublicKeyFull("D73D6044821BD0DF4068AE1792F0851170F53062150AA70A87E2A58A05A26115");
+        invalidPublicKeyFull("F9D557BE0F3C700571CD8AD9CFDE0A2C67F88EE71830073C7756A0599311AD94");
+        invalidPublicKeyFull("7A772BBC08D53BF381B150D8411B9AF134BBF24B90A038EFD8DA4A17B32606A1");
+        invalidPublicKeyFull("DC6EF81316C08B91209A73FE8E208DD319F56C6A47956A03AF7D6D826A88AC87");
+        invalidPublicKeyFull("6EEDF105177868C9AD48DAF2C36EE3B169D892A02A3BF83101B1D50D86BFB19E");
+        invalidPublicKeyFull("4BAAB5711F22FF7479E6D9BD2C5BC4DCD3CFC9F36921971496907B1F2B62C6BA");
+        invalidPublicKeyFull("D96A46432581A80085F978F7FC0977E228C5A3FD2E64D588BB5F5E5A84E4ABAE");
+        invalidPublicKeyFull("10C326AE15FA5BA89EDDAB89C860797385298F4C7750BAEB94A5AAC9A876B538");
+        invalidPublicKeyFull("7808F3F6EB858E9BBD2570F20A9F7502175F312FA2DBE4C96EB5C683B384AA60");
+        invalidPublicKeyFull("0DE943C51E91AA3ED9FFA82D39A9813D94F59246452F6A7780D067BC61342FE1");
 
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("10026DBFB4C55628716BB0EF979A10DD5AC7AA970C229B5E68DD993E2C20E7D5"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("68EC52D16C1DB4483AA8679277C34E0DC56EB7D064D302B9749F0D31A901D484"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("6E54C8F00669422D5697E09C0575AE1E699841ACF1690A5DFAA25E3160F3A2EF"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("CA66B62D361F790AA9658161BA0FFDC3CE60624151258C7301926DFE0C67EE64"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("88D912C322AE3D0907B38ED08727FBF06D51C5D1DE622B5BC24DAB30078AE9FF"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("F24683E044CE3F14BCA24F1356AE7767509E17EFA2606438BA275860819E14B8"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("B2865F02E6D19A94CE6147B574095733B3628A2FBE2C84022262D88F7D6C4F7D"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("FA4DA03321816C1C9066BD250982DDD1B4349C43C5E124D2B39F8DDA4E5364F8"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("FCADF40DE51A943F3B7847DBEBA0627B33D020D81DFFABF2B3701BD9B746952A"), 0));
-        assertFalse(Ed25519.validatePublicKeyFull(Hex.decodeStrict("379B071E6F7E2479D5A8588AB708137808D63F689127D4A228E2C1681873C55E"), 0));
+        invalidPublicKeyFull("10026DBFB4C55628716BB0EF979A10DD5AC7AA970C229B5E68DD993E2C20E7D5");
+        invalidPublicKeyFull("68EC52D16C1DB4483AA8679277C34E0DC56EB7D064D302B9749F0D31A901D484");
+        invalidPublicKeyFull("6E54C8F00669422D5697E09C0575AE1E699841ACF1690A5DFAA25E3160F3A2EF");
+        invalidPublicKeyFull("CA66B62D361F790AA9658161BA0FFDC3CE60624151258C7301926DFE0C67EE64");
+        invalidPublicKeyFull("88D912C322AE3D0907B38ED08727FBF06D51C5D1DE622B5BC24DAB30078AE9FF");
+        invalidPublicKeyFull("F24683E044CE3F14BCA24F1356AE7767509E17EFA2606438BA275860819E14B8");
+        invalidPublicKeyFull("B2865F02E6D19A94CE6147B574095733B3628A2FBE2C84022262D88F7D6C4F7D");
+        invalidPublicKeyFull("FA4DA03321816C1C9066BD250982DDD1B4349C43C5E124D2B39F8DDA4E5364F8");
+        invalidPublicKeyFull("FCADF40DE51A943F3B7847DBEBA0627B33D020D81DFFABF2B3701BD9B746952A");
+        invalidPublicKeyFull("379B071E6F7E2479D5A8588AB708137808D63F689127D4A228E2C1681873C55E");
     }
 
     public void testPublicKeyValidationPartial()
@@ -504,48 +610,63 @@ public class Ed25519Test
         }
 
         // Small order points (canonical encodings)
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("0000000000000000000000000000000000000000000000000000000000000000"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("0000000000000000000000000000000000000000000000000000000000000080"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("0100000000000000000000000000000000000000000000000000000000000000"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("ECFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("C7176A703D4DD84FBA3C0B760D10670F2A2053FA2C39CCC64EC7FD7792AC037A"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("C7176A703D4DD84FBA3C0B760D10670F2A2053FA2C39CCC64EC7FD7792AC03FA"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("26E8958FC2B227B045C3F489F2EF98F0D5DFAC05D3C63339B13802886D53FC05"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("26E8958FC2B227B045C3F489F2EF98F0D5DFAC05D3C63339B13802886D53FC85"), 0));
+        invalidPublicKeyPartial("0000000000000000000000000000000000000000000000000000000000000000");
+        invalidPublicKeyPartial("0000000000000000000000000000000000000000000000000000000000000080");
+        invalidPublicKeyPartial("0100000000000000000000000000000000000000000000000000000000000000");
+        invalidPublicKeyPartial("ECFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F");
+        invalidPublicKeyPartial("C7176A703D4DD84FBA3C0B760D10670F2A2053FA2C39CCC64EC7FD7792AC037A");
+        invalidPublicKeyPartial("C7176A703D4DD84FBA3C0B760D10670F2A2053FA2C39CCC64EC7FD7792AC03FA");
+        invalidPublicKeyPartial("26E8958FC2B227B045C3F489F2EF98F0D5DFAC05D3C63339B13802886D53FC05");
+        invalidPublicKeyPartial("26E8958FC2B227B045C3F489F2EF98F0D5DFAC05D3C63339B13802886D53FC85");
 
         // Small order points (non-canonical encodings)
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("0100000000000000000000000000000000000000000000000000000000000080"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("ECFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), 0));
+        invalidPublicKeyPartial("0100000000000000000000000000000000000000000000000000000000000080");
+        invalidPublicKeyPartial("ECFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
         // Non-canonical encodings
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("EDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("EDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), 0));
+        invalidPublicKeyPartial("EDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F");
+        invalidPublicKeyPartial("EDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        invalidPublicKeyPartial("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F");
+        invalidPublicKeyPartial("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("D73D6044821BD0DF4068AE1792F0851170F53062150AA70A87E2A58A05A26115"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("F9D557BE0F3C700571CD8AD9CFDE0A2C67F88EE71830073C7756A0599311AD94"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("7A772BBC08D53BF381B150D8411B9AF134BBF24B90A038EFD8DA4A17B32606A1"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("DC6EF81316C08B91209A73FE8E208DD319F56C6A47956A03AF7D6D826A88AC87"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("6EEDF105177868C9AD48DAF2C36EE3B169D892A02A3BF83101B1D50D86BFB19E"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("4BAAB5711F22FF7479E6D9BD2C5BC4DCD3CFC9F36921971496907B1F2B62C6BA"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("D96A46432581A80085F978F7FC0977E228C5A3FD2E64D588BB5F5E5A84E4ABAE"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("10C326AE15FA5BA89EDDAB89C860797385298F4C7750BAEB94A5AAC9A876B538"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("7808F3F6EB858E9BBD2570F20A9F7502175F312FA2DBE4C96EB5C683B384AA60"), 0));
-        assertFalse(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("0DE943C51E91AA3ED9FFA82D39A9813D94F59246452F6A7780D067BC61342FE1"), 0));
+        invalidPublicKeyPartial("D73D6044821BD0DF4068AE1792F0851170F53062150AA70A87E2A58A05A26115");
+        invalidPublicKeyPartial("F9D557BE0F3C700571CD8AD9CFDE0A2C67F88EE71830073C7756A0599311AD94");
+        invalidPublicKeyPartial("7A772BBC08D53BF381B150D8411B9AF134BBF24B90A038EFD8DA4A17B32606A1");
+        invalidPublicKeyPartial("DC6EF81316C08B91209A73FE8E208DD319F56C6A47956A03AF7D6D826A88AC87");
+        invalidPublicKeyPartial("6EEDF105177868C9AD48DAF2C36EE3B169D892A02A3BF83101B1D50D86BFB19E");
+        invalidPublicKeyPartial("4BAAB5711F22FF7479E6D9BD2C5BC4DCD3CFC9F36921971496907B1F2B62C6BA");
+        invalidPublicKeyPartial("D96A46432581A80085F978F7FC0977E228C5A3FD2E64D588BB5F5E5A84E4ABAE");
+        invalidPublicKeyPartial("10C326AE15FA5BA89EDDAB89C860797385298F4C7750BAEB94A5AAC9A876B538");
+        invalidPublicKeyPartial("7808F3F6EB858E9BBD2570F20A9F7502175F312FA2DBE4C96EB5C683B384AA60");
+        invalidPublicKeyPartial("0DE943C51E91AA3ED9FFA82D39A9813D94F59246452F6A7780D067BC61342FE1");
 
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("10026DBFB4C55628716BB0EF979A10DD5AC7AA970C229B5E68DD993E2C20E7D5"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("68EC52D16C1DB4483AA8679277C34E0DC56EB7D064D302B9749F0D31A901D484"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("6E54C8F00669422D5697E09C0575AE1E699841ACF1690A5DFAA25E3160F3A2EF"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("CA66B62D361F790AA9658161BA0FFDC3CE60624151258C7301926DFE0C67EE64"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("88D912C322AE3D0907B38ED08727FBF06D51C5D1DE622B5BC24DAB30078AE9FF"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("F24683E044CE3F14BCA24F1356AE7767509E17EFA2606438BA275860819E14B8"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("B2865F02E6D19A94CE6147B574095733B3628A2FBE2C84022262D88F7D6C4F7D"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("FA4DA03321816C1C9066BD250982DDD1B4349C43C5E124D2B39F8DDA4E5364F8"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("FCADF40DE51A943F3B7847DBEBA0627B33D020D81DFFABF2B3701BD9B746952A"), 0));
-        assertTrue(Ed25519.validatePublicKeyPartial(Hex.decodeStrict("379B071E6F7E2479D5A8588AB708137808D63F689127D4A228E2C1681873C55E"), 0));
+        validPublicKeyPartial("10026DBFB4C55628716BB0EF979A10DD5AC7AA970C229B5E68DD993E2C20E7D5");
+        validPublicKeyPartial("68EC52D16C1DB4483AA8679277C34E0DC56EB7D064D302B9749F0D31A901D484");
+        validPublicKeyPartial("6E54C8F00669422D5697E09C0575AE1E699841ACF1690A5DFAA25E3160F3A2EF");
+        validPublicKeyPartial("CA66B62D361F790AA9658161BA0FFDC3CE60624151258C7301926DFE0C67EE64");
+        validPublicKeyPartial("88D912C322AE3D0907B38ED08727FBF06D51C5D1DE622B5BC24DAB30078AE9FF");
+        validPublicKeyPartial("F24683E044CE3F14BCA24F1356AE7767509E17EFA2606438BA275860819E14B8");
+        validPublicKeyPartial("B2865F02E6D19A94CE6147B574095733B3628A2FBE2C84022262D88F7D6C4F7D");
+        validPublicKeyPartial("FA4DA03321816C1C9066BD250982DDD1B4349C43C5E124D2B39F8DDA4E5364F8");
+        validPublicKeyPartial("FCADF40DE51A943F3B7847DBEBA0627B33D020D81DFFABF2B3701BD9B746952A");
+        validPublicKeyPartial("379B071E6F7E2479D5A8588AB708137808D63F689127D4A228E2C1681873C55E");
     }
 
+    private static void invalidPublicKeyFull(String sPK)
+    {
+        assertFalse(sPK, Ed25519.validatePublicKeyFull(Hex.decodeStrict(sPK), 0));
+    }
+
+    private static void invalidPublicKeyPartial(String sPK)
+    {
+        assertFalse(sPK, Ed25519.validatePublicKeyPartial(Hex.decodeStrict(sPK), 0));
+    }
+
+    private static void validPublicKeyPartial(String sPK)
+    {
+        assertTrue(sPK, Ed25519.validatePublicKeyPartial(Hex.decodeStrict(sPK), 0));
+    }
+    
     /*
      * Test vectors from the paper "Taming the many EdDSAs" (https://ia.cr/2020/1244).
      */
@@ -727,6 +848,18 @@ public class Ed25519Test
 
         boolean shouldNotVerify = Ed25519.verify(badsig, 0, pk, 0, m, 0, m.length);
         assertFalse(text, shouldNotVerify);
+
+        byte[] xk = new byte[Ed25519.ExpandedKey.EXPANDED_KEY_SIZE];
+        Ed25519.ExpandedKey.expandPrivateKey(sk, 0, xk, 0);
+
+        Ed25519.ExpandedKey.generatePublicKey(xk, 0, pkGen, 0);
+        assertTrue(text, Arrays.areEqual(pk, pkGen));
+
+        Ed25519.ExpandedKey.sign(xk, 0, m, 0, m.length, sigGen, 0);
+        assertTrue(text, Arrays.areEqual(sig, sigGen));
+
+        Ed25519.ExpandedKey.sign(xk, 0, pk, 0, m, 0, m.length, sigGen, 0);
+        assertTrue(text, Arrays.areEqual(sig, sigGen));        
     }
 
     private static void checkEd25519ctxVector(String sSK, String sPK, String sM, String sCTX, String sSig, String text)

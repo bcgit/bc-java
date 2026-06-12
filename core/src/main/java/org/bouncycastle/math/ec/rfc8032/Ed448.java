@@ -77,6 +77,7 @@ public abstract class Ed448
     private static final int SCALAR_INTS = 14;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4 + 1;
 
+    private static final int XOF_SIZE = SCALAR_BYTES * 2;
     public static final int PREHASH_SIZE = 64;
     public static final int PUBLIC_KEY_SIZE = POINT_BYTES;
     public static final int SECRET_KEY_SIZE = 57;
@@ -156,7 +157,7 @@ public abstract class Ed448
 
         Nat.mulAddTo(SCALAR_INTS, u, v, t);
 
-        byte[] result = new byte[SCALAR_BYTES * 2];
+        byte[] result = new byte[XOF_SIZE];
         Codec.encode32(t, 0, t.length, result, 0);
         return Scalar448.reduce912(result);
     }
@@ -379,7 +380,7 @@ public abstract class Ed448
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte[] h = new byte[XOF_SIZE];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0, h.length);
@@ -393,7 +394,7 @@ public abstract class Ed448
     public static PublicPoint generatePublicKey(byte[] sk, int skOff)
     {
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte[] h = new byte[XOF_SIZE];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0, h.length);
@@ -455,7 +456,7 @@ public abstract class Ed448
         }
 
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte[] h = new byte[XOF_SIZE];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0, h.length);
@@ -478,7 +479,7 @@ public abstract class Ed448
         }
 
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte[] h = new byte[XOF_SIZE];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0, h.length);
@@ -528,7 +529,7 @@ public abstract class Ed448
         }
 
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte[] h = new byte[XOF_SIZE];
 
         dom4(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);
@@ -592,7 +593,7 @@ public abstract class Ed448
         encodePublicPoint(publicPoint, A, 0);
 
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte[] h = new byte[XOF_SIZE];
 
         dom4(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);

@@ -26,6 +26,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.plants.LandmarkCertificateManager;
 import org.bouncycastle.cert.plants.MTCSignature;
+import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.MerkleTreePrimitives;
 import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
@@ -88,26 +89,31 @@ public class LandmarkCertificateManagerTest
         TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
         SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
 
+        long logNumber = 1;
         long index = 42;
         long start = 40;
         long end = 44;
 
-        // Two-leaf inclusion proof (the certificate's entry plus one sibling),
-        // wrapped up into the SubtreeInfo passed through to the builder.
-        byte[] siblingHash = hashFunc.hashLeaf("sibling".getBytes());
-        List<byte[]> inclusionProof = Collections.singletonList(siblingHash);
+        // Index 42 sits at relative position 2 of the size-4 landmark subtree
+        // [40, 44), so the inclusion proof carries two nodes: the sibling leaf
+        // 43 (combined on the right) and the node [40, 42) (combined on the left).
+        byte[] leaf43 = hashFunc.hashLeaf("leaf43".getBytes());
+        byte[] node4042 = hashFunc.hashNode(
+            hashFunc.hashLeaf("leaf40".getBytes()), hashFunc.hashLeaf("leaf41".getBytes()));
+        List<byte[]> inclusionProof = java.util.Arrays.asList(leaf43, node4042);
 
         MerkleTreePrimitives.SubtreeInfo landmarkSubtree = new MerkleTreePrimitives.SubtreeInfo(start, end);
 
         X509CertificateHolder cert = LandmarkCertificateManager.buildLandmarkCertificate(
-            index, tbsEntry, spki, landmarkSubtree, inclusionProof, hashFunc);
+            logNumber, index, tbsEntry, spki, landmarkSubtree, inclusionProof, hashFunc);
 
         AlgorithmIdentifier sigAlg = cert.getSignatureAlgorithm();
         isTrue("Signature algorithm is id-alg-mtcProof",
             MTCObjectIdentifiers.id_alg_mtcProof.equals(sigAlg.getAlgorithm()));
         isTrue("Signature algorithm parameters are absent", sigAlg.getParameters() == null);
 
-        isEquals(index, cert.getSerialNumber().longValue());
+        // The serial packs (log_number << 48) | index per Section 6.1.
+        isEquals((logNumber << 48) | index, cert.getSerialNumber().longValue());
 
         // Decode the MTCProof from the signatureValue and confirm it carries no signatures.
         org.bouncycastle.cert.plants.MTCProof decoded =
@@ -115,8 +121,30 @@ public class LandmarkCertificateManagerTest
         isEquals(start, decoded.getStart());
         isEquals(end, decoded.getEnd());
         isEquals(0, decoded.getSignatures().size());
+        byte[] expectedProofBytes = new byte[leaf43.length + node4042.length];
+        System.arraycopy(leaf43, 0, expectedProofBytes, 0, leaf43.length);
+        System.arraycopy(node4042, 0, expectedProofBytes, leaf43.length, node4042.length);
         isTrue("Inclusion proof bytes preserved",
-            areEqual(siblingHash, decoded.getInclusionProof()));
+            areEqual(expectedProofBytes, decoded.getInclusionProof()));
+
+        // Round-trip through the validator's trusted-subtree path (Section 7.2
+        // step 11): a relying party that trusts (logNumber, [40, 44)) with the
+        // hash the proof evaluates to must accept the certificate.
+        byte[] entryHash = MerkleTreeCertificateValidator.computeEntryHash(cert, hashFunc);
+        byte[] subtreeHash = MerkleTreePrimitives.evaluateSubtreeInclusionProof(
+            index, start, end, entryHash, inclusionProof, hashFunc);
+
+        MerkleTreeCertificateValidator.ValidationParams params =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                new BcMTCCosignerVerifierProvider.Builder().build(),
+                hashFunc,
+                Collections.singletonList(new MerkleTreeCertificateValidator.TrustedSubtree(
+                    logNumber, start, end, subtreeHash)),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
+                1);
+
+        isTrue("Landmark-relative certificate validates against the trusted subtree",
+            MerkleTreeCertificateValidator.validateCertificate(cert, params));
     }
 
     private void testTrustedSubtreeManager()

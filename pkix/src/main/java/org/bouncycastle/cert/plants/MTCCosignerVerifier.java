@@ -19,4 +19,14 @@ import org.bouncycastle.operator.ContentVerifier;
 public interface MTCCosignerVerifier
     extends ContentVerifier
 {
+    /**
+     * @return the binary trust anchor ID of the cosigner this verifier is
+     *         bound to — the key under which it was registered with its
+     *         {@link MTCCosignerVerifierProvider}. Consumers counting
+     *         cosignatures use this to confirm a signature's
+     *         {@code cosigner_id} names the identity of the key it is checked
+     *         against, rather than relying solely on the {@code cosigner_name}
+     *         binding inside the CosignedMessage.
+     */
+    byte[] getCosignerId();
 }

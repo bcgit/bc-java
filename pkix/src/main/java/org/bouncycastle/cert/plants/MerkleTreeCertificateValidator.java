@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -61,17 +60,19 @@ public class MerkleTreeCertificateValidator
      *       (Section 7.1).</li>
      * </ul>
      * <p>{@code authorityInfo.getSigAlg()} is the CA cosigner's published signature
-     * algorithm; enforcing it requires the {@link MTCCosignerVerifierProvider}
-     * to expose its bound algorithm, which the operator interface does not
-     * currently surface. Callers building the provider for the CA cosigner are
-     * responsible for ensuring the verifier they register uses
+     * algorithm. {@link MTCSignatureVerifier#getAlgorithm()} surfaces the MTC
+     * algorithm string a registered verifier is bound to, but the draft does
+     * not pin OID identifiers for the plain (r||s) ECDSA forms, so the
+     * validator does not map {@code sigAlg} to that string itself. Callers
+     * building the provider for the CA cosigner remain responsible for
+     * checking the verifier they register against
      * {@code authorityInfo.getSigAlg()}.</p>
      */
     public static class ValidationParams
     {
         private final MTCCosignerVerifierProvider cosignerVerifierProvider;
         private final List<TrustedSubtree> trustedSubtrees;
-        private final Set<Long> revokedIndices;
+        private final List<RevokedRange> revokedRanges;
         private final int minCosignatures;
         private final MerkleTreeHash hashFunction;
         private final MTCCertificationAuthority authorityInfo;
@@ -80,18 +81,18 @@ public class MerkleTreeCertificateValidator
             MTCCosignerVerifierProvider cosignerVerifierProvider,
             MerkleTreeHash hashFunction,
             List<TrustedSubtree> trustedSubtrees,
-            Set<Long> revokedIndices,
+            List<RevokedRange> revokedRanges,
             int minCosignatures)
         {
-            this(cosignerVerifierProvider, trustedSubtrees, revokedIndices,
+            this(cosignerVerifierProvider, trustedSubtrees, revokedRanges,
                 minCosignatures, hashFunction, null);
         }
 
         /**
          * Convenience constructor for the common case where the relying party
          * has no pre-distributed trusted subtrees and no revocations to apply.
-         * Defaults {@code trustedSubtrees} to an empty list and
-         * {@code revokedIndices} to an empty set.
+         * Defaults {@code trustedSubtrees} and {@code revokedRanges} to empty
+         * lists.
          */
         public ValidationParams(
             MTCCosignerVerifierProvider cosignerVerifierProvider,
@@ -101,21 +102,21 @@ public class MerkleTreeCertificateValidator
         {
             this(cosignerVerifierProvider,
                 Collections.<TrustedSubtree>emptyList(),
-                Collections.<Long>emptySet(),
+                Collections.<RevokedRange>emptyList(),
                 minCosignatures, hashFunction, authorityInfo);
         }
 
         public ValidationParams(
             MTCCosignerVerifierProvider cosignerVerifierProvider,
             List<TrustedSubtree> trustedSubtrees,
-            Set<Long> revokedIndices,
+            List<RevokedRange> revokedRanges,
             int minCosignatures,
             MerkleTreeHash hashFunction,
             MTCCertificationAuthority authorityInfo)
         {
             this.cosignerVerifierProvider = cosignerVerifierProvider;
             this.trustedSubtrees = trustedSubtrees;
-            this.revokedIndices = revokedIndices;
+            this.revokedRanges = revokedRanges;
             this.minCosignatures = minCosignatures;
             this.hashFunction = hashFunction;
             this.authorityInfo = authorityInfo;
@@ -131,9 +132,9 @@ public class MerkleTreeCertificateValidator
             return trustedSubtrees;
         }
 
-        public Set<Long> getRevokedIndices()
+        public List<RevokedRange> getRevokedRanges()
         {
-            return revokedIndices;
+            return revokedRanges;
         }
 
         public int getMinCosignatures()
@@ -154,19 +155,43 @@ public class MerkleTreeCertificateValidator
 
     /**
      * Represents a trusted subtree (typically a landmark subtree predistributed
-     * to the relying party, per Section 7.4).
+     * to the relying party). Per Section 7.4 a trusted subtree carries the log
+     * number of the containing log alongside the {@code [start, end)} window
+     * and the subtree hash &mdash; Section 7.2 step 11 matches on all three, so
+     * a subtree trusted for one issuance log never matches a certificate whose
+     * serial claims a different log.
      */
     public static class TrustedSubtree
     {
+        private final long logNumber;
         private final long start;
         private final long end;
         private final byte[] hash;
 
-        public TrustedSubtree(long start, long end, byte[] hash)
+        public TrustedSubtree(long logNumber, long start, long end, byte[] hash)
         {
+            if (logNumber < 1 || logNumber > 0xFFFFL)
+            {
+                throw new IllegalArgumentException("log_number out of range [1, 65535]: " + logNumber);
+            }
+            this.logNumber = logNumber;
             this.start = start;
             this.end = end;
             this.hash = hash.clone();
+        }
+
+        /**
+         * Convenience constructor taking the log number and subtree window from
+         * an {@link MTCLog}.
+         */
+        public TrustedSubtree(MTCLog log, byte[] hash)
+        {
+            this(log.getLogNumber(), log.getStart(), log.getEnd(), hash);
+        }
+
+        public long getLogNumber()
+        {
+            return logNumber;
         }
 
         public long getStart()
@@ -184,14 +209,139 @@ public class MerkleTreeCertificateValidator
             return hash.clone();
         }
 
-        boolean matchesInterval(long start, long end)
+        boolean matches(long logNumber, long start, long end)
         {
-            return this.start == start && this.end == end;
+            return this.logNumber == logNumber && this.start == start && this.end == end;
         }
 
         boolean matchesHash(byte[] hash)
         {
             return Arrays.areEqual(this.hash, hash);
+        }
+    }
+
+    /**
+     * A half-open range {@code [start, end)} of revoked certificate serial
+     * numbers, per Section 7.5 of the draft. The serial packs the log number
+     * into the upper 16 bits and the entry index into the lower 48 (Section
+     * 6.1), so ranges can revoke spans of entries within one log, whole logs,
+     * or spans of logs. The relying party's list of ranges is checked against
+     * the full serial before it is decomposed (Section 7.2 step 4).
+     *
+     * <p>Serial numbers are unsigned 64-bit values, so bounds are
+     * {@link BigInteger}s; {@code 0 <= start < end <= 2^64}.</p>
+     */
+    public static class RevokedRange
+    {
+        private static final BigInteger TWO_POW_64 = BigInteger.ONE.shiftLeft(64);
+
+        private final BigInteger start;
+        private final BigInteger end;
+
+        /**
+         * @param startInclusive first revoked serial
+         * @param endExclusive   first serial past the range (at most 2^64)
+         */
+        public RevokedRange(BigInteger startInclusive, BigInteger endExclusive)
+        {
+            if (startInclusive.signum() < 0)
+            {
+                throw new IllegalArgumentException("range start must be non-negative");
+            }
+            if (endExclusive.compareTo(startInclusive) <= 0)
+            {
+                throw new IllegalArgumentException("range end must be greater than range start");
+            }
+            if (endExclusive.compareTo(TWO_POW_64) > 0)
+            {
+                throw new IllegalArgumentException("range end must not exceed 2^64");
+            }
+            this.start = startInclusive;
+            this.end = endExclusive;
+        }
+
+        /**
+         * The range {@code [0, endExclusive)} &mdash; the shape of the CA's
+         * published {@code minSerial} floor (Section 7.1).
+         */
+        public static RevokedRange before(BigInteger endExclusive)
+        {
+            return new RevokedRange(BigInteger.ZERO, endExclusive);
+        }
+
+        /**
+         * The range {@code [startInclusive, 2^64)} &mdash; distrust everything
+         * from a serial onwards, the analogue of the SCTNotAfter mechanism
+         * cited in Section 7.5.
+         */
+        public static RevokedRange from(BigInteger startInclusive)
+        {
+            return new RevokedRange(startInclusive, TWO_POW_64);
+        }
+
+        /**
+         * Every serial of issuance log {@code logNumber}:
+         * {@code [logNumber << 48, (logNumber + 1) << 48)}.
+         */
+        public static RevokedRange ofLog(long logNumber)
+        {
+            checkLogNumber(logNumber);
+            return new RevokedRange(
+                BigInteger.valueOf(logNumber).shiftLeft(48),
+                BigInteger.valueOf(logNumber + 1).shiftLeft(48));
+        }
+
+        /**
+         * Indices {@code [startIndex, endIndex)} of issuance log
+         * {@code logNumber}.
+         *
+         * @param startIndex first revoked index ({@code 0 <= startIndex < 2^48})
+         * @param endIndex   first index past the range ({@code startIndex < endIndex <= 2^48})
+         */
+        public static RevokedRange ofIndices(long logNumber, long startIndex, long endIndex)
+        {
+            checkLogNumber(logNumber);
+            if (startIndex < 0 || startIndex > 0xFFFFFFFFFFFFL)
+            {
+                throw new IllegalArgumentException("startIndex out of uint48 range: " + startIndex);
+            }
+            if (endIndex <= startIndex || endIndex > 0x1000000000000L)
+            {
+                throw new IllegalArgumentException("endIndex out of range: " + endIndex);
+            }
+            BigInteger base = BigInteger.valueOf(logNumber).shiftLeft(48);
+            return new RevokedRange(
+                base.add(BigInteger.valueOf(startIndex)),
+                base.add(BigInteger.valueOf(endIndex)));
+        }
+
+        /** The single serial {@code [serial, serial + 1)}. */
+        public static RevokedRange single(BigInteger serial)
+        {
+            return new RevokedRange(serial, serial.add(BigInteger.ONE));
+        }
+
+        public BigInteger getStart()
+        {
+            return start;
+        }
+
+        public BigInteger getEnd()
+        {
+            return end;
+        }
+
+        public boolean contains(BigInteger serial)
+        {
+            return serial.compareTo(start) >= 0 && serial.compareTo(end) < 0;
+        }
+
+        private static void checkLogNumber(long logNumber)
+        {
+            if (logNumber < 1 || logNumber > 0xFFFFL)
+            {
+                throw new IllegalArgumentException("log_number out of range [1, 65535]: " + logNumber);
+            }
         }
     }
 
@@ -240,9 +390,7 @@ public class MerkleTreeCertificateValidator
         // Step 2: decode the signatureValue as an MTCProof.
         MTCProof proof = new MTCProof(certHolder.getSignature());
 
-        // Step 3: decompose the serial number per Section 6.1 of the draft:
-        //   serial = (log_number << 48) | index
-        // and check revocation and the CA's minSerial floor.
+        // Step 3: the serial number must be positive and fit in a uint64.
         BigInteger serialBig = certHolder.getSerialNumber();
         if (serialBig.signum() <= 0)
         {
@@ -252,28 +400,49 @@ public class MerkleTreeCertificateValidator
         {
             throw new SecurityException("Serial number exceeds uint64");
         }
+
+        // Step 4: reject serials in any revoked range (Section 7.5), checked
+        // against the full serial before it is decomposed. The CA's published
+        // minSerial floor is the implicit range [0, minSerial) (Section 7.1).
         if (authorityInfo != null && serialBig.compareTo(authorityInfo.getMinSerial()) < 0)
         {
             throw new SecurityException(
                 "Serial number " + serialBig + " is below CA minSerial " + authorityInfo.getMinSerial());
         }
+        for (RevokedRange range : params.revokedRanges)
+        {
+            if (range.contains(serialBig))
+            {
+                throw new SecurityException("Serial number " + serialBig + " is in a revoked range");
+            }
+        }
+
+        // Step 5: decompose the serial number per Section 6.1 of the draft:
+        //   serial = (log_number << 48) | index
         long index = serialBig.and(BigInteger.valueOf(0xFFFFFFFFFFFFL)).longValue();
         long logNumber = serialBig.shiftRight(48).longValueExact();
         if (logNumber < 1 || logNumber > 0xFFFF)
         {
             throw new SecurityException("Invalid log_number " + logNumber + " in serial");
         }
-        if (params.revokedIndices.contains(Long.valueOf(index)))
-        {
-            throw new SecurityException("Certificate index " + index + " is revoked");
-        }
 
-        // Steps 4 and 5: derive the entry hash from the TBSCertificate. The
-        // MTCProof's extensions list is prepended (per Section 7.2 step 5.2)
+        // Steps 7-9: derive the entry hash from the TBSCertificate. The
+        // MTCProof's extensions list is prepended (per Section 7.2 step 8.2)
         // so that the leaf hash matches the log's view of the MerkleTreeCertEntry.
         byte[] entryHash = computeEntryHash(certHolder, proof.getExtensionsWire(), params.hashFunction);
 
-        // Step 6: evaluate the inclusion proof to recover the expected subtree hash.
+        // Step 10: evaluate the inclusion proof to recover the expected subtree hash.
+        List<byte[]> proofHashes;
+        try
+        {
+            proofHashes = proof.getHashList(params.hashFunction.getHashSize());
+        }
+        catch (IllegalArgumentException e)
+        {
+            // The inclusion_proof length is attacker-controlled; a bad length is
+            // a rejection of the certificate, not a caller error.
+            throw new SecurityException("Invalid inclusion proof: " + e.getMessage(), e);
+        }
         byte[] expectedSubtreeHash;
         try
         {
@@ -282,7 +451,7 @@ public class MerkleTreeCertificateValidator
                 proof.getStart(),
                 proof.getEnd(),
                 entryHash,
-                proof.getHashList(params.hashFunction.getHashSize()),
+                proofHashes,
                 params.hashFunction);
         }
         catch (InvalidProofException e)
@@ -290,11 +459,12 @@ public class MerkleTreeCertificateValidator
             throw new SecurityException("Invalid inclusion proof: " + e.getMessage(), e);
         }
 
-        // Step 7: if any trusted subtree matches [start, end), the hash must equal it.
-        // Per Section 7.2: "Return success if it matches and failure if it does not."
+        // Step 11: if any trusted subtree matches (log_number, start, end), the
+        // hash must equal it. Per Section 7.2: "Return success if it matches
+        // and failure if it does not."
         for (TrustedSubtree trusted : params.trustedSubtrees)
         {
-            if (trusted.matchesInterval(proof.getStart(), proof.getEnd()))
+            if (trusted.matches(logNumber, proof.getStart(), proof.getEnd()))
             {
                 if (trusted.matchesHash(expectedSubtreeHash))
                 {
@@ -304,7 +474,7 @@ public class MerkleTreeCertificateValidator
             }
         }
 
-        // Step 8: otherwise verify cosignatures against the relying-party policy.
+        // Step 12: otherwise verify cosignatures against the relying-party policy.
         // The issuer field carries the CA ID; the log ID is the CA ID concatenated
         // with the OID components 0 and the log_number from the serial number.
         byte[] caId = extractCaIdFromIssuer(certHolder.getIssuer());
@@ -317,7 +487,7 @@ public class MerkleTreeCertificateValidator
             MTCCosignerVerifier verifier = params.cosignerVerifierProvider.get(cosignerId);
             if (verifier == null)
             {
-                // Unrecognized cosigners MUST be ignored (Section 7.2 step 8).
+                // Unrecognized cosigners MUST be ignored (Section 7.2 step 12).
                 continue;
             }
 
@@ -390,8 +560,9 @@ public class MerkleTreeCertificateValidator
     }
 
     /**
-     * Combined "leaf hash + climb one level" for the simple-case 2-leaf log
-     * where the EE has exactly one sibling leaf. Equivalent to
+     * Combined "leaf hash + climb one level" for the simple case of a
+     * size-two subtree {@code [0, 2)} where the EE has exactly one sibling
+     * leaf. Equivalent to
      * {@code hashFunc.hashNode(computeEntryHash(tbsCertDer, hashFunc), inclusionProof)}.
      * The extensions list is empty.
      */
@@ -480,7 +651,8 @@ public class MerkleTreeCertificateValidator
      * {@code java.security.DigestOutputStream}) so the {@code MerkleTreeCertEntry}
      * never lives fully in memory.
      *
-     * <p>{@code hashFunc} is still required because Section 7.2 step 5 hashes
+     * <p>{@code hashFunc} is still required because Section 7.2's single-pass
+     * procedure (step 8) hashes
      * the SubjectPublicKeyInfo separately via {@link MerkleTreeHash#hashRaw}
      * and writes only its hash into the entry stream.</p>
      *
