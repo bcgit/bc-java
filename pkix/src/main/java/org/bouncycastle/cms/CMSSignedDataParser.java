@@ -31,7 +31,6 @@ import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.BERSetParser;
 import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
@@ -559,7 +558,7 @@ public class CMSSignedDataParser
             signerInfos.add(signer.toASN1Structure());
         }
 
-        sigGen.addObject(new DERSet(signerInfos));
+        sigGen.addObject(new DLSet(signerInfos));
 
         sigGen.close();
 
