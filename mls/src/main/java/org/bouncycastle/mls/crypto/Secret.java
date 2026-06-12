@@ -2,9 +2,9 @@ package org.bouncycastle.mls.crypto;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.util.Arrays;
 
 public class Secret
 {
@@ -40,7 +40,11 @@ public class Secret
             return false;
         }
         Secret secret = (Secret)o;
-        return Arrays.equals(value, secret.value) && Arrays.equals(parents, secret.parents);
+        if (value == null || secret.value == null)
+        {
+            return value == secret.value && Arrays.areEqual(parents, secret.parents);
+        }
+        return Arrays.constantTimeAreEqual(value, secret.value) && Arrays.areEqual(parents, secret.parents);
     }
 
     @Override
