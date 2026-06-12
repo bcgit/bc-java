@@ -37,7 +37,6 @@ public class CMSAuthEnvelopedDataStreamGenerator
 
     private int _bufferSize;
     private boolean _berEncodeRecipientSet;
-    private String encoding = ASN1Encoding.BER;
 
     public CMSAuthEnvelopedDataStreamGenerator()
     {
@@ -62,34 +61,6 @@ public class CMSAuthEnvelopedDataStreamGenerator
         boolean berEncodeRecipientSet)
     {
         _berEncodeRecipientSet = berEncodeRecipientSet;
-    }
-
-    /**
-     * Specify use of definite-length/DER rather than indefinite-length encoding ("BER").
-     * <p>
-     * In definite-length mode the content length must be supplied up front via
-     * {@link #open(OutputStream, long, OutputAEADEncryptor)} /
-     * {@link #open(ASN1ObjectIdentifier, OutputStream, long, OutputAEADEncryptor)},
-     * since the encrypted-content OCTET STRING's length is written before any
-     * ciphertext flows; the {@link #setBufferSize(int) buffer size} and
-     * {@link #setBEREncodeRecipients(boolean) BER recipient set} settings are
-     * ignored (an indefinite-length encoding may not appear inside a
-     * definite-length one). Nothing is buffered, so content larger than a Java
-     * array can carry is supported. Note that in this mode any authenticated
-     * attributes are generated and fed to the encryptor's AAD stream at
-     * {@code open()} time, ahead of the content - the order AEAD modes
-     * require.
-     *
-     * @param encoding one of "DER", "DL", "BER".
-     */
-    public void setEncoding(String encoding)
-    {
-        if (!(ASN1Encoding.BER.equals(encoding) || ASN1Encoding.DL.equals(encoding) || ASN1Encoding.DER.equals(encoding)))
-        {
-            throw new IllegalArgumentException("encoding must be one of BER, DER, or DL");
-        }
-
-        this.encoding = encoding;
     }
 
     protected OutputStream open(
@@ -188,6 +159,15 @@ public class CMSAuthEnvelopedDataStreamGenerator
      * written to the returned stream - a mismatch fails with an IOException,
      * by which point the output is unusable and must be discarded. In BER
      * mode the length is ignored.
+     * <p>
+     * In definite-length mode the {@link #setBufferSize(int) buffer size} and
+     * {@link #setBEREncodeRecipients(boolean) BER recipient set} settings are
+     * ignored (an indefinite-length encoding may not appear inside a
+     * definite-length one). Nothing is buffered, so content larger than a Java
+     * array can carry is supported. Note that in this mode any authenticated
+     * attributes are generated and fed to the encryptor's AAD stream at
+     * {@code open()} time, ahead of the content - the order AEAD modes
+     * require.
      */
     public OutputStream open(OutputStream out, long inputLength, OutputAEADEncryptor encryptor)
         throws CMSException, IOException

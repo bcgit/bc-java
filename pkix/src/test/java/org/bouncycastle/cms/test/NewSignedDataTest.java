@@ -1202,6 +1202,41 @@ public class NewSignedDataTest
         verifySignatures(s, md.digest("Hello world!".getBytes()));
     }
 
+    public void testEncapsulatedWithDEREncoding()
+        throws Exception
+    {
+        List              certList = new ArrayList();
+        CMSTypedData      msg = new CMSProcessableByteArray("Hello world!".getBytes());
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store           certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha256Signer, _origCert));
+
+        gen.addCertificates(certs);
+
+        gen.setEncoding(ASN1Encoding.DER);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        // canonical - re-encoding as DER is the identity
+        byte[] enc = s.getEncoded();
+
+        assertTrue(org.bouncycastle.util.Arrays.areEqual(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DER)));
+
+        //
+        // compute expected content digest and verify the round trip
+        //
+        MessageDigest md = MessageDigest.getInstance("SHA256", BC);
+
+        verifySignatures(new CMSSignedData(enc), md.digest("Hello world!".getBytes()));
+    }
+
     public void testSHA1WithRSAWrongDigestOID()
         throws Exception
     {

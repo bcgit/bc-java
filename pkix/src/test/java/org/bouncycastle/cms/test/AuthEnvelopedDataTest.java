@@ -13,12 +13,14 @@ import java.util.Map;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -206,6 +208,66 @@ public class AuthEnvelopedDataTest
         byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
         assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
+    public void testGCMEncodings()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+
+        byte[] message = Strings.toByteArray("Hello, world!");
+
+        // default - outer ContentInfo uses the indefinite-length (BER) method
+        byte[] enc = gcmEncode(message, null);
+
+        assertEquals((byte)0x80, enc[1]);
+        gcmDecode(enc, message);
+
+        // DL - definite-length throughout, re-encoding as DL is the identity
+        enc = gcmEncode(message, ASN1Encoding.DL);
+
+        assertTrue(enc[1] != (byte)0x80);
+        assertTrue(Arrays.areEqual(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DL)));
+        gcmDecode(enc, message);
+
+        // DER - canonical, re-encoding as DER is the identity
+        enc = gcmEncode(message, ASN1Encoding.DER);
+
+        assertTrue(Arrays.areEqual(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DER)));
+        gcmDecode(enc, message);
+    }
+
+    private byte[] gcmEncode(byte[] message, String encoding)
+        throws Exception
+    {
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+
+        if (encoding != null)
+        {
+            authGen.setEncoding(encoding);
+        }
+
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message),
+            (OutputAEADEncryptor)new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM).setProvider(BC).build());
+
+        return authData.getEncoded();
+    }
+
+    private void gcmDecode(byte[] enc, byte[] message)
+        throws Exception
+    {
+        CMSAuthEnvelopedData authData = new CMSAuthEnvelopedData(enc);
+
+        RecipientInformation recipient = (RecipientInformation)authData.getRecipientInfos().getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertTrue(Arrays.areEqual(message, recData));
     }
 
     public void testChacha20Poly1305()

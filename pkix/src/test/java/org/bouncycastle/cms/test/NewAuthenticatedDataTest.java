@@ -17,6 +17,7 @@ import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERNull;
@@ -142,6 +143,63 @@ public class NewAuthenticatedDataTest
         throws Exception
     {
         tryKeyTransWithDigest(CMSAlgorithm.DES_EDE3_CBC);
+    }
+
+    public void testKeyTransEncodings()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        // default - outer ContentInfo uses the indefinite-length (BER) method
+        byte[] enc = authEncode(data, null);
+
+        assertEquals((byte)0x80, enc[1]);
+        authDecode(enc, data);
+
+        // DL - definite-length throughout, re-encoding as DL is the identity
+        enc = authEncode(data, ASN1Encoding.DL);
+
+        assertTrue(enc[1] != (byte)0x80);
+        assertTrue(Arrays.equals(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DL)));
+        authDecode(enc, data);
+
+        // DER - canonical, re-encoding as DER is the identity
+        enc = authEncode(data, ASN1Encoding.DER);
+
+        assertTrue(Arrays.equals(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DER)));
+        authDecode(enc, data);
+    }
+
+    private byte[] authEncode(byte[] data, String encoding)
+        throws Exception
+    {
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+
+        if (encoding != null)
+        {
+            adGen.setEncoding(encoding);
+        }
+
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
+
+        return ad.getEncoded();
+    }
+
+    private void authDecode(byte[] enc, byte[] data)
+        throws Exception
+    {
+        CMSAuthenticatedData ad = new CMSAuthenticatedData(enc);
+
+        RecipientInformation recipient = (RecipientInformation)ad.getRecipientInfos().getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertTrue(Arrays.equals(data, recData));
+        assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
     }
 
     public void testKeyTransRC2()
