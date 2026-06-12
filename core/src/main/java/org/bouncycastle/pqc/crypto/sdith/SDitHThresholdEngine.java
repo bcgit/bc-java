@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.GF256;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -199,7 +200,16 @@ public final class SDitHThresholdEngine
     {
         if (!isP251())
         {
-            for (int i = 0; i < size; ++i)
+            // vz = vz*y + vx over GF(256): word-parallel scalar-times-vector
+            // multiply (mulFx8) per 8-byte block, scalar tail for the rest.
+            int i = 0;
+            for (; i + 8 <= size; i += 8)
+            {
+                long prod = GF256.mulFx8(y, Pack.littleEndianToLong(vz, vzOff + i));
+                long vxb = Pack.littleEndianToLong(vx, vxOff + i);
+                Pack.longToLittleEndian(prod ^ vxb, vz, vzOff + i);
+            }
+            for (; i < size; ++i)
             {
                 int p = SDitHGF256.mulNaive(vz[vzOff + i] & 0xff, y);
                 vz[vzOff + i] = (byte) (p ^ (vx[vxOff + i] & 0xff));
@@ -515,17 +525,24 @@ public final class SDitHThresholdEngine
     {
         int outLen = paramT * extDegree;
         java.util.Arrays.fill(evals, (byte) 0);
+        // No zero-coefficient skip: the polynomial here is frequently secret
+        // share data (Q / P / S — and on the plain-broadcast path the actual
+        // witness polynomials), so work must not depend on coefficient values.
+        // The C reference's matcols_muladd is likewise skip-free.
         if (!isP251())
         {
             for (int j = 0; j < nbCoefs; ++j)
             {
                 int coef = poly[polyOff + j] & 0xff;
-                if (coef == 0)
-                {
-                    continue;
-                }
                 byte[] row = powersOfCh[j];
-                for (int i = 0; i < outLen; ++i)
+                int i = 0;
+                for (; i + 8 <= outLen; i += 8)
+                {
+                    long e = Pack.littleEndianToLong(evals, i)
+                        ^ GF256.mulFx8(coef, Pack.littleEndianToLong(row, i));
+                    Pack.longToLittleEndian(e, evals, i);
+                }
+                for (; i < outLen; ++i)
                 {
                     evals[i] = (byte) ((evals[i] & 0xff) ^ SDitHGF256.mulNaive(coef, row[i] & 0xff));
                 }
@@ -537,10 +554,6 @@ public final class SDitHThresholdEngine
             for (int j = 0; j < nbCoefs; ++j)
             {
                 int coef = poly[polyOff + j] & 0xff;
-                if (coef == 0)
-                {
-                    continue;
-                }
                 byte[] row = powersOfCh[j];
                 for (int i = 0; i < outLen; ++i)
                 {
