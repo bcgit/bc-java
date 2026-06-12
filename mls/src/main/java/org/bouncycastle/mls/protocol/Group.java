@@ -3,7 +3,6 @@ package org.bouncycastle.mls.protocol;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,6 +51,7 @@ import org.bouncycastle.mls.codec.Welcome;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.util.Arrays;
 
 public class Group
 {
@@ -354,7 +354,7 @@ public class Group
             {
                 return false;
             }
-            return Arrays.equals(id, epochRef.id);
+            return Arrays.areEqual(id, epochRef.id);
         }
 
         @Override
@@ -624,7 +624,7 @@ public class Group
 
         // Verify confirmation tag
         byte[] confirmationTag = keySchedule.confirmationTag(transcriptHash.getConfirmed());
-        if (!org.bouncycastle.util.Arrays.constantTimeAreEqual(confirmationTag, groupInfo.getConfirmationTag()))
+        if (!Arrays.constantTimeAreEqual(confirmationTag, groupInfo.getConfirmationTag()))
         {
             throw new Exception("Confirmation failed to verify");
         }
@@ -678,7 +678,7 @@ public class Group
     {
         // Validate the GroupContent
         FramedContent content = auth.getContent();
-        if (!Arrays.equals(content.getGroupID(), groupID))
+        if (!Arrays.areEqual(content.getGroupID(), groupID))
         {
             throw new Exception("GroupID mismatch");
         }
@@ -723,7 +723,7 @@ public class Group
             if (cachedGroup != null)
             {
                 // Verify that the cached state is a plausible successor to this state
-                if (!Arrays.equals(cachedGroup.groupID, groupID) || cachedGroup.epoch != epoch + 1 || !cachedGroup.index.equals(index))
+                if (!Arrays.areEqual(cachedGroup.groupID, groupID) || cachedGroup.epoch != epoch + 1 || !cachedGroup.index.equals(index))
                 {
                     throw new Exception("Invalid successor state");
                 }
@@ -820,7 +820,7 @@ public class Group
         // Verify the confirmation MAC
         byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.getConfirmed());
 
-        if (!org.bouncycastle.util.Arrays.constantTimeAreEqual(confirmationTag, auth.getConfirmationTag()))
+        if (!Arrays.constantTimeAreEqual(confirmationTag, auth.getConfirmationTag()))
         {
             throw new Exception("Confirmation failed to verify");
         }
@@ -1802,7 +1802,7 @@ public class Group
         // check if ref is already in the queue
         for (CachedProposal cached : pendingProposals)
         {
-            if (Arrays.equals(cached.proposalRef, ref))
+            if (Arrays.areEqual(cached.proposalRef, ref))
             {
                 return;
             }
@@ -1941,7 +1941,7 @@ public class Group
 
         // Verify that the value of leaf_node.encryption_key is different from the
         // value of the init_key field.
-        boolean distinct_keys = !Arrays.equals(keyPackage.getInitKey(), keyPackage.getLeafNode().getEncryptionKey());
+        boolean distinct_keys = !Arrays.areEqual(keyPackage.getInitKey(), keyPackage.getLeafNode().getEncryptionKey());
 
         return (correct_ciphersuite && valid_signature && leaf_node_valid && distinct_keys);
     }
@@ -2019,8 +2019,8 @@ public class Group
                 continue;
             }
 
-            isUniqueSigKey &= (index != null && ((i == index.value())) || (!Arrays.equals(sigKey, leaf.getSignatureKey())));
-            isUniqueEncKey &= !Arrays.equals(encKey, leaf.getEncryptionKey());
+            isUniqueSigKey &= (index != null && ((i == index.value())) || (!Arrays.areEqual(sigKey, leaf.getSignatureKey())));
+            isUniqueEncKey &= !Arrays.areEqual(encKey, leaf.getEncryptionKey());
             //TODO:
 //            mutualCredentialSupport &= leaf.capabilities.credentialSupported(leafNode.credential)
 //                    && leafNode.capabilities.credentialSupported(leaf.credential)
@@ -2170,7 +2170,7 @@ public class Group
             boolean areEqual = false;
             for (byte[] sig : signatureKeys)
             {
-                if (Arrays.equals(sig, signatureKey))
+                if (Arrays.areEqual(sig, signatureKey))
                 {
                     areEqual = true;
                     break;
@@ -2272,7 +2272,7 @@ public class Group
             boolean areEqual = false;
             for (byte[] key : encKeys)
             {
-                if (Arrays.equals(key, encKey))
+                if (Arrays.areEqual(key, encKey))
                 {
                     areEqual = true;
                     break;
@@ -2336,7 +2336,7 @@ public class Group
             case REFERENCE:
                 for (CachedProposal cached : pendingProposals)
                 {
-                    if (Arrays.equals(cached.proposalRef, id.getReference()))
+                    if (Arrays.areEqual(cached.proposalRef, id.getReference()))
                     {
                         out.add(cached);
                         break;
@@ -2378,7 +2378,7 @@ public class Group
 
         outTree.setSuite(suite);
         outTree.setHashAll();
-        if (!Arrays.equals(outTree.getRootHash(), treeHash))
+        if (!Arrays.areEqual(outTree.getRootHash(), treeHash))
         {
             throw new Exception("Tree does not match GroupInfo");
         }
