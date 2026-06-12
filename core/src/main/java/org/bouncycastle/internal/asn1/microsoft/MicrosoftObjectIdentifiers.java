@@ -27,4 +27,7 @@ public interface MicrosoftObjectIdentifiers
     static final ASN1ObjectIdentifier    microsoftCertTemplateV2 = microsoft.branch("21.7");
     /** OID: 1.3.6.1.4.1.311.21.10 */
     static final ASN1ObjectIdentifier    microsoftAppPolicies    = microsoft.branch("21.10");
+    /** OID: 1.3.6.1.4.1.311.3.2.1 — SPC_TIME_STAMP_REQUEST_OBJID, the countersignature
+     * type of a legacy (pre-RFC 3161) Authenticode time stamp request. */
+    static final ASN1ObjectIdentifier    microsoftTimeStampRequest = microsoft.branch("3.2.1");
 }

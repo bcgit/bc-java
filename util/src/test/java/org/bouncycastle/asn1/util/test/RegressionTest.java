@@ -60,6 +60,7 @@ import org.bouncycastle.asn1.isismtt.test.NamingAuthorityUnitTest;
 import org.bouncycastle.asn1.isismtt.test.ProcurationSyntaxUnitTest;
 import org.bouncycastle.asn1.isismtt.test.RequestedCertificateUnitTest;
 import org.bouncycastle.asn1.isismtt.test.RestrictionUnitTest;
+import org.bouncycastle.asn1.microsoft.test.TimeStampRequestTest;
 import org.bouncycastle.asn1.smime.test.SMIMETest;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
@@ -129,6 +130,7 @@ public class RegressionTest
         new ProcurationSyntaxUnitTest(),
         new RequestedCertificateUnitTest(),
         new RestrictionUnitTest(),
+        new TimeStampRequestTest(),
         new SMIMETest(),
     };
 
