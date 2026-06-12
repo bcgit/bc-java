@@ -62,6 +62,7 @@ public class RegressionTest
             new MD4DigestTest(),
             new MD5DigestTest(),
             new SHA1DigestTest(),
+            new SHA1InterleaveDigestTest(),
             new SHA224DigestTest(),
             new SHA256DigestTest(),
             new SHA384DigestTest(),
