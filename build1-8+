@@ -11,6 +11,13 @@ then
 	JDKPATH=/usr/lib/jvm/java-8-openjdk-amd64
 fi
 
+if [ ! -x "${JDKPATH}/bin/java" ]
+then
+	echo "build1-8+: no JDK found at ${JDKPATH} (${JDKPATH}/bin/java is missing)." >&2
+	echo "build1-8+: set JDKPATH to a JDK 8 installation, or to the JDK you intend to test on together with a matching JAVA_VERSION_PREFIX." >&2
+	exit 1
+fi
+
 JAVA_HOME=$JDKPATH
 export JAVA_HOME
 
