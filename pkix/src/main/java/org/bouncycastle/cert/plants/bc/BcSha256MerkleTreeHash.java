@@ -8,13 +8,17 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 
 /**
  * Lightweight SHA-256 implementation of {@link MerkleTreeHash}.
+ *
+ * <p>A fresh digest is created per call, so a single instance is thread-safe
+ * and can be shared (e.g. inside an
+ * {@link org.bouncycastle.cert.plants.MTCCertAuth} or a
+ * {@link org.bouncycastle.cert.plants.MerkleTreeCertificateValidator.ValidationParams}
+ * used by concurrent validations).</p>
  */
 public class BcSha256MerkleTreeHash
     implements MerkleTreeHash
 {
     private static final AlgorithmIdentifier ALG_ID = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-
-    private final Digest digest = new SHA256Digest();
 
     public AlgorithmIdentifier getAlgorithmIdentifier()
     {
@@ -23,12 +27,12 @@ public class BcSha256MerkleTreeHash
 
     public int getHashSize()
     {
-        return digest.getDigestSize();
+        return new SHA256Digest().getDigestSize();
     }
 
     public byte[] hashLeaf(byte[] entry)
     {
-        digest.reset();
+        Digest digest = new SHA256Digest();
         digest.update((byte)0x00);
         digest.update(entry, 0, entry.length);
         byte[] out = new byte[digest.getDigestSize()];
@@ -38,7 +42,7 @@ public class BcSha256MerkleTreeHash
 
     public byte[] hashNode(byte[] left, byte[] right)
     {
-        digest.reset();
+        Digest digest = new SHA256Digest();
         digest.update((byte)0x01);
         digest.update(left, 0, left.length);
         digest.update(right, 0, right.length);
@@ -49,7 +53,7 @@ public class BcSha256MerkleTreeHash
 
     public byte[] hashRaw(byte[] data)
     {
-        digest.reset();
+        Digest digest = new SHA256Digest();
         digest.update(data, 0, data.length);
         byte[] out = new byte[digest.getDigestSize()];
         digest.doFinal(out, 0);

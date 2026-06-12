@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
@@ -65,13 +66,13 @@ final class BcMTCSigners
      *   <li>{@link ECKeyParameters} on a 256-bit field &rarr; {@code ECDSA-P256-SHA256}</li>
      *   <li>{@link ECKeyParameters} on a 384-bit field &rarr; {@code ECDSA-P384-SHA384}</li>
      *   <li>{@link Ed25519PublicKeyParameters} / {@link Ed25519PrivateKeyParameters} &rarr; {@code Ed25519}</li>
-     *   <li>{@link MLDSAKeyParameters} &rarr; {@code ML-DSA-65} — placeholder;
-     *       the actual signer takes its parameter set from the key, so the
-     *       returned string identifies "this is an ML-DSA key" rather than
-     *       differentiating among ML-DSA-44/65/87.</li>
+     *   <li>{@link MLDSAKeyParameters} &rarr; {@code ML-DSA-44} / {@code ML-DSA-65} /
+     *       {@code ML-DSA-87} per the key's parameter set; the pre-hash
+     *       ({@code -with-sha512}) parameter sets are rejected — the MTC
+     *       cosigner algorithms are pure ML-DSA.</li>
      * </ul>
      *
-     * @throws IllegalArgumentException if the key type is unsupported
+     * @throws IllegalArgumentException if the key type or parameter set is unsupported
      */
     static String detectAlgorithm(AsymmetricKeyParameter key)
     {
@@ -94,7 +95,20 @@ final class BcMTCSigners
         }
         if (key instanceof MLDSAKeyParameters)
         {
-            return MTCSignatureAlgorithm.ML_DSA_65;
+            MLDSAParameters params = ((MLDSAKeyParameters)key).getParameters();
+            if (MLDSAParameters.ml_dsa_44 == params)
+            {
+                return MTCSignatureAlgorithm.ML_DSA_44;
+            }
+            if (MLDSAParameters.ml_dsa_65 == params)
+            {
+                return MTCSignatureAlgorithm.ML_DSA_65;
+            }
+            if (MLDSAParameters.ml_dsa_87 == params)
+            {
+                return MTCSignatureAlgorithm.ML_DSA_87;
+            }
+            throw new IllegalArgumentException("Unsupported ML-DSA parameter set: " + params.getName());
         }
         throw new IllegalArgumentException("Unsupported key type: " + key.getClass().getName());
     }

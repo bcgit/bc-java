@@ -77,7 +77,9 @@ public final class TrustAnchorIDs
         {
             throw new IllegalArgumentException("index out of uint48 range: " + index);
         }
-        return BigInteger.valueOf((logNumber << 48) | index);
+        // (logNumber << 48) overflows a signed long for log_number >= 32768; the
+        // draft requires serials to be positive and at most 2^64-1 (Section 6.1).
+        return BigInteger.valueOf(logNumber).shiftLeft(48).or(BigInteger.valueOf(index));
     }
 
     /**
@@ -90,11 +92,14 @@ public final class TrustAnchorIDs
     }
 
     /**
-     * Builds the binary trust anchor ID of a landmark (Section 8.2).
+     * Builds the binary trust anchor ID of a landmark (Section 8.2). Section
+     * 5.1 allocates these OIDs for positive landmark numbers only — landmark 0
+     * always has tree size zero and no landmark subtrees, so it never needs an
+     * ID.
      *
      * @param caId           binary trust anchor ID of the CA
      * @param logNumber      log number
-     * @param landmarkNumber landmark number ({@code landmarkNumber >= 0})
+     * @param landmarkNumber landmark number ({@code landmarkNumber >= 1})
      */
     public static byte[] landmarkId(byte[] caId, long logNumber, long landmarkNumber)
     {
@@ -102,9 +107,9 @@ public final class TrustAnchorIDs
         {
             throw new IllegalArgumentException("log_number out of range: " + logNumber);
         }
-        if (landmarkNumber < 0)
+        if (landmarkNumber < 1)
         {
-            throw new IllegalArgumentException("landmark_number must be non-negative: " + landmarkNumber);
+            throw new IllegalArgumentException("landmark_number must be positive: " + landmarkNumber);
         }
         return concat(caId,
             encodeComponent(LANDMARKS_ARC),
@@ -114,10 +119,13 @@ public final class TrustAnchorIDs
 
     /**
      * Builds the binary trust anchor ID of a landmark group (Section 8.2.1).
+     * As with {@link #landmarkId}, Section 5.1 allocates these OIDs for
+     * positive landmark numbers only.
      *
      * @param caId           binary trust anchor ID of the CA
      * @param logNumber      log number
      * @param landmarkNumber landmark number that names the group's high end
+     *                       ({@code landmarkNumber >= 1})
      */
     public static byte[] landmarkGroupId(byte[] caId, long logNumber, long landmarkNumber)
     {
@@ -125,9 +133,9 @@ public final class TrustAnchorIDs
         {
             throw new IllegalArgumentException("log_number out of range: " + logNumber);
         }
-        if (landmarkNumber < 0)
+        if (landmarkNumber < 1)
         {
-            throw new IllegalArgumentException("landmark_number must be non-negative: " + landmarkNumber);
+            throw new IllegalArgumentException("landmark_number must be positive: " + landmarkNumber);
         }
         return concat(caId,
             encodeComponent(LANDMARK_GROUPS_ARC),

@@ -207,8 +207,9 @@ public class MerkleTreePrimitives
                 sr = hash.hashNode(c, sr);
 
                 // Section 4.4.3 step 7.2.3: "Until LSB(sn) is set, right-shift fn, sn, and tn equally."
-                // I.e. continue shifting while LSB(sn) is unset.
-                while ((sn & 1) == 0 && fn < sn)
+                // The shift applies even once fn == sn (the f- and s-paths have merged);
+                // sn > 0 here, so the loop terminates when sn's top bit reaches LSB.
+                while ((sn & 1) == 0)
                 {
                     fn >>= 1;
                     sn >>= 1;
@@ -338,6 +339,32 @@ public class MerkleTreePrimitives
         public long getEnd()
         {
             return end;
+        }
+
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (!(o instanceof SubtreeInfo))
+            {
+                return false;
+            }
+            SubtreeInfo other = (SubtreeInfo)o;
+            return start == other.start && end == other.end;
+        }
+
+        public int hashCode()
+        {
+            int h = (int)(start ^ (start >>> 32));
+            h = 31 * h + (int)(end ^ (end >>> 32));
+            return h;
+        }
+
+        public String toString()
+        {
+            return "[" + start + ", " + end + ")";
         }
     }
 }

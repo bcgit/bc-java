@@ -8,6 +8,7 @@ import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
 import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat256;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -80,7 +81,8 @@ public abstract class Ed25519
     private static final int SCALAR_INTS = 8;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4;
 
-    public static final int PREHASH_SIZE = 64;
+    private static final int DIGEST_SIZE = 64;
+    public static final int PREHASH_SIZE = DIGEST_SIZE;
     public static final int PUBLIC_KEY_SIZE = POINT_BYTES;
     public static final int SECRET_KEY_SIZE = 32;
     public static final int SIGNATURE_SIZE = POINT_BYTES + SCALAR_BYTES;
@@ -307,7 +309,7 @@ public abstract class Ed25519
     private static Digest createDigest()
     {
         Digest d = new SHA512Digest();
-        if (d.getDigestSize() != 64)
+        if (d.getDigestSize() != DIGEST_SIZE)
         {
             throw new IllegalStateException();
         }
@@ -391,6 +393,12 @@ public abstract class Ed25519
         return result;
     }
 
+    private static void expandPrivateKey(Digest d, byte[] sk, int skOff, byte[] h, int hOff)
+    {
+        d.update(sk, skOff, SECRET_KEY_SIZE);
+        d.doFinal(h, hOff);
+    }
+
     private static PublicPoint exportPoint(PointAffine p)
     {
         int[] data = new int[F.SIZE * 2];
@@ -413,10 +421,9 @@ public abstract class Ed25519
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0);
+        expandPrivateKey(d, sk, skOff, h, 0);
 
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
@@ -427,13 +434,17 @@ public abstract class Ed25519
     public static PublicPoint generatePublicKey(byte[] sk, int skOff)
     {
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0);
+        expandPrivateKey(d, sk, skOff, h, 0);
 
+        return generatePublicPoint(h, 0);
+    }
+
+    private static PublicPoint generatePublicPoint(byte[] h, int hOff)
+    {
         byte[] s = new byte[SCALAR_BYTES];
-        pruneScalar(h, 0, s);
+        pruneScalar(h, hOff, s);
 
         PointAccum p = new PointAccum();
         scalarMultBase(s, p);
@@ -459,7 +470,7 @@ public abstract class Ed25519
     {
         /*
          * Because we are using 4 teeth and 8 spacing, each limb of n corresponds to one of the 8 blocks.
-         * Therefore we can efficiently group the bits for each comb position using a (double) shuffle. 
+         * Therefore we can efficiently group the bits for each comb position using a (double) shuffle.
          */
         for (int i = 0; i < n.length; ++i)
         {
@@ -507,10 +518,9 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0);
+        expandPrivateKey(d, sk, skOff, h, 0);
 
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
@@ -530,10 +540,9 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0);
+        expandPrivateKey(d, sk, skOff, h, 0);
 
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
@@ -580,7 +589,7 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
         if (ctx != null)
         {
@@ -647,7 +656,7 @@ public abstract class Ed25519
         encodePublicPoint(publicPoint, A, 0);
 
         Digest d = createDigest();
-        byte[] h = new byte[64];
+        byte[] h = new byte[DIGEST_SIZE];
 
         if (ctx != null)
         {
@@ -1223,13 +1232,17 @@ public abstract class Ed25519
         }
     }
 
-    private static void pruneScalar(byte[] n, int nOff, byte[] r)
+    private static void pruneScalar(byte[] s, int sOff)
     {
-        System.arraycopy(n, nOff, r, 0, SCALAR_BYTES);
+        s[sOff                   ] &= 0xF8;
+        s[sOff + SCALAR_BYTES - 1] &= 0x7F;
+        s[sOff + SCALAR_BYTES - 1] |= 0x40;
+    }
 
-        r[0] &= 0xF8;
-        r[SCALAR_BYTES - 1] &= 0x7F;
-        r[SCALAR_BYTES - 1] |= 0x40;
+    private static void pruneScalar(byte[] n, int nOff, byte[] s)
+    {
+        System.arraycopy(n, nOff, s, 0, SCALAR_BYTES);
+        pruneScalar(s, 0);
     }
 
     private static void scalarMult(byte[] k, PointAffine p, PointAccum r)
@@ -1336,11 +1349,11 @@ public abstract class Ed25519
             throw new NullPointerException("This method is only for use by X25519");
         }
 
-        byte[] n = new byte[SCALAR_BYTES];
-        pruneScalar(k, kOff, n);
+        byte[] s = new byte[SCALAR_BYTES];
+        pruneScalar(k, kOff, s);
 
         PointAccum p = new PointAccum();
-        scalarMultBase(n, p);
+        scalarMultBase(s, p);
         if (0 == checkPoint(p))
         {
             throw new IllegalStateException();
@@ -1671,5 +1684,79 @@ public abstract class Ed25519
         byte phflag = 0x01;
 
         return implVerify(sig, sigOff, publicPoint, ctx, phflag, m, 0, m.length);
+    }
+
+    /**
+     * Methods that work with expanded format for private keys (xk/xkOff) i.e. SHA-512(seed).
+     */
+    public static class ExpandedKey
+    {
+        public static final int EXPANDED_KEY_SIZE = DIGEST_SIZE;
+
+        public static void expandPrivateKey(byte[] sk, int skOff, byte[] xk, int xkOff)
+        {
+            Digest d = createDigest();
+            Ed25519.expandPrivateKey(d, sk, skOff, xk, xkOff);
+        }
+
+        public static void generatePrivateKey(SecureRandom random, byte[] xk, int xkOff)
+        {
+            byte[] k = new byte[SECRET_KEY_SIZE];
+            Ed25519.generatePrivateKey(random, k);
+            expandPrivateKey(k, 0, xk, xkOff);
+            Arrays.clear(k);
+        }
+
+        public static void generatePublicKey(byte[] xk, int xkOff, byte[] pk, int pkOff)
+        {
+            Arrays.validateSegment(xk,  xkOff, EXPANDED_KEY_SIZE);
+
+            byte[] s = new byte[SCALAR_BYTES];
+            pruneScalar(xk, xkOff, s);
+
+            scalarMultBaseEncoded(s, pk, pkOff);
+        }
+
+        public static PublicPoint generatePublicKey(byte[] xk, int xkOff)
+        {
+            Arrays.validateSegment(xk,  xkOff, EXPANDED_KEY_SIZE);
+
+            return Ed25519.generatePublicPoint(xk, xkOff);
+        }
+
+        public static void prune(byte[] xk, int xkOff)
+        {
+            Arrays.validateSegment(xk,  xkOff, EXPANDED_KEY_SIZE);
+
+            pruneScalar(xk, xkOff);
+        }
+
+        public static void sign(byte[] xk, int xkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+        {
+            Digest d = createDigest();
+            byte[] h = new byte[DIGEST_SIZE];
+            System.arraycopy(xk, xkOff, h, 0, DIGEST_SIZE);
+
+            byte[] s = new byte[SCALAR_BYTES];
+            pruneScalar(h, 0, s);
+
+            byte[] pk = new byte[POINT_BYTES];
+            scalarMultBaseEncoded(s, pk, 0);
+
+            implSign(d, h, s, pk, 0, null, (byte)0x00, m, mOff, mLen, sig, sigOff);
+        }
+
+        public static void sign(byte[] xk, int xkOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig,
+            int sigOff)
+        {
+            Digest d = createDigest();
+            byte[] h = new byte[DIGEST_SIZE];
+            System.arraycopy(xk, xkOff, h, 0, DIGEST_SIZE);
+
+            byte[] s = new byte[SCALAR_BYTES];
+            pruneScalar(h, 0, s);
+
+            implSign(d, h, s, pk, pkOff, null, (byte)0x00, m, mOff, mLen, sig, sigOff);
+        }
     }
 }

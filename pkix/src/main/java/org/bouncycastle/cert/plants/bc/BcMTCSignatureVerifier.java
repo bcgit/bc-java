@@ -20,7 +20,7 @@ public class BcMTCSignatureVerifier
     private final AsymmetricKeyParameter publicKey;
     private final String algorithm;
 
-    public BcMTCSignatureVerifier(AsymmetricKeyParameter publicKey, String algorithm)
+    public BcMTCSignatureVerifier(String algorithm, AsymmetricKeyParameter publicKey)
     {
         if (MTCSignatureAlgorithm.ED25519.equals(algorithm)
             && !(publicKey instanceof Ed25519PublicKeyParameters))
@@ -29,6 +29,11 @@ public class BcMTCSignatureVerifier
         }
         this.publicKey = publicKey;
         this.algorithm = algorithm;
+    }
+
+    public String getAlgorithm()
+    {
+        return algorithm;
     }
 
     public boolean verify(byte[] cosignedMessage, byte[] signature)

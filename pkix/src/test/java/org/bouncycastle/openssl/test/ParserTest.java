@@ -21,12 +21,17 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -61,6 +66,8 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -241,6 +248,8 @@ public class ParserTest
         pair = kpGen.generateKeyPair();
 
         keyPairTest("DSA", pair);
+
+        dsaVersionTest(pair);
 
         //
         // PKCS7
@@ -667,6 +676,67 @@ public class ParserTest
         {
             fail("Failed private key public read: " + name);
         }
+    }
+
+    // GitHub #2319: the traditional "DSA PRIVATE KEY" parser must reject a non-zero version field.
+    private void dsaVersionTest(
+        KeyPair pair)
+        throws Exception
+    {
+        DSAPrivateKey priv = (DSAPrivateKey)pair.getPrivate();
+        DSAParams params = priv.getParams();
+        BigInteger y = ((DSAPublicKey)pair.getPublic()).getY();
+
+        // a well-formed (version 0) traditional DSA key still parses
+        ASN1EncodableVector good = new ASN1EncodableVector(6);
+        good.add(new ASN1Integer(0));
+        good.add(new ASN1Integer(params.getP()));
+        good.add(new ASN1Integer(params.getQ()));
+        good.add(new ASN1Integer(params.getG()));
+        good.add(new ASN1Integer(y));
+        good.add(new ASN1Integer(priv.getX()));
+
+        if (!(readDsaPem(new DERSequence(good).getEncoded()) instanceof PEMKeyPair))
+        {
+            fail("valid DSA private key not parsed");
+        }
+
+        // the same key with a bogus version must be rejected
+        ASN1EncodableVector bad = new ASN1EncodableVector(6);
+        bad.add(new ASN1Integer(17));
+        bad.add(new ASN1Integer(params.getP()));
+        bad.add(new ASN1Integer(params.getQ()));
+        bad.add(new ASN1Integer(params.getG()));
+        bad.add(new ASN1Integer(y));
+        bad.add(new ASN1Integer(priv.getX()));
+
+        try
+        {
+            readDsaPem(new DERSequence(bad).getEncoded());
+            fail("DSA private key with bad version not rejected");
+        }
+        catch (PEMException e)
+        {
+            if (!e.getMessage().equals("wrong version for DSA private key"))
+            {
+                fail("unexpected message: " + e.getMessage());
+            }
+        }
+    }
+
+    private Object readDsaPem(
+        byte[] der)
+        throws IOException
+    {
+        StringWriter sw = new StringWriter();
+        PemWriter pemWriter = new PemWriter(sw);
+
+        pemWriter.writeObject(new PemObject("DSA PRIVATE KEY", der));
+        pemWriter.close();
+
+        PEMParser pemRd = new PEMParser(new StringReader(sw.toString()));
+
+        return pemRd.readObject();
     }
 
     private void doOpenSslTests(

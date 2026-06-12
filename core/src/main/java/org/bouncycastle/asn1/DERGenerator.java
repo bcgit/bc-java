@@ -39,61 +39,21 @@ public abstract class DERGenerator
         _tagNo = tagNo;
     }
 
-    private void writeLength(
-        OutputStream out,
-        int          length)
-        throws IOException
-    {
-        if (length > 127)
-        {
-            int size = 1;
-            int val = length;
-
-            while ((val >>>= 8) != 0)
-            {
-                size++;
-            }
-
-            out.write((byte)(size | 0x80));
-
-            for (int i = (size - 1) * 8; i >= 0; i -= 8)
-            {
-                out.write((byte)(length >> i));
-            }
-        }
-        else
-        {
-            out.write((byte)length);
-        }
-    }
-
-    void writeDEREncoded(
-        OutputStream out,
-        int          tag,
-        byte[]       bytes)
-        throws IOException
+    void writeDEREncoded(OutputStream out, int tag, byte[] bytes) throws IOException
     {
         out.write(tag);
-        writeLength(out, bytes.length);
+        ASN1OutputStream.writeDL(out, bytes.length);
         out.write(bytes);
     }
 
-    private void writeDEREncoded(
-        OutputStream out,
-        int          flags,
-        int          tagNo,
-        byte[]       bytes)
-        throws IOException
+    private void writeDEREncoded(OutputStream out, int flags, int tagNo, byte[] bytes) throws IOException
     {
-        ASN1OutputStream.create(out).writeIdentifier(true, flags, tagNo);
-        writeLength(out, bytes.length);
+        ASN1OutputStream.writeIdentifier(out, flags, tagNo);
+        ASN1OutputStream.writeDL(out, bytes.length);
         out.write(bytes);
     }
 
-    void writeDEREncoded(
-        int       tag,
-        byte[]    bytes)
-        throws IOException
+    void writeDEREncoded(int tag, byte[] bytes) throws IOException
     {
         if (!_tagged)
         {

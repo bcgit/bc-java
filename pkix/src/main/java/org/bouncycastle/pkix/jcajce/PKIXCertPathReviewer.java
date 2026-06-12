@@ -433,6 +433,22 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         // (b)  and (c)
         PKIXNameConstraintValidator nameConstraintValidator = new PKIXNameConstraintValidator();
 
+        // RFC 5280 sec. 4.2.1.10: the name constraints extension MUST be used
+        // only in a CA certificate. The path validation algorithm never
+        // processes the extension on a non-CA certificate, so its presence
+        // there is an issuance defect worth surfacing - but acceptance remains
+        // RFC-permissible, hence a notification rather than an error.
+        for (int c = 0; c != certs.size(); c++)
+        {
+            X509Certificate ncCert = (X509Certificate)certs.get(c);
+            if (ncCert.getBasicConstraints() == -1
+                && ncCert.getExtensionValue(NAME_CONSTRAINTS) != null)
+            {
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.ncNonCACert");
+                addNotification(msg, c);
+            }
+        }
+
         //
         // process each certificate except the last in the path
         //

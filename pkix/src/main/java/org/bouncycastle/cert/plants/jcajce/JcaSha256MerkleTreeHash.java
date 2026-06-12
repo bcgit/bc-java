@@ -16,13 +16,21 @@ import org.bouncycastle.util.Exceptions;
 /**
  * JCA-side SHA-256 implementation of {@link MerkleTreeHash}, obtained via
  * {@code MessageDigest.getInstance("SHA-256")} through a {@link JcaJceHelper}.
+ *
+ * <p>A fresh {@link MessageDigest} is created per call, so a single instance
+ * is thread-safe and can be shared (e.g. inside an
+ * {@link org.bouncycastle.cert.plants.MTCCertAuth} or a
+ * {@link org.bouncycastle.cert.plants.MerkleTreeCertificateValidator.ValidationParams}
+ * used by concurrent validations). The constructor fails fast if the selected
+ * provider cannot supply SHA-256.</p>
  */
 public class JcaSha256MerkleTreeHash
     implements MerkleTreeHash
 {
     private static final AlgorithmIdentifier ALG_ID = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
 
-    private final MessageDigest digest;
+    private final JcaJceHelper helper;
+    private final int hashSize;
 
     public AlgorithmIdentifier getAlgorithmIdentifier()
     {
@@ -46,9 +54,15 @@ public class JcaSha256MerkleTreeHash
 
     public JcaSha256MerkleTreeHash(JcaJceHelper helper)
     {
+        this.helper = helper;
+        this.hashSize = createDigest().getDigestLength();
+    }
+
+    private MessageDigest createDigest()
+    {
         try
         {
-            this.digest = helper.createDigest("SHA-256");
+            return helper.createDigest("SHA-256");
         }
         catch (GeneralSecurityException e)
         {
@@ -58,12 +72,12 @@ public class JcaSha256MerkleTreeHash
 
     public int getHashSize()
     {
-        return digest.getDigestLength();
+        return hashSize;
     }
 
     public byte[] hashLeaf(byte[] entry)
     {
-        digest.reset();
+        MessageDigest digest = createDigest();
         digest.update((byte)0x00);
         digest.update(entry, 0, entry.length);
         return digest.digest();
@@ -71,7 +85,7 @@ public class JcaSha256MerkleTreeHash
 
     public byte[] hashNode(byte[] left, byte[] right)
     {
-        digest.reset();
+        MessageDigest digest = createDigest();
         digest.update((byte)0x01);
         digest.update(left, 0, left.length);
         digest.update(right, 0, right.length);
@@ -80,7 +94,7 @@ public class JcaSha256MerkleTreeHash
 
     public byte[] hashRaw(byte[] data)
     {
-        digest.reset();
+        MessageDigest digest = createDigest();
         digest.update(data, 0, data.length);
         return digest.digest();
     }
