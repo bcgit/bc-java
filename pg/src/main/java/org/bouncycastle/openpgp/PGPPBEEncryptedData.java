@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp;
 import java.io.InputStream;
 
 import org.bouncycastle.bcpg.InputStreamPacket;
-import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -134,7 +133,6 @@ public class PGPPBEEncryptedData
             PBEDataDecryptorFactory dataDecryptorFactory)
             throws PGPException
     {
-        checkParameterBounds();
         if (keyData.getVersion() == SymmetricKeyEncSessionPacket.VERSION_4)
         {
             // SKESK v4 stores cipher algorithm inside the encrypted session data
@@ -164,7 +162,6 @@ public class PGPPBEEncryptedData
     public PGPSessionKey getSessionKey(PBEDataDecryptorFactory dataDecryptorFactory)
             throws PGPException
     {
-        checkParameterBounds();
         byte[] key = dataDecryptorFactory.makeKeyFromPassPhrase(keyData.getEncAlgorithm(), keyData.getS2K());
 
         int version = getVersion();
@@ -238,22 +235,6 @@ public class PGPPBEEncryptedData
         catch (Exception e)
         {
             throw new PGPException("Exception creating cipher", e);
-        }
-    }
-
-    private void checkParameterBounds()
-            throws PGPException
-    {
-        if (keyData.getS2K().getType() != S2K.ARGON_2)
-        {
-            return;
-        }
-
-        int memorySizeExponent = keyData.getS2K().getMemorySizeExponent();
-        // TODO: should really be 3 + log2(parallelism)
-        if (memorySizeExponent < 3 || memorySizeExponent > org.bouncycastle.util.Properties.asInteger(org.bouncycastle.crypto.params.Argon2Parameters.MAX_MEMORY_EXP, 30))
-        {
-            throw new PGPException("memory size exponent out of range");
         }
     }
 }

@@ -6,9 +6,7 @@ import java.io.InputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Properties;
 
 
 /**
