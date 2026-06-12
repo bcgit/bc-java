@@ -19,6 +19,7 @@ public class OpenPGPDefaultPolicy
     private int defaultDocumentSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
     private int defaultCertificationSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
     private int defaultSymmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
+    private OpenPGPCertificate.ComponentSignatureEvaluator componentSignatureEvaluator;
 
     public OpenPGPDefaultPolicy()
     {
@@ -80,6 +81,13 @@ public class OpenPGPDefaultPolicy
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.X448);
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.Ed25519);
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.Ed448);
+
+        /*
+         * Certificate component signature evaluation
+         */
+        // Strictly constrain the temporal validity of component signatures during signature evaluation.
+        // This is consistent with legacy OpenPGP implementations.
+        applyStrictTemporalComponentSignatureValidityConstraints();
     }
 
     public OpenPGPDefaultPolicy rejectHashAlgorithm(int hashAlgorithmId)
@@ -210,6 +218,57 @@ public class OpenPGPDefaultPolicy
     public boolean isAcceptablePublicKeyStrength(int publicKeyAlgorithmId, int bitStrength)
     {
         return isAcceptable(publicKeyAlgorithmId, bitStrength, publicKeyMinimalBitStrengths);
+    }
+
+    @Override
+    public OpenPGPCertificate.ComponentSignatureEvaluator getComponentSignatureEffectivenessEvaluator() {
+        return componentSignatureEvaluator;
+    }
+
+    public OpenPGPDefaultPolicy setComponentSignatureEffectivenessEvaluator(
+            OpenPGPCertificate.ComponentSignatureEvaluator componentSignatureEvaluator)
+    {
+        this.componentSignatureEvaluator = componentSignatureEvaluator;
+        return this;
+    }
+
+    /**
+     * When evaluating a document signature or third-party certification issued at time t1,
+     * only consider component binding signatures made at t1 or prior and reject component
+     * binding signatures made at t2+.
+     * This behavior is consistent with OpenPGP implementations, but might break historical
+     * document signatures and third-party certifications if old component signatures are
+     * cleaned from the certificate (temporal holes).
+     * You can prevent temporal holes with {@link #allowRetroactiveComponentSignatureValidation()}.
+     * <p>
+     * This behavior is currently the default.
+     *
+     * @return policy
+     */
+    public OpenPGPDefaultPolicy applyStrictTemporalComponentSignatureValidityConstraints()
+    {
+        return setComponentSignatureEffectivenessEvaluator(
+                OpenPGPCertificate.strictlyTemporallyConstrainedSignatureEvaluator());
+    }
+
+    /**
+     * When evaluating a document signature or third-party certification issued at time t1,
+     * also consider component binding signatures created at t2+.
+     * This behavior prevents historical document or certification signatures from breaking
+     * if older binding signatures are cleaned from the issuer certificate.
+     * Since PQC signatures may quickly blow up the certificate in size, it is desirable to
+     * clean up old signatures every once in a while and allowing retroactive validation of
+     * historic signatures via new component signatures prevents temporal holes.
+     * <p>
+     * Calling this will overwrite the - currently default - behavior from
+     * {@link #applyStrictTemporalComponentSignatureValidityConstraints()}.
+     * 
+     * @return policy
+     */
+    public OpenPGPDefaultPolicy allowRetroactiveComponentSignatureValidation()
+    {
+        return setComponentSignatureEffectivenessEvaluator(
+                OpenPGPCertificate.retroactivelyTemporallyRevalidatingSignatureEvaluator());
     }
 
     @Override
