@@ -781,19 +781,19 @@ public class X500NameTest
     private void turkishLocaleCanonicalizeTest()
         throws Exception
     {
+        Locale turkish = new Locale("tr", "TR");
+
+        // Precondition: confirm the JVM's Turkish locale really does the
+        // dotless-i fold (String.toLowerCase("IT") -> "ıt", not "it"),
+        // otherwise the test would pass vacuously.
+        isTrue("Turkish locale dotless-i fold not active", !"IT".toLowerCase(turkish).equals("it"));
+
         Locale defaultLocale = Locale.getDefault();
         try
         {
-            Locale.setDefault(new Locale("tr", "TR"));
+            Locale.setDefault(turkish);
 
-            // Precondition: confirm the JVM's Turkish locale really does the
-            // dotless-i fold (String.toLowerCase("IT") -> "ıt", not "it"),
-            // otherwise the test would pass vacuously.
-            isTrue("Turkish locale dotless-i fold not active",
-                !"IT".toLowerCase().equals("it"));
-
-            isTrue("canonicalize must ASCII-fold under Turkish locale",
-                "it".equals(IETFUtils.canonicalize("IT")));
+            isTrue("canonicalize must ASCII-fold under Turkish locale", "it".equals(IETFUtils.canonicalize("IT")));
 
             X500Name upper = new X500Name("CN=ITALY,C=IT");
             X500Name lower = new X500Name("CN=italy,C=it");
