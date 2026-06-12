@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -183,6 +184,11 @@ class CMSUtils
     static ASN1Set convertToDlSet(Set<AlgorithmIdentifier> digestAlgs)
     {
         return new DLSet((AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]));
+    }
+
+    static ASN1Set convertToDerSet(Set<AlgorithmIdentifier> digestAlgs)
+    {
+        return new DERSet((AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]));
     }
 
     static void addDigestAlgs(Set<AlgorithmIdentifier> digestAlgs, SignerInformation signer, DigestAlgorithmIdentifierFinder dgstAlgFinder)
@@ -390,6 +396,50 @@ class CMSUtils
             || CMSAlgorithm.AES256_CCM.equals(algorithm))
         {
             return inputLength + CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+
+        return -1;
+    }
+
+    /**
+     * Return the MAC output length in octets implied by the given MAC
+     * algorithm, or -1 when the algorithm does not have a spec-fixed output
+     * length (e.g. block-cipher based MACs, whose truncation is a provider
+     * default) - used by the definite-length authenticated-data path, which
+     * must size the mac field before any content is written.
+     */
+    static int getMacOutputLength(AlgorithmIdentifier macAlgId)
+    {
+        ASN1ObjectIdentifier algorithm = macAlgId.getAlgorithm();
+
+        if (PKCSObjectIdentifiers.id_hmacWithSHA1.equals(algorithm)
+            || IANAObjectIdentifiers.hmacSHA1.equals(algorithm))
+        {
+            return 20;
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA224.equals(algorithm)
+            || NISTObjectIdentifiers.id_hmacWithSHA3_224.equals(algorithm))
+        {
+            return 28;
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA256.equals(algorithm)
+            || NISTObjectIdentifiers.id_hmacWithSHA3_256.equals(algorithm))
+        {
+            return 32;
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA384.equals(algorithm)
+            || NISTObjectIdentifiers.id_hmacWithSHA3_384.equals(algorithm))
+        {
+            return 48;
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA512.equals(algorithm)
+            || NISTObjectIdentifiers.id_hmacWithSHA3_512.equals(algorithm))
+        {
+            return 64;
+        }
+        if (IANAObjectIdentifiers.hmacMD5.equals(algorithm))
+        {
+            return 16;
         }
 
         return -1;
@@ -674,6 +724,11 @@ class CMSUtils
     static ASN1Set getAttrBERSet(CMSAttributeTableGenerator gen)
     {
         return (gen != null) ? new BERSet(gen.getAttributes(getEmptyParameters()).toASN1EncodableVector()) : null;
+    }
+
+    static ASN1Set getAttrDERSet(CMSAttributeTableGenerator gen)
+    {
+        return (gen != null) ? new DERSet(gen.getAttributes(getEmptyParameters()).toASN1EncodableVector()) : null;
     }
 
     static byte[] encodeObj(

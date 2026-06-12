@@ -74,7 +74,6 @@ public class CMSSignedDataStreamGenerator
     extends CMSSignedGenerator
 {
     private int _bufferSize;
-    private String encoding = ASN1Encoding.BER;
 
     /**
      * base constructor
@@ -100,21 +99,6 @@ public class CMSSignedDataStreamGenerator
         int bufferSize)
     {
         _bufferSize = bufferSize;
-    }
-
-    /**
-     * Specify use of definite-length/DER rather than indefinite length encoding ("BER").
-     *
-     * @param encoding one of "DER", "DL", "BER".
-     */
-    public void setEncoding(String encoding)
-    {
-        if (!(ASN1Encoding.BER.equals(encoding) || ASN1Encoding.DL.equals(encoding) || ASN1Encoding.DER.equals(encoding)))
-        {
-            throw new IllegalArgumentException("encoding must be one of BER, DER, or DL");
-        }
-
-        this.encoding = encoding;
     }
 
     /**

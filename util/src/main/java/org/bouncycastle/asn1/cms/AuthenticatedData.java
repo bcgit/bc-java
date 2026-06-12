@@ -10,7 +10,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
+import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -250,7 +252,15 @@ public class AuthenticatedData
             v.add(new DERTaggedObject(false, 3, unauthAttrs));
         }
 
-        return new BERSequence(v);
+        if (!encapsulatedContentInfo.isDefiniteLength()
+            || recipientInfos instanceof BERSet || unauthAttrs instanceof BERSet)
+        {
+            return new BERSequence(v);
+        }
+        else
+        {
+            return new DLSequence(v);
+        }
     }
 
     public static int calculateVersion(OriginatorInfo origInfo)

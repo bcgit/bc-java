@@ -3,6 +3,7 @@ package org.bouncycastle.cms;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -51,11 +52,36 @@ public class CMSEnvelopedGenerator
 
     protected OriginatorInfo originatorInfo;
 
+    protected String encoding = ASN1Encoding.BER;
+
     /**
      * base constructor
      */
     protected CMSEnvelopedGenerator()
     {
+    }
+
+    /**
+     * Specify use of definite-length/DER rather than indefinite length encoding ("BER").
+     * <p>
+     * The in-memory generators honour the choice all the way through their
+     * generate() methods - in the definite-length modes the encrypted content
+     * is carried as a primitive definite-length OCTET STRING, with "DER"
+     * additionally sorting the sets the generator builds. The streaming
+     * generators that support definite-length output need the content length
+     * supplied up front via their length-taking open() methods; see the
+     * individual open() javadoc.
+     *
+     * @param encoding one of "DER", "DL", "BER".
+     */
+    public void setEncoding(String encoding)
+    {
+        if (!(ASN1Encoding.BER.equals(encoding) || ASN1Encoding.DL.equals(encoding) || ASN1Encoding.DER.equals(encoding)))
+        {
+            throw new IllegalArgumentException("encoding must be one of BER, DER, or DL");
+        }
+
+        this.encoding = encoding;
     }
 
     public void setUnprotectedAttributeGenerator(CMSAttributeTableGenerator unprotectedAttributeGenerator)

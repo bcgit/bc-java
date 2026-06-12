@@ -57,7 +57,6 @@ public class CMSEnvelopedDataStreamGenerator
 {
     private int                 _bufferSize;
     private boolean             _berEncodeRecipientSet;
-    private String              encoding = ASN1Encoding.BER;
 
     /**
      * base constructor
@@ -84,31 +83,6 @@ public class CMSEnvelopedDataStreamGenerator
         boolean berEncodeRecipientSet)
     {
         _berEncodeRecipientSet = berEncodeRecipientSet;
-    }
-
-    /**
-     * Specify use of definite-length/DER rather than indefinite-length encoding ("BER").
-     * <p>
-     * In definite-length mode the content length must be supplied up front via
-     * {@link #open(OutputStream, long, OutputEncryptor)} /
-     * {@link #open(ASN1ObjectIdentifier, OutputStream, long, OutputEncryptor)},
-     * since the encrypted-content OCTET STRING's length is written before any
-     * ciphertext flows; the {@link #setBufferSize(int) buffer size} and
-     * {@link #setBEREncodeRecipients(boolean) BER recipient set} settings are
-     * ignored (an indefinite-length encoding may not appear inside a
-     * definite-length one). Nothing is buffered, so content larger than a Java
-     * array can carry is supported.
-     *
-     * @param encoding one of "DER", "DL", "BER".
-     */
-    public void setEncoding(String encoding)
-    {
-        if (!(ASN1Encoding.BER.equals(encoding) || ASN1Encoding.DL.equals(encoding) || ASN1Encoding.DER.equals(encoding)))
-        {
-            throw new IllegalArgumentException("encoding must be one of BER, DER, or DL");
-        }
-
-        this.encoding = encoding;
     }
 
     private ASN1Integer getVersion(ASN1EncodableVector recipientInfos)
@@ -201,6 +175,12 @@ public class CMSEnvelopedDataStreamGenerator
      * octets must then be written to the returned stream - a mismatch fails
      * with an IOException, by which point the output is unusable and must be
      * discarded. In BER mode the length is ignored.
+     * <p>
+     * In definite-length mode the {@link #setBufferSize(int) buffer size} and
+     * {@link #setBEREncodeRecipients(boolean) BER recipient set} settings are
+     * ignored (an indefinite-length encoding may not appear inside a
+     * definite-length one). Nothing is buffered, so content larger than a Java
+     * array can carry is supported.
      */
     public OutputStream open(OutputStream out, long inputLength, OutputEncryptor encryptor)
         throws CMSException, IOException

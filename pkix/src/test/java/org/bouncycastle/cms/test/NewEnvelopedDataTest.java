@@ -49,6 +49,7 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
@@ -1082,6 +1083,62 @@ public class NewEnvelopedDataTest
             fail("recipients not matched using general recipient ID.");
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testKeyTransEncodings()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        // default - outer ContentInfo uses the indefinite-length (BER) method
+        byte[] enc = keyTransEncode(data, null);
+
+        assertEquals((byte)0x80, enc[1]);
+        keyTransDecode(enc, data);
+
+        // DL - definite-length throughout, re-encoding as DL is the identity
+        enc = keyTransEncode(data, ASN1Encoding.DL);
+
+        assertTrue(enc[1] != (byte)0x80);
+        assertTrue(Arrays.equals(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DL)));
+        keyTransDecode(enc, data);
+
+        // DER - canonical, re-encoding as DER is the identity
+        enc = keyTransEncode(data, ASN1Encoding.DER);
+
+        assertTrue(Arrays.equals(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DER)));
+        keyTransDecode(enc, data);
+    }
+
+    private byte[] keyTransEncode(byte[] data, String encoding)
+        throws Exception
+    {
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        if (encoding != null)
+        {
+            edGen.setEncoding(encoding);
+        }
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        return ed.getEncoded();
+    }
+
+    private void keyTransDecode(byte[] enc, byte[] data)
+        throws Exception
+    {
+        CMSEnvelopedData ed = new CMSEnvelopedData(enc);
+
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertTrue(Arrays.equals(data, recData));
     }
 
     public void testKeyTransSM2()
