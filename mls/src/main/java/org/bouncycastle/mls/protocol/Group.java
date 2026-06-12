@@ -1288,10 +1288,20 @@ public class Group
                 sendersExt = ext;
             }
         }
+        if (sendersExt == null)
+        {
+            throw new Exception("No external senders extension in group");
+        }
+
         List<ExternalSender> senders = sendersExt.getSenders();
+        int senderIndex = extSender.getSenderIndex();
+        if (senders == null || senderIndex < 0 || senderIndex >= senders.size())
+        {
+            throw new Exception("External sender index out of range");
+        }
 
         return auth.verify(suite,
-            senders.get(extSender.getSenderIndex()).getSignatureKey(),
+            senders.get(senderIndex).getSignatureKey(),
             MLSOutputStream.encode(getGroupContext()));
     }
 
