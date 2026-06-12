@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -19,6 +20,11 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSequenceGenerator;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLGenerator;
+import org.bouncycastle.asn1.DLOctetStringGenerator;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.DLSequenceGenerator;
+import org.bouncycastle.asn1.DLTaggedObject;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -83,6 +89,171 @@ public class ASN1GeneratorTest
             testTaggedDERSequence(tagNo, false, derSeq);
             testTaggedBEROctetString(tagNo, true, content, berOctets);
             testTaggedBEROctetString(tagNo, false, content, berOctets);
+        }
+
+        testDLGenerators(content);
+        testDLLengthArithmetic();
+        testDLLengthEnforcement();
+    }
+
+    private void testDLGenerators(byte[] content)
+        throws Exception
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new ASN1Integer(4095));
+        v.add(new DEROctetString(new byte[]{ 1, 2, 3, 4 }));
+        DLSequence dlSeq = new DLSequence(v);
+
+        long seqBodyLength = new ASN1Integer(4095).getEncoded(ASN1Encoding.DL).length
+            + new DEROctetString(new byte[]{ 1, 2, 3, 4 }).getEncoded(ASN1Encoding.DL).length;
+
+        // untagged baselines against the in-memory encodings
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        DLSequenceGenerator dlSeqGen = new DLSequenceGenerator(bOut, seqBodyLength);
+        dlSeqGen.addObject(new ASN1Integer(4095));
+        dlSeqGen.addObject(new DEROctetString(new byte[]{ 1, 2, 3, 4 }));
+        dlSeqGen.close();
+        isTrue("untagged DL seq", areEqual(dlSeq.getEncoded(ASN1Encoding.DL), bOut.toByteArray()));
+
+        DEROctetString dlOctets = new DEROctetString(content);
+        bOut = new ByteArrayOutputStream();
+        DLOctetStringGenerator dlOctGen = new DLOctetStringGenerator(bOut, content.length);
+        dlOctGen.getOctetOutputStream().write(content);
+        dlOctGen.close();
+        isTrue("untagged DL octets", areEqual(dlOctets.getEncoded(ASN1Encoding.DL), bOut.toByteArray()));
+
+        for (int i = 0; i != TAG_NOS.length; i++)
+        {
+            int tagNo = TAG_NOS[i];
+
+            // implicit tags: all tag numbers; explicit: single identifier octet only
+            testTaggedDLSequence(tagNo, false, dlSeq, seqBodyLength);
+            testTaggedDLOctetString(tagNo, false, content, dlOctets);
+            if (tagNo <= 30)
+            {
+                testTaggedDLSequence(tagNo, true, dlSeq, seqBodyLength);
+                testTaggedDLOctetString(tagNo, true, content, dlOctets);
+            }
+        }
+    }
+
+    private void testTaggedDLSequence(int tagNo, boolean isExplicit, DLSequence seq, long bodyLength)
+        throws Exception
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        DLSequenceGenerator gen = new DLSequenceGenerator(bOut, tagNo, isExplicit, bodyLength);
+        gen.addObject(new ASN1Integer(4095));
+        gen.addObject(new DEROctetString(new byte[]{ 1, 2, 3, 4 }));
+        gen.close();
+
+        byte[] expected = new DLTaggedObject(isExplicit, tagNo, seq).getEncoded(ASN1Encoding.DL);
+        isTrue("DL seq [" + tagNo + "] explicit=" + isExplicit, areEqual(expected, bOut.toByteArray()));
+
+        checkSequenceRoundTrip(bOut.toByteArray(), tagNo, isExplicit, seq);
+    }
+
+    private void testTaggedDLOctetString(int tagNo, boolean isExplicit, byte[] content, DEROctetString octets)
+        throws Exception
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        DLOctetStringGenerator gen = new DLOctetStringGenerator(bOut, tagNo, isExplicit, content.length);
+        gen.getOctetOutputStream().write(content);
+        gen.close();
+
+        byte[] expected = new DLTaggedObject(isExplicit, tagNo, octets).getEncoded(ASN1Encoding.DL);
+        isTrue("DL octets [" + tagNo + "] explicit=" + isExplicit, areEqual(expected, bOut.toByteArray()));
+
+        ASN1InputStream aIn = new ASN1InputStream(bOut.toByteArray());
+        ASN1TaggedObject tagged = (ASN1TaggedObject)aIn.readObject();
+        isTrue("DL octets tagNo [" + tagNo + "]", tagNo == tagged.getTagNo());
+        ASN1OctetString recovered = ASN1OctetString.getInstance(tagged, isExplicit);
+        isTrue("DL octets content [" + tagNo + "] explicit=" + isExplicit, areEqual(content, recovered.getOctets()));
+    }
+
+    private void testDLLengthArithmetic()
+        throws Exception
+    {
+        // short form boundary, long form 1..5 length octets
+        long[] bodyLengths = { 0, 1, 0x7F, 0x80, 0xFF, 0x100, 0xFFFF, 0x10000, 0xFFFFFFFFL, 0x100000000L, 0x123456789AL };
+        int[] expectedOctets = { 1, 1, 1, 2, 2, 3, 3, 4, 5, 6, 6 };
+
+        for (int i = 0; i != bodyLengths.length; i++)
+        {
+            isTrue("length octet count for " + bodyLengths[i],
+                expectedOctets[i] == DLGenerator.getLengthOctetCount(bodyLengths[i]));
+            isTrue("TLV length for " + bodyLengths[i],
+                1 + expectedOctets[i] + bodyLengths[i] == DLGenerator.getDLEncodingLength(bodyLengths[i]));
+        }
+
+        // a header for a body larger than any Java array: 04 85 12 34 56 78 9A
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        new DLOctetStringGenerator(bOut, 0x123456789AL);
+        isTrue("beyond-array-size header", areEqual(
+            new byte[]{ 0x04, (byte)0x85, 0x12, 0x34, 0x56, 0x78, (byte)0x9A }, bOut.toByteArray()));
+    }
+
+    private void testDLLengthEnforcement()
+        throws Exception
+    {
+        // overrun fails on write
+        DLOctetStringGenerator gen = new DLOctetStringGenerator(new ByteArrayOutputStream(), 4);
+        gen.getOctetOutputStream().write(new byte[]{ 1, 2, 3 });
+        try
+        {
+            gen.getOctetOutputStream().write(new byte[]{ 4, 5 });
+            fail("overrun not detected");
+        }
+        catch (IOException e)
+        {
+            isTrue(e.getMessage(), e.getMessage().indexOf("more than the declared") >= 0);
+        }
+
+        // underrun fails on close
+        gen = new DLOctetStringGenerator(new ByteArrayOutputStream(), 4);
+        gen.getOctetOutputStream().write(new byte[]{ 1, 2, 3 });
+        try
+        {
+            gen.close();
+            fail("underrun not detected");
+        }
+        catch (IOException e)
+        {
+            isTrue(e.getMessage(), e.getMessage().indexOf("fewer octets written") >= 0);
+        }
+
+        // same checks on the sequence generator body
+        DLSequenceGenerator seqGen = new DLSequenceGenerator(new ByteArrayOutputStream(), 3);
+        try
+        {
+            seqGen.addObject(new DEROctetString(new byte[]{ 1, 2, 3, 4 }));
+            fail("sequence overrun not detected");
+        }
+        catch (IOException e)
+        {
+            isTrue(e.getMessage(), e.getMessage().indexOf("more than the declared") >= 0);
+        }
+
+        seqGen = new DLSequenceGenerator(new ByteArrayOutputStream(), 7);
+        seqGen.addObject(new DEROctetString(new byte[]{ 1, 2, 3, 4 }));
+        try
+        {
+            seqGen.close();
+            fail("sequence underrun not detected");
+        }
+        catch (IOException e)
+        {
+            isTrue(e.getMessage(), e.getMessage().indexOf("fewer octets written") >= 0);
+        }
+
+        // explicit tags above 30 are rejected up front
+        try
+        {
+            new DLSequenceGenerator(new ByteArrayOutputStream(), 31, true, 4);
+            fail("explicit high tag not rejected");
+        }
+        catch (IOException e)
+        {
+            isTrue(e.getMessage(), e.getMessage().indexOf("explicit tag numbers > 30") >= 0);
         }
     }
 

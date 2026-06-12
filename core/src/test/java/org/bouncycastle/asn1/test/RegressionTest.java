@@ -65,7 +65,8 @@ public class RegressionTest
         new CertIDTest(),
         new IANAObjectIdentifierTest(),
         new StreamLimitTest(),
-        new ASN1GeneratorTest()
+        new ASN1GeneratorTest(),
+        new LongDefiniteLengthParserTest()
     };
 
     public static void main(String[] args)

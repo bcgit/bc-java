@@ -14,13 +14,13 @@ class DefiniteLengthInputStream
 {
     private static final byte[] EMPTY_BYTES = new byte[0];
 
-    private final int _originalLength;
+    private final long _originalLength;
 
-    private int _remaining;
+    private long _remaining;
 
     DefiniteLengthInputStream(
         InputStream in,
-        int         length,
+        long        length,
         int         limit)
     {
         super(in, limit);
@@ -39,7 +39,21 @@ class DefiniteLengthInputStream
         this._remaining = length;
     }
 
+    /**
+     * Only valid on the materialization path, where lengths are bounded by
+     * what a Java array can hold; the streaming path uses
+     * {@link #getLongRemaining()}.
+     */
     int getRemaining()
+    {
+        if (_remaining > Integer.MAX_VALUE)
+        {
+            throw new IllegalStateException("definite-length too large for int: " + _remaining);
+        }
+        return (int)_remaining;
+    }
+
+    long getLongRemaining()
     {
         return _remaining;
     }
@@ -75,7 +89,7 @@ class DefiniteLengthInputStream
             return -1;
         }
 
-        int toRead = Math.min(len, _remaining);
+        int toRead = (int)Math.min(len, _remaining);
         int numRead = _in.read(buf, off, toRead);
 
         if (numRead < 0)
@@ -99,13 +113,13 @@ class DefiniteLengthInputStream
             return;
         }
 
-        StreamUtil.checkLength(_remaining, getLimit());
+        StreamUtil.checkLength(_remaining, (long)getLimit());
 
         if (_remaining > buf.length)
         {
             throw new IllegalArgumentException("buffer length insufficient for data");
         }
-        if ((_remaining -= Streams.readFully(_in, buf, 0, _remaining)) != 0)
+        if ((_remaining -= Streams.readFully(_in, buf, 0, (int)_remaining)) != 0)
         {
             throw new EOFException("DEF length " + _originalLength + " object truncated by " + _remaining);
         }
@@ -120,9 +134,9 @@ class DefiniteLengthInputStream
             return EMPTY_BYTES;
         }
 
-        StreamUtil.checkLength(_remaining, getLimit());
+        StreamUtil.checkLength(_remaining, (long)getLimit());
 
-        byte[] bytes = new byte[_remaining];
+        byte[] bytes = new byte[(int)_remaining];
         if ((_remaining -= Streams.readFully(_in, bytes, 0, bytes.length)) != 0)
         {
             throw new EOFException("DEF length " + _originalLength + " object truncated by " + _remaining);

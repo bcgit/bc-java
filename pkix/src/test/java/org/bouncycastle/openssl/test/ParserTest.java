@@ -293,12 +293,12 @@ public class ParserTest
         doDudPasswordTest("800ce", 2, "unknown tag 26 encountered");
         doDudPasswordTest("b6cd8", 3, "DEF length 81 object truncated by 56");
         doDudPasswordTest("28ce09", 4, "corrupted stream - high tag number < 31 found");
-        doDudPasswordTest("2ac3b9", 5, "long form definite-length more than 31 bits");
+        doDudPasswordTest("2ac3b9", 5, "long form definite-length more than 63 bits");
         doDudPasswordTest("2cba96", 6, "corrupted stream - out of bounds length found: 100 > 67");
         doDudPasswordTest("2e3354", 7, "corrupted stream - out of bounds length found: 42 > 35");
         doDudPasswordTest("2f4142", 8, "corrupted stream - out of bounds length found: 127 > 39");
         doDudPasswordTest("2fe9bb", 9, "long form definite-length more than 31 bits");
-        doDudPasswordTest("3ee7a8", 10, "long form definite-length more than 31 bits");
+        doDudPasswordTest("3ee7a8", 10, "long form definite-length more than 63 bits");
         doDudPasswordTest("41af75", 11, "unknown tag 16 encountered");
         doDudPasswordTest("1704a5", 12, "BOOLEAN value should have 1 byte in it");
         doDudPasswordTest("1c5822", 13, "Extra data detected in stream");

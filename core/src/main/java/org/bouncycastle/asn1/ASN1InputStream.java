@@ -403,6 +403,58 @@ public class ASN1InputStream
         return tagNo;
     }
 
+    /**
+     * Long-capable variant of {@link #readLength(InputStream)} for the
+     * streaming parser, where definite lengths are traversed or drained
+     * rather than materialized and so may exceed the size of a Java array.
+     * The in-memory paths deliberately keep the 31-bit-bounded variant.
+     */
+    static long readLongLength(InputStream s)
+        throws IOException
+    {
+        int length = s.read();
+        if (0 == (length >>> 7))
+        {
+            // definite-length short form 
+            return length;
+        }
+        if (0x80 == length)
+        {
+            // indefinite-length
+            return -1;
+        }
+        if (length < 0)
+        {
+            throw new EOFException("EOF found when length expected");
+        }
+        if (0xFF == length)
+        {
+            throw new IOException("invalid long form definite-length 0xFF");
+        }
+
+        int octetsCount = length & 0x7F, octetsPos = 0;
+
+        long longLength = 0;
+        do
+        {
+            int octet = s.read();
+            if (octet < 0)
+            {
+                throw new EOFException("EOF found reading length");
+            }
+
+            if ((longLength >>> 55) != 0)
+            {
+                throw new IOException("long form definite-length more than 63 bits");
+            }
+
+            longLength = (longLength << 8) + octet;
+        }
+        while (++octetsPos < octetsCount);
+
+        return longLength;
+    }
+
     static int readLength(InputStream s)
         throws IOException
     {
