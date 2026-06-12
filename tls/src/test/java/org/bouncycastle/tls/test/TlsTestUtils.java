@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PipedInputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Security;
@@ -27,13 +28,16 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateEntry;
+import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -47,11 +51,13 @@ import org.bouncycastle.tls.TlsPSKIdentity;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsRawKeyCertificate;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
@@ -501,6 +507,52 @@ public class TlsTestUtils
         String keyResource = "x509-server-key-" + sigName + ".pem";
 
         return loadSignerCredentials(context, supportedSignatureAlgorithms, signatureAlgorithm, certResource, keyResource);
+    }
+
+    /**
+     * Build a fresh Ed25519 raw public key (RFC 7250) signer credential for the connection's crypto
+     * backend, exercising either {@code BcTlsRawKeyCertificate} or {@code JcaTlsRawKeyCertificate}.
+     */
+    static TlsCredentialedSigner createRawKeyEd25519Credentials(TlsContext context) throws IOException
+    {
+        TlsCrypto crypto = context.getCrypto();
+        byte[] certificateRequestContext = TlsUtils.isTLSv13(context) ? TlsUtils.EMPTY_BYTES : null;
+
+        if (crypto instanceof BcTlsCrypto)
+        {
+            BcTlsCrypto bcCrypto = (BcTlsCrypto)crypto;
+
+            Ed25519PrivateKeyParameters privateKey = new Ed25519PrivateKeyParameters(bcCrypto.getSecureRandom());
+            TlsCertificate rawKeyCert = new BcTlsRawKeyCertificate(bcCrypto,
+                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(privateKey.generatePublicKey()));
+            Certificate certificate = new Certificate(CertificateType.RawPublicKey, certificateRequestContext,
+                new CertificateEntry[]{ new CertificateEntry(rawKeyCert, null) });
+
+            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), bcCrypto, privateKey,
+                certificate, SignatureAndHashAlgorithm.ed25519);
+        }
+        else
+        {
+            JcaTlsCrypto jcaCrypto = (JcaTlsCrypto)crypto;
+
+            KeyPair keyPair;
+            try
+            {
+                keyPair = jcaCrypto.getHelper().createKeyPairGenerator("Ed25519").generateKeyPair();
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new TlsCryptoException("unable to generate Ed25519 key pair", e);
+            }
+
+            TlsCertificate rawKeyCert = jcaCrypto.createCertificate(CertificateType.RawPublicKey,
+                keyPair.getPublic().getEncoded());
+            Certificate certificate = new Certificate(CertificateType.RawPublicKey, certificateRequestContext,
+                new CertificateEntry[]{ new CertificateEntry(rawKeyCert, null) });
+
+            return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), jcaCrypto,
+                keyPair.getPrivate(), certificate, SignatureAndHashAlgorithm.ed25519);
+        }
     }
 
     static Certificate loadCertificateChain(ProtocolVersion protocolVersion, TlsCrypto crypto, String[] resources)
