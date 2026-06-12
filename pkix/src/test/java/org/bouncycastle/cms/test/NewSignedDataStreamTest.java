@@ -26,16 +26,23 @@ import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.asn1.cms.SignedData;
+import org.bouncycastle.asn1.esf.ESFAttributes;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cades.CAdESArchiveTimestampUtil;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCRLStore;
@@ -63,6 +70,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
@@ -1685,6 +1693,347 @@ public class NewSignedDataStreamTest
         sp.getSignedContent().drain();
 
         verifySignatures(sp);
+    }
+
+    public void testEncodingMetadata()
+        throws Exception
+    {
+        List certList = new ArrayList();
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        //
+        // BER source - streaming generator, encapsulated
+        //
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA1withRSA", _origKP.getPrivate(), _origCert));
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA224withRSA", _origKP.getPrivate(), _origCert));
+
+        gen.addCertificates(certs);
+
+        OutputStream sigOut = gen.open(bOut, true);
+
+        sigOut.write(TEST_MESSAGE.getBytes());
+
+        sigOut.close();
+
+        byte[] berEncoding = bOut.toByteArray();
+
+        CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), berEncoding);
+
+        // metadata is available immediately after construction
+        assertTrue(sp.isBEREncoded());
+        assertTrue(sp.isContentBEREncoded());
+
+        ASN1Set digestAlgSet = sp.getDigestAlgorithmsSet();
+
+        // the streaming generator writes the digestAlgorithms field definite-length
+        assertTrue(digestAlgSet instanceof DLSet);
+        assertEquals(2, digestAlgSet.size());
+
+        // wire order preserved - compare against a full materialization
+        ASN1Set materialized = SignedData.getInstance(
+            ContentInfo.getInstance(berEncoding).getContent()).getDigestAlgorithms();
+        assertEquals(materialized.size(), digestAlgSet.size());
+        for (int i = 0; i != digestAlgSet.size(); i++)
+        {
+            assertEquals(materialized.getObjectAt(i), digestAlgSet.getObjectAt(i));
+        }
+
+        sp.getSignedContent().drain();
+        verifySignatures(sp);
+        sp.close();
+
+        //
+        // DER source - everything definite-length, primitive eContent
+        //
+        CMSSignedData sd = new CMSSignedData(berEncoding);
+
+        sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), sd.getEncoded(ASN1Encoding.DER));
+
+        assertFalse(sp.isBEREncoded());
+        assertFalse(sp.isContentBEREncoded());
+        assertFalse(sp.getDigestAlgorithmsSet() instanceof BERSet);
+        assertEquals(2, sp.getDigestAlgorithmsSet().size());
+
+        sp.getSignedContent().drain();
+        verifySignatures(sp);
+        sp.close();
+    }
+
+    public void testReplaceSignersPreservingEncoding()
+        throws Exception
+    {
+        List certList = new ArrayList();
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store certs = new JcaCertStore(certList);
+        Store crls = new JcaCRLStore(Collections.singletonList(_signCrl));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+
+        // a small, odd buffer size forces multi-chunk constructed BER eContent -
+        // any re-encoding of the content (rather than a verbatim copy) re-chunks
+        // it and is caught by the slice comparison below.
+        gen.setBufferSize(7);
+
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA1withRSA", _origKP.getPrivate(), _origCert));
+
+        gen.addCertificates(certs);
+        gen.addCRLs(crls);
+
+        OutputStream sigOut = gen.open(bOut, true);
+
+        sigOut.write(TEST_MESSAGE.getBytes());
+
+        sigOut.close();
+
+        byte[] original = bOut.toByteArray();
+
+        //
+        // attach a dummy archive-time-stamp v2 unsigned attribute to the signer
+        //
+        CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), original);
+
+        sp.getSignedContent().drain();
+
+        SignerInformation signer = (SignerInformation)sp.getSignerInfos().getSigners().iterator().next();
+
+        Hashtable attrs = new Hashtable();
+        Attribute dummyArchiveTimestamp = new Attribute(ESFAttributes.archiveTimestampV2,
+            new DERSet(new DEROctetString(new byte[16])));
+        attrs.put(dummyArchiveTimestamp.getAttrType(), dummyArchiveTimestamp);
+
+        SignerInformation augmented = SignerInformation.replaceUnsignedAttributes(signer, new AttributeTable(attrs));
+
+        sp.close();
+
+        ByteArrayOutputStream newOut = new ByteArrayOutputStream();
+
+        CMSSignedDataParser.replaceSignersPreservingEncoding(new ByteArrayInputStream(original),
+            new SignerInformationStore(Collections.singletonList(augmented)), newOut);
+
+        byte[] augmentedEncoding = newOut.toByteArray();
+
+        //
+        // the result still verifies and carries the new unsigned attribute
+        //
+        sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), augmentedEncoding);
+
+        sp.getSignedContent().drain();
+
+        verifySignatures(sp);
+
+        signer = (SignerInformation)sp.getSignerInfos().getSigners().iterator().next();
+
+        assertNotNull(signer.getUnsignedAttributes().get(ESFAttributes.archiveTimestampV2));
+
+        sp.close();
+
+        //
+        // version, digestAlgorithms, encapContentInfo, certificates and crls
+        // are byte-for-byte identical to the original
+        //
+        List originalSlices = sliceSignedDataElements(original);
+        List augmentedSlices = sliceSignedDataElements(augmentedEncoding);
+
+        assertEquals(6, originalSlices.size());     // version, digestAlgs, encapContentInfo, certs, crls, signerInfos
+        assertEquals(originalSlices.size(), augmentedSlices.size());
+
+        for (int i = 0; i != originalSlices.size() - 1; i++)
+        {
+            assertTrue("element " + i + " not copied verbatim",
+                Arrays.areEqual((byte[])originalSlices.get(i), (byte[])augmentedSlices.get(i)));
+        }
+
+        // ... whereas the re-encoding replaceSigners re-chunks the content -
+        // proving the slice comparison can actually tell the two apart.
+        ByteArrayOutputStream reencodedOut = new ByteArrayOutputStream();
+
+        CMSSignedDataParser.replaceSigners(new ByteArrayInputStream(original),
+            new SignerInformationStore(Collections.singletonList(augmented)), reencodedOut);
+
+        List reencodedSlices = sliceSignedDataElements(reencodedOut.toByteArray());
+
+        assertFalse(Arrays.areEqual((byte[])originalSlices.get(2), (byte[])reencodedSlices.get(2)));
+
+        //
+        // the ETSI archive-time-stamp v2 imprint is unchanged by the augmentation
+        //
+        AlgorithmIdentifier sha256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+
+        sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), original);
+        byte[] originalImprint = CAdESArchiveTimestampUtil.computeArchiveTimestampImprint(sp, sha256,
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+        sp.close();
+
+        sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), augmentedEncoding);
+        byte[] augmentedImprint = CAdESArchiveTimestampUtil.computeArchiveTimestampImprint(sp, sha256,
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+        sp.close();
+
+        assertTrue(Arrays.areEqual(originalImprint, augmentedImprint));
+
+        //
+        // the raw walk also accepts fully definite-length (DER) input
+        //
+        byte[] derEncoding = new CMSSignedData(original).getEncoded(ASN1Encoding.DER);
+
+        newOut = new ByteArrayOutputStream();
+
+        CMSSignedDataParser.replaceSignersPreservingEncoding(new ByteArrayInputStream(derEncoding),
+            new SignerInformationStore(Collections.singletonList(augmented)), newOut);
+
+        sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), newOut.toByteArray());
+
+        sp.getSignedContent().drain();
+
+        verifySignatures(sp);
+
+        sp.close();
+    }
+
+    public void testReplaceSignersPreservingEncodingKeepsStoreOrder()
+        throws Exception
+    {
+        List certList = new ArrayList();
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA1withRSA", _origKP.getPrivate(), _origCert));
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA224withRSA", _origKP.getPrivate(), _origCert));
+
+        gen.addCertificates(certs);
+
+        OutputStream sigOut = gen.open(bOut, true);
+
+        sigOut.write(TEST_MESSAGE.getBytes());
+
+        sigOut.close();
+
+        byte[] original = bOut.toByteArray();
+
+        CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), original);
+
+        sp.getSignedContent().drain();
+
+        List wireOrder = new ArrayList(sp.getSignerInfos().getSigners());
+
+        sp.close();
+
+        assertEquals(2, wireOrder.size());
+
+        // reverse the signers - a DER SET would sort them back
+        List reversed = new ArrayList(wireOrder);
+        Collections.reverse(reversed);
+
+        ByteArrayOutputStream newOut = new ByteArrayOutputStream();
+
+        CMSSignedDataParser.replaceSignersPreservingEncoding(new ByteArrayInputStream(original),
+            new SignerInformationStore(reversed), newOut);
+
+        sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), newOut.toByteArray());
+
+        sp.getSignedContent().drain();
+
+        verifySignatures(sp);
+
+        List newOrder = new ArrayList(sp.getSignerInfos().getSigners());
+
+        sp.close();
+
+        assertEquals(reversed.size(), newOrder.size());
+        for (int i = 0; i != reversed.size(); i++)
+        {
+            assertEquals(((SignerInformation)reversed.get(i)).getDigestAlgOID(),
+                ((SignerInformation)newOrder.get(i)).getDigestAlgOID());
+        }
+    }
+
+    /**
+     * Slice the top-level elements of the SignedData (version,
+     * digestAlgorithms, encapContentInfo, optional certs/crls, signerInfos)
+     * out of a BER-framed ContentInfo, as raw TLV byte ranges.
+     */
+    private static List sliceSignedDataElements(byte[] enc)
+    {
+        int off = 0;
+        off = skipHeaderOctets(enc, off);   // ContentInfo SEQUENCE
+        off = skipTLV(enc, off);            // contentType
+        off = skipHeaderOctets(enc, off);   // [0]
+        off = skipHeaderOctets(enc, off);   // SignedData SEQUENCE
+
+        List slices = new ArrayList();
+        while ((enc[off] & 0xff) != 0)      // until the end-of-contents marker
+        {
+            int end = skipTLV(enc, off);
+            byte[] slice = new byte[end - off];
+            System.arraycopy(enc, off, slice, 0, slice.length);
+            slices.add(slice);
+            off = end;
+        }
+        return slices;
+    }
+
+    /** Step over identifier and length octets only (header of a constructed element). */
+    private static int skipHeaderOctets(byte[] enc, int off)
+    {
+        off++;
+        int b = enc[off++] & 0xff;
+        if (b > 0x80)
+        {
+            off += b & 0x7f;
+        }
+        return off;
+    }
+
+    /** Return the end offset of the complete TLV starting at off. */
+    private static int skipTLV(byte[] enc, int off)
+    {
+        int tag = enc[off++] & 0xff;
+        if ((tag & 0x1f) == 0x1f)
+        {
+            while ((enc[off++] & 0x80) != 0)
+            {
+            }
+        }
+        int b = enc[off++] & 0xff;
+        if (b == 0x80)
+        {
+            while ((enc[off] & 0xff) != 0)
+            {
+                off = skipTLV(enc, off);
+            }
+            return off + 2;
+        }
+        if (b > 0x7f)
+        {
+            int octets = b & 0x7f;
+            int length = 0;
+            for (int i = 0; i != octets; i++)
+            {
+                length = (length << 8) | (enc[off++] & 0xff);
+            }
+            return off + length;
+        }
+        return off + b;
     }
 
     public void testCertStoreReplacement()
