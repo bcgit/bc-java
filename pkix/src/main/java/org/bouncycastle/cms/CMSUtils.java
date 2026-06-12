@@ -39,10 +39,13 @@ import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.cms.CCMParameters;
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
@@ -342,6 +345,145 @@ class CMSUtils
         }
 
         return new DERSet(v);
+    }
+
+    /**
+     * Return the exact encrypted-content octet count produced by encrypting
+     * {@code inputLength} octets under the passed in content encryption
+     * algorithm, or -1 when the algorithm is not recognised. AEAD counts
+     * include the appended tag, matching the EnvelopedData convention of
+     * carrying the tag at the end of encryptedContent.
+     */
+    static long getDefiniteLengthCipherOutput(AlgorithmIdentifier encAlgId, long inputLength)
+    {
+        ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
+
+        if (CMSAlgorithm.AES128_CBC.equals(algorithm)
+            || CMSAlgorithm.AES192_CBC.equals(algorithm)
+            || CMSAlgorithm.AES256_CBC.equals(algorithm)
+            || CMSAlgorithm.CAMELLIA128_CBC.equals(algorithm)
+            || CMSAlgorithm.CAMELLIA192_CBC.equals(algorithm)
+            || CMSAlgorithm.CAMELLIA256_CBC.equals(algorithm)
+            || CMSAlgorithm.SEED_CBC.equals(algorithm)
+            || CMSAlgorithm.SM4_CBC.equals(algorithm))
+        {
+            // CBC with PKCS#7 padding, 16 octet blocks: always at least one pad octet.
+            return inputLength + (16 - (inputLength % 16));
+        }
+        if (CMSAlgorithm.DES_CBC.equals(algorithm)
+            || CMSAlgorithm.DES_EDE3_CBC.equals(algorithm)
+            || CMSAlgorithm.RC2_CBC.equals(algorithm)
+            || CMSAlgorithm.CAST5_CBC.equals(algorithm)
+            || CMSAlgorithm.IDEA_CBC.equals(algorithm))
+        {
+            // CBC with PKCS#7 padding, 8 octet blocks.
+            return inputLength + (8 - (inputLength % 8));
+        }
+        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
+            || CMSAlgorithm.AES192_GCM.equals(algorithm)
+            || CMSAlgorithm.AES256_GCM.equals(algorithm))
+        {
+            return inputLength + GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+        if (CMSAlgorithm.AES128_CCM.equals(algorithm)
+            || CMSAlgorithm.AES192_CCM.equals(algorithm)
+            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        {
+            return inputLength + CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+
+        return -1;
+    }
+
+    /**
+     * Return the output length in octets of the passed in digest algorithm,
+     * or -1 when the algorithm is not recognised. Used to size the trial
+     * messageDigest attribute when predicting a SignerInfo's encoded length.
+     */
+    static int getDigestOutputLength(AlgorithmIdentifier digAlgId)
+    {
+        ASN1ObjectIdentifier algorithm = digAlgId.getAlgorithm();
+
+        if (NISTObjectIdentifiers.id_sha256.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha512_256.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha3_256.equals(algorithm))
+        {
+            return 32;
+        }
+        if (NISTObjectIdentifiers.id_sha384.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha3_384.equals(algorithm))
+        {
+            return 48;
+        }
+        if (NISTObjectIdentifiers.id_sha512.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha3_512.equals(algorithm)
+            || NISTObjectIdentifiers.id_shake256.equals(algorithm))
+        {
+            return 64;
+        }
+        if (NISTObjectIdentifiers.id_sha224.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha512_224.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha3_224.equals(algorithm))
+        {
+            return 28;
+        }
+        if (OIWObjectIdentifiers.idSHA1.equals(algorithm))
+        {
+            return 20;
+        }
+        if (PKCSObjectIdentifiers.md5.equals(algorithm))
+        {
+            return 16;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Return the exact encrypted-content octet count for AuthEnvelopedData,
+     * or -1 when the algorithm is not recognised. The AEAD tag lives in the
+     * separate mac field, so the encrypted content is the raw (CTR-mode)
+     * ciphertext - the same octet count as the plaintext for GCM and CCM.
+     */
+    static long getDefiniteLengthAEADOutput(AlgorithmIdentifier encAlgId, long inputLength)
+    {
+        ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
+
+        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
+            || CMSAlgorithm.AES192_GCM.equals(algorithm)
+            || CMSAlgorithm.AES256_GCM.equals(algorithm)
+            || CMSAlgorithm.AES128_CCM.equals(algorithm)
+            || CMSAlgorithm.AES192_CCM.equals(algorithm)
+            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        {
+            return inputLength;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Return the AEAD tag length carried in AuthEnvelopedData's mac field, or
+     * -1 when the algorithm is not recognised.
+     */
+    static int getAEADMacLength(AlgorithmIdentifier encAlgId)
+    {
+        ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
+
+        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
+            || CMSAlgorithm.AES192_GCM.equals(algorithm)
+            || CMSAlgorithm.AES256_GCM.equals(algorithm))
+        {
+            return GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+        if (CMSAlgorithm.AES128_CCM.equals(algorithm)
+            || CMSAlgorithm.AES192_CCM.equals(algorithm)
+            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        {
+            return CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+
+        return -1;
     }
 
     static OutputStream createBEROctetOutputStream(OutputStream s,

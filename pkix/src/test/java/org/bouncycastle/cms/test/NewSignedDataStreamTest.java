@@ -30,6 +30,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
@@ -48,6 +49,7 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.CMSSignedDataParser;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedDataStreamGenerator;
 import org.bouncycastle.cms.CMSTypedData;
 import org.bouncycastle.cms.CMSTypedStream;
@@ -522,6 +524,281 @@ public class NewSignedDataStreamTest
         assertTrue(digestIDs.size() == 0);
         assertEquals(certStore.getMatches(null).size(), sp.getCertificates().getMatches(null).size());
         assertEquals(crlStore.getMatches(null).size(), sp.getCRLs().getMatches(null).size());
+    }
+
+    public void testDefiniteLengthSinglePass()
+        throws Exception
+    {
+        // github #1482: single-pass definite-length encapsulated SignedData
+        // for fixed-length (here RSA) signers.
+        checkDefiniteLengthSinglePass("DER", false, 1);
+        checkDefiniteLengthSinglePass("DL", false, 1);
+        checkDefiniteLengthSinglePass("DER", true, 1);     // direct signature, no signed attrs
+        checkDefiniteLengthSinglePass("DER", false, 2);    // multi-signer: DER SET sorting
+    }
+
+    private void checkDefiniteLengthSinglePass(String encoding, boolean directSignature, int signerCount)
+        throws Exception
+    {
+        byte[] data = new byte[2545];
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)i;
+        }
+
+        List certList = new ArrayList();
+        certList.add(_origCert);
+        certList.add(_signCert);
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+
+        JcaSignerInfoGeneratorBuilder siBuilder = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+        siBuilder.setDirectSignature(directSignature);
+
+        ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        gen.addSignerInfoGenerator(siBuilder.build(sha256Signer, _origCert));
+        if (signerCount > 1)
+        {
+            ContentSigner signSigner = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_signKP.getPrivate());
+            gen.addSignerInfoGenerator(siBuilder.build(signSigner, _signCert));
+        }
+
+        gen.addCertificates(certs);
+        gen.setEncoding(encoding);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OutputStream sigOut = gen.open(bOut, data.length);
+
+        sigOut.write(data, 0, 1);
+        sigOut.write(data, 1, 2000);
+        sigOut.write(data, 2001, data.length - 2001);
+
+        sigOut.close();
+
+        byte[] encoded = bOut.toByteArray();
+
+        // the output must be its own re-encoding in the requested form - i.e.
+        // genuinely definite-length (and, for DER, canonically sorted).
+        ContentInfo info = ContentInfo.getInstance(encoded);
+        assertTrue("not " + encoding + " (direct=" + directSignature + ", signers=" + signerCount + ")",
+            org.bouncycastle.util.Arrays.areEqual(encoded, info.getEncoded(encoding)));
+
+        CMSSignedDataParser sp = new CMSSignedDataParser(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), encoded);
+
+        assertTrue(org.bouncycastle.util.Arrays.areEqual(data, CMSTestUtil.streamToByteArray(sp.getSignedContent().getContentStream())));
+
+        verifySignatures(sp);
+
+        sp.close();
+    }
+
+    public void testDefiniteLengthSinglePassRejectsVariableLengthSigner()
+        throws Exception
+    {
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+
+        // DER-encoded ECDSA signatures vary in length, so the SignerInfo
+        // cannot be pre-committed.
+        KeyPair ecKP = CMSTestUtil.makeEcDsaKeyPair();
+        X509Certificate ecCert = CMSTestUtil.makeCertificate(ecKP, _origDN, _signKP, _signDN);
+        ContentSigner ecSigner = new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(ecKP.getPrivate());
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(ecSigner, ecCert));
+        gen.setEncoding("DER");
+
+        try
+        {
+            gen.open(new ByteArrayOutputStream(), 100L);
+            fail("variable-length signer not rejected");
+        }
+        catch (CMSException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().indexOf("cannot pre-commit") >= 0);
+        }
+
+        // and the single-pass entry point requires a definite-length encoding
+        CMSSignedDataStreamGenerator berGen = new CMSSignedDataStreamGenerator();
+        ContentSigner rsaSigner = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        berGen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(rsaSigner, _origCert));
+
+        try
+        {
+            berGen.open(new ByteArrayOutputStream(), 100L);
+            fail("BER mode accepted by single-pass open");
+        }
+        catch (CMSException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().indexOf("setEncoding") >= 0);
+        }
+    }
+
+    public void testDefiniteLengthSinglePassContentMismatch()
+        throws Exception
+    {
+        byte[] data = new byte[100];
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+        ContentSigner rsaSigner = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(rsaSigner, _origCert));
+        gen.setEncoding("DL");
+
+        // underrun fails at close
+        OutputStream sigOut = gen.open(new ByteArrayOutputStream(), data.length + 1);
+        sigOut.write(data);
+        try
+        {
+            sigOut.close();
+            fail("definite-length underrun not detected");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+
+        // overrun fails at write
+        gen = new CMSSignedDataStreamGenerator();
+        rsaSigner = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(rsaSigner, _origCert));
+        gen.setEncoding("DL");
+
+        sigOut = gen.open(new ByteArrayOutputStream(), data.length - 1);
+        try
+        {
+            sigOut.write(data);
+            sigOut.close();
+            fail("definite-length overrun not detected");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+    }
+
+    public void testDefiniteLengthTwoPass()
+        throws Exception
+    {
+        // github #1482: two-pass definite-length encapsulated SignedData -
+        // signatures are computed on the first pass, so variable-length
+        // signature algorithms (DER-encoded ECDSA) work too.
+        checkDefiniteLengthTwoPass("DER");
+        checkDefiniteLengthTwoPass("DL");
+    }
+
+    private void checkDefiniteLengthTwoPass(String encoding)
+        throws Exception
+    {
+        byte[] data = new byte[2545];
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)i;
+        }
+
+        KeyPair ecKP = CMSTestUtil.makeEcDsaKeyPair();
+        X509Certificate ecCert = CMSTestUtil.makeCertificate(ecKP, _origDN, _signKP, _signDN);
+
+        List certList = new ArrayList();
+        certList.add(ecCert);
+        certList.add(_origCert);
+        certList.add(_signCert);
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+
+        JcaSignerInfoGeneratorBuilder siBuilder = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        // one variable-length (ECDSA) and one fixed-length (RSA) signer
+        ContentSigner ecSigner = new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(ecKP.getPrivate());
+        gen.addSignerInfoGenerator(siBuilder.build(ecSigner, ecCert));
+        ContentSigner rsaSigner = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        gen.addSignerInfoGenerator(siBuilder.build(rsaSigner, _origCert));
+
+        gen.addCertificates(certs);
+        gen.setEncoding(encoding);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        gen.generate(new CMSProcessableByteArray(data), bOut);
+
+        byte[] encoded = bOut.toByteArray();
+
+        // the output must be its own re-encoding in the requested form.
+        ContentInfo info = ContentInfo.getInstance(encoded);
+        assertTrue("not " + encoding,
+            org.bouncycastle.util.Arrays.areEqual(encoded, info.getEncoded(encoding)));
+
+        CMSSignedDataParser sp = new CMSSignedDataParser(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), encoded);
+
+        assertTrue(org.bouncycastle.util.Arrays.areEqual(data,
+            CMSTestUtil.streamToByteArray(sp.getSignedContent().getContentStream())));
+
+        verifySignatures(sp);
+
+        sp.close();
+    }
+
+    public void testDefiniteLengthTwoPassContentChangeDetected()
+        throws Exception
+    {
+        final byte[] data = new byte[600];
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+        ContentSigner rsaSigner = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(rsaSigner, _origCert));
+        gen.setEncoding("DL");
+
+        // a content source that yields different (same-length) bytes on the
+        // second read must be caught by the cross-pass digest comparison.
+        CMSTypedData unstable = new CMSTypedData()
+        {
+            private int pass = 0;
+
+            public ASN1ObjectIdentifier getContentType()
+            {
+                return CMSObjectIdentifiers.data;
+            }
+
+            public Object getContent()
+            {
+                return data;
+            }
+
+            public void write(OutputStream out)
+                throws IOException
+            {
+                byte[] copy = (byte[])data.clone();
+                copy[0] ^= (byte)pass++;
+                out.write(copy);
+            }
+        };
+
+        // first invocation: pass counter 0 -> identical content; do a clean run
+        // to prove the harness itself is sound.
+        CMSTypedData stable = new CMSProcessableByteArray(data);
+        gen.generate(stable, new ByteArrayOutputStream());
+
+        gen = new CMSSignedDataStreamGenerator();
+        rsaSigner = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(rsaSigner, _origCert));
+        gen.setEncoding("DL");
+
+        try
+        {
+            gen.generate(unstable, new ByteArrayOutputStream());
+            fail("changed content between passes not detected");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().indexOf("content changed between passes") >= 0);
+        }
     }
 
     public void testSHA1WithRSA()

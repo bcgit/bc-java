@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.FixedLengthContentSigner;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeOutputStream;
@@ -204,9 +205,90 @@ public class SignerInfoGenerator
         }
     }
 
+    /**
+     * Return the exact encoded length of the SignerInfo this generator will
+     * produce for the given content type, or -1 when it cannot be predicted.
+     * <p>
+     * Prediction requires the underlying ContentSigner to implement
+     * {@link FixedLengthContentSigner} and, where attribute generators are
+     * present, that they produce attribute sets whose encoded length does not
+     * depend on the values supplied at signing time. The default CMS
+     * signed-attribute table qualifies: the messageDigest value's length is
+     * fixed by the digest algorithm and signingTime is a fixed-width UTCTime
+     * (until 2050). Definite-length consumers verify the eventual SignerInfo
+     * against this prediction, so a length-unstable attribute generator fails
+     * at generation time rather than silently corrupting output.
+     */
+    public long getPredictedEncodedLength(ASN1ObjectIdentifier contentType)
+    {
+        if (!(signer instanceof FixedLengthContentSigner))
+        {
+            return -1;
+        }
+        int sigLen = ((FixedLengthContentSigner)signer).getSignatureLength();
+        if (sigLen < 0)
+        {
+            return -1;
+        }
+
+        try
+        {
+            AlgorithmIdentifier digestEncryptionAlgorithm = sigEncAlgFinder.findEncryptionAlgorithm(signer.getAlgorithmIdentifier());
+
+            AlgorithmIdentifier digestAlg;
+            ASN1Set signedAttr = null;
+            byte[] trialDigest = null;
+
+            if (sAttrGen != null)
+            {
+                digestAlg = digester.getAlgorithmIdentifier();
+                int digestLen = CMSUtils.getDigestOutputLength(digestAlg);
+                if (digestLen < 0)
+                {
+                    return -1;
+                }
+                trialDigest = new byte[digestLen];
+                Map parameters = getBaseParameters(contentType, digestAlg, digestEncryptionAlgorithm, trialDigest);
+                signedAttr = getAttributeSet(sAttrGen.getAttributes(Collections.unmodifiableMap(parameters)));
+            }
+            else
+            {
+                digestAlg = digestAlgorithm;
+                // RFC 8419, Section 3.2 - needs to be shake-256, not shake-256-len
+                if (EdECObjectIdentifiers.id_Ed448.equals(digestEncryptionAlgorithm.getAlgorithm()))
+                {
+                    digestAlg = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+                }
+            }
+
+            ASN1Set unsignedAttr = null;
+            if (unsAttrGen != null)
+            {
+                Map parameters = getBaseParameters(contentType, digestAlg, digestEncryptionAlgorithm, trialDigest);
+                parameters.put(CMSAttributeTableGenerator.SIGNATURE, new byte[sigLen]);
+                unsignedAttr = getAttributeSet(unsAttrGen.getAttributes(Collections.unmodifiableMap(parameters)));
+            }
+
+            SignerInfo trial = new SignerInfo(signerIdentifier, digestAlg, signedAttr,
+                digestEncryptionAlgorithm, new DEROctetString(new byte[sigLen]), unsignedAttr);
+
+            return trial.getEncoded(ASN1Encoding.DER).length;
+        }
+        catch (Exception e)
+        {
+            // anything the trial run cannot handle means no prediction
+            return -1;
+        }
+    }
+
     void setAssociatedCertificate(X509CertificateHolder certHolder)
     {
         this.certHolder = certHolder;
+    }
+
+    DigestCalculator getDigester()
+    {
+        return digester;
     }
 
     private ASN1Set getAttributeSet(
