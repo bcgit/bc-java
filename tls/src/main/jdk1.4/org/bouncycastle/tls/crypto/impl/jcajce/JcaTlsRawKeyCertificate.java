@@ -1,39 +1,31 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.PublicKey;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
-import org.bouncycastle.jce.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.interfaces.DHPublicKey;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
-import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
@@ -41,9 +33,19 @@ import org.bouncycastle.tls.crypto.impl.PQCUtil;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 
 /**
- * Implementation class for a single X.509 certificate based on the JCA.
+ * Implementation class for a raw public key (RFC 7250) based on the JCA. The certificate is just a
+ * DER-encoded SubjectPublicKeyInfo, with no X.509 metadata: it has no serial number, signature
+ * algorithm, extensions or KeyUsage, so all signature/encryption uses are permitted by the key
+ * itself.
+ * <p>
+ * This is the base class for {@link JcaTlsCertificate} (an X.509 certificate is a SubjectPublicKeyInfo
+ * plus X.509 metadata); subclasses override {@link #getPublicKey()},
+ * {@link #getSubjectPublicKeyInfo()}, {@link #supportsKeyUsageBit(int)} and the X.509 accessors
+ * ({@link #getEncoded()}, {@link #getExtension(ASN1ObjectIdentifier)}, {@link #getSerialNumber()},
+ * {@link #getSigAlgOID()}, {@link #getSigAlgParams()}) to source them from the certificate. This
+ * mirrors the lightweight {@code BcTlsCertificate extends BcTlsRawKeyCertificate} structure.
  */
-public class JcaTlsCertificate
+public class JcaTlsRawKeyCertificate
     implements TlsCertificate
 {
     protected static final int KU_DIGITAL_SIGNATURE = 0;
@@ -56,68 +58,37 @@ public class JcaTlsCertificate
     protected static final int KU_ENCIPHER_ONLY = 7;
     protected static final int KU_DECIPHER_ONLY = 8;
 
-    public static JcaTlsCertificate convert(JcaTlsCrypto crypto, TlsCertificate certificate) throws IOException
-    {
-        if (certificate instanceof JcaTlsCertificate)
-        {
-            return (JcaTlsCertificate)certificate;
-        }
-
-        return new JcaTlsCertificate(crypto, certificate.getEncoded());
-    }
-
-    public static X509Certificate parseCertificate(JcaJceHelper helper, byte[] encoding)
-        throws IOException
-    {
-        try
-        {
-            /*
-             * NOTE: We want to restrict 'encoding' to a binary BER encoding, but
-             * CertificateFactory.generateCertificate claims to require DER encoding, and also
-             * supports Base64 encodings (in PEM format), which we don't support.
-             * 
-             * Re-encoding validates as BER and produces DER.
-             */
-            ASN1Primitive asn1 = TlsUtils.readASN1Object(encoding);
-            byte[] derEncoding = Certificate.getInstance(asn1).getEncoded(ASN1Encoding.DER);
-
-            ByteArrayInputStream input = new ByteArrayInputStream(derEncoding);
-            X509Certificate certificate = (X509Certificate)helper.createCertificateFactory("X.509")
-                .generateCertificate(input);
-            if (input.available() != 0)
-            {
-                throw new IOException("Extra data detected in stream");
-            }
-            return certificate;
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new TlsCryptoException("unable to decode certificate", e);
-        }
-    }
-
     protected final JcaTlsCrypto crypto;
-    protected final X509Certificate certificate;
+    protected final SubjectPublicKeyInfo keyInfo;
 
     protected DHPublicKey pubKeyDH = null;
     protected ECPublicKey pubKeyEC = null;
     protected PublicKey pubKeyRSA = null;
 
-    public JcaTlsCertificate(JcaTlsCrypto crypto, byte[] encoding)
-        throws IOException
+    public JcaTlsRawKeyCertificate(JcaTlsCrypto crypto, byte[] keyInfo)
     {
-        this(crypto, parseCertificate(crypto.getHelper(), encoding));
+        this(crypto, SubjectPublicKeyInfo.getInstance(keyInfo));
     }
 
-    public JcaTlsCertificate(JcaTlsCrypto crypto, X509Certificate certificate)
+    public JcaTlsRawKeyCertificate(JcaTlsCrypto crypto, SubjectPublicKeyInfo keyInfo)
     {
         this.crypto = crypto;
-        this.certificate = certificate;
+        this.keyInfo = keyInfo;
+    }
+
+    /**
+     * For subclasses (e.g. {@link JcaTlsCertificate}) that source the public key from elsewhere and
+     * override {@link #getPublicKey()} / {@link #getSubjectPublicKeyInfo()}.
+     */
+    protected JcaTlsRawKeyCertificate(JcaTlsCrypto crypto)
+    {
+        this.crypto = crypto;
+        this.keyInfo = null;
     }
 
     public TlsEncryptor createEncryptor(int tlsCertificateRole) throws IOException
     {
-        validateKeyUsageBit(JcaTlsCertificate.KU_KEY_ENCIPHERMENT);
+        validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
 
         switch (tlsCertificateRole)
         {
@@ -241,15 +212,15 @@ public class JcaTlsCertificate
         case SignatureScheme.rsa_pss_pss_sha512:
         {
             validateRSA_PSS_PSS(SignatureScheme.getSignatureAlgorithm(signatureScheme));
-            
+
             int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
             String digestName = crypto.getDigestName(cryptoHashAlgorithm);
             String sigName = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getDigestSigAlgName(digestName)
                 + "WITHRSAANDMGF1";
 
             // NOTE: We explicitly set them even though they should be the defaults, because providers vary
-            AlgorithmParameterSpec pssSpec = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil
-                .getPSSParameterSpec(cryptoHashAlgorithm, digestName, crypto.getHelper());
+            AlgorithmParameterSpec pssSpec = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getPSSParameterSpec(
+                cryptoHashAlgorithm, digestName, crypto.getHelper());
 
             return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
         }
@@ -266,8 +237,8 @@ public class JcaTlsCertificate
                 + "WITHRSAANDMGF1";
 
             // NOTE: We explicitly set them even though they should be the defaults, because providers vary
-            AlgorithmParameterSpec pssSpec = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil
-                .getPSSParameterSpec(cryptoHashAlgorithm, digestName, crypto.getHelper());
+            AlgorithmParameterSpec pssSpec = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getPSSParameterSpec(
+                cryptoHashAlgorithm, digestName, crypto.getHelper());
 
             return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
         }
@@ -311,45 +282,27 @@ public class JcaTlsCertificate
 
     public byte[] getEncoded() throws IOException
     {
-        try
-        {
-            // DER encoding enforced by provider - as defined by JCA for X.509 certificates.
-            return certificate.getEncoded();
-        }
-        catch (CertificateEncodingException e)
-        {
-            throw new TlsCryptoException("unable to encode certificate: " + e.getMessage(), e);
-        }
+        return keyInfo.getEncoded(ASN1Encoding.DER);
     }
 
     public byte[] getExtension(ASN1ObjectIdentifier extensionOID) throws IOException
     {
-        byte[] encoding = certificate.getExtensionValue(extensionOID.getId());
-        return encoding == null ? null : ((ASN1OctetString)ASN1Primitive.fromByteArray(encoding)).getOctets();
+        return null;
     }
 
     public BigInteger getSerialNumber()
     {
-        return certificate.getSerialNumber();
+        return null;
     }
 
     public String getSigAlgOID()
     {
-        return certificate.getSigAlgOID();
+        return null;
     }
 
     public ASN1Encodable getSigAlgParams() throws IOException
     {
-        byte[] derEncoding = certificate.getSigAlgParams();
-        if (null == derEncoding)
-        {
-            return null;
-        }
-
-        ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
-        // TODO[tls] Without a known ASN.1 type, this is not-quite-right
-        TlsUtils.requireDEREncoding(asn1, derEncoding);
-        return asn1;
+        return null;
     }
 
     DHPublicKey getPubKeyDH() throws IOException
@@ -565,29 +518,24 @@ public class JcaTlsCertificate
     {
         try
         {
-            return certificate.getPublicKey();
+            KeyFactory keyFactory = crypto.getHelper().createKeyFactory(
+                keyInfo.getAlgorithm().getAlgorithm().getId());
+            return keyFactory.generatePublic(new X509EncodedKeySpec(keyInfo.getEncoded(ASN1Encoding.DER)));
         }
-        catch (RuntimeException e)
+        catch (Exception e)
         {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate, e);
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
     }
 
     protected SubjectPublicKeyInfo getSubjectPublicKeyInfo() throws IOException
     {
-        return SubjectPublicKeyInfo.getInstance(getPublicKey().getEncoded());
-    }
-
-    public X509Certificate getX509Certificate()
-    {
-        return certificate;
+        return keyInfo;
     }
 
     protected boolean supportsKeyUsageBit(int keyUsageBit)
     {
-        boolean[] keyUsage = certificate.getKeyUsage();
-
-        return null == keyUsage || (keyUsage.length > keyUsageBit && keyUsage[keyUsageBit]);
+        return true;
     }
 
     protected boolean supportsMLDSA(ASN1ObjectIdentifier mlDsaAlgOid)
