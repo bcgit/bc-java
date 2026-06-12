@@ -39,7 +39,17 @@ public class LMSPublicKeyParameters
         {
             int pubType = ((DataInputStream)src).readInt();
             LMSigParameters lmsParameter = LMSigParameters.getParametersForType(pubType);
-            LMOtsParameters ostTypeCode = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
+            if (lmsParameter == null)
+            {
+                throw new IOException("unknown LMS type code: " + pubType);
+            }
+
+            int otsType = ((DataInputStream)src).readInt();
+            LMOtsParameters ostTypeCode = LMOtsParameters.getParametersForType(otsType);
+            if (ostTypeCode == null)
+            {
+                throw new IOException("unknown LM-OTS type code: " + otsType);
+            }
 
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
@@ -55,7 +65,13 @@ public class LMSPublicKeyParameters
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
-                return getInstance(in);
+                LMSPublicKeyParameters pKey = getInstance(in);
+                // RFC 8554, Section 5.3: the public key is exactly 24 + m bytes long.
+                if (in.available() != 0)
+                {
+                    throw new IOException("unexpected data found after LMS public key");
+                }
+                return pKey;
             }
             finally
             {
