@@ -31,7 +31,11 @@ public class JVMVersionTest extends TestCase
         //
 
         String version = System.getProperty("java.version");
-        assertNotNull(String.format("property %s is not set, see comment in test for reason why.", expectedVersionPropName), System.getProperty(expectedVersionPropName));
+        assertNotNull(String.format(
+            "system property %s is not set. It guards against the tests being run on an unintended JVM: "
+                + "set it to the expected java.version prefix (e.g. 1.8, 11, 17), or to 'any' to accept the current JVM. "
+                + "The Ant builds set it from the JAVA_VERSION_PREFIX environment variable.",
+            expectedVersionPropName), System.getProperty(expectedVersionPropName));
 
 
         String expectedPrefix = System.getProperty(expectedVersionPropName);
@@ -42,7 +46,12 @@ public class JVMVersionTest extends TestCase
             return;
         }
 
-        TestCase.assertTrue(String.format("JVM Version: '%s' did not start with '%s' see comment in test", version, expectedPrefix), version.startsWith(expectedPrefix));
+        TestCase.assertTrue(String.format(
+            "Tests are running on JVM version '%s' but the build expected a JVM whose java.version starts with '%s'. "
+                + "The multi-release jars must be tested on a representative JVM for each version they support, so either "
+                + "run the build with the expected JDK (e.g. set JDKPATH for build1-8+), or change the expectation to match: "
+                + "the Ant builds take it from the JAVA_VERSION_PREFIX environment variable ('any' accepts any JVM).",
+            version, expectedPrefix), version.startsWith(expectedPrefix));
 
     }
 
