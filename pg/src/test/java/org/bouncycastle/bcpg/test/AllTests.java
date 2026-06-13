@@ -28,6 +28,7 @@ public class AllTests
             new SignaturePacketTest(),
             new SignatureSubpacketsTest(),
             new TimeEncodingTest(),
+            new UserAttributeSubpacketInputStreamTest(),
             new UnknownPublicKeyPacketTest(),
             new UnknownSecretKeyPacketTest(),
         };
