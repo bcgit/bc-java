@@ -23,9 +23,11 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
@@ -70,6 +72,12 @@ public class BcKeyStoreSpi
 
     private static final int    KEY_SALT_SIZE = 20;
     private static final int    MIN_ITERATIONS = 1024;
+
+    // Buffer cap for reading a single length-prefixed entry from a store stream. A declared
+    // length up to this size is allocated directly; a larger length is read incrementally
+    // through a fixed-size buffer so a corrupt or hostile length field cannot drive an
+    // unbounded allocation (and OutOfMemoryError) before the integrity MAC is checked.
+    private static final int    ENTRY_BUF_SIZE = 2 * 1024 * 1024;
 
     private static final String KEY_CIPHER = "PBEWithSHAAnd3-KeyTripleDES-CBC";
 
@@ -228,9 +236,7 @@ public class BcKeyStoreSpi
             
                 try
                 {
-                    byte[]      salt = new byte[dIn.readInt()];
-
-                    dIn.readFully(salt);
+                    byte[]      salt = readBlock(dIn);
 
                     int     iterationCount = dIn.readInt();
                 
@@ -247,9 +253,7 @@ public class BcKeyStoreSpi
                         bIn = new ByteArrayInputStream((byte[])obj);
                         dIn = new DataInputStream(bIn);
             
-                        salt = new byte[dIn.readInt()];
-
-                        dIn.readFully(salt);
+                        salt = readBlock(dIn);
 
                         iterationCount = dIn.readInt();
 
@@ -268,9 +272,7 @@ public class BcKeyStoreSpi
                             bIn = new ByteArrayInputStream((byte[])obj);
                             dIn = new DataInputStream(bIn);
                 
-                            salt = new byte[dIn.readInt()];
-
-                            dIn.readFully(salt);
+                            salt = readBlock(dIn);
 
                             iterationCount = dIn.readInt();
 
@@ -363,9 +365,7 @@ public class BcKeyStoreSpi
         throws IOException
     {
         String      type = dIn.readUTF();
-        byte[]      cEnc = new byte[dIn.readInt()];
-
-        dIn.readFully(cEnc);
+        byte[]      cEnc = readBlock(dIn);
 
         try
         {
@@ -422,10 +422,8 @@ public class BcKeyStoreSpi
         int         keyType = dIn.read();
         String      format = dIn.readUTF();
         String      algorithm = dIn.readUTF();
-        byte[]      enc = new byte[dIn.readInt()];
+        byte[]      enc = readBlock(dIn);
         KeySpec     spec;
-
-        dIn.readFully(enc);
 
         if (format.equals("PKCS#8") || format.equals("PKCS8"))
         {
@@ -703,6 +701,43 @@ public class BcKeyStoreSpi
         return table.size();
     }
 
+    /*
+     * Read a length-prefixed block. A declared length up to ENTRY_BUF_SIZE is allocated and read
+     * directly; a larger length is read incrementally through a fixed-size buffer into a
+     * ByteArrayOutputStream, so a corrupt or hostile length field cannot drive an unbounded array
+     * allocation (and OutOfMemoryError) ahead of the keystore integrity check - a stream that does
+     * not actually carry the declared number of bytes fails with an EOFException instead.
+     */
+    private static byte[] readBlock(DataInputStream dIn)
+        throws IOException
+    {
+        int length = dIn.readInt();
+        if (length < 0)
+        {
+            throw new IOException("Illegal block length: " + length);
+        }
+
+        if (length <= ENTRY_BUF_SIZE)
+        {
+            byte[] block = new byte[length];
+            dIn.readFully(block);
+            return block;
+        }
+
+        byte[] buf = new byte[ENTRY_BUF_SIZE];
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        int remaining = length;
+        while (remaining > 0)
+        {
+            int toRead = Math.min(remaining, buf.length);
+            dIn.readFully(buf, 0, toRead);
+            bOut.write(buf, 0, toRead);
+            remaining -= toRead;
+        }
+
+        return bOut.toByteArray();
+    }
+
     protected void loadStore(
         InputStream in)
         throws IOException
@@ -717,14 +752,25 @@ public class BcKeyStoreSpi
             int             chainLength = dIn.readInt();
             Certificate[]   chain = null;
 
+            if (chainLength < 0)
+            {
+                throw new IOException("Illegal certificate chain length: " + chainLength);
+            }
+
             if (chainLength != 0)
             {
-                chain = new Certificate[chainLength];
+                // Accumulate rather than pre-allocating new Certificate[chainLength]: a hostile
+                // chainLength would otherwise drive a huge array allocation up front. Each
+                // decodeCertificate consumes stream bytes, so the count is bounded by the
+                // actual content (a lying length hits EOF on the first missing certificate).
+                List certs = new ArrayList();
 
                 for (int i = 0; i != chainLength; i++)
                 {
-                    chain[i] = decodeCertificate(dIn);
+                    certs.add(decodeCertificate(dIn));
                 }
+
+                chain = (Certificate[])certs.toArray(new Certificate[certs.size()]);
             }
 
             switch (type)
@@ -740,9 +786,8 @@ public class BcKeyStoreSpi
                     break;
             case SECRET:
             case SEALED:
-                    byte[]      b = new byte[dIn.readInt()];
+                    byte[]      b = readBlock(dIn);
 
-                    dIn.readFully(b);
                     table.put(alias, new StoreEntry(alias, date, type, b, chain));
                     break;
             default:
@@ -829,7 +874,7 @@ public class BcKeyStoreSpi
         }
 
         int saltLength = dIn.readInt();
-        if (saltLength <= 0)
+        if (saltLength <= 0 || saltLength > ENTRY_BUF_SIZE)
         {
             throw new IOException("Invalid salt detected");
         }
@@ -983,13 +1028,15 @@ public class BcKeyStoreSpi
                 }
             }
     
-            byte[]      salt = new byte[dIn.readInt()];
+            int         saltLength = dIn.readInt();
 
-            if (salt.length != STORE_SALT_SIZE)
+            if (saltLength != STORE_SALT_SIZE)
             {
                 throw new IOException("Key store corrupted.");
             }
-    
+
+            byte[]      salt = new byte[saltLength];
+
             dIn.readFully(salt);
     
             int         iterationCount = dIn.readInt();
