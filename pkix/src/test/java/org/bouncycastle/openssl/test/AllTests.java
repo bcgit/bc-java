@@ -56,7 +56,8 @@ public class
         org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[]
         {
             new WriterTest(),
-            new ParserTest()
+            new ParserTest(),
+            new JcaPrivateKeyReaderTest()
         };
 
         for (int i = 0; i != tests.length; i++)
