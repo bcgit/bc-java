@@ -29,14 +29,20 @@
             <fileset dir="core/src/main/java" includes="**/*.properties" />
             <fileset dir="core/src/main/resources" includes="**/*.properties" />
             <fileset dir="core/src/main/javadoc" includes="**/*.html" />
-            <fileset dir="core/src/test/java" includes="**/*.java" />
+            <fileset dir="core/src/test/java" includes="**/*.java">
+                <exclude name="**/faest/*.java"/>
+                <exclude name="**/lms/*.java"/>
+                <exclude name="**/sdith/*.java"/>
+            </fileset>
             <fileset dir="core/src/test/javadoc" includes="**/*.html" />
             <fileset dir="core/src/test/resources" includes="**/*.*" />
 
             <fileset dir="prov/src/main/java" includes="**/*.java" />
             <fileset dir="prov/src/main/javadoc" includes="**/*.html" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
-            <fileset dir="prov/src/test/java" includes="**/*.java" />
+            <fileset dir="prov/src/test/java" includes="**/*.java">
+                <exclude name="**/provider/*.java"/>
+            </fileset>
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
             <fileset dir="tls/src/main/java" includes="**/*.java" />
