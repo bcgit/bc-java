@@ -591,8 +591,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>subbudvk &lt;https://github.com/subbudvk&gt; - initial author on S2K parser hardening work for OpenPGP API.</li>
 <li>mkarasik &lt;https://github.com/mkarasik&gt; - initial work on EST server-side key generation (RFC 7030 4.4).</li>
 <li>Bernd Pr&uuml;nster (A-SIT Plus) &lt;bernd.pruenster&#064;a-sit.at&gt; - reported lenient ASN.1 UTCTime/GeneralizedTime parsing accepting structurally malformed content, with fuzzing-derived test cases.</li>
-<li>rootvector2 &lt;https://github.com/rootvector2&gt; - constant time comparison of membership and confirmation tags in the MLS API.</li>
-<li>Weiran SHI &lt;weiran_shi&#064;hotmail.com&gt; - reported unbounded array allocation in the BKS/UBER keystore load path (OutOfMemoryError DoS from a crafted keystore), with POC.</li>
+<li>rootvector2 &lt;https://github.com/rootvector2&gt; - constant time comparison of membership and confirmation tags in the MLS API. Reported unbounded array allocation in the BKS/UBER keystore load path (OutOfMemoryError DoS from a crafted keystore) and introduction of a capped decompression limit in PGPCompressedData.getDataStream(), both with POC.</li>
 </ul>
 </body>
 </html>
