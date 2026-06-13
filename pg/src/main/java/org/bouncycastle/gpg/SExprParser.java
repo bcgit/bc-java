@@ -1,5 +1,6 @@
 package org.bouncycastle.gpg;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -141,7 +142,25 @@ public class SExprParser
         throws IOException, PGPException
     {
         final int maxDepth = 10;
-        SExpression keyExpression = SExpression.parseCanonical(inputStream, maxDepth);
+
+        // GnuPG 2.2.20+ defaults to the "Extended Private Key Format": a set of "Name: value"
+        // header lines followed by the key S-expression under a "Key:" field, rather than a bare
+        // canonical S-expression. Detect it here so this long-standing entry point handles both
+        // layouts - the extended form otherwise fails in parseCanonical on the leading header
+        // character (github #794).
+        InputStream in = inputStream.markSupported() ? inputStream : new BufferedInputStream(inputStream);
+        if (PGPSecretKeyParser.isExtendedSExpression(in))
+        {
+            PGPSecretKey key = PGPSecretKeyParser.parse(in, maxDepth).getKeyData(
+                pubKey, digestProvider, keyProtectionRemoverFactory, fingerPrintCalculator, maxDepth);
+            if (key == null)
+            {
+                throw new PGPException("unknown key type found");
+            }
+            return key;
+        }
+
+        SExpression keyExpression = SExpression.parseCanonical(in, maxDepth);
         int type = getProtectionType(keyExpression.getString(0));
         if (type == ProtectionFormatTypeTags.PRIVATE_KEY || type == ProtectionFormatTypeTags.PROTECTED_PRIVATE_KEY ||
             type == ProtectionFormatTypeTags.SHADOWED_PRIVATE_KEY)
