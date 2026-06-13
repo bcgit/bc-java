@@ -23,6 +23,7 @@ import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPublicKeyParameters;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.CMCEPublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
@@ -105,6 +106,8 @@ public class PublicKeyFactory
         converters.put(PQCObjectIdentifiers.xmss_mt, new XMSSMTConverter());
         converters.put(IsaraObjectIdentifiers.id_alg_xmss, new XMSSConverter());
         converters.put(IsaraObjectIdentifiers.id_alg_xmssmt, new XMSSMTConverter());
+        converters.put(IANAObjectIdentifiers.id_alg_xmss_hashsig, new XMSSConverter());
+        converters.put(IANAObjectIdentifiers.id_alg_xmssmt_hashsig, new XMSSMTConverter());
         converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusConverter());
 
@@ -556,10 +559,23 @@ public class PublicKeyFactory
             }
             else
             {
-                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+                // RFC 9802 carries the raw RFC 8391 key; the legacy draft form wrapped it in an OCTET STRING.
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+                ASN1OctetString data = Utils.parseOctetData(keyEnc);
+
+                if (data != null)
+                {
+                    keyEnc = data.getOctets();
+                }
+
+                XMSSParameters parameters = XMSSParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0));
+                if (parameters == null)
+                {
+                    throw new IOException("unknown XMSS public key OID: " + Pack.bigEndianToInt(keyEnc, 0));
+                }
 
                 return new XMSSPublicKeyParameters
-                    .Builder(XMSSParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
+                    .Builder(parameters)
                     .withPublicKey(keyEnc).build();
             }
         }
@@ -586,10 +602,23 @@ public class PublicKeyFactory
             }
             else
             {
-                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+                // RFC 9802 carries the raw RFC 8391 key; the legacy draft form wrapped it in an OCTET STRING.
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+                ASN1OctetString data = Utils.parseOctetData(keyEnc);
+
+                if (data != null)
+                {
+                    keyEnc = data.getOctets();
+                }
+
+                XMSSMTParameters parameters = XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0));
+                if (parameters == null)
+                {
+                    throw new IOException("unknown XMSS^MT public key OID: " + Pack.bigEndianToInt(keyEnc, 0));
+                }
 
                 return new XMSSMTPublicKeyParameters
-                    .Builder(XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
+                    .Builder(parameters)
                     .withPublicKey(keyEnc).build();
             }
         }
