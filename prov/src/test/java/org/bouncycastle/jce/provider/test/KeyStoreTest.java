@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Key;
@@ -433,6 +434,111 @@ public class KeyStoreTest
         ecStoreTest("BKS");
         oldStoreTest();
         checkException();
+        checkOversizedEntryRejected();
+        checkLargeEntryStreamed();
+    }
+
+    /*
+     * An entry whose declared length genuinely exceeds the read buffer (and whose bytes are
+     * actually present) must still load: the incremental read has to consume exactly the
+     * declared number of bytes, otherwise the trailing store MAC would misalign and the load
+     * would fail. Confirms the bounded-buffer hardening did not turn into a hard size cap.
+     */
+    private void checkLargeEntryStreamed()
+        throws Exception
+    {
+        int bigLength = (2 * 1024 * 1024) + 1000;   // just over the 2 MiB read buffer
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        dos.writeInt(2);                            // store version
+        dos.writeInt(20);                           // salt length
+        dos.write(new byte[20]);                    // salt
+        dos.writeInt(1024);                         // iteration count
+        dos.write(3);                               // entry type = SECRET
+        dos.writeUTF("big");                        // alias
+        dos.writeLong(System.currentTimeMillis());  // creation date
+        dos.writeInt(0);                            // chain length
+        dos.writeInt(bigLength);                    // blob length, > read buffer
+        dos.write(new byte[bigLength]);             // the blob bytes really are present
+        dos.write(0);                               // NULL entry terminator
+        dos.write(new byte[20]);                    // store MAC (not checked for null password)
+
+        KeyStore ks = KeyStore.getInstance("BKS", "BC");
+        ks.load(new ByteArrayInputStream(baos.toByteArray()), null);
+
+        isTrue("large entry not loaded", ks.containsAlias("big"));
+        isTrue("unexpected entry count", ks.size() == 1);
+    }
+
+    /*
+     * A crafted BKS/UBER stream declaring an enormous length-prefixed allocation must be
+     * rejected with an IOException rather than driving an unbounded array allocation /
+     * OutOfMemoryError before the integrity MAC is checked. The poison is reached regardless of
+     * the password supplied, since loadStore() runs ahead of the MAC comparison.
+     */
+    private void checkOversizedEntryRejected()
+        throws Exception
+    {
+        char[][] passwords = {null, new char[0], "test".toCharArray()};
+
+        // BKS: a KEY entry with an Integer.MAX_VALUE certificate chain length.
+        ByteArrayOutputStream chainPoison = new ByteArrayOutputStream();
+        DataOutputStream c = new DataOutputStream(chainPoison);
+        c.writeInt(2);                              // store version
+        c.writeInt(20);                             // salt length
+        c.write(new byte[20]);                      // salt
+        c.writeInt(1024);                           // iteration count
+        c.write(2);                                 // entry type = KEY
+        c.writeUTF("evil");                         // alias
+        c.writeLong(System.currentTimeMillis());    // creation date
+        c.writeInt(Integer.MAX_VALUE);              // poison chain length
+
+        // BKS: a SECRET entry (chain length 0) with an Integer.MAX_VALUE blob length.
+        ByteArrayOutputStream blobPoison = new ByteArrayOutputStream();
+        DataOutputStream b = new DataOutputStream(blobPoison);
+        b.writeInt(2);
+        b.writeInt(20);
+        b.write(new byte[20]);
+        b.writeInt(1024);
+        b.write(3);                                 // entry type = SECRET
+        b.writeUTF("evil");
+        b.writeLong(System.currentTimeMillis());
+        b.writeInt(0);                              // chain length
+        b.writeInt(Integer.MAX_VALUE);              // poison blob length
+
+        // BKS / UBER: an Integer.MAX_VALUE store salt length, read before any cipher is set up.
+        ByteArrayOutputStream saltPoison = new ByteArrayOutputStream();
+        DataOutputStream s = new DataOutputStream(saltPoison);
+        s.writeInt(2);
+        s.writeInt(Integer.MAX_VALUE);              // poison salt length
+
+        for (int p = 0; p != passwords.length; p++)
+        {
+            loadShouldRejectNotOOM("BKS", chainPoison.toByteArray(), passwords[p]);
+            loadShouldRejectNotOOM("BKS", blobPoison.toByteArray(), passwords[p]);
+            loadShouldRejectNotOOM("BKS", saltPoison.toByteArray(), passwords[p]);
+            loadShouldRejectNotOOM("UBER", saltPoison.toByteArray(), passwords[p]);
+        }
+    }
+
+    private void loadShouldRejectNotOOM(String type, byte[] poison, char[] password)
+        throws Exception
+    {
+        KeyStore ks = KeyStore.getInstance(type, "BC");
+        try
+        {
+            ks.load(new ByteArrayInputStream(poison), password);
+            fail("oversized " + type + " allocation not rejected");
+        }
+        catch (IOException e)
+        {
+            // expected - the length is rejected before the array is allocated and read
+        }
+        catch (OutOfMemoryError e)
+        {
+            fail("oversized " + type + " allocation caused OutOfMemoryError");
+        }
     }
 
     public static void main(
