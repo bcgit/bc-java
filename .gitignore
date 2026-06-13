@@ -2,6 +2,7 @@
 .gradle
 .project
 
+junit*.properties
 *.class
 *.gen
 */*.gen

@@ -241,6 +241,7 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     nohttp {
+        source.exclude 'junit*'
         source.exclude '*/*.asc'
         source.exclude '*/*.bpg'
         source.exclude '*/*.class'
