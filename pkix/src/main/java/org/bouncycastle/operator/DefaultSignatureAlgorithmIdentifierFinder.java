@@ -238,13 +238,13 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 
         addAlgorithm("LMS", PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
 
-        addAlgorithm("XMSS", IsaraObjectIdentifiers.id_alg_xmss);
+        addAlgorithm("XMSS", IANAObjectIdentifiers.id_alg_xmss_hashsig);   // RFC 9802
         addAlgorithm("XMSS-SHA256", BCObjectIdentifiers.xmss_SHA256);
         addAlgorithm("XMSS-SHA512", BCObjectIdentifiers.xmss_SHA512);
         addAlgorithm("XMSS-SHAKE128", BCObjectIdentifiers.xmss_SHAKE128);
         addAlgorithm("XMSS-SHAKE256", BCObjectIdentifiers.xmss_SHAKE256);
 
-        addAlgorithm("XMSSMT", IsaraObjectIdentifiers.id_alg_xmssmt);
+        addAlgorithm("XMSSMT", IANAObjectIdentifiers.id_alg_xmssmt_hashsig);   // RFC 9802
         addAlgorithm("XMSSMT-SHA256", BCObjectIdentifiers.xmss_mt_SHA256);
         addAlgorithm("XMSSMT-SHA512", BCObjectIdentifiers.xmss_mt_SHA512);
         addAlgorithm("XMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128);
@@ -533,6 +533,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 
         noParams.add(IsaraObjectIdentifiers.id_alg_xmss);
         noParams.add(IsaraObjectIdentifiers.id_alg_xmssmt);
+        noParams.add(IANAObjectIdentifiers.id_alg_xmss_hashsig);
+        noParams.add(IANAObjectIdentifiers.id_alg_xmssmt_hashsig);
 
         //
         // qTESLA

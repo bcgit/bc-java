@@ -68,6 +68,12 @@ public interface IANAObjectIdentifiers
 
     ASN1ObjectIdentifier id_ecdsa_with_shake256 = id_alg.branch("33");
 
+    /** 1.3.6.1.5.5.7.6.34 id-alg-xmss-hashsig (RFC 9802) */
+    ASN1ObjectIdentifier id_alg_xmss_hashsig = id_alg.branch("34");
+
+    /** 1.3.6.1.5.5.7.6.35 id-alg-xmssmt-hashsig (RFC 9802) */
+    ASN1ObjectIdentifier id_alg_xmssmt_hashsig = id_alg.branch("35");
+
     ASN1ObjectIdentifier id_alg_unsigned = id_alg.branch("36");
 
     /** 1.3.6.1.5.5.7.6.37 id-MLDSA44-RSA2048-PSS-SHA256 */
