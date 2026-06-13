@@ -13,9 +13,21 @@ public class UserAttributeSubpacketInputStream
     extends InputStream
     implements UserAttributeSubpacketTags
 {
+    /**
+     * Hard upper bound on a single user-attribute subpacket body. This is an absolute cap applied
+     * independently of {@link StreamUtil#findLimit(InputStream)}, which for the non-seekable
+     * streams used during packet parsing returns close to the JVM heap size and so does not bound
+     * the per-packet allocation. Without it a crafted 4-octet length header could force a
+     * multi-gigabyte {@code new byte[]} before any body bytes are read. 2 MiB matches the ceiling
+     * used for signature subpackets ({@link SignaturePacket#MAX_SUBPACKET_LEN}) and public-key
+     * packets ({@link PublicKeyPacket#MAX_LEN}); user-attribute (image) subpackets are not
+     * expected to approach it.
+     */
+    public static final int MAX_SUBPACKET_LEN = 2 * 1024 * 1024;
+
     InputStream in;
     private final int limit;
-    
+
     public UserAttributeSubpacketInputStream(
         InputStream in)
     {
@@ -96,6 +108,12 @@ public class UserAttributeSubpacketInputStream
         if (bodyLen > limit)
         {
             throw new MalformedPacketException("Body length octet (" + bodyLen + ") exceeds limitations (" + limit + ").");
+        }
+        // Absolute cap, independent of the findLimit() hint above (which is ~heap-sized for the
+        // BCPGInputStream used during parsing), so a crafted length cannot drive a huge allocation.
+        if (bodyLen > MAX_SUBPACKET_LEN)
+        {
+            throw new MalformedPacketException("Body length octet (" + bodyLen + ") exceeds max user attribute subpacket length (" + MAX_SUBPACKET_LEN + ").");
         }
         boolean longLength = flags[StreamUtil.flag_isLongLength];
 
