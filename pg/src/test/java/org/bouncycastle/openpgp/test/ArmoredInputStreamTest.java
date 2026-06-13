@@ -69,6 +69,39 @@ public class ArmoredInputStreamTest
     {
         bogusHeadersTest();
         unknownClearsignedMessageHeadersTest();
+        invalidBase64TrailerTest();
+    }
+
+    private void invalidBase64TrailerTest()
+    {
+        // a final base64 group ending in "==" must reject non-alphabet
+        // characters the same way the one-pad ("XXX=") and no-pad ("XXXX")
+        // groups already do.
+        String twoPad = "-----BEGIN PGP MESSAGE-----\n\n!!==\n-----END PGP MESSAGE-----\n";
+        String onePad = "-----BEGIN PGP MESSAGE-----\n\n!!!=\n-----END PGP MESSAGE-----\n";
+        String noPad = "-----BEGIN PGP MESSAGE-----\n\n!!!!\n-----END PGP MESSAGE-----\n";
+
+        isTrue("XX== invalid armor not rejected", readsAsInvalidArmor(twoPad));
+        isTrue("XXX= invalid armor not rejected", readsAsInvalidArmor(onePad));
+        isTrue("XXXX invalid armor not rejected", readsAsInvalidArmor(noPad));
+    }
+
+    private boolean readsAsInvalidArmor(String armor)
+    {
+        try
+        {
+            ArmoredInputStream aIn = new ArmoredInputStream(
+                new ByteArrayInputStream(Strings.toByteArray(armor)));
+            while (aIn.read() >= 0)
+            {
+                // drain
+            }
+            return false;
+        }
+        catch (IOException e)
+        {
+            return "invalid armor".equals(e.getMessage());
+        }
     }
 
     private void bogusHeadersTest()

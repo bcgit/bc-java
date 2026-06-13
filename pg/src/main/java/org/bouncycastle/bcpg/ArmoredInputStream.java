@@ -78,8 +78,8 @@ public class ArmoredInputStream
 
         if (in2 == '=')
         {
-            b1 = decodingTable[in0] & 0xff;
-            b2 = decodingTable[in1] & 0xff;
+            b1 = decodingTable[in0];
+            b2 = decodingTable[in1];
 
             if ((b1 | b2) < 0)
             {
