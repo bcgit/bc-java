@@ -604,6 +604,53 @@ public class DSTU7624Test
         doFinalTest(new KCCMBlockCipher(new DSTU7624Engine(512), 8), key, iv, authText, input, expectedEncrypted);
 
         CCMModePartialBlockTests();
+
+        CCMModeLongMessageKeystreamTest();
+    }
+
+    /*
+     * Regression test for the KCCM gamma-counter carry bug: the per-block counter advance must
+     * propagate carry across the whole block, otherwise only the low byte of the counter changes
+     * and the keystream block E(s) repeats every 256 blocks, encrypting a long message with a
+     * two-time pad. Encrypting 257 identical (zero) plaintext blocks makes ciphertext block i
+     * equal block i+256 under the buggy no-carry code; with carry they differ. See github #287.
+     */
+    private void CCMModeLongMessageKeystreamTest()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] iv = Hex.decode("101112131415161718191A1B1C1D1E1F");
+
+        KCCMBlockCipher ccm = new KCCMBlockCipher(new DSTU7624Engine(128));
+        int blockSize = ccm.getUnderlyingCipher().getBlockSize();
+
+        // 257 blocks of zero plaintext: with zero input each ciphertext block equals its keystream
+        // block, so a repeating keystream shows up directly as repeated ciphertext blocks.
+        byte[] input = new byte[257 * blockSize];
+
+        AEADParameters param = new AEADParameters(new KeyParameter(key), 128, iv);
+        ccm.init(true, param);
+        byte[] encrypted = new byte[ccm.getOutputSize(input.length)];
+        int len = ccm.processBytes(input, 0, input.length, encrypted, 0);
+        len += ccm.doFinal(encrypted, len);
+
+        byte[] block0 = Arrays.copyOfRange(encrypted, 0, blockSize);
+        byte[] block256 = Arrays.copyOfRange(encrypted, 256 * blockSize, 257 * blockSize);
+        if (Arrays.areEqual(block0, block256))
+        {
+            fail("Failed CCM long-message keystream test - keystream block repeats every 256 blocks (two-time pad)");
+        }
+
+        // sanity: encrypt/decrypt still round-trips over the long message
+        ccm.init(false, param);
+        byte[] decrypted = new byte[ccm.getOutputSize(len)];
+        int decLen = ccm.processBytes(encrypted, 0, len, decrypted, 0);
+        decLen += ccm.doFinal(decrypted, decLen);
+
+        if (decLen != input.length || !Arrays.areEqual(input, Arrays.copyOfRange(decrypted, 0, input.length)))
+        {
+            fail("Failed CCM long-message round-trip");
+        }
     }
 
     /*
