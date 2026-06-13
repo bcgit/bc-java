@@ -295,10 +295,7 @@ public class KCCMBlockCipher
                 outOff += blockLen;
             }
 
-            for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
-            {
-                s[byteIndex] += counter[byteIndex];
-            }
+            advanceGamma();
 
             engine.processBlock(s, 0, buffer, 0);
 
@@ -335,10 +332,7 @@ public class KCCMBlockCipher
             }
 
             // recover the appended (masked) MAC using the next keystream block
-            for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
-            {
-                s[byteIndex] += counter[byteIndex];
-            }
+            advanceGamma();
 
             engine.processBlock(s, 0, buffer, 0);
 
@@ -372,11 +366,7 @@ public class KCCMBlockCipher
 
     private void ProcessBlock(byte[] input, int inOff, int blockLen, byte[] output, int outOff)
     {
-
-        for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
-        {
-            s[byteIndex] += counter[byteIndex];
-        }
+        advanceGamma();
 
         engine.processBlock(s, 0, buffer, 0);
 
@@ -385,6 +375,24 @@ public class KCCMBlockCipher
         for (int byteIndex = 0; byteIndex < blockLen; byteIndex++)
         {
             output[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ input[inOff + byteIndex]);
+        }
+    }
+
+    /**
+     * Advance the gamma counter by adding {@code counter} to {@code s} as a little-endian
+     * multi-byte integer with carry propagation (counter[0] is the least significant byte).
+     * The carry must propagate across the whole block: without it only s[0] ever changes, so
+     * the keystream block E(s) repeats every 256 blocks and any message longer than 255 blocks
+     * is encrypted with a repeating keystream (a two-time pad). See github #287.
+     */
+    private void advanceGamma()
+    {
+        int carry = 0;
+        for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
+        {
+            carry += (s[byteIndex] & 0xFF) + (counter[byteIndex] & 0xFF);
+            s[byteIndex] = (byte)carry;
+            carry >>>= 8;
         }
     }
 
