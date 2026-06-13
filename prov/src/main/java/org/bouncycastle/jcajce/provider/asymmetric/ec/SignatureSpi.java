@@ -351,6 +351,15 @@ public class SignatureSpi
         }
     }
 
+    static public class ecCVCDSANone
+        extends SignatureSpi
+    {
+        public ecCVCDSANone()
+        {
+            super(new NullDigest(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
+        }
+    }
+
     static public class ecPlainDSARP160
         extends SignatureSpi
     {
