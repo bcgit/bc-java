@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of GOST 3412 2015 (aka "Kuznyechik") RFC 7801, GOST 3412
@@ -45,17 +46,85 @@ public class GOST3412_2015Engine
     };
 
 
-    private final byte[] lFactors = {
+    private static final byte[] lFactors = {
         -108, 32, -123, 16, -62, -64, 1, -5, 1, -64, -62, 16, -123, 32, -108, 1
     };
 
+    /*
+     * Precomputed lookup tables for the linear transform L (and its inverse) of
+     * GOST 34.12-2015. L is the LFSR R applied 16 times; since L is GF(2^8)-linear
+     * over the 16-byte block, L(data) = XOR_i LT[i][data[i]], where LT[i][v] is L
+     * applied to the block holding v at position i and 0 elsewhere. Each 16-byte
+     * row is held as two longs (bytes 0-7 / 8-15, big-endian). The tables are
+     * generated from the original R^16 / inverseR^16 over the GF(2^8) multiply
+     * table, so the result is byte-identical to the per-byte LFSR implementation
+     * while replacing ~256 table lookups + 16 register shifts per L with 16
+     * row-XORs. This is information-equivalent to the existing S-box / GF-multiply
+     * lookups (indexed by the same secret block bytes), so it does not change the
+     * engine's cache constant-time posture.
+     */
+    private static final long[][] forwardT0 = new long[16][256];
+    private static final long[][] forwardT1 = new long[16][256];
+    private static final long[][] inverseT0 = new long[16][256];
+    private static final long[][] inverseT1 = new long[16][256];
+
+    /*
+     * LS tables fold the S-box into the linear transform (LSX round = X then L(S(.))).
+     * Since the S-box is applied before the (linear) L, L(S(x)) = XOR_i LST[i][x[i]]
+     * with LST[i][v] = L(S(v) at position i) = forwardT[i][PI[v]]; likewise for the
+     * equivalent inverse round invL(invS(.)) the LFSR-and-substitution fold is
+     * inverseLST[i][v] = inverseT[i][inversePI[v]]. Indexed by the same secret block
+     * bytes the S-box already indexes, so still information-equivalent / CT-neutral.
+     */
+    private static final long[][] forwardLST0 = new long[16][256];
+    private static final long[][] forwardLST1 = new long[16][256];
+    private static final long[][] inverseLST0 = new long[16][256];
+    private static final long[][] inverseLST1 = new long[16][256];
+
+    static
+    {
+        byte[][] gfMul = init_gf256_mul_table();
+        for (int i = 0; i < 16; i++)
+        {
+            for (int v = 1; v < 256; v++)
+            {
+                byte[] block = new byte[16];
+                block[i] = (byte)v;
+                for (int r = 0; r < 16; r++)
+                {
+                    rSlow(block, gfMul);
+                }
+                forwardT0[i][v] = Pack.bigEndianToLong(block, 0);
+                forwardT1[i][v] = Pack.bigEndianToLong(block, 8);
+
+                byte[] iblock = new byte[16];
+                iblock[i] = (byte)v;
+                for (int r = 0; r < 16; r++)
+                {
+                    inverseRSlow(iblock, gfMul);
+                }
+                inverseT0[i][v] = Pack.bigEndianToLong(iblock, 0);
+                inverseT1[i][v] = Pack.bigEndianToLong(iblock, 8);
+            }
+        }
+        for (int i = 0; i < 16; i++)
+        {
+            for (int v = 0; v < 256; v++)
+            {
+                forwardLST0[i][v] = forwardT0[i][PI[v] & 0xFF];
+                forwardLST1[i][v] = forwardT1[i][PI[v] & 0xFF];
+                inverseLST0[i][v] = inverseT0[i][inversePI[v] & 0xFF];
+                inverseLST1[i][v] = inverseT1[i][inversePI[v] & 0xFF];
+            }
+        }
+    }
 
     protected static final int BLOCK_SIZE = 16;
     private int KEY_LENGTH = 32;
     private int SUB_LENGTH = KEY_LENGTH / 2;
     private byte[][] subKeys = null;
+    private byte[][] invSubKeys = null;
     private boolean forEncryption;
-    private byte[][] _gf_mul = init_gf256_mul_table();
 
 
     private static byte[][] init_gf256_mul_table()
@@ -158,6 +227,17 @@ public class GOST3412_2015Engine
             System.arraycopy(x, 0, subKeys[2 * k], 0, SUB_LENGTH);
             System.arraycopy(y, 0, subKeys[2 * k + 1], 0, SUB_LENGTH);
         }
+
+        // For the equivalent-decryption round (which applies the inverse S-box
+        // before the inverse linear transform) the inner round keys are pushed
+        // through inverseL once, at key-schedule time.
+        invSubKeys = new byte[9][];
+        for (int i = 1; i <= 8; i++)
+        {
+            byte[] ik = Arrays.clone(subKeys[i]);
+            inverseL(ik);
+            invSubKeys[i] = ik;
+        }
     }
 
 
@@ -218,25 +298,27 @@ public class GOST3412_2015Engine
 
         if (forEncryption)
         {
-
             for (int i = 0; i < 9; i++)
             {
-
-                byte[] temp = LSX(subKeys[i], block);
-                block = Arrays.copyOf(temp, BLOCK_SIZE);
+                X(block, subKeys[i]);
+                LS(block);
             }
 
             X(block, subKeys[9]);
         }
         else
         {
-
-            for (int i = 9; i > 0; i--)
+            // Equivalent decryption: w = invL(C ^ K9); for i=8..1: w = invLS(w) ^ invL(Ki);
+            // P = invS(w) ^ K0. invLS folds inverseS into the inverse linear tables, and the
+            // inner round keys are pre-transformed (invSubKeys[i] = inverseL(Ki)).
+            X(block, subKeys[9]);
+            inverseL(block);
+            for (int i = 8; i >= 1; i--)
             {
-
-                byte[] temp = XSL(subKeys[i], block);
-                block = Arrays.copyOf(temp, BLOCK_SIZE);
+                inverseLS(block);
+                X(block, invSubKeys[i]);
             }
+            inverseS(block);
             X(block, subKeys[0]);
         }
 
@@ -251,15 +333,6 @@ public class GOST3412_2015Engine
         X(result, a);
         S(result);
         L(result);
-        return result;
-    }
-
-    private byte[] XSL(byte[] k, byte[] a)
-    {
-        byte[] result = Arrays.copyOf(k, k.length);
-        X(result, a);
-        inverseL(result);
-        inverseS(result);
         return result;
     }
 
@@ -294,47 +367,92 @@ public class GOST3412_2015Engine
 
     private void L(byte[] data)
     {
+        long r0 = 0;
+        long r1 = 0;
         for (int i = 0; i < 16; i++)
         {
-            R(data);
+            int v = data[i] & 0xFF;
+            r0 ^= forwardT0[i][v];
+            r1 ^= forwardT1[i][v];
         }
+        Pack.longToBigEndian(r0, data, 0);
+        Pack.longToBigEndian(r1, data, 8);
     }
 
     private void inverseL(byte[] data)
     {
+        long r0 = 0;
+        long r1 = 0;
         for (int i = 0; i < 16; i++)
         {
-            inverseR(data);
+            int v = data[i] & 0xFF;
+            r0 ^= inverseT0[i][v];
+            r1 ^= inverseT1[i][v];
         }
+        Pack.longToBigEndian(r0, data, 0);
+        Pack.longToBigEndian(r1, data, 8);
     }
 
-
-    private void R(byte[] data)
+    private void LS(byte[] data)
     {
-        byte z = l(data);
-        System.arraycopy(data, 0, data, 1, 15);
-        data[0] = z;
+        long r0 = 0;
+        long r1 = 0;
+        for (int i = 0; i < 16; i++)
+        {
+            int v = data[i] & 0xFF;
+            r0 ^= forwardLST0[i][v];
+            r1 ^= forwardLST1[i][v];
+        }
+        Pack.longToBigEndian(r0, data, 0);
+        Pack.longToBigEndian(r1, data, 8);
     }
 
-    private void inverseR(byte[] data)
+    private void inverseLS(byte[] data)
     {
-        byte[] temp = new byte[16];
-        System.arraycopy(data, 1, temp, 0, 15);
-        temp[15] = data[0];
-        byte z = l(temp);
-        System.arraycopy(data, 1, data, 0, 15);
-        data[15] = z;
+        long r0 = 0;
+        long r1 = 0;
+        for (int i = 0; i < 16; i++)
+        {
+            int v = data[i] & 0xFF;
+            r0 ^= inverseLST0[i][v];
+            r1 ^= inverseLST1[i][v];
+        }
+        Pack.longToBigEndian(r0, data, 0);
+        Pack.longToBigEndian(r1, data, 8);
     }
 
 
-    private byte l(byte[] data)
+    /*
+     * Build-time helpers (used only to populate the static L tables): the original
+     * per-byte LFSR step R, its inverse, and the linear functional l over the
+     * GF(2^8) multiply table. Driving R^16 / inverseR^16 over the unit vectors is
+     * what makes the precomputed tables byte-identical to the old implementation.
+     */
+    private static byte lSlow(byte[] data, byte[][] gfMul)
     {
         byte x = data[15];
         for (int i = 14; i >= 0; i--)
         {
-            x ^= _gf_mul[unsignedByte(data[i])][unsignedByte(lFactors[i])];
+            x ^= gfMul[data[i] & 0xFF][lFactors[i] & 0xFF];
         }
         return x;
+    }
+
+    private static void rSlow(byte[] data, byte[][] gfMul)
+    {
+        byte z = lSlow(data, gfMul);
+        System.arraycopy(data, 0, data, 1, 15);
+        data[0] = z;
+    }
+
+    private static void inverseRSlow(byte[] data, byte[][] gfMul)
+    {
+        byte[] temp = new byte[16];
+        System.arraycopy(data, 1, temp, 0, 15);
+        temp[15] = data[0];
+        byte z = lSlow(temp, gfMul);
+        System.arraycopy(data, 1, data, 0, 15);
+        data[15] = z;
     }
 
     public void reset()
