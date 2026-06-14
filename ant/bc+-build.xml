@@ -190,6 +190,7 @@
                 <copy todir="${build.dir}/@{target}/classes">
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.asc" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.pem" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.p12" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.p7m" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.message" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.properties" />
@@ -226,6 +227,7 @@
                             <include name="**/*.class" />
                             <include name="**/*.asc" />
                             <include name="**/*.pem" />
+                            <include name="**/*.p12" />
                             <include name="**/*.p7m" />
                             <include name="**/*.crl" />
                             <include name="**/*.der" />
@@ -980,6 +982,7 @@
              <fileset dir="${src.dir}" includes="**/test/*/*.java" />
              <fileset dir="${src.dir}" includes="**/*.asc" />
              <fileset dir="${src.dir}" includes="**/*.pem" />
+             <fileset dir="${src.dir}" includes="**/*.p12" />
              <fileset dir="${src.dir}" includes="**/*.p7m" />
              <fileset dir="${src.dir}" includes="**/*.eml" />
              <fileset dir="${src.dir}" includes="**/*.sig" />

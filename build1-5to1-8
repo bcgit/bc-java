@@ -6,11 +6,13 @@
 # otherwise it just creates the docs and class files.
 #
 
-if [ "${JDKPATH}" = "" ] 
+if [ "${JDKPATH}" = "" ]
 then
 	JDKPATH=/usr/lib/jvm/java-8-openjdk-amd64
+else
+	JDKPATH_WAS_SET=yes
 fi
-if [ "${JDK5PATH}" = "" ] 
+if [ "${JDK5PATH}" = "" ]
 then
 	JDK5PATH=/usr/lib/jvm/java-1.5.0-oracle-i586/
 fi
@@ -20,6 +22,26 @@ export JAVA_HOME
 
 PATH=$JDKPATH/bin:$PATH
 export PATH
+
+if [ "${JAVA_VERSION_PREFIX}" = "" ]
+then
+    if [ "${JDKPATH_WAS_SET}" = "yes" ]
+    then
+        # JDKPATH was supplied but JAVA_VERSION_PREFIX wasn't: derive the prefix
+        # from the JVM's reported version so it matches System.getProperty("java.version").
+        # e.g. java.version "1.8.0_492" -> 1.8, "11.0.31" -> 11, "17.0.19" -> 17.
+        _javaVersion=`"${JDKPATH}/bin/java" -version 2>&1 | sed -n '1s/.*version "\([^"]*\)".*/\1/p'`
+        case "${_javaVersion}" in
+            1.*) JAVA_VERSION_PREFIX=`echo "${_javaVersion}" | cut -d. -f1-2` ;;
+            ?*)  JAVA_VERSION_PREFIX=`echo "${_javaVersion}" | cut -d. -f1` ;;
+        esac
+    fi
+    if [ "${JAVA_VERSION_PREFIX}" = "" ]
+    then
+        JAVA_VERSION_PREFIX=1.5
+    fi
+    export JAVA_VERSION_PREFIX
+fi
 
 if [ "$1" = "test" ]
 then
