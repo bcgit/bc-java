@@ -695,8 +695,12 @@ class CMCEEngine
         // support gen
         benes.support_gen(L, sk);
 
+        // precompute 1/g(L_i)^2 once; both synd passes below reuse it
+        short[] eInv = new short[SYS_N];
+        syndInv(eInv, g, L);
+
         // compute syndrome
-        synd(s, g, L, r);
+        synd(s, eInv, L, r);
 
         // compute minimal polynomial of syndrome
         bm(locator, s);
@@ -724,7 +728,7 @@ class CMCEEngine
         }
 
         // compute syndrome
-        synd(s_cmp, g, L, error_vector);
+        synd(s_cmp, eInv, L, error_vector);
 
         /*
         2.2.4 Decoding subroutine
@@ -834,17 +838,29 @@ class CMCEEngine
         }
     }
 
-    /* input: Goppa polynomial f, support L, received word r */
-    /* output: out, the syndrome of length 2t */
-    private void synd(short[] out, short[] f, short[] L, byte[] r)
+    /* input: Goppa polynomial f, support L */
+    /* output: eInv[i] = 1 / g(L_i)^2 for every support element */
+    // This depends only on the secret Goppa polynomial f and support L, not on
+    // the word being syndromed, so the two synd() passes in decrypt() (for the
+    // received word and for the recovered error vector) share one evaluation
+    // instead of repeating SYS_N polynomial evaluations and inversions. Access
+    // is by public index i, so the constant-time access pattern is unchanged.
+    private void syndInv(short[] eInv, short[] f, short[] L)
+    {
+        for (int i = 0; i < SYS_N; i++)
+        {
+            short e = eval(f, L[i]);
+            eInv[i] = gf.gf_inv(gf.gf_sq(e));
+        }
+    }
+
+    private void synd(short[] out, short[] eInv, short[] L, byte[] r)
     {
         {
             short c = (short)(r[0] & 1);
 
             short L_i = L[0];
-            short e = eval(f, L_i);
-            short e_inv = gf.gf_inv(gf.gf_sq(e));
-            short c_div_e = (short)(e_inv & -c);
+            short c_div_e = (short)(eInv[0] & -c);
 
             out[0] = c_div_e;
 
@@ -859,9 +875,7 @@ class CMCEEngine
             short c = (short)((r[i / 8] >> (i % 8)) & 1);
 
             short L_i = L[i];
-            short e = eval(f, L_i);
-            short e_inv = gf.gf_inv(gf.gf_sq(e));
-            short c_div_e = gf.gf_mul(e_inv, c);
+            short c_div_e = gf.gf_mul(eInv[i], c);
 
             out[0] ^= c_div_e;
 
@@ -1471,40 +1485,63 @@ class CMCEEngine
         }
 
         // gaussian elimination
-        int row, c;
-        byte mask;
+        // The matrix rows are packed into 64-bit words so the dominant row XOR
+        // operates on 64 columns per step instead of 8 (matching the uint64_t
+        // representation of the reference). Byte-identical: the low SYS_N bits
+        // are the same bits XORed, and the constant-time pivot select mask is
+        // 0L / -1L (the 64-bit widening of the original 0 / -1 byte mask). The
+        // access pattern is dense and indexed only by public loop counters, so
+        // L1/L2/L3 constant-time properties are preserved.
+        int nBytes = SYS_N / 8;
+        int nLongs = (nBytes + 7) / 8;
+        long[][] matL = new long[PK_NROWS][nLongs];
+        for (i = 0; i < PK_NROWS; i++)
+        {
+            packRow(mat[i], nBytes, matL[i]);
+        }
+
+        int row, c, wi, bj;
         for (row = 0; row < PK_NROWS; row++)
         {
-            i = row >>> 3;
-            j = row & 7;
+            wi = row >>> 6;
+            bj = row & 63;
 
             if (usePivots)
             {
                 if (row == PK_NROWS - 32)
                 {
+                    // mov_columns operates on the byte[][] form: sync down, move, re-pack.
+                    // Runs once per keygen, so the round-trip cost is negligible.
+                    for (i = 0; i < PK_NROWS; i++)
+                    {
+                        unpackRow(matL[i], nBytes, mat[i]);
+                    }
                     if (mov_columns(mat, pi, pivots) != 0)
                     {
 //                        System.out.println("failed mov column!");
                         return -1;
                     }
+                    for (i = 0; i < PK_NROWS; i++)
+                    {
+                        packRow(mat[i], nBytes, matL[i]);
+                    }
                 }
             }
 
+            long[] matRow = matL[row];
             for (k = row + 1; k < PK_NROWS; k++)
             {
-                mask = (byte)(mat[row][i] ^ mat[k][i]);
-                mask >>= j;
-                mask &= 1;
-                mask = (byte)-mask;
+                long[] matK = matL[k];
+                long mask = -(((matRow[wi] ^ matK[wi]) >>> bj) & 1L);
 
-                for (c = 0; c < SYS_N / 8; c++)
+                for (c = 0; c < nLongs; c++)
                 {
-                    mat[row][c] ^= mat[k][c] & mask;
+                    matRow[c] ^= matK[c] & mask;
                 }
             }
             // 7. Compute (T,cn−k−μ+1,...,cn−k,Γ′) =  MatGen(Γ). If this fails, set δ =  δ′ and
             // restart the algorithm.
-            if (((mat[row][i] >> j) & 1) == 0) // return if not systematic
+            if (((matRow[wi] >>> bj) & 1L) == 0) // return if not systematic
             {
 //                System.out.println("FAIL 2\n");
                 return -1;
@@ -1514,17 +1551,26 @@ class CMCEEngine
             {
                 if (k != row)
                 {
-                    mask = (byte)(mat[k][i] >> j);
-                    mask &= 1;
-                    mask = (byte)-mask;
+                    long[] matK = matL[k];
+                    long mask = -((matK[wi] >>> bj) & 1L);
 
-                    for (c = 0; c < SYS_N / 8; c++)
+                    for (c = 0; c < nLongs; c++)
                     {
-                        mat[k][c] ^= mat[row][c] & mask;
+                        matK[c] ^= matRow[c] & mask;
                     }
                 }
             }
         }
+
+        // unpack back to byte form for the public-key extraction below
+        for (i = 0; i < PK_NROWS; i++)
+        {
+            unpackRow(matL[i], nBytes, mat[i]);
+        }
+        // restore the byte/bit index the loop above used to leave in i/j, which
+        // the padded public-key extraction relies on
+        i = (PK_NROWS - 1) >>> 3;
+        j = (PK_NROWS - 1) & 7;
 
         // FieldOrdering 2.4.2 - 5. Output (α1,α2,...,αq)
         if (pk != null)
@@ -1568,6 +1614,55 @@ class CMCEEngine
             }
         }
         return 0;
+    }
+
+    // Pack nBytes little-endian bytes of a matrix row into ceil(nBytes/8) 64-bit
+    // words (zero-padding the final word). Used once per row before Gaussian
+    // elimination; the wide form lets the inner XOR clear 64 columns per step.
+    private static void packRow(byte[] src, int nBytes, long[] dst)
+    {
+        int b = 0, w = 0;
+        int full = nBytes & ~7;
+        while (b < full)
+        {
+            dst[w++] = Utils.load8(src, b);
+            b += 8;
+        }
+        if (b < nBytes)
+        {
+            long t = 0;
+            int sh = 0;
+            while (b < nBytes)
+            {
+                t |= (src[b] & 0xffL) << sh;
+                sh += 8;
+                b++;
+            }
+            dst[w] = t;
+        }
+    }
+
+    // Inverse of packRow: write ceil(nBytes/8) words back to nBytes little-endian
+    // bytes. The padding bits of the final word are discarded (they stay zero
+    // throughout elimination, so this is byte-identical to the original layout).
+    private static void unpackRow(long[] src, int nBytes, byte[] dst)
+    {
+        int b = 0, w = 0;
+        int full = nBytes & ~7;
+        while (b < full)
+        {
+            Utils.store8(dst, b, src[w++]);
+            b += 8;
+        }
+        if (b < nBytes)
+        {
+            long t = src[w];
+            while (b < nBytes)
+            {
+                dst[b++] = (byte)t;
+                t >>>= 8;
+            }
+        }
     }
 
 
