@@ -39,6 +39,7 @@ public class DSTU7564Digest
     private long[] state;
     private long[] tempState1;
     private long[] tempState2;
+    private long[] tempBuf;
 
     // TODO Guard against 'inputBlocks' overflow (2^64 blocks)
     private long inputBlocks;
@@ -71,6 +72,7 @@ public class DSTU7564Digest
             this.state = Arrays.clone(digest.state);
             this.tempState1 = new long[columns];
             this.tempState2 = new long[columns];
+            this.tempBuf = new long[columns];
             this.buf = Arrays.clone(digest.buf);
         }
 
@@ -114,6 +116,7 @@ public class DSTU7564Digest
 
         this.tempState1 = new long[columns];
         this.tempState2 = new long[columns];
+        this.tempBuf = new long[columns];
 
         this.buf = new byte[blockSize];
 
@@ -271,9 +274,8 @@ public class DSTU7564Digest
                 rc += 0x10L;
             }
 
-            shiftRows(s);
-            subBytes(s);
-            mixColumns(s);
+            /* shiftRows + subBytes + mixColumns, fused into T-table lookups */
+            transform(s);
         }
     }
 
@@ -290,9 +292,37 @@ public class DSTU7564Digest
                 rc -= 0x1000000000000000L;
             }
 
-            shiftRows(s);
-            subBytes(s);
-            mixColumns(s);
+            /* shiftRows + subBytes + mixColumns, fused into T-table lookups */
+            transform(s);
+        }
+    }
+
+    /*
+     * Fused shiftRows + subBytes + mixColumns. Each output column is the XOR of eight
+     * precomputed T-table entries (Whirlpool C0..C7 form): T_k folds the row-k S-box and the
+     * mixColumn contribution of byte position k, while shiftRows is folded into the source-column
+     * selection. Row r of an output column is drawn from input column (col - shift[r]) mod columns,
+     * with shift = {0,1,2,3,4,5,6,7} for the 512-bit state and {0,1,2,3,4,5,6,11} for the 1024-bit
+     * state (only row 7 differs). columns is a power of two, so the modulo is a mask.
+     */
+    private void transform(long[] s)
+    {
+        long[] t = tempBuf;
+        System.arraycopy(s, 0, t, 0, columns);
+
+        int mask = columns - 1;
+        int s7 = columns == NB_512 ? 7 : 11;
+
+        for (int col = 0; col < columns; ++col)
+        {
+            s[col] = T0[(int)t[col] & 0xFF]
+                ^ T1[(int)(t[(col - 1) & mask] >>> 8) & 0xFF]
+                ^ T2[(int)(t[(col - 2) & mask] >>> 16) & 0xFF]
+                ^ T3[(int)(t[(col - 3) & mask] >>> 24) & 0xFF]
+                ^ T4[(int)(t[(col - 4) & mask] >>> 32) & 0xFF]
+                ^ T5[(int)(t[(col - 5) & mask] >>> 40) & 0xFF]
+                ^ T6[(int)(t[(col - 6) & mask] >>> 48) & 0xFF]
+                ^ T7[(int)(t[(col - s7) & mask] >>> 56) & 0xFF];
         }
     }
 
@@ -340,125 +370,9 @@ public class DSTU7564Digest
         return u ^ rotate(32, v) ^ rotate(40, x1) ^ rotate(48, x1);
     }
 
-    private void mixColumns(long[] s)
-    {
-        for (int col = 0; col < columns; ++col)
-        {
-            s[col] = mixColumn(s[col]);
-        }
-    }
-
     private static long rotate(int n, long x)
     {
         return (x >>> n) | (x << -n);
-    }
-
-    private void shiftRows(long[] s)
-    {
-        switch (columns)
-        {
-        case NB_512:
-        {
-            long c0 = s[0], c1 = s[1], c2 = s[2], c3 = s[3];
-            long c4 = s[4], c5 = s[5], c6 = s[6], c7 = s[7];
-            long d;
-
-            d = (c0 ^ c4) & 0xFFFFFFFF00000000L; c0 ^= d; c4 ^= d;
-            d = (c1 ^ c5) & 0x00FFFFFFFF000000L; c1 ^= d; c5 ^= d;
-            d = (c2 ^ c6) & 0x0000FFFFFFFF0000L; c2 ^= d; c6 ^= d;
-            d = (c3 ^ c7) & 0x000000FFFFFFFF00L; c3 ^= d; c7 ^= d;
-
-            d = (c0 ^ c2) & 0xFFFF0000FFFF0000L; c0 ^= d; c2 ^= d;
-            d = (c1 ^ c3) & 0x00FFFF0000FFFF00L; c1 ^= d; c3 ^= d;
-            d = (c4 ^ c6) & 0xFFFF0000FFFF0000L; c4 ^= d; c6 ^= d;
-            d = (c5 ^ c7) & 0x00FFFF0000FFFF00L; c5 ^= d; c7 ^= d;
-
-            d = (c0 ^ c1) & 0xFF00FF00FF00FF00L; c0 ^= d; c1 ^= d;
-            d = (c2 ^ c3) & 0xFF00FF00FF00FF00L; c2 ^= d; c3 ^= d;
-            d = (c4 ^ c5) & 0xFF00FF00FF00FF00L; c4 ^= d; c5 ^= d;
-            d = (c6 ^ c7) & 0xFF00FF00FF00FF00L; c6 ^= d; c7 ^= d;
-
-            s[0] = c0; s[1] = c1; s[2] = c2; s[3] = c3;
-            s[4] = c4; s[5] = c5; s[6] = c6; s[7] = c7;
-            break;
-        }
-        case NB_1024:
-        {
-            long c00 = s[ 0], c01 = s[ 1], c02 = s[ 2], c03 = s[ 3];
-            long c04 = s[ 4], c05 = s[ 5], c06 = s[ 6], c07 = s[ 7];
-            long c08 = s[ 8], c09 = s[ 9], c10 = s[10], c11 = s[11];
-            long c12 = s[12], c13 = s[13], c14 = s[14], c15 = s[15];
-            long d;
-
-            // NOTE: Row 7 is shifted by 11
-
-            d = (c00 ^ c08) & 0xFF00000000000000L; c00 ^= d; c08 ^= d;
-            d = (c01 ^ c09) & 0xFF00000000000000L; c01 ^= d; c09 ^= d;
-            d = (c02 ^ c10) & 0xFFFF000000000000L; c02 ^= d; c10 ^= d;
-            d = (c03 ^ c11) & 0xFFFFFF0000000000L; c03 ^= d; c11 ^= d;
-            d = (c04 ^ c12) & 0xFFFFFFFF00000000L; c04 ^= d; c12 ^= d;
-            d = (c05 ^ c13) & 0x00FFFFFFFF000000L; c05 ^= d; c13 ^= d;
-            d = (c06 ^ c14) & 0x00FFFFFFFFFF0000L; c06 ^= d; c14 ^= d;
-            d = (c07 ^ c15) & 0x00FFFFFFFFFFFF00L; c07 ^= d; c15 ^= d;
-
-            d = (c00 ^ c04) & 0x00FFFFFF00000000L; c00 ^= d; c04 ^= d;
-            d = (c01 ^ c05) & 0xFFFFFFFFFF000000L; c01 ^= d; c05 ^= d;
-            d = (c02 ^ c06) & 0xFF00FFFFFFFF0000L; c02 ^= d; c06 ^= d;
-            d = (c03 ^ c07) & 0xFF0000FFFFFFFF00L; c03 ^= d; c07 ^= d;
-            d = (c08 ^ c12) & 0x00FFFFFF00000000L; c08 ^= d; c12 ^= d;
-            d = (c09 ^ c13) & 0xFFFFFFFFFF000000L; c09 ^= d; c13 ^= d;
-            d = (c10 ^ c14) & 0xFF00FFFFFFFF0000L; c10 ^= d; c14 ^= d;
-            d = (c11 ^ c15) & 0xFF0000FFFFFFFF00L; c11 ^= d; c15 ^= d;
-
-            d = (c00 ^ c02) & 0xFFFF0000FFFF0000L; c00 ^= d; c02 ^= d;
-            d = (c01 ^ c03) & 0x00FFFF0000FFFF00L; c01 ^= d; c03 ^= d;
-            d = (c04 ^ c06) & 0xFFFF0000FFFF0000L; c04 ^= d; c06 ^= d;
-            d = (c05 ^ c07) & 0x00FFFF0000FFFF00L; c05 ^= d; c07 ^= d;
-            d = (c08 ^ c10) & 0xFFFF0000FFFF0000L; c08 ^= d; c10 ^= d;
-            d = (c09 ^ c11) & 0x00FFFF0000FFFF00L; c09 ^= d; c11 ^= d;
-            d = (c12 ^ c14) & 0xFFFF0000FFFF0000L; c12 ^= d; c14 ^= d;
-            d = (c13 ^ c15) & 0x00FFFF0000FFFF00L; c13 ^= d; c15 ^= d;
-
-            d = (c00 ^ c01) & 0xFF00FF00FF00FF00L; c00 ^= d; c01 ^= d;
-            d = (c02 ^ c03) & 0xFF00FF00FF00FF00L; c02 ^= d; c03 ^= d;
-            d = (c04 ^ c05) & 0xFF00FF00FF00FF00L; c04 ^= d; c05 ^= d;
-            d = (c06 ^ c07) & 0xFF00FF00FF00FF00L; c06 ^= d; c07 ^= d;
-            d = (c08 ^ c09) & 0xFF00FF00FF00FF00L; c08 ^= d; c09 ^= d;
-            d = (c10 ^ c11) & 0xFF00FF00FF00FF00L; c10 ^= d; c11 ^= d;
-            d = (c12 ^ c13) & 0xFF00FF00FF00FF00L; c12 ^= d; c13 ^= d;
-            d = (c14 ^ c15) & 0xFF00FF00FF00FF00L; c14 ^= d; c15 ^= d;
-
-            s[ 0] = c00; s[ 1] = c01; s[ 2] = c02; s[ 3] = c03;
-            s[ 4] = c04; s[ 5] = c05; s[ 6] = c06; s[ 7] = c07;
-            s[ 8] = c08; s[ 9] = c09; s[10] = c10; s[11] = c11;
-            s[12] = c12; s[13] = c13; s[14] = c14; s[15] = c15;
-            break;
-        }
-        default:
-        {
-            throw new IllegalStateException("unsupported state size: only 512/1024 are allowed");
-        }
-        }
-    }
-
-    private void subBytes(long[] s)
-    {
-        for (int i = 0; i < columns; ++i)
-        {
-            long u = s[i];
-            int lo = (int)u, hi = (int)(u >>> 32);
-            byte t0 = S0[lo & 0xFF];
-            byte t1 = S1[(lo >>> 8) & 0xFF];
-            byte t2 = S2[(lo >>> 16) & 0xFF];
-            byte t3 = S3[lo >>> 24];
-            lo = (t0 & 0xFF) | ((t1 & 0xFF) << 8) | ((t2 & 0xFF) << 16) | ((int)t3 << 24);
-            byte t4 = S0[hi & 0xFF];
-            byte t5 = S1[(hi >>> 8) & 0xFF];
-            byte t6 = S2[(hi >>> 16) & 0xFF];
-            byte t7 = S3[hi >>> 24];
-            hi = (t4 & 0xFF) | ((t5 & 0xFF) << 8) | ((t6 & 0xFF) << 16) | ((int)t7 << 24);
-            s[i] = (lo & 0xFFFFFFFFL) | ((long)hi << 32);
-        }
     }
 
     private static final byte[] S0 = new byte[]{ (byte)0xa8, (byte)0x43, (byte)0x5f, (byte)0x06, (byte)0x6b, (byte)0x75,
@@ -580,6 +494,37 @@ public class DSTU7564Digest
         (byte)0x78, (byte)0x0b, (byte)0x95, (byte)0xe3, (byte)0xad, (byte)0x74, (byte)0x98, (byte)0x3b, (byte)0x36,
         (byte)0x64, (byte)0x6d, (byte)0xdc, (byte)0xf0, (byte)0x59, (byte)0xa9, (byte)0x4c, (byte)0x17, (byte)0x7f,
         (byte)0x91, (byte)0xb8, (byte)0xc9, (byte)0x57, (byte)0x1b, (byte)0xe0, (byte)0x61 };
+
+    /*
+     * T-tables fusing subBytes and mixColumns (Whirlpool C0..C7 form). T_k[b] places the row-k
+     * S-box image of b at byte position k and applies the MDS mixColumn, so that the combined
+     * subBytes + mixColumns of a column equals the XOR of the eight T_k[byte_k] lookups; shiftRows
+     * is folded into the source-column selection in transform(). Rows 0/4 use S0, 1/5 S1, 2/6 S2,
+     * 3/7 S3 (matching the original subBytes byte-position mapping).
+     */
+    private static final long[] T0 = new long[256];
+    private static final long[] T1 = new long[256];
+    private static final long[] T2 = new long[256];
+    private static final long[] T3 = new long[256];
+    private static final long[] T4 = new long[256];
+    private static final long[] T5 = new long[256];
+    private static final long[] T6 = new long[256];
+    private static final long[] T7 = new long[256];
+
+    static
+    {
+        for (int b = 0; b < 256; ++b)
+        {
+            T0[b] = mixColumn((long)(S0[b] & 0xFF));
+            T1[b] = mixColumn((long)(S1[b] & 0xFF) << 8);
+            T2[b] = mixColumn((long)(S2[b] & 0xFF) << 16);
+            T3[b] = mixColumn((long)(S3[b] & 0xFF) << 24);
+            T4[b] = mixColumn((long)(S0[b] & 0xFF) << 32);
+            T5[b] = mixColumn((long)(S1[b] & 0xFF) << 40);
+            T6[b] = mixColumn((long)(S2[b] & 0xFF) << 48);
+            T7[b] = mixColumn((long)(S3[b] & 0xFF) << 56);
+        }
+    }
 
     public Memoable copy()
     {
