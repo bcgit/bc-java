@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
@@ -18,7 +19,9 @@ import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
 import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -459,8 +462,221 @@ public class OpenSSHKeyParsingTests
         }
         catch (IllegalStateException iles)
         {
-            isEquals("enc keys not supported ", iles.getMessage(), "encrypted keys not supported");
+            isEquals("passphrase required ", iles.getMessage(), "passphrase required to decrypt encrypted OpenSSH private key");
         }
+    }
+
+    /**
+     * github #1733 - decryption of passphrase-protected openssh-key-v1 keys across the
+     * OpenSSH cipher suite (bcrypt KDF). The keys below were produced by ssh-keygen with
+     * passphrase "Test1234!"; each expected value is the deterministic key material
+     * (ed25519 32-byte seed||public, RSA modulus, or EC private scalar, in hex).
+     */
+    public void testEncryptedKeys()
+        throws Exception
+    {
+        checkEncryptedKey("aes256-ctr",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABD4XaoKXH\n" +
+            "N9dMM5dz+nRBC6AAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIHs3/Bh5SIn8aexd\n" +
+            "42KtdGV83J4+sckvemTmsG0u6uOyAAAAkBLLK8FUZ0ErL2dC/3fDEz+MdA6MMVZv0Q83OJ\n" +
+            "5AbQ0WvN0wLo6lARyiiZm2L4Z3rO5XGkY+BpDrNUI1iKNd39VdgyBLX+u0dbJ/EI5ZXMYs\n" +
+            "j5iVU+CD0fJc7KrToTDvblDoS3jeW9yXrLdnV5Mi25gdQLojq8x3px2Dv+HoqT3vTuAivl\n" +
+            "ISNUnmozjANHauJg==\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "0ad120d52190b5a6edf251e51e9eedf70acc46b3643d72c9ae952021afc1af68");
+
+        checkEncryptedKey("aes128-ctr",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACmFlczEyOC1jdHIAAAAGYmNyeXB0AAAAGAAAABD65HXuos\n" +
+            "80kHc6jA6zQyjpAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIBfVtOvwgqyb+PmG\n" +
+            "qUgKEuQ22VVe/BRgY0psSvfWPn+UAAAAkGD9cseM/xe9hi2/hi1A7RkLmSGZ35MuK3q091\n" +
+            "TeerghU8asugJkKVpx40CNnYcjWWvdQPDd3UxJY4TPhHrReShEw/jCHddY2EKkX+DaB4Vg\n" +
+            "ov37XQ1vG5chvGsHzbCtGB6+zR+MBSBqpAV7gk61NJpI0gKEQ4Rw0X7z6KFSNcYObyqJ/I\n" +
+            "QWinajEzSw00J1DA==\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "ef7918190fd8f3497010cc0db19468aedc89f3cc728216a7a7663e66e07c20bc");
+
+        checkEncryptedKey("aes192-ctr",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACmFlczE5Mi1jdHIAAAAGYmNyeXB0AAAAGAAAABBcwtTCKS\n" +
+            "P9X1AVv/6upTd2AAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIAxrhqEQOiXfopRa\n" +
+            "h4A3uTJRFcHpvah0FwqTmulJ2UjMAAAAkGrpJJBHf2tI1RKH7ZnWFjl5AdlMaFXM3U2KYq\n" +
+            "YMiKHTC+i85zBWN90LXp13kjxuz11S3M3NCqh0uYE7j6CRf7tC3LaUDnaqFoN0pP+S3ypK\n" +
+            "i8WGMx3VANB0AuyzGRF99guDlP1yTq/stcf41ggKZ40JujdhCoklj6EzvUCLF3WknGTWtj\n" +
+            "ElAcS55uL1DfLPxQ==\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "8dc8b9b50506b43e71cbdd5887b2f0a1d1c59d512aa3f1f0e44f0a0cdbf0d56b");
+
+        checkEncryptedKey("aes256-cbc",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jYmMAAAAGYmNyeXB0AAAAGAAAABBUK0hoIh\n" +
+            "NVvdqYYjVNHzO8AAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIBR52tLLhGaQVYg8\n" +
+            "61k+6hM8Ck7arTmAlhEzZpXQkBtHAAAAkDqBF9pv30NX6YrOEJMYupzi9eR6jdhw7502Wq\n" +
+            "0OnL445d5oB32RpxiGlQ8onN0ZZY6wjV4al8C81kpTLu/ECD0qcLm/zo/CeKMBNFv7K+AV\n" +
+            "ytMzmBy/ajdxn2fDdJqUgHRDyCD+rMbcc3y1WB5F5ONji00+M1MQa7qZjRsWO4AOd3yXGw\n" +
+            "Drnpu9rs8Wz/W8NA==\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "925820043002fb0e96b82ea775501cd2da9eb61a71383e5ab09c7bf7e8ff31b4");
+
+        checkEncryptedKey("aes128-cbc",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACmFlczEyOC1jYmMAAAAGYmNyeXB0AAAAGAAAABB7OnTR7J\n" +
+            "aVNVY9Zs8FhKZUAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIExC0pZHM66wbsIh\n" +
+            "yyQpzSy+OF5AcoCf/NMrtGmwqCJdAAAAkDfsRluSpZ5r82JzjvPU0+AdknAn++kXD8vfb1\n" +
+            "CHz3C9VHWmTtFlkkgSUwzCf2mW6Ev0M+gX8XRQHst6+tNqUnLJLdNGNoGKD7PW+k8ZXE8j\n" +
+            "cJx6WdTcJHqm343diQ7EfZLwe/inrC6pKrl/+OkU4ao5eUdc7ftsqWvTh4F7dcIq/tgSmp\n" +
+            "ZXPPUZtj5zfvoZxQ==\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "d8933d873bf493d3bf4d03170c1730762f2fd2c61444df164e302dfc2c312f8f");
+
+        checkEncryptedKey("3des-cbc",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACDNkZXMtY2JjAAAABmJjcnlwdAAAABgAAAAQOpEywjI8Qn\n" +
+            "w3w7BPeV1ScwAAABAAAAABAAAAMwAAAAtzc2gtZWQyNTUxOQAAACDxoqNYLcC0DTKb76mN\n" +
+            "k8sVXtyx8lrr6CVoQW52nVi+EAAAAJArCdk43AjdgrltLKUx1JrTSSRX4c7JWfZJ4ofTgR\n" +
+            "2QwoglwyBSNT3huXOJFMNnloeSNa3EEGAvZS/NScPSC0B2V+o+dknbLmaJSKISRmxiLoZc\n" +
+            "9xCWuEysuWBLDP16a8GuDC2SrJWPy2V4YZ+AG2Pg4hi31PV/PyufaK2d8BmZTu9YmuPer9\n" +
+            "qItCt3uY39/NE=\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "7879e37e8803109c7db26729394172b17649c0b0cdaaa83eff91be532a49b7bb");
+
+        checkEncryptedKey("aes256-gcm@openssh.com",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAAFmFlczI1Ni1nY21Ab3BlbnNzaC5jb20AAAAGYmNyeXB0AA\n" +
+            "AAGAAAABA6fSk3ItHVNeQXXxrdBT6VAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAA\n" +
+            "INuBZXiaJuwfDT80owG0HJR21ztvk+dnblKrN91Y0QDfAAAAkDKV/baBadVkqyyygAe4Ya\n" +
+            "RY6wEp7Y05j3hQV7qSGl3vLDZ2YRzafhdcECWL5qDThKeFizMmnqAoGnidrEC/bzu4VyQ/\n" +
+            "8bkJhu3sqM5dVFAFBsfv38SkZVP/vsaU61lhAtpbt9J6M1i5vGonnHWLxV0aT6iOdIkzLu\n" +
+            "UhUjm5+8v/gQ16/4+5AqlK2ltKYRXGJHepmBevQGiEdsAdTtt6En4=\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "c1f5bc9f64983c1507be7a1372d873e56eb959c0fc31f48c97d93207e6965210");
+
+        checkEncryptedKey("aes128-gcm@openssh.com",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAAFmFlczEyOC1nY21Ab3BlbnNzaC5jb20AAAAGYmNyeXB0AA\n" +
+            "AAGAAAABBx775z1G1CHFmOttl4UcFHAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAA\n" +
+            "IHHDo+8swumF2dza5gsYzJFtnCOXOEEzLQqnqFjlOcfJAAAAkM+rf2z1eNDN2eu9RosxhL\n" +
+            "HNtpb1SEPmBFNEiEl+aIJad9D6V2uZIucKtEqSyTDV4sYMEktCejt3njxYwa20P2FMUAF7\n" +
+            "OFnxqekBD19hHg6oN4odqnphtQAiKWqlK5DETKgcgiQIuayIyw0UdkcWccjy9fJYouh3ga\n" +
+            "KKfBAyQS8fQwZxxmOs6y8ZmKgkriw864tX0O8sH4437nduK4B4690=\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "74a2baaedd54a6ffb87ec2fb729b4012e14cc9c7d9a197606ca503e4770ed0e4");
+
+        checkEncryptedKey("chacha20-poly1305@openssh.com",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAAHWNoYWNoYTIwLXBvbHkxMzA1QG9wZW5zc2guY29tAAAABm\n" +
+            "JjcnlwdAAAABgAAAAQZeYt3vUlx5onMOCJPTNChAAAABAAAAABAAAAMwAAAAtzc2gtZWQy\n" +
+            "NTUxOQAAACCNHqOGdurGrXq0zzzNz8hhu5QwbFCbD8Mn08fkgchuMwAAAJA33h9WYKCfi7\n" +
+            "P9P6CEKd5Ha5hAdYi9ZKgTffR7WMfu+eBM756dV1ljwYL+FH1ZmkTei2o4yjRxa7Ek5UGV\n" +
+            "DJQQAmNNfNFk5AQsEcSVUZ7JuG41yeT449ujFWv9v5pk/dtVzhcuUeXDvUxrCOQzE94oBK\n" +
+            "g1mg3jkd1Ahb3rcPp8988lutsBg1TIRhqDGkmymRKzOEpuGU2pqfKp9048jcex\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "5505052cf395cbe63dbe0437a755b55c4efb1406d915c135411066208625bc8a");
+
+        checkEncryptedKey("aes256-ctr",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABB50uPQMn\n" +
+            "4vfG13Q/m8WTS4AAAAEAAAAAEAAAGXAAAAB3NzaC1yc2EAAAADAQABAAABgQDGk5mXBFuM\n" +
+            "g6cboE6mLjpSoLaRI6uzQZVVqCNpR6zHokDCDBA+LssA25NGlW2ZKyCVgXB9rZwahkfSXM\n" +
+            "RTI5/M3/7wldtZgyS2PNBHnRbK2ujQnzwExYdDIen4mbZOuRwlAPVbhXGQ1HNmwsssvBhq\n" +
+            "VQ+aKAP3ro+ca0mu2e9DVcImecEaP9zwpLmfwnqBqOvJDI/PMHWJ/CUGqXvqaHwKWJbXmh\n" +
+            "sP+kppISVRwNvCO280nFnEB2L/Sg1g2IJhy+Q9Rj3XjtqQVDHivN1GcRXpl9sAgt2kKDdi\n" +
+            "KRKAOAGeAa+3GogS50yHLRx7xBhCFDC+SQX92/RmiCRPe6haaj2DWiu5GlzYuWyElYJb4A\n" +
+            "u4P7EmFJxgnIklbA1VZfOJIgzpS8zH9RCcZHUXYgie4MwdhXB9svoXldkkjistoPEQa0Zy\n" +
+            "NoCTuAISpa5EHR6ymrXUUXhv2JWC+G7oOJU01gUr8SzewLQvar0kWZTAbQfXor9C1VoQdd\n" +
+            "tiONdvp1MSWYsAAAWAB9EiEahx1wV56fp41BscViRYPuEFrmO9/gdqVab/aOTTAOobfgOb\n" +
+            "wqlZkxeEpA75yU817EmMS+fvd1tJyNUXMxY6Zc5qn1eQ5+lw8jaol489D8cKsS55h551XZ\n" +
+            "iKgNVbP0YR9nYzgNiBVXORm+UZVNXnRyn35xRAz0Sw/5lMbYk4J0PpUZyscTS5Zwz46cRb\n" +
+            "MnquLg2yZvJFbddOayGLdmJzXT542jkNj1pveRL2fiK7/ALozOSwhLe1ZWaYolrjWi7bHm\n" +
+            "IiBAFKQbLlkJeYgm+3TDQo+LAw02dkC2rDcmFk4svWFXfPmaWggPKd/BKqwTlx0JkhwboY\n" +
+            "G+6z8PKrr28OPO7NrBbzkR7hfIk3qizYGNJ88vpjrz8FxHIIUyRm5Lokj/zDszRuYDtUjb\n" +
+            "xC62zSsnY4yvZLjDJaaBYznGi4gJWHfTcoYm/7sY29vbPqF3YSyXktw51DE4AdF52LONmy\n" +
+            "ThZQ58jKvRY4rLr8aW1W2wFCLzQhUb2HDnB8cViTH4j2We/QQrRUj8/VIcIIT+/tS7sIo/\n" +
+            "beFhQXJLipBWRtATaclRcvr7b2h8imHR5vq1mebLwHM/97kC5dwVjJ5/nXfFNEa4GdW+dI\n" +
+            "y1dGNk2LrEfaT8PkaalZ09kC56Hrje1hgnZAgV3uheIDq6ijODdzxNRxXBXf16ljqFoug5\n" +
+            "Qg4xVp7yJTEs3II+eHRetAi/OTybf4AuF3V32dG9Cr+1QJ9WETFG60F8Ttud2+STPqlzlR\n" +
+            "EkkuqQG/8TP2STFXj5DjGui0A1+o7KWm3zuP/0KTbOuOp2nVNqUuaSDnEn2zU58//jQFJR\n" +
+            "iu2Y58SdM3aCWnCRUYfvbe6OJ/sfwoeD/J9N1E/C0aDWgYuWP/d38yek1ELoLlpKtrz+8P\n" +
+            "ajN5rxUlnDeU+Z8HcIbl8xA/toXb4zvVVRc17pF4ELeoT2c5OQI7WBypuNgei/Z5Iekl+N\n" +
+            "oV3Rt2lvd09MVzPwWvPCKONDhObRv7AEKwDc7UsK5+nt1ww1XLswMuN9JGs10Zdq5VU6lp\n" +
+            "97WNgH/sX5XEZaXCjHVJvBmmCYd0Wh3k7YwTOkxVGSy1nhC5R8g7UlPzWxOwYwEk1SmW8o\n" +
+            "OtpJs9oSycp5TaXTzF82a9hA1Mjun7kpZnee0hnir2cLRp+1rzCWBs/ABJITuLw9kOPKxu\n" +
+            "5IVC0vd2WMAFM0eF59FCP6OGQid28edLmVZ/uK7uY483gM9RPmDF1mTDbL2w2U6zP954Lz\n" +
+            "tmPPZK1yD6+d58CxzW0pzQuxebiF/eeuvDjneqqOAErdR7/vA9HUjqa4owFStERPtja3Qn\n" +
+            "kwDQzhiScSIp1h87ok7ozVnOipF6EtjFOXlD1nPw685fgDgFGpMq5xdBmTbiqVKWbJxRTY\n" +
+            "MdS4c6lH9ksG+Dcm0Gpv1957hHIfviaRsXba33lPfpBki23xL7CkMFWCpzG2VdZWK9Y3XY\n" +
+            "xRqtwQ1E31MeMrnrQAJSxe64iHU2dRW5w/mpYIrO2CKaQzsiN4t1wOodHzyuzXoAFp3fSY\n" +
+            "IELkl27ggHEBlnMLpP1wSibqfqNADQtu3MFABQh2nen0Lec9YuqpH/hFl6eqpchbJiWkun\n" +
+            "vpaCL6eTO2kIZvNU8YjAreej5CXl6tnX+wiVc9A+ROOIcMk+ui8ESPvSue7NS/DRk4Wxf4\n" +
+            "FRABBcXjSsKOOl6jZOjwWUwY6Fp+WQQtmjUJOfiMrrsjN8mGxLuYpJtzLeZj1AriHdrj2K\n" +
+            "L05RwtWfl9R2dHwjQo6AuzD8XgSj4njqNHdn6S0AKkVjopil7o2bav2VTpbsCwIc+qU4I6\n" +
+            "PmBtd+iRWbotbgsFO6e8jaYNPd+8g4uiqLWAb41vLW2rq8fuyV1EhwaUuFQMqQrcbhq8gL\n" +
+            "0CFPzw==\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "c6939997045b8c83a71ba04ea62e3a52a0b69123abb3419555a8236947acc7a240c20c103e2ecb00db9346956d992b209581707dad9c1a8647d25cc453239fccdffef095db598324b63cd0479d16cadae8d09f3c04c5874321e9f899b64eb91c2500f55b857190d47366c2cb2cbc186a550f9a2803f7ae8f9c6b49aed9ef4355c22679c11a3fdcf0a4b99fc27a81a8ebc90c8fcf307589fc2506a97bea687c0a5896d79a1b0ffa4a69212551c0dbc23b6f349c59c40762ff4a0d60d88261cbe43d463dd78eda905431e2bcdd467115e997db0082dda428376229128038019e01afb71a8812e74c872d1c7bc418421430be4905fddbf46688244f7ba85a6a3d835a2bb91a5cd8b96c8495825be00bb83fb126149c609c89256c0d5565f389220ce94bccc7f5109c64751762089ee0cc1d85707db2fa1795d9248e2b2da0f1106b4672368093b80212a5ae441d1eb29ab5d451786fd89582f86ee8389534d6052bf12cdec0b42f6abd245994c06d07d7a2bf42d55a1075db6238d76fa75312598b");
+
+        checkEncryptedKey("aes256-ctr",
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABDfFJi65K\n" +
+            "f09iHP5l5Jg6TzAAAAEAAAAAEAAABoAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlz\n" +
+            "dHAyNTYAAABBBKzN/6RkvOl5Eo72vr7gCGPjh1mW5R2t8G7YGyCDGhsgnUdRYW/zwPZAqu\n" +
+            "tkZsk6Ytf007s8M0jLMYiwhMM0o18AAACgDhq9mvCR6ZoRXSnD7+VWKmZ0pU4U9V3+4OVb\n" +
+            "jEDgFj3CqYw6jUPkgF5qt4UTrzMRGWGyaEFNxXnHTYr9Qeqf3xnr+BHjPpvUUYXcUOS4AC\n" +
+            "yYCd39Dg13PGl7jHRT4gd9VVGg0WR7/q6/kbe4qPYiaYNzbzKusVipo4wtvPqaMotRMyyR\n" +
+            "Mh0LzQlrCw1m+OcuTv+PhWMkqY/RTGzZfvqbZA==\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n",
+            "ef07ad1bbb71aaaf49536840adce11a16ee7ebfbcd2f2a48f84a6638309031f9");
+
+    }
+
+    private void checkEncryptedKey(String cipher, String pem, String expectedHex)
+        throws Exception
+    {
+        byte[] blob = new PemReader(new StringReader(pem)).readPemObject().getContent();
+
+        AsymmetricKeyParameter key = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(blob, Strings.toByteArray("Test1234!"));
+
+        isEquals("decrypted key material for " + cipher, expectedHex, keyMaterial(key));
+
+        // a wrong passphrase must be rejected, not silently mis-decrypted
+        try
+        {
+            OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(blob, Strings.toByteArray("definitely-wrong"));
+            fail("wrong passphrase accepted for " + cipher);
+        }
+        catch (IllegalStateException expected)
+        {
+            // expected
+        }
+
+        // the single-argument entry point must report that a passphrase is required
+        try
+        {
+            OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(blob);
+            fail("missing passphrase accepted for " + cipher);
+        }
+        catch (IllegalStateException expected)
+        {
+            isEquals(expected.getMessage(), "passphrase required to decrypt encrypted OpenSSH private key");
+        }
+    }
+
+    private String keyMaterial(AsymmetricKeyParameter key)
+    {
+        if (key instanceof Ed25519PrivateKeyParameters)
+        {
+            return Hex.toHexString(((Ed25519PrivateKeyParameters)key).getEncoded());
+        }
+        if (key instanceof RSAPrivateCrtKeyParameters)
+        {
+            return ((RSAPrivateCrtKeyParameters)key).getModulus().toString(16);
+        }
+        if (key instanceof ECPrivateKeyParameters)
+        {
+            return ((ECPrivateKeyParameters)key).getD().toString(16);
+        }
+        throw new IllegalStateException("unexpected key type: " + key.getClass().getName());
     }
 
     public String getName()
@@ -479,6 +695,7 @@ public class OpenSSHKeyParsingTests
         testFailures();
         testFido2Keys();
         testECDSAEncodeOpenSSHFormat();
+        testEncryptedKeys();
     }
 
     /**

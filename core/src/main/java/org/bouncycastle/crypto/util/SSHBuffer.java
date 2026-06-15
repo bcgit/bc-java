@@ -76,6 +76,17 @@ class SSHBuffer
         pos += len;
     }
 
+    byte[] readRawBytes(int len)
+    {
+        if (len < 0 || len > buffer.length - pos)
+        {
+            throw new IllegalArgumentException("not enough data for raw read");
+        }
+
+        int start = pos; pos += len;
+        return Arrays.copyOfRange(buffer, start, pos);
+    }
+
     byte[] readPaddedBlock()
     {
         return readPaddedBlock(8);
@@ -145,5 +156,21 @@ class SSHBuffer
     boolean hasRemaining()
     {
         return pos < buffer.length;
+    }
+
+    /**
+     * Validate that any bytes remaining in the buffer form the OpenSSH key padding sequence
+     * (1, 2, 3, ...). Used after decrypting an {@code openssh-key-v1} private block, whose
+     * plaintext is padded to the cipher block size before encryption.
+     */
+    void checkTrailingPadding()
+    {
+        for (int n = 1; pos < buffer.length; ++n, ++pos)
+        {
+            if ((buffer[pos] & 0xFF) != n)
+            {
+                throw new IllegalArgumentException("incorrect padding");
+            }
+        }
     }
 }

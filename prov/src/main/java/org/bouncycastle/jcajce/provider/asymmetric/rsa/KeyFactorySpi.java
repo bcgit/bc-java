@@ -27,9 +27,11 @@ import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
 import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ExtendedInvalidKeySpecException;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
@@ -194,7 +196,18 @@ public class KeyFactorySpi
         }
         else if (keySpec instanceof OpenSSHPrivateKeySpec)
         {
-            CipherParameters parameters = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(((OpenSSHPrivateKeySpec)keySpec).getEncoded());
+            OpenSSHPrivateKeySpec sshKeySpec = (OpenSSHPrivateKeySpec)keySpec;
+            char[] password = sshKeySpec.getPassword();
+            CipherParameters parameters;
+            try
+            {
+                parameters = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(
+                    sshKeySpec.getEncoded(), password == null ? null : Strings.toUTF8ByteArray(password));
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeySpecException("unable to decode OpenSSH private key: " + e.getMessage(), e);
+            }
 
             if (parameters instanceof RSAPrivateCrtKeyParameters)
             {
