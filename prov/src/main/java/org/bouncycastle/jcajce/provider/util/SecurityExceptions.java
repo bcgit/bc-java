@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.util;
 
 import java.security.UnrecoverableKeyException;
+import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -10,6 +11,13 @@ public class SecurityExceptions
     private SecurityExceptions()
     {
 
+    }
+
+    public static InvalidKeySpecException invalidKeySpecException(String message, Throwable cause)
+    {
+        // InvalidKeySpecException(String, Throwable) only exists from Java 5; initCause keeps the
+        // legacy (Java 4) builds compiling, so do not "simplify" this to the two-arg constructor.
+        return (InvalidKeySpecException)new InvalidKeySpecException(message).initCause(cause);
     }
 
     public static UnrecoverableKeyException unrecoverableKeyException(String message, Throwable cause)
