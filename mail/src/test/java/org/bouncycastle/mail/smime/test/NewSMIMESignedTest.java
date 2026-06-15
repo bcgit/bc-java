@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.activation.DataHandler;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -430,6 +431,57 @@ public class NewSMIMESignedTest
         verifyMessageBytes(msg, s.getContent());
 
         verifySigners(s.getCertificates(), s.getSignerInfos());
+    }
+
+    public void testAttachmentOnlyMessage()
+        throws Exception
+    {
+        // github #1432: signing an attachment-only MimeMessage whose body is object-backed
+        // binary content (setContent(byte[], "application/octet-stream"), a type with no object
+        // DataContentHandler) dropped the body. makeContentBodyPart(MimeMessage) rebuilt the
+        // content part with new DataHandler(message.getDataHandler().getDataSource()); for an
+        // object-backed handler getDataSource() is a synthetic DataHandlerDataSource, and
+        // re-wrapping it yields a part that serialises to nothing - on a mail implementation
+        // that can render such content (javax.mail 1.4.7+, jakarta.mail) writeTo() threw
+        // "no object DCH" and the signature covered empty content. The fix carries the
+        // original DataHandler through unchanged for object-backed content.
+        //
+        // Object-backed octet-stream content cannot be re-serialised at all on the javax.mail
+        // 1.4 the build tests against (a JavaMail limitation - there is no octet-stream object
+        // handler - not a BC one), so a writeTo round-trip is not portable here. Preserving the
+        // original DataHandler rather than the content-dropping re-wrap is exactly the behaviour
+        // that lets the body survive on the implementations that can render it, and is the
+        // version-portable signal: before the fix this assertion fails (a fresh DataHandler is
+        // substituted), after it the original handler is kept.
+        byte[] data = new byte[36];
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)(i * 7 + 1);
+        }
+
+        MimeMessage message = new MimeMessage(Session.getInstance(new Properties()));
+        message.setContent(data, "application/octet-stream");
+        message.setFileName("file.gz");
+        message.saveChanges();
+
+        DataHandler messageDataHandler = message.getDataHandler();
+
+        List certList = new ArrayList();
+
+        certList.add(_signCert);
+        certList.add(_origCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        SMIMESignedGenerator gen = new SMIMESignedGenerator();
+
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA256withRSA", _signKP.getPrivate(), _signCert));
+        gen.addCertificates(certs);
+
+        MimeMultipart smm = gen.generate(message);
+
+        assertSame("object-backed content body was re-wrapped and dropped",
+            messageDataHandler, smm.getBodyPart(0).getDataHandler());
     }
 
     public void testSHA1WithRSAAddSigners()
