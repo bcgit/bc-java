@@ -1,7 +1,5 @@
 package org.bouncycastle.tls.test;
 
-import java.security.SecureRandom;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
@@ -15,6 +13,6 @@ public class JcaTlsRawKeysProtocolTest
 {
     protected TlsCrypto createCrypto()
     {
-        return new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(new SecureRandom());
+        return new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(RANDOM);
     }
 }

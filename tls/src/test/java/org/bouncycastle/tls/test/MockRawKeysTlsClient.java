@@ -29,8 +29,8 @@ class MockRawKeysTlsClient
     private ProtocolVersion tlsVersion;
     private TlsCredentialedSigner credentials;
 
-    MockRawKeysTlsClient(short serverCertType, short clientCertType, short[] offerServerCertTypes,
-        short[] offerClientCertTypes, TlsCrypto crypto, ProtocolVersion tlsVersion)
+    MockRawKeysTlsClient(TlsCrypto crypto, short serverCertType, short clientCertType, short[] offerServerCertTypes,
+        short[] offerClientCertTypes, ProtocolVersion tlsVersion)
         throws Exception
     {
         super(crypto);
