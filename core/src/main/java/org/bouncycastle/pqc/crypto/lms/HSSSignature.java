@@ -64,7 +64,12 @@ class HSSSignature
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
-                return getInstance(in, L);
+                HSSSignature hssSignature = getInstance(in, L);
+                if (in.available() != 0)
+                {
+                    throw new IOException("unexpected data found after HSS signature");
+                }
+                return hssSignature;
             }
             finally
             {
