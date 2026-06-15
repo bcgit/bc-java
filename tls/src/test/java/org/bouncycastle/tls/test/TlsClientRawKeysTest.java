@@ -37,11 +37,11 @@ public class TlsClientRawKeysTest
     static void runTest(InetAddress address, int port, ProtocolVersion tlsVersion) throws Exception
     {
         MockRawKeysTlsClient client = new MockRawKeysTlsClient(
-                CertificateType.RawPublicKey,
-                CertificateType.RawPublicKey,
-                new short[]{ CertificateType.RawPublicKey },
-                new short[]{ CertificateType.RawPublicKey },
                 new BcTlsCrypto(),
+                CertificateType.RawPublicKey,
+                CertificateType.RawPublicKey,
+                new short[]{ CertificateType.RawPublicKey },
+                new short[]{ CertificateType.RawPublicKey },
                 tlsVersion);
         TlsClientProtocol protocol = openTlsConnection(address, port, client);
 

@@ -63,10 +63,10 @@ public class TlsServerRawKeysTest
             try
             {
                 MockRawKeysTlsServer server = new MockRawKeysTlsServer(
+                        new BcTlsCrypto(),
                         CertificateType.RawPublicKey,
                         CertificateType.RawPublicKey,
                         new short[]{ CertificateType.RawPublicKey },
-                        new BcTlsCrypto(),
                         tlsVersion);
                 TlsServerProtocol serverProtocol = new TlsServerProtocol(s.getInputStream(), s.getOutputStream());
                 serverProtocol.accept(server);

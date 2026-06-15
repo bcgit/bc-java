@@ -29,8 +29,8 @@ class MockRawKeysTlsServer extends DefaultTlsServer
 
     Hashtable receivedClientExtensions;
 
-    MockRawKeysTlsServer(short serverCertType, short clientCertType, short[] allowedClientCertTypes,
-        TlsCrypto crypto, ProtocolVersion tlsVersion) throws Exception
+    MockRawKeysTlsServer(TlsCrypto crypto, short serverCertType, short clientCertType, short[] allowedClientCertTypes,
+        ProtocolVersion tlsVersion) throws Exception
     {
         super(crypto);
 
