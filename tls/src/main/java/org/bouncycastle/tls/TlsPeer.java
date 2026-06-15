@@ -27,14 +27,19 @@ public interface TlsPeer
 
     /**
      * <p>
-     * NOTE: Currently only respected by DTLS protocols.
+     * NOTE: Respected by DTLS protocols, and by the (BC)JSSE provider for blocking sockets (see
+     * the {@code org.bouncycastle.jsse.handshakeTimeoutMillis} system property). It is not
+     * respected by the blocking {@link TlsClientProtocol} / {@link TlsServerProtocol} stream API,
+     * which reads from a caller-supplied stream with no timed-read primitive; callers needing a
+     * handshake deadline there should drive the non-blocking API and enforce it in their own I/O
+     * loop.
      * </p>
      * <p>
      * Specify the timeout, in milliseconds, to use for the complete handshake process. Negative
      * values are not allowed. A timeout of zero means an infinite timeout (i.e. the handshake will
      * never time out).
      * </p>
-     * 
+     *
      * @return the handshake timeout, in milliseconds.
      */
     int getHandshakeTimeoutMillis();

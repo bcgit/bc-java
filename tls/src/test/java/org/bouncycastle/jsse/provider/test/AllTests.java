@@ -26,6 +26,7 @@ public class AllTests
         suite.addTestSuite(ConfigTest.class);
         suite.addTestSuite(ECDSACredentialsTest.class);
         suite.addTestSuite(EdDSACredentialsTest.class);
+        suite.addTestSuite(HandshakeTimeoutTest.class);
         suite.addTestSuite(InstanceTest.class);
         suite.addTestSuite(KeyManagerFactoryTest.class);
         suite.addTestSuite(MLDSACredentialsTest.class);

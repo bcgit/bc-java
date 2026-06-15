@@ -37,6 +37,7 @@ final class ContextData
     private final NamedGroupInfo.PerContext namedGroups;
     private final SignatureSchemeInfo.PerContext signatureSchemes;
     private final int maxHandshakeMessageSize;
+    private final int handshakeTimeoutMillis;
 
     ContextData(boolean fipsMode, JcaTlsCrypto crypto, BCX509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager, Map<String, CipherSuiteInfo> supportedCipherSuites,
@@ -59,6 +60,8 @@ final class ContextData
         this.signatureSchemes = SignatureSchemeInfo.createPerContext(fipsMode, crypto, namedGroups);
         this.maxHandshakeMessageSize = PropertyUtils.getIntegerSystemProperty(
             "jdk.tls.maxHandshakeMessageSize", 32768, 1024, Integer.MAX_VALUE);
+        this.handshakeTimeoutMillis = PropertyUtils.getIntegerSystemProperty(
+            "org.bouncycastle.jsse.handshakeTimeoutMillis", 0, 0, Integer.MAX_VALUE);
     }
 
     int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,
@@ -197,6 +200,11 @@ final class ContextData
     int getMaxHandshakeMessageSize()
     {
         return maxHandshakeMessageSize;
+    }
+
+    int getHandshakeTimeoutMillis()
+    {
+        return handshakeTimeoutMillis;
     }
 
     NamedGroupInfo.PerConnection getNamedGroupsClient(ProvSSLParameters sslParameters,

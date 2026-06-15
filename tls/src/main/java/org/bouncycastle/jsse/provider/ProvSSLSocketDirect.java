@@ -50,6 +50,7 @@ class ProvSSLSocketDirect
 
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
+    protected HandshakeTimeoutInputStream handshakeTimeoutInput = null;
     protected ProvSSLConnection connection = null;
     protected ProvSSLSession dummySession = null;
     protected ProvSSLSessionHandshake handshakeSession = null;
@@ -419,27 +420,44 @@ class ProvSSLSocketDirect
             InputStream input = super.getInputStream();
             OutputStream output = super.getOutputStream();
 
-            if (this.useClientMode)
+            int handshakeTimeout = contextData.getHandshakeTimeoutMillis();
+            if (handshakeTimeout > 0)
             {
-                TlsClientProtocol clientProtocol = new ProvTlsClientProtocol(input, output, socketCloser);
-                clientProtocol.setResumableHandshake(resumable);
-                this.protocol = clientProtocol;
-
-                ProvTlsClient client = new ProvTlsClient(this, sslParameters);
-                this.protocolPeer = client;
-
-                clientProtocol.connect(client);
+                this.handshakeTimeoutInput = new HandshakeTimeoutInputStream(input, this, handshakeTimeout);
+                input = this.handshakeTimeoutInput;
             }
-            else
+
+            try
             {
-                TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(input, output, socketCloser);
-                serverProtocol.setResumableHandshake(resumable);
-                this.protocol = serverProtocol;
+                if (this.useClientMode)
+                {
+                    TlsClientProtocol clientProtocol = new ProvTlsClientProtocol(input, output, socketCloser);
+                    clientProtocol.setResumableHandshake(resumable);
+                    this.protocol = clientProtocol;
 
-                ProvTlsServer server = new ProvTlsServer(this, sslParameters);
-                this.protocolPeer = server;
+                    ProvTlsClient client = new ProvTlsClient(this, sslParameters);
+                    this.protocolPeer = client;
 
-                serverProtocol.accept(server);
+                    clientProtocol.connect(client);
+                }
+                else
+                {
+                    TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(input, output, socketCloser);
+                    serverProtocol.setResumableHandshake(resumable);
+                    this.protocol = serverProtocol;
+
+                    ProvTlsServer server = new ProvTlsServer(this, sslParameters);
+                    this.protocolPeer = server;
+
+                    serverProtocol.accept(server);
+                }
+            }
+            finally
+            {
+                if (this.handshakeTimeoutInput != null)
+                {
+                    this.handshakeTimeoutInput.deactivate();
+                }
             }
         }
         else if (protocol.isHandshaking())
