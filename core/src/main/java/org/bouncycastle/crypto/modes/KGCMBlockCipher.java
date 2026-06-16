@@ -55,6 +55,8 @@ public class KGCMBlockCipher
     private byte[] initialAssociatedText;
     private byte[] macBlock;
     private byte[] iv;
+    private byte[] nonce;
+    private byte[] lastKey;
 
     private KGCMMultiplier multiplier;
     private long[] b;
@@ -85,11 +87,13 @@ public class KGCMBlockCipher
         this.forEncryption = forEncryption;
 
         KeyParameter engineParam;
+        byte[] newNonce;
         if (params instanceof AEADParameters)
         {
             AEADParameters param = (AEADParameters)params;
 
             byte[] iv = param.getNonce();
+            newNonce = iv;
             int diff = this.iv.length - iv.length;
             Arrays.fill(this.iv, (byte)0);
             System.arraycopy(iv, 0, this.iv, diff, iv.length);
@@ -115,6 +119,7 @@ public class KGCMBlockCipher
             ParametersWithIV param = (ParametersWithIV)params;
 
             byte[] iv = param.getIV();
+            newNonce = iv;
             int diff = this.iv.length - iv.length;
             Arrays.fill(this.iv, (byte)0);
             System.arraycopy(iv, 0, this.iv, diff, iv.length);
@@ -130,21 +135,20 @@ public class KGCMBlockCipher
             throw new IllegalArgumentException("Invalid parameter passed");
         }
 
-        // TODO Nonce re-use check (sample code from GCMBlockCipher)
-//        if (forEncryption)
-//        {
-//            if (nonce != null && Arrays.areEqual(nonce, newNonce))
-//            {
-//                if (keyParam == null)
-//                {
-//                    throw new IllegalArgumentException("cannot reuse nonce for GCM encryption");
-//                }
-//                if (lastKey != null && Arrays.areEqual(lastKey, keyParam.getKey()))
-//                {
-//                    throw new IllegalArgumentException("cannot reuse nonce for GCM encryption");
-//                }
-//            }
-//        }
+        // Encrypting twice with the same key and nonce is catastrophic for any GCM-family mode
+        // (it leaks the authentication key and the XOR of the plaintexts). Reject it on re-init,
+        // mirroring GCMBlockCipher. reset()-based reuse is unaffected (it does not re-init).
+        if (forEncryption && nonce != null && Arrays.areEqual(nonce, newNonce)
+            && engineParam != null && Arrays.areEqual(lastKey, engineParam.getKey()))
+        {
+            throw new IllegalArgumentException("cannot reuse nonce for KGCM encryption");
+        }
+
+        nonce = newNonce;
+        if (engineParam != null)
+        {
+            lastKey = engineParam.getKey();
+        }
 
         this.macBlock = new byte[blockSize];
         ctrEngine.init(true, new ParametersWithIV(engineParam, this.iv));
