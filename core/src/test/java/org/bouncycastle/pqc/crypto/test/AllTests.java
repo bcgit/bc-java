@@ -32,6 +32,7 @@ public class AllTests
         suite.addTestSuite(XMSSSignatureTest.class);
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSUtilTest.class);
+        suite.addTestSuite(XMSSPublicKeyParseTest.class);
 //        suite.addTestSuite(SphincsPlusTest.class);
         suite.addTestSuite(CMCEVectorTest.class);
         suite.addTestSuite(FrodoVectorTest.class);
