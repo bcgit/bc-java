@@ -568,15 +568,27 @@ public class PublicKeyFactory
                     keyEnc = data.getOctets();
                 }
 
+                if (keyEnc.length < 4)
+                {
+                    throw new IOException("XMSS public key data too short");
+                }
+
                 XMSSParameters parameters = XMSSParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0));
                 if (parameters == null)
                 {
                     throw new IOException("unknown XMSS public key OID: " + Pack.bigEndianToInt(keyEnc, 0));
                 }
 
-                return new XMSSPublicKeyParameters
-                    .Builder(parameters)
-                    .withPublicKey(keyEnc).build();
+                try
+                {
+                    return new XMSSPublicKeyParameters
+                        .Builder(parameters)
+                        .withPublicKey(keyEnc).build();
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IOException("malformed XMSS public key: " + e.getMessage());
+                }
             }
         }
     }
@@ -611,15 +623,27 @@ public class PublicKeyFactory
                     keyEnc = data.getOctets();
                 }
 
+                if (keyEnc.length < 4)
+                {
+                    throw new IOException("XMSS^MT public key data too short");
+                }
+
                 XMSSMTParameters parameters = XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0));
                 if (parameters == null)
                 {
                     throw new IOException("unknown XMSS^MT public key OID: " + Pack.bigEndianToInt(keyEnc, 0));
                 }
 
-                return new XMSSMTPublicKeyParameters
-                    .Builder(parameters)
-                    .withPublicKey(keyEnc).build();
+                try
+                {
+                    return new XMSSMTPublicKeyParameters
+                        .Builder(parameters)
+                        .withPublicKey(keyEnc).build();
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IOException("malformed XMSS^MT public key: " + e.getMessage());
+                }
             }
         }
     }
