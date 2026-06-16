@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -72,7 +73,7 @@ public class SMIMESignedParser
     {
         try
         {
-            return File.createTempFile("bcMail", ".mime");
+            return Files.createTempFile("bcMail", ".mime").toFile();
         }
         catch (IOException e)
         {
@@ -278,7 +279,7 @@ public class SMIMESignedParser
     {
         try
         {
-            File tmpFile = File.createTempFile("bcSigned", ".tmp");
+            File tmpFile = Files.createTempFile("bcSigned", ".tmp").toFile();
             return getSafeInstance(digCalcProvider, message, "7bit", tmpFile);
         }
         catch (IOException e)
