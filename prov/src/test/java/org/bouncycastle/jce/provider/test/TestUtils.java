@@ -65,6 +65,12 @@ import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 class TestUtils
 {
     private static AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
+
+    static long nextSerialNumber()
+    {
+        return serialNumber.getAndIncrement();
+    }
+
     private static Map algIds = new HashMap();
 
     static
@@ -93,7 +99,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(nextSerialNumber()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
@@ -125,7 +131,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(nextSerialNumber()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
@@ -157,7 +163,7 @@ class TestUtils
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(ASN1Integer.valueOf(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(ASN1Integer.valueOf(nextSerialNumber()));
         certGen.setIssuer(signerName);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
