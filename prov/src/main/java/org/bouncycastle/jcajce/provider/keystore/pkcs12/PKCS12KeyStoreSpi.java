@@ -1606,33 +1606,6 @@ public class PKCS12KeyStoreSpi
 
     private void syncFriendlyName()
     {
-        // TODO:delete comment
-        //  Since we cannot add any function to the KeyStore Api we will run code when saving the store
-        // to sync the friendlyNames with Alias depending on the storeParameter
-        /*
-         *     @Override
-         *     public void setFriendlyName(String alias, String newFriendlyName, char[] password) throws UnrecoverableKeyException, NoSuchAlgorithmException
-         *     {
-         *         if (alias.equals(newFriendlyName))
-         *         {
-         *             return;
-         *         }
-         *
-         *         if (engineIsKeyEntry(alias))
-         *         {
-         *             ((PKCS12BagAttributeCarrier)engineGetKey(alias, password)).setFriendlyName(newFriendlyName);
-         *             keyCerts.put(newFriendlyName, keyCerts.get(alias));
-         *             keyCerts.remove(alias);
-         *         }
-         *         else
-         *         {
-         *             certs.put(newFriendlyName, certs.get(alias));
-         *             certs.remove(alias);
-         *         }
-         *         ((PKCS12BagAttributeCarrier)engineGetCertificate(alias)).setFriendlyName(newFriendlyName);
-         *
-         *     }
-         */
         Enumeration cs = keys.keys();
 
         while (cs.hasMoreElements())
