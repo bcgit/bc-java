@@ -984,13 +984,17 @@ final class UOVEngine
                 for (int j = i + 1; j < height; j++)
                 {
                     int ajOff = j * (len + 1);
+                    // No `if (scalar != 0)` guard: scalar is the leading
+                    // coefficient of a secret-derived row, so branching on its
+                    // zero-ness leaks one bit of timing per sub-diagonal row per
+                    // pivot. mul16 returns 0 for a zero scalar, so the
+                    // unconditional madd is functionally identical. Matches the
+                    // reference gf16mat_gauss_elim_row_echolen, which calls
+                    // gf16v_madd unconditionally (src/ref/blas_matrix_ref.c).
                     int scalar = mat[ajOff + i] & 0xf;
-                    if (scalar != 0)
+                    for (int kk = i; kk <= len; kk++)
                     {
-                        for (int kk = i; kk <= len; kk++)
-                        {
-                            mat[ajOff + kk] ^= (byte)GF.mul16(mat[aiOff + kk] & 0xf, scalar);
-                        }
+                        mat[ajOff + kk] ^= (byte)GF.mul16(mat[aiOff + kk] & 0xf, scalar);
                     }
                 }
             }

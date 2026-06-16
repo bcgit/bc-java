@@ -28,11 +28,12 @@ final class GF
 
     static int inv256(int a)
     {
+        // No `if (a == 0) return 0` early-out: during Gaussian elimination a is
+        // the (secret-derived) pivot element, so branching on its zero-ness
+        // leaks per-column whether that pivot was singular. The Fermat chain
+        // below already maps 0 -> 0 (every term stays 0), so the early-out is
+        // redundant. Matches the reference branchless gf256_inv (src/gf16.h).
         a &= 0xff;
-        if (a == 0)
-        {
-            return 0;
-        }
         int a2 = squ256(a);
         int a4 = squ256(a2);
         int a8 = squ256(a4);
