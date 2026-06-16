@@ -541,7 +541,7 @@ public class CertPathBuilderTest
     {
         V3TBSCertificateGenerator g = new V3TBSCertificateGenerator();
         long now = System.currentTimeMillis();
-        g.setSerialNumber(new ASN1Integer(BigInteger.valueOf(System.nanoTime())));
+        g.setSerialNumber(ASN1Integer.valueOf(TestUtils.nextSerialNumber()));
         g.setIssuer(issuerDN);
         g.setSubject(subjectDN);
         g.setStartDate(new Time(new Date(now - 5000)));
