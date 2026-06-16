@@ -61,6 +61,7 @@ public class RegressionTest
         new KeccakTest(),
         new KeyStoreTest(),
         new MacTest(),
+        new MalformedKeyInfoTest(),
         new MQVTest(),
         new MultiCertStoreTest(),
         new NamedCurveTest(),

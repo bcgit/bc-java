@@ -54,6 +54,7 @@ import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -696,31 +697,57 @@ public final class BouncyCastleProvider extends Provider
     public static PublicKey getPublicKey(SubjectPublicKeyInfo publicKeyInfo)
         throws IOException
     {
-        if (publicKeyInfo.getAlgorithm().getAlgorithm().on(BCObjectIdentifiers.picnic_key))
+        try
         {
-            return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
-        }
-        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
+            if (publicKeyInfo.getAlgorithm().getAlgorithm().on(BCObjectIdentifiers.picnic_key))
+            {
+                return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
+            }
+            AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
 
-        if (converter == null)
+            if (converter == null)
+            {
+                return null;
+            }
+
+            return converter.generatePublic(publicKeyInfo);
+        }
+        catch (IOException e)
         {
-            return null;
+            throw e;
         }
-
-        return converter.generatePublic(publicKeyInfo);
+        catch (RuntimeException e)
+        {
+            // a converter must not leak a RuntimeException out of the declared IOException contract
+            // when handed a malformed SubjectPublicKeyInfo decoded from untrusted input
+            throw Exceptions.ioException("malformed public key", e);
+        }
     }
 
     public static PrivateKey getPrivateKey(PrivateKeyInfo privateKeyInfo)
         throws IOException
     {
-        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
-
-        if (converter == null)
+        try
         {
-            return null;
-        }
+            AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-        return converter.generatePrivate(privateKeyInfo);
+            if (converter == null)
+            {
+                return null;
+            }
+
+            return converter.generatePrivate(privateKeyInfo);
+        }
+        catch (IOException e)
+        {
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            // a converter must not leak a RuntimeException out of the declared IOException contract
+            // when handed a malformed PrivateKeyInfo decoded from untrusted input
+            throw Exceptions.ioException("malformed private key", e);
+        }
     }
 
     private static CryptoServiceProperties service(String name, int bitsOfSecurity)
