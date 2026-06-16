@@ -2037,10 +2037,6 @@ public class Group
         }
 
 
-        //TODO:
-        // Verify that the extensions in the LeafNode are supported
-        // by checking that the ID for each extension in the extensions field is listed in the
-        // capabilities.extensions field of the LeafNode.
         boolean supportsAllExtensions = true;
         for (Extension ext : leafNode.getExtensions())
         {
