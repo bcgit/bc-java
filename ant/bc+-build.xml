@@ -428,6 +428,7 @@
                  <exclude name="org/bouncycastle/tls/**" />
                  <exclude name="org/bouncycastle/jsse/**" />
                  <exclude name="org/bouncycastle/**/CrlCacheTest.java" />
+                 <exclude name="org/bouncycastle/**/MultiValuedRDNEmailTest.java" />
              </fileset>
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/x509/CertPathReviewerMessages*.properties" />
