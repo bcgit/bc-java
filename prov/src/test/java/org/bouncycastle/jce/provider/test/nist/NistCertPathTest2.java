@@ -1,6 +1,9 @@
 package org.bouncycastle.jce.provider.test.nist;
 
+import java.lang.reflect.Method;
 import java.security.Security;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import junit.framework.TestCase;
 
@@ -4583,5 +4586,40 @@ public class NistCertPathTest2
         new PKITSTest()
             .withEndEntity("Invalid Unknown Critical Certificate Extension Test2 EE")
             .doExceptionTest(0, "Certificate has unsupported critical extension: [2.16.840.1.101.2.1.12.2]");
+    }
+
+    /**
+     * When more than one unsupported critical extension is present, the OIDs listed in the
+     * "Certificate has unsupported critical extension: [...]" message must appear in a stable
+     * (ascending string) order rather than the non-deterministic iteration order of the
+     * underlying Set, so that the thrown message is reproducible and testable.
+     */
+    public void testUnsupportedCriticalExtensionMessageSorted()
+        throws Exception
+    {
+        Method m = Class.forName("org.bouncycastle.jce.provider.RFC3280CertPathUtilities")
+            .getDeclaredMethod("getUnsupportedCriticalExtensionMessage", Set.class);
+        m.setAccessible(true);
+
+        // Insertion order here is deliberately NOT ascending; LinkedHashSet preserves it so the
+        // pre-fix code (which iterated the Set directly) would emit them in this order.
+        Set critical = new LinkedHashSet();
+        critical.add("2.16.840.1.101.2.1.12.2");
+        critical.add("1.2.3.4");
+        critical.add("2.5.29.99");
+
+        String message = (String)m.invoke(null, critical);
+
+        assertEquals(
+            "Certificate has unsupported critical extension: [1.2.3.4, 2.16.840.1.101.2.1.12.2, 2.5.29.99]",
+            message);
+
+        // A single-element set must be byte-identical to the legacy single-OID output.
+        Set single = new LinkedHashSet();
+        single.add("2.16.840.1.101.2.1.12.2");
+
+        assertEquals(
+            "Certificate has unsupported critical extension: [2.16.840.1.101.2.1.12.2]",
+            (String)m.invoke(null, single));
     }
 }
