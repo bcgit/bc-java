@@ -450,6 +450,12 @@ class ProvTlsServer
     }
 
     @Override
+    public int getHandshakeTimeoutMillis()
+    {
+        return manager.getContextData().getHandshakeTimeoutMillis();
+    }
+
+    @Override
     public int getMaxHandshakeMessageSize()
     {
         return manager.getContextData().getMaxHandshakeMessageSize();

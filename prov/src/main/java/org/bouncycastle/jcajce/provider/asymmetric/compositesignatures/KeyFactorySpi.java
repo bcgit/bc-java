@@ -302,8 +302,7 @@ public class KeyFactorySpi
         if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
             || MiscObjectIdentifiers.id_composite_key.equals(keyIdentifier))
         {
-            // TODO This is redundant with 'seq' calculation above
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+            ASN1Sequence keySeq = (seq != null) ? seq : ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
             PublicKey[] pubKeys = new PublicKey[keySeq.size()];
 
             for (int i = 0; i != keySeq.size(); i++)

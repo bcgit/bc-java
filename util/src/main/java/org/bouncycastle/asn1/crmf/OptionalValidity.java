@@ -59,7 +59,10 @@ public class OptionalValidity
             }
         }
 
-        // TODO[crmf] Validate the "at least one" rule after parsing?
+        if (notBefore == null && notAfter == null)
+        {
+            throw new IllegalArgumentException("at least one of notBefore/notAfter MUST be present.");
+        }
     }
 
     public OptionalValidity(Time notBefore, Time notAfter)

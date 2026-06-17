@@ -1539,6 +1539,7 @@ public class DSTU7624Test
         }
 
         KGMacPartialBlockTests();
+        KGCMNonceReuseTests();
     }
 
     /*
@@ -1586,6 +1587,56 @@ public class DSTU7624Test
                 + Hex.toHexString(freshMac)
                 + " but reused " + Hex.toHexString(reusedMac));
         }
+    }
+
+    /*
+     * Re-initialising for encryption with the same key and nonce is rejected (a repeated key+nonce
+     * is catastrophic for any GCM-family mode), matching GCMBlockCipher. reset()-based reuse,
+     * a fresh nonce, and re-init for decryption are all still allowed.
+     */
+    private void KGCMNonceReuseTests()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] nonce = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] nonce2 = Hex.decode("202122232425262728292A2B2C2D2E2F");
+
+        KGCMBlockCipher c = new KGCMBlockCipher(new DSTU7624Engine(128));
+        c.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+        kgcmEncryptBlock(c);
+
+        // reset()-based reuse must still work (it does not re-init)
+        c.reset();
+        kgcmEncryptBlock(c);
+
+        // re-init for encryption with the same key+nonce must be rejected
+        try
+        {
+            c.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+            fail("KGCM nonce reuse not detected on re-init for encryption");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong KGCM nonce-reuse message: " + e.getMessage(),
+                "cannot reuse nonce for KGCM encryption".equals(e.getMessage()));
+        }
+
+        // a different nonce is fine
+        c.init(true, new AEADParameters(new KeyParameter(key), 128, nonce2));
+
+        // re-init for decryption with the same key+nonce is allowed (the guard is encrypt-only)
+        KGCMBlockCipher d = new KGCMBlockCipher(new DSTU7624Engine(128));
+        d.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+        d.init(false, new AEADParameters(new KeyParameter(key), 128, nonce));
+    }
+
+    private void kgcmEncryptBlock(KGCMBlockCipher cipher)
+        throws Exception
+    {
+        byte[] in = new byte[16];
+        byte[] out = new byte[cipher.getOutputSize(in.length)];
+        int len = cipher.processBytes(in, 0, in.length, out, 0);
+        cipher.doFinal(out, len);
     }
 
     private void doFinalTest(AEADBlockCipher cipher, byte[] key, byte[] iv, byte[] authText, byte[] input, byte[] expected)

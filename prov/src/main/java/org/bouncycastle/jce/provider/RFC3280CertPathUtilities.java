@@ -29,6 +29,7 @@ import java.util.TimeZone;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -523,12 +524,12 @@ class RFC3280CertPathUtilities
             {
                 AuthorityKeyIdentifier akid = AuthorityKeyIdentifier.getInstance(
                     ASN1OctetString.getInstance(crlAkiExt).getOctets());
-                byte[] keyId = akid.getKeyIdentifierOctets();
-                if (keyId != null)
+                ASN1OctetString keyID = akid.getKeyIdentifierObject();
+                if (keyID != null)
                 {
                     // X509CertSelector.setSubjectKeyIdentifier wants the DER
                     // encoding of the OCTET STRING wrapping the keyId bytes.
-                    certSelector.setSubjectKeyIdentifier(new DEROctetString(keyId).getEncoded());
+                    certSelector.setSubjectKeyIdentifier(keyID.getEncoded(ASN1Encoding.DER));
                 }
             }
         }
