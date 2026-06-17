@@ -232,6 +232,7 @@
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="core/src/main/jdk1.4" includes="**/*.java"/>
+            <fileset dir="mail/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="prov/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java"/>

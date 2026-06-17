@@ -560,7 +560,7 @@ public class SMIMEUtil
     {
         try
         {
-            return new WriteOnceFileBackedMimeBodyPart(content.getContentStream(), File.createTempFile("bcMail", ".mime"));
+            return new WriteOnceFileBackedMimeBodyPart(content.getContentStream(), TempFileFactory.createTempFile("bcMail", ".mime"));
         }
         catch (IOException e)
         {
@@ -581,7 +581,7 @@ public class SMIMEUtil
     {
         try
         {
-            return toMimeBodyPart(content, File.createTempFile("bcMail", ".mime"));
+            return toMimeBodyPart(content, TempFileFactory.createTempFile("bcMail", ".mime"));
         }
         catch (IOException e)
         {
