@@ -50,6 +50,28 @@ public class OEROutputStream
         return j;
     }
 
+    /**
+     * Build a "call stack like" suffix identifying the offending element for diagnostic messages.
+     * Returns the empty string when the child element has no label, so the existing message text is
+     * preserved byte-for-byte for unlabelled elements.
+     */
+    private static String elementLabelSuffix(Element child, Element parent)
+    {
+        String childLabel = child == null ? null : child.getLabel();
+        if (childLabel == null)
+        {
+            return "";
+        }
+
+        String parentLabel = parent == null ? null : parent.getLabel();
+        if (parentLabel == null)
+        {
+            return ": " + childLabel;
+        }
+
+        return ": " + parentLabel + "." + childLabel;
+    }
+
     public void write(ASN1Encodable encodable, Element oerElement)
         throws IOException
     {
@@ -153,8 +175,9 @@ public class OEROutputStream
 
                 if (childOERDescription.isExplicit() && asn1EncodableChild instanceof OEROptional)
                 {
-                    // TODO call stack like definition error.
-                    throw new IllegalStateException("absent sequence element that is required by oer definition");
+                    throw new IllegalStateException(
+                        "absent sequence element that is required by oer definition"
+                            + elementLabelSuffix(childOERDescription, oerElement));
                 }
 
                 if (!childOERDescription.isExplicit())
