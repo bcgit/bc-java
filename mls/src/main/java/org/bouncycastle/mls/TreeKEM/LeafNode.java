@@ -254,7 +254,6 @@ public class LeafNode
     }
 
 
-    //TODO: add options to clone with credential/capabilities/extensions
     public LeafNode copyWithOptions(byte[] encKeyIn, Group.LeafNodeOptions options)
     {
         LeafNode clone = copy(encKeyIn);

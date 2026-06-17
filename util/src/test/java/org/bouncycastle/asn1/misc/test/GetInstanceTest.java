@@ -947,6 +947,29 @@ public class GetInstanceTest
     }
 
 
+    public void testOptionalValidityAtLeastOne()
+    {
+        // RFC 4211: OptionalValidity requires at least one of notBefore/notAfter.
+        // An empty SEQUENCE must be rejected on decode, matching the constructor.
+        try
+        {
+            OptionalValidity.getInstance(new DERSequence());
+            fail("empty OptionalValidity SEQUENCE accepted on decode");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("at least one of notBefore/notAfter MUST be present.", e.getMessage());
+        }
+    }
+
+    private void isEquals(Object expected, Object actual)
+    {
+        if (!expected.equals(actual))
+        {
+            fail("expected " + expected + " got " + actual);
+        }
+    }
+
     public String getName()
     {
         return "GetInstanceNullTest";
