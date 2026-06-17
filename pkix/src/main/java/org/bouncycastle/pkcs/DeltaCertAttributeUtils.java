@@ -17,10 +17,25 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.operator.ContentVerifierProvider;
 
+/**
+ * Helpers for working with the delta certificate request attribute carried by a paired
+ * ("chameleon") PKCS#10 request — see
+ * <a href="https://datatracker.ietf.org/doc/draft-bonnell-lamps-chameleon-certs/">draft-bonnell-lamps-chameleon-certs</a>.
+ */
 public class DeltaCertAttributeUtils
 {
     static final ASN1ObjectIdentifier deltaCertificateRequestSignature = new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.3");
 
+    /**
+     * Verify the delta signature attached to a base PKCS#10 request. Reconstructs the delta
+     * CertificationRequest from the base — stripping the delta-signature attribute — and
+     * validates the delta signature with the supplied verifier provider.
+     *
+     * @param baseRequest             the base PKCS#10 request carrying the delta attributes.
+     * @param contentVerifierProvider provider able to verify the delta signature algorithm.
+     * @return {@code true} if the delta signature is valid, {@code false} otherwise.
+     * @throws PKCSException if the signature cannot be processed.
+     */
     public static boolean isDeltaRequestSignatureValid(PKCS10CertificationRequest baseRequest, ContentVerifierProvider contentVerifierProvider)
         throws PKCSException
     {

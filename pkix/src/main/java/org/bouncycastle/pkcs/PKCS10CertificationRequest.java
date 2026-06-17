@@ -32,7 +32,9 @@ import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Exceptions;
 
 /**
- * Holding class for a PKCS#10 certification request.
+ * Holding class for a PKCS#10 certification request (RFC 2986). Also exposes the alternate
+ * public-key / alternate signature attributes used by paired ("chameleon") certificates per
+ * draft-bonnell-lamps-chameleon-certs.
  */
 public class PKCS10CertificationRequest
 {
@@ -253,6 +255,12 @@ public class PKCS10CertificationRequest
         return (Attribute[])list.toArray(new Attribute[list.size()]);
     }
 
+    /**
+     * Return the default (DER) encoding of the underlying CertificationRequest.
+     *
+     * @return the encoded request bytes.
+     * @throws IOException if encoding fails.
+     */
     public byte[] getEncoded()
         throws IOException
     {

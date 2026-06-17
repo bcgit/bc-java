@@ -10,12 +10,26 @@ import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilder;
 
+/**
+ * Lightweight {@link PKCS12MacCalculatorBuilder} that produces a PBMAC1 calculator
+ * (RFC 8018 §7.1) for use as PKCS#12 PFX integrity protection per RFC 9579. Currently
+ * restricted to PBKDF2; RFC 9579 requires the PBKDF2 parameters to carry an explicit key
+ * length.
+ */
 public class BcPKCS12PBMac1CalculatorBuilder
     implements PKCS12MacCalculatorBuilder
-{    
+{
     private final PBMAC1Params pbmac1Params;
     private PBKDF2Params pbkdf2Params = null;
 
+    /**
+     * Base constructor.
+     *
+     * @param pbeMacParams the PBMAC1 parameters carrying the key-derivation function and
+     *                     message-authentication scheme.
+     * @throws IOException if the PBMAC1 parameters omit a key length (required by RFC 9579) or
+     *                     use an unsupported key-derivation function.
+     */
     public BcPKCS12PBMac1CalculatorBuilder(PBMAC1Params pbeMacParams) throws IOException
     {
         this.pbmac1Params = pbeMacParams;

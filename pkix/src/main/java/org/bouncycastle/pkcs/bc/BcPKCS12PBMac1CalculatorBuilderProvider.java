@@ -10,6 +10,11 @@ import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilderProvider;
 
 import java.io.IOException;
 
+/**
+ * Lightweight {@link PKCS12MacCalculatorBuilderProvider} that returns PBMAC1
+ * (RFC 8018 / RFC 9579) MAC calculator builders. Refuses any algorithm identifier whose OID is
+ * not {@code id-PBMAC1}.
+ */
 public class BcPKCS12PBMac1CalculatorBuilderProvider
     implements PKCS12MacCalculatorBuilderProvider
 {

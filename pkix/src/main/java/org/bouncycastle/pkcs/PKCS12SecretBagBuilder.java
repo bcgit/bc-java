@@ -13,12 +13,23 @@ public class PKCS12SecretBagBuilder
     private final ASN1ObjectIdentifier secretTypeId;
     private final ASN1Encodable secretValue;
 
+    /**
+     * Base constructor.
+     *
+     * @param secretTypeId OID identifying the type of secret being stored.
+     * @param secretValue  the secret value to wrap.
+     */
     public PKCS12SecretBagBuilder(ASN1ObjectIdentifier secretTypeId, ASN1Encodable secretValue)
     {
         this.secretTypeId = secretTypeId;
         this.secretValue = secretValue;
     }
 
+    /**
+     * Build the configured {@link PKCS12SecretBag}.
+     *
+     * @return the resulting secret bag.
+     */
     public PKCS12SecretBag build()
     {
         return new PKCS12SecretBag(new SecretBag(secretTypeId, secretValue));

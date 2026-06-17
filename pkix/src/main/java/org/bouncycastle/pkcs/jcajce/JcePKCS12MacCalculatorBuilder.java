@@ -24,6 +24,11 @@ import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilder;
 
+/**
+ * JCA-based builder for the password-based MAC calculator used to protect the integrity of a
+ * PKCS#12 PFX (RFC 7292). Defaults to SHA-1 with an iteration count of 1024. For RFC 9579
+ * PBMAC1 protection use {@link JcePBMac1CalculatorBuilder} instead.
+ */
 public class JcePKCS12MacCalculatorBuilder
     implements PKCS12MacCalculatorBuilder
 {
@@ -34,11 +39,19 @@ public class JcePKCS12MacCalculatorBuilder
     private int saltLength;
     private int iterationCount = 1024;
 
+    /**
+     * Default constructor — uses SHA-1 as the MAC digest.
+     */
     public JcePKCS12MacCalculatorBuilder()
     {
         this(OIWObjectIdentifiers.idSHA1);
     }
 
+    /**
+     * Construct a builder using an explicit hash algorithm.
+     *
+     * @param hashAlgorithm the OID of the digest used by the HmacPBE MAC.
+     */
     public JcePKCS12MacCalculatorBuilder(ASN1ObjectIdentifier hashAlgorithm)
     {
         this.algorithm = hashAlgorithm;
