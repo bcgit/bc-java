@@ -72,7 +72,6 @@
 
         </copy>
         <copy todir="${src.dir}" overwrite="true">
-            <fileset dir="core/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="mail/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="prov/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="prov/src/test/jdk1.5" includes="**/*.java" />
