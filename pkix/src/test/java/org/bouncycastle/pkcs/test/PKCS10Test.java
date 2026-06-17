@@ -16,6 +16,9 @@ import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -358,6 +361,27 @@ public class PKCS10Test
         assertNull(trimmed.getExtensions());
     }
 
+
+    public void testDeltaCertificateRequestEmptySequenceRejected()
+        throws Exception
+    {
+        // An empty DeltaCertificateRequest sequence is malformed: the mandatory subjectPKInfo
+        // field is absent. It must be rejected with a clear IllegalArgumentException rather than
+        // crashing with an IndexOutOfBoundsException from the positional getObjectAt(0) read.
+        Attribute attribute = new Attribute(
+            new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.2"),
+            new DERSet(new DERSequence()));
+
+        try
+        {
+            new DeltaCertificateRequestAttributeValue(attribute);
+            fail("empty DeltaCertificateRequest sequence accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("DeltaCertificateRequest must contain a subjectPKInfo", e.getMessage());
+        }
+    }
 
     public static void main(String args[])
     {

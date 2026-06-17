@@ -60,7 +60,11 @@ public class DeltaCertificateRequestAttributeValue
     DeltaCertificateRequestAttributeValue(ASN1Sequence attrSeq)
     {
         this.attrSeq = attrSeq;
-        // TODO: validate attribute size
+
+        if (attrSeq.size() == 0)
+        {
+            throw new IllegalArgumentException("DeltaCertificateRequest must contain a subjectPKInfo");
+        }
 
         int idx = 0;
         if (attrSeq.getObjectAt(0) instanceof ASN1TaggedObject)
