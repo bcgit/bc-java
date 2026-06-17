@@ -26,11 +26,20 @@ import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilderProvider;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * JCA-based {@link PKCS12MacCalculatorBuilderProvider} that handles both the legacy PKCS#12
+ * PBE-MAC (RFC 7292) and the RFC 9579 PBMAC1 protection schemes. The algorithm OID passed in
+ * selects which path is used: {@code id-PBMAC1} delegates to {@link JcePBMac1CalculatorBuilder};
+ * any other OID is treated as a {@code pkcs-12PbeIds} family algorithm.
+ */
 public class JcePKCS12MacCalculatorBuilderProvider
     implements PKCS12MacCalculatorBuilderProvider
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
 
+    /**
+     * Base constructor.
+     */
     public JcePKCS12MacCalculatorBuilderProvider()
     {
     }
