@@ -16,6 +16,7 @@ import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -2521,9 +2522,12 @@ class RFC3280CertPathUtilities
 
     private static String getUnsupportedCriticalExtensionMessage(Set criticalExtensions)
     {
-        // TODO Still susceptible to sort order for stable error messages
+        // Sort the OID strings so the message is stable regardless of Set iteration order.
+        List sorted = new ArrayList(criticalExtensions);
+        Collections.sort(sorted);
+
         StringBuilder sb = new StringBuilder("Certificate has unsupported critical extension: [");
-        Iterator it = criticalExtensions.iterator();
+        Iterator it = sorted.iterator();
         if (it.hasNext())
         {
             for (;;)
