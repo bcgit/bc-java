@@ -184,8 +184,14 @@ public class SecretKeyPacket
             byte[] s2kBytes = new byte[s2KLen];
             in.readFully(s2kBytes);
 
-            // TODO: catch UnsupportedPacketVersionException gracefully
-            s2k = new S2K(new ByteArrayInputStream(s2kBytes));
+            try
+            {
+                s2k = new S2K(new ByteArrayInputStream(s2kBytes));
+            }
+            catch (UnsupportedPacketVersionException e)
+            {
+                throw new MalformedPacketException("Unsupported S2K type", e);
+            }
         }
         else
         {
