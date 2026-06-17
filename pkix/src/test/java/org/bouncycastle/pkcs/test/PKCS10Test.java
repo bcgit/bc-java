@@ -383,6 +383,45 @@ public class PKCS10Test
         }
     }
 
+    public void testDeltaCertificateRequestAttributeValueGetInstance()
+        throws Exception
+    {
+        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        dilKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
+        KeyPair dilKp = dilKpg.generateKeyPair();
+
+        DeltaCertificateRequestAttributeValue value = new DeltaCertificateRequestAttributeValueBuilder(
+            SubjectPublicKeyInfo.getInstance(dilKp.getPublic().getEncoded()))
+            .setSubject(new X500Name("CN=Delta"))
+            .build();
+
+        // null in -> null out (per javadoc).
+        assertNull(DeltaCertificateRequestAttributeValue.getInstance(null));
+
+        // An existing instance must be returned as-is, not re-parsed.
+        assertSame(value, DeltaCertificateRequestAttributeValue.getInstance(value));
+
+        // An ASN.1 sequence must be parsed into an equivalent new instance. The previously
+        // broken factory returned null for this (and every other non-null) input.
+        DeltaCertificateRequestAttributeValue parsed =
+            DeltaCertificateRequestAttributeValue.getInstance(value.toASN1Primitive());
+        assertNotNull(parsed);
+        assertTrue(org.bouncycastle.util.Arrays.areEqual(
+            value.toASN1Primitive().getEncoded(), parsed.toASN1Primitive().getEncoded()));
+        assertEquals(new X500Name("CN=Delta"), parsed.getSubject());
+
+        // Malformed input still throws the constructor's IllegalArgumentException.
+        try
+        {
+            DeltaCertificateRequestAttributeValue.getInstance(new DERSequence());
+            fail("empty DeltaCertificateRequest sequence accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("DeltaCertificateRequest must contain a subjectPKInfo", e.getMessage());
+        }
+    }
+
     public static void main(String args[])
     {
         PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));

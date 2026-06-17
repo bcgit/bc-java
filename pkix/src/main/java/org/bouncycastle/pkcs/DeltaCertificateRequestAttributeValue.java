@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.DeltaCertificateDescriptor;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
@@ -44,14 +43,14 @@ public class DeltaCertificateRequestAttributeValue
      */
     public static DeltaCertificateRequestAttributeValue getInstance(Object o)
     {
-        if (o instanceof DeltaCertificateDescriptor)
+        if (o instanceof DeltaCertificateRequestAttributeValue)
         {
             return (DeltaCertificateRequestAttributeValue)o;
         }
-        
+
         if (o != null)
         {
-            new DeltaCertificateRequestAttributeValue(ASN1Sequence.getInstance(o));
+            return new DeltaCertificateRequestAttributeValue(ASN1Sequence.getInstance(o));
         }
 
         return null;
