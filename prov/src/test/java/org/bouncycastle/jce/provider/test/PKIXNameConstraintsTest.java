@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.x509.GeneralSubtree;
 import org.bouncycastle.asn1.x509.OtherName;
 import org.bouncycastle.jce.provider.PKIXNameConstraintValidator;
 import org.bouncycastle.jce.provider.PKIXNameConstraintValidatorException;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -258,6 +259,103 @@ public class PKIXNameConstraintsTest
         catch (PKIXNameConstraintValidatorException e)
         {
             fail(e.getMessage());
+        }
+
+        testSGP22LegacySerialNumber();
+        testSGP22NameConstraints();
+    }
+
+    private GeneralName directoryName(String name)
+    {
+        return new GeneralName(GeneralName.directoryName, new X500Name(name));
+    }
+
+    private boolean isPermitted(GeneralName permitted, GeneralName subject)
+    {
+        PKIXNameConstraintValidator validator = new PKIXNameConstraintValidator();
+        validator.intersectPermittedSubtree(new GeneralSubtree(permitted));
+        try
+        {
+            validator.checkPermitted(subject);
+            return true;
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            return false;
+        }
+    }
+
+    /**
+     * GSMA SGP.22 v2.5 relaxed directoryName name-constraint matching (github #2327): gated behind
+     * {@link Properties#X509_SGP22_NAME_CONSTRAINTS}, off by default. With the flag set, additional
+     * subject attributes are tolerated and serialNumber is matched with a startsWith comparison
+     * wherever it appears; with the flag clear the strict RFC 5280 matching is unchanged.
+     */
+    private void testSGP22NameConstraints()
+    {
+        GeneralName subtreeExtra = directoryName("O=VALID, serialNumber=89034011");
+        GeneralName subjectExtra = directoryName("C=ES, O=VALID, CN=VALID EUICC CD, OU=VALID, serialNumber=89034011026140000000000000001332");
+
+        GeneralName subtreeSnFirst = directoryName("serialNumber=89034011, O=VALID");
+        GeneralName subjectSnFirst = directoryName("serialNumber=89034011026140000000000000001332, O=VALID");
+
+        // default (flag off): RFC 5280 strict prefix matching rejects both SGP.22 cases
+        isTrue("SGP.22 extra-attributes should be rejected by default", !isPermitted(subtreeExtra, subjectExtra));
+        isTrue("SGP.22 leading serialNumber should be rejected by default", !isPermitted(subtreeSnFirst, subjectSnFirst));
+
+        System.setProperty(Properties.X509_SGP22_NAME_CONSTRAINTS, "true");
+        try
+        {
+            // failure 1: subject carries extra attributes around the constrained O / serialNumber
+            isTrue("SGP.22 extra-attributes should be permitted when enabled", isPermitted(subtreeExtra, subjectExtra));
+
+            // failure 2: serialNumber is the leading RDN and must match via startsWith
+            isTrue("SGP.22 leading serialNumber should be permitted when enabled", isPermitted(subtreeSnFirst, subjectSnFirst));
+
+            // negative: a required organization that does not match is still rejected
+            isTrue("mismatched organization must still be rejected",
+                !isPermitted(subtreeExtra, directoryName("O=OTHER, serialNumber=89034011026140000000000000001332")));
+
+            // negative: a serialNumber that is not a prefix is still rejected
+            isTrue("non-prefix serialNumber must still be rejected",
+                !isPermitted(subtreeExtra, directoryName("O=VALID, serialNumber=12340000000000000000000000000000")));
+
+            // negative: a required attribute missing entirely is rejected
+            isTrue("missing required serialNumber must be rejected",
+                !isPermitted(subtreeExtra, directoryName("C=ES, O=VALID, CN=VALID EUICC CD")));
+        }
+        finally
+        {
+            System.clearProperty(Properties.X509_SGP22_NAME_CONSTRAINTS);
+        }
+    }
+
+    /**
+     * Regression test pinning the lone-serialNumber matching of a directoryName subtree. Before
+     * github #2327 this GSMA SGP.22 startsWith concession ran ungated in the strict path; it is now
+     * gated behind {@link Properties#X509_SGP22_NAME_CONSTRAINTS}, so default validation applies the
+     * RFC 5280 sec. 7.1 equality comparison and the startsWith behaviour returns only with the flag.
+     */
+    private void testSGP22LegacySerialNumber()
+    {
+        GeneralName subtree = directoryName("serialNumber=89034011");
+        GeneralName exact = directoryName("serialNumber=89034011");
+        GeneralName prefix = directoryName("serialNumber=89034011026140000000000000001332");
+
+        // default (flag off): RFC 5280 equality - an exact value matches, a longer value does not
+        isTrue("exact serialNumber must match by default", isPermitted(subtree, exact));
+        isTrue("prefix serialNumber must not match by default", !isPermitted(subtree, prefix));
+
+        System.setProperty(Properties.X509_SGP22_NAME_CONSTRAINTS, "true");
+        try
+        {
+            // flag on: the legacy GSMA SGP.22 startsWith comparison applies again
+            isTrue("exact serialNumber must match when enabled", isPermitted(subtree, exact));
+            isTrue("prefix serialNumber must match when enabled", isPermitted(subtree, prefix));
+        }
+        finally
+        {
+            System.clearProperty(Properties.X509_SGP22_NAME_CONSTRAINTS);
         }
     }
 
