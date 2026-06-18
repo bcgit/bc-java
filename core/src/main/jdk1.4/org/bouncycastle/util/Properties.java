@@ -22,6 +22,12 @@ public class Properties
      */
     public static final String EMULATE_ORACLE = "org.bouncycastle.emulate.oracle";
 
+    /**
+     * Opt in to the relaxed directoryName name-constraint matching required by GSMA SGP.22 v2.5
+     * (Remote SIM Provisioning). Looser than RFC 5280 7.1, so defaults to off. See github #2327.
+     */
+    public static final String X509_SGP22_NAME_CONSTRAINTS = "org.bouncycastle.x509.sgp22_name_constraints";
+
     private Properties()
     {
     }

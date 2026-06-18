@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -320,6 +321,11 @@ public class PKIXNameConstraintValidator
             return false;
         }
 
+        if (Properties.isOverrideSet(Properties.X509_SGP22_NAME_CONSTRAINTS))
+        {
+            return withinDNSubtreeSGP22(dns, subtree);
+        }
+
         int start = 0;
         RDN subtreeRdnStart = RDN.getInstance(subtree.getObjectAt(0));
         for (int j = 0; j < dns.size(); j++)
@@ -352,19 +358,13 @@ public class PKIXNameConstraintValidator
                 //   NOTE: this is checking the attributes in the same order, which might be not necessary, if this is a problem also IETFUtils.rDNAreEqual must be changed.
                 // use new RFC 5280 comparison, NOTE: this is now different from with RFC 3280, where only binary comparison is used
                 // obey RFC 5280 7.1
-                // special treatment of serialNumber for GSMA SGP.22 RSP specification
+                // NOTE: the GSMA SGP.22 serialNumber startsWith concession is gated behind
+                // Properties.X509_SGP22_NAME_CONSTRAINTS (see withinDNSubtreeSGP22); this path stays strict.
                 if (!subtreeRdn.getFirst().getType().equals(dnsRdn.getFirst().getType()))
                 {
                     return false;
                 }
-                if (subtreeRdn.size() == 1 && subtreeRdn.getFirst().getType().equals(RFC4519Style.serialNumber))
-                {
-                    if (!dnsRdn.getFirst().getValue().toString().startsWith(subtreeRdn.getFirst().getValue().toString()))
-                    {
-                        return false;
-                    }
-                }
-                else if (!IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn))
+                if (!IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn))
                 {
                     return false;
                 }
@@ -376,6 +376,61 @@ public class PKIXNameConstraintValidator
         }
 
         return true;
+    }
+
+    /**
+     * Relaxed directoryName subtree matching for GSMA SGP.22 v2.5 (sections 4.5.2.1.0.2 and
+     * 4.5.2.1.0.3), enabled only when {@link Properties#X509_SGP22_NAME_CONSTRAINTS} is set. Each
+     * RDN of the permitted subtree must be matched by some RDN of the subject DN regardless of
+     * position; additional subject attributes are permitted, and a serialNumber RDN is matched with
+     * a startsWith comparison wherever it occurs. This deliberately departs from the contiguous
+     * prefix matching of RFC 5280 7.1 implemented by {@link #withinDNSubtree(ASN1Sequence, ASN1Sequence)}.
+     */
+    private static boolean withinDNSubtreeSGP22(ASN1Sequence dns, ASN1Sequence subtree)
+    {
+        for (int i = 0; i < subtree.size(); i++)
+        {
+            RDN subtreeRdn = RDN.getInstance(subtree.getObjectAt(i));
+
+            boolean matched = false;
+            for (int j = 0; j < dns.size(); j++)
+            {
+                RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
+                if (rdnMatchesSGP22(subtreeRdn, dnsRdn))
+                {
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean rdnMatchesSGP22(RDN subtreeRdn, RDN dnsRdn)
+    {
+        if (subtreeRdn.size() != dnsRdn.size())
+        {
+            return false;
+        }
+
+        if (!subtreeRdn.getFirst().getType().equals(dnsRdn.getFirst().getType()))
+        {
+            return false;
+        }
+
+        // special treatment of serialNumber for GSMA SGP.22 RSP specification
+        if (subtreeRdn.size() == 1 && subtreeRdn.getFirst().getType().equals(RFC4519Style.serialNumber))
+        {
+            return dnsRdn.getFirst().getValue().toString().startsWith(subtreeRdn.getFirst().getValue().toString());
+        }
+
+        return IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn);
     }
 
     private static void checkPermittedDN(Set permitted, ASN1Sequence dns)
