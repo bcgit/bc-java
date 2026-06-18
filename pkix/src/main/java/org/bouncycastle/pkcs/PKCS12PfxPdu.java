@@ -18,7 +18,8 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
- * A holding class for the PKCS12 Pfx structure.
+ * Holding class for a PKCS#12 PFX structure (RFC 7292). Supports MAC verification using the
+ * legacy PKCS#12 PBE-MAC and the PBMAC1 scheme introduced by RFC 9579.
  */
 public class PKCS12PfxPdu
 {
@@ -41,11 +42,22 @@ public class PKCS12PfxPdu
         }
     }
 
+    /**
+     * Wrap an existing parsed PFX ASN.1 structure.
+     *
+     * @param pfx the PFX to wrap.
+     */
     public PKCS12PfxPdu(Pfx pfx)
     {
         this.pfx = pfx;
     }
 
+    /**
+     * Parse a BER/DER encoded PFX from a byte array.
+     *
+     * @param pfx the encoded PFX bytes.
+     * @throws IOException if the data is not a valid PFX encoding.
+     */
     public PKCS12PfxPdu(byte[] pfx)
         throws IOException
     {
@@ -168,6 +180,12 @@ public class PKCS12PfxPdu
         return pfx;
     }
 
+    /**
+     * Return the default (BER) encoding of the PFX.
+     *
+     * @return the encoded PFX bytes.
+     * @throws IOException if encoding fails.
+     */
     public byte[] getEncoded()
         throws IOException
     {

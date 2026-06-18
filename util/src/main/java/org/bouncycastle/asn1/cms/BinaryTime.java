@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.cms;
 
-import java.math.BigInteger;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1Integer;
@@ -72,8 +71,12 @@ public class BinaryTime
         this.time = new ASN1Integer(seconds);
     }
 
-    private BinaryTime(ASN1Integer time)
+    public BinaryTime(ASN1Integer time)
     {
+        if (time == null)
+        {
+            throw new NullPointerException("'time' cannot be null");
+        }
         if (time.isNegative())
         {
             throw new IllegalArgumentException("'time' cannot be negative");
@@ -87,9 +90,9 @@ public class BinaryTime
      *         encoding; callers that only need a Date may prefer
      *         {@link #toDate()} which rejects unrepresentable values.
      */
-    public BigInteger getTime()
+    public ASN1Integer getTime()
     {
-        return time.getValue();
+        return time;
     }
 
     /**
@@ -100,7 +103,19 @@ public class BinaryTime
      */
     public Date toDate()
     {
-        return new Date(time.getValue().multiply(BigInteger.valueOf(1000L)).longValueExact());
+        try
+        {
+            long seconds = time.longValueExact();
+            if (seconds <= Long.MAX_VALUE / 1000L)
+            {
+                return new Date(seconds * 1000L);
+            }
+        }
+        catch (ArithmeticException e)
+        {
+        }
+
+        throw new ArithmeticException("BinaryTime out of Date range");
     }
 
     public ASN1Primitive toASN1Primitive()

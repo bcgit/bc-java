@@ -21,6 +21,11 @@ import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
+/**
+ * JCA-aware extension of {@link PKCS10CertificationRequest} that returns the request's public
+ * key as a JCA {@link PublicKey}. Use {@link #setProvider} to pin the underlying
+ * {@link KeyFactory} lookup to a specific JCE provider.
+ */
 public class JcaPKCS10CertificationRequest
     extends PKCS10CertificationRequest
 {
@@ -38,22 +43,44 @@ public class JcaPKCS10CertificationRequest
 
     private JcaJceHelper helper = new DefaultJcaJceHelper();
 
+    /**
+     * Wrap a parsed {@link CertificationRequest}.
+     *
+     * @param certificationRequest the underlying request.
+     */
     public JcaPKCS10CertificationRequest(CertificationRequest certificationRequest)
     {
         super(certificationRequest);
     }
 
+    /**
+     * Parse a BER/DER encoded PKCS#10 request.
+     *
+     * @param encoding the encoded request bytes.
+     * @throws IOException if the data is not a valid CertificationRequest.
+     */
     public JcaPKCS10CertificationRequest(byte[] encoding)
         throws IOException
     {
         super(encoding);
     }
 
+    /**
+     * Re-wrap an existing {@link PKCS10CertificationRequest} as a JCA-aware holder.
+     *
+     * @param requestHolder the existing holder.
+     */
     public JcaPKCS10CertificationRequest(PKCS10CertificationRequest requestHolder)
     {
         super(requestHolder.toASN1Structure());
     }
 
+    /**
+     * Pin {@link KeyFactory} lookups to the named JCE provider.
+     *
+     * @param providerName name of the registered provider.
+     * @return this holder.
+     */
     public JcaPKCS10CertificationRequest setProvider(String providerName)
     {
         helper = new NamedJcaJceHelper(providerName);
@@ -61,6 +88,12 @@ public class JcaPKCS10CertificationRequest
         return this;
     }
 
+    /**
+     * Pin {@link KeyFactory} lookups to the supplied JCE provider.
+     *
+     * @param provider the provider instance.
+     * @return this holder.
+     */
     public JcaPKCS10CertificationRequest setProvider(Provider provider)
     {
         helper = new ProviderJcaJceHelper(provider);
@@ -68,6 +101,13 @@ public class JcaPKCS10CertificationRequest
         return this;
     }
 
+    /**
+     * Return the public key carried by the request as a JCA {@link PublicKey}.
+     *
+     * @return the decoded public key.
+     * @throws InvalidKeyException if the SubjectPublicKeyInfo cannot be parsed.
+     * @throws NoSuchAlgorithmException if no matching KeyFactory can be located.
+     */
     public PublicKey getPublicKey()
         throws InvalidKeyException, NoSuchAlgorithmException
     {

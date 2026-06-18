@@ -70,10 +70,58 @@ public class DANETest
         }
     }
 
+    private void shouldValidateCertificateUsageRange()
+        throws IOException, DANEException
+    {
+        DANEEntryFactory daneEntryFactory = new DANEEntryFactory(new TruncatingDigestCalculator(new SHA256DigestCalculator()));
+
+        DANEEntry entry = daneEntryFactory.createEntry("test@test.com", new X509CertificateHolder(randomCert));
+
+        byte[] rdata = entry.getRDATA();
+
+        // each of the assigned certificate usages 0..3 (with selector/matching-type 0) must validate.
+        for (int usage = 0; usage <= 3; usage++)
+        {
+            rdata[0] = (byte)usage;
+
+            if (!DANEEntry.isValidCertificate(rdata))
+            {
+                fail("certificate usage " + usage + " should be valid");
+            }
+        }
+
+        // an unassigned positive certificate usage (4..127) must not validate.
+        rdata[0] = (byte)4;
+        if (DANEEntry.isValidCertificate(rdata))
+        {
+            fail("certificate usage 4 should not be valid");
+        }
+
+        rdata[0] = (byte)127;
+        if (DANEEntry.isValidCertificate(rdata))
+        {
+            fail("certificate usage 127 should not be valid");
+        }
+
+        // an unassigned certificate usage with the high bit set (128..255, i.e. negative as a byte) must not validate.
+        rdata[0] = (byte)0xFF;
+        if (DANEEntry.isValidCertificate(rdata))
+        {
+            fail("certificate usage 255 should not be valid");
+        }
+
+        rdata[0] = (byte)0x80;
+        if (DANEEntry.isValidCertificate(rdata))
+        {
+            fail("certificate usage 128 should not be valid");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
          shouldCreateDANEEntry();
+         shouldValidateCertificateUsageRange();
     }
 
     public static void main(

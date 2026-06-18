@@ -8,7 +8,7 @@ public class RegressionTest
     public static Test[] tests = {
         new ExpansionTest(),
         new ExtensionTest(),
-        
+        new OEROutputStreamErrorTest(),
     };
 
     public static void main(String[] args)

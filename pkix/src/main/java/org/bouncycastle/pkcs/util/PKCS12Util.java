@@ -156,6 +156,13 @@ public class PKCS12Util
         return pfx.getEncoded(ASN1Encoding.DER);
     }
 
+    /**
+     * Return the content of a ContentInfo, raising {@link ASN1ParsingException} if absent.
+     *
+     * @param contentInfo the ContentInfo to inspect.
+     * @return the carried content.
+     * @throws IOException on ASN.1 parsing errors.
+     */
     public static ASN1Encodable getContent(ContentInfo contentInfo) throws IOException
     {
         ASN1Encodable content = contentInfo.getContent();
@@ -167,11 +174,27 @@ public class PKCS12Util
         return content;
     }
 
+    /**
+     * Return the octets carried by a ContentInfo, raising {@link ASN1ParsingException} if the
+     * content is absent or not an {@code OCTET STRING}.
+     *
+     * @param contentInfo the ContentInfo to inspect.
+     * @return the content octets.
+     * @throws IOException on ASN.1 parsing errors.
+     */
     public static byte[] getContentOctets(ContentInfo contentInfo) throws IOException
     {
         return ASN1OctetString.getInstance(getContent(contentInfo)).getOctets();
     }
 
+    /**
+     * Return the ciphertext octets of an {@link EncryptedData}, raising
+     * {@link ASN1ParsingException} if absent.
+     *
+     * @param encryptedData the EncryptedData to inspect.
+     * @return the encrypted-content octet string.
+     * @throws IOException on ASN.1 parsing errors.
+     */
     public static ASN1OctetString getEncryptedContent(EncryptedData encryptedData) throws IOException
     {
         ASN1OctetString content = encryptedData.getContent();
@@ -183,6 +206,17 @@ public class PKCS12Util
         return content;
     }
 
+    /**
+     * Validate an iteration count from a PFX, enforcing the cap configured via the
+     * {@link org.bouncycastle.util.Properties#PKCS12_MAX_IT_COUNT} security property (default
+     * 5,000,000). Negative values and values that do not fit in a signed 32-bit integer are
+     * also rejected.
+     *
+     * @param ic the iteration count from the wire.
+     * @return the validated iteration count as an {@code int}.
+     * @throws IllegalStateException if the iteration count is negative, larger than the
+     *         configured maximum, or does not fit in a signed 32-bit integer.
+     */
     public static int validateIterationCount(BigInteger ic)
     {
         if (ic.signum() < 0)

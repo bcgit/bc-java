@@ -14,20 +14,38 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.InputDecryptor;
 import org.bouncycastle.operator.InputDecryptorProvider;
 
+/**
+ * Lightweight builder for an {@link InputDecryptorProvider} that handles the PKCS#12 password-based
+ * encryption schemes from RFC 7292 Appendix C (e.g. {@code pbeWithSHAAnd3-KeyTripleDES-CBC}).
+ */
 public class BcPKCS12PBEInputDecryptorProviderBuilder
 {
     private ExtendedDigest digest;
 
+    /**
+     * Default constructor — uses SHA-1 for the PKCS#12 KDF.
+     */
     public BcPKCS12PBEInputDecryptorProviderBuilder()
     {
          this(new SHA1Digest());
     }
 
+    /**
+     * Construct a builder that uses an explicit digest for the PKCS#12 KDF.
+     *
+     * @param digest the digest implementation to drive the key derivation.
+     */
     public BcPKCS12PBEInputDecryptorProviderBuilder(ExtendedDigest digest)
     {
          this.digest = digest;
     }
 
+    /**
+     * Bind the builder to a password and return an {@link InputDecryptorProvider}.
+     *
+     * @param password the password used to derive the encryption key.
+     * @return a configured decryptor provider.
+     */
     public InputDecryptorProvider build(final char[] password)
     {
         return new InputDecryptorProvider()

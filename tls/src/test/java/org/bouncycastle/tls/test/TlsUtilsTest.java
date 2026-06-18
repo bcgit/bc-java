@@ -1,5 +1,6 @@
 package org.bouncycastle.tls.test;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Random;
 import java.util.Vector;
 
@@ -32,6 +33,27 @@ public class TlsUtilsTest
             sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(ProtocolVersion.TLSv12, supportedSignatureAlgorithms,
                 signatureAlgorithm);
             assertEquals(HashAlgorithm.sha256, sigAlg.getHash());
+        }
+    }
+
+    public void testEncodeSupportedSignatureAlgorithmsRejectsAnonymous()
+        throws Exception
+    {
+        // RFC 5246 7.4.1.4.1: SignatureAlgorithm.anonymous MUST NOT appear in the
+        // signature_algorithms extension. This is what CertificateRequest.encode relies on.
+        Vector supportedSignatureAlgorithms = new Vector();
+        supportedSignatureAlgorithms.addElement(
+            new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.anonymous));
+
+        try
+        {
+            TlsUtils.encodeSupportedSignatureAlgorithms(supportedSignatureAlgorithms, new ByteArrayOutputStream());
+            fail("expected IllegalArgumentException for SignatureAlgorithm.anonymous");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("SignatureAlgorithm.anonymous MUST NOT appear in the signature_algorithms extension",
+                e.getMessage());
         }
     }
 
