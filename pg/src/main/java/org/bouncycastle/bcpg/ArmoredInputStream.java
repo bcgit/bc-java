@@ -149,6 +149,7 @@ public class ArmoredInputStream
     boolean isEndOfStream;
 
     private boolean validateAllowedHeaders = false;
+    private boolean csfRejectPrefixedDashes = true;
     private List<String> allowedHeaders = defaultAllowedHeaders();
 
     /**
@@ -199,6 +200,7 @@ public class ArmoredInputStream
         this.detectMissingChecksum = builder.detectMissingCRC;
         this.crc = builder.ignoreCRC ? null : new FastCRC24();
         this.validateAllowedHeaders = builder.validateAllowedHeaders;
+        this.csfRejectPrefixedDashes = builder.csfRejectPrefixedDashes;
         this.allowedHeaders = builder.allowedHeaders;
 
         if (hasHeaders)
@@ -463,9 +465,13 @@ public class ArmoredInputStream
                     start = true;
                     restart = true;
                 }
-                else                   // a space - must be a dash escape
+                else if (c == ' ')                   // a space - must be a dash escape
                 {
                     c = in.read();
+                }
+                else if (csfRejectPrefixedDashes)
+                {
+                    throw new ArmoredInputException("Prefixed dash without trailing space encountered. CSF-signed message malformed.");
                 }
                 newLineFound = false;
             }
@@ -683,6 +689,7 @@ public class ArmoredInputStream
         private boolean detectMissingCRC = false;
         private boolean ignoreCRC = false;
         private boolean validateAllowedHeaders = false;
+        private boolean csfRejectPrefixedDashes = false;
         private List<String> allowedHeaders = defaultAllowedHeaders();
 
         private Builder()
@@ -706,6 +713,11 @@ public class ArmoredInputStream
         public Builder setValidateClearsignedMessageHeaders(boolean validateHeaders)
         {
             this.validateAllowedHeaders = validateHeaders;
+            return this;
+        }
+
+        public Builder setRejectPrefixedDashesInCSFMessages(boolean rejectDashes) {
+            this.csfRejectPrefixedDashes = rejectDashes;
             return this;
         }
 
