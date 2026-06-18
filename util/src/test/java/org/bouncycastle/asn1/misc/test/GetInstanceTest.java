@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.misc.test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.Date;
@@ -959,6 +960,57 @@ public class GetInstanceTest
         catch (IllegalArgumentException e)
         {
             isEquals("at least one of notBefore/notAfter MUST be present.", e.getMessage());
+        }
+    }
+
+    public void testTooShortSequenceRejected()
+    {
+        // Fixed-arity, all-mandatory CMP/CRMF SEQUENCE types must reject a
+        // too-short encoding with a clean IllegalArgumentException rather than
+        // leaking an ArrayIndexOutOfBoundsException from positional getObjectAt.
+        // The guard is a strict lower bound, mirroring the sibling size checks
+        // in these same util/asn1 packages (e.g. CountryAndRegions,
+        // RootCaKeyUpdateContent, CMCPublicationInfo, DecryptedPOP).
+
+        CMPCertificate cmpCert = new CMPCertificate(Certificate.getInstance(cert1));
+
+        // PBMParameter needs 4 mandatory fields.
+        checkTooShort(PBMParameter.class, new DERSequence(new ASN1Encodable[]{
+            new DEROctetString(new byte[1]), new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1")), ASN1Integer.ONE}));
+
+        // CAKeyUpdAnnContent needs 3 mandatory CMPCertificate fields.
+        checkTooShort(CAKeyUpdAnnContent.class, new DERSequence(new ASN1Encodable[]{
+            cmpCert, cmpCert}));
+
+        // PKMACValue needs 2 mandatory fields.
+        checkTooShort(PKMACValue.class, new DERSequence(new ASN1Encodable[]{
+            new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1"))}));
+
+        // CertId needs 2 mandatory fields.
+        checkTooShort(CertId.class, new DERSequence(new ASN1Encodable[]{
+            new GeneralName(new X500Name("CN=Test"))}));
+    }
+
+    private void checkTooShort(Class clazz, DERSequence tooShort)
+    {
+        try
+        {
+            Method m = clazz.getMethod("getInstance", Object.class);
+
+            m.invoke(clazz, tooShort);
+
+            fail(clazz.getName() + " accepted a too-short SEQUENCE on decode");
+        }
+        catch (InvocationTargetException e)
+        {
+            if (!(e.getCause() instanceof IllegalArgumentException))
+            {
+                fail(clazz.getName() + " threw " + e.getCause() + " instead of IllegalArgumentException");
+            }
+        }
+        catch (Exception e)
+        {
+            fail(clazz.getName() + " getInstance reflection failed: " + e);
         }
     }
 
