@@ -111,6 +111,35 @@ public class CompositeSignaturesTest
         Security.addProvider(new BouncyCastleProvider());
     }
 
+    /**
+     * A truncated composite-signature public key whose body is the raw concatenation form (not a DER SEQUENCE)
+     * and is shorter than the first component must surface as a checked IOException from
+     * generatePublic(SubjectPublicKeyInfo), not an unchecked NegativeArraySizeException escaping the
+     * KeyFactorySpi.split helper. Mirrors the compositekem sibling guard.
+     */
+    public void testMalformedTruncatedCompositePublicKey()
+        throws Exception
+    {
+        org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi keyFactorySpi =
+            new org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi();
+
+        // id_MLDSA44_ECDSA_P256_SHA256 expects a first component of 1312 bytes; supply only 16 raw bytes
+        // that do not parse as a DER SEQUENCE, forcing the raw-concatenation split path.
+        byte[] truncatedBody = new byte[16];
+        SubjectPublicKeyInfo malformed = new SubjectPublicKeyInfo(
+            new AlgorithmIdentifier(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256), truncatedBody);
+
+        try
+        {
+            keyFactorySpi.generatePublic(malformed);
+            fail("expected IOException for truncated composite public key");
+        }
+        catch (java.io.IOException e)
+        {
+            TestCase.assertEquals("malformed composite public key: body shorter than the first component", e.getMessage());
+        }
+    }
+
     public void testTestVectors()
         throws Exception
     {
