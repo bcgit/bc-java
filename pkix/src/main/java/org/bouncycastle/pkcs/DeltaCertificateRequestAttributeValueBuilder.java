@@ -36,11 +36,23 @@ public class DeltaCertificateRequestAttributeValueBuilder
     private X500Name subject;
     private Extensions extensions;
 
+    /**
+     * Base constructor.
+     *
+     * @param subjectPublicKey the alternate public key committed to by the delta request.
+     */
     public DeltaCertificateRequestAttributeValueBuilder(SubjectPublicKeyInfo subjectPublicKey)
     {
         this.subjectPublicKey = subjectPublicKey;
     }
 
+    /**
+     * Set the signature algorithm declared in the delta request; when unset the delta request
+     * reuses the base request's signature algorithm.
+     *
+     * @param signatureAlgorithm the signature algorithm identifier.
+     * @return this builder.
+     */
     public DeltaCertificateRequestAttributeValueBuilder setSignatureAlgorithm(AlgorithmIdentifier signatureAlgorithm)
     {
         this.signatureAlgorithm = signatureAlgorithm;
@@ -48,6 +60,13 @@ public class DeltaCertificateRequestAttributeValueBuilder
         return this;
     }
 
+    /**
+     * Set the subject declared in the delta request; when unset the delta request reuses the
+     * base request's subject.
+     *
+     * @param subject the subject distinguished name.
+     * @return this builder.
+     */
     public DeltaCertificateRequestAttributeValueBuilder setSubject(X500Name subject)
     {
         this.subject = subject;
@@ -55,6 +74,12 @@ public class DeltaCertificateRequestAttributeValueBuilder
         return this;
     }
 
+    /**
+     * Set the extensions declared in the delta request.
+     *
+     * @param extensions the extensions to attach to the delta request.
+     * @return this builder.
+     */
     public DeltaCertificateRequestAttributeValueBuilder setExtensions(Extensions extensions)
     {
         this.extensions = extensions;
@@ -62,6 +87,11 @@ public class DeltaCertificateRequestAttributeValueBuilder
         return this;
     }
 
+    /**
+     * Build the configured {@link DeltaCertificateRequestAttributeValue}.
+     *
+     * @return the resulting attribute value.
+     */
     public DeltaCertificateRequestAttributeValue build()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(4);

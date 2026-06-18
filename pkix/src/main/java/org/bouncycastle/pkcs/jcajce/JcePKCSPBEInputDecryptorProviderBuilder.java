@@ -45,12 +45,21 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 
+/**
+ * JCA-based builder for an {@link InputDecryptorProvider} that handles the password-based
+ * decryption schemes encountered in PKCS#12 / PKCS#8: the legacy {@code pkcs-12PbeIds} family
+ * (RFC 7292 Appendix C), PBES2 / PBKDF2 and PBES2 / scrypt (RFC 8018, RFC 7914), and the older
+ * PBE1 schemes ({@code pbeWithMD5AndDES-CBC}, {@code pbeWithSHA1AndDES-CBC}).
+ */
 public class JcePKCSPBEInputDecryptorProviderBuilder
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
     private boolean      wrongPKCS12Zero = false;
     private SecretKeySizeProvider keySizeProvider = DefaultSecretKeySizeProvider.INSTANCE;
 
+    /**
+     * Base constructor.
+     */
     public JcePKCSPBEInputDecryptorProviderBuilder()
     {
     }
@@ -69,6 +78,13 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
         return this;
     }
 
+    /**
+     * Enable a workaround for older PKCS#12 files that derive the encryption key without
+     * applying the trailing zero byte that RFC 7292 requires.
+     *
+     * @param tryWrong {@code true} to enable the workaround.
+     * @return this builder.
+     */
     public JcePKCSPBEInputDecryptorProviderBuilder setTryWrongPKCS12Zero(boolean tryWrong)
     {
         this.wrongPKCS12Zero = tryWrong;
@@ -91,6 +107,13 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
         return this;
     }
 
+    /**
+     * Bind the builder to a password and return an {@link InputDecryptorProvider} that can
+     * produce decryptors for the password-based algorithm identifiers it is asked for.
+     *
+     * @param password the password used to derive the encryption key.
+     * @return a configured decryptor provider.
+     */
     public InputDecryptorProvider build(final char[] password)
     {
         return new InputDecryptorProvider()

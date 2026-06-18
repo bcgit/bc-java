@@ -12,6 +12,11 @@ public class PKCS12SecretBag
 {
     private final SecretBag secretBag;
 
+    /**
+     * Wrap an existing parsed SecretBag ASN.1 structure.
+     *
+     * @param secretBag the underlying SecretBag.
+     */
     public PKCS12SecretBag(SecretBag secretBag)
     {
         this.secretBag = secretBag;

@@ -85,7 +85,7 @@ public class JcePBMac1CalculatorBuilder
     }
 
     /**
-     * Base constructor from an ASN.1 parameter set. See RFC 8108 for details.
+     * Base constructor from an ASN.1 parameter set. See RFC 8018 §7.1 for details.
      *
      * @param pbeMacParams the ASN.1 parameters for the MAC calculator we want to create.
      */
@@ -125,9 +125,11 @@ public class JcePBMac1CalculatorBuilder
     }
 
     /**
-     * Set the length of the salt in bytes.
-     * @param saltLength
-     * @return
+     * Set the length, in bytes, of the salt used by the PBKDF2 key derivation. Defaults to the
+     * MAC output size.
+     *
+     * @param saltLength the salt length in bytes.
+     * @return this builder.
      */
     public JcePBMac1CalculatorBuilder setSaltLength(int saltLength)
     {

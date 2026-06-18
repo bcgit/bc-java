@@ -3,7 +3,8 @@ package org.bouncycastle.pkcs;
 import java.io.IOException;
 
 /**
- * General IOException thrown in the cert package and its sub-packages.
+ * Specialised {@link IOException} thrown by classes in {@link org.bouncycastle.pkcs} and its
+ * sub-packages to signal malformed or corrupted PKCS encodings.
  */
 public class PKCSIOException
     extends IOException

@@ -83,6 +83,6 @@ public class DANEEntry
     public static boolean isValidCertificate(byte[] data)
     {
         // TODO: perhaps validate ASN.1 data as well...
-        return ((data[CERT_USAGE] >= 0 || data[CERT_USAGE] <= 3)&& data[SELECTOR] == 0 && data[MATCHING_TYPE] == 0);
+        return ((data[CERT_USAGE] >= 0 && data[CERT_USAGE] <= 3) && data[SELECTOR] == 0 && data[MATCHING_TYPE] == 0);
     }
 }

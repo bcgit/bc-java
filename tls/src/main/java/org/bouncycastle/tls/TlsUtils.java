@@ -4830,7 +4830,14 @@ public class TlsUtils
         if (tlsFeatures != null)
         {
             // TODO[tls] Proper ASN.1 type class for this extension?
-            ASN1Sequence tlsFeaturesSeq = (ASN1Sequence)readASN1Object(tlsFeatures);
+            ASN1Primitive tlsFeaturesObj = readASN1Object(tlsFeatures);
+            if (!(tlsFeaturesObj instanceof ASN1Sequence))
+            {
+                throw new TlsFatalAlert(AlertDescription.bad_certificate,
+                    "Server certificate has invalid TLS Features extension");
+            }
+
+            ASN1Sequence tlsFeaturesSeq = (ASN1Sequence)tlsFeaturesObj;
             for (int i = 0; i < tlsFeaturesSeq.size(); ++i)
             {
                 if (!(tlsFeaturesSeq.getObjectAt(i) instanceof ASN1Integer))

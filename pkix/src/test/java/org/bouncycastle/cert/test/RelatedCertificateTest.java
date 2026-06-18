@@ -77,11 +77,11 @@ public class RelatedCertificateTest
         // Pick a fixed epoch-second value to anchor the wire encoding.
         long sec = 1700000000L;
         BinaryTime t = new BinaryTime(sec);
-        assertEquals(BigInteger.valueOf(sec), t.getTime());
+        assertTrue(t.getTime().hasValue(sec));
 
         BinaryTime reparsed = BinaryTime.getInstance(t.getEncoded());
         assertEquals(t, reparsed);
-        assertEquals(sec, reparsed.getTime().longValue());
+        assertTrue(reparsed.getTime().hasValue(sec));
 
         BinaryTime fromDate = new BinaryTime(new Date(sec * 1000L));
         assertEquals(t, fromDate);
@@ -245,7 +245,7 @@ public class RelatedCertificateTest
 
         // And the verify must reject a tampered request time.
         RequesterCertificate tampered = new RequesterCertificate(
-            certID, new BinaryTime(ts.getTime().longValue() + 1), uris, value.getSignature().getOctets());
+            certID, new BinaryTime(ts.getTime().longValueExact() + 1), uris, value.getSignature().getOctets());
         ContentVerifier verifier2 = verifierProv.get(signer.getAlgorithmIdentifier());
         assertFalse("tampered requestTime should fail signature verification",
             RelatedCertificateTool.verifyRequesterCertificate(tampered, verifier2));
