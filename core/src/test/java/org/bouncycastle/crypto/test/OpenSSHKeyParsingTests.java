@@ -464,6 +464,51 @@ public class OpenSSHKeyParsingTests
         {
             isEquals("passphrase required ", iles.getMessage(), "passphrase required to decrypt encrypted OpenSSH private key");
         }
+
+        //
+        // A uint32 length-prefix with bit 31 set decodes to a negative Java int. Such a
+        // length is never producible by a conforming SSH encoder, but a malformed key can
+        // carry one; it must be rejected with the same "not enough data" diagnostic as the
+        // over-large case, not corrupt the parse position or surface a cryptic copyOfRange
+        // message. Exercises the readBlock and readBigNumPositive guards via the public
+        // OpenSSHPublicKeyUtil.parsePublicKey path.
+        //
+
+        // First length field (the key-type name, read via readBlock) is 0xFFFFFFFF.
+        byte[] negNameLen = new byte[]{ (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF };
+
+        try
+        {
+            OpenSSHPublicKeyUtil.parsePublicKey(negNameLen);
+            fail("negative block length should trigger failure.");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            isEquals("negative block length ", iae.getMessage(), "not enough data for block");
+        }
+
+        // "ssh-rsa" name, then a big-num exponent length of 0xFFFFFFFF (negative int).
+        byte[] sshRsa = Strings.toByteArray("ssh-rsa");
+        byte[] negBigNum = new byte[4 + sshRsa.length + 4];
+        negBigNum[0] = 0;
+        negBigNum[1] = 0;
+        negBigNum[2] = 0;
+        negBigNum[3] = (byte)sshRsa.length;
+        System.arraycopy(sshRsa, 0, negBigNum, 4, sshRsa.length);
+        for (int i = 4 + sshRsa.length; i < negBigNum.length; i++)
+        {
+            negBigNum[i] = (byte)0xFF;
+        }
+
+        try
+        {
+            OpenSSHPublicKeyUtil.parsePublicKey(negBigNum);
+            fail("negative big-num length should trigger failure.");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            isEquals("negative big-num length ", iae.getMessage(), "not enough data for big num");
+        }
     }
 
     /**
