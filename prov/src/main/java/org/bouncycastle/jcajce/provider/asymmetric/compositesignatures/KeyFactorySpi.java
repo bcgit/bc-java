@@ -367,9 +367,14 @@ public class KeyFactorySpi
     }
 
     byte[][] split(ASN1ObjectIdentifier algorithm, ASN1BitString publicKeyData)
+        throws IOException
     {
         int[] sizes = componentKeySizes.get(algorithm);
         byte[] keyData = publicKeyData.getOctets();
+        if (sizes == null || keyData.length < sizes[0])
+        {
+            throw new IOException("malformed composite public key: body shorter than the first component");
+        }
         byte[][] components = new byte[][]{new byte[sizes[0]], new byte[keyData.length - sizes[0]]};
         System.arraycopy(keyData, 0, components[0], 0, sizes[0]);
         System.arraycopy(keyData, sizes[0], components[1], 0, components[1].length);
