@@ -689,7 +689,7 @@ public class ArmoredInputStream
         private boolean detectMissingCRC = false;
         private boolean ignoreCRC = false;
         private boolean validateAllowedHeaders = false;
-        private boolean csfRejectPrefixedDashes = false;
+        private boolean csfRejectPrefixedDashes = true;
         private List<String> allowedHeaders = defaultAllowedHeaders();
 
         private Builder()
