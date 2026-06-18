@@ -56,7 +56,7 @@ class SSHBuffer
         {
             return new byte[0];
         }
-        if (len > buffer.length - pos)
+        if (len < 0 || len > buffer.length - pos)
         {
             throw new IllegalArgumentException("not enough data for block");
         }
@@ -68,7 +68,7 @@ class SSHBuffer
     void skipBlock()
     {
         int len = readU32();
-        if (len > buffer.length - pos)
+        if (len < 0 || len > buffer.length - pos)
         {
             throw new IllegalArgumentException("not enough data for block");
         }
@@ -99,7 +99,7 @@ class SSHBuffer
         {
             return new byte[0];
         }
-        if (len > buffer.length - pos)
+        if (len < 0 || len > buffer.length - pos)
         {
             throw new IllegalArgumentException("not enough data for block");
         }
@@ -138,7 +138,7 @@ class SSHBuffer
     BigInteger readBigNumPositive()
     {
         int len = readU32();
-        if (len > buffer.length - pos)
+        if (len < 0 || len > buffer.length - pos)
         {
             throw new IllegalArgumentException("not enough data for big num");
         }
