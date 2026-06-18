@@ -25,6 +25,10 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
+import org.bouncycastle.asn1.tsp.ArchiveTimeStampChain;
+import org.bouncycastle.asn1.tsp.ArchiveTimeStampSequence;
+import org.bouncycastle.asn1.tsp.EvidenceRecord;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
@@ -1643,5 +1647,75 @@ public class ERSTest
 
         byte[] hiprime = digest.digest(hihai);
         return hiprime;
+    }
+
+    // Regression: a malformed EvidenceRecord whose ArchiveTimeStampSequence has zero
+    // ArchiveTimeStampChains, or whose chain has zero ArchiveTimeStamps, previously leaked an
+    // unchecked ArrayIndexOutOfBoundsException out of the ERSEvidenceRecord constructor; it must
+    // now report the contracted ERSException.
+    public void testEmptyArchiveTimeStampSequence()
+        throws Exception
+    {
+        // A known-good evidence record (from testCompareStreamAndByteData) used as a source of a
+        // real, non-empty ArchiveTimeStampChain.
+        String evidenceRecordBase64 = "MIIDCgIBATANMAsGCWCGSAFlAwQCATCCAvQwggLwMIIC7DCCAugGCSqGSI"
+            + "b3DQEHAqCCAtkwggLVAgEDMQ0wCwYJYIZIAWUDBAIDMG0GCyqGSIb3DQEJEAEEoF4EXDBaAgEBBgYEA"
+            + "I9nAQEwLzALBglghkgBZQMEAgEEICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueuAgEBGA8y"
+            + "MDI0MTAwMjIzMDAzNloCCFO56J9TFmGGMYICUDCCAkwCAQEwBTAAAgEAMAsGCWCGSAFlAwQCA6CCAR4"
+            + "wGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEPFw0yNDEwMDIyMzAwMzZaMC"
+            + "sGCSqGSIb3DQEJNDEeMBwwCwYJYIZIAWUDBAIDoQ0GCSqGSIb3DQEBDQUAME8GCSqGSIb3DQEJBDFCB"
+            + "EDPPkk9PN5EGrAvZyjv9wJR77tQCIwoA3xWwqESBGICShZxNjt6YU3LZor99ARJ4As+yiIjW/hTg5v3"
+            + "vqbTrfSIMGQGCyqGSIb3DQEJEAIvMVUwUzBRME8wCwYJYIZIAWUDBAIDBEAPvi2mNblzqqI91nWRM9s"
+            + "ocS7TJfpyQsx4ZcBVeGK1XjCW6BQ5KmrPFCc+IefB5FB/ZQsPwdyYv6umJzCYK0SzMA0GCSqGSIb3DQ"
+            + "EBDQUABIIBALWgWcjxzY5QEOlK92GNf9kjBflbO65dYkAKxrrgcwQ6Dz+ablUwsG01ILDUUnSL9wTQC"
+            + "OkYKb1oEFNrd9lbHWBOqlu5/lMjhZcWnYzbK3rzQRuoPwXYD/GWgiO0wLmF3FQ9xaum1Oui+Y075OS4"
+            + "7fXfLlSe2wMPlnoDb/IFAgHGBK/3zJ7w7n9OCa1U6qwTYCpw9MTXsOI/PbNw2h3cHTVgbY+HCTB4oJC"
+            + "GpY9bbEMuJboe4DkQx2Eqpq1pVaMKRxsjhrnbH8QlkUGtuGztqnZa5AoCth79x70Ch7WhdDcxG3wiFi"
+            + "29pw69obUCh3c61Q2WKl+MKW/tqq7EGYu5+jE=";
+        DigestCalculatorProvider digestProvider = new BcDigestCalculatorProvider();
+
+        EvidenceRecord template = EvidenceRecord.getInstance(Base64.decode(evidenceRecordBase64));
+        AlgorithmIdentifier[] digestAlgs = template.getDigestAlgorithms();
+        ArchiveTimeStampChain goodChain = template.getArchiveTimeStampSequence().getArchiveTimeStampChains()[0];
+
+        // 1. zero chains in the sequence.
+        EvidenceRecord noChains = new EvidenceRecord(digestAlgs, null, null,
+            new ArchiveTimeStampSequence(new ArchiveTimeStampChain[0]));
+        try
+        {
+            new ERSEvidenceRecord(noChains.getEncoded(), digestProvider);
+            fail("no exception on empty ArchiveTimeStampSequence");
+        }
+        catch (ERSException e)
+        {
+            assertEquals("EvidenceRecord must contain at least one ArchiveTimeStampChain", e.getMessage());
+        }
+
+        // 2. first (and only) chain has zero ArchiveTimeStamps.
+        EvidenceRecord emptyFirstChain = new EvidenceRecord(digestAlgs, null, null,
+            new ArchiveTimeStampSequence(new ArchiveTimeStampChain[]{new ArchiveTimeStampChain(new ArchiveTimeStamp[0])}));
+        try
+        {
+            new ERSEvidenceRecord(emptyFirstChain.getEncoded(), digestProvider);
+            fail("no exception on empty leading ArchiveTimeStampChain");
+        }
+        catch (ERSException e)
+        {
+            assertEquals("ArchiveTimeStampChain must contain at least one ArchiveTimeStamp", e.getMessage());
+        }
+
+        // 3. good leading chain, but a trailing chain with zero ArchiveTimeStamps - this exercises
+        // the per-chain guard in validateChains.
+        EvidenceRecord emptyTrailingChain = new EvidenceRecord(digestAlgs, null, null,
+            new ArchiveTimeStampSequence(new ArchiveTimeStampChain[]{goodChain, new ArchiveTimeStampChain(new ArchiveTimeStamp[0])}));
+        try
+        {
+            new ERSEvidenceRecord(emptyTrailingChain.getEncoded(), digestProvider);
+            fail("no exception on empty trailing ArchiveTimeStampChain");
+        }
+        catch (ERSException e)
+        {
+            assertEquals("ArchiveTimeStampChain must contain at least one ArchiveTimeStamp", e.getMessage());
+        }
     }
 }
