@@ -67,8 +67,18 @@ public class ERSEvidenceRecord
         ArchiveTimeStampSequence sequence = evidenceRecord.getArchiveTimeStampSequence();
 
         ArchiveTimeStampChain[] chains = sequence.getArchiveTimeStampChains();
-        this.primaryArchiveTimeStamp = chains[0].getArchiveTimestamps()[0];
-        
+        if (chains.length == 0)
+        {
+            throw new ERSException("EvidenceRecord must contain at least one ArchiveTimeStampChain");
+        }
+
+        ArchiveTimeStamp[] primaryTimeStamps = chains[0].getArchiveTimestamps();
+        if (primaryTimeStamps.length == 0)
+        {
+            throw new ERSException("ArchiveTimeStampChain must contain at least one ArchiveTimeStamp");
+        }
+        this.primaryArchiveTimeStamp = primaryTimeStamps[0];
+
         // Section 5.3 Part 2. - check chains.
         validateChains(chains);
 
@@ -115,6 +125,10 @@ public class ERSEvidenceRecord
         for (int i = 0; i != chains.length; i++)
         {
             ArchiveTimeStamp[] archiveTimeStamps = chains[i].getArchiveTimestamps();
+            if (archiveTimeStamps.length == 0)
+            {
+                throw new ERSException("ArchiveTimeStampChain must contain at least one ArchiveTimeStamp");
+            }
             ArchiveTimeStamp prevArchiveTimeStamp = archiveTimeStamps[0];
             AlgorithmIdentifier digAlg = archiveTimeStamps[0].getDigestAlgorithmIdentifier();
             for (int j = 1; j != archiveTimeStamps.length; j++)
