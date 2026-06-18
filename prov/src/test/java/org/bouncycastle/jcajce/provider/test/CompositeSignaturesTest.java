@@ -29,8 +29,10 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -137,6 +139,58 @@ public class CompositeSignaturesTest
         catch (java.io.IOException e)
         {
             TestCase.assertEquals("malformed composite public key: body shorter than the first component", e.getMessage());
+        }
+    }
+
+    /**
+     * A composite-signature public key whose body parses as a DER SEQUENCE but whose element count is
+     * not exactly two must surface as a checked IOException from generatePublic(SubjectPublicKeyInfo),
+     * not an unchecked ArrayIndexOutOfBoundsException (size 1) or IndexOutOfBoundsException (size 3)
+     * escaping through the fixed two-element factory list and getKeysSpecs. Mirrors the split() guard
+     * exercised by testMalformedTruncatedCompositePublicKey.
+     */
+    public void testMalformedCompositePublicKeyWrongComponentCount()
+        throws Exception
+    {
+        org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi keyFactorySpi =
+            new org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi();
+
+        // A one-element SEQUENCE body: getKeysSpecs would read subjectPublicKeys[1] and previously
+        // threw ArrayIndexOutOfBoundsException.
+        ASN1EncodableVector oneElement = new ASN1EncodableVector();
+        oneElement.add(new DEROctetString(new byte[8]));
+        SubjectPublicKeyInfo oneComponent = new SubjectPublicKeyInfo(
+            new AlgorithmIdentifier(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256),
+            new DERSequence(oneElement).getEncoded());
+
+        try
+        {
+            keyFactorySpi.generatePublic(oneComponent);
+            fail("expected IOException for one-component composite public key");
+        }
+        catch (java.io.IOException e)
+        {
+            TestCase.assertEquals("malformed composite public key: expected exactly two components", e.getMessage());
+        }
+
+        // A three-element SEQUENCE body: the factories.get(i) loop would read factories.get(2) and
+        // previously threw IndexOutOfBoundsException.
+        ASN1EncodableVector threeElements = new ASN1EncodableVector();
+        threeElements.add(new DEROctetString(new byte[8]));
+        threeElements.add(new DEROctetString(new byte[8]));
+        threeElements.add(new DEROctetString(new byte[8]));
+        SubjectPublicKeyInfo threeComponents = new SubjectPublicKeyInfo(
+            new AlgorithmIdentifier(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256),
+            new DERSequence(threeElements).getEncoded());
+
+        try
+        {
+            keyFactorySpi.generatePublic(threeComponents);
+            fail("expected IOException for three-component composite public key");
+        }
+        catch (java.io.IOException e)
+        {
+            TestCase.assertEquals("malformed composite public key: expected exactly two components", e.getMessage());
         }
     }
 
