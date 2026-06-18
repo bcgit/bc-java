@@ -146,6 +146,7 @@ public class ArmoredInputStream
     boolean restart = false;
     StringList headerList = Strings.newList();
     int lastC = 0;
+    int lookAhead = -1;
     boolean isEndOfStream;
 
     private boolean validateAllowedHeaders = false;
@@ -450,6 +451,12 @@ public class ArmoredInputStream
 
         if (clearText)
         {
+            if (lookAhead != -1)
+            {
+                c = lookAhead;
+                lookAhead = -1;
+                return c;
+            }
             c = in.read();
 
             if (c == '\r' || (c == '\n' && lastC != '\r'))
@@ -458,20 +465,26 @@ public class ArmoredInputStream
             }
             else if (newLineFound && c == '-')
             {
-                c = in.read();
-                if (c == '-')            // a header, not dash escaped
+                lookAhead = in.read();
+                if (lookAhead == '-')            // a header, not dash escaped
                 {
                     clearText = false;
                     start = true;
                     restart = true;
                 }
-                else if (c == ' ')                   // a space - must be a dash escape
+                else if (lookAhead == ' ')       // a space - must be a dash escape
                 {
+                    // remove dash escaping
                     c = in.read();
+                    lookAhead = -1;
                 }
-                else if (csfRejectPrefixedDashes)
+                else
                 {
-                    throw new ArmoredInputException("Prefixed dash without trailing space encountered. CSF-signed message malformed.");
+                    // malformed message
+                    if (csfRejectPrefixedDashes)
+                    {
+                        throw new ArmoredInputException("Prefixed dash without trailing space encountered. CSF-signed message malformed.");
+                    }
                 }
                 newLineFound = false;
             }
@@ -716,7 +729,8 @@ public class ArmoredInputStream
             return this;
         }
 
-        public Builder setRejectPrefixedDashesInCSFMessages(boolean rejectDashes) {
+        public Builder setRejectPrefixedDashesInCSFMessages(boolean rejectDashes)
+        {
             this.csfRejectPrefixedDashes = rejectDashes;
             return this;
         }

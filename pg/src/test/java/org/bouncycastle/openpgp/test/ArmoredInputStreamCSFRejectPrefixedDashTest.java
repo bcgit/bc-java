@@ -5,6 +5,7 @@ import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
@@ -49,11 +50,26 @@ public class ArmoredInputStreamCSFRejectPrefixedDashTest
                 .setRejectPrefixedDashesInCSFMessages(true)
                 .build(bIn);
 
-        try {
+        try
+        {
             Streams.drain(aIn);
             fail("Prefixed dash in CSF message MUST be rejected if configured to do so.");
-        } catch (ArmoredInputException e) {
-            isEquals("Prefixed dash without trailing space encountered. CSF-signed message malformed.", e.getMessage());
         }
+        catch (ArmoredInputException e)
+        {
+            isEquals("Exception message mismatch", "Prefixed dash without trailing space encountered. CSF-signed message malformed.", e.getMessage());
+        }
+
+        bIn = new ByteArrayInputStream(malformed.getBytes(StandardCharsets.UTF_8));
+        aIn = ArmoredInputStream.builder()
+                .setRejectPrefixedDashesInCSFMessages(false)
+                .build(bIn);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        while (aIn.isClearText())
+        {
+            bOut.write(aIn.read());
+        }
+        isTrue("Malformed payload MUST be returned unaltered", bOut.toString().startsWith("-Xpayload"));
     }
 }
