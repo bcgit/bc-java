@@ -99,6 +99,11 @@ public class TimeStampToken
 
             if (attr != null)
             {
+                if (attr.getAttrValues().size() < 1)
+                {
+                    throw new TSPException("signing certificate attribute MUST contain at least one AttributeValue");
+                }
+
                 SigningCertificate signCert = SigningCertificate.getInstance(attr.getAttrValues().getObjectAt(0));
 
                 this.certID = ESSCertIDv2.from(ESSCertID.getInstance(signCert.getCerts()[0]));
@@ -110,6 +115,11 @@ public class TimeStampToken
                 if (attr == null)
                 {
                     throw new TSPValidationException("no signing certificate attribute found, time stamp invalid.");
+                }
+
+                if (attr.getAttrValues().size() < 1)
+                {
+                    throw new TSPException("signing certificate attribute MUST contain at least one AttributeValue");
                 }
 
                 SigningCertificateV2 signCertV2 = SigningCertificateV2.getInstance(attr.getAttrValues().getObjectAt(0));
