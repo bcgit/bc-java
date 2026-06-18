@@ -1,8 +1,16 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.DomainParameters;
+import org.bouncycastle.asn1.x9.ValidationParams;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.agreement.DHAgreement;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
@@ -10,13 +18,16 @@ import org.bouncycastle.crypto.agreement.DHUnifiedAgreement;
 import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.DHUPrivateParameters;
 import org.bouncycastle.crypto.params.DHUPublicParameters;
+import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -459,6 +470,68 @@ public class DHTest
         new DHPublicKeyParameters(BigInteger.valueOf(2), new DHParameters(p512, g512));
     }
 
+    private void testPgenCounterBound()
+    {
+        // X9 dhpublicnumber domain parameters with a ValidationParams pgenCounter that does not
+        // fit in a signed 32-bit int. PublicKeyFactory must reject it rather than silently
+        // truncating the counter (which previously produced a corrupt DHValidationParameters).
+        BigInteger P = new BigInteger("eedb3431b31d30851ddcd4dce57e1b8fc3b83cc7913bc049281d713d9f8fa91bfd0fde2e1ec5eb45a0d6483cfa6b5055ffa88622a1aa83b9f9c1df561e88b702866f17af2defea0b04cf3fbdd817140ad49c415909fc2bb2c5d160b77273e958a181bf73cf72118e1c8670d53d0e459d14d61ecb5b7c7f63a9cb019cd66aecb3a01d0402f1c18218f142653f4bc922e5baa35964b7432f311fa5a9b34e3b91582db366ad1493f25ea659540f87758ae34678dc864fb2c9d4aba18cb757285292c7d0bac73cc4632a2d54b89f2dc9656d1c50edd49dcbe2102510c70563a96f35dd8a21f0fdc5a1e23ce31fce0ee3023eafdca623508ffd2412fe4dc5b5dd0f75", 16);
+        BigInteger Q = new BigInteger("e90a78d5da01e926462e5c17a61ff97b09b6ac18f9137e7b99298705", 16);
+        BigInteger G = new BigInteger("9da3567e2f7396dd2ee4716d3477a53a47f811b2275a95ed07024d7231b739c79e88e5377479b23d460a41f981b1af619915e4d8b2dabf2cb716168d02dfb81e76048e23fff6c773f496b2ac3ae06e2eb12c39787a8244452aef404ce631aec9cf4027eefae492ce55517db0af3939354c5414e23205ae3bcd17faedecf80101fa75c619249a43b41aa15ee2d7699ee32e227b641129fe1c78b20c6655b09fa7fead338e179b4b4416c359b16e3773d141e1a876b7ee4281b61120607717f7edc8da8de42b16b54d0802d67d41fc173cd33227436f7c66bd2fe711b37fb0162543c268857414f4188f243fbf92e128388329c9f2df8db4e7808ab539891da798", 16);
+
+        // A Y value that is a valid member of the q-order subgroup for the P/G/Q above
+        // (taken from the NIST sample key used in testCombinedTestVector1).
+        BigInteger Y = new BigInteger("e485cd4b82e82dafd35f89d40361049e6100c16b17ca156d072832319a40bf7a3f5081182397b8fbd9d33391896bb35d9cc890d8c0a9e5b642b773ce0690f1bbd4596a9604708edb9c27f45117a7395b7407b43eebd8b82bef4a925e2a93185df21fbf012ec9059a9c9efc0b64afe0505aa1864d79a2a9833863c16163b48c9fcc26a9b9e2741097bdeabc2b7208589e4154e1de7ecf77e928668b28abb8113b322c6d426701df979d47ccd50d493b7fb6f20050c3e67cb876c1550d8c8677527600eab07196213252bd9a48d5023788fdb4b65f85144cf6654e092550646be4882125b286ced6578eedc981304ff88725e4138f90a7a4a07c94105d796b038f", 16);
+
+        byte[] seed = Hex.decode("0102030405060708090a0b0c0d0e0f10");
+
+        // pgenCounter = Integer.MAX_VALUE + 1, i.e. just outside the signed int range.
+        BigInteger oversized = BigInteger.valueOf(Integer.MAX_VALUE).add(BigInteger.ONE);
+
+        try
+        {
+            DomainParameters dhParams = new DomainParameters(P, G, Q, null,
+                new ValidationParams(new DERBitString(seed), new ASN1Integer(oversized)));
+            AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.dhpublicnumber, dhParams);
+            SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo(algId, new ASN1Integer(Y));
+
+            PublicKeyFactory.createKey(spki);
+
+            fail("oversized DH pgenCounter accepted");
+        }
+        catch (ArithmeticException e)
+        {
+            // expected -- BigIntegers.intValueExact rejects the out-of-range counter
+        }
+        catch (IOException e)
+        {
+            fail("unexpected IOException for oversized DH pgenCounter: " + e);
+        }
+
+        // An in-range pgenCounter must still be accepted and round-trip the exact int value,
+        // proving the change is behaviour-preserving for every conforming key.
+        int counter = 12345;
+        try
+        {
+            DomainParameters dhParams = new DomainParameters(P, G, Q, null,
+                new ValidationParams(seed, counter));
+            AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.dhpublicnumber, dhParams);
+            SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo(algId, new ASN1Integer(Y));
+
+            AsymmetricKeyParameter key = PublicKeyFactory.createKey(spki);
+
+            DHValidationParameters validation = ((DHPublicKeyParameters)key).getParameters().getValidationParameters();
+            if (validation == null || validation.getCounter() != counter)
+            {
+                fail("in-range DH pgenCounter not round-tripped");
+            }
+        }
+        catch (IOException e)
+        {
+            fail("unexpected IOException for in-range DH pgenCounter: " + e);
+        }
+    }
+
     public void performTest()
     {
         testDHBasic(512, 0, g512, p512);
@@ -476,6 +549,8 @@ public class DHTest
         testBounds();
 
         testModulusSizeBound();
+
+        testPgenCounterBound();
 
         testCombinedTestVector1();
         testCombinedTestVector2();
