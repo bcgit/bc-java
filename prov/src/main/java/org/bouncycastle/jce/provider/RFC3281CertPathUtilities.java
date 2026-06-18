@@ -352,7 +352,7 @@ class RFC3281CertPathUtilities
         }
     }
 
-    protected static CertPathValidatorResult processAttrCert2(
+    protected static CertPathValidatorResult processAttrCert2A(
         CertPath certPath, PKIXExtendedParameters pkixParams)
         throws CertPathValidatorException
     {
@@ -385,6 +385,22 @@ class RFC3281CertPathUtilities
         {
             // must be a programming error
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    protected static void processAttrCert2B(X509AttributeCertificate attrCert, X509Certificate issuerCert,
+        PKIXExtendedParameters pkixParams) throws CertPathValidatorException
+    {
+        // the AC signature must be cryptographically correct
+        try
+        {
+            CertPathValidatorUtilities.verifyX509AttributeCertificate(attrCert, issuerCert.getPublicKey(),
+                pkixParams.getSigProvider());
+        }
+        catch (Exception e)
+        {
+            throw new ExtCertPathValidatorException(
+                "Attribute certificate signature could not be verified.", e);
         }
     }
 
