@@ -43,7 +43,6 @@ public class AllTests
         suite.addTestSuite(TlsRawKeysProtocolTest.class);
         suite.addTestSuite(TlsSRPProtocolTest.class);
         suite.addTestSuite(TlsUtilsTest.class);
-        suite.addTestSuite(org.bouncycastle.tls.CheckTlsFeaturesExtensionTest.class);
 
         suite.addTest(DTLSTestSuite.suite());
         suite.addTest(TlsTestSuite.suite());

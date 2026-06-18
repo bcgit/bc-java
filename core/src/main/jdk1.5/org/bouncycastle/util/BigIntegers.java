@@ -168,22 +168,46 @@ public final class BigIntegers
 
     public static byte byteValueExact(BigInteger x)
     {
-        return x.byteValueExact();
+        // Since Java 1.8 could use BigInteger.byteValueExact instead
+        if (x.bitLength() > 7)
+        {
+            throw new ArithmeticException("BigInteger out of int range");
+        }
+
+        return x.byteValue();
     }
 
     public static short shortValueExact(BigInteger x)
     {
-        return x.shortValueExact();
+        // Since Java 1.8 could use BigInteger.shortValueExact instead
+        if (x.bitLength() > 15)
+        {
+            throw new ArithmeticException("BigInteger out of int range");
+        }
+
+        return x.shortValue();
     }
 
     public static int intValueExact(BigInteger x)
     {
-        return x.intValueExact();
+        // Since Java 1.8 could use BigInteger.intValueExact instead
+        if (x.bitLength() > 31)
+        {
+            throw new ArithmeticException("BigInteger out of int range");
+        }
+
+        return x.intValue();
     }
 
     public static long longValueExact(BigInteger x)
     {
-        return x.longValueExact();
+        // Since Java 1.8 could use BigInteger.longValueExact instead
+        if (x.bitLength() > 63)
+        {
+            throw new ArithmeticException("BigInteger out of long range");
+        }
+
+        return x.longValue();
     }
 
     public static boolean hasAnySmallFactors(BigInteger x)
