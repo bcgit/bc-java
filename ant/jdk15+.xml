@@ -42,7 +42,9 @@
 
             <fileset dir="tls/src/main/java" includes="**/*.java" />
             <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
-            <fileset dir="tls/src/test/java" includes="**/*.java" />
+            <fileset dir="tls/src/test/java" includes="**/*.java" >
+                <exclude name="**/tls/*.java"/>
+            </fileset>
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
             <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />
