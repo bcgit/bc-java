@@ -326,6 +326,11 @@ public class KeyFactorySpi
         {
             int numKeys = (seq == null) ? componentKeys.length : seq.size();
 
+            if (numKeys != 2)
+            {
+                throw new IOException("malformed composite public key: expected exactly two components");
+            }
+
             List<KeyFactory> factories = getKeyFactoriesFromIdentifier(keyIdentifier);
             ASN1BitString[] componentBitStrings = new ASN1BitString[numKeys];
             for (int i = 0; i < numKeys; i++)
