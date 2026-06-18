@@ -106,6 +106,11 @@ public class TimeStampToken
 
                 SigningCertificate signCert = SigningCertificate.getInstance(attr.getAttrValues().getObjectAt(0));
 
+                if (signCert.getCerts().length < 1)
+                {
+                    throw new TSPException("signing certificate attribute MUST contain at least one ESSCertID");
+                }
+
                 this.certID = ESSCertIDv2.from(ESSCertID.getInstance(signCert.getCerts()[0]));
             }
             else
@@ -123,6 +128,11 @@ public class TimeStampToken
                 }
 
                 SigningCertificateV2 signCertV2 = SigningCertificateV2.getInstance(attr.getAttrValues().getObjectAt(0));
+
+                if (signCertV2.getCerts().length < 1)
+                {
+                    throw new TSPException("signing certificate attribute MUST contain at least one ESSCertID");
+                }
 
                 this.certID = ESSCertIDv2.getInstance(signCertV2.getCerts()[0]);
             }
