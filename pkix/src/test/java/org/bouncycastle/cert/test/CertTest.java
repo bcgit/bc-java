@@ -1738,7 +1738,7 @@ public class CertTest
         // create the certificate - version 3 - without extensions
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         isTrue(!certGen.hasExtension(Extension.authorityKeyIdentifier));
 
@@ -1767,7 +1767,7 @@ public class CertTest
         sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
         certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1)
             , new Date(System.currentTimeMillis() - 50000)
-            , new Date(System.currentTimeMillis() + 50000)
+            , new Date(System.currentTimeMillis() + SIX_MONTHS)
             , builder.build()
             , pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
@@ -1844,7 +1844,7 @@ public class CertTest
         // create the certificate - version 1
         //
         sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
-        X509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen1.build(sigGen));
 
@@ -1907,7 +1907,7 @@ public class CertTest
 
         sigGen = new BcRSAContentSignerBuilder(sigAlgId, digAlgId).build(lwPrivKey);
         SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE), new RSAPublicKey(lwPubKey.getModulus(), lwPubKey.getExponent()));
-        certGen = new X509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubInfo);
+        certGen = new X509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubInfo);
 
         certHolder = certGen.build(sigGen);
 
@@ -1968,7 +1968,7 @@ public class CertTest
         //
 
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA1withDSA").setProvider(BC).build(privKey);
-        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
@@ -1989,7 +1989,7 @@ public class CertTest
         // create the certificate - version 1
         //
         sigGen = new JcaContentSignerBuilder("SHA1withDSA").setProvider(BC).build(privKey);
-        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen1.build(sigGen));
 
@@ -2009,7 +2009,7 @@ public class CertTest
         //
         try
         {
-            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), dudPublicKey);
+            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), dudPublicKey);
 
 
             fail("key without encoding not detected in v1");
@@ -2067,7 +2067,7 @@ public class CertTest
             builder.build(),
             BigInteger.valueOf(1),
             new Date(System.currentTimeMillis() - 50000),
-            new Date(System.currentTimeMillis() + 50000),
+            new Date(System.currentTimeMillis() + SIX_MONTHS),
             builder.build(),
             pubKey);
 
@@ -2189,7 +2189,7 @@ public class CertTest
         try
         {
             ContentSigner sigGen = new JcaContentSignerBuilder("SHA1withECDSA").setProvider(BC).build(privKey);
-            JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+            JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
             X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -2207,7 +2207,7 @@ public class CertTest
             //
             ((ECPointEncoder)pubKey).setPointFormat("UNCOMPRESSED");
 
-            certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+            certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
             cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -2281,7 +2281,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(algorithm).setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -2299,7 +2299,7 @@ public class CertTest
         //
         ((ECPointEncoder)pubKey).setPointFormat("UNCOMPRESSED");
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -2399,7 +2399,7 @@ public class CertTest
         //
 
         ContentSigner sigGen = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(privKey);
-        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
@@ -2420,7 +2420,7 @@ public class CertTest
         // create the certificate - version 1
         //
         sigGen = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(privKey);
-        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen1.build(sigGen));
 
@@ -2440,7 +2440,7 @@ public class CertTest
         //
         try
         {
-            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), dudPublicKey);
+            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), dudPublicKey);
 
 
             fail("key without encoding not detected in v1");
@@ -3355,7 +3355,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("GOST3411withGOST3410").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3426,7 +3426,7 @@ public class CertTest
         // create base certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.encipherOnly))
             .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
@@ -3440,7 +3440,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -3502,7 +3502,7 @@ public class CertTest
         // create base certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA512withSPHINCS256").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.encipherOnly))
             .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
@@ -3519,7 +3519,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -3564,7 +3564,7 @@ public class CertTest
 
         KeyPair nhKp = kpGen.generateKeyPair();
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), nhKp.getPublic())
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -3607,7 +3607,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("GOST3411-2012-512WITHECGOST3410-2012-512").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3658,7 +3658,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("XMSS").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(((XMSSPrivateKey)privKey).getIndex()), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(((XMSSPrivateKey)privKey).getIndex()), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3709,7 +3709,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("XMSSMT").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3760,7 +3760,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("LMS").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3811,7 +3811,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3862,7 +3862,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3913,7 +3913,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -4076,7 +4076,7 @@ public class CertTest
         ContentSigner sigGen = new JcaContentSignerBuilder("RSAPSS",
             new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 20, 1))
             .setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -4122,7 +4122,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withRSAandMGF1").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -4171,7 +4171,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new NoSignatureContentSigner();
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -4283,7 +4283,7 @@ public class CertTest
         // create base certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("PICNIC").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.encipherOnly))
             .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
@@ -4300,7 +4300,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4345,7 +4345,7 @@ public class CertTest
 
         KeyPair nhKp = kpGen.generateKeyPair();
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), nhKp.getPublic())
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4408,7 +4408,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4455,7 +4455,7 @@ public class CertTest
 
         KeyPair nhKp = kpGen.generateKeyPair();
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), nhKp.getPublic())
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4518,7 +4518,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4565,7 +4565,7 @@ public class CertTest
 
         KeyPair nhKp = kpGen.generateKeyPair();
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), nhKp.getPublic())
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4770,7 +4770,7 @@ public class CertTest
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             issuer,
             BigInteger.valueOf(1),
-            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), issuer,
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), issuer,
             compPub);
 
         X509CertificateHolder certHldr = certGen.build(sigGen);
@@ -4915,7 +4915,7 @@ public class CertTest
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             issuer,
             BigInteger.valueOf(1),
-            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), issuer,
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), issuer,
             compPub);
 
         X509CertificateHolder ecCertHldr = certGen.build(sigGen);
@@ -4982,7 +4982,7 @@ public class CertTest
             // create the certificate - version 3
             //
             ContentSigner sigGen = new JcaContentSignerBuilder(algs[i]).setProvider(BC).build(privKey);
-            X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+            X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
             isEquals("oid mismatch", sigGen.getAlgorithmIdentifier().getAlgorithm(), oids[i]);
 
@@ -5187,7 +5187,7 @@ public class CertTest
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(algorithm).setProvider(BC).build(privKey);
         JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1),
-            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         certGen.addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
             new X509KeyUsage(X509KeyUsage.encipherOnly));
@@ -5251,7 +5251,7 @@ public class CertTest
         PrivateKey privKey = pair.getPrivate();
 
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(privKey);
-        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(new X500Name("CN=Test"), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), new X500Name("CN=Test"), pubKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(new X500Name("CN=Test"), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), new X500Name("CN=Test"), pubKey);
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
         org.bouncycastle.asn1.x509.Certificate struct = org.bouncycastle.asn1.x509.Certificate.getInstance(ASN1Primitive.fromByteArray(cert.getEncoded()));
