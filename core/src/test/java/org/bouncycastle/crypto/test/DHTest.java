@@ -534,7 +534,7 @@ public class DHTest
         BigInteger orderTwo = dhParams.getP().subtract(BigIntegers.ONE);
 
         // A malicious 'message' must be rejected even when 'pub' is well-formed.
-        BigInteger[] badMessages = new BigInteger[]{ BigIntegers.ONE, orderTwo, dhParams.getP() };
+        BigInteger[] badMessages = new BigInteger[]{ BigIntegers.ZERO, BigIntegers.ONE, orderTwo, dhParams.getP() };
         for (int i = 0; i < badMessages.length; ++i)
         {
             BigInteger badMessage = badMessages[i];
@@ -552,7 +552,7 @@ public class DHTest
         // A malicious 'pub' must be rejected even when 'message' is well-formed. DHWeakPubKey passes
         // construction-time validation with a dummy Y, then returns a weak value from the overridden
         // (virtual) Y property -- so CalculateAgreement must re-validate rather than trust the type.
-        BigInteger[] weakYs = new BigInteger[]{ BigIntegers.ONE, orderTwo, dhParams.getP() };
+        BigInteger[] weakYs = new BigInteger[]{ BigIntegers.ZERO, BigIntegers.ONE, orderTwo, dhParams.getP() };
         for (int i = 0; i < weakYs.length; ++i)
         {
             BigInteger weakY = weakYs[i];
