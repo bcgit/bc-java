@@ -45,7 +45,7 @@ class DEROutputStream
         }
         catch (DEREncodingException e)
         {
-            throw new IOException(e.getMessage(), e);
+            throw Exceptions.ioException(e.getMessage(), e);
         }
     }
 
