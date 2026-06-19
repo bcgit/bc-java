@@ -95,7 +95,7 @@ public class DTLSClientProtocol
 
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(clientContext, recordLayer,
             client.getHandshakeTimeoutMillis(), client.getHandshakeResendTimeMillis(), null,
-            Math.max(1024, client.getMaxHandshakeMessageSize()));
+            TlsUtils.getMaxHandshakeMessageSize(client));
 
         byte[] clientHelloBody = generateClientHello(state);
 

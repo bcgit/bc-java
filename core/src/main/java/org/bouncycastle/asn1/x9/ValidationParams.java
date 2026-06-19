@@ -89,7 +89,13 @@ public class ValidationParams
 
     public BigInteger getPgenCounter()
     {
+        // TODO Perhaps avoid forcing unsigned interpretation and add guards elsewhere
         return this.pgenCounter.getPositiveValue();
+    }
+
+    public ASN1Integer getPgenCounterObject()
+    {
+        return pgenCounter;
     }
 
     public ASN1Primitive toASN1Primitive()
