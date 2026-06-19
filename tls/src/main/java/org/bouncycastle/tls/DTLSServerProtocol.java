@@ -110,7 +110,7 @@ public class DTLSServerProtocol
 
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(serverContext, recordLayer,
             server.getHandshakeTimeoutMillis(), server.getHandshakeResendTimeMillis(), request,
-            Math.max(1024, server.getMaxHandshakeMessageSize()));
+            TlsUtils.getMaxHandshakeMessageSize(server));
 
         DTLSReliableHandshake.Message clientMessage = null;
 
