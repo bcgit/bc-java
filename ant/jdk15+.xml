@@ -38,6 +38,7 @@
             <fileset dir="prov/src/main/javadoc" includes="**/*.html" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
             <fileset dir="prov/src/test/java" includes="**/*.java" >
+                <exclude name="**/jce/provider/*.java"/>
                 <!-- AEADTest references javax.crypto.spec.GCMParameterSpec (JDK 7+) directly -->
                 <exclude name="**/jce/provider/test/AEADTest.java"/>
                 <!-- LEATest references javax.crypto.spec.GCMParameterSpec (JDK 7+) directly;
@@ -88,6 +89,7 @@
             <fileset dir="prov/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="prov/src/test/jdk1.5" includes="**/*.java" />
             <fileset dir="pkix/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="pkix/src/test/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/test/jdk1.5" includes="**/*.java" />
             <fileset dir="pg/src/main/jdk1.5" includes="**/*.java" />

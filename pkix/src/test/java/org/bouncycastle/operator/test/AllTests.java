@@ -788,6 +788,16 @@ public class AllTests
     public void testGcmDecryptorIssue1510()
         throws Exception
     {
+        try
+        {
+            // javax.crypto.spec.GCMParameterSpec is JDK 1.7+; skip on older JREs.
+            Class.forName("javax.crypto.spec.GCMParameterSpec");
+        }
+        catch (ClassNotFoundException e)
+        {
+            return;
+        }
+
         if (Security.getProvider(BC) == null)
         {
             Security.addProvider(new BouncyCastleProvider());

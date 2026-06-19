@@ -92,9 +92,12 @@ public final class LandmarkSequence
         // newline, including the last; we tolerate either presence or absence
         // of a trailing newline by ignoring a single empty trailing token.
         String[] lines = text.split("\\n", -1);
-        if (lines.length > 0 && lines[lines.length - 1].isEmpty())
+        if (lines.length > 0 && (lines[lines.length - 1].length() == 0)) // Java 5 consideration
         {
-            lines = java.util.Arrays.copyOf(lines, lines.length - 1);
+            // java.util.Arrays.copyOf is JDK 1.6+; use System.arraycopy for the JRE 5 floor.
+            String[] trimmed = new String[lines.length - 1];
+            System.arraycopy(lines, 0, trimmed, 0, trimmed.length);
+            lines = trimmed;
         }
         if (lines.length < 2)
         {

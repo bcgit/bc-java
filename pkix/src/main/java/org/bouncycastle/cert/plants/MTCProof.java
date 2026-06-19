@@ -332,7 +332,7 @@ public class MTCProof
     {
         if (a.length != b.length)
         {
-            return Integer.compare(a.length, b.length);
+            return a.length < b.length ? -1 : 1;
         }
         for (int i = 0; i < a.length; i++)
         {

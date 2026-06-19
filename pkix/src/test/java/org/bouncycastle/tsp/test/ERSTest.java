@@ -1135,6 +1135,16 @@ public class ERSTest
     public void testDirUtil()
         throws Exception
     {
+        try
+        {
+            // java.nio.file.Files is JDK 1.7+; skip on older JREs.
+            Class.forName("java.nio.file.Files");
+        }
+        catch (ClassNotFoundException e)
+        {
+            return;
+        }
+
         File rootDir = Files.createTempDirectory("ers.dir").toFile();
         try
         {

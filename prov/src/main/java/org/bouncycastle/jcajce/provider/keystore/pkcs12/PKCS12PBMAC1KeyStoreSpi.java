@@ -6,7 +6,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -875,7 +874,7 @@ public class PKCS12PBMAC1KeyStoreSpi
             {
                 PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA1Digest());
 
-                pGen.init(new String(password).getBytes(StandardCharsets.ISO_8859_1), salt, iterationCount);
+                pGen.init(Strings.toByteArray(new String(password)), salt, iterationCount);
 
                 KeyParameter kParam = (KeyParameter)pGen.generateDerivedParameters(keyLength);
 

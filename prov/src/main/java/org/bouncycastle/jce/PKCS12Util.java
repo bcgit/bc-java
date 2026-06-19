@@ -10,6 +10,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.security.auth.DestroyFailedException;
+import javax.security.auth.Destroyable;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -243,9 +244,11 @@ public class PKCS12Util
         {
             try
             {
-                if (key != null)
+                // SecretKey only extends Destroyable from JDK 1.8; guard via the
+                // Destroyable interface (JDK 1.4) so this is a no-op on older JREs.
+                if (key instanceof Destroyable)
                 {
-                    key.destroy();
+                    ((Destroyable)key).destroy();
                 }
             }
             catch (DestroyFailedException e)

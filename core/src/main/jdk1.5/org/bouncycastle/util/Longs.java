@@ -53,6 +53,13 @@ public class Longs
         return Long.numberOfTrailingZeros(i);
     }
 
+    public static long parseUnsignedLong(String s)
+    {
+        // @since 1.8
+//        return Long.parseUnsignedLong(s);
+        return new java.math.BigInteger(s).longValue();
+    }
+
     public static long reverse(long i)
     {
         return Long.reverse(i);
