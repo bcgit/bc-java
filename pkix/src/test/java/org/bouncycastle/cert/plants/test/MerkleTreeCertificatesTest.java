@@ -1210,7 +1210,7 @@ public class MerkleTreeCertificatesTest
         TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
         SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
         AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
-        TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial.longValueExact(), sigAlg, spki);
+        TBSCertificate tbs = buildTBSCertificate(tbsEntry, BigIntegers.longValueExact(serial), sigAlg, spki);
 
         // The MTCProof has [10, 11) — a single-leaf subtree, so no inclusion siblings.
         org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(

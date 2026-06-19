@@ -88,7 +88,7 @@ public class MayoTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyFactory kFact = KeyFactory.getInstance("Mayo_2", "BCPQC");
+        KeyFactory kFact = KeyFactory.getInstance("MAYO-2", "BCPQC");
 
         MayoKey pubKey = (MayoKey)kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
 
@@ -121,7 +121,7 @@ public class MayoTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("MAYO_5", "BCPQC");
+        Signature sig = Signature.getInstance("MAYO-5", "BCPQC");
 
         sig.initSign(kp.getPrivate(), new SecureRandom());
 
@@ -129,9 +129,9 @@ public class MayoTest
 
         byte[] s = sig.sign();
 
-        sig = Signature.getInstance("MAYO_5", "BCPQC");
+        sig = Signature.getInstance("MAYO-5", "BCPQC");
 
-        assertEquals("MAYO_5", Strings.toUpperCase(sig.getAlgorithm()));
+        assertEquals("MAYO-5", Strings.toUpperCase(sig.getAlgorithm()));
 
         sig.initVerify(kp.getPublic());
 
@@ -165,7 +165,7 @@ public class MayoTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("MAYO_3", "BCPQC");
+        Signature sig = Signature.getInstance("MAYO-3", "BCPQC");
 
         sig.initSign(kp.getPrivate(), new SecureRandom());
 
@@ -173,9 +173,9 @@ public class MayoTest
 
         byte[] s = sig.sign();
 
-        sig = Signature.getInstance("MAYO_3", "BCPQC");
+        sig = Signature.getInstance("MAYO-3", "BCPQC");
 
-        assertEquals("MAYO_3", Strings.toUpperCase(sig.getAlgorithm()));
+        assertEquals("MAYO-3", Strings.toUpperCase(sig.getAlgorithm()));
 
         sig.initVerify(kp.getPublic());
 

@@ -50,6 +50,11 @@ public class Longs
         return Long.numberOfTrailingZeros(i);
     }
 
+    public static long parseUnsignedLong(String s)
+    {
+        return Long.parseUnsignedLong(s);
+    }
+
     public static long reverse(long i)
     {
         return Long.reverse(i);
