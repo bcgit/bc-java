@@ -3,6 +3,8 @@ package org.bouncycastle.pqc.crypto.sqisign;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.BigIntegers;
+
 
 /**
  * Lvl3 driver for the shared {@link SQIsignSign} engine.
@@ -21,7 +23,7 @@ final class SQIsignSignLvl3
         PrecompLvl3.SQIsign_RESPONSE_LENGTH,
         PrecompLvl3.TORSION_EVEN_POWER,
         PrecompLvl3.HD_EXTRA_TORSION,
-        PrecompLvl3.P_COFACTOR_FOR_2F.longValueExact(),
+        BigIntegers.longValueExact(PrecompLvl3.P_COFACTOR_FOR_2F),
         PrecompLvl3.IBZ_TORSION_PLUS_2POWER,
         CurvesWithEndomorphismsLvl3.CURVES_WITH_ENDOMORPHISMS[0].actionI,
         CurvesWithEndomorphismsLvl3.CURVES_WITH_ENDOMORPHISMS[0].actionJ,
