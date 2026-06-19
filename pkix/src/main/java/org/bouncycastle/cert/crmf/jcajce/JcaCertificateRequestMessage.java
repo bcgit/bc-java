@@ -12,15 +12,12 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.cert.crmf.CertificateRequestMessage;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.util.Exceptions;
 
 public class JcaCertificateRequestMessage
     extends CertificateRequestMessage
 {
-    private CRMFHelper helper = new CRMFHelper(new DefaultJcaJceHelper());
+    private CRMFHelper helper = CRMFHelper.createDefaultHelper();
 
     public JcaCertificateRequestMessage(byte[] certReqMsg)
     {
@@ -39,14 +36,14 @@ public class JcaCertificateRequestMessage
 
     public JcaCertificateRequestMessage setProvider(String providerName)
     {
-        this.helper = new CRMFHelper(new NamedJcaJceHelper(providerName));
+        this.helper = CRMFHelper.createNamedHelper(providerName);
 
         return this;
     }
 
     public JcaCertificateRequestMessage setProvider(Provider provider)
     {
-        this.helper = new CRMFHelper(new ProviderJcaJceHelper(provider));
+        this.helper = CRMFHelper.createProviderHelper(provider);
 
         return this;
     }
