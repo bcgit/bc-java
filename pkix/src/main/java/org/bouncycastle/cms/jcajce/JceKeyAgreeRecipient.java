@@ -56,7 +56,7 @@ public abstract class JceKeyAgreeRecipient
     }
 
     private PrivateKey recipientKey;
-    protected EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    protected EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
     protected EnvelopedDataHelper contentHelper = helper;
     protected EnvelopedDataHelper unwrappingHelper = helper;
     private SecretKeySizeProvider keySizeProvider = new DefaultSecretKeySizeProvider();
@@ -75,7 +75,7 @@ public abstract class JceKeyAgreeRecipient
      */
     public JceKeyAgreeRecipient setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
         this.contentHelper = helper;
         this.unwrappingHelper = helper;
 
@@ -90,7 +90,7 @@ public abstract class JceKeyAgreeRecipient
      */
     public JceKeyAgreeRecipient setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
         this.contentHelper = helper;
         this.unwrappingHelper = helper;
 
@@ -105,7 +105,7 @@ public abstract class JceKeyAgreeRecipient
      */
     public JceKeyAgreeRecipient setUnwrappingProvider(Provider provider)
     {
-        this.unwrappingHelper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.unwrappingHelper = CMSUtils.createProviderHelper(provider);
 
         return this;
     }
@@ -118,7 +118,7 @@ public abstract class JceKeyAgreeRecipient
      */
     public JceKeyAgreeRecipient setUnwrappingProvider(String providerName)
     {
-        this.unwrappingHelper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.unwrappingHelper = CMSUtils.createNamedHelper(providerName);
 
         return this;
     }
