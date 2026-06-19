@@ -150,7 +150,7 @@ public final class LandmarkSequence
         catch (IllegalArgumentException e)
         {
             // Re-wrap so callers see a single error type from parse failures.
-            throw new IOException(e.getMessage(), e);
+            throw Exceptions.ioException(e.getMessage(), e);
         }
     }
 

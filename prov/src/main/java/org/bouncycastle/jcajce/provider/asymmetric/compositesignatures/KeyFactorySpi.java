@@ -196,7 +196,7 @@ public class KeyFactorySpi
                 }
                 catch (Exception e)
                 {
-                    throw new IOException("cannot decode generic composite: " + e.getMessage(), e);
+                    throw Exceptions.ioException("cannot decode generic composite: " + e.getMessage(), e);
                 }
             }
 
@@ -315,7 +315,7 @@ public class KeyFactorySpi
                 }
                 catch (Exception e)
                 {
-                    throw new IOException("cannot decode generic composite: " + e.getMessage(), e);
+                    throw Exceptions.ioException("cannot decode generic composite: " + e.getMessage(), e);
                 }
             }
 

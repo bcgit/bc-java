@@ -116,7 +116,7 @@ public class X509LDAPCertStoreTest
         List<String> entry = new ArrayList<String>();
         while ((line = bin.readLine()) != null)
         {
-            if (line.isEmpty())
+            if (line.length() == 0)
             {
                 // End of entry, add to list and reset
                 if (entry.size() > 0)
