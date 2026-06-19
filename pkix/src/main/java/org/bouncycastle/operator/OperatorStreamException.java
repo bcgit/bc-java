@@ -34,6 +34,10 @@ public class OperatorStreamException
      */
     public OperatorStreamException(String msg, Throwable cause)
     {
-        super(msg, cause);
+        super(msg);
+        if (cause != null)
+        {
+            initCause(cause);
+        }
     }
 }

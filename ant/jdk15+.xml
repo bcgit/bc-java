@@ -37,7 +37,16 @@
             <fileset dir="prov/src/main/java" includes="**/*.java" />
             <fileset dir="prov/src/main/javadoc" includes="**/*.html" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
-            <fileset dir="prov/src/test/java" includes="**/*.java" />
+            <fileset dir="prov/src/test/java" includes="**/*.java" >
+                <!-- AEADTest references javax.crypto.spec.GCMParameterSpec (JDK 7+) directly -->
+                <exclude name="**/jce/provider/test/AEADTest.java"/>
+                <!-- LEATest references javax.crypto.spec.GCMParameterSpec (JDK 7+) directly;
+                     the jdk1.5 AllTests overlay drops it from the suite -->
+                <exclude name="**/jcajce/provider/test/LEATest.java"/>
+                <!-- X509LDAPCertStoreTest depends on unboundid-ldapsdk (JDK 7 bytecode);
+                     not referenced by the jdk1.5 RegressionTest overlay -->
+                <exclude name="**/jce/provider/test/X509LDAPCertStoreTest.java"/>
+            </fileset>
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
             <fileset dir="tls/src/main/java" includes="**/*.java" />

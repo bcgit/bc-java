@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Lightweight implementation of {@link MTCCosigner} for the MTC signature
@@ -71,7 +72,7 @@ public class BcMTCCosigner
         }
         catch (CryptoException e)
         {
-            throw new IOException("MTC cosigning failed: " + e.getMessage(), e);
+            throw Exceptions.ioException("MTC cosigning failed: " + e.getMessage(), e);
         }
     }
 }

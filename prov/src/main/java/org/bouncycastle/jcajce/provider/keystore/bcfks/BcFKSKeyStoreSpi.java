@@ -1083,7 +1083,7 @@ class BcFKSKeyStoreSpi
                 }
                 catch (GeneralSecurityException e)
                 {
-                    throw new IOException("error creating signature: " + e.getMessage(), e);
+                    throw Exceptions.ioException("error creating signature: " + e.getMessage(), e);
                 }
             }
             else
@@ -1435,7 +1435,7 @@ class BcFKSKeyStoreSpi
             }
             catch (GeneralSecurityException e)
             {
-                throw new IOException("error verifying signature: " + e.getMessage(), e);
+                throw Exceptions.ioException("error verifying signature: " + e.getMessage(), e);
             }
         }
         else

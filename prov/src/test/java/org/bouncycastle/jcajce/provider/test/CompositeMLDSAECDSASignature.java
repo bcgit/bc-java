@@ -35,6 +35,7 @@ import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class CompositeMLDSAECDSASignature
@@ -42,7 +43,7 @@ public class CompositeMLDSAECDSASignature
 
     // Constants
     private static final String PREFIX_STRING = "CompositeAlgorithmSignatures2025";
-    private static final byte[] PREFIX = PREFIX_STRING.getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+    private static final byte[] PREFIX = Strings.toByteArray(PREFIX_STRING);
     private static final byte[] DOMAIN_SEPARATOR = Hex.decode("060B6086480186FA6B50080167");//060B6086480186FA6B50080153
     private static final byte[] HASH_OID_SHA256 = Hex.decode("0609608648016503040201");
     private static final int ML_DSA_SIG_SIZE = 2420; // For ML-DSA-44

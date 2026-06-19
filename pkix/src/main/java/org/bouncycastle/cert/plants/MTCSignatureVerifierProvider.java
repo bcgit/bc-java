@@ -11,6 +11,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * Single-cosigner {@link ContentVerifierProvider} adapter for MTC verification.
@@ -137,7 +138,7 @@ public class MTCSignatureVerifierProvider
             {
                 byte[] tbsDer = tbsBuf.toByteArray();
                 TBSCertificate tbs = TBSCertificate.getInstance(tbsDer);
-                long logNumber = tbs.getSerialNumber().getValue().shiftRight(48).longValueExact();
+                long logNumber = BigIntegers.longValueExact(tbs.getSerialNumber().getValue().shiftRight(48));
 
                 MTCProof proof = new MTCProof(expected);
                 MTCLog log = new MTCLog(ca, logNumber, proof.getStart(), proof.getEnd());
