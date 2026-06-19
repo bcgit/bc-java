@@ -85,9 +85,9 @@ public class DHParameters
     {
         if (l != 0)
         {
-            if (l > p.bitLength())
+            if (l >= p.bitLength())
             {
-                throw new IllegalArgumentException("when l value specified, it must satisfy 2^(l-1) <= p");
+                throw new IllegalArgumentException("when l value specified, it must be less than bitlength(p)");
             }
             if (l < m)
             {
@@ -95,7 +95,7 @@ public class DHParameters
             }
         }
 
-        if (m > p.bitLength() && !Properties.isOverrideSet("org.bouncycastle.dh.allow_unsafe_p_value"))
+        if (m >= p.bitLength() && !Properties.isOverrideSet("org.bouncycastle.dh.allow_unsafe_p_value"))
         {
             throw new IllegalArgumentException("unsafe p value so small specific l required");
         }
