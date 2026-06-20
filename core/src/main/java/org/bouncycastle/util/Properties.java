@@ -225,6 +225,17 @@ public class Properties
      */
     public static final String X509_SGP22_NAME_CONSTRAINTS = "org.bouncycastle.x509.sgp22_name_constraints";
 
+    /**
+     * Opt in to short AEAD authentication tags for AES-GCM parameters. RFC 5084 constrains the
+     * AES-GCM ICV (tag) length carried in {@code GCMParameters} to 12..16 octets (96..128 bits), and
+     * BC enforces that by default. When this property is set, {@code GCMParameters} additionally
+     * accepts tags down to the NIST SP 800-38D minimum of 4 octets (32 bits; SP 800-38D sec. 5.2.1.2
+     * permits a 32-bit tag for limited applications). Short tags weaken integrity protection, so this
+     * defaults to off and must be enabled explicitly; anything below 4 octets or above 16 octets is
+     * still rejected. Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String GCM_ALLOW_SHORT_TAGS = "org.bouncycastle.gcm.allow_short_tags";
+
     private Properties()
     {
     }

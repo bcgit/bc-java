@@ -1,5 +1,6 @@
 package org.bouncycastle.cms.test;
 
+import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -14,13 +15,19 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.AuthEnvelopedData;
+import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -29,6 +36,7 @@ import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.CMSAuthEnvelopedData;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.RecipientInformation;
@@ -38,10 +46,12 @@ import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransAuthEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -208,6 +218,147 @@ public class AuthEnvelopedDataTest
         byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
         assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
+    /*
+     * End-to-end check that a malformed RFC 5084 GCMParameters carried in an AuthEnvelopedData is
+     * rejected on consumption. The ICV (tag) length is rewritten to 0 octets: RFC 5084 only permits
+     * 12..16, and a zero-length tag would make the AEAD integrity check vacuous, so the CMS layer
+     * must refuse rather than hand back unauthenticated "plaintext".
+     */
+    public void testGCMRejectsZeroICVlen()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+
+        byte[] message = Strings.toByteArray("Hello, world!");
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)new JceCMSContentEncryptorBuilder(
+            NISTObjectIdentifiers.id_aes128_GCM).setProvider(BC).build();
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        // Surgically rebuild the structure with the content-encryption ICV length forced to 0.
+        // GCMParameters' own constructor rejects 0, so the malformed parameters are hand-assembled.
+        AuthEnvelopedData aed = AuthEnvelopedData.getInstance(authData.toASN1Structure().getContent());
+        EncryptedContentInfo eci = aed.getAuthEncryptedContentInfo();
+        AlgorithmIdentifier encAlg = eci.getContentEncryptionAlgorithm();
+
+        byte[] nonce = GCMParameters.getInstance(encAlg.getParameters()).getNonce();
+
+        AlgorithmIdentifier tamperedAlg = new AlgorithmIdentifier(encAlg.getAlgorithm(),
+            new DERSequence(new DEROctetString(nonce), new ASN1Integer(0)));
+
+        EncryptedContentInfo tamperedEci = new EncryptedContentInfo(
+            eci.getContentType(), tamperedAlg, eci.getEncryptedContent());
+
+        AuthEnvelopedData tampered = new AuthEnvelopedData(
+            aed.getOriginatorInfo(), aed.getRecipientInfos(), tamperedEci,
+            aed.getAuthAttrs(), aed.getMac(), aed.getUnauthAttrs());
+
+        byte[] tamperedEncoding = new ContentInfo(
+            CMSObjectIdentifiers.authEnvelopedData, tampered).getEncoded();
+
+        try
+        {
+            CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(tamperedEncoding);
+
+            RecipientInformation recipient = (RecipientInformation)encAuthData.getRecipientInfos()
+                .getRecipients().iterator().next();
+
+            byte[] recovered = recipient.getContent(
+                new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            fail("zero-length ICV accepted, recovered " + recovered.length + " bytes");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected - RFC 5084 ICV length validation rejects 0
+        }
+        catch (CMSException e)
+        {
+            // also acceptable - rejection surfaced as a CMS-level failure
+        }
+    }
+
+    /*
+     * Properties.GCM_ALLOW_SHORT_TAGS opts in to the NIST SP 800-38D 32-bit (4 octet) minimum GCM
+     * tag, below the RFC 5084 floor of 12 octets. End-to-end: with the property set a 32-bit-tag
+     * AuthEnvelopedData encrypts and decrypts; the very same structure is rejected once the property
+     * is cleared, confirming the short tag is only honoured behind the explicit opt-in.
+     */
+    public void testGCMShortTagProperty()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+
+        byte[] message = Strings.toByteArray("Hello, world!");
+        byte[] shortTagEncoding;
+
+        System.setProperty(Properties.GCM_ALLOW_SHORT_TAGS, "true");
+        try
+        {
+            // a 32-bit (4 octet) GCM tag, supplied through explicit content-encryption parameters
+            AlgorithmParameters algParams = AlgorithmParameters.getInstance("GCM", BC);
+            algParams.init(new AEADParameterSpec(new byte[12], 32));
+
+            OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM)
+                .setProvider(BC).setAlgorithmParameters(algParams).build();
+
+            assertEquals(4, GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()).getIcvLen());
+
+            CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+            authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+            CMSAuthEnvelopedData authData = authGen.generate(
+                new CMSProcessableByteArray(message), (OutputAEADEncryptor)candidate);
+
+            shortTagEncoding = authData.getEncoded();
+
+            // round-trips while the property is set
+            CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(shortTagEncoding);
+            RecipientInformation recipient = (RecipientInformation)encAuthData.getRecipientInfos()
+                .getRecipients().iterator().next();
+
+            byte[] recData = recipient.getContent(
+                new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            assertEquals("Hello, world!", Strings.fromByteArray(recData));
+        }
+        finally
+        {
+            System.clearProperty(Properties.GCM_ALLOW_SHORT_TAGS);
+        }
+
+        // the same well-formed short-tag structure is now rejected on consumption
+        try
+        {
+            CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(shortTagEncoding);
+            RecipientInformation recipient = (RecipientInformation)encAuthData.getRecipientInfos()
+                .getRecipients().iterator().next();
+
+            byte[] recovered = recipient.getContent(
+                new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            fail("short GCM tag accepted without property, recovered " + recovered.length + " bytes");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected - RFC 5084 ICV length validation rejects 4 octets when the opt-in is off
+        }
+        catch (CMSException e)
+        {
+            // also acceptable - rejection surfaced as a CMS-level failure
+        }
     }
 
     public void testGCMEncodings()
@@ -415,6 +566,73 @@ public class AuthEnvelopedDataTest
         byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
         assertTrue(java.util.Arrays.equals(authData.getMac(), recipient.getMac()));
         assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
+    /*
+     * CCM counterpart of testGCMRejectsZeroICVlen: a malformed RFC 5084 CCMParameters carried in an
+     * AuthEnvelopedData must be rejected on consumption. The ICV (tag) length is rewritten to 0 octets
+     * (RFC 5084 only permits 4,6,8,10,12,14,16); a zero-length tag would make the AEAD integrity check
+     * vacuous, so the CMS layer must refuse rather than hand back unauthenticated "plaintext".
+     */
+    public void testCCMRejectsZeroICVlen()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+
+        byte[] message = Strings.toByteArray("Hello, world!");
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)new JceCMSContentEncryptorBuilder(
+            NISTObjectIdentifiers.id_aes128_CCM).setProvider(BC).build();
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        // Surgically rebuild the structure with the content-encryption ICV length forced to 0.
+        // CCMParameters' own constructor rejects 0, so the malformed parameters are hand-assembled.
+        AuthEnvelopedData aed = AuthEnvelopedData.getInstance(authData.toASN1Structure().getContent());
+        EncryptedContentInfo eci = aed.getAuthEncryptedContentInfo();
+        AlgorithmIdentifier encAlg = eci.getContentEncryptionAlgorithm();
+
+        byte[] nonce = CCMParameters.getInstance(encAlg.getParameters()).getNonce();
+
+        AlgorithmIdentifier tamperedAlg = new AlgorithmIdentifier(encAlg.getAlgorithm(),
+            new DERSequence(new DEROctetString(nonce), new ASN1Integer(0)));
+
+        EncryptedContentInfo tamperedEci = new EncryptedContentInfo(
+            eci.getContentType(), tamperedAlg, eci.getEncryptedContent());
+
+        AuthEnvelopedData tampered = new AuthEnvelopedData(
+            aed.getOriginatorInfo(), aed.getRecipientInfos(), tamperedEci,
+            aed.getAuthAttrs(), aed.getMac(), aed.getUnauthAttrs());
+
+        byte[] tamperedEncoding = new ContentInfo(
+            CMSObjectIdentifiers.authEnvelopedData, tampered).getEncoded();
+
+        try
+        {
+            CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(tamperedEncoding);
+
+            RecipientInformation recipient = (RecipientInformation)encAuthData.getRecipientInfos()
+                .getRecipients().iterator().next();
+
+            byte[] recovered = recipient.getContent(
+                new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            fail("zero-length ICV accepted, recovered " + recovered.length + " bytes");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected - RFC 5084 ICV length validation rejects 0
+        }
+        catch (CMSException e)
+        {
+            // also acceptable - rejection surfaced as a CMS-level failure
+        }
     }
 
     public void testCCMwithHKDF()

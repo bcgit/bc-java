@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 /**
  * <a href="https://tools.ietf.org/html/rfc5084">RFC 5084</a>: GCMParameters object.
@@ -102,10 +103,12 @@ public class GCMParameters
         return new DERSequence(v);
     }
 
-    // RFC 5084: AES-GCM-ICVlen ::= INTEGER (12 | 13 | 14 | 15 | 16)
+    // RFC 5084: AES-GCM-ICVlen ::= INTEGER (12 | 13 | 14 | 15 | 16). The lower bound relaxes to the
+    // NIST SP 800-38D minimum of 4 octets (32 bits) when Properties.GCM_ALLOW_SHORT_TAGS is set.
     private static int validateICVLen(int icvLen)
     {
-        if (icvLen < 12 || icvLen > 16)
+        int minLen = Properties.isOverrideSet(Properties.GCM_ALLOW_SHORT_TAGS) ? 4 : 12;
+        if (icvLen < minLen || icvLen > 16)
             throw new IllegalArgumentException("Invalid ICV length: " + icvLen);
 
         return icvLen;

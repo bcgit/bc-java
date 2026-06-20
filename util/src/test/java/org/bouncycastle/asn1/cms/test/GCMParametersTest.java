@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.GCMParameters;
+import org.bouncycastle.util.Properties;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -73,6 +74,68 @@ public class GCMParametersTest
             int icvLen = valid[i];
             assertEquals(icvLen, GCMParameters.getInstance(seq(icvLen)).getIcvLen());
             assertEquals(icvLen, new GCMParameters(new byte[12], icvLen).getIcvLen());
+        }
+    }
+
+    /*
+     * Properties.GCM_ALLOW_SHORT_TAGS relaxes the RFC 5084 lower bound (12 octets) to the NIST
+     * SP 800-38D minimum of 4 octets (32 bits). It defaults off, and even when set the 4..16 octet
+     * window is still enforced at both ends.
+     */
+    public void testShortTagsProperty()
+    {
+        // off by default - the RFC 5084 minimum still applies
+        for (int icvLen = 4; icvLen < 12; ++icvLen)
+        {
+            try
+            {
+                GCMParameters.getInstance(seq(icvLen));
+                fail("short tag accepted with property unset");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+        }
+
+        System.setProperty(Properties.GCM_ALLOW_SHORT_TAGS, "true");
+        try
+        {
+            for (int icvLen = 4; icvLen <= 16; ++icvLen)
+            {
+                assertEquals(icvLen, GCMParameters.getInstance(seq(icvLen)).getIcvLen());
+                assertEquals(icvLen, new GCMParameters(new byte[12], icvLen).getIcvLen());
+            }
+
+            // the 4..16 window is still enforced at both ends
+            int[] stillInvalid = new int[]{ -1, 0, 3, 17 };
+            for (int i = 0; i < stillInvalid.length; ++i)
+            {
+                try
+                {
+                    GCMParameters.getInstance(seq(stillInvalid[i]));
+                    fail("out-of-window tag accepted with property set");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // expected
+                }
+            }
+        }
+        finally
+        {
+            System.clearProperty(Properties.GCM_ALLOW_SHORT_TAGS);
+        }
+
+        // cleared again - the RFC 5084 minimum is back
+        try
+        {
+            GCMParameters.getInstance(seq(4));
+            fail("short tag accepted after property cleared");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
         }
     }
 }
