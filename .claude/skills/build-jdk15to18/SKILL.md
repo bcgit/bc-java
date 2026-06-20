@@ -63,15 +63,43 @@ J5=/usr/lib/jvm/java-1.5.0-oracle-i586
 ```
 (Include `jce.jar`/`jsse.jar` — `javax.crypto.*` / `javax.net.ssl.*` are not in `rt.jar` on JDK 5.)
 
+**Excluding a test from the JRE-5 run.** The build copies the main test tree then overlays `<module>/src/test/jdk1.5/` with `overwrite="true"`. Two cases:
+- A `*AllTests`/`*Test` discovered by the batchtest, or one constructed in an `AllTests` method: the offending class can fail to even *load* on JRE 5 (the bytecode verifier resolves a JDK-7/8 type referenced in a method body at class-load time, so a guard *inside* the method never runs). So you must drop it from the **suite**, via a `jdk1.5` overlay of the enclosing `AllTests`/`RegressionTest` (e.g. `prov/src/test/jdk1.5/.../RegressionTest.java`, `pkix/src/test/jdk1.5/.../cert/ocsp/test/AllTests.java`). The overlay must list every test *except* the excluded one (it replaces, not merges). Add the module's `src/test/jdk1.5` to the `overwrite` copy block in `ant/jdk15+.xml` if it isn't already (prov/tls/pg were wired; core/pkix were added during the 1.85 pass).
+- A `SimpleTest` run only via `RegressionTest.tests` (e.g. `crypto.test.RSATest`): a `RegressionTest` overlay would duplicate ~200 entries, so a **runtime guard inside the test** keyed on `System.getProperty("java.version").startsWith("1.5")` is cleaner (it still runs on JDK 8/21). Used for the `RSATest` JIT case below.
+
 ### (b) Runtime — target-1.5 bytecode calls an API absent on JRE 5
 
-These compile cleanly (JDK 8 has the API) and only surface as JUnit errors on JRE 5. Fix the **main** source to use a Java-4/5-safe equivalent:
-- `new IOException(String, Throwable)` (Java 6) → `org.bouncycastle.util.Exceptions.ioException(msg, cause)`. Symptom: `method <init>(Ljava/lang/String;Ljava/lang/Throwable;)V not found`.
-- `BigInteger.longValueExact()` (Java 8) → `org.bouncycastle.util.BigIntegers.longValueExact(x)`. Symptom: `java.math.BigInteger.longValueExact()J`.
-- `String.getBytes(Charset)` / `new String(byte[], Charset)` (Java 6) → `Strings.toByteArray` / the charset-*name* (`String`) overloads. `StandardCharsets` itself is Java 7.
-- `java.security.cert.PKIXRevocationChecker` / `Extension`, `SecretKey.destroy()` (Java 8) — need version-guarded paths or `jdk1.5` overlays. Symptom: `NoClassDefFoundError: java/security/cert/PKIXRevocationChecker`.
+These compile cleanly (JDK 8 has the API) and only surface as JUnit `NoSuchMethodError`/`NoClassDefFoundError` on JRE 5. **The BC util wrappers `Longs`/`Integers`/`BigIntegers` exist precisely for this** — they have `jdk1.5` overlays that reimplement the Java-7/8 method in a 1.5-safe way, so the fix is usually "route the static call through the wrapper" (and, if the wrapper lacks the method, add it to both the main class and its `jdk1.5` overlay). Confirmed fixes from the 1.85 pass:
 
-The general audit before shipping a jdk15to18 change: grep the reachable main source for `longValueExact()`, `new IOException(` with a second arg, `StandardCharsets`, `getBytes(java.nio.charset`, and Java 8 `java.security.cert.*` / `Destroyable` usage. Lenient-read/strict-write and `Exceptions`/`BigIntegers`/`Strings` helpers exist precisely so the 1.5 floor holds.
+| Java-7/8 API (symptom) | Java-5-safe fix |
+|---|---|
+| `new IOException(String,Throwable)` / `IOException(Throwable)` (Java 6) | `Exceptions.ioException(msg,cause)`; for an `IOException` subclass ctor `super(msg); initCause(cause);` |
+| `BigInteger.longValueExact()` (Java 8) | `BigIntegers.longValueExact(x)` |
+| `Long.parseUnsignedLong/compareUnsigned/divideUnsigned`, `Integer.compare` (Java 7/8) | `Longs.*` / `Integers.*` (add to main **and** `jdk1.5` overlay if missing) |
+| `Math.getExponent`/`Math.scalb` (Java 6) | full `jdk1.5` overlay of the class (e.g. `Dpe`) with exact ports; keep main on `Math.*` |
+| `SecretKey.destroy()` (Java 8 — `SecretKey extends Destroyable` only since 8) | `if (key instanceof Destroyable) ((Destroyable)key).destroy();` (the interface is Java 1.4) |
+| `StandardCharsets` / `String.getBytes(Charset)` / `new String(byte[],Charset)` (Java 6/7) | `Strings.toByteArray` / charset-*name* (`String`) overloads |
+| `java.util.Arrays.copyOf` / `copyOfRange` (Java 6) | `System.arraycopy` (BC `org.bouncycastle.util.Arrays.copyOf` has only primitive/`BigInteger` overloads) |
+| `ResourceBundle.Control` (Java 6) | `jdk1.5` overlay; emulate no-fallback by pinning `Locale.setDefault(loc)` across `getBundle` |
+| `PKIXRevocationChecker`/`java.security.cert.Extension` (Java 8) | not portable — version-gate the provider registration / exclude the test |
+
+Audit grep before shipping a change: `longValueExact()`, `new IOException(` with a 2nd arg (and `extends IOException` ctors), `StandardCharsets`, `getBytes(java.nio.charset`, `\bLong\.(parseUnsigned|compareUnsigned|divideUnsigned)`, `Integer.compare`, `Math.(getExponent|scalb)`, `java.util.Arrays.copyOf`, `\.destroy\(\)` on `SecretKey`, `ResourceBundle.Control`, `java.security.cert.PKIXRevocationChecker`. **mls is not in this build** — ignore its hits.
+
+Note: `@Override` on an *interface*-method implementation is a genuine-javac-1.5 error, but the real build compiles under JDK 8 (`-source 1.5`, lenient), so it is **not** a blocker — don't churn those.
+
+### (c) JVM defect — JRE 5's JIT miscompiles correct code
+
+Not every JRE-5-only failure is a Java-version-API problem. The Oracle 1.5.0_22 i586 HotSpot **JIT miscompiles `org.bouncycastle.math.raw.Mod.modOddIsCoprimeVar`** (the safegcd routine behind `BigIntegers.hasAnySmallFactors`) once that path warms up — so `RSATest`'s small-factor modulus rejection silently doesn't fire. The bytecode is correct (passes on JDK 21 and under the 1.5 **interpreter**). Diagnostic recipe to classify any suspicious JRE-5 failure:
+
+```
+J5=/usr/lib/jvm/java-1.5.0-oracle-i586
+CP=build/artifacts/jdk1.5/jars/bcprov-jdk15to18-*.jar:build/artifacts/jdk1.5/jars/bctest-jdk15to18-*.jar
+"$J5/bin/java"          -cp "$CP" <SimpleTest fqcn>   # genuine JIT  -> reproduces
+"$J5/bin/java" -Xint    -cp "$CP" <SimpleTest fqcn>   # interpreter  -> if it PASSES, it's a JIT bug, not a BC bug
+$JAVA_HOME/bin/java     -cp "$CP" <SimpleTest fqcn>   # JDK 21       -> if it PASSES, not a logic bug
+```
+
+If `-Xint` passes but JIT fails, it's a JVM defect — don't "fix" the BC code; guard the affected assertion on `java.version` 1.5 (see exclusion note above) and document it.
 
 ## Quick reference
 

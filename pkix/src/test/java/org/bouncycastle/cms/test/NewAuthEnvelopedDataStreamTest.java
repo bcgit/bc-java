@@ -172,6 +172,20 @@ public class NewAuthEnvelopedDataStreamTest
     private void checkDefiniteLength(ASN1ObjectIdentifier encAlg, String encoding, boolean withAttrs)
         throws Exception
     {
+        if (withAttrs)
+        {
+            try
+            {
+                // Authenticated attributes are fed to the cipher as AEAD AAD, which needs
+                // javax.crypto.Cipher.updateAAD (JDK 1.7+); skip on older JREs.
+                javax.crypto.Cipher.class.getMethod("updateAAD", byte[].class);
+            }
+            catch (NoSuchMethodException e)
+            {
+                return;
+            }
+        }
+
         byte[] data = new byte[2545];   // deliberately not block-aligned
         for (int i = 0; i != data.length; i++)
         {

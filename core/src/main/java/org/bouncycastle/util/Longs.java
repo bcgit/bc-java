@@ -30,6 +30,11 @@ public class Longs
         return Long.compareUnsigned(x, y);
     }
 
+    public static long divideUnsigned(long x, long y)
+    {
+        return Long.divideUnsigned(x, y);
+    }
+
     public static long highestOneBit(long i)
     {
         return Long.highestOneBit(i);

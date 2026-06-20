@@ -689,10 +689,18 @@ class CMSUtils
         ASN1Set authenticatedAttrSet = null;
         if (authAttrsGenerator != null)
         {
+            OutputStream aadStream = encryptor.getAADStream();
+            if (aadStream == null)
+            {
+                // getAADStream() is null when the JCE provider has no AEAD AAD support
+                // (java.crypto.Cipher.updateAAD is JDK 1.7+); authenticated attributes
+                // cannot be fed as AAD on this runtime.
+                throw new IOException("authenticated attributes require AEAD AAD support (JDK 1.7+)");
+            }
             AttributeTable attrTable = authAttrsGenerator.getAttributes(getEmptyParameters());
 
             authenticatedAttrSet = new DERSet(attrTable.toASN1EncodableVector());
-            encryptor.getAADStream().write(authenticatedAttrSet.getEncoded(ASN1Encoding.DER));
+            aadStream.write(authenticatedAttrSet.getEncoded(ASN1Encoding.DER));
         }
         return authenticatedAttrSet;
     }

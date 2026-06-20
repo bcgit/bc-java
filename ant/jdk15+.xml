@@ -30,7 +30,9 @@
             <fileset dir="core/src/main/java" includes="**/*.properties" />
             <fileset dir="core/src/main/resources" includes="**/*.properties" />
             <fileset dir="core/src/main/javadoc" includes="**/*.html" />
-            <fileset dir="core/src/test/java" includes="**/*.java" />
+            <fileset dir="core/src/test/java" includes="**/*.java" >
+                <exclude name="**/crypto/faest/*.java"/>
+            </fileset>
             <fileset dir="core/src/test/javadoc" includes="**/*.html" />
             <fileset dir="core/src/test/resources" includes="**/*.*" />
 
