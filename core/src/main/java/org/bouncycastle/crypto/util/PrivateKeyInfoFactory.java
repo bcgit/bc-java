@@ -37,6 +37,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.FrodoKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
@@ -212,6 +213,14 @@ public class PrivateKeyInfoFactory
                 return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
             }
             return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
+        }
+        else if (privateKey instanceof FrodoKEMPrivateKeyParameters)
+        {
+            FrodoKEMPrivateKeyParameters params = (FrodoKEMPrivateKeyParameters)privateKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.frodoKemOidLookup(params.getParameters()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
         }
         else if (privateKey instanceof SLHDSAPrivateKeyParameters)
         {

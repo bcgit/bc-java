@@ -24,7 +24,7 @@ public class WrapUtil
         AlgorithmIdentifier kdfAlgorithm = ktsParameterSpec.getKdfAlgorithm();
         if (kdfAlgorithm == null)
         {
-            kWrap.init(true, new KeyParameter(Arrays.copyOfRange(secret, 0, (ktsParameterSpec.getKeySize() + 7) / 8)));
+            kWrap.init(true, new KeyParameter(Arrays.copyOfRange(secret, 0, kekLength(ktsParameterSpec, secret))));
         }
         else
         {
@@ -42,7 +42,7 @@ public class WrapUtil
         AlgorithmIdentifier kdfAlgorithm = ktsParameterSpec.getKdfAlgorithm();
         if (kdfAlgorithm == null)
         {
-            kWrap.init(false, new KeyParameter(secret, 0, (ktsParameterSpec.getKeySize()+ 7) / 8));
+            kWrap.init(false, new KeyParameter(secret, 0, kekLength(ktsParameterSpec, secret)));
         }
         else
         {
@@ -99,6 +99,15 @@ public class WrapUtil
         }
         
         return secret;
+    }
+
+    // When no KDF is configured the shared secret is used directly as the wrapping key. The
+    // requested key size is an upper bound, but a KEM shared secret can be shorter than the
+    // default 256-bit request (e.g. FrodoKEM-976's secret is 192 bits), so clamp to what the
+    // secret actually provides rather than over-reading it.
+    private static int kekLength(KTSParameterSpec ktsSpec, byte[] secret)
+    {
+        return Math.min((ktsSpec.getKeySize() + 7) / 8, secret.length);
     }
 
     private static byte[] makeKeyBytes(KTSParameterSpec ktsSpec, byte[] secret)

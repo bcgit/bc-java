@@ -56,8 +56,11 @@ import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.FrodoKEMParameters;
+import org.bouncycastle.crypto.params.FrodoKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
@@ -114,6 +117,11 @@ public class PublicKeyFactory
         converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMConverter());
         converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMConverter());
         converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMConverter());
+
+        converters.put(ISOIECObjectIdentifiers.frodokem976_shake, new FrodoKEMConverter());
+        converters.put(ISOIECObjectIdentifiers.frodokem1344_shake, new FrodoKEMConverter());
+        converters.put(ISOIECObjectIdentifiers.efrodokem976_shake, new FrodoKEMConverter());
+        converters.put(ISOIECObjectIdentifiers.efrodokem1344_shake, new FrodoKEMConverter());
 
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SLHDSAConverter());
@@ -656,6 +664,19 @@ public class PublicKeyFactory
                 // we're a raw encoding
                 return new MLKEMPublicKeyParameters(parameters, publicKeyData.getOctets());
             }
+        }
+    }
+
+    static class FrodoKEMConverter
+        extends PublicKeyFactory.SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            FrodoKEMParameters parameters = Utils.frodoKemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            // we're a raw encoding
+            return new FrodoKEMPublicKeyParameters(parameters, keyInfo.getPublicKeyData().getOctets());
         }
     }
 
