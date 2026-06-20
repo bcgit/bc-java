@@ -36,6 +36,7 @@ public class AllTests
 //        suite.addTestSuite(SphincsPlusTest.class);
         suite.addTestSuite(CMCEVectorTest.class);
         suite.addTestSuite(FrodoVectorTest.class);
+        suite.addTestSuite(FrodoKEMVectorTest.class);
         suite.addTestSuite(SABERVectorTest.class);
         suite.addTestSuite(NTRUTest.class);
         suite.addTestSuite(NTRUParametersTest.class);

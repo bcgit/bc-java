@@ -31,6 +31,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.FrodoKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
@@ -93,6 +94,14 @@ public class SubjectPublicKeyInfoFactory
             MLKEMPublicKeyParameters params = (MLKEMPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
+        }
+        else if (publicKey instanceof FrodoKEMPublicKeyParameters)
+        {
+            FrodoKEMPublicKeyParameters params = (FrodoKEMPublicKeyParameters)publicKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.frodoKemOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }

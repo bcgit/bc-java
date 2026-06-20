@@ -8,6 +8,7 @@ module org.bouncycastle.provider
 
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
+    opens org.bouncycastle.jcajce.provider.asymmetric.frodokem to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mldsa to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mlkem to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.slhdsa to java.base;
