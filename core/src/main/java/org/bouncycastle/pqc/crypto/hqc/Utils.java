@@ -28,15 +28,6 @@ class Utils
         }
     }
 
-    static void fromByte32ArrayToLongArray(long[] out, int[] in)
-    {
-        for (int i = 0; i != in.length; i += 2)
-        {
-            out[i / 2] = in[i] & 0xffffffffL;
-            out[i / 2] |= (long)in[i + 1] << 32;
-        }
-    }
-
     static void fromLongArrayToByte32Array(int[] out, long[] in)
     {
         for (int i = 0; i != in.length; i++)
