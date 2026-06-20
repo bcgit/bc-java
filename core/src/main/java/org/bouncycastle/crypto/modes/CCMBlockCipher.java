@@ -455,7 +455,7 @@ public class CCMBlockCipher
         return cMac.doFinal(macBlock, 0);
     }
 
-    private int getMacSize(int requestedMacBits)
+    private static int getMacSize(int requestedMacBits)
     {
         if (requestedMacBits < 32 || requestedMacBits > 128 || 0 != (requestedMacBits & 15))
         {
