@@ -124,7 +124,8 @@ public class HQCTest
                 SecretWithEncapsulation encapsulated = generator.generateEncapsulated(kp.getPublic());
                 byte[] encapSecret = encapsulated.getSecret();
                 byte[] encapsulation = encapsulated.getEncapsulation();
-                assertEquals(parameters.getSessionKeySize() / 8, encapSecret.length);
+                assertEquals(parameters.getSessionKeySize(), encapSecret.length * 8);
+                assertEquals(parameters.getSecretLength(), encapSecret.length);
                 assertEquals(parameters.getEncapsulationLength(), encapsulation.length);
 
                 HQCKEMExtractor extractor = new HQCKEMExtractor((HQCPrivateKeyParameters)kp.getPrivate());
