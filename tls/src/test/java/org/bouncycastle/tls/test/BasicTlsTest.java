@@ -28,8 +28,6 @@ import junit.framework.TestSuite;
 public class BasicTlsTest
     extends TestCase
 {
-    private static final int PORT_NO = 12001;
-
     protected boolean isSufficientVMVersion(String vmVersion)
     {
         if (vmVersion == null)
@@ -70,32 +68,14 @@ public class BasicTlsTest
             return; // only works on later VMs.
         }
 
-        Thread server = new HTTPSServerThread();
+        // The server binds an ephemeral port in its constructor (before the accept loop starts), so
+        // parallel test runs never contend for a fixed port and the socket is already listening by
+        // the time we connect.
+        HTTPSServerThread server = new HTTPSServerThread();
 
         server.start();
 
-        Thread.yield();
-
-        Socket s = null;
-
-        for (int i = 0; s == null && i != 3; i++)
-        {
-            Thread.sleep(1000);
-
-            try
-            {
-                s = new Socket("localhost", PORT_NO);
-            }
-            catch (IOException e)
-            {
-                // ignore
-            }
-        }
-
-        if (s == null)
-        {
-            throw new IOException("unable to connect");
-        }
+        Socket s = new Socket("localhost", server.getPort());
 
         TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(new MyTlsClient(new ServerOnlyTlsAuthentication()

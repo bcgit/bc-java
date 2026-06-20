@@ -25,8 +25,28 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 public class HTTPSServerThread
     extends Thread
 {
-    private static final int PORT_NO = 12001;
     private static final char[] SERVER_PASSWORD = "serverPassword".toCharArray();
+
+    private final SSLServerSocket serverSocket;
+
+    /**
+     * Binds an ephemeral port (port 0) up front so that concurrent test runs (e.g. parallel CI
+     * pipelines) never contend for a fixed port, and so the server is already listening before the
+     * client connects. Use {@link #getPort()} to discover the assigned port.
+     */
+    public HTTPSServerThread()
+        throws Exception
+    {
+        SSLContext sslContext = createSSLContext();
+        SSLServerSocketFactory fact = sslContext.getServerSocketFactory();
+
+        this.serverSocket = (SSLServerSocket)fact.createServerSocket(0);
+    }
+
+    int getPort()
+    {
+        return serverSocket.getLocalPort();
+    }
 
     /**
      * Read a HTTP request
@@ -113,11 +133,7 @@ public class HTTPSServerThread
     {
         try
         {
-            SSLContext sslContext = createSSLContext();
-            SSLServerSocketFactory fact = sslContext.getServerSocketFactory();
-
-            SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
-            SSLSocket sslSock = (SSLSocket)sSock.accept();
+            SSLSocket sslSock = (SSLSocket)serverSocket.accept();
             disableRSAKeyExchange(sslSock);
             sslSock.setUseClientMode(false);
 
@@ -129,7 +145,7 @@ public class HTTPSServerThread
             sendResponse(sslSock.getOutputStream());
 
             sslSock.close();
-            sSock.close();
+            serverSocket.close();
         }
         catch (Exception e)
         {
