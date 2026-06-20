@@ -7,6 +7,7 @@ module org.bouncycastle.provider
     provides java.security.Provider with org.bouncycastle.jce.provider.BouncyCastleProvider, org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
+    opens org.bouncycastle.jcajce.provider.asymmetric.frodokem to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mldsa to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mlkem to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.slhdsa to java.base;
@@ -62,6 +63,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.hpke;
     exports org.bouncycastle.crypto.io;
     exports org.bouncycastle.crypto.kems;
+    exports org.bouncycastle.crypto.kems.frodo;
     exports org.bouncycastle.crypto.kems.mlkem;
     exports org.bouncycastle.crypto.macs;
     exports org.bouncycastle.crypto.modes;
@@ -94,6 +96,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
     exports org.bouncycastle.jcajce.provider.asymmetric.elgamal;
     exports org.bouncycastle.jcajce.provider.asymmetric.gost;
+    exports org.bouncycastle.jcajce.provider.asymmetric.frodokem;
     exports org.bouncycastle.jcajce.provider.asymmetric.ies;
     exports org.bouncycastle.jcajce.provider.asymmetric.mldsa;
     exports org.bouncycastle.jcajce.provider.asymmetric.mlkem;
