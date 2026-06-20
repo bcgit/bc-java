@@ -354,4 +354,40 @@ public class FrodoKEMCipherSpi
             super(FrodoKEMParameters.efrodokem1344shake);
         }
     }
+
+    public static class Frodokem976Aes
+        extends FrodoKEMCipherSpi
+    {
+        public Frodokem976Aes()
+        {
+            super(FrodoKEMParameters.frodokem976aes);
+        }
+    }
+
+    public static class Frodokem1344Aes
+        extends FrodoKEMCipherSpi
+    {
+        public Frodokem1344Aes()
+        {
+            super(FrodoKEMParameters.frodokem1344aes);
+        }
+    }
+
+    public static class EFrodokem976Aes
+        extends FrodoKEMCipherSpi
+    {
+        public EFrodokem976Aes()
+        {
+            super(FrodoKEMParameters.efrodokem976aes);
+        }
+    }
+
+    public static class EFrodokem1344Aes
+        extends FrodoKEMCipherSpi
+    {
+        public EFrodokem1344Aes()
+        {
+            super(FrodoKEMParameters.efrodokem1344aes);
+        }
+    }
 }

@@ -116,20 +116,6 @@ class Utils
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128_r3, CMCEParameters.mceliece8192128r3);
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128f_r3, CMCEParameters.mceliece8192128fr3);
 
-        frodoOids.put(FrodoParameters.frodokem640aes, BCObjectIdentifiers.frodokem640aes);
-        frodoOids.put(FrodoParameters.frodokem640shake, BCObjectIdentifiers.frodokem640shake);
-        frodoOids.put(FrodoParameters.frodokem976aes, BCObjectIdentifiers.frodokem976aes);
-        frodoOids.put(FrodoParameters.frodokem976shake, BCObjectIdentifiers.frodokem976shake);
-        frodoOids.put(FrodoParameters.frodokem1344aes, BCObjectIdentifiers.frodokem1344aes);
-        frodoOids.put(FrodoParameters.frodokem1344shake, BCObjectIdentifiers.frodokem1344shake);
-
-        frodoParams.put(BCObjectIdentifiers.frodokem640aes, FrodoParameters.frodokem640aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem640shake, FrodoParameters.frodokem640shake);
-        frodoParams.put(BCObjectIdentifiers.frodokem976aes, FrodoParameters.frodokem976aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem976shake, FrodoParameters.frodokem976shake);
-        frodoParams.put(BCObjectIdentifiers.frodokem1344aes, FrodoParameters.frodokem1344aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem1344shake, FrodoParameters.frodokem1344shake);
-
         saberOids.put(SABERParameters.lightsaberkem128r3, BCObjectIdentifiers.lightsaberkem128r3);
         saberOids.put(SABERParameters.saberkem128r3, BCObjectIdentifiers.saberkem128r3);
         saberOids.put(SABERParameters.firesaberkem128r3, BCObjectIdentifiers.firesaberkem128r3);
@@ -202,11 +188,19 @@ class Utils
         frodoKemOids.put(FrodoKEMParameters.frodokem1344shake, ISOIECObjectIdentifiers.frodokem1344_shake);
         frodoKemOids.put(FrodoKEMParameters.efrodokem976shake, ISOIECObjectIdentifiers.efrodokem976_shake);
         frodoKemOids.put(FrodoKEMParameters.efrodokem1344shake, ISOIECObjectIdentifiers.efrodokem1344_shake);
+        frodoKemOids.put(FrodoKEMParameters.frodokem976aes, ISOIECObjectIdentifiers.frodokem976_aes);
+        frodoKemOids.put(FrodoKEMParameters.frodokem1344aes, ISOIECObjectIdentifiers.frodokem1344_aes);
+        frodoKemOids.put(FrodoKEMParameters.efrodokem976aes, ISOIECObjectIdentifiers.efrodokem976_aes);
+        frodoKemOids.put(FrodoKEMParameters.efrodokem1344aes, ISOIECObjectIdentifiers.efrodokem1344_aes);
 
         frodoKemParams.put(ISOIECObjectIdentifiers.frodokem976_shake, FrodoKEMParameters.frodokem976shake);
         frodoKemParams.put(ISOIECObjectIdentifiers.frodokem1344_shake, FrodoKEMParameters.frodokem1344shake);
         frodoKemParams.put(ISOIECObjectIdentifiers.efrodokem976_shake, FrodoKEMParameters.efrodokem976shake);
         frodoKemParams.put(ISOIECObjectIdentifiers.efrodokem1344_shake, FrodoKEMParameters.efrodokem1344shake);
+        frodoKemParams.put(ISOIECObjectIdentifiers.frodokem976_aes, FrodoKEMParameters.frodokem976aes);
+        frodoKemParams.put(ISOIECObjectIdentifiers.frodokem1344_aes, FrodoKEMParameters.frodokem1344aes);
+        frodoKemParams.put(ISOIECObjectIdentifiers.efrodokem976_aes, FrodoKEMParameters.efrodokem976aes);
+        frodoKemParams.put(ISOIECObjectIdentifiers.efrodokem1344_aes, FrodoKEMParameters.efrodokem1344aes);
 
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);

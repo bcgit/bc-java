@@ -16,6 +16,10 @@ class Utils
         parameters.put(FrodoKEMParameterSpec.frodokem1344shake.getName(), FrodoKEMParameters.frodokem1344shake);
         parameters.put(FrodoKEMParameterSpec.efrodokem976shake.getName(), FrodoKEMParameters.efrodokem976shake);
         parameters.put(FrodoKEMParameterSpec.efrodokem1344shake.getName(), FrodoKEMParameters.efrodokem1344shake);
+        parameters.put(FrodoKEMParameterSpec.frodokem976aes.getName(), FrodoKEMParameters.frodokem976aes);
+        parameters.put(FrodoKEMParameterSpec.frodokem1344aes.getName(), FrodoKEMParameters.frodokem1344aes);
+        parameters.put(FrodoKEMParameterSpec.efrodokem976aes.getName(), FrodoKEMParameters.efrodokem976aes);
+        parameters.put(FrodoKEMParameterSpec.efrodokem1344aes.getName(), FrodoKEMParameters.efrodokem1344aes);
     }
 
     static FrodoKEMParameters getParameters(String name)

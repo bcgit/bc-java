@@ -122,6 +122,10 @@ public class PublicKeyFactory
         converters.put(ISOIECObjectIdentifiers.frodokem1344_shake, new FrodoKEMConverter());
         converters.put(ISOIECObjectIdentifiers.efrodokem976_shake, new FrodoKEMConverter());
         converters.put(ISOIECObjectIdentifiers.efrodokem1344_shake, new FrodoKEMConverter());
+        converters.put(ISOIECObjectIdentifiers.frodokem976_aes, new FrodoKEMConverter());
+        converters.put(ISOIECObjectIdentifiers.frodokem1344_aes, new FrodoKEMConverter());
+        converters.put(ISOIECObjectIdentifiers.efrodokem976_aes, new FrodoKEMConverter());
+        converters.put(ISOIECObjectIdentifiers.efrodokem1344_aes, new FrodoKEMConverter());
 
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SLHDSAConverter());

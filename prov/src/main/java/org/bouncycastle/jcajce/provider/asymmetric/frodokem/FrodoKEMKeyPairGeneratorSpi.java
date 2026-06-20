@@ -165,4 +165,40 @@ public class FrodoKEMKeyPairGeneratorSpi
             super(FrodoKEMParameterSpec.efrodokem1344shake);
         }
     }
+
+    public static class Frodokem976Aes
+        extends FrodoKEMKeyPairGeneratorSpi
+    {
+        public Frodokem976Aes()
+        {
+            super(FrodoKEMParameterSpec.frodokem976aes);
+        }
+    }
+
+    public static class Frodokem1344Aes
+        extends FrodoKEMKeyPairGeneratorSpi
+    {
+        public Frodokem1344Aes()
+        {
+            super(FrodoKEMParameterSpec.frodokem1344aes);
+        }
+    }
+
+    public static class EFrodokem976Aes
+        extends FrodoKEMKeyPairGeneratorSpi
+    {
+        public EFrodokem976Aes()
+        {
+            super(FrodoKEMParameterSpec.efrodokem976aes);
+        }
+    }
+
+    public static class EFrodokem1344Aes
+        extends FrodoKEMKeyPairGeneratorSpi
+    {
+        public EFrodokem1344Aes()
+        {
+            super(FrodoKEMParameterSpec.efrodokem1344aes);
+        }
+    }
 }

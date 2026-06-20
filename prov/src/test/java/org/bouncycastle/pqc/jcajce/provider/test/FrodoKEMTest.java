@@ -47,7 +47,11 @@ public class FrodoKEMTest
             FrodoKEMParameterSpec.frodokem976shake,
             FrodoKEMParameterSpec.frodokem1344shake,
             FrodoKEMParameterSpec.efrodokem976shake,
-            FrodoKEMParameterSpec.efrodokem1344shake
+            FrodoKEMParameterSpec.efrodokem1344shake,
+            FrodoKEMParameterSpec.frodokem976aes,
+            FrodoKEMParameterSpec.frodokem1344aes,
+            FrodoKEMParameterSpec.efrodokem976aes,
+            FrodoKEMParameterSpec.efrodokem1344aes
         };
 
         for (int i = 0; i != specs.length; i++)

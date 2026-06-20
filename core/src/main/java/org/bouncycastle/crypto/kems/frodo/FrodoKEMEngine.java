@@ -61,7 +61,7 @@ public class FrodoKEMEngine
 
     public static FrodoKEMEngine getInstance(FrodoKEMParameters params)
     {
-        return new FrodoKEMEngine(params.getN(), params.getD(), params.getB(), params.isSalted());
+        return new FrodoKEMEngine(params.isAes(), params.getN(), params.getD(), params.getB(), params.isSalted());
     }
 
     public int getCipherTextSize()
@@ -84,7 +84,7 @@ public class FrodoKEMEngine
         return len_pk_bytes;
     }
 
-    FrodoKEMEngine(int n, int D, int B, boolean salted)
+    FrodoKEMEngine(boolean useAes, int n, int D, int B, boolean salted)
     {
         this.n = n;
         this.D = D;
@@ -111,7 +111,9 @@ public class FrodoKEMEngine
 
         this.T_chi = (n == 976) ? cdf_table976 : cdf_table1344;
         this.digest = new SHAKEDigest(256);
-        this.gen = new FrodoMatrixGenerator(n, q);
+        this.gen = useAes
+            ? (FrodoMatrixGenerator)new FrodoMatrixGenerator.Aes128MatrixGenerator(n, q)
+            : new FrodoMatrixGenerator.Shake128MatrixGenerator(n, q);
     }
 
     private short[] sample_matrix(short[] r, int offset, int n1, int n2)
