@@ -33,9 +33,9 @@ public class AllTests
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSUtilTest.class);
         suite.addTestSuite(XMSSPublicKeyParseTest.class);
-//        suite.addTestSuite(SphincsPlusTest.class);
+//        suite.addTestSuite(SphincsPlusTest.class);   -- now deprecated
         suite.addTestSuite(CMCEVectorTest.class);
-        suite.addTestSuite(FrodoVectorTest.class);
+//        suite.addTestSuite(FrodoVectorTest.class);  -- now deprecated
         suite.addTestSuite(FrodoKEMVectorTest.class);
         suite.addTestSuite(SABERVectorTest.class);
         suite.addTestSuite(NTRUTest.class);

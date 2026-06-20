@@ -25,9 +25,9 @@ import org.bouncycastle.util.encoders.Hex;
 
 /**
  * KAT tests for the standardised FrodoKEM (ISO/IEC 18033-2) under org.bouncycastle.crypto: the
- * salted "FrodoKEM" and ephemeral "eFrodoKEM" SHAKE parameter sets at security levels 976 and 1344.
- * Vectors are the FrodoKEM team's reference KATs (salted from the FrodoKEM tree, ephemeral from the
- * eFrodoKEM tree).
+ * salted "FrodoKEM" and ephemeral "eFrodoKEM" parameter sets, in both SHAKE and AES gen-matrix
+ * variants, at security levels 976 and 1344. Vectors are the FrodoKEM team's reference KATs (salted
+ * from the FrodoKEM tree, ephemeral from the eFrodoKEM tree).
  */
 public class FrodoKEMVectorTest
     extends TestCase
@@ -39,6 +39,10 @@ public class FrodoKEMVectorTest
         assertEquals(256, FrodoKEMParameters.frodokem1344shake.getSessionKeySize());
         assertEquals(192, FrodoKEMParameters.efrodokem976shake.getSessionKeySize());
         assertEquals(256, FrodoKEMParameters.efrodokem1344shake.getSessionKeySize());
+        assertEquals(192, FrodoKEMParameters.frodokem976aes.getSessionKeySize());
+        assertEquals(256, FrodoKEMParameters.frodokem1344aes.getSessionKeySize());
+        assertEquals(192, FrodoKEMParameters.efrodokem976aes.getSessionKeySize());
+        assertEquals(256, FrodoKEMParameters.efrodokem1344aes.getSessionKeySize());
     }
 
     public void testVectors()
@@ -48,14 +52,22 @@ public class FrodoKEMVectorTest
             "frodokem976shake.rsp",
             "frodokem1344shake.rsp",
             "efrodokem976shake.rsp",
-            "efrodokem1344shake.rsp"
+            "efrodokem1344shake.rsp",
+            "frodokem976aes.rsp",
+            "frodokem1344aes.rsp",
+            "efrodokem976aes.rsp",
+            "efrodokem1344aes.rsp"
         };
 
         FrodoKEMParameters[] params = new FrodoKEMParameters[]{
             FrodoKEMParameters.frodokem976shake,
             FrodoKEMParameters.frodokem1344shake,
             FrodoKEMParameters.efrodokem976shake,
-            FrodoKEMParameters.efrodokem1344shake
+            FrodoKEMParameters.efrodokem1344shake,
+            FrodoKEMParameters.frodokem976aes,
+            FrodoKEMParameters.frodokem1344aes,
+            FrodoKEMParameters.efrodokem976aes,
+            FrodoKEMParameters.efrodokem1344aes
         };
 
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
