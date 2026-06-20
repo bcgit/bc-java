@@ -52,6 +52,7 @@ public class AllTests
         suite.addTestSuite(PicnicKeyPairGeneratorTest.class);
         suite.addTestSuite(CMCEKeyPairGeneratorTest.class);
         suite.addTestSuite(FrodoTest.class);
+        suite.addTestSuite(FrodoKEMTest.class);
         suite.addTestSuite(FrodoKeyPairGeneratorTest.class);
         suite.addTestSuite(SABERTest.class);
         suite.addTestSuite(SABERKeyPairGeneratorTest.class);
