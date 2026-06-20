@@ -141,7 +141,7 @@ class HQCEngine
     {
         // Extract Y and Public Keys from sk
         long[] u64 = gf2x.create();
-        long[] v64 = gf2x.create();
+        long[] v64 = new long[N1N2_BYTE_64]; // ciphertext v: an n1*n2-bit codeword, not a ring element
         long[] cKemPrimeU64 = gf2x.create(); // tmpLong
         long[] cKemPrimeV64 = gf2x.create(); // re-encryption v scratch
         byte[] hashEkKem = new byte[SEED_BYTES];
@@ -161,7 +161,7 @@ class HQCEngine
         // cKemPrimeU64 is tmpLong
         gf2x.mul(cKemPrimeV64, u64, cKemPrimeU64);
         vectTruncate(cKemPrimeU64);
-        gf2x.addTo(v64, cKemPrimeU64);
+        Nat.xorTo64(N1N2_BYTE_64, v64, cKemPrimeU64); // cKemPrimeU64 ^= v over the codeword limbs
 
         ReedMuller.decode(tmp, cKemPrimeU64, n1, mulParam);
         ReedSolomon.decode(mPrime, tmp, n1, fft, delta, k, generatorPoly.length);
@@ -174,7 +174,9 @@ class HQCEngine
         pkeEncrypt(cKemPrimeU64, cKemPrimeV64, sk, mPrime, kThetaPrime, 32);
         hashGJ(kBar, 256, hashEkKem, sk, pkSize + SEED_BYTES, k, ct, 0, ct.length, (byte)3);
 
-        int result = (int)(gf2x.equalTo(u64, cKemPrimeU64) & gf2x.equalTo(v64, cKemPrimeV64));
+        // u is a full ring element; v is an n1*n2-bit codeword, so compare it over just the codeword
+        // limbs (cKemPrimeV64's higher limbs are unused re-encryption scratch).
+        int result = (int)(gf2x.equalTo(u64, cKemPrimeU64) & Nat.equalTo64(N1N2_BYTE_64, v64, cKemPrimeV64));
 
         // On re-encryption failure the implicit-rejection secret kBar must replace the *entire*
         // shared secret. Bounding this by k would leave ss[k..] holding K' = G(H(pk)||m'||salt),
@@ -186,7 +188,7 @@ class HQCEngine
         }
 
         gf2x.clear(u64);
-        gf2x.clear(v64);
+        Nat.zero64(v64.length, v64);
         gf2x.clear(cKemPrimeU64);
         gf2x.clear(cKemPrimeV64);
         Arrays.clear(ySupport);
