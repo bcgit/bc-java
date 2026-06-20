@@ -258,7 +258,11 @@ public class PrivateKeyFactory
         else if (algOID.equals(ISOIECObjectIdentifiers.frodokem976_shake) ||
             algOID.equals(ISOIECObjectIdentifiers.frodokem1344_shake) ||
             algOID.equals(ISOIECObjectIdentifiers.efrodokem976_shake) ||
-            algOID.equals(ISOIECObjectIdentifiers.efrodokem1344_shake))
+            algOID.equals(ISOIECObjectIdentifiers.efrodokem1344_shake) ||
+            algOID.equals(ISOIECObjectIdentifiers.frodokem976_aes) ||
+            algOID.equals(ISOIECObjectIdentifiers.frodokem1344_aes) ||
+            algOID.equals(ISOIECObjectIdentifiers.efrodokem976_aes) ||
+            algOID.equals(ISOIECObjectIdentifiers.efrodokem1344_aes))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             FrodoKEMParameters fParams = Utils.frodoKemParamsLookup(algOID);

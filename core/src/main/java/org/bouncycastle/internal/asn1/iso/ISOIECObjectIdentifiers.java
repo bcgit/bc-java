@@ -3,7 +3,7 @@ package org.bouncycastle.internal.asn1.iso;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
- * OIDS from  ISO/IEC 10118-3:2004
+ * OIDS from  ISO/IEC 10118-3:2004 and ISO/IEC 18033-2:2006/Amd 2:2026
  */
 public interface ISOIECObjectIdentifiers
 {
@@ -46,4 +46,8 @@ public interface ISOIECObjectIdentifiers
     ASN1ObjectIdentifier frodokem1344_shake = id_kem_frodokem.branch("2");
     ASN1ObjectIdentifier efrodokem976_shake = id_kem_frodokem.branch("3");
     ASN1ObjectIdentifier efrodokem1344_shake = id_kem_frodokem.branch("4");
+    ASN1ObjectIdentifier frodokem976_aes = id_kem_frodokem.branch("5");
+    ASN1ObjectIdentifier frodokem1344_aes = id_kem_frodokem.branch("6");
+    ASN1ObjectIdentifier efrodokem976_aes = id_kem_frodokem.branch("7");
+    ASN1ObjectIdentifier efrodokem1344_aes = id_kem_frodokem.branch("8");
 }

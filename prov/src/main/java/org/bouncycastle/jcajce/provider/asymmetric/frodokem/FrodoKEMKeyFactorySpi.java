@@ -29,6 +29,10 @@ public class FrodoKEMKeyFactorySpi
         keyOids.add(ISOIECObjectIdentifiers.frodokem1344_shake);
         keyOids.add(ISOIECObjectIdentifiers.efrodokem976_shake);
         keyOids.add(ISOIECObjectIdentifiers.efrodokem1344_shake);
+        keyOids.add(ISOIECObjectIdentifiers.frodokem976_aes);
+        keyOids.add(ISOIECObjectIdentifiers.frodokem1344_aes);
+        keyOids.add(ISOIECObjectIdentifiers.efrodokem976_aes);
+        keyOids.add(ISOIECObjectIdentifiers.efrodokem1344_aes);
     }
 
     public FrodoKEMKeyFactorySpi()
@@ -124,6 +128,42 @@ public class FrodoKEMKeyFactorySpi
         public EFrodokem1344Shake()
         {
             super(ISOIECObjectIdentifiers.efrodokem1344_shake);
+        }
+    }
+
+    public static class Frodokem976Aes
+        extends FrodoKEMKeyFactorySpi
+    {
+        public Frodokem976Aes()
+        {
+            super(ISOIECObjectIdentifiers.frodokem976_aes);
+        }
+    }
+
+    public static class Frodokem1344Aes
+        extends FrodoKEMKeyFactorySpi
+    {
+        public Frodokem1344Aes()
+        {
+            super(ISOIECObjectIdentifiers.frodokem1344_aes);
+        }
+    }
+
+    public static class EFrodokem976Aes
+        extends FrodoKEMKeyFactorySpi
+    {
+        public EFrodokem976Aes()
+        {
+            super(ISOIECObjectIdentifiers.efrodokem976_aes);
+        }
+    }
+
+    public static class EFrodokem1344Aes
+        extends FrodoKEMKeyFactorySpi
+    {
+        public EFrodokem1344Aes()
+        {
+            super(ISOIECObjectIdentifiers.efrodokem1344_aes);
         }
     }
 }
