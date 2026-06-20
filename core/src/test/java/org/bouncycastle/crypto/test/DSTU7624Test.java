@@ -606,6 +606,7 @@ public class DSTU7624Test
         CCMModePartialBlockTests();
 
         CCMModeLongMessageKeystreamTest();
+        CCMModeNonceBindingTest();
     }
 
     /*
@@ -651,6 +652,62 @@ public class DSTU7624Test
         {
             fail("Failed CCM long-message round-trip");
         }
+    }
+
+    /*
+     * Regression test ensuring the G1 block is processed unconditionally; it had been previously skipped when no
+     * associated data was present. The G1 block folds the nonce, data length and MAC-size flag into the MAC. If it
+     * is absent, the underlying MAC is independent of the nonce, so a chosen-plaintext attacker could forge a valid
+     * ciphertext+tag for an un-queried nonce by cancelling the nonce-dependent data/tag keystreams across three
+     * empty-AAD encryption queries. This test assembles such a forgery and requires that the decryptor rejects it.
+     * (A plain wrong-nonce decryption does NOT catch this specific bug, since the tag is masked by a nonce-
+     * dependent keystream; so it fails even when the MAC ignores it.)
+     */
+    private void CCMModeNonceBindingTest() throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] nonce1 = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] nonce2 = Hex.decode("202122232425262728292A2B2C2D2E2F");
+        byte[] plaintext = Hex.decode("303132333435363738393A3B3C3D3E3F");
+        int blockSize = plaintext.length;
+
+        // Three empty-AAD encryption-oracle queries used to build a cross-nonce forgery.
+        byte[] z1 = CCMModeNoAADEncrypt(key, nonce1, new byte[blockSize]); // enc(0, N1)
+        byte[] z2 = CCMModeNoAADEncrypt(key, nonce2, new byte[blockSize]); // enc(0, N2)
+        byte[] zp = CCMModeNoAADEncrypt(key, nonce2, plaintext);           // enc(P, N2)
+
+        // C_forge = P xor C0' (decrypts to P under N1); T_forge = TP xor T0 xor T0' cancels the
+        // nonce-2 keystream and the E_K(0) terms, which only validates if the MAC ignores the nonce.
+        byte[] forged = new byte[2 * blockSize];
+        for (int i = 0; i < blockSize; i++)
+        {
+            forged[i] = (byte)(plaintext[i] ^ z1[i]);
+            forged[blockSize + i] = (byte)(zp[blockSize + i] ^ z2[blockSize + i] ^ z1[blockSize + i]);
+        }
+
+        KCCMBlockCipher ccm = new KCCMBlockCipher(new DSTU7624Engine(128));
+        ccm.init(false, new AEADParameters(new KeyParameter(key), 128, nonce1));
+        byte[] decrypted = new byte[ccm.getOutputSize(forged.length)];
+        try
+        {
+            int len = ccm.processBytes(forged, 0, forged.length, decrypted, 0);
+            ccm.doFinal(decrypted, len);
+            fail("Failed CCM nonce-binding test - cross-nonce forgery accepted (MAC not bound to nonce)");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            // expected: the G1 nonce binding makes the forged tag invalid
+        }
+    }
+
+    private static byte[] CCMModeNoAADEncrypt(byte[] key, byte[] nonce, byte[] plaintext) throws Exception
+    {
+        KCCMBlockCipher ccm = new KCCMBlockCipher(new DSTU7624Engine(128));
+        ccm.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+        byte[] output = new byte[ccm.getOutputSize(plaintext.length)];
+        int len = ccm.processBytes(plaintext, 0, plaintext.length, output, 0);
+        len += ccm.doFinal(output, len);
+        return output;
     }
 
     /*
