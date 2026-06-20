@@ -169,24 +169,38 @@ public class KCCMBlockCipher
 
     private void processAAD(byte[] assocText, int assocOff, int assocLen, int dataLen)
     {
-        if (assocLen - assocOff < engine.getBlockSize())
+        boolean hasAssocText = assocLen > 0;
+
+        if (hasAssocText)
         {
-            throw new IllegalArgumentException("authText buffer too short");
-        }
-        if (assocLen % engine.getBlockSize() != 0)
-        {
-            throw new IllegalArgumentException("padding not supported");
+            if (assocLen - assocOff < engine.getBlockSize())
+            {
+                throw new IllegalArgumentException("authText buffer too short");
+            }
+            if (assocLen % engine.getBlockSize() != 0)
+            {
+                throw new IllegalArgumentException("padding not supported");
+            }
         }
 
+        // The G1 block binds the nonce, data length and MAC-size flag into the MAC and must be
+        // processed unconditionally. DSTU 7624 carries the associated-data-present indicator as a flag
+        // bit inside G1, so it is not a gate on computing G1: skipping G1 when no AAD is present leaves
+        // the MAC independent of the nonce and enables cross-nonce forgery.        
         System.arraycopy(nonce, 0, G1, 0, nonce.length - Nb_ - 1);
 
         Pack.intToLittleEndian(dataLen, buffer, 0); // for G1
 
         System.arraycopy(buffer, 0, G1, nonce.length - Nb_ - 1, BYTES_IN_INT);
 
-        G1[G1.length - 1] = getFlag(true, macSize);
+        G1[G1.length - 1] = getFlag(hasAssocText, macSize);
 
         engine.processBlock(G1, 0, macBlock, 0);
+
+        if (!hasAssocText)
+        {
+            return;
+        }
 
         Pack.intToLittleEndian(assocLen, buffer, 0); // for G2
 
@@ -261,16 +275,13 @@ public class KCCMBlockCipher
             throw new OutputLengthException("output buffer too short");
         }
 
-        if (associatedText.size() > 0)
+        if (forEncryption)
         {
-            if (forEncryption)
-            {
-                processAAD(associatedText.getBuffer(), 0, associatedText.size(), data.size());
-            }
-            else
-            {
-                processAAD(associatedText.getBuffer(), 0, associatedText.size(), data.size() - macSize);
-            }
+            processAAD(associatedText.getBuffer(), 0, associatedText.size(), data.size());
+        }
+        else
+        {
+            processAAD(associatedText.getBuffer(), 0, associatedText.size(), data.size() - macSize);
         }
 
         if (forEncryption)
