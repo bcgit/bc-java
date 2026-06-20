@@ -9,6 +9,7 @@ import org.bouncycastle.util.Pack;
 
 class HQCEngine
 {
+    static final int SHARED_SECRET_BYTES = 32;
     private static final int SALT_BYTES = 16;
     private static final int SEED_BYTES = 32;
 

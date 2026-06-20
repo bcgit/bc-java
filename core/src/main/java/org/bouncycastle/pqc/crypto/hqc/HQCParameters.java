@@ -94,4 +94,9 @@ public class HQCParameters
     {
         return secretKeyBytes;
     }
+
+    public int getSecretLength()
+    {
+        return HQCEngine.SHARED_SECRET_BYTES;
+    }
 }
