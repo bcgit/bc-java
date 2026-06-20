@@ -96,7 +96,7 @@ public class EAXBlockCipher
 
             nonce = param.getNonce();
             initialAssociatedText = param.getAssociatedText();
-            macSize = param.getMacSize() / 8;
+            macSize = getMacSize(param.getMacSize(), blockSize);
             keyParam = param.getKey();
         }
         else if (params instanceof ParametersWithIV)
@@ -105,7 +105,7 @@ public class EAXBlockCipher
 
             nonce = param.getIV();
             initialAssociatedText = null;
-            macSize = mac.getMacSize() / 2;
+            macSize = getMacSize((mac.getMacSize() / 2) * 8, blockSize);
             keyParam = param.getParameters();
         }
         else
@@ -383,5 +383,15 @@ public class EAXBlockCipher
         }
 
         return nonEqual == 0;
+    }
+
+    private static int getMacSize(int requestedMacBits, int blockSize)
+    {
+        if (requestedMacBits < 32 || requestedMacBits > blockSize * 8 || 0 != (requestedMacBits & 7))
+        {
+            throw new IllegalArgumentException("Invalid value for MAC size: " + requestedMacBits);
+        }
+
+        return requestedMacBits >>> 3;
     }
 }
