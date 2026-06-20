@@ -176,7 +176,11 @@ class HQCEngine
 
         int result = (int)(gf2x.equalTo(u64, cKemPrimeU64) & gf2x.equalTo(v64, cKemPrimeV64));
 
-        for (int i = 0; i < k; i++)
+        // On re-encryption failure the implicit-rejection secret kBar must replace the *entire*
+        // shared secret. Bounding this by k would leave ss[k..] holding K' = G(H(pk)||m'||salt),
+        // which depends on the decrypted m' - an FO/IND-CCA break for the parameter sets with
+        // k < SHARED_SECRET_BYTES (HQC-128: 16, HQC-192: 24).
+        for (int i = 0; i < SHARED_SECRET_BYTES; i++)
         {
             ss[i] = (byte)(((ss[i] & result) ^ (kBar[i] & ~result)) & 0xff);
         }

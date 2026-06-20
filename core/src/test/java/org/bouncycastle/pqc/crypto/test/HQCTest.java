@@ -39,6 +39,21 @@ public class HQCTest
         implTestConsistency(HQCParameters.hqc256);
     }
 
+    public void testImplicitRejectionCoverageHQC128()
+    {
+        implTestImplicitRejectionCoverage(HQCParameters.hqc128);
+    }
+
+    public void testImplicitRejectionCoverageHQC192()
+    {
+        implTestImplicitRejectionCoverage(HQCParameters.hqc192);
+    }
+
+    public void testImplicitRejectionCoverageHQC256()
+    {
+        implTestImplicitRejectionCoverage(HQCParameters.hqc256);
+    }
+
     public void testVectors()
         throws Exception
     {
@@ -137,7 +152,59 @@ public class HQCTest
             }
         }
     }
-    
+
+    private void implTestImplicitRejectionCoverage(HQCParameters parameters)
+    {
+        // Regression test for the FO implicit-rejection / IND-CCA property: on re-encryption
+        // failure the returned secret must be derived solely from (sigma, ciphertext) and must
+        // NOT leak the decrypted message m'. Previously the conditional-move was bounded by the
+        // message length k (16 for HQC-128, 24 for HQC-192) rather than the 32-byte secret, so
+        // the trailing bytes kept K' = G(H(pk) || m' || salt) and gave a plaintext-checking oracle.
+        HQCKeyPairGenerator kpg = new HQCKeyPairGenerator();
+        kpg.init(new HQCKeyGenerationParameters(RANDOM, parameters));
+        AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+        HQCKEMGenerator generator = new HQCKEMGenerator(RANDOM);
+        SecretWithEncapsulation encapsulated = generator.generateEncapsulated(kp.getPublic());
+        byte[] validSecret = encapsulated.getSecret();
+        byte[] ct = encapsulated.getEncapsulation();
+
+        HQCKEMExtractor extractor = new HQCKEMExtractor((HQCPrivateKeyParameters)kp.getPrivate());
+
+        // Sanity: an untampered ciphertext decapsulates to the encapsulated secret.
+        assertTrue(parameters + ": valid decaps", Arrays.areEqual(validSecret, extractor.extractSecret(ct)));
+
+        // The 'v' part of the ciphertext follows 'u', which is N_BYTE = PublicKeyBytes - 32 bytes
+        // long (the public key is a 32-byte seed plus the N_BYTE syndrome). A single-bit flip in v
+        // stays within the Reed-Muller/Reed-Solomon correction capacity, so the decoded m' (and
+        // hence the salt) is unchanged while the re-encryption check fails. Two such ciphertexts
+        // therefore share the same (m', salt) but differ as byte strings.
+        int vOffset = parameters.getPublicKeyBytes() - 32;
+
+        byte[] ct1 = Arrays.clone(ct);
+        byte[] ct2 = Arrays.clone(ct);
+        ct1[vOffset] ^= 0x01;
+        ct2[vOffset] ^= 0x02;
+
+        byte[] rej1 = extractor.extractSecret(ct1);
+        byte[] rej2 = extractor.extractSecret(ct2);
+
+        // Both must be genuine rejections, not the valid secret.
+        assertFalse(parameters + ": ct1 not rejected", Arrays.areEqual(validSecret, rej1));
+        assertFalse(parameters + ": ct2 not rejected", Arrays.areEqual(validSecret, rej2));
+
+        // Rejection must be deterministic in (sk, ct).
+        assertTrue(parameters + ": rejection not deterministic", Arrays.areEqual(rej1, extractor.extractSecret(ct1)));
+
+        // The trailing 8 bytes lie in the vulnerable region for every parameter set (k <= 32),
+        // and must depend on the differing ciphertext. With the bug they were a copy of K',
+        // identical for ct1 and ct2.
+        byte[] tail1 = Arrays.copyOfRange(rej1, 24, 32);
+        byte[] tail2 = Arrays.copyOfRange(rej2, 24, 32);
+        assertFalse(parameters + ": rejection secret tail must depend on the ciphertext (FO implicit rejection)",
+            Arrays.areEqual(tail1, tail2));
+    }
+
     private static class Shake256SecureRandom
         extends SecureRandom
     {
