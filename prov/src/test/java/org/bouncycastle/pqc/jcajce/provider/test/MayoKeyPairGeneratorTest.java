@@ -33,10 +33,10 @@ public class MayoKeyPairGeneratorTest
         throws Exception
     {
         kf = KeyFactory.getInstance("Mayo", "BCPQC");
-        KeyFactory kf1 = KeyFactory.getInstance("MAYO_1", "BCPQC");
-        KeyFactory kf2 = KeyFactory.getInstance("MAYO_2", "BCPQC");
-        KeyFactory kf3 = KeyFactory.getInstance("MAYO_3", "BCPQC");
-        KeyFactory kf5 = KeyFactory.getInstance("MAYO_5", "BCPQC");
+        KeyFactory kf1 = KeyFactory.getInstance("MAYO-1", "BCPQC");
+        KeyFactory kf2 = KeyFactory.getInstance("MAYO-2", "BCPQC");
+        KeyFactory kf3 = KeyFactory.getInstance("MAYO-3", "BCPQC");
+        KeyFactory kf5 = KeyFactory.getInstance("MAYO-5", "BCPQC");
     }
 
     public void testKeyPairEncoding()
