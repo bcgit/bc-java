@@ -75,9 +75,6 @@ import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.bcpg.X448SecretBCPGKey;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.rfc7748.X25519;
@@ -97,19 +94,19 @@ import org.bouncycastle.util.BigIntegers;
 public class JcaPGPKeyConverter
     extends PGPKeyConverter
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private KeyFingerPrintCalculator fingerPrintCalculator = new JcaKeyFingerprintCalculator();
 
     public JcaPGPKeyConverter setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JcaPGPKeyConverter setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }

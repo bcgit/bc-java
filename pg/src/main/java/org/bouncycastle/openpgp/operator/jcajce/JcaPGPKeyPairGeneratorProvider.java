@@ -7,9 +7,6 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -34,7 +31,7 @@ public class JcaPGPKeyPairGeneratorProvider
 
     public JcaPGPKeyPairGeneratorProvider()
     {
-        this.helper = new OperatorHelper(new DefaultJcaJceHelper());
+        this.helper = OperatorUtils.createDefaultHelper();
     }
 
 
@@ -46,7 +43,7 @@ public class JcaPGPKeyPairGeneratorProvider
      */
     public JcaPGPKeyPairGeneratorProvider setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
         return this;
     }
 
@@ -58,7 +55,7 @@ public class JcaPGPKeyPairGeneratorProvider
      */
     public JcaPGPKeyPairGeneratorProvider setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
         return this;
     }
 
