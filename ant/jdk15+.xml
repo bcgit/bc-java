@@ -56,6 +56,7 @@
             <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
             <fileset dir="tls/src/test/java" includes="**/*.java" >
                 <exclude name="**/tls/*.java"/>
+                <exclude name="**/jsse/provider/*.java"/>
             </fileset>
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
