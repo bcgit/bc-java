@@ -74,12 +74,16 @@ public abstract class X25519
 
     public static void clampPrivateKey(byte[] k)
     {
+        if (k == null)
+        {
+            throw new NullPointerException("'k' cannot be null");
+        }
         if (k.length != SCALAR_SIZE)
         {
             throw new IllegalArgumentException("k");
         }
 
-        k[0] &= 0xF8;
+        k[0              ] &= 0xF8;
         k[SCALAR_SIZE - 1] &= 0x7F;
         k[SCALAR_SIZE - 1] |= 0x40;
     }
@@ -98,6 +102,14 @@ public abstract class X25519
 
     public static void generatePrivateKey(SecureRandom random, byte[] k)
     {
+        if (random == null)
+        {
+            throw new NullPointerException("'random' cannot be null");
+        }
+        if (k == null)
+        {
+            throw new NullPointerException("'k' cannot be null");
+        }
         if (k.length != SCALAR_SIZE)
         {
             throw new IllegalArgumentException("k");
@@ -135,6 +147,10 @@ public abstract class X25519
 
     public static void scalarMult(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
     {
+        Arrays.validateSegment(k, kOff, SCALAR_SIZE);
+        Arrays.validateSegment(u, uOff, POINT_SIZE);
+        Arrays.validateSegment(r, rOff, POINT_SIZE);
+
         int[] n = new int[8];       decodeScalar(k, kOff, n);
 
         int[] x1 = F.create();      F.decode255(u, uOff, x1, 0);
@@ -201,6 +217,9 @@ public abstract class X25519
 //        u[0] = 9;
 //
 //        scalarMult(k, kOff, u, 0, r, rOff);
+
+        Arrays.validateSegment(k, kOff, SCALAR_SIZE);
+        Arrays.validateSegment(r, rOff, POINT_SIZE);
 
         int[] y = F.create();
         int[] z = F.create();
