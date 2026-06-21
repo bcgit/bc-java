@@ -74,7 +74,7 @@ public class FrodoKEMVectorTest
         {
             String name = files[fileIndex];
 
-            InputStream src = TestResourceFinder.findTestResource("crypto/frodo", name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/frodo", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
