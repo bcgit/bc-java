@@ -418,7 +418,20 @@ public class IESEngine
             }
         }
 
-        // Compute the common value and convert to byte array. 
+        // Stream mode (no backing block cipher) splits one length-keyed KDF output into the XOR
+        // keystream K1 and the MAC key K2. Without an ephemeral V the KDF is seeded only by the static
+        // shared secret Z and the fixed derivation vector, so that output is identical for every
+        // message: the keystream repeats (a many-time pad) and the MAC key of a short message lies
+        // inside the keystream leaked by a longer known-plaintext message, allowing cross-message
+        // forgery. No per-message value feeds the stream-mode KDF, so this configuration cannot be
+        // made safe - reject it rather than emit forgeable ciphertext. Use an ephemeral-key init
+        // (or a block cipher) instead.
+        if (cipher == null && V.length == 0)
+        {
+            throw new IllegalStateException("stream mode requires an ephemeral key pair: with static keys the IES keystream and MAC key repeat across messages");
+        }
+
+        // Compute the common value and convert to byte array.
         agree.init(privParam);
         BigInteger z = agree.calculateAgreement(pubParam);
         byte[] Z = BigIntegers.asUnsignedByteArray(agree.getFieldSize(), z);
