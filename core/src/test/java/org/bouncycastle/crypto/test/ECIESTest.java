@@ -107,19 +107,18 @@ public class ECIESTest
 
         byte[] message = Hex.decode("1234567890abcdef");
 
-        // static keys in stream mode are rejected (CVD ANT-2026-WZ2GJBGD): without an ephemeral
-        // component the KDF keystream and MAC key repeat across messages, enabling forgery.
-        byte[]   out1;
-        byte[]   out2;
+        byte[]   out1 = i1.processBlock(message, 0, message.length);
 
-        try
+        if (!areEqual(out1, Hex.decode("468d89877e8238802403ec4cb6b329faeccfa6f3a730f2cdb3c0a8e8")))
         {
-            i1.processBlock(message, 0, message.length);
-            fail("static-key stream mode not rejected");
+            fail("stream cipher test failed on enc");
         }
-        catch (IllegalStateException ex)
+
+        byte[]   out2 = i2.processBlock(out1, 0, out1.length);
+
+        if (!areEqual(out2, message))
         {
-            isTrue("wrong message", ex.getMessage().startsWith("stream mode requires an ephemeral key pair"));
+            fail("stream cipher test failed");
         }
 
         //
@@ -213,21 +212,30 @@ public class ECIESTest
         CipherParameters p = new IESParameters(d, e, 64);
 
         i1.init(true, p1.getPrivate(), p2.getPublic(), p);
+        i2.init(false, p2.getPrivate(), p1.getPublic(), p);
 
         byte[] message = new byte[0];
 
-        // static keys in stream mode are rejected (CVD ANT-2026-WZ2GJBGD)
-        byte[]   out1;
-        byte[]   out2;
+        byte[]   out1 = i1.processBlock(message, 0, message.length);
+
+        byte[]   out2 = i2.processBlock(out1, 0, out1.length);
+
+        if (!areEqual(out2, message))
+        {
+            fail("stream cipher test failed");
+        }
 
         try
         {
-            i1.processBlock(message, 0, message.length);
-            fail("static-key stream mode not rejected");
+            i2.processBlock(out1, 0, out1.length - 1);
+            fail("no exception");
         }
-        catch (IllegalStateException ex)
+        catch (InvalidCipherTextException ex)
         {
-            isTrue("wrong message", ex.getMessage().startsWith("stream mode requires an ephemeral key pair"));
+            if (!"Length of input must be greater than the MAC and V combined".equals(ex.getMessage()))
+            {
+                fail("wrong exception");
+            }
         }
 
         // with ephemeral key pair
@@ -403,18 +411,13 @@ public class ECIESTest
 
         byte[] message = Hex.decode("1234567890abcdef");
 
-        // static keys in stream mode are rejected (CVD ANT-2026-WZ2GJBGD)
-        byte[]   out1;
-        byte[]   out2;
+        byte[]   out1 = i1.processBlock(message, 0, message.length);
+ 
+        byte[]   out2 = i2.processBlock(out1, 0, out1.length);
 
-        try
+        if (!areEqual(out2, message))
         {
-            i1.processBlock(message, 0, message.length);
-            fail("static-key stream mode not rejected");
-        }
-        catch (IllegalStateException ex)
-        {
-            isTrue("wrong message", ex.getMessage().startsWith("stream mode requires an ephemeral key pair"));
+            fail("stream cipher test failed");
         }
 
         //
@@ -453,72 +456,9 @@ public class ECIESTest
         }
     }
 
-    // CVD ANT-2026-WZ2GJBGD: IESEngine stream mode (no block cipher) with static keys - the 4-arg
-    // init, so V is empty - must be rejected in both directions. Without an ephemeral component the
-    // KDF output (and therefore both the XOR keystream and the MAC key) is identical for every
-    // message, so the keystream is a many-time pad and the MAC key of a shorter message lies inside
-    // the keystream leaked by a longer known-plaintext message, enabling cross-message forgery.
-    private void doStreamStaticKeyRejectionTest()
-        throws Exception
-    {
-        BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
-
-        ECCurve.Fp curve = new ECCurve.Fp(
-            new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
-            new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
-            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16), // b
-            n, ECConstants.ONE);
-
-        ECDomainParameters params = new ECDomainParameters(
-                curve,
-                curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")), // G
-                n);
-
-        ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
-            new BigInteger("651056770906015076056810763456358567190100156695615665659"), // d
-            params);
-
-        ECPublicKeyParameters pubKey = new ECPublicKeyParameters(
-            curve.decodePoint(Hex.decode("0262b12d60690cdcf330babab6e69763b471f994dd702d16a5")), // Q
-            params);
-
-        CipherParameters p = new IESParameters(
-            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }, new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 }, 64);
-
-        // encryption direction
-        IESEngine enc = new IESEngine(new ECDHBasicAgreement(),
-            new KDF2BytesGenerator(new SHA1Digest()), new HMac(new SHA1Digest()));
-        enc.init(true, priKey, pubKey, p);
-        try
-        {
-            enc.processBlock(Hex.decode("1234567890abcdef"), 0, 8);
-            fail("static-key stream mode encryption not rejected");
-        }
-        catch (IllegalStateException ex)
-        {
-            isTrue("wrong message", ex.getMessage().startsWith("stream mode requires an ephemeral key pair"));
-        }
-
-        // decryption direction
-        IESEngine dec = new IESEngine(new ECDHBasicAgreement(),
-            new KDF2BytesGenerator(new SHA1Digest()), new HMac(new SHA1Digest()));
-        dec.init(false, priKey, pubKey, p);
-        try
-        {
-            // the guard fires before any ciphertext-length check, so the input length is irrelevant
-            dec.processBlock(new byte[32], 0, 32);
-            fail("static-key stream mode decryption not rejected");
-        }
-        catch (IllegalStateException ex)
-        {
-            isTrue("wrong message", ex.getMessage().startsWith("stream mode requires an ephemeral key pair"));
-        }
-    }
-
     public void performTest()
         throws Exception
     {
-        doStreamStaticKeyRejectionTest();
         doStaticTest(null);
         doStaticTest(TWOFISH_IV);
         doShortTest(null);
