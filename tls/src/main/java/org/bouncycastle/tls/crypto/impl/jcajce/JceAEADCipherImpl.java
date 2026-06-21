@@ -12,6 +12,7 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -116,8 +117,15 @@ public class JceAEADCipherImpl
                 }
                 else
                 {
-                    // fortunately CCM and GCM parameters have the same ASN.1 structure
-                    algParams.init(new GCMParameters(nonce, macSize).getEncoded());
+                    // CCM and GCM parameters share the same ASN.1 structure but validate the ICV (tag)
+                    // length differently: GCMParameters enforces the RFC 5084 GCM range of 12-16 octets,
+                    // while CCM additionally permits 4/6/8/10. A short CCM tag - e.g. the 8-octet
+                    // *_CCM_8 cipher suites - must therefore be encoded through CCMParameters, otherwise
+                    // GCMParameters rejects it as an invalid ICV length.
+                    byte[] encoded = "CCM".equals(algorithmParamsName)
+                        ? new CCMParameters(nonce, macSize).getEncoded()
+                        : new GCMParameters(nonce, macSize).getEncoded();
+                    algParams.init(encoded);
                 }
 
                 cipher.init(cipherMode, key, algParams, random);
