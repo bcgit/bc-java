@@ -352,7 +352,7 @@ public final class ARIA
         {
             if (GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                ccmParams = CCMParameters.getInstance(GcmSpecUtil.extractGcmParameters(paramSpec));
+                ccmParams = CCMParameters.getInstance(GcmSpecUtil.extractCcmParameters(paramSpec));
             }
             else if (paramSpec instanceof AEADParameterSpec)
             {

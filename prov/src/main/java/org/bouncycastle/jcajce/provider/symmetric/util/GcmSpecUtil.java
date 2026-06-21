@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.util.Integers;
 
@@ -150,6 +151,36 @@ public class GcmSpecUtil
                     throws Exception
                 {
                     return ASN1Sequence.getInstance(new GCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue() / 8).toASN1Primitive());
+                }
+            });
+        }
+        catch (Exception e)
+        {
+            throw new InvalidParameterSpecException("Cannot process GCMParameterSpec");
+        }
+    }
+
+    /**
+     * Return a sequence representing a primitive version of the CCMParameters class, derived from a
+     * GCMParameterSpec (the JCE has no dedicated CCM spec, so a GCMParameterSpec carries the CCM nonce
+     * and tag length). CCMParameters is used rather than GCMParameters so that the RFC 5084 CCM ICV
+     * lengths (4/6/8/10/12/14/16 octets) are accepted - notably the 8-octet tag of the TLS *_CCM_8
+     * cipher suites, which GCMParameters would reject as outside the GCM 12-16 range.
+     *
+     * @param paramSpec a GCMParameterSpec.
+     * @return an ASN1Sequence representing a CCMParameters.
+     */
+    public static ASN1Sequence extractCcmParameters(final AlgorithmParameterSpec paramSpec)
+        throws InvalidParameterSpecException
+    {
+        try
+        {
+            return (ASN1Sequence)AccessController.doPrivileged(new PrivilegedExceptionAction()
+            {
+                public Object run()
+                    throws Exception
+                {
+                    return ASN1Sequence.getInstance(new CCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue() / 8).toASN1Primitive());
                 }
             });
         }
