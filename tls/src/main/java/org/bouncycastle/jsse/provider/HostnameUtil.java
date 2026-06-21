@@ -121,10 +121,10 @@ class HostnameUtil
             // for publicly-trusted server certs. The fallback below is also
             // a Name-Constraints bypass surface — see Properties.JSSE_HOSTNAME_CHECK_CN_FALLBACK
             // javadoc for the full scenario — so it is gated behind that
-            // property, default OFF. Set the property to "true" (the current default) to restore the
+            // property, default OFF. Set the property to "true" to restore the
             // pre-fix SunJSSE-compatible behaviour for legacy certs that only
             // identify the server via CN.
-            if (Properties.isOverrideSet(Properties.JSSE_HOSTNAME_CHECK_CN_FALLBACK, true))
+            if (Properties.isOverrideSet(Properties.JSSE_HOSTNAME_CHECK_CN_FALLBACK))
             {
                 ASN1Primitive commonName = findMostSpecificCN(certificate.getSubjectX500Principal());
                 if (commonName instanceof ASN1String
