@@ -84,7 +84,7 @@ public class JcePBEKeyEncryptionMethodGenerator
 
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, S2K.Argon2Params params)
     {
-        super(passPhrase, params);
+        super(passPhrase, params, new JcaPGPS2KCalculator());
     }
 
     /**

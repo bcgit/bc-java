@@ -7,11 +7,18 @@ public abstract class PBESecretKeyDecryptor
 {
     private char[] passPhrase;
     private PGPDigestCalculatorProvider calculatorProvider;
+    private PGPS2KCalculator s2kCalculator;
 
     protected PBESecretKeyDecryptor(char[] passPhrase, PGPDigestCalculatorProvider calculatorProvider)
     {
+        this(passPhrase, calculatorProvider, null);
+    }
+
+    protected PBESecretKeyDecryptor(char[] passPhrase, PGPDigestCalculatorProvider calculatorProvider, PGPS2KCalculator s2kCalculator)
+    {
         this.passPhrase = passPhrase;
         this.calculatorProvider = calculatorProvider;
+        this.s2kCalculator = s2kCalculator;
     }
 
     public PGPDigestCalculator getChecksumCalculator(int hashAlgorithm)
@@ -23,7 +30,7 @@ public abstract class PBESecretKeyDecryptor
     public byte[] makeKeyFromPassPhrase(int keyAlgorithm, S2K s2k)
         throws PGPException
     {
-        return PGPUtil.makeKeyFromPassPhrase(calculatorProvider, keyAlgorithm, s2k, passPhrase);
+        return PGPUtil.makeKeyFromPassPhrase(calculatorProvider, s2kCalculator, keyAlgorithm, s2k, passPhrase);
     }
 
     public abstract byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
