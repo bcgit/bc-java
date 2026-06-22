@@ -70,60 +70,26 @@ public class SnovaParameterSpec
 
     static
     {
-        parameters.put("SNOVA_24_5_4_SSK", SNOVA_24_5_4_SSK);
-        parameters.put("SNOVA_24_5_4_ESK", SNOVA_24_5_4_ESK);
-        parameters.put("SNOVA_24_5_4_SHAKE_SSK", SNOVA_24_5_4_SHAKE_SSK);
-        parameters.put("SNOVA_24_5_4_SHAKE_ESK", SNOVA_24_5_4_SHAKE_ESK);
-
-        parameters.put("SNOVA_24_5_5_SSK", SNOVA_24_5_5_SSK);
-        parameters.put("SNOVA_24_5_5_ESK", SNOVA_24_5_5_ESK);
-        parameters.put("SNOVA_24_5_5_SHAKE_SSK", SNOVA_24_5_5_SHAKE_SSK);
-        parameters.put("SNOVA_24_5_5_SHAKE_ESK", SNOVA_24_5_5_SHAKE_ESK);
-
-        parameters.put("SNOVA_25_8_3_SSK", SNOVA_25_8_3_SSK);
-        parameters.put("SNOVA_25_8_3_ESK", SNOVA_25_8_3_ESK);
-        parameters.put("SNOVA_25_8_3_SHAKE_SSK", SNOVA_25_8_3_SHAKE_SSK);
-        parameters.put("SNOVA_25_8_3_SHAKE_ESK", SNOVA_25_8_3_SHAKE_ESK);
-
-        parameters.put("SNOVA_29_6_5_SSK", SNOVA_29_6_5_SSK);
-        parameters.put("SNOVA_29_6_5_ESK", SNOVA_29_6_5_ESK);
-        parameters.put("SNOVA_29_6_5_SHAKE_SSK", SNOVA_29_6_5_SHAKE_SSK);
-        parameters.put("SNOVA_29_6_5_SHAKE_ESK", SNOVA_29_6_5_SHAKE_ESK);
-
-        parameters.put("SNOVA_37_8_4_SSK", SNOVA_37_8_4_SSK);
-        parameters.put("SNOVA_37_8_4_ESK", SNOVA_37_8_4_ESK);
-        parameters.put("SNOVA_37_8_4_SHAKE_SSK", SNOVA_37_8_4_SHAKE_SSK);
-        parameters.put("SNOVA_37_8_4_SHAKE_ESK", SNOVA_37_8_4_SHAKE_ESK);
-
-        parameters.put("SNOVA_37_17_2_SSK", SNOVA_37_17_2_SSK);
-        parameters.put("SNOVA_37_17_2_ESK", SNOVA_37_17_2_ESK);
-        parameters.put("SNOVA_37_17_2_SHAKE_SSK", SNOVA_37_17_2_SHAKE_SSK);
-        parameters.put("SNOVA_37_17_2_SHAKE_ESK", SNOVA_37_17_2_SHAKE_ESK);
-
-        parameters.put("SNOVA_49_11_3_SSK", SNOVA_49_11_3_SSK);
-        parameters.put("SNOVA_49_11_3_ESK", SNOVA_49_11_3_ESK);
-        parameters.put("SNOVA_49_11_3_SHAKE_SSK", SNOVA_49_11_3_SHAKE_SSK);
-        parameters.put("SNOVA_49_11_3_SHAKE_ESK", SNOVA_49_11_3_SHAKE_ESK);
-
-        parameters.put("SNOVA_56_25_2_SSK", SNOVA_56_25_2_SSK);
-        parameters.put("SNOVA_56_25_2_ESK", SNOVA_56_25_2_ESK);
-        parameters.put("SNOVA_56_25_2_SHAKE_SSK", SNOVA_56_25_2_SHAKE_SSK);
-        parameters.put("SNOVA_56_25_2_SHAKE_ESK", SNOVA_56_25_2_SHAKE_ESK);
-
-        parameters.put("SNOVA_60_10_4_SSK", SNOVA_60_10_4_SSK);
-        parameters.put("SNOVA_60_10_4_ESK", SNOVA_60_10_4_ESK);
-        parameters.put("SNOVA_60_10_4_SHAKE_SSK", SNOVA_60_10_4_SHAKE_SSK);
-        parameters.put("SNOVA_60_10_4_SHAKE_ESK", SNOVA_60_10_4_SHAKE_ESK);
-
-        parameters.put("SNOVA_66_15_3_SSK", SNOVA_66_15_3_SSK);
-        parameters.put("SNOVA_66_15_3_ESK", SNOVA_66_15_3_ESK);
-        parameters.put("SNOVA_66_15_3_SHAKE_SSK", SNOVA_66_15_3_SHAKE_SSK);
-        parameters.put("SNOVA_66_15_3_SHAKE_ESK", SNOVA_66_15_3_SHAKE_ESK);
-
-        parameters.put("SNOVA_75_33_2_SSK", SNOVA_75_33_2_SSK);
-        parameters.put("SNOVA_75_33_2_ESK", SNOVA_75_33_2_ESK);
-        parameters.put("SNOVA_75_33_2_SHAKE_SSK", SNOVA_75_33_2_SHAKE_SSK);
-        parameters.put("SNOVA_75_33_2_SHAKE_ESK", SNOVA_75_33_2_SHAKE_ESK);
+        // fromName(name) looks up Strings.toLowerCase(name), but the SnovaParameters
+        // names are upper-case (e.g. "SNOVA_24_5_4_SSK"); key by the lower-cased name so
+        // fromName(getName()) round-trips. Same shape as MQOMParameterSpec.
+        SnovaParameterSpec[] all = new SnovaParameterSpec[]{
+            SNOVA_24_5_4_SSK, SNOVA_24_5_4_ESK, SNOVA_24_5_4_SHAKE_SSK, SNOVA_24_5_4_SHAKE_ESK,
+            SNOVA_24_5_5_SSK, SNOVA_24_5_5_ESK, SNOVA_24_5_5_SHAKE_SSK, SNOVA_24_5_5_SHAKE_ESK,
+            SNOVA_25_8_3_SSK, SNOVA_25_8_3_ESK, SNOVA_25_8_3_SHAKE_SSK, SNOVA_25_8_3_SHAKE_ESK,
+            SNOVA_29_6_5_SSK, SNOVA_29_6_5_ESK, SNOVA_29_6_5_SHAKE_SSK, SNOVA_29_6_5_SHAKE_ESK,
+            SNOVA_37_8_4_SSK, SNOVA_37_8_4_ESK, SNOVA_37_8_4_SHAKE_SSK, SNOVA_37_8_4_SHAKE_ESK,
+            SNOVA_37_17_2_SSK, SNOVA_37_17_2_ESK, SNOVA_37_17_2_SHAKE_SSK, SNOVA_37_17_2_SHAKE_ESK,
+            SNOVA_49_11_3_SSK, SNOVA_49_11_3_ESK, SNOVA_49_11_3_SHAKE_SSK, SNOVA_49_11_3_SHAKE_ESK,
+            SNOVA_56_25_2_SSK, SNOVA_56_25_2_ESK, SNOVA_56_25_2_SHAKE_SSK, SNOVA_56_25_2_SHAKE_ESK,
+            SNOVA_60_10_4_SSK, SNOVA_60_10_4_ESK, SNOVA_60_10_4_SHAKE_SSK, SNOVA_60_10_4_SHAKE_ESK,
+            SNOVA_66_15_3_SSK, SNOVA_66_15_3_ESK, SNOVA_66_15_3_SHAKE_SSK, SNOVA_66_15_3_SHAKE_ESK,
+            SNOVA_75_33_2_SSK, SNOVA_75_33_2_ESK, SNOVA_75_33_2_SHAKE_SSK, SNOVA_75_33_2_SHAKE_ESK,
+        };
+        for (int i = 0; i < all.length; i++)
+        {
+            parameters.put(Strings.toLowerCase(all[i].name), all[i]);
+        }
     }
 
     private final String name;

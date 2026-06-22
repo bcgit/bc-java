@@ -87,6 +87,7 @@ public class AllTests
         suite.addTestSuite(MQOMTest.class);
         suite.addTestSuite(SQIsignTest.class);
         suite.addTestSuite(HawkTest.class);
+        suite.addTestSuite(ParameterSpecRoundTripTest.class);
 
         return new BCTestSetup(suite);
     }

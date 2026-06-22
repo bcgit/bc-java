@@ -18,6 +18,13 @@ public class HQCParameterSpec
 
     static
     {
+        // getName() returns the HQCParameters name (e.g. "hqc-128"), so the dashed form
+        // must be a key for fromName(getName()) to round-trip; the un-dashed names are
+        // kept as aliases.
+        parameters.put("hqc-128", hqc128);
+        parameters.put("hqc-192", hqc192);
+        parameters.put("hqc-256", hqc256);
+
         parameters.put("hqc128", hqc128);
         parameters.put("hqc192", hqc192);
         parameters.put("hqc256", hqc256);
