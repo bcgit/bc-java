@@ -57,6 +57,7 @@ public abstract class PBESecretKeyEncryptor
     protected int aeadAlgorithm;
     protected char[] passPhrase;
     protected PGPDigestCalculator s2kDigestCalculator;
+    protected PGPS2KCalculator s2kCalculator;
     protected int s2kCount;
     protected S2K s2k;
 
@@ -64,10 +65,16 @@ public abstract class PBESecretKeyEncryptor
 
     protected PBESecretKeyEncryptor(int encAlgorithm, int aeadAlgorithm, S2K.Argon2Params argon2Params, SecureRandom random, char[] passPhrase)
     {
+        this(encAlgorithm, aeadAlgorithm, argon2Params, null, random, passPhrase);
+    }
+
+    protected PBESecretKeyEncryptor(int encAlgorithm, int aeadAlgorithm, S2K.Argon2Params argon2Params, PGPS2KCalculator s2kCalculator, SecureRandom random, char[] passPhrase)
+    {
         this.encAlgorithm = encAlgorithm;
         this.aeadAlgorithm = aeadAlgorithm;
         this.passPhrase = passPhrase;
         this.s2k = S2K.argon2S2K(argon2Params);
+        this.s2kCalculator = s2kCalculator;
         this.random = random;
     }
 
@@ -114,7 +121,7 @@ public abstract class PBESecretKeyEncryptor
     public byte[] getKey()
         throws PGPException
     {
-        return PGPUtil.makeKeyFromPassPhrase(s2kDigestCalculator, encAlgorithm, s2k, passPhrase);
+        return PGPUtil.makeKeyFromPassPhrase(s2kDigestCalculator, s2kCalculator, encAlgorithm, s2k, passPhrase);
     }
 
     public S2K getS2K()

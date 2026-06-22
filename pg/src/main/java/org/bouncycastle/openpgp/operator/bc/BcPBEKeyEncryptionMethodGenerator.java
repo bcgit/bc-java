@@ -47,7 +47,7 @@ public class BcPBEKeyEncryptionMethodGenerator
      */
     public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, S2K.Argon2Params argon2Params)
     {
-        super(passPhrase, argon2Params);
+        super(passPhrase, argon2Params, new BcPGPS2KCalculator());
     }
 
     /**

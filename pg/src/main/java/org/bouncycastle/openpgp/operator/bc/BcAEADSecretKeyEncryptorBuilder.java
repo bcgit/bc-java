@@ -34,7 +34,7 @@ public class BcAEADSecretKeyEncryptorBuilder
 
     public PBESecretKeyEncryptor build(char[] passphrase, final PublicKeyPacket pubKey)
     {
-        return new PBESecretKeyEncryptor(symmetricAlgorithm, aeadAlgorithm, argon2Params, random, passphrase)
+        return new PBESecretKeyEncryptor(symmetricAlgorithm, aeadAlgorithm, argon2Params, new BcPGPS2KCalculator(), random, passphrase)
         {
             private byte[] iv;
 

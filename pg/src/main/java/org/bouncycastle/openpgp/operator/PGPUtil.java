@@ -6,8 +6,6 @@ import java.io.OutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
-import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
@@ -18,8 +16,17 @@ import org.bouncycastle.util.Strings;
 class PGPUtil
     implements HashAlgorithmTags
 {
+    // Property names mirror org.bouncycastle.crypto.params.Argon2Parameters.MAX_MEMORY_EXP / MAX_PASSES /
+    // MAX_PARALLELISM. They are referenced here as plain strings (rather than via the Argon2Parameters
+    // constants) so that this top-level operator class does not import org.bouncycastle.crypto.* - the
+    // Argon2 cost clamp is policy on untrusted packet data and must run here, before any backend.
+    private static final String MAX_MEMORY_EXP = "org.bouncycastle.argon2.max_memory_exp";
+    private static final String MAX_PASSES = "org.bouncycastle.argon2.max_passes";
+    private static final String MAX_PARALLELISM = "org.bouncycastle.argon2.max_parallelism";
+
     static byte[] makeKeyFromPassPhrase(
         PGPDigestCalculator digestCalculator,
+        PGPS2KCalculator s2kCalculator,
         int algorithm,
         S2K s2k,
         char[] passPhrase)
@@ -64,25 +71,31 @@ class PGPUtil
         {
             if (s2k.getType() == S2K.ARGON_2)
             {
+                if (s2kCalculator == null)
+                {
+                    throw new PGPException("no PGPS2KCalculator configured for Argon2 S2K");
+                }
                 int memorySizeExponent = s2k.getMemorySizeExponent();
-                // TODO: should really be 3 + log2(parallelism)
-                if (memorySizeExponent < 3 || memorySizeExponent > Properties.asInteger(Argon2Parameters.MAX_MEMORY_EXP, 30))
+                // The passes, parallelism and memory-size fields are one-byte values taken verbatim from
+                // the (unauthenticated) S2K packet, and Argon2 must run before the message can be
+                // authenticated. Clamp all three to conservative, property-overridable maxima so a single
+                // decrypt attempt cannot be driven into a huge allocation or unbounded CPU work. The clamp
+                // stays here (above the backend) so the .bc / .jcajce calculators cannot diverge on it.
+                // TODO: memory lower bound should really be 3 + log2(parallelism)
+                if (memorySizeExponent < 3 || memorySizeExponent > Properties.asInteger(MAX_MEMORY_EXP, 24))
                 {
                     throw new PGPException("memory size exponent out of range");
                 }
+                if (s2k.getPasses() < 1 || s2k.getPasses() > Properties.asInteger(MAX_PASSES, 10))
+                {
+                    throw new PGPException("passes out of range");
+                }
+                if (s2k.getParallelism() < 1 || s2k.getParallelism() > Properties.asInteger(MAX_PARALLELISM, 16))
+                {
+                    throw new PGPException("parallelism out of range");
+                }
 
-                Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
-                    .withSalt(s2k.getIV())
-                    .withIterations(s2k.getPasses())
-                    .withParallelism(s2k.getParallelism())
-                    .withMemoryPowOfTwo(s2k.getMemorySizeExponent())
-                    .withVersion(Argon2Parameters.ARGON2_VERSION_13);
-
-                Argon2BytesGenerator argon2 = new Argon2BytesGenerator();
-                argon2.init(builder.build());
-                argon2.generateBytes(passPhrase, keyBytes);
-
-                return keyBytes;
+                return s2kCalculator.makeKey(passPhrase, s2k, keyBytes.length);
             }
             else if (s2k.getHashAlgorithm() != digestCalculator.getAlgorithm())
             {
@@ -186,6 +199,7 @@ class PGPUtil
 
     public static byte[] makeKeyFromPassPhrase(
         PGPDigestCalculatorProvider digCalcProvider,
+        PGPS2KCalculator s2kCalculator,
         int algorithm,
         S2K s2k,
         char[] passPhrase)
@@ -202,6 +216,6 @@ class PGPUtil
             digestCalculator = digCalcProvider.get(HashAlgorithmTags.MD5);
         }
 
-        return makeKeyFromPassPhrase(digestCalculator, algorithm, s2k, passPhrase);
+        return makeKeyFromPassPhrase(digestCalculator, s2kCalculator, algorithm, s2k, passPhrase);
     }
 }
