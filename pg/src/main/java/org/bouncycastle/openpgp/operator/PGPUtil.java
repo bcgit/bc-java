@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
@@ -33,7 +32,7 @@ class PGPUtil
         throws PGPException
     {
         int keySize = getKeySize(algorithm);
-        int digAlg = (s2kCalculator instanceof HashBasedS2KCalculator) ? ((HashBasedS2KCalculator)s2kCalculator).getAlgorithm() : -1;
+        int digAlg = s2kCalculator.getType();
 
         if (s2k != null)
         {
@@ -154,7 +153,7 @@ class PGPUtil
             this.digCalc = digCalc;
         }
 
-        int getAlgorithm()
+        public int getType()
         {
             return digCalc.getAlgorithm();
         }

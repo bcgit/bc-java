@@ -111,7 +111,7 @@ public abstract class PBESecretKeyEncryptor
     {
         if (s2kCalculator instanceof PGPUtil.HashBasedS2KCalculator)
         {
-            return ((PGPUtil.HashBasedS2KCalculator)s2kCalculator).getAlgorithm();
+            return s2kCalculator.getType();
         }
 
         return -1;
@@ -146,7 +146,7 @@ public abstract class PBESecretKeyEncryptor
 
             random.nextBytes(iv);
 
-            s2k = new S2K(((PGPUtil.HashBasedS2KCalculator)s2kCalculator).getAlgorithm(), iv, s2kCount);
+            s2k = new S2K(s2kCalculator.getType(), iv, s2kCount);
         }
 
         return encryptKeyData(getKey(), keyData, keyOff, keyLen);
