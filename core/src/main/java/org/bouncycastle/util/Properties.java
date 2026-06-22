@@ -201,6 +201,16 @@ public class Properties
     public static final String PBE_MAX_SCRYPT_MEMORY = "org.bouncycastle.pbe.max_scrypt_memory";
 
     /**
+     * Upper bound on the RFC 4211 PKMAC / CMP password-based-MAC iteration count honoured when no
+     * explicit ceiling was supplied to {@link org.bouncycastle.cert.crmf.PKMACBuilder}. The count
+     * travels in the (unauthenticated) PBMParameter of an incoming CMP message and drives an
+     * iterated hash, so an unbounded count makes verifying an attacker-supplied message a
+     * CPU-exhaustion vector. Default 10,000,000, generous enough for any legitimate setting. Read
+     * via {@link #asInteger(String, int)}.
+     */
+    public static final String PKMAC_MAX_ITERATION_COUNT = "org.bouncycastle.pkmac.max_iteration_count";
+
+    /**
      * Upper bound on the total number of valid-policy-tree nodes retained (across all depth
      * levels) during PKIX certification-path validation. Certificate policy mapping combined with
      * the anyPolicy expansion of RFC 5280 6.1.3/6.1.4 can grow the tree multiplicatively per
