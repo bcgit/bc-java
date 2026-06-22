@@ -114,35 +114,6 @@ class PGPUtil
         return keySize;
     }
 
-    public static byte[] makeKeyFromPassPhrase(
-        PGPDigestCalculatorProvider digCalcProvider,
-        PGPS2KCalculator s2kCalculator,
-        int algorithm,
-        S2K s2k,
-        char[] passPhrase)
-        throws PGPException
-    {
-        PGPDigestCalculator digestCalculator;
-
-        if (s2k != null)
-        {
-            if (s2k.getType() == S2K.ARGON_2)
-            {
-                return makeKeyFromPassPhrase(s2kCalculator, algorithm, s2k, passPhrase);
-            }
-            else
-            {
-                return makeKeyFromPassPhrase(new HashBasedS2KCalculator(digCalcProvider.get(s2k.getHashAlgorithm())), algorithm, s2k, passPhrase);
-            }
-        }
-        else
-        {
-            digestCalculator = digCalcProvider.get(HashAlgorithmTags.MD5);
-        }
-
-        return makeKeyFromPassPhrase(new HashBasedS2KCalculator(digestCalculator), algorithm, s2k, passPhrase);
-    }
-
     static class HashBasedS2KCalculator
         implements PGPS2KCalculator
     {
