@@ -224,7 +224,9 @@ public class RSADigestSigner
 
             int nonEqual = 0;
 
-            for (int i = 0; i < hash.length; i++)
+            // Compare the whole trailing OCTET STRING - tag, length and every hash byte. That region
+            // is hash.length + 2 bytes
+            for (int i = 0; i < hash.length + 2; i++)
             {
                 nonEqual |= (sig[sigOffset + i] ^ expected[expectedOffset + i]);
             }
