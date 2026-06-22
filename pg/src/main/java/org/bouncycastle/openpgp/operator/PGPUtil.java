@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
@@ -25,7 +26,6 @@ class PGPUtil
     private static final String MAX_PARALLELISM = "org.bouncycastle.argon2.max_parallelism";
 
     static byte[] makeKeyFromPassPhrase(
-        PGPDigestCalculator digestCalculator,
         PGPS2KCalculator s2kCalculator,
         int algorithm,
         S2K s2k,
@@ -33,6 +33,7 @@ class PGPUtil
         throws PGPException
     {
         int keySize = getKeySize(algorithm);
+        int digAlg = (s2kCalculator instanceof HashBasedS2KCalculator) ? ((HashBasedS2KCalculator)s2kCalculator).getAlgorithm() : -1;
 
         if (s2k != null)
         {
@@ -64,116 +65,20 @@ class PGPUtil
 
                 return s2kCalculator.makeKey(passPhrase, s2k, (keySize + 7) / 8);
             }
-            else if (s2k.getHashAlgorithm() != digestCalculator.getAlgorithm())
+            else if (s2k.getHashAlgorithm() != digAlg)
             {
                 throw new PGPException("s2k/digestCalculator mismatch");
             }
         }
         else
         {
-            if (digestCalculator.getAlgorithm() != HashAlgorithmTags.MD5)
+            if (HashAlgorithmTags.MD5 != digAlg)
             {
                 throw new PGPException("digestCalculator not for MD5");
             }
         }
-
-        return makeKeyFromCalculator(digestCalculator, s2k, passPhrase, keySize);
-    }
-
-    private static byte[] makeKeyFromCalculator(PGPDigestCalculator digestCalculator, S2K s2k, char[] passPhrase, int keySize)
-        throws PGPException
-    {
-        byte[] pBytes = Strings.toUTF8ByteArray(passPhrase);
-        byte[] keyBytes = new byte[(keySize + 7) / 8];
-
-        int generatedBytes = 0;
-        int loopCount = 0;
-
-        OutputStream dOut = digestCalculator.getOutputStream();
-
-        try
-        {
-            byte[] iv = s2k != null? s2k.getIV() : null;
-            while (generatedBytes < keyBytes.length)
-            {
-                for (int i = 0; i != loopCount; i++)
-                {
-                    dOut.write(0);
-                }
-
-                if (s2k != null)
-                {
-                    switch (s2k.getType())
-                    {
-                    case S2K.SIMPLE:
-                        dOut.write(pBytes);
-                        break;
-                    case S2K.SALTED:
-                        dOut.write(iv);
-                        dOut.write(pBytes);
-                        break;
-                    case S2K.SALTED_AND_ITERATED:
-                        long count = s2k.getIterationCount();
-                        dOut.write(iv);
-                        dOut.write(pBytes);
-
-                        count -= iv.length + pBytes.length;
-
-                        while (count > 0)
-                        {
-                            if (count < iv.length)
-                            {
-                                dOut.write(iv, 0, (int)count);
-                                break;
-                            }
-                            else
-                            {
-                                dOut.write(iv);
-                                count -= iv.length;
-                            }
-
-                            if (count < pBytes.length)
-                            {
-                                dOut.write(pBytes, 0, (int)count);
-                                count = 0;
-                            }
-                            else
-                            {
-                                dOut.write(pBytes);
-                                count -= pBytes.length;
-                            }
-                        }
-                        break;
-                    default:
-                        throw new PGPException("unknown S2K type: " + s2k.getType());
-                    }
-                }
-                else
-                {
-                    dOut.write(pBytes);
-                }
-
-                dOut.close();
-
-                byte[] dig = digestCalculator.getDigest();
-                int toCopy = Math.min(dig.length, keyBytes.length - generatedBytes);
-                System.arraycopy(dig, 0, keyBytes, generatedBytes, toCopy);
-                generatedBytes += toCopy;
-
-                loopCount++;
-            }
-        }
-        catch (IOException e)
-        {
-            throw new PGPException("exception calculating digest: " + e.getMessage(), e);
-        }
-
-        for (int i = 0; i != pBytes.length; i++)
-        {
-            pBytes[i] = 0;
-        }
-
-        return keyBytes;
+        
+        return s2kCalculator.makeKey(passPhrase, s2k, (keySize + 7) / 8);
     }
 
     private static int getKeySize(int algorithm)
@@ -220,15 +125,141 @@ class PGPUtil
     {
         PGPDigestCalculator digestCalculator;
 
-        if (s2k != null && s2k.getType() != S2K.ARGON_2)
+        if (s2k != null)
         {
-            digestCalculator = digCalcProvider.get(s2k.getHashAlgorithm());
+            if (s2k.getType() == S2K.ARGON_2)
+            {
+                return makeKeyFromPassPhrase(s2kCalculator, algorithm, s2k, passPhrase);
+            }
+            else
+            {
+                return makeKeyFromPassPhrase(new HashBasedS2KCalculator(digCalcProvider.get(s2k.getHashAlgorithm())), algorithm, s2k, passPhrase);
+            }
         }
         else
         {
             digestCalculator = digCalcProvider.get(HashAlgorithmTags.MD5);
         }
 
-        return makeKeyFromPassPhrase(digestCalculator, s2kCalculator, algorithm, s2k, passPhrase);
+        return makeKeyFromPassPhrase(new HashBasedS2KCalculator(digestCalculator), algorithm, s2k, passPhrase);
+    }
+
+    static class HashBasedS2KCalculator
+        implements PGPS2KCalculator
+    {
+        private PGPDigestCalculator digCalc;
+
+        HashBasedS2KCalculator(PGPDigestCalculator digCalc)
+        {
+            this.digCalc = digCalc;
+        }
+
+        int getAlgorithm()
+        {
+            return digCalc.getAlgorithm();
+        }
+
+        private byte[] makeKeyFromCalculator(PGPDigestCalculator digestCalculator, S2K s2k, char[] passPhrase, int keyLen)
+            throws PGPException
+        {
+            byte[] pBytes = Strings.toUTF8ByteArray(passPhrase);
+            byte[] keyBytes = new byte[keyLen];
+
+            int generatedBytes = 0;
+            int loopCount = 0;
+
+            OutputStream dOut = digestCalculator.getOutputStream();
+
+            try
+            {
+                byte[] iv = s2k != null ? s2k.getIV() : null;
+                while (generatedBytes < keyBytes.length)
+                {
+                    for (int i = 0; i != loopCount; i++)
+                    {
+                        dOut.write(0);
+                    }
+
+                    if (s2k != null)
+                    {
+                        switch (s2k.getType())
+                        {
+                        case S2K.SIMPLE:
+                            dOut.write(pBytes);
+                            break;
+                        case S2K.SALTED:
+                            dOut.write(iv);
+                            dOut.write(pBytes);
+                            break;
+                        case S2K.SALTED_AND_ITERATED:
+                            long count = s2k.getIterationCount();
+                            dOut.write(iv);
+                            dOut.write(pBytes);
+
+                            count -= iv.length + pBytes.length;
+
+                            while (count > 0)
+                            {
+                                if (count < iv.length)
+                                {
+                                    dOut.write(iv, 0, (int)count);
+                                    break;
+                                }
+                                else
+                                {
+                                    dOut.write(iv);
+                                    count -= iv.length;
+                                }
+
+                                if (count < pBytes.length)
+                                {
+                                    dOut.write(pBytes, 0, (int)count);
+                                    count = 0;
+                                }
+                                else
+                                {
+                                    dOut.write(pBytes);
+                                    count -= pBytes.length;
+                                }
+                            }
+                            break;
+                        default:
+                            throw new PGPException("unknown S2K type: " + s2k.getType());
+                        }
+                    }
+                    else
+                    {
+                        dOut.write(pBytes);
+                    }
+
+                    dOut.close();
+
+                    byte[] dig = digestCalculator.getDigest();
+                    int toCopy = Math.min(dig.length, keyBytes.length - generatedBytes);
+                    System.arraycopy(dig, 0, keyBytes, generatedBytes, toCopy);
+                    generatedBytes += toCopy;
+
+                    loopCount++;
+                }
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("exception calculating digest: " + e.getMessage(), e);
+            }
+
+            for (int i = 0; i != pBytes.length; i++)
+            {
+                pBytes[i] = 0;
+            }
+
+            return keyBytes;
+        }
+
+        @Override
+        public byte[] makeKey(char[] passPhrase, S2K s2k, int keyLen)
+            throws PGPException
+        {
+            return makeKeyFromCalculator(digCalc, s2k, passPhrase, keyLen);
+        }
     }
 }
