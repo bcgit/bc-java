@@ -213,6 +213,40 @@ public class CCMTest
 
         invalidTagLengthTest();
         validTagLengthTest();
+
+        noUnverifiedPlaintextOnFailure();
+    }
+
+    private void noUnverifiedPlaintextOnFailure()
+        throws Exception
+    {
+        CCMBlockCipher ccm = new CCMBlockCipher(AESEngine.newInstance());
+        ccm.init(false, new AEADParameters(new KeyParameter(K2), 48, N2, A2));
+
+        // Corrupt the authentication tag so verification fails; the ciphertext body is unchanged.
+        byte[] tampered = Arrays.clone(C2);
+        tampered[tampered.length - 1] ^= 0x01;
+
+        byte[] output = new byte[ccm.getOutputSize(tampered.length)];
+        Arrays.fill(output, (byte)0x55);
+
+        try
+        {
+            ccm.processPacket(tampered, 0, tampered.length, output, 0);
+            fail("tampered CCM ciphertext must not verify");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            // On a tag-check failure the caller's output buffer must not be left holding the
+            // unverified CTR plaintext.
+            for (int i = 0; i != output.length; i++)
+            {
+                if (output[i] != (byte)0x55)
+                {
+                    fail("CCM left unverified plaintext in the output buffer on tag failure");
+                }
+            }
+        }
     }
 
     private boolean isEqual(byte[] exp, byte[] other, int off)
