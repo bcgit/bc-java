@@ -340,10 +340,18 @@ public class CCMBlockCipher
                 macBlock[i] = 0;
             }
 
+            // Decrypt into a private buffer and verify the MAC before writing any plaintext to the
+            // caller's output: on a tag-check failure the caller's buffer must not be left holding
+            // unverified CTR plaintext (NIST SP 800-38C 6.2 returns FAIL without revealing P; this
+            // matches GCMSIVBlockCipher). CCM is non-streaming, so the whole payload is buffered here
+            // regardless.
+            byte[] plain = new byte[outputLen];
+            int plainIndex = 0;
+
             while (inIndex < (inOff + outputLen - blockSize))
             {
-                ctrCipher.processBlock(in, inIndex, output, outIndex);
-                outIndex += blockSize;
+                ctrCipher.processBlock(in, inIndex, plain, plainIndex);
+                plainIndex += blockSize;
                 inIndex += blockSize;
             }
 
@@ -353,16 +361,19 @@ public class CCMBlockCipher
 
             ctrCipher.processBlock(block, 0, block, 0);
 
-            System.arraycopy(block, 0, output, outIndex, outputLen - (inIndex - inOff));
+            System.arraycopy(block, 0, plain, plainIndex, outputLen - (inIndex - inOff));
 
             byte[] calculatedMacBlock = new byte[blockSize];
 
-            calculateMac(output, outOff, outputLen, calculatedMacBlock);
+            calculateMac(plain, 0, outputLen, calculatedMacBlock);
 
             if (!Arrays.constantTimeAreEqual(macBlock, calculatedMacBlock))
             {
+                Arrays.clear(plain);
                 throw new InvalidCipherTextException("mac check in CCM failed");
             }
+
+            System.arraycopy(plain, 0, output, outOff, outputLen);
         }
 
         return outputLen;
