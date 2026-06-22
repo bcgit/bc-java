@@ -62,7 +62,7 @@ public class BCKyberPrivateKey
         {
             BCKyberPrivateKey otherKey = (BCKyberPrivateKey)o;
 
-            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
+            return Arrays.constantTimeAreEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;

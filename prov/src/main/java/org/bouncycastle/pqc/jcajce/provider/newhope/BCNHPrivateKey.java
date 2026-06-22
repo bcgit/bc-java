@@ -54,7 +54,7 @@ public class BCNHPrivateKey
         }
         BCNHPrivateKey otherKey = (BCNHPrivateKey)o;
 
-        return Arrays.areEqual(params.getSecData(), otherKey.params.getSecData());
+        return Arrays.constantTimeAreEqual(getEncoded(), otherKey.getEncoded());
     }
 
     public int hashCode()

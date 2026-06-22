@@ -50,7 +50,7 @@ public class BCMQOMPrivateKey
         if (o instanceof BCMQOMPrivateKey)
         {
             BCMQOMPrivateKey other = (BCMQOMPrivateKey)o;
-            return Arrays.areEqual(params.getEncoded(), other.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), other.params.getEncoded());
         }
         return false;
     }

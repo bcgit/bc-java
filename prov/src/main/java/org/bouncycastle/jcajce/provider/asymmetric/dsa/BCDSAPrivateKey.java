@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 public class BCDSAPrivateKey
@@ -115,7 +116,7 @@ public class BCDSAPrivateKey
         
         DSAPrivateKey other = (DSAPrivateKey)o;
         
-        return this.getX().equals(other.getX()) 
+        return BigIntegers.constantTimeAreEqual(this.getX(), other.getX())
             && this.getParams().getG().equals(other.getParams().getG()) 
             && this.getParams().getP().equals(other.getParams().getP()) 
             && this.getParams().getQ().equals(other.getParams().getQ());

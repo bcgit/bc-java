@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -248,12 +249,12 @@ public class BCRSAPrivateCrtKey
 
         return this.getModulus().equals(key.getModulus())
          && this.getPublicExponent().equals(key.getPublicExponent())
-         && this.getPrivateExponent().equals(key.getPrivateExponent())
-         && this.getPrimeP().equals(key.getPrimeP())
-         && this.getPrimeQ().equals(key.getPrimeQ())
-         && this.getPrimeExponentP().equals(key.getPrimeExponentP())
-         && this.getPrimeExponentQ().equals(key.getPrimeExponentQ())
-         && this.getCrtCoefficient().equals(key.getCrtCoefficient());
+         && BigIntegers.constantTimeAreEqual(this.getPrivateExponent(), key.getPrivateExponent())
+         && BigIntegers.constantTimeAreEqual(this.getPrimeP(), key.getPrimeP())
+         && BigIntegers.constantTimeAreEqual(this.getPrimeQ(), key.getPrimeQ())
+         && BigIntegers.constantTimeAreEqual(this.getPrimeExponentP(), key.getPrimeExponentP())
+         && BigIntegers.constantTimeAreEqual(this.getPrimeExponentQ(), key.getPrimeExponentQ())
+         && BigIntegers.constantTimeAreEqual(this.getCrtCoefficient(), key.getCrtCoefficient());
     }
 
     private void readObject(

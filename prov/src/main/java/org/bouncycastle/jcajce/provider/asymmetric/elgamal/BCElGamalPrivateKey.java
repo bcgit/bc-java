@@ -24,6 +24,7 @@ import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalPrivateKeySpec;
+import org.bouncycastle.util.BigIntegers;
 
 public class BCElGamalPrivateKey
     implements ElGamalPrivateKey, DHPrivateKey, PKCS12BagAttributeCarrier
@@ -145,7 +146,7 @@ public class BCElGamalPrivateKey
 
         DHPrivateKey other = (DHPrivateKey)o;
 
-        return this.getX().equals(other.getX())
+        return BigIntegers.constantTimeAreEqual(this.getX(), other.getX())
             && this.getParams().getG().equals(other.getParams().getG())
             && this.getParams().getP().equals(other.getParams().getP())
             && this.getParams().getL() == other.getParams().getL();
