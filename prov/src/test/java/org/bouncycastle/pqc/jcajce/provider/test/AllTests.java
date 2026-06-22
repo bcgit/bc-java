@@ -87,6 +87,8 @@ public class AllTests
         suite.addTestSuite(MQOMTest.class);
         suite.addTestSuite(SQIsignTest.class);
         suite.addTestSuite(HawkTest.class);
+        suite.addTestSuite(NTRUPlusTest.class);
+        suite.addTestSuite(NTRUPlusKeyPairGeneratorTest.class);
 
         return new BCTestSetup(suite);
     }
