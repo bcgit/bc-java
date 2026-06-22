@@ -256,28 +256,12 @@ public class KGCMBlockCipher
             resultLen += ctrEngine.doFinal(out, outOff + resultLen);
 
             calculateMac(out, outOff, len, lenAAD);
-        }
-        else
-        {
-            int ctLen = len - macSize; 
-            if (out.length - outOff < ctLen)
+
+            if (macBlock == null)
             {
-                throw new OutputLengthException("Output buffer too short");
+                throw new IllegalStateException("mac is not calculated");
             }
 
-            calculateMac(data.getBuffer(), 0, ctLen, lenAAD);
-
-            resultLen = ctrEngine.processBytes(data.getBuffer(), 0, ctLen, out, outOff);
-            resultLen += ctrEngine.doFinal(out, outOff + resultLen);
-        }
-
-        if (macBlock == null)
-        {
-            throw new IllegalStateException("mac is not calculated");
-        }
-
-        if (forEncryption)
-        {
             System.arraycopy(macBlock, 0, out, outOff + resultLen, macSize);
 
             reset();
@@ -286,6 +270,22 @@ public class KGCMBlockCipher
         }
         else
         {
+            int ctLen = len - macSize;
+            if (out.length - outOff < ctLen)
+            {
+                throw new OutputLengthException("Output buffer too short");
+            }
+
+            // KGCM authenticates the ciphertext, so verify the tag BEFORE decrypting: a forged
+            // ciphertext is rejected without ever writing unverified CTR plaintext to the caller's
+            // output buffer (matches CCMBlockCipher / GCMSIVBlockCipher).
+            calculateMac(data.getBuffer(), 0, ctLen, lenAAD);
+
+            if (macBlock == null)
+            {
+                throw new IllegalStateException("mac is not calculated");
+            }
+
             byte[] mac = new byte[macSize];
             System.arraycopy(data.getBuffer(), len - macSize, mac, 0, macSize);
 
@@ -296,6 +296,9 @@ public class KGCMBlockCipher
             {
                 throw new InvalidCipherTextException("mac verification failed");
             }
+
+            resultLen = ctrEngine.processBytes(data.getBuffer(), 0, ctLen, out, outOff);
+            resultLen += ctrEngine.doFinal(out, outOff + resultLen);
 
             reset();
 

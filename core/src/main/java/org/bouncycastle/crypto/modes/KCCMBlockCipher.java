@@ -310,23 +310,26 @@ public class KCCMBlockCipher
         }
         else
         {
-            // A partial trailing data block is permitted: the gamma keystream is truncated for
-            // the trailing block and CalculateMac zero-pads it when recomputing the tag below.
-            // See the interop caveat in the class javadoc (github #287).
-            int outStart = outOff;
             int dataLen = len - macSize;
 
             engine.processBlock(nonce, 0, s, 0);
 
-            // recover the plaintext payload (gamma/counter mode, trailing block truncated)
+            // Recover the plaintext into a private buffer and verify the MAC before writing any of it
+            // to the caller's output: on a tag failure the caller's buffer must not be left holding
+            // unverified gamma plaintext (matches CCMBlockCipher / GCMSIVBlockCipher). A partial
+            // trailing block is permitted: the gamma keystream is truncated for the trailing block
+            // and CalculateMac zero-pads it. See the interop caveat in the class javadoc (github #287).
+            byte[] plain = new byte[dataLen];
+            int plainOff = 0;
+            int inPos = inOff;
             int totalLength = dataLen;
             while (totalLength > 0)
             {
                 int blockLen = Math.min(totalLength, engine.getBlockSize());
-                ProcessBlock(in, inOff, blockLen, out, outOff);
+                ProcessBlock(in, inPos, blockLen, plain, plainOff);
                 totalLength -= blockLen;
-                inOff += blockLen;
-                outOff += blockLen;
+                inPos += blockLen;
+                plainOff += blockLen;
             }
 
             // recover the appended (masked) MAC using the next keystream block
@@ -334,27 +337,27 @@ public class KCCMBlockCipher
 
             engine.processBlock(s, 0, buffer, 0);
 
+            byte[] recoveredMac = new byte[macSize];
             for (int byteIndex = 0; byteIndex < macSize; byteIndex++)
             {
-                out[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ in[inOff + byteIndex]);
+                recoveredMac[byteIndex] = (byte)(buffer[byteIndex] ^ in[inPos + byteIndex]);
             }
-            outOff += macSize;
 
             // recompute the MAC over the recovered plaintext and compare
-            System.arraycopy(out, outOff - macSize, buffer, 0, macSize);
-
-            CalculateMac(out, outStart, dataLen);
+            CalculateMac(plain, 0, dataLen);
 
             System.arraycopy(macBlock, 0, mac, 0, macSize);
 
-            byte[] calculatedMac = new byte[macSize];
-
-            System.arraycopy(buffer, 0, calculatedMac, 0, macSize);
-
-            if (!Arrays.constantTimeAreEqual(mac, calculatedMac))
+            if (!Arrays.constantTimeAreEqual(mac, recoveredMac))
             {
+                Arrays.clear(plain);
                 throw new InvalidCipherTextException("mac check failed");
             }
+
+            // Only now (MAC verified) expose the recovered plaintext, followed by the recovered MAC,
+            // in the caller's output - the same buffer layout the encrypt side and callers expect.
+            System.arraycopy(plain, 0, out, outOff, dataLen);
+            System.arraycopy(recoveredMac, 0, out, outOff + dataLen, macSize);
 
             reset();
 

@@ -98,6 +98,75 @@ public class DSTU7624Test
         XTSModeTests();
         GCMModeTests();
         testOverlapping();
+        kccmKgcmNoUnverifiedPlaintextOnFailure();
+    }
+
+    private void kccmKgcmNoUnverifiedPlaintextOnFailure()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] iv = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] plaintext = Hex.decode("303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F");
+
+        // KCCM: plaintext is recovered into the output before the MAC is checked, so a tag failure
+        // must not leave it there.
+        {
+            AEADParameters params = new AEADParameters(new KeyParameter(key), 128, iv);
+            KCCMBlockCipher ccm = new KCCMBlockCipher(new DSTU7624Engine(128));
+            ccm.init(true, params);
+            byte[] ct = new byte[ccm.getOutputSize(plaintext.length)];
+            ccm.doFinal(ct, ccm.processBytes(plaintext, 0, plaintext.length, ct, 0));
+
+            ct[ct.length - 1] ^= 0x01;  // corrupt the (masked) MAC
+
+            ccm.init(false, params);
+            byte[] out = new byte[ct.length];
+            Arrays.fill(out, (byte)0x55);
+            try
+            {
+                ccm.doFinal(out, ccm.processBytes(ct, 0, ct.length, out, 0));
+                fail("tampered KCCM ciphertext must not verify");
+            }
+            catch (InvalidCipherTextException e)
+            {
+                checkNoUnverifiedPlaintext("KCCM", out, plaintext.length);
+            }
+        }
+
+        // KGCM
+        {
+            AEADParameters params = new AEADParameters(new KeyParameter(key), 128, iv);
+            KGCMBlockCipher gcm = new KGCMBlockCipher(new DSTU7624Engine(128));
+            gcm.init(true, params);
+            byte[] ct = new byte[gcm.getOutputSize(plaintext.length)];
+            gcm.doFinal(ct, gcm.processBytes(plaintext, 0, plaintext.length, ct, 0));
+
+            ct[ct.length - 1] ^= 0x01;  // corrupt the tag
+
+            gcm.init(false, params);
+            byte[] out = new byte[ct.length];
+            Arrays.fill(out, (byte)0x55);
+            try
+            {
+                gcm.doFinal(out, gcm.processBytes(ct, 0, ct.length, out, 0));
+                fail("tampered KGCM ciphertext must not verify");
+            }
+            catch (InvalidCipherTextException e)
+            {
+                checkNoUnverifiedPlaintext("KGCM", out, plaintext.length);
+            }
+        }
+    }
+
+    private void checkNoUnverifiedPlaintext(String name, byte[] out, int plaintextLen)
+    {
+        for (int i = 0; i != plaintextLen; i++)
+        {
+            if (out[i] != (byte)0x55)
+            {
+                fail(name + " left unverified plaintext in the output buffer on tag failure");
+            }
+        }
     }
 
     public static void main(
