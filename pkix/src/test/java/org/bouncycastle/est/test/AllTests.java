@@ -5,6 +5,7 @@ import java.security.Security;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.est.HttpUtilTest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.PrintTestResult;
 
@@ -39,6 +40,7 @@ public class AllTests
         suite.addTestSuite(TestHostNameAuthorizer.class);
         suite.addTestSuite(ESTResponseTest.class);
         suite.addTestSuite(Rfc7894AttributesTest.class);
+        suite.addTestSuite(HttpUtilTest.class);
 
         return new ESTTestSetup(suite);
     }
