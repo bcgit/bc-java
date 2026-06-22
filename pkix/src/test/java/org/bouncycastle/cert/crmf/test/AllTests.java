@@ -23,7 +23,11 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cmp.CMPObjectIdentifiers;
+import org.bouncycastle.asn1.cmp.PBMParameter;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.crmf.*;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
@@ -117,6 +121,31 @@ public class AllTests
     public void tearDown()
     {
 
+    }
+
+    public void testPKMACIterationCountCeiling()
+        throws Exception
+    {
+        AlgorithmIdentifier owf = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1);
+        AlgorithmIdentifier mac = new AlgorithmIdentifier(IANAObjectIdentifiers.hmacSHA1, DERNull.INSTANCE);
+        byte[] salt = new byte[20];
+
+        // A PKMACBuilder with no explicit ceiling must still reject an attacker-declared iteration
+        // count (from an untrusted CMP PBMParameter) before the iterated hash runs.
+        PBMParameter hostile = new PBMParameter(salt, owf, Integer.MAX_VALUE, mac);
+        try
+        {
+            new PKMACBuilder(new JcePKMACValuesCalculator()).setParameters(hostile);
+            fail("no exception on oversized iteration count");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertTrue(e.getMessage().startsWith("iteration count exceeds limit"));
+        }
+
+        // A legitimate count is still accepted.
+        PBMParameter benign = new PBMParameter(salt, owf, 1000, mac);
+        new PKMACBuilder(new JcePKMACValuesCalculator()).setParameters(benign);
     }
 
     public void testBasicMessage()
