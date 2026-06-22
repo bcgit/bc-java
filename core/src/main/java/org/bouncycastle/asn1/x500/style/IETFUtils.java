@@ -497,17 +497,41 @@ public class IETFUtils
             }
         }
 
-        int end = vBuf.length();
-        int index = 0;
+        // Escape in a single linear pass into a fresh builder. The previous implementation escaped by
+        // inserting a backslash into the buffer it was scanning (O(n) per insert), so a value of n
+        // RFC 4514 special characters - or n leading/trailing spaces - cost ~n^2/2 character moves: a
+        // CPU-exhaustion vector for an attacker-supplied large RDN reached via
+        // X500Name.toString()/equals()/hashCode(). Output is unchanged.
+        int len = vBuf.length();
 
-        if (vBuf.length() >= 2 && vBuf.charAt(0) == '\\' && vBuf.charAt(1) == '#')
+        // A leading "\#" (produced above when the value begins with '#') is emitted verbatim and the
+        // leading-space escaping is suppressed, matching the original phase ordering.
+        boolean hashPrefix = len >= 2 && vBuf.charAt(0) == '\\' && vBuf.charAt(1) == '#';
+
+        int firstNonSpace = 0;
+        while (firstNonSpace < len && vBuf.charAt(firstNonSpace) == ' ')
         {
-            index += 2;
+            firstNonSpace++;
+        }
+        int lastNonSpace = len - 1;
+        while (lastNonSpace >= 0 && vBuf.charAt(lastNonSpace) == ' ')
+        {
+            lastNonSpace--;
         }
 
-        while (index != end)
+        StringBuilder out = new StringBuilder(len + 16);
+        int index = 0;
+        if (hashPrefix)
         {
-            switch (vBuf.charAt(index))
+            out.append("\\#");
+            index = 2;
+        }
+
+        for (; index < len; index++)
+        {
+            char c = vBuf.charAt(index);
+            boolean escape;
+            switch (c)
             {
             case ',':
             case '"':
@@ -517,39 +541,24 @@ public class IETFUtils
             case '<':
             case '>':
             case ';':
-            {
-                vBuf.insert(index, "\\");
-                index += 2;
-                ++end;
+                escape = true;
                 break;
-            }
+            case ' ':
+                // leading spaces escaped only without a "\#" prefix; trailing spaces always escaped.
+                escape = (!hashPrefix && index < firstNonSpace) || index > lastNonSpace;
+                break;
             default:
-            {
-                ++index;
+                escape = false;
                 break;
             }
-            }
-        }
-
-        int start = 0;
-        if (vBuf.length() > 0)
-        {
-            while (vBuf.length() > start && vBuf.charAt(start) == ' ')
+            if (escape)
             {
-                vBuf.insert(start, "\\");
-                start += 2;
+                out.append('\\');
             }
+            out.append(c);
         }
 
-        int endBuf = vBuf.length() - 1;
-
-        while (endBuf >= start && vBuf.charAt(endBuf) == ' ')
-        {
-            vBuf.insert(endBuf, '\\');
-            endBuf--;
-        }
-
-        return vBuf.toString();
+        return out.toString();
     }
 
     public static String canonicalize(String s)
