@@ -15,6 +15,11 @@ import org.bouncycastle.openpgp.operator.PGPS2KCalculator;
 public class JcaPGPS2KCalculator
     implements PGPS2KCalculator
 {
+    public int getType()
+    {
+        return S2K.ARGON_2;
+    }
+
     public byte[] makeKey(char[] passPhrase, S2K s2k, int keyLen)
         throws PGPException
     {

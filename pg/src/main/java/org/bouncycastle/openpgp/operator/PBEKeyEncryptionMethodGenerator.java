@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.ContainedPacket;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
@@ -170,7 +169,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
 
             random.nextBytes(iv);
 
-            s2k = new S2K(((PGPUtil.HashBasedS2KCalculator)s2kCalculator).getAlgorithm(), iv, s2kCount);
+            s2k = new S2K(s2kCalculator.getType(), iv, s2kCount);
         }
 
         return PGPUtil.makeKeyFromPassPhrase(s2kCalculator, encAlgorithm, s2k, passPhrase);
