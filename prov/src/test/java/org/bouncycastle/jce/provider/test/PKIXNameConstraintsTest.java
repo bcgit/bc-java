@@ -261,8 +261,54 @@ public class PKIXNameConstraintsTest
             fail(e.getMessage());
         }
 
+        testNameConstraintBypasses();
+
         testSGP22LegacySerialNumber();
         testSGP22NameConstraints();
+    }
+
+    private void testNameConstraintBypasses()
+        throws Exception
+    {
+        // An RFC 1034 root-label trailing dot must not let a host escape an excluded rfc822Name or
+        // URI subtree, matching the dNSName canonicalisation.
+        PKIXNameConstraintValidator emailV = new PKIXNameConstraintValidator();
+        emailV.addExcludedSubtree(new GeneralSubtree(new GeneralName(GeneralName.rfc822Name, "bank.com")));
+        try
+        {
+            emailV.checkExcluded(new GeneralName(GeneralName.rfc822Name, "ceo@bank.com."));
+            fail("trailing-dot email must be caught by the excluded bank.com subtree");
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            // expected
+        }
+
+        PKIXNameConstraintValidator uriV = new PKIXNameConstraintValidator();
+        uriV.addExcludedSubtree(new GeneralSubtree(new GeneralName(GeneralName.uniformResourceIdentifier, "competitor.example")));
+        try
+        {
+            uriV.checkExcluded(new GeneralName(GeneralName.uniformResourceIdentifier, "https://competitor.example./"));
+            fail("trailing-dot URI host must be caught by the excluded competitor.example subtree");
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            // expected
+        }
+
+        // A directoryName permitted constraint must match as an INITIAL PREFIX of the subject
+        // (RFC 5280 4.2.1.10), not as a subsequence at an arbitrary offset. Prepending an RDN ahead
+        // of the permitted sequence must not satisfy the constraint.
+        GeneralName permittedDN = new GeneralName(GeneralName.directoryName,
+            new X500Name(RFC4519Style.INSTANCE, "ou=permittedSubtree1, o=Test Certificates 2011, c=US"));
+        GeneralName prefixSubject = new GeneralName(GeneralName.directoryName,
+            new X500Name(RFC4519Style.INSTANCE, "cn=Valid DN nameConstraints EE Certificate Test1, ou=permittedSubtree1, o=Test Certificates 2011, c=US"));
+        GeneralName prependedSubject = new GeneralName(GeneralName.directoryName,
+            new X500Name(RFC4519Style.INSTANCE, "cn=Valid DN nameConstraints EE Certificate Test1, ou=permittedSubtree1, o=Test Certificates 2011, c=US, o=Injected"));
+
+        isTrue("prefix subject must be permitted", isPermitted(permittedDN, prefixSubject));
+        isTrue("subject with an RDN prepended before the permitted sequence must NOT be permitted",
+            !isPermitted(permittedDN, prependedSubject));
     }
 
     private GeneralName directoryName(String name)

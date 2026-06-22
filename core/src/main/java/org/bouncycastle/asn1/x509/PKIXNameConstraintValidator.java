@@ -326,22 +326,13 @@ public class PKIXNameConstraintValidator
             return withinDNSubtreeSGP22(dns, subtree);
         }
 
+        // RFC 5280 4.2.1.10 / 7.1: a directoryName constraint is satisfied only when the constraint's
+        // RDNSequence is an initial prefix of the subject's. Match from index 0 only - searching for
+        // the constraint's first RDN at an arbitrary offset let an attacker prepend RDNs ahead of the
+        // permitted sequence (e.g. a subject C=FR,O=Attacker,C=US,O=TrustedOrg,CN=x being judged
+        // inside permitted subtree C=US,O=TrustedOrg) and still pass the permittedSubtrees check. The
+        // relaxed anywhere-match needed for GSMA SGP.22 stays behind Properties.X509_SGP22_NAME_CONSTRAINTS.
         int start = 0;
-        RDN subtreeRdnStart = RDN.getInstance(subtree.getObjectAt(0));
-        for (int j = 0; j < dns.size(); j++)
-        {
-            start = j;
-            RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
-            if (IETFUtils.rDNAreEqual(subtreeRdnStart, dnsRdn))
-            {
-                break;
-            }
-        }
-
-        if (subtree.size() > dns.size() - start)
-        {
-            return false;
-        }
 
         for (int j = 0; j < subtree.size(); j++)
         {
@@ -1089,18 +1080,20 @@ public class PKIXNameConstraintValidator
     {
         int atPos = constraint.indexOf('@');
 
-        // a particular mailbox
+        // a particular mailbox. RFC 1034 root-label trailing dot: the dNSName path strips it (see
+        // isDNSConstrained); apply the same canonicalisation to the rfc822Name host so a trailing dot
+        // (e.g. "user@bank.com.") cannot slip a leaf past an excluded/permitted "bank.com" constraint.
         if (atPos > 0)
         {
-            return email.equalsIgnoreCase(constraint);
+            return stripTrailingDot(email).equalsIgnoreCase(stripTrailingDot(constraint));
         }
 
-        String sub = email.substring(email.indexOf('@') + 1);
+        String sub = stripTrailingDot(email.substring(email.indexOf('@') + 1));
 
         // "@domain" style
         if (atPos == 0)
         {
-            return sub.equalsIgnoreCase(constraint.substring(1));
+            return sub.equalsIgnoreCase(stripTrailingDot(constraint.substring(1)));
         }
 
         // address in sub domain
@@ -1110,7 +1103,7 @@ public class PKIXNameConstraintValidator
         }
 
         // on particular host
-        return sub.equalsIgnoreCase(constraint);
+        return sub.equalsIgnoreCase(stripTrailingDot(constraint));
     }
 
     private static boolean withinDomain(String testDomain, String domain)
@@ -1845,7 +1838,9 @@ public class PKIXNameConstraintValidator
 
     private static boolean isURIConstrained(String constraint, String uri)
     {
-        String host = extractHostFromURL(uri);
+        // Strip an RFC 1034 root-label trailing dot from the host, matching the dNSName path, so a
+        // URI host such as "competitor.example." cannot slip past a "competitor.example" constraint.
+        String host = stripTrailingDot(extractHostFromURL(uri));
 
         // in sub domain or domain
         if (constraint.startsWith("."))
@@ -1854,7 +1849,7 @@ public class PKIXNameConstraintValidator
         }
 
         // a host
-        return host.equalsIgnoreCase(constraint);
+        return host.equalsIgnoreCase(stripTrailingDot(constraint));
     }
 
     private static String extractHostFromURL(String url)
