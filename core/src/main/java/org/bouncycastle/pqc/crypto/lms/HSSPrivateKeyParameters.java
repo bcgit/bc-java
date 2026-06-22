@@ -346,7 +346,7 @@ public class HSSPrivateKeyParameters
             // I and seed are derived from this nodes parent and will change if the parent q, I, seed changes.
             //
             boolean seedEquals = org.bouncycastle.util.Arrays.areEqual(childI, keys[i].getI())
-                && org.bouncycastle.util.Arrays.areEqual(childSeed, keys[i].getMasterSecret());
+                && org.bouncycastle.util.Arrays.constantTimeAreEqual(childSeed, keys[i].getMasterSecret());
 
 
             if (!seedEquals)

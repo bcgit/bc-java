@@ -210,6 +210,17 @@ public final class BigIntegers
         return x.longValue();
     }
 
+    /**
+     * Compare two values for equality in constant time, returning true iff they are equal.
+     * <p>
+     * Intended for comparing secret values (e.g. private key components) without the
+     * early-exit timing leak of {@link BigInteger#equals(Object)}.
+     */
+    public static boolean constantTimeAreEqual(BigInteger a, BigInteger b)
+    {
+        return Arrays.constantTimeAreEqual(a.toByteArray(), b.toByteArray());
+    }
+
     public static boolean hasAnySmallFactors(BigInteger x)
     {
         if (!x.testBit(0))

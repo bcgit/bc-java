@@ -59,7 +59,7 @@ public class BCHQCPrivateKey
         {
             BCHQCPrivateKey otherKey = (BCHQCPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
