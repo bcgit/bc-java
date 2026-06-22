@@ -821,7 +821,10 @@ public class OpenPGPMessageInputStream
                 }
                 catch (PGPSignatureException e)
                 {
-                    // continue
+                    // signature rejected by policy (e.g. weak hash) - skip it, do NOT fall through to
+                    // verify()/report it as correct. Matches the detached- and prefixed-signature paths.
+                    processor.onException(e);
+                    continue;
                 }
 
                 if (!dataSignature.createdInBounds(processor.getVerifyNotBefore(), processor.getVerifyNotAfter()))
