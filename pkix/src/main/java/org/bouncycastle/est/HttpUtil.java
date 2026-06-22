@@ -114,11 +114,17 @@ class HttpUtil
 
         private String consumeAlpha()
         {
-            char c = src.charAt(p);
-            while (p < src.length() && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+            while (p < src.length())
             {
-                p++;
-                c = src.charAt(p);
+                char c = src.charAt(p);
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+                {
+                    p++;
+                }
+                else
+                {
+                    break;
+                }
             }
             String s = src.substring(last, p);
             last = p;
