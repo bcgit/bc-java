@@ -33,6 +33,7 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSRuntimeException;
 import org.bouncycastle.cms.CMSAuthenticatedData;
 import org.bouncycastle.cms.CMSAuthenticatedDataGenerator;
 import org.bouncycastle.cms.CMSException;
@@ -665,6 +666,64 @@ public class NewAuthenticatedDataTest
             assertTrue(Arrays.equals(data, recData));
             assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
         }
+    }
+
+    public void testTamperedContentIsRejected()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+        DigestCalculatorProvider calcProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        // generate with authenticated attributes (the messageDigest attribute path)
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build(),
+            calcProvider.get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)));
+
+        // AuthenticatedData authenticates but does not encrypt the content, so the plaintext is
+        // present in the encoding. Flip one content byte to simulate an in-transit substitution,
+        // leaving authAttrs and the MAC untouched.
+        byte[] encoded = ad.getEncoded();
+        int idx = indexOf(encoded, data);
+        assertTrue("content not located in encoding", idx >= 0);
+        encoded[idx] ^= 0x01;
+
+        CMSAuthenticatedData tampered = new CMSAuthenticatedData(encoded, calcProvider);
+        RecipientInformation recipient =
+            (RecipientInformation)tampered.getRecipientInfos().getRecipients().iterator().next();
+
+        // read the (tampered) content so the content digest is computed
+        recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        try
+        {
+            recipient.getMac();
+            fail("tampered AuthenticatedData content must not yield a valid MAC");
+        }
+        catch (CMSRuntimeException e)
+        {
+            // expected: the recovered content digest no longer matches the messageDigest attribute
+        }
+    }
+
+    private static int indexOf(byte[] haystack, byte[] needle)
+    {
+        for (int i = 0; i <= haystack.length - needle.length; i++)
+        {
+            int j = 0;
+            while (j < needle.length && haystack[i + j] == needle[j])
+            {
+                j++;
+            }
+            if (j == needle.length)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private void tryKeyTransWithDigest(ASN1ObjectIdentifier macAlg)
