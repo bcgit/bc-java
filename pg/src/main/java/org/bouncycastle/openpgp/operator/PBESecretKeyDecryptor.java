@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator;
 
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.openpgp.PGPException;
 
@@ -30,7 +31,16 @@ public abstract class PBESecretKeyDecryptor
     public byte[] makeKeyFromPassPhrase(int keyAlgorithm, S2K s2k)
         throws PGPException
     {
-        return PGPUtil.makeKeyFromPassPhrase(calculatorProvider, s2kCalculator, keyAlgorithm, s2k, passPhrase);
+        if (s2k == null || s2k.getType() != S2K.ARGON_2)
+        {
+            if (s2k == null)
+            {
+                return PGPUtil.makeKeyFromPassPhrase(new PGPUtil.HashBasedS2KCalculator(calculatorProvider.get(HashAlgorithmTags.MD5)), keyAlgorithm, s2k, passPhrase);
+            }
+            return PGPUtil.makeKeyFromPassPhrase(new PGPUtil.HashBasedS2KCalculator(calculatorProvider.get(s2k.getHashAlgorithm())), keyAlgorithm, s2k, passPhrase);
+        }
+        return PGPUtil.makeKeyFromPassPhrase(s2kCalculator, keyAlgorithm, s2k, passPhrase);
+
     }
 
     public abstract byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
