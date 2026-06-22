@@ -70,6 +70,7 @@ public class AllTests
         suite.addTestSuite(MLKEMKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumTest.class);
+        suite.addTestSuite(DilithiumFactoryConsistencyTest.class);
         suite.addTestSuite(MLDSAKeyPairGeneratorTest.class);
         suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(BIKEKeyPairGeneratorTest.class);
