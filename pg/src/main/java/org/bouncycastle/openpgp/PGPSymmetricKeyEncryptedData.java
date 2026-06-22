@@ -77,7 +77,7 @@ public class PGPSymmetricKeyEncryptedData
         {
             InputStream encIn = getInputStream();
             encIn.mark(dataDecryptor.getBlockSize() + 2); // iv + 2 octets checksum
-            if (processSymmetricEncIntegrityPacketDataStream(withIntegrityPacket, dataDecryptor, encIn))
+            if (processSymmetricEncIntegrityPacketDataStream(withIntegrityPacket, dataDecryptor, encIn, isPublicKeyEncrypted()))
             {
                 encIn.reset();
                 throw new PGPDataValidationException("data check failed.");
@@ -93,5 +93,16 @@ public class PGPSymmetricKeyEncryptedData
         {
             throw new PGPException("Exception creating cipher", e);
         }
+    }
+
+    /**
+     * Whether this data was decrypted from a public-key (or otherwise already-recovered session key)
+     * rather than from a password (PBE). The CFB "quick check" is suppressed on the public-key /
+     * session-key path (it would only re-create the Mister-Zuccherato oracle and there is no
+     * multi-SKESK passphrase retry to drive); PBE keeps it. Overridden by {@link PGPSessionKeyEncryptedData}.
+     */
+    protected boolean isPublicKeyEncrypted()
+    {
+        return false;
     }
 }
