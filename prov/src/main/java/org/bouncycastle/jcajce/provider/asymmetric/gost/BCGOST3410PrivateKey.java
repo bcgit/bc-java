@@ -26,6 +26,7 @@ import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.jce.spec.GOST3410PrivateKeySpec;
 import org.bouncycastle.jce.spec.GOST3410PublicKeyParameterSetSpec;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Exceptions;
 
 public class BCGOST3410PrivateKey
@@ -178,7 +179,7 @@ public class BCGOST3410PrivateKey
 
         GOST3410PrivateKey other = (GOST3410PrivateKey)o;
 
-        return this.getX().equals(other.getX())
+        return BigIntegers.constantTimeAreEqual(this.getX(), other.getX())
             && this.getParameters().getPublicKeyParameters().equals(other.getParameters().getPublicKeyParameters())
             && compareObj(this.getParameters().getDigestParamSetOID(), other.getParameters().getDigestParamSetOID())
             && compareObj(this.getParameters().getEncryptionParamSetOID(), other.getParameters().getEncryptionParamSetOID());
