@@ -336,7 +336,7 @@ class NTRUPlusCipherSpi
     {
         public NTRUPlus768()
         {
-            super(NTRUPlusParameters.ntruplus_kem_864);
+            super(NTRUPlusParameters.ntruplus_kem_768);
         }
     }
 
