@@ -62,7 +62,7 @@ public class BCFrodoPrivateKey
         {
             BCFrodoPrivateKey otherKey = (BCFrodoPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;

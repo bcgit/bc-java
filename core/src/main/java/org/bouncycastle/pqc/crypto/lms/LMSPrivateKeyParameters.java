@@ -418,7 +418,7 @@ public class LMSPrivateKeyParameters
         {
             return false;
         }
-        if (!Arrays.areEqual(masterSecret, that.masterSecret))
+        if (!Arrays.constantTimeAreEqual(masterSecret, that.masterSecret))
         {
             return false;
         }

@@ -70,7 +70,7 @@ public class BCFalconPrivateKey
         {
             BCFalconPrivateKey otherKey = (BCFalconPrivateKey)o;
 
-            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
+            return Arrays.constantTimeAreEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;

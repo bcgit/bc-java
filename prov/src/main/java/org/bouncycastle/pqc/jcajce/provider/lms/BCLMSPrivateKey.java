@@ -113,7 +113,7 @@ public class BCLMSPrivateKey
 
             try
             {
-                return Arrays.areEqual(keyParams.getEncoded(), otherKey.keyParams.getEncoded());
+                return Arrays.constantTimeAreEqual(keyParams.getEncoded(), otherKey.keyParams.getEncoded());
             }
             catch (IOException e)
             {
