@@ -18,9 +18,9 @@ public class NTRUPlusParameterSpec
 
     static
     {
-        parameters.put("ntruplus-768", ntruplus_768);
-        parameters.put("ntruplus-864", ntruplus_864);
-        parameters.put("ntruplus-864", ntruplus_864);
+        parameters.put("ntru+kem768", ntruplus_768);
+        parameters.put("ntru+kem864", ntruplus_864);
+        parameters.put("ntru+kem1152", ntruplus_1152);
     }
 
     private final String name;
