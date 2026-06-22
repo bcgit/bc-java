@@ -32,40 +32,7 @@ class PGPUtil
         char[] passPhrase)
         throws PGPException
     {
-        int keySize;
-
-        switch (algorithm)
-        {
-        case SymmetricKeyAlgorithmTags.TRIPLE_DES:
-        case SymmetricKeyAlgorithmTags.AES_192:
-        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
-            keySize = 192;
-            break;
-        case SymmetricKeyAlgorithmTags.IDEA:
-        case SymmetricKeyAlgorithmTags.CAST5:
-        case SymmetricKeyAlgorithmTags.BLOWFISH:
-        case SymmetricKeyAlgorithmTags.SAFER:
-        case SymmetricKeyAlgorithmTags.AES_128:
-        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.DES:
-            keySize = 64;
-            break;
-        case SymmetricKeyAlgorithmTags.AES_256:
-        case SymmetricKeyAlgorithmTags.TWOFISH:
-        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-            keySize = 256;
-            break;
-        default:
-            throw new PGPException("unknown symmetric algorithm: " + algorithm);
-        }
-
-        byte[] pBytes = Strings.toUTF8ByteArray(passPhrase);
-        byte[] keyBytes = new byte[(keySize + 7) / 8];
-
-        int generatedBytes = 0;
-        int loopCount = 0;
+        int keySize = getKeySize(algorithm);
 
         if (s2k != null)
         {
@@ -95,7 +62,7 @@ class PGPUtil
                     throw new PGPException("parallelism out of range");
                 }
 
-                return s2kCalculator.makeKey(passPhrase, s2k, keyBytes.length);
+                return s2kCalculator.makeKey(passPhrase, s2k, (keySize + 7) / 8);
             }
             else if (s2k.getHashAlgorithm() != digestCalculator.getAlgorithm())
             {
@@ -109,6 +76,18 @@ class PGPUtil
                 throw new PGPException("digestCalculator not for MD5");
             }
         }
+
+        return makeKeyFromCalculator(digestCalculator, s2k, passPhrase, keySize);
+    }
+
+    private static byte[] makeKeyFromCalculator(PGPDigestCalculator digestCalculator, S2K s2k, char[] passPhrase, int keySize)
+        throws PGPException
+    {
+        byte[] pBytes = Strings.toUTF8ByteArray(passPhrase);
+        byte[] keyBytes = new byte[(keySize + 7) / 8];
+
+        int generatedBytes = 0;
+        int loopCount = 0;
 
         OutputStream dOut = digestCalculator.getOutputStream();
 
@@ -195,6 +174,40 @@ class PGPUtil
         }
 
         return keyBytes;
+    }
+
+    private static int getKeySize(int algorithm)
+        throws PGPException
+    {
+        int keySize;
+
+        switch (algorithm)
+        {
+        case SymmetricKeyAlgorithmTags.TRIPLE_DES:
+        case SymmetricKeyAlgorithmTags.AES_192:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+            keySize = 192;
+            break;
+        case SymmetricKeyAlgorithmTags.IDEA:
+        case SymmetricKeyAlgorithmTags.CAST5:
+        case SymmetricKeyAlgorithmTags.BLOWFISH:
+        case SymmetricKeyAlgorithmTags.SAFER:
+        case SymmetricKeyAlgorithmTags.AES_128:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+            keySize = 128;
+            break;
+        case SymmetricKeyAlgorithmTags.DES:
+            keySize = 64;
+            break;
+        case SymmetricKeyAlgorithmTags.AES_256:
+        case SymmetricKeyAlgorithmTags.TWOFISH:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+            keySize = 256;
+            break;
+        default:
+            throw new PGPException("unknown symmetric algorithm: " + algorithm);
+        }
+        return keySize;
     }
 
     public static byte[] makeKeyFromPassPhrase(
