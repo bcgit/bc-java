@@ -160,6 +160,13 @@ configure(allprojects.findAll {it.name != 'bom'}) {
             check('UseCorrectAssertInTests', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('VariableNameSameAsType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
         }
+
+        // Only run Error Prone over main sources; the test trees carry intentional patterns
+        // (duplicate branches, redundant control flow, etc.) that aren't worth the noise. Use the
+        // task's own name (it.name) - unqualified 'name' would resolve to the enclosing project.
+        if (it.name.toLowerCase().contains("test")) {
+            options.errorprone.enabled = false
+        }
     }
 
 
