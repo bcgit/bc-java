@@ -289,7 +289,7 @@ class TestUtils
                 {
                     continue;
                 }
-                if (line.length() != 0)
+                if (line.length() == 0)
                 {
                     if (!buf.isEmpty())
                     {
