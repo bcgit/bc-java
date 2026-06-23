@@ -23,7 +23,7 @@ public class RevocationKey
     // 20 octets of fingerprint
     public RevocationKey(boolean isCritical, boolean isLongLength, byte[] data)
     {
-        super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, isLongLength, data);
+        super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, isLongLength, verifyData(data));
     }
 
     public RevocationKey(boolean isCritical, byte signatureClass, int keyAlgorithm, byte[] fingerprint)
@@ -38,6 +38,15 @@ public class RevocationKey
         data[0] = signatureClass;
         data[1] = keyAlgorithm;
         System.arraycopy(fingerprint, 0, data, 2, fingerprint.length);
+        return data;
+    }
+
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 2)
+        {
+            throw new IllegalArgumentException("Truncated revocation key subpacket");
+        }
         return data;
     }
 

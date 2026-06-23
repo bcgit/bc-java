@@ -49,7 +49,7 @@ public class Features
         boolean isLongLength,
         byte[] data)
     {
-        super(SignatureSubpacketTags.FEATURES, critical, isLongLength, data);
+        super(SignatureSubpacketTags.FEATURES, critical, isLongLength, verifyData(data));
     }
 
     public Features(boolean critical, byte features)
@@ -60,6 +60,15 @@ public class Features
     public Features(boolean critical, int features)
     {
         super(SignatureSubpacketTags.FEATURES, critical, false, featureToByteArray((byte)features));
+    }
+
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 1)
+        {
+            throw new IllegalArgumentException("Truncated Features subpacket");
+        }
+        return data;
     }
 
     public byte getFeatures()

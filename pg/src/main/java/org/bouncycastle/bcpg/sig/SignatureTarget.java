@@ -20,7 +20,7 @@ public class SignatureTarget
         boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.SIGNATURE_TARGET, critical, isLongLength, data);
+        super(SignatureSubpacketTags.SIGNATURE_TARGET, critical, isLongLength, verifyData(data));
     }
 
     public SignatureTarget(
@@ -30,6 +30,15 @@ public class SignatureTarget
         byte[]     hashData)
     {
         super(SignatureSubpacketTags.SIGNATURE_TARGET, critical, false, Arrays.concatenate(new byte[] { (byte)publicKeyAlgorithm, (byte)hashAlgorithm }, hashData));
+    }
+
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 2)
+        {
+            throw new IllegalArgumentException("Truncated signature target subpacket");
+        }
+        return data;
     }
 
     public int getPublicKeyAlgorithm()
