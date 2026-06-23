@@ -472,7 +472,7 @@ public class BCDSTU4145PrivateKey
 
         BCDSTU4145PrivateKey other = (BCDSTU4145PrivateKey)o;
 
-        return BigIntegers.constantTimeAreEqual(getD(), other.getD()) && (engineGetSpec().equals(other.engineGetSpec()));
+        return BigIntegers.constantTimeAreEqual(getD(), other.getD()) & (engineGetSpec().equals(other.engineGetSpec()));
     }
 
     public int hashCode()
