@@ -63,6 +63,7 @@ public class AllTests
         suite.addTestSuite(SQIsignTest.class);
         suite.addTestSuite(HAETAETest.class);
         suite.addTestSuite(SDitHTest.class);
+        suite.addTestSuite(PublicKeyLengthValidationTest.class);
 
         return new BCTestSetup(suite);
     }
