@@ -248,13 +248,13 @@ public class BCRSAPrivateCrtKey
         RSAPrivateCrtKey key = (RSAPrivateCrtKey)o;
 
         return this.getModulus().equals(key.getModulus())
-         && this.getPublicExponent().equals(key.getPublicExponent())
-         && BigIntegers.constantTimeAreEqual(this.getPrivateExponent(), key.getPrivateExponent())
-         && BigIntegers.constantTimeAreEqual(this.getPrimeP(), key.getPrimeP())
-         && BigIntegers.constantTimeAreEqual(this.getPrimeQ(), key.getPrimeQ())
-         && BigIntegers.constantTimeAreEqual(this.getPrimeExponentP(), key.getPrimeExponentP())
-         && BigIntegers.constantTimeAreEqual(this.getPrimeExponentQ(), key.getPrimeExponentQ())
-         && BigIntegers.constantTimeAreEqual(this.getCrtCoefficient(), key.getCrtCoefficient());
+         & this.getPublicExponent().equals(key.getPublicExponent())
+         & BigIntegers.constantTimeAreEqual(this.getPrivateExponent(), key.getPrivateExponent())
+         & BigIntegers.constantTimeAreEqual(this.getPrimeP(), key.getPrimeP())
+         & BigIntegers.constantTimeAreEqual(this.getPrimeQ(), key.getPrimeQ())
+         & BigIntegers.constantTimeAreEqual(this.getPrimeExponentP(), key.getPrimeExponentP())
+         & BigIntegers.constantTimeAreEqual(this.getPrimeExponentQ(), key.getPrimeExponentQ())
+         & BigIntegers.constantTimeAreEqual(this.getCrtCoefficient(), key.getCrtCoefficient());
     }
 
     private void readObject(

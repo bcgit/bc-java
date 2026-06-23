@@ -215,9 +215,9 @@ public class BCDHPrivateKey
         DHPrivateKey other = (DHPrivateKey)o;
 
         return BigIntegers.constantTimeAreEqual(this.getX(), other.getX())
-            && this.getParams().getG().equals(other.getParams().getG())
-            && this.getParams().getP().equals(other.getParams().getP())
-            && this.getParams().getL() == other.getParams().getL();
+            & this.getParams().getG().equals(other.getParams().getG())
+            & this.getParams().getP().equals(other.getParams().getP())
+            & this.getParams().getL() == other.getParams().getL();
     }
 
     public int hashCode()
