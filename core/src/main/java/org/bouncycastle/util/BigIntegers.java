@@ -199,13 +199,30 @@ public final class BigIntegers
      * the underlying {@code toByteArray()} still runs in time proportional to each value's magnitude
      * — but the comparison no longer differs in length on the value's high bit. Intended for secret
      * key material (RSA {@code d} and the CRT factors, DSA/DH/ElGamal/GOST {@code x}, EC {@code d}),
-     * which are all non-negative.
+     * which are all non-negative; the temporary unsigned encodings holding that secret material are
+     * zeroed before returning.
+     * <p>
+     * Both arguments must be non-null and non-negative; a negative value does not produce a meaningful
+     * result (and may throw {@link IllegalArgumentException}), and a null value throws
+     * {@link NullPointerException}.
+     *
+     * @param a the first value, non-null and non-negative.
+     * @param b the second value, non-null and non-negative.
+     * @return true if {@code a} and {@code b} are numerically equal, false otherwise.
      */
     public static boolean constantTimeAreEqual(BigInteger a, BigInteger b)
     {
         int len = Math.max(getUnsignedByteLength(a), getUnsignedByteLength(b));
 
-        return Arrays.constantTimeAreEqual(asUnsignedByteArray(len, a), asUnsignedByteArray(len, b));
+        byte[] aEnc = asUnsignedByteArray(len, a);
+        byte[] bEnc = asUnsignedByteArray(len, b);
+
+        boolean equal = Arrays.constantTimeAreEqual(aEnc, bEnc);
+
+        Arrays.clear(aEnc);
+        Arrays.clear(bEnc);
+
+        return equal;
     }
 
     public static boolean hasAnySmallFactors(BigInteger x)
