@@ -246,6 +246,16 @@ public class Properties
      */
     public static final String GCM_ALLOW_SHORT_TAGS = "org.bouncycastle.gcm.allow_short_tags";
 
+    /**
+     * Opt in to handling legacy version 0/1 BKS keystores. Those stores derive the HMAC integrity
+     * key at only the digest size in bits (a 16-bit key for SHA-1; CVE-2018-5382), which is
+     * brute-forceable offline, so by default the default {@code BKS} keystore type refuses to load
+     * them and only writes the current version 2 format. Set this property to read or create the
+     * weak legacy format (e.g. to migrate an old store); it also gates registration of the separate
+     * {@code BKS-V1} keystore type. Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String BKS_ENABLE_V1 = "org.bouncycastle.bks.enable_v1";
+
     private Properties()
     {
     }
