@@ -484,7 +484,7 @@ public class BCECGOST3410PrivateKey
 
         BCECGOST3410PrivateKey other = (BCECGOST3410PrivateKey)o;
 
-        return BigIntegers.constantTimeAreEqual(getD(), other.getD()) && (engineGetSpec().equals(other.engineGetSpec()));
+        return BigIntegers.constantTimeAreEqual(getD(), other.getD()) & (engineGetSpec().equals(other.engineGetSpec()));
     }
 
     public int hashCode()
