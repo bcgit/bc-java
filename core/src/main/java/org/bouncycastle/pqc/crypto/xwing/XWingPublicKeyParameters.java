@@ -24,6 +24,11 @@ public class XWingPublicKeyParameters
     {
         super(false);
 
+        if (encoding.length <= X25519PublicKeyParameters.KEY_SIZE)
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
+
         this.kybPub = new MLKEMPublicKeyParameters(MLKEMParameters.ml_kem_768, Arrays.copyOfRange(encoding, 0, encoding.length - X25519PublicKeyParameters.KEY_SIZE));
         this.xdhPub = new X25519PublicKeyParameters(encoding, encoding.length - X25519PublicKeyParameters.KEY_SIZE);
     }
