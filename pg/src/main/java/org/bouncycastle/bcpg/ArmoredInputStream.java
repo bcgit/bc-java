@@ -146,9 +146,11 @@ public class ArmoredInputStream
     boolean restart = false;
     StringList headerList = Strings.newList();
     int lastC = 0;
+    int lookAhead = -1;
     boolean isEndOfStream;
 
     private boolean validateAllowedHeaders = false;
+    private boolean csfRejectPrefixedDashes = true;
     private List<String> allowedHeaders = defaultAllowedHeaders();
 
     /**
@@ -199,6 +201,7 @@ public class ArmoredInputStream
         this.detectMissingChecksum = builder.detectMissingCRC;
         this.crc = builder.ignoreCRC ? null : new FastCRC24();
         this.validateAllowedHeaders = builder.validateAllowedHeaders;
+        this.csfRejectPrefixedDashes = builder.csfRejectPrefixedDashes;
         this.allowedHeaders = builder.allowedHeaders;
 
         if (hasHeaders)
@@ -448,6 +451,12 @@ public class ArmoredInputStream
 
         if (clearText)
         {
+            if (lookAhead != -1)
+            {
+                c = lookAhead;
+                lookAhead = -1;
+                return c;
+            }
             c = in.read();
 
             if (c == '\r' || (c == '\n' && lastC != '\r'))
@@ -456,16 +465,26 @@ public class ArmoredInputStream
             }
             else if (newLineFound && c == '-')
             {
-                c = in.read();
-                if (c == '-')            // a header, not dash escaped
+                lookAhead = in.read();
+                if (lookAhead == '-')            // a header, not dash escaped
                 {
                     clearText = false;
                     start = true;
                     restart = true;
                 }
-                else                   // a space - must be a dash escape
+                else if (lookAhead == ' ')       // a space - must be a dash escape
                 {
+                    // remove dash escaping
                     c = in.read();
+                    lookAhead = -1;
+                }
+                else
+                {
+                    // malformed message
+                    if (csfRejectPrefixedDashes)
+                    {
+                        throw new ArmoredInputException("Prefixed dash without trailing space encountered. CSF-signed message malformed.");
+                    }
                 }
                 newLineFound = false;
             }
@@ -683,6 +702,7 @@ public class ArmoredInputStream
         private boolean detectMissingCRC = false;
         private boolean ignoreCRC = false;
         private boolean validateAllowedHeaders = false;
+        private boolean csfRejectPrefixedDashes = true;
         private List<String> allowedHeaders = defaultAllowedHeaders();
 
         private Builder()
@@ -706,6 +726,12 @@ public class ArmoredInputStream
         public Builder setValidateClearsignedMessageHeaders(boolean validateHeaders)
         {
             this.validateAllowedHeaders = validateHeaders;
+            return this;
+        }
+
+        public Builder setRejectPrefixedDashesInCSFMessages(boolean rejectDashes)
+        {
+            this.csfRejectPrefixedDashes = rejectDashes;
             return this;
         }
 
