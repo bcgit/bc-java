@@ -10,6 +10,10 @@ public class NTRUPlusPublicKeyParameters
     public NTRUPlusPublicKeyParameters(NTRUPlusParameters params, byte[] p)
     {
         super(false, params);
+        if (p.length != params.getPublicKeyBytes())
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
         this.p = Arrays.clone(p);
     }
 

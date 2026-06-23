@@ -281,6 +281,15 @@ public class MayoSigner
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // Reject a buffer too short to contain a signature before indexing it:
+        // generateSignature returns the signature optionally followed by the
+        // message (the signed-message envelope), and verify reads only the
+        // leading getSigBytes() bytes (the encoded solution and the salt); a
+        // shorter buffer would throw ArrayIndexOutOfBoundsException.
+        if (signature.length < params.getSigBytes())
+        {
+            return false;
+        }
         final int m = params.getM();
         final int n = params.getN();
         final int k = params.getK();
