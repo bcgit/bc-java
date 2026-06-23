@@ -108,7 +108,7 @@ public class BCXMSSMTPrivateKey
         {
             BCXMSSMTPrivateKey otherKey = (BCXMSSMTPrivateKey)o;
 
-            return treeDigest.equals(otherKey.treeDigest) && Arrays.constantTimeAreEqual(keyParams.toByteArray(), otherKey.keyParams.toByteArray());
+            return treeDigest.equals(otherKey.treeDigest) & Arrays.constantTimeAreEqual(keyParams.toByteArray(), otherKey.keyParams.toByteArray());
         }
 
         return false;
