@@ -187,14 +187,25 @@ public final class BigIntegers
     }
 
     /**
-     * Compare two values for equality in constant time, returning true iff they are equal.
+     * Compare two non-negative values for equality without an early exit. Both are laid out as
+     * unsigned big-endian byte arrays of a common length — the larger of their two unsigned byte
+     * lengths — before the comparison, so the comparison itself is length-uniform.
      * <p>
-     * Intended for comparing secret values (e.g. private key components) without the
-     * early-exit timing leak of {@link BigInteger#equals(Object)}.
+     * Sizing from the unsigned lengths drops the two's-complement sign byte that
+     * {@link BigInteger#toByteArray()} prepends when the most-significant bit is set: without that,
+     * two values could serialise to different lengths (e.g. 256 vs 257 bytes for a 2048-bit value)
+     * purely according to that high bit, and the variable-time comparison would leak it. This is not
+     * perfectly constant-time — {@code java.math.BigInteger} has no constant-time serialisation, so
+     * the underlying {@code toByteArray()} still runs in time proportional to each value's magnitude
+     * — but the comparison no longer differs in length on the value's high bit. Intended for secret
+     * key material (RSA {@code d} and the CRT factors, DSA/DH/ElGamal/GOST {@code x}, EC {@code d}),
+     * which are all non-negative.
      */
     public static boolean constantTimeAreEqual(BigInteger a, BigInteger b)
     {
-        return Arrays.constantTimeAreEqual(a.toByteArray(), b.toByteArray());
+        int len = Math.max(getUnsignedByteLength(a), getUnsignedByteLength(b));
+
+        return Arrays.constantTimeAreEqual(asUnsignedByteArray(len, a), asUnsignedByteArray(len, b));
     }
 
     public static boolean hasAnySmallFactors(BigInteger x)
