@@ -117,9 +117,9 @@ public class BCDSAPrivateKey
         DSAPrivateKey other = (DSAPrivateKey)o;
         
         return BigIntegers.constantTimeAreEqual(this.getX(), other.getX())
-            && this.getParams().getG().equals(other.getParams().getG()) 
-            && this.getParams().getP().equals(other.getParams().getP()) 
-            && this.getParams().getQ().equals(other.getParams().getQ());
+            & this.getParams().getG().equals(other.getParams().getG())
+            & this.getParams().getP().equals(other.getParams().getP())
+            & this.getParams().getQ().equals(other.getParams().getQ());
     }
 
     public int hashCode()

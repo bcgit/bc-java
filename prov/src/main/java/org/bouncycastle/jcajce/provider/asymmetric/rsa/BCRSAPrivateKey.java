@@ -130,7 +130,7 @@ public class BCRSAPrivateKey
         RSAPrivateKey key = (RSAPrivateKey)o;
 
         return getModulus().equals(key.getModulus())
-            && BigIntegers.constantTimeAreEqual(getPrivateExponent(), key.getPrivateExponent());
+            & BigIntegers.constantTimeAreEqual(getPrivateExponent(), key.getPrivateExponent());
     }
 
     public int hashCode()

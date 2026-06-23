@@ -180,9 +180,9 @@ public class BCGOST3410PrivateKey
         GOST3410PrivateKey other = (GOST3410PrivateKey)o;
 
         return BigIntegers.constantTimeAreEqual(this.getX(), other.getX())
-            && this.getParameters().getPublicKeyParameters().equals(other.getParameters().getPublicKeyParameters())
-            && compareObj(this.getParameters().getDigestParamSetOID(), other.getParameters().getDigestParamSetOID())
-            && compareObj(this.getParameters().getEncryptionParamSetOID(), other.getParameters().getEncryptionParamSetOID());
+            & this.getParameters().getPublicKeyParameters().equals(other.getParameters().getPublicKeyParameters())
+            & compareObj(this.getParameters().getDigestParamSetOID(), other.getParameters().getDigestParamSetOID())
+            & compareObj(this.getParameters().getEncryptionParamSetOID(), other.getParameters().getEncryptionParamSetOID());
     }
 
     private boolean compareObj(Object o1, Object o2)
