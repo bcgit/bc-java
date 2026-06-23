@@ -6,6 +6,7 @@ module org.bouncycastle.provider
 
     provides java.security.Provider with org.bouncycastle.jce.provider.BouncyCastleProvider, org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
+    opens org.bouncycastle.jcajce.provider.asymmetric.cmce to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.frodokem to java.base;
