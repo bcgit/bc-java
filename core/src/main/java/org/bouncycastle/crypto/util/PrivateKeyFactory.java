@@ -40,6 +40,8 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
+import org.bouncycastle.crypto.params.CMCEParameters;
+import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
@@ -55,6 +57,7 @@ import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
@@ -318,6 +321,13 @@ public class PrivateKeyFactory
             ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
 
             return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
+        }
+        else if (algOID.on(ISOIECObjectIdentifiers.id_kem_cm))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            CMCEParameters cmceParams = Utils.cmceParamsLookup(algOID);
+
+            return new CMCEPrivateKeyParameters(cmceParams, keyEnc);
         }
         else if (
             algOID.equals(CryptoProObjectIdentifiers.gostR3410_2001) ||
