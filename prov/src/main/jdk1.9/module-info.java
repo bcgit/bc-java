@@ -6,6 +6,7 @@ module org.bouncycastle.provider
 
     provides java.security.Provider with org.bouncycastle.jce.provider.BouncyCastleProvider, org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
+    opens org.bouncycastle.jcajce.provider.asymmetric.cmce to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.frodokem to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mldsa to java.base;
@@ -63,6 +64,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.hpke;
     exports org.bouncycastle.crypto.io;
     exports org.bouncycastle.crypto.kems;
+    exports org.bouncycastle.crypto.kems.cmce;
     exports org.bouncycastle.crypto.kems.frodo;
     exports org.bouncycastle.crypto.kems.mlkem;
     exports org.bouncycastle.crypto.macs;
@@ -86,6 +88,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce;
     exports org.bouncycastle.jcajce.io;
     exports org.bouncycastle.jcajce.provider.asymmetric;
+    exports org.bouncycastle.jcajce.provider.asymmetric.cmce;
     exports org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
     exports org.bouncycastle.jcajce.provider.asymmetric.dh;
     exports org.bouncycastle.jcajce.provider.asymmetric.dsa;
