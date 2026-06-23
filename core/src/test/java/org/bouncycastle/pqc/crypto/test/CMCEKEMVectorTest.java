@@ -3,6 +3,10 @@ package org.bouncycastle.pqc.crypto.test;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
@@ -14,6 +18,12 @@ import org.bouncycastle.crypto.params.CMCEKeyGenerationParameters;
 import org.bouncycastle.crypto.params.CMCEParameters;
 import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
 import org.bouncycastle.crypto.params.CMCEPublicKeyParameters;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Known-answer tests for the standardised Classic McEliece KEM (ISO/IEC 18033-2:2006/Amd 2:2026,
@@ -55,6 +65,47 @@ public class CMCEKEMVectorTest
         assertEquals(256, CMCEParameters.mceliece460896pcf.getSessionKeySize());
         assertEquals(256, CMCEParameters.mceliece6960119pc.getSessionKeySize());
         assertEquals(256, CMCEParameters.mceliece8192128.getSessionKeySize());
+    }
+
+    public void testKeyInfoFactoryRoundTrip()
+        throws Exception
+    {
+        // Encode and decode the standardised keys through the org.bouncycastle.crypto.util factories,
+        // confirming the SubjectPublicKeyInfo / PKCS#8 carries the per-parameter-set id-kem-cm OID and
+        // that the key material survives the round-trip. The 460896 family covers the base/f/pc/pcf OID
+        // suffixes; the remaining security levels exercise the same factories through prov CMCEKEMTest.
+        CMCEParameters[] params = new CMCEParameters[]{
+            CMCEParameters.mceliece460896, CMCEParameters.mceliece460896f,
+            CMCEParameters.mceliece460896pc, CMCEParameters.mceliece460896pcf
+        };
+        ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[]{
+            ISOIECObjectIdentifiers.mceliece460896, ISOIECObjectIdentifiers.mceliece460896f,
+            ISOIECObjectIdentifiers.mceliece460896pc, ISOIECObjectIdentifiers.mceliece460896pcf
+        };
+
+        for (int i = 0; i != params.length; i++)
+        {
+            CMCEKeyPairGenerator kpGen = new CMCEKeyPairGenerator();
+            kpGen.init(new CMCEKeyGenerationParameters(new SecureRandom(), params[i]));
+            AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+            CMCEPublicKeyParameters pub = (CMCEPublicKeyParameters)kp.getPublic();
+            CMCEPrivateKeyParameters priv = (CMCEPrivateKeyParameters)kp.getPrivate();
+
+            SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pub);
+            assertEquals(oids[i], spki.getAlgorithm().getAlgorithm());
+
+            CMCEPublicKeyParameters pub2 = (CMCEPublicKeyParameters)PublicKeyFactory.createKey(spki);
+            assertEquals(params[i], pub2.getParameters());
+            assertTrue(Arrays.areEqual(pub.getPublicKey(), pub2.getPublicKey()));
+
+            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(priv);
+            assertEquals(oids[i], pki.getPrivateKeyAlgorithm().getAlgorithm());
+
+            CMCEPrivateKeyParameters priv2 = (CMCEPrivateKeyParameters)PrivateKeyFactory.createKey(pki);
+            assertEquals(params[i], priv2.getParameters());
+            assertTrue(Arrays.areEqual(priv.getPrivateKey(), priv2.getPrivateKey()));
+        }
     }
 
     public void testVectors()
