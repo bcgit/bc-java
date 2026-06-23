@@ -107,6 +107,15 @@ public class SnovaSigner
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // Reject a buffer too short to contain a signature before indexing it:
+        // generateSignature returns the signature optionally followed by the
+        // message (the signed-message envelope), and verifySignatureCore reads
+        // only the leading signature bytes; a shorter buffer would throw
+        // ArrayIndexOutOfBoundsException.
+        if (signature.length < ((params.getN() * params.getLsq() + 1) >>> 1) + params.getSaltLength())
+        {
+            return false;
+        }
         byte[] hash = getMessageHash(message);
         MapGroup1 map1 = new MapGroup1(params);
         byte[] pk = pubKey.getEncoded();

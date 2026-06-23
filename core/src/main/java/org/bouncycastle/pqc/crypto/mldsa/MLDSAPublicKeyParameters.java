@@ -20,12 +20,13 @@ public class MLDSAPublicKeyParameters
     public MLDSAPublicKeyParameters(MLDSAParameters params, byte[] encoding)
     {
         super(false, params);
+        MLDSAEngine eng = params.getEngine(null);
+        if (encoding.length != eng.getCryptoPublicKeyBytes())
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
         this.rho = Arrays.copyOfRange(encoding, 0, MLDSAEngine.SeedBytes);
         this.t1 = Arrays.copyOfRange(encoding, MLDSAEngine.SeedBytes, encoding.length);
-        if (t1.length == 0)
-        {
-            throw new IllegalArgumentException("encoding too short");
-        }
     }
 
     public MLDSAPublicKeyParameters(MLDSAParameters params, byte[] rho, byte[] t1)
