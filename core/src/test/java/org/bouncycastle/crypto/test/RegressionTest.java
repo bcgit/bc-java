@@ -87,6 +87,7 @@ public class RegressionTest
             new SHA512HMacTest(),
             new RIPEMD128HMacTest(),
             new RIPEMD160HMacTest(),
+            new SM3HMacTest(),
             new OAEPTest(),
             new PSSTest(),
             new CTSTest(),
