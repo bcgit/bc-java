@@ -46,7 +46,7 @@ public class ECDHBasicAgreement
 
     public BigInteger calculateAgreement(CipherParameters pubKey)
     {
-        return calculateAgreementFieldElement(key, (ECPublicKeyParameters)pubKey).toBigInteger();        
+        return calculateAgreementFieldElement(key, (ECPublicKeyParameters)pubKey).toBigInteger();
     }
 
     static ECFieldElement calculateAgreementFieldElement(ECPrivateKeyParameters privateKey,
