@@ -30,6 +30,8 @@ public class RevocationReason extends SignatureSubpacket
         return Arrays.prepend(Strings.toUTF8ByteArray(description), reason);
     }
 
+    // RFC 9580 5.2.3.31: the Reason for Revocation body is 1 octet of revocation code
+    // followed by an optional reason string, so at least one octet is required.
     private static byte[] verifyData(byte[] data)
     {
         if (data.length < 1)

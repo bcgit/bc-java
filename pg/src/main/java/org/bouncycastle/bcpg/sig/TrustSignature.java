@@ -42,6 +42,8 @@ public class TrustSignature
         super(SignatureSubpacketTags.TRUST_SIG, critical, false, intToByteArray(depth, trustAmount));
     }
 
+    // RFC 9580 5.2.3.21: the Trust Signature body is 1 octet of depth followed by 1 octet
+    // of trust amount, so at least two octets are required.
     private static byte[] verifyData(byte[] data)
     {
         if (data.length < 2)
