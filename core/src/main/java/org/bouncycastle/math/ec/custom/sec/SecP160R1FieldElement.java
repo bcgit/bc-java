@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.raw.Nat160;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SecP160R1FieldElement extends ECFieldElement.AbstractFp
@@ -54,6 +55,19 @@ public class SecP160R1FieldElement extends ECFieldElement.AbstractFp
         return Nat160.toBigInteger(x);
     }
 
+    public void encodeTo(byte[] buf, int off)
+    {
+        for (int i = 4; i >= 0; --i)
+        {
+            Pack.intToBigEndian(x[i], buf, off + ((4 - i) << 2));
+        }
+    }
+
+    public int getEncodedLength()
+    {
+        return 20;
+    }
+
     public String getFieldName()
     {
         return "SecP160R1Field";
@@ -61,7 +75,7 @@ public class SecP160R1FieldElement extends ECFieldElement.AbstractFp
 
     public int getFieldSize()
     {
-        return Q.bitLength();
+        return 160;
     }
 
     public ECFieldElement add(ECFieldElement b)
