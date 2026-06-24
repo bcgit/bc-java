@@ -330,7 +330,11 @@ class ProvX509TrustManager
 
         if (endpointIDAlg.equalsIgnoreCase("HTTPS"))
         {
-            HostnameUtil.checkHostname(hostname, certificate, true);
+            // A wildcard matches only the complete left-most label, consistent with SunJSSE
+            // (sun.security.util.HostnameChecker.matchLeftmostWildcard for TYPE_TLS) and required by
+            // RFC 6125 sec. 6.4.3 / RFC 9525 sec. 6.3. A wildcard in any other label is rejected (the
+            // LDAP branch below is likewise leftmost-only).
+            HostnameUtil.checkHostname(hostname, certificate, false);
         }
         else if (endpointIDAlg.equalsIgnoreCase("LDAP") || endpointIDAlg.equalsIgnoreCase("LDAPS"))
         {
