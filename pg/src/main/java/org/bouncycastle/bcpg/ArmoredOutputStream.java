@@ -363,10 +363,24 @@ public class ArmoredOutputStream
         String value)
         throws IOException
     {
+        // Single chokepoint for every header-setting path (deprecated setHeader/addHeader, the
+        // Hashtable constructor and the Builder). A CR or LF in a name or value would inject extra
+        // armor header lines, and a blank line would terminate the header block early with the rest
+        // parsed as base64 body -- an armor header injection. Reject it here so no path can forge it.
+        if (hasLineBreak(name) || hasLineBreak(value))
+        {
+            throw new IllegalArgumentException("armor header must not contain CR/LF");
+        }
+
         write(name);
         write(": ");
         write(value);
         write(nl);
+    }
+
+    private static boolean hasLineBreak(String s)
+    {
+        return s != null && (s.indexOf('\r') >= 0 || s.indexOf('\n') >= 0);
     }
 
     public void write(
