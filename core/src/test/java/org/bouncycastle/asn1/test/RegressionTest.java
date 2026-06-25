@@ -22,6 +22,7 @@ public class RegressionTest
         new PKCS12Test(),
         new X509NameTest(),
         new X500NameTest(),
+        new IETFUtilsTest(),
         new X509ExtensionsTest(),
         new GeneralizedTimeTest(),
         new BitStringTest(),
