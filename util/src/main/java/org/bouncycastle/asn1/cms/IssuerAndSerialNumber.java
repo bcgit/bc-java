@@ -64,6 +64,11 @@ public class IssuerAndSerialNumber
     public IssuerAndSerialNumber(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         this.name = X500Name.getInstance(seq.getObjectAt(0));
         this.serialNumber = (ASN1Integer)seq.getObjectAt(1);
     }

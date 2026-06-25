@@ -21,6 +21,11 @@ public class POPOSigningKeyInput
 
     private POPOSigningKeyInput(ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         ASN1Encodable authInfo = (ASN1Encodable)seq.getObjectAt(0);
 
         if (authInfo instanceof ASN1TaggedObject)
