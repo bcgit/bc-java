@@ -111,6 +111,10 @@ public class SExpression
                     try
                     {
                         int len = Integer.parseInt(Strings.fromByteArray(accumulator.toByteArray()));
+                        if (len < 0)
+                        {
+                            throw new IOException("invalid negative length in S-Expression");
+                        }
                         byte[] b = new byte[len];
                         Streams.readFully(src, b);
                         if (expr.parseCanonical)
@@ -178,7 +182,14 @@ public class SExpression
                         throw new IOException("invalid input stream at '#'");
                     }
                     consumeUntilSkipWhiteSpace(src, accumulator, '#');
-                    expr.addValue(Hex.decode(accumulator.toByteArray()));
+                    try
+                    {
+                        expr.addValue(Hex.decode(accumulator.toByteArray()));
+                    }
+                    catch (RuntimeException e)
+                    {
+                        throw new IOException("invalid hex data in S-Expression");
+                    }
                 }
                 else if (c == '"')
                 {
