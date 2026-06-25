@@ -217,6 +217,10 @@ public class KeyFactorySpi
             {
                 data = keyInfo.getPrivateKey().getOctets();
             }
+            if (data.length < 32)
+            {
+                throw new IOException("malformed composite private key: body shorter than the ML-DSA seed");
+            }
             v.add(new DEROctetString(Arrays.copyOfRange(data, 0, 32)));
             String traditionAlg = factories.get(1).getAlgorithm();
             if (traditionAlg.equals("Ed25519"))
