@@ -32,7 +32,7 @@ public class CMSProcessableCMPCertificate
     public void write(OutputStream out)
         throws IOException, CMSException
     {
-        out.write(cmpCert.getEncoded());
+        cmpCert.encodeTo(out);
     }
 
     @Override
