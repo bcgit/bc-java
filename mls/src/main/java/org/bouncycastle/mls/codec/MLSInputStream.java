@@ -197,6 +197,16 @@ public class MLSInputStream
 
         }
 
+        // Validate the attacker-controlled element count against the bytes actually remaining before
+        // allocating, so a tiny unauthenticated message declaring a huge element count cannot drive a
+        // large Array.newInstance allocation (or a NegativeArraySizeException) before the per-element
+        // reads could fail. Each non-byte element consumes at least one byte, so length <= available()
+        // always holds for well-formed input. Mirrors the SliceableStream.readAll guard above.
+        if (length < 0 || length > stream.available())
+        {
+            throw new IOException("Attempt to read beyond end of buffer");
+        }
+
         // Otherwise, recursively decode entries
         Object val = Array.newInstance(elemClass, length);
         for (int i = 0; i < length; i++)
