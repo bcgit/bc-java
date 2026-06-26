@@ -3,14 +3,10 @@ package org.bouncycastle.cms.bc;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -35,6 +31,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.AlgorithmIdentifierFactory;
 import org.bouncycastle.crypto.util.CipherFactory;
 import org.bouncycastle.crypto.util.CipherKeyGeneratorFactory;
+import org.bouncycastle.crypto.util.OidCatalogue;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDigestProvider;
 
@@ -42,8 +39,6 @@ class EnvelopedDataHelper
 {
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
     protected static final Map MAC_ALG_NAMES = new HashMap();
-
-    private static final Set authEnvelopedAlgorithms = new HashSet();
     private static final Map prfs = createTable();
 
     private static Map createTable()
@@ -101,22 +96,6 @@ class EnvelopedDataHelper
         MAC_ALG_NAMES.put(CMSAlgorithm.AES192_CBC, "AESMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.AES256_CBC, "AESMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.RC2_CBC, "RC2Mac");
-
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.ChaCha20Poly1305);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria128_gcm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria192_gcm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria256_gcm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria128_ccm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria192_ccm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria256_ccm);
-        authEnvelopedAlgorithms.add(GMObjectIdentifiers.sms4_gcm);
-        authEnvelopedAlgorithms.add(GMObjectIdentifiers.sms4_ccm);
     }
 
     EnvelopedDataHelper()
@@ -204,6 +183,6 @@ class EnvelopedDataHelper
 
     boolean isAuthEnveloped(ASN1ObjectIdentifier algorithm)
     {
-        return authEnvelopedAlgorithms.contains(algorithm);
+        return OidCatalogue.isAuthEnveloped(algorithm);
     }
 }

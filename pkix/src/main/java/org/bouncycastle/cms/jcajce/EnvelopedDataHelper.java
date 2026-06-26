@@ -16,9 +16,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -42,7 +40,6 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
-import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
@@ -54,6 +51,7 @@ import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.crypto.util.OidCatalogue;
 import org.bouncycastle.operator.AsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
@@ -67,8 +65,6 @@ public class EnvelopedDataHelper
 {
     protected static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
     private static final byte[] hkdfSalt = Strings.toByteArray("The Cryptographic Message Syntax");
-
-    private static final Set authEnvelopedAlgorithms = new HashSet();
 
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
     protected static final Map CIPHER_ALG_NAMES = new HashMap();
@@ -127,22 +123,6 @@ public class EnvelopedDataHelper
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA256.getAlgorithmID(), "PBKDF2WITHHMACSHA256");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA384.getAlgorithmID(), "PBKDF2WITHHMACSHA384");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA512.getAlgorithmID(), "PBKDF2WITHHMACSHA512");
-
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.ChaCha20Poly1305);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria128_gcm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria192_gcm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria256_gcm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria128_ccm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria192_ccm);
-        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria256_ccm);
-        authEnvelopedAlgorithms.add(GMObjectIdentifiers.sms4_gcm);
-        authEnvelopedAlgorithms.add(GMObjectIdentifiers.sms4_ccm);
     }
 
     private static final short[] rc2Table = {
@@ -830,7 +810,7 @@ public class EnvelopedDataHelper
 
     boolean isAuthEnveloped(ASN1ObjectIdentifier algorithm)
     {
-        return authEnvelopedAlgorithms.contains(algorithm);
+        return OidCatalogue.isAuthEnveloped(algorithm);
     }
 
     static interface JCECallback
