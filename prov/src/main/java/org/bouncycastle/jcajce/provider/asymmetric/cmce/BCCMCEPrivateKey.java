@@ -65,7 +65,8 @@ public class BCCMCEPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(getEncoded());
+        // ISO CMCE private keys do not embed the public key and pk reconstruction is not exposed on CMCEEngine.
+        return getAlgorithm().hashCode();
     }
 
     /**

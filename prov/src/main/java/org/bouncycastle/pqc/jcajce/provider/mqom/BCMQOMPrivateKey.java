@@ -57,7 +57,12 @@ public class BCMQOMPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCMQOMPublicKey getPublicKey()
+    {
+        return new BCMQOMPublicKey(params.getPublicKeyParameters());
     }
 
     public final String getAlgorithm()

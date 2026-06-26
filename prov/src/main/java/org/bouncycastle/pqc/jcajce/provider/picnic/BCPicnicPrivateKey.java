@@ -7,11 +7,12 @@ import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.pqc.legacy.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.PicnicKey;
 import org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec;
+import org.bouncycastle.pqc.legacy.picnic.PicnicPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 public class BCPicnicPrivateKey
@@ -66,7 +67,18 @@ public class BCPicnicPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCPicnicPublicKey getPublicKey()
+    {
+        byte[] sk = params.getEncoded();
+        int stateSizeBytes = (sk.length - 1) / 3;
+        int pubKeySize = 1 + 2 * stateSizeBytes;
+        byte[] pk = new byte[pubKeySize];
+        pk[0] = sk[0];
+        System.arraycopy(sk, 1 + stateSizeBytes, pk, 1, pubKeySize - 1);
+        return new BCPicnicPublicKey(new PicnicPublicKeyParameters(params.getParameters(), pk));
     }
 
     /**

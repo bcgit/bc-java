@@ -8,6 +8,7 @@ import java.security.PrivateKey;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.SNTRUPrimeKey;
@@ -66,7 +67,12 @@ public class BCSNTRUPrimePrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCSNTRUPrimePublicKey getPublicKey()
+    {
+        return new BCSNTRUPrimePublicKey(new SNTRUPrimePublicKeyParameters(params.getParameters(), params.getPk()));
     }
 
     /**

@@ -13,6 +13,7 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTPrivateKey;
 import org.bouncycastle.util.Arrays;
 
@@ -116,7 +117,16 @@ public class BCXMSSMTPrivateKey
 
     public int hashCode()
     {
-        return treeDigest.hashCode() + 37 * Arrays.hashCode(keyParams.toByteArray());
+        return getPublicKey().hashCode();
+    }
+
+    private BCXMSSMTPublicKey getPublicKey()
+    {
+        XMSSMTPublicKeyParameters pubParams = new XMSSMTPublicKeyParameters.Builder(keyParams.getParameters())
+            .withRoot(keyParams.getRoot())
+            .withPublicSeed(keyParams.getPublicSeed())
+            .build();
+        return new BCXMSSMTPublicKey(treeDigest, pubParams);
     }
 
     ASN1ObjectIdentifier getTreeDigestOID()
