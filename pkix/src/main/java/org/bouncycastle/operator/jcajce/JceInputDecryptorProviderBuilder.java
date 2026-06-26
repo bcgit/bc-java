@@ -17,7 +17,9 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.io.CipherInputStream;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
@@ -35,18 +37,26 @@ import org.bouncycastle.util.Arrays;
  */
 public class JceInputDecryptorProviderBuilder
 {
-    private static final Set<ASN1ObjectIdentifier> AES_GCM_OIDS = new HashSet<ASN1ObjectIdentifier>();
-    private static final Set<ASN1ObjectIdentifier> AES_CCM_OIDS = new HashSet<ASN1ObjectIdentifier>();
+    private static final Set<ASN1ObjectIdentifier> gcmAlgs = new HashSet<ASN1ObjectIdentifier>();
+    private static final Set<ASN1ObjectIdentifier> ccmAlgs = new HashSet<ASN1ObjectIdentifier>();
 
     static
     {
-        AES_GCM_OIDS.add(NISTObjectIdentifiers.id_aes128_GCM);
-        AES_GCM_OIDS.add(NISTObjectIdentifiers.id_aes192_GCM);
-        AES_GCM_OIDS.add(NISTObjectIdentifiers.id_aes256_GCM);
+        gcmAlgs.add(NISTObjectIdentifiers.id_aes128_GCM);
+        gcmAlgs.add(NISTObjectIdentifiers.id_aes192_GCM);
+        gcmAlgs.add(NISTObjectIdentifiers.id_aes256_GCM);
+        gcmAlgs.add(NSRIObjectIdentifiers.id_aria128_gcm);
+        gcmAlgs.add(NSRIObjectIdentifiers.id_aria192_gcm);
+        gcmAlgs.add(NSRIObjectIdentifiers.id_aria256_gcm);
+        gcmAlgs.add(GMObjectIdentifiers.sms4_gcm);
 
-        AES_CCM_OIDS.add(NISTObjectIdentifiers.id_aes128_CCM);
-        AES_CCM_OIDS.add(NISTObjectIdentifiers.id_aes192_CCM);
-        AES_CCM_OIDS.add(NISTObjectIdentifiers.id_aes256_CCM);
+        ccmAlgs.add(NISTObjectIdentifiers.id_aes128_CCM);
+        ccmAlgs.add(NISTObjectIdentifiers.id_aes192_CCM);
+        ccmAlgs.add(NISTObjectIdentifiers.id_aes256_CCM);
+        ccmAlgs.add(NSRIObjectIdentifiers.id_aria128_ccm);
+        ccmAlgs.add(NSRIObjectIdentifiers.id_aria192_ccm);
+        ccmAlgs.add(NSRIObjectIdentifiers.id_aria256_ccm);
+        ccmAlgs.add(GMObjectIdentifiers.sms4_ccm);
     }
 
     private JcaJceHelper helper = new DefaultJcaJceHelper();
@@ -98,14 +108,14 @@ public class JceInputDecryptorProviderBuilder
                     
                     ASN1Encodable encParams = algorithmIdentifier.getParameters();
 
-                    if (AES_GCM_OIDS.contains(algorithm))
+                    if (gcmAlgs.contains(algorithm))
                     {
                         // RFC 5084 / RFC 3565 GCMParameters: nonce + icvLen (bytes).
                         GCMParameters gcm = GCMParameters.getInstance(encParams);
                         cipher.init(Cipher.DECRYPT_MODE, key,
                             new GCMParameterSpec(gcm.getIcvLen() * 8, gcm.getNonce()));
                     }
-                    else if (AES_CCM_OIDS.contains(algorithm))
+                    else if (ccmAlgs.contains(algorithm))
                     {
                         // RFC 5084 CCMParameters share the GCMParameters shape
                         // (nonce + icvLen); BC's CCM JCE init accepts a
