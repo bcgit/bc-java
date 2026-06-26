@@ -70,7 +70,7 @@ public class BCKyberPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(getEncoded());
+        return getPublicKey().hashCode();
     }
 
     /**

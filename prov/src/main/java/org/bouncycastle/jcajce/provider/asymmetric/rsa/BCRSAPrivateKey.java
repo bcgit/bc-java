@@ -129,13 +129,17 @@ public class BCRSAPrivateKey
 
         RSAPrivateKey key = (RSAPrivateKey)o;
 
+        int len = Math.max(
+            (getModulus().bitLength() + 7) / 8,
+            (key.getModulus().bitLength() + 7) / 8);
+
         return getModulus().equals(key.getModulus())
-            & BigIntegers.constantTimeAreEqual(getPrivateExponent(), key.getPrivateExponent());
+            && BigIntegers.areSecretValuesEqual(len, getPrivateExponent(), key.getPrivateExponent());
     }
 
     public int hashCode()
     {
-        return getModulus().hashCode() ^ getPrivateExponent().hashCode();
+        return getModulus().hashCode();
     }
 
     public void setBagAttribute(

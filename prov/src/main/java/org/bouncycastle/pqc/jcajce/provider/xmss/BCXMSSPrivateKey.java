@@ -13,6 +13,7 @@ import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.util.Arrays;
 
@@ -110,7 +111,16 @@ public class BCXMSSPrivateKey
 
     public int hashCode()
     {
-        return treeDigest.hashCode() + 37 * Arrays.hashCode(keyParams.toByteArray());
+        return getPublicKey().hashCode();
+    }
+
+    private BCXMSSPublicKey getPublicKey()
+    {
+        XMSSPublicKeyParameters pubParams = new XMSSPublicKeyParameters.Builder(keyParams.getParameters())
+            .withRoot(keyParams.getRoot())
+            .withPublicSeed(keyParams.getPublicSeed())
+            .build();
+        return new BCXMSSPublicKey(treeDigest, pubParams);
     }
 
     CipherParameters getKeyParams()

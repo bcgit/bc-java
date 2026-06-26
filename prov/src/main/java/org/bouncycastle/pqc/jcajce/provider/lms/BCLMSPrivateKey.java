@@ -126,14 +126,7 @@ public class BCLMSPrivateKey
 
     public int hashCode()
     {
-        try
-        {
-            return Arrays.hashCode(keyParams.getEncoded());
-        }
-        catch (IOException e)
-        {
-            throw Exceptions.illegalStateException("unable to calculate hashCode", e);     // should never happen.
-        }
+        return new BCLMSPublicKey(((HSSPrivateKeyParameters)keyParams).getPublicKey()).hashCode();
     }
 
     CipherParameters getKeyParams()

@@ -437,4 +437,17 @@ public class ECUtil
     {
         return SpecUtil.getNameFrom(paramSpec);
     }
+
+    /**
+     * Hash code for an EC private scalar derived from the public point and domain parameters.
+     */
+    public static int privateKeyHashCode(BigInteger d, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        if (spec == null)
+        {
+            return 0;
+        }
+
+        return spec.getG().multiply(d).normalize().hashCode() ^ spec.hashCode();
+    }
 }

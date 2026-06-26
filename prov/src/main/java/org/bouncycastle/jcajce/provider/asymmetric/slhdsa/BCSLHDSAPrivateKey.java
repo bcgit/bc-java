@@ -71,7 +71,7 @@ public class BCSLHDSAPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
     }
 
     /**

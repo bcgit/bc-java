@@ -498,13 +498,7 @@ public class HSSPrivateKeyParameters
     @Override
     public int hashCode()
     {
-        int result = l;
-        result = 31 * result + (isShard ? 1 : 0);
-        result = 31 * result + keys.hashCode();
-        result = 31 * result + sig.hashCode();
-        result = 31 * result + (int)(indexLimit ^ (indexLimit >>> 32));
-        result = 31 * result + (int)(index ^ (index >>> 32));
-        return result;
+        return getPublicKey().hashCode();
     }
 
     @Override
