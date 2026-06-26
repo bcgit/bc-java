@@ -37,6 +37,8 @@ import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
@@ -68,9 +70,27 @@ class CMSUtils
     private static final Set mqvAlgs = new HashSet();
     private static final Set ecAlgs = new HashSet();
     private static final Set gostAlgs = new HashSet();
+    private static final Set gcmAlgs = new HashSet();
+    private static final Set ccmAlgs = new HashSet();
 
     static
     {
+        gcmAlgs.add(CMSAlgorithm.AES128_GCM);
+        gcmAlgs.add(CMSAlgorithm.AES192_GCM);
+        gcmAlgs.add(CMSAlgorithm.AES256_GCM);
+        gcmAlgs.add(NSRIObjectIdentifiers.id_aria128_gcm);
+        gcmAlgs.add(NSRIObjectIdentifiers.id_aria192_gcm);
+        gcmAlgs.add(NSRIObjectIdentifiers.id_aria256_gcm);
+        gcmAlgs.add(GMObjectIdentifiers.sms4_gcm);
+
+        ccmAlgs.add(CMSAlgorithm.AES128_CCM);
+        ccmAlgs.add(CMSAlgorithm.AES192_CCM);
+        ccmAlgs.add(CMSAlgorithm.AES256_CCM);
+        ccmAlgs.add(NSRIObjectIdentifiers.id_aria128_ccm);
+        ccmAlgs.add(NSRIObjectIdentifiers.id_aria192_ccm);
+        ccmAlgs.add(NSRIObjectIdentifiers.id_aria256_ccm);
+        ccmAlgs.add(GMObjectIdentifiers.sms4_ccm);
+
         desAlgs.add(OIWObjectIdentifiers.desCBC);
         desAlgs.add(PKCSObjectIdentifiers.des_EDE3_CBC);
         desAlgs.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap);
@@ -385,15 +405,11 @@ class CMSUtils
             // CBC with PKCS#7 padding, 8 octet blocks.
             return inputLength + (8 - (inputLength % 8));
         }
-        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
-            || CMSAlgorithm.AES192_GCM.equals(algorithm)
-            || CMSAlgorithm.AES256_GCM.equals(algorithm))
+        if (gcmAlgs.contains(algorithm))
         {
             return inputLength + GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
         }
-        if (CMSAlgorithm.AES128_CCM.equals(algorithm)
-            || CMSAlgorithm.AES192_CCM.equals(algorithm)
-            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        if (ccmAlgs.contains(algorithm))
         {
             return inputLength + CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
         }
@@ -499,12 +515,7 @@ class CMSUtils
     {
         ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
 
-        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
-            || CMSAlgorithm.AES192_GCM.equals(algorithm)
-            || CMSAlgorithm.AES256_GCM.equals(algorithm)
-            || CMSAlgorithm.AES128_CCM.equals(algorithm)
-            || CMSAlgorithm.AES192_CCM.equals(algorithm)
-            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        if (gcmAlgs.contains(algorithm) || ccmAlgs.contains(algorithm))
         {
             return inputLength;
         }
@@ -520,15 +531,11 @@ class CMSUtils
     {
         ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
 
-        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
-            || CMSAlgorithm.AES192_GCM.equals(algorithm)
-            || CMSAlgorithm.AES256_GCM.equals(algorithm))
+        if (gcmAlgs.contains(algorithm))
         {
             return GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
         }
-        if (CMSAlgorithm.AES128_CCM.equals(algorithm)
-            || CMSAlgorithm.AES192_CCM.equals(algorithm)
-            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        if (ccmAlgs.contains(algorithm))
         {
             return CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
         }
