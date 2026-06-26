@@ -48,6 +48,8 @@ public abstract class BcKeyTransRecipient
             throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + encryptedKeyAlgorithm.getAlgorithm());
         }
 
+        checkTagSize(encryptedKeyAlgorithm);
+
         AsymmetricKeyUnwrapper unwrapper = new BcRSAAsymmetricKeyUnwrapper(keyEncryptionAlgorithm, recipientKey);
 
         try

@@ -47,6 +47,8 @@ public abstract class BcKEKRecipient
             throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + contentEncryptionAlgorithm.getAlgorithm());
         }
 
+        checkTagSize(contentEncryptionAlgorithm);
+
         try
         {
             return CMSUtils.getBcKey(unwrapper.generateUnwrappedKey(contentEncryptionAlgorithm, encryptedContentEncryptionKey));

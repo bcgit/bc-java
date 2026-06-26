@@ -158,6 +158,21 @@ public abstract class JceKEMRecipient
         return this;
     }
 
+    /**
+     * Set the minimum AEAD authentication tag size (in bits) this recipient will accept. When set, an
+     * attempt to recover AuthEnvelopedData whose content algorithm carries a shorter tag is rejected,
+     * mitigating an attacker downgrading the tag to a weaker length.
+     *
+     * @param tagSizeInBits the minimum acceptable AEAD tag size, in bits.
+     * @return this recipient.
+     */
+    public JceKEMRecipient setMinimumTagSize(int tagSizeInBits)
+    {
+        setMinimumTagSizeInBits(tagSizeInBits);
+
+        return this;
+    }
+
     protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedEncryptionKey)
         throws CMSException
     {
@@ -165,6 +180,8 @@ public abstract class JceKEMRecipient
         {
             throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + encryptedKeyAlgorithm.getAlgorithm());
         }
+
+        checkTagSize(encryptedKeyAlgorithm);
 
         // TODO: note there is a move to change the type for KEMs from KeyTrans, expect this to change
         KEMRecipientInfo gktParams = KEMRecipientInfo.getInstance(keyEncryptionAlgorithm.getParameters());
