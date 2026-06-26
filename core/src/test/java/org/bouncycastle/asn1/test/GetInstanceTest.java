@@ -30,6 +30,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERUniversalString;
 import org.bouncycastle.asn1.DERVisibleString;
+import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410ParamSetParameters;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
 import org.bouncycastle.asn1.cryptopro.GOST3410ParamSetParameters;
@@ -331,6 +332,8 @@ public class GetInstanceTest
             new ASN1ObjectIdentifier("1.2.3.4")));                      // SafeBag is 2 or 3
         checkBadSequenceSize("SignerInfo", new DERSequence(new ASN1Encodable[]{
             ASN1Integer.ONE, ASN1Integer.ONE, ASN1Integer.ONE, ASN1Integer.ONE}));   // SignerInfo is 5..7
+        checkBadSequenceSize("PbkdMacIntegrityCheck", new DERSequence(
+            new ASN1ObjectIdentifier("1.2.3.4")));                      // PbkdMacIntegrityCheck is exactly 3
     }
 
     private void checkBadSequenceSize(String name, ASN1Sequence seq)
@@ -344,6 +347,10 @@ public class GetInstanceTest
             else if (name.equals("SafeBag"))
             {
                 SafeBag.getInstance(seq);
+            }
+            else if (name.equals("PbkdMacIntegrityCheck"))
+            {
+                PbkdMacIntegrityCheck.getInstance(seq);
             }
             else
             {
