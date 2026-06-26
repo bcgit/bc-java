@@ -39,6 +39,7 @@ import org.bouncycastle.cms.CMSAuthEnvelopedData;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSProcessableByteArray;
+import org.bouncycastle.cms.CMSTagLengthException;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.bc.BcCMSContentEncryptorBuilder;
@@ -151,6 +152,60 @@ public class AuthEnvelopedDataTest
         init();
 
         return new CMSTestSetup(new TestSuite(AuthEnvelopedDataTest.class));
+    }
+
+    public void testKeyTransMinimumTagSize()
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("Hello, world!");
+
+        // generate AuthEnvelopedData with a 96-bit (12-octet) GCM tag - valid under RFC 5084
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance("GCM", BC);
+        algParams.init(new AEADParameterSpec(new byte[12], 96));
+
+        OutputEncryptor enc = new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM)
+            .setProvider(BC).setAlgorithmParameters(algParams).build();
+
+        assertEquals(12, GCMParameters.getInstance(enc.getAlgorithmIdentifier().getParameters()).getIcvLen());
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        byte[] encoded = authGen.generate(new CMSProcessableByteArray(message), (OutputAEADEncryptor)enc).getEncoded();
+
+        // a minimum at or below the actual tag size recovers as normal
+        RecipientInformation recipient = (RecipientInformation)new CMSAuthEnvelopedData(encoded)
+            .getRecipientInfos().getRecipients().iterator().next();
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate())
+            .setProvider(BC).setMinimumTagSize(96));
+        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+
+        // a minimum above the actual tag size is refused with CMSTagLengthException
+        try
+        {
+            recipient = (RecipientInformation)new CMSAuthEnvelopedData(encoded)
+                .getRecipientInfos().getRecipients().iterator().next();
+            recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate())
+                .setProvider(BC).setMinimumTagSize(128));
+
+            fail("content recovered under a tag shorter than the configured minimum");
+        }
+        catch (CMSTagLengthException e)
+        {
+            // expected
+        }
+
+        // a default (128-bit) tag satisfies a 128-bit minimum
+        OutputEncryptor fullEnc = new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM).setProvider(BC).build();
+        CMSAuthEnvelopedDataGenerator fullGen = new CMSAuthEnvelopedDataGenerator();
+        fullGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        byte[] fullEncoded = fullGen.generate(new CMSProcessableByteArray(message), (OutputAEADEncryptor)fullEnc).getEncoded();
+
+        recipient = (RecipientInformation)new CMSAuthEnvelopedData(fullEncoded)
+            .getRecipientInfos().getRecipients().iterator().next();
+        byte[] fullRec = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate())
+            .setProvider(BC).setMinimumTagSize(128));
+        assertEquals("Hello, world!", Strings.fromByteArray(fullRec));
     }
 
     public void testSample1()

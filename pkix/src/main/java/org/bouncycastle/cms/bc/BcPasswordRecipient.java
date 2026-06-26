@@ -65,6 +65,8 @@ public abstract class BcPasswordRecipient
             throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + contentEncryptionAlgorithm.getAlgorithm());
         }
 
+        checkTagSize(contentEncryptionAlgorithm);
+
         Wrapper keyEncryptionCipher = EnvelopedDataHelper.createRFC3211Wrapper(keyEncryptionAlgorithm.getAlgorithm());
 
         keyEncryptionCipher.init(false, new ParametersWithIV(new KeyParameter(derivedKey), ASN1OctetString.getInstance(keyEncryptionAlgorithm.getParameters()).getOctets()));
