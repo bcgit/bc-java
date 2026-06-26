@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
@@ -16,11 +17,13 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.ARIAEngine;
 import org.bouncycastle.crypto.engines.CAST5Engine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC2Engine;
 import org.bouncycastle.crypto.engines.RC4Engine;
+import org.bouncycastle.crypto.engines.SM4Engine;
 import org.bouncycastle.crypto.io.CipherOutputStream;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -37,6 +40,7 @@ import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.internal.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.CAST5CBCParameters;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.internal.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 
@@ -108,7 +112,11 @@ public class CipherFactory
         }
         else if (encAlg.equals(NISTObjectIdentifiers.id_aes128_GCM)
             || encAlg.equals(NISTObjectIdentifiers.id_aes192_GCM)
-            || encAlg.equals(NISTObjectIdentifiers.id_aes256_GCM))
+            || encAlg.equals(NISTObjectIdentifiers.id_aes256_GCM)
+            || encAlg.equals(NSRIObjectIdentifiers.id_aria128_gcm)
+            || encAlg.equals(NSRIObjectIdentifiers.id_aria192_gcm)
+            || encAlg.equals(NSRIObjectIdentifiers.id_aria256_gcm)
+            || encAlg.equals(GMObjectIdentifiers.sms4_gcm))
         {
             AEADBlockCipher cipher = createAEADCipher(encryptionAlgID.getAlgorithm());
             GCMParameters gcmParameters = GCMParameters.getInstance(encryptionAlgID.getParameters());
@@ -122,7 +130,11 @@ public class CipherFactory
         }
         else if (encAlg.equals(NISTObjectIdentifiers.id_aes128_CCM)
             || encAlg.equals(NISTObjectIdentifiers.id_aes192_CCM)
-            || encAlg.equals(NISTObjectIdentifiers.id_aes256_CCM))
+            || encAlg.equals(NISTObjectIdentifiers.id_aes256_CCM)
+            || encAlg.equals(NSRIObjectIdentifiers.id_aria128_ccm)
+            || encAlg.equals(NSRIObjectIdentifiers.id_aria192_ccm)
+            || encAlg.equals(NSRIObjectIdentifiers.id_aria256_ccm)
+            || encAlg.equals(GMObjectIdentifiers.sms4_ccm))
         {
             AEADBlockCipher cipher = createAEADCipher(encryptionAlgID.getAlgorithm());
             CCMParameters ccmParameters = CCMParameters.getInstance(encryptionAlgID.getParameters());
@@ -206,6 +218,26 @@ public class CipherFactory
             || NISTObjectIdentifiers.id_aes256_CCM.equals(algorithm))
         {
             return CCMBlockCipher.newInstance(AESEngine.newInstance());
+        }
+        if (NSRIObjectIdentifiers.id_aria128_gcm.equals(algorithm)
+            || NSRIObjectIdentifiers.id_aria192_gcm.equals(algorithm)
+            || NSRIObjectIdentifiers.id_aria256_gcm.equals(algorithm))
+        {
+            return GCMBlockCipher.newInstance(new ARIAEngine());
+        }
+        if (NSRIObjectIdentifiers.id_aria128_ccm.equals(algorithm)
+            || NSRIObjectIdentifiers.id_aria192_ccm.equals(algorithm)
+            || NSRIObjectIdentifiers.id_aria256_ccm.equals(algorithm))
+        {
+            return CCMBlockCipher.newInstance(new ARIAEngine());
+        }
+        if (GMObjectIdentifiers.sms4_gcm.equals(algorithm))
+        {
+            return GCMBlockCipher.newInstance(new SM4Engine());
+        }
+        if (GMObjectIdentifiers.sms4_ccm.equals(algorithm))
+        {
+            return CCMBlockCipher.newInstance(new SM4Engine());
         }
         else
         {

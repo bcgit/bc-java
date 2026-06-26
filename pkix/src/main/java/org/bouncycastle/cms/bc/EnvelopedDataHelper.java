@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -107,6 +109,14 @@ class EnvelopedDataHelper
         authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_CCM);
         authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_CCM);
         authEnvelopedAlgorithms.add(CMSAlgorithm.ChaCha20Poly1305);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria128_gcm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria192_gcm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria256_gcm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria128_ccm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria192_ccm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria256_ccm);
+        authEnvelopedAlgorithms.add(GMObjectIdentifiers.sms4_gcm);
+        authEnvelopedAlgorithms.add(GMObjectIdentifiers.sms4_ccm);
     }
 
     EnvelopedDataHelper()

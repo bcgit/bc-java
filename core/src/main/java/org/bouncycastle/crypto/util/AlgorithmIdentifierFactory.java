@@ -8,10 +8,12 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.internal.asn1.kisa.KISAObjectIdentifiers;
+import org.bouncycastle.internal.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.CAST5CBCParameters;
 import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
@@ -76,7 +78,11 @@ public class AlgorithmIdentifierFactory
         }
         else if (encryptionOID.equals(NISTObjectIdentifiers.id_aes128_GCM)
                 || encryptionOID.equals(NISTObjectIdentifiers.id_aes192_GCM)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_GCM))
+                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_GCM)
+                || encryptionOID.equals(NSRIObjectIdentifiers.id_aria128_gcm)
+                || encryptionOID.equals(NSRIObjectIdentifiers.id_aria192_gcm)
+                || encryptionOID.equals(NSRIObjectIdentifiers.id_aria256_gcm)
+                || encryptionOID.equals(GMObjectIdentifiers.sms4_gcm))
         {
             byte[] iv = new byte[12];
 
@@ -86,7 +92,11 @@ public class AlgorithmIdentifierFactory
         }
         else if (encryptionOID.equals(NISTObjectIdentifiers.id_aes128_CCM)
                 || encryptionOID.equals(NISTObjectIdentifiers.id_aes192_CCM)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_CCM))
+                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_CCM)
+                || encryptionOID.equals(NSRIObjectIdentifiers.id_aria128_ccm)
+                || encryptionOID.equals(NSRIObjectIdentifiers.id_aria192_ccm)
+                || encryptionOID.equals(NSRIObjectIdentifiers.id_aria256_ccm)
+                || encryptionOID.equals(GMObjectIdentifiers.sms4_ccm))
         {
             byte[] iv = new byte[8];
 

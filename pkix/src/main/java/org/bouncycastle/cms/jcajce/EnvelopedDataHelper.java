@@ -42,6 +42,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
@@ -134,6 +135,14 @@ public class EnvelopedDataHelper
         authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_CCM);
         authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_CCM);
         authEnvelopedAlgorithms.add(CMSAlgorithm.ChaCha20Poly1305);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria128_gcm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria192_gcm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria256_gcm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria128_ccm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria192_ccm);
+        authEnvelopedAlgorithms.add(NSRIObjectIdentifiers.id_aria256_ccm);
+        authEnvelopedAlgorithms.add(GMObjectIdentifiers.sms4_gcm);
+        authEnvelopedAlgorithms.add(GMObjectIdentifiers.sms4_ccm);
     }
 
     private static final short[] rc2Table = {
