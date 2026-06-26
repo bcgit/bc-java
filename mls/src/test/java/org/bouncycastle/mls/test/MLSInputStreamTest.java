@@ -5,6 +5,7 @@ import java.io.IOException;
 import junit.framework.TestCase;
 
 import org.bouncycastle.mls.codec.MLSInputStream;
+import org.bouncycastle.mls.codec.MLSMessage;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -90,5 +91,43 @@ public class MLSInputStreamTest
         assertEquals(2, shorts.length);
         assertEquals((short)0x1122, shorts[0].shortValue());
         assertEquals((short)0x3344, shorts[1].shortValue());
+    }
+
+    // MLSMessage decode reads the outermost attacker-controlled ProtocolVersion / WireFormat as a
+    // short index straight into enum.values()[idx]. An out-of-range index used to surface as a raw
+    // ArrayIndexOutOfBoundsException opaquely re-wrapped to IOException("InvocationTargetException:
+    // Index N out of bounds for length M"); the decode now rejects it with a descriptive message,
+    // mirroring the Varint "Invalid varint header" / readBoolean "Invalid boolean value" guards in
+    // the same codec package.
+    public void testOutOfRangeProtocolVersionRejected()
+        throws Exception
+    {
+        // ProtocolVersion has 2 constants (0,1); a leading short of 99 is out of range.
+        byte[] data = Hex.decode("0063");
+        try
+        {
+            MLSInputStream.decode(data, MLSMessage.class);
+            fail("out-of-range ProtocolVersion index was accepted");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage().indexOf("invalid ProtocolVersion") >= 0);
+        }
+    }
+
+    public void testOutOfRangeWireFormatRejected()
+        throws Exception
+    {
+        // version=1 (valid), then a WireFormat short of 99 (WireFormat has 6 constants, 0..5).
+        byte[] data = Hex.decode("00010063");
+        try
+        {
+            MLSInputStream.decode(data, MLSMessage.class);
+            fail("out-of-range WireFormat index was accepted");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage().indexOf("invalid WireFormat") >= 0);
+        }
     }
 }
