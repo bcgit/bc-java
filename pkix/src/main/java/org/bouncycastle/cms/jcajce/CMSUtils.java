@@ -174,7 +174,13 @@ class CMSUtils
         {
             throw new IllegalArgumentException("malformed AEAD parameters: unexpected sequence size " + seq.size());
         }
-        return (seq.size() > 1) ? ASN1Integer.getInstance(seq.getObjectAt(1)).intValueExact() : 12;
+        int icvLen = (seq.size() > 1) ? ASN1Integer.getInstance(seq.getObjectAt(1)).intValueExact() : 12;
+        if (icvLen < 4)
+        {
+            throw new IllegalArgumentException("malformed AEAD parameters: icvLen < 4");
+        }
+
+        return icvLen;
     }
 
     static Key getJceKey(GenericKey key)
