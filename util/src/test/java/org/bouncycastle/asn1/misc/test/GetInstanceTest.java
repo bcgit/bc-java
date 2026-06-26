@@ -989,6 +989,26 @@ public class GetInstanceTest
         // CertId needs 2 mandatory fields.
         checkTooShort(CertId.class, new DERSequence(new ASN1Encodable[]{
             new GeneralName(new X500Name("CN=Test"))}));
+
+        // ProtectedPart needs 2 mandatory fields (header PKIHeader, body PKIBody).
+        checkTooShort(ProtectedPart.class, new DERSequence(new ASN1Encodable[]{
+            new GeneralName(new X500Name("CN=Test"))}));
+
+        // AttributeTypeAndValue needs 2 mandatory fields (type OID, value ANY).
+        checkTooShort(AttributeTypeAndValue.class, new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.1")}));
+
+        // POPOSigningKeyInput needs 2 mandatory fields (authInfo CHOICE, publicKey).
+        checkTooShort(POPOSigningKeyInput.class, new DERSequence(new ASN1Encodable[]{
+            new GeneralName(new X500Name("CN=Test"))}));
+
+        // IssuerAndSerialNumber needs 2 mandatory fields (issuer Name, serialNumber).
+        checkTooShort(IssuerAndSerialNumber.class, new DERSequence(new ASN1Encodable[]{
+            new GeneralName(new X500Name("CN=Test"))}));
+
+        // OriginatorPublicKey needs 2 mandatory fields (algorithm, publicKey BIT STRING).
+        checkTooShort(OriginatorPublicKey.class, new DERSequence(new ASN1Encodable[]{
+            new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1"))}));
     }
 
     private void checkTooShort(Class clazz, DERSequence tooShort)
