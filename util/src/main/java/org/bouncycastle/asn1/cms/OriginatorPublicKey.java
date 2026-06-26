@@ -45,6 +45,11 @@ public class OriginatorPublicKey
     private OriginatorPublicKey(
         ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         algorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         publicKey = (DERBitString)seq.getObjectAt(1);
     }
