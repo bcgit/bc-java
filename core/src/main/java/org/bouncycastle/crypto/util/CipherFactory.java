@@ -37,11 +37,9 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.RC2Parameters;
 import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
-import org.bouncycastle.internal.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.CAST5CBCParameters;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.internal.asn1.nsri.NSRIObjectIdentifiers;
-import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 
 /**
@@ -110,13 +108,7 @@ public class CipherFactory
 
             return cipher;
         }
-        else if (encAlg.equals(NISTObjectIdentifiers.id_aes128_GCM)
-            || encAlg.equals(NISTObjectIdentifiers.id_aes192_GCM)
-            || encAlg.equals(NISTObjectIdentifiers.id_aes256_GCM)
-            || encAlg.equals(NSRIObjectIdentifiers.id_aria128_gcm)
-            || encAlg.equals(NSRIObjectIdentifiers.id_aria192_gcm)
-            || encAlg.equals(NSRIObjectIdentifiers.id_aria256_gcm)
-            || encAlg.equals(GMObjectIdentifiers.sms4_gcm))
+        else if (OidCatalogue.isGCM(encAlg))
         {
             AEADBlockCipher cipher = createAEADCipher(encryptionAlgID.getAlgorithm());
             GCMParameters gcmParameters = GCMParameters.getInstance(encryptionAlgID.getParameters());
@@ -128,13 +120,7 @@ public class CipherFactory
             cipher.init(forEncryption, aeadParameters);
             return cipher;
         }
-        else if (encAlg.equals(NISTObjectIdentifiers.id_aes128_CCM)
-            || encAlg.equals(NISTObjectIdentifiers.id_aes192_CCM)
-            || encAlg.equals(NISTObjectIdentifiers.id_aes256_CCM)
-            || encAlg.equals(NSRIObjectIdentifiers.id_aria128_ccm)
-            || encAlg.equals(NSRIObjectIdentifiers.id_aria192_ccm)
-            || encAlg.equals(NSRIObjectIdentifiers.id_aria256_ccm)
-            || encAlg.equals(GMObjectIdentifiers.sms4_ccm))
+        else if (OidCatalogue.isCCM(encAlg))
         {
             AEADBlockCipher cipher = createAEADCipher(encryptionAlgID.getAlgorithm());
             CCMParameters ccmParameters = CCMParameters.getInstance(encryptionAlgID.getParameters());
@@ -155,13 +141,7 @@ public class CipherFactory
             {
                 if (encAlg.equals(PKCSObjectIdentifiers.des_EDE3_CBC)
                     || encAlg.equals(AlgorithmIdentifierFactory.IDEA_CBC)
-                    || encAlg.equals(NISTObjectIdentifiers.id_aes128_CBC)
-                    || encAlg.equals(NISTObjectIdentifiers.id_aes192_CBC)
-                    || encAlg.equals(NISTObjectIdentifiers.id_aes256_CBC)
-                    || encAlg.equals(NTTObjectIdentifiers.id_camellia128_cbc)
-                    || encAlg.equals(NTTObjectIdentifiers.id_camellia192_cbc)
-                    || encAlg.equals(NTTObjectIdentifiers.id_camellia256_cbc)
-                    || encAlg.equals(KISAObjectIdentifiers.id_seedCBC)
+                    || OidCatalogue.isCBC128(encAlg)
                     || encAlg.equals(OIWObjectIdentifiers.desCBC))
                 {
                     cipher.init(forEncryption, new ParametersWithIV(encKey,
