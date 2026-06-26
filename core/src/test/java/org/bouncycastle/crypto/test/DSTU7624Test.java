@@ -436,10 +436,10 @@ public class DSTU7624Test
         byte[] mac;
         byte[] encrypted = new byte[expectedEncrypted.length];
 
-        byte[] decrypted = new byte[encrypted.length];
-        byte[] expectedDecrypted = new byte[input.length + expectedMac.length];
-        System.arraycopy(input, 0, expectedDecrypted, 0, input.length);
-        System.arraycopy(expectedMac, 0, expectedDecrypted, input.length, expectedMac.length);
+        // decryption no longer appends the MAC to the recovered plaintext; the output is
+        // the plaintext only and the MAC is available via getMac() (standard AEAD contract).
+        byte[] decrypted = new byte[input.length];
+        byte[] expectedDecrypted = Arrays.clone(input);
         int len;
 
 
@@ -499,10 +499,8 @@ public class DSTU7624Test
         mac = new byte[expectedMac.length];
         encrypted = new byte[expectedEncrypted.length];
 
-        decrypted = new byte[encrypted.length];
-        expectedDecrypted = new byte[input.length + expectedMac.length];
-        System.arraycopy(input, 0, expectedDecrypted, 0, input.length);
-        System.arraycopy(expectedMac, 0, expectedDecrypted, input.length, expectedMac.length);
+        decrypted = new byte[input.length];
+        expectedDecrypted = Arrays.clone(input);
 
 
         param = new AEADParameters(new KeyParameter(key), 128, iv);
@@ -560,10 +558,8 @@ public class DSTU7624Test
         mac = new byte[expectedMac.length];
         encrypted = new byte[expectedEncrypted.length];
 
-        decrypted = new byte[encrypted.length];
-        expectedDecrypted = new byte[input.length + expectedMac.length];
-        System.arraycopy(input, 0, expectedDecrypted, 0, input.length);
-        System.arraycopy(expectedMac, 0, expectedDecrypted, input.length, expectedMac.length);
+        decrypted = new byte[input.length];
+        expectedDecrypted = Arrays.clone(input);
 
 
         param = new AEADParameters(new KeyParameter(key), 256, iv);
@@ -621,10 +617,8 @@ public class DSTU7624Test
         mac = new byte[expectedMac.length];
         encrypted = new byte[expectedEncrypted.length];
 
-        decrypted = new byte[encrypted.length];
-        expectedDecrypted = new byte[input.length + expectedMac.length];
-        System.arraycopy(input, 0, expectedDecrypted, 0, input.length);
-        System.arraycopy(expectedMac, 0, expectedDecrypted, input.length, expectedMac.length);
+        decrypted = new byte[input.length];
+        expectedDecrypted = Arrays.clone(input);
 
 
         param = new AEADParameters(new KeyParameter(key), 512, iv);

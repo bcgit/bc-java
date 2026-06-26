@@ -269,15 +269,16 @@ public class KCCMBlockCipher
         {
             throw new DataLengthException("input buffer too short");
         }
-        if (out.length - outOff < len)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
 
         processAssociatedText();
 
         if (forEncryption)
         {
+            if (out.length - outOff < len + macSize)
+            {
+                throw new OutputLengthException("output buffer too short");
+            }
+
             // Partial trailing block permitted: CalculateMac zero-pads it and the gamma
             // keystream is truncated below. See the interop caveat in the class javadoc (github #287).
             CalculateMac(in, inOff, len);
@@ -311,6 +312,11 @@ public class KCCMBlockCipher
         else
         {
             int dataLen = len - macSize;
+
+            if (out.length - outOff < dataLen)
+            {
+                throw new OutputLengthException("output buffer too short");
+            }
 
             engine.processBlock(nonce, 0, s, 0);
 
@@ -354,10 +360,10 @@ public class KCCMBlockCipher
                 throw new InvalidCipherTextException("mac check failed");
             }
 
-            // Only now (MAC verified) expose the recovered plaintext, followed by the recovered MAC,
-            // in the caller's output - the same buffer layout the encrypt side and callers expect.
+            // Only now (MAC verified) expose the recovered plaintext in the caller's output. The MAC
+            // is not written to the output - it is consumed for verification and is available via
+            // getMac() - matching the standard AEAD contract (CCMBlockCipher / GCMBlockCipher / KGCM).
             System.arraycopy(plain, 0, out, outOff, dataLen);
-            System.arraycopy(recoveredMac, 0, out, outOff + dataLen, macSize);
 
             reset();
 
@@ -439,7 +445,14 @@ public class KCCMBlockCipher
 
     public int getOutputSize(int len)
     {
-        return len + macSize;
+        int totalData = len + data.size();
+
+        if (forEncryption)
+        {
+            return totalData + macSize;
+        }
+
+        return totalData < macSize ? 0 : totalData - macSize;
     }
 
     public void reset()
