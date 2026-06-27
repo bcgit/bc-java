@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.TranscriptHash;
@@ -121,7 +122,6 @@ public class Group
 
             // Create PSK proposal
             byte[] nonce = new byte[suite.getKDF().getHashLength()];
-            SecureRandom random = new SecureRandom();
             random.nextBytes(nonce);
             proposals.add(Proposal.preSharedKey(PreSharedKeyID.resumption(ResumptionPSKUsage.REINIT, priorGroupID, priorEpoch, nonce)));
 
@@ -377,6 +377,7 @@ public class Group
     private TreeKEMPrivateKey treePriv;
     private GroupKeySet keys;
     private MlsCipherSuite suite;
+    private SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     private LeafIndex index;
     private byte[] identitySk;
     private ArrayList<CachedProposal> pendingProposals;
@@ -890,7 +891,6 @@ public class Group
 
         // Create PSK Proposal
         byte[] nonce = new byte[suite.getKDF().getHashLength()];
-        SecureRandom random = new SecureRandom();
         random.nextBytes(nonce);
         proposals.add(Proposal.preSharedKey(PreSharedKeyID.resumption(ResumptionPSKUsage.BRANCH, this.groupID, this.epoch, nonce)));
 
@@ -1434,7 +1434,6 @@ public class Group
         {
             throw new Exception("Unknown PSK");
         }
-        SecureRandom random = new SecureRandom();
         byte[] nonce = new byte[suite.getKDF().getHashLength()];
         random.nextBytes(nonce);
         PreSharedKeyID pskId = PreSharedKeyID.external(externalPskId, nonce);
@@ -1455,7 +1454,6 @@ public class Group
         {
             throw new Exception("Unknown PSK");
         }
-        SecureRandom random = new SecureRandom();
         byte[] nonce = new byte[suite.getKDF().getHashLength()];
         random.nextBytes(nonce);
         PreSharedKeyID pskId = PreSharedKeyID.resumption(ResumptionPSKUsage.APPLICATION, groupID, epoch, nonce);
@@ -1526,7 +1524,7 @@ public class Group
             message.publicMessage = PublicMessage.protect(contentAuth, suite, keySchedule.membershipKey.value(), MLSOutputStream.encode(getGroupContext()));
             return message;
         case mls_private_message:
-            message.privateMessage = PrivateMessage.protect(contentAuth, suite, keys, keySchedule.senderDataSecret.value(), paddingSize);
+            message.privateMessage = PrivateMessage.protect(contentAuth, suite, keys, keySchedule.senderDataSecret.value(), paddingSize, random);
             return message;
         default:
             throw new Exception("Malformed AuthenticatedContent");
@@ -1567,7 +1565,6 @@ public class Group
         {
             throw new Exception("Unknown PSK");
         }
-        SecureRandom random = new SecureRandom();
         byte[] nonce = new byte[suite.getKDF().getHashLength()];
         random.nextBytes(nonce);
 
