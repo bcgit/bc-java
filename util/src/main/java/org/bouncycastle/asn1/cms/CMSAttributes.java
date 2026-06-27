@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 /**
  * <a href="https://tools.ietf.org/html/rfc5652">RFC 5652</a> CMS attribute OID constants,
  * <a href="https://tools.ietf.org/html/rfc6019">RFC 6019</a> Binary Time,
- * and <a href="https://tools.ietf.org/html/rfc6211">RFC 6211</a> Algorithm Identifier Protection Attribute.
+ * and <a href="https://tools.ietf.org/html/rfc6211">RFC 6211</a> Algorithm Protection Attribute.
  * <pre>
  * contentType       ::= 1.2.840.113549.1.9.3
  * messageDigest     ::= 1.2.840.113549.1.9.4

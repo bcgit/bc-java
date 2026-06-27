@@ -577,7 +577,7 @@ public class NewAuthenticatedDataTest
         }
         catch (CMSException e)
         {
-            Assert.assertEquals(e.getMessage(), "CMS Algorithm Identifier Protection check failed for digestAlgorithm");
+            Assert.assertEquals(e.getMessage(), "CMS Algorithm Protection check failed for digestAlgorithm");
         }
 
         AlgorithmIdentifier newDigAlgId = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
@@ -592,7 +592,7 @@ public class NewAuthenticatedDataTest
         }
         catch (CMSException e)
         {
-            Assert.assertEquals(e.getMessage(), "CMS Algorithm Identifier Protection check failed for macAlgorithm");
+            Assert.assertEquals(e.getMessage(), "CMS Algorithm Protection check failed for macAlgorithm");
         }
 
         try
@@ -604,7 +604,7 @@ public class NewAuthenticatedDataTest
         }
         catch (CMSException e)
         {
-            Assert.assertEquals(e.getMessage(), "CMS Algorithm Identifier Protection check failed for macAlgorithm");
+            Assert.assertEquals(e.getMessage(), "CMS Algorithm Protection check failed for macAlgorithm");
         }
     }
 
