@@ -6,9 +6,9 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.raw.GF16;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.GF16;
 
 /**
  * Implementation of the Snova digital signature scheme as specified in the Snova documentation.
