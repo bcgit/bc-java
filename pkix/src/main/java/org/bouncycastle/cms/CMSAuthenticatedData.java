@@ -133,12 +133,12 @@ public class CMSAuthenticatedData
 
                 if (!CMSUtils.isEquivalent(algorithmProtection.getDigestAlgorithm(), authData.getDigestAlgorithm()))
                 {
-                    throw new CMSException("CMS Algorithm Identifier Protection check failed for digestAlgorithm");
+                    throw new CMSException("CMS Algorithm Protection check failed for digestAlgorithm");
                 }
 
                 if (!CMSUtils.isEquivalent(algorithmProtection.getMacAlgorithm(), macAlg))
                 {
-                    throw new CMSException("CMS Algorithm Identifier Protection check failed for macAlgorithm");
+                    throw new CMSException("CMS Algorithm Protection check failed for macAlgorithm");
                 }
             }
             try

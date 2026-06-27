@@ -433,8 +433,8 @@ public class SignerInformation
 
         AttributeTable signedAttrTable = this.getSignedAttributes();
 
-        // RFC 6211 Validate Algorithm Identifier protection attribute if present
-        verifyAlgorithmIdentifierProtectionAttribute(signedAttrTable);
+        // RFC 6211 Validate Algorithm Protection attribute if present
+        verifyAlgorithmProtectionAttribute(signedAttrTable);
 
         // RFC 3852 11.2 Check the message-digest attribute is correct
         verifyMessageDigestAttribute();
@@ -541,12 +541,12 @@ public class SignerInformation
     }
 
     /**
-     * RFC 6211 Validate Algorithm Identifier protection attribute if present
+     * RFC 6211 Validate Algorithm Protection attribute if present
      *
      * @param signedAttrTable signed attributes
-     * @throws CMSException when cmsAlgorihmProtect attribute was rejected
+     * @throws CMSException when cmsAlgorithmProtect attribute was rejected
      */
-    private void verifyAlgorithmIdentifierProtectionAttribute(AttributeTable signedAttrTable)
+    private void verifyAlgorithmProtectionAttribute(AttributeTable signedAttrTable)
         throws CMSException
     {
         AttributeTable unsignedAttrTable = this.getUnsignedAttributes();
@@ -565,21 +565,23 @@ public class SignerInformation
             if (protectionAttributes.size() > 0)
             {
                 Attribute attr = Attribute.getInstance(protectionAttributes.get(0));
-                if (attr.getAttrValues().size() != 1)
+
+                ASN1Set attrValues = attr.getAttrValues();
+                if (attrValues.size() != 1)
                 {
                     throw new CMSException("A cmsAlgorithmProtect attribute MUST contain exactly one value");
                 }
 
-                CMSAlgorithmProtection algorithmProtection = CMSAlgorithmProtection.getInstance(attr.getAttributeValues()[0]);
+                CMSAlgorithmProtection algorithmProtection = CMSAlgorithmProtection.getInstance(attrValues.getObjectAt(0));
 
                 if (!CMSUtils.isEquivalent(algorithmProtection.getDigestAlgorithm(), info.getDigestAlgorithm()))
                 {
-                    throw new CMSException("CMS Algorithm Identifier Protection check failed for digestAlgorithm");
+                    throw new CMSException("CMS Algorithm Protection check failed for digestAlgorithm");
                 }
 
                 if (!CMSUtils.isEquivalent(algorithmProtection.getSignatureAlgorithm(), info.getDigestEncryptionAlgorithm()))
                 {
-                    throw new CMSException("CMS Algorithm Identifier Protection check failed for signatureAlgorithm");
+                    throw new CMSException("CMS Algorithm Protection check failed for signatureAlgorithm");
                 }
             }
         }
