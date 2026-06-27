@@ -2,6 +2,7 @@ package org.bouncycastle.gpg;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,7 +18,6 @@ import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.util.Characters;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.io.Streams;
 
 public class SExpression
 {
@@ -77,6 +77,40 @@ public class SExpression
         return parseExpression(_src, null, new ByteArrayOutputStream(), maxDepth);
     }
 
+    // Largest increment by which the canonical-string buffer grows at a time. Reading the declared
+    // length incrementally (rather than pre-allocating new byte[len]) bounds the allocation to the
+    // bytes the stream actually delivers: a hostile canonical string can declare a length up to
+    // Integer.MAX_VALUE from a handful of input bytes (e.g. "(67108864:)"), and a pre-allocation of
+    // that size drives an out-of-memory denial of service before any data is read. See github #2338.
+    private static final int CANONICAL_STRING_BUFFER_INCREMENT = 0x10000;
+
+    private static byte[] readCanonicalString(InputStream src, int len)
+        throws IOException
+    {
+        byte[] b = new byte[Math.min(len, CANONICAL_STRING_BUFFER_INCREMENT)];
+
+        int total = 0;
+        while (total < len)
+        {
+            if (total == b.length)
+            {
+                int next = (int)Math.min((long)len, (long)b.length + CANONICAL_STRING_BUFFER_INCREMENT);
+                byte[] tmp = new byte[next];
+                System.arraycopy(b, 0, tmp, 0, total);
+                b = tmp;
+            }
+
+            int n = src.read(b, total, b.length - total);
+            if (n < 0)
+            {
+                throw new EOFException("premature end of stream in S-Expression canonical string");
+            }
+            total += n;
+        }
+
+        return b;
+    }
+
     private static SExpression parseExpression(InputStream src, SExpression expr, ByteArrayOutputStream accumulator, int maxDepth)
         throws IOException
     {
@@ -115,8 +149,7 @@ public class SExpression
                         {
                             throw new IOException("invalid negative length in S-Expression");
                         }
-                        byte[] b = new byte[len];
-                        Streams.readFully(src, b);
+                        byte[] b = readCanonicalString(src, len);
                         if (expr.parseCanonical)
                         {
                             int size = expr.values.size();

@@ -218,6 +218,20 @@ public class SExprTest
         {
             isEquals("invalid hex data in S-Expression", e.getMessage());
         }
+
+        // a canonical string that declares a huge length (here 64 MiB) but supplies no data must not
+        // drive a buffer allocation of the declared size before reading: the data is read incrementally
+        // so a truncated stream fails with a clean EOFException at the genuine end of input rather than
+        // an out-of-memory allocation from a few input bytes. See github #2338.
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("(67108864:)")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("premature end of stream in S-Expression canonical string", e.getMessage());
+        }
     }
 
     public void performTest()
