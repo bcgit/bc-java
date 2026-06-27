@@ -48,6 +48,14 @@ public class Interleave
 //        0x5540, 0x5541, 0x5544, 0x5545, 0x5550, 0x5551, 0x5554, 0x5555
 //    };
 
+    public static int expand4to8(int x)
+    {
+        x &= 0xF;
+        x  = (x | (x << 2)) & 0x33;
+        x  = (x | (x << 1)) & 0x55;
+        return x;
+    }
+
     public static int expand8to16(int x)
     {
         x &= 0xFF;

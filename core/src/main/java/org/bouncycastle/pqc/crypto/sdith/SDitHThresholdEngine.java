@@ -4,8 +4,8 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.raw.GF256AES;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.GF256;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -141,7 +141,7 @@ public final class SDitHThresholdEngine
 
     private int fieldByteMul(int a, int b)
     {
-        return isP251() ? SDitHP251.mulNaive(a, b) : SDitHGF256.mulNaive(a, b);
+        return isP251() ? SDitHP251.mulNaive(a, b) : GF256AES.mul(a, b);
     }
 
     private int fieldByteNeg(int a)
@@ -205,13 +205,13 @@ public final class SDitHThresholdEngine
             int i = 0;
             for (; i + 8 <= size; i += 8)
             {
-                long prod = GF256.mulFx8(y, Pack.littleEndianToLong(vz, vzOff + i));
+                long prod = GF256AES.mulFx8(y, Pack.littleEndianToLong(vz, vzOff + i));
                 long vxb = Pack.littleEndianToLong(vx, vxOff + i);
                 Pack.longToLittleEndian(prod ^ vxb, vz, vzOff + i);
             }
             for (; i < size; ++i)
             {
-                int p = SDitHGF256.mulNaive(vz[vzOff + i] & 0xff, y);
+                int p = GF256AES.mul(vz[vzOff + i] & 0xff, y);
                 vz[vzOff + i] = (byte) (p ^ (vx[vxOff + i] & 0xff));
             }
         }
@@ -313,7 +313,7 @@ public final class SDitHThresholdEngine
         {
             for (int i = 0; i < extDegree; ++i)
             {
-                dst[dstOff + i] = (byte) SDitHGF256.mulNaive(a, b[bOff + i] & 0xff);
+                dst[dstOff + i] = (byte) GF256AES.mul(a, b[bOff + i] & 0xff);
             }
         }
         else
@@ -539,12 +539,12 @@ public final class SDitHThresholdEngine
                 for (; i + 8 <= outLen; i += 8)
                 {
                     long e = Pack.littleEndianToLong(evals, i)
-                        ^ GF256.mulFx8(coef, Pack.littleEndianToLong(row, i));
+                        ^ GF256AES.mulFx8(coef, Pack.littleEndianToLong(row, i));
                     Pack.longToLittleEndian(e, evals, i);
                 }
                 for (; i < outLen; ++i)
                 {
-                    evals[i] = (byte) ((evals[i] & 0xff) ^ SDitHGF256.mulNaive(coef, row[i] & 0xff));
+                    evals[i] = (byte) ((evals[i] & 0xff) ^ GF256AES.mul(coef, row[i] & 0xff));
                 }
             }
         }
