@@ -58,6 +58,15 @@ public class EthereumIESEngine
     /**
      * Set up for use with stream mode, where the key derivation function is used to provide a stream of bytes to xor with
      * the message.
+     * <p>
+     * <b>Security note:</b> when this engine is initialised with static keys on both sides (the
+     * {@link #init(boolean, CipherParameters, CipherParameters, CipherParameters)} entry point, which
+     * supplies no ephemeral component) the key-derivation input is the same for every message, so the
+     * stream-mode keystream is identical from message to message - encrypting more than one message
+     * under a given key pair is a many-time pad and leaks plaintext relationships. Use the ephemeral
+     * sender-key initialisation (the standard ECIES mode) for messages that must remain confidential;
+     * the static-static mode is effectively deterministic encryption.
+     * </p>
      *
      * @param agree     the key agreement used as the basis for the encryption
      * @param kdf       the key derivation function used for byte generation
@@ -190,16 +199,14 @@ public class EthereumIESEngine
 
             kdf.generateBytes(K, 0, K.length);
 
-            if (V.length != 0)
-            {
-                System.arraycopy(K, 0, K2, 0, K2.length);
-                System.arraycopy(K, K2.length, K1, 0, K1.length);
-            }
-            else
-            {
-                System.arraycopy(K, 0, K1, 0, K1.length);
-                System.arraycopy(K, inLen, K2, 0, K2.length);
-            }
+            // Derive the MAC key K2 from a fixed prefix of the KDF output and the keystream K1 from
+            // the remainder, regardless of whether an ephemeral V is present. Placing K1 first (the
+            // legacy static-key, V-absent layout) put K2 at a message-length-dependent offset behind
+            // the keystream, so a single known-plaintext leak of K1 also exposed the MAC key of any
+            // shorter message - a cross-message forgery in the deterministic static-key mode. A fixed
+            // K2 offset is never covered by the keystream, closing that.
+            System.arraycopy(K, 0, K2, 0, K2.length);
+            System.arraycopy(K, K2.length, K1, 0, K1.length);
 
             C = new byte[inLen];
 
@@ -304,16 +311,9 @@ public class EthereumIESEngine
 
             kdf.generateBytes(K, 0, K.length);
 
-            if (V.length != 0)
-            {
-                System.arraycopy(K, 0, K2, 0, K2.length);
-                System.arraycopy(K, K2.length, K1, 0, K1.length);
-            }
-            else
-            {
-                System.arraycopy(K, 0, K1, 0, K1.length);
-                System.arraycopy(K, K1.length, K2, 0, K2.length);
-            }
+            // K2 (MAC key) from a fixed prefix, K1 (keystream) from the remainder - see encryptBlock.
+            System.arraycopy(K, 0, K2, 0, K2.length);
+            System.arraycopy(K, K2.length, K1, 0, K1.length);
 
             // process the message
             M = new byte[K1.length];
