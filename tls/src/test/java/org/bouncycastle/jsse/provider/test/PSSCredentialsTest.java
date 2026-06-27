@@ -28,8 +28,6 @@ public class PSSCredentialsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_12_PSS = 9018;
-    private static final int PORT_NO_13_PSS = 9019;
 
     static class PSSClient
         implements TestProtocolUtil.BlockingCallable
@@ -101,11 +99,8 @@ public class PSSCredentialsTest
     static class PSSServer
         implements TestProtocolUtil.BlockingCallable
     {
-        private final int port;
         private final String protocol;
-        private final KeyStore serverStore;
-        private final char[] keyPass;
-        private final KeyStore trustStore;
+        private final SSLServerSocket sSock;
         private final CountDownLatch latch;
 
         PSSServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
@@ -114,36 +109,37 @@ public class PSSCredentialsTest
             KeyStore trustStore = createKeyStore();
             trustStore.setCertificateEntry("client", trustAnchor);
 
-            this.port = port;
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            keyMgrFact.init(serverStore, keyPass);
+
+            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            trustMgrFact.init(trustStore);
+
+            SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+            serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
+                SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+            this.sSock = (SSLServerSocket)fact.createServerSocket(port);
+
+            SSLUtils.enableAll(sSock);
+            sSock.setNeedClientAuth(true);
+
             this.protocol = protocol;
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
-            this.trustStore = trustStore;
             this.latch = new CountDownLatch(1);
+        }
+
+        int getPort()
+        {
+            return sSock.getLocalPort();
         }
 
         public Exception call() throws Exception
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                keyMgrFact.init(serverStore, keyPass);
-
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                trustMgrFact.init(trustStore);
-
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-                serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-
-                SSLUtils.enableAll(sSock);
-                sSock.setNeedClientAuth(true);
-
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
@@ -176,15 +172,15 @@ public class PSSCredentialsTest
 
     public void test12() throws Exception
     {
-        implTestPSSCredentials(PORT_NO_12_PSS, "TLSv1.2");
+        implTestPSSCredentials("TLSv1.2");
     }
 
     public void test13() throws Exception
     {
-        implTestPSSCredentials(PORT_NO_13_PSS, "TLSv1.3");
+        implTestPSSCredentials("TLSv1.3");
     }
 
-    private void implTestPSSCredentials(int port, String protocol) throws Exception
+    private void implTestPSSCredentials(String protocol) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
 
@@ -197,8 +193,9 @@ public class PSSCredentialsTest
         KeyStore clientKs = createKeyStore();
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new PSSServer(port, protocol, serverKs, keyPass, caCert),
-            new PSSClient(port, protocol, clientKs, keyPass, caCert));
+        PSSServer server = new PSSServer(0, protocol, serverKs, keyPass, caCert);
+        TestProtocolUtil.runClientAndServer(server,
+            new PSSClient(server.getPort(), protocol, clientKs, keyPass, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException

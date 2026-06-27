@@ -35,7 +35,6 @@ public class RequestedServerNamesTest
     extends TestCase
 {
     private static final String HOST = "localhost";
-    private static final int PORT_NO = 9070;
     private static final String SNI_HOST = "test.bouncycastle.org";
 
     protected void setUp()
@@ -103,38 +102,39 @@ public class RequestedServerNamesTest
     static class Server
         implements TestProtocolUtil.BlockingCallable
     {
-        private final int port;
         private final String protocol;
-        private final KeyStore serverStore;
-        private final char[] keyPass;
+        private final SSLServerSocket sSock;
         private final CountDownLatch latch;
 
         Server(int port, String protocol, KeyStore serverStore, char[] keyPass)
+            throws GeneralSecurityException, IOException
         {
-            this.port = port;
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            keyMgrFact.init(serverStore, keyPass);
+
+            SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+            serverContext.init(keyMgrFact.getKeyManagers(), null,
+                SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+            this.sSock = (SSLServerSocket)fact.createServerSocket(port);
+
+            SSLUtils.enableAll(sSock);
+
             this.protocol = protocol;
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
             this.latch = new CountDownLatch(1);
+        }
+
+        int getPort()
+        {
+            return sSock.getLocalPort();
         }
 
         public Exception call() throws Exception
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                keyMgrFact.init(serverStore, keyPass);
-
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-                serverContext.init(keyMgrFact.getKeyManagers(), null,
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-
-                SSLUtils.enableAll(sSock);
-
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
@@ -192,8 +192,9 @@ public class RequestedServerNamesTest
         KeyStore serverKs = createKeyStore();
         serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new Server(PORT_NO, protocol, serverKs, keyPass),
-            new Client(PORT_NO, protocol, caCert));
+        Server server = new Server(0, protocol, serverKs, keyPass);
+        TestProtocolUtil.runClientAndServer(server,
+            new Client(server.getPort(), protocol, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException
