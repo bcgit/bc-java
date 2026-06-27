@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.macs.CBCBlockCipherMac;
 import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
@@ -29,6 +30,7 @@ public class CCMBlockCipher
     private byte[]                initialAssociatedText;
     private int                   macSize;
     private CipherParameters      keyParam;
+    private byte[]                lastKey;
     private byte[]                macBlock;
     private ExposedByteArrayOutputStream associatedText = new ExposedByteArrayOutputStream();
     private ExposedByteArrayOutputStream data = new ExposedByteArrayOutputStream();
@@ -78,11 +80,12 @@ public class CCMBlockCipher
         this.forEncryption = forEncryption;
 
         CipherParameters cipherParameters;
+        byte[] newNonce;
         if (params instanceof AEADParameters)
         {
             AEADParameters param = (AEADParameters)params;
 
-            nonce = param.getNonce();
+            newNonce = param.getNonce();
             initialAssociatedText = param.getAssociatedText();
             macSize = getMacSize(param.getMacSize());
             cipherParameters = param.getKey();
@@ -91,7 +94,7 @@ public class CCMBlockCipher
         {
             ParametersWithIV param = (ParametersWithIV)params;
 
-            nonce = param.getIV();
+            newNonce = param.getIV();
             initialAssociatedText = null;
             macSize = getMacSize(64);
             cipherParameters = param.getParameters();
@@ -101,10 +104,36 @@ public class CCMBlockCipher
             throw new IllegalArgumentException("invalid parameters passed to CCM: " + params.getClass().getName());
         }
 
+        // RFC 5116 sec. 2.1 requires every nonce passed to an AEAD encryption operation to be
+        // distinct for a given key; sec. 5.3.1 notes CCM nonce reuse "undermines the security for
+        // the messages processed" (here CTR keystream reuse plus a forgeable CBC-MAC; see also NIST
+        // SP 800-38C / RFC 3610). That obligation is the caller's, so this guard enforces it
+        // defensively, mirroring GCMBlockCipher. A null key parameter (explicit key re-use) with a
+        // repeated nonce is also caught. A fresh nonce or key, reset(), or init for decryption are
+        // all unaffected.
+        if (forEncryption && nonce != null && Arrays.areEqual(nonce, newNonce))
+        {
+            if (cipherParameters == null)
+            {
+                throw new IllegalArgumentException("cannot reuse nonce for CCM encryption");
+            }
+            if (cipherParameters instanceof KeyParameter
+                && Arrays.areEqual(lastKey, ((KeyParameter)cipherParameters).getKey()))
+            {
+                throw new IllegalArgumentException("cannot reuse nonce for CCM encryption");
+            }
+        }
+
+        nonce = newNonce;
+
         // NOTE: Very basic support for key re-use, but no performance gain from it
         if (cipherParameters != null)
         {
             keyParam = cipherParameters;
+            if (cipherParameters instanceof KeyParameter)
+            {
+                lastKey = ((KeyParameter)cipherParameters).getKey();
+            }
         }
 
         if (nonce == null || nonce.length < 7 || nonce.length > 13)
