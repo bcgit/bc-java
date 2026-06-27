@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -46,6 +47,8 @@ public class KCCMBlockCipher
     private byte[] macBlock;
 
     private byte[] nonce;
+    // Previous key seen on init(true, ...) - used with nonce only to reject nonce reuse for encryption.
+    private byte[] lastKey;
 
     private byte[] G1;
     private byte[] buffer;
@@ -113,6 +116,7 @@ public class KCCMBlockCipher
         throws IllegalArgumentException
     {
         CipherParameters cipherParameters;
+        byte[] newNonce;
         if (params instanceof AEADParameters)
         {
             AEADParameters parameters = (AEADParameters)params;
@@ -122,14 +126,14 @@ public class KCCMBlockCipher
                 throw new IllegalArgumentException("Invalid mac size specified");
             }
 
-            nonce = parameters.getNonce();
+            newNonce = parameters.getNonce();
             macSize = parameters.getMacSize() / BITS_IN_BYTE;
             initialAssociatedText = parameters.getAssociatedText();
             cipherParameters = parameters.getKey();
         }
         else if (params instanceof ParametersWithIV)
         {
-            nonce = ((ParametersWithIV)params).getIV();
+            newNonce = ((ParametersWithIV)params).getIV();
             macSize = engine.getBlockSize(); // use default blockSize for MAC if it is not specified
             initialAssociatedText = null;
             cipherParameters = ((ParametersWithIV)params).getParameters();
@@ -137,6 +141,24 @@ public class KCCMBlockCipher
         else
         {
             throw new IllegalArgumentException("Invalid parameters specified");
+        }
+
+        // RFC 5116 sec. 2.1 requires a distinct nonce per AEAD encryption under a given key; the
+        // DSTU 7624 CCM construction inherits this CCM rule (cf. NIST SP 800-38C), and reuse is
+        // catastrophic (CTR keystream reuse plus a forgeable CBC-MAC). That obligation is the
+        // caller's, so this guard enforces it defensively, mirroring KGCMBlockCipher /
+        // GCMBlockCipher. A fresh nonce or key, reset(), or init for decryption are all unaffected.
+        if (forEncryption && nonce != null && Arrays.areEqual(nonce, newNonce)
+            && cipherParameters instanceof KeyParameter
+            && Arrays.areEqual(lastKey, ((KeyParameter)cipherParameters).getKey()))
+        {
+            throw new IllegalArgumentException("cannot reuse nonce for KCCM encryption");
+        }
+
+        nonce = newNonce;
+        if (cipherParameters instanceof KeyParameter)
+        {
+            lastKey = ((KeyParameter)cipherParameters).getKey();
         }
 
         this.mac = new byte[macSize];
