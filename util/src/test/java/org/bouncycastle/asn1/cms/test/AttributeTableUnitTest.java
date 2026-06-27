@@ -56,13 +56,17 @@ public class AttributeTableUnitTest
         {
             fail("type3 attribute found when none expected.");
         }
-        
+
+        isTrue(table.hasAny(type1));
+
         ASN1EncodableVector vec = table.getAll(type1);
         if (vec.size() != 1)
         {
             fail("wrong vector size for type1.");
         }
-        
+
+        isTrue(!table.hasAny(type3));
+
         vec = table.getAll(type3);
         if (vec.size() != 0)
         {
@@ -98,7 +102,9 @@ public class AttributeTableUnitTest
         {
             fail("wrong value retrieved for type1 multi get!");
         }
-        
+
+        isTrue(table.hasAny(type1));
+
         vec = table.getAll(type1);
         if (vec.size() != 3)
         {
@@ -122,7 +128,9 @@ public class AttributeTableUnitTest
         {
             fail("wrong value retrieved for type1(2)!");
         }
-        
+
+        isTrue(table.hasAny(type2));
+
         vec = table.getAll(type2);
         if (vec.size() != 1)
         {
