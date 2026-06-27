@@ -111,7 +111,17 @@ public class AlgorithmIdentifierFactory
 
             random.nextBytes(iv);
 
-            RC2CBCParameter cbcParams = new RC2CBCParameter(rc2Table[128], iv);
+            int parameterVersion;
+            if (keySize < 256)
+            {
+                parameterVersion = rc2Table[keySize];
+            }
+            else
+            {
+                parameterVersion = keySize;
+            }
+
+            RC2CBCParameter cbcParams = new RC2CBCParameter(parameterVersion, iv);            
 
             return new AlgorithmIdentifier(encryptionOID, cbcParams);
         }

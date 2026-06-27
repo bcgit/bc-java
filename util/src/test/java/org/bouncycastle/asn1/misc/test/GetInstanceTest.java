@@ -80,6 +80,7 @@ import org.bouncycastle.asn1.cms.AuthEnvelopedData;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CompressedData;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.DigestedData;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedData;
 import org.bouncycastle.asn1.cms.EnvelopedData;
@@ -96,6 +97,7 @@ import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.cms.OriginatorPublicKey;
 import org.bouncycastle.asn1.cms.OtherKeyAttribute;
 import org.bouncycastle.asn1.cms.OtherRecipientInfo;
+import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cms.PasswordRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientEncryptedKey;
 import org.bouncycastle.asn1.cms.RecipientIdentifier;
@@ -1009,6 +1011,22 @@ public class GetInstanceTest
         // OriginatorPublicKey needs 2 mandatory fields (algorithm, publicKey BIT STRING).
         checkTooShort(OriginatorPublicKey.class, new DERSequence(new ASN1Encodable[]{
             new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1"))}));
+
+        // CompressedData needs 3 mandatory fields (version, compressionAlgorithm, encapContentInfo).
+        checkTooShort(CompressedData.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1"))}));
+
+        // DigestedData needs 4 mandatory fields (version, digestAlgorithm, encapContentInfo, digest).
+        checkTooShort(DigestedData.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1")), new DEROctetString(new byte[1])}));
+
+        // KeyTransRecipientInfo needs 4 mandatory fields (version, rid, keyEncryptionAlgorithm, encryptedKey).
+        checkTooShort(KeyTransRecipientInfo.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1")), new DEROctetString(new byte[1])}));
+
+        // OtherRevocationInfoFormat needs 2 mandatory fields (otherRevInfoFormat OID, otherRevInfo ANY).
+        checkTooShort(OtherRevocationInfoFormat.class, new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.1")}));
     }
 
     private void checkTooShort(Class clazz, DERSequence tooShort)
