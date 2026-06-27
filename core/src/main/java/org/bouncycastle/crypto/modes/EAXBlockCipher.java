@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
@@ -51,6 +52,10 @@ public class EAXBlockCipher
 
     private boolean cipherInitialized;
     private byte[] initialAssociatedText;
+
+    // Previous (nonce, key) seen on init(true, ...) - used only to reject nonce reuse for encryption.
+    private byte[] lastNonce;
+    private byte[] lastKey;
 
     /**
      * Constructor that accepts an instance of a block cipher engine.
@@ -111,6 +116,31 @@ public class EAXBlockCipher
         else
         {
             throw new IllegalArgumentException("invalid parameters passed to EAX");
+        }
+
+        // RFC 5116 sec. 2.1 requires every nonce passed to an AEAD encryption operation to be
+        // distinct for a given key; reuse is catastrophic (here CTR keystream reuse plus a forgeable
+        // OMAC). That standard places the obligation on the caller, so this guard enforces it
+        // defensively, mirroring GCMBlockCipher / KGCMBlockCipher. A null key parameter (explicit
+        // key re-use, supported by the underlying CMac) combined with a repeated nonce is also
+        // caught. A fresh nonce or key, reset(), or init for decryption are all unaffected.
+        if (forEncryption && lastNonce != null && Arrays.areEqual(lastNonce, nonce))
+        {
+            if (keyParam == null)
+            {
+                throw new IllegalArgumentException("cannot reuse nonce for EAX encryption");
+            }
+            if (keyParam instanceof KeyParameter
+                && Arrays.areEqual(lastKey, ((KeyParameter)keyParam).getKey()))
+            {
+                throw new IllegalArgumentException("cannot reuse nonce for EAX encryption");
+            }
+        }
+
+        lastNonce = nonce;
+        if (keyParam instanceof KeyParameter)
+        {
+            lastKey = ((KeyParameter)keyParam).getKey();
         }
 
         bufBlock = new byte[forEncryption ? blockSize : (blockSize + macSize)];
