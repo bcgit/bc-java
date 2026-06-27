@@ -7,11 +7,11 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSet;
@@ -47,8 +47,8 @@ public class SignerInformation
     private final boolean isCounterSignature;
 
     // Derived
-    private AttributeTable signedAttributeValues;
-    private AttributeTable unsignedAttributeValues;
+    private AttributeTable signedAttributeTable;
+    private AttributeTable unsignedAttributeTable;
     private byte[] resultDigest;
 
     protected final SignerInfo info;
@@ -125,8 +125,8 @@ public class SignerInformation
         this.signature = info.getEncryptedDigest().getOctets();
         this.content = baseInfo.content;
         this.resultDigest = baseInfo.resultDigest;
-        this.signedAttributeValues = getSignedAttributes();
-        this.unsignedAttributeValues = getUnsignedAttributes();
+        this.signedAttributeTable = getSignedAttributes();
+        this.unsignedAttributeTable = getUnsignedAttributes();
     }
 
     public boolean isCounterSignature()
@@ -223,12 +223,12 @@ public class SignerInformation
      */
     public AttributeTable getSignedAttributes()
     {
-        if (signedAttributeSet != null && signedAttributeValues == null)
+        if (signedAttributeSet != null && signedAttributeTable == null)
         {
-            signedAttributeValues = new AttributeTable(signedAttributeSet);
+            signedAttributeTable = new AttributeTable(signedAttributeSet);
         }
 
-        return signedAttributeValues;
+        return signedAttributeTable;
     }
 
     /**
@@ -237,12 +237,12 @@ public class SignerInformation
      */
     public AttributeTable getUnsignedAttributes()
     {
-        if (unsignedAttributeSet != null && unsignedAttributeValues == null)
+        if (unsignedAttributeSet != null && unsignedAttributeTable == null)
         {
-            unsignedAttributeValues = new AttributeTable(unsignedAttributeSet);
+            unsignedAttributeTable = new AttributeTable(unsignedAttributeSet);
         }
 
-        return unsignedAttributeValues;
+        return unsignedAttributeTable;
     }
 
     /**
@@ -431,16 +431,14 @@ public class SignerInformation
         // RFC 3852 11.1 Check the content-type attribute is correct
         verifyContentTypeAttributeValue();
 
-        AttributeTable signedAttrTable = this.getSignedAttributes();
-
         // RFC 6211 Validate Algorithm Protection attribute if present
-        verifyAlgorithmProtectionAttribute(signedAttrTable);
+        verifyAlgorithmProtectionAttribute();
 
         // RFC 3852 11.2 Check the message-digest attribute is correct
         verifyMessageDigestAttribute();
 
         // RFC 3852 11.4 Validate countersignature attribute(s)
-        verifyCounterSignatureAttribute(signedAttrTable);
+        verifyCounterSignatureAttribute();
 
         try
         {
@@ -477,8 +475,7 @@ public class SignerInformation
     private void verifyContentTypeAttributeValue()
         throws CMSException
     {
-        ASN1Primitive validContentType = getSingleValuedSignedAttribute(
-            CMSAttributes.contentType, "content-type");
+        ASN1Encodable validContentType = getSingleValuedSignedAttribute(CMSAttributes.contentType, "content-type");
         if (validContentType == null)
         {
             if (!isCounterSignature && signedAttributeSet != null)
@@ -515,8 +512,8 @@ public class SignerInformation
     private void verifyMessageDigestAttribute()
         throws CMSException
     {
-        ASN1Primitive validMessageDigest = getSingleValuedSignedAttribute(
-            CMSAttributes.messageDigest, "message-digest");
+        ASN1Encodable validMessageDigest = getSingleValuedSignedAttribute(CMSAttributes.messageDigest,
+            "message-digest");
         if (validMessageDigest == null)
         {
             if (signedAttributeSet != null)
@@ -543,46 +540,26 @@ public class SignerInformation
     /**
      * RFC 6211 Validate Algorithm Protection attribute if present
      *
-     * @param signedAttrTable signed attributes
      * @throws CMSException when cmsAlgorithmProtect attribute was rejected
      */
-    private void verifyAlgorithmProtectionAttribute(AttributeTable signedAttrTable)
+    private void verifyAlgorithmProtectionAttribute()
         throws CMSException
     {
-        AttributeTable unsignedAttrTable = this.getUnsignedAttributes();
-        if (unsignedAttrTable != null && unsignedAttrTable.getAll(CMSAttributes.cmsAlgorithmProtect).size() > 0)
+        ASN1Encodable validAlgorithmProtection = getSingleValuedSignedAttribute(CMSAttributes.cmsAlgorithmProtect,
+            "cmsAlgorithmProtect");
+        if (validAlgorithmProtection != null)
         {
-            throw new CMSException("A cmsAlgorithmProtect attribute MUST be a signed attribute");
-        }
-        if (signedAttrTable != null)
-        {
-            ASN1EncodableVector protectionAttributes = signedAttrTable.getAll(CMSAttributes.cmsAlgorithmProtect);
-            if (protectionAttributes.size() > 1)
+            CMSAlgorithmProtection algorithmProtection = CMSAlgorithmProtection.getInstance(validAlgorithmProtection);
+
+            if (!CMSUtils.isEquivalent(algorithmProtection.getDigestAlgorithm(), info.getDigestAlgorithm()))
             {
-                throw new CMSException("Only one instance of a cmsAlgorithmProtect attribute can be present");
+                throw new CMSException("CMS Algorithm Protection check failed for digestAlgorithm");
             }
 
-            if (protectionAttributes.size() > 0)
+            if (!CMSUtils.isEquivalent(algorithmProtection.getSignatureAlgorithm(),
+                info.getDigestEncryptionAlgorithm()))
             {
-                Attribute attr = Attribute.getInstance(protectionAttributes.get(0));
-
-                ASN1Set attrValues = attr.getAttrValues();
-                if (attrValues.size() != 1)
-                {
-                    throw new CMSException("A cmsAlgorithmProtect attribute MUST contain exactly one value");
-                }
-
-                CMSAlgorithmProtection algorithmProtection = CMSAlgorithmProtection.getInstance(attrValues.getObjectAt(0));
-
-                if (!CMSUtils.isEquivalent(algorithmProtection.getDigestAlgorithm(), info.getDigestAlgorithm()))
-                {
-                    throw new CMSException("CMS Algorithm Protection check failed for digestAlgorithm");
-                }
-
-                if (!CMSUtils.isEquivalent(algorithmProtection.getSignatureAlgorithm(), info.getDigestEncryptionAlgorithm()))
-                {
-                    throw new CMSException("CMS Algorithm Protection check failed for signatureAlgorithm");
-                }
+                throw new CMSException("CMS Algorithm Protection check failed for signatureAlgorithm");
             }
         }
     }
@@ -590,14 +567,13 @@ public class SignerInformation
     /**
      * RFC 3852 11.4 Validate countersignature attribute(s)
      *
-     * @param signedAttrTable signed attributes
      * @throws CMSException when countersignature attribute was rejected
      */
-    private void verifyCounterSignatureAttribute(AttributeTable signedAttrTable)
+    private void verifyCounterSignatureAttribute()
         throws CMSException
     {
-        if (signedAttrTable != null
-            && signedAttrTable.getAll(CMSAttributes.counterSignature).size() > 0)
+        AttributeTable signedAttrTable = getSignedAttributes();
+        if (signedAttrTable != null && signedAttrTable.hasAny(CMSAttributes.counterSignature))
         {
             throw new CMSException("A countersignature attribute MUST NOT be a signed attribute");
         }
@@ -659,19 +635,16 @@ public class SignerInformation
         return info;
     }
 
-    private ASN1Primitive getSingleValuedSignedAttribute(
-        ASN1ObjectIdentifier attrOID, String printableName)
+    private ASN1Encodable getSingleValuedSignedAttribute(ASN1ObjectIdentifier attrOID, String printableName)
         throws CMSException
     {
-        AttributeTable unsignedAttrTable = this.getUnsignedAttributes();
-        if (unsignedAttrTable != null
-            && unsignedAttrTable.getAll(attrOID).size() > 0)
+        AttributeTable unsignedAttrTable = getUnsignedAttributes();
+        if (unsignedAttrTable != null && unsignedAttrTable.hasAny(attrOID))
         {
-            throw new CMSException("The " + printableName
-                + " attribute MUST NOT be an unsigned attribute");
+            throw new CMSException("The " + printableName + " attribute MUST NOT be an unsigned attribute");
         }
 
-        AttributeTable signedAttrTable = this.getSignedAttributes();
+        AttributeTable signedAttrTable = getSignedAttributes();
         if (signedAttrTable == null)
         {
             return null;
@@ -688,14 +661,13 @@ public class SignerInformation
             ASN1Set attrValues = t.getAttrValues();
             if (attrValues.size() != 1)
             {
-                throw new CMSException("A " + printableName
-                    + " attribute MUST have a single attribute value");
+                throw new CMSException("A " + printableName + " attribute MUST have a single attribute value");
             }
 
-            return attrValues.getObjectAt(0).toASN1Primitive();
+            return attrValues.getObjectAt(0);
         }
         default:
-            throw new CMSException("The SignedAttributes in a signerInfo MUST NOT include multiple instances of the "
+            throw new CMSException("The SignedAttributes in a SignerInfo MUST NOT include multiple instances of the "
                 + printableName + " attribute");
         }
     }
@@ -703,9 +675,7 @@ public class SignerInformation
     private Time getSigningTime()
         throws CMSException
     {
-        ASN1Primitive validSigningTime = getSingleValuedSignedAttribute(
-            CMSAttributes.signingTime, "signing-time");
-
+        ASN1Encodable validSigningTime = getSingleValuedSignedAttribute(CMSAttributes.signingTime, "signing-time");
         if (validSigningTime == null)
         {
             return null;
