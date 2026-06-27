@@ -230,7 +230,7 @@ public class SExprTest
         }
         catch (IOException e)
         {
-            isEquals("premature end of stream in S-Expression canonical string", e.getMessage());
+            isEquals("premature end of stream", e.getMessage());
         }
     }
 
