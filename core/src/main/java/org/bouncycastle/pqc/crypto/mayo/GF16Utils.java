@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.mayo;
 
-import org.bouncycastle.util.GF16;
+import org.bouncycastle.math.raw.GF16;
 
 class GF16Utils
 {
@@ -24,36 +24,18 @@ class GF16Utils
      */
     static void mVecMulAdd(int mVecLimbs, long[] in, int inOffset, int b, long[] acc, int accOffset)
     {
-        long a, r64, a_msb, a_msb3;
+        // Broadcast scalar-bit masks (0 or -1), hoisted out of the limb loop;
+        // the per-limb bitsliced GF(16) step is shared with UOV via
+        // GF16.mulAddStep16 (constant-time, table-free). In the original C there
+        // is a conditional XOR with unsigned_char_blocker; here we use b directly.
         long b32 = b & 0x00000000FFFFFFFFL;
-        long b32and1 = b32 & 1;
-        long b32_1_1 = ((b32 >>> 1) & 1);
-        long b32_2_1 = ((b32 >>> 2) & 1);
-        long b32_3_1 = ((b32 >>> 3) & 1);
+        long m0 = -(b32 & 1);
+        long m1 = -((b32 >>> 1) & 1);
+        long m2 = -((b32 >>> 2) & 1);
+        long m3 = -((b32 >>> 3) & 1);
         for (int i = 0; i < mVecLimbs; i++)
         {
-            // In the original code there is a conditional XOR with unsigned_char_blocker;
-            // here we simply use b directly.
-            a = in[inOffset++];
-            r64 = a & -b32and1;
-
-            a_msb = a & MASK_MSB;
-            a &= NIBBLE_MASK_MSB;
-            a_msb3 = a_msb >>> 3;
-            a = (a << 1) ^ (a_msb3 + (a_msb3 << 1));
-            r64 ^= a & -b32_1_1;
-
-            a_msb = a & MASK_MSB;
-            a &= NIBBLE_MASK_MSB;
-            a_msb3 = a_msb >>> 3;
-            a = (a << 1) ^ (a_msb3 + (a_msb3 << 1));
-            r64 ^= a & -b32_2_1;
-
-            a_msb = a & MASK_MSB;
-            a &= NIBBLE_MASK_MSB;
-            a_msb3 = a_msb >>> 3;
-            a = (a << 1) ^ (a_msb3 + (a_msb3 << 1));
-            acc[accOffset++] ^= r64 ^ (a & -b32_3_1);
+            acc[accOffset++] ^= GF16.mulAddStep16(in[inOffset++], m0, m1, m2, m3);
         }
     }
 

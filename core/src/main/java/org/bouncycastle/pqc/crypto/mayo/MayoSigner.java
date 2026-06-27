@@ -6,11 +6,11 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.raw.GF16;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
-import org.bouncycastle.util.GF16;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -784,11 +784,10 @@ public class MayoSigner
                 vecMulAddU64(rowLen, pivotRow2, (byte)(belowPivot & eltToElim), packedA, rowRowLen);
             }
 
-            // If pivot is nonzero, increment pivotRowIndex.
-            if (pivot != 0)
-            {
-                pivotRowIndex++;
-            }
+            // If pivot is nonzero, increment pivotRowIndex. Done branchlessly so the
+            // secret pivot's zero-ness is not leaked via timing; mirrors the reference
+            // EF (MAYO-C echelon_form.h: pivot_row += -(int64_t)(~pivot_is_zero)).
+            pivotRowIndex += (int)(~pivotIsZero) & 1;
         }
 
         int outIndex = 0;
