@@ -117,6 +117,9 @@ public class EnvelopedDataHelper
         MAC_ALG_NAMES.put(CMSAlgorithm.AES256_CBC,  "AESMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2Mac");
         MAC_ALG_NAMES.put(CMSAlgorithm.ChaCha20Poly1305, "ChaCha20Poly1305Mac");
+        // RFC 8702
+        MAC_ALG_NAMES.put(CMSAlgorithm.KMACwithSHAKE128, "KMAC128");
+        MAC_ALG_NAMES.put(CMSAlgorithm.KMACwithSHAKE256, "KMAC256");
 
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA1.getAlgorithmID(), "PBKDF2WITHHMACSHA1");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA224.getAlgorithmID(), "PBKDF2WITHHMACSHA224");
