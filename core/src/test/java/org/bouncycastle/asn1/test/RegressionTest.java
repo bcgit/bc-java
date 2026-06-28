@@ -53,6 +53,7 @@ public class RegressionTest
         new AttributeCertificateInfoIssuerTest(),
         new ParsingTest(),
         new GeneralNameTest(),
+        new NameConstraintsTest(),
         new ObjectIdentifierTest(),
         new RFC4519Test(),
         new PolicyConstraintsTest(),
