@@ -446,9 +446,24 @@ public class PGPSecretKey
      */
     public boolean isPrivateKeyEmpty()
     {
+        if (isExternalKey())
+        {
+            return true;
+        }
+
         byte[] secKeyData = secret.getSecretKeyData();
 
         return (secKeyData == null || secKeyData.length < 1);
+    }
+
+    public boolean isExternalKey()
+    {
+        return secret.getS2KUsage() == SecretKeyPacket.USAGE_EXTERNAL;
+    }
+
+    public byte[] getExternalKeyLocatorHint()
+    {
+        return secret.getExternalKeyLocatorHint();
     }
 
     /**
@@ -510,6 +525,7 @@ public class PGPSecretKey
      *     <li>{@link SecretKeyPacket#USAGE_CHECKSUM}: Password-protected using malleable CFB (deprecated)</li>
      *     <li>{@link SecretKeyPacket#USAGE_SHA1}: Password-protected using CFB</li>
      *     <li>{@link SecretKeyPacket#USAGE_AEAD}: Password-protected using AEAD (recommended)</li>
+     *     <li>{@link SecretKeyPacket#USAGE_EXTERNAL}: Externally-backed private key, e.g. hardware token</li>
      * </ul>
      *
      * @return the key's S2K usage
@@ -563,6 +579,11 @@ public class PGPSecretKey
         throws PGPException
     {
         byte[] encData = secret.getSecretKeyData();
+
+        if (isExternalKey())
+        {
+            throw new PGPException("Key is externally-backed and key-data cannot be extracted.");
+        }
 
         if (secret.getEncAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
         {
