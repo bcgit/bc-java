@@ -115,32 +115,45 @@ public class KCCMBlockCipher
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        CipherParameters cipherParameters;
+        KeyParameter keyParameter = null;
         byte[] newNonce;
         if (params instanceof AEADParameters)
         {
-            AEADParameters parameters = (AEADParameters)params;
+            AEADParameters aeadParameters = (AEADParameters)params;
 
-            if (parameters.getMacSize() > MAX_MAC_BIT_LENGTH || parameters.getMacSize() < MIN_MAC_BIT_LENGTH || parameters.getMacSize() % 8 != 0)
+            int macSizeInBits = aeadParameters.getMacSize();
+            if (macSizeInBits > MAX_MAC_BIT_LENGTH || macSizeInBits < MIN_MAC_BIT_LENGTH || macSizeInBits % 8 != 0)
             {
                 throw new IllegalArgumentException("Invalid mac size specified");
             }
 
-            newNonce = parameters.getNonce();
-            macSize = parameters.getMacSize() / BITS_IN_BYTE;
-            initialAssociatedText = parameters.getAssociatedText();
-            cipherParameters = parameters.getKey();
+            newNonce = aeadParameters.getNonce();
+            macSize = macSizeInBits / BITS_IN_BYTE;
+            initialAssociatedText = aeadParameters.getAssociatedText();
+            keyParameter = aeadParameters.getKey();
         }
         else if (params instanceof ParametersWithIV)
         {
-            newNonce = ((ParametersWithIV)params).getIV();
+            ParametersWithIV withIV = (ParametersWithIV)params;
+
+            newNonce = withIV.getIV();
             macSize = engine.getBlockSize(); // use default blockSize for MAC if it is not specified
             initialAssociatedText = null;
-            cipherParameters = ((ParametersWithIV)params).getParameters();
+
+            CipherParameters innerParameters = withIV.getParameters();
+            if (innerParameters != null)
+            {
+                if (!(innerParameters instanceof KeyParameter))
+                {
+                    throw new IllegalArgumentException("invalid parameters passed to KCCM");
+                }
+
+                keyParameter = (KeyParameter)innerParameters;
+            }
         }
         else
         {
-            throw new IllegalArgumentException("Invalid parameters specified");
+            throw new IllegalArgumentException("invalid parameters passed to KCCM");
         }
 
         // RFC 5116 sec. 2.1 requires a distinct nonce per AEAD encryption under a given key; the
@@ -148,23 +161,31 @@ public class KCCMBlockCipher
         // catastrophic (CTR keystream reuse plus a forgeable CBC-MAC). That obligation is the
         // caller's, so this guard enforces it defensively, mirroring KGCMBlockCipher /
         // GCMBlockCipher. A fresh nonce or key, reset(), or init for decryption are all unaffected.
-        if (forEncryption && nonce != null && Arrays.areEqual(nonce, newNonce)
-            && cipherParameters instanceof KeyParameter
-            && Arrays.areEqual(lastKey, ((KeyParameter)cipherParameters).getKey()))
+        if (forEncryption)
         {
-            throw new IllegalArgumentException("cannot reuse nonce for KCCM encryption");
+            if (nonce != null && Arrays.areEqual(nonce, newNonce))
+            {
+                if (keyParameter == null)
+                {
+                    throw new IllegalArgumentException("cannot reuse nonce for KCCM encryption");
+                }
+                if (lastKey != null && Arrays.constantTimeAreEqual(lastKey, keyParameter.getKey()))
+                {
+                    throw new IllegalArgumentException("cannot reuse nonce for KCCM encryption");
+                }
+            }
         }
 
         nonce = newNonce;
-        if (cipherParameters instanceof KeyParameter)
+        if (keyParameter != null)
         {
-            lastKey = ((KeyParameter)cipherParameters).getKey();
+            lastKey = keyParameter.getKey();
         }
 
         this.mac = new byte[macSize];
         this.forEncryption = forEncryption;
 
-        engine.init(true, cipherParameters);
+        engine.init(true, keyParameter);
 
         reset();
     }
