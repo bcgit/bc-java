@@ -333,6 +333,11 @@ public class KCCMBlockCipher
         }
         else
         {
+            if (len < macSize)
+            {
+                throw new InvalidCipherTextException("data too short");
+            }
+
             int dataLen = len - macSize;
 
             if (out.length - outOff < dataLen)
