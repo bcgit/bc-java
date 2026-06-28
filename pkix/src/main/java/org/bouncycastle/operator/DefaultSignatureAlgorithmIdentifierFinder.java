@@ -557,7 +557,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(EdECObjectIdentifiers.id_Ed25519);
         noParams.add(EdECObjectIdentifiers.id_Ed448);
 
-        // RFC 8692
+        // RFC 8692 (X.509) / RFC 8702 (CMS) - parameters MUST be absent
         noParams.add(X509ObjectIdentifiers.id_rsassa_pss_shake128);
         noParams.add(X509ObjectIdentifiers.id_rsassa_pss_shake256);
         noParams.add(X509ObjectIdentifiers.id_ecdsa_with_shake128);
