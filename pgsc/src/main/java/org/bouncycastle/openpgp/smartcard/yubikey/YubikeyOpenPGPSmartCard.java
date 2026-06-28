@@ -61,7 +61,7 @@ public class YubikeyOpenPGPSmartCard
         }
         catch (ApduException | IOException | BadResponseException e)
         {
-            throw new CardException("Cannot perform initial read from Yubikey", e);
+            throw new CardException("Cannot perform initial read from Yubikey " + getSerialNumber(), e);
         }
     }
 

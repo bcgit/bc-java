@@ -1,4 +1,4 @@
-package org.bouncycastle.openpgp.smartcard.yubikey.operator;
+package org.bouncycastle.openpgp.smartcard.yubikey.operator.bc;
 
 import com.yubico.yubikit.core.application.InvalidPinException;
 import com.yubico.yubikit.core.keys.PublicKeyValues;
@@ -39,13 +39,13 @@ import java.util.Date;
  * unwrap work stays in {@link org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory}.
  * ElGamal and X448 are not supported by the applet and are rejected.
  */
-public class YubikeyPublicKeyDataDecryptorFactory
+public class BcYubikeyPublicKeyDataDecryptorFactory
     extends BcExternalPublicKeyDataDecryptorFactory
 {
     private final KeyPassphraseProvider userPinProvider;
     private final YubikeyOpenPGPSmartCard yubikey;
 
-    public YubikeyPublicKeyDataDecryptorFactory(OpenPGPKey.OpenPGPSecretKey secretKey,
+    public BcYubikeyPublicKeyDataDecryptorFactory(OpenPGPKey.OpenPGPSecretKey secretKey,
                                                 YubikeyOpenPGPSmartCard yubikey,
                                                 KeyPassphraseProvider userPinProvider)
         throws PGPException
