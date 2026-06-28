@@ -24,54 +24,52 @@ public class GF256AES
 
     /**
      * Constant-time GF(256) scalar multiply over the AES polynomial 0x11b:
-     * returns {@code a * b}. The Russian-peasant loop doubles one operand
-     * (branchless xtime {@code (b<<1) ^ (carry * 0x1b)}) and conditionally adds
-     * it under the mask {@code -(bit)} (0 or -1) for each bit of the other, so
-     * there is no table lookup and no data-dependent branch — safe to feed
-     * secret operands. This is the scalar companion of {@link #mulFx8(int, long)}
-     * and is byte-identical to the per-scheme forms it replaces (UOV's mul256,
-     * SDitH's mulNaive, MQOM's gf256Mult).
+     * returns {@code a * b}. There is no table lookup and no data-dependent branch
+     *  — safe to feed secret operands. This is the scalar companion of
+     * {@link #mulFx8(int, long)} and is byte-identical to the per-scheme forms it
+     *  replaces (UOV's mul256, SDitH's mulNaive, MQOM's gf256Mult).
      */
     public static int mul(int a, int b)
     {
-        a &= 0xff;
         b &= 0xff;
-        int acc = b & -(a & 1);
-        for (int k = 1; k < 8; ++k)
-        {
-            int hi = (b >>> 7) & 1;
-            b = ((b << 1) & 0xfe) ^ (hi * 0x1b);
-            acc ^= b & -((a >>> k) & 1);
-        }
-        return acc & 0xff;
+
+        int d = (b << 4) & -(a & 0x10)
+              ^ (b << 5) & -(a & 0x20)
+              ^ (b << 6) & -(a & 0x40)
+              ^ (b << 7) & -(a & 0x80);
+        int c = (b << 0) & -(a & 0x01)
+              ^ (b << 1) & -(a & 0x02)
+              ^ (b << 2) & -(a & 0x04)
+              ^ (b << 3) & -(a & 0x08);
+
+        // reduce x^8..x^15 -> x^0..x^11
+        int u = d >>> 8;
+        u ^= u << 1;
+        u ^= u << 3;
+        c ^= u;
+
+        // reduce x^8..x^11 -> x^0..x^7
+        int v = c >>> 8; c = (c ^ d) & 0xff;
+        v ^= v << 1;
+        v ^= v << 3;
+        c ^= v;
+
+        return c;        
     }
 
     /**
      * Constant-time GF(256) squaring over 0x11b. Squaring is GF(2)-linear, so
      * {@code a^2} is just the bit-spread of {@code a} (interleave a zero between
-     * each bit, via {@link Interleave#expand8to16(int)}) reduced mod 0x11b. The
-     * reduction folds the high byte back twice: {@code x^8 = x^4 + x^3 + x + 1}
-     * means a high coefficient block multiplies by 0x1b, computed branchlessly as
-     * {@code (d ^= d<<1; d ^= d<<3)} = {@code d * (1+x)(1+x^3) = d * 0x1b}. Returns
-     * the same value as {@link #mul(int, int) mul(a, a)} but with no
-     * data-dependent loop — table-free, branchless, and measurably faster
-     * (~2.6x on HotSpot C2), so it replaces the squarings in {@link #inv(int)}.
+     * each bit), reduced mod 0x11b.
      */
     public static int sqr(int a)
     {
-        // a^2 unreduced: bits 0..14, even positions only.
-        int c = Interleave.expand8to16(a);
-        // reduce x^8..x^15 -> x^0..x^11  (fold the high byte * 0x1b)
-        int d = c >>> 8; c &= 0xff;
-        d ^= d << 1;
-        d ^= d << 3;
-        c ^= d;
-        // reduce the residual x^8..x^11 -> x^0..x^7
-        int e = c >>> 8; c &= 0xff;
-        e ^= e << 1;
-        e ^= e << 3;
-        c ^= e;
-        return c;
+        int c = Interleave.expand4to8(a);
+        int hi = 0x1b00 & -(a & 0x10)
+               ^ 0x6c00 & -(a & 0x20)
+               ^ 0xab00 & -(a & 0x40)
+               ^ 0x9a00 & -(a & 0x80);
+        return c ^ (hi >>> 8);        
     }
 
     /**
@@ -91,12 +89,13 @@ public class GF256AES
         int a8 = sqr(a4);            // a^8
         int a6 = mul(a4, a2);        // a^6
         int a14 = mul(a8, a6);       // a^14
-        int a112 = sqr(a14);         // a^28
-        a112 = sqr(a112);            // a^56
-        a112 = sqr(a112);            // a^112
+        int a28 = sqr(a14);          // a^28
+        int a56 = sqr(a28);          // a^56
+        int a112 = sqr(a56);         // a^112
         int a126 = mul(a112, a14);   // a^126
         int a252 = sqr(a126);        // a^252
-        return mul(a252, a2);        // a^254 = a^-1
+        int a254 = mul(a252, a2);    // a^254 = a^-1
+        return a254;
     }
 
     /**
