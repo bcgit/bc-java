@@ -152,6 +152,19 @@ public class ElGamalEngine
             BigInteger  gamma = new BigInteger(1, in1);
             BigInteger  phi = new BigInteger(1, in2);
 
+            // Both ciphertext components are peer-supplied, and gamma is raised below to the
+            // (potentially static, reused) private-key-derived exponent, so both must be valid
+            // public values in [2, p-2]. Otherwise a peer can submit a small-order or out-of-range
+            // element to mount a small-subgroup confinement attack and, with a decryption oracle and
+            // a reused key, recover the private key. Mirrors the peer-value validation in
+            // DHBasicAgreement / DHAgreement.
+            BigInteger  pSub1 = p.subtract(ONE);
+            if (gamma.compareTo(ONE) <= 0 || gamma.compareTo(pSub1) >= 0
+                || phi.compareTo(ONE) <= 0 || phi.compareTo(pSub1) >= 0)
+            {
+                throw new IllegalArgumentException("ElGamal ciphertext element is weak");
+            }
+
             ElGamalPrivateKeyParameters  priv = (ElGamalPrivateKeyParameters)key;
             // a shortcut, which generally relies on p being prime amongst other things.
             // if a problem with this shows up, check the p and g values!
