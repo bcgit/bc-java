@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.mayo;
+package org.bouncycastle.pqc.jcajce.provider.aimer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -6,28 +6,28 @@ import java.io.ObjectOutputStream;
 import java.security.PublicKey;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.aimer.AIMerPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.MayoKey;
-import org.bouncycastle.pqc.jcajce.spec.MayoParameterSpec;
+import org.bouncycastle.pqc.jcajce.interfaces.AIMerKey;
+import org.bouncycastle.pqc.jcajce.spec.AIMerParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
-public class BCMayoPublicKey
-    implements PublicKey, MayoKey
+public class BCAIMerPublicKey
+    implements PublicKey, AIMerKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient MayoPublicKeyParameters params;
+    private transient AIMerPublicKeyParameters params;
 
-    public BCMayoPublicKey(
-        MayoPublicKeyParameters params)
+    public BCAIMerPublicKey(
+        AIMerPublicKeyParameters params)
     {
         this.params = params;
     }
 
-    public BCMayoPublicKey(SubjectPublicKeyInfo keyInfo)
+    public BCAIMerPublicKey(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
         init(keyInfo);
@@ -36,11 +36,11 @@ public class BCMayoPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (MayoPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
+        this.params = (AIMerPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
     }
 
     /**
-     * Compare this Mayo public key with another object.
+     * Compare this AIMer public key with another object.
      *
      * @param o the other object
      * @return the result of the comparison
@@ -52,9 +52,9 @@ public class BCMayoPublicKey
             return true;
         }
 
-        if (o instanceof BCMayoPublicKey)
+        if (o instanceof BCAIMerPublicKey)
         {
-            BCMayoPublicKey otherKey = (BCMayoPublicKey)o;
+            BCAIMerPublicKey otherKey = (BCAIMerPublicKey)o;
 
             return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
@@ -68,7 +68,7 @@ public class BCMayoPublicKey
     }
 
     /**
-     * @return name of the algorithm - "Mayo[1|2|3|5]"
+     * @return name of the algorithm - "AIMer-[128|192|256][f|s]"
      */
     public final String getAlgorithm()
     {
@@ -94,12 +94,12 @@ public class BCMayoPublicKey
         return "X.509";
     }
 
-    public MayoParameterSpec getParameterSpec()
+    public AIMerParameterSpec getParameterSpec()
     {
-        return MayoParameterSpec.fromName(params.getParameters().getName());
+        return AIMerParameterSpec.fromName(params.getParameters().getName());
     }
 
-    MayoPublicKeyParameters getKeyParams()
+    AIMerPublicKeyParameters getKeyParams()
     {
         return params;
     }

@@ -31,6 +31,10 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
+import org.bouncycastle.pqc.crypto.aimer.AIMerParameters;
+import org.bouncycastle.pqc.crypto.aimer.AIMerPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
@@ -328,12 +332,16 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruplus864, new NTRUPlusConverter());
         converters.put(BCObjectIdentifiers.ntruplus1152, new NTRUPlusConverter());
 
+        converters.put(BCObjectIdentifiers.aimer_128f, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_128s, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_192f, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_192s, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_256f, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_256s, new AIMerConverter());
+
         converters.put(BCObjectIdentifiers.hawk256, new HawkConverter());
         converters.put(BCObjectIdentifiers.hawk512, new HawkConverter());
         converters.put(BCObjectIdentifiers.hawk1024, new HawkConverter());
-        converters.put(BCObjectIdentifiers.ntruplus768, new NTRUPlusConverter());
-        converters.put(BCObjectIdentifiers.ntruplus864, new NTRUPlusConverter());
-        converters.put(BCObjectIdentifiers.ntruplus1152, new NTRUPlusConverter());
 
         converters.put(BCObjectIdentifiers.faest_128s, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_128f, new FaestConverter());
@@ -1138,6 +1146,20 @@ public class PublicKeyFactory
             NTRUPlusParameters ntruPlusParams = Utils.ntruPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new NTRUPlusPublicKeyParameters(ntruPlusParams, keyEnc);
+        }
+    }
+
+    private static class AIMerConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            AIMerParameters aimerParams = Utils.aimerParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new AIMerPublicKeyParameters(aimerParams, keyEnc);
         }
     }
 
