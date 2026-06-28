@@ -28,6 +28,23 @@ public class SecretSubkeyPacket
     {
         super(SECRET_SUBKEY, in, newPacketFormat);
     }
+
+    /**
+     * Create a SecretSubkeyPacket which has external private key material.
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     *
+     * @param publicKeyPacket public key material
+     * @param locatorHints optional external key locator hints
+     */
+    public SecretSubkeyPacket(
+            PublicSubkeyPacket publicKeyPacket,
+            byte[] locatorHints)
+    {
+        super(SECRET_SUBKEY, publicKeyPacket, locatorHints);
+    }
+
     /**
      * Create a secret subkey packet.
      * If the encryption algorithm is NOT {@link SymmetricKeyAlgorithmTags#NULL},
