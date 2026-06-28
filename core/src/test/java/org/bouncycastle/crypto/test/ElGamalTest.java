@@ -258,6 +258,73 @@ public class ElGamalTest
         }
     }
 
+    private void testMaliciousCiphertext()
+    {
+        // ElGamal decryption raises the first ciphertext component (gamma) to the static private key,
+        // so an out-of-range or small-order gamma -- or phi -- must be rejected before the modPow;
+        // otherwise a peer can mount a small-subgroup confinement attack against a reused decryption
+        // key (the class closed for DHAgreement). The DH analogue is DHTest.testMaliciousMessage.
+        ElGamalParameters               dhParams = new ElGamalParameters(p512, g512, 0);
+        ElGamalKeyGenerationParameters  params = new ElGamalKeyGenerationParameters(new SecureRandom(), dhParams);
+        ElGamalKeyPairGenerator         kpGen = new ElGamalKeyPairGenerator();
+
+        kpGen.init(params);
+
+        ElGamalPrivateKeyParameters     pv = (ElGamalPrivateKeyParameters)kpGen.generateKeyPair().getPrivate();
+
+        ElGamalEngine    e = new ElGamalEngine();
+
+        e.init(false, pv);
+
+        int half = (p512.bitLength() + 7) / 8;
+
+        // weak / out-of-range component values: 0 and 1 (small order / below range), p-1 (order 2)
+        // and p (>= range). A well-formed gamma = g^k mod p is always in (1, p-1), so these never
+        // arise from a legitimate ciphertext.
+        BigInteger[] weak = new BigInteger[]
+        {
+            BigInteger.valueOf(0),
+            BigInteger.valueOf(1),
+            p512.subtract(BigInteger.valueOf(1)),
+            p512
+        };
+
+        // an in-range component (2 lies in [2, p-2]) used to fill the other half, so each case
+        // isolates the component under test.
+        byte[] goodHalf = BigIntegers.asUnsignedByteArray(half, BigInteger.valueOf(2));
+
+        for (int i = 0; i != weak.length; i++)
+        {
+            byte[] weakHalf = BigIntegers.asUnsignedByteArray(half, weak[i]);
+
+            // weak gamma (first half), valid phi (second half)
+            checkRejected(e, weakHalf, goodHalf, "gamma", weak[i]);
+            // valid gamma (first half), weak phi (second half)
+            checkRejected(e, goodHalf, weakHalf, "phi", weak[i]);
+        }
+    }
+
+    private void checkRejected(
+        ElGamalEngine e,
+        byte[]        firstHalf,
+        byte[]        secondHalf,
+        String        which,
+        BigInteger    value)
+    {
+        byte[] cText = Arrays.concatenate(firstHalf, secondHalf);
+
+        try
+        {
+            e.processBlock(cText, 0, cText.length);
+
+            fail("ElGamal accepted weak " + which + " = " + value);
+        }
+        catch (IllegalArgumentException ex)
+        {
+            // expected
+        }
+    }
+
     public void performTest()
     {
         testInvalidP();
@@ -275,6 +342,8 @@ public class ElGamalTest
         testGeneration(258);
 
         testInitCheck();
+
+        testMaliciousCiphertext();
     }
 
     public static void main(
