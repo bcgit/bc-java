@@ -26,6 +26,11 @@ public class RecipientEncryptedKey
     private RecipientEncryptedKey(
         ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         identifier = KeyAgreeRecipientIdentifier.getInstance(seq.getObjectAt(0));
         encryptedKey = (ASN1OctetString)seq.getObjectAt(1);
     }
