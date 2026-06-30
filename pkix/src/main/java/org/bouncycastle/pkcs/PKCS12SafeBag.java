@@ -16,13 +16,24 @@ import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 
+/**
+ * Holding class for a PKCS#12 SafeBag (RFC 7292). {@link #getBagValue()} returns a typed view
+ * of the payload appropriate to {@link #getType()}.
+ */
 public class PKCS12SafeBag
 {
+    /** Standard {@code pkcs-9-at-friendlyName} attribute OID. */
     public static final ASN1ObjectIdentifier friendlyNameAttribute = PKCSObjectIdentifiers.pkcs_9_at_friendlyName;
+    /** Standard {@code pkcs-9-at-localKeyId} attribute OID. */
     public static final ASN1ObjectIdentifier localKeyIdAttribute = PKCSObjectIdentifiers.pkcs_9_at_localKeyId;
 
     private SafeBag safeBag;
 
+    /**
+     * Wrap an existing parsed SafeBag ASN.1 structure.
+     *
+     * @param safeBag the underlying SafeBag.
+     */
     public PKCS12SafeBag(SafeBag safeBag)
     {
         this.safeBag = safeBag;
@@ -48,6 +59,11 @@ public class PKCS12SafeBag
         return safeBag.getBagId();
     }
 
+    /**
+     * Return the bag attributes (e.g. friendlyName, localKeyId) attached to this bag.
+     *
+     * @return the attributes as an array, or {@code null} if none are present.
+     */
     public Attribute[] getAttributes()
     {
         ASN1Set attrs = safeBag.getBagAttributes();
@@ -66,6 +82,15 @@ public class PKCS12SafeBag
         return attributes;
     }
 
+    /**
+     * Return the bag value as a typed object appropriate to {@link #getType()}:
+     * pkcs8ShroudedKeyBag → {@link PKCS8EncryptedPrivateKeyInfo}, certBag →
+     * {@link X509CertificateHolder}, keyBag → {@link org.bouncycastle.asn1.pkcs.PrivateKeyInfo},
+     * crlBag → {@link X509CRLHolder}, secretBag → {@link PKCS12SecretBag}. Other types are
+     * returned as their raw ASN.1 encoding.
+     *
+     * @return a typed view of this bag's value.
+     */
     public Object getBagValue()
     {
         if (getType().equals(PKCSObjectIdentifiers.pkcs8ShroudedKeyBag))

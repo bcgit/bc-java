@@ -29,25 +29,38 @@
             <fileset dir="core/src/main/java" includes="**/*.properties" />
             <fileset dir="core/src/main/resources" includes="**/*.properties" />
             <fileset dir="core/src/main/javadoc" includes="**/*.html" />
-            <fileset dir="core/src/test/java" includes="**/*.java" />
+            <fileset dir="core/src/test/java" includes="**/*.java">
+                <exclude name="**/faest/*.java"/>
+                <exclude name="**/lms/*.java"/>
+                <exclude name="**/sdith/*.java"/>
+            </fileset>
             <fileset dir="core/src/test/javadoc" includes="**/*.html" />
             <fileset dir="core/src/test/resources" includes="**/*.*" />
 
             <fileset dir="prov/src/main/java" includes="**/*.java" />
             <fileset dir="prov/src/main/javadoc" includes="**/*.html" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
-            <fileset dir="prov/src/test/java" includes="**/*.java" />
+            <fileset dir="prov/src/test/java" includes="**/*.java">
+                <exclude name="**/provider/*.java"/>
+            </fileset>
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
             <fileset dir="tls/src/main/java" includes="**/*.java" />
             <fileset dir="tls/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
-            <fileset dir="tls/src/test/java" includes="**/*.java" />
+            <fileset dir="tls/src/test/java" includes="**/*.java">
+                <exclude name="**/tls/*.java"/>
+                <exclude name="**/jsse/provider/*.java"/>
+            </fileset>
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
             <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/main/resources" includes="**/*.properties" />
-            <fileset dir="pkix/src/test/java" includes="**/*.java" />
+            <fileset dir="pkix/src/test/java" includes="**/*.java" >
+                <!-- est.jcajce tests reach the package-private DefaultESTClient; run from the test
+                     jar in this build that cross-jar package access fails, so exclude them -->
+                <exclude name="**/est/jcajce/*.java"/>
+            </fileset>
             <fileset dir="pkix/src/test/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
 

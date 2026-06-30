@@ -96,6 +96,7 @@
                 <exclude name="**/SIKE*.java"/>
                 <exclude name="**/CompositeSign*.java"/>
                 <exclude name="**/COMPOSITE*.java"/>
+                <exclude name="**/CompositeKEMs.java"/>
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/XMS*.java"/>
@@ -105,6 +106,7 @@
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/asymmetric/compositesignatures/*.java"/>
+                <exclude name="**/asymmetric/compositekem/*.java"/>
                 <exclude name="**/asymmetric/DSTU*.java"/>
                 <exclude name="**/asymmetric/dstu/*.java"/>
                 <exclude name="**/asymmetric/ecgost12/*.java"/>
@@ -258,6 +260,7 @@
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="core/src/main/jdk1.4" includes="**/*.java"/>
+            <fileset dir="mail/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="prov/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java"/>

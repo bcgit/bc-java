@@ -9,10 +9,22 @@ import org.bouncycastle.cms.CMSEncryptedData;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.operator.InputDecryptorProvider;
 
+/**
+ * Factory that materialises the {@link PKCS12SafeBag}s carried in one {@link ContentInfo} of a
+ * PFX's AuthenticatedSafe. Use the single-argument constructor for plain {@code data} content
+ * infos and the two-argument constructor with an {@link InputDecryptorProvider} for
+ * {@code encryptedData} content infos.
+ */
 public class PKCS12SafeBagFactory
 {
     private ASN1Sequence safeBagSeq;
 
+    /**
+     * Construct a factory over a plain (unencrypted) {@code data} ContentInfo.
+     *
+     * @param info the ContentInfo holding the SafeContents.
+     * @throws IllegalArgumentException if {@code info} is an {@code encryptedData} ContentInfo.
+     */
     public PKCS12SafeBagFactory(ContentInfo info)
     {
         if (info.getContentType().equals(PKCSObjectIdentifiers.encryptedData))
@@ -23,6 +35,16 @@ public class PKCS12SafeBagFactory
         this.safeBagSeq = ASN1Sequence.getInstance(ASN1OctetString.getInstance(info.getContent()).getOctets());
     }
 
+    /**
+     * Construct a factory over an {@code encryptedData} ContentInfo, decrypting its contents
+     * with the supplied provider.
+     *
+     * @param info                   the encrypted ContentInfo.
+     * @param inputDecryptorProvider provider able to produce a decryptor matching the
+     *                               algorithm identifier carried by {@code info}.
+     * @throws PKCSException if decryption fails.
+     * @throws IllegalArgumentException if {@code info} is not an {@code encryptedData} ContentInfo.
+     */
     public PKCS12SafeBagFactory(ContentInfo info, InputDecryptorProvider inputDecryptorProvider)
         throws PKCSException
     {
@@ -44,6 +66,11 @@ public class PKCS12SafeBagFactory
         throw new IllegalArgumentException("encryptedData requires constructor with decryptor.");
     }
 
+    /**
+     * Return the {@link PKCS12SafeBag}s contained in the ContentInfo this factory was created over.
+     *
+     * @return the SafeBags as an array.
+     */
     public PKCS12SafeBag[] getSafeBags()
     {
         PKCS12SafeBag[] safeBags = new PKCS12SafeBag[safeBagSeq.size()];

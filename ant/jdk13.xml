@@ -293,6 +293,7 @@
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="core/src/main/jdk1.4" includes="**/*.java" />
+            <fileset dir="mail/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="prov/src/main/jdk1.4" includes="**/*.java" >
                 <exclude name="**/LDAP*.java" />
                 <exclude name="**/X509LDAP*.java" />

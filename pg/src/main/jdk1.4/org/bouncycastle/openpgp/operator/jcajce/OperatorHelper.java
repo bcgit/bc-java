@@ -15,6 +15,7 @@ import java.security.Signature;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -262,6 +263,12 @@ class OperatorHelper
         {
             throw new PGPException("cannot create cipher: " + e.getMessage(), e);
         }
+    }
+
+    SecretKeyFactory createSecretKeyFactory(String algorithm)
+        throws GeneralSecurityException
+    {
+        return helper.createSecretKeyFactory(algorithm);
     }
 
     Cipher createPublicKeyCipher(int encAlgorithm)

@@ -26,6 +26,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
 {
     private char[] passPhrase;
     private PGPDigestCalculator s2kDigestCalculator;
+    private PGPS2KCalculator s2kCalculator;
     private S2K s2k;
     private SecureRandom random;
     private int s2kCount;
@@ -54,8 +55,22 @@ public abstract class PBEKeyEncryptionMethodGenerator
     protected PBEKeyEncryptionMethodGenerator(
         char[] passPhrase, S2K.Argon2Params params)
     {
+        this(passPhrase, params, null);
+    }
+
+    /**
+     * Construct a PBE key generator using Argon2 as S2K mechanism.
+     *
+     * @param passPhrase    passphrase
+     * @param params        argon2 parameters
+     * @param s2kCalculator the calculator to use for the Argon2 key derivation.
+     */
+    protected PBEKeyEncryptionMethodGenerator(
+        char[] passPhrase, S2K.Argon2Params params, PGPS2KCalculator s2kCalculator)
+    {
         this.passPhrase = passPhrase;
         this.s2k = new S2K(params);
+        this.s2kCalculator = s2kCalculator;
     }
 
     /**
@@ -72,7 +87,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
         int s2kCount)
     {
         this.passPhrase = passPhrase;
-        this.s2kDigestCalculator = s2kDigestCalculator;
+        this.s2kCalculator = new PGPUtil.HashBasedS2KCalculator(s2kDigestCalculator);
 
         if (s2kCount < 0 || s2kCount > 0xff)
         {
@@ -154,10 +169,10 @@ public abstract class PBEKeyEncryptionMethodGenerator
 
             random.nextBytes(iv);
 
-            s2k = new S2K(s2kDigestCalculator.getAlgorithm(), iv, s2kCount);
+            s2k = new S2K(s2kCalculator.getType(), iv, s2kCount);
         }
 
-        return PGPUtil.makeKeyFromPassPhrase(s2kDigestCalculator, encAlgorithm, s2k, passPhrase);
+        return PGPUtil.makeKeyFromPassPhrase(s2kCalculator, encAlgorithm, s2k, passPhrase);
     }
 
     /**

@@ -8,8 +8,11 @@ public class SimpleTestTest
 {
     public void testCrypto()
     {
-        org.bouncycastle.util.test.Test[] tests = RegressionTest.tests;
+        runTests(RegressionTest.tests);
+    }
 
+    private void runTests(org.bouncycastle.util.test.Test[] tests)
+    {
         for (int i = 0; i != tests.length; i++)
         {
             SimpleTestResult result = (SimpleTestResult)tests[i].perform();
@@ -31,4 +34,3 @@ public class SimpleTestTest
         test.testCrypto();
     }
 }
-

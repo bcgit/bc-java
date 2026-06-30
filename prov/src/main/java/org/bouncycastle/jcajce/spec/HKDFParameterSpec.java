@@ -3,17 +3,26 @@ package org.bouncycastle.jcajce.spec;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
 
-import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.util.Arrays;
 
 public class HKDFParameterSpec
     implements KeySpec, AlgorithmParameterSpec
 {
-    private final HKDFParameters hkdfParameters;
+    private final byte[] ikm;
+    private final byte[] salt;
+    private final byte[] info;
     private final int outputLength;
 
     public HKDFParameterSpec(byte[] ikm, byte[] salt, byte[] info, int outputLength)
     {
-        this.hkdfParameters = new HKDFParameters(ikm, salt, info);
+        if (ikm == null)
+        {
+            throw new IllegalArgumentException("IKM (input keying material) should not be null");
+        }
+
+        this.ikm = Arrays.clone(ikm);
+        this.salt = (salt == null || salt.length == 0) ? null : Arrays.clone(salt);
+        this.info = (info == null) ? new byte[0] : Arrays.clone(info);
         this.outputLength = outputLength;
     }
 
@@ -24,17 +33,17 @@ public class HKDFParameterSpec
      */
     public byte[] getIKM()
     {
-        return hkdfParameters.getIKM();
+        return Arrays.clone(ikm);
     }
 
     /**
-     * Returns if step 1: extract has to be skipped or not
+     * Returns if step 1: extract has to be skipped or not.
      *
      * @return true for skipping, false for no skipping of step 1
      */
     public boolean skipExtract()
     {
-        return hkdfParameters.skipExtract();
+        return false;
     }
 
     /**
@@ -45,7 +54,7 @@ public class HKDFParameterSpec
      */
     public byte[] getSalt()
     {
-        return hkdfParameters.getSalt();
+        return Arrays.clone(salt);
     }
 
     /**
@@ -55,7 +64,7 @@ public class HKDFParameterSpec
      */
     public byte[] getInfo()
     {
-        return hkdfParameters.getInfo();
+        return Arrays.clone(info);
     }
 
     /**

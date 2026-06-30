@@ -10,6 +10,11 @@ public abstract class PGPSecretKeyDecryptorWithAAD
         super(passPhrase, calculatorProvider);
     }
 
+    public PGPSecretKeyDecryptorWithAAD(char[] passPhrase, PGPDigestCalculatorProvider calculatorProvider, PGPS2KCalculator s2kCalculator)
+    {
+        super(passPhrase, calculatorProvider, s2kCalculator);
+    }
+
     public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
         throws PGPException
     {

@@ -401,8 +401,79 @@ public class PKIXPolicyMappingTest
         requirePolicies.add("2.16.840.1.101.3.2.1.48.1");
         msg = testPolicies(8, trustCert, intCert, endCert, requirePolicies, false);
         checkMessage(8, msg, "Path processing failed on policy.");
+
+        /*
+         * test_09 - the valid-policy-tree size is bounded (CVE-2023-0464 class). With the node cap
+         * (org.bouncycastle.x509.max_policy_nodes) set very low, a chain that otherwise validates
+         * is rejected with a clear cap error rather than being allowed to grow the policy tree
+         * without bound. Without the cap the same chain validates, so this also proves the bound is
+         * actually enforced.
+         */
+        intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
+        map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
+        policies = new ASN1EncodableVector();
+        policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.2")));
+        endCert = createEndEntityCert(pubKey, intPrivKey, policies);
+
+        String savedMax = System.getProperty("org.bouncycastle.x509.max_policy_nodes");
+        System.setProperty("org.bouncycastle.x509.max_policy_nodes", "1");
+        try
+        {
+            Set trust = new HashSet();
+            trust.add(new TrustAnchor(trustCert, null));
+            X509CertSelector target = new X509CertSelector();
+            target.setSubject(endCert.getSubjectX500Principal().getEncoded());
+            PKIXBuilderParameters params = new PKIXBuilderParameters(trust, target);
+            Set certs = new HashSet();
+            certs.add(intCert);
+            certs.add(endCert);
+            params.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(certs)));
+            params.setRevocationEnabled(false);
+
+            try
+            {
+                CertPathBuilder.getInstance("PKIX", "BC").build(params);
+                fail("test 9 failed: policy-tree node cap not enforced (path validated)");
+            }
+            catch (TestFailedException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                if (!containsMessage(e, "max_policy_nodes"))
+                {
+                    fail("test 9 failed: expected policy-tree cap error, got: " + e.getMessage());
+                }
+            }
+        }
+        finally
+        {
+            if (savedMax == null)
+            {
+                System.clearProperty("org.bouncycastle.x509.max_policy_nodes");
+            }
+            else
+            {
+                System.setProperty("org.bouncycastle.x509.max_policy_nodes", savedMax);
+            }
+        }
     }
-    
+
+    private boolean containsMessage(Throwable t, String text)
+    {
+        while (t != null)
+        {
+            if (t.getMessage() != null && t.getMessage().indexOf(text) >= 0)
+            {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
+    }
+
 
     private void checkMessage(
         int index, 

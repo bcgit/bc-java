@@ -21,6 +21,11 @@ public class ProtectedPart
 
     private ProtectedPart(ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         header = PKIHeader.getInstance(seq.getObjectAt(0));
         body = PKIBody.getInstance(seq.getObjectAt(1));
     }

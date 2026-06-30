@@ -20,8 +20,13 @@ import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLGenerator;
+import org.bouncycastle.asn1.DLOctetStringGenerator;
+import org.bouncycastle.asn1.DLSequenceGenerator;
+import org.bouncycastle.asn1.DLTaggedObject;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DLSet;
+import org.bouncycastle.util.io.TeeOutputStream;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignerInfo;
@@ -69,7 +74,6 @@ public class CMSSignedDataStreamGenerator
     extends CMSSignedGenerator
 {
     private int _bufferSize;
-    private String encoding = ASN1Encoding.BER;
 
     /**
      * base constructor
@@ -95,21 +99,6 @@ public class CMSSignedDataStreamGenerator
         int bufferSize)
     {
         _bufferSize = bufferSize;
-    }
-
-    /**
-     * Specify use of definite-length/DER rather than indefinite length encoding ("BER").
-     *
-     * @param encoding one of "DER", "DL", "BER".
-     */
-    public void setEncoding(String encoding)
-    {
-        if (!(ASN1Encoding.BER.equals(encoding) || ASN1Encoding.DL.equals(encoding) || ASN1Encoding.DER.equals(encoding)))
-        {
-            throw new IllegalArgumentException("encoding must be one of BER, DER, or DL");
-        }
-
-        this.encoding = encoding;
     }
 
     /**
@@ -300,6 +289,364 @@ public class CMSSignedDataStreamGenerator
             OutputStream sigStream = CMSUtils.attachSignersToOutputStream(signerGens, contentStream);
 
             return new CmsDLSignedDataOutputStream(sigStream, eContentType, sigGen, eciGen, ecStream, out);
+        }
+    }
+
+    /**
+     * Generate a definite-length signed object with encapsulated content of
+     * exactly {@code contentLength} octets, the content type marked as DATA.
+     * See {@link #open(ASN1ObjectIdentifier, OutputStream, long, OutputStream)}.
+     */
+    public OutputStream open(OutputStream out, long contentLength)
+        throws CMSException, IOException
+    {
+        return open(CMSObjectIdentifiers.data, out, contentLength, null);
+    }
+
+    /**
+     * Generate a definite-length signed object with encapsulated content of
+     * exactly {@code contentLength} octets.
+     * See {@link #open(ASN1ObjectIdentifier, OutputStream, long, OutputStream)}.
+     */
+    public OutputStream open(ASN1ObjectIdentifier eContentType, OutputStream out, long contentLength)
+        throws CMSException, IOException
+    {
+        return open(eContentType, out, contentLength, null);
+    }
+
+    /**
+     * Generate a definite-length (DL or DER, per {@link #setEncoding(String)})
+     * signed object with encapsulated content of exactly {@code contentLength}
+     * octets, in a single pass with nothing buffered - so the content may
+     * exceed the size of a Java array.
+     * <p>
+     * The SignerInfos trail the content in the encoding but their length feeds
+     * the enclosing headers, which are written before any content flows. Every
+     * {@link SignerInfoGenerator} must therefore be able to pre-commit its
+     * encoded SignerInfo length (see
+     * {@link SignerInfoGenerator#getPredictedEncodedLength}): the underlying
+     * signer has to implement
+     * {@link org.bouncycastle.operator.FixedLengthContentSigner} - RSA,
+     * Ed25519/Ed448 and ML-DSA qualify; DER-encoded ECDSA/DSA do not - and any
+     * attribute generators must be length-stable. Exactly {@code contentLength}
+     * octets must then be written to the returned stream; any mismatch,
+     * including a SignerInfo coming out at other than its predicted length,
+     * fails with an IOException, by which point the output is unusable and
+     * must be discarded.
+     *
+     * @param eContentType     the type of the data being written to the object.
+     * @param out              stream the CMS object is to be written to.
+     * @param contentLength    the exact number of content octets that will be written.
+     * @param dataOutputStream output stream to copy the content to as it is processed (may be null).
+     */
+    public OutputStream open(ASN1ObjectIdentifier eContentType, OutputStream out, long contentLength,
+        OutputStream dataOutputStream)
+        throws CMSException, IOException
+    {
+        if (ASN1Encoding.BER.equals(encoding))
+        {
+            throw new CMSException(
+                "single-pass definite-length encoding requires setEncoding(\"DL\") or setEncoding(\"DER\")");
+        }
+        if (contentLength < 0)
+        {
+            throw new CMSException("contentLength cannot be negative");
+        }
+
+        boolean der = ASN1Encoding.DER.equals(encoding);
+        String enc = der ? ASN1Encoding.DER : ASN1Encoding.DL;
+
+        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+        digestAlgs.addAll(extraDigestAlgorithms);
+        for (Iterator it = _signers.iterator(); it.hasNext(); )
+        {
+            CMSUtils.addDigestAlgs(digestAlgs, (SignerInformation)it.next(), digestAlgIdFinder);
+        }
+        for (Iterator it = signerGens.iterator(); it.hasNext(); )
+        {
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(((SignerInfoGenerator)it.next()).getDigestAlgorithm(), digestAlgIdFinder));
+        }
+
+        // every SignerInfo's encoded length must be committed before the
+        // headers are written.
+        long siBody = 0;
+        for (Iterator it = signerGens.iterator(); it.hasNext(); )
+        {
+            SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
+            long predicted = signerGen.getPredictedEncodedLength(eContentType);
+            if (predicted < 0)
+            {
+                throw new CMSException("signer for " + signerGen.getDigestAlgorithm().getAlgorithm()
+                    + " cannot pre-commit a fixed-length SignerInfo - signature length or attributes"
+                    + " are not predictable; use the two-pass generate() or BER encoding");
+            }
+            siBody += predicted;
+        }
+        for (Iterator it = _signers.iterator(); it.hasNext(); )
+        {
+            siBody += ((SignerInformation)it.next()).toASN1Structure().getEncoded(enc).length;
+        }
+
+        // pre-encode everything other than the content; these all stay small.
+        byte[] contentOid = CMSObjectIdentifiers.signedData.getEncoded(enc);
+        byte[] versionEnc = calculateVersion(eContentType).getEncoded(enc);
+        ASN1EncodableVector digestVec = new ASN1EncodableVector();
+        for (Iterator it = digestAlgs.iterator(); it.hasNext(); )
+        {
+            digestVec.add((AlgorithmIdentifier)it.next());
+        }
+        byte[] digestSetEnc = (der ? (ASN1Set)new DERSet(digestVec) : new DLSet(digestVec)).getEncoded(enc);
+        byte[] eContentTypeEnc = eContentType.getEncoded(enc);
+        byte[] certsEnc = null;
+        if (certs.size() != 0)
+        {
+            ASN1Set certSet = der ? CMSUtils.createDerSetFromList(certs) : CMSUtils.createDlSetFromList(certs);
+            certsEnc = new DLTaggedObject(false, 0, certSet).getEncoded(enc);
+        }
+        byte[] crlsEnc = null;
+        if (crls.size() != 0)
+        {
+            ASN1Set crlSet = der ? CMSUtils.createDerSetFromList(crls) : CMSUtils.createDlSetFromList(crls);
+            crlsEnc = new DLTaggedObject(false, 1, crlSet).getEncoded(enc);
+        }
+
+        // bottom-up length arithmetic for the enclosing headers.
+        long ecTLV = DLGenerator.getDLEncodingLength(DLGenerator.getDLEncodingLength(contentLength));   // [0] EXPLICIT OCTET STRING
+        long eciBody = eContentTypeEnc.length + ecTLV;
+        long eciTLV = DLGenerator.getDLEncodingLength(eciBody);
+        long siTLV = DLGenerator.getDLEncodingLength(siBody);       // signerInfos SET
+        long sdBody = versionEnc.length + digestSetEnc.length + eciTLV
+            + (certsEnc != null ? certsEnc.length : 0)
+            + (crlsEnc != null ? crlsEnc.length : 0)
+            + siTLV;
+        long sdTLV = DLGenerator.getDLEncodingLength(sdBody);
+        long taggedTLV = DLGenerator.getDLEncodingLength(sdTLV);    // [0] EXPLICIT
+        long ciBody = contentOid.length + taggedTLV;
+
+        // ContentInfo
+        DLSequenceGenerator ciGen = new DLSequenceGenerator(out, ciBody);
+        ciGen.getRawOutputStream().write(contentOid);
+
+        // SignedData, [0] EXPLICIT
+        DLSequenceGenerator sdGen = new DLSequenceGenerator(ciGen.getRawOutputStream(), 0, true, sdBody);
+        OutputStream sdRaw = sdGen.getRawOutputStream();
+        sdRaw.write(versionEnc);
+        sdRaw.write(digestSetEnc);
+
+        // EncapsulatedContentInfo
+        DLSequenceGenerator eciGen = new DLSequenceGenerator(sdRaw, eciBody);
+        eciGen.getRawOutputStream().write(eContentTypeEnc);
+
+        // eContent [0] EXPLICIT OCTET STRING - primitive, definite length.
+        DLOctetStringGenerator octGen = new DLOctetStringGenerator(eciGen.getRawOutputStream(), 0, true, contentLength);
+
+        // Also send the data to 'dataOutputStream' if necessary
+        OutputStream contentStream = CMSUtils.getSafeTeeOutputStream(dataOutputStream, octGen.getOctetOutputStream());
+
+        // Let all the signers see the data as it is written
+        OutputStream sigStream = CMSUtils.attachSignersToOutputStream(signerGens, contentStream);
+
+        return new CmsDLSinglePassSignedDataOutputStream(
+            sigStream, eContentType, der, octGen, eciGen, sdGen, ciGen, certsEnc, crlsEnc);
+    }
+
+    /**
+     * Write a definite-length (DL or DER, per {@link #setEncoding(String)})
+     * signed object with encapsulated content in two passes over the supplied
+     * content, with nothing buffered - so the content may exceed the size of a
+     * Java array, and no length needs to be known in advance.
+     * <p>
+     * Pass one streams the content through the signers' digest calculators
+     * and computes every signature, so all lengths are exact - unlike the
+     * single-pass {@link #open(OutputStream, long)} this works with
+     * variable-length signature algorithms such as DER-encoded ECDSA. Pass two
+     * writes the structure, re-reading the content from {@code content} -
+     * which must therefore be re-readable (e.g. file-backed) and stable: the
+     * second pass is re-digested and compared against the first, so a source
+     * that changed between passes fails with an IOException rather than
+     * producing a structure whose signatures don't verify.
+     *
+     * @param content the content to sign and encapsulate; {@code write} is invoked twice.
+     * @param out     stream the CMS object is to be written to.
+     */
+    public void generate(CMSTypedData content, OutputStream out)
+        throws CMSException, IOException
+    {
+        if (ASN1Encoding.BER.equals(encoding))
+        {
+            throw new CMSException(
+                "two-pass definite-length encoding requires setEncoding(\"DL\") or setEncoding(\"DER\")");
+        }
+
+        boolean der = ASN1Encoding.DER.equals(encoding);
+        String enc = der ? ASN1Encoding.DER : ASN1Encoding.DL;
+        ASN1ObjectIdentifier eContentType = content.getContentType();
+
+        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+        digestAlgs.addAll(extraDigestAlgorithms);
+        for (Iterator it = _signers.iterator(); it.hasNext(); )
+        {
+            CMSUtils.addDigestAlgs(digestAlgs, (SignerInformation)it.next(), digestAlgIdFinder);
+        }
+        for (Iterator it = signerGens.iterator(); it.hasNext(); )
+        {
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(((SignerInfoGenerator)it.next()).getDigestAlgorithm(), digestAlgIdFinder));
+        }
+
+        //
+        // pass one: digest (and, for direct signers, sign) the content.
+        //
+        CountingOutputStream passOne = new CountingOutputStream(
+            CMSUtils.getSafeOutputStream(CMSUtils.attachSignersToOutputStream(signerGens, null)));
+        content.write(passOne);
+        passOne.close();
+        long contentLength = passOne.getCount();
+
+        digests.clear();    // clear the current preserved digest state
+
+        ASN1EncodableVector signerInfos = new ASN1EncodableVector();
+        for (Iterator it = signerGens.iterator(); it.hasNext(); )
+        {
+            SignerInfoGenerator sigGen = (SignerInfoGenerator)it.next();
+
+            signerInfos.add(sigGen.generate(eContentType));
+
+            digests.put(sigGen.getDigestAlgorithm().getAlgorithm().getId(), sigGen.getCalculatedDigest());
+        }
+        for (Iterator it = _signers.iterator(); it.hasNext(); )
+        {
+            signerInfos.add(((SignerInformation)it.next()).toASN1Structure());
+        }
+
+        // every length is now exact.
+        byte[] siSetEnc = (der ? (ASN1Set)new DERSet(signerInfos) : new DLSet(signerInfos)).getEncoded(enc);
+
+        byte[] contentOid = CMSObjectIdentifiers.signedData.getEncoded(enc);
+        byte[] versionEnc = calculateVersion(eContentType).getEncoded(enc);
+        ASN1EncodableVector digestVec = new ASN1EncodableVector();
+        for (Iterator it = digestAlgs.iterator(); it.hasNext(); )
+        {
+            digestVec.add((AlgorithmIdentifier)it.next());
+        }
+        byte[] digestSetEnc = (der ? (ASN1Set)new DERSet(digestVec) : new DLSet(digestVec)).getEncoded(enc);
+        byte[] eContentTypeEnc = eContentType.getEncoded(enc);
+        byte[] certsEnc = null;
+        if (certs.size() != 0)
+        {
+            ASN1Set certSet = der ? CMSUtils.createDerSetFromList(certs) : CMSUtils.createDlSetFromList(certs);
+            certsEnc = new DLTaggedObject(false, 0, certSet).getEncoded(enc);
+        }
+        byte[] crlsEnc = null;
+        if (crls.size() != 0)
+        {
+            ASN1Set crlSet = der ? CMSUtils.createDerSetFromList(crls) : CMSUtils.createDlSetFromList(crls);
+            crlsEnc = new DLTaggedObject(false, 1, crlSet).getEncoded(enc);
+        }
+
+        long ecTLV = DLGenerator.getDLEncodingLength(DLGenerator.getDLEncodingLength(contentLength));
+        long eciBody = eContentTypeEnc.length + ecTLV;
+        long eciTLV = DLGenerator.getDLEncodingLength(eciBody);
+        long sdBody = versionEnc.length + digestSetEnc.length + eciTLV
+            + (certsEnc != null ? certsEnc.length : 0)
+            + (crlsEnc != null ? crlsEnc.length : 0)
+            + siSetEnc.length;
+        long sdTLV = DLGenerator.getDLEncodingLength(sdBody);
+        long taggedTLV = DLGenerator.getDLEncodingLength(sdTLV);
+        long ciBody = contentOid.length + taggedTLV;
+
+        //
+        // pass two: write the structure, re-reading and re-digesting the content.
+        //
+        DLSequenceGenerator ciGen = new DLSequenceGenerator(out, ciBody);
+        ciGen.getRawOutputStream().write(contentOid);
+
+        DLSequenceGenerator sdGen = new DLSequenceGenerator(ciGen.getRawOutputStream(), 0, true, sdBody);
+        OutputStream sdRaw = sdGen.getRawOutputStream();
+        sdRaw.write(versionEnc);
+        sdRaw.write(digestSetEnc);
+
+        DLSequenceGenerator eciGen = new DLSequenceGenerator(sdRaw, eciBody);
+        eciGen.getRawOutputStream().write(eContentTypeEnc);
+
+        DLOctetStringGenerator octGen = new DLOctetStringGenerator(eciGen.getRawOutputStream(), 0, true, contentLength);
+
+        // tee the second pass back through the signers' digest calculators
+        // (getDigest() resets them, in both the JCA and lightweight
+        // implementations) so a source that changed between passes is caught.
+        OutputStream verifyStream = octGen.getOctetOutputStream();
+        for (Iterator it = signerGens.iterator(); it.hasNext(); )
+        {
+            SignerInfoGenerator sigGen = (SignerInfoGenerator)it.next();
+            if (sigGen.getDigester() != null)
+            {
+                verifyStream = new TeeOutputStream(verifyStream, sigGen.getDigester().getOutputStream());
+            }
+        }
+
+        content.write(verifyStream);
+        verifyStream.close();
+        octGen.close();     // verifies pass two produced the pass-one octet count
+
+        for (Iterator it = signerGens.iterator(); it.hasNext(); )
+        {
+            SignerInfoGenerator sigGen = (SignerInfoGenerator)it.next();
+            if (sigGen.getDigester() != null)
+            {
+                if (!org.bouncycastle.util.Arrays.areEqual(sigGen.getCalculatedDigest(), sigGen.getDigester().getDigest()))
+                {
+                    throw new IOException("content changed between passes");
+                }
+            }
+        }
+
+        eciGen.close();
+        if (certsEnc != null)
+        {
+            sdRaw.write(certsEnc);
+        }
+        if (crlsEnc != null)
+        {
+            sdRaw.write(crlsEnc);
+        }
+        sdRaw.write(siSetEnc);
+        sdGen.close();
+        ciGen.close();
+    }
+
+    private static class CountingOutputStream
+        extends OutputStream
+    {
+        private final OutputStream _target;
+        private long _count = 0;
+
+        CountingOutputStream(OutputStream target)
+        {
+            _target = target;
+        }
+
+        public void write(int b)
+            throws IOException
+        {
+            _target.write(b);
+            _count++;
+        }
+
+        public void write(byte[] buf, int off, int len)
+            throws IOException
+        {
+            _target.write(buf, off, len);
+            _count += len;
+        }
+
+        public void close()
+            throws IOException
+        {
+            _target.close();
+        }
+
+        long getCount()
+        {
+            return _count;
         }
     }
 
@@ -590,6 +937,114 @@ public class CMSSignedDataStreamGenerator
 
             _sigGen.close();
             _sGen.close();
+        }
+    }
+
+    private class CmsDLSinglePassSignedDataOutputStream
+        extends OutputStream
+    {
+        private final OutputStream _out;
+        private final ASN1ObjectIdentifier _contentOID;
+        private final boolean _der;
+        private final DLOctetStringGenerator _octGen;
+        private final DLSequenceGenerator _eciGen;
+        private final DLSequenceGenerator _sdGen;
+        private final DLSequenceGenerator _ciGen;
+        private final byte[] _certsEnc;
+        private final byte[] _crlsEnc;
+
+        CmsDLSinglePassSignedDataOutputStream(
+            OutputStream out,
+            ASN1ObjectIdentifier contentOID,
+            boolean der,
+            DLOctetStringGenerator octGen,
+            DLSequenceGenerator eciGen,
+            DLSequenceGenerator sdGen,
+            DLSequenceGenerator ciGen,
+            byte[] certsEnc,
+            byte[] crlsEnc)
+        {
+            _out = out;
+            _contentOID = contentOID;
+            _der = der;
+            _octGen = octGen;
+            _eciGen = eciGen;
+            _sdGen = sdGen;
+            _ciGen = ciGen;
+            _certsEnc = certsEnc;
+            _crlsEnc = crlsEnc;
+        }
+
+        public void write(int b)
+            throws IOException
+        {
+            _out.write(b);
+        }
+
+        public void write(byte[] bytes, int off, int len)
+            throws IOException
+        {
+            _out.write(bytes, off, len);
+        }
+
+        public void write(byte[] bytes)
+            throws IOException
+        {
+            _out.write(bytes);
+        }
+
+        public void close()
+            throws IOException
+        {
+            _out.close();
+            _octGen.close();    // verifies the declared content length
+            _eciGen.close();
+
+            digests.clear();    // clear the current preserved digest state
+
+            OutputStream sdRaw = _sdGen.getRawOutputStream();
+            if (_certsEnc != null)
+            {
+                sdRaw.write(_certsEnc);
+            }
+            if (_crlsEnc != null)
+            {
+                sdRaw.write(_crlsEnc);
+            }
+
+            //
+            // collect all the SignerInfo objects
+            //
+            ASN1EncodableVector signerInfos = new ASN1EncodableVector();
+
+            for (Iterator it = signerGens.iterator(); it.hasNext(); )
+            {
+                SignerInfoGenerator sigGen = (SignerInfoGenerator)it.next();
+
+                try
+                {
+                    signerInfos.add(sigGen.generate(_contentOID));
+
+                    digests.put(sigGen.getDigestAlgorithm().getAlgorithm().getId(), sigGen.getCalculatedDigest());
+                }
+                catch (CMSException e)
+                {
+                    throw new CMSStreamException("exception generating signers: " + e.getMessage(), e);
+                }
+            }
+
+            for (Iterator it = _signers.iterator(); it.hasNext(); )
+            {
+                signerInfos.add(((SignerInformation)it.next()).toASN1Structure());
+            }
+
+            // a SignerInfo coming out at other than its predicted length fails
+            // the enclosing length enforcement here.
+            ASN1Set siSet = _der ? (ASN1Set)new DERSet(signerInfos) : (ASN1Set)new DLSet(signerInfos);
+            sdRaw.write(siSet.getEncoded(_der ? ASN1Encoding.DER : ASN1Encoding.DL));
+
+            _sdGen.close();
+            _ciGen.close();
         }
     }
 

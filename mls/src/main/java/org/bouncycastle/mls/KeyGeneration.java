@@ -1,8 +1,7 @@
 package org.bouncycastle.mls;
 
-import java.util.Arrays;
-
 import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.util.Arrays;
 
 public class KeyGeneration
 {
@@ -32,7 +31,7 @@ public class KeyGeneration
             return false;
         }
         KeyGeneration that = (KeyGeneration)o;
-        return generation == that.generation && Arrays.equals(key, that.key) && Arrays.equals(nonce, that.nonce);
+        return generation == that.generation && Arrays.constantTimeAreEqual(key, that.key) && Arrays.constantTimeAreEqual(nonce, that.nonce);
     }
 
     void consume()

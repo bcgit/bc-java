@@ -32,9 +32,9 @@ public class NTRUPlus
             addKeyPairGeneratorAlgorithm(provider, "NTRU+KEM-1152", PREFIX + "NTRUPlusKeyPairGeneratorSpi$NTRUPlus1152", BCObjectIdentifiers.ntruplus1152);
 
             provider.addAlgorithm("KeyGenerator.NTRUPLUS", PREFIX + "NTRUPlusKeyGeneratorSpi");
-            addKeyGeneratorAlgorithm(provider, "NTRU+KEM-768", PREFIX + "NTRUPLUSKeyGeneratorSpi$NTRUPLUS768", BCObjectIdentifiers.ntruplus768);
-            addKeyGeneratorAlgorithm(provider, "NTRU+KEM-864", PREFIX + "NTRUPLUSKeyGeneratorSpi$NTRUPLUS864", BCObjectIdentifiers.ntruplus864);
-            addKeyGeneratorAlgorithm(provider, "NTRU+KEM-1152", PREFIX + "NTRUPLUSKeyGeneratorSpi$NTRUPLUS1152", BCObjectIdentifiers.ntruplus1152);
+            addKeyGeneratorAlgorithm(provider, "NTRU+KEM-768", PREFIX + "NTRUPlusKeyGeneratorSpi$NTRUPlus768", BCObjectIdentifiers.ntruplus768);
+            addKeyGeneratorAlgorithm(provider, "NTRU+KEM-864", PREFIX + "NTRUPlusKeyGeneratorSpi$NTRUPlus864", BCObjectIdentifiers.ntruplus864);
+            addKeyGeneratorAlgorithm(provider, "NTRU+KEM-1152", PREFIX + "NTRUPlusKeyGeneratorSpi$NTRUPlus1152", BCObjectIdentifiers.ntruplus1152);
 
             AsymmetricKeyInfoConverter keyFact = new NTRUPlusKeyFactorySpi();
 
@@ -42,9 +42,9 @@ public class NTRUPlus
             provider.addAlgorithm("Alg.Alias.Cipher.NTRUPLUS", "NTRUPLUS");
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_ntruplus, "NTRUPLUS");
 
-            addCipherAlgorithm(provider, "NTRU+KEM-768", PREFIX + "NTRUPLUSCipherSpi$NTRUPLUS768", BCObjectIdentifiers.ntruplus768);
-            addCipherAlgorithm(provider, "NTRU+KEM-864", PREFIX + "NTRUPLUSCipherSpi$NTRUPLUS864", BCObjectIdentifiers.ntruplus864);
-            addCipherAlgorithm(provider, "NTRU+KEM-1152", PREFIX + "NTRUPLUSCipherSpi$NTRUPLUS1152", BCObjectIdentifiers.ntruplus1152);
+            addCipherAlgorithm(provider, "NTRU+KEM-768", PREFIX + "NTRUPlusCipherSpi$NTRUPlus768", BCObjectIdentifiers.ntruplus768);
+            addCipherAlgorithm(provider, "NTRU+KEM-864", PREFIX + "NTRUPlusCipherSpi$NTRUPlus864", BCObjectIdentifiers.ntruplus864);
+            addCipherAlgorithm(provider, "NTRU+KEM-1152", PREFIX + "NTRUPlusCipherSpi$NTRUPlus1152", BCObjectIdentifiers.ntruplus1152);
 
             registerOid(provider, BCObjectIdentifiers.pqc_kem_ntruplus, "NTRUPLUS", keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.ntruplus768, keyFact);

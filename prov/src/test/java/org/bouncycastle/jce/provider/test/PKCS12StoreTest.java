@@ -26,18 +26,23 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DLSequenceParser;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.AuthenticatedSafe;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedData;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.SafeBag;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -1493,6 +1498,58 @@ public class PKCS12StoreTest
         isTrue(store.isKeyEntry("ONVIF_Test_Alias"));
     }
 
+    // Wrap a single SafeBag in a minimal, MAC-less, unencrypted PKCS#12 PFX.
+    private byte[] keyBagPfx(SafeBag bag)
+        throws IOException
+    {
+        ContentInfo dataInfo = new ContentInfo(PKCSObjectIdentifiers.data,
+            new DEROctetString(new DERSequence(bag).getEncoded()));
+        AuthenticatedSafe authSafe = new AuthenticatedSafe(new ContentInfo[]{dataInfo});
+        ContentInfo mainInfo = new ContentInfo(PKCSObjectIdentifiers.data,
+            new DEROctetString(authSafe.getEncoded()));
+
+        return new Pfx(mainInfo, null).getEncoded();
+    }
+
+    private void testRawKeyBagNoAttributes()
+        throws Exception
+    {
+        // Regression: an RFC 7292 sec. 4.2.1 keyBag (unencrypted PrivateKeyInfo)
+        // may carry no bagAttributes, and the localKeyId attribute is optional
+        // even when bagAttributes are present. processKeyBag used to dereference
+        // getBagAttributes() and localId unconditionally, throwing NPE on load -
+        // unlike processShroudedKeyBag which guards both. Mirror that handling.
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", BC);
+        kpGen.initialize(2048);
+        KeyPair kp = kpGen.generateKeyPair();
+        PrivateKeyInfo kInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
+
+        // Case A: keyBag with no bagAttributes at all.
+        SafeBag noAttrBag = new SafeBag(PKCSObjectIdentifiers.keyBag, kInfo.toASN1Primitive());
+
+        KeyStore store = KeyStore.getInstance("PKCS12", BC);
+        store.load(new ByteArrayInputStream(keyBagPfx(noAttrBag)), null);
+
+        Enumeration aliases = store.aliases();
+        isTrue("no-attributes keyBag produced no entry", aliases.hasMoreElements());
+        String alias = (String)aliases.nextElement();
+        isTrue("no-attributes keyBag entry not a key", store.isKeyEntry(alias));
+        isTrue("no-attributes keyBag key not recoverable", store.getKey(alias, null) != null);
+
+        // Case B: keyBag carrying a friendlyName but no localKeyId attribute.
+        ASN1Encodable friendlyName = new DERSequence(new ASN1Encodable[]{
+            PKCSObjectIdentifiers.pkcs_9_at_friendlyName,
+            new DERSet(new DERBMPString("rawKeyBag"))});
+        SafeBag friendlyBag = new SafeBag(PKCSObjectIdentifiers.keyBag, kInfo.toASN1Primitive(),
+            new DERSet(friendlyName));
+
+        store = KeyStore.getInstance("PKCS12", BC);
+        store.load(new ByteArrayInputStream(keyBagPfx(friendlyBag)), null);
+
+        isTrue("friendlyName keyBag not stored under its alias", store.isKeyEntry("rawKeyBag"));
+        isTrue("friendlyName keyBag key not recoverable", store.getKey("rawKeyBag", null) != null);
+    }
+
     private void testNTRUStore()
         throws Exception
     {
@@ -2785,6 +2842,7 @@ public class PKCS12StoreTest
         testNTRUStore();
         testSphincsPlusStore();
         testRawKeyBagStore();
+        testRawKeyBagNoAttributes();
         testAES256_AES128();
         testAES256GCM_AES128_GCM();
         testPKCS12StoreWrongPassword();

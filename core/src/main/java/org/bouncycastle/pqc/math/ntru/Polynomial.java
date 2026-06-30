@@ -220,22 +220,132 @@ public abstract class Polynomial
         this.modQPhiN();
     }
 
+    // Karatsuba base-case size: below this, the recursion bottoms out into the schoolbook
+    // linear convolution. Tuned empirically across the parameter sets (n = 509..1373).
+    private static final int RQ_MUL_THRESHOLD = 48;
+
     // defined in poly_rq_mul.c
     public void rqMul(Polynomial a, Polynomial b)
     {
-        int n = this.coeffs.length;
-        int k, i;
-        for (k = 0; k < n; k++)
+        // rqMul is multiplication in Z[x]/(x^n - 1) (cyclic convolution), with the result kept
+        // only modulo 2^16 in each short (the caller reduces mod q / mod Phi_n afterwards).
+        //
+        // The reference computes this with a Karatsuba/Toom-Cook split; the original Java port
+        // used a naive O(n^2) schoolbook. We replace it with recursive Karatsuba (O(n^1.585)),
+        // which is division-free - pure +/-/* - so it stays byte-identical to the schoolbook
+        // result modulo 2^16 even though intermediates overflow int: every operation is closed
+        // under arithmetic mod 2^32, and 2^16 divides 2^32, so the low 16 bits of each folded
+        // coefficient are preserved. (Toom-Cook is deliberately NOT used: its interpolation
+        // divides by 2, which is not invertible mod 2^16, so it cannot be made byte-identical
+        // here without full-precision interpolation.)
+        //
+        // The access pattern is loop-counter-indexed throughout (no secret-derived index, branch,
+        // or table), so the constant-time posture of the schoolbook kernel is preserved.
+        short[] aCoeffs = a.coeffs, bCoeffs = b.coeffs, cCoeffs = this.coeffs;
+        int n = cCoeffs.length;
+
+        int[] ai = new int[n];
+        int[] bi = new int[n];
+        for (int i = 0; i < n; i++)
         {
-            this.coeffs[k] = 0;
-            for (i = 1; i < n - k; i++)
+            ai[i] = aCoeffs[i];
+            bi[i] = bCoeffs[i];
+        }
+
+        // Linear convolution of length 2n-1 (index 2n-1 is left zero so the fold below needs no
+        // bounds branch); t is the Karatsuba scratch workspace (the recursion uses up to ~8n).
+        int[] lin = new int[2 * n];
+        int[] t = new int[9 * n];
+        kMul(lin, 0, ai, 0, bi, 0, n, t, 0);
+
+        // Fold the linear convolution into the cyclic ring: x^n == 1 means coefficient (k+n)
+        // wraps onto coefficient k. Truncate to short once, here.
+        for (int k = 0; k < n; k++)
+        {
+            cCoeffs[k] = (short)(lin[k] + lin[k + n]);
+        }
+    }
+
+    /**
+     * Recursive Karatsuba linear convolution over the integers (taken mod 2^32 by natural int
+     * overflow). Writes exactly {@code 2*len - 1} entries to {@code r[rOff..]}; uses {@code t[tOff..]}
+     * as scratch. {@code r} and {@code t} may be the same backing array, provided the written
+     * result range and the scratch range are disjoint (the callers guarantee this).
+     */
+    private static void kMul(int[] r, int rOff, int[] a, int aOff, int[] b, int bOff, int len, int[] t, int tOff)
+    {
+        if (len <= RQ_MUL_THRESHOLD)
+        {
+            int outLen = 2 * len - 1;
+            for (int p = 0; p < outLen; p++)
             {
-                this.coeffs[k] += a.coeffs[k + i] * b.coeffs[n - i];
+                r[rOff + p] = 0;
             }
-            for (i = 0; i < k + 1; i++)
+            for (int i = 0; i < len; i++)
             {
-                this.coeffs[k] += a.coeffs[k - i] * b.coeffs[i];
+                int ai = a[aOff + i];
+                int base = rOff + i;
+                for (int j = 0; j < len; j++)
+                {
+                    r[base + j] += ai * b[bOff + j];
+                }
             }
+            return;
+        }
+
+        int m = (len + 1) >> 1;     // low-half length
+        int hi = len - m;           // high-half length (hi <= m)
+
+        // Carve the scratch for this level out of t[tOff..]; deeper recursions get t[next..].
+        int saOff = tOff;                   // sa = a_lo + a_hi   (length m)
+        int sbOff = saOff + m;              // sb = b_lo + b_hi   (length m)
+        int z0Off = sbOff + m;              // z0 = a_lo * b_lo   (length 2m-1)
+        int z2Off = z0Off + (2 * m - 1);    // z2 = a_hi * b_hi   (length 2hi-1)
+        int z1Off = z2Off + (2 * hi - 1);   // z1 = sa * sb       (length 2m-1)
+        int next = z1Off + (2 * m - 1);
+
+        for (int i = 0; i < m; i++)
+        {
+            t[saOff + i] = a[aOff + i];
+            t[sbOff + i] = b[bOff + i];
+        }
+        for (int i = 0; i < hi; i++)
+        {
+            t[saOff + i] += a[aOff + m + i];
+            t[sbOff + i] += b[bOff + m + i];
+        }
+
+        kMul(t, z0Off, a, aOff, b, bOff, m, t, next);
+        kMul(t, z2Off, a, aOff + m, b, bOff + m, hi, t, next);
+        kMul(t, z1Off, t, saOff, t, sbOff, m, t, next);
+
+        // z1 -= z0 + z2 (the Karatsuba middle term)
+        for (int i = 0; i < 2 * m - 1; i++)
+        {
+            t[z1Off + i] -= t[z0Off + i];
+        }
+        for (int i = 0; i < 2 * hi - 1; i++)
+        {
+            t[z1Off + i] -= t[z2Off + i];
+        }
+
+        // Assemble: r = z0 + (z1 << m) + (z2 << 2m).
+        int outLen = 2 * len - 1;
+        for (int p = 0; p < outLen; p++)
+        {
+            r[rOff + p] = 0;
+        }
+        for (int i = 0; i < 2 * m - 1; i++)
+        {
+            r[rOff + i] += t[z0Off + i];
+        }
+        for (int i = 0; i < 2 * hi - 1; i++)
+        {
+            r[rOff + 2 * m + i] += t[z2Off + i];
+        }
+        for (int i = 0; i < 2 * m - 1; i++)
+        {
+            r[rOff + m + i] += t[z1Off + i];
         }
     }
 
@@ -299,21 +409,26 @@ public abstract class Polynomial
 
     void r2Inv(Polynomial a, Polynomial f, Polynomial g, Polynomial v, Polynomial w)
     {
-        int n = this.coeffs.length;
+        // Hoist the per-Polynomial coefficient arrays into locals. The array identities are
+        // stable across the method (the constant-time swap only exchanges contents, never the
+        // backing arrays), so this is a byte-identical refactor that keeps the arrays
+        // register-resident and lets the JIT auto-vectorise the inner XOR/AND loops.
+        short[] ac = a.coeffs, fc = f.coeffs, gc = g.coeffs, vc = v.coeffs, wc = w.coeffs, rc = this.coeffs;
+        int n = rc.length;
         int i, loop;
         short delta, sign, swap, t;
 
-        w.coeffs[0] = 1;
+        wc[0] = 1;
 
         for (i = 0; i < n; ++i)
         {
-            f.coeffs[i] = 1;
+            fc[i] = 1;
         }
         for (i = 0; i < n - 1; ++i)
         {
-            g.coeffs[n - 2 - i] = (short)((a.coeffs[i] ^ a.coeffs[n - 1]) & 1);
+            gc[n - 2 - i] = (short)((ac[i] ^ ac[n - 1]) & 1);
         }
-        g.coeffs[n - 1] = 0;
+        gc[n - 1] = 0;
 
         delta = 1;
 
@@ -321,45 +436,45 @@ public abstract class Polynomial
         {
             for (i = n - 1; i > 0; --i)
             {
-                v.coeffs[i] = v.coeffs[i - 1];
+                vc[i] = vc[i - 1];
             }
-            v.coeffs[0] = 0;
+            vc[0] = 0;
 
-            sign = (short)(g.coeffs[0] & f.coeffs[0]);
-            swap = bothNegativeMask((short)-delta, (short)-g.coeffs[0]);
+            sign = (short)(gc[0] & fc[0]);
+            swap = bothNegativeMask((short)-delta, (short)-gc[0]);
             delta ^= swap & (delta ^ -delta);
             delta++;
 
             for (i = 0; i < n; ++i)
             {
-                t = (short)(swap & (f.coeffs[i] ^ g.coeffs[i]));
-                f.coeffs[i] ^= t;
-                g.coeffs[i] ^= t;
-                t = (short)(swap & (v.coeffs[i] ^ w.coeffs[i]));
-                v.coeffs[i] ^= t;
-                w.coeffs[i] ^= t;
+                t = (short)(swap & (fc[i] ^ gc[i]));
+                fc[i] ^= t;
+                gc[i] ^= t;
+                t = (short)(swap & (vc[i] ^ wc[i]));
+                vc[i] ^= t;
+                wc[i] ^= t;
             }
 
             for (i = 0; i < n; ++i)
             {
-                g.coeffs[i] = (short)(g.coeffs[i] ^ (sign & f.coeffs[i]));
+                gc[i] = (short)(gc[i] ^ (sign & fc[i]));
             }
             for (i = 0; i < n; ++i)
             {
-                w.coeffs[i] = (short)(w.coeffs[i] ^ (sign & v.coeffs[i]));
+                wc[i] = (short)(wc[i] ^ (sign & vc[i]));
             }
             for (i = 0; i < n - 1; ++i)
             {
-                g.coeffs[i] = g.coeffs[i + 1];
+                gc[i] = gc[i + 1];
             }
-            g.coeffs[n - 1] = 0;
+            gc[n - 1] = 0;
         }
 
         for (i = 0; i < n - 1; ++i)
         {
-            this.coeffs[i] = v.coeffs[n - 2 - i];
+            rc[i] = vc[n - 2 - i];
         }
-        this.coeffs[n - 1] = 0;
+        rc[n - 1] = 0;
     }
 
     void rqInv(Polynomial a, Polynomial ai2, Polynomial b, Polynomial c, Polynomial s)
@@ -401,21 +516,23 @@ public abstract class Polynomial
 
     void s3Inv(Polynomial a, Polynomial f, Polynomial g, Polynomial v, Polynomial w)
     {
-        int n = this.coeffs.length;
+        // See r2Inv: byte-identical hoist of the stable coefficient arrays into locals.
+        short[] ac = a.coeffs, fc = f.coeffs, gc = g.coeffs, vc = v.coeffs, wc = w.coeffs, rc = this.coeffs;
+        int n = rc.length;
         int i, loop;
         short delta, sign, swap, t;
 
-        w.coeffs[0] = 1;
+        wc[0] = 1;
 
         for (i = 0; i < n; ++i)
         {
-            f.coeffs[i] = 1;
+            fc[i] = 1;
         }
         for (i = 0; i < n - 1; ++i)
         {
-            g.coeffs[n - 2 - i] = mod3((short)((a.coeffs[i] & 3) + 2 * (a.coeffs[n - 1] & 3)));
+            gc[n - 2 - i] = mod3((short)((ac[i] & 3) + 2 * (ac[n - 1] & 3)));
         }
-        g.coeffs[n - 1] = 0;
+        gc[n - 1] = 0;
 
         delta = 1;
 
@@ -423,46 +540,46 @@ public abstract class Polynomial
         {
             for (i = n - 1; i > 0; --i)
             {
-                v.coeffs[i] = v.coeffs[i - 1];
+                vc[i] = vc[i - 1];
             }
-            v.coeffs[0] = 0;
+            vc[0] = 0;
 
-            sign = mod3((byte)(2 * g.coeffs[0] * f.coeffs[0]));
-            swap = bothNegativeMask((short)-delta, (short)-g.coeffs[0]);
+            sign = mod3((byte)(2 * gc[0] * fc[0]));
+            swap = bothNegativeMask((short)-delta, (short)-gc[0]);
             delta ^= swap & (delta ^ -delta);
             delta++;
 
             for (i = 0; i < n; ++i)
             {
-                t = (short)(swap & (f.coeffs[i] ^ g.coeffs[i]));
-                f.coeffs[i] ^= t;
-                g.coeffs[i] ^= t;
-                t = (short)(swap & (v.coeffs[i] ^ w.coeffs[i]));
-                v.coeffs[i] ^= t;
-                w.coeffs[i] ^= t;
+                t = (short)(swap & (fc[i] ^ gc[i]));
+                fc[i] ^= t;
+                gc[i] ^= t;
+                t = (short)(swap & (vc[i] ^ wc[i]));
+                vc[i] ^= t;
+                wc[i] ^= t;
             }
 
             for (i = 0; i < n; ++i)
             {
-                g.coeffs[i] = mod3((byte)(g.coeffs[i] + sign * f.coeffs[i]));
+                gc[i] = mod3((byte)(gc[i] + sign * fc[i]));
             }
             for (i = 0; i < n; ++i)
             {
-                w.coeffs[i] = mod3((byte)(w.coeffs[i] + sign * v.coeffs[i]));
+                wc[i] = mod3((byte)(wc[i] + sign * vc[i]));
             }
             for (i = 0; i < n - 1; ++i)
             {
-                g.coeffs[i] = g.coeffs[i + 1];
+                gc[i] = gc[i + 1];
             }
-            g.coeffs[n - 1] = 0;
+            gc[n - 1] = 0;
         }
 
-        sign = f.coeffs[0];
+        sign = fc[0];
         for (i = 0; i < n - 1; ++i)
         {
-            this.coeffs[i] = mod3((byte)(sign * v.coeffs[n - 2 - i]));
+            rc[i] = mod3((byte)(sign * vc[n - 2 - i]));
         }
-        this.coeffs[n - 1] = 0;
+        rc[n - 1] = 0;
     }
 
 

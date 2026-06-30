@@ -22,6 +22,11 @@ public class PKMACValue
 
     private PKMACValue(ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         algId = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         value = ASN1BitString.getInstance(seq.getObjectAt(1));
     }

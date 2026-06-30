@@ -13,20 +13,22 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkix.jcajce.JcaPKIXIdentity;
 
 /**
- * Builder for a private/public identity object representing a "user"
+ * Builder for a private/public identity object representing a "user". The private key may be in
+ * any of the forms understood by {@link JcaPrivateKeyReader} (PKCS#1 / PKCS#8, PEM or DER,
+ * optionally password-protected via {@link #setPassword(char[])}).
  */
 public class JcaPKIXIdentityBuilder
 {
-    private JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter();
     private JcaX509CertificateConverter certConverter = new JcaX509CertificateConverter();
+    private Provider provider;
+    private String providerName;
+    private char[] password;
 
     public JcaPKIXIdentityBuilder()
     {
@@ -35,16 +37,32 @@ public class JcaPKIXIdentityBuilder
 
     public JcaPKIXIdentityBuilder setProvider(Provider provider)
     {
-        this.keyConverter = keyConverter.setProvider(provider);
         this.certConverter = certConverter.setProvider(provider);
+        this.provider = provider;
+        this.providerName = null;
 
         return this;
     }
 
     public JcaPKIXIdentityBuilder setProvider(String providerName)
     {
-        this.keyConverter = keyConverter.setProvider(providerName);
         this.certConverter = certConverter.setProvider(providerName);
+        this.providerName = providerName;
+        this.provider = null;
+
+        return this;
+    }
+
+    /**
+     * Set the password used to decrypt a password-protected private key. The password is ignored
+     * when the key turns out to be unencrypted, and may be left unset for unencrypted keys.
+     *
+     * @param password the password to decrypt the private key with.
+     * @return the current builder instance.
+     */
+    public JcaPKIXIdentityBuilder setPassword(char[] password)
+    {
+        this.password = password;
 
         return this;
     }
@@ -87,25 +105,17 @@ public class JcaPKIXIdentityBuilder
     public JcaPKIXIdentity build(InputStream keyStream, InputStream certificateStream)
         throws IOException, CertificateException
     {
-        PEMParser keyParser = new PEMParser(new InputStreamReader(keyStream));
-
-        PrivateKey privKey;
-
-        Object keyObj = keyParser.readObject();
-        if (keyObj instanceof PEMKeyPair)
+        JcaPrivateKeyReader keyReader = new JcaPrivateKeyReader(password);
+        if (provider != null)
         {
-            PEMKeyPair kp = (PEMKeyPair)keyObj;
+            keyReader.setProvider(provider);
+        }
+        else if (providerName != null)
+        {
+            keyReader.setProvider(providerName);
+        }
 
-            privKey = keyConverter.getPrivateKey(kp.getPrivateKeyInfo());
-        }
-        else if (keyObj instanceof PrivateKeyInfo)
-        {
-            privKey = keyConverter.getPrivateKey((PrivateKeyInfo)keyObj);
-        }
-        else
-        {
-            throw new IOException("unrecognised private key file"); // TODO: handle encrypted private keys
-        }
+        PrivateKey privKey = keyReader.readKey(keyStream);
 
         PEMParser certParser = new PEMParser(new InputStreamReader(certificateStream));
 

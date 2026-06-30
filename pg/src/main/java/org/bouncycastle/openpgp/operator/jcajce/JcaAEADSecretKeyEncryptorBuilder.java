@@ -51,7 +51,7 @@ public class JcaAEADSecretKeyEncryptorBuilder
 
     public PBESecretKeyEncryptor build(char[] passphrase, final PublicKeyPacket pubKey)
     {
-        return new PBESecretKeyEncryptor(symmetricAlgorithm, aeadAlgorithm, argon2Params, new SecureRandom(), passphrase)
+        return new PBESecretKeyEncryptor(symmetricAlgorithm, aeadAlgorithm, argon2Params, new JcePGPS2KCalculator(helper), new SecureRandom(), passphrase)
         {
             private byte[] iv;
 

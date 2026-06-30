@@ -243,6 +243,11 @@ public class GroupKeySet
 
     public class HashRatchet
     {
+        // get(generation) advances one HKDF-derivation step per skipped generation, and the requested
+        // generation arrives (authenticated) from the wire. Cap the forward gap so a crafted generation
+        // cannot drive unbounded key derivation (CPU exhaustion); legitimate gaps are far smaller.
+        private static final int MAX_FORWARD_RATCHET_STEPS = 1 << 16;
+
         final int keySize;
         final int nonceSize;
         Secret nextSecret;
@@ -286,6 +291,11 @@ public class GroupKeySet
             if (nextGeneration > generation)
             {
                 throw new InvalidParameterException("Request for expired key");
+            }
+
+            if (generation - nextGeneration > MAX_FORWARD_RATCHET_STEPS)
+            {
+                throw new InvalidParameterException("Generation too far in the future");
             }
 
             while (nextGeneration < generation)

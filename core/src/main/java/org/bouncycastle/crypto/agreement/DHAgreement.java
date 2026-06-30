@@ -83,10 +83,17 @@ public class DHAgreement
      * calculate the next message in the agreement sequence. In this case
      * this will represent the shared secret.
      */
-    public BigInteger calculateAgreement(
-        DHPublicKeyParameters   pub,
-        BigInteger              message)
+    public BigInteger calculateAgreement(DHPublicKeyParameters pub, BigInteger message)
     {
+        if (pub == null)
+        {
+            throw new NullPointerException("'pub' cannot be null");
+        }
+        if (message == null)
+        {
+            throw new NullPointerException("'message' cannot be null");
+        }
+
         if (!pub.getParameters().equals(dhParams))
         {
             throw new IllegalArgumentException("Diffie-Hellman public key has wrong parameters.");
@@ -94,11 +101,18 @@ public class DHAgreement
 
         BigInteger p = dhParams.getP();
 
-        BigInteger peerY = pub.getY();
-        if (peerY == null || peerY.compareTo(ONE) <= 0 || peerY.compareTo(p.subtract(ONE)) >= 0)
-        {
-            throw new IllegalArgumentException("Diffie-Hellman public key is weak");
-        }
+        // Both peer-supplied values are raised to our (potentially static) private key, so both must
+        // satisfy the DH public-value range/subgroup checks; otherwise a peer can submit a small-order
+        // or out-of-range element to mount a small-subgroup confinement attack and, when our private
+        // key is reused, recover it via CRT. The 'message' is a raw BigInteger, so validate it by
+        // construction. A normally-constructed DHPublicKeyParameters already validated its Y; but Y is
+        // virtual and a subclass can override it to return an unvalidated value, so re-validate unless
+        // pub is exactly the base type.
+        BigInteger peerMessage = new DHPublicKeyParameters(message, dhParams).getY();
+
+        BigInteger peerY = pub.getClass() == DHPublicKeyParameters.class
+            ? pub.getY()
+            : new DHPublicKeyParameters(pub.getY(), dhParams).getY();
 
         BigInteger result = peerY.modPow(privateValue, p);
         if (result.equals(ONE))
@@ -106,6 +120,6 @@ public class DHAgreement
             throw new IllegalStateException("Shared key can't be 1");
         }
 
-        return message.modPow(key.getX(), p).multiply(result).mod(p);
+        return peerMessage.modPow(key.getX(), p).multiply(result).mod(p);
     }
 }

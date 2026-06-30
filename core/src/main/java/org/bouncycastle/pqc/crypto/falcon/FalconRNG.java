@@ -5,6 +5,13 @@ import org.bouncycastle.util.Pack;
 
 class FalconRNG
 {
+    /*
+     * ChaCha20 "expand 32-byte k" sigma constants. Hoisted to static
+     * final so each prng_refill() does not re-allocate the 4-int table.
+     */
+    private static final int[] CW = {
+        0x61707865, 0x3320646e, 0x79622d32, 0x6b206574
+    };
 
     byte[] bd;
     //    long bdummy_u64;
@@ -12,6 +19,15 @@ class FalconRNG
     byte[] sd;
 //    long sdummy_u64;
 //    int type;
+
+    /*
+     * ChaCha20 round state, reused across prng_refill() calls. The
+     * previous port allocated this on every refill; for Falcon's
+     * sampling-heavy sign path the per-refill alloc was real GC
+     * pressure (escape analysis cannot scalarize across the SHAKE
+     * boundary nor across the 8-block refill body).
+     */
+    private final int[] state = new int[16];
 
     //FalconConversions convertor;
 
@@ -77,13 +93,9 @@ class FalconRNG
      */
     void prng_refill()
     {
-
-        int[] CW = {
-            0x61707865, 0x3320646e, 0x79622d32, 0x6b206574
-        };
-
         long cc;
         int u;
+        int[] state = this.state;
 
         /*
          * State uses local endianness. Only the output bytes must be
@@ -92,7 +104,6 @@ class FalconRNG
 //        cc = *(uint64_t *)(p->state.d + 48);
         cc = Pack.littleEndianToLong(this.sd, 48);
         //cc = convertor.bytes_to_long(this.sd, 48);
-        int[] state = new int[16];
         for (u = 0; u < 8; u++)
         {
             int v;
@@ -194,7 +205,7 @@ class FalconRNG
 //        }
 //    }
 
-    private void QROUND(int a, int b, int c, int d, int[] state)
+    private static void QROUND(int a, int b, int c, int d, int[] state)
     {
         state[a] += state[b];
         state[d] ^= state[a];

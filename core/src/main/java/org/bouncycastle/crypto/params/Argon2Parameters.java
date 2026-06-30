@@ -24,9 +24,27 @@ public class Argon2Parameters
 {
     /**
      * System/security property setting the maximum permitted memory exponent
-     * (i.e. {@code memory <= 1 << MAX_MEMORY_EXP}). Default and ceiling are 30.
+     * (i.e. {@code memory <= 1 << MAX_MEMORY_EXP}). Defaults to 24 (16 GiB); the property may be
+     * raised up to a ceiling of 30. The default was lowered from the historical 30 (1 TiB) so that a
+     * single key derivation driven by attacker-chosen cost parameters - notably an OpenPGP Argon2 S2K
+     * specifier read from an unauthenticated packet - cannot exhaust the heap of a typical host.
      */
     public static final String MAX_MEMORY_EXP = "org.bouncycastle.argon2.max_memory_exp";
+
+    /**
+     * System/security property bounding the number of Argon2 passes (iterations) accepted when a key
+     * is derived from untrusted cost parameters - notably an OpenPGP Argon2 S2K specifier. Defaults
+     * to 10; OpenPGP key derivation rejects a larger value rather than spend unbounded CPU on
+     * attacker-chosen iterations. Read via {@link org.bouncycastle.util.Properties#asInteger}.
+     */
+    public static final String MAX_PASSES = "org.bouncycastle.argon2.max_passes";
+
+    /**
+     * System/security property bounding the Argon2 parallelism (lanes) accepted when a key is derived
+     * from untrusted cost parameters - notably an OpenPGP Argon2 S2K specifier. Defaults to 16. Read
+     * via {@link org.bouncycastle.util.Properties#asInteger}.
+     */
+    public static final String MAX_PARALLELISM = "org.bouncycastle.argon2.max_parallelism";
 
     /** Argon2d - data-dependent memory access. */
     public static final int ARGON2_d = 0x00;
@@ -88,7 +106,7 @@ public class Argon2Parameters
             this.memory = 1 << DEFAULT_MEMORY_COST;
             this.iterations = DEFAULT_ITERATIONS;
             this.version = DEFAULT_VERSION;
-            this.maxMemory = Properties.asInteger(MAX_MEMORY_EXP, 30);
+            this.maxMemory = Properties.asInteger(MAX_MEMORY_EXP, 24);
             if (maxMemory < 3  || maxMemory > 30)
             {
                 throw new IllegalStateException(MAX_MEMORY_EXP + " out of range");

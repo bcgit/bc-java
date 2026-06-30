@@ -248,6 +248,74 @@ public final class ARIA
         }
     }
 
+    public static class AlgParamGenCCM
+        extends BaseAlgorithmParameterGenerator
+    {
+        protected void engineInit(
+            AlgorithmParameterSpec genParamSpec,
+            SecureRandom random)
+            throws InvalidAlgorithmParameterException
+        {
+            // TODO: add support for GCMParameterSpec as a template.
+            throw new InvalidAlgorithmParameterException("No supported AlgorithmParameterSpec for ARIA parameter generation.");
+        }
+
+        protected AlgorithmParameters engineGenerateParameters()
+        {
+            random = CryptoServicesRegistrar.getSecureRandom(random);
+
+            byte[] nonce = new byte[12];
+            random.nextBytes(nonce);
+
+            AlgorithmParameters params;
+            try
+            {
+                params = createParametersInstance("ARIACCM");
+                params.init(new CCMParameters(nonce, 12).getEncoded());
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e.getMessage());
+            }
+
+            return params;
+        }
+    }
+
+    public static class AlgParamGenGCM
+        extends BaseAlgorithmParameterGenerator
+    {
+        protected void engineInit(
+            AlgorithmParameterSpec genParamSpec,
+            SecureRandom random)
+            throws InvalidAlgorithmParameterException
+        {
+            // TODO: add support for GCMParameterSpec as a template.
+            throw new InvalidAlgorithmParameterException("No supported AlgorithmParameterSpec for ARIA parameter generation.");
+        }
+
+        protected AlgorithmParameters engineGenerateParameters()
+        {
+            random = CryptoServicesRegistrar.getSecureRandom(random);
+
+            byte[] nonce = new byte[12];
+            random.nextBytes(nonce);
+
+            AlgorithmParameters params;
+            try
+            {
+                params = createParametersInstance("ARIAGCM");
+                params.init(new GCMParameters(nonce, 16).getEncoded());
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e.getMessage());
+            }
+
+            return params;
+        }
+    }
+
     public static class AlgParams
         extends IvAlgorithmParameters
     {
@@ -352,7 +420,7 @@ public final class ARIA
         {
             if (GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                ccmParams = CCMParameters.getInstance(GcmSpecUtil.extractGcmParameters(paramSpec));
+                ccmParams = CCMParameters.getInstance(GcmSpecUtil.extractCcmParameters(paramSpec));
             }
             else if (paramSpec instanceof AEADParameterSpec)
             {
@@ -519,17 +587,22 @@ public final class ARIA
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory", NSRIObjectIdentifiers.id_aria192_cbc, "ARIA");
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory", NSRIObjectIdentifiers.id_aria256_cbc, "ARIA");
 
-            provider.addAlgorithm("AlgorithmParameterGenerator.ARIACCM", PREFIX + "$AlgParamGen");
+            provider.addAlgorithm("AlgorithmParameterGenerator.ARIACCM", PREFIX + "$AlgParamGenCCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NSRIObjectIdentifiers.id_aria128_ccm, "ARIACCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NSRIObjectIdentifiers.id_aria192_ccm, "ARIACCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NSRIObjectIdentifiers.id_aria256_ccm, "ARIACCM");
 
             provider.addAlgorithm("Cipher.ARIACCM", PREFIX + "$CCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria128_ccm, "CCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria192_ccm, "CCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria256_ccm, "CCM");
+            provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria128_ccm, "ARIACCM");
+            provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria192_ccm, "ARIACCM");
+            provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria256_ccm, "ARIACCM");
 
-            provider.addAlgorithm("AlgorithmParameterGenerator.ARIAGCM", PREFIX + "$AlgParamGen");
+            provider.addAlgorithm("AlgorithmParameters.ARIACCM", PREFIX + "$AlgParamsCCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NSRIObjectIdentifiers.id_aria128_ccm, "ARIACCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NSRIObjectIdentifiers.id_aria192_ccm, "ARIACCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NSRIObjectIdentifiers.id_aria256_ccm, "ARIACCM");
+
+            provider.addAlgorithm("AlgorithmParameterGenerator.ARIAGCM", PREFIX + "$AlgParamGenGCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NSRIObjectIdentifiers.id_aria128_gcm, "ARIAGCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NSRIObjectIdentifiers.id_aria192_gcm, "ARIAGCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NSRIObjectIdentifiers.id_aria256_gcm, "ARIAGCM");
@@ -538,6 +611,11 @@ public final class ARIA
             provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria128_gcm, "ARIAGCM");
             provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria192_gcm, "ARIAGCM");
             provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria256_gcm, "ARIAGCM");
+
+            provider.addAlgorithm("AlgorithmParameters.ARIAGCM", PREFIX + "$AlgParamsGCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NSRIObjectIdentifiers.id_aria128_gcm, "ARIAGCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NSRIObjectIdentifiers.id_aria192_gcm, "ARIAGCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NSRIObjectIdentifiers.id_aria256_gcm, "ARIAGCM");
 
             addGMacAlgorithm(provider, "ARIA", PREFIX + "$GMAC", PREFIX + "$KeyGen");
             addPoly1305Algorithm(provider, "ARIA", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");

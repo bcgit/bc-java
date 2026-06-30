@@ -43,15 +43,20 @@ class SSLUtils
         s.setEnabledCipherSuites(enabled.toArray(new String[enabled.size()]));
     }
 
-    static void startServer(final KeyStore keyStore, final char[] password, final KeyStore serverStore)
+    static int startServer(final KeyStore keyStore, final char[] password, final KeyStore serverStore)
     {
-        startServer(keyStore, password, serverStore, false, 8888);
+        return startServer(keyStore, password, serverStore, false, 0);
     }
 
-    static void startServer(final KeyStore keyStore, final char[] password, final KeyStore serverStore, final boolean needClientAuth,
+    /**
+     * Start a TLS test server on the given port (pass 0 to allocate an ephemeral port) and return
+     * the port it actually bound to. The returned value is the one callers should connect to.
+     */
+    static int startServer(final KeyStore keyStore, final char[] password, final KeyStore serverStore, final boolean needClientAuth,
         final int port)
     {
         final CountDownLatch latch = new CountDownLatch(1);
+        final int[] boundPort = new int[]{ -1 };
 
         Runnable serverTask = new Runnable()
         {
@@ -87,6 +92,8 @@ class SSLUtils
 
                     ss.setNeedClientAuth(needClientAuth);
 
+                    boundPort[0] = ss.getLocalPort();
+
                     latch.countDown();
 
                     SSLSocket s = (SSLSocket)ss.accept();
@@ -120,5 +127,7 @@ class SSLUtils
         {
               e.printStackTrace();
         }
+
+        return boundPort[0];
     }
 }

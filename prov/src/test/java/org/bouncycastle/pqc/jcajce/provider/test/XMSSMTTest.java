@@ -24,8 +24,13 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -123,6 +128,38 @@ public class XMSSMTTest
         XMSSMTKey privKey2 = (XMSSMTKey)oIn.readObject();
 
         assertEquals(privKey, privKey2);
+    }
+
+    public void testRFC9802PublicKeyEncoding()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+
+        kpg.initialize(new XMSSMTParameterSpec(20, 2, XMSSMTParameterSpec.SHA256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        // RFC 9802: id-alg-xmssmt-hashsig, absent parameters, raw RFC 8391 key in the BIT STRING.
+        SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
+
+        assertEquals(IANAObjectIdentifiers.id_alg_xmssmt_hashsig, keyInfo.getAlgorithm().getAlgorithm());
+        assertNull(keyInfo.getAlgorithm().getParameters());
+
+        byte[] rawKey = keyInfo.getPublicKeyData().getOctets();
+
+        KeyFactory kFact = KeyFactory.getInstance("XMSSMT", "BCPQC");
+
+        PublicKey pubKey = kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        assertEquals(kp.getPublic(), pubKey);
+
+        // the legacy draft form - id_alg_xmssmt with the key wrapped in an OCTET STRING - must still decode.
+        SubjectPublicKeyInfo legacy = new SubjectPublicKeyInfo(
+            new AlgorithmIdentifier(IsaraObjectIdentifiers.id_alg_xmssmt), new DEROctetString(rawKey));
+
+        PublicKey legacyKey = kFact.generatePublic(new X509EncodedKeySpec(legacy.getEncoded()));
+
+        assertEquals(kp.getPublic(), legacyKey);
     }
 
     public void testPublicKeyRecovery()

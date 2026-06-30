@@ -8,11 +8,13 @@ import java.util.Vector;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERBMPString;
@@ -22,11 +24,13 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERNumericString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERPrintableString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERT61String;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERUniversalString;
 import org.bouncycastle.asn1.DERVisibleString;
+import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410ParamSetParameters;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
 import org.bouncycastle.asn1.cryptopro.GOST3410ParamSetParameters;
@@ -64,6 +68,7 @@ import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.pkcs.SafeBag;
 import org.bouncycastle.asn1.pkcs.SignedData;
+import org.bouncycastle.asn1.pkcs.SignerInfo;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x500.DirectoryString;
 import org.bouncycastle.asn1.x500.RDN;
@@ -101,6 +106,7 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.NameConstraints;
 import org.bouncycastle.asn1.x509.NoticeReference;
 import org.bouncycastle.asn1.x509.ObjectDigestInfo;
+import org.bouncycastle.asn1.x509.OtherName;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.PolicyMappings;
 import org.bouncycastle.asn1.x509.PolicyQualifierInfo;
@@ -311,6 +317,71 @@ public class GetInstanceTest
         if (!o1.equals(o2) || !clazz.isInstance(o2))
         {
             fail(clazz.getName() + " tag equality failed");
+        }
+    }
+
+    public void testBadSequenceSize()
+        throws Exception
+    {
+        // getInstance on a structurally invalid SEQUENCE should fail fast with a
+        // clear IllegalArgumentException rather than letting an
+        // ArrayIndexOutOfBoundsException or ClassCastException leak out of parse.
+        checkBadSequenceSize("OtherName", new DERSequence(
+            new ASN1ObjectIdentifier("1.2.3.4")));                      // OtherName is exactly 2
+        checkBadSequenceSize("SafeBag", new DERSequence(
+            new ASN1ObjectIdentifier("1.2.3.4")));                      // SafeBag is 2 or 3
+        checkBadSequenceSize("SignerInfo", new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ONE, ASN1Integer.ONE, ASN1Integer.ONE, ASN1Integer.ONE}));   // SignerInfo is 5..7
+        checkBadSequenceSize("PbkdMacIntegrityCheck", new DERSequence(
+            new ASN1ObjectIdentifier("1.2.3.4")));                      // PbkdMacIntegrityCheck is exactly 3
+        checkBadSequenceSize("RevokedInfo", new DERSequence());         // RevokedInfo is at least 1
+        checkBadSequenceSize("ocsp.Signature", new DERSequence(
+            new ASN1ObjectIdentifier("1.2.3.4")));                      // OCSP Signature is at least 2
+        checkBadSequenceSize("SingleResponse", new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.2.3.4"), new ASN1ObjectIdentifier("1.2.3.4")}));  // SingleResponse is at least 3
+    }
+
+    private void checkBadSequenceSize(String name, ASN1Sequence seq)
+    {
+        try
+        {
+            if (name.equals("OtherName"))
+            {
+                OtherName.getInstance(seq);
+            }
+            else if (name.equals("SafeBag"))
+            {
+                SafeBag.getInstance(seq);
+            }
+            else if (name.equals("PbkdMacIntegrityCheck"))
+            {
+                PbkdMacIntegrityCheck.getInstance(seq);
+            }
+            else if (name.equals("RevokedInfo"))
+            {
+                RevokedInfo.getInstance(seq);
+            }
+            else if (name.equals("ocsp.Signature"))
+            {
+                Signature.getInstance(seq);
+            }
+            else if (name.equals("SingleResponse"))
+            {
+                SingleResponse.getInstance(seq);
+            }
+            else
+            {
+                SignerInfo.getInstance(seq);
+            }
+
+            fail(name + ".getInstance accepted a wrong-size sequence");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!e.getMessage().startsWith("Bad sequence size"))
+            {
+                fail(name + ".getInstance threw the wrong message: " + e.getMessage());
+            }
         }
     }
 

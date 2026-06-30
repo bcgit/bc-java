@@ -225,4 +225,60 @@ public class FalconTest
                 verifier.verifySignature(msg, signature));
         }
     }
+
+    /**
+     * github #2297: when only the private encoding (f &#8214; g &#8214; F) was
+     * persisted — no public key bytes, no key-generation seed — the public key
+     * h must be recomputed from the private polynomials (h = g * f^-1 mod q)
+     * by the {@code getPublicKeyParameters()} fall-back. The recovered h must
+     * match the keypair's original public key and verify a signature made under
+     * the reconstructed private key.
+     */
+    public void testPublicKeyDerivationWithoutStoredPublicKey()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] msg = Strings.toByteArray("no public key retained");
+
+        FalconParameters[] parameters = new FalconParameters[]{
+            FalconParameters.falcon_512,
+            FalconParameters.falcon_1024
+        };
+
+        for (int p = 0; p < parameters.length; p++)
+        {
+            FalconKeyPairGenerator keyGen = new FalconKeyPairGenerator();
+            keyGen.init(new FalconKeyGenerationParameters(random, parameters[p]));
+            AsymmetricCipherKeyPair kp = keyGen.generateKeyPair();
+
+            FalconPrivateKeyParameters orig = (FalconPrivateKeyParameters)kp.getPrivate();
+            FalconPublicKeyParameters pubFromKpg = (FalconPublicKeyParameters)kp.getPublic();
+
+            // Rebuild the private key from only its private encoding, as a
+            // consumer that stored f || g || F and nothing else would.
+            FalconPrivateKeyParameters stripped = new FalconPrivateKeyParameters(
+                parameters[p], orig.getSpolyf(), orig.getG(), orig.getSpolyF(), new byte[0]);
+
+            // getPublicKey() recomputes h from (f, g) when no public bytes are present
+            assertTrue("getPublicKey() did not recompute h for " + parameters[p].getName(),
+                org.bouncycastle.util.Arrays.areEqual(pubFromKpg.getH(), stripped.getPublicKey()));
+
+            // getPublicKeyParameters() exposes the same recovered key
+            FalconPublicKeyParameters recovered = stripped.getPublicKeyParameters();
+            assertTrue("getPublicKeyParameters() did not recompute h for " + parameters[p].getName(),
+                org.bouncycastle.util.Arrays.areEqual(pubFromKpg.getH(), recovered.getH()));
+
+            // the reconstructed private key still signs, and the recomputed
+            // public key verifies that signature
+            FalconSigner signer = new FalconSigner();
+            signer.init(true, new ParametersWithRandom(stripped, random));
+            byte[] signature = signer.generateSignature(msg);
+
+            FalconSigner verifier = new FalconSigner();
+            verifier.init(false, recovered);
+            assertTrue("signature did not verify under recomputed public key for "
+                + parameters[p].getName(),
+                verifier.verifySignature(msg, signature));
+        }
+    }
 }

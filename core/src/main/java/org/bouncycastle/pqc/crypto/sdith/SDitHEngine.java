@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.sdith;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.raw.GF256AES;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -204,7 +205,7 @@ public final class SDitHEngine
      */
     private int fieldByteMul(int a, int b)
     {
-        return isP251() ? SDitHP251.mulNaive(a, b) : SDitHGF256.mulNaive(a, b);
+        return isP251() ? SDitHP251.mulNaive(a, b) : GF256AES.mul(a, b);
     }
 
     /**
@@ -443,11 +444,12 @@ public final class SDitHEngine
 
             for (int ii = 0; ii < paramMd; ++ii)
             {
+                // No skip for zero positions: the zero/non-zero pattern of x IS
+                // the SD secret (the non-zero support), so the Lagrange
+                // accumulation must run uniformly over all md positions, as the
+                // C reference does. A zero x_i yields scalar = 0 and the
+                // multiply-accumulate contributes nothing.
                 int xi = x[iD * paramMd + ii] & 0xff;
-                if (xi == 0)
-                {
-                    continue;
-                }
                 int scalar = fieldByteMul(ljS[ii] & 0xff, xi);
 
                 removeOneDegreeFactorFromMonic(tempF, fPoly, paramMd, ii);
@@ -655,11 +657,12 @@ public final class SDitHEngine
 
             for (int ii = 0; ii < paramMd; ++ii)
             {
+                // No skip for zero positions: the zero/non-zero pattern of x IS
+                // the SD secret (the non-zero support), so the Lagrange
+                // accumulation must run uniformly over all md positions, as the
+                // C reference does. A zero x_i yields scalar = 0 and the
+                // multiply-accumulate contributes nothing.
                 int xi = x[iD * paramMd + ii] & 0xff;
-                if (xi == 0)
-                {
-                    continue;
-                }
                 int scalar = fieldByteMul(ljS[ii] & 0xff, xi);
 
                 removeOneDegreeFactorFromMonic(tempF, fPoly, paramMd, ii);
@@ -1294,26 +1297,12 @@ public final class SDitHEngine
                 // The reference uses gf256_vec_mat16cols_muladd / p251_vec_mat16cols_muladd
                 // (which folds the row-accumulator and the final reduction together).
                 byte[] epsFrBytes = new byte[16];
-                if (isP251())
+                byte[] flat = new byte[(paramMd + 1) * 16];
+                for (int p = 0; p < paramMd + 1; ++p)
                 {
-                    byte[] flat = new byte[(paramMd + 1) * 16];
-                    for (int p = 0; p < paramMd + 1; ++p)
-                    {
-                        System.arraycopy(h.compressedEpsPowR[p], 0, flat, p * 16, 16);
-                    }
-                    SDitHP251.vecMat16ColsMulAdd(epsFrBytes, 0, fPoly, 0, flat, 0, paramMd + 1);
+                    System.arraycopy(h.compressedEpsPowR[p], 0, flat, p * 16, 16);
                 }
-                else
-                {
-                    for (int p = 0; p < paramMd + 1; ++p)
-                    {
-                        int fp = fPoly[p] & 0xff;
-                        for (int j = 0; j < 16; ++j)
-                        {
-                            epsFrBytes[j] ^= (byte) SDitHGF256.mulNaive(fp, h.compressedEpsPowR[p][j] & 0xff);
-                        }
-                    }
-                }
+                vecMat16ColsMulAdd(epsFrBytes, 0, fPoly, 0, flat, 0, paramMd + 1);
                 for (int iT = 0; iT < paramT; ++iT)
                 {
                     int v = 0;

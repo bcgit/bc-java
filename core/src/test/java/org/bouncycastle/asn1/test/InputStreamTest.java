@@ -75,14 +75,20 @@ public class InputStreamTest
             }
         }
 
-        // TODO Test data has length issues too; needs to be reworked
+        /*
+         * The arrays below are fuzzer-generated inputs that originally provoked ClassCastException
+         * or OutOfMemoryError. They are preserved byte-for-byte (several also contain out-of-bounds
+         * lengths, so e.g. classCast1 fails on a length check before reaching the cast it is named
+         * for); the requirement is that each fails cleanly with an IOException.
+         */
         testWithByteArray(classCast1, "corrupted stream - out of bounds length found: 80 > 16");
         testWithByteArray(classCast2, "unknown object encountered: class org.bouncycastle.asn1.DLTaggedObjectParser");
         testWithByteArray(classCast3, "unknown object encountered in constructed OCTET STRING: class org.bouncycastle.asn1.DLTaggedObject");
 
-        // TODO Error dependent on parser choices; needs to be reworked
-//        testWithByteArray(memoryError1, "corrupted stream - out of bounds length found: 2078365180 > 39");
-//        testWithByteArray(memoryError2, "corrupted stream - out of bounds length found: 2102504523 > 39");
+        // the point of failure (and so the message) for these depends on parser implementation
+        // choices, so only require the clean IOException
+        testWithByteArray(memoryError1, null);
+        testWithByteArray(memoryError2, null);
     }
 
     private void testWithByteArray(byte[] data, String message)
@@ -100,10 +106,15 @@ public class InputStreamTest
                     asn1.getObjectAt(i);
                 }
             }
+
+            fail("malformed input accepted without exception");
         }
         catch (java.io.IOException e)
         {
-            isEquals(e.getMessage(), message, e.getMessage());
+            if (message != null)
+            {
+                isEquals(e.getMessage(), message, e.getMessage());
+            }
         }
     }
 

@@ -29,13 +29,31 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import java.math.BigInteger;
+import java.util.Date;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.Time;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
@@ -254,6 +272,98 @@ public class SignedMailValidatorTest extends TestCase
         assertContainsMessage(result.getNotifications(),
                 "SignedMailValidator.longValidity",
                 "Warning: The signing certificate has a very long validity period: from Sep 1, 2006 11:00:00 AM GMT until Aug 8, 2106 11:00:00 AM GMT.");
+    }
+
+    // CVD ANT-2026-1295YEMR: the signer-asserted signingTime must not override a caller-supplied
+    // (trusted) validation date. A signature back-dated to a time when the signing certificate was
+    // still valid is accepted when no date is pinned (validate-as-of-signing), but must be rejected
+    // when the caller pins the current time and the certificate has since expired.
+    public void testCallerDateOverridesSigningTime()
+        throws Exception
+    {
+        long now = System.currentTimeMillis();
+        long day = 1000L * 60 * 60 * 24;
+        Date pastBefore = new Date(now - 20 * day);
+        Date signingTime = new Date(now - 15 * day); // within the signer cert validity window
+        Date eeNotAfter = new Date(now - 5 * day);    // signer cert is expired as of "now"
+
+        String caDN = "CN=Test CA, O=Bouncy Castle, C=AU";
+        String signDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+
+        KeyPair caKP = CMSTestUtil.makeKeyPair();
+        KeyPair signKP = CMSTestUtil.makeKeyPair();
+
+        X509Certificate caCert = buildCert(caDN, caKP.getPublic(), caDN, caKP, pastBefore,
+            new Date(now + 100 * day), true);
+        X509Certificate signCert = buildCert(signDN, signKP.getPublic(), caDN, caKP, pastBefore,
+            eeNotAfter, false);
+
+        // back-dated signing time as a signed attribute
+        ASN1EncodableVector signedAttrs = new ASN1EncodableVector();
+        signedAttrs.add(new Attribute(CMSAttributes.signingTime, new DERSet(new Time(signingTime))));
+
+        List certList = new ArrayList();
+        certList.add(signCert);
+        certList.add(caCert);
+        Store certs = new JcaCertStore(certList);
+
+        SMIMESignedGenerator gen = new SMIMESignedGenerator();
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC")
+            .setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(signedAttrs)))
+            .build("SHA256withRSA", signKP.getPrivate(), signCert));
+        gen.addCertificates(certs);
+
+        MimeMultipart signedMsg = gen.generate(SMIMETestUtil.makeMimeBodyPart("Hello world!\n"));
+
+        Session session = Session.getDefaultInstance(System.getProperties(), null);
+        MimeMessage msg = new MimeMessage(session);
+        msg.setFrom(new InternetAddress("\"Eric H. Echidna\"<eric@bouncycastle.org>"));
+        msg.setRecipient(Message.RecipientType.TO, new InternetAddress("example@bouncycastle.org"));
+        msg.setContent(signedMsg, signedMsg.getContentType());
+        msg.saveChanges();
+
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(caCert, null));
+
+        // 1. no validation date pinned: validated as of the back-dated signing time -> accepted
+        PKIXParameters paramsNoDate = new PKIXParameters(trust);
+        paramsNoDate.setRevocationEnabled(false);
+        assertTrue("back-dated signature should validate as of signing time",
+            firstResult(new SignedMailValidator(msg, paramsNoDate)).isValidSignature());
+
+        // 2. caller pins the current time: the now-expired certificate must be rejected (the fix)
+        PKIXParameters paramsNow = new PKIXParameters(trust);
+        paramsNow.setRevocationEnabled(false);
+        paramsNow.setDate(new Date(now));
+        assertFalse("caller-pinned current date must not be overridden by signingTime",
+            firstResult(new SignedMailValidator(msg, paramsNow)).isValidSignature());
+    }
+
+    private static X509Certificate buildCert(String subDN, java.security.PublicKey subPub, String issDN,
+        KeyPair issKP, Date notBefore, Date notAfter, boolean ca)
+        throws Exception
+    {
+        JcaX509v3CertificateBuilder b = new JcaX509v3CertificateBuilder(new X500Name(issDN),
+            BigInteger.valueOf(System.nanoTime()), notBefore, notAfter, new X500Name(subDN), subPub);
+        b.addExtension(Extension.basicConstraints, false, new BasicConstraints(ca));
+        if (ca)
+        {
+            b.addExtension(Extension.keyUsage, false, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        }
+        else
+        {
+            b.addExtension(Extension.keyUsage, false, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.nonRepudiation));
+            b.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(KeyPurposeId.id_kp_emailProtection));
+        }
+        return new JcaX509CertificateConverter().setProvider("BC").getCertificate(
+            b.build(new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").build(issKP.getPrivate())));
+    }
+
+    private static SignedMailValidator.ValidationResult firstResult(SignedMailValidator validator)
+        throws Exception
+    {
+        SignerInformation signer = (SignerInformation)validator.getSignerInformationStore().getSigners().iterator().next();
+        return validator.getValidationResult(signer);
     }
 
     public void testSelfSignedCert()

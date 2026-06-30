@@ -451,6 +451,10 @@ public class SignatureSpi
         {
             mldsaSigLen = 4627;
         }
+        if (mldsaSigLen == 0 || signature.length < mldsaSigLen)
+        {
+            throw new SignatureException("malformed composite signature");
+        }
         byte[][] signatures = splitCompositeSignature(signature, mldsaSigLen);
 
         if (preHashDigest != null)

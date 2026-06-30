@@ -106,4 +106,26 @@ public class Longs
             z[zOff + i] ^= x[xOff + i];
         }
     }
+
+    public static long divideUnsigned(long dividend, long divisor)
+    {
+        if (divisor < 0L)
+        {
+            // divisor > Long.MAX_VALUE (unsigned): quotient is 0 or 1.
+            return compareUnsigned(dividend, divisor) < 0 ? 0L : 1L;
+        }
+        if (dividend >= 0L)
+        {
+            return dividend / divisor;
+        }
+        // Approximate, then correct (Hacker's Delight 9-3 / Guava UnsignedLongs).
+        long quotient = ((dividend >>> 1) / divisor) << 1;
+        long rem = dividend - quotient * divisor;
+        return quotient + (compareUnsigned(rem, divisor) >= 0 ? 1L : 0L);
+    }
+
+    public static long parseUnsignedLong(String s)
+    {
+        return new java.math.BigInteger(s).longValue();
+    }
 }

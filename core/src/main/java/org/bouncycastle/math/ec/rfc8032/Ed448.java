@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
 import org.bouncycastle.math.raw.Nat;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -77,6 +78,7 @@ public abstract class Ed448
     private static final int SCALAR_INTS = 14;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4 + 1;
 
+    private static final int XOF_SIZE = SCALAR_BYTES * 2;
     public static final int PREHASH_SIZE = 64;
     public static final int PUBLIC_KEY_SIZE = POINT_BYTES;
     public static final int SECRET_KEY_SIZE = 57;
@@ -156,7 +158,7 @@ public abstract class Ed448
 
         Nat.mulAddTo(SCALAR_INTS, u, v, t);
 
-        byte[] result = new byte[SCALAR_BYTES * 2];
+        byte[] result = new byte[XOF_SIZE];
         Codec.encode32(t, 0, t.length, result, 0);
         return Scalar448.reduce912(result);
     }
@@ -341,6 +343,12 @@ public abstract class Ed448
 
     public static void encodePublicPoint(PublicPoint publicPoint, byte[] pk, int pkOff)
     {
+        if (publicPoint == null)
+        {
+            throw new NullPointerException("'publicPoint' cannot be null");
+        }
+        Arrays.validateSegment(pk, pkOff, PUBLIC_KEY_SIZE);
+
         F.encode(publicPoint.data, F.SIZE, pk, pkOff);
         pk[pkOff + POINT_BYTES - 1] = (byte)((publicPoint.data[0] & 1) << 7);
     }
@@ -357,6 +365,12 @@ public abstract class Ed448
         return result;
     }
 
+    private static void expandPrivateKey(Xof d, byte[] sk, int skOff, byte[] h, int hOff)
+    {
+        d.update(sk, skOff, SECRET_KEY_SIZE);
+        d.doFinal(h, hOff, XOF_SIZE);
+    }
+
     private static PublicPoint exportPoint(PointAffine p)
     {
         int[] data = new int[F.SIZE * 2];
@@ -368,6 +382,14 @@ public abstract class Ed448
 
     public static void generatePrivateKey(SecureRandom random, byte[] k)
     {
+        if (random == null)
+        {
+            throw new NullPointerException("'random' cannot be null");
+        }
+        if (k == null)
+        {
+            throw new NullPointerException("'k' cannot be null");
+        }
         if (k.length != SECRET_KEY_SIZE)
         {
             throw new IllegalArgumentException("k");
@@ -378,11 +400,11 @@ public abstract class Ed448
 
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
-        Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
-
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0, h.length);
+        Arrays.validateSegment(sk, skOff, SECRET_KEY_SIZE);
+        Arrays.validateSegment(pk, pkOff, PUBLIC_KEY_SIZE);
+        
+        byte[] h = new byte[XOF_SIZE];
+        expandPrivateKey(createXof(), sk, skOff, h, 0);
 
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
@@ -392,14 +414,18 @@ public abstract class Ed448
 
     public static PublicPoint generatePublicKey(byte[] sk, int skOff)
     {
-        Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        Arrays.validateSegment(sk, skOff, SECRET_KEY_SIZE);
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0, h.length);
+        byte[] h = new byte[XOF_SIZE];
+        expandPrivateKey(createXof(), sk, skOff, h, 0);
 
+        return generatePublicPoint(h, 0);
+    }
+
+    private static PublicPoint generatePublicPoint(byte[] h, int hOff)
+    {
         byte[] s = new byte[SCALAR_BYTES];
-        pruneScalar(h, 0, s);
+        pruneScalar(h, hOff, s);
 
         PointProjective p = new PointProjective();
         scalarMultBase(s, p);
@@ -455,10 +481,9 @@ public abstract class Ed448
         }
 
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0, h.length);
+        byte[] h = new byte[XOF_SIZE];
+        expandPrivateKey(d, sk, skOff, h, 0);
 
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
@@ -478,10 +503,9 @@ public abstract class Ed448
         }
 
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0, h.length);
+        byte[] h = new byte[XOF_SIZE];
+        expandPrivateKey(d, sk, skOff, h, 0);
 
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
@@ -528,7 +552,7 @@ public abstract class Ed448
         }
 
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte[] h = new byte[XOF_SIZE];
 
         dom4(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);
@@ -592,7 +616,7 @@ public abstract class Ed448
         encodePublicPoint(publicPoint, A, 0);
 
         Xof d = createXof();
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte[] h = new byte[XOF_SIZE];
 
         dom4(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);
@@ -1105,7 +1129,7 @@ public abstract class Ed448
     {
         System.arraycopy(n, nOff, r, 0, SCALAR_BYTES - 1);
 
-        r[0] &= 0xFC;
+        r[0               ] &= 0xFC;
         r[SCALAR_BYTES - 2] |= 0x80;
         r[SCALAR_BYTES - 1]  = 0x00;
     }
@@ -1223,11 +1247,30 @@ public abstract class Ed448
             throw new NullPointerException("This method is only for use by X448");
         }
 
+        Arrays.validateSegment(k, kOff, X448.SCALAR_SIZE);
+        if (x == null)
+        {
+            throw new NullPointerException("'x' cannot be null");
+        }
+        if (x.length != F.SIZE)
+        {
+            throw new IllegalArgumentException("x");
+        }
+        if (y == null)
+        {
+            throw new NullPointerException("'y' cannot be null");
+        }
+        if (y.length != F.SIZE)
+        {
+            throw new IllegalArgumentException("y");
+        }
+
         byte[] n = new byte[SCALAR_BYTES];
         pruneScalar(k, kOff, n);
 
         PointProjective p = new PointProjective();
         scalarMultBase(n, p);
+
         if (0 == checkPoint(p))
         {
             throw new IllegalStateException();
@@ -1403,6 +1446,8 @@ public abstract class Ed448
 
     public static boolean validatePublicKeyFull(byte[] pk, int pkOff)
     {
+        Arrays.validateSegment(pk, pkOff, PUBLIC_KEY_SIZE);
+
         byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
 
         if (!checkPointFullVar(A))
@@ -1421,6 +1466,8 @@ public abstract class Ed448
 
     public static PublicPoint validatePublicKeyFullExport(byte[] pk, int pkOff)
     {
+        Arrays.validateSegment(pk, pkOff, PUBLIC_KEY_SIZE);
+        
         byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
 
         if (!checkPointFullVar(A))
@@ -1444,6 +1491,8 @@ public abstract class Ed448
 
     public static boolean validatePublicKeyPartial(byte[] pk, int pkOff)
     {
+        Arrays.validateSegment(pk, pkOff, PUBLIC_KEY_SIZE);
+
         byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
 
         if (!checkPointFullVar(A))
@@ -1457,6 +1506,8 @@ public abstract class Ed448
 
     public static PublicPoint validatePublicKeyPartialExport(byte[] pk, int pkOff)
     {
+        Arrays.validateSegment(pk, pkOff, PUBLIC_KEY_SIZE);
+
         byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
 
         if (!checkPointFullVar(A))

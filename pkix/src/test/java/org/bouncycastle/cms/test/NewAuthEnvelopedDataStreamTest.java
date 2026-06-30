@@ -2,6 +2,7 @@ package org.bouncycastle.cms.test;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.KeyPair;
@@ -25,6 +26,7 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -36,6 +38,7 @@ import org.bouncycastle.cms.CMSAuthEnvelopedData;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataParser;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataStreamGenerator;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSAuthenticatedDataGenerator;
 import org.bouncycastle.cms.CMSEnvelopedDataParser;
 import org.bouncycastle.cms.CMSEnvelopedDataStreamGenerator;
@@ -149,6 +152,135 @@ public class NewAuthEnvelopedDataStreamTest
             CMSTypedStream recData = recipient.getContentStream(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
             assertTrue(Arrays.equals(expectedData, CMSTestUtil.streamToByteArray(recData.getContentStream())));
+        }
+    }
+
+    public void testKeyTransAES128GCMDefiniteLength()
+        throws Exception
+    {
+        // github #1482: definite-length streaming for AuthEnvelopedData -
+        // the AEAD tag lives in the separate mac field, so the encrypted
+        // content is exactly the plaintext length.
+        checkDefiniteLength(CMSAlgorithm.AES128_GCM, "DER", false);
+        checkDefiniteLength(CMSAlgorithm.AES128_GCM, "DL", false);
+        checkDefiniteLength(CMSAlgorithm.AES256_GCM, "DER", false);
+        // with authenticated (AAD) and unauthenticated attributes
+        checkDefiniteLength(CMSAlgorithm.AES128_GCM, "DER", true);
+        checkDefiniteLength(CMSAlgorithm.AES128_GCM, "DL", true);
+    }
+
+    private void checkDefiniteLength(ASN1ObjectIdentifier encAlg, String encoding, boolean withAttrs)
+        throws Exception
+    {
+        if (withAttrs)
+        {
+            try
+            {
+                // Authenticated attributes are fed to the cipher as AEAD AAD, which needs
+                // javax.crypto.Cipher.updateAAD (JDK 1.7+); skip on older JREs.
+                javax.crypto.Cipher.class.getMethod("updateAAD", byte[].class);
+            }
+            catch (NoSuchMethodException e)
+            {
+                return;
+            }
+        }
+
+        byte[] data = new byte[2545];   // deliberately not block-aligned
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)i;
+        }
+
+        CMSAuthEnvelopedDataStreamGenerator edGen = new CMSAuthEnvelopedDataStreamGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        edGen.setEncoding(encoding);
+
+        if (withAttrs)
+        {
+            Hashtable<ASN1ObjectIdentifier, Attribute> authAttrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+            authAttrs.put(PKCSObjectIdentifiers.id_aa_contentHint,
+                new Attribute(PKCSObjectIdentifiers.id_aa_contentHint, new DERSet(new DERUTF8String("Hint"))));
+            edGen.setAuthenticatedAttributeGenerator(new SimpleAttributeTableGenerator(new AttributeTable(authAttrs)));
+
+            Hashtable<ASN1ObjectIdentifier, Attribute> unauthAttrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+            unauthAttrs.put(PKCSObjectIdentifiers.id_aa_receiptRequest,
+                new Attribute(PKCSObjectIdentifiers.id_aa_receiptRequest, new DERSet(new DERUTF8String("Request"))));
+            edGen.setUnauthenticatedAttributeGenerator(new SimpleAttributeTableGenerator(new AttributeTable(unauthAttrs)));
+        }
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        OutputStream out = edGen.open(
+            bOut, data.length, (OutputAEADEncryptor)new JceCMSContentEncryptorBuilder(encAlg).setProvider(BC).build());
+
+        out.write(data, 0, 1);
+        out.write(data, 1, 2000);
+        out.write(data, 2001, data.length - 2001);
+
+        out.close();
+
+        byte[] encoded = bOut.toByteArray();
+
+        // the output must be its own re-encoding in the requested form - i.e.
+        // genuinely definite-length (and, for DER, canonically sorted).
+        ContentInfo info = ContentInfo.getInstance(encoded);
+        assertTrue("not " + encoding + " for " + encAlg.getId(),
+            Arrays.equals(encoded, info.getEncoded(encoding)));
+
+        verifyData(bOut, encAlg.getId(), data);
+
+        if (withAttrs)
+        {
+            CMSAuthEnvelopedDataParser ep = new CMSAuthEnvelopedDataParser(encoded);
+            ep.getRecipientInfos().getRecipients().iterator().next()
+                .getContentStream(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC))
+                .drain();
+            assertEquals(new DERUTF8String("Hint"),
+                ep.getAuthAttrs().get(PKCSObjectIdentifiers.id_aa_contentHint).getAttrValues().getObjectAt(0));
+            assertEquals(new DERUTF8String("Request"),
+                ep.getUnauthAttrs().get(PKCSObjectIdentifiers.id_aa_receiptRequest).getAttrValues().getObjectAt(0));
+        }
+    }
+
+    public void testDefiniteLengthContentMismatch()
+        throws Exception
+    {
+        byte[] data = new byte[100];
+
+        CMSAuthEnvelopedDataStreamGenerator edGen = new CMSAuthEnvelopedDataStreamGenerator();
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        edGen.setEncoding("DL");
+
+        // underrun: fewer content octets than declared fails at close
+        OutputStream out = edGen.open(
+            new ByteArrayOutputStream(), data.length + 1,
+            (OutputAEADEncryptor)new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(BC).build());
+        out.write(data);
+        try
+        {
+            out.close();
+            fail("definite-length underrun not detected");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+
+        // the no-length open() entry points reject definite-length mode up front
+        final CMSAuthEnvelopedDataStreamGenerator dlGen = new CMSAuthEnvelopedDataStreamGenerator();
+        dlGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        dlGen.setEncoding("DER");
+        try
+        {
+            dlGen.open(new ByteArrayOutputStream(),
+                (OutputAEADEncryptor)new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(BC).build());
+            fail("no-length open accepted in definite-length mode");
+        }
+        catch (CMSException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().indexOf("content length up front") >= 0);
         }
     }
 

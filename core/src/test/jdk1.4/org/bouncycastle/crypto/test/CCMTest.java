@@ -205,6 +205,9 @@ public class CCMTest
                 new KeyParameter(K1), 32, N2));
         AEADTestUtil.testBufferSizeChecks(this, new CCMBlockCipher(AESEngine.newInstance()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
+
+        invalidTagLengthTest();
+        validTagLengthTest();
     }
 
     private boolean isEqual(byte[] exp, byte[] other, int off)
@@ -338,6 +341,57 @@ public class CCMTest
         if (!areEqual(p, dec))
         {
             fail("decrypted stream fails to match in test " + count);
+        }
+    }
+
+    private void invalidTagLengthTest()
+    {
+        int[] invalid = new int[]{ 0, 8, 24, 40, 56, 72, 88, 104, 120, 136 };
+        for (int i = 0; i < invalid.length; ++i)
+        {
+            int macSizeBits = invalid[i];
+
+            // Rejected on encryption...
+            try
+            {
+                CCMBlockCipher.newInstance(AESEngine.newInstance()).init(true,
+                    new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+                fail("invalid tag length accepted");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+
+            // ...and decryption
+            try
+            {
+                CCMBlockCipher.newInstance(AESEngine.newInstance()).init(false,
+                    new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+                fail("invalid tag length accepted");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+        }
+    }
+
+    private void validTagLengthTest() throws Exception
+    {
+        byte[] plaintext = Hex.decode("202122232425262728292a2b2c2d2e2f3031323334353637");
+
+        for (int macSizeBits = 32; macSizeBits <= 128; macSizeBits += 16)
+        {
+            CCMBlockCipher enc = new CCMBlockCipher(AESEngine.newInstance());
+            enc.init(true, new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+            byte[] ct = enc.processPacket(plaintext, 0, plaintext.length);
+
+            CCMBlockCipher dec = new CCMBlockCipher(AESEngine.newInstance());
+            dec.init(false, new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+            byte[] recovered = dec.processPacket(ct, 0, ct.length);
+
+            isTrue(Arrays.areEqual(plaintext, recovered));
         }
     }
 

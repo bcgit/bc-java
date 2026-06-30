@@ -23,6 +23,7 @@ import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPublicKeyParameters;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.CMCEPublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
@@ -30,6 +31,10 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
+import org.bouncycastle.pqc.crypto.aimer.AIMerParameters;
+import org.bouncycastle.pqc.crypto.aimer.AIMerPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
@@ -105,6 +110,8 @@ public class PublicKeyFactory
         converters.put(PQCObjectIdentifiers.xmss_mt, new XMSSMTConverter());
         converters.put(IsaraObjectIdentifiers.id_alg_xmss, new XMSSConverter());
         converters.put(IsaraObjectIdentifiers.id_alg_xmssmt, new XMSSMTConverter());
+        converters.put(IANAObjectIdentifiers.id_alg_xmss_hashsig, new XMSSConverter());
+        converters.put(IANAObjectIdentifiers.id_alg_xmssmt_hashsig, new XMSSMTConverter());
         converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusConverter());
 
@@ -325,12 +332,16 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruplus864, new NTRUPlusConverter());
         converters.put(BCObjectIdentifiers.ntruplus1152, new NTRUPlusConverter());
 
+        converters.put(BCObjectIdentifiers.aimer_128f, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_128s, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_192f, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_192s, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_256f, new AIMerConverter());
+        converters.put(BCObjectIdentifiers.aimer_256s, new AIMerConverter());
+
         converters.put(BCObjectIdentifiers.hawk256, new HawkConverter());
         converters.put(BCObjectIdentifiers.hawk512, new HawkConverter());
         converters.put(BCObjectIdentifiers.hawk1024, new HawkConverter());
-        converters.put(BCObjectIdentifiers.ntruplus768, new NTRUPlusConverter());
-        converters.put(BCObjectIdentifiers.ntruplus864, new NTRUPlusConverter());
-        converters.put(BCObjectIdentifiers.ntruplus1152, new NTRUPlusConverter());
 
         converters.put(BCObjectIdentifiers.faest_128s, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_128f, new FaestConverter());
@@ -556,11 +567,36 @@ public class PublicKeyFactory
             }
             else
             {
-                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+                // RFC 9802 carries the raw RFC 8391 key; the legacy draft form wrapped it in an OCTET STRING.
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+                ASN1OctetString data = Utils.parseOctetData(keyEnc);
 
-                return new XMSSPublicKeyParameters
-                    .Builder(XMSSParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
-                    .withPublicKey(keyEnc).build();
+                if (data != null)
+                {
+                    keyEnc = data.getOctets();
+                }
+
+                if (keyEnc.length < 4)
+                {
+                    throw new IOException("XMSS public key data too short");
+                }
+
+                XMSSParameters parameters = XMSSParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0));
+                if (parameters == null)
+                {
+                    throw new IOException("unknown XMSS public key OID: " + Pack.bigEndianToInt(keyEnc, 0));
+                }
+
+                try
+                {
+                    return new XMSSPublicKeyParameters
+                        .Builder(parameters)
+                        .withPublicKey(keyEnc).build();
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IOException("malformed XMSS public key: " + e.getMessage());
+                }
             }
         }
     }
@@ -586,11 +622,36 @@ public class PublicKeyFactory
             }
             else
             {
-                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+                // RFC 9802 carries the raw RFC 8391 key; the legacy draft form wrapped it in an OCTET STRING.
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+                ASN1OctetString data = Utils.parseOctetData(keyEnc);
 
-                return new XMSSMTPublicKeyParameters
-                    .Builder(XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
-                    .withPublicKey(keyEnc).build();
+                if (data != null)
+                {
+                    keyEnc = data.getOctets();
+                }
+
+                if (keyEnc.length < 4)
+                {
+                    throw new IOException("XMSS^MT public key data too short");
+                }
+
+                XMSSMTParameters parameters = XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0));
+                if (parameters == null)
+                {
+                    throw new IOException("unknown XMSS^MT public key OID: " + Pack.bigEndianToInt(keyEnc, 0));
+                }
+
+                try
+                {
+                    return new XMSSMTPublicKeyParameters
+                        .Builder(parameters)
+                        .withPublicKey(keyEnc).build();
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IOException("malformed XMSS^MT public key: " + e.getMessage());
+                }
             }
         }
     }
@@ -1085,6 +1146,20 @@ public class PublicKeyFactory
             NTRUPlusParameters ntruPlusParams = Utils.ntruPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new NTRUPlusPublicKeyParameters(ntruPlusParams, keyEnc);
+        }
+    }
+
+    private static class AIMerConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            AIMerParameters aimerParams = Utils.aimerParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new AIMerPublicKeyParameters(aimerParams, keyEnc);
         }
     }
 

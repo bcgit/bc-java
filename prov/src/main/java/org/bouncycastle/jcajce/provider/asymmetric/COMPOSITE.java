@@ -11,6 +11,7 @@ import java.util.Map;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.jcajce.provider.asymmetric.compositekem.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -32,6 +33,7 @@ public class COMPOSITE
     }
 
     private static AsymmetricKeyInfoConverter baseConverter;
+    private static AsymmetricKeyInfoConverter compositeKemConverter;
 
     public static class KeyFactory
         extends BaseKeyFactorySpi
@@ -61,13 +63,27 @@ public class COMPOSITE
         public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
             throws IOException
         {
-            return baseConverter.generatePrivate(keyInfo);
+            if (CompositeIndex.isCompositeKEMOID(keyInfo.getPrivateKeyAlgorithm().getAlgorithm()))
+            {
+                return compositeKemConverter.generatePrivate(keyInfo);
+            }
+            else
+            {
+                return baseConverter.generatePrivate(keyInfo);
+            }
         }
 
         public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
             throws IOException
         {
-            return baseConverter.generatePublic(keyInfo);
+            if (CompositeIndex.isCompositeKEMOID(keyInfo.getAlgorithm().getAlgorithm()))
+            {
+                return compositeKemConverter.generatePublic(keyInfo);
+            }
+            else
+            {
+                return baseConverter.generatePublic(keyInfo);
+            }
         }
     }
 
@@ -87,6 +103,7 @@ public class COMPOSITE
             provider.addAlgorithm("KeyFactory.OID." + MiscObjectIdentifiers.id_composite_key, PREFIX + "$KeyFactory");
 
             baseConverter = new KeyFactorySpi(new ProviderJcaJceHelper((BouncyCastleProvider)provider));
+            compositeKemConverter = new org.bouncycastle.jcajce.provider.asymmetric.compositekem.KeyFactorySpi(new ProviderJcaJceHelper((BouncyCastleProvider)provider));
 
             provider.addKeyInfoConverter(MiscObjectIdentifiers.id_alg_composite, baseConverter);
             provider.addKeyInfoConverter(MiscObjectIdentifiers.id_composite_key, baseConverter);

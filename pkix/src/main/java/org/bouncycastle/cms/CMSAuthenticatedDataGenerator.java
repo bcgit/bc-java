@@ -91,7 +91,7 @@ public class CMSAuthenticatedDataGenerator
 
                 out.close();
 
-                encContent = new BEROctetString(bOut.toByteArray());
+                encContent = encapsulate(bOut.toByteArray());
             }
             catch (IOException e)
             {
@@ -120,7 +120,7 @@ public class CMSAuthenticatedDataGenerator
             {
                 throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
-            ASN1Set unauthed = CMSUtils.getAttrBERSet(unauthGen);
+            ASN1Set unauthed = getUnauthedAttrSet();
 
             ContentInfo eci = new ContentInfo(
                 typedData.getContentType(),
@@ -139,7 +139,7 @@ public class CMSAuthenticatedDataGenerator
 
                 mOut.close();
 
-                encContent = new BEROctetString(bOut.toByteArray());
+                encContent = encapsulate(bOut.toByteArray());
 
                 macResult = new DEROctetString(macCalculator.getMac());
             }
@@ -148,7 +148,7 @@ public class CMSAuthenticatedDataGenerator
                 throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
 
-            ASN1Set unauthed = CMSUtils.getAttrBERSet(unauthGen);
+            ASN1Set unauthed = getUnauthedAttrSet();
 
             ContentInfo eci = new ContentInfo(
                 typedData.getContentType(),
@@ -168,5 +168,21 @@ public class CMSAuthenticatedDataGenerator
                 return digestCalculator;
             }
         });
+    }
+
+    private ASN1OctetString encapsulate(byte[] content)
+    {
+        return ASN1Encoding.BER.equals(encoding)
+            ?   (ASN1OctetString)new BEROctetString(content)
+            :   (ASN1OctetString)new DEROctetString(content);
+    }
+
+    private ASN1Set getUnauthedAttrSet()
+    {
+        return ASN1Encoding.BER.equals(encoding)
+            ?   CMSUtils.getAttrBERSet(unauthGen)
+            :   (ASN1Encoding.DER.equals(encoding)
+                    ?   CMSUtils.getAttrDERSet(unauthGen)
+                    :   CMSUtils.getAttrDLSet(unauthGen));
     }
 }

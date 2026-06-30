@@ -62,7 +62,7 @@ public class ASN1StreamParser
         set00Check(false);
 
         int tagNo = ASN1InputStream.readTagNumber(_in, tagHdr);
-        int length = ASN1InputStream.readLength(_in);
+        long length = ASN1InputStream.readLongLength(_in);
 
         if (length < 0) // indefinite-length method
         {
@@ -84,8 +84,9 @@ public class ASN1StreamParser
         }
         else
         {
-            // NOTE: Length can exceed the stream limit as long as we are parsing/streaming
-            int subLimit = Math.min(_limit, length);
+            // NOTE: Length can exceed the stream limit as long as we are parsing/streaming;
+            // the limit only bounds materialization, so the cast below cannot lose magnitude.
+            int subLimit = (int)Math.min(_limit, length);
             DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length, subLimit);
 
             if (0 == (tagHdr & BERTags.FLAGS))
@@ -190,7 +191,7 @@ public class ASN1StreamParser
             throw new ASN1Exception("sets must use constructed encoding (see X.690 8.11.1/8.12.1)");
         }
 
-        StreamUtil.checkLength(defIn.getRemaining(), defIn.getLimit());
+        StreamUtil.checkLength(defIn.getLongRemaining(), (long)defIn.getLimit());
 
         try
         {

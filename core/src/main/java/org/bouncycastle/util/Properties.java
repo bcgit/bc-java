@@ -147,6 +147,115 @@ public class Properties
      */
     public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
 
+    /**
+     * Upper bound (in bits) on the prime modulus p accepted when validating an imported
+     * Diffie-Hellman public key. Validation performs a modular exponentiation / Legendre
+     * computation whose cost is super-linear in the size of p, so an unbounded p taken from a
+     * crafted key encoding would turn key import into a CPU-exhaustion denial of service. The
+     * default (16384) is the analogue of {@code org.bouncycastle.rsa.max_size} and is well above
+     * any standardised DH group. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String DH_MAX_SIZE = "org.bouncycastle.dh.max_size";
+
+    /**
+     * Upper bound (in bits) on the prime modulus p accepted when validating an imported DSA
+     * public key. As with {@link #DH_MAX_SIZE}, validation runs a modular exponentiation whose
+     * cost grows super-linearly in the size of p, so an unbounded p from a crafted encoding is an
+     * import-time CPU-exhaustion vector. Default 16384. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String DSA_MAX_SIZE = "org.bouncycastle.dsa.max_size";
+
+    /**
+     * Upper bound on the PBKDF2 iteration count honoured when deriving the integrity-MAC key of a
+     * BCFKS keystore during load. The KDF runs on parameters taken from the (not-yet-verified)
+     * keystore, so an unbounded iteration count is a pre-integrity CPU-exhaustion vector. Default
+     * 5,000,000 (the BCFKS writer uses ~51,200). Read via {@link #asInteger(String, int)}.
+     */
+    public static final String BCFKS_MAX_IT_COUNT = "org.bouncycastle.bcfks.max_it_count";
+
+    /**
+     * Upper bound, in bytes, on the working memory (~128 * N * r) of the scrypt KDF honoured when
+     * deriving the integrity-MAC key of a BCFKS keystore during load. As with
+     * {@link #BCFKS_MAX_IT_COUNT} the scrypt cost parameters are taken from the not-yet-verified
+     * keystore, so an unbounded cost is a pre-integrity memory-exhaustion vector. Default
+     * 1073741824 (1 GiB); the BCFKS writer uses N=16384, r=8 (~16 MiB). Read via
+     * {@link #asInteger(String, int)}.
+     */
+    public static final String BCFKS_MAX_SCRYPT_MEMORY = "org.bouncycastle.bcfks.max_scrypt_memory";
+
+    /**
+     * Upper bound on the PBKDF2 iteration count honoured when decrypting a PBES2-protected
+     * PKCS#8 / PEM private key. The key-derivation parameters travel inside the (unauthenticated)
+     * encrypted-key container, so an unbounded count makes decrypting attacker-supplied key
+     * material a CPU-exhaustion vector. Default 10,000,000, generous enough for deliberately
+     * strong settings. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String PBE_MAX_ITERATION_COUNT = "org.bouncycastle.pbe.max_iteration_count";
+
+    /**
+     * Upper bound, in bytes, on the scrypt working memory (~128 * N * r) honoured when decrypting
+     * a PBES2-protected PKCS#8 / PEM private key. As with {@link #PBE_MAX_ITERATION_COUNT} the
+     * scrypt cost travels in the unauthenticated container, so an unbounded cost is a
+     * memory-exhaustion vector. Default 1073741824 (1 GiB). Read via {@link #asInteger(String, int)}.
+     */
+    public static final String PBE_MAX_SCRYPT_MEMORY = "org.bouncycastle.pbe.max_scrypt_memory";
+
+    /**
+     * Upper bound on the RFC 4211 PKMAC / CMP password-based-MAC iteration count honoured when no
+     * explicit ceiling was supplied to {@link org.bouncycastle.cert.crmf.PKMACBuilder}. The count
+     * travels in the (unauthenticated) PBMParameter of an incoming CMP message and drives an
+     * iterated hash, so an unbounded count makes verifying an attacker-supplied message a
+     * CPU-exhaustion vector. Default 10,000,000, generous enough for any legitimate setting. Read
+     * via {@link #asInteger(String, int)}.
+     */
+    public static final String PKMAC_MAX_ITERATION_COUNT = "org.bouncycastle.pkmac.max_iteration_count";
+
+    /**
+     * Upper bound on the total number of valid-policy-tree nodes retained (across all depth
+     * levels) during PKIX certification-path validation. Certificate policy mapping combined with
+     * the anyPolicy expansion of RFC 5280 6.1.3/6.1.4 can grow the tree multiplicatively per
+     * certificate, so a crafted chain that still chains to a trust anchor could drive the validator
+     * into exponential memory/CPU consumption -- a denial of service of the class of CVE-2023-0464.
+     * The tree size is checked once per certificate and validation is aborted with a
+     * CertPathValidatorException once it exceeds this bound. The default (8192) is far above any
+     * legitimate policy tree (a real chain produces a handful of nodes) and is configurable for
+     * unusual deployments. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String X509_MAX_POLICY_NODES = "org.bouncycastle.x509.max_policy_nodes";
+
+    /**
+     * Opt in to the relaxed directoryName name-constraint matching required by GSMA SGP.22 v2.5
+     * (Remote SIM Provisioning), sections 4.5.2.1.0.2 / 4.5.2.1.0.3. When set, a permitted-subtree
+     * RDN is satisfied by any matching subject RDN regardless of position, additional subject
+     * attributes beyond those named in the subtree are tolerated, and a serialNumber RDN is matched
+     * with a startsWith comparison wherever it appears. This is deliberately looser than the
+     * contiguous-prefix DN matching mandated by RFC 5280 7.1, so it defaults to off and must be
+     * enabled explicitly; BC's default validation remains RFC 5280 strict. See github #2327.
+     * Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String X509_SGP22_NAME_CONSTRAINTS = "org.bouncycastle.x509.sgp22_name_constraints";
+
+    /**
+     * Opt in to short AEAD authentication tags for AES-GCM parameters. RFC 5084 constrains the
+     * AES-GCM ICV (tag) length carried in {@code GCMParameters} to 12..16 octets (96..128 bits), and
+     * BC enforces that by default. When this property is set, {@code GCMParameters} additionally
+     * accepts tags down to the NIST SP 800-38D minimum of 4 octets (32 bits; SP 800-38D sec. 5.2.1.2
+     * permits a 32-bit tag for limited applications). Short tags weaken integrity protection, so this
+     * defaults to off and must be enabled explicitly; anything below 4 octets or above 16 octets is
+     * still rejected. Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String GCM_ALLOW_SHORT_TAGS = "org.bouncycastle.gcm.allow_short_tags";
+
+    /**
+     * Opt in to handling legacy version 0/1 BKS keystores. Those stores derive the HMAC integrity
+     * key at only the digest size in bits (a 16-bit key for SHA-1; CVE-2018-5382), which is
+     * brute-forceable offline, so by default the default {@code BKS} keystore type refuses to load
+     * them and only writes the current version 2 format. Set this property to read or create the
+     * weak legacy format (e.g. to migrate an old store); it also gates registration of the separate
+     * {@code BKS-V1} keystore type. Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String BKS_ENABLE_V1 = "org.bouncycastle.bks.enable_v1";
+
     private Properties()
     {
     }

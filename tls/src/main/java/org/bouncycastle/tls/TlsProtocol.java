@@ -435,7 +435,7 @@ public abstract class TlsProtocol
         AbstractTlsContext context = getContextAdmin(); 
         TlsPeer peer = getPeer();
 
-        this.maxHandshakeMessageSize = Math.max(1024, peer.getMaxHandshakeMessageSize());
+        this.maxHandshakeMessageSize = TlsUtils.getMaxHandshakeMessageSize(peer);
 
         this.handshakeHash = new DeferredHash(context);
         this.connection_state = CS_START;

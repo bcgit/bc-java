@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.misc.test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.Date;
@@ -79,6 +80,7 @@ import org.bouncycastle.asn1.cms.AuthEnvelopedData;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CompressedData;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.DigestedData;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedData;
 import org.bouncycastle.asn1.cms.EnvelopedData;
@@ -95,6 +97,7 @@ import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.cms.OriginatorPublicKey;
 import org.bouncycastle.asn1.cms.OtherKeyAttribute;
 import org.bouncycastle.asn1.cms.OtherRecipientInfo;
+import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cms.PasswordRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientEncryptedKey;
 import org.bouncycastle.asn1.cms.RecipientIdentifier;
@@ -946,6 +949,132 @@ public class GetInstanceTest
 
     }
 
+
+    public void testOptionalValidityAtLeastOne()
+    {
+        // RFC 4211: OptionalValidity requires at least one of notBefore/notAfter.
+        // An empty SEQUENCE must be rejected on decode, matching the constructor.
+        try
+        {
+            OptionalValidity.getInstance(new DERSequence());
+            fail("empty OptionalValidity SEQUENCE accepted on decode");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("at least one of notBefore/notAfter MUST be present.", e.getMessage());
+        }
+    }
+
+    public void testTooShortSequenceRejected()
+    {
+        // Fixed-arity, all-mandatory CMP/CRMF SEQUENCE types must reject a
+        // too-short encoding with a clean IllegalArgumentException rather than
+        // leaking an ArrayIndexOutOfBoundsException from positional getObjectAt.
+        // The guard is a strict lower bound, mirroring the sibling size checks
+        // in these same util/asn1 packages (e.g. CountryAndRegions,
+        // RootCaKeyUpdateContent, CMCPublicationInfo, DecryptedPOP).
+
+        CMPCertificate cmpCert = new CMPCertificate(Certificate.getInstance(cert1));
+
+        // PBMParameter needs 4 mandatory fields.
+        checkTooShort(PBMParameter.class, new DERSequence(new ASN1Encodable[]{
+            new DEROctetString(new byte[1]), new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1")), ASN1Integer.ONE}));
+
+        // CAKeyUpdAnnContent needs 3 mandatory CMPCertificate fields.
+        checkTooShort(CAKeyUpdAnnContent.class, new DERSequence(new ASN1Encodable[]{
+            cmpCert, cmpCert}));
+
+        // PKMACValue needs 2 mandatory fields.
+        checkTooShort(PKMACValue.class, new DERSequence(new ASN1Encodable[]{
+            new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1"))}));
+
+        // CertId needs 2 mandatory fields.
+        checkTooShort(CertId.class, new DERSequence(new ASN1Encodable[]{
+            new GeneralName(new X500Name("CN=Test"))}));
+
+        // ProtectedPart needs 2 mandatory fields (header PKIHeader, body PKIBody).
+        checkTooShort(ProtectedPart.class, new DERSequence(new ASN1Encodable[]{
+            new GeneralName(new X500Name("CN=Test"))}));
+
+        // AttributeTypeAndValue needs 2 mandatory fields (type OID, value ANY).
+        checkTooShort(AttributeTypeAndValue.class, new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.1")}));
+
+        // POPOSigningKeyInput needs 2 mandatory fields (authInfo CHOICE, publicKey).
+        checkTooShort(POPOSigningKeyInput.class, new DERSequence(new ASN1Encodable[]{
+            new GeneralName(new X500Name("CN=Test"))}));
+
+        // IssuerAndSerialNumber needs 2 mandatory fields (issuer Name, serialNumber).
+        checkTooShort(IssuerAndSerialNumber.class, new DERSequence(new ASN1Encodable[]{
+            new GeneralName(new X500Name("CN=Test"))}));
+
+        // OriginatorPublicKey needs 2 mandatory fields (algorithm, publicKey BIT STRING).
+        checkTooShort(OriginatorPublicKey.class, new DERSequence(new ASN1Encodable[]{
+            new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1"))}));
+
+        // CompressedData needs 3 mandatory fields (version, compressionAlgorithm, encapContentInfo).
+        checkTooShort(CompressedData.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1"))}));
+
+        // DigestedData needs 4 mandatory fields (version, digestAlgorithm, encapContentInfo, digest).
+        checkTooShort(DigestedData.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1")), new DEROctetString(new byte[1])}));
+
+        // KeyTransRecipientInfo needs 4 mandatory fields (version, rid, keyEncryptionAlgorithm, encryptedKey).
+        checkTooShort(KeyTransRecipientInfo.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1")), new DEROctetString(new byte[1])}));
+
+        // OtherRevocationInfoFormat needs 2 mandatory fields (otherRevInfoFormat OID, otherRevInfo ANY).
+        checkTooShort(OtherRevocationInfoFormat.class, new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.1")}));
+
+        // Attribute needs 2 mandatory fields (attrType OID, attrValues SET OF).
+        checkTooShort(Attribute.class, new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.1")}));
+
+        // cmp.CertStatus needs 2 mandatory fields (certHash OCTET STRING, certReqId INTEGER).
+        checkTooShort(org.bouncycastle.asn1.cmp.CertStatus.class, new DERSequence(new ASN1Encodable[]{
+            new DEROctetString(new byte[1])}));
+
+        // RecipientEncryptedKey needs 2 mandatory fields (rid, encryptedKey).
+        checkTooShort(RecipientEncryptedKey.class, new DERSequence(new ASN1Encodable[]{
+            new DEROctetString(new byte[1])}));
+
+        // OtherRecipientInfo needs 2 mandatory fields (oriType OID, oriValue ANY).
+        checkTooShort(OtherRecipientInfo.class, new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.1")}));
+    }
+
+    private void checkTooShort(Class clazz, DERSequence tooShort)
+    {
+        try
+        {
+            Method m = clazz.getMethod("getInstance", Object.class);
+
+            m.invoke(clazz, tooShort);
+
+            fail(clazz.getName() + " accepted a too-short SEQUENCE on decode");
+        }
+        catch (InvocationTargetException e)
+        {
+            if (!(e.getCause() instanceof IllegalArgumentException))
+            {
+                fail(clazz.getName() + " threw " + e.getCause() + " instead of IllegalArgumentException");
+            }
+        }
+        catch (Exception e)
+        {
+            fail(clazz.getName() + " getInstance reflection failed: " + e);
+        }
+    }
+
+    private void isEquals(Object expected, Object actual)
+    {
+        if (!expected.equals(actual))
+        {
+            fail("expected " + expected + " got " + actual);
+        }
+    }
 
     public String getName()
     {

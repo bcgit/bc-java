@@ -33,7 +33,7 @@ public class ECJPAKECurve
      * <li>n must be prime</li>
      * <li>The curve must not be singular i.e. the discriminant is equal to 0 mod q</li>
      * <li>G must lie on the curve</li>
-     * <li>n*h must equal the order of the curve</li>
+     * <li>n*h, the implied order of the curve, must be within the Hasse bound of the field size</li>
      * <li>a must be in [0, q-1]</li>
      * <li>b must be in [0, q-1]</li>
      * </ul>
@@ -94,10 +94,15 @@ public class ECJPAKECurve
         }
 
         /*
-         * TODO It's expensive to calculate the actual total number of points. Probably the best that could be done is
-         * checking that the point count is within the Hasse bound?
+         * Calculating the actual number of points is too expensive; instead check that n * h, the
+         * implied curve order, lies within the Hasse bound: |n * h - (q + 1)| <= 2 * sqrt(q),
+         * checked as (q + 1 - n * h)^2 <= 4 * q to avoid the square root.
          */
-//        BigInteger totalPoints = n.multiply(h);
+        BigInteger hasseDelta = q.add(BigInteger.ONE).subtract(n.multiply(h));
+        if (hasseDelta.multiply(hasseDelta).compareTo(q.shiftLeft(2)) > 0)
+        {
+            throw new IllegalArgumentException("The implied curve order n * h is outside the Hasse bound for the field size q");
+        }
 
         this.curve = new ECCurve.Fp(q, a, b, n, h);
         this.g = curve.validatePoint(g_x, g_y);

@@ -22,6 +22,8 @@ import org.bouncycastle.util.Arrays;
 public class CCMParameters
     extends ASN1Object
 {
+    private static final int DEFAULT_ICVLEN = 12;
+
     private byte[] nonce;
     private int icvLen;
 
@@ -56,16 +58,16 @@ public class CCMParameters
     private CCMParameters(
         ASN1Sequence seq)
     {
-        this.nonce = ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets();
+        int count = seq.size();
+        if (count < 1 || count > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
 
-        if (seq.size() == 2)
-        {
-            this.icvLen = ASN1Integer.getInstance(seq.getObjectAt(1)).intValueExact();
-        }
-        else
-        {
-            this.icvLen = 12;
-        }
+        this.nonce = ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets();
+        ASN1Integer icvLen = seq.size() < 2 ? null : ASN1Integer.getInstance(seq.getObjectAt(1)); 
+
+        this.icvLen = validateICVLen(icvLen == null ? DEFAULT_ICVLEN : icvLen.intValueExact());
     }
 
     public CCMParameters(
@@ -73,7 +75,7 @@ public class CCMParameters
         int icvLen)
     {
         this.nonce = Arrays.clone(nonce);
-        this.icvLen = icvLen;
+        this.icvLen = validateICVLen(icvLen);
     }
 
     public byte[] getNonce()
@@ -92,11 +94,22 @@ public class CCMParameters
 
         v.add(new DEROctetString(nonce));
 
-        if (icvLen != 12)
+        if (icvLen != DEFAULT_ICVLEN)
         {
             v.add(ASN1Integer.valueOf(icvLen));
         }
 
         return new DERSequence(v);
     }
+
+    // RFC 5084: AES-CCM-ICVlen ::= INTEGER (4 | 6 | 8 | 10 | 12 | 14 | 16)
+    private static int validateICVLen(int icvLen)
+    {
+        if (icvLen < 4 || icvLen > 16 || (icvLen & 1) != 0)
+        {
+            throw new IllegalArgumentException("Invalid ICV length: " + icvLen);
+        }
+
+        return icvLen;
+    }    
 }

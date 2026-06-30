@@ -35,25 +35,24 @@ public class BasicClientAuthTlsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_ACCEPTED = 9020;
-    private static final int PORT_NO_ACCEPTED_CUSTOM = 9021;
-    private static final int PORT_NO_REJECTED = 9022;
 
     public static class ClientAuthAcceptedClient
         implements TestProtocolUtil.BlockingCallable
     {
+        private final int port;
         private final KeyStore trustStore;
         private final KeyStore clientStore;
         private final char[] clientKeyPass;
         private final CountDownLatch latch;
 
-        public ClientAuthAcceptedClient(KeyStore clientStore, char[] clientKeyPass, X509Certificate trustAnchor)
+        public ClientAuthAcceptedClient(int port, KeyStore clientStore, char[] clientKeyPass, X509Certificate trustAnchor)
             throws GeneralSecurityException, IOException
         {
             this.trustStore = KeyStore.getInstance("JKS");
             trustStore.load(null, null);
             trustStore.setCertificateEntry("server", trustAnchor);
 
+            this.port = port;
             this.clientStore = clientStore;
             this.clientKeyPass = clientKeyPass;
             this.latch = new CountDownLatch(1);
@@ -80,7 +79,7 @@ public class BasicClientAuthTlsTest
                     SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
     
                 SSLSocketFactory fact = clientContext.getSocketFactory();
-                SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO_ACCEPTED);
+                SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
@@ -108,18 +107,20 @@ public class BasicClientAuthTlsTest
     public static class ClientAuthAcceptedCustomClient
         implements TestProtocolUtil.BlockingCallable
     {
+        private final int port;
         private final KeyStore trustStore;
         private final KeyStore clientStore;
         private final char[] clientKeyPass;
         private final CountDownLatch latch;
 
-        public ClientAuthAcceptedCustomClient(KeyStore clientStore, char[] clientKeyPass, X509Certificate trustAnchor)
+        public ClientAuthAcceptedCustomClient(int port, KeyStore clientStore, char[] clientKeyPass, X509Certificate trustAnchor)
             throws GeneralSecurityException, IOException
         {
             this.trustStore = KeyStore.getInstance("JKS");
             trustStore.load(null, null);
             trustStore.setCertificateEntry("server", trustAnchor);
 
+            this.port = port;
             this.clientStore = clientStore;
             this.clientKeyPass = clientKeyPass;
             this.latch = new CountDownLatch(1);
@@ -226,7 +227,7 @@ public class BasicClientAuthTlsTest
                     SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
 
                 SSLSocketFactory fact = clientContext.getSocketFactory();
-                SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO_ACCEPTED_CUSTOM);
+                SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
@@ -254,16 +255,18 @@ public class BasicClientAuthTlsTest
     public static class ClientAuthRejectedClient
         implements TestProtocolUtil.BlockingCallable
     {
+        private final int port;
         private final KeyStore trustStore;
         private final CountDownLatch latch;
 
-        public ClientAuthRejectedClient(X509Certificate trustAnchor)
+        public ClientAuthRejectedClient(int port, X509Certificate trustAnchor)
             throws GeneralSecurityException, IOException
         {
             this.trustStore = KeyStore.getInstance("JKS");
             trustStore.load(null, null);
             trustStore.setCertificateEntry("server", trustAnchor);
 
+            this.port = port;
             this.latch = new CountDownLatch(1);
         }
 
@@ -283,7 +286,7 @@ public class BasicClientAuthTlsTest
                     SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
 
                 SSLSocketFactory fact = clientContext.getSocketFactory();
-                SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO_REJECTED);
+                SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
@@ -311,25 +314,53 @@ public class BasicClientAuthTlsTest
     public static class ClientAuthServer
         implements TestProtocolUtil.BlockingCallable
     {
-        private final int port;
         private final boolean needClientAuth;
-        private final KeyStore serverStore;
-        private final char[] keyPass;
-        private final KeyStore trustStore;
+        private final SSLServerSocket sSock;
         private final CountDownLatch latch;
 
         ClientAuthServer(int port, boolean needClientAuth, KeyStore serverStore, char[] keyPass,
             X509Certificate trustAnchor) throws GeneralSecurityException, IOException
         {
-            this.port = port;
-            this.needClientAuth = needClientAuth;
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
-            this.trustStore = KeyStore.getInstance("JKS");
+            KeyStore trustStore = KeyStore.getInstance("JKS");
             trustStore.load(null, null);
             trustStore.setCertificateEntry("client", trustAnchor);
 
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+
+            keyMgrFact.init(serverStore, keyPass);
+
+            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+
+            trustMgrFact.init(trustStore);
+
+            SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+
+            serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
+                SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+            this.sSock = (SSLServerSocket)fact.createServerSocket(port);
+
+            SSLUtils.enableAll(sSock);
+
+            if (needClientAuth)
+            {
+                sSock.setNeedClientAuth(true);
+            }
+            else
+            {
+                sSock.setWantClientAuth(true);
+            }
+
+            this.needClientAuth = needClientAuth;
             this.latch = new CountDownLatch(1);
+        }
+
+        int getPort()
+        {
+            return sSock.getLocalPort();
         }
 
         public Exception call()
@@ -337,37 +368,8 @@ public class BasicClientAuthTlsTest
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-    
-                keyMgrFact.init(serverStore, keyPass);
-    
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-    
-                trustMgrFact.init(trustStore);
-    
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-    
-                serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-    
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-    
-                SSLUtils.enableAll(sSock);
-    
-                if (needClientAuth)
-                {
-                    sSock.setNeedClientAuth(true);
-                }
-                else
-                {
-                    sSock.setWantClientAuth(true);
-                }
-
                 latch.countDown();
-    
+
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
     
                 SSLSession session = sslSock.getSession();
@@ -427,8 +429,9 @@ public class BasicClientAuthTlsTest
         clientKs.load(null, null);
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new ClientAuthServer(PORT_NO_ACCEPTED, true, serverKs, keyPass, caCert),
-            new ClientAuthAcceptedClient(clientKs, keyPass, caCert));
+        ClientAuthServer server = new ClientAuthServer(0, true, serverKs, keyPass, caCert);
+        TestProtocolUtil.runClientAndServer(server,
+            new ClientAuthAcceptedClient(server.getPort(), clientKs, keyPass, caCert));
     }
 
     public void testClientAuthAcceptedCustom()
@@ -447,8 +450,9 @@ public class BasicClientAuthTlsTest
         clientKs.load(null, null);
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new ClientAuthServer(PORT_NO_ACCEPTED_CUSTOM, true, serverKs, keyPass, caCert),
-            new ClientAuthAcceptedCustomClient(clientKs, keyPass, caCert));
+        ClientAuthServer server = new ClientAuthServer(0, true, serverKs, keyPass, caCert);
+        TestProtocolUtil.runClientAndServer(server,
+            new ClientAuthAcceptedCustomClient(server.getPort(), clientKs, keyPass, caCert));
     }
 
     public void testClientAuthRejected()
@@ -463,7 +467,8 @@ public class BasicClientAuthTlsTest
         serverKs.load(null, null);
         serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new ClientAuthServer(PORT_NO_REJECTED, false, serverKs, keyPass, caCert),
-            new ClientAuthRejectedClient(caCert));
+        ClientAuthServer server = new ClientAuthServer(0, false, serverKs, keyPass, caCert);
+        TestProtocolUtil.runClientAndServer(server,
+            new ClientAuthRejectedClient(server.getPort(), caCert));
     }
 }

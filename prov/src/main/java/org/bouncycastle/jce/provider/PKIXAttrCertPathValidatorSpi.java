@@ -113,9 +113,9 @@ public class PKIXAttrCertPathValidatorSpi
             .getAttributeCert();
 
         CertPath holderCertPath = RFC3281CertPathUtilities.processAttrCert1(attrCert, paramsPKIX);
-        CertPathValidatorResult result = RFC3281CertPathUtilities.processAttrCert2(certPath, paramsPKIX);
-        X509Certificate issuerCert = (X509Certificate) certPath
-            .getCertificates().get(0);
+        CertPathValidatorResult result = RFC3281CertPathUtilities.processAttrCert2A(certPath, paramsPKIX);
+        X509Certificate issuerCert = (X509Certificate)certPath.getCertificates().get(0);
+        RFC3281CertPathUtilities.processAttrCert2B(attrCert, issuerCert, paramsPKIX);        
         RFC3281CertPathUtilities.processAttrCert3(issuerCert, paramsPKIX);
         RFC3281CertPathUtilities.processAttrCert4(issuerCert, trustedACIssuers);
         RFC3281CertPathUtilities.processAttrCert5(attrCert, validityDate);

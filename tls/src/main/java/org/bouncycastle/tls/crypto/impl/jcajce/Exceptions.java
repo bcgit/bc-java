@@ -19,6 +19,6 @@ class Exceptions
 
     static IOException ioException(String message, Throwable cause)
     {
-        return new IOException(message, cause);
+        return (IOException)new IOException(message).initCause(cause);
     }
 }

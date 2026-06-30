@@ -22,6 +22,7 @@ import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
@@ -29,6 +30,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.provider.aimer.AIMerKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
@@ -53,6 +55,7 @@ import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -101,7 +104,7 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] SYMMETRIC_GENERIC =
         {
-            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT", "HKDF"
+            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT", "ARGON2", "HKDF"
         };
 
     private static final String[] SYMMETRIC_MACS =
@@ -137,7 +140,7 @@ public final class BouncyCastleProvider extends Provider
     private static final String[] ASYMMETRIC_CIPHERS =
         {
             "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC", "LMS", "NTRU", "Falcon", "CONTEXT", "SLHDSA", "MLDSA", "MLKEM",
-            "Dilithium", "SPHINCSPlus"
+            "CMCE", "FrodoKEM", "Dilithium", "SPHINCSPlus", "CompositeKEMs"
         };
 
     /*
@@ -422,8 +425,10 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(PQCObjectIdentifiers.newHope, new NHKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.xmss, new XMSSKeyFactorySpi());
         addKeyInfoConverter(IsaraObjectIdentifiers.id_alg_xmss, new XMSSKeyFactorySpi());
+        addKeyInfoConverter(IANAObjectIdentifiers.id_alg_xmss_hashsig, new XMSSKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.xmss_mt, new XMSSMTKeyFactorySpi());
         addKeyInfoConverter(IsaraObjectIdentifiers.id_alg_xmssmt, new XMSSMTKeyFactorySpi());
+        addKeyInfoConverter(IANAObjectIdentifiers.id_alg_xmssmt_hashsig, new XMSSMTKeyFactorySpi());
         addKeyInfoConverter(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.picnic_key, new PicnicKeyFactorySpi());
 
@@ -605,6 +610,13 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.hawk256,  new HawkKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hawk512,  new HawkKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hawk1024, new HawkKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_128f, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_128s, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_192f, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_192s, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_256f, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_256s, new AIMerKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)
@@ -659,7 +671,10 @@ public final class BouncyCastleProvider extends Provider
 
     public AsymmetricKeyInfoConverter getKeyInfoConverter(ASN1ObjectIdentifier oid)
     {
-        return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
+        synchronized (keyInfoConverters)
+        {
+            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
+        }
     }
 
     public void addAttributes(String key, Map<String, String> attributeMap)
@@ -690,31 +705,57 @@ public final class BouncyCastleProvider extends Provider
     public static PublicKey getPublicKey(SubjectPublicKeyInfo publicKeyInfo)
         throws IOException
     {
-        if (publicKeyInfo.getAlgorithm().getAlgorithm().on(BCObjectIdentifiers.picnic_key))
+        try
         {
-            return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
-        }
-        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
+            if (publicKeyInfo.getAlgorithm().getAlgorithm().on(BCObjectIdentifiers.picnic_key))
+            {
+                return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
+            }
+            AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
 
-        if (converter == null)
+            if (converter == null)
+            {
+                return null;
+            }
+
+            return converter.generatePublic(publicKeyInfo);
+        }
+        catch (IOException e)
         {
-            return null;
+            throw e;
         }
-
-        return converter.generatePublic(publicKeyInfo);
+        catch (RuntimeException e)
+        {
+            // a converter must not leak a RuntimeException out of the declared IOException contract
+            // when handed a malformed SubjectPublicKeyInfo decoded from untrusted input
+            throw Exceptions.ioException("malformed public key", e);
+        }
     }
 
     public static PrivateKey getPrivateKey(PrivateKeyInfo privateKeyInfo)
         throws IOException
     {
-        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
-
-        if (converter == null)
+        try
         {
-            return null;
-        }
+            AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-        return converter.generatePrivate(privateKeyInfo);
+            if (converter == null)
+            {
+                return null;
+            }
+
+            return converter.generatePrivate(privateKeyInfo);
+        }
+        catch (IOException e)
+        {
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            // a converter must not leak a RuntimeException out of the declared IOException contract
+            // when handed a malformed PrivateKeyInfo decoded from untrusted input
+            throw Exceptions.ioException("malformed private key", e);
+        }
     }
 
     private static CryptoServiceProperties service(String name, int bitsOfSecurity)

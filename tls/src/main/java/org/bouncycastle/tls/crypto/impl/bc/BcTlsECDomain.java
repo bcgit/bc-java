@@ -1,12 +1,11 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
 import java.io.IOException;
-import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHRawAgreement;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -20,7 +19,6 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * EC domain class for generating key pairs and performing key agreement.
@@ -30,16 +28,15 @@ public class BcTlsECDomain implements TlsECDomain
     public static BcTlsSecret calculateECDHAgreement(BcTlsCrypto crypto, ECPrivateKeyParameters privateKey,
         ECPublicKeyParameters publicKey)
     {
-        ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
-        basicAgreement.init(privateKey);
-        BigInteger agreementValue = basicAgreement.calculateAgreement(publicKey);
-
         /*
          * RFC 4492 5.10. Note that this octet string (Z in IEEE 1363 terminology) as output by
          * FE2OSP, the Field Element to Octet String Conversion Primitive, has constant length for
          * any given field; leading zeros found in this octet string MUST NOT be truncated.
          */
-        byte[] secret = BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue);
+        ECDHRawAgreement agreement = new ECDHRawAgreement();
+        agreement.init(privateKey);
+        byte[] secret = new byte[agreement.getAgreementSize()];
+        agreement.calculateAgreement(publicKey, secret, 0);
         return crypto.adoptLocalSecret(secret);
     }
 

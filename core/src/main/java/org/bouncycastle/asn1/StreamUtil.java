@@ -21,6 +21,14 @@ class StreamUtil
         }
     }
 
+    static void checkLength(long length, long limit) throws IOException
+    {
+        if (length > limit)
+        {
+            throw new ASN1Exception("corrupted stream - out of bounds length found: " + length + " > " + limit);
+        }
+    }
+
     static int decrementDepth(int parentDepth) throws IOException
     {
         if (parentDepth <= 0)

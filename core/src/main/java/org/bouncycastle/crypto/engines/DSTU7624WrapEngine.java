@@ -215,7 +215,7 @@ public class DSTU7624WrapEngine
         System.arraycopy(buffer, buffer.length - engine.getBlockSize(), checkSumArray, 0, engine.getBlockSize());
 
         byte[] wrappedBuffer = new byte[buffer.length - engine.getBlockSize()];
-        if (!Arrays.areEqual(checkSumArray, zeroArray))
+        if (!Arrays.constantTimeAreEqual(checkSumArray, zeroArray))
         {
             throw new InvalidCipherTextException("checksum failed");
         }

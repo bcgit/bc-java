@@ -2,6 +2,7 @@ package org.bouncycastle.cms.test;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.KeyFactory;
@@ -26,12 +27,14 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSEnvelopedDataParser;
 import org.bouncycastle.cms.CMSEnvelopedDataStreamGenerator;
 import org.bouncycastle.cms.CMSTypedStream;
@@ -593,6 +596,127 @@ public class NewEnvelopedDataStreamTest
         }
 
         ep.close();
+    }
+
+    public void testKeyTransAES128DefiniteLength()
+        throws Exception
+    {
+        // github #1482: definite-length streaming - CBC (padded) and GCM
+        // (tag appended) under both DER and DL.
+        checkDefiniteLength(CMSAlgorithm.AES128_CBC, "DER");
+        checkDefiniteLength(CMSAlgorithm.AES128_CBC, "DL");
+        checkDefiniteLength(CMSAlgorithm.AES128_GCM, "DER");
+        checkDefiniteLength(CMSAlgorithm.AES128_GCM, "DL");
+        checkDefiniteLength(CMSAlgorithm.DES_EDE3_CBC, "DER");
+    }
+
+    private void checkDefiniteLength(ASN1ObjectIdentifier encAlg, String encoding)
+        throws Exception
+    {
+        byte[] data = new byte[2545];   // deliberately not block-aligned
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)i;
+        }
+
+        CMSEnvelopedDataStreamGenerator edGen = new CMSEnvelopedDataStreamGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        edGen.setEncoding(encoding);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        OutputStream out = edGen.open(
+            bOut, data.length, new JceCMSContentEncryptorBuilder(encAlg).setProvider(BC).build());
+
+        // write in assorted chunk sizes
+        out.write(data, 0, 1);
+        out.write(data, 1, 2000);
+        out.write(data, 2001, data.length - 2001);
+
+        out.close();
+
+        byte[] encoded = bOut.toByteArray();
+
+        // the output must be its own re-encoding in the requested form - i.e.
+        // genuinely definite-length (and, for DER, canonically sorted).
+        ContentInfo info = ContentInfo.getInstance(encoded);
+        assertTrue("not " + encoding + " for " + encAlg.getId(),
+            Arrays.equals(encoded, info.getEncoded(encoding)));
+
+        // and decrypt back to the original content.
+        CMSEnvelopedDataParser ep = new CMSEnvelopedDataParser(encoded);
+        RecipientInformationStore recipients = ep.getRecipientInfos();
+        assertEquals(ep.getEncryptionAlgOID(), encAlg.getId());
+
+        Collection c = recipients.getRecipients();
+        assertTrue(c.size() > 0);
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+            CMSTypedStream recData = recipient.getContentStream(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+            assertEquals(true, Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));
+        }
+
+        ep.close();
+    }
+
+    public void testDefiniteLengthContentMismatch()
+        throws Exception
+    {
+        byte[] data = new byte[100];
+
+        CMSEnvelopedDataStreamGenerator edGen = new CMSEnvelopedDataStreamGenerator();
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        edGen.setEncoding("DL");
+
+        // underrun: fewer content octets than declared fails at close
+        OutputStream out = edGen.open(
+            new ByteArrayOutputStream(), data.length + 1, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+        out.write(data);
+        try
+        {
+            out.close();
+            fail("definite-length underrun not detected");
+        }
+        catch (IOException e)
+        {
+            // mismatch surfaces from the length-enforcing octet stream
+        }
+
+        // overrun: more content octets than declared fails during write/close
+        edGen = new CMSEnvelopedDataStreamGenerator();
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        edGen.setEncoding("DL");
+
+        out = edGen.open(
+            new ByteArrayOutputStream(), data.length - 17, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+        try
+        {
+            out.write(data);
+            out.close();
+            fail("definite-length overrun not detected");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+
+        // the no-length open() entry points reject definite-length mode up front
+        final CMSEnvelopedDataStreamGenerator dlGen = new CMSEnvelopedDataStreamGenerator();
+        dlGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        dlGen.setEncoding("DER");
+        try
+        {
+            dlGen.open(new ByteArrayOutputStream(), new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+            fail("no-length open accepted in definite-length mode");
+        }
+        catch (CMSException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().indexOf("content length up front") >= 0);
+        }
     }
 
     public void testKeyTransAES128()

@@ -64,7 +64,14 @@ public class KMIPInputStream
     public KMIPInputStream(InputStream stream)
         throws XMLStreamException
     {
-        this.eventReader = XMLInputFactory.newInstance().createXMLEventReader(stream);
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        // KMIP XML arrives from a (pre-authentication) network peer, so disable DTDs and external
+        // entity resolution to prevent XXE - local file disclosure and SSRF. SUPPORT_DTD = false
+        // rejects any DOCTYPE outright; IS_SUPPORTING_EXTERNAL_ENTITIES = false is set as well for
+        // defence in depth in case an implementation still honours a DTD.
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+        this.eventReader = factory.createXMLEventReader(stream);
     }
 
     public KMIPMessage[] parse()

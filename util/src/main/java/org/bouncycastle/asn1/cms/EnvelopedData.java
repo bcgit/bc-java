@@ -9,7 +9,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
+import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSequence;
 
 /**
  * <a href="https://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> EnvelopedData object.
@@ -157,6 +159,10 @@ public class EnvelopedData
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
+     * <p>
+     * The encoding follows the components, as for {@link SignedData}: if the
+     * encrypted content info or any of the sets carries the indefinite-length
+     * (BER) form the sequence is BER, otherwise it is definite-length.
      */
     public ASN1Primitive toASN1Primitive()
     {
@@ -177,7 +183,15 @@ public class EnvelopedData
             v.add(new DERTaggedObject(false, 1, unprotectedAttrs));
         }
 
-        return new BERSequence(v);
+        if (encryptedContentInfo.toASN1Primitive() instanceof BERSequence
+            || recipientInfos instanceof BERSet || unprotectedAttrs instanceof BERSet)
+        {
+            return new BERSequence(v);
+        }
+        else
+        {
+            return new DLSequence(v);
+        }
     }
 
     public static int calculateVersion(OriginatorInfo originatorInfo, ASN1Set recipientInfos, ASN1Set unprotectedAttrs)

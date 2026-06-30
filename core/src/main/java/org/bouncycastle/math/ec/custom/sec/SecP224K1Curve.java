@@ -31,6 +31,7 @@ public class SecP224K1Curve extends ECCurve.AbstractFp
         this.b = fromBigInteger(BigInteger.valueOf(5));
         this.order = new BigInteger(1, Hex.decodeStrict("010000000000000000000000000001DCE8D2EC6184CAF0A971769FB1F7"));
         this.cofactor = BigInteger.valueOf(1);
+
         this.coord = SECP224K1_DEFAULT_COORDS;
     }
 
@@ -55,9 +56,14 @@ public class SecP224K1Curve extends ECCurve.AbstractFp
         return q;
     }
 
+    public int getFieldElementEncodingLength()
+    {
+        return 28;
+    }
+
     public int getFieldSize()
     {
-        return q.bitLength();
+        return 224;
     }
 
     public ECFieldElement fromBigInteger(BigInteger x)
@@ -67,7 +73,7 @@ public class SecP224K1Curve extends ECCurve.AbstractFp
 
     protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
     {
-        return new SecP224K1Point(this, x, y);
+        return new SecP224K1Point(this, x, y, SECP224K1_AFFINE_ZS);
     }
 
     protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
@@ -146,7 +152,7 @@ public class SecP224K1Curve extends ECCurve.AbstractFp
 
             private ECPoint createPoint(int[] x, int[] y)
             {
-                return createRawPoint(new SecP224K1FieldElement(x), new SecP224K1FieldElement(y), SECP224K1_AFFINE_ZS);
+                return createRawPoint(new SecP224K1FieldElement(x), new SecP224K1FieldElement(y));
             }
         };
     }

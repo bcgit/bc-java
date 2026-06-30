@@ -33,9 +33,10 @@ import org.bouncycastle.operator.ContentSigner;
 /**
  * End-to-end Merkle Tree Certificate walkthrough using a single CA cosigner.
  *
- * <p>The example builds a two-leaf log in-memory, issues a Merkle Tree
- * certificate for entry index 0, then has a relying party validate it through
- * {@link MerkleTreeCertificateValidator}. The whole flow is exercised against
+ * <p>The example builds an in-memory issuance log holding two entries, issues
+ * a <em>standalone certificate</em> (Section 6.2 of the draft) for entry
+ * index 0 over the subtree {@code [0, 2)}, then has a relying party validate
+ * it through {@link MerkleTreeCertificateValidator}. The whole flow is exercised against
  * the lightweight bindings in {@code org.bouncycastle.cert.plants.bc} so no
  * JCA provider needs to be registered.</p>
  *
@@ -77,8 +78,10 @@ public class MerkleTreeCertificateExample
 
         // 3. Issue the EE certificate. The cert's issuer carries the CA's
         //    trust anchor ID; the validator recovers the issuance log ID by
-        //    appending the log_number from the serial. The synthetic 2-leaf
-        //    log places the EE at index 0 with a sibling leaf at index 1.
+        //    appending the log_number from the serial. The result is a
+        //    standalone certificate (Section 6.2 of the draft) over the
+        //    minimal subtree [0, 2): the EE's entry at index 0 with a
+        //    sibling leaf at index 1.
         //
         //    MTCContentSigner captures the TBSCertificate bytes streamed by
         //    the X509v3CertificateBuilder, derives the MerkleTreeCertEntry
@@ -102,7 +105,7 @@ public class MerkleTreeCertificateExample
         //    the CA's trust anchor ID to the CA's public key + Ed25519
         //    algorithm, then assemble ValidationParams and validate.
         BcMTCSignatureVerifier caVerifier = new BcMTCSignatureVerifier(
-            caKp.getPublic(), MTCSignatureAlgorithm.ED25519);
+            MTCSignatureAlgorithm.ED25519, caKp.getPublic());
         BcMTCCosignerVerifierProvider cosigners =
             BcMTCCosignerVerifierProvider.singleCosigner(ca.getCaId(), caVerifier);
 

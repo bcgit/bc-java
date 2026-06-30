@@ -1381,6 +1381,8 @@ public class DSATest
         testECDSA239bitBinary("SHA384withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_384);
         testECDSA239bitBinary("SHA512withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_512);
 
+        testECDSAInP1363Format();
+
         testECDSAP256sha3(NISTObjectIdentifiers.id_ecdsa_with_sha3_224, 224, new BigInteger("84d7d8e68e405064109cd9fc3e3026d74d278aada14ce6b7a9dd0380c154dc94", 16));
         testECDSAP256sha3(NISTObjectIdentifiers.id_ecdsa_with_sha3_256, 256, new BigInteger("99a43bdab4af989aaf2899079375642f2bae2dce05bcd8b72ec8c4a8d9a143f", 16));
         testECDSAP256sha3(NISTObjectIdentifiers.id_ecdsa_with_sha3_384, 384, new BigInteger("aa27726509c37aaf601de6f7e01e11c19add99530c9848381c23365dc505b11a", 16));
@@ -1409,6 +1411,68 @@ public class DSATest
         sig[1] = ((ASN1Integer)s.getObjectAt(1)).getValue();
 
         return sig;
+    }
+
+    // github #751: Java 9+ standard "...withECDSAinP1363Format" names must resolve in the BC
+    // provider and produce the IEEE P1363 (fixed-width r || s) encoding - the same as PLAIN-ECDSA.
+    private void testECDSAInP1363Format()
+        throws Exception
+    {
+        KeyPairGenerator g = KeyPairGenerator.getInstance("ECDSA", "BC");
+        g.initialize(256, new SecureRandom());
+        KeyPair kp = g.generateKeyPair();
+
+        byte[] data = "the quick brown fox".getBytes();
+
+        String[][] pairs =
+        {
+            {"SHA1withECDSAinP1363Format",     "SHA1withPLAIN-ECDSA"},
+            {"SHA224withECDSAinP1363Format",   "SHA224withPLAIN-ECDSA"},
+            {"SHA256withECDSAinP1363Format",   "SHA256withPLAIN-ECDSA"},
+            {"SHA384withECDSAinP1363Format",   "SHA384withPLAIN-ECDSA"},
+            {"SHA512withECDSAinP1363Format",   "SHA512withPLAIN-ECDSA"},
+            {"SHA3-256withECDSAinP1363Format", "SHA3-256withPLAIN-ECDSA"},
+        };
+
+        for (int i = 0; i != pairs.length; i++)
+        {
+            Signature sgr = Signature.getInstance(pairs[i][0], "BC");
+            sgr.initSign(kp.getPrivate());
+            sgr.update(data);
+            byte[] sig = sgr.sign();
+
+            // P1363 output is the raw r || s pair, never a DER SEQUENCE
+            isTrue(pairs[i][0] + " not fixed-width", (sig.length & 1) == 0);
+
+            // round-trips under its own name
+            Signature self = Signature.getInstance(pairs[i][0], "BC");
+            self.initVerify(kp.getPublic());
+            self.update(data);
+            isTrue(pairs[i][0] + " self-verify failed", self.verify(sig));
+
+            // and verifies under the equivalent PLAIN-ECDSA name - which only accepts the
+            // fixed-width encoding, proving the P1363 name uses that encoding rather than DER
+            Signature plain = Signature.getInstance(pairs[i][1], "BC");
+            plain.initVerify(kp.getPublic());
+            plain.update(data);
+            isTrue(pairs[i][0] + " did not verify as " + pairs[i][1], plain.verify(sig));
+        }
+
+        // NONEwithECDSAinP1363Format: the input is the pre-computed digest
+        byte[] hash = new byte[32];
+        new SecureRandom().nextBytes(hash);
+
+        Signature noneSgr = Signature.getInstance("NONEwithECDSAinP1363Format", "BC");
+        noneSgr.initSign(kp.getPrivate());
+        noneSgr.update(hash);
+        byte[] noneSig = noneSgr.sign();
+
+        isTrue("NONEwithECDSAinP1363Format not fixed-width", (noneSig.length & 1) == 0);
+
+        Signature noneVfy = Signature.getInstance("NONEwithECDSAinP1363Format", "BC");
+        noneVfy.initVerify(kp.getPublic());
+        noneVfy.update(hash);
+        isTrue("NONEwithECDSAinP1363Format self-verify failed", noneVfy.verify(noneSig));
     }
 
     public String getName()

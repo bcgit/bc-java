@@ -28,6 +28,8 @@ public class AllTests
             new SignaturePacketTest(),
             new SignatureSubpacketsTest(),
             new TimeEncodingTest(),
+            new ArmoredOutputStreamHeaderInjectionTest(),
+            new UserAttributeSubpacketInputStreamTest(),
             new UnknownPublicKeyPacketTest(),
             new UnknownSecretKeyPacketTest(),
         };

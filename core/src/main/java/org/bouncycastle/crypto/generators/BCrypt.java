@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.generators;
 
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
@@ -701,5 +702,272 @@ public final class BCrypt
         }
 
         return new BCrypt().deriveRawKey(cost, salt, effective);
+    }
+
+    //====================================
+    // OpenSSH bcrypt_pbkdf
+    //====================================
+
+    /**
+     * Clear text for the OpenSSH bcrypt_pbkdf hash step ("OxychromaticBlowfishSwatDynamite",
+     * 32 bytes = 8 32-bit words). Distinct from the OpenBSD MAGIC_STRING used by the password
+     * hash above.
+     */
+    private static final byte[] BCRYPT_PBKDF_MAGIC = Strings.toByteArray("OxychromaticBlowfishSwatDynamite");
+
+    /**
+     * Output size, in bytes, of a single OpenSSH {@code bcrypt_hash} block.
+     */
+    private static final int BCRYPT_PBKDF_HASH_SIZE = 32;
+
+    /**
+     * The generic Blowfish encipher operation (16 rounds), updating {@code lr[0]} / {@code lr[1]}
+     * in place. Uses the current {@link #P} / {@link #S} state and matches the layout the existing
+     * {@link #processTable} fill relies on (output stored as the swapped pair).
+     */
+    private void encipher(int[] lr)
+    {
+        int xl = lr[0];
+        int xr = lr[1];
+
+        xl ^= P[0];
+        for (int i = 1; i < ROUNDS; i += 2)
+        {
+            xr ^= F(xl) ^ P[i];
+            xl ^= F(xr) ^ P[i + 1];
+        }
+        xr ^= P[ROUNDS + 1];
+
+        lr[0] = xr;
+        lr[1] = xl;
+    }
+
+    /**
+     * OpenSSH {@code Blowfish_stream2word}: read the next big-endian 32-bit word from {@code data},
+     * cycling back to the start when the end is reached. {@code offset[0]} carries the cursor.
+     */
+    private static int streamToWord(byte[] data, int[] offset)
+    {
+        int word = 0;
+        int off = offset[0];
+        for (int i = 0; i < 4; i++)
+        {
+            word = (word << 8) | (data[off] & 0xff);
+            off = (off + 1) % data.length;
+        }
+        offset[0] = off;
+        return word;
+    }
+
+    /**
+     * OpenSSH {@code Blowfish_expandstate}: the salted (eksblowfish) key schedule, with both
+     * {@code data} and {@code key} streamed cyclically. Unlike {@link #processTableWithSalt} this
+     * accepts an arbitrary-length salt, as bcrypt_pbkdf passes 64-byte SHA-512 outputs.
+     */
+    private void expandState(byte[] data, byte[] key)
+    {
+        int[] keyOffset = new int[1];
+        for (int i = 0; i < P_SZ; i++)
+        {
+            P[i] ^= streamToWord(key, keyOffset);
+        }
+
+        int[] lr = new int[2];
+        int[] dataOffset = new int[1];
+        for (int i = 0; i < P_SZ; i += 2)
+        {
+            lr[0] ^= streamToWord(data, dataOffset);
+            lr[1] ^= streamToWord(data, dataOffset);
+            encipher(lr);
+            P[i] = lr[0];
+            P[i + 1] = lr[1];
+        }
+        for (int i = 0; i < S.length; i += 2)
+        {
+            lr[0] ^= streamToWord(data, dataOffset);
+            lr[1] ^= streamToWord(data, dataOffset);
+            encipher(lr);
+            S[i] = lr[0];
+            S[i + 1] = lr[1];
+        }
+    }
+
+    /**
+     * OpenSSH {@code Blowfish_expand0state}: as {@link #expandState} but with an all-zero data
+     * stream, so only the key is mixed into P and the encipher output chains through P and S.
+     */
+    private void expand0State(byte[] key)
+    {
+        int[] keyOffset = new int[1];
+        for (int i = 0; i < P_SZ; i++)
+        {
+            P[i] ^= streamToWord(key, keyOffset);
+        }
+
+        int[] lr = new int[2];
+        for (int i = 0; i < P_SZ; i += 2)
+        {
+            encipher(lr);
+            P[i] = lr[0];
+            P[i + 1] = lr[1];
+        }
+        for (int i = 0; i < S.length; i += 2)
+        {
+            encipher(lr);
+            S[i] = lr[0];
+            S[i + 1] = lr[1];
+        }
+    }
+
+    /**
+     * OpenSSH {@code bcrypt_hash}: 64-round eksblowfish setup over the two 64-byte SHA-512 inputs,
+     * then 64 ECB encryptions of the 32-byte magic, emitted as little-endian words.
+     */
+    private byte[] bcryptHash(byte[] sha2pass, byte[] sha2salt)
+    {
+        initState();
+        expandState(sha2salt, sha2pass);
+        for (int i = 0; i < 64; i++)
+        {
+            expand0State(sha2salt);
+            expand0State(sha2pass);
+        }
+
+        int[] cdata = new int[BCRYPT_PBKDF_HASH_SIZE / 4];
+        int[] magicOffset = new int[1];
+        for (int i = 0; i < cdata.length; i++)
+        {
+            cdata[i] = streamToWord(BCRYPT_PBKDF_MAGIC, magicOffset);
+        }
+
+        int[] lr = new int[2];
+        for (int i = 0; i < 64; i++)
+        {
+            for (int j = 0; j < cdata.length; j += 2)
+            {
+                lr[0] = cdata[j];
+                lr[1] = cdata[j + 1];
+                encipher(lr);
+                cdata[j] = lr[0];
+                cdata[j + 1] = lr[1];
+            }
+        }
+
+        byte[] out = new byte[BCRYPT_PBKDF_HASH_SIZE];
+        for (int i = 0; i < cdata.length; i++)
+        {
+            // little-endian, the OpenSSH word swap
+            out[4 * i] = (byte)cdata[i];
+            out[4 * i + 1] = (byte)(cdata[i] >>> 8);
+            out[4 * i + 2] = (byte)(cdata[i] >>> 16);
+            out[4 * i + 3] = (byte)(cdata[i] >>> 24);
+        }
+
+        Arrays.fill(P, 0);
+        Arrays.fill(S, 0);
+
+        return out;
+    }
+
+    /**
+     * The OpenSSH {@code bcrypt_pbkdf} password-based key derivation function, as used to protect
+     * the {@code openssh-key-v1} private key format (kdfname {@code "bcrypt"}). It layers SHA-512
+     * over a 32-byte {@code bcrypt_hash} primitive and distributes the output non-linearly; it is
+     * <b>not</b> interchangeable with PBKDF2-over-bcrypt or with the OpenBSD password hash produced
+     * by {@link #generate(byte[], byte[], int, boolean)} / {@link OpenBSDBCrypt}.
+     *
+     * @param password     the passphrase bytes (the OpenSSH client uses the raw UTF-8 bytes, with
+     *                     no trailing NUL).
+     * @param salt         the salt taken from the key's kdfoptions; must be non-empty.
+     * @param rounds       the iteration count from the key's kdfoptions; must be at least 1.
+     * @param outputLength the number of key bytes to derive (the cipher key length plus IV length);
+     *                     must be between 1 and 1024 inclusive.
+     * @return {@code outputLength} derived key bytes.
+     */
+    public static byte[] pbkdfGenerate(byte[] password, byte[] salt, int rounds, int outputLength)
+    {
+        if (password == null || salt == null)
+        {
+            throw new IllegalArgumentException("password and salt are required");
+        }
+        if (salt.length == 0)
+        {
+            throw new IllegalArgumentException("salt must not be empty");
+        }
+        if (rounds < 1)
+        {
+            throw new IllegalArgumentException("rounds must be at least 1");
+        }
+        if (outputLength < 1 || outputLength > BCRYPT_PBKDF_HASH_SIZE * BCRYPT_PBKDF_HASH_SIZE)
+        {
+            throw new IllegalArgumentException("outputLength must be from 1 to 1024");
+        }
+
+        SHA512Digest sha512 = new SHA512Digest();
+
+        byte[] sha2pass = new byte[64];
+        sha512.update(password, 0, password.length);
+        sha512.doFinal(sha2pass, 0);
+
+        byte[] sha2salt = new byte[64];
+        byte[] out = new byte[BCRYPT_PBKDF_HASH_SIZE];
+        byte[] tmpout = new byte[BCRYPT_PBKDF_HASH_SIZE];
+        byte[] countsalt = new byte[4];
+        byte[] key = new byte[outputLength];
+
+        BCrypt bcrypt = new BCrypt();
+
+        int stride = (outputLength + BCRYPT_PBKDF_HASH_SIZE - 1) / BCRYPT_PBKDF_HASH_SIZE;
+        int amt = (outputLength + stride - 1) / stride;
+
+        int keylen = outputLength;
+        for (int count = 1; keylen > 0; count++)
+        {
+            Pack.intToBigEndian(count, countsalt, 0);
+
+            // first round: salt is the supplied salt followed by the block counter
+            sha512.update(salt, 0, salt.length);
+            sha512.update(countsalt, 0, 4);
+            sha512.doFinal(sha2salt, 0);
+
+            byte[] hash = bcrypt.bcryptHash(sha2pass, sha2salt);
+            System.arraycopy(hash, 0, out, 0, BCRYPT_PBKDF_HASH_SIZE);
+            System.arraycopy(hash, 0, tmpout, 0, BCRYPT_PBKDF_HASH_SIZE);
+
+            for (int i = 1; i < rounds; i++)
+            {
+                // subsequent rounds: salt is the previous output
+                sha512.update(tmpout, 0, BCRYPT_PBKDF_HASH_SIZE);
+                sha512.doFinal(sha2salt, 0);
+
+                hash = bcrypt.bcryptHash(sha2pass, sha2salt);
+                System.arraycopy(hash, 0, tmpout, 0, BCRYPT_PBKDF_HASH_SIZE);
+                for (int j = 0; j < BCRYPT_PBKDF_HASH_SIZE; j++)
+                {
+                    out[j] ^= tmpout[j];
+                }
+            }
+
+            // pbkdf2 deviation: output the key material non-linearly
+            amt = Math.min(amt, keylen);
+            int i;
+            for (i = 0; i < amt; i++)
+            {
+                int dest = i * stride + (count - 1);
+                if (dest >= outputLength)
+                {
+                    break;
+                }
+                key[dest] = out[i];
+            }
+            keylen -= i;
+        }
+
+        Arrays.fill(sha2pass, (byte)0);
+        Arrays.fill(sha2salt, (byte)0);
+        Arrays.fill(out, (byte)0);
+        Arrays.fill(tmpout, (byte)0);
+
+        return key;
     }
 }

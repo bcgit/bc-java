@@ -22,6 +22,7 @@ public class RegressionTest
         new PKCS12Test(),
         new X509NameTest(),
         new X500NameTest(),
+        new IETFUtilsTest(),
         new X509ExtensionsTest(),
         new GeneralizedTimeTest(),
         new BitStringTest(),
@@ -52,6 +53,7 @@ public class RegressionTest
         new AttributeCertificateInfoIssuerTest(),
         new ParsingTest(),
         new GeneralNameTest(),
+        new NameConstraintsTest(),
         new ObjectIdentifierTest(),
         new RFC4519Test(),
         new PolicyConstraintsTest(),
@@ -64,7 +66,9 @@ public class RegressionTest
         new X509AltTest(),
         new CertIDTest(),
         new IANAObjectIdentifierTest(),
-        new StreamLimitTest()
+        new StreamLimitTest(),
+        new ASN1GeneratorTest(),
+        new LongDefiniteLengthParserTest()
     };
 
     public static void main(String[] args)

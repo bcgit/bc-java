@@ -64,7 +64,7 @@ public class RFC5649WrapEngine
         }
         else
         {
-            // TODO Throw an exception for bad parameters?
+            throw new IllegalArgumentException("invalid parameter passed to " + getAlgorithmName() + " init - " + param.getClass().getName());
         }
     }
 

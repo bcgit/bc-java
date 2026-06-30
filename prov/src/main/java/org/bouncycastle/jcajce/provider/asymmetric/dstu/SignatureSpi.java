@@ -83,6 +83,11 @@ public class SignatureSpi
             param = ECUtil.generatePrivateKeyParameter(privateKey);
             digest = new GOST3411Digest(expandSbox(DSTU4145Params.getDefaultDKE()));
         }
+        else
+        {
+            param = ECUtil.generatePrivateKeyParameter(privateKey);
+            digest = new GOST3411Digest(expandSbox(DSTU4145Params.getDefaultDKE()));
+        }
 
         if (appRandom != null)
         {

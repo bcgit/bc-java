@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.hawk;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.Longs;
 
 /**
  * Verification side of the Hawk PQC signature scheme. This is a faithful port
@@ -281,8 +282,10 @@ final class HawkVerifier
     }
 
     // ---- GM table generation: gm[i] = R * g^rev(i) mod p (Montgomery form) ----
-    private static int[] gmP1Cache;
-    private static int[] gmP2Cache;
+    // volatile so the double-checked locking in getGmP1()/getGmP2() safely publishes the fully
+    // built table: a reader that sees a non-null reference is guaranteed to see its contents too.
+    private static volatile int[] gmP1Cache;
+    private static volatile int[] gmP2Cache;
     private static final Object GM_LOCK = new Object();
 
     /**
@@ -1139,14 +1142,14 @@ final class HawkVerifier
             long xImLo = xIm & 0xFFFFFFFFL;
             long w00 = (cstup + (fq00[u] & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
             long wm1 = (w00 - 1) & 0xFFFFFFFFL;
-            if (Long.compareUnsigned(wm1, 0x3FFFFFFFL) >= 0
-                || Long.compareUnsigned(xReHi, w00) >= 0
-                || Long.compareUnsigned(xImHi, w00) >= 0)
+            if (Longs.compareUnsigned(wm1, 0x3FFFFFFFL) >= 0
+                || Longs.compareUnsigned(xReHi, w00) >= 0
+                || Longs.compareUnsigned(xImHi, w00) >= 0)
             {
                 return false;
             }
-            long yRe = Long.divideUnsigned(((xReHi << 32) | xReLo), w00);
-            long yIm = Long.divideUnsigned(((xImHi << 32) | xImLo), w00);
+            long yRe = Longs.divideUnsigned(((xReHi << 32) | xReLo), w00);
+            long yIm = Longs.divideUnsigned(((xImHi << 32) | xImLo), w00);
             int sxRe32 = (int)sxRe;
             int sxIm32 = (int)sxIm;
             fq01[u] = ((int)yRe ^ sxRe32) - sxRe32;

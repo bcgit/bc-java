@@ -85,27 +85,7 @@ public class ASN1OutputStream
 
     final void writeDL(int length) throws IOException
     {
-        if (length < 128)
-        {
-            write(length);
-        }
-        else
-        {
-            byte[] stack = new byte[5];
-            int pos = stack.length;
-
-            do
-            {
-                stack[--pos] = (byte)length;
-                length >>>= 8;
-            }
-            while (length != 0);
-
-            int count = stack.length - pos;
-            stack[--pos] = (byte)(0x80 | count);
-
-            write(stack, pos, count + 1);
-        }
+        writeDL(os, length);
     }
 
     final void write(int b) throws IOException
@@ -193,29 +173,9 @@ public class ASN1OutputStream
 
     final void writeIdentifier(boolean withID, int flags, int tag) throws IOException
     {
-        if (!withID)
+        if (withID)
         {
-            // Don't write the identifier
-        }
-        else if (tag < 31)
-        {
-            write(flags | tag);
-        }
-        else
-        {
-            byte[] stack = new byte[6];
-            int pos = stack.length;
-
-            stack[--pos] = (byte)(tag & 0x7F);
-            while (tag > 127)
-            {
-                tag >>>= 7;
-                stack[--pos] = (byte)(tag & 0x7F | 0x80);
-            }
-
-            stack[--pos] = (byte)(flags | 0x1F);
-
-            write(stack, pos, stack.length - pos);
+            writeIdentifier(os, flags, tag);
         }
     }
 
@@ -265,5 +225,54 @@ public class ASN1OutputStream
             ++length;
         }
         return length;
+    }
+
+    static void writeDL(OutputStream out, int length) throws IOException
+    {
+        if (length < 128)
+        {
+            out.write(length);
+        }
+        else
+        {
+            byte[] stack = new byte[5];
+            int pos = stack.length;
+
+            do
+            {
+                stack[--pos] = (byte)length;
+                length >>>= 8;
+            }
+            while (length != 0);
+
+            int count = stack.length - pos;
+            stack[--pos] = (byte)(0x80 | count);
+
+            out.write(stack, pos, count + 1);
+        }
+    }
+
+    static void writeIdentifier(OutputStream out, int flags, int tag) throws IOException
+    {
+        if (tag < 31)
+        {
+            out.write(flags | tag);
+        }
+        else
+        {
+            byte[] stack = new byte[6];
+            int pos = stack.length;
+
+            stack[--pos] = (byte)(tag & 0x7F);
+            while (tag > 127)
+            {
+                tag >>>= 7;
+                stack[--pos] = (byte)(tag & 0x7F | 0x80);
+            }
+
+            stack[--pos] = (byte)(flags | 0x1F);
+
+            out.write(stack, pos, stack.length - pos);
+        }
     }
 }

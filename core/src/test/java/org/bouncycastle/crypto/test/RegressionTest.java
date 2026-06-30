@@ -7,7 +7,6 @@ public class RegressionTest
 {
     public static Test[] tests =
         {
-            new AESTest(),
             new AESLightTest(),
             new AESFastTest(),
             new AESWrapTest(),
@@ -22,7 +21,6 @@ public class RegressionTest
             new DSATest(),
             new ECTest(),
             new DeterministicDSATest(),
-            new GOST3410Test(),
             new ECGOST3410Test(),
             new ECIESTest(),
             new ECNRTest(),
@@ -38,7 +36,6 @@ public class RegressionTest
             new TnepresTest(),
             new CamelliaTest(),
             new CamelliaLightTest(),
-            new DigestRandomNumberTest(),
             new SkipjackTest(),
             new BlowfishTest(),
             new TwofishTest(),
@@ -51,8 +48,8 @@ public class RegressionTest
             new CAST6Test(),
             new GOST28147Test(),
             new IDEATest(),
-            new RSATest(),
             new RSABlindedTest(),
+            new RSABlindSignatureTest(),
             new RSADigestSignerTest(),
             new PSSBlindTest(),
             new ISO9796Test(),
@@ -61,6 +58,7 @@ public class RegressionTest
             new MD4DigestTest(),
             new MD5DigestTest(),
             new SHA1DigestTest(),
+            new SHA1InterleaveDigestTest(),
             new SHA224DigestTest(),
             new SHA256DigestTest(),
             new SHA384DigestTest(),
@@ -85,6 +83,7 @@ public class RegressionTest
             new SHA512HMacTest(),
             new RIPEMD128HMacTest(),
             new RIPEMD160HMacTest(),
+            new SM3HMacTest(),
             new OAEPTest(),
             new PSSTest(),
             new CTSTest(),
@@ -126,7 +125,6 @@ public class RegressionTest
             new Grain128Test(),
             //new NaccacheSternTest(),
             new SRP6Test(),
-            new SCryptTest(),
             new ResetTest(),
             new NullTest(),
             new DSTU4145Test(),
@@ -145,9 +143,7 @@ public class RegressionTest
             new KDFCounterGeneratorTest(),
             new KDFDoublePipelineIteratorGeneratorTest(),
             new KDFFeedbackGeneratorTest(),
-            new CramerShoupTest(),
             new BCryptTest(),
-            new OpenBSDBCryptTest(),
             new X931SignerTest(),
             new Blake2bDigestTest(),
             new Blake2sDigestTest(),
@@ -170,8 +166,6 @@ public class RegressionTest
             new Ed448Test(),
             new BIP340SignerTest(),
             new CSHAKETest(),
-            new Argon2Test(),
-            new OpenSSHKeyParsingTests(),
             new EthereumIESTest(),
             new BigIntegersTest(),
             new ZucTest(),
@@ -187,7 +181,6 @@ public class RegressionTest
             new ParallelHashTest(),
             new CryptoServiceConstraintsTest(),
             new SymmetricConstraintsTest(),
-            new AsymmetricConstraintsTest(),
             new DigestConstraintsTest(),
             new RadixConverterTest(),
             new Grain128AEADTest(),
@@ -205,8 +198,40 @@ public class RegressionTest
             new SHA3HMacTest()
         };
 
+    public static Test[] slowTests =
+        {
+            new AESTest(),
+            new GOST3410Test(),
+            new DigestRandomNumberTest(),
+            new RSATest(),
+            new SCryptTest(),
+            new CramerShoupTest(),
+            new OpenSSHKeyParsingTests(),
+            new AsymmetricConstraintsTest()
+        };
+
+    public static Test[] openBSDBCryptTests =
+        {
+            new OpenBSDBCryptTest()
+        };
+
+    public static Test[] argonTests =
+        {
+            new Argon2Test()
+        };
+
+
+    private static Test[] join(Test[] test1, Test[] test2)
+    {
+        Test[] tests = new Test[test1.length + test2.length];
+        System.arraycopy(test1, 0, tests, 0, test1.length);
+        System.arraycopy(test2, 0, tests, test1.length, test2.length);
+
+        return tests;
+    }
+
     public static void main(String[] args)
     {
-        SimpleTest.runTests(tests);
+        SimpleTest.runTests(join(join(tests, slowTests), join(openBSDBCryptTests, argonTests)));
     }
 }

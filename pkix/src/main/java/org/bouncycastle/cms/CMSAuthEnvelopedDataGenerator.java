@@ -6,6 +6,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetString;
@@ -58,13 +59,17 @@ public class CMSAuthEnvelopedDataGenerator
             throw new CMSException("unable to process authenticated content: " + e.getMessage(), e);
         }
 
-        ASN1OctetString encryptedContent = new BEROctetString(bOut.toByteArray());
+        ASN1OctetString encryptedContent = ASN1Encoding.BER.equals(encoding)
+            ?   (ASN1OctetString)new BEROctetString(bOut.toByteArray())
+            :   (ASN1OctetString)new DEROctetString(bOut.toByteArray());
         ASN1OctetString mac = new DEROctetString(contentEncryptor.getMAC());
 
         EncryptedContentInfo encryptedContentInfo = CMSUtils.getEncryptedContentInfo(content, contentEncryptor,
             encryptedContent);
 
-        ASN1Set unprotectedAttrSet = CMSUtils.getAttrDLSet(unauthAttrsGenerator);
+        ASN1Set unprotectedAttrSet = ASN1Encoding.DER.equals(encoding)
+            ?   CMSUtils.getAttrDERSet(unauthAttrsGenerator)
+            :   CMSUtils.getAttrDLSet(unauthAttrsGenerator);
 
         ASN1Encodable authEnvelopedData = new AuthEnvelopedData(originatorInfo, new DERSet(recipientInfos),
             encryptedContentInfo, authenticatedAttrSet, mac, unprotectedAttrSet);

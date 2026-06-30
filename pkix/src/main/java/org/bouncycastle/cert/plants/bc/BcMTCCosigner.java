@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Lightweight implementation of {@link MTCCosigner} for the MTC signature
@@ -44,10 +45,7 @@ public class BcMTCCosigner
     /**
      * Override constructor that takes an explicit MTC algorithm string instead
      * of detecting it from the key type. Use when the key's
-     * {@link BcMTCSigners#detectAlgorithm field-size dispatch} doesn't apply —
-     * notably to pick a specific {@code ML-DSA-44}/{@code ML-DSA-65}/
-     * {@code ML-DSA-87} variant where the detector returns the placeholder
-     * {@code ML-DSA-65}.
+     * {@link BcMTCSigners#detectAlgorithm key-type dispatch} doesn't apply.
      */
     public BcMTCCosigner(String algorithm, byte[] cosignerId, AsymmetricKeyParameter privateKey)
     {
@@ -74,7 +72,7 @@ public class BcMTCCosigner
         }
         catch (CryptoException e)
         {
-            throw new IOException("MTC cosigning failed: " + e.getMessage(), e);
+            throw Exceptions.ioException("MTC cosigning failed: " + e.getMessage(), e);
         }
     }
 }

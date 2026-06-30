@@ -38,8 +38,14 @@ public interface TlsServer
      * 
      * @param identities a {@link Vector} of {@link PskIdentity} instances.
      * @return the {@link TlsPSKExternal} corresponding to the selected identity, or null to not select any.
+     * @throws IOException if the handshake should be aborted. An implementation may throw a
+     *             {@link TlsFatalAlert} to control the alert sent to the peer - e.g.
+     *             {@link AlertDescription#unknown_psk_identity} when none of the offered identities is
+     *             recognised, or {@link AlertDescription#decrypt_error} when an identity is recognised
+     *             but is invalid or expired (see RFC 8446 6.2). Returning null instead leaves PSK
+     *             unselected without aborting.
      */
-    TlsPSKExternal getExternalPSK(Vector identities);
+    TlsPSKExternal getExternalPSK(Vector identities) throws IOException;
 
     void notifySession(TlsSession session);
 

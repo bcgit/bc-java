@@ -34,6 +34,20 @@ public interface PGPDataEncryptorBuilder
         throws PGPException;
 
     /**
+     * Builds a data encryptor for OpenPGP v2 SEIPD (AEAD), deriving the message key and IV from
+     * the supplied session key and salt per RFC 9580 sec. 5.13.2, using this builder's crypto
+     * stack. Only meaningful when the builder is configured for v2 SEIPD (v6) AEAD; the derivation
+     * is owned here rather than by the caller so it runs through the same provider as the cipher.
+     *
+     * @param key  the session key.
+     * @param salt the 32-octet salt carried in the v2 SEIPD packet.
+     * @return a data encryptor with an initialised AEAD cipher.
+     * @throws PGPException if an error occurs deriving the message key or initialising the cipher.
+     */
+    PGPDataEncryptor build(byte[] key, byte[] salt)
+        throws PGPException;
+
+    /**
      * Gets the SecureRandom instance used by this builder.
      * <p>
      * If a SecureRandom has not been explicitly configured, a default {@link SecureRandom} is

@@ -14,6 +14,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 
@@ -35,6 +36,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSAlgorithmNotAllowedException;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
@@ -230,6 +232,41 @@ public class BcEnvelopedDataTest
         init();
 
         return new CMSTestSetup(new TestSuite(BcEnvelopedDataTest.class));
+    }
+
+    public void testKeyTransAllowedContentAlgorithms()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new BcRSAKeyTransRecipientInfoGenerator(new JcaX509CertificateHolder(_reciCert)));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new BcCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).build());
+
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+
+        // when the content-encryption algorithm is in the allowed set, recovery proceeds as normal
+        byte[] recData = recipient.getContent(new BcRSAKeyTransEnvelopedRecipient(PrivateKeyFactory.createKey(_reciKP.getPrivate().getEncoded()))
+            .setAllowedContentAlgorithms(Collections.singleton(CMSAlgorithm.AES256_CBC)));
+
+        assertTrue(Arrays.equals(data, recData));
+
+        // when the actual content-encryption algorithm is not in the allowed set, recovery is refused
+        try
+        {
+            recipient.getContent(new BcRSAKeyTransEnvelopedRecipient(PrivateKeyFactory.createKey(_reciKP.getPrivate().getEncoded()))
+                .setAllowedContentAlgorithms(Collections.singleton(CMSAlgorithm.AES128_CBC)));
+
+            fail("content recovered under a disallowed content-encryption algorithm");
+        }
+        catch (CMSAlgorithmNotAllowedException e)
+        {
+            // expected
+        }
     }
 
     public void testUnprotectedAttributes()

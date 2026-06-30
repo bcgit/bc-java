@@ -53,8 +53,6 @@ import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 public class CMSSignedDataGenerator
     extends CMSSignedGenerator
 {
-    private String encoding = ASN1Encoding.BER;
-
     /**
      * base constructor
      */
@@ -79,21 +77,6 @@ public class CMSSignedDataGenerator
     public void setDefiniteLengthEncoding(boolean isDefiniteLength)
     {
         this.setEncoding((isDefiniteLength) ? ASN1Encoding.DL : ASN1Encoding.BER);
-    }
-
-    /**
-     * Specify use of definite-length/DER rather than indefinite length encoding ("BER").
-     *
-     * @param encoding one of "DER", "DL", "BER".
-     */
-    public void setEncoding(String encoding)
-    {
-        if (!(ASN1Encoding.BER.equals(encoding) || ASN1Encoding.DL.equals(encoding) || ASN1Encoding.DER.equals(encoding)))
-        {
-            throw new IllegalArgumentException("encoding must be one of BER, DER, or DL");
-        }
-
-        this.encoding = encoding;
     }
 
     /**
@@ -212,7 +195,9 @@ public class CMSSignedDataGenerator
         ContentInfo encapContentInfo = new ContentInfo(encapContentType, encapContent);
 
         SignedData signedData = new SignedData(
-            CMSUtils.convertToDlSet(digestAlgs),
+            ASN1Encoding.DER.equals(encoding)
+                ?   CMSUtils.convertToDerSet(digestAlgs)
+                :   CMSUtils.convertToDlSet(digestAlgs),
             encapContentInfo,
             certificates,
             crls,
@@ -235,7 +220,9 @@ public class CMSSignedDataGenerator
     {
         digests.clear();
 
-        CMSTypedData content = new CMSProcessableByteArray(null, signer.getSignature());
+        ASN1ObjectIdentifier contentType = null;
+
+        CMSTypedData content = new CMSProcessableByteArray(contentType, signer.getSignature());
 
         ArrayList signerInformations = new ArrayList();
 
@@ -243,7 +230,7 @@ public class CMSSignedDataGenerator
         {
             SignerInformation _signer = (SignerInformation)it.next();
             SignerInfo signerInfo = _signer.toASN1Structure();
-            signerInformations.add(new SignerInformation(signerInfo, null, content, null));
+            signerInformations.add(new SignerInformation(signerInfo, contentType, content, null));
         }
 
         writeContentViaSignerGens(content, null);
@@ -251,8 +238,8 @@ public class CMSSignedDataGenerator
         for (Iterator it = signerGens.iterator(); it.hasNext(); )
         {
             SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
-            SignerInfo signerInfo = generateSignerInfo(signerGen, null);
-            signerInformations.add(new SignerInformation(signerInfo, null, content, null));
+            SignerInfo signerInfo = generateSignerInfo(signerGen, contentType);
+            signerInformations.add(new SignerInformation(signerInfo, contentType, content, null));
         }
 
         return new SignerInformationStore(signerInformations);

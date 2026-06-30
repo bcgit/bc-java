@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +21,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
+import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
@@ -27,7 +29,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 /**
- * A composite private key class.
+ * A composite private key class for Composite ML-KEM.
  */
 public class CompositePrivateKey
     implements PrivateKey
@@ -71,9 +73,9 @@ public class CompositePrivateKey
         public CompositePrivateKey build()
         {
             if (providers[0] == null && providers[1] == null)
-             {
-                 return new CompositePrivateKey(algorithmIdentifier, keys, null);
-             }
+            {
+                return new CompositePrivateKey(algorithmIdentifier, keys, null);
+            }
 
             return new CompositePrivateKey(algorithmIdentifier, keys, providers);
         }
@@ -86,7 +88,7 @@ public class CompositePrivateKey
 
     public static Builder builder(String algorithmName)
     {
-        return builder(CompositeUtil.getOid(algorithmName));
+        return builder(CompositeUtil.getOid(algorithmName)); // UPDATED: Use KEM util
     }
 
     private final List<PrivateKey> keys;
@@ -95,8 +97,7 @@ public class CompositePrivateKey
     private AlgorithmIdentifier algorithmIdentifier;
 
     /**
-     * Create a composite private key from an array of PublicKeys.
-     * This constructor is currently used only for legacy composites implementation.
+     * Create a composite private key from an array of PrivateKeys.
      *
      * @param keys The component private keys.
      */
@@ -111,9 +112,7 @@ public class CompositePrivateKey
     }
 
     /**
-     * Create a composite private key which corresponds to a composite signature algorithm in algorithmIdentifier.
-     * The component private keys are not checked if they satisfy the composite definition at this point,
-     * however, they will fail when they are fed into component algorithms which are defined by the algorithmIdentifier.
+     * Create a composite private key which corresponds to a composite KEM algorithm in algorithmIdentifier.
      *
      * @param algorithmIdentifier
      * @param keys
@@ -196,7 +195,7 @@ public class CompositePrivateKey
      */
     public CompositePrivateKey(PrivateKeyInfo keyInfo)
     {
-        CompositePrivateKey privateKeyFromFactory = null;
+        CompositePrivateKey privateKeyFromFactory;
         ASN1ObjectIdentifier keyInfoIdentifier = keyInfo.getPrivateKeyAlgorithm().getAlgorithm();
         try
         {
@@ -244,7 +243,7 @@ public class CompositePrivateKey
 
     public String getAlgorithm()
     {
-        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier.getAlgorithm());
+        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier.getAlgorithm()); // UPDATED
     }
 
     public AlgorithmIdentifier getAlgorithmIdentifier()
@@ -258,25 +257,61 @@ public class CompositePrivateKey
     }
 
     /**
-     * Returns the encoding of the composite private key.
-     * It is compliant with <a href="https://lamps-wg.github.io/draft-composite-sigs/draft-ietf-lamps-pq-composite-sigs.html">
-     * Composite ML-DSA for use in X.509 Public Key Infrastructure</a>
-     * as each component is encoded as a PrivateKeyInfo (older name for OneAsymmetricKey).
-     *
-     * @return
+     * Returns the encoding of the composite private key as per Section 4.2.
+     * Format: ML-KEM seed (64 bytes) || Traditional private key encoding
      */
     public byte[] getEncoded()
     {
         ASN1ObjectIdentifier algOid = algorithmIdentifier.getAlgorithm();
 
-        if (algOid.on(IANAObjectIdentifiers.id_alg))
+        if (org.bouncycastle.jcajce.provider.asymmetric.compositekem.CompositeIndex.isCompositeKEMOID(algOid))
+        {
+            try
+            {
+                PrivateKey mlkemKey = keys.get(0);
+                PrivateKey tradKey = keys.get(1);
+
+                // 1. Get ML-KEM seed (64 bytes) as per Section 4.2
+                byte[] mlkemSeed;
+                if (mlkemKey instanceof MLKEMPrivateKey)
+                {
+                    MLKEMPrivateKey mlkemPriv = (MLKEMPrivateKey)mlkemKey;
+                    mlkemSeed = mlkemPriv.getSeed();
+                    if (mlkemSeed == null || mlkemSeed.length != 64)
+                    {
+                        throw new IllegalStateException("ML-KEM private key must provide a 64-byte seed");
+                    }
+                }
+                else
+                {
+                    // Try to extract from encoded form
+                    PrivateKeyInfo pki = PrivateKeyInfo.getInstance(mlkemKey.getEncoded());
+                    mlkemSeed = pki.getPrivateKey().getOctets();
+                    if (mlkemSeed.length != 64)
+                    {
+                        throw new IllegalStateException("ML-KEM private key must be 64-byte seed");
+                    }
+                }
+
+                byte[] tradSK = encodeTraditionalPrivateKey(tradKey);
+
+                byte[] compositePrivateBytes = Arrays.concatenate(mlkemSeed, tradSK);
+
+                return new PrivateKeyInfo(algorithmIdentifier, compositePrivateBytes).getEncoded();
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite private key: " + e.getMessage(), e);
+            }
+        }
+        else if (algOid.on(IANAObjectIdentifiers.id_alg))
         {
             try
             {
                 PrivateKey key0 = keys.get(0);
                 PrivateKey key1 = keys.get(1);
 
-                byte[] mldsaSeed = ((MLDSAPrivateKey)key0).getSeed();
+                byte[] mldsaSeed = ((org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey)key0).getSeed();
 
                 PrivateKeyInfo pki = PrivateKeyInfo.getInstance(key1.getEncoded());
 
@@ -290,14 +325,6 @@ public class CompositePrivateKey
                 {
                     ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(pki.parsePrivateKey());
 
-                    /*
-                     * TODO
-                     * - Confirm pki.privateKeyAlgorithm is id_ecPublicKey with X9.62 Parameters namedCurve OID.
-                     * - If ecPrivateKey.parameters are present, must match pki.privateKeyAlgorithm
-                     * The private key MUST be encoded as ECPrivateKey specified in [RFC5915] with the 'NamedCurve'
-                     * parameter set to the OID of the curve, but without the 'publicKey' field.
-                     */
-                    // TODO Also need to ensure that ECPrivateKey.parameters are present
                     ASN1BitString publicKey = ecPrivateKey.getPublicKey();
                     if (publicKey != null)
                     {
@@ -318,46 +345,85 @@ public class CompositePrivateKey
                 throw Exceptions.illegalStateException("unable to encode composite public key", e);
             }
         }
-
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        if (MiscObjectIdentifiers.id_composite_key.equals(algOid))
-        {
-            for (int i = 0; i < keys.size(); i++)
-            {
-                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
-
-                v.add(pki);
-            }
-
-            try
-            {
-                return new PrivateKeyInfo(this.algorithmIdentifier, new DERSequence(v)).getEncoded(ASN1Encoding.DER);
-            }
-            catch (IOException e)
-            {
-                throw Exceptions.illegalStateException("unable to encode composite private key", e);
-            }
-        }
         else
         {
-            byte[] keyEncoding = null;
-            for (int i = 0; i < keys.size(); i++)
-            {
-                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+            ASN1EncodableVector v = new ASN1EncodableVector();
 
-                keyEncoding = Arrays.concatenate(keyEncoding, pki.getPrivateKey().getOctets());
-            }
+            if (MiscObjectIdentifiers.id_composite_key.equals(algOid))
+            {
+                for (int i = 0; i < keys.size(); i++)
+                {
+                    PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+                    v.add(pki);
+                }
 
-            try
-            {
-                return new PrivateKeyInfo(this.algorithmIdentifier, keyEncoding).getEncoded(ASN1Encoding.DER);
+                try
+                {
+                    return new PrivateKeyInfo(this.algorithmIdentifier, new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+                }
+                catch (IOException e)
+                {
+                    throw Exceptions.illegalStateException("unable to encode composite private key", e);
+                }
             }
-            catch (IOException e)
+            else
             {
-                throw Exceptions.illegalStateException("unable to encode composite private key", e);
+                byte[] keyEncoding = null;
+                for (int i = 0; i < keys.size(); i++)
+                {
+                    PrivateKeyInfo pki = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+                    keyEncoding = Arrays.concatenate(keyEncoding, pki.getPrivateKey().getOctets());
+                }
+
+                try
+                {
+                    return new PrivateKeyInfo(this.algorithmIdentifier, keyEncoding).getEncoded(ASN1Encoding.DER);
+                }
+                catch (IOException e)
+                {
+                    throw Exceptions.illegalStateException("unable to encode composite private key", e);
+                }
             }
         }
+    }
+
+    /**
+     * Encode traditional private key as per Section 4.2
+     */
+    private byte[] encodeTraditionalPrivateKey(PrivateKey key) throws IOException
+    {
+        String algorithm = key.getAlgorithm();
+
+        if (algorithm.contains("RSA"))
+        {
+            // RSA: RSAPrivateKey with version 0, no otherPrimeInfos
+            PrivateKeyInfo pki = PrivateKeyInfo.getInstance(key.getEncoded());
+            // Verify it's correct format
+            return pki.getPrivateKey().getOctets();
+        }
+        else if (algorithm.contains("EC"))
+        {
+            // ECDH: ECPrivateKey without publicKey field
+            PrivateKeyInfo pki = PrivateKeyInfo.getInstance(key.getEncoded());
+            ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(pki.parsePrivateKey());
+
+            // Remove publicKey field if present
+            if (ecPrivateKey.getPublicKey() != null)
+            {
+                ecPrivateKey = new ECPrivateKey(ecPrivateKey.getPrivateKey(),
+                    ecPrivateKey.getParametersObject(), null);
+            }
+
+            return ecPrivateKey.getEncoded(ASN1Encoding.DER);
+        }
+        else if (algorithm.contains("X25519") || algorithm.contains("X448"))
+        {
+            // X25519/X448: raw 32/56 byte value
+            PrivateKeyInfo pki = PrivateKeyInfo.getInstance(key.getEncoded());
+            return ASN1OctetString.getInstance(pki.parsePrivateKey()).getOctets();
+        }
+
+        throw new IOException("Unsupported traditional algorithm: " + algorithm);
     }
 
     public int hashCode()

@@ -22,7 +22,6 @@ public abstract class BERGenerator
     {
         super(out);
 
-        // TODO Check proper handling of implicit tagging
         _tagged = true;
         _isExplicit = isExplicit;
         _tagNo = tagNo;
@@ -39,6 +38,12 @@ public abstract class BERGenerator
         _out.write(0x80);
     }
 
+    private void writeHdr(int flags, int tagNo) throws IOException
+    {
+        ASN1OutputStream.writeIdentifier(_out, flags, tagNo);
+        _out.write(0x80);
+    }
+
     protected void writeBERHeader(int tag) throws IOException
     {
         if (!_tagged)
@@ -51,7 +56,7 @@ public abstract class BERGenerator
              * X.690-0207 8.14.2. If implicit tagging [..] was not used [..], the encoding shall be constructed
              * and the contents octets shall be the complete base encoding.
              */
-            writeHdr(_tagNo | BERTags.CONTEXT_SPECIFIC | BERTags.CONSTRUCTED);
+            writeHdr(BERTags.CONTEXT_SPECIFIC | BERTags.CONSTRUCTED, _tagNo);
             writeHdr(tag);
         }
         else
@@ -61,7 +66,7 @@ public abstract class BERGenerator
              * if the base encoding is constructed, and shall be primitive otherwise; and b) the contents octets
              * shall be [..] the contents octets of the base encoding.
              */
-            writeHdr(inheritConstructedFlag(_tagNo | BERTags.CONTEXT_SPECIFIC, tag));
+            writeHdr(inheritConstructedFlag(BERTags.CONTEXT_SPECIFIC, tag), _tagNo);
         }
     }
 

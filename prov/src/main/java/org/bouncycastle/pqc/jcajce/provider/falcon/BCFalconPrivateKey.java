@@ -6,11 +6,9 @@ import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPrivateKey;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPublicKey;
 import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
@@ -70,7 +68,7 @@ public class BCFalconPrivateKey
         {
             BCFalconPrivateKey otherKey = (BCFalconPrivateKey)o;
 
-            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
+            return Arrays.constantTimeAreEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;
@@ -78,7 +76,7 @@ public class BCFalconPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(getEncoded());
+        return getPublicKey().hashCode();
     }
 
     /**

@@ -134,88 +134,70 @@ public class ElGamalEngine
             ?   (bitSize - 1 + 7) / 8
             :   getInputBlockSize();
 
-        if (inLen > maxLength)
-        {
-            throw new DataLengthException("input too large for ElGamal cipher.\n");
-        }
-
         BigInteger  p = key.getParameters().getP();
 
         if (key instanceof ElGamalPrivateKeyParameters) // decryption
         {
-            byte[]  in1 = new byte[inLen / 2];
-            byte[]  in2 = new byte[inLen / 2];
+            if (inLen != maxLength)
+            {
+                throw new DataLengthException("input is the wrong size for ElGamal cipher.");
+            }
 
-            System.arraycopy(in, inOff, in1, 0, in1.length);
-            System.arraycopy(in, inOff + in1.length, in2, 0, in2.length);
+            int half = inLen / 2;
+            BigInteger gamma = BigIntegers.fromUnsignedByteArray(in, inOff, half);
+            BigInteger phi = BigIntegers.fromUnsignedByteArray(in, inOff + half, half);
 
-            BigInteger  gamma = new BigInteger(1, in1);
-            BigInteger  phi = new BigInteger(1, in2);
+            // Both ciphertext components are peer-supplied, and gamma is raised below to the
+            // (potentially static, reused) private-key-derived exponent, so both must be valid
+            // public values in [2, p-2]. Otherwise a peer can submit a small-order or out-of-range
+            // element to mount a small-subgroup confinement attack and, with a decryption oracle and
+            // a reused key, recover the private key.
+            BigInteger pSub1 = p.subtract(ONE);
+            if ((gamma.compareTo(ONE) <= 0 || gamma.compareTo(pSub1) >= 0) ||
+                (phi.compareTo(ONE) <= 0 || phi.compareTo(pSub1) >= 0))
+            {
+                throw new IllegalArgumentException("ElGamal ciphertext element is weak");
+            }
 
-            ElGamalPrivateKeyParameters  priv = (ElGamalPrivateKeyParameters)key;
+            ElGamalPrivateKeyParameters priv = (ElGamalPrivateKeyParameters)key;
             // a shortcut, which generally relies on p being prime amongst other things.
             // if a problem with this shows up, check the p and g values!
-            BigInteger  m = gamma.modPow(p.subtract(ONE).subtract(priv.getX()), p).multiply(phi).mod(p);
+            BigInteger m = gamma.modPow(pSub1.subtract(priv.getX()), p).multiply(phi).mod(p);
 
             return BigIntegers.asUnsignedByteArray(m);
         }
         else // encryption
         {
-            byte[] block;
-            if (inOff != 0 || inLen != in.length)
+            if (inLen > maxLength)
             {
-                block = new byte[inLen];
-
-                System.arraycopy(in, inOff, block, 0, inLen);
-            }
-            else
-            {
-                block = in;
+                throw new DataLengthException("input too large for ElGamal cipher.");
             }
 
-            BigInteger input = new BigInteger(1, block);
+            BigInteger tmp = BigIntegers.fromUnsignedByteArray(in, inOff, inLen);
 
-            if (input.compareTo(p) >= 0)
+            if (tmp.compareTo(p) >= 0)
             {
-                throw new DataLengthException("input too large for ElGamal cipher.\n");
+                throw new DataLengthException("input too large for ElGamal cipher.");
             }
 
-            ElGamalPublicKeyParameters  pub = (ElGamalPublicKeyParameters)key;
+            ElGamalPublicKeyParameters pub = (ElGamalPublicKeyParameters)key;
 
-            int                         pBitLength = p.bitLength();
-            BigInteger                  k = BigIntegers.createRandomBigInteger(pBitLength, random);
-
-            while (k.equals(ZERO) || (k.compareTo(p.subtract(TWO)) > 0))
+            // TODO In theory, a series of 'k', 'g.modPow(k, p)' and 'y.modPow(k, p)' can be pre-calculated
+            BigInteger k;
+            do
             {
-                k = BigIntegers.createRandomBigInteger(pBitLength, random);
+                k = BigIntegers.createRandomBigInteger(p.bitLength(), random);
             }
+            while (k.equals(ZERO) || k.compareTo(p.subtract(TWO)) > 0);
 
-            BigInteger  g = key.getParameters().getG();
-            BigInteger  gamma = g.modPow(k, p);
-            BigInteger  phi = input.multiply(pub.getY().modPow(k, p)).mod(p);
+            BigInteger g = key.getParameters().getG();
+            BigInteger gamma = g.modPow(k, p);
+            BigInteger phi = pub.getY().modPow(k, p).multiply(tmp).mod(p);
 
-            byte[]  out1 = gamma.toByteArray();
-            byte[]  out2 = phi.toByteArray();
-            byte[]  output = new byte[this.getOutputBlockSize()];
-
-            if (out1.length > output.length / 2)
-            {
-                System.arraycopy(out1, 1, output, output.length / 2 - (out1.length - 1), out1.length - 1);
-            }
-            else
-            {
-                System.arraycopy(out1, 0, output, output.length / 2 - out1.length, out1.length);
-            }
-
-            if (out2.length > output.length / 2)
-            {
-                System.arraycopy(out2, 1, output, output.length - (out2.length - 1), out2.length - 1);
-            }
-            else
-            {
-                System.arraycopy(out2, 0, output, output.length - out2.length, out2.length);
-            }
-
+            int half = (bitSize + 7) / 8;
+            byte[] output = new byte[2 * half];
+            BigIntegers.asUnsignedByteArray(gamma, output, 0, half);
+            BigIntegers.asUnsignedByteArray(phi, output, half, half);
             return output;
         }
     }

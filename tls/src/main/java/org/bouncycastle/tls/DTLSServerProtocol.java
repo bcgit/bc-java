@@ -109,7 +109,8 @@ public class DTLSServerProtocol
         SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
 
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(serverContext, recordLayer,
-            server.getHandshakeTimeoutMillis(), server.getHandshakeResendTimeMillis(), request);
+            server.getHandshakeTimeoutMillis(), server.getHandshakeResendTimeMillis(), request,
+            TlsUtils.getMaxHandshakeMessageSize(server));
 
         DTLSReliableHandshake.Message clientMessage = null;
 

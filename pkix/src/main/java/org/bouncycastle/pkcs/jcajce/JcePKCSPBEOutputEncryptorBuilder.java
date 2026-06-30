@@ -41,6 +41,17 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 
+/**
+ * JCA-based builder for an {@link OutputEncryptor} that applies one of the password-based
+ * encryption schemes used to protect PKCS#8 / PKCS#12 payloads:
+ * <ul>
+ * <li>the legacy PKCS#12 {@code pkcs-12PbeIds} family (RFC 7292 Appendix C) — selected when
+ *     the constructor is passed one of those OIDs,</li>
+ * <li>PBES2 (RFC 8018) — selected for any other key-encryption algorithm; the embedded
+ *     key-derivation function may be PBKDF2 or scrypt (RFC 7914) via an explicit
+ *     {@link PBKDFConfig}.</li>
+ * </ul>
+ */
 public class JcePKCSPBEOutputEncryptorBuilder
 {
     private final PBKDFConfig pbkdf;
@@ -54,6 +65,14 @@ public class JcePKCSPBEOutputEncryptorBuilder
     private int iterationCount = 1024;
     private PBKDF2Config.Builder pbkdfBuilder = new PBKDF2Config.Builder();
 
+    /**
+     * Construct a builder for a single algorithm. If {@code keyEncryptionAlg} is a PKCS#12 PBE
+     * OID, the resulting encryptor uses the PKCS#12 wire profile; otherwise the encryptor uses
+     * PBES2 with the default PBKDF2 configuration and {@code keyEncryptionAlg} as the underlying
+     * encryption scheme.
+     *
+     * @param keyEncryptionAlg the algorithm identifier the encryptor should apply.
+     */
     public JcePKCSPBEOutputEncryptorBuilder(ASN1ObjectIdentifier keyEncryptionAlg)
     {
         this.pbkdf = null;
@@ -154,6 +173,16 @@ public class JcePKCSPBEOutputEncryptorBuilder
         return this;
     }
 
+    /**
+     * Bind the builder to a password and return a configured {@link OutputEncryptor}. Its
+     * algorithm identifier carries the freshly generated salt / iteration count / IV in the
+     * wire format appropriate to the chosen scheme.
+     *
+     * @param password the password used to derive the encryption key.
+     * @return a configured output encryptor.
+     * @throws OperatorCreationException if a JCE {@link Cipher} or {@link SecretKeyFactory}
+     *         cannot be created for the requested scheme.
+     */
     public OutputEncryptor build(final char[] password)
         throws OperatorCreationException
     {

@@ -41,7 +41,7 @@ public class BouncyCastlePQCProvider
             "CMCE", "Frodo", "SABER", "Picnic", "NTRU", "Falcon", "Kyber",
             "Dilithium", "NTRUPrime", "BIKE", "HQC", "Rainbow",
             "Mayo", "Snova",
-            "NTRUPlus", "Faest",  "QRUOV", "Haetae", "UOV", "MQOM", "SQIsign", "Hawk", "SDitH"
+            "NTRUPlus", "AIMer", "Faest", "QRUOV", "Haetae", "UOV", "MQOM", "SQIsign", "Hawk", "SDitH"
         };
 
     /**
@@ -146,7 +146,10 @@ public class BouncyCastlePQCProvider
 
     public AsymmetricKeyInfoConverter getKeyInfoConverter(ASN1ObjectIdentifier oid)
     {
-        return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
+        synchronized (keyInfoConverters)
+        {
+            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
+        }
     }
 
     public void addAttributes(String key, Map<String, String> attributeMap)

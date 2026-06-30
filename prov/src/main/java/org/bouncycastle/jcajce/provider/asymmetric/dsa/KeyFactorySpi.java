@@ -22,9 +22,11 @@ import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
 import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
@@ -134,7 +136,18 @@ public class KeyFactorySpi
         }
         else if (keySpec instanceof OpenSSHPrivateKeySpec)
         {
-            CipherParameters params = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(((OpenSSHPrivateKeySpec)keySpec).getEncoded());
+            OpenSSHPrivateKeySpec sshKeySpec = (OpenSSHPrivateKeySpec)keySpec;
+            char[] password = sshKeySpec.getPassword();
+            CipherParameters params;
+            try
+            {
+                params = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(
+                    sshKeySpec.getEncoded(), password == null ? null : Strings.toUTF8ByteArray(password));
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeySpecException("unable to decode OpenSSH private key: " + e.getMessage(), e);
+            }
             if (params instanceof DSAPrivateKeyParameters)
             {
                 return engineGeneratePrivate(
@@ -146,7 +159,7 @@ public class KeyFactorySpi
             }
             else
             {
-                throw new IllegalArgumentException("openssh private key is not dsa privare key");
+                throw new InvalidKeySpecException("openssh private key is not dsa private key");
             }
 
         }

@@ -40,18 +40,24 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
+import org.bouncycastle.crypto.params.CMCEParameters;
+import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.FrodoKEMParameters;
+import org.bouncycastle.crypto.params.FrodoKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
@@ -252,6 +258,20 @@ public class PrivateKeyFactory
 
             throw new IllegalArgumentException("invalid " + mldsaParams.getName() + " private key");
         }
+        else if (algOID.equals(ISOIECObjectIdentifiers.frodokem976_shake) ||
+            algOID.equals(ISOIECObjectIdentifiers.frodokem1344_shake) ||
+            algOID.equals(ISOIECObjectIdentifiers.efrodokem976_shake) ||
+            algOID.equals(ISOIECObjectIdentifiers.efrodokem1344_shake) ||
+            algOID.equals(ISOIECObjectIdentifiers.frodokem976_aes) ||
+            algOID.equals(ISOIECObjectIdentifiers.frodokem1344_aes) ||
+            algOID.equals(ISOIECObjectIdentifiers.efrodokem976_aes) ||
+            algOID.equals(ISOIECObjectIdentifiers.efrodokem1344_aes))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            FrodoKEMParameters fParams = Utils.frodoKemParamsLookup(algOID);
+
+            return new FrodoKEMPrivateKeyParameters(fParams, keyEnc);
+        }
         else if (algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_512) ||
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
@@ -301,6 +321,13 @@ public class PrivateKeyFactory
             ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
 
             return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
+        }
+        else if (algOID.on(ISOIECObjectIdentifiers.id_kem_cm))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            CMCEParameters cmceParams = Utils.cmceParamsLookup(algOID);
+
+            return new CMCEPrivateKeyParameters(cmceParams, keyEnc);
         }
         else if (
             algOID.equals(CryptoProObjectIdentifiers.gostR3410_2001) ||

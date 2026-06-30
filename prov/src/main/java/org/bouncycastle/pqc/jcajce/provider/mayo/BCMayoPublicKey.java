@@ -40,7 +40,7 @@ public class BCMayoPublicKey
     }
 
     /**
-     * Compare this BIKE public key with another object.
+     * Compare this Mayo public key with another object.
      *
      * @param o the other object
      * @return the result of the comparison

@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
@@ -27,6 +28,8 @@ public class XMSS
             provider.addAlgorithm("Signature.XMSS", PREFIX + "XMSSSignatureSpi$generic");
             provider.addAlgorithm("Alg.Alias.Signature." + IsaraObjectIdentifiers.id_alg_xmss, "XMSS");
             provider.addAlgorithm("Alg.Alias.Signature.OID." + IsaraObjectIdentifiers.id_alg_xmss, "XMSS");
+            provider.addAlgorithm("Alg.Alias.Signature." + IANAObjectIdentifiers.id_alg_xmss_hashsig, "XMSS");
+            provider.addAlgorithm("Alg.Alias.Signature.OID." + IANAObjectIdentifiers.id_alg_xmss_hashsig, "XMSS");
 
             addSignatureAlgorithm(provider, "XMSS-SHA256", PREFIX + "XMSSSignatureSpi$withSha256", BCObjectIdentifiers.xmss_SHA256);
             addSignatureAlgorithm(provider, "XMSS-SHAKE128", PREFIX + "XMSSSignatureSpi$withShake128", BCObjectIdentifiers.xmss_SHAKE128);
@@ -52,6 +55,8 @@ public class XMSS
             provider.addAlgorithm("Signature.XMSSMT", PREFIX + "XMSSMTSignatureSpi$generic");
             provider.addAlgorithm("Alg.Alias.Signature." + IsaraObjectIdentifiers.id_alg_xmssmt, "XMSSMT");
             provider.addAlgorithm("Alg.Alias.Signature.OID." + IsaraObjectIdentifiers.id_alg_xmssmt, "XMSSMT");
+            provider.addAlgorithm("Alg.Alias.Signature." + IANAObjectIdentifiers.id_alg_xmssmt_hashsig, "XMSSMT");
+            provider.addAlgorithm("Alg.Alias.Signature.OID." + IANAObjectIdentifiers.id_alg_xmssmt_hashsig, "XMSSMT");
 
             addSignatureAlgorithm(provider, "XMSSMT-SHA256", PREFIX + "XMSSMTSignatureSpi$withSha256", BCObjectIdentifiers.xmss_mt_SHA256);
             addSignatureAlgorithm(provider, "XMSSMT-SHAKE128", PREFIX + "XMSSMTSignatureSpi$withShake128", BCObjectIdentifiers.xmss_mt_SHAKE128);
@@ -73,8 +78,10 @@ public class XMSS
 
             registerOid(provider, PQCObjectIdentifiers.xmss, "XMSS", new XMSSKeyFactorySpi());
             registerOid(provider, IsaraObjectIdentifiers.id_alg_xmss, "XMSS", new XMSSKeyFactorySpi());
+            registerOid(provider, IANAObjectIdentifiers.id_alg_xmss_hashsig, "XMSS", new XMSSKeyFactorySpi());
             registerOid(provider, PQCObjectIdentifiers.xmss_mt, "XMSSMT", new XMSSMTKeyFactorySpi());
             registerOid(provider, IsaraObjectIdentifiers.id_alg_xmssmt, "XMSSMT", new XMSSMTKeyFactorySpi());
+            registerOid(provider, IANAObjectIdentifiers.id_alg_xmssmt_hashsig, "XMSSMT", new XMSSMTKeyFactorySpi());
         }
     }
 }

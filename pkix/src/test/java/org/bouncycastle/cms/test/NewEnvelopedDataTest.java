@@ -19,10 +19,12 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 
@@ -48,6 +50,7 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
@@ -70,6 +73,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSAlgorithmNotAllowedException;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
@@ -648,6 +652,78 @@ public class NewEnvelopedDataTest
         return new CMSTestSetup(new TestSuite(NewEnvelopedDataTest.class));
     }
 
+    public void testKeyTransAllowedContentAlgorithms()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).setProvider(BC).build());
+
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+
+        // when the content-encryption algorithm is in the allowed set, recovery proceeds as normal
+        byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC)
+            .setAllowedContentAlgorithms(Collections.singleton(CMSAlgorithm.AES256_CBC)));
+
+        assertTrue(Arrays.equals(data, recData));
+
+        // when the actual content-encryption algorithm is not in the allowed set, recovery is refused
+        try
+        {
+            recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC)
+                .setAllowedContentAlgorithms(Collections.singleton(CMSAlgorithm.AES128_CBC)));
+
+            fail("content recovered under a disallowed content-encryption algorithm");
+        }
+        catch (CMSAlgorithmNotAllowedException e)
+        {
+            // expected
+        }
+    }
+
+    public void testKEKAllowedContentAlgorithms()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+        SecretKey kek = new SecretKeySpec(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, "AES");
+        byte[] kekId = new byte[]{1, 2, 3, 4, 5};
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).setProvider(BC).build());
+
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+
+        // when the content-encryption algorithm is in the allowed set, recovery proceeds as normal
+        byte[] recData = recipient.getContent(new JceKEKEnvelopedRecipient(kek).setProvider(BC)
+            .setAllowedContentAlgorithms(Collections.singleton(CMSAlgorithm.AES256_CBC)));
+
+        assertTrue(Arrays.equals(data, recData));
+
+        // when the actual content-encryption algorithm is not in the allowed set, recovery is refused
+        try
+        {
+            recipient.getContent(new JceKEKEnvelopedRecipient(kek).setProvider(BC)
+                .setAllowedContentAlgorithms(Collections.singleton(CMSAlgorithm.AES128_CBC)));
+
+            fail("content recovered under a disallowed content-encryption algorithm");
+        }
+        catch (CMSAlgorithmNotAllowedException e)
+        {
+            // expected
+        }
+    }
+
     public void testUnprotectedAttributes()
         throws Exception
     {
@@ -915,51 +991,127 @@ public class NewEnvelopedDataTest
         }
     }
 
-    // TODO: add KEMS to provider.
-//    public void testRsaKEMS()
-//        throws Exception
-//    {
-//        byte[]          data     = "WallaWallaWashington".getBytes();
-//
-//        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
-//
-//        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciKemsCert).setProvider(BC));
-//
-//        CMSEnvelopedData ed = edGen.generate(
-//                                new CMSProcessableByteArray(data),
-//                                new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
-//
-//        RecipientInformationStore  recipients = ed.getRecipientInfos();
-//
-//
-//        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
-//
-//        Collection  c = recipients.getRecipients();
-//
-//        assertEquals(2, c.size());
-//
-//        Iterator    it = c.iterator();
-//
-//        while (it.hasNext())
-//        {
-//            RecipientInformation   recipient = (RecipientInformation)it.next();
-//
-//            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
-//
-//            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
-//
-//            assertEquals(true, Arrays.equals(data, recData));
-//        }
-//
-//        RecipientId id = new JceKeyTransRecipientId(_reciCert);
-//
-//        Collection collection = recipients.getRecipients(id);
-//        if (collection.size() != 2)
-//        {
-//            fail("recipients not matched using general recipient ID.");
-//        }
-//        assertTrue(collection.iterator().next() instanceof RecipientInformation);
-//    }
+    /**
+     * RFC 9690 mandatory-to-implement combination: RSA-KEM with KDF3-SHA256 + AES-128-WRAP.
+     * The KEMRecipientInfo flow (RFC 9629) carries the RSA encapsulation in {@code kemct}
+     * and the AES-wrapped CEK in {@code encryptedKey}.
+     */
+    public void testRsaKemKdf3Sha256Aes128Wrap()
+        throws Exception
+    {
+        doRsaKemRoundTrip(
+            new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE)),
+            CMSAlgorithm.AES128_WRAP);
+    }
+
+    public void testRsaKemKdf3Sha512Aes256Wrap()
+        throws Exception
+    {
+        doRsaKemRoundTrip(
+            new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE)),
+            CMSAlgorithm.AES256_WRAP);
+    }
+
+    public void testRsaKemKdf2Sha256Aes256Wrap()
+        throws Exception
+    {
+        doRsaKemRoundTrip(
+            new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf2, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE)),
+            CMSAlgorithm.AES256_WRAP);
+    }
+
+    public void testRsaKemHkdfSha256Aes256Wrap()
+        throws Exception
+    {
+        doRsaKemRoundTrip(CMSAlgorithm.SHA256_HKDF, CMSAlgorithm.AES256_WRAP);
+    }
+
+    /**
+     * RFC 9690 RSA-KEM key transport composed with RFC 9709 CEK derivation: the
+     * recipient delivers the IKM via RSA-KEM + AES-Wrap, then the actual CEK is
+     * derived via CMS_CEK_HKDF_SHA256(IKM, info = DER(inner contentEncryptionAlg)).
+     * Exercises that the KEM path's {@code getJceKey(algId, ...)} hook performs the
+     * HKDF derivation transparently.
+     */
+    public void testRsaKemWithCekHkdfSha256()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(
+            new JceKEMRecipientInfoGenerator(_reciCert_2048, CMSAlgorithm.AES128_WRAP)
+                .setKDF(new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE)))
+                .setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC)
+                .setEnableSha256HKdf(true)
+                .setProvider(BC).build());
+
+        assertEquals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256.getId(), ed.getEncryptionAlgOID());
+
+        AlgorithmIdentifier innerAlg = AlgorithmIdentifier.getInstance(ed.getContentEncryptionAlgorithm().getParameters());
+        assertEquals(CMSAlgorithm.AES128_CBC, innerAlg.getAlgorithm());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+        Collection c = recipients.getRecipients();
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+        while (it.hasNext())
+        {
+            KEMRecipientInformation recipient = (KEMRecipientInformation)it.next();
+
+            CMSTypedStream contentStream = recipient.getContentStream(
+                new JceKEMEnvelopedRecipient(_reciKP_2048.getPrivate()).setProvider(BC));
+
+            assertEquals(PKCSObjectIdentifiers.data, contentStream.getContentType());
+            assertEquals(true, Arrays.equals(data, Streams.readAll(contentStream.getContentStream())));
+        }
+    }
+
+    private void doRsaKemRoundTrip(AlgorithmIdentifier kdfAlg, ASN1ObjectIdentifier wrapAlg)
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(
+            new JceKEMRecipientInfoGenerator(_reciCert_2048, wrapAlg)
+                .setKDF(kdfAlg)
+                .setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        assertEquals(CMSAlgorithm.AES128_CBC.getId(), ed.getEncryptionAlgOID());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+        Collection c = recipients.getRecipients();
+        assertEquals(1, c.size());
+
+        int expectedEnc = (((RSAPublicKey)_reciKP_2048.getPublic()).getModulus().bitLength() + 7) / 8;
+
+        Iterator it = c.iterator();
+        while (it.hasNext())
+        {
+            KEMRecipientInformation recipient = (KEMRecipientInformation)it.next();
+
+            assertEquals(expectedEnc, recipient.getEncapsulation().length);
+            assertEquals(kdfAlg, recipient.getKdfAlgorithm());
+
+            CMSTypedStream contentStream = recipient.getContentStream(
+                new JceKEMEnvelopedRecipient(_reciKP_2048.getPrivate()).setProvider(BC));
+
+            assertEquals(PKCSObjectIdentifiers.data, contentStream.getContentType());
+            assertEquals(true, Arrays.equals(data, Streams.readAll(contentStream.getContentStream())));
+        }
+    }
 
     public void testKeyTrans()
         throws Exception
@@ -1005,6 +1157,62 @@ public class NewEnvelopedDataTest
             fail("recipients not matched using general recipient ID.");
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testKeyTransEncodings()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        // default - outer ContentInfo uses the indefinite-length (BER) method
+        byte[] enc = keyTransEncode(data, null);
+
+        assertEquals((byte)0x80, enc[1]);
+        keyTransDecode(enc, data);
+
+        // DL - definite-length throughout, re-encoding as DL is the identity
+        enc = keyTransEncode(data, ASN1Encoding.DL);
+
+        assertTrue(enc[1] != (byte)0x80);
+        assertTrue(Arrays.equals(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DL)));
+        keyTransDecode(enc, data);
+
+        // DER - canonical, re-encoding as DER is the identity
+        enc = keyTransEncode(data, ASN1Encoding.DER);
+
+        assertTrue(Arrays.equals(enc, ContentInfo.getInstance(enc).getEncoded(ASN1Encoding.DER)));
+        keyTransDecode(enc, data);
+    }
+
+    private byte[] keyTransEncode(byte[] data, String encoding)
+        throws Exception
+    {
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        if (encoding != null)
+        {
+            edGen.setEncoding(encoding);
+        }
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        return ed.getEncoded();
+    }
+
+    private void keyTransDecode(byte[] enc, byte[] data)
+        throws Exception
+    {
+        CMSEnvelopedData ed = new CMSEnvelopedData(enc);
+
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertTrue(Arrays.equals(data, recData));
     }
 
     public void testKeyTransSM2()
@@ -1892,9 +2100,9 @@ public class NewEnvelopedDataTest
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES256_GCM, CMSAlgorithm.AES256_GCM);
 
         byte[] nonce = Hex.decode("0102030405060708090a0b0c");
-        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_GCM, CMSAlgorithm.AES128_GCM, new GCMParameters(nonce, 11).getEncoded());
-        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES192_GCM, CMSAlgorithm.AES192_GCM, new GCMParameters(nonce, 11).getEncoded());
-        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES256_GCM, CMSAlgorithm.AES256_GCM, new GCMParameters(nonce, 11).getEncoded());
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_GCM, CMSAlgorithm.AES128_GCM, new GCMParameters(nonce, 15).getEncoded());
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES192_GCM, CMSAlgorithm.AES192_GCM, new GCMParameters(nonce, 15).getEncoded());
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES256_GCM, CMSAlgorithm.AES256_GCM, new GCMParameters(nonce, 15).getEncoded());
 
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_CCM, CMSAlgorithm.AES128_CCM);
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES192_CCM, CMSAlgorithm.AES192_CCM);

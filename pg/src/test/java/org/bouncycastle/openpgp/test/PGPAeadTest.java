@@ -125,9 +125,139 @@ public class PGPAeadTest
 
         roundTripEncryptionDecryptionTests();
 
+        finalTagTruncationTests();
+
         paddingPacketTests();
 
         preferredAEADAlgorithmsTests();
+    }
+
+    // CVD ANT-2026-51RAV5MH: the trailing AEAD message tag (RFC 9580 5.13.2) authenticates the total
+    // plaintext length and so lets the recipient detect chunk-boundary truncation. It used to be
+    // verified only when the final data chunk was shorter than chunkLength. For a chunk-aligned message
+    // (plaintext an exact multiple of chunkLength) every chunk is full-size, so the final tag was
+    // pre-read into the look-ahead, never passed to doFinal, and readBlock() returned clean EOF - a
+    // corrupted or truncated final tag went undetected, letting an attacker strip trailing chunks and
+    // the final tag and have the recipient accept the truncated plaintext as authentic. Using the
+    // minimum 64-byte chunk and sweeping payload lengths across more than one chunk guarantees at least
+    // one chunk-aligned message; a corrupted final tag must now be rejected for every length, by both
+    // the Bc and the Jce decryption paths (the fix is mirrored in BcAEADUtil and JceAEADUtil).
+    private void finalTagTruncationTests()
+        throws PGPException, IOException
+    {
+        Security.addProvider(new BouncyCastleProvider());
+
+        int chunkSizeOctet = 6; // chunkLength == 64, the minimum
+        int symAlg = SymmetricKeyAlgorithmTags.AES_128;
+        int[] aeadAlgs = new int[]{AEADAlgorithmTags.EAX, AEADAlgorithmTags.OCB, AEADAlgorithmTags.GCM};
+
+        for (int a = 0; a != aeadAlgs.length; a++)
+        {
+            int aeadAlg = aeadAlgs[a];
+            for (int v = 0; v != 2; v++)
+            {
+                boolean v5AEAD = (v == 0);
+                for (int n = 0; n <= 96; n++)
+                {
+                    byte[] plaintext = new byte[n];
+                    for (int i = 0; i != n; i++)
+                    {
+                        plaintext[i] = (byte)i;
+                    }
+
+                    byte[] message = bcEncryptRaw(v5AEAD, aeadAlg, symAlg, chunkSizeOctet, plaintext, PASSWORD);
+
+                    String desc = "(n=" + n + ", " + algNames(aeadAlg, symAlg) + ", v5=" + v5AEAD + ")";
+
+                    // the untampered message must still decrypt: the fix must not break aligned messages
+                    isTrue("round-trip failed " + desc, Arrays.areEqual(plaintext, bcDecryptRaw(message, PASSWORD)));
+
+                    // corrupt the final message tag (the last 16 bytes end the SEIPD body and the stream)
+                    byte[] tampered = Arrays.clone(message);
+                    tampered[tampered.length - 1] ^= 0x01;
+
+                    isTrue("Bc accepted corrupted final tag " + desc, decryptRejected(false, tampered, PASSWORD));
+                    isTrue("Jce accepted corrupted final tag " + desc, decryptRejected(true, tampered, PASSWORD));
+                }
+            }
+        }
+    }
+
+    private boolean decryptRejected(boolean jce, byte[] message, char[] password)
+    {
+        try
+        {
+            if (jce)
+            {
+                jceDecryptRaw(message, password);
+            }
+            else
+            {
+                bcDecryptRaw(message, password);
+            }
+            return false;
+        }
+        catch (Exception e)
+        {
+            return true;
+        }
+    }
+
+    private byte[] bcEncryptRaw(boolean v5AEAD, int aeadAlg, int symAlg, int chunkSizeOctet, byte[] plaintext, char[] password)
+        throws PGPException, IOException
+    {
+        ByteArrayOutputStream ciphertextOut = new ByteArrayOutputStream();
+        PGPDigestCalculatorProvider digestCalculatorProvider = new BcPGPDigestCalculatorProvider();
+        PGPDataEncryptorBuilder encBuilder = new BcPGPDataEncryptorBuilder(symAlg);
+        if (v5AEAD)
+        {
+            encBuilder.setUseV5AEAD();
+        }
+        else
+        {
+            encBuilder.setUseV6AEAD();
+        }
+        encBuilder.setWithAEAD(aeadAlg, chunkSizeOctet);
+
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder, false);
+        encGen.setForceSessionKey(true);
+        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(password, digestCalculatorProvider.get(HashAlgorithmTags.SHA256)));
+        OutputStream encOut = encGen.open(ciphertextOut, new byte[1 << 9]);
+        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        OutputStream litOut = litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[1 << 9]);
+        litOut.write(plaintext);
+        litOut.close();
+        encOut.close();
+        return ciphertextOut.toByteArray();
+    }
+
+    private byte[] bcDecryptRaw(byte[] message, char[] password)
+        throws PGPException, IOException
+    {
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(new ByteArrayInputStream(message));
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
+        PGPPBEEncryptedData symEncData = (PGPPBEEncryptedData)encryptedDataList.get(0);
+        PBEDataDecryptorFactory decryptorFactory = new BcPBEDataDecryptorFactory(password, new BcPGPDigestCalculatorProvider());
+        InputStream decryptedIn = symEncData.getDataStream(decryptorFactory);
+        PGPLiteralData literalData = (PGPLiteralData)new BcPGPObjectFactory(decryptedIn).nextObject();
+        ByteArrayOutputStream plaintextOut = new ByteArrayOutputStream();
+        Streams.pipeAll(literalData.getDataStream(), plaintextOut);
+        return plaintextOut.toByteArray();
+    }
+
+    private byte[] jceDecryptRaw(byte[] message, char[] password)
+        throws PGPException, IOException
+    {
+        PGPObjectFactory objectFactory = new JcaPGPObjectFactory(new ByteArrayInputStream(message));
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
+        PGPPBEEncryptedData symEncData = (PGPPBEEncryptedData)encryptedDataList.get(0);
+        PGPDigestCalculatorProvider digestCalculatorProvider = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build();
+        PBEDataDecryptorFactory decryptorFactory = new JcePBEDataDecryptorFactoryBuilder(digestCalculatorProvider).setProvider("BC").build(password);
+        InputStream decryptedIn = symEncData.getDataStream(decryptorFactory);
+        PGPLiteralData literalData = (PGPLiteralData)new JcaPGPObjectFactory(decryptedIn).nextObject();
+        ByteArrayOutputStream plaintextOut = new ByteArrayOutputStream();
+        Streams.pipeAll(literalData.getDataStream(), plaintextOut);
+        return plaintextOut.toByteArray();
     }
 
     private void roundTripEncryptionDecryptionTests()
