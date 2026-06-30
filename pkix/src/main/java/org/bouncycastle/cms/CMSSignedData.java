@@ -225,12 +225,11 @@ public class CMSSignedData
         {
             return SignedData.getInstance(contentInfo.getContent());
         }
-        catch (ClassCastException e)
+        catch (RuntimeException e)
         {
-            throw new CMSException("Malformed content.", e);
-        }
-        catch (IllegalArgumentException e)
-        {
+            // Malformed input can surface as any unchecked ASN.1 exception
+            // (ClassCastException, IllegalArgumentException, IllegalStateException, ...);
+            // keep them inside the declared CMSException contract.
             throw new CMSException("Malformed content.", e);
         }
     }
