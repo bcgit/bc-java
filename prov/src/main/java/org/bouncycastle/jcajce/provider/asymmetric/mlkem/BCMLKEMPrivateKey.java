@@ -68,7 +68,7 @@ public class BCMLKEMPrivateKey
         {
             BCMLKEMPrivateKey otherKey = (BCMLKEMPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -76,7 +76,7 @@ public class BCMLKEMPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
     }
 
     /**

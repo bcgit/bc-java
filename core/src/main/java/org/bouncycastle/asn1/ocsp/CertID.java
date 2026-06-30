@@ -35,6 +35,11 @@ public class CertID
     private CertID(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         hashAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         issuerNameHash = (ASN1OctetString)seq.getObjectAt(1);
         issuerKeyHash = (ASN1OctetString)seq.getObjectAt(2);

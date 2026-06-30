@@ -22,6 +22,11 @@ public class CAKeyUpdAnnContent
 
     private CAKeyUpdAnnContent(ASN1Sequence seq)
     {
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("expected sequence size of 3");
+        }
+
         oldWithNew = CMPCertificate.getInstance(seq.getObjectAt(0));
         newWithOld = CMPCertificate.getInstance(seq.getObjectAt(1));
         newWithNew = CMPCertificate.getInstance(seq.getObjectAt(2));

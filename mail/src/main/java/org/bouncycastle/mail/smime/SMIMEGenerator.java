@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.activation.DataHandler;
+import javax.activation.DataSource;
 //import javax.crypto.KeyGenerator;
 import javax.mail.Header;
 import javax.mail.MessagingException;
@@ -153,7 +154,24 @@ public class SMIMEGenerator
 
             content.setContent(message.getContent(), message.getContentType());
 
-            content.setDataHandler(new DataHandler(message.getDataHandler().getDataSource()));
+            // Detaching the body part's DataHandler from the original message (commit d050ec4)
+            // works around a javax.mail change for stream/DataSource-backed attachments. However,
+            // when the message is object-backed (content set via setContent(Object, type)),
+            // getDataSource() returns an internal DataHandlerDataSource that re-renders through the
+            // object's DataContentHandler; for content types with no object DCH (e.g.
+            // application/octet-stream) re-wrapping that synthetic DataSource produces an empty body
+            // and the signature is computed over no content (github #1432). So only re-wrap a
+            // genuine DataSource; keep the original DataHandler for object-backed content.
+            DataHandler dataHandler = message.getDataHandler();
+            DataSource dataSource = dataHandler.getDataSource();
+            if (dataSource != null && !dataSource.getClass().getName().endsWith(".DataHandlerDataSource"))
+            {
+                content.setDataHandler(new DataHandler(dataSource));
+            }
+            else
+            {
+                content.setDataHandler(dataHandler);
+            }
 
             extractHeaders(content, message);
         }

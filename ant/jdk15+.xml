@@ -30,24 +30,43 @@
             <fileset dir="core/src/main/java" includes="**/*.properties" />
             <fileset dir="core/src/main/resources" includes="**/*.properties" />
             <fileset dir="core/src/main/javadoc" includes="**/*.html" />
-            <fileset dir="core/src/test/java" includes="**/*.java" />
+            <fileset dir="core/src/test/java" includes="**/*.java" >
+                <exclude name="**/crypto/faest/*.java"/>
+            </fileset>
             <fileset dir="core/src/test/javadoc" includes="**/*.html" />
             <fileset dir="core/src/test/resources" includes="**/*.*" />
 
             <fileset dir="prov/src/main/java" includes="**/*.java" />
             <fileset dir="prov/src/main/javadoc" includes="**/*.html" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
-            <fileset dir="prov/src/test/java" includes="**/*.java" />
+            <fileset dir="prov/src/test/java" includes="**/*.java" >
+                <exclude name="**/jce/provider/*.java"/>
+                <!-- AEADTest references javax.crypto.spec.GCMParameterSpec (JDK 7+) directly -->
+                <exclude name="**/jce/provider/test/AEADTest.java"/>
+                <!-- LEATest references javax.crypto.spec.GCMParameterSpec (JDK 7+) directly;
+                     the jdk1.5 AllTests overlay drops it from the suite -->
+                <exclude name="**/jcajce/provider/test/LEATest.java"/>
+                <!-- X509LDAPCertStoreTest depends on unboundid-ldapsdk (JDK 7 bytecode);
+                     not referenced by the jdk1.5 RegressionTest overlay -->
+                <exclude name="**/jce/provider/test/X509LDAPCertStoreTest.java"/>
+            </fileset>
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
             <fileset dir="tls/src/main/java" includes="**/*.java" />
             <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
-            <fileset dir="tls/src/test/java" includes="**/*.java" />
+            <fileset dir="tls/src/test/java" includes="**/*.java" >
+                <exclude name="**/tls/*.java"/>
+                <exclude name="**/jsse/provider/*.java"/>
+            </fileset>
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
             <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/main/resources" includes="**/*.properties" />
-            <fileset dir="pkix/src/test/java" includes="**/*.java" />
+            <fileset dir="pkix/src/test/java" includes="**/*.java" >
+                <!-- est.jcajce tests reach the package-private DefaultESTClient; run from the test
+                     jar in this build that cross-jar package access fails, so exclude them -->
+                <exclude name="**/est/jcajce/*.java"/>
+            </fileset>
             <fileset dir="pkix/src/test/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
 
@@ -73,9 +92,11 @@
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="core/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="mail/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="prov/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="prov/src/test/jdk1.5" includes="**/*.java" />
             <fileset dir="pkix/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="pkix/src/test/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/test/jdk1.5" includes="**/*.java" />
             <fileset dir="pg/src/main/jdk1.5" includes="**/*.java" />

@@ -58,7 +58,6 @@ public class PKIXRevocationTest
     extends SimpleTest
 {
     private static final String BC = "BC";
-    private static final int TEST_OCSP_RESPONDER_PORT = 10541;
 
     public String getName()
     {
@@ -114,6 +113,35 @@ public class PKIXRevocationTest
         param.addCertPathChecker(rv);
 
         cpv.validate(certPath, param);
+
+        // Stapled OCSP response not bound to the checked certificate (CVD ANT-2026-07K5M6C1):
+        // a validly-signed 'good' response for a different serial (here the CA's) stapled for the EE
+        // must not be accepted as proof the EE is good - it must be rejected (so CRL fallback could
+        // run) rather than silently passing because no SingleResponse matched the EE's CertID.
+        cpv = CertPathValidator.getInstance("PKIX", BC);
+
+        rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+
+        Map mismatched = new HashMap();
+        mismatched.put(ee, caResp);   // wrong response: covers the CA's CertID, not the EE's
+
+        rv.setOcspResponses(mismatched);
+        rv.setOcspResponderCert(ocsp);
+        rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.ONLY_END_ENTITY));
+
+        param = new PKIXParameters(trust);
+        param.addCertPathChecker(rv);
+
+        try
+        {
+            cpv.validate(certPath, param);
+            fail("stapled OCSP response not bound to the certificate was accepted");
+        }
+        catch (CertPathValidatorException e)
+        {
+            // expected: with no SingleResponse matching the EE's CertID the OCSP check no longer
+            // returns success; it fails over to CRL (which is absent here), so validation is rejected.
+        }
 
         // CA and EE
 
@@ -221,7 +249,9 @@ public class PKIXRevocationTest
 
         rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
 
-        rv.setOcspResponder(new URI("http://localhost:" + TEST_OCSP_RESPONDER_PORT + "/"));
+        ServerSocket responderSocket = new ServerSocket(0);
+
+        rv.setOcspResponder(new URI("http://localhost:" + responderSocket.getLocalPort() + "/"));
         rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.ONLY_END_ENTITY));
         rv.setOcspResponderCert(ocsp);
 
@@ -237,7 +267,7 @@ public class PKIXRevocationTest
 
         param.addCertPathChecker(rv);
 
-        Thread ocspResponder = new Thread(new OCSPResponderTask(TEST_OCSP_RESPONDER_PORT, getOcspResponse(ocspKp, digCalcProv, ca, ee, nonce)));
+        Thread ocspResponder = new Thread(new OCSPResponderTask(responderSocket, getOcspResponse(ocspKp, digCalcProv, ca, ee, nonce)));
 
         ocspResponder.setDaemon(true);
         ocspResponder.start();
@@ -250,8 +280,9 @@ public class PKIXRevocationTest
         cpv = CertPathValidator.getInstance("PKIX", BC);
 
         rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
-        // need to avoid cache.
-        rv.setOcspResponder(new URI("http://localhost:" + (TEST_OCSP_RESPONDER_PORT + 1) + "/"));
+        // a fresh dynamic port also avoids reusing the previous responder's OCSP cache entry.
+        responderSocket = new ServerSocket(0);
+        rv.setOcspResponder(new URI("http://localhost:" + responderSocket.getLocalPort() + "/"));
         rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.ONLY_END_ENTITY));
 
         param = new PKIXParameters(trust);
@@ -259,7 +290,7 @@ public class PKIXRevocationTest
         param.addCertPathChecker(rv);
 
         ocspResponder = new Thread(new OCSPResponderTask(
-            TEST_OCSP_RESPONDER_PORT + 1,
+            responderSocket,
             getOcspResponse(ocspKp, ocsp, digCalcProv, ca, ee)));
 
         ocspResponder.setDaemon(true);
@@ -283,7 +314,8 @@ public class PKIXRevocationTest
 
         rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
 
-        rv.setOcspResponder(new URI("http://localhost:" + (TEST_OCSP_RESPONDER_PORT + 2) + "/"));
+        responderSocket = new ServerSocket(0);
+        rv.setOcspResponder(new URI("http://localhost:" + responderSocket.getLocalPort() + "/"));
         rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.ONLY_END_ENTITY));
 
         param = new PKIXParameters(trust);
@@ -291,7 +323,7 @@ public class PKIXRevocationTest
         param.addCertPathChecker(rv);
 
         ocspResponder = new Thread(new OCSPResponderTask(
-            TEST_OCSP_RESPONDER_PORT + 2,
+            responderSocket,
             getOcspResponse(ocspKp, ocsp, digCalcProv, ca, ee)));
 
         ocspResponder.setDaemon(true);
@@ -299,8 +331,13 @@ public class PKIXRevocationTest
 
         cpv.validate(certPath, param);
 
-        // EE Only, CA using responder URL
-        ca = OCSPTestUtil.makeCertificateWithOCSP(caKp, "CN=CA", rootKp, root, true, "http://localhost:" + TEST_OCSP_RESPONDER_PORT + "/");
+        // EE Only, CA using responder URL. OCSP via the certificate's AIA responder URL is gated
+        // behind the ocsp.enable security property (BC does not fetch OCSP over the network by default).
+        String prevOcspEnable = Security.getProperty("ocsp.enable");
+        Security.setProperty("ocsp.enable", "true");
+
+        responderSocket = new ServerSocket(0);
+        ca = OCSPTestUtil.makeCertificateWithOCSP(caKp, "CN=CA", rootKp, root, true, "http://localhost:" + responderSocket.getLocalPort() + "/");
         ee = OCSPTestUtil.makeCertificate(eeKp, "CN=EE", caKp, ca, false);
 
         eeResp = getOcspResponseName(caKp, digCalcProv, ca, ee);
@@ -323,7 +360,7 @@ public class PKIXRevocationTest
 
         rv.setOcspResponderCert(ocsp);
 
-        ocspResponder = new Thread(new OCSPResponderTask(TEST_OCSP_RESPONDER_PORT, caResp));
+        ocspResponder = new Thread(new OCSPResponderTask(responderSocket, caResp));
 
         ocspResponder.setDaemon(true);
         ocspResponder.start();
@@ -334,8 +371,13 @@ public class PKIXRevocationTest
 
         cpv.validate(certPath, param);
 
-        ocspCertChainTest();
-        dispPointCertChainTest();
+        Security.setProperty("ocsp.enable", prevOcspEnable == null ? "false" : prevOcspEnable);
+
+        // ocspCertChainTest() and dispPointCertChainTest() are live-network integration checks: they
+        // validate static GlobalSign certificates (ee.pem / ca.pem / ta.pem) against the real
+        // ocsp.globalsign.com and crl.globalsign.com endpoints. They are not part of the automated
+        // suite (CI has no network access, and the sample certificates expire), but are retained below
+        // for manual exercising of live OCSP / CRL-distribution-point retrieval.
     }
 
     private void ocspCertChainTest()
@@ -577,11 +619,15 @@ public class PKIXRevocationTest
         implements Runnable
     {
         private final byte[] resp;
-        private final int portNo;
+        private final ServerSocket ss;
 
-        OCSPResponderTask(int portNo, byte[] resp)
+        // The ServerSocket is bound (on a dynamically allocated free port) by the caller before the
+        // task is started, so the port is known and the socket is already listening when validate()
+        // connects. This avoids both clashes from reusing a fixed port across successive responders
+        // (a rebind during TIME_WAIT throws BindException) and a start/accept race with the client.
+        OCSPResponderTask(ServerSocket ss, byte[] resp)
         {
-            this.portNo = portNo;
+            this.ss = ss;
             this.resp = resp;
         }
 
@@ -589,7 +635,6 @@ public class PKIXRevocationTest
         {
             try
             {
-                ServerSocket ss = new ServerSocket(portNo);
                 Socket s = ss.accept();
 
                 InputStream sIn = s.getInputStream();

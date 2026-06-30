@@ -150,11 +150,11 @@ public class X500NameTest
     public void performTest()
         throws Exception
     {
-        ietfUtilsTest();
         bogusEqualsTest();
         dnQualifierAliasParseTest();
         stateOrProvinceAliasParseTest();
         hexEscapedUTF8ParseTest();
+        escapeRoundTripTest();
         turkishLocaleCanonicalizeTest();
 
         testEncodingPrintableString(BCStyle.C, "AU");
@@ -682,12 +682,6 @@ public class X500NameTest
         return ((ASN1String)vl.getFirst().getValue()).getString();
     }
 
-    private void ietfUtilsTest()
-        throws Exception
-    {
-        IETFUtils.valueToString(new DERUTF8String(" "));
-    }
-
     /**
      * BCStyle / RFC4519Style now accept "DN", "DNQ" and "dnQualifier"
      * as parser aliases for the dnQualifier attribute (OID 2.5.4.46).
@@ -780,19 +774,19 @@ public class X500NameTest
     private void turkishLocaleCanonicalizeTest()
         throws Exception
     {
+        Locale turkish = new Locale("tr", "TR");
+
+        // Precondition: confirm the JVM's Turkish locale really does the
+        // dotless-i fold (String.toLowerCase("IT") -> "ıt", not "it"),
+        // otherwise the test would pass vacuously.
+        isTrue("Turkish locale dotless-i fold not active", !"IT".toLowerCase(turkish).equals("it"));
+
         Locale defaultLocale = Locale.getDefault();
         try
         {
-            Locale.setDefault(new Locale("tr", "TR"));
+            Locale.setDefault(turkish);
 
-            // Precondition: confirm the JVM's Turkish locale really does the
-            // dotless-i fold (String.toLowerCase("IT") -> "ıt", not "it"),
-            // otherwise the test would pass vacuously.
-            isTrue("Turkish locale dotless-i fold not active",
-                !"IT".toLowerCase().equals("it"));
-
-            isTrue("canonicalize must ASCII-fold under Turkish locale",
-                "it".equals(IETFUtils.canonicalize("IT")));
+            isTrue("canonicalize must ASCII-fold under Turkish locale", "it".equals(IETFUtils.canonicalize("IT")));
 
             X500Name upper = new X500Name("CN=ITALY,C=IT");
             X500Name lower = new X500Name("CN=italy,C=it");
@@ -895,6 +889,93 @@ public class X500NameTest
         catch (IllegalArgumentException e)
         {
             // expected
+        }
+    }
+
+    /**
+     * Exercise every branch of {@link IETFUtils} unescape / {@code valueToString}
+     * escaping. RFC 4514 sec. 2.4 makes each of {@code , + " \ < > ;} (and a space
+     * at either end) an escapable {@code special}; sec. 3 (legacy RFC 2253 quoting)
+     * lets a double-quoted value carry those same separators unescaped. For each
+     * input we assert both the unescaped attributeValue and that {@code toString()}
+     * re-emits the canonical backslash-escaped form (and round-trips).
+     */
+    private void escapeRoundTripTest()
+        throws Exception
+    {
+        String[][] cases = new String[][]
+        {
+            // input                value (after unescape)   canonical toString
+            { "CN=a\\,b",           "a,b",                   "CN=a\\,b" },          // escaped comma (RDN separator)
+            { "CN=a\\;b",           "a;b",                   "CN=a\\;b" },          // escaped semicolon (legacy separator)
+            { "CN=a\\<b",           "a<b",                   "CN=a\\<b" },          // escaped less-than
+            { "CN=a\\>b",           "a>b",                   "CN=a\\>b" },          // escaped greater-than
+            { "CN=a\\\\b",          "a\\b",                  "CN=a\\\\b" },         // escaped backslash
+            { "CN=a\\+b",           "a+b",                   "CN=a\\+b" },          // escaped plus (multi-value separator)
+            { "CN=a\\=b",           "a=b",                   "CN=a\\=b" },          // escaped equals
+            { "CN=a\\\"b",          "a\"b",                  "CN=a\\\"b" },         // escaped quote mid-value
+            { "CN=a\\ b",           "a b",                   "CN=a b" },            // escaped interior space (kept, not trimmed)
+            { "CN=\"a,b\"",         "a,b",                   "CN=a\\,b" },          // quoting protects the comma separator
+            { "CN=\"a;b\"",         "a;b",                   "CN=a\\;b" },          // quoting protects the semicolon
+            { "CN=\"a+b\"",         "a+b",                   "CN=a\\+b" },          // quoting protects the plus
+            { "CN=\"a\\b\"",        "a\\b",                  "CN=a\\\\b" },         // backslash is literal inside quotes
+            { "CN=   a\\+b",        "a+b",                   "CN=a\\+b" },          // leading unescaped spaces are skipped
+            { "CN=\\C3\\A9\\+",     "é+",               "CN=é\\+" },      // hex UTF-8 run flushed before escaped special
+        };
+
+        for (int i = 0; i != cases.length; i++)
+        {
+            String input = cases[i][0];
+
+            X500Name name = new X500Name(input);
+            String value = getValue(name.getRDNs()[0]);
+            isEquals("unescape value for [" + input + "]", cases[i][1], value);
+
+            String str = name.toString();
+            isEquals("toString for [" + input + "]", cases[i][2], str);
+
+            // re-parsing the canonical form must yield the same attributeValue
+            String reValue = getValue(new X500Name(str).getRDNs()[0]);
+            isEquals("round-trip value for [" + input + "]", cases[i][1], reValue);
+        }
+
+        // An empty value still parses to an empty string.
+        isEquals("empty value", "", getValue(new X500Name("CN=").getRDNs()[0]));
+
+        // Running out of input while still escaping or quoting is malformed. The
+        // unterminated-quote and dangling-bare-backslash cases are caught by
+        // X500NameTokenizer.nextToken() (escaped/quoted unbalanced at token end);
+        // the incomplete-hexpair cases are invisible to the tokenizer (\C looks
+        // like a balanced escape) and are caught by IETFUtils.unescape itself.
+        // A '\' beginning a hexpair (RFC 4514 sec. 2.4) that isn't completed by a
+        // second hex digit used to silently drop the partial digit (and leak state
+        // into a later escape); it must throw.
+        String[] malformed = new String[]
+        {
+            "CN=a\\Cz",     // single hex digit then a letter
+            "CN=a\\C,O=x",  // single hex digit then the RDN separator
+            "CN=a\\C b",    // single hex digit then a space
+            "CN=ab\\C",     // single hex digit at end of input
+            "CN=a\\C\"b\"", // single hex digit then a quote
+            "CN=\\Cz\\AB",  // partial digit must not corrupt a following valid escape
+            "CN=abc\\",     // dangling bare backslash at end of input (tokenizer)
+            "O=x,CN=abc\\", // dangling bare backslash after a prior RDN (tokenizer)
+            "CN=\"abc",     // unterminated quote at end of input (tokenizer)
+            "CN=\"abc,O=x", // unterminated quote spanning the RDN separator (tokenizer)
+            "CN=\"",        // lone opening quote (tokenizer)
+
+        };
+        for (int i = 0; i != malformed.length; i++)
+        {
+            try
+            {
+                new X500Name(malformed[i]);
+                fail("malformed hex escape not rejected: " + malformed[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
         }
     }
 

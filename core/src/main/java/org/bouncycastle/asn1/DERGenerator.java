@@ -39,49 +39,21 @@ public abstract class DERGenerator
         _tagNo = tagNo;
     }
 
-    private void writeLength(
-        OutputStream out,
-        int          length)
-        throws IOException
-    {
-        if (length > 127)
-        {
-            int size = 1;
-            int val = length;
-
-            while ((val >>>= 8) != 0)
-            {
-                size++;
-            }
-
-            out.write((byte)(size | 0x80));
-
-            for (int i = (size - 1) * 8; i >= 0; i -= 8)
-            {
-                out.write((byte)(length >> i));
-            }
-        }
-        else
-        {
-            out.write((byte)length);
-        }
-    }
-
-    void writeDEREncoded(
-        OutputStream out,
-        int          tag,
-        byte[]       bytes)
-        throws IOException
+    void writeDEREncoded(OutputStream out, int tag, byte[] bytes) throws IOException
     {
         out.write(tag);
-        writeLength(out, bytes.length);
+        ASN1OutputStream.writeDL(out, bytes.length);
         out.write(bytes);
     }
 
-    void writeDEREncoded(
-        int       tag,
-        byte[]    bytes)
-        throws IOException
+    private void writeDEREncoded(OutputStream out, int flags, int tagNo, byte[] bytes) throws IOException
+    {
+        ASN1OutputStream.writeIdentifier(out, flags, tagNo);
+        ASN1OutputStream.writeDL(out, bytes.length);
+        out.write(bytes);
+    }
+
+    void writeDEREncoded(int tag, byte[] bytes) throws IOException
     {
         if (!_tagged)
         {
@@ -95,7 +67,7 @@ public abstract class DERGenerator
              */
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             writeDEREncoded(bOut, tag, bytes);
-            writeDEREncoded(_out, _tagNo | BERTags.CONTEXT_SPECIFIC | BERTags.CONSTRUCTED, bOut.toByteArray());
+            writeDEREncoded(_out, BERTags.CONTEXT_SPECIFIC | BERTags.CONSTRUCTED, _tagNo, bOut.toByteArray());
         }
         else
         {
@@ -104,7 +76,7 @@ public abstract class DERGenerator
              * if the base encoding is constructed, and shall be primitive otherwise; and b) the contents octets
              * shall be [..] the contents octets of the base encoding.
              */
-            writeDEREncoded(_out, inheritConstructedFlag(_tagNo | BERTags.CONTEXT_SPECIFIC, tag), bytes);
+            writeDEREncoded(_out, inheritConstructedFlag(BERTags.CONTEXT_SPECIFIC, tag), _tagNo, bytes);
         }
     }
 }

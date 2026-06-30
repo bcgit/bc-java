@@ -72,7 +72,7 @@ public class SMIMESignedParser
     {
         try
         {
-            return File.createTempFile("bcMail", ".mime");
+            return TempFileFactory.createTempFile("bcMail", ".mime");
         }
         catch (IOException e)
         {
@@ -278,7 +278,7 @@ public class SMIMESignedParser
     {
         try
         {
-            File tmpFile = File.createTempFile("bcSigned", ".tmp");
+            File tmpFile = TempFileFactory.createTempFile("bcSigned", ".tmp");
             return getSafeInstance(digCalcProvider, message, "7bit", tmpFile);
         }
         catch (IOException e)

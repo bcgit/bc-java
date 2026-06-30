@@ -25,6 +25,8 @@ public class DigestTest
         { "MD4", "a448017aaf21d8525fc10ae87aa6729d" },
         { "MD5", "900150983cd24fb0d6963f7d28e17f72" },
         { "SHA-1", "a9993e364706816aba3e25717850c26c9cd0d89d" },
+        { "SHA1-INTERLEAVE", "e984d7a51f165e84e71bc9a72d7a6d5bc946e9482fdefd2cadd017dfb8cbbd3049ea41468fdb98b4" },
+        { "SHA-1-INTERLEAVE", "e984d7a51f165e84e71bc9a72d7a6d5bc946e9482fdefd2cadd017dfb8cbbd3049ea41468fdb98b4" },
         { "SHA-224", "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7" },
         { "SHA-256", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" },
         { "SHA-384", "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7" },

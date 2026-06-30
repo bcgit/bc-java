@@ -30,6 +30,7 @@ public class AllTests
         }
 
         suite.addTestSuite(CrlCacheTest.class);
+        suite.addTestSuite(MultiValuedRDNEmailTest.class);
 
         return new BCTestSetup(suite);
     }

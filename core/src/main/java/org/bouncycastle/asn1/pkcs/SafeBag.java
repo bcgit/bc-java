@@ -56,11 +56,16 @@ public class SafeBag
     private SafeBag(
         ASN1Sequence    seq)
     {
-        this.bagId = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        this.bagValue = ((ASN1TaggedObject)seq.getObjectAt(1)).getExplicitBaseObject();
+        if (seq.size() < 2 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        this.bagId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        this.bagValue = ASN1TaggedObject.getInstance(seq.getObjectAt(1)).getExplicitBaseObject();
         if (seq.size() == 3)
         {
-            this.bagAttributes = (ASN1Set)seq.getObjectAt(2);
+            this.bagAttributes = ASN1Set.getInstance(seq.getObjectAt(2));
         }
     }
 

@@ -1,12 +1,16 @@
 package org.bouncycastle.tls.test;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.Vector;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsFatalAlertReceived;
+import org.bouncycastle.tls.TlsPSKExternal;
 import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
@@ -71,7 +75,29 @@ public class Tls13PSKProtocolTest
         serverThread.join();
     }
 
+    public void testServerExternalPSKAbortWithAlert() throws Exception
+    {
+        // github #1673: a server can now abort PSK selection with a chosen alert by throwing from
+        // getExternalPSK (which is only possible because the method declares throws IOException).
+        MockPSKTls13Client client = new MockPSKTls13Client();
+        MockPSKTls13Server server = new MockPSKTls13Server()
+        {
+            public TlsPSKExternal getExternalPSK(Vector identities) throws IOException
+            {
+                throw new TlsFatalAlert(AlertDescription.unknown_psk_identity);
+            }
+        };
+
+        implTestClientReceivesAlert(client, server, AlertDescription.unknown_psk_identity);
+    }
+
     private void implTestKeyMismatch(MockPSKTls13Client client, MockPSKTls13Server server) throws Exception
+    {
+        implTestClientReceivesAlert(client, server, AlertDescription.decrypt_error);
+    }
+
+    private void implTestClientReceivesAlert(MockPSKTls13Client client, MockPSKTls13Server server, short expectedAlert)
+        throws Exception
     {
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
         PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
@@ -107,7 +133,7 @@ public class Tls13PSKProtocolTest
         serverThread.join();
 
         assertTrue(correctException);
-        assertEquals(AlertDescription.decrypt_error, alertDescription);        
+        assertEquals(expectedAlert, alertDescription);
     }
 
     static class ServerThread

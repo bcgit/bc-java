@@ -58,7 +58,7 @@ public class BCNTRUPrivateKey
         {
             BCNTRUPrivateKey otherKey = (BCNTRUPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -66,7 +66,8 @@ public class BCNTRUPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // NTRU private keys do not embed the public key.
+        return getAlgorithm().hashCode();
     }
 
     /**

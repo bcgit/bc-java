@@ -45,7 +45,7 @@ public class MayoTest
         throws Exception
     {
         long start = System.currentTimeMillis();
-        TestUtils.testTestVector(false, true, false, "pqc/crypto/mayo", files, new TestUtils.SignerOperation()
+        TestUtils.testTestVector(true, true, false, "pqc/crypto/mayo", files, new TestUtils.SignerOperation()
         {
             @Override
             public SecureRandom getSecureRandom(byte[] seed)

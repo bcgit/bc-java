@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Properties;
 
 public class DHPublicKeyParameters
     extends DHKeyParameters
@@ -30,6 +31,14 @@ public class DHPublicKeyParameters
         }
 
         BigInteger p = dhParams.getP();
+
+        // Bound the modulus size before the super-linear legendre/modPow below, so a crafted
+        // oversized p cannot turn key import into a CPU-exhaustion DoS (cf. RSA modulus cap).
+        int maxBitLength = Properties.asInteger(Properties.DH_MAX_SIZE, 16384);
+        if (p.bitLength() > maxBitLength)
+        {
+            throw new IllegalArgumentException("DH modulus out of range");
+        }
 
         // TLS check
         if (y.compareTo(TWO) < 0 || y.compareTo(p.subtract(TWO)) > 0)

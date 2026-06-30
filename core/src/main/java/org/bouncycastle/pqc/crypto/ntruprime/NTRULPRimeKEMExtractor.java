@@ -125,7 +125,7 @@ public class NTRULPRimeKEMExtractor
         Utils.top(Tnew, bA, r, q, tau0, tau1);
 
         byte[] encTnew = new byte[128];
-        Utils.getTopEncodedPolynomial(encTnew, T);
+        Utils.getTopEncodedPolynomial(encTnew, Tnew);
 
         /*
          * hc = SHA-512(2 | encR | cache[0:32])
@@ -139,12 +139,18 @@ public class NTRULPRimeKEMExtractor
         byte[] hc = Utils.getHashWithPrefix(hcPrefix, hcInput);
 
         /*
-         * ct = encB | encT | hc[0:32]
+         * ct = encBnew | encTnew | hc[0:32]
+         *
+         * Build the candidate ciphertext from the RE-ENCRYPTED B and T (encBnew/encTnew), not from
+         * the input encB/encT, so the constant-time compare below actually validates that the
+         * recovered message re-encrypts to the supplied ciphertext (the Fujisaki-Okamoto check).
+         * Comparing the input against its own encB/encT made the B/T check vacuous, leaving only the
+         * hc confirmation hash and allowing rounding-induced ciphertext malleability (IND-CCA break).
          */
-        byte[] ct = new byte[encB.length + encT.length + (hc.length / 2)];
-        System.arraycopy(encB, 0, ct, 0, encB.length);
-        System.arraycopy(encT, 0, ct, encB.length, encT.length);
-        System.arraycopy(hc, 0, ct, encB.length + encT.length, hc.length / 2);
+        byte[] ct = new byte[encBnew.length + encTnew.length + (hc.length / 2)];
+        System.arraycopy(encBnew, 0, ct, 0, encBnew.length);
+        System.arraycopy(encTnew, 0, ct, encBnew.length, encTnew.length);
+        System.arraycopy(hc, 0, ct, encBnew.length + encTnew.length, hc.length / 2);
 
         /*
          * Match Ciphertext ct with input encapsulation

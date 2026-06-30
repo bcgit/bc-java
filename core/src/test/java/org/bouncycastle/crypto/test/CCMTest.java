@@ -61,9 +61,9 @@ public class CCMTest
 //        CCMModeCipher ccm = CCMBlockCipher.newInstance(AESEngine.newInstance());
         CCMBlockCipher ccm = new CCMBlockCipher(AESEngine.newInstance());
 
-        checkVectors(0, ccm, K1, 32, N1, A1, P1, T1, C1);
-        checkVectors(1, ccm, K2, 48, N2, A2, P2, T2, C2);
-        checkVectors(2, ccm, K3, 64, N3, A3, P3, T3, C3);
+        checkVectors(0, K1, 32, N1, A1, P1, T1, C1);
+        checkVectors(1, K2, 48, N2, A2, P2, T2, C2);
+        checkVectors(2, K3, 64, N3, A3, P3, T3, C3);
 
         ivParamTest(0, ccm, K1, N1);
 
@@ -77,12 +77,12 @@ public class CCMTest
             System.arraycopy(A4, 0, a4, i, A4.length);
         }
 
-        checkVectors(3, ccm, K4, 112, N4, a4, P4, T4, C4);
+        checkVectors(3, K4, 112, N4, a4, P4, T4, C4);
 
         //
         // long data test
         //
-        checkVectors(4, ccm, K4, 112, N4, A4, A4, T5, C5);
+        checkVectors(4, K4, 112, N4, A4, A4, T5, C5);
 
         // decryption with output specified, non-zero offset.
         ccm.init(false, new AEADParameters(new KeyParameter(K2), 48, N2, A2));
@@ -100,15 +100,18 @@ public class CCMTest
             fail("decryption output incorrect");
         }
 
-        // encryption with output specified, non-zero offset.
-        ccm.init(true, new AEADParameters(new KeyParameter(K2), 48, N2, A2));
+        // encryption with output specified, non-zero offset. A fresh instance is used because
+        // re-initialising the decryption cipher above for encryption with the same key+nonce is
+        // now rejected by the nonce-reuse guard.
+        CCMBlockCipher encCcm = new CCMBlockCipher(AESEngine.newInstance());
+        encCcm.init(true, new AEADParameters(new KeyParameter(K2), 48, N2, A2));
 
         int inLen = len;
         inBuf = outBuf;
-        outBuf = new byte[ccm.getOutputSize(inLen) + 10];
+        outBuf = new byte[encCcm.getOutputSize(inLen) + 10];
 
-        len = ccm.processPacket(inBuf, 10, inLen, outBuf, 10);
-        out = ccm.processPacket(inBuf, 10, inLen);
+        len = encCcm.processPacket(inBuf, 10, inLen, outBuf, 10);
+        out = encCcm.processPacket(inBuf, 10, inLen);
 
         if (len != out.length || !isEqual(out, outBuf, 10))
         {
@@ -169,7 +172,10 @@ public class CCMTest
                 int offset = offsets[j];
                 try
                 {
-                    ccm.init(true, new AEADParameters(new KeyParameter(K1), 128, new byte[n_len]));
+                    // A fresh cipher per iteration: re-initialising one instance for encryption
+                    // with the same key+nonce is now rejected by the nonce-reuse guard.
+                    CCMBlockCipher bccm = new CCMBlockCipher(AESEngine.newInstance());
+                    bccm.init(true, new AEADParameters(new KeyParameter(K1), 128, new byte[n_len]));
 
                     // Encrypt up to 2^(8q) + offset. Note that message length
                     // must be strictly less than 2^(8q) so offset=0 will not
@@ -178,15 +184,15 @@ public class CCMTest
                     int size = 1 << (8*q);
                     inBuf = new byte[size + offset];
 
-                    outBuf = new byte[ccm.getOutputSize(inBuf.length)];
-                    len = ccm.processPacket(inBuf, 0, inBuf.length, outBuf, 0);
+                    outBuf = new byte[bccm.getOutputSize(inBuf.length)];
+                    len = bccm.processPacket(inBuf, 0, inBuf.length, outBuf, 0);
 
                     if (offset >= 0) {
                         fail("expected to fail to encrypt boundary bytes n=" + n_len + "size=" + size + " offset=" + offset);
                     } else {
                         // Decrypt should also succeed if encryption succeeded.
-                        ccm.init(false, new AEADParameters(new KeyParameter(K1), 128, new byte[n_len]));
-                        out = ccm.processPacket(outBuf, 0, outBuf.length);
+                        bccm.init(false, new AEADParameters(new KeyParameter(K1), 128, new byte[n_len]));
+                        out = bccm.processPacket(outBuf, 0, outBuf.length);
 
                         if (out.length != inBuf.length || !Arrays.areEqual(inBuf, out))
                         {
@@ -205,11 +211,48 @@ public class CCMTest
 
         AEADTestUtil.testReset(this, CCMBlockCipher.newInstance(AESEngine.newInstance()),
             CCMBlockCipher.newInstance(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));
-        AEADTestUtil.testTampering(this, ccm, new AEADParameters(new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testTampering(this, CCMBlockCipher.newInstance(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testOutputSizes(this, CCMBlockCipher.newInstance(AESEngine.newInstance()),
             new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testBufferSizeChecks(this, CCMBlockCipher.newInstance(AESEngine.newInstance()),
             new AEADParameters(new KeyParameter(K1), 32, N2));
+
+        invalidTagLengthTest();
+        validTagLengthTest();
+
+        noUnverifiedPlaintextOnFailure();
+    }
+
+    private void noUnverifiedPlaintextOnFailure()
+        throws Exception
+    {
+        CCMBlockCipher ccm = new CCMBlockCipher(AESEngine.newInstance());
+        ccm.init(false, new AEADParameters(new KeyParameter(K2), 48, N2, A2));
+
+        // Corrupt the authentication tag so verification fails; the ciphertext body is unchanged.
+        byte[] tampered = Arrays.clone(C2);
+        tampered[tampered.length - 1] ^= 0x01;
+
+        byte[] output = new byte[ccm.getOutputSize(tampered.length)];
+        Arrays.fill(output, (byte)0x55);
+
+        try
+        {
+            ccm.processPacket(tampered, 0, tampered.length, output, 0);
+            fail("tampered CCM ciphertext must not verify");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            // On a tag-check failure the caller's output buffer must not be left holding the
+            // unverified CTR plaintext.
+            for (int i = 0; i != output.length; i++)
+            {
+                if (output[i] != (byte)0x55)
+                {
+                    fail("CCM left unverified plaintext in the output buffer on tag failure");
+                }
+            }
+        }
     }
 
     private boolean isEqual(byte[] exp, byte[] other, int off)
@@ -227,7 +270,6 @@ public class CCMTest
 
     private void checkVectors(
         int count,
-        CCMModeCipher ccm,
         byte[] k,
         int macSize,
         byte[] n,
@@ -242,10 +284,29 @@ public class CCMTest
         System.arraycopy(a, 0, fa, 0, fa.length);
         System.arraycopy(a, fa.length, la, 0, la.length);
 
-        checkVectors(count, ccm, "all initial associated data", k, macSize, n, a, null, p, t, c);
-        checkVectors(count, ccm, "subsequent associated data", k, macSize, n, null, a, p, t, c);
-        checkVectors(count, ccm, "split associated data", k, macSize, n, fa, la, p, t, c);
-        checkVectors(count, ccm, "reuse key", null, macSize, n, fa, la, p, t, c);
+        // A fresh cipher per case: re-initialising one instance for encryption with the same
+        // key+nonce is now rejected by the nonce-reuse guard.
+        checkVectors(count, CCMBlockCipher.newInstance(AESEngine.newInstance()), "all initial associated data", k, macSize, n, a, null, p, t, c);
+        checkVectors(count, CCMBlockCipher.newInstance(AESEngine.newInstance()), "subsequent associated data", k, macSize, n, null, a, p, t, c);
+        checkVectors(count, CCMBlockCipher.newInstance(AESEngine.newInstance()), "split associated data", k, macSize, n, fa, la, p, t, c);
+
+        // Key reuse: re-initialising the same instance for encryption with the same key+nonce (here
+        // via a null key, i.e. key re-use) is now rejected (nonce reuse is catastrophic for CCM).
+        CCMModeCipher reuse = CCMBlockCipher.newInstance(AESEngine.newInstance());
+        reuse.init(true, new AEADParameters(new KeyParameter(k), macSize, n, a));
+        byte[] enc = new byte[reuse.getOutputSize(p.length)];
+        int len = reuse.processBytes(p, 0, p.length, enc, 0);
+        reuse.doFinal(enc, len);
+        try
+        {
+            reuse.init(true, new AEADParameters(null, macSize, n, a));
+            fail("CCM nonce reuse not detected on re-init for encryption in test " + count);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong CCM nonce-reuse message: " + e.getMessage(),
+                "cannot reuse nonce for CCM encryption".equals(e.getMessage()));
+        }
     }
 
     private void checkVectors(
@@ -343,6 +404,60 @@ public class CCMTest
         if (!areEqual(p, dec))
         {
             fail("decrypted stream fails to match in test " + count);
+        }
+    }
+
+    private void invalidTagLengthTest()
+    {
+        int[] invalid = new int[]{ 0, 8, 24, 40, 56, 72, 88, 104, 120, 136 };
+        for (int i = 0; i < invalid.length; ++i)
+        {
+            int macSizeBits = invalid[i];
+
+            // Rejected on encryption...
+            try
+            {
+                CCMBlockCipher.newInstance(AESEngine.newInstance()).init(true,
+                    new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+                fail("invalid tag length accepted");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+
+            // ...and decryption
+            try
+            {
+                CCMBlockCipher.newInstance(AESEngine.newInstance()).init(false,
+                    new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+                fail("invalid tag length accepted");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+        }
+    }
+
+    private void validTagLengthTest() throws Exception
+    {
+        byte[] plaintext = Hex.decode("202122232425262728292a2b2c2d2e2f3031323334353637");
+
+        for (int macSizeBits = 32; macSizeBits <= 128; macSizeBits += 16)
+        {
+            // TODO Need to resolve dependency on processPacket methods (add them to CCMModeCipher?)
+//            CCMModeCipher enc = CCMBlockCipher.newInstance(AESEngine.newInstance());
+            CCMBlockCipher enc = new CCMBlockCipher(AESEngine.newInstance());
+            enc.init(true, new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+            byte[] ct = enc.processPacket(plaintext, 0, plaintext.length);
+
+//            CCMModeCipher dec = CCMBlockCipher.newInstance(AESEngine.newInstance());
+            CCMBlockCipher dec = new CCMBlockCipher(AESEngine.newInstance());
+            dec.init(false, new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+            byte[] recovered = dec.processPacket(ct, 0, ct.length);
+
+            isTrue(Arrays.areEqual(plaintext, recovered));
         }
     }
 

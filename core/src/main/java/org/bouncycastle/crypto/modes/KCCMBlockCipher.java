@@ -8,8 +8,10 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of DSTU7624 CCM mode.
@@ -45,6 +47,8 @@ public class KCCMBlockCipher
     private byte[] macBlock;
 
     private byte[] nonce;
+    // Previous key seen on init(true, ...) - used with nonce only to reject nonce reuse for encryption.
+    private byte[] lastKey;
 
     private byte[] G1;
     private byte[] buffer;
@@ -111,45 +115,79 @@ public class KCCMBlockCipher
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-
-        CipherParameters cipherParameters;
+        KeyParameter keyParameter = null;
+        byte[] newNonce;
         if (params instanceof AEADParameters)
         {
+            AEADParameters aeadParameters = (AEADParameters)params;
 
-            AEADParameters parameters = (AEADParameters)params;
-
-            if (parameters.getMacSize() > MAX_MAC_BIT_LENGTH || parameters.getMacSize() < MIN_MAC_BIT_LENGTH || parameters.getMacSize() % 8 != 0)
+            int macSizeInBits = aeadParameters.getMacSize();
+            if (macSizeInBits > MAX_MAC_BIT_LENGTH || macSizeInBits < MIN_MAC_BIT_LENGTH || macSizeInBits % 8 != 0)
             {
                 throw new IllegalArgumentException("Invalid mac size specified");
             }
 
-            nonce = parameters.getNonce();
-            macSize = parameters.getMacSize() / BITS_IN_BYTE;
-            initialAssociatedText = parameters.getAssociatedText();
-            cipherParameters = parameters.getKey();
+            newNonce = aeadParameters.getNonce();
+            macSize = macSizeInBits / BITS_IN_BYTE;
+            initialAssociatedText = aeadParameters.getAssociatedText();
+            keyParameter = aeadParameters.getKey();
         }
         else if (params instanceof ParametersWithIV)
         {
-            nonce = ((ParametersWithIV)params).getIV();
+            ParametersWithIV withIV = (ParametersWithIV)params;
+
+            newNonce = withIV.getIV();
             macSize = engine.getBlockSize(); // use default blockSize for MAC if it is not specified
             initialAssociatedText = null;
-            cipherParameters = ((ParametersWithIV)params).getParameters();
+
+            CipherParameters innerParameters = withIV.getParameters();
+            if (innerParameters != null)
+            {
+                if (!(innerParameters instanceof KeyParameter))
+                {
+                    throw new IllegalArgumentException("invalid parameters passed to KCCM");
+                }
+
+                keyParameter = (KeyParameter)innerParameters;
+            }
         }
         else
         {
-            throw new IllegalArgumentException("Invalid parameters specified");
+            throw new IllegalArgumentException("invalid parameters passed to KCCM");
+        }
+
+        // RFC 5116 sec. 2.1 requires a distinct nonce per AEAD encryption under a given key; the
+        // DSTU 7624 CCM construction inherits this CCM rule (cf. NIST SP 800-38C), and reuse is
+        // catastrophic (CTR keystream reuse plus a forgeable CBC-MAC). That obligation is the
+        // caller's, so this guard enforces it defensively, mirroring KGCMBlockCipher /
+        // GCMBlockCipher. A fresh nonce or key, reset(), or init for decryption are all unaffected.
+        if (forEncryption)
+        {
+            if (nonce != null && Arrays.areEqual(nonce, newNonce))
+            {
+                if (keyParameter == null)
+                {
+                    throw new IllegalArgumentException("cannot reuse nonce for KCCM encryption");
+                }
+                if (lastKey != null && Arrays.constantTimeAreEqual(lastKey, keyParameter.getKey()))
+                {
+                    throw new IllegalArgumentException("cannot reuse nonce for KCCM encryption");
+                }
+            }
+        }
+
+        nonce = newNonce;
+        if (keyParameter != null)
+        {
+            lastKey = keyParameter.getKey();
         }
 
         this.mac = new byte[macSize];
         this.forEncryption = forEncryption;
-        engine.init(true, cipherParameters);
 
-        counter[0] = 0x01; // defined in standard
+        engine.init(true, keyParameter);
 
-        if (initialAssociatedText != null)
-        {
-            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
-        }
+        reset();
     }
 
     public String getAlgorithmName()
@@ -172,34 +210,46 @@ public class KCCMBlockCipher
         associatedText.write(in, inOff, len);
     }
 
-    private void processAAD(byte[] assocText, int assocOff, int assocLen, int dataLen)
+    private void processAssociatedText()
     {
-        if (assocLen - assocOff < engine.getBlockSize())
-        {
-            throw new IllegalArgumentException("authText buffer too short");
-        }
-        if (assocLen % engine.getBlockSize() != 0)
+        int aadLen = associatedText.size();
+
+        boolean hasAssocText = aadLen > 0;
+
+        if (hasAssocText && aadLen % engine.getBlockSize() != 0)
         {
             throw new IllegalArgumentException("padding not supported");
         }
 
+        // The G1 block binds the nonce, data length and MAC-size flag into the MAC and must be
+        // processed unconditionally. DSTU 7624 carries the associated-data-present indicator as a flag
+        // bit inside G1, so it is not a gate on computing G1: skipping G1 when no AAD is present leaves
+        // the MAC independent of the nonce and enables cross-nonce forgery.
         System.arraycopy(nonce, 0, G1, 0, nonce.length - Nb_ - 1);
 
-        intToBytes(dataLen, buffer, 0); // for G1
+        int dataLen = data.size() - (forEncryption ? 0 : macSize);
+        Pack.intToLittleEndian(dataLen, buffer, 0); // for G1
 
         System.arraycopy(buffer, 0, G1, nonce.length - Nb_ - 1, BYTES_IN_INT);
 
-        G1[G1.length - 1] = getFlag(true, macSize);
+        G1[G1.length - 1] = getFlag(hasAssocText, macSize);
 
         engine.processBlock(G1, 0, macBlock, 0);
 
-        intToBytes(assocLen, buffer, 0); // for G2
-
-        if (assocLen <= engine.getBlockSize() - Nb_)
+        if (!hasAssocText)
         {
-            for (int byteIndex = 0; byteIndex < assocLen; byteIndex++)
+            return;
+        }
+
+        Pack.intToLittleEndian(aadLen, buffer, 0); // for G2
+
+        byte[] aad = associatedText.getBuffer();
+
+        if (aadLen <= engine.getBlockSize() - Nb_)
+        {
+            for (int byteIndex = 0; byteIndex < aadLen; byteIndex++)
             {
-                buffer[byteIndex + Nb_] ^= assocText[assocOff + byteIndex];
+                buffer[byteIndex + Nb_] ^= aad[byteIndex];
             }
 
             for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
@@ -219,12 +269,13 @@ public class KCCMBlockCipher
 
         engine.processBlock(macBlock, 0, macBlock, 0);
 
-        int authLen = assocLen;
+        int assocOff = 0;
+        int authLen = aadLen;
         while (authLen != 0)
         {
             for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
             {
-                macBlock[byteIndex] ^= assocText[byteIndex + assocOff];
+                macBlock[byteIndex] ^= aad[byteIndex + assocOff];
             }
 
             engine.processBlock(macBlock, 0, macBlock, 0);
@@ -261,25 +312,16 @@ public class KCCMBlockCipher
         {
             throw new DataLengthException("input buffer too short");
         }
-        if (out.length - outOff < len)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
 
-        if (associatedText.size() > 0)
-        {
-            if (forEncryption)
-            {
-                processAAD(associatedText.getBuffer(), 0, associatedText.size(), data.size());
-            }
-            else
-            {
-                processAAD(associatedText.getBuffer(), 0, associatedText.size(), data.size() - macSize);
-            }
-        }
+        processAssociatedText();
 
         if (forEncryption)
         {
+            if (out.length - outOff < len + macSize)
+            {
+                throw new OutputLengthException("output buffer too short");
+            }
+
             // Partial trailing block permitted: CalculateMac zero-pads it and the gamma
             // keystream is truncated below. See the interop caveat in the class javadoc (github #287).
             CalculateMac(in, inOff, len);
@@ -295,10 +337,7 @@ public class KCCMBlockCipher
                 outOff += blockLen;
             }
 
-            for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
-            {
-                s[byteIndex] += counter[byteIndex];
-            }
+            advanceGamma();
 
             engine.processBlock(s, 0, buffer, 0);
 
@@ -315,54 +354,64 @@ public class KCCMBlockCipher
         }
         else
         {
-            // A partial trailing data block is permitted: the gamma keystream is truncated for
-            // the trailing block and CalculateMac zero-pads it when recomputing the tag below.
-            // See the interop caveat in the class javadoc (github #287).
-            int outStart = outOff;
+            if (len < macSize)
+            {
+                throw new InvalidCipherTextException("data too short");
+            }
+
             int dataLen = len - macSize;
+
+            if (out.length - outOff < dataLen)
+            {
+                throw new OutputLengthException("output buffer too short");
+            }
 
             engine.processBlock(nonce, 0, s, 0);
 
-            // recover the plaintext payload (gamma/counter mode, trailing block truncated)
+            // Recover the plaintext into a private buffer and verify the MAC before writing any of it
+            // to the caller's output: on a tag failure the caller's buffer must not be left holding
+            // unverified gamma plaintext (matches CCMBlockCipher / GCMSIVBlockCipher). A partial
+            // trailing block is permitted: the gamma keystream is truncated for the trailing block
+            // and CalculateMac zero-pads it. See the interop caveat in the class javadoc (github #287).
+            byte[] plain = new byte[dataLen];
+            int plainOff = 0;
+            int inPos = inOff;
             int totalLength = dataLen;
             while (totalLength > 0)
             {
                 int blockLen = Math.min(totalLength, engine.getBlockSize());
-                ProcessBlock(in, inOff, blockLen, out, outOff);
+                ProcessBlock(in, inPos, blockLen, plain, plainOff);
                 totalLength -= blockLen;
-                inOff += blockLen;
-                outOff += blockLen;
+                inPos += blockLen;
+                plainOff += blockLen;
             }
 
             // recover the appended (masked) MAC using the next keystream block
-            for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
-            {
-                s[byteIndex] += counter[byteIndex];
-            }
+            advanceGamma();
 
             engine.processBlock(s, 0, buffer, 0);
 
+            byte[] recoveredMac = new byte[macSize];
             for (int byteIndex = 0; byteIndex < macSize; byteIndex++)
             {
-                out[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ in[inOff + byteIndex]);
+                recoveredMac[byteIndex] = (byte)(buffer[byteIndex] ^ in[inPos + byteIndex]);
             }
-            outOff += macSize;
 
             // recompute the MAC over the recovered plaintext and compare
-            System.arraycopy(out, outOff - macSize, buffer, 0, macSize);
-
-            CalculateMac(out, outStart, dataLen);
+            CalculateMac(plain, 0, dataLen);
 
             System.arraycopy(macBlock, 0, mac, 0, macSize);
 
-            byte[] calculatedMac = new byte[macSize];
-
-            System.arraycopy(buffer, 0, calculatedMac, 0, macSize);
-
-            if (!Arrays.constantTimeAreEqual(mac, calculatedMac))
+            if (!Arrays.constantTimeAreEqual(mac, recoveredMac))
             {
+                Arrays.clear(plain);
                 throw new InvalidCipherTextException("mac check failed");
             }
+
+            // Only now (MAC verified) expose the recovered plaintext in the caller's output. The MAC
+            // is not written to the output - it is consumed for verification and is available via
+            // getMac() - matching the standard AEAD contract (CCMBlockCipher / GCMBlockCipher / KGCM).
+            System.arraycopy(plain, 0, out, outOff, dataLen);
 
             reset();
 
@@ -372,11 +421,7 @@ public class KCCMBlockCipher
 
     private void ProcessBlock(byte[] input, int inOff, int blockLen, byte[] output, int outOff)
     {
-
-        for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
-        {
-            s[byteIndex] += counter[byteIndex];
-        }
+        advanceGamma();
 
         engine.processBlock(s, 0, buffer, 0);
 
@@ -385,6 +430,24 @@ public class KCCMBlockCipher
         for (int byteIndex = 0; byteIndex < blockLen; byteIndex++)
         {
             output[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ input[inOff + byteIndex]);
+        }
+    }
+
+    /**
+     * Advance the gamma counter by adding {@code counter} to {@code s} as a little-endian
+     * multi-byte integer with carry propagation (counter[0] is the least significant byte).
+     * The carry must propagate across the whole block: without it only s[0] ever changes, so
+     * the keystream block E(s) repeats every 256 blocks and any message longer than 255 blocks
+     * is encrypted with a repeating keystream (a two-time pad). See github #287.
+     */
+    private void advanceGamma()
+    {
+        int carry = 0;
+        for (int byteIndex = 0; byteIndex < counter.length; byteIndex++)
+        {
+            carry += (s[byteIndex] & 0xFF) + (counter[byteIndex] & 0xFF);
+            s[byteIndex] = (byte)carry;
+            carry >>>= 8;
         }
     }
 
@@ -430,7 +493,14 @@ public class KCCMBlockCipher
 
     public int getOutputSize(int len)
     {
-        return len + macSize;
+        int totalData = len + data.size();
+
+        if (forEncryption)
+        {
+            return totalData + macSize;
+        }
+
+        return totalData < macSize ? 0 : totalData - macSize;
     }
 
     public void reset()
@@ -439,7 +509,7 @@ public class KCCMBlockCipher
         Arrays.fill(buffer, (byte)0);
         Arrays.fill(counter, (byte)0);
         Arrays.fill(macBlock, (byte)0);
-        counter[0] = 0x01;
+        counter[0] = 0x01; // defined in standard
         data.reset();
         associatedText.reset();
 
@@ -447,18 +517,6 @@ public class KCCMBlockCipher
         {
             processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
         }
-    }
-
-
-    private void intToBytes(
-        int num,
-        byte[] outBytes,
-        int outOff)
-    {
-        outBytes[outOff + 3] = (byte)(num >> 24);
-        outBytes[outOff + 2] = (byte)(num >> 16);
-        outBytes[outOff + 1] = (byte)(num >> 8);
-        outBytes[outOff] = (byte)num;
     }
 
     private byte getFlag(boolean authTextPresents, int macSize)

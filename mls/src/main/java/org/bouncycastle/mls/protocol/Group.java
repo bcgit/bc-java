@@ -3,7 +3,6 @@ package org.bouncycastle.mls.protocol;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.TranscriptHash;
@@ -52,6 +52,7 @@ import org.bouncycastle.mls.codec.Welcome;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.util.Arrays;
 
 public class Group
 {
@@ -121,7 +122,6 @@ public class Group
 
             // Create PSK proposal
             byte[] nonce = new byte[suite.getKDF().getHashLength()];
-            SecureRandom random = new SecureRandom();
             random.nextBytes(nonce);
             proposals.add(Proposal.preSharedKey(PreSharedKeyID.resumption(ResumptionPSKUsage.REINIT, priorGroupID, priorEpoch, nonce)));
 
@@ -354,7 +354,7 @@ public class Group
             {
                 return false;
             }
-            return Arrays.equals(id, epochRef.id);
+            return Arrays.areEqual(id, epochRef.id);
         }
 
         @Override
@@ -377,6 +377,7 @@ public class Group
     private TreeKEMPrivateKey treePriv;
     private GroupKeySet keys;
     private MlsCipherSuite suite;
+    private SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     private LeafIndex index;
     private byte[] identitySk;
     private ArrayList<CachedProposal> pendingProposals;
@@ -624,7 +625,7 @@ public class Group
 
         // Verify confirmation tag
         byte[] confirmationTag = keySchedule.confirmationTag(transcriptHash.getConfirmed());
-        if (!Arrays.equals(confirmationTag, groupInfo.getConfirmationTag()))
+        if (!Arrays.constantTimeAreEqual(confirmationTag, groupInfo.getConfirmationTag()))
         {
             throw new Exception("Confirmation failed to verify");
         }
@@ -678,7 +679,7 @@ public class Group
     {
         // Validate the GroupContent
         FramedContent content = auth.getContent();
-        if (!Arrays.equals(content.getGroupID(), groupID))
+        if (!Arrays.areEqual(content.getGroupID(), groupID))
         {
             throw new Exception("GroupID mismatch");
         }
@@ -723,7 +724,7 @@ public class Group
             if (cachedGroup != null)
             {
                 // Verify that the cached state is a plausible successor to this state
-                if (!Arrays.equals(cachedGroup.groupID, groupID) || cachedGroup.epoch != epoch + 1 || !cachedGroup.index.equals(index))
+                if (!Arrays.areEqual(cachedGroup.groupID, groupID) || cachedGroup.epoch != epoch + 1 || !cachedGroup.index.equals(index))
                 {
                     throw new Exception("Invalid successor state");
                 }
@@ -820,7 +821,7 @@ public class Group
         // Verify the confirmation MAC
         byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.getConfirmed());
 
-        if (!Arrays.equals(auth.getConfirmationTag(), confirmationTag))
+        if (!Arrays.constantTimeAreEqual(confirmationTag, auth.getConfirmationTag()))
         {
             throw new Exception("Confirmation failed to verify");
         }
@@ -890,7 +891,6 @@ public class Group
 
         // Create PSK Proposal
         byte[] nonce = new byte[suite.getKDF().getHashLength()];
-        SecureRandom random = new SecureRandom();
         random.nextBytes(nonce);
         proposals.add(Proposal.preSharedKey(PreSharedKeyID.resumption(ResumptionPSKUsage.BRANCH, this.groupID, this.epoch, nonce)));
 
@@ -1288,10 +1288,20 @@ public class Group
                 sendersExt = ext;
             }
         }
+        if (sendersExt == null)
+        {
+            throw new Exception("No external senders extension in group");
+        }
+
         List<ExternalSender> senders = sendersExt.getSenders();
+        int senderIndex = extSender.getSenderIndex();
+        if (senders == null || senderIndex < 0 || senderIndex >= senders.size())
+        {
+            throw new Exception("External sender index out of range");
+        }
 
         return auth.verify(suite,
-            senders.get(extSender.getSenderIndex()).getSignatureKey(),
+            senders.get(senderIndex).getSignatureKey(),
             MLSOutputStream.encode(getGroupContext()));
     }
 
@@ -1424,7 +1434,6 @@ public class Group
         {
             throw new Exception("Unknown PSK");
         }
-        SecureRandom random = new SecureRandom();
         byte[] nonce = new byte[suite.getKDF().getHashLength()];
         random.nextBytes(nonce);
         PreSharedKeyID pskId = PreSharedKeyID.external(externalPskId, nonce);
@@ -1445,7 +1454,6 @@ public class Group
         {
             throw new Exception("Unknown PSK");
         }
-        SecureRandom random = new SecureRandom();
         byte[] nonce = new byte[suite.getKDF().getHashLength()];
         random.nextBytes(nonce);
         PreSharedKeyID pskId = PreSharedKeyID.resumption(ResumptionPSKUsage.APPLICATION, groupID, epoch, nonce);
@@ -1516,7 +1524,7 @@ public class Group
             message.publicMessage = PublicMessage.protect(contentAuth, suite, keySchedule.membershipKey.value(), MLSOutputStream.encode(getGroupContext()));
             return message;
         case mls_private_message:
-            message.privateMessage = PrivateMessage.protect(contentAuth, suite, keys, keySchedule.senderDataSecret.value(), paddingSize);
+            message.privateMessage = PrivateMessage.protect(contentAuth, suite, keys, keySchedule.senderDataSecret.value(), paddingSize, random);
             return message;
         default:
             throw new Exception("Malformed AuthenticatedContent");
@@ -1557,7 +1565,6 @@ public class Group
         {
             throw new Exception("Unknown PSK");
         }
-        SecureRandom random = new SecureRandom();
         byte[] nonce = new byte[suite.getKDF().getHashLength()];
         random.nextBytes(nonce);
 
@@ -1802,7 +1809,7 @@ public class Group
         // check if ref is already in the queue
         for (CachedProposal cached : pendingProposals)
         {
-            if (Arrays.equals(cached.proposalRef, ref))
+            if (Arrays.areEqual(cached.proposalRef, ref))
             {
                 return;
             }
@@ -1941,7 +1948,7 @@ public class Group
 
         // Verify that the value of leaf_node.encryption_key is different from the
         // value of the init_key field.
-        boolean distinct_keys = !Arrays.equals(keyPackage.getInitKey(), keyPackage.getLeafNode().getEncryptionKey());
+        boolean distinct_keys = !Arrays.areEqual(keyPackage.getInitKey(), keyPackage.getLeafNode().getEncryptionKey());
 
         return (correct_ciphersuite && valid_signature && leaf_node_valid && distinct_keys);
     }
@@ -2019,18 +2026,14 @@ public class Group
                 continue;
             }
 
-            isUniqueSigKey &= (index != null && ((i == index.value())) || (!Arrays.equals(sigKey, leaf.getSignatureKey())));
-            isUniqueEncKey &= !Arrays.equals(encKey, leaf.getEncryptionKey());
+            isUniqueSigKey &= (index != null && ((i == index.value())) || (!Arrays.areEqual(sigKey, leaf.getSignatureKey())));
+            isUniqueEncKey &= !Arrays.areEqual(encKey, leaf.getEncryptionKey());
             //TODO:
 //            mutualCredentialSupport &= leaf.capabilities.credentialSupported(leafNode.credential)
 //                    && leafNode.capabilities.credentialSupported(leaf.credential)
         }
 
 
-        //TODO:
-        // Verify that the extensions in the LeafNode are supported
-        // by checking that the ID for each extension in the extensions field is listed in the
-        // capabilities.extensions field of the LeafNode.
         boolean supportsAllExtensions = true;
         for (Extension ext : leafNode.getExtensions())
         {
@@ -2170,7 +2173,7 @@ public class Group
             boolean areEqual = false;
             for (byte[] sig : signatureKeys)
             {
-                if (Arrays.equals(sig, signatureKey))
+                if (Arrays.areEqual(sig, signatureKey))
                 {
                     areEqual = true;
                     break;
@@ -2272,7 +2275,7 @@ public class Group
             boolean areEqual = false;
             for (byte[] key : encKeys)
             {
-                if (Arrays.equals(key, encKey))
+                if (Arrays.areEqual(key, encKey))
                 {
                     areEqual = true;
                     break;
@@ -2336,7 +2339,7 @@ public class Group
             case REFERENCE:
                 for (CachedProposal cached : pendingProposals)
                 {
-                    if (Arrays.equals(cached.proposalRef, id.getReference()))
+                    if (Arrays.areEqual(cached.proposalRef, id.getReference()))
                     {
                         out.add(cached);
                         break;
@@ -2378,7 +2381,7 @@ public class Group
 
         outTree.setSuite(suite);
         outTree.setHashAll();
-        if (!Arrays.equals(outTree.getRootHash(), treeHash))
+        if (!Arrays.areEqual(outTree.getRootHash(), treeHash))
         {
             throw new Exception("Tree does not match GroupInfo");
         }

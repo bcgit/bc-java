@@ -15,7 +15,7 @@ package org.bouncycastle.pqc.crypto.faest;
  * Implementation is bit-serial constant-time: the S-box uses {@link BF8#inv}
  * plus an affine combination of {@link BF8#parity} terms rather than a
  * lookup table. The MixColumns multiplies use {@link BF8#mul} for the
- * {@code &#xd7;02} / {@code &#xd7;03} fixed constants. No data-dependent
+ * {@code ×02} / {@code ×03} fixed constants. No data-dependent
  * memory access on any secret-influenced value.
  * <p>
  * State layout (matching the C reference): byte array of length

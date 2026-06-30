@@ -39,15 +39,20 @@ import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.cms.CCMParameters;
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.crypto.util.OidCatalogue;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.GenericKey;
@@ -180,6 +185,11 @@ class CMSUtils
     static ASN1Set convertToDlSet(Set<AlgorithmIdentifier> digestAlgs)
     {
         return new DLSet((AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]));
+    }
+
+    static ASN1Set convertToDerSet(Set<AlgorithmIdentifier> digestAlgs)
+    {
+        return new DERSet((AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]));
     }
 
     static void addDigestAlgs(Set<AlgorithmIdentifier> digestAlgs, SignerInformation signer, DigestAlgorithmIdentifierFinder dgstAlgFinder)
@@ -344,6 +354,165 @@ class CMSUtils
         return new DERSet(v);
     }
 
+    /**
+     * Return the exact encrypted-content octet count produced by encrypting
+     * {@code inputLength} octets under the passed in content encryption
+     * algorithm, or -1 when the algorithm is not recognised. AEAD counts
+     * include the appended tag, matching the EnvelopedData convention of
+     * carrying the tag at the end of encryptedContent.
+     */
+    static long getDefiniteLengthCipherOutput(AlgorithmIdentifier encAlgId, long inputLength)
+    {
+        ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
+
+        if (OidCatalogue.isCBC128(algorithm))
+        {
+            // CBC with PKCS#7 padding, 16 octet blocks: always at least one pad octet.
+            return inputLength + (16 - (inputLength % 16));
+        }
+        if (OidCatalogue.isCBC64(algorithm))
+        {
+            // CBC with PKCS#7 padding, 8 octet blocks.
+            return inputLength + (8 - (inputLength % 8));
+        }
+        if (OidCatalogue.isGCM(algorithm))
+        {
+            return inputLength + GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+        if (OidCatalogue.isCCM(algorithm))
+        {
+            return inputLength + CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+
+        return -1;
+    }
+
+    /**
+     * Return the MAC output length in octets implied by the given MAC
+     * algorithm, or -1 when the algorithm does not have a spec-fixed output
+     * length (e.g. block-cipher based MACs, whose truncation is a provider
+     * default) - used by the definite-length authenticated-data path, which
+     * must size the mac field before any content is written.
+     */
+    static int getMacOutputLength(AlgorithmIdentifier macAlgId)
+    {
+        ASN1ObjectIdentifier algorithm = macAlgId.getAlgorithm();
+
+        if (PKCSObjectIdentifiers.id_hmacWithSHA1.equals(algorithm)
+            || IANAObjectIdentifiers.hmacSHA1.equals(algorithm))
+        {
+            return 20;
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA224.equals(algorithm)
+            || NISTObjectIdentifiers.id_hmacWithSHA3_224.equals(algorithm))
+        {
+            return 28;
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA256.equals(algorithm)
+            || NISTObjectIdentifiers.id_hmacWithSHA3_256.equals(algorithm))
+        {
+            return 32;
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA384.equals(algorithm)
+            || NISTObjectIdentifiers.id_hmacWithSHA3_384.equals(algorithm))
+        {
+            return 48;
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA512.equals(algorithm)
+            || NISTObjectIdentifiers.id_hmacWithSHA3_512.equals(algorithm))
+        {
+            return 64;
+        }
+        if (IANAObjectIdentifiers.hmacMD5.equals(algorithm))
+        {
+            return 16;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Return the output length in octets of the passed in digest algorithm,
+     * or -1 when the algorithm is not recognised. Used to size the trial
+     * messageDigest attribute when predicting a SignerInfo's encoded length.
+     */
+    static int getDigestOutputLength(AlgorithmIdentifier digAlgId)
+    {
+        ASN1ObjectIdentifier algorithm = digAlgId.getAlgorithm();
+
+        if (NISTObjectIdentifiers.id_sha256.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha512_256.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha3_256.equals(algorithm))
+        {
+            return 32;
+        }
+        if (NISTObjectIdentifiers.id_sha384.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha3_384.equals(algorithm))
+        {
+            return 48;
+        }
+        if (NISTObjectIdentifiers.id_sha512.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha3_512.equals(algorithm)
+            || NISTObjectIdentifiers.id_shake256.equals(algorithm))
+        {
+            return 64;
+        }
+        if (NISTObjectIdentifiers.id_sha224.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha512_224.equals(algorithm)
+            || NISTObjectIdentifiers.id_sha3_224.equals(algorithm))
+        {
+            return 28;
+        }
+        if (OIWObjectIdentifiers.idSHA1.equals(algorithm))
+        {
+            return 20;
+        }
+        if (PKCSObjectIdentifiers.md5.equals(algorithm))
+        {
+            return 16;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Return the exact encrypted-content octet count for AuthEnvelopedData,
+     * or -1 when the algorithm is not recognised. The AEAD tag lives in the
+     * separate mac field, so the encrypted content is the raw (CTR-mode)
+     * ciphertext - the same octet count as the plaintext for GCM and CCM.
+     */
+    static long getDefiniteLengthAEADOutput(AlgorithmIdentifier encAlgId, long inputLength)
+    {
+        ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
+
+        if (OidCatalogue.isAEAD(algorithm))
+        {
+            return inputLength;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Return the AEAD tag length carried in AuthEnvelopedData's mac field, or
+     * -1 when the algorithm is not recognised.
+     */
+    static int getAEADMacLength(AlgorithmIdentifier encAlgId)
+    {
+        ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
+
+        if (OidCatalogue.isGCM(algorithm))
+        {
+            return GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+        if (OidCatalogue.isCCM(algorithm))
+        {
+            return CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+        }
+
+        return -1;
+    }
+
     static OutputStream createBEROctetOutputStream(OutputStream s,
                                                    int tagNo, boolean isExplicit, int bufferSize)
         throws IOException
@@ -497,10 +666,18 @@ class CMSUtils
         ASN1Set authenticatedAttrSet = null;
         if (authAttrsGenerator != null)
         {
+            OutputStream aadStream = encryptor.getAADStream();
+            if (aadStream == null)
+            {
+                // getAADStream() is null when the JCE provider has no AEAD AAD support
+                // (java.crypto.Cipher.updateAAD is JDK 1.7+); authenticated attributes
+                // cannot be fed as AAD on this runtime.
+                throw new IOException("authenticated attributes require AEAD AAD support (JDK 1.7+)");
+            }
             AttributeTable attrTable = authAttrsGenerator.getAttributes(getEmptyParameters());
 
             authenticatedAttrSet = new DERSet(attrTable.toASN1EncodableVector());
-            encryptor.getAADStream().write(authenticatedAttrSet.getEncoded(ASN1Encoding.DER));
+            aadStream.write(authenticatedAttrSet.getEncoded(ASN1Encoding.DER));
         }
         return authenticatedAttrSet;
     }
@@ -532,6 +709,11 @@ class CMSUtils
     static ASN1Set getAttrBERSet(CMSAttributeTableGenerator gen)
     {
         return (gen != null) ? new BERSet(gen.getAttributes(getEmptyParameters()).toASN1EncodableVector()) : null;
+    }
+
+    static ASN1Set getAttrDERSet(CMSAttributeTableGenerator gen)
+    {
+        return (gen != null) ? new DERSet(gen.getAttributes(getEmptyParameters()).toASN1EncodableVector()) : null;
     }
 
     static byte[] encodeObj(

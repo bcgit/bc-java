@@ -1,7 +1,8 @@
 package org.bouncycastle.pkcs;
 
 /**
- * General checked Exception thrown in the cert package and its sub-packages.
+ * General checked exception thrown by classes in {@link org.bouncycastle.pkcs} and its
+ * sub-packages.
  */
 public class PKCSException
     extends Exception

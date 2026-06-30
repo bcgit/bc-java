@@ -1,6 +1,7 @@
 package org.bouncycastle.mls.codec;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.mls.GroupKeySet;
@@ -42,13 +43,14 @@ public class PrivateMessage
         ciphertext = stream.readOpaque();
     }
 
-    public static PrivateMessage protect(AuthenticatedContent auth, MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes, int paddingSize)
+    public static PrivateMessage protect(AuthenticatedContent auth, MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes, int paddingSize, SecureRandom rng)
         throws IOException, IllegalAccessException, InvalidCipherTextException
     {
         // Get KeyGeneration from the secret tree
         LeafIndex index = auth.content.sender.sender;
         ContentType contentType = auth.content.contentType;
         byte[] reuseGuard = new byte[4];
+        rng.nextBytes(reuseGuard);
         KeyGeneration keyGen = keys.get(contentType, index, reuseGuard);
 
         // Encrypt the content

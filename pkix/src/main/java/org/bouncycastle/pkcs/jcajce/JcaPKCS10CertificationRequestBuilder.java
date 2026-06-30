@@ -38,6 +38,15 @@ public class JcaPKCS10CertificationRequestBuilder
         super(X500Name.getInstance(subject.getEncoded()), SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
     }
 
+    /**
+     * Generate a PKCS#10 certification request carrying the alternate public key / alternate
+     * signature attributes used by paired ("chameleon") certificates.
+     *
+     * @param signer       the content signer used to produce the primary signature.
+     * @param altPublicKey the alternate public key as a JCA {@link PublicKey}.
+     * @param altSigner    the content signer used to produce the alternate signature value.
+     * @return the resulting PKCS#10 certification request with both signatures.
+     */
     public PKCS10CertificationRequest build(
           ContentSigner signer,
           PublicKey altPublicKey,

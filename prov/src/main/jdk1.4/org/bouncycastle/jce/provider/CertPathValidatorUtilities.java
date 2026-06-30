@@ -1412,6 +1412,19 @@ class CertPathValidatorUtilities
         }
     }
 
+    protected static void verifyX509AttributeCertificate(X509AttributeCertificate attrCert, PublicKey publicKey,
+        String sigProvider) throws GeneralSecurityException
+    {
+        if (sigProvider == null)
+        {
+            attrCert.verify(publicKey, BouncyCastleProvider.PROVIDER_NAME);
+        }
+        else
+        {
+            attrCert.verify(publicKey, sigProvider);
+        }
+    }
+
     static void checkCRLsNotEmpty(PKIXCertRevocationCheckerParameters params, Set crls, Object cert)
         throws RecoverableCertPathValidatorException
     {

@@ -46,7 +46,13 @@ public class AllowNonDerTimeTest
         ASN1GeneralizedTime genDerObj = (ASN1GeneralizedTime)ASN1Primitive.fromByteArray(genDer);
         ASN1GeneralizedTime genNoSecondsObj = (ASN1GeneralizedTime)ASN1Primitive.fromByteArray(genNoSeconds);
         ASN1GeneralizedTime genTrailingZeroObj = (ASN1GeneralizedTime)ASN1Primitive.fromByteArray(genTrailingZero);
-        ASN1GeneralizedTime genIssue2040Obj = (ASN1GeneralizedTime)ASN1Primitive.fromByteArray(genIssue2040);
+
+        // github #2040: a GeneralizedTime carrying a 2-digit-year (UTCTime-shaped) value decodes
+        // to an out-of-range month and is now rejected on read by the strict structural validation
+        // in ASN1GeneralizedTime.createPrimitive - earlier than, and independent of, the DER write
+        // gate below. (Legal-but-non-DER forms - missing seconds, offset, trailing-zero fraction -
+        // still parse leniently, as asserted above.)
+        shouldRejectParse("GeneralizedTime 2-digit year (github #2040)", genIssue2040);
 
         // default (property unset / "true"): non-DER may still be re-emitted as DER (lenient pass-through)
         isTrue("default: DER UTCTime round-trip", utcDerObj.getEncoded(ASN1Encoding.DER).length > 0);
@@ -71,7 +77,6 @@ public class AllowNonDerTimeTest
             shouldRejectDER("UTCTime offset not Z", utcOffsetObj);
             shouldRejectDER("GeneralizedTime missing seconds", genNoSecondsObj);
             shouldRejectDER("GeneralizedTime trailing-zero fraction", genTrailingZeroObj);
-            shouldRejectDER("GeneralizedTime 2-digit year (github #2040)", genIssue2040Obj);
 
             // BER serialization is unaffected by the property
             isTrue("strict: BER write of non-DER UTCTime", utcNoSecondsObj.getEncoded(ASN1Encoding.BER).length > 0);
@@ -84,6 +89,20 @@ public class AllowNonDerTimeTest
 
         // property cleared: lenient pass-through again (and the override did not leak to other tests)
         isTrue("restored: non-DER UTCTime DER write", utcNoSecondsObj.getEncoded(ASN1Encoding.DER).length > 0);
+    }
+
+    private void shouldRejectParse(String label, byte[] encoding)
+    {
+        try
+        {
+            ASN1Primitive.fromByteArray(encoding);
+            fail("strict read did not reject " + label);
+        }
+        catch (IOException e)
+        {
+            isTrue("unexpected message rejecting " + label,
+                e.getMessage() != null && e.getMessage().contains("invalid GeneralizedTime format"));
+        }
     }
 
     private void shouldRejectDER(String label, ASN1Primitive prim)

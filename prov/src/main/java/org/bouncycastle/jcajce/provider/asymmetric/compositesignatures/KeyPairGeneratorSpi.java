@@ -22,9 +22,6 @@ public class KeyPairGeneratorSpi
     private final ASN1ObjectIdentifier algorithm;
     private final KeyPairGenerator[] generators;
 
-    private SecureRandom secureRandom;
-    private boolean parametersInitialized = false;
-
     KeyPairGeneratorSpi(ASN1ObjectIdentifier algorithm)
     {
         this.algorithm = algorithm;

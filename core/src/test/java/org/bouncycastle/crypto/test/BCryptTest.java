@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import org.bouncycastle.crypto.generators.BCrypt;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -46,6 +47,44 @@ public class BCryptTest
         testShortKeys();
         testVectors();
         testAddTerminator();
+        testBcryptPbkdf();
+    }
+
+    private void testBcryptPbkdf()
+    {
+        // OpenSSH bcrypt_pbkdf, cross-checked against the OpenBSD reference implementation
+        // (via the python "bcrypt" package's bcrypt.kdf).
+        byte[] salt16 = new byte[16];
+        for (int i = 0; i != salt16.length; i++)
+        {
+            salt16[i] = (byte)i;
+        }
+
+        isTrue("bcrypt_pbkdf vec1", areEqual(
+            BCrypt.pbkdfGenerate(Strings.toByteArray("password"), Strings.toByteArray("salt"), 16, 32),
+            Hex.decode("c3d7ec5f693f16055b6d2f0af904795f79a924bbeb6fbdb805e82409d56d1e63")));
+
+        isTrue("bcrypt_pbkdf vec2", areEqual(
+            BCrypt.pbkdfGenerate(Strings.toByteArray("passphrase-here"), salt16, 8, 48),
+            Hex.decode("30446fa60d600082c87e2a00450f9cad0c3cd9e182830ce4d4bdc35488b6e32a76edd48232dbc23a4f62e8f2f034899c")));
+
+        // argument validation
+        try
+        {
+            BCrypt.pbkdfGenerate(Strings.toByteArray("p"), new byte[0], 1, 16);
+            fail("empty salt accepted");
+        }
+        catch (IllegalArgumentException expected)
+        {
+        }
+        try
+        {
+            BCrypt.pbkdfGenerate(Strings.toByteArray("p"), Strings.toByteArray("salt"), 0, 16);
+            fail("zero rounds accepted");
+        }
+        catch (IllegalArgumentException expected)
+        {
+        }
     }
 
     private void testShortKeys()

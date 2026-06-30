@@ -71,7 +71,7 @@ public class JcePBESecretKeyDecryptorBuilder
             calculatorProvider = calculatorProviderBuilder.build();
         }
 
-        return new PBESecretKeyDecryptor(passPhrase, calculatorProvider)
+        return new PBESecretKeyDecryptor(passPhrase, calculatorProvider, new JcePGPS2KCalculator(helper))
         {
             public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
                 throws PGPException

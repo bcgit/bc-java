@@ -1049,222 +1049,232 @@ public class PKCS12KeyStoreSpi
         keys = new IgnoresCaseHashtable();
         localIds = new IgnoresCaseHashtable();
 
-        if (info.getContentType().equals(data))
+        try
         {
-            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(PKCS12Util.getContentOctets(info));
-            ContentInfo[] c = authSafe.getContentInfo();
-
-            for (int i = 0; i != c.length; i++)
+            if (info.getContentType().equals(data))
             {
-                if (c[i].getContentType().equals(data))
-                {
-                    ASN1Sequence seq = ASN1Sequence.getInstance(PKCS12Util.getContentOctets(c[i]));
+                AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(PKCS12Util.getContentOctets(info));
+                ContentInfo[] c = authSafe.getContentInfo();
 
-                    for (int j = 0; j != seq.size(); j++)
+                for (int i = 0; i != c.length; i++)
+                {
+                    if (c[i].getContentType().equals(data))
                     {
-                        SafeBag b = SafeBag.getInstance(seq.getObjectAt(j));
-                        if (b.getBagId().equals(pkcs8ShroudedKeyBag))
+                        ASN1Sequence seq = ASN1Sequence.getInstance(PKCS12Util.getContentOctets(c[i]));
+
+                        for (int j = 0; j != seq.size(); j++)
                         {
-                            unmarkedKey = processShroudedKeyBag(b, password, wrongPKCS12Zero);
-                            noEnc = false;
+                            SafeBag b = SafeBag.getInstance(seq.getObjectAt(j));
+                            if (b.getBagId().equals(pkcs8ShroudedKeyBag))
+                            {
+                                unmarkedKey = processShroudedKeyBag(b, password, wrongPKCS12Zero);
+                                noEnc = false;
+                            }
+                            else if (b.getBagId().equals(certBag))
+                            {
+                                chain.addElement(b);
+                            }
+                            else if (b.getBagId().equals(keyBag))
+                            {
+                                processKeyBag(b);
+                            }
+                            else if (b.getBagId().equals(secretBag))
+                            {
+                                processSecretBag(b, password, wrongPKCS12Zero);
+                            }
+                            else
+                            {
+                                LOG.info("extra in data " + b.getBagId());
+                                LOG.fine(ASN1Dump.dumpAsString(b));
+                            }
                         }
-                        else if (b.getBagId().equals(certBag))
+                    }
+                    else if (c[i].getContentType().equals(encryptedData))
+                    {
+                        EncryptedData d = EncryptedData.getInstance(PKCS12Util.getContent(c[i]));
+                        byte[] octets = cryptData(false, d.getEncryptionAlgorithm(),
+                            password, wrongPKCS12Zero, PKCS12Util.getEncryptedContent(d).getOctets());
+                        ASN1Sequence seq = ASN1Sequence.getInstance(octets);
+
+                        noEnc = false;
+                        for (int j = 0; j != seq.size(); j++)
                         {
-                            chain.addElement(b);
+                            SafeBag b = SafeBag.getInstance(seq.getObjectAt(j));
+                            if (b.getBagId().equals(certBag))
+                            {
+                                chain.addElement(b);
+                            }
+                            else if (b.getBagId().equals(pkcs8ShroudedKeyBag))
+                            {
+                                unmarkedKey = processShroudedKeyBag(b, password, wrongPKCS12Zero);
+                            }
+                            else if (b.getBagId().equals(keyBag))
+                            {
+                                processKeyBag(b);
+                            }
+                            else if (b.getBagId().equals(secretBag))
+                            {
+                                processSecretBag(b, password, wrongPKCS12Zero);
+                            }
+                            else
+                            {
+                                LOG.info("extra in encrypted data " + b.getBagId());
+                                LOG.fine(ASN1Dump.dumpAsString(b));
+                            }
                         }
-                        else if (b.getBagId().equals(keyBag))
+                    }
+                    else
+                    {
+                        LOG.info("extra " + c[i].getContentType().getId());
+                        LOG.fine(ASN1Dump.dumpAsString(PKCS12Util.getContent(c[i])));
+                    }
+                }
+            }
+
+            certs = new IgnoresCaseHashtable();
+            chainCerts = new Hashtable();
+            keyCerts = new Hashtable();
+
+            for (int i = 0; i != chain.size(); i++)
+            {
+                SafeBag b = (SafeBag)chain.elementAt(i);
+                CertBag cb = CertBag.getInstance(b.getBagValue());
+
+                if (!cb.getCertId().equals(x509Certificate))
+                {
+                    throw new RuntimeException("Unsupported certificate type: " + cb.getCertId());
+                }
+
+                Certificate cert;
+
+                try
+                {
+                    ByteArrayInputStream cIn = new ByteArrayInputStream(
+                        ((ASN1OctetString)cb.getCertValue()).getOctets());
+                    cert = certFact.generateCertificate(cIn);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e.toString());
+                }
+
+                //
+                // set the attributes
+                //
+                ASN1OctetString localId = null;
+                String alias = null;
+
+                if (b.getBagAttributes() != null)
+                {
+                    Enumeration e = b.getBagAttributes().getObjects();
+                    while (e.hasMoreElements())
+                    {
+                        ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
+                        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
+                        ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
+
+                        if (attrSet.size() > 0)   // sometimes this is empty!
                         {
-                            processKeyBag(b);
-                        }
-                        else if (b.getBagId().equals(secretBag))
-                        {
-                            processSecretBag(b, password, wrongPKCS12Zero);
-                        }
-                        else
-                        {
-                            LOG.info("extra in data " + b.getBagId());
-                            LOG.fine(ASN1Dump.dumpAsString(b));
+                            ASN1Primitive attr = (ASN1Primitive)attrSet.getObjectAt(0);
+                            PKCS12BagAttributeCarrier bagAttr = null;
+
+                            if (cert instanceof PKCS12BagAttributeCarrier)
+                            {
+                                bagAttr = (PKCS12BagAttributeCarrier)cert;
+
+                                ASN1Encodable existing = bagAttr.getBagAttribute(oid);
+                                if (existing != null)
+                                {
+                                    // we've found more than one - one might be incorrect
+                                    if (oid.equals(pkcs_9_at_localKeyId))
+                                    {
+                                        // -DM Hex.toHexString
+                                        String id = Hex.toHexString(((ASN1OctetString)attr).getOctets());
+                                        if (!(keys.keys.containsKey(id) || localIds.keys.containsKey(id)))
+                                        {
+                                            continue; // ignore this one - it's not valid
+                                        }
+                                    }
+
+                                    // OK, but the value has to be the same
+                                    if (!existing.toASN1Primitive().equals(attr))
+                                    {
+                                        throw new IOException(
+                                            "attempt to add existing attribute with different value");
+                                    }
+                                }
+                                else
+                                {
+                                    if (attrSet.size() > 1)
+                                    {
+                                        bagAttr.setBagAttribute(oid, attrSet);
+                                    }
+                                    else
+                                    {
+                                        bagAttr.setBagAttribute(oid, attr);
+                                    }
+                                }
+                            }
+
+                            if (oid.equals(pkcs_9_at_friendlyName))
+                            {
+                                alias = ((ASN1BMPString)attr).getString();
+                            }
+                            else if (oid.equals(pkcs_9_at_localKeyId))
+                            {
+                                localId = (ASN1OctetString)attr;
+                            }
                         }
                     }
                 }
-                else if (c[i].getContentType().equals(encryptedData))
-                {
-                    EncryptedData d = EncryptedData.getInstance(PKCS12Util.getContent(c[i]));
-                    byte[] octets = cryptData(false, d.getEncryptionAlgorithm(),
-                        password, wrongPKCS12Zero, PKCS12Util.getEncryptedContent(d).getOctets());
-                    ASN1Sequence seq = ASN1Sequence.getInstance(octets);
 
-                    noEnc = false;
-                    for (int j = 0; j != seq.size(); j++)
+                chainCerts.put(new CertId(cert.getPublicKey()), cert);
+
+                if (unmarkedKey)
+                {
+                    if (keyCerts.isEmpty())
                     {
-                        SafeBag b = SafeBag.getInstance(seq.getObjectAt(j));
-                        if (b.getBagId().equals(certBag))
-                        {
-                            chain.addElement(b);
-                        }
-                        else if (b.getBagId().equals(pkcs8ShroudedKeyBag))
-                        {
-                            unmarkedKey = processShroudedKeyBag(b, password, wrongPKCS12Zero);
-                        }
-                        else if (b.getBagId().equals(keyBag))
-                        {
-                            processKeyBag(b);
-                        }
-                        else if (b.getBagId().equals(secretBag))
-                        {
-                            processSecretBag(b, password, wrongPKCS12Zero);
-                        }
-                        else
-                        {
-                            LOG.info("extra in encrypted data " + b.getBagId());
-                            LOG.fine(ASN1Dump.dumpAsString(b));
-                        }
+                        String name = new String(Hex.encode(createSubjectKeyId(cert.getPublicKey()).getKeyIdentifier()));
+
+                        keyCerts.put(name, cert);
+                        keys.put(name, keys.remove("unmarked"));
                     }
                 }
                 else
                 {
-                    LOG.info("extra " + c[i].getContentType().getId());
-                    LOG.fine(ASN1Dump.dumpAsString(PKCS12Util.getContent(c[i])));
-                }
-            }
-        }
-
-        certs = new IgnoresCaseHashtable();
-        chainCerts = new Hashtable();
-        keyCerts = new Hashtable();
-
-        for (int i = 0; i != chain.size(); i++)
-        {
-            SafeBag b = (SafeBag)chain.elementAt(i);
-            CertBag cb = CertBag.getInstance(b.getBagValue());
-
-            if (!cb.getCertId().equals(x509Certificate))
-            {
-                throw new RuntimeException("Unsupported certificate type: " + cb.getCertId());
-            }
-
-            Certificate cert;
-
-            try
-            {
-                ByteArrayInputStream cIn = new ByteArrayInputStream(
-                    ((ASN1OctetString)cb.getCertValue()).getOctets());
-                cert = certFact.generateCertificate(cIn);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e.toString());
-            }
-
-            //
-            // set the attributes
-            //
-            ASN1OctetString localId = null;
-            String alias = null;
-
-            if (b.getBagAttributes() != null)
-            {
-                Enumeration e = b.getBagAttributes().getObjects();
-                while (e.hasMoreElements())
-                {
-                    ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
-                    ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
-                    ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
-
-                    if (attrSet.size() > 0)   // sometimes this is empty!
+                    //
+                    // the local key id needs to override the friendly name
+                    //
+                    if (localId != null)
                     {
-                        ASN1Primitive attr = (ASN1Primitive)attrSet.getObjectAt(0);
-                        PKCS12BagAttributeCarrier bagAttr = null;
+                        String name = new String(Hex.encode(localId.getOctets()));
 
-                        if (cert instanceof PKCS12BagAttributeCarrier)
-                        {
-                            bagAttr = (PKCS12BagAttributeCarrier)cert;
-
-                            ASN1Encodable existing = bagAttr.getBagAttribute(oid);
-                            if (existing != null)
-                            {
-                                // we've found more than one - one might be incorrect
-                                if (oid.equals(pkcs_9_at_localKeyId))
-                                {
-                                    // -DM Hex.toHexString
-                                    String id = Hex.toHexString(((ASN1OctetString)attr).getOctets());
-                                    if (!(keys.keys.containsKey(id) || localIds.keys.containsKey(id)))
-                                    {
-                                        continue; // ignore this one - it's not valid
-                                    }
-                                }
-
-                                // OK, but the value has to be the same
-                                if (!existing.toASN1Primitive().equals(attr))
-                                {
-                                    throw new IOException(
-                                        "attempt to add existing attribute with different value");
-                                }
-                            }
-                            else
-                            {
-                                if (attrSet.size() > 1)
-                                {
-                                    bagAttr.setBagAttribute(oid, attrSet);
-                                }
-                                else
-                                {
-                                    bagAttr.setBagAttribute(oid, attr);
-                                }
-                            }
-                        }
-
-                        if (oid.equals(pkcs_9_at_friendlyName))
-                        {
-                            alias = ((ASN1BMPString)attr).getString();
-                        }
-                        else if (oid.equals(pkcs_9_at_localKeyId))
-                        {
-                            localId = (ASN1OctetString)attr;
-                        }
+                        keyCerts.put(name, cert);
+                    }
+                    if (alias != null)
+                    {
+                        certs.put(alias, cert);
                     }
                 }
             }
 
-            chainCerts.put(new CertId(cert.getPublicKey()), cert);
-
-            if (unmarkedKey)
+            if (noMac && noEnc)
             {
-                if (keyCerts.isEmpty())
+                if (password != null && password.length != 0)
                 {
-                    String name = new String(Hex.encode(createSubjectKeyId(cert.getPublicKey()).getKeyIdentifier()));
-
-                    keyCerts.put(name, cert);
-                    keys.put(name, keys.remove("unmarked"));
-                }
-            }
-            else
-            {
-                //
-                // the local key id needs to override the friendly name
-                //
-                if (localId != null)
-                {
-                    String name = new String(Hex.encode(localId.getOctets()));
-
-                    keyCerts.put(name, cert);
-                }
-                if (alias != null)
-                {
-                    certs.put(alias, cert);
+                    if (!Properties.isOverrideSet(Properties.PKCS12_IGNORE_USELESS_PASSWD))
+                    {
+                        throw new IOException("password supplied for keystore that does not require one");
+                    }
                 }
             }
         }
-
-        if (noMac && noEnc)
+        catch (RuntimeException e)
         {
-            if (password != null && password.length != 0)
-            {
-                if (!Properties.isOverrideSet(Properties.PKCS12_IGNORE_USELESS_PASSWD))
-                {
-                    throw new IOException("password supplied for keystore that does not require one");
-                }
-            }
+            // any RuntimeException from the ASN.1 decode of the (untrusted) PKCS#12 safe
+            // contents means malformed input; surface it as the declared IOException
+            // rather than letting it escape engineLoad's contract.
+            throw Exceptions.ioException("error parsing PKCS12 data: " + e.getMessage(), e);
         }
     }
 
@@ -1363,55 +1373,65 @@ public class PKCS12KeyStoreSpi
         {
             PKCS12BagAttributeCarrier bagAttr = (PKCS12BagAttributeCarrier)privKey;
 
-            Enumeration e = b.getBagAttributes().getObjects();
-            while (e.hasMoreElements())
+            if (b.getBagAttributes() != null)
             {
-                ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
-                ASN1ObjectIdentifier aOid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
-                ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
-                ASN1Primitive attr = null;
-
-                if (attrSet.size() > 0)
+                Enumeration e = b.getBagAttributes().getObjects();
+                while (e.hasMoreElements())
                 {
-                    attr = (ASN1Primitive)attrSet.getObjectAt(0);
+                    ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
+                    ASN1ObjectIdentifier aOid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
+                    ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
+                    ASN1Primitive attr = null;
 
-                    ASN1Encodable existing = bagAttr.getBagAttribute(aOid);
-                    if (existing != null)
+                    if (attrSet.size() > 0)
                     {
-                        // OK, but the value has to be the same
-                        if (!existing.toASN1Primitive().equals(attr))
+                        attr = (ASN1Primitive)attrSet.getObjectAt(0);
+
+                        ASN1Encodable existing = bagAttr.getBagAttribute(aOid);
+                        if (existing != null)
                         {
-                            throw new IOException(
-                                "attempt to add existing attribute with different value");
+                            // OK, but the value has to be the same
+                            if (!existing.toASN1Primitive().equals(attr))
+                            {
+                                throw new IOException(
+                                    "attempt to add existing attribute with different value");
+                            }
                         }
-                    }
-                    else
-                    {
-                        bagAttr.setBagAttribute(aOid, attr);
-                    }
+                        else
+                        {
+                            bagAttr.setBagAttribute(aOid, attr);
+                        }
 
-                    if (aOid.equals(pkcs_9_at_friendlyName))
-                    {
-                        alias = ((ASN1BMPString)attr).getString();
-                        keys.put(alias, privKey);
-                    }
-                    else if (aOid.equals(pkcs_9_at_localKeyId))
-                    {
-                        localId = (ASN1OctetString)attr;
+                        if (aOid.equals(pkcs_9_at_friendlyName))
+                        {
+                            alias = ((ASN1BMPString)attr).getString();
+                            keys.put(alias, privKey);
+                        }
+                        else if (aOid.equals(pkcs_9_at_localKeyId))
+                        {
+                            localId = (ASN1OctetString)attr;
+                        }
                     }
                 }
             }
         }
 
-        String name = new String(Hex.encode(localId.getOctets()));
-
-        if (alias == null)
+        if (localId != null)
         {
-            keys.put(name, privKey);
+            String name = new String(Hex.encode(localId.getOctets()));
+
+            if (alias == null)
+            {
+                keys.put(name, privKey);
+            }
+            else
+            {
+                localIds.put(alias, name);
+            }
         }
         else
         {
-            localIds.put(alias, name);
+            keys.put("unmarked", privKey);
         }
     }
 
@@ -1586,33 +1606,6 @@ public class PKCS12KeyStoreSpi
 
     private void syncFriendlyName()
     {
-        // TODO:delete comment
-        //  Since we cannot add any function to the KeyStore Api we will run code when saving the store
-        // to sync the friendlyNames with Alias depending on the storeParameter
-        /*
-         *     @Override
-         *     public void setFriendlyName(String alias, String newFriendlyName, char[] password) throws UnrecoverableKeyException, NoSuchAlgorithmException
-         *     {
-         *         if (alias.equals(newFriendlyName))
-         *         {
-         *             return;
-         *         }
-         *
-         *         if (engineIsKeyEntry(alias))
-         *         {
-         *             ((PKCS12BagAttributeCarrier)engineGetKey(alias, password)).setFriendlyName(newFriendlyName);
-         *             keyCerts.put(newFriendlyName, keyCerts.get(alias));
-         *             keyCerts.remove(alias);
-         *         }
-         *         else
-         *         {
-         *             certs.put(newFriendlyName, certs.get(alias));
-         *             certs.remove(alias);
-         *         }
-         *         ((PKCS12BagAttributeCarrier)engineGetCertificate(alias)).setFriendlyName(newFriendlyName);
-         *
-         *     }
-         */
         Enumeration cs = keys.keys();
 
         while (cs.hasMoreElements())

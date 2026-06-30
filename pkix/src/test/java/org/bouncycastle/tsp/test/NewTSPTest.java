@@ -20,13 +20,23 @@ import java.util.Set;
 import java.util.SimpleTimeZone;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.cmp.PKIStatus;
+import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.Attributes;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.SignedData;
+import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.ess.ESSCertID;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
 import org.bouncycastle.asn1.ess.SigningCertificate;
@@ -1185,5 +1195,193 @@ public class NewTSPTest
         AttributeTable table = tsToken.getSignedAttributes();
 
         assertNotNull("no signingCertificate attribute found", table.get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+    }
+
+    public void testEmptySigningCertificateAttribute()
+        throws Exception
+    {
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = TSPTestUtil.makeKeyPair();
+        X509Certificate signCert = TSPTestUtil.makeCACertificate(signKP, signDN, signKP, signDN);
+
+        String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+        KeyPair origKP = TSPTestUtil.makeKeyPair();
+        X509Certificate origCert = TSPTestUtil.makeCertificate(origKP, origDN, signKP, signDN);
+
+        List certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSimpleSignerInfoGeneratorBuilder().build("SHA1withRSA", origKP.getPrivate(), origCert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        tsTokenGen.addCertificates(certs);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA1, new byte[20], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+
+        // the well-formed token parses fine: its signing-certificate attribute carries exactly one value.
+        TimeStampToken validToken = tsResp.getTimeStampToken();
+        assertNotNull("no signingCertificate attribute found", validToken.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+
+        // surgically rewrite the single SignerInfo so the id-aa-signingCertificate attribute carries an EMPTY value SET.
+        SignedData signedData = SignedData.getInstance(validToken.toCMSSignedData().toASN1Structure().getContent());
+
+        ASN1Set signerInfos = signedData.getSignerInfos();
+        assertEquals(1, signerInfos.size());
+
+        SignerInfo signerInfo = SignerInfo.getInstance(signerInfos.getObjectAt(0));
+
+        ASN1Set authAttrSet = signerInfo.getAuthenticatedAttributes();
+        Attributes authAttrs = Attributes.getInstance(authAttrSet);
+
+        ASN1EncodableVector rebuilt = new ASN1EncodableVector();
+        boolean emptied = false;
+        Attribute[] attrArr = authAttrs.getAttributes();
+        for (int i = 0; i != attrArr.length; i++)
+        {
+            Attribute attr = attrArr[i];
+            if (attr.getAttrType().equals(PKCSObjectIdentifiers.id_aa_signingCertificate))
+            {
+                rebuilt.add(new Attribute(PKCSObjectIdentifiers.id_aa_signingCertificate, new DERSet()));
+                emptied = true;
+            }
+            else
+            {
+                rebuilt.add(attr);
+            }
+        }
+
+        assertTrue("test fixture failed to locate the signing-certificate attribute", emptied);
+
+        SignerInfo corruptedSignerInfo = new SignerInfo(
+            signerInfo.getSID(),
+            signerInfo.getDigestAlgorithm(),
+            new Attributes(rebuilt),
+            signerInfo.getDigestEncryptionAlgorithm(),
+            signerInfo.getEncryptedDigest(),
+            signerInfo.getUnauthenticatedAttributes() == null ? null : Attributes.getInstance(signerInfo.getUnauthenticatedAttributes()));
+
+        SignedData corruptedSignedData = new SignedData(
+            signedData.getDigestAlgorithms(),
+            signedData.getEncapContentInfo(),
+            signedData.getCertificates(),
+            signedData.getCRLs(),
+            new DERSet(corruptedSignerInfo));
+
+        ContentInfo corruptedContentInfo = new ContentInfo(CMSObjectIdentifiers.signedData, corruptedSignedData);
+
+        try
+        {
+            new TimeStampToken(corruptedContentInfo);
+            fail("no exception on empty signing-certificate attribute value SET");
+        }
+        catch (TSPException e)
+        {
+            assertEquals("signing certificate attribute MUST contain at least one AttributeValue", e.getMessage());
+        }
+    }
+
+    public void testEmptyEssCertsSequence()
+        throws Exception
+    {
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = TSPTestUtil.makeKeyPair();
+        X509Certificate signCert = TSPTestUtil.makeCACertificate(signKP, signDN, signKP, signDN);
+
+        String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+        KeyPair origKP = TSPTestUtil.makeKeyPair();
+        X509Certificate origCert = TSPTestUtil.makeCertificate(origKP, origDN, signKP, signDN);
+
+        List certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSimpleSignerInfoGeneratorBuilder().build("SHA1withRSA", origKP.getPrivate(), origCert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        tsTokenGen.addCertificates(certs);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA1, new byte[20], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+
+        // the well-formed token parses fine: its signing-certificate attribute carries exactly one ESSCertID.
+        TimeStampToken validToken = tsResp.getTimeStampToken();
+        assertNotNull("no signingCertificate attribute found", validToken.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+
+        // surgically rewrite the single SignerInfo so the id-aa-signingCertificate attribute carries a
+        // SigningCertificate whose inner `certs SEQUENCE OF ESSCertID` is EMPTY (the value SET itself is non-empty,
+        // so the outer attribute-value guard is satisfied and only the inner ESSCertID guard can trip).
+        SignedData signedData = SignedData.getInstance(validToken.toCMSSignedData().toASN1Structure().getContent());
+
+        ASN1Set signerInfos = signedData.getSignerInfos();
+        assertEquals(1, signerInfos.size());
+
+        SignerInfo signerInfo = SignerInfo.getInstance(signerInfos.getObjectAt(0));
+
+        ASN1Set authAttrSet = signerInfo.getAuthenticatedAttributes();
+        Attributes authAttrs = Attributes.getInstance(authAttrSet);
+
+        // SigningCertificate ::= SEQUENCE { certs SEQUENCE OF ESSCertID, policies ... OPTIONAL }
+        // build one with an empty certs SEQUENCE: the outer SEQUENCE size is still 1, which the
+        // util-layer SigningCertificate constructor accepts.
+        SigningCertificate emptyCertsSigningCertificate = SigningCertificate.getInstance(
+            new DERSequence(new DERSequence()));
+
+        ASN1EncodableVector rebuilt = new ASN1EncodableVector();
+        boolean replaced = false;
+        Attribute[] attrArr = authAttrs.getAttributes();
+        for (int i = 0; i != attrArr.length; i++)
+        {
+            Attribute attr = attrArr[i];
+            if (attr.getAttrType().equals(PKCSObjectIdentifiers.id_aa_signingCertificate))
+            {
+                rebuilt.add(new Attribute(PKCSObjectIdentifiers.id_aa_signingCertificate, new DERSet(emptyCertsSigningCertificate)));
+                replaced = true;
+            }
+            else
+            {
+                rebuilt.add(attr);
+            }
+        }
+
+        assertTrue("test fixture failed to locate the signing-certificate attribute", replaced);
+
+        SignerInfo corruptedSignerInfo = new SignerInfo(
+            signerInfo.getSID(),
+            signerInfo.getDigestAlgorithm(),
+            new Attributes(rebuilt),
+            signerInfo.getDigestEncryptionAlgorithm(),
+            signerInfo.getEncryptedDigest(),
+            signerInfo.getUnauthenticatedAttributes() == null ? null : Attributes.getInstance(signerInfo.getUnauthenticatedAttributes()));
+
+        SignedData corruptedSignedData = new SignedData(
+            signedData.getDigestAlgorithms(),
+            signedData.getEncapContentInfo(),
+            signedData.getCertificates(),
+            signedData.getCRLs(),
+            new DERSet(corruptedSignerInfo));
+
+        ContentInfo corruptedContentInfo = new ContentInfo(CMSObjectIdentifiers.signedData, corruptedSignedData);
+
+        try
+        {
+            new TimeStampToken(corruptedContentInfo);
+            fail("no exception on empty ESS certs SEQUENCE");
+        }
+        catch (TSPException e)
+        {
+            assertEquals("signing certificate attribute MUST contain at least one ESSCertID", e.getMessage());
+        }
     }
 }

@@ -13,10 +13,18 @@ import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.PBEMacCalculatorProvider;
 
+/**
+ * Builder for a {@link PBEMacCalculatorProvider} that vends PBMAC1 (RFC 8018 / RFC 9579)
+ * verifier MAC calculators via the JCA. The returned provider rejects any algorithm identifier
+ * whose OID is not {@code id-PBMAC1}.
+ */
 public class JcePBMac1CalculatorProviderBuilder
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
 
+    /**
+     * Base constructor.
+     */
     public JcePBMac1CalculatorProviderBuilder()
     {
     }

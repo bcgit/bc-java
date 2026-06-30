@@ -389,8 +389,19 @@ public class CertPathValidatorTest
         PKIXParameters param = new PKIXParameters(trust);
         param.setRevocationEnabled(false);
 
-        cpv.validate(certPath, param);
-
+        // These are GSMA SGP.22 RSP certificates: the EUM intermediate carries a directoryName name
+        // constraint permitting serialNumber=89049032, which only matches the longer eUICC subject
+        // serialNumber via the SGP.22 startsWith concession. That concession is gated off by default
+        // (RFC 5280 sec. 7.1 equality otherwise), so enable it for this chain. See github #2327.
+        System.setProperty(Properties.X509_SGP22_NAME_CONSTRAINTS, "true");
+        try
+        {
+            cpv.validate(certPath, param);
+        }
+        finally
+        {
+            System.clearProperty(Properties.X509_SGP22_NAME_CONSTRAINTS);
+        }
     }
 
     private static byte[] crlFake = Base64.decode(

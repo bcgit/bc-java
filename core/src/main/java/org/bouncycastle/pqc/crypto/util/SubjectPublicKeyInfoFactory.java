@@ -11,13 +11,15 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPublicKeyParameters;
-import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPublicKey;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
+import org.bouncycastle.pqc.crypto.aimer.AIMerPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestPublicKeyParameters;
@@ -140,9 +142,10 @@ public class SubjectPublicKeyInfoFactory
             byte[] keyEnc = keyParams.getEncoded();
             if (keyEnc.length > publicSeed.length + root.length)
             {
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IsaraObjectIdentifiers.id_alg_xmss);
+                // RFC 9802: raw RFC 8391 public key, no parameters, no ASN.1 wrapping.
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IANAObjectIdentifiers.id_alg_xmss_hashsig);
 
-                return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(keyEnc));
+                return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
             }
             else
             {
@@ -161,9 +164,10 @@ public class SubjectPublicKeyInfoFactory
             byte[] keyEnc = keyParams.getEncoded();
             if (keyEnc.length > publicSeed.length + root.length)
             {
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IsaraObjectIdentifiers.id_alg_xmssmt);
+                // RFC 9802: raw RFC 8391 public key, no parameters, no ASN.1 wrapping.
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IANAObjectIdentifiers.id_alg_xmssmt_hashsig);
 
-                return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(keyEnc));
+                return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
             }
             else
             {
@@ -314,6 +318,13 @@ public class SubjectPublicKeyInfoFactory
             NTRUPlusPublicKeyParameters params = (NTRUPlusPublicKeyParameters)publicKey;
             byte[] encoding = params.getEncoded();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.ntruPlusOidLookup(params.getParameters()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof AIMerPublicKeyParameters)
+        {
+            AIMerPublicKeyParameters params = (AIMerPublicKeyParameters)publicKey;
+            byte[] encoding = params.getEncoded();
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.aimerOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (publicKey instanceof HawkPublicKeyParameters)

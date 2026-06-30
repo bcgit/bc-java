@@ -77,10 +77,16 @@ public class ISAPEngine
     private abstract class ISAPAEAD_A
         implements ISAP_AEAD
     {
-        protected long[] k64;
-        protected long[] npub64;
+        private long[] k64;
+        private long[] npub64;
+        // protected (not private): assigned by the ISAPAEAD_A subclasses below; a private
+        // superclass field is not reachable by bare name from a subclass, so EffectivelyPrivate
+        // is a false positive here.
+        @SuppressWarnings("EffectivelyPrivate")
         protected long ISAP_IV1_64;
+        @SuppressWarnings("EffectivelyPrivate")
         protected long ISAP_IV2_64;
+        @SuppressWarnings("EffectivelyPrivate")
         protected long ISAP_IV3_64;
         AsconPermutationFriend.AsconPermutation p;
         AsconPermutationFriend.AsconPermutation mac;
@@ -237,19 +243,31 @@ public class ISAPEngine
     {
         final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - IV_SIZE;
 
+        // protected (not private): assigned by the ISAPAEAD_K subclasses below; a private
+        // superclass field is not reachable by bare name from a subclass, so EffectivelyPrivate
+        // is a false positive here.
+        @SuppressWarnings("EffectivelyPrivate")
         protected short[] ISAP_IV1_16;
+        @SuppressWarnings("EffectivelyPrivate")
         protected short[] ISAP_IV2_16;
+        @SuppressWarnings("EffectivelyPrivate")
         protected short[] ISAP_IV3_16;
-        protected short[] k16;
-        protected short[] iv16;
+        private short[] k16;
+        private short[] iv16;
         private final int[] KeccakF400RoundConstants = {0x0001, 0x8082, 0x808a, 0x8000, 0x808b, 0x0001, 0x8081, 0x8009,
             0x008a, 0x0088, 0x8009, 0x000a, 0x808b, 0x008b, 0x8089, 0x8003, 0x8002, 0x0080, 0x800a, 0x000a};
+        // protected (not private): read by the ISAPAEAD_K subclasses below; a private superclass
+        // field is not reachable by bare name from a subclass, so EffectivelyPrivate is a false
+        // positive on SX, E and C.
+        @SuppressWarnings("EffectivelyPrivate")
         protected short[] SX = new short[25];
-        protected short[] macSX = new short[25];
+        private short[] macSX = new short[25];
+        @SuppressWarnings("EffectivelyPrivate")
         protected short[] E = new short[25];
+        @SuppressWarnings("EffectivelyPrivate")
         protected short[] C = new short[5];
-        protected short[] macE = new short[25];
-        protected short[] macC = new short[5];
+        private short[] macE = new short[25];
+        private short[] macC = new short[5];
 
         ISAPAEAD_K()
         {

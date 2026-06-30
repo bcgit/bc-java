@@ -1,175 +1,83 @@
 package org.bouncycastle.util;
 
+/**
+ * GF(2^4) helpers.
+ *
+ * @deprecated moved to {@link org.bouncycastle.math.raw.GF16}; this type now
+ * delegates there and will be removed in a future release.
+ */
+@Deprecated
 public class GF16
 {
-    private static final byte[] MT4B = new byte[]{
-        (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-        (byte)0x00, (byte)0x01, (byte)0x02, (byte)0x03, (byte)0x04, (byte)0x05, (byte)0x06, (byte)0x07, (byte)0x08, (byte)0x09, (byte)0x0a, (byte)0x0b, (byte)0x0c, (byte)0x0d, (byte)0x0e, (byte)0x0f,
-        (byte)0x00, (byte)0x02, (byte)0x04, (byte)0x06, (byte)0x08, (byte)0x0a, (byte)0x0c, (byte)0x0e, (byte)0x03, (byte)0x01, (byte)0x07, (byte)0x05, (byte)0x0b, (byte)0x09, (byte)0x0f, (byte)0x0d,
-        (byte)0x00, (byte)0x03, (byte)0x06, (byte)0x05, (byte)0x0c, (byte)0x0f, (byte)0x0a, (byte)0x09, (byte)0x0b, (byte)0x08, (byte)0x0d, (byte)0x0e, (byte)0x07, (byte)0x04, (byte)0x01, (byte)0x02,
-        (byte)0x00, (byte)0x04, (byte)0x08, (byte)0x0c, (byte)0x03, (byte)0x07, (byte)0x0b, (byte)0x0f, (byte)0x06, (byte)0x02, (byte)0x0e, (byte)0x0a, (byte)0x05, (byte)0x01, (byte)0x0d, (byte)0x09,
-        (byte)0x00, (byte)0x05, (byte)0x0a, (byte)0x0f, (byte)0x07, (byte)0x02, (byte)0x0d, (byte)0x08, (byte)0x0e, (byte)0x0b, (byte)0x04, (byte)0x01, (byte)0x09, (byte)0x0c, (byte)0x03, (byte)0x06,
-        (byte)0x00, (byte)0x06, (byte)0x0c, (byte)0x0a, (byte)0x0b, (byte)0x0d, (byte)0x07, (byte)0x01, (byte)0x05, (byte)0x03, (byte)0x09, (byte)0x0f, (byte)0x0e, (byte)0x08, (byte)0x02, (byte)0x04,
-        (byte)0x00, (byte)0x07, (byte)0x0e, (byte)0x09, (byte)0x0f, (byte)0x08, (byte)0x01, (byte)0x06, (byte)0x0d, (byte)0x0a, (byte)0x03, (byte)0x04, (byte)0x02, (byte)0x05, (byte)0x0c, (byte)0x0b,
-        (byte)0x00, (byte)0x08, (byte)0x03, (byte)0x0b, (byte)0x06, (byte)0x0e, (byte)0x05, (byte)0x0d, (byte)0x0c, (byte)0x04, (byte)0x0f, (byte)0x07, (byte)0x0a, (byte)0x02, (byte)0x09, (byte)0x01,
-        (byte)0x00, (byte)0x09, (byte)0x01, (byte)0x08, (byte)0x02, (byte)0x0b, (byte)0x03, (byte)0x0a, (byte)0x04, (byte)0x0d, (byte)0x05, (byte)0x0c, (byte)0x06, (byte)0x0f, (byte)0x07, (byte)0x0e,
-        (byte)0x00, (byte)0x0a, (byte)0x07, (byte)0x0d, (byte)0x0e, (byte)0x04, (byte)0x09, (byte)0x03, (byte)0x0f, (byte)0x05, (byte)0x08, (byte)0x02, (byte)0x01, (byte)0x0b, (byte)0x06, (byte)0x0c,
-        (byte)0x00, (byte)0x0b, (byte)0x05, (byte)0x0e, (byte)0x0a, (byte)0x01, (byte)0x0f, (byte)0x04, (byte)0x07, (byte)0x0c, (byte)0x02, (byte)0x09, (byte)0x0d, (byte)0x06, (byte)0x08, (byte)0x03,
-        (byte)0x00, (byte)0x0c, (byte)0x0b, (byte)0x07, (byte)0x05, (byte)0x09, (byte)0x0e, (byte)0x02, (byte)0x0a, (byte)0x06, (byte)0x01, (byte)0x0d, (byte)0x0f, (byte)0x03, (byte)0x04, (byte)0x08,
-        (byte)0x00, (byte)0x0d, (byte)0x09, (byte)0x04, (byte)0x01, (byte)0x0c, (byte)0x08, (byte)0x05, (byte)0x02, (byte)0x0f, (byte)0x0b, (byte)0x06, (byte)0x03, (byte)0x0e, (byte)0x0a, (byte)0x07,
-        (byte)0x00, (byte)0x0e, (byte)0x0f, (byte)0x01, (byte)0x0d, (byte)0x03, (byte)0x02, (byte)0x0c, (byte)0x09, (byte)0x07, (byte)0x06, (byte)0x08, (byte)0x04, (byte)0x0a, (byte)0x0b, (byte)0x05,
-        (byte)0x00, (byte)0x0f, (byte)0x0d, (byte)0x02, (byte)0x09, (byte)0x06, (byte)0x04, (byte)0x0b, (byte)0x01, (byte)0x0e, (byte)0x0c, (byte)0x03, (byte)0x08, (byte)0x07, (byte)0x05, (byte)0x0a,
-    };
-
-    private static final byte[] INV4B = new byte[]{
-        0, 1, 9, 14, 13, 11, 7, 6, 15, 2, 12, 5, 10, 4, 3, 8
-    };
-
-//    static byte mt(int p, int q)
-//    {
-//        return MT4B[((p) << 4) ^ (q)];
-//    }
-
     /**
-     * GF(16) multiplication mod x^4 + x + 1.
-     * <p>
-     * This method multiplies two elements in GF(16) (represented as integers 0–15)
-     * using carryless multiplication followed by reduction modulo x^4 + x + 1.
-     * Please ensure a &lt;= 0x0F and b &lt;= 0x0F
-     *
-     * @param a an element in GF(16) (only the lower 4 bits are used)
-     * @param b an element in GF(16) (only the lower 4 bits are used)
-     * @return the product a * b in GF(16)
+     * @deprecated use {@link org.bouncycastle.math.raw.GF16#mul(byte, byte)}.
      */
+    @Deprecated
     public static byte mul(byte a, byte b)
     {
-        return MT4B[a << 4 | b];
+        return org.bouncycastle.math.raw.GF16.mul(a, b);
     }
 
     /**
-     * GF(16) multiplication mod x^4 + x + 1.
-     * <p>
-     * This method multiplies two elements in GF(16) (represented as integers 0–15)
-     * using carryless multiplication followed by reduction modulo x^4 + x + 1.
-     * Please ensure a &lt;= 0x0F and b &lt;= 0x0F
-     *
-     * @param a an element in GF(16) (only the lower 4 bits are used)
-     * @param b an element in GF(16) (only the lower 4 bits are used)
-     * @return the product a * b in GF(16)
+     * @deprecated use {@link org.bouncycastle.math.raw.GF16#mul(int, int)}.
      */
+    @Deprecated
     public static int mul(int a, int b)
     {
-        return MT4B[a << 4 | b];
+        return org.bouncycastle.math.raw.GF16.mul(a, b);
     }
 
     /**
-     * Computes the multiplicative inverse in GF(16) for a GF(16) element.
+     * @deprecated use {@link org.bouncycastle.math.raw.GF16#inv(byte)}.
      */
+    @Deprecated
     public static byte inv(byte a)
     {
-        return INV4B[a & 0xF];
-//        int a2 = GF16.mul(a, a);
-//        int a4 = GF16.mul(a2, a2);
-//        int a8 = GF16.mul(a4, a4);
-//        int a6 = GF16.mul(a2, a4);
-//        return (byte)GF16.mul(a8, a6);
+        return org.bouncycastle.math.raw.GF16.inv(a);
     }
 
     /**
-     * Decodes an encoded byte array.
-     * Each byte in the input contains two nibbles (4-bit values); the lower nibble is stored first,
-     * followed by the upper nibble.
-     *
-     * @param input     the input byte array (each byte holds two 4-bit values)
-     * @param output    the output array that will hold the decoded nibbles (one per byte)
-     * @param outputLen the total number of nibbles to decode
+     * @deprecated use {@link org.bouncycastle.math.raw.GF16#decode(byte[], byte[], int)}.
      */
+    @Deprecated
     public static void decode(byte[] input, byte[] output, int outputLen)
     {
-        int i, decIndex = 0, blocks = outputLen >> 1;
-        // Process pairs of nibbles from each byte
-        for (i = 0; i < blocks; i++)
-        {
-            // Extract the lower nibble
-            output[decIndex++] = (byte)(input[i] & 0x0F);
-            // Extract the upper nibble (shift right 4 bits)
-            output[decIndex++] = (byte)((input[i] >>> 4) & 0x0F);
-        }
-        // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
-        if ((outputLen & 1) == 1)
-        {
-            output[decIndex] = (byte)(input[i] & 0x0F);
-        }
-    }
-
-    public static void decode(byte[] input, int inOff, byte[] output, int outOff, int outputLen)
-    {
-        // Process pairs of nibbles from each byte
-        int blocks = outputLen >> 1;
-        for (int i = 0; i < blocks; i++)
-        {
-            // Extract the lower nibble
-            output[outOff++] = (byte)(input[inOff] & 0x0F);
-            // Extract the upper nibble (shift right 4 bits)
-            output[outOff++] = (byte)((input[inOff++] >>> 4) & 0x0F);
-        }
-        // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
-        if ((outputLen & 1) == 1)
-        {
-            output[outOff] = (byte)(input[inOff] & 0x0F);
-        }
+        org.bouncycastle.math.raw.GF16.decode(input, output, outputLen);
     }
 
     /**
-     * Encodes an array of 4-bit values into a byte array.
-     * Two 4-bit values are packed into one byte, with the first nibble stored in the lower 4 bits
-     * and the second nibble stored in the upper 4 bits.
-     *
-     * @param input    the input array of 4-bit values (stored as bytes, only lower 4 bits used)
-     * @param output   the output byte array that will hold the encoded bytes
-     * @param inputLen the number of nibbles in the input array
+     * @deprecated use {@link org.bouncycastle.math.raw.GF16#decode(byte[], int, byte[], int, int)}.
      */
+    @Deprecated
+    public static void decode(byte[] input, int inOff, byte[] output, int outOff, int outputLen)
+    {
+        org.bouncycastle.math.raw.GF16.decode(input, inOff, output, outOff, outputLen);
+    }
+
+    /**
+     * @deprecated use {@link org.bouncycastle.math.raw.GF16#encode(byte[], byte[], int)}.
+     */
+    @Deprecated
     public static void encode(byte[] input, byte[] output, int inputLen)
     {
-        int i, inOff = 0, blocks = inputLen >> 1;
-        // Process pairs of 4-bit values
-        for (i = 0; i < blocks; i++)
-        {
-            int lowerNibble = input[inOff++] & 0x0F;
-            int upperNibble = (input[inOff++] & 0x0F) << 4;
-            output[i] = (byte)(lowerNibble | upperNibble);
-        }
-        // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
-        if ((inputLen & 1) == 1)
-        {
-            output[i] = (byte)(input[inOff] & 0x0F);
-        }
+        org.bouncycastle.math.raw.GF16.encode(input, output, inputLen);
     }
 
+    /**
+     * @deprecated use {@link org.bouncycastle.math.raw.GF16#encode(byte[], byte[], int, int)}.
+     */
+    @Deprecated
     public static void encode(byte[] input, byte[] output, int outOff, int inputLen)
     {
-        int i, inOff = 0, blocks = inputLen >> 1;
-        // Process pairs of 4-bit values
-        for (i = 0; i < blocks; i++)
-        {
-            int lowerNibble = input[inOff++] & 0x0F;
-            int upperNibble = (input[inOff++] & 0x0F) << 4;
-            output[outOff++] = (byte)(lowerNibble | upperNibble);
-        }
-        // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
-        if ((inputLen & 1) == 1)
-        {
-            output[outOff] = (byte)(input[inOff] & 0x0F);
-        }
+        org.bouncycastle.math.raw.GF16.encode(input, output, outOff, inputLen);
     }
 
+    /**
+     * @deprecated use {@link org.bouncycastle.math.raw.GF16#innerProduct(byte[], int, byte[], int, int)}.
+     */
+    @Deprecated
     public static byte innerProduct(byte[] a, int aOff, byte[] b, int bOff, int rank)
     {
-        byte result = 0;
-        for (int k = 0; k < rank; ++k, bOff += rank)
-        {
-            result ^= mul(a[aOff++], b[bOff]);
-        }
-        return result;
+        return org.bouncycastle.math.raw.GF16.innerProduct(a, aOff, b, bOff, rank);
     }
 }

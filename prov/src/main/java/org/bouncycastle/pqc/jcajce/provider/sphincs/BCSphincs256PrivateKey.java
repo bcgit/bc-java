@@ -67,7 +67,7 @@ public class BCSphincs256PrivateKey
         {
             BCSphincs256PrivateKey otherKey = (BCSphincs256PrivateKey)o;
 
-            return treeDigest.equals(otherKey.treeDigest) && Arrays.areEqual(params.getKeyData(), otherKey.params.getKeyData());
+            return treeDigest.equals(otherKey.treeDigest) & Arrays.constantTimeAreEqual(params.getKeyData(), otherKey.params.getKeyData());
         }
 
         return false;
@@ -75,7 +75,8 @@ public class BCSphincs256PrivateKey
 
     public int hashCode()
     {
-        return treeDigest.hashCode() + 37 * Arrays.hashCode(params.getKeyData());
+        // SPHINCS-256 public root cannot be reconstructed from the private key without package-private Tree routines.
+        return treeDigest.hashCode();
     }
 
     /**

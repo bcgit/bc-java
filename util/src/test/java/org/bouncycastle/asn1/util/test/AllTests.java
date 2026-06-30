@@ -4,6 +4,9 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
+import org.bouncycastle.asn1.cms.test.CCMParametersTest;
+import org.bouncycastle.asn1.cms.test.GCMParametersTest;
 import org.bouncycastle.asn1.cms.test.OctetStringTest;
 import org.bouncycastle.asn1.cms.test.ParseTest;
 import org.bouncycastle.asn1.misc.test.GetInstanceTest;
@@ -38,6 +41,8 @@ public class AllTests
         TestSuite suite = new TestSuite("ASN.1 Tests");
         
         suite.addTestSuite(AllTests.class);
+        suite.addTestSuite(CCMParametersTest.class);
+        suite.addTestSuite(GCMParametersTest.class);
         suite.addTestSuite(OctetStringTest.class);
         suite.addTestSuite(ParseTest.class);
         suite.addTestSuite(GetInstanceTest.class);

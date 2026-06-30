@@ -32,9 +32,11 @@ public class AllTests
         suite.addTestSuite(SP80038GTest.class);
         suite.addTestSuite(CompositeKeyTest.class);
         suite.addTestSuite(CompositeSignaturesTest.class);
+        suite.addTestSuite(CompositeMLKEMTest.class);
         suite.addTestSuite(BouncyCastleProviderTest.class);
         suite.addTestSuite(PQCSignatureTest.class);
         suite.addTestSuite(SecretKeyUtilTest.class);
+        suite.addTestSuite(PKCS12PBMAC1StoreTest.class);
 
         return new BCTestSetup(suite);
     }

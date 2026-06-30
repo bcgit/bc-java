@@ -13,7 +13,7 @@ package org.bouncycastle.pqc.crypto.faest;
  *             {@code S_ke / 4} columns selected from the schedule at stride
  *             4 (for &lambda; &isin; {128, 256}) or 6 (&lambda; = 192).</li>
  *         <li>FAEST-EM mode: the OWF secret key verbatim
- *             ({@code &lambda; / 8} bytes).</li>
+ *             ({@code λ / 8} bytes).</li>
  *       </ul>
  *   </li>
  *   <li><b>Per-block AES trace</b> ({@code beta} blocks):

@@ -41,6 +41,7 @@ public class RegressionTest
         new ArmoredInputStreamTest(),
         new ArmoredInputStreamBackslashTRVFTest(),
         new ArmoredInputStreamCRCErrorGetsThrownTest(),
+        new ArmoredInputStreamCSFRejectPrefixedDashTest(),
         new ArmoredInputStreamIngoreMissingCRCSum(),
         new ArmoredOutputStreamTest(),
         new PGPSessionKeyTest(),

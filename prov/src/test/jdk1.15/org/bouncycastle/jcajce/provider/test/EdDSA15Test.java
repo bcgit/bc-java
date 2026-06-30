@@ -270,6 +270,110 @@ public class EdDSA15Test
         assertEquals(name, spec.getName());
     }
 
+    // github #2313: BC must honour the standard JDK 15+ java.security.spec.EdDSAParameterSpec so it
+    // can stand in for SunEC for Ed25519ph / Ed25519ctx / Ed448ph. Verify cross-provider interop and,
+    // since EdDSA is deterministic (RFC 8032), that BC and SunEC emit byte-identical signatures.
+
+    public void testParamSpecInteropEd25519()
+        throws Exception
+    {
+        implTestParamSpecInterop("Ed25519", new java.security.spec.EdDSAParameterSpec(true));                                // Ed25519ph
+        implTestParamSpecInterop("Ed25519", new java.security.spec.EdDSAParameterSpec(false, Strings.toByteArray("ctx")));   // Ed25519ctx
+        implTestParamSpecInterop("Ed25519", new java.security.spec.EdDSAParameterSpec(true, Strings.toByteArray("ctx")));    // Ed25519ph + ctx
+    }
+
+    public void testParamSpecInteropEd448()
+        throws Exception
+    {
+        implTestParamSpecInterop("Ed448", new java.security.spec.EdDSAParameterSpec(true));                                  // Ed448ph
+        implTestParamSpecInterop("Ed448", new java.security.spec.EdDSAParameterSpec(false, Strings.toByteArray("ctx")));     // Ed448 with context
+        implTestParamSpecInterop("Ed448", new java.security.spec.EdDSAParameterSpec(true, Strings.toByteArray("ctx")));      // Ed448ph + ctx
+    }
+
+    private void implTestParamSpecInterop(String algorithm, java.security.spec.EdDSAParameterSpec spec)
+        throws Exception
+    {
+        BouncyCastleProvider bc = new BouncyCastleProvider();
+        byte[] msg = Strings.toByteArray("Hello, world!");
+
+        KeyPair kp = KeyPairGenerator.getInstance(algorithm, "SunEC").generateKeyPair();
+
+        byte[] bcSig = sign(algorithm, bc, kp.getPrivate(), spec, msg);
+        byte[] sunSig = sign(algorithm, null, kp.getPrivate(), spec, msg);
+
+        // BC sign -> SunEC verify, and SunEC sign -> BC verify
+        assertTrue("BC sign / SunEC verify " + algorithm, verify(algorithm, null, kp.getPublic(), spec, msg, bcSig));
+        assertTrue("SunEC sign / BC verify " + algorithm, verify(algorithm, bc, kp.getPublic(), spec, msg, sunSig));
+
+        // EdDSA is deterministic: same key, message and instance => identical signature
+        assertTrue("BC and SunEC " + algorithm + " signatures identical", Arrays.areEqual(bcSig, sunSig));
+    }
+
+    public void testParamSpecAlgorithmParameters()
+        throws Exception
+    {
+        implTestParamSpecAlgorithmParameters("Ed25519");
+        implTestParamSpecAlgorithmParameters("Ed448");
+    }
+
+    private void implTestParamSpecAlgorithmParameters(String algorithm)
+        throws Exception
+    {
+        BouncyCastleProvider bc = new BouncyCastleProvider();
+        byte[] ctx = Strings.toByteArray("ctx");
+
+        // AlgorithmParameters round-trips the standard JDK spec
+        java.security.AlgorithmParameters ap = java.security.AlgorithmParameters.getInstance(algorithm, bc);
+        ap.init(new java.security.spec.EdDSAParameterSpec(true, ctx));
+
+        java.security.spec.EdDSAParameterSpec out =
+            ap.getParameterSpec(java.security.spec.EdDSAParameterSpec.class);
+        assertTrue(algorithm + " prehash round-trip", out.isPrehash());
+        assertTrue(algorithm + " context present", out.getContext().isPresent());
+        assertTrue(algorithm + " context round-trip", Arrays.areEqual(ctx, out.getContext().get()));
+
+        // Signature.getParameters() reports the selected instance
+        KeyPair kp = KeyPairGenerator.getInstance(algorithm, bc).generateKeyPair();
+        Signature signature = Signature.getInstance(algorithm, bc);
+        signature.setParameter(new java.security.spec.EdDSAParameterSpec(true, ctx));
+        signature.initSign(kp.getPrivate());
+        signature.update(Strings.toByteArray("hello"));
+        signature.sign();
+
+        java.security.AlgorithmParameters sigParams = signature.getParameters();
+        assertNotNull(algorithm + " getParameters non-null", sigParams);
+        java.security.spec.EdDSAParameterSpec sigSpec =
+            sigParams.getParameterSpec(java.security.spec.EdDSAParameterSpec.class);
+        assertTrue(algorithm + " sig prehash", sigSpec.isPrehash());
+        assertTrue(algorithm + " sig context", Arrays.areEqual(ctx, sigSpec.getContext().get()));
+    }
+
+    private byte[] sign(String algorithm, BouncyCastleProvider bc, PrivateKey key,
+        java.security.spec.EdDSAParameterSpec spec, byte[] msg)
+        throws Exception
+    {
+        Signature signature = (bc != null)
+            ? Signature.getInstance(algorithm, bc)
+            : Signature.getInstance(algorithm, "SunEC");
+        signature.setParameter(spec);
+        signature.initSign(key);
+        signature.update(msg);
+        return signature.sign();
+    }
+
+    private boolean verify(String algorithm, BouncyCastleProvider bc, PublicKey key,
+        java.security.spec.EdDSAParameterSpec spec, byte[] msg, byte[] sig)
+        throws Exception
+    {
+        Signature signature = (bc != null)
+            ? Signature.getInstance(algorithm, bc)
+            : Signature.getInstance(algorithm, "SunEC");
+        signature.setParameter(spec);
+        signature.initVerify(key);
+        signature.update(msg);
+        return signature.verify(sig);
+    }
+
     public static void main(String args[])
     {
         junit.textui.TestRunner.run(EdDSA15Test.class);

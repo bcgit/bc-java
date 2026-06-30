@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.digest;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA1InterleaveDigest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
@@ -33,6 +34,28 @@ public class SHA1
         {
             Digest d = (Digest)super.clone();
             d.digest = new SHA1Digest((SHA1Digest)digest);
+
+            return d;
+        }
+    }
+
+    /**
+     * SHA_Interleave - RFC 2945, section 3.1.
+     */
+    static public class DigestInterleave
+        extends BCMessageDigest
+        implements Cloneable
+    {
+        public DigestInterleave()
+        {
+            super(new SHA1InterleaveDigest());
+        }
+
+        public Object clone()
+            throws CloneNotSupportedException
+        {
+            DigestInterleave d = (DigestInterleave)super.clone();
+            d.digest = new SHA1InterleaveDigest((SHA1InterleaveDigest)digest);
 
             return d;
         }
@@ -107,6 +130,9 @@ public class SHA1
             provider.addAlgorithm("Alg.Alias.MessageDigest.SHA1", "SHA-1");
             provider.addAlgorithm("Alg.Alias.MessageDigest.SHA", "SHA-1");
             provider.addAlgorithm("Alg.Alias.MessageDigest." + OIWObjectIdentifiers.idSHA1, "SHA-1");
+
+            provider.addAlgorithm("MessageDigest.SHA1-INTERLEAVE", PREFIX + "$DigestInterleave");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.SHA-1-INTERLEAVE", "SHA1-INTERLEAVE");
 
             addHMACAlgorithm(provider, "SHA1", PREFIX + "$HashMac", PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "SHA1", PKCSObjectIdentifiers.id_hmacWithSHA1);

@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 /**
  * <a href="https://tools.ietf.org/html/rfc5084">RFC 5084</a>: GCMParameters object.
@@ -22,6 +23,8 @@ import org.bouncycastle.util.Arrays;
 public class GCMParameters
     extends ASN1Object
 {
+    private static final int DEFAULT_ICVLEN = 12;
+
     private byte[] nonce;
     private int icvLen;
 
@@ -56,16 +59,16 @@ public class GCMParameters
     private GCMParameters(
         ASN1Sequence seq)
     {
+        int count = seq.size();
+        if (count < 1 || count > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
+        
         this.nonce = ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets();
+        ASN1Integer icvLen = seq.size() < 2 ? null : ASN1Integer.getInstance(seq.getObjectAt(1)); 
 
-        if (seq.size() == 2)
-        {
-            this.icvLen = ASN1Integer.getInstance(seq.getObjectAt(1)).intValueExact();
-        }
-        else
-        {
-            this.icvLen = 12;
-        }
+        this.icvLen = validateICVLen(icvLen == null ? DEFAULT_ICVLEN : icvLen.intValueExact());
     }
 
     public GCMParameters(
@@ -73,7 +76,7 @@ public class GCMParameters
         int    icvLen)
     {
         this.nonce = Arrays.clone(nonce);
-        this.icvLen = icvLen;
+        this.icvLen = validateICVLen(icvLen);
     }
 
     public byte[] getNonce()
@@ -92,11 +95,22 @@ public class GCMParameters
 
         v.add(new DEROctetString(nonce));
 
-        if (icvLen != 12)
+        if (icvLen != DEFAULT_ICVLEN)
         {
             v.add(ASN1Integer.valueOf(icvLen));
         }
 
         return new DERSequence(v);
+    }
+
+    // RFC 5084: AES-GCM-ICVlen ::= INTEGER (12 | 13 | 14 | 15 | 16). The lower bound relaxes to the
+    // NIST SP 800-38D minimum of 4 octets (32 bits) when Properties.GCM_ALLOW_SHORT_TAGS is set.
+    private static int validateICVLen(int icvLen)
+    {
+        int minLen = Properties.isOverrideSet(Properties.GCM_ALLOW_SHORT_TAGS) ? 4 : 12;
+        if (icvLen < minLen || icvLen > 16)
+            throw new IllegalArgumentException("Invalid ICV length: " + icvLen);
+
+        return icvLen;
     }
 }

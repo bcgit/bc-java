@@ -97,8 +97,10 @@ class DTLSReliableHandshake
 
     private int next_send_seq = 0, next_receive_seq = 0;
 
+    private int maxHandshakeMessageSize;
+
     DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport, int timeoutMillis, int initialResendMillis,
-        DTLSRequest request)
+        DTLSRequest request, int maxHandshakeMessageSize)
     {
         long currentTimeMillis = System.currentTimeMillis();
 
@@ -106,6 +108,7 @@ class DTLSReliableHandshake
         this.handshakeHash = new DeferredHash(context);
         this.handshakeTimeout = Timeout.forWaitMillis(timeoutMillis, currentTimeMillis);
         this.initialResendMillis = initialResendMillis;
+        this.maxHandshakeMessageSize = maxHandshakeMessageSize;
 
         if (null != request)
         {
@@ -400,6 +403,15 @@ class DTLSReliableHandshake
             if (fragment_offset + fragment_length > length)
             {
                 // NOTE: Malformed fragment - ignore it and the rest of the record
+                break;
+            }
+
+            if (length > maxHandshakeMessageSize)
+            {
+                // NOTE: Declared message length exceeds the configured maximum - ignore it (and
+                // the rest of the record) rather than committing a reassembly buffer of that size.
+                // The reassembler is sized from this attacker-controlled length before any
+                // signature/Finished verification, so an unbounded value is a memory-exhaustion DoS.
                 break;
             }
 

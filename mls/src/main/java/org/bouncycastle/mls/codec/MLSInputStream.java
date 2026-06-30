@@ -40,6 +40,14 @@ public class MLSInputStream
         byte[] readAll(int size)
             throws IOException
         {
+            // Validate the requested length against the bytes actually remaining before allocating, so
+            // an attacker-declared opaque/Varint length (up to ~1 GiB) in a tiny unauthenticated wire
+            // message cannot drive a huge new byte[] allocation and exhaust the heap. available() is
+            // exact for the backing ByteArrayInputStream.
+            if (size < 0 || size > available())
+            {
+                throw new IOException("Attempt to read beyond end of buffer");
+            }
             byte[] data = new byte[size];
             if (size == 0)
             {
@@ -187,6 +195,16 @@ public class MLSInputStream
         {
             return stream.readAll(length);
 
+        }
+
+        // Validate the attacker-controlled element count against the bytes actually remaining before
+        // allocating, so a tiny unauthenticated message declaring a huge element count cannot drive a
+        // large Array.newInstance allocation (or a NegativeArraySizeException) before the per-element
+        // reads could fail. Each non-byte element consumes at least one byte, so length <= available()
+        // always holds for well-formed input. Mirrors the SliceableStream.readAll guard above.
+        if (length < 0 || length > stream.available())
+        {
+            throw new IOException("Attempt to read beyond end of buffer");
         }
 
         // Otherwise, recursively decode entries

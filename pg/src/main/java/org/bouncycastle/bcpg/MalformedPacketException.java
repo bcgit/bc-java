@@ -13,11 +13,15 @@ public class MalformedPacketException
 
     public MalformedPacketException(Throwable cause)
     {
-        super(cause);
+        this(cause == null ? null : cause.getMessage(), cause);
     }
 
     public MalformedPacketException(String message, Throwable cause)
     {
-        super(message, cause);
+        super(message);
+        if (cause != null)
+        {
+            initCause(cause);
+        }
     }
 }

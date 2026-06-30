@@ -30,8 +30,7 @@ public class DLBitString
 
     public DLBitString(ASN1Encodable obj) throws IOException
     {
-        // TODO[asn1] Unify in single allocation of 'contents'
-        super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER), 0);
+        super(derEncodedContents(obj), false);
     }
 
     DLBitString(byte[] contents, boolean check)

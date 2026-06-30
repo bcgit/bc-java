@@ -94,7 +94,7 @@ public class PublicMessage
         if (content.sender.senderType == SenderType.MEMBER)
         {
             byte[] membershipTag = membershipMac(suite, membership_key, context);
-            if (!Arrays.areEqual(membershipTag, membership_tag))
+            if (!Arrays.constantTimeAreEqual(membershipTag, membership_tag))
             {
                 // throw tagMisMatch error!
                 throw new IOException("incorrect membership tag");

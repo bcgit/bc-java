@@ -1464,6 +1464,136 @@ public class CertTest
 
     }
 
+    // self-signed example certificates from RFC 9802, Appendix A (HSS), B (XMSS) and C (XMSS^MT).
+    private static byte[] rfc9802HssCert = Base64.decode(
+        "MIIGnjCCAXagAwIBAgIJAOiR1gaRT87zMA0GCyqGSIb3DQEJEAMRMD8xCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJWQTEQMA4GA1UEBwwHSGVybm"
+            + "RvbjERMA8GA1UECgwIQm9ndXMgQ0EwHhcNMjQwNTE0MDg1ODExWhcNMzQwNTE0MDg1ODExWjA/MQswCQYDVQQGEwJVUzELMAkGA1UECAwCVkEx"
+            + "EDAOBgNVBAcMB0hlcm5kb24xETAPBgNVBAoMCEJvZ3VzIENBME4wDQYLKoZIhvcNAQkQAxEDPQAAAAABAAAABQAAAATAlhKL6jgweOv2+0PXf5"
+            + "+egTnifLk0Tm5TGfDuaHWFg9Mr6XsURp5OxeNaGAsw5ROjYzBhMB0GA1UdDgQWBBRYFav0zwNpAmB6V03F1bNyihkhaDAfBgNVHSMEGDAWgBRY"
+            + "Fav0zwNpAmB6V03F1bNyihkhaDAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBBjANBgsqhkiG9w0BCRADEQOCBREAAAAAAAAAAAAAAA"
+            + "AEnDdS/7nX3/VbAbpQwlDMb/Oxc98MKuqz7ZYezudYBdqNp3chQjLZ+UpN9ysYKhxcaQPzHJyVbTGaycqETa6zi8NxrD+HUb44tL/Z3JAfHlS9"
+            + "+RplcNRGtq1NbRa5+yn044ZCSj+kjwGEm0QLIyKcl23VuSY5EatGgr0QbLR6ZO3HQLAz8LWBHLRBVJww2dKTukiMT9AlQWB7kF4SILcwFhYet+"
+            + "7YS+7tPHD8/zYYqiQjh5FlqJUtthzRAntwgYoYF8BFYv5HoT5pVDFnWJrh48mN7h4q0UZ16eSQZwFXklTbtOrei+fr/CeAm9Xa4I6wswjKb6Ec"
+            + "9EBlsPb4yaeXBMh8nlbsL0vNRYvX5qdQx+YhLBcxIxF6rpq1hF/mXIKZqDqpkYeaJFyDAZF8/M2+LpJQ+xIRlggNySQNu2/7WQWvf5a8o/RY4v"
+            + "oKSvJM97Mbgd1KQaCx3VJMu23AqNm7Kcj84374auVexOTofAsAhxV1ogZQl8YfFFJ5BKic7LHHakYzmLhj96cs1GJ4lBxdnU+mCq45UIWyCY1i"
+            + "yUwRnwyRpawtEb1xtgzqNJhT/C7Me6ScLnqkjeLojAGpnD61NHczggHU73IE1lvl9iwbrobEcwJEhdb3rKPo9qm1XG1GiNpVuCt6TAya581dYo"
+            + "rKyJbOjXF70sENmjVVK4Q+DqX61qB2jiOz38k7T2hWHuk8eVvTJVQRraasWBFJj03EwTmZdjqm0S9Xrb98nVfMNw0phCl7y0aFw4HFM5plwy8B"
+            + "SMpEbPGEPdBJwsEF23dMuXI9b85p8pHGFSWP2jh+71s+XzWrpngWKELBLC+eEVMsvcQke+nEzj3WQcddkpHDN8tyRNcNcIUTC6yzD7Dl4y5IuZ"
+            + "y41z58UGkDel+u+GwJYZdrzs3l8FX+BfiXHZ6BZfX/mnqMltj4z9jcVc5negBr/bs/Gz1llMFatqCOvqS+JpBfHwbU6j+ml0COvxhckg8V4wVK"
+            + "FFEeI4Hvz/eoiHX4LSg3JocnY1wBUw5eU9KnGOsvwIJJBbBNM2+UEJF3+JCeyv67PcRC1omEmEL0JLO0214rZqn/bBjUefhyc1ObAu0Ec3ekaM"
+            + "9LvksWUGKH+UmZ46EMQpK8qeMtIoI1f3EViHBqAatEZK3lUtSX7rtEe24If92U/ckca1nRklEpA87sv0GlFGlUOrQ52URd8bL0XGufyV+7/MjH"
+            + "o4vh7OLQaVpAHJydij13O8FdwHJhSzfFloxti/hW2qw+PHIJzvbD/l3PN9lozafd95Zj2owd37gyz+uXEYP+a6q54kuy6mJzwxzpQJBWTxLDuv"
+            + "Qr2RxQzOBR2Ou/ZygMLRONs28Tah2nVCC6glu45R+J8WcmwdwbYFftpizyFwF/pedcZMk8CPLPSOyIhO8DwvXrBTF9/n88cUEoF2RfuexUedCz"
+            + "mPuEnDaLQwvUyewJSnATYvI2yLR1zCp3CKCd7xnWiNzisk5AYXHLx8PeFm9Jf17VFwAAAAV5RxKfzusdqP0NsBhEau9UKEbkGfYtPnS7nTYKrm"
+            + "dKKHobgDmgCCoooOxV7lWqocyU1DYas1clMK0sXmO6Ivyqellk9tgDIChx+dwJ+kyBuWQbrerL2xgXXdiYvdKNxQR8W5Kaifa81lXHCF08WI4Y"
+            + "rG+IqNee1O5d9SFOpYsZX+P0ZvklTfnGYGIxclw0NGcap2p9VKPYmx9b+AhBeVtD");
+
+    private static byte[] rfc9802XmssCert = Base64.decode(
+        "MIILSDCCAW+gAwIBAgIUVH5kcCmeA8V6pVx40SeHjFQ1F10wCgYIKwYBBQUHBiIwNTELMAkGA1UEBhMCRlIxDjAMBgNVBAcMBVBhcmlzMRYwFA"
+            + "YDVQQKDA1Cb2d1cyBYTVNTIENBMB4XDTI0MDcxMDA4MjcyNFoXDTM0MDcwODA4MjcyNFowNTELMAkGA1UEBhMCRlIxDjAMBgNVBAcMBVBhcmlz"
+            + "MRYwFAYDVQQKDA1Cb2d1cyBYTVNTIENBMFMwCgYIKwYBBQUHBiIDRQAAAAABK+u/ZhTeb5ZbTSpQAHutXCKwE3lyAhSpX/yW4Jt4jta+jBxwPN"
+            + "jdeLIaFEe+Hw10cj82dsLLGa0pkAuC3pt/36NjMGEwHQYDVR0OBBYEFGLONaVHd/8hhy68LSfnjvQ1a8/YMB8GA1UdIwQYMBaAFGLONaVHd/8h"
+            + "hy68LSfnjvQ1a8/YMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCsGAQUFBwYiA4IJxQAAAAAA5YiouHOtTZL4XIHFimNXaq"
+            + "c7VKq2BorZ8cILyCceS6LP4tpE6ujyQKi5VJxJNhIk33St5SnvT9qIDSFdO2RjJ9CEtZV6MBg3zTQX3aydnkjbdAd5hCFa8CbNIWR7dzNIWGeb"
+            + "LLKFbczsMUsvUVU6heHKBBXObkc59ekxRUHtccZPlvWuZGq9ctCMFwKZEB0UNMrlR+P3ZpaWEdWXdnaD8YSltgBePmeXejLcyOtMKUZ3mdbaRe"
+            + "Z7jEVttSlr/ZiiiY0MMEL1C3yXxbEd4tpnqUiknin0YD9NHUiDgjjv+ssdhhGhFZT71e5o+US5PVRw874XjdcuhS1c0KDFmVLMeeccGNluPQ9s"
+            + "BVEzKDXiAllfH+14CsZi8H3+c5YDTLRC4wDC18vrURDEDGS4N/6F0I4RbaYWd7EeAdke8xCc3QG8OHVej1ieW2x7CkEIWTWpOoMZ4H2h9c+jHE"
+            + "4H4a0DlfLTi3kz+FIiUxseMpphP8R8mujVtSjxhGXVwfxNFpOIk2nK+pSglU4jrh5g4Oi0v/8WlXEPMXS7vrha6ySVi5UoE83jqWX39W6bqal6"
+            + "Bc6r8FRi2RL4oRpo368Vj4rfZyfJ7b3hgaaNmoTzkTbZiXSO74TcXAMaCOTX8HL8bYoBNJTl/whRG4Bf5wfYnyXkHcP45dCcUM9mcfnM98Cn0G"
+            + "YBtxegX2aXpP9irBygYw0wKOmQ1VmkSNgHhwJLP2gjpQTcs9dF9tyw7MaQphyh+H6EumN+WmQUeFj1dcD14R29SVfAQAgHmX9DLuIl2O2jGuN4"
+            + "8XivAklUNlmO03KlC1IyvReiz+FHISg9urYk2Rj5RHM17SmkGLztaM1KmjTLGi+zX7pzmxjueqiSJWUlgQRjHCIruLqBIbz5nah4mHW87UrGt2"
+            + "/AkSTrHfld4ON4TgX2NA97QVRJIKIwZpTx2sFsP14QkpKjDH7oiyYRHNdoyTF5s6TVYwBow+OGLQmSSy1jfbgDpExgtCwS1QufFijqiC+7HBkL"
+            + "D0A9Z+gL+sbjOUSyvYo/Id2q7KOMSN1MmUOG10iBa+W5u1mfHA8/Efd8S2eolcJ8yztmsHmmVW9tsCmKXnvuMGjz3UEpkfZ5ca6NIXB4HV3S98"
+            + "/nQjjRjFKmpvaxOLErI4HhHyFtmT8Q67Gpc7g+MZnM3SvfWCfbC1opmY+xn+kxQtAm21O3fjBBlcPwB4O7sGO1FkjypmAvMl0iodp2TjcmUw2V"
+            + "ey25BS+TK9TfwQJb96WiTxFcgPTwvcfqPNtv4utsf8NY2TF3S033zrvWyGSjAdX5pI3o8O4JBiwLPKwKV9jkgXnqSr1RA4hM0EwLxAx+LeffG2"
+            + "diwNGcrbvT8HXdg6pwmSwZeD0mK0dvJMFgAh5LdQSRHwgcs3mgm9v7XT/H4wkfQT5ku60ZPTXhpvRpC6IEN0KVxsfl9FYOZ1t4NLsH8Y/nc1uH"
+            + "19/JLY2MQnaHFYVLIwMgNOEb9gwehFPZG07ZMUM4O4gShNgqOLHOD8cH1GMtl4kcs0SZ69TfMnS+DWMRIv36juILVhJWDEYWrUQQJpjcz8mVZz"
+            + "4RwXb6uBLqlvbZkay/SbkcjhUFU6yeBNJbuIe/gVD3AqTAnBgPRax6gs9GFUJACTKJpeqQpZlo+ZMMe9Z6qOlR4pCeue0h29l+3txia0Rrn4HF"
+            + "dzmOHXgw3txTgODD+vqUaCiRmIb/hgSpvVh8MTcf25op88FIECBxX/w1E+t7EuJ9HMyX/o9cot320qOy6lGz77EeeQsAU/TyUnVa1xfFMaBUTi"
+            + "soLE9reic6LATasx0ETqROlFyokXCrwEt1n7NqqU6KIul//exT52ptMguLq0znfXLsBGIcGkUeM443rmovyPvzae0RAfP0V+kp1TsMnAzEy8M4"
+            + "XAHn1jHD2M4k175xm8iWE8pcXeSSQK+GoEv/p1U5cP2sCuGHxwFLw0E2xsYzj08lSo1wkqx8lcxJqdzWamdSpVt/L7uR477WKPwi0HJm6Alzpy"
+            + "PGpok4C+XQs/FAOJxNF5YRF0Tv45RRkUxd/tntw3agLTvcjbkxFfZ1WHQvV7QpISltX+sGcQr02//GLxZzp3Zr0FunIVz98BHob5vQycn+NXZK"
+            + "SmObukisr0+RZ5xcR9jjLQMSXvHLVjR1aZWtaJZs50qRcvubuuiSVvuaW107ndPFxFJCG/lKR0Ldd0naK73XlF97uGS5BjJ86tE29pW4V0Ebbm"
+            + "YxLO6HelwZL9iVShaTSPOXJT0kYR7QYzfuOsmjRsWUoH4kzH9yjRSePDPszZrdtQiQmBmVhTj//9Iev6bElxMrPUfpV1nTfZkBblNNwIKX+4nW"
+            + "fLcjDn1uI4hTBo8W/0AKG83VHpEBPnc6X8FXOnvG1VHX4uyJEmudA+Sdu31OAr9njQPKkFbwmpdLAi1MMYmCdpf+L9UKPeoNOGwwdV+ukVPXRW"
+            + "TfugsigESFbQ5cKX+CnlSjepW+lnlmnVui1i5Hxpl9KzLc8rYCkW1j1JNFYMRCcRCe+5Av5nVxznhwwdr/4Uf+eSuOmoG/3QLjeDlxF7MjFBGd"
+            + "KY4hoZiwrANabJ5iZO9PA8o3pu3keNUNmSn1XGHmSMuXDl75LPa2x3wMpPca92e1XAO/v3riTaKbXV1fUdDWUo8qIGgIu/CcBQ7vs0kMKh2P+Q"
+            + "O3YQlxiH3ijOS4rJgbw4BVoWvdE6IpT5OT09UBMT97OQ46V2zrXGpfG62XvZcjGJEFDiu0sRHu+FjHCNDeoj66VI09Y9qRUDokjRkYIy7PMI1d"
+            + "4+cCk/rI+OoF5usGgJBNFVg9JpgTS7Cs3ZAu0OHrcTKDXSqpubUk/OnsGMrJoQVZPvqv7U6Gsf5AR5tCd6+cK6DiPv1RqwJ36PE5RapUthTUFC"
+            + "D8NoHmBJiKoMCKz672tdy36yaG088cOGVUBLG1CUj1LQe6+OtJvdmxVOqswg0gEHnBy+ncLf9VUE/2BQJ4MTNvFX4kWmYjcLOyDBc5zhU4xf9g"
+            + "FjhgdHLJcNhZt4B/2vZnP9C6vhuhh9qSLaNsmSlXqsvRjWbxLclWYCRWSxmf9WWEiYZ9TYv4W2Ddry1mdmxm2cb1OSVs5XtDl2RcxSAePbXckr"
+            + "Kc2Bsb4LxEe5yVxVNIkbKlRha/UK+lRMxUeD/tINguC0E98QSd3zxK14EE/4y3efhRjbcurCxU5vxDdo75voy4XK3EE6+wbjvRglce9VKEyszS"
+            + "aPMtBP8nCuai+sCpl9ZkRRhcb57BZCJm21YCw6hX/IcbXEMVjlj88gALT2pLoFza8uUbgkpr79tj132THS8geDcXIoLNa8GDYQWBmQwlKdZfIr"
+            + "wGZ31n");
+
+    private static byte[] rfc9802XmssMtCert = Base64.decode(
+        "MIIU6zCCAXOgAwIBAgIUXCKtigZRnmcCai1DPovHI0N3gMgwCgYIKwYBBQUHBiMwNzELMAkGA1UEBhMCRlIxDjAMBgNVBAcMBVBhcmlzMRgwFg"
+            + "YDVQQKDA9Cb2d1cyBYTVNTTVQgQ0EwHhcNMjQwNzEwMDgyODA0WhcNMzQwNzA4MDgyODA0WjA3MQswCQYDVQQGEwJGUjEOMAwGA1UEBwwFUGFy"
+            + "aXMxGDAWBgNVBAoMD0JvZ3VzIFhNU1NNVCBDQTBTMAoGCCsGAQUFBwYjA0UAAAAAAUuniRFv/B370+dxc7iiSO9TuZ0fxop8vk+KKfpB/b3aIH"
+            + "/2O7DFuKfC8lryJhTrNvAmL4d0+w7Vfheg0U22z1GjYzBhMB0GA1UdDgQWBBR8fVm4lWHVA2oePfEkqx3tBM3bXzAfBgNVHSMEGDAWgBR8fVm4"
+            + "lWHVA2oePfEkqx3tBM3bXzAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBBjAKBggrBgEFBQcGIwOCE2QAAAAAV8SYif/ZCo5ubxaVjO"
+            + "w1QiHCylbt+IHxsk8rbXP0N1X89E4V62uQ3jT+1pZwlI3B50oySTA6QKRn0vva+NihekgiHOOYvNBohSnJ5fdcVticgL5o7RHrOQ/vywmyKDCm"
+            + "KwW83hEivsTcCJo9tEk3H1ReXy2TYrCVxV0jkvNVQHgZAFaeovEOS6511pIJsXnsyRhnGQmGg3RdCgar2vCvApdN13MGi6KExwmv3YsVOeQwn8"
+            + "kAJagzTd7oJbY1C1G/ejSn6ITo+jlbqjdulYmsJkpOyr4pCEs8KKeFaq1a0pPrEuGahxxAO88VbENOiCFUUn4NbRcpjRVv70JaqSXQl4BhMSKk"
+            + "nyUXUa0LocuTtPWmsCIbbVBkKki9BRaIAON7VtADs3otagvz3qKMboGALI/p2HjtW5nJE9G263jDQCuheoQKuhKHXh04JCKPwKNlHBzOLY7lLx"
+            + "++k1z+HM2onX5+zxjinMVU3GJhdCNVZGYhlkynLoqUpjUQpehebpGsqMvtUStmRQP1h+1NjE5tVIChM4qEnSMxkMYFEaedvVEKc0e8CEkRs5j/"
+            + "ARRp18CgDFXkXuL6hKwns4UsmXFSnDP4nYzSE7xuGHkVpwLuFesn2K8kOAKcyjDz4jBBL2KiLKWBG3FtsZS9xj2eXlFF3lv01+Y159h81Zjsfg"
+            + "74ncGne7NlsaFLLezZEkVrHwscazsKZnY59Myb4bcX91P8w6YY9y5FUrEYmXXRabt3yBqEXwa1i8sCsLIPvxcYZT2ncltxn5J+Ot+EzGVcxFtw"
+            + "/cw4nhJu+f8fAvzK9WiG/Mpx8T17MrTUw6IgFj8SB3GVO9SxHvyMHzSMyKuMu3WTwRrShT6a5gSGiN4nRsrz9/OOVBjqqq4UArFKauAkd0AojT"
+            + "cnnIdqgQnSAU0gf96EqICMjmOCvmbfhzBcuHEK6ZFocW6Xl/AnTvquaoWsgM04SEnBK53bVMXwv/oG6JY6wJXwiL2OgHg93K1dClbdx4Cf/GRY"
+            + "TW0n9tcajLIcCep9T3SZDUoMuLDvdN1vb9zlg+HjwuhYF7hEii3s31T2H2eis8UZ+7nHGzzqvSzhQ2XRWhfck53FhQxVNBNJFZLiUhTRgapiAh"
+            + "q6ybBThY570U40dqx517NIkr9Vfi1czTKbwUGno823lFyWHj4nTevwYUuk4zy7aYU36ZyY9Gh6YXeMvbkw1vH9aXg/lpl7aTmQs3y2iO3NGdpC"
+            + "ZOUyTKIw98ToJ5Nw7fpeyo560ROvFbFZyZuRYQsG1cwugLtJk92+U4i+r4BkfF6+e4vnXzmvq2dCawaq79Zpr6kAH6AVEAQ+25OyN9vrhVlDoo"
+            + "2PBozLoh2oPJ/0pHzIzf/wqHkP59iUZ+wXP/puBAdPv4YEbPxGh7UQhaQH6K+p7F0oXICMMczHs4EXC0t9HJ50Ah7v3g0bwcAETUb93AukxjPm"
+            + "hQpgOU0L+UlEM+AVmRm/x4rGlgSTN2td6L5z1IC4gQ+akUTPcgLTyfjgfdKbK//rQm44ftzNp5DFLCugIze5ZBCmJ2hHxfHojUHBSeg1SM7ICE"
+            + "yt8q1d6WLryTxhhRjGNHP9JqTwUIObZFSqVWzYoiGB/5wnOR/Dog7lU7HX+h/vKYvCkJjqLt1Fv8Nso5NHmQMYJeil7i5363/0SUlZmMH8qx6t"
+            + "IL34JP0hG9paB1XIUAUxUJOy+G7bc01fNKrzNIOQ8EFtyENW0XUH9RYgs5myxzQlxA50WlEPezt/aqlBF7VHYi1PuWGXYOmuyq0xbksKR5xTZq"
+            + "NOw5Z8AaCOroNFQuaSEo6Xb+igt32mdCSqILD6npjofLTaMOmUCJa3uVNPdV8MTYLjz268+iNP+jMXfJi2HkeJPtmhqkIZJa6eP1NErJGW2FXD"
+            + "QB36rYY4Yr0nLyY0vq2aAURCyFSlOukK//hBbTge4j0IOpRPHmDQscKOlDTwMD7wkSXumDS0jZVOz+0dYYnJWRBo8rwuXL3ADx2cL3zAJyUUm9"
+            + "6jdGQoFCyispA6pGpQ6Y7KeOW2dFbgkml9tC7g52aSFpKgw9tP09BXTUoo7rfMBO8X2fwBux6yWwI9H1qFc6GBlrczXXnla8kpczQBaepX8AG+"
+            + "TvNc8wqnNwitGJzHTFnQXbsB8VN2y83ZhF68IhF2AdnjrxcDAe84TK3BfanGYSu6nIGVhq+7c5Dc2S/RP5VquUYP+4RkfH2GZaoQcVYZX2BSfx"
+            + "n61VrgkOS5YlVxKmH5Ny9eB3FDzwbKatVSyDPhrbI+pGEBALxVXQrz5k81BsSoP0yLm8lBS/TBV+48wERoUlotuafyQdrEjX3bQLb8R2NaaaHH"
+            + "jMw/r1GUN5VYgnnSFkq/EgtZpaURceYcYzvq8C8Q4JeaoQRT0HL0PHc7eO61qmv1u1zpNU9pZYcpJOxHe3hap8Hl8XN9TXnv7051h9uPNv1QPn"
+            + "TcF9TDP0+CJFEbEhYmYduTFRk5VfUFLG6F3bLMT8AJCnZG2OTyEZKh4DaoJcdFGWyY65r6weyAGM7R+MQjmvm4HwVnjkXL5u4L+ttnH2IsSXi7"
+            + "VZgeM0Jj8tvuc/dggG1fmuiMiTlbsoTiw5l3818Z7LgrzmBZLGYG+cFDuf2UNZ4onaCO/Q3GGrsgk7BjaoMvCtvCs46x3fWrGQlTettyPx4lB+"
+            + "safSHaiCLm8LqzFW+V83LSy21IuLp7qkB/gf66FcJ3nYZYvH2JLns6lgSf8TpQSFolTZG27d72Lk3ldxFtdvQjX5HwD3lZevMyJBHEiDAhJjvx"
+            + "eQ8EBq2CbepYTqpOCn97XKWr3napqcfZ4+vWhIACq9pMW0mQKcXLWxwGYeiaz6TqnTEWaiE62SIluDmdTOOGdqjd2LTbiPleYcMdh9+pMTN6s1"
+            + "A+8s2toJ2YX2zi8NgnucI3f420+IQTXyJtm4G9HOV1rrWV0cvQxuN47IxxbYxdQHl9WD1cY3fMLqJjqXEwL1kq7IKx5bnWv/sh5pf8cEWax+jS"
+            + "gXOx9bx2yrS+nzm1LfI+xTLjrjz9dKE2WlxN9t7S1WZhdIguS2l8KS/gKtbYk5lBvHt//MMchO0WwAh4+1dhnoN60em3rZqFHMO6o+QYtgD2NS"
+            + "fiJx0Q3EQdEQWi298KWZic88o6syYt0cQ8/CHzPDlif/S9kXTvAoPaSiJAYJ9qn4uP8eQemdUXVWIcYAF9x0HbGZ4pAbqgX0HzYe2dDJzvMouw"
+            + "iomx5AbJL01CKgGEKazxQaChybSD2YcaUx9/1IUSLnnzLIgGc2LuFrzHi+cJlroCtVarb8DPdmRiDh615GlCTe1WltkdjQdAesW9059DB+Sdti"
+            + "YrM2p52Yrs7lFz8ZGw6JBC2xFVVxsBEPwR/3e0CQFt+IzPchbfCRIJvUnvM7nFjTVgd4CP7pgYvrs6YelbagmwCh44gOlxRnehGXrDBFeld+Za"
+            + "AXfSkpD2mVCHPzCKNz03HmsdpHE8axUHAfY9Q5aj9zDPCCwyo8pnblnaUS6WvJdBS3xfl6PPRiCeZJYI9wwDS7SDCdtsu5QjTv97+y+EZgqW+e"
+            + "FY/w08hGKca2CffjnPM/MDL8fQi2/zmmLMM8S9tPy4gJ3+nsLw0J4Hcaj5H6dkTWP5a84+RAo/BViQDQwgfU7HUtDlt2HTalIIN5EVPM9B7O+I"
+            + "VtwUKhJVywUBI4nA/sreQNLQlqMfB0pYlvqy73iW8HMlyC4gO9gCz+fKsCkaJX8Vli39Urspw/y/sXzYD3YhBSguidmCDsvNAx/DcbQPdVLltJ"
+            + "OMrO3VMFq5M4T9PNrc5oRtwma+k61nf9vQCJVkWiwTf+IFtdzQv01uk8I7jDuxXDoo6MOW7VniYlKOlY214cHyNFu/Wszx7uw9bGGZ8sjkBV/q"
+            + "1XQ8/98bIL01MMAn+KRuc0WB4rkVUseg58j9e4730gzE6SJpTnBix4qipmF8C1p0jQ/A5WbcGHt0O3KrGlOzSe9QqnaA5xFTkKsk0S78ZkHPs8"
+            + "yurPnrHhn3vFQAFtqw1Ct0xzX7CP9nFINa62u3tGMo4ra41AwTaoy7MMH7bELfI8TwviXfKzkRu4LD5/kESHfP0F49bhl/s8QvxOxRX53Hj4if"
+            + "IXmNoBc+F3O09aJxcOaZxP1M8mNkIyLDcnFSQ0KlkONZd1D/oQkux/Z+F/Ki1n4sdfKrnjZ4q1e+xZFxcCy6A5GAl/SeFrz6gPQiKrV1FVfZsJ"
+            + "KesTXbJpZ3KJyJmdubVdQpFV9Uig1YqJUTlRdsa7Aqo/oa7C60Dgjqj+GMWc99YADzv7fkXwimAu/O15yNb1bXyTXp5c/S9SjK5jbvxCZS1U0E"
+            + "7FBzh9xwHxrbB79M6exXmH+8yDGefuY6tMR3kzlWV2cFhI0DAtm/BGv+cYq+toquRLDd2x9qJuVQ1f8Dgdgbnz+mvBtStUmTsCf9WdR9aeljNQ"
+            + "ub3qHUcAwIQUt21s3IZYy7mm7k8eIwE52jx2cWD329rNyqnBcBpicU+krBJz8He58vR1bM8JY46Vh8H2xzEDwRaCo8X3T+N66L6evGBjBvYjxc"
+            + "bC3HWyRtzHU/19TmcmSKrQNnrc3LLXyCSanv6Lm+8myYQk4mRgRYpSvJiJukkX8iCRJSKtFONiLYU7w4k60RGcXnyYMAtLawrJYyytAIaeTSKY"
+            + "Z0dEm+SrK/8i/CUv0VPI0HEjqYx0lngR2xXej0Qnmg90S4lZ/hN0FbybGJkHtmluuO3BvXc7LrwUJB6C0ounTqfHeHdls2ED2HCFKU5mCVwRvJ"
+            + "J8FCqjJi7cpvBE4ROj094Ng6wP+5mpSxefMBFDqZNFmO2azxqXe1LVnhKZYbE4CLEJQ+wlHbwSQGAkeWm65dJTSvS2XziutlfKVefKLWHUEgEw"
+            + "te6mey679sRPt2MVhe0jNtb5w6QXA0EW+ZjEKd1isUebCs1N46sNjSl4iaF2g+eaiwStenPGPFKcFldnR+wt64Sc4mX9JiLQ9czGxTwKR1BVLR"
+            + "Ujiuchd8Amdrdjjncqo4cF6vopjAwXqgbeyQUY3VmYs5BWrrDIc3W0sAkSx9im3BIxBEJlpH93+PhhzCp5+eSPZCzdE82eiV3gA87Nuho8B/9x"
+            + "c7StzS9dSbEhkPbRM4cgYh65SIh4+h3vbXoIiq40e7aegwWYLSOm3HJpWSpFgH69ul0btRACjvb8jOnA/ZjeCzFNuQ3fkmr7CISK4icSav1eBN"
+            + "XEHmC/Jcm7tpgglaWGO5DIoiN6qicSql2ad7n9X0F429Tt4IaqQgzqaFx/oFx9gDdwzdQDIRQyqMUCJL+qHR8ZRCP9W4oN0BcW4wNP+mdoDmwQ"
+            + "SL8MM4FJiu6/0FmNGWfrS/Uc6qtGZxMJ96Rbbt0W6PsGyl9U/uvOplXiRDc0tQjshoDyNI7d3/hJebMQ27LNtpaww0cz6uadL1vqiZvntAgvT+"
+            + "NfU9o7G04mx5twsprTA9Vp28JOnmpW3Mgxh71ZijX91xcilxRY9BUs6GmVzxQAwesZfaOhRKpwJI2E5jEpnaKOneDReQOvXamgF8FRK/AEh9Y4"
+            + "yJC7l3lQEnsjNzS6uo8yTuwdMMo54m/iQjO4K0Gl5y3J6ROnuFZA0wLmtVU36iT7cQ5HehAUqy138clKan5Wbix+U3bYkscrFTz9ZnD3f4vwcg"
+            + "mJlg7y5ywHKeeSrKove8gttT92jj7U84ZIMb3aV43NsIqTQ19vGcdoVezVmjyIlQW72gZAa019t64XVXE5DOBUug9iJwC3ighEaHtKcNiMZBxZ"
+            + "PLdzfRrzdIuUfbmXqYNoLLJ2qa3oAkOinrq72wQA2mUOWkcqMZy/NSji8dEO99ChVsSQhTVYSFXHNTzj4Y5QSSppnbTXvHqZnOqpBIc3ph9ZJz"
+            + "2rQmdKE5dOOC+TLgCO+8L59t4do98KVGtheVuGsTffOhMY23R6BFqiBT1vA866LneiaMxsfLDyFa30YGxbItpTu3Af0PVRteWABwlKN/SI5KZ6"
+            + "QUXeC6tvmb595h2GeDrLcB62LFIrhIOpZV+xpKxGMw83gFpqsM5zOgiPfi40ob/WY8FL7uINEylduX/9nCvHrI5LokxbIuFvhTr7RXViUm9TZI"
+            + "6wwg+Ttz/929IIEM9VWJfUYbBbYl35aZ6gl5YHLYN5Ko8XWjXG1Ut/MyFzUaLZblXvzNVDBJr28aQtmYUnJzdHK3cpWAHTFa5IO3ttQUAAtZzn"
+            + "y8HXIkq3TWLJwgsQp4b6l2jWw3AjW9b5nu0UU28TRgehJXJ2gFJhR1PJ8NPrdduCpsHaewQcT0Pa6OUVQ3Za0KySigPwTtVFnEnx09cJdf+URT"
+            + "/xWfAxN7QWvA94+jJysDOTePvZFlTXSpn0VqpCXcTPl+WfxOk3yJj3GOpplmXmolpMCm+iX3aFyKAvV7Sc2J4Xd4lRupIXhu9HriBOUOIVK/BM"
+            + "0MaV3X8ldxn9gB4PMQzBUt/Zl4/9wfj6kxDQ+f9CyhPU+yUZJo8OzYX8RVoUzIEukFfgWTX/l2mYUYKSRgFF2zeflLfOQicYrCZkXSQRRdWUwK"
+            + "tSurvcZQ+Ic3QubUlnLPRfDUvw3FF5/xuRJcqHSJnlYHz4+YmtrX23/H0DoKFM1aZgzrAnag1Fbm6L6h8Mcjs0+GkBpaFo4HDSTR7gOYnw==");
+
+
     public void checkSelfSignedCertificate(
         int id,
         byte[] bytes)
@@ -1482,7 +1612,9 @@ public class CertTest
             PublicKey k = cert.getPublicKey();
 
             X509CertificateHolder certHldr = new X509CertificateHolder(bytes);
-            String provider = certHldr.getSignatureAlgorithm().getAlgorithm().equals(IsaraObjectIdentifiers.id_alg_xmss) ? "BCPQC" : BC;
+            ASN1ObjectIdentifier sigAlg = certHldr.getSignatureAlgorithm().getAlgorithm();
+            String provider = sigAlg.equals(IsaraObjectIdentifiers.id_alg_xmss) || sigAlg.equals(IsaraObjectIdentifiers.id_alg_xmssmt)
+                || sigAlg.equals(IANAObjectIdentifiers.id_alg_xmss_hashsig) || sigAlg.equals(IANAObjectIdentifiers.id_alg_xmssmt_hashsig) ? "BCPQC" : BC;
 
             isTrue(certHldr.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(provider).build(k)));
             // System.out.println(cert);
@@ -1606,7 +1738,7 @@ public class CertTest
         // create the certificate - version 3 - without extensions
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         isTrue(!certGen.hasExtension(Extension.authorityKeyIdentifier));
 
@@ -1635,7 +1767,7 @@ public class CertTest
         sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
         certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1)
             , new Date(System.currentTimeMillis() - 50000)
-            , new Date(System.currentTimeMillis() + 50000)
+            , new Date(System.currentTimeMillis() + SIX_MONTHS)
             , builder.build()
             , pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
@@ -1712,7 +1844,7 @@ public class CertTest
         // create the certificate - version 1
         //
         sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
-        X509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen1.build(sigGen));
 
@@ -1775,7 +1907,7 @@ public class CertTest
 
         sigGen = new BcRSAContentSignerBuilder(sigAlgId, digAlgId).build(lwPrivKey);
         SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE), new RSAPublicKey(lwPubKey.getModulus(), lwPubKey.getExponent()));
-        certGen = new X509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubInfo);
+        certGen = new X509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubInfo);
 
         certHolder = certGen.build(sigGen);
 
@@ -1836,7 +1968,7 @@ public class CertTest
         //
 
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA1withDSA").setProvider(BC).build(privKey);
-        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
@@ -1857,7 +1989,7 @@ public class CertTest
         // create the certificate - version 1
         //
         sigGen = new JcaContentSignerBuilder("SHA1withDSA").setProvider(BC).build(privKey);
-        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen1.build(sigGen));
 
@@ -1877,7 +2009,7 @@ public class CertTest
         //
         try
         {
-            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), dudPublicKey);
+            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), dudPublicKey);
 
 
             fail("key without encoding not detected in v1");
@@ -1935,7 +2067,7 @@ public class CertTest
             builder.build(),
             BigInteger.valueOf(1),
             new Date(System.currentTimeMillis() - 50000),
-            new Date(System.currentTimeMillis() + 50000),
+            new Date(System.currentTimeMillis() + SIX_MONTHS),
             builder.build(),
             pubKey);
 
@@ -2057,7 +2189,7 @@ public class CertTest
         try
         {
             ContentSigner sigGen = new JcaContentSignerBuilder("SHA1withECDSA").setProvider(BC).build(privKey);
-            JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+            JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
             X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -2075,7 +2207,7 @@ public class CertTest
             //
             ((ECPointEncoder)pubKey).setPointFormat("UNCOMPRESSED");
 
-            certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+            certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
             cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -2149,7 +2281,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(algorithm).setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -2167,7 +2299,7 @@ public class CertTest
         //
         ((ECPointEncoder)pubKey).setPointFormat("UNCOMPRESSED");
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -2267,7 +2399,7 @@ public class CertTest
         //
 
         ContentSigner sigGen = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(privKey);
-        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
@@ -2288,7 +2420,7 @@ public class CertTest
         // create the certificate - version 1
         //
         sigGen = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(privKey);
-        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen1.build(sigGen));
 
@@ -2308,7 +2440,7 @@ public class CertTest
         //
         try
         {
-            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), dudPublicKey);
+            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), dudPublicKey);
 
 
             fail("key without encoding not detected in v1");
@@ -3223,7 +3355,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("GOST3411withGOST3410").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3294,7 +3426,7 @@ public class CertTest
         // create base certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.encipherOnly))
             .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
@@ -3308,7 +3440,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -3370,7 +3502,7 @@ public class CertTest
         // create base certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA512withSPHINCS256").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.encipherOnly))
             .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
@@ -3387,7 +3519,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -3432,7 +3564,7 @@ public class CertTest
 
         KeyPair nhKp = kpGen.generateKeyPair();
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), nhKp.getPublic())
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -3475,7 +3607,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("GOST3411-2012-512WITHECGOST3410-2012-512").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3526,7 +3658,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("XMSS").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(((XMSSPrivateKey)privKey).getIndex()), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(((XMSSPrivateKey)privKey).getIndex()), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3577,7 +3709,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("XMSSMT").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3628,7 +3760,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("LMS").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3679,7 +3811,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3730,7 +3862,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3781,7 +3913,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3944,7 +4076,7 @@ public class CertTest
         ContentSigner sigGen = new JcaContentSignerBuilder("RSAPSS",
             new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 20, 1))
             .setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3990,7 +4122,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withRSAandMGF1").setProvider(BC).build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -4039,7 +4171,7 @@ public class CertTest
         // create the certificate - version 3
         //
         ContentSigner sigGen = new NoSignatureContentSigner();
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -4151,7 +4283,7 @@ public class CertTest
         // create base certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("PICNIC").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.encipherOnly))
             .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
@@ -4168,7 +4300,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4213,7 +4345,7 @@ public class CertTest
 
         KeyPair nhKp = kpGen.generateKeyPair();
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), nhKp.getPublic())
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4276,7 +4408,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4323,7 +4455,7 @@ public class CertTest
 
         KeyPair nhKp = kpGen.generateKeyPair();
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), nhKp.getPublic())
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4386,7 +4518,7 @@ public class CertTest
         // copy certificate
         //
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4433,7 +4565,7 @@ public class CertTest
 
         KeyPair nhKp = kpGen.generateKeyPair();
 
-        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), nhKp.getPublic())
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
             .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
 
@@ -4638,7 +4770,7 @@ public class CertTest
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             issuer,
             BigInteger.valueOf(1),
-            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), issuer,
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), issuer,
             compPub);
 
         X509CertificateHolder certHldr = certGen.build(sigGen);
@@ -4783,7 +4915,7 @@ public class CertTest
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             issuer,
             BigInteger.valueOf(1),
-            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), issuer,
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), issuer,
             compPub);
 
         X509CertificateHolder ecCertHldr = certGen.build(sigGen);
@@ -4850,7 +4982,7 @@ public class CertTest
             // create the certificate - version 3
             //
             ContentSigner sigGen = new JcaContentSignerBuilder(algs[i]).setProvider(BC).build(privKey);
-            X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+            X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
             isEquals("oid mismatch", sigGen.getAlgorithmIdentifier().getAlgorithm(), oids[i]);
 
@@ -5055,7 +5187,7 @@ public class CertTest
         //
         ContentSigner sigGen = new JcaContentSignerBuilder(algorithm).setProvider(BC).build(privKey);
         JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1),
-            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), builder.build(), pubKey);
 
         certGen.addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
             new X509KeyUsage(X509KeyUsage.encipherOnly));
@@ -5119,7 +5251,7 @@ public class CertTest
         PrivateKey privKey = pair.getPrivate();
 
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(privKey);
-        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(new X500Name("CN=Test"), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), new X500Name("CN=Test"), pubKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(new X500Name("CN=Test"), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + SIX_MONTHS), new X500Name("CN=Test"), pubKey);
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
         org.bouncycastle.asn1.x509.Certificate struct = org.bouncycastle.asn1.x509.Certificate.getInstance(ASN1Primitive.fromByteArray(cert.getEncoded()));
@@ -5710,6 +5842,11 @@ public class CertTest
         checkSelfSignedCertificate(17, gost341094B);
         checkSelfSignedCertificate(18, gost34102001A);
         checkSelfSignedCertificate(19, sha3Cert);
+
+        // RFC 9802 Appendix A-C example certificates.
+        checkSelfSignedCertificate(21, rfc9802HssCert);
+        checkSelfSignedCertificate(22, rfc9802XmssCert);
+        checkSelfSignedCertificate(23, rfc9802XmssMtCert);
         checkSelfSignedCertificateAndKey(20, gost_2012_cert, "ECGOST3410-2012-256", gost_2012_privateKey);
         checkCRL(1, crl1);
 

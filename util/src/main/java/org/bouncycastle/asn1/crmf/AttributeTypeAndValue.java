@@ -15,6 +15,11 @@ public class AttributeTypeAndValue
 
     private AttributeTypeAndValue(ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         type = (ASN1ObjectIdentifier)seq.getObjectAt(0);
         value = (ASN1Encodable)seq.getObjectAt(1);
     }

@@ -1,5 +1,6 @@
 package org.bouncycastle.mail.smime.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,6 +44,7 @@ import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.ZlibCompressor;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.mail.smime.SMIMEBoundaryNotFoundException;
 import org.bouncycastle.mail.smime.SMIMECompressedGenerator;
 import org.bouncycastle.mail.smime.SMIMEEnveloped;
 import org.bouncycastle.mail.smime.SMIMEEnvelopedGenerator;
@@ -120,6 +122,75 @@ public class SMIMEMiscTest
         Security.addProvider(new BouncyCastleProvider());
         
         junit.textui.TestRunner.run(SMIMEMiscTest.class);
+    }
+
+    public void testMissingInnerBoundaryDiagnostics()
+        throws Exception
+    {
+        String CRLF = "\r\n";
+
+        // a multipart/signed whose signed body is a multipart/alternative
+        // deliberately missing its closing --innerBCREPRO-- line (github #2318).
+        // the signature blob is a placeholder - the failure fires during
+        // re-serialisation of the content, before the signature is parsed.
+        String message =
+            "MIME-Version: 1.0" + CRLF
+          + "From: test@example.com" + CRLF
+          + "To: test@example.com" + CRLF
+          + "Subject: missing inner boundary repro" + CRLF
+          + "Content-Type: multipart/signed; protocol=\"application/pkcs7-signature\"; micalg=sha-256; boundary=\"outerBCREPRO\"" + CRLF
+          + CRLF
+          + "--outerBCREPRO" + CRLF
+          + "Content-Type: multipart/alternative; boundary=\"innerBCREPRO\"" + CRLF
+          + CRLF
+          + "--innerBCREPRO" + CRLF
+          + "Content-Type: text/plain; charset=us-ascii" + CRLF
+          + CRLF
+          + "this is the secret plain text" + CRLF
+          + "--innerBCREPRO" + CRLF
+          + "Content-Type: text/html; charset=us-ascii" + CRLF
+          + CRLF
+          + "<b>this is the secret html text</b>" + CRLF
+          + CRLF
+          + "--outerBCREPRO" + CRLF
+          + "Content-Type: application/pkcs7-signature; name=smime.p7s" + CRLF
+          + "Content-Transfer-Encoding: base64" + CRLF
+          + CRLF
+          + "MIAGCSqGSIb3DQEHAqCAMIACAQExADEA" + CRLF
+          + "--outerBCREPRO--" + CRLF;
+
+        Session session = Session.getDefaultInstance(System.getProperties(), null);
+        MimeMessage msg = new MimeMessage(session, new ByteArrayInputStream(message.getBytes("US-ASCII")));
+        MimeMultipart multipart = (MimeMultipart)msg.getContent();
+
+        try
+        {
+            new SMIMESignedParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), multipart);
+            fail("missing inner boundary not detected");
+        }
+        catch (SMIMEBoundaryNotFoundException e)
+        {
+            assertEquals("--innerBCREPRO", e.getBoundary());
+            assertEquals(3, e.getExpectedBoundaries());
+            assertEquals(2, e.getFoundBoundaries());
+            assertTrue(e.getBytesConsumed() > 0);
+            assertNotNull(e.getParentContentType());
+            assertTrue(e.getParentContentType().indexOf("multipart/alternative") >= 0);
+
+            // the last line read is available as a typed field for callers
+            // cleared to see message content...
+            assertNotNull(e.getLastLineRead());
+            assertTrue(e.getLastLineRead().indexOf("secret") >= 0);
+
+            // ...but the exception message must stay structural-only, safe
+            // for stack-trace logging by default.
+            String diag = e.getMessage();
+            assertTrue(diag, diag.startsWith("all boundaries not found for: --innerBCREPRO"));
+            assertTrue(diag, diag.indexOf("expected 3 boundary lines, found 2") >= 0);
+            assertTrue(diag, diag.indexOf("bytes consumed") >= 0);
+            assertTrue(diag, diag.indexOf("multipart/alternative") >= 0);
+            assertTrue(diag, diag.indexOf("secret") < 0);
+        }
     }
 
     public void testSHA256WithRSAParserEncryptedWithAES()

@@ -54,8 +54,29 @@ public class DSATest
         return "DSA";
     }
 
+    private void testModulusSizeBound()
+    {
+        // An oversized prime modulus must be rejected at import before the super-linear validation
+        // exponentiation, capping the import-time CPU-exhaustion vector. The value is not prime --
+        // only its bit length matters to the guard, which fires before the modPow.
+        BigInteger hugeP = BigInteger.ONE.shiftLeft(20000);
+
+        try
+        {
+            new DSAPublicKeyParameters(BigInteger.valueOf(2),
+                new DSAParameters(hugeP, BigInteger.valueOf(11), BigInteger.valueOf(2)));
+            fail("oversized DSA modulus accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("unexpected DSA message: " + e.getMessage(), "DSA modulus out of range".equals(e.getMessage()));
+        }
+    }
+
     public void performTest()
     {
+        testModulusSizeBound();
+
         BigInteger              r = new BigInteger("68076202252361894315274692543577577550894681403");
         BigInteger              s = new BigInteger("1089214853334067536215539335472893651470583479365");
         DSAParametersGenerator  pGen = new DSAParametersGenerator();

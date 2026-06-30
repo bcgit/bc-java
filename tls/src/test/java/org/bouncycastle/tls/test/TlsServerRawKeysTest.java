@@ -5,12 +5,11 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsServerProtocol;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeOutputStream;
 
@@ -64,10 +63,10 @@ public class TlsServerRawKeysTest
             try
             {
                 MockRawKeysTlsServer server = new MockRawKeysTlsServer(
+                        new BcTlsCrypto(),
                         CertificateType.RawPublicKey,
                         CertificateType.RawPublicKey,
                         new short[]{ CertificateType.RawPublicKey },
-                        new Ed25519PrivateKeyParameters(new SecureRandom()),
                         tlsVersion);
                 TlsServerProtocol serverProtocol = new TlsServerProtocol(s.getInputStream(), s.getOutputStream());
                 serverProtocol.accept(server);

@@ -17,6 +17,7 @@ import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 public class BCRSAPrivateKey
@@ -128,13 +129,17 @@ public class BCRSAPrivateKey
 
         RSAPrivateKey key = (RSAPrivateKey)o;
 
+        int len = Math.max(
+            (getModulus().bitLength() + 7) / 8,
+            (key.getModulus().bitLength() + 7) / 8);
+
         return getModulus().equals(key.getModulus())
-            && getPrivateExponent().equals(key.getPrivateExponent());
+            && BigIntegers.areSecretValuesEqual(len, getPrivateExponent(), key.getPrivateExponent());
     }
 
     public int hashCode()
     {
-        return getModulus().hashCode() ^ getPrivateExponent().hashCode();
+        return getModulus().hashCode();
     }
 
     public void setBagAttribute(

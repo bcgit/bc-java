@@ -19,10 +19,11 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.FrodoKEMParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
-import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
@@ -44,9 +45,6 @@ class Utils
 
     static final Map saberOids = new HashMap();
     static final Map saberParams = new HashMap();
-
-    static final Map mcElieceOids = new HashMap();
-    static final Map mcElieceParams = new HashMap();
 
     static final Map sphincsPlusOids = new HashMap();
     static final Map sphincsPlusParams = new HashMap();
@@ -72,6 +70,9 @@ class Utils
     static final Map mlkemOids = new HashMap<ASN1ObjectIdentifier, MLKEMParameters>();
     static final Map mlkemParams = new HashMap<MLKEMParameters, ASN1ObjectIdentifier>();
 
+    static final Map frodoKemOids = new HashMap();
+    static final Map frodoKemParams = new HashMap();
+
     static final Map mldsaOids = new HashMap<ASN1ObjectIdentifier, MLDSAParameters>();
     static final Map mldsaParams = new HashMap<MLDSAParameters, ASN1ObjectIdentifier>();
 
@@ -87,43 +88,45 @@ class Utils
     static final Map ntruPlusOids = new HashMap<ASN1ObjectIdentifier, NTRUPlusParameters>();
     static final Map ntruPlusParams = new HashMap<NTRUPlusParameters, ASN1ObjectIdentifier>();
 
+    // standardised Classic McEliece (ISO/IEC 18033-2 Clause 13) -- org.bouncycastle.crypto.params.CMCEParameters
+    static final Map cmceOids = new HashMap();
+    static final Map cmceParams = new HashMap();
+
     static
     {
-        mcElieceOids.put(CMCEParameters.mceliece348864r3, BCObjectIdentifiers.mceliece348864_r3);
-        mcElieceOids.put(CMCEParameters.mceliece348864fr3, BCObjectIdentifiers.mceliece348864f_r3);
-        mcElieceOids.put(CMCEParameters.mceliece460896r3, BCObjectIdentifiers.mceliece460896_r3);
-        mcElieceOids.put(CMCEParameters.mceliece460896fr3, BCObjectIdentifiers.mceliece460896f_r3);
-        mcElieceOids.put(CMCEParameters.mceliece6688128r3, BCObjectIdentifiers.mceliece6688128_r3);
-        mcElieceOids.put(CMCEParameters.mceliece6688128fr3, BCObjectIdentifiers.mceliece6688128f_r3);
-        mcElieceOids.put(CMCEParameters.mceliece6960119r3, BCObjectIdentifiers.mceliece6960119_r3);
-        mcElieceOids.put(CMCEParameters.mceliece6960119fr3, BCObjectIdentifiers.mceliece6960119f_r3);
-        mcElieceOids.put(CMCEParameters.mceliece8192128r3, BCObjectIdentifiers.mceliece8192128_r3);
-        mcElieceOids.put(CMCEParameters.mceliece8192128fr3, BCObjectIdentifiers.mceliece8192128f_r3);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece460896, ISOIECObjectIdentifiers.mceliece460896);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece460896f, ISOIECObjectIdentifiers.mceliece460896f);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece460896pc, ISOIECObjectIdentifiers.mceliece460896pc);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece460896pcf, ISOIECObjectIdentifiers.mceliece460896pcf);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece6688128, ISOIECObjectIdentifiers.mceliece6688128);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece6688128f, ISOIECObjectIdentifiers.mceliece6688128f);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece6688128pc, ISOIECObjectIdentifiers.mceliece6688128pc);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece6688128pcf, ISOIECObjectIdentifiers.mceliece6688128pcf);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece6960119, ISOIECObjectIdentifiers.mceliece6960119);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece6960119f, ISOIECObjectIdentifiers.mceliece6960119f);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece6960119pc, ISOIECObjectIdentifiers.mceliece6960119pc);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece6960119pcf, ISOIECObjectIdentifiers.mceliece6960119pcf);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece8192128, ISOIECObjectIdentifiers.mceliece8192128);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece8192128f, ISOIECObjectIdentifiers.mceliece8192128f);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece8192128pc, ISOIECObjectIdentifiers.mceliece8192128pc);
+        cmceOids.put(org.bouncycastle.crypto.params.CMCEParameters.mceliece8192128pcf, ISOIECObjectIdentifiers.mceliece8192128pcf);
 
-        mcElieceParams.put(BCObjectIdentifiers.mceliece348864_r3, CMCEParameters.mceliece348864r3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece348864f_r3, CMCEParameters.mceliece348864fr3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece460896_r3, CMCEParameters.mceliece460896r3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece460896f_r3, CMCEParameters.mceliece460896fr3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece6688128_r3, CMCEParameters.mceliece6688128r3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece6688128f_r3, CMCEParameters.mceliece6688128fr3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece6960119_r3, CMCEParameters.mceliece6960119r3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece6960119f_r3, CMCEParameters.mceliece6960119fr3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece8192128_r3, CMCEParameters.mceliece8192128r3);
-        mcElieceParams.put(BCObjectIdentifiers.mceliece8192128f_r3, CMCEParameters.mceliece8192128fr3);
-
-        frodoOids.put(FrodoParameters.frodokem640aes, BCObjectIdentifiers.frodokem640aes);
-        frodoOids.put(FrodoParameters.frodokem640shake, BCObjectIdentifiers.frodokem640shake);
-        frodoOids.put(FrodoParameters.frodokem976aes, BCObjectIdentifiers.frodokem976aes);
-        frodoOids.put(FrodoParameters.frodokem976shake, BCObjectIdentifiers.frodokem976shake);
-        frodoOids.put(FrodoParameters.frodokem1344aes, BCObjectIdentifiers.frodokem1344aes);
-        frodoOids.put(FrodoParameters.frodokem1344shake, BCObjectIdentifiers.frodokem1344shake);
-
-        frodoParams.put(BCObjectIdentifiers.frodokem640aes, FrodoParameters.frodokem640aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem640shake, FrodoParameters.frodokem640shake);
-        frodoParams.put(BCObjectIdentifiers.frodokem976aes, FrodoParameters.frodokem976aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem976shake, FrodoParameters.frodokem976shake);
-        frodoParams.put(BCObjectIdentifiers.frodokem1344aes, FrodoParameters.frodokem1344aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem1344shake, FrodoParameters.frodokem1344shake);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece460896, org.bouncycastle.crypto.params.CMCEParameters.mceliece460896);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece460896f, org.bouncycastle.crypto.params.CMCEParameters.mceliece460896f);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece460896pc, org.bouncycastle.crypto.params.CMCEParameters.mceliece460896pc);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece460896pcf, org.bouncycastle.crypto.params.CMCEParameters.mceliece460896pcf);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece6688128, org.bouncycastle.crypto.params.CMCEParameters.mceliece6688128);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece6688128f, org.bouncycastle.crypto.params.CMCEParameters.mceliece6688128f);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece6688128pc, org.bouncycastle.crypto.params.CMCEParameters.mceliece6688128pc);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece6688128pcf, org.bouncycastle.crypto.params.CMCEParameters.mceliece6688128pcf);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece6960119, org.bouncycastle.crypto.params.CMCEParameters.mceliece6960119);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece6960119f, org.bouncycastle.crypto.params.CMCEParameters.mceliece6960119f);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece6960119pc, org.bouncycastle.crypto.params.CMCEParameters.mceliece6960119pc);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece6960119pcf, org.bouncycastle.crypto.params.CMCEParameters.mceliece6960119pcf);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece8192128, org.bouncycastle.crypto.params.CMCEParameters.mceliece8192128);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece8192128f, org.bouncycastle.crypto.params.CMCEParameters.mceliece8192128f);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece8192128pc, org.bouncycastle.crypto.params.CMCEParameters.mceliece8192128pc);
+        cmceParams.put(ISOIECObjectIdentifiers.mceliece8192128pcf, org.bouncycastle.crypto.params.CMCEParameters.mceliece8192128pcf);
 
         saberOids.put(SABERParameters.lightsaberkem128r3, BCObjectIdentifiers.lightsaberkem128r3);
         saberOids.put(SABERParameters.saberkem128r3, BCObjectIdentifiers.saberkem128r3);
@@ -192,6 +195,24 @@ class Utils
         mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, MLKEMParameters.ml_kem_512);
         mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, MLKEMParameters.ml_kem_768);
         mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, MLKEMParameters.ml_kem_1024);
+
+        frodoKemOids.put(FrodoKEMParameters.frodokem976shake, ISOIECObjectIdentifiers.frodokem976_shake);
+        frodoKemOids.put(FrodoKEMParameters.frodokem1344shake, ISOIECObjectIdentifiers.frodokem1344_shake);
+        frodoKemOids.put(FrodoKEMParameters.efrodokem976shake, ISOIECObjectIdentifiers.efrodokem976_shake);
+        frodoKemOids.put(FrodoKEMParameters.efrodokem1344shake, ISOIECObjectIdentifiers.efrodokem1344_shake);
+        frodoKemOids.put(FrodoKEMParameters.frodokem976aes, ISOIECObjectIdentifiers.frodokem976_aes);
+        frodoKemOids.put(FrodoKEMParameters.frodokem1344aes, ISOIECObjectIdentifiers.frodokem1344_aes);
+        frodoKemOids.put(FrodoKEMParameters.efrodokem976aes, ISOIECObjectIdentifiers.efrodokem976_aes);
+        frodoKemOids.put(FrodoKEMParameters.efrodokem1344aes, ISOIECObjectIdentifiers.efrodokem1344_aes);
+
+        frodoKemParams.put(ISOIECObjectIdentifiers.frodokem976_shake, FrodoKEMParameters.frodokem976shake);
+        frodoKemParams.put(ISOIECObjectIdentifiers.frodokem1344_shake, FrodoKEMParameters.frodokem1344shake);
+        frodoKemParams.put(ISOIECObjectIdentifiers.efrodokem976_shake, FrodoKEMParameters.efrodokem976shake);
+        frodoKemParams.put(ISOIECObjectIdentifiers.efrodokem1344_shake, FrodoKEMParameters.efrodokem1344shake);
+        frodoKemParams.put(ISOIECObjectIdentifiers.frodokem976_aes, FrodoKEMParameters.frodokem976aes);
+        frodoKemParams.put(ISOIECObjectIdentifiers.frodokem1344_aes, FrodoKEMParameters.frodokem1344aes);
+        frodoKemParams.put(ISOIECObjectIdentifiers.efrodokem976_aes, FrodoKEMParameters.efrodokem976aes);
+        frodoKemParams.put(ISOIECObjectIdentifiers.efrodokem1344_aes, FrodoKEMParameters.efrodokem1344aes);
 
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);
@@ -488,14 +509,14 @@ class Utils
         throw new IllegalArgumentException("unrecognised digest algorithm: " + digestOid);
     }
 
-    static ASN1ObjectIdentifier mcElieceOidLookup(CMCEParameters params)
+    static ASN1ObjectIdentifier cmceOidLookup(org.bouncycastle.crypto.params.CMCEParameters params)
     {
-        return (ASN1ObjectIdentifier)mcElieceOids.get(params);
+        return (ASN1ObjectIdentifier)cmceOids.get(params);
     }
 
-    static CMCEParameters mcElieceParamsLookup(ASN1ObjectIdentifier oid)
+    static org.bouncycastle.crypto.params.CMCEParameters cmceParamsLookup(ASN1ObjectIdentifier oid)
     {
-        return (CMCEParameters)mcElieceParams.get(oid);
+        return (org.bouncycastle.crypto.params.CMCEParameters)cmceParams.get(oid);
     }
 
     static ASN1ObjectIdentifier frodoOidLookup(FrodoParameters params)
@@ -546,6 +567,16 @@ class Utils
     static MLKEMParameters mlkemParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (MLKEMParameters)mlkemParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier frodoKemOidLookup(FrodoKEMParameters params)
+    {
+        return (ASN1ObjectIdentifier)frodoKemOids.get(params);
+    }
+
+    static FrodoKEMParameters frodoKemParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (FrodoKEMParameters)frodoKemParams.get(oid);
     }
 
     static ASN1ObjectIdentifier ntrulprimeOidLookup(NTRULPRimeParameters params)

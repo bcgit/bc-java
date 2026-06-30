@@ -16,9 +16,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -53,6 +51,7 @@ import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.crypto.util.OidCatalogue;
 import org.bouncycastle.operator.AsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
@@ -67,8 +66,6 @@ public class EnvelopedDataHelper
     protected static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
     private static final byte[] hkdfSalt = Strings.toByteArray("The Cryptographic Message Syntax");
 
-    private static final Set authEnvelopedAlgorithms = new HashSet();
-
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
     protected static final Map CIPHER_ALG_NAMES = new HashMap();
     protected static final Map MAC_ALG_NAMES = new HashMap();
@@ -82,6 +79,13 @@ public class EnvelopedDataHelper
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES128_CBC,  "AES");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES192_CBC,  "AES");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES256_CBC,  "AES");
+        // AES-GCM as a CMS content cipher: without these the unwrapped CEK is
+        // labelled with the raw GCM OID, which strict providers (JSL) reject on
+        // content-cipher init. CBC entries above cover the common case; GCM is
+        // needed for the ML-KEM/KEMRecipientInfo + AES-GCM path.
+        BASE_CIPHER_NAMES.put(CMSAlgorithm.AES128_GCM,  "AES");
+        BASE_CIPHER_NAMES.put(CMSAlgorithm.AES192_GCM,  "AES");
+        BASE_CIPHER_NAMES.put(CMSAlgorithm.AES256_GCM,  "AES");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.CAST5_CBC, "CAST5");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.CAMELLIA128_CBC, "Camellia");
@@ -113,20 +117,15 @@ public class EnvelopedDataHelper
         MAC_ALG_NAMES.put(CMSAlgorithm.AES256_CBC,  "AESMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2Mac");
         MAC_ALG_NAMES.put(CMSAlgorithm.ChaCha20Poly1305, "ChaCha20Poly1305Mac");
+        // RFC 8702
+        MAC_ALG_NAMES.put(CMSAlgorithm.KMACwithSHAKE128, "KMAC128");
+        MAC_ALG_NAMES.put(CMSAlgorithm.KMACwithSHAKE256, "KMAC256");
 
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA1.getAlgorithmID(), "PBKDF2WITHHMACSHA1");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA224.getAlgorithmID(), "PBKDF2WITHHMACSHA224");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA256.getAlgorithmID(), "PBKDF2WITHHMACSHA256");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA384.getAlgorithmID(), "PBKDF2WITHHMACSHA384");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA512.getAlgorithmID(), "PBKDF2WITHHMACSHA512");
-
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.ChaCha20Poly1305);
     }
 
     private static final short[] rc2Table = {
@@ -351,7 +350,7 @@ public class EnvelopedDataHelper
 
         try
         {
-             return helper.createCipher(cipherName);
+            return helper.createCipher(cipherName);
         }
         catch (GeneralSecurityException e)
         {
@@ -389,9 +388,14 @@ public class EnvelopedDataHelper
     AlgorithmParameterGenerator createAlgorithmParameterGenerator(ASN1ObjectIdentifier algorithm)
         throws GeneralSecurityException
     {
-        String algorithmName = (String)BASE_CIPHER_NAMES.get(algorithm);
+        // See createAlgorithmParameters: AEAD algorithms need OID-resolved parameters (e.g. the
+        // GCMParameters SEQUENCE), not the "AES" base-name parameters, so skip the shortcut.
+        String algorithmName = isAuthEnveloped(algorithm) ? null : (String)BASE_CIPHER_NAMES.get(algorithm);
 
-        if (algorithmName != null)
+        // See createAlgorithmParameters: AEAD algorithms must resolve their parameter generator by
+        // OID so the algorithm-specific parameters (e.g. RFC 5084 GCMParameters) are produced rather
+        // than a bare IV from the base cipher name.
+        if (algorithmName != null && !isAuthEnveloped(algorithm))
         {
             try
             {
@@ -417,6 +421,10 @@ public class EnvelopedDataHelper
                 NoSuchPaddingException, NoSuchProviderException
             {
                 AlgorithmIdentifier encAlgId;
+                // RFC 9709: the EncryptedContentInfo carries an outer id-alg-cek-hkdf-sha256
+                // wrapping the real inner content-encryption AlgorithmIdentifier. The HKDF
+                // derivation of the CEK happens upstream in getJceKey(AlgorithmIdentifier, ...);
+                // here we only need to unwrap to the inner algId to select the right cipher.
                 if (encryptionAlgID.getAlgorithm().equals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256))
                 {
                     encAlgId = AlgorithmIdentifier.getInstance(encryptionAlgID.getParameters());
@@ -518,9 +526,18 @@ public class EnvelopedDataHelper
     AlgorithmParameters createAlgorithmParameters(ASN1ObjectIdentifier algorithm)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        String algorithmName = (String)BASE_CIPHER_NAMES.get(algorithm);
+        // AEAD algorithms (GCM / CCM / ChaCha20Poly1305) carry structured AlgorithmParameters
+        // (for AES-GCM a GCMParameters SEQUENCE of nonce + icvLen) that must be resolved via the
+        // algorithm OID. The BASE_CIPHER_NAMES base name ("AES" for AES-GCM) would instead produce
+        // a bare IV OCTET STRING and corrupt the AuthEnvelopedData encoding, so skip the base-name
+        // shortcut for them and fall through to the OID lookup.
+        String algorithmName = isAuthEnveloped(algorithm) ? null : (String)BASE_CIPHER_NAMES.get(algorithm);
 
-        if (algorithmName != null)
+        // AEAD algorithms (GCM/CCM/ChaCha20Poly1305) carry algorithm-specific parameters - e.g. the
+        // RFC 5084 GCMParameters SEQUENCE - so they must be resolved by OID. The base cipher name
+        // (e.g. "AES") only yields a bare IV OCTET STRING, which is wrong for the content algorithm
+        // identifier; the base-name mapping exists for the cipher/key, not the parameters.
+        if (algorithmName != null && !isAuthEnveloped(algorithm))
         {
             try
             {
@@ -741,7 +758,7 @@ public class EnvelopedDataHelper
             if (effKeyBits != -1)
             {
                 int parameterVersion;
-                            
+
                 if (effKeyBits < 256)
                 {
                     parameterVersion = rc2Table[effKeyBits];
@@ -790,13 +807,13 @@ public class EnvelopedDataHelper
         }
         catch (GeneralSecurityException e)
         {
-             throw new CMSException("Unable to calculate derived key from password: " + e.getMessage(), e);
+            throw new CMSException("Unable to calculate derived key from password: " + e.getMessage(), e);
         }
     }
 
     boolean isAuthEnveloped(ASN1ObjectIdentifier algorithm)
     {
-        return authEnvelopedAlgorithms.contains(algorithm);
+        return OidCatalogue.isAuthEnveloped(algorithm);
     }
 
     static interface JCECallback

@@ -29,6 +29,12 @@ public class KeccakDigest
     protected int bitsInQueue;
     protected int fixedOutputLength;
     protected boolean squeezing;
+    // Number of bytes of the current squeeze block already materialised into dataQueue
+    // (always a multiple of 8). KeccakExtract permutes but defers the long->byte packing;
+    // squeeze() materialises only the lanes it actually consumes. Consumers that squeeze
+    // less than a full rate block (SHA3-256, the many N-byte SLH-DSA tweakable hashes,
+    // small cSHAKE/KMAC outputs) avoid packing the discarded tail of the block.
+    private int queuePacked;
 
     public KeccakDigest()
     {
@@ -62,6 +68,7 @@ public class KeccakDigest
         this.bitsInQueue = source.bitsInQueue;
         this.fixedOutputLength = source.fixedOutputLength;
         this.squeezing = source.squeezing;
+        this.queuePacked = source.queuePacked;
 
         CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
     }
@@ -82,6 +89,9 @@ public class KeccakDigest
         fixedOutputLength = Pack.bigEndianToInt(encodedState, encOff);
         encOff += 4;
         squeezing = encodedState[encOff] != 0;
+        // getEncodedState fully materialises dataQueue before serialising, so the restored
+        // queue is complete for the current block.
+        queuePacked = rate >>> 3;
     }
 
     protected KeccakDigest(byte[] encodedState, CryptoServicePurpose purpose)
@@ -112,6 +122,7 @@ public class KeccakDigest
         this.bitsInQueue = source.bitsInQueue;
         this.fixedOutputLength = source.fixedOutputLength;
         this.squeezing = source.squeezing;
+        this.queuePacked = source.queuePacked;
 
         CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
     }
@@ -208,6 +219,7 @@ public class KeccakDigest
         }
         Arrays.fill(this.dataQueue, (byte)0);
         this.bitsInQueue = 0;
+        this.queuePacked = 0;
         this.squeezing = false;
         this.fixedOutputLength = (1600 - rate) / 2;
     }
@@ -345,9 +357,30 @@ public class KeccakDigest
                 KeccakExtract();
             }
             int partialBlock = (int)Math.min((long)bitsInQueue, outputLength - i);
-            System.arraycopy(dataQueue, (rate - bitsInQueue) / 8, output, offset + (int)(i / 8), partialBlock / 8);
+            int srcOff = (rate - bitsInQueue) / 8;
+            int nBytes = partialBlock / 8;
+            ensureQueuePacked(srcOff + nBytes);
+            System.arraycopy(dataQueue, srcOff, output, offset + (int)(i / 8), nBytes);
             bitsInQueue -= partialBlock;
             i += partialBlock;
+        }
+    }
+
+    /**
+     * Materialise (little-endian) the state lanes covering the first {@code needBytes} bytes of
+     * the current squeeze block into dataQueue, picking up where a previous call left off. Always
+     * packs whole lanes, so consumers reading less than a full rate block skip packing the
+     * discarded tail. Reads the (squeeze-stable) state, so the produced bytes are identical to
+     * eagerly packing the whole block.
+     */
+    private void ensureQueuePacked(int needBytes)
+    {
+        if (queuePacked < needBytes)
+        {
+            int startLong = queuePacked >>> 3;
+            int endLong = (needBytes + 7) >>> 3;
+            Pack.longToLittleEndian(state, startLong, endLong - startLong, dataQueue, queuePacked);
+            queuePacked = endLong << 3;
         }
     }
 
@@ -371,8 +404,8 @@ public class KeccakDigest
 
         KeccakPermutation();
 
-        Pack.longToLittleEndian(state, 0, rate >>> 6, dataQueue, 0);
-
+        // Defer packing state -> dataQueue until squeeze() knows how many lanes it will read.
+        this.queuePacked = 0;
         this.bitsInQueue = rate;
     }
 
@@ -493,6 +526,13 @@ public class KeccakDigest
 
     protected byte[] getEncodedState(byte[] encState)
     {
+        // The serialised format carries the full dataQueue; materialise any lanes that lazy
+        // packing has so far deferred so a digest saved mid-squeeze round-trips byte-identically.
+        if (squeezing)
+        {
+            ensureQueuePacked(rate >>> 3);
+        }
+
         encState[0] = (byte)purpose.ordinal();
 
         int sOff = 1;

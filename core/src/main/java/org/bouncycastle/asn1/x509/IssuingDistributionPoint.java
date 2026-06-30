@@ -73,7 +73,7 @@ public class IssuingDistributionPoint
      *            Which revocation reasons does this point cover.
      * @param indirectCRL
      *            If <code>true</code> then the CRL contains revocation
-     *            information about certificates ssued by other CAs.
+     *            information about certificates issued by other CAs.
      * @param onlyContainsAttributeCerts Covers revocation information for attribute certificates.
      */
     public IssuingDistributionPoint(
@@ -133,7 +133,7 @@ public class IssuingDistributionPoint
      *            May contain an URI as pointer to most current CRL.
      * @param indirectCRL
      *            If <code>true</code> then the CRL contains revocation
-     *            information about certificates ssued by other CAs.
+     *            information about certificates issued by other CAs.
      * @param onlyContainsAttributeCerts Covers revocation information for attribute certificates.
      */
     public IssuingDistributionPoint(

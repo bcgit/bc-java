@@ -234,7 +234,7 @@ public class PGPPublicKeyEncryptedData
                     {
                         PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(true, sessionKey.getAlgorithm(), sessionKey.getKey());
 
-                        processSymmetricEncIntegrityPacketDataStream(true, dataDecryptor, encIn);
+                        processSymmetricEncIntegrityPacketDataStream(true, dataDecryptor, encIn, true);
                     }
                     // SEIPD v2 (OpenPGP v6 AEAD)
                     else
@@ -249,7 +249,7 @@ public class PGPPublicKeyEncryptedData
                 {
                     PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(false, sessionKey.getAlgorithm(), sessionKey.getKey());
 
-                    processSymmetricEncIntegrityPacketDataStream(false, dataDecryptor, encIn);
+                    processSymmetricEncIntegrityPacketDataStream(false, dataDecryptor, encIn, true);
                 }
 
                 //

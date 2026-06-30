@@ -78,6 +78,7 @@ import org.bouncycastle.jce.provider.PKIXPolicyNode;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Objects;
+import org.bouncycastle.util.Properties;
 
 /**
  * PKIXCertPathReviewer<br>
@@ -434,6 +435,22 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         
         // (b)  and (c)
         PKIXNameConstraintValidator nameConstraintValidator = new PKIXNameConstraintValidator();
+
+        // RFC 5280 sec. 4.2.1.10: the name constraints extension MUST be used
+        // only in a CA certificate. The path validation algorithm never
+        // processes the extension on a non-CA certificate, so its presence
+        // there is an issuance defect worth surfacing - but acceptance remains
+        // RFC-permissible, hence a notification rather than an error.
+        for (int c = 0; c != certs.size(); c++)
+        {
+            X509Certificate ncCert = (X509Certificate)certs.get(c);
+            if (ncCert.getBasicConstraints() == -1
+                && ncCert.getExtensionValue(NAME_CONSTRAINTS) != null)
+            {
+                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.ncNonCACert");
+                addNotification(msg, c);
+            }
+        }
 
         //
         // process each certificate except the last in the path
@@ -1325,8 +1342,24 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         }
                     }
 
+                    // Bound the valid-policy-tree: policy mapping plus anyPolicy expansion can
+                    // grow it multiplicatively per certificate, so a crafted chain could drive an
+                    // exponential blow-up (CVE-2023-0464 class). Checked once per certificate.
+                    {
+                        int maxPolicyNodes = Properties.asInteger(Properties.X509_MAX_POLICY_NODES, 8192);
+                        int policyNodeCount = 0;
+                        for (int pj = 0; pj != policyNodes.length; pj++)
+                        {
+                            policyNodeCount += policyNodes[pj].size();
+                            if (policyNodeCount > maxPolicyNodes)
+                            {
+                                throw new CertPathReviewerException(
+                                    new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.policyTreeTooLarge"));
+                            }
+                        }
+                    }
                 }
-                
+
                 // e)
                 
                 if (certPolicies == null) 
@@ -1764,6 +1797,8 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             addError(cpre.getErrorMessage(),cpre.getIndex());
             validPolicyTree = null;
         }
+
+        policyTree = validPolicyTree;
     }
 
     private void checkCriticalExtensions()

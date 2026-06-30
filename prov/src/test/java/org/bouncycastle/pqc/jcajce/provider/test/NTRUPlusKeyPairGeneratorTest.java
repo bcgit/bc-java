@@ -20,7 +20,7 @@ public class NTRUPlusKeyPairGeneratorTest
         throws Exception
     {
         kf = KeyFactory.getInstance("NTRUPLUS", "BCPQC");
-        kf = KeyFactory.getInstance(BCObjectIdentifiers.pqc_kem_hqc.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.pqc_kem_ntruplus.getId(), "BCPQC");
     }
 
     public void testKeyPairEncoding()

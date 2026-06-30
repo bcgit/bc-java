@@ -37,6 +37,11 @@ public class PBMParameter
 
     private PBMParameter(ASN1Sequence seq)
     {
+        if (seq.size() < 4)
+        {
+            throw new IllegalArgumentException("expected sequence size of 4");
+        }
+
         salt = ASN1OctetString.getInstance(seq.getObjectAt(0));
         owf = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
         iterationCount = ASN1Integer.getInstance(seq.getObjectAt(2));

@@ -34,6 +34,7 @@ import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 public class JCEECPrivateKey
@@ -406,12 +407,16 @@ public class JCEECPrivateKey
 
         JCEECPrivateKey other = (JCEECPrivateKey)o;
 
-        return getD().equals(other.getD()) && (engineGetSpec().equals(other.engineGetSpec()));
+        int len = Math.max(
+            (this.getD().bitLength() + 7) / 8,
+            (other.getD().bitLength() + 7) / 8);
+
+        return (engineGetSpec().equals(other.engineGetSpec()) && BigIntegers.areSecretValuesEqual(len, this.getD(), other.getD()));
     }
 
     public int hashCode()
     {
-        return getD().hashCode() ^ engineGetSpec().hashCode();
+        return ECUtil.privateKeyHashCode(getD(), engineGetSpec());
     }
 
     public String toString()

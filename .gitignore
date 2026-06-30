@@ -2,6 +2,7 @@
 .gradle
 .project
 
+junit*.properties
 *.class
 *.gen
 */*.gen
@@ -26,7 +27,6 @@ pg/*.bpg
 pg/*.txt
 
 .idea/
-.claude/
 
 .DS_Store
 
@@ -42,8 +42,14 @@ bc-build.user.properties
 # macOS Finder metadata
 .DS_Store
 
-# Local Claude Code tooling state (skills, settings, etc.)
-.claude/
+# Claude Code: ignore personal/local state, but share team tooling
+# (skills, slash commands, subagents, and project settings.json).
+.claude/*
+!.claude/settings.json
+!.claude/skills/
+!.claude/commands/
+!.claude/agents/
+.claude/settings.local.json
 .claude 2/
 
 # Stray test-run output left at the top of modules

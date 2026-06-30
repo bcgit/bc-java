@@ -36,6 +36,22 @@ public class Properties
     public static final String DRBG_ENTROPY_THREAD = "org.bouncycastle.drbg.entropy_thread";
     public static final String DRBG_GATHER_PAUSE_SECS = "org.bouncycastle.drbg.gather_pause_secs";
     public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
+    public static final String DH_MAX_SIZE = "org.bouncycastle.dh.max_size";
+    public static final String DSA_MAX_SIZE = "org.bouncycastle.dsa.max_size";
+    public static final String BCFKS_MAX_IT_COUNT = "org.bouncycastle.bcfks.max_it_count";
+    public static final String BCFKS_MAX_SCRYPT_MEMORY = "org.bouncycastle.bcfks.max_scrypt_memory";
+    public static final String PBE_MAX_ITERATION_COUNT = "org.bouncycastle.pbe.max_iteration_count";
+    public static final String PBE_MAX_SCRYPT_MEMORY = "org.bouncycastle.pbe.max_scrypt_memory";
+    public static final String PKMAC_MAX_ITERATION_COUNT = "org.bouncycastle.pkmac.max_iteration_count";
+    public static final String X509_MAX_POLICY_NODES = "org.bouncycastle.x509.max_policy_nodes";
+    public static final String GCM_ALLOW_SHORT_TAGS = "org.bouncycastle.gcm.allow_short_tags";
+    public static final String BKS_ENABLE_V1 = "org.bouncycastle.bks.enable_v1";
+
+    /**
+     * Opt in to the relaxed directoryName name-constraint matching required by GSMA SGP.22 v2.5
+     * (Remote SIM Provisioning). Looser than RFC 5280 7.1, so defaults to off. See github #2327.
+     */
+    public static final String X509_SGP22_NAME_CONSTRAINTS = "org.bouncycastle.x509.sgp22_name_constraints";
 
     private Properties()
     {

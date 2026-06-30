@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.hawk;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 class HawkEngine
@@ -803,7 +804,7 @@ class HawkEngine
     // Fixed-point comparison
     public static boolean fxrLt(long x, long y)
     {
-        return Long.compareUnsigned(x, y) < 0;
+        return Longs.compareUnsigned(x, y) < 0;
     }
 
     // Main recursive step for (f,g) computation

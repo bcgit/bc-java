@@ -19,8 +19,10 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.gpg.PGPSecretKeyParser;
+import org.bouncycastle.gpg.SExprParser;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.ExtendedPGPSecretKey;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.OpenedPGPKeyData;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
@@ -618,7 +620,34 @@ public class ExSExprTest
         testRSAOpen();
         testProtectedRSA();
         testShadowedRSA();
+        testParseSecretKeyExtendedBridge();
 
+    }
+
+    /*
+     * The long-standing SExprParser.parseSecretKey entry point must auto-detect the GnuPG
+     * extended private key format and route it through the extended parser, rather than failing
+     * in parseCanonical on the leading header character (github #794). Covers an open and a
+     * protected extended key.
+     */
+    public void testParseSecretKeyExtendedBridge()
+        throws Exception
+    {
+        byte[][] examples = {brainPool256Open, brainPool256Protected};
+        for (int i = 0; i != examples.length; i++)
+        {
+            // confirm the fixture really is in the extended (non-canonical) layout
+            isTrue(PGPSecretKeyParser.isExtendedSExpression(new ByteArrayInputStream(examples[i])));
+
+            JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
+            PGPSecretKey secretKey = new SExprParser(digBuild.build()).parseSecretKey(
+                new ByteArrayInputStream(examples[i]),
+                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
+                new JcaKeyFingerprintCalculator());
+
+            isTrue("no key returned from extended-format parse", secretKey != null);
+            validateEcKey(((ExtendedPGPSecretKey)secretKey).extractKeyPair(null));
+        }
     }
 
     public void validateDSAKey(PGPKeyPair keyPair)

@@ -19,7 +19,9 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
+import org.bouncycastle.jcajce.provider.symmetric.util.GcmSpecUtil;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -68,6 +70,7 @@ public class AEADTest extends SimpleTest
             testGCMGeneric(KGCM, NGCM, new byte[0], new byte[0], CGCM);
             testGCMParameterSpecWithMultipleUpdates(K2, N2, A2, P2, C2);
             testRepeatedGCMWithSpec(KGCM, NGCM, A2, P2, Hex.decode("f4732d84342623f65b7d63c3c335dd44b87d"));
+            testCCMParameterSpecWithShortTag();
         }
         else
         {
@@ -269,15 +272,22 @@ public class AEADTest extends SimpleTest
         SecretKeySpec key = new SecretKeySpec(K, "AES");
         SecureRandom random = new SecureRandom();
 
-        // GCMParameterSpec mapped to AEADParameters and overrides default MAC
-        // size
-        GCMParameterSpec spec = new GCMParameterSpec(128, N);
-
         for (int i = 900; i != 1024; i++)
         {
             byte[] message = new byte[i];
 
             random.nextBytes(message);
+
+            // GCMParameterSpec mapped to AEADParameters and overrides the default MAC size. The
+            // nonce is varied per iteration: re-initialising the same Cipher for encryption with a
+            // repeated key+nonce is rejected by the AEAD nonce-reuse guard, and this round-trip
+            // test does not depend on the nonce value.
+            byte[] n = Arrays.clone(N);
+            for (int b = 0; b < n.length && b < 4; b++)
+            {
+                n[b] ^= (byte)(i >>> (8 * b));
+            }
+            GCMParameterSpec spec = new GCMParameterSpec(128, n);
 
             eax.init(Cipher.ENCRYPT_MODE, key, spec);
 
@@ -355,6 +365,74 @@ public class AEADTest extends SimpleTest
         if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen() * 8)
         {
             fail("parameters mismatch");
+        }
+    }
+
+    // A CCM AlgorithmParameters must accept a GCMParameterSpec carrying a short (sub-12-octet) tag -
+    // the JCE has no dedicated CCM spec, so a GCMParameterSpec conveys the CCM nonce and ICV length,
+    // and the 8-octet tag of the TLS *_CCM_8 cipher suites is a legal RFC 5084 CCM ICV. Before the fix
+    // (GcmSpecUtil.extractCcmParameters used by the AES/ARIA/LEA AlgParamsCCM) this threw "Cannot
+    // process GCMParameterSpec", because the parameters were built via GCMParameters, which enforces
+    // the RFC 5084 GCM range of 12-16. GCM itself must still reject the short tag.
+    private void testCCMParameterSpecWithShortTag()
+        throws Exception
+    {
+        byte[] K = Hex.decode("000102030405060708090a0b0c0d0e0f");
+        byte[] N = Hex.decode("000102030405060708090a0b");
+        byte[] A = Hex.decode("0001020304050607");
+        byte[] P = Hex.decode("48656c6c6f2c20776f726c6421");
+
+        SecretKeySpec key = new SecretKeySpec(K, "AES");
+        GCMParameterSpec spec = new GCMParameterSpec(64, N); // 8-octet tag, as used by *_CCM_8
+
+        // AlgParamsCCM: round-trip the short-tag spec through the CCM AlgorithmParameters
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance("CCM", "BC");
+        algParams.init(spec);
+
+        CCMParameters ccmParameters = CCMParameters.getInstance(algParams.getEncoded());
+        if (!Arrays.areEqual(N, ccmParameters.getNonce()) || ccmParameters.getIcvLen() != 8)
+        {
+            fail("CCM AlgorithmParameters did not round-trip a short-tag GCMParameterSpec");
+        }
+
+        // full encrypt/decrypt round-trip through the CCM cipher using those parameters
+        Cipher enc = Cipher.getInstance("AES/CCM/NoPadding", "BC");
+        enc.init(Cipher.ENCRYPT_MODE, key, algParams);
+        enc.updateAAD(A);
+        byte[] c = enc.doFinal(P);
+
+        Cipher dec = Cipher.getInstance("AES/CCM/NoPadding", "BC");
+        dec.init(Cipher.DECRYPT_MODE, key, algParams);
+        dec.updateAAD(A);
+        if (!areEqual(P, dec.doFinal(c)))
+        {
+            fail("CCM short-tag round-trip failed");
+        }
+
+        // GcmSpecUtil: extractCcmParameters accepts the 8-octet ICV; extractGcmParameters must reject it
+        if (CCMParameters.getInstance(GcmSpecUtil.extractCcmParameters(spec)).getIcvLen() != 8)
+        {
+            fail("extractCcmParameters produced wrong ICV length");
+        }
+        try
+        {
+            GcmSpecUtil.extractGcmParameters(spec);
+            fail("extractGcmParameters accepted an 8-octet ICV");
+        }
+        catch (InvalidParameterSpecException e)
+        {
+            // expected - GCM ICV must be 12-16 (RFC 5084)
+        }
+
+        // and the GCM AlgorithmParameters must still reject a short tag (GCM was not loosened)
+        try
+        {
+            AlgorithmParameters.getInstance("GCM", "BC").init(new GCMParameterSpec(64, N));
+            fail("GCM AlgorithmParameters accepted an 8-octet ICV");
+        }
+        catch (InvalidParameterSpecException e)
+        {
+            // expected
         }
     }
 

@@ -52,6 +52,18 @@ public class ASN1InputStream
     }
 
     /**
+     * Continue a lazily-deferred parse at a specific remaining nesting depth, so that forcing a
+     * LazyEncodedSequence keeps decrementing the nested-construction guard instead of resetting it
+     * to the configured maximum. Without this a deeply nested SEQUENCE captured lazily would parse
+     * one level per force() with the depth reset each time, defeating the StreamUtil depth limit
+     * and allowing a StackOverflowError on a whole-tree walk of crafted input.
+     */
+    ASN1InputStream(byte[] input, boolean lazyEvaluate, int depth)
+    {
+        this(new ByteArrayInputStream(input), depth, input.length, lazyEvaluate, new byte[16]);
+    }
+
+    /**
      * Create an ASN1InputStream where no DER object will be longer than limit.
      * 
      * @param input stream containing ASN.1 encoded data.
@@ -187,7 +199,11 @@ public class ASN1InputStream
             }
             else if (lazyEvaluate)
             {
-                return new LazyEncodedSequence(defIn.toByteArray());
+                // Record the remaining depth budget for the captured contents so that forcing the
+                // lazy sequence later continues to decrement the nested-construction guard rather
+                // than resetting it. decrementDepth throws here for an over-deep SEQUENCE, exactly
+                // as the eager path would when descending into its contents.
+                return new LazyEncodedSequence(defIn.toByteArray(), StreamUtil.decrementDepth(depth));
             }
             else
             {
@@ -401,6 +417,58 @@ public class ASN1InputStream
         }
 
         return tagNo;
+    }
+
+    /**
+     * Long-capable variant of {@link #readLength(InputStream)} for the
+     * streaming parser, where definite lengths are traversed or drained
+     * rather than materialized and so may exceed the size of a Java array.
+     * The in-memory paths deliberately keep the 31-bit-bounded variant.
+     */
+    static long readLongLength(InputStream s)
+        throws IOException
+    {
+        int length = s.read();
+        if (0 == (length >>> 7))
+        {
+            // definite-length short form 
+            return length;
+        }
+        if (0x80 == length)
+        {
+            // indefinite-length
+            return -1;
+        }
+        if (length < 0)
+        {
+            throw new EOFException("EOF found when length expected");
+        }
+        if (0xFF == length)
+        {
+            throw new IOException("invalid long form definite-length 0xFF");
+        }
+
+        int octetsCount = length & 0x7F, octetsPos = 0;
+
+        long longLength = 0;
+        do
+        {
+            int octet = s.read();
+            if (octet < 0)
+            {
+                throw new EOFException("EOF found reading length");
+            }
+
+            if ((longLength >>> 55) != 0)
+            {
+                throw new IOException("long form definite-length more than 63 bits");
+            }
+
+            longLength = (longLength << 8) + octet;
+        }
+        while (++octetsPos < octetsCount);
+
+        return longLength;
     }
 
     static int readLength(InputStream s)

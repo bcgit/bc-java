@@ -20,6 +20,7 @@ public class AllTests
 
         suite.addTestSuite(ClientVectorTest.class);
         suite.addTestSuite(MessageProtectionTest.class);
+        suite.addTestSuite(MLSInputStreamTest.class);
         suite.addTestSuite(VectorTest.class);
 
         return new BCTestSetup(suite);

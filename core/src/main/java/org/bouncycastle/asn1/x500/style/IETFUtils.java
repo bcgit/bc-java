@@ -41,7 +41,7 @@ public class IETFUtils
         // is the UTF-8 encoding of the character — so a run of pairs must be
         // decoded as UTF-8 (RFC 5280 sec. 4.1.2.4), not one Java char per pair.
         ByteArrayOutputStream hexBytes = new ByteArrayOutputStream();
-        int[] lastEscapedHolder = new int[1];
+        int[] lastEscapedHolder = new int[]{ -1 };
         int start = 0;
 
         // if it's an escaped hash string and not an actual encoding in string form
@@ -56,7 +56,7 @@ public class IETFUtils
         }
 
         boolean nonWhiteSpaceEncountered = false;
-        char hex1 = 0;
+        int hex1 = -1;
 
         for (int i = start; i != elt.length(); i++)
         {
@@ -75,6 +75,7 @@ public class IETFUtils
                 }
                 else
                 {
+                    checkCompleteHexPair(hex1);
                     flushHexBytes(buf, hexBytes, lastEscapedHolder);
                     buf.append(c);
                     escaped = false;
@@ -83,37 +84,46 @@ public class IETFUtils
             else if (c == '\\' && !(escaped || quoted))
             {
                 escaped = true;
-                lastEscapedHolder[0] = buf.length() + hexBytes.size();
+                // In case hexBytes is not empty, lastEscapedHolder will get updated when hexBytes is flushed
+                lastEscapedHolder[0] = buf.length();
+            }
+            else if (c == ' ' && !escaped && !nonWhiteSpaceEncountered)
+            {
+                // Skip leading spaces
+            }
+            else if (escaped && isHexDigit(c))
+            {
+                int hexDigit = convertHex(c);
+                if (hex1 < 0)
+                {
+                    hex1 = hexDigit;
+                }
+                else
+                {
+                    hexBytes.write(hex1 * 16 + hexDigit);
+                    escaped = false;
+                    hex1 = -1;
+                }
             }
             else
             {
-                if (c == ' ' && !escaped && !nonWhiteSpaceEncountered)
-                {
-                    continue;
-                }
-                if (escaped && isHexDigit(c))
-                {
-                    if (hex1 != 0)
-                    {
-                        hexBytes.write(convertHex(hex1) * 16 + convertHex(c));
-                        escaped = false;
-                        hex1 = 0;
-                        continue;
-                    }
-                    hex1 = c;
-                    continue;
-                }
+                // A '\' followed by a single hex digit and then a non-hex char is an
+                // incomplete hexpair (RFC 4514 sec. 2.4 requires two), not a literal.
+                checkCompleteHexPair(hex1);
                 flushHexBytes(buf, hexBytes, lastEscapedHolder);
                 buf.append(c);
                 escaped = false;
             }
         }
 
+        // A '\' followed by a single hex digit at end of input is likewise incomplete.
+        checkCompleteHexPair(hex1);
+
         flushHexBytes(buf, hexBytes, lastEscapedHolder);
 
         if (buf.length() > 0)
         {
-            while (buf.charAt(buf.length() - 1) == ' ' && lastEscapedHolder[0] != (buf.length() - 1))
+            while (buf.charAt(buf.length() - 1) == ' ' && lastEscapedHolder[0] < buf.length() - 1)
             {
                 buf.setLength(buf.length() - 1);
             }
@@ -132,6 +142,14 @@ public class IETFUtils
         hexBytes.reset();
         buf.append(decoded);
         lastEscapedHolder[0] = buf.length() - 1;
+    }
+
+    private static void checkCompleteHexPair(int hex1)
+    {
+        if (hex1 >= 0)
+        {
+            throw new IllegalArgumentException("invalid hex escape in directory string");
+        }
     }
 
     private static boolean isHexDigit(char c)
@@ -479,17 +497,41 @@ public class IETFUtils
             }
         }
 
-        int end = vBuf.length();
-        int index = 0;
+        // Escape in a single linear pass into a fresh builder. The previous implementation escaped by
+        // inserting a backslash into the buffer it was scanning (O(n) per insert), so a value of n
+        // RFC 4514 special characters - or n leading/trailing spaces - cost ~n^2/2 character moves: a
+        // CPU-exhaustion vector for an attacker-supplied large RDN reached via
+        // X500Name.toString()/equals()/hashCode(). Output is unchanged.
+        int len = vBuf.length();
 
-        if (vBuf.length() >= 2 && vBuf.charAt(0) == '\\' && vBuf.charAt(1) == '#')
+        // A leading "\#" (produced above when the value begins with '#') is emitted verbatim and the
+        // leading-space escaping is suppressed, matching the original phase ordering.
+        boolean hashPrefix = len >= 2 && vBuf.charAt(0) == '\\' && vBuf.charAt(1) == '#';
+
+        int firstNonSpace = 0;
+        while (firstNonSpace < len && vBuf.charAt(firstNonSpace) == ' ')
         {
-            index += 2;
+            firstNonSpace++;
+        }
+        int lastNonSpace = len - 1;
+        while (lastNonSpace >= 0 && vBuf.charAt(lastNonSpace) == ' ')
+        {
+            lastNonSpace--;
         }
 
-        while (index != end)
+        StringBuilder out = new StringBuilder(len + 16);
+        int index = 0;
+        if (hashPrefix)
         {
-            switch (vBuf.charAt(index))
+            out.append("\\#");
+            index = 2;
+        }
+
+        for (; index < len; index++)
+        {
+            char c = vBuf.charAt(index);
+            boolean escape;
+            switch (c)
             {
             case ',':
             case '"':
@@ -499,39 +541,24 @@ public class IETFUtils
             case '<':
             case '>':
             case ';':
-            {
-                vBuf.insert(index, "\\");
-                index += 2;
-                ++end;
+                escape = true;
                 break;
-            }
+            case ' ':
+                // leading spaces escaped only without a "\#" prefix; trailing spaces always escaped.
+                escape = (!hashPrefix && index < firstNonSpace) || index > lastNonSpace;
+                break;
             default:
-            {
-                ++index;
+                escape = false;
                 break;
             }
-            }
-        }
-
-        int start = 0;
-        if (vBuf.length() > 0)
-        {
-            while (vBuf.length() > start && vBuf.charAt(start) == ' ')
+            if (escape)
             {
-                vBuf.insert(start, "\\");
-                start += 2;
+                out.append('\\');
             }
+            out.append(c);
         }
 
-        int endBuf = vBuf.length() - 1;
-
-        while (endBuf >= start && vBuf.charAt(endBuf) == ' ')
-        {
-            vBuf.insert(endBuf, '\\');
-            endBuf--;
-        }
-
-        return vBuf.toString();
+        return out.toString();
     }
 
     public static String canonicalize(String s)

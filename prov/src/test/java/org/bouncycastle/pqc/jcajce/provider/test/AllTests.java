@@ -51,7 +51,9 @@ public class AllTests
         suite.addTestSuite(PicnicTest.class);
         suite.addTestSuite(PicnicKeyPairGeneratorTest.class);
         suite.addTestSuite(CMCEKeyPairGeneratorTest.class);
+        suite.addTestSuite(CMCEKEMTest.class);
         suite.addTestSuite(FrodoTest.class);
+        suite.addTestSuite(FrodoKEMTest.class);
         suite.addTestSuite(FrodoKeyPairGeneratorTest.class);
         suite.addTestSuite(SABERTest.class);
         suite.addTestSuite(SABERKeyPairGeneratorTest.class);
@@ -86,6 +88,8 @@ public class AllTests
         suite.addTestSuite(MQOMTest.class);
         suite.addTestSuite(SQIsignTest.class);
         suite.addTestSuite(HawkTest.class);
+        suite.addTestSuite(NTRUPlusTest.class);
+        suite.addTestSuite(NTRUPlusKeyPairGeneratorTest.class);
 
         return new BCTestSetup(suite);
     }

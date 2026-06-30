@@ -44,6 +44,11 @@ public class EdEC
             provider.addAlgorithm("Alg.Alias.Signature", EdECObjectIdentifiers.id_Ed448, "ED448");
             provider.addAlgorithm("Alg.Alias.Signature", EdECObjectIdentifiers.id_Ed25519, "ED25519");
 
+            provider.addAlgorithm("AlgorithmParameters.ED448", PREFIX + "AlgorithmParametersSpi$Ed448");
+            provider.addAlgorithm("AlgorithmParameters.ED25519", PREFIX + "AlgorithmParametersSpi$Ed25519");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters", EdECObjectIdentifiers.id_Ed448, "ED448");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters", EdECObjectIdentifiers.id_Ed25519, "ED25519");
+
             provider.addAlgorithm("KeyPairGenerator.EDDSA", PREFIX + "KeyPairGeneratorSpi$EdDSA");
             provider.addAlgorithm("KeyPairGenerator.ED448", PREFIX + "KeyPairGeneratorSpi$Ed448");
             provider.addAlgorithm("KeyPairGenerator.ED25519", PREFIX + "KeyPairGeneratorSpi$Ed25519");

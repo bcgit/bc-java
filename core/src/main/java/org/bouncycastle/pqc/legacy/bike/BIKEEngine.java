@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 
@@ -211,15 +212,29 @@ class BIKEEngine
         Bytes.xorTo(L_BYTE, c1, mPrime);
 
         // 3. Compute K
+        // Implicit rejection (Fujisaki-Okamoto): select the real seed m' on a matching
+        // re-encryption and the secret-key seed sigma otherwise. The select must be branchless
+        // so decapsulation timing does not leak the FO oracle bit, per Qian Guo, Thomas Johansson,
+        // Alexander Nilsson, "A key-recovery timing attack on post-quantum primitives using the
+        // Fujisaki-Okamoto transformation and its application on FrodoKEM" (CRYPTO 2020).
         byte[] wlist = functionH(mPrime);
-        if (Arrays.constantTimeAreEqual(R2_BYTE, ePrimeBytes, 0, wlist, 0))
+        int match = ctVerify(ePrimeBytes, wlist);
+        Bytes.cmov(L_BYTE, ~match, sigma, mPrime);
+        functionK(mPrime, c0, c1, k);
+    }
+
+    /**
+     * Constant-time comparison of the first R2_BYTE bytes of {@code a} and {@code b}: returns an
+     * all-ones mask (-1) when they are equal and 0 otherwise, with no input-dependent branch.
+     */
+    private int ctVerify(byte[] a, byte[] b)
+    {
+        int v = 0;
+        for (int i = 0; i < R2_BYTE; i++)
         {
-            functionK(mPrime, c0, c1, k);
+            v |= (a[i] ^ b[i]);
         }
-        else
-        {
-            functionK(sigma, c0, c1, k);
-        }
+        return Nat.czero(v);
     }
 
     private byte[] computeSyndrome(byte[] c0, byte[] h0)
@@ -260,14 +275,12 @@ class BIKEEngine
 
             BFIter2(s, e, T, h0Compact, h1Compact, h0CompactCol, h1CompactCol, ctrs);
         }
-        if (BIKEUtils.getHammingWeight(s) == 0)
-        {
-            return e;
-        }
-        else
-        {
-            return null;
-        }
+        // Always return the recovered error vector e, even when the syndrome did not clear
+        // (a decoding failure). Returning null here previously caused a NullPointerException in
+        // decaps() before the implicit-rejection step, turning a decoding failure into an
+        // observable decryption-failure oracle (and an uncaught crash on malformed input). The FO
+        // re-encryption check in decaps() rejects a bad decode by selecting sigma instead.
+        return e;
     }
 
     private void BFIter(byte[] s, byte[] e, int T, int[] h0Compact, int[] h1Compact, int[] h0CompactCol,

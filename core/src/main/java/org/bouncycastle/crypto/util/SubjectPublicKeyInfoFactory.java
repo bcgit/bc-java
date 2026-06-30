@@ -30,7 +30,9 @@ import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
+import org.bouncycastle.crypto.params.CMCEPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.FrodoKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
@@ -48,7 +50,6 @@ import org.bouncycastle.util.Arrays;
  */
 public class SubjectPublicKeyInfoFactory
 {
-    private static final byte tag_OctetString = (byte)0x04;
     private static Set cryptoProOids = new HashSet(5);
 
     static
@@ -94,6 +95,22 @@ public class SubjectPublicKeyInfoFactory
             MLKEMPublicKeyParameters params = (MLKEMPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
+        }
+        else if (publicKey instanceof CMCEPublicKeyParameters)
+        {
+            CMCEPublicKeyParameters params = (CMCEPublicKeyParameters)publicKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.cmceOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
+        }
+        else if (publicKey instanceof FrodoKEMPublicKeyParameters)
+        {
+            FrodoKEMPublicKeyParameters params = (FrodoKEMPublicKeyParameters)publicKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.frodoKemOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }
@@ -225,19 +242,23 @@ public class SubjectPublicKeyInfoFactory
 
             return new SubjectPublicKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519), key.getEncoded());
         }
-        else if (publicKey instanceof HSSPublicKeyParameters)
-        {
-            HSSPublicKeyParameters params = (HSSPublicKeyParameters)publicKey;
-            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params.getLMSPublicKey()).build();
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(new byte[]{tag_OctetString, (byte)encoding.length}, encoding));
-        }
         else if (publicKey instanceof LMSPublicKeyParameters)
         {
             LMSPublicKeyParameters params = (LMSPublicKeyParameters)publicKey;
+
             byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
+
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(new byte[]{tag_OctetString, (byte)encoding.length}, encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
+        }
+        else if (publicKey instanceof HSSPublicKeyParameters)
+        {
+            HSSPublicKeyParameters params = (HSSPublicKeyParameters)publicKey;
+
+            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params.getLMSPublicKey()).build();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else
         {

@@ -33,6 +33,9 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  AES128_GCM      = NISTObjectIdentifiers.id_aes128_GCM.intern();
     public static final ASN1ObjectIdentifier  AES192_GCM      = NISTObjectIdentifiers.id_aes192_GCM.intern();
     public static final ASN1ObjectIdentifier  AES256_GCM      = NISTObjectIdentifiers.id_aes256_GCM.intern();
+    public static final ASN1ObjectIdentifier  AES128_GMAC     = NISTObjectIdentifiers.id_aes128_GMAC.intern();
+    public static final ASN1ObjectIdentifier  AES192_GMAC     = NISTObjectIdentifiers.id_aes192_GMAC.intern();
+    public static final ASN1ObjectIdentifier  AES256_GMAC     = NISTObjectIdentifiers.id_aes256_GMAC.intern();
 
 //    public static final ASN1ObjectIdentifier  AES128_CBC_CMAC      = BSIObjectIdentifiers.id_aes128_CBC_CMAC;
 //    public static final ASN1ObjectIdentifier  AES192_CBC_CMAC      = BSIObjectIdentifiers.id_aes192_CBC_CMAC;
@@ -115,6 +118,10 @@ public class CMSAlgorithm
 
     public static final ASN1ObjectIdentifier  SHAKE128_LEN = NISTObjectIdentifiers.id_shake128_len.intern();
     public static final ASN1ObjectIdentifier  SHAKE256_LEN = NISTObjectIdentifiers.id_shake256_len.intern();
+    /** RFC 8702 - id-KMACWithSHAKE128. */
+    public static final ASN1ObjectIdentifier  KMACwithSHAKE128 = NISTObjectIdentifiers.id_KmacWithSHAKE128.intern();
+    /** RFC 8702 - id-KMACWithSHAKE256. */
+    public static final ASN1ObjectIdentifier  KMACwithSHAKE256 = NISTObjectIdentifiers.id_KmacWithSHAKE256.intern();
     public static final ASN1ObjectIdentifier  ChaCha20Poly1305 = PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.intern();
 
     public static final AlgorithmIdentifier   SHAKE128_XOF = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);

@@ -29,11 +29,15 @@ import org.bouncycastle.util.Arrays;
  *       {@link MTCProof} and returns its TLS wire encoding.</li>
  * </ol>
  *
- * <p>This is the simple-case binding used by the worked example: one
- * cosigner, a two-leaf log where the EE is at index 0 with one sibling leaf
- * at index 1. Issuers with multi-level inclusion proofs or multiple cosigners
+ * <p>This is the simple-case binding used by the worked examples: a
+ * <em>standalone certificate</em> (Section 6.2 of the draft) over the minimal
+ * subtree {@code [0, 2)} — the EE's log entry at index 0, one sibling leaf at
+ * index 1, and a single-node inclusion proof — carrying one cosigner
+ * signature. Issuers with multi-level inclusion proofs or multiple cosigners
  * should compose the {@link MTCCosigner}, {@link MTCProof} and
- * {@link MerkleTreeHash} primitives directly.</p>
+ * {@link MerkleTreeHash} primitives directly; landmark-relative certificates
+ * (Section 6.3, no signatures) are built via
+ * {@link LandmarkCertificateManager#buildLandmarkCertificate}.</p>
  */
 public class MTCContentSigner
     implements ContentSigner

@@ -2,6 +2,8 @@ package org.bouncycastle.pqc.crypto.sqisign;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.BigIntegers;
+
 
 /**
  * Lvl1 driver for the shared {@link SQIsignKeyGen} engine. Wires the lvl1
@@ -36,7 +38,7 @@ final class SQIsignKeyGenLvl1
             PrecompLvl1.QUAT_PRIMALITY_NUM_ITER,
             PrecompLvl1.QUAT_EQUIV_BOUND_COEFF,
             PrecompLvl1.TORSION_EVEN_POWER,
-            PrecompLvl1.P_COFACTOR_FOR_2F.longValueExact(),
+            BigIntegers.longValueExact(PrecompLvl1.P_COFACTOR_FOR_2F),
             new SQIsignKeyGen.IdealToIsogeny()
             {
                 public int arbitraryIsogenyEvaluation(EcBasis canonicalBasis, EcCurve codomain,

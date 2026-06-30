@@ -56,7 +56,8 @@ public class
         org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[]
         {
             new WriterTest(),
-            new ParserTest()
+            new ParserTest(),
+            new JcaPrivateKeyReaderTest()
         };
 
         for (int i = 0; i != tests.length; i++)
@@ -195,7 +196,8 @@ public class
      * (RFC 7914) rather than PBKDF2. JceOpenSSLPKCS8DecryptorProviderBuilder
      * previously cast the KDF parameters blind to PBKDF2Params and threw
      * "DLSequence cannot be cast to PBKDF2Params". The builder now recognises
-     * id-scrypt inside PBES2 and derives the key via SCrypt.generate.
+     * id-scrypt inside PBES2 and derives the key via the provider's SCRYPT
+     * SecretKeyFactory.
      *
      * Fixture from RFC 7914 sec. 7.2 (password "Rabbit").
      */

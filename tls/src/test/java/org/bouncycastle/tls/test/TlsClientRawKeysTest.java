@@ -7,13 +7,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsClient;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -38,11 +37,11 @@ public class TlsClientRawKeysTest
     static void runTest(InetAddress address, int port, ProtocolVersion tlsVersion) throws Exception
     {
         MockRawKeysTlsClient client = new MockRawKeysTlsClient(
+                new BcTlsCrypto(),
                 CertificateType.RawPublicKey,
                 CertificateType.RawPublicKey,
                 new short[]{ CertificateType.RawPublicKey },
                 new short[]{ CertificateType.RawPublicKey },
-                new Ed25519PrivateKeyParameters(new SecureRandom()),
                 tlsVersion);
         TlsClientProtocol protocol = openTlsConnection(address, port, client);
 

@@ -22,16 +22,17 @@ public class Longs
 
     public static int compare(long x, long y)
     {
-        // @since 1.7
-//        return Long.compare(x, y);
-        return x < y ? -1 : x == y ? 0 : 1;
+        return Long.compare(x, y);
     }
 
     public static int compareUnsigned(long x, long y)
     {
-        // @since 1.8
-//        return Long.compareUnsigned(x, y);
-        return compare(x + Long.MIN_VALUE, y + Long.MIN_VALUE);
+        return Long.compareUnsigned(x, y);
+    }
+
+    public static long divideUnsigned(long x, long y)
+    {
+        return Long.divideUnsigned(x, y);
     }
 
     public static long highestOneBit(long i)
@@ -52,6 +53,11 @@ public class Longs
     public static int numberOfTrailingZeros(long i)
     {
         return Long.numberOfTrailingZeros(i);
+    }
+
+    public static long parseUnsignedLong(String s)
+    {
+        return Long.parseUnsignedLong(s);
     }
 
     public static long reverse(long i)
@@ -79,7 +85,9 @@ public class Longs
         return Long.valueOf(value);
     }
 
-    /** @deprecated Use {@link Nat#xorTo64(int, long[], int, long[], int)} instead. */
+    /**
+     * @deprecated Use {@link Nat#xorTo64(int, long[], int, long[], int)} instead.
+     */
     public static void xorTo(int len, long[] x, int xOff, long[] z, int zOff)
     {
         Nat.xorTo64(len, x, xOff, z, zOff);

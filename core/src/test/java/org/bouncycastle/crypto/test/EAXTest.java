@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -154,11 +155,14 @@ public class EAXTest
 
         randomTests();
         AEADTestUtil.testReset(this, new EAXBlockCipher(AESEngine.newInstance()), new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));
-        AEADTestUtil.testTampering(this, eax, new AEADParameters(new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testTampering(this, new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testOutputSizes(this, new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
         AEADTestUtil.testBufferSizeChecks(this, new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
+
+        invalidTagLengthTest();
+        validTagLengthTest();
     }
 
     private void checkVectors(
@@ -205,9 +209,20 @@ public class EAXTest
         runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
         runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
 
-        // key reuse test
+        // Key reuse: re-initialising for encryption with the same key+nonce (here via a null key,
+        // i.e. key re-use) is now rejected (nonce reuse is catastrophic for EAX). Re-init for
+        // decryption with the reused key stays allowed.
         parameters = new AEADParameters(null, macSize, n, a);
-        encEax.init(true, parameters);
+        try
+        {
+            encEax.init(true, parameters);
+            fail("EAX nonce reuse not detected on re-init for encryption in test " + count);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong EAX nonce-reuse message: " + e.getMessage(),
+                "cannot reuse nonce for EAX encryption".equals(e.getMessage()));
+        }
         decEax.init(false, parameters);
 
         runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
@@ -345,6 +360,61 @@ public class EAXTest
         if (!areEqual(datIn, datOut))
         {
             fail("EAX roundtrip failed to match");
+        }
+    }
+
+    private void invalidTagLengthTest()
+    {
+        int[] invalid = new int[]{ 0, 24, 28, 36, 124, 132, 136 };
+        for (int i = 0; i < invalid.length; ++i)
+        {
+            int macSizeBits = invalid[i];
+
+            // Rejected on encryption...
+            try
+            {
+                new EAXBlockCipher(AESEngine.newInstance()).init(true,
+                    new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+                fail("invalid tag length accepted");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+
+            // ...and decryption
+            try
+            {
+                new EAXBlockCipher(AESEngine.newInstance()).init(false,
+                    new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+                fail("invalid tag length accepted");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+        }
+    }
+
+    private void validTagLengthTest() throws Exception
+    {
+        byte[] plaintext = Hex.decode("202122232425262728292a2b2c2d2e2f3031323334353637");
+
+        for (int macSizeBits = 32; macSizeBits <= 128; macSizeBits += 8)
+        {
+            EAXBlockCipher enc = new EAXBlockCipher(AESEngine.newInstance());
+            enc.init(true, new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+            byte[] ct = new byte[enc.getOutputSize(plaintext.length)];
+            int len = enc.processBytes(plaintext, 0, plaintext.length, ct, 0);
+            len += enc.doFinal(ct, len);
+
+            EAXBlockCipher dec = new EAXBlockCipher(AESEngine.newInstance());
+            dec.init(false, new AEADParameters(new KeyParameter(K1), macSizeBits, N1, A1));
+            byte[] pt = new byte[dec.getOutputSize(len)];
+            int n = dec.processBytes(ct, 0, len, pt, 0);
+            n += dec.doFinal(pt, n);
+
+            isTrue(Arrays.areEqual(plaintext, Arrays.copyOf(pt, n)));
         }
     }
 

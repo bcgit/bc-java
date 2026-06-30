@@ -433,7 +433,7 @@ public class BCECPrivateKey
 
     public int hashCode()
     {
-        return getD().hashCode() ^ engineGetSpec().hashCode();
+        return ECUtil.privateKeyHashCode(getD(), engineGetSpec());
     }
 
     public String toString()

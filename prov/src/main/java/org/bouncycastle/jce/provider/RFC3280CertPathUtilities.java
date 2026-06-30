@@ -16,6 +16,7 @@ import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import java.util.TimeZone;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -523,12 +525,12 @@ class RFC3280CertPathUtilities
             {
                 AuthorityKeyIdentifier akid = AuthorityKeyIdentifier.getInstance(
                     ASN1OctetString.getInstance(crlAkiExt).getOctets());
-                byte[] keyId = akid.getKeyIdentifierOctets();
-                if (keyId != null)
+                ASN1OctetString keyID = akid.getKeyIdentifierObject();
+                if (keyID != null)
                 {
                     // X509CertSelector.setSubjectKeyIdentifier wants the DER
                     // encoding of the OCTET STRING wrapping the keyId bytes.
-                    certSelector.setSubjectKeyIdentifier(new DEROctetString(keyId).getEncoded());
+                    certSelector.setSubjectKeyIdentifier(keyID.getEncoded(ASN1Encoding.DER));
                 }
             }
         }
@@ -1385,6 +1387,9 @@ class RFC3280CertPathUtilities
                     node.setCritical(true);
                 }
             }
+
+            CertPathValidatorUtilities.checkPolicyTreeSize(policyNodes);
+
             return validPolicyTree;
         }
         return null;
@@ -2517,9 +2522,12 @@ class RFC3280CertPathUtilities
 
     private static String getUnsupportedCriticalExtensionMessage(Set criticalExtensions)
     {
-        // TODO Still susceptible to sort order for stable error messages
+        // Sort the OID strings so the message is stable regardless of Set iteration order.
+        List sorted = new ArrayList(criticalExtensions);
+        Collections.sort(sorted);
+
         StringBuilder sb = new StringBuilder("Certificate has unsupported critical extension: [");
-        Iterator it = criticalExtensions.iterator();
+        Iterator it = sorted.iterator();
         if (it.hasNext())
         {
             for (;;)

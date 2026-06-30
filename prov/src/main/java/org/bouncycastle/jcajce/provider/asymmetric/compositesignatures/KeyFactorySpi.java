@@ -64,7 +64,7 @@ public class KeyFactorySpi
     private static final AlgorithmIdentifier mlDsa44 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_44);
     private static final AlgorithmIdentifier mlDsa65 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_65);
     private static final AlgorithmIdentifier mlDsa87 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_87);
-//    private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
+    //    private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
     private static final AlgorithmIdentifier ed25519 = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519);
     private static final AlgorithmIdentifier ed448 = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448);
     private static final AlgorithmIdentifier ecDsaP256 = createECAlgID(SECObjectIdentifiers.secp256r1);
@@ -97,7 +97,7 @@ public class KeyFactorySpi
         pairings.put(IANAObjectIdentifiers.id_MLDSA87_RSA4096_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa87, rsa});
         pairings.put(IANAObjectIdentifiers.id_MLDSA87_ECDSA_P521_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaP521});
         pairings.put(IANAObjectIdentifiers.id_MLDSA87_RSA3072_PSS_SHA512, new AlgorithmIdentifier[]{mlDsa87, rsa});
-        
+
         componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new int[]{1312, 268});
         componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new int[]{1312, 284});
         componentKeySizes.put(IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new int[]{1312, Ed25519.PUBLIC_KEY_SIZE});
@@ -196,7 +196,7 @@ public class KeyFactorySpi
                 }
                 catch (Exception e)
                 {
-                    throw new IOException("cannot decode generic composite: " + e.getMessage(), e);
+                    throw Exceptions.ioException("cannot decode generic composite: " + e.getMessage(), e);
                 }
             }
 
@@ -216,6 +216,10 @@ public class KeyFactorySpi
             catch (Exception e)
             {
                 data = keyInfo.getPrivateKey().getOctets();
+            }
+            if (data.length < 32)
+            {
+                throw new IOException("malformed composite private key: body shorter than the ML-DSA seed");
             }
             v.add(new DEROctetString(Arrays.copyOfRange(data, 0, 32)));
             String traditionAlg = factories.get(1).getAlgorithm();
@@ -302,8 +306,7 @@ public class KeyFactorySpi
         if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
             || MiscObjectIdentifiers.id_composite_key.equals(keyIdentifier))
         {
-            // TODO This is redundant with 'seq' calculation above 
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+            ASN1Sequence keySeq = (seq != null) ? seq : ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
             PublicKey[] pubKeys = new PublicKey[keySeq.size()];
 
             for (int i = 0; i != keySeq.size(); i++)
@@ -316,7 +319,7 @@ public class KeyFactorySpi
                 }
                 catch (Exception e)
                 {
-                    throw new IOException("cannot decode generic composite: " + e.getMessage(), e);
+                    throw Exceptions.ioException("cannot decode generic composite: " + e.getMessage(), e);
                 }
             }
 
@@ -326,6 +329,11 @@ public class KeyFactorySpi
         try
         {
             int numKeys = (seq == null) ? componentKeys.length : seq.size();
+
+            if (numKeys != 2)
+            {
+                throw new IOException("malformed composite public key: expected exactly two components");
+            }
 
             List<KeyFactory> factories = getKeyFactoriesFromIdentifier(keyIdentifier);
             ASN1BitString[] componentBitStrings = new ASN1BitString[numKeys];
@@ -368,9 +376,14 @@ public class KeyFactorySpi
     }
 
     byte[][] split(ASN1ObjectIdentifier algorithm, ASN1BitString publicKeyData)
+        throws IOException
     {
         int[] sizes = componentKeySizes.get(algorithm);
         byte[] keyData = publicKeyData.getOctets();
+        if (sizes == null || keyData.length < sizes[0])
+        {
+            throw new IOException("malformed composite public key: body shorter than the first component");
+        }
         byte[][] components = new byte[][]{new byte[sizes[0]], new byte[keyData.length - sizes[0]]};
         System.arraycopy(keyData, 0, components[0], 0, sizes[0]);
         System.arraycopy(keyData, sizes[0], components[1], 0, components[1].length);

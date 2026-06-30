@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.signers.mldsa;
 
-import org.bouncycastle.util.Arrays;
-
 class Ntt
 {
     static final int[] nttZetas = {
@@ -39,10 +37,8 @@ class Ntt
         -554416, 3919660, -48306, -1362209, 3937738, 1400424, -846154, 1976782
     };
 
-    static int[] ntt(int[] a)
+    static void ntt(int[] r)
     {
-        int[] r = Arrays.copyOfRange(a, 0, a.length);
-
         int len, start, j, k;
         int zeta, t;
 
@@ -60,17 +56,14 @@ class Ntt
                 }
             }
         }
-        return r;
     }
 
 
-    static int[] invNttToMont(int[] a)
+    static void invNttToMont(int[] out)
     {
         int start, len, j, k;
         int t, zeta;
         final int f = 41978; // (mont^2)/256
-
-        int[] out = Arrays.copyOfRange(a, 0, a.length);
 
         k = 256;
         for (len = 1; len < MLDSAEngine.DilithiumN; len <<= 1)
@@ -92,7 +85,6 @@ class Ntt
         {
             out[j] = Reduce.montgomeryReduce((long)((long)f * (long)out[j]));
         }
-        return out;
     }
 }
 

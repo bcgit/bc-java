@@ -6,6 +6,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
 import org.bouncycastle.crypto.engines.Salsa20Engine;
 import org.bouncycastle.crypto.modes.CTRModeCipher;
@@ -220,6 +221,51 @@ public class BigSkippingCipherTest
             {
                 fail("output mismatch");
             }
+        }
+    }
+
+    /*
+     * Regression test for the signed-vs-unsigned carry bug in advanceCounter(long): skip()ing from
+     * a non-zero counter by a delta whose low 32 counter-bits cross the 0x80000000 boundary used a
+     * signed comparison to detect the carry into the high counter word. For Salsa20 / ChaCha that
+     * silently desynced the 64-bit block counter; for the 32-bit ChaCha7539 counter it spuriously
+     * threw "attempt to increase counter past 2^32". seekTo() reaches the same absolute position
+     * via reset() (oldState == 0) and was correct, so the two keystreams must agree.
+     */
+    public void testSkipFromNonZeroCounterCarry()
+        throws Exception
+    {
+        byte[] key = Hex.decode("0053A6F94C9FF24598EB3E91E4378ADD3083D6297CCF2275C81B6EC11467BA0D");
+        byte[] iv8 = Hex.decode("0D74DB42A91077DE");
+        byte[] iv12 = Hex.decode("000000000000004A00000000");
+
+        checkSkipCarry(new Salsa20Engine(), new Salsa20Engine(), new ParametersWithIV(new KeyParameter(key), iv8));
+        checkSkipCarry(new ChaChaEngine(), new ChaChaEngine(), new ParametersWithIV(new KeyParameter(key), iv8));
+        checkSkipCarry(new ChaCha7539Engine(), new ChaCha7539Engine(), new ParametersWithIV(new KeyParameter(key), iv12));
+    }
+
+    private void checkSkipCarry(SkippingStreamCipher enc, SkippingStreamCipher ref, CipherParameters params)
+    {
+        enc.init(true, params);
+        ref.init(true, params);
+
+        // advance to a non-zero counter (one block), then skip 2^31 blocks so the low counter word
+        // goes 1 + 0x80000000 = 0x80000001 -- a value where signed and unsigned compares disagree.
+        byte[] block = new byte[64];
+        enc.processBytes(block, 0, block.length, new byte[64], 0);
+        enc.skip(64L << 31);
+
+        byte[] ksFromSkip = new byte[16];
+        enc.processBytes(new byte[16], 0, 16, ksFromSkip, 0);
+
+        long position = 64L + (64L << 31);
+        ref.seekTo(position);
+        byte[] ksFromSeek = new byte[16];
+        ref.processBytes(new byte[16], 0, 16, ksFromSeek, 0);
+
+        if (!Arrays.areEqual(ksFromSkip, ksFromSeek))
+        {
+            fail(enc.getAlgorithmName() + ": skip() from a non-zero counter desynced the block counter");
         }
     }
 }

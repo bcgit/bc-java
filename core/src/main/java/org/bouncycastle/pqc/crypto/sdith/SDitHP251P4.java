@@ -3,10 +3,11 @@ package org.bouncycastle.pqc.crypto.sdith;
 /**
  * GF(p251^4) arithmetic for SDitH p251 variants, port of the reference p251p4.c.
  * <p>
- * Tower-field construction:
+ * Tower-field construction (matching IRRED_CST_P251P2 = 2 and
+ * IRRED_CST_P251P4 = 0x101 = X + 1):
  * <ul>
- *   <li>GF(p251^2) = GF(p251)[X] / (X^2 - X - 7), generator 0x2984.</li>
- *   <li>GF(p251^4) = GF(p251^2)[Y] / (Y^2 - 0x100), generator 0x703d9e62.</li>
+ *   <li>GF(p251^2) = GF(p251)[X] / (X^2 - 2), generator 0x2984.</li>
+ *   <li>GF(p251^4) = GF(p251^2)[Y] / (Y^2 - (X + 1)), generator 0x703d9e62.</li>
  * </ul>
  * Log/exp tables are built lazily.
  */
@@ -53,26 +54,67 @@ final class SDitHP251P4
         return SDitHP251.reduce16(z0) | (SDitHP251.reduce16(z1) << 8);
     }
 
-    static int add16(int x, int y)
-    {
-        int xx0 = x & 0xff;
-        int xx1 = (x >>> 8) & 0xff;
-        int yy0 = y & 0xff;
-        int yy1 = (y >>> 8) & 0xff;
-        return SDitHP251.reduce16(xx0 + yy0) | (SDitHP251.reduce16(xx1 + yy1) << 8);
-    }
-
+    /**
+     * Flattened GF(251^4) multiplication, port of the optimized reference's
+     * gf251to4.c (Optimized_Implementation, threshold tree). Same tower as the
+     * nested form this replaces — X^2 = 2, Y^2 = X + 1 — but the two levels of
+     * Karatsuba are expanded into a single formula: 9 widening base-field
+     * multiplications with reduction deferred to 4 final reduce32 calls,
+     * instead of 16 base multiplications with reductions at every tower level.
+     * Byte-identical output; constant-time (no tables, no branches). The
+     * inline bound comments track the unreduced magnitudes for canonical
+     * lanes (p = 251, p^2 = 63001); the maximum, 36 p^2 = 2268036, stays far
+     * below 2^31 even when lanes run to 255 (a further ~3.3% headroom). The
+     * added multiples of p^2 keep intermediates non-negative and vanish mod p.
+     */
     static int mulNaive(int x, int y)
     {
-        int xx0 = x & 0xffff;
-        int xx1 = (x >>> 16) & 0xffff;
-        int yy0 = y & 0xffff;
-        int yy1 = (y >>> 16) & 0xffff;
-        int z0 = mulNaive16(xx0, yy0);
-        int z1 = add16(mulNaive16(xx0, yy1), mulNaive16(xx1, yy0));
-        int z2 = mulNaive16(xx1, yy1);
-        z0 = add16(z0, mulNaive16(IRRED_CST_P251P4, z2));
-        return z0 | (z1 << 16);
+        final int p = 251;
+        final int p2 = p * p;
+
+        int a0 = x & 0xff;
+        int a1 = (x >>> 8) & 0xff;
+        int a2 = (x >>> 16) & 0xff;
+        int a3 = (x >>> 24) & 0xff;
+        int b0 = y & 0xff;
+        int b1 = (y >>> 8) & 0xff;
+        int b2 = (y >>> 16) & 0xff;
+        int b3 = (y >>> 24) & 0xff;
+
+        int mAb0 = a0 * b0;                                       // <= p^2
+        int mAb1 = a1 * b1;                                       // <= p^2
+        int mAb2 = a2 * b2;                                       // <= p^2
+        int mAb3 = a3 * b3;                                       // <= p^2
+        int aA01 = a0 + a1;                                       // <= 2p
+        int aA23 = a2 + a3;                                       // <= 2p
+        int aA02 = a0 + a2;                                       // <= 2p
+        int aA13 = a1 + a3;                                       // <= 2p
+        int aB01 = b0 + b1;                                       // <= 2p
+        int aB23 = b2 + b3;                                       // <= 2p
+        int aB02 = b0 + b2;                                       // <= 2p
+        int aB13 = b1 + b3;                                       // <= 2p
+
+        int cnst0 = 2 * mAb1 + mAb0;                              // <= 3 p^2
+        int cnst1 = aA01 * aB01 + 2 * p2 - mAb1 - mAb0;           // <= 6 p^2
+        int leading0 = 2 * mAb3 + mAb2;                           // <= 3 p^2
+        int leading1 = aA23 * aB23 + 2 * p2 - mAb3 - mAb2;        // <= 6 p^2
+        int cnstSum = aA02 * aB02;                                // <= 4 p^2
+        int leadingSum = aA13 * aB13;                             // <= 4 p^2
+        int aA01234 = aA01 + aA23;                                // <= 4p
+        int aB01234 = aB01 + aB23;                                // <= 4p
+
+        int aCnstLeading0 = leading0 + cnst0;                     // <= 6 p^2
+        int aCnstLeading1 = leading1 + cnst1;                     // <= 12 p^2
+
+        int res0 = 2 * leading1 + aCnstLeading0;                  // <= 18 p^2
+        int res1 = aCnstLeading1 + leading0;                      // <= 15 p^2
+        int res2 = 2 * leadingSum + cnstSum + 6 * p2 - aCnstLeading0;                       // <= 18 p^2
+        int res3 = aA01234 * aB01234 + 20 * p2 - leadingSum - cnstSum - aCnstLeading1;      // <= 36 p^2
+
+        return SDitHP251.reduce32(res0)
+            | (SDitHP251.reduce32(res1) << 8)
+            | (SDitHP251.reduce32(res2) << 16)
+            | (SDitHP251.reduce32(res3) << 24);
     }
 
     static int add(int x, int y)

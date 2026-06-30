@@ -47,7 +47,7 @@ public class HAETAETest
         throws Exception
     {
         long start = System.currentTimeMillis();
-        TestUtils.testTestVector(false, false, false, "pqc/crypto/haetae", files, new TestUtils.SignerOperation()
+        TestUtils.testTestVector(true, false, false, "pqc/crypto/haetae", files, new TestUtils.SignerOperation()
         {
             @Override
             public SecureRandom getSecureRandom(byte[] seed)

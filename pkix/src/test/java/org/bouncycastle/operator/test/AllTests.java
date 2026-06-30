@@ -259,6 +259,9 @@ public class AllTests
             new Object[]{NISTObjectIdentifiers.id_aes128_GCM, "AES-128/GCM"},
             new Object[]{NISTObjectIdentifiers.id_aes192_GCM, "AES-192/GCM"},
             new Object[]{NISTObjectIdentifiers.id_aes256_GCM, "AES-256/GCM"},
+            new Object[]{NISTObjectIdentifiers.id_aes128_GMAC, "AES-128/GMAC"},
+            new Object[]{NISTObjectIdentifiers.id_aes192_GMAC, "AES-192/GMAC"},
+            new Object[]{NISTObjectIdentifiers.id_aes256_GMAC, "AES-256/GMAC"},
             new Object[]{NTTObjectIdentifiers.id_camellia128_cbc, "CAMELLIA-128/CBC"},
             new Object[]{NTTObjectIdentifiers.id_camellia192_cbc, "CAMELLIA-192/CBC"},
             new Object[]{NTTObjectIdentifiers.id_camellia256_cbc, "CAMELLIA-256/CBC"},
@@ -785,6 +788,16 @@ public class AllTests
     public void testGcmDecryptorIssue1510()
         throws Exception
     {
+        try
+        {
+            // javax.crypto.spec.GCMParameterSpec is JDK 1.7+; skip on older JREs.
+            Class.forName("javax.crypto.spec.GCMParameterSpec");
+        }
+        catch (ClassNotFoundException e)
+        {
+            return;
+        }
+
         if (Security.getProvider(BC) == null)
         {
             Security.addProvider(new BouncyCastleProvider());

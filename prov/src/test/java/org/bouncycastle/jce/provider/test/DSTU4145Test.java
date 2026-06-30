@@ -40,6 +40,28 @@ public class DSTU4145Test
         generationTest();
         //parametersTest();
         generateFromCurveTest();
+        unrecognisedKeyInitSignTest();
+    }
+
+    private void unrecognisedKeyInitSignTest()
+        throws Exception
+    {
+        // a private key that is neither BCDSTU4145PrivateKey nor org.bouncycastle.jce.interfaces.ECKey
+        KeyPairGenerator rsaKeyGen = KeyPairGenerator.getInstance("RSA", "BC");
+        rsaKeyGen.initialize(1024);
+        KeyPair rsaPair = rsaKeyGen.generateKeyPair();
+
+        Signature sgr = Signature.getInstance("DSTU4145", "BC");
+
+        try
+        {
+            sgr.initSign(rsaPair.getPrivate());
+            fail("no exception on initSign with non-EC private key");
+        }
+        catch (java.security.InvalidKeyException e)
+        {
+            // expected - mirrors engineInitVerify behaviour for a non-EC public key
+        }
     }
 
     public static void main(String[] args)

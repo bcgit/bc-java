@@ -820,7 +820,7 @@ public interface BCObjectIdentifiers
     /**
      * MQOM v2.1 ("MQ on my Mind"). BC-allocated arc pending NIST OID assignment.
      * 36 child OIDs follow the canonical naming
-     * {@code mqom2_&lt;category&gt;_&lt;base-field&gt;_&lt;trade-off&gt;_&lt;variant&gt;}
+     * {@code mqom2_<category>_<base-field>_<trade-off>_<variant>}
      * with category in {cat1, cat3, cat5}, base-field in {gf2, gf16, gf256},
      * trade-off in {fast, short}, variant in {r3, r5}.
      */
@@ -866,7 +866,7 @@ public interface BCObjectIdentifiers
      * UOV (Unbalanced Oil and Vinegar). BC-allocated arc pending NIST OID
      * assignment from the additional-signatures round of NIST's PQC
      * standardisation. Twelve child OIDs follow the canonical naming
-     * {@code uov_&lt;security-level&gt;_&lt;encoding-variant&gt;} where
+     * {@code uov_<security-level>_<encoding-variant>} where
      * security-level is in {Is, Ip, III, V} and encoding-variant is in
      * {classic, pkc, pkc_skc}. See pqov reference implementation
      * (https://github.com/pqov/pqov) for the algorithm definitions.
@@ -889,7 +889,7 @@ public interface BCObjectIdentifiers
      * SQIsign (Short Quaternion and Isogeny Signature). BC-allocated arc
      * pending NIST OID assignment from the additional-signatures round of
      * NIST's PQC standardisation. Three child OIDs follow the canonical
-     * NIST-API parameter-set naming {@code sqisign_lvl&lt;n&gt;} with
+     * NIST-API parameter-set naming {@code sqisign_lvl<n>} with
      * n in {1, 3, 5}.
      */
     ASN1ObjectIdentifier sqisign       = bc_sig.branch("19");
@@ -972,4 +972,19 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier qruov5q31L3v324m114 = qruov.branch("10");
     ASN1ObjectIdentifier qruov5q31L10v1120m120 = qruov.branch("11");
     ASN1ObjectIdentifier qruov5q7L10v1490m190 = qruov.branch("12");
+
+    /**
+     * AIMer post-quantum digital signature scheme (KpqC Round 2 submission).
+     * Parent arc and the six parameter-set OIDs
+     * (aimer-128f/s, aimer-192f/s, aimer-256f/s).
+     * <p>
+     * bc-sig.16/17/18/19 are taken by SDitH/QR-UOV/Haetae/SQIsign; AIMer takes bc-sig.20.
+     */
+    ASN1ObjectIdentifier aimer = bc_sig.branch("20");
+    ASN1ObjectIdentifier aimer_128f = aimer.branch("1");
+    ASN1ObjectIdentifier aimer_128s = aimer.branch("2");
+    ASN1ObjectIdentifier aimer_192f = aimer.branch("3");
+    ASN1ObjectIdentifier aimer_192s = aimer.branch("4");
+    ASN1ObjectIdentifier aimer_256f = aimer.branch("5");
+    ASN1ObjectIdentifier aimer_256s = aimer.branch("6");
 }

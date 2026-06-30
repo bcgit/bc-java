@@ -17,12 +17,16 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
 import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
+import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -30,6 +34,7 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
@@ -184,10 +189,36 @@ public class KeyFactorySpi
         }
         else if (keySpec instanceof OpenSSHPrivateKeySpec)
         {
-            org.bouncycastle.asn1.sec.ECPrivateKey ecKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(((OpenSSHPrivateKeySpec)keySpec).getEncoded());
+            OpenSSHPrivateKeySpec sshKeySpec = (OpenSSHPrivateKeySpec)keySpec;
 
             try
             {
+                if ("OpenSSH".equals(sshKeySpec.getFormat()))
+                {
+                    // openssh-key-v1 form (possibly passphrase-encrypted); the ASN.1 / SEC1 form
+                    // below is handled by org.bouncycastle.asn1.sec.ECPrivateKey directly.
+                    char[] password = sshKeySpec.getPassword();
+                    CipherParameters parameters;
+                    try
+                    {
+                        parameters = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(
+                            sshKeySpec.getEncoded(), password == null ? null : Strings.toUTF8ByteArray(password));
+                    }
+                    catch (RuntimeException e)
+                    {
+                        throw SecurityExceptions.invalidKeySpecException("unable to decode OpenSSH private key: " + e.getMessage(), e);
+                    }
+                    if (!(parameters instanceof ECPrivateKeyParameters))
+                    {
+                        throw new InvalidKeySpecException("openssh private key is not an EC private key");
+                    }
+                    return new BCECPrivateKey(algorithm,
+                        PrivateKeyInfoFactory.createPrivateKeyInfo((ECPrivateKeyParameters)parameters),
+                        configuration);
+                }
+
+                org.bouncycastle.asn1.sec.ECPrivateKey ecKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(sshKeySpec.getEncoded());
+
                 return new BCECPrivateKey(algorithm,
                     new PrivateKeyInfo(
                         new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, ecKey.getParametersObject()),

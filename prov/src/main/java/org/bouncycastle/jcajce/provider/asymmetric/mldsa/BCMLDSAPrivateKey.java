@@ -73,7 +73,7 @@ public class BCMLDSAPrivateKey
         {
             BCMLDSAPrivateKey otherKey = (BCMLDSAPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -81,7 +81,13 @@ public class BCMLDSAPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        MLDSAPublicKey publicKey = getPublicKey();
+        if (publicKey != null)
+        {
+            return publicKey.hashCode();
+        }
+
+        return getParameterSpec().hashCode();
     }
 
     /**
