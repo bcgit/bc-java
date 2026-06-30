@@ -545,12 +545,11 @@ class CMSUtils
         {
             throw new CMSException("IOException reading content.", e);
         }
-        catch (ClassCastException e)
+        catch (RuntimeException e)
         {
-            throw new CMSException("Malformed content.", e);
-        }
-        catch (IllegalArgumentException e)
-        {
+            // Malformed input can surface as any unchecked ASN.1 exception
+            // (ClassCastException, IllegalArgumentException, IllegalStateException, ...);
+            // keep them inside the declared CMSException contract.
             throw new CMSException("Malformed content.", e);
         }
     }
