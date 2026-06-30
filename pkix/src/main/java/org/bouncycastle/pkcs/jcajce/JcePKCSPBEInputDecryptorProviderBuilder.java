@@ -214,7 +214,7 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                         cipher = helper.createCipher(algorithm.getId());
 
                         cipher.init(Cipher.DECRYPT_MODE, new PBKDF1Key(password, PasswordConverter.ASCII),
-                                new PBEParameterSpec(pbeParams.getSalt(), pbeParams.getIterationCount().intValue()));
+                                new PBEParameterSpec(pbeParams.getSalt(), checkIterationCount(pbeParams.getIterationCount())));
                     }
                     else
                     {
