@@ -35,7 +35,7 @@ public class MessageDigestUtils
         digestOidMap.put(NISTObjectIdentifiers.id_sha512_256, "SHA-512(256)");
         digestOidMap.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD-128");
         digestOidMap.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD-160");
-        digestOidMap.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD-128");
+        digestOidMap.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD-256");
         digestOidMap.put(ISOIECObjectIdentifiers.ripemd128, "RIPEMD-128");
         digestOidMap.put(ISOIECObjectIdentifiers.ripemd160, "RIPEMD-160");
         digestOidMap.put(CryptoProObjectIdentifiers.gostR3411, "GOST3411");
