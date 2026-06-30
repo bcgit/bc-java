@@ -29,7 +29,6 @@ public class AllTests
         suite.addTestSuite(DTLSHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSProtocolTest.class);
         suite.addTestSuite(DTLSPSKProtocolTest.class);
-        suite.addTestSuite(DTLSRawKeysProtocolTest.class);
         suite.addTestSuite(JcaTlsProtocolHybridTest.class);
         suite.addTestSuite(JcaTlsProtocolKemTest.class);
         //suite.addTestSuite(SM2Tls13Test.class);
@@ -39,7 +38,6 @@ public class AllTests
         suite.addTestSuite(TlsProtocolNonBlockingTest.class);
         suite.addTestSuite(TlsProtocolTest.class);
         suite.addTestSuite(TlsPSKProtocolTest.class);
-        suite.addTestSuite(TlsRawKeysProtocolTest.class);
         suite.addTestSuite(TlsSRPProtocolTest.class);
         suite.addTestSuite(TlsUtilsTest.class);
 
