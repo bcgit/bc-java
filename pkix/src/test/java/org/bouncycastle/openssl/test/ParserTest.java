@@ -399,6 +399,7 @@ public class ParserTest
         doLegacyEncryptedPkcs8GenPemTest();
         doLegacyEncryptedEcPemSm4CbcTest();
         doMalformedEncryptionHeaderTest();
+        doMalformedPemTypeContractTest();
     }
 
     private void doLegacyEncryptedPkcs8PemTest()
@@ -603,6 +604,25 @@ public class ParserTest
             + "QmysBFzoMkgvVTM39kvHjg==\n"
             + "-----END PRIVATE KEY-----\n", "missing DEK-Info (PKCS#8)");
 
+        // DEK-Info present and well-shaped (two tokens) but with a non-hex IV. Hex.decode
+        // throws a DecoderException (a RuntimeException that is not an
+        // IllegalArgumentException), which used to escape readObject()'s throws IOException
+        // contract from KeyPairParser (finding #37).
+        checkMalformedPEMException("-----BEGIN RSA PRIVATE KEY-----\n"
+            + "Proc-Type: 4,ENCRYPTED\n"
+            + "DEK-Info: AES-128-CBC,ZZZZnothex!!\n"
+            + "\n"
+            + "QmysBFzoMkgvVTM39kvHjg==\n"
+            + "-----END RSA PRIVATE KEY-----\n", "non-hex DEK-Info IV");
+
+        // Same malformed-hex IV on the PKCS#8 "PRIVATE KEY" path (PrivateKeyParser).
+        checkMalformedPEMException("-----BEGIN PRIVATE KEY-----\n"
+            + "Proc-Type: 4,ENCRYPTED\n"
+            + "DEK-Info: AES-128-CBC,ZZZZnothex!!\n"
+            + "\n"
+            + "QmysBFzoMkgvVTM39kvHjg==\n"
+            + "-----END PRIVATE KEY-----\n", "non-hex DEK-Info IV (PKCS#8)");
+
         // Malformed base64 in the body should surface as an IOException, not a
         // DecoderException (a RuntimeException) escaping PemReader.
         try
@@ -629,6 +649,63 @@ public class ParserTest
         catch (PEMException e)
         {
             // expected
+        }
+    }
+
+    private void doMalformedPemTypeContractTest()
+        throws Exception
+    {
+        // A well-formed PEM frame whose base64 body is a valid DER INTEGER - structurally
+        // wrong for every key/cert/CRL/PKCS7 type below. Each per-type parser must surface
+        // this as an IOException (PEMException) and never let an unchecked exception escape
+        // the readObject() throws IOException contract. PUBLIC KEY is included because the
+        // PublicKeyParser used to leak the IllegalStateException/IllegalArgumentException
+        // from SubjectPublicKeyInfo.getInstance (finding #33); EC PARAMETERS is omitted as
+        // it deliberately returns null (implicitly CA) for a non-OID/non-sequence body.
+        byte[] malformed = new byte[]{ 0x02, 0x01, 0x00 }; // DER INTEGER 0
+
+        String[] safeTypes = new String[]
+        {
+            PEMParser.TYPE_CERTIFICATE_REQUEST,
+            PEMParser.TYPE_NEW_CERTIFICATE_REQUEST,
+            PEMParser.TYPE_CERTIFICATE,
+            PEMParser.TYPE_TRUSTED_CERTIFICATE,
+            PEMParser.TYPE_X509_CERTIFICATE,
+            PEMParser.TYPE_X509_CRL,
+            PEMParser.TYPE_PKCS7,
+            PEMParser.TYPE_CMS,
+            PEMParser.TYPE_ATTRIBUTE_CERTIFICATE,
+            PEMParser.TYPE_PUBLIC_KEY,
+            PEMParser.TYPE_RSA_PUBLIC_KEY,
+            PEMParser.TYPE_RSA_PRIVATE_KEY,
+            PEMParser.TYPE_DSA_PRIVATE_KEY,
+            PEMParser.TYPE_EC_PRIVATE_KEY,
+            PEMParser.TYPE_ENCRYPTED_PRIVATE_KEY,
+            PEMParser.TYPE_PRIVATE_KEY,
+        };
+
+        for (int i = 0; i != safeTypes.length; i++)
+        {
+            String type = safeTypes[i];
+
+            StringWriter sw = new StringWriter();
+            PemWriter pemWriter = new PemWriter(sw);
+            pemWriter.writeObject(new PemObject(type, malformed));
+            pemWriter.close();
+
+            try
+            {
+                new PEMParser(new StringReader(sw.toString())).readObject();
+                fail("malformed " + type + " body not rejected");
+            }
+            catch (IOException e)
+            {
+                // expected - the throws IOException contract is preserved
+            }
+            catch (RuntimeException e)
+            {
+                fail("malformed " + type + " leaked " + e.getClass().getName() + ": " + e.getMessage());
+            }
         }
     }
 
