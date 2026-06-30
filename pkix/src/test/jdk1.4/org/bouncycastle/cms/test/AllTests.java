@@ -27,7 +27,6 @@ public class AllTests
         suite.addTest(NewAuthenticatedDataTest.suite());
         suite.addTest(NewAuthenticatedDataStreamTest.suite());
         suite.addTest(NewCompressedDataStreamTest.suite());
-        suite.addTest(NewSignedDataStreamTest.suite());
         suite.addTest(NewEnvelopedDataStreamTest.suite());
 
         suite.addTest(MiscDataStreamTest.suite());

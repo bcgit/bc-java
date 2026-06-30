@@ -4,6 +4,7 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.bcpg.AEADUtils;
+import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.BlockCipher;
@@ -171,6 +172,20 @@ public class BcPGPDataEncryptorBuilder
         }
 
         return new MyPGPDataEncryptor(keyBytes);
+    }
+
+    public PGPDataEncryptor build(byte[] key, byte[] salt)
+        throws PGPException
+    {
+        // OpenPGP v2 SEIPD (AEAD): derive the message key and IV from the session key and salt
+        // (RFC 9580 sec. 5.13.2).
+        byte[] hkdfInfo = SymmetricEncIntegrityPacket.createAAData(
+            SymmetricEncIntegrityPacket.VERSION_2, encAlgorithm, aeadAlgorithm, chunkSize);
+        int keyLen = SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm);
+        int ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+        byte[] messageKeyAndIv = BcAEADUtil.generateHKDFBytes(key, salt, hkdfInfo, keyLen + ivLen - 8);
+
+        return new MyAeadDataEncryptor(messageKeyAndIv);
     }
 
     private class MyPGPDataEncryptor

@@ -36,6 +36,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -2458,5 +2459,32 @@ class RFC3280CertPathUtilities
         }
         sb.append(']');
         return sb.toString();
+    }
+
+    static String[] extractEmailAddressesFromSubjectDN(X500Name dn)
+    {
+        if (dn == null)
+        {
+            return new String[0];
+        }
+        List collected = new ArrayList();
+        RDN[] rdns = dn.getRDNs(BCStyle.EmailAddress);
+        for (int rI = 0; rI != rdns.length; rI++)
+        {
+            AttributeTypeAndValue[] tvs = rdns[rI].getTypesAndValues();
+            for (int tI = 0; tI != tvs.length; tI++)
+            {
+                AttributeTypeAndValue tv = tvs[tI];
+                if (!BCStyle.EmailAddress.equals(tv.getType()))
+                {
+                    continue;
+                }
+                if (tv.getValue() instanceof ASN1String)
+                {
+                    collected.add(((ASN1String)tv.getValue()).getString());
+                }
+            }
+        }
+        return (String[])collected.toArray(new String[collected.size()]);
     }
 }
