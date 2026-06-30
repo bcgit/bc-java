@@ -140,7 +140,7 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
 
                         cipher = helper.createCipher(PEMUtilities.getCipherName(algorithm.getAlgorithm()));
 
-                        cipher.init(Cipher.DECRYPT_MODE, new PKCS12KeyWithParameters(password, params.getIV(), params.getIterations().intValue()));
+                        cipher.init(Cipher.DECRYPT_MODE, new PKCS12KeyWithParameters(password, params.getIV(), checkIterationCount(params.getIterations())));
                     }
                     else if (PEMUtilities.isPKCS5Scheme1(algorithm.getAlgorithm()))
                     {
