@@ -159,7 +159,7 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
                             {
                                 return Strings.toByteArray(password);     // just drop hi-order byte.
                             }
-                        }, params.getSalt(), params.getIterationCount().intValue()));
+                        }, params.getSalt(), checkIterationCount(params.getIterationCount())));
                     }
                     else
                     {
