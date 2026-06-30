@@ -44,7 +44,7 @@ import org.bouncycastle.util.Arrays;
  *
  *          processDataStream(recData.getContentStream());
  *
- *          if (!Arrays.equals(ad.getMac(), recipient.getMac())
+ *          if (!Arrays.constantTimeAreEqual(ad.getMac(), recipient.getMac()))
  *          {
  *              System.err.println("Data corrupted!!!!");
  *          }
