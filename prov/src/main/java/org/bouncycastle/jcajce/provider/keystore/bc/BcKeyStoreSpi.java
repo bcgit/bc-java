@@ -238,8 +238,8 @@ public class BcKeyStoreSpi
                 {
                     byte[]      salt = readBlock(dIn);
 
-                    int     iterationCount = dIn.readInt();
-                
+                    int     iterationCount = validateIterationCount(dIn.readInt());
+
                     Cipher      cipher = makePBECipher(KEY_CIPHER, Cipher.DECRYPT_MODE, password, salt, iterationCount);
 
                     CipherInputStream cIn = new CipherInputStream(dIn, cipher);
@@ -255,7 +255,7 @@ public class BcKeyStoreSpi
             
                         salt = readBlock(dIn);
 
-                        iterationCount = dIn.readInt();
+                        iterationCount = validateIterationCount(dIn.readInt());
 
                         cipher = makePBECipher("Broken" + KEY_CIPHER, Cipher.DECRYPT_MODE, password, salt, iterationCount);
 
@@ -274,7 +274,7 @@ public class BcKeyStoreSpi
                 
                             salt = readBlock(dIn);
 
-                            iterationCount = dIn.readInt();
+                            iterationCount = validateIterationCount(dIn.readInt());
 
                             cipher = makePBECipher("Old" + KEY_CIPHER, Cipher.DECRYPT_MODE, password, salt, iterationCount);
 
@@ -738,6 +738,31 @@ public class BcKeyStoreSpi
         return bOut.toByteArray();
     }
 
+    /*
+     * Bound the PKCS#12-PBE iteration count read from an untrusted store before it drives a key
+     * derivation. In the base engineLoad the count is consumed ahead of the HMAC integrity check,
+     * so an unbounded value would run an arbitrarily long PBKDF on attacker-supplied input (a
+     * pre-integrity CPU-exhaustion DoS); the per-entry sealed-key reads share the same guard. The
+     * default cap (1 << 20) is generous and far above what engineStore writes (~1024-2047) - the
+     * sibling UBER store hard-caps at MIN_ITERATIONS << 6, and PKCS12 / BCFKS cap the same way.
+     */
+    private static int validateIterationCount(int iterationCount)
+        throws IOException
+    {
+        if (iterationCount < 0)
+        {
+            throw new IOException("BKS KeyStore: invalid iteration count");
+        }
+
+        int max = Properties.asInteger(Properties.BKS_MAX_IT_COUNT, 1 << 20);
+        if (iterationCount > max)
+        {
+            throw new IOException("BKS KeyStore: iteration count (" + iterationCount + ") greater than " + max);
+        }
+
+        return iterationCount;
+    }
+
     protected void loadStore(
         InputStream in)
         throws IOException
@@ -891,7 +916,7 @@ public class BcKeyStoreSpi
 
         dIn.readFully(salt);
 
-        int         iterationCount = dIn.readInt();
+        int         iterationCount = validateIterationCount(dIn.readInt());
 
         //
         // we only do an integrity check if the password is provided.

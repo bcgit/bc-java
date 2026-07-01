@@ -95,7 +95,7 @@ public class X509CRLHolder
     public X509CRLHolder(byte[] crlEncoding)
         throws IOException
     {
-        this(parseStream(new ByteArrayInputStream(crlEncoding)));
+        init(parseStream(new ByteArrayInputStream(crlEncoding)));
     }
 
     /**
@@ -107,7 +107,7 @@ public class X509CRLHolder
     public X509CRLHolder(InputStream crlStream)
         throws IOException
     {
-        this(parseStream(crlStream));
+        init(parseStream(crlStream));
     }
 
     /**
@@ -117,14 +117,34 @@ public class X509CRLHolder
      */
     public X509CRLHolder(CertificateList x509CRL)
     {
-        init(x509CRL);
+        try
+        {
+            init(x509CRL);
+        }
+        catch (IOException e)
+        {
+            // a CertificateList handed in directly is already a parsed structure; preserve the
+            // historical unchecked-exception behaviour for a malformed embedded extension.
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
     }
 
     private void init(CertificateList x509CRL)
+        throws IOException
     {
         this.x509CRL = x509CRL;
         this.extensions = x509CRL.getTBSCertList().getExtensions();
-        this.isIndirect = isIndirectCRL(extensions);
+        try
+        {
+            this.isIndirect = isIndirectCRL(extensions);
+        }
+        catch (RuntimeException e)
+        {
+            // a malformed issuingDistributionPoint extension value makes the eager getParsedValue()
+            // parse throw (typically IllegalArgumentException "can't convert extension"); surface it
+            // as the declared IOException rather than letting it escape the constructor's contract.
+            throw new CertIOException("malformed IssuingDistributionPoint extension: " + e.getMessage(), e);
+        }
         this.issuerName = new GeneralNames(new GeneralName(x509CRL.getIssuer()));
     }
 
