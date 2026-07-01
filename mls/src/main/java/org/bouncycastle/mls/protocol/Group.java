@@ -1309,6 +1309,10 @@ public class Group
         throws Exception
     {
         Proposal proposal = auth.getContent().getProposal();
+        if (proposal == null || proposal.getAdd() == null)
+        {
+            throw new Exception("malformed NewMemberProposal");
+        }
         Proposal.Add add = proposal.getAdd();
         byte[] pub = add.keyPackage.getLeafNode().getSignatureKey();
         return auth.verify(suite, pub, MLSOutputStream.encode(getGroupContext()));
@@ -1318,6 +1322,10 @@ public class Group
         throws Exception
     {
         Commit commit = auth.getContent().getCommit();
+        if (commit == null || commit.getUpdatePath() == null)
+        {
+            throw new Exception("malformed NewMemberCommit");
+        }
         UpdatePath path = commit.getUpdatePath();
         byte[] pub = path.getLeafNode().getSignatureKey();
         return auth.verify(suite, pub, MLSOutputStream.encode(getGroupContext()));

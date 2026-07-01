@@ -1007,17 +1007,21 @@ public class PKCS12PBMAC1KeyStoreSpi
             }
 
             noMac = false;
-            MacData mData = bag.getMacData();
-            DigestInfo dInfo = mData.getMac();
-            macAlgorithm = dInfo.getAlgorithmId();
-            byte[] salt = mData.getSalt();
-            itCount = PKCS12Util.validateIterationCount(mData.getIterationCount());
-            saltLength = salt.length;
-
-            byte[] data = PKCS12Util.getContentOctets(info);
 
             try
             {
+                // Reading the MAC parameters (iteration count, content octets) can throw
+                // unchecked ASN.1 exceptions on malformed input; keep them inside engineLoad's
+                // declared IOException by parsing them under the same guard as the MAC itself.
+                MacData mData = bag.getMacData();
+                DigestInfo dInfo = mData.getMac();
+                macAlgorithm = dInfo.getAlgorithmId();
+                byte[] salt = mData.getSalt();
+                itCount = PKCS12Util.validateIterationCount(mData.getIterationCount());
+                saltLength = salt.length;
+
+                byte[] data = PKCS12Util.getContentOctets(info);
+
                 byte[] res = calculatePbeMac(macAlgorithm.getAlgorithm(), salt, itCount, password, false, data);
                 byte[] dig = dInfo.getDigest();
 
