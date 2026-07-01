@@ -45,6 +45,11 @@ public class TimeStampReq
     {
         int nbObjects = seq.size();
 
+        if (nbObjects < 2)
+        {
+            throw new IllegalArgumentException("sequence too short to be a TimeStampReq");
+        }
+
         int seqStart = 0;
 
         // version

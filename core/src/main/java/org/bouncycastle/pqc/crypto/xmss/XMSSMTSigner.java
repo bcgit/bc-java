@@ -177,7 +177,16 @@ public class XMSSMTSigner
             throw new NullPointerException("publicKey == null");
         }
         /* (re)create compressed message */
-        XMSSMTSignature sig = new XMSSMTSignature.Builder(params).withSignature(signature).build();
+        XMSSMTSignature sig;
+        try
+        {
+            sig = new XMSSMTSignature.Builder(params).withSignature(signature).build();
+        }
+        catch (RuntimeException e)
+        {
+            // malformed/truncated signature: do not propagate IllegalArgumentException
+            return false;
+        }
 
         byte[] concatenated = Arrays.concatenate(sig.getRandom(), publicKey.getRoot(),
                                          XMSSUtil.toBytesBigEndian(sig.getIndex(), params.getTreeDigestSize()));

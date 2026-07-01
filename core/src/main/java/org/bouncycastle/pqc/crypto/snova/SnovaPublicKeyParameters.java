@@ -12,6 +12,12 @@ public class SnovaPublicKeyParameters
     public SnovaPublicKeyParameters(SnovaParameters parameters, byte[] publicKey)
     {
         super(false);
+
+        if (publicKey.length != parameters.getPublicKeyLength())
+        {
+            throw new IllegalArgumentException("'publicKey' has invalid length");
+        }
+
         this.publicKey = Arrays.clone(publicKey);
         this.parameters = parameters;
     }

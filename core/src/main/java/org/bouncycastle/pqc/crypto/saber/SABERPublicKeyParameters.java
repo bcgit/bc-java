@@ -10,6 +10,12 @@ public class SABERPublicKeyParameters
     public SABERPublicKeyParameters(SABERParameters params, byte[] publicKey)
     {
         super(false, params);
+
+        if (publicKey.length != params.getEngine().getPublicKeySize())
+        {
+            throw new IllegalArgumentException("'publicKey' has invalid length");
+        }
+
         this.publicKey = Arrays.clone(publicKey);
     }
 

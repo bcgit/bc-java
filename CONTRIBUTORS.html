@@ -593,6 +593,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>Bernd Pr&uuml;nster (A-SIT Plus) &lt;bernd.pruenster&#064;a-sit.at&gt; - reported lenient ASN.1 UTCTime/GeneralizedTime parsing accepting structurally malformed content, with fuzzing-derived test cases.</li>
 <li>rootvector2 &lt;https://github.com/rootvector2&gt; - constant time comparison of membership and confirmation tags in the MLS API. Reported unbounded array allocation in the BKS/UBER keystore load path (OutOfMemoryError DoS from a crafted keystore) and introduction of a capped decompression limit in PGPCompressedData.getDataStream(), both with POC. Original submission creating S/MIME backing temp files with owner-only permissions (PR #2326). Rejecting empty sequences in the X.509 extension parsers whose RFC 5280 syntax is SEQUENCE SIZE (1..MAX) - CRLDistPoint, CertificatePolicies, ExtendedKeyUsage, PolicyMappings, and SubjectDirectoryAttributes (PR #2331).</li>
 <li>suraj0208 &lt;https://github.com/suraj0208&gt; - initial work on auto-detecting private key reader (JcaPrivateKeyReader).</li>
+<li>liamgilligan &lt;https://github.com/liamgilligan&gt; - noticing the BIP-340 step numbering in the BIP340Signer signing comments was incorrect (PR #2340).</li>
 </ul>
 </body>
 </html>
