@@ -21,17 +21,17 @@ abstract class ASN1UniversalType
             return primitive;
         }
 
-        throw new IllegalStateException("unexpected object: " + primitive.getClass().getName());
+        throw new IllegalArgumentException("unexpected object: " + primitive.getClass().getName());
     }
 
     ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
     {
-        throw new IllegalStateException("unexpected implicit primitive encoding");
+        throw new IllegalArgumentException("unexpected implicit primitive encoding");
     }
 
     ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
     {
-        throw new IllegalStateException("unexpected implicit constructed encoding");
+        throw new IllegalArgumentException("unexpected implicit constructed encoding");
     }
 
     final ASN1Primitive fromByteArray(byte[] bytes) throws IOException
