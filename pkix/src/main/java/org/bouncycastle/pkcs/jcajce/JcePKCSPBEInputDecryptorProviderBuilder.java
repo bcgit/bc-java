@@ -135,7 +135,7 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
 
                         cipher = helper.createCipher(algorithm.getId());
 
-                        cipher.init(Cipher.DECRYPT_MODE, new PKCS12KeyWithParameters(password, wrongPKCS12Zero, pbeParams.getIV(), pbeParams.getIterations().intValue()));
+                        cipher.init(Cipher.DECRYPT_MODE, new PKCS12KeyWithParameters(password, wrongPKCS12Zero, pbeParams.getIV(), checkIterationCount(pbeParams.getIterations())));
 
                         encryptionAlg = algorithmIdentifier;
                     }
