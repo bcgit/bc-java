@@ -22,6 +22,10 @@ public class NTRUPlusKEMExtractor
     @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
+        if (encapsulation.length != getEncapsulationLength())
+        {
+            throw new IllegalArgumentException("encapsulation wrong length");
+        }
         byte[] ss = new byte[NTRUPlusEngine.SSBytes];
         engine.crypto_kem_dec(ss, 0, encapsulation, 0, privateKey.getEncoded(), 0);
         return ss;
