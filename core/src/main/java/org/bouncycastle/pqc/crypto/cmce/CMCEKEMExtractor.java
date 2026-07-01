@@ -36,6 +36,10 @@ public class CMCEKEMExtractor
 
     public byte[] extractSecret(byte[] encapsulation, int sessionKeySizeInBits)
     {
+        if (encapsulation.length != getEncapsulationLength())
+        {
+            throw new IllegalArgumentException("encapsulation wrong length");
+        }
         byte[] session_key = new byte[sessionKeySizeInBits / 8];
         engine.kem_dec(session_key, encapsulation, ((CMCEPrivateKeyParameters)key).getPrivateKey());
         return session_key;

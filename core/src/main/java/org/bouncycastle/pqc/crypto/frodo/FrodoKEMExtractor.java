@@ -27,6 +27,10 @@ public class FrodoKEMExtractor
     @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
+        if (encapsulation.length != getEncapsulationLength())
+        {
+            throw new IllegalArgumentException("encapsulation wrong length");
+        }
         byte[] session_key = new byte[engine.getSessionKeySize()];
         engine.kem_dec(session_key, encapsulation, ((FrodoPrivateKeyParameters)key).getPrivateKey());
         return session_key;
