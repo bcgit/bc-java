@@ -61,7 +61,8 @@ public class BCFaestPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // FAEST public OWF output requires package-private Faest.owf to recompute from the secret key.
+        return getAlgorithm().hashCode();
     }
 
     /**

@@ -150,6 +150,40 @@ public class AllTests
 
     }
 
+    public void testHeaderInjection()
+        throws IOException
+    {
+        // A CR or LF in a PEM header name or value must be rejected: a newline injects extra
+        // header lines and a blank line terminates the header block early, with the remainder
+        // parsed as base64 body -- a PEM header injection (the analogue of the ASCII-armor case).
+        checkPemHeaderRejected("Comment", "ok\nInjected: forged");
+        checkPemHeaderRejected("Comment", "ok\rInjected: forged");
+        checkPemHeaderRejected("Comment", "ok\r\n\r\nforged body");
+        checkPemHeaderRejected("Bad\nName", "value");
+    }
+
+    private void checkPemHeaderRejected(String name, String value)
+        throws IOException
+    {
+        List headers = new ArrayList();
+        headers.add(new PemHeader(name, value));
+
+        PemWriter pWrt = new PemWriter(new OutputStreamWriter(new ByteArrayOutputStream()));
+        try
+        {
+            pWrt.writeObject(new PemObject("CERTIFICATE", headers, new byte[8]));
+            fail("CR/LF in PEM header accepted: [" + name + "] -> [" + value + "]");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("PEM header must not contain CR/LF", e.getMessage());
+        }
+        finally
+        {
+            pWrt.close();
+        }
+    }
+
     private void lengthTest(String type, List headers, byte[] data)
         throws IOException
     {

@@ -97,7 +97,7 @@ public class KeyManagerFactoryTest
 
         trustStore.setCertificateEntry("server", ks.getCertificate("root"));
 
-        SSLUtils.startServer(ks, PASSWORD, trustStore, false, 8886);
+        int port = SSLUtils.startServer(ks, PASSWORD, trustStore, false, 0);
 
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX",
             ProviderUtils.PROVIDER_NAME_BCJSSE);
@@ -110,7 +110,7 @@ public class KeyManagerFactoryTest
 
         SSLSocketFactory f = context.getSocketFactory();
 
-        SSLSocket c = (SSLSocket)f.createSocket("localhost", 8886);
+        SSLSocket c = (SSLSocket)f.createSocket("localhost", port);
         c.setUseClientMode(true);
 
         SSLUtils.restrictKeyExchange(c, "RSA");
@@ -135,7 +135,7 @@ public class KeyManagerFactoryTest
         trustStore.load(null, PASSWORD);
         trustStore.setCertificateEntry("server", ks.getCertificate("root"));
 
-        SSLUtils.startServer(ks, PASSWORD, trustStore, false, 8886);
+        int port = SSLUtils.startServer(ks, PASSWORD, trustStore, false, 0);
 
         /*
          * For this variation we add the server's certificate to the client's trust store directly,
@@ -161,7 +161,7 @@ public class KeyManagerFactoryTest
 
         SSLSocketFactory f = context.getSocketFactory();
 
-        SSLSocket c = (SSLSocket)f.createSocket("localhost", 8886);
+        SSLSocket c = (SSLSocket)f.createSocket("localhost", port);
         c.setUseClientMode(true);
 
         SSLUtils.restrictKeyExchange(c, "RSA");
@@ -186,7 +186,7 @@ public class KeyManagerFactoryTest
         serverTS.load(null, PASSWORD);
         serverTS.setCertificateEntry("clientRoot", clientKS.getCertificate("root"));
 
-        SSLUtils.startServer(serverKS, PASSWORD, serverTS, true, 8887);
+        int port = SSLUtils.startServer(serverKS, PASSWORD, serverTS, true, 0);
 
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
         keyManagerFactory.init(clientKS, PASSWORD);
@@ -205,7 +205,7 @@ public class KeyManagerFactoryTest
 
         SSLSocketFactory f = context.getSocketFactory();
 
-        SSLSocket c = (SSLSocket)f.createSocket("localhost", 8887);
+        SSLSocket c = (SSLSocket)f.createSocket("localhost", port);
         c.setUseClientMode(true);
 
         SSLUtils.restrictKeyExchange(c, "RSA");

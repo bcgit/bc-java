@@ -10,6 +10,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.io.MacOutputStream;
@@ -128,7 +129,17 @@ public class JceCMSMacCalculatorBuilder
                 params = helper.generateParameters(macOID, encKey, random);
             }
 
-            algorithmIdentifier = helper.getAlgorithmIdentifier(macOID, params);
+            if (params == null && isKMACwithSHAKE(macOID))
+            {
+                // RFC 8702 sec.3.4 - KMACwithSHAKE128/256 parameters are OPTIONAL;
+                // omit them to signal the defaults (256/512-bit output, empty
+                // customization) rather than emitting a NULL placeholder.
+                algorithmIdentifier = new AlgorithmIdentifier(macOID);
+            }
+            else
+            {
+                algorithmIdentifier = helper.getAlgorithmIdentifier(macOID, params);
+            }
             mac = helper.createContentMac(encKey, algorithmIdentifier);
         }
 
@@ -151,5 +162,11 @@ public class JceCMSMacCalculatorBuilder
         {
             return new JceGenericKey(algorithmIdentifier, encKey);
         }
+    }
+
+    private static boolean isKMACwithSHAKE(ASN1ObjectIdentifier macOID)
+    {
+        return NISTObjectIdentifiers.id_KmacWithSHAKE128.equals(macOID)
+            || NISTObjectIdentifiers.id_KmacWithSHAKE256.equals(macOID);
     }
 }

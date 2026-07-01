@@ -23,7 +23,10 @@ public class DHPrivateKeyParameters
 
     public int hashCode()
     {
-        return x.hashCode() ^ super.hashCode();
+        DHParameters params = getParameters();
+        BigInteger y = params.getG().modPow(x, params.getP());
+
+        return y.hashCode() ^ super.hashCode();
     }
     
     public boolean equals(

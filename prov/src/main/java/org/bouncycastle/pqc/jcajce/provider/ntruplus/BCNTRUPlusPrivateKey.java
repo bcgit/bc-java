@@ -67,7 +67,8 @@ public class BCNTRUPlusPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // NTRU+ private keys do not embed the public key polynomial.
+        return getAlgorithm().hashCode();
     }
 
     /**

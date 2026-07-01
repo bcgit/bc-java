@@ -5,15 +5,12 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
-import org.bouncycastle.internal.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.CAST5CBCParameters;
-import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 
 /**
@@ -60,13 +57,7 @@ public class AlgorithmIdentifierFactory
     public static AlgorithmIdentifier generateEncryptionAlgID(ASN1ObjectIdentifier encryptionOID, int keySize, SecureRandom random)
         throws IllegalArgumentException
     {
-        if (encryptionOID.equals(NISTObjectIdentifiers.id_aes128_CBC)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes192_CBC)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_CBC)
-                || encryptionOID.equals(NTTObjectIdentifiers.id_camellia128_cbc)
-                || encryptionOID.equals(NTTObjectIdentifiers.id_camellia192_cbc)
-                || encryptionOID.equals(NTTObjectIdentifiers.id_camellia256_cbc)
-                || encryptionOID.equals(KISAObjectIdentifiers.id_seedCBC))
+        if (OidCatalogue.isCBC128(encryptionOID))
         {
             byte[] iv = new byte[16];
 
@@ -74,9 +65,7 @@ public class AlgorithmIdentifierFactory
 
             return new AlgorithmIdentifier(encryptionOID, new DEROctetString(iv));
         }
-        else if (encryptionOID.equals(NISTObjectIdentifiers.id_aes128_GCM)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes192_GCM)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_GCM))
+        else if (OidCatalogue.isGCM(encryptionOID))
         {
             byte[] iv = new byte[12];
 
@@ -84,9 +73,7 @@ public class AlgorithmIdentifierFactory
 
             return new AlgorithmIdentifier(encryptionOID, new GCMParameters(iv, 16));
         }
-        else if (encryptionOID.equals(NISTObjectIdentifiers.id_aes128_CCM)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes192_CCM)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_CCM))
+        else if (OidCatalogue.isCCM(encryptionOID))
         {
             byte[] iv = new byte[8];
 
@@ -124,7 +111,17 @@ public class AlgorithmIdentifierFactory
 
             random.nextBytes(iv);
 
-            RC2CBCParameter cbcParams = new RC2CBCParameter(rc2Table[128], iv);
+            int parameterVersion;
+            if (keySize < 256)
+            {
+                parameterVersion = rc2Table[keySize];
+            }
+            else
+            {
+                parameterVersion = keySize;
+            }
+
+            RC2CBCParameter cbcParams = new RC2CBCParameter(parameterVersion, iv);            
 
             return new AlgorithmIdentifier(encryptionOID, cbcParams);
         }

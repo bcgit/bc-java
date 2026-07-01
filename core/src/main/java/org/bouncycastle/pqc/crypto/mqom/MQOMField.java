@@ -1,5 +1,8 @@
 package org.bouncycastle.pqc.crypto.mqom;
 
+import org.bouncycastle.math.raw.GF256AES;
+import org.bouncycastle.util.Pack;
+
 /**
  * Low-level GF arithmetic for MQOM v2.1. Each field family in MQOM
  * (GF(2), GF(4), GF(16), GF(256), GF(256^2)) has its own packing and
@@ -23,30 +26,6 @@ package org.bouncycastle.pqc.crypto.mqom;
  */
 final class MQOMField
 {
-    /* ===== GF(256) tables ===== */
-    static final byte[] EXP_TABLE = new byte[512];
-    static final byte[] LOG_TABLE = new byte[256];
-
-    static
-    {
-        int x = 1;
-        for (int i = 0; i < 255; i++)
-        {
-            EXP_TABLE[i] = (byte)x;
-            LOG_TABLE[x] = (byte)i;
-            int x2 = x << 1;
-            if ((x2 & 0x100) != 0)
-            {
-                x2 ^= 0x11B;
-            }
-            x = x ^ x2;
-        }
-        for (int i = 255; i < 512; i++)
-        {
-            EXP_TABLE[i] = EXP_TABLE[i - 255];
-        }
-    }
-
     private MQOMField()
     {
     }
@@ -55,70 +34,34 @@ final class MQOMField
      * GF(256) -- a single byte, Rijndael polynomial.
      * =================================================================== */
 
-    static int gf256Mult(int a, int b)
-    {
-        int aa = a & 0xFF;
-        int bb = b & 0xFF;
-        if (aa == 0 || bb == 0)
-        {
-            return 0;
-        }
-        return EXP_TABLE[(LOG_TABLE[aa] & 0xFF) + (LOG_TABLE[bb] & 0xFF)] & 0xFF;
-    }
-
-    static int gf256Mult0xBC(int x)
-    {
-        // Multiplies by 0xBC over GF(256); used to embed GF(4) into GF(256).
-        return gf256Mult(0xBC, x);
-    }
-
-    /** XOR two packed GF(256) vectors of given element count. */
-    static void gf256VectAdd(byte[] a, int aOff, byte[] b, int bOff, byte[] c, int cOff, int len)
-    {
-        for (int i = 0; i < len; i++)
-        {
-            c[cOff + i] = (byte)((a[aOff + i] ^ b[bOff + i]) & 0xFF);
-        }
-    }
-
     static void gf256ConstantVectMult(int a, byte[] b, int bOff, byte[] c, int cOff, int len)
     {
-        int aa = a & 0xFF;
-        if (aa == 0)
+        // Constant-time c[i] = a * b[i]: word-parallel over eight lanes per long
+        // via the shared GF256AES.mulFx8, scalar tail via GF256AES.mul. The previous
+        // form had aa==0/aa==1 scalar fast-paths and a per-element bi==0 branch
+        // over EXP_TABLE/LOG_TABLE indices, all secret-dependent on the MPCitH
+        // path. Byte-identical, table-free, no data-dependent branch.
+        int i = 0;
+        for (; i + 8 <= len; i += 8)
         {
-            for (int i = 0; i < len; i++)
-            {
-                c[cOff + i] = 0;
-            }
-            return;
+            Pack.longToLittleEndian(GF256AES.mulFx8(a, Pack.littleEndianToLong(b, bOff + i)), c, cOff + i);
         }
-        if (aa == 1)
+        for (; i < len; i++)
         {
-            for (int i = 0; i < len; i++)
-            {
-                c[cOff + i] = b[bOff + i];
-            }
-            return;
-        }
-        int la = LOG_TABLE[aa] & 0xFF;
-        for (int i = 0; i < len; i++)
-        {
-            int bi = b[bOff + i] & 0xFF;
-            c[cOff + i] = (bi == 0) ? 0 : EXP_TABLE[la + (LOG_TABLE[bi] & 0xFF)];
+            c[cOff + i] = (byte)GF256AES.mul(a, b[bOff + i] & 0xFF);
         }
     }
 
     static int gf256VectMult(byte[] a, int aOff, byte[] b, int bOff, int len)
     {
+        // Constant-time dot product sum_i a[i]*b[i]. Element-wise GF256AES.mul is
+        // table-free and handles zero operands correctly, so the previous
+        // ai!=0 && bi!=0 branch over EXP_TABLE/LOG_TABLE indices — secret-
+        // dependent on the MPCitH path — is gone. Byte-identical.
         int acc = 0;
         for (int i = 0; i < len; i++)
         {
-            int ai = a[aOff + i] & 0xFF;
-            int bi = b[bOff + i] & 0xFF;
-            if (ai != 0 && bi != 0)
-            {
-                acc ^= EXP_TABLE[(LOG_TABLE[ai] & 0xFF) + (LOG_TABLE[bi] & 0xFF)] & 0xFF;
-            }
+            acc ^= GF256AES.mul(a[aOff + i] & 0xFF, b[bOff + i] & 0xFF);
         }
         return acc & 0xFF;
     }
@@ -150,10 +93,10 @@ final class MQOMField
         int a1 = (a >>> 8) & 0xFF;
         int b0 = b & 0xFF;
         int b1 = (b >>> 8) & 0xFF;
-        int a1b1 = gf256Mult(a1, b1);
-        int a0b0 = gf256Mult(a0, b0);
-        int c0 = a0b0 ^ gf256Mult(a1b1, 32);
-        int c1 = a0b0 ^ gf256Mult(a0 ^ a1, b0 ^ b1);
+        int a1b1 = GF256AES.mul(a1, b1);
+        int a0b0 = GF256AES.mul(a0, b0);
+        int c0 = a0b0 ^ GF256AES.mul(a1b1, 32);
+        int c1 = a0b0 ^ GF256AES.mul(a0 ^ a1, b0 ^ b1);
         return ((c1 << 8) | c0) & 0xFFFF;
     }
 
@@ -240,7 +183,7 @@ final class MQOMField
     static int gf4Gf256Mult(int a4, int bGf256)
     {
         int b = bGf256 & 0xFF;
-        int x = gf256Mult(0xBC, b);
+        int x = GF256AES.mul(0xBC, b);
         int t = ((-((a4 >>> 1) & 1)) & x) ^ ((-(a4 & 1)) & b);
         return t & 0xFF;
     }
@@ -249,7 +192,7 @@ final class MQOMField
     static int gf16Gf256Mult(int a16, int bGf256)
     {
         int lifted = gf16ToGf256(a16);
-        return gf256Mult(lifted, bGf256);
+        return GF256AES.mul(lifted, bGf256);
     }
 
     /** GF(2) * GF(256) multiplication: 0 or b. */
@@ -357,8 +300,8 @@ final class MQOMField
             // gf256 * gf256to2: multiply each byte independently by aLifted in GF(256).
             int b0 = bi & 0xFF;
             int b1 = (bi >>> 8) & 0xFF;
-            int p0 = gf256Mult(aLifted, b0);
-            int p1 = gf256Mult(aLifted, b1);
+            int p0 = GF256AES.mul(aLifted, b0);
+            int p1 = GF256AES.mul(aLifted, b1);
             acc ^= (p0 & 0xFF) | ((p1 & 0xFF) << 8);
         }
         return acc & 0xFFFF;
@@ -389,7 +332,7 @@ final class MQOMField
             case 1: prod = (bi == 0) ? 0 : (aExt & 0xFF); break;
             case 2: prod = gf4Gf256Mult(bi, aExt); break;
             case 4: prod = gf16Gf256Mult(bi, aExt); break;
-            case 8: prod = gf256Mult(aExt, bi); break;
+            case 8: prod = GF256AES.mul(aExt, bi); break;
             default: throw new IllegalArgumentException();
             }
             cExt[cExtOff + i] = (byte)(prod & 0xFF);
@@ -429,8 +372,8 @@ final class MQOMField
             }
             int a0 = aExt & 0xFF;
             int a1 = (aExt >>> 8) & 0xFF;
-            int p0 = gf256Mult(a0, lifted);
-            int p1 = gf256Mult(a1, lifted);
+            int p0 = GF256AES.mul(a0, lifted);
+            int p1 = GF256AES.mul(a1, lifted);
             gf256to2PutElt(cExt, cExtOff, i, ((p1 & 0xFF) << 8) | (p0 & 0xFF));
         }
     }
@@ -467,7 +410,7 @@ final class MQOMField
                 case 1: prod = (xk == 0) ? 0 : aJK; break;
                 case 2: prod = gf4Gf256Mult(xk, aJK); break;
                 case 4: prod = gf16Gf256Mult(xk, aJK); break;
-                case 8: prod = gf256Mult(aJK, xk); break;
+                case 8: prod = GF256AES.mul(aJK, xk); break;
                 default: throw new IllegalArgumentException();
                 }
                 acc ^= prod;
@@ -510,8 +453,8 @@ final class MQOMField
                 }
                 int a0 = aJK & 0xFF;
                 int a1 = (aJK >>> 8) & 0xFF;
-                int p0 = gf256Mult(lifted, a0);
-                int p1 = gf256Mult(lifted, a1);
+                int p0 = GF256AES.mul(lifted, a0);
+                int p1 = GF256AES.mul(lifted, a1);
                 acc ^= ((p1 & 0xFF) << 8) | (p0 & 0xFF);
             }
             gf256to2PutElt(y, yOff, j, acc);

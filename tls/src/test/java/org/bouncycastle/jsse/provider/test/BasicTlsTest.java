@@ -1,6 +1,8 @@
 package org.bouncycastle.jsse.provider.test;
 
+import java.io.IOException;
 import java.net.Socket;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -28,17 +30,18 @@ public class BasicTlsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO = 9017;
 
     public static class SimpleClient
         implements TestProtocolUtil.BlockingCallable
     {
+        private final int port;
         private final boolean layered;
         private final KeyStore trustStore;
         private final CountDownLatch latch;
 
-        public SimpleClient(boolean layered, KeyStore trustStore)
+        public SimpleClient(int port, boolean layered, KeyStore trustStore)
         {
+            this.port = port;
             this.layered = layered;
             this.trustStore = trustStore;
             this.latch = new CountDownLatch(1);
@@ -69,12 +72,12 @@ public class BasicTlsTest
                 SSLSocket cSock;
                 if (layered)
                 {
-                    Socket s = SocketFactory.getDefault().createSocket(HOST, PORT_NO);
-                    cSock = (SSLSocket)fact.createSocket(s, HOST, PORT_NO, true);
+                    Socket s = SocketFactory.getDefault().createSocket(HOST, port);
+                    cSock = (SSLSocket)fact.createSocket(s, HOST, port, true);
                 }
                 else
                 {
-                    cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
+                    cSock = (SSLSocket)fact.createSocket(HOST, port);
                 }
 
                 TestProtocolUtil.doClientProtocol(cSock, "Hello");
@@ -97,29 +100,19 @@ public class BasicTlsTest
     public static class SimpleServer
         implements TestProtocolUtil.BlockingCallable
     {
-        private final KeyStore serverStore;
-        private final char[] keyPass;
+        private final SSLServerSocket sSock;
         private final CountDownLatch latch;
 
         SimpleServer(KeyStore serverStore, char[] keyPass)
+            throws GeneralSecurityException, IOException
         {
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
-            this.latch = new CountDownLatch(1);
-        }
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            keyMgrFact.init(serverStore, keyPass);
 
-        public Exception call()
-            throws Exception
-        {
-            try
-            {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                keyMgrFact.init(serverStore, keyPass);
-
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-                serverContext.init(keyMgrFact.getKeyManagers(), null,
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+            SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+            serverContext.init(keyMgrFact.getKeyManagers(), null,
+                SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
 
 //                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
 //                keyMgrFact.init(serverStore, keyPass);
@@ -128,11 +121,24 @@ public class BasicTlsTest
 //                serverContext.init(keyMgrFact.getKeyManagers(), null, null);
 
 
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
+            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+            this.sSock = (SSLServerSocket)fact.createServerSocket(0);
 
-                SSLUtils.enableAll(sSock);
+            SSLUtils.enableAll(sSock);
 
+            this.latch = new CountDownLatch(1);
+        }
+
+        int getPort()
+        {
+            return sSock.getLocalPort();
+        }
+
+        public Exception call()
+            throws Exception
+        {
+            try
+            {
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
@@ -222,6 +228,7 @@ public class BasicTlsTest
         ts.setCertificateEntry("caEC", caCertEC);
         ts.setCertificateEntry("caRSA", caCertRSA);
 
-        TestProtocolUtil.runClientAndServer(new SimpleServer(ks, keyPass), new SimpleClient(layered, ts));
+        SimpleServer server = new SimpleServer(ks, keyPass);
+        TestProtocolUtil.runClientAndServer(server, new SimpleClient(server.getPort(), layered, ts));
     }
 }

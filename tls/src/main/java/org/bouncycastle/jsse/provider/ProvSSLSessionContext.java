@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
+import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.SessionID;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
@@ -94,10 +96,13 @@ class ProvSSLSessionContext
     {
         processQueue();
 
+        // Capture the SNI requested during this handshake so it survives onto the established session.
+        List<BCSNIServerName> requestedServerNames = handshakeSession.getRequestedServerNames();
+
         if (!addToCache)
         {
             return new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort,
-                handshakeSession.getCreationTime(), tlsSession, jsseSessionParameters);
+                handshakeSession.getCreationTime(), tlsSession, jsseSessionParameters, requestedServerNames);
         }
 
         SessionID sessionID = makeSessionID(tlsSession.getSessionID());
@@ -107,7 +112,7 @@ class ProvSSLSessionContext
         if (null == session || session.getTlsSession() != tlsSession)
         {
             session = new ProvSSLSession(this, handshakeSession.getValueMap(), peerHost, peerPort,
-                handshakeSession.getCreationTime(), tlsSession, jsseSessionParameters);
+                handshakeSession.getCreationTime(), tlsSession, jsseSessionParameters, requestedServerNames);
 
             if (null != sessionID)
             {

@@ -81,7 +81,13 @@ public class BCMLDSAPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        MLDSAPublicKey publicKey = getPublicKey();
+        if (publicKey != null)
+        {
+            return publicKey.hashCode();
+        }
+
+        return getParameterSpec().hashCode();
     }
 
     /**

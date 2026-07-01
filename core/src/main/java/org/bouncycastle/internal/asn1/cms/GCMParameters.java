@@ -109,7 +109,9 @@ public class GCMParameters
     {
         int minLen = Properties.isOverrideSet(Properties.GCM_ALLOW_SHORT_TAGS) ? 4 : 12;
         if (icvLen < minLen || icvLen > 16)
+        {
             throw new IllegalArgumentException("Invalid ICV length: " + icvLen);
+        }
 
         return icvLen;
     }

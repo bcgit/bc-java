@@ -1,8 +1,10 @@
 package org.bouncycastle.asn1.test;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
@@ -44,6 +46,19 @@ public class CertIDTest
         isTrue(!a.equals(b));
         b = new CertID(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), issuerAHash, issuerBKeyHash, new ASN1Integer(BigIntegers.ONE));
         isTrue(!a.equals(b));
+
+        // a truncated CertID SEQUENCE (fewer than the 4 mandatory fields) must fail
+        // fast with an IllegalArgumentException rather than leak an
+        // ArrayIndexOutOfBoundsException from the positional getObjectAt decode.
+        try
+        {
+            CertID.getInstance(new DERSequence(new ASN1ObjectIdentifier("1.2.3.4")));
+            fail("CertID.getInstance accepted a wrong-size sequence");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong message: " + e.getMessage(), e.getMessage().startsWith("Bad sequence size"));
+        }
     }
 
     public static void main(

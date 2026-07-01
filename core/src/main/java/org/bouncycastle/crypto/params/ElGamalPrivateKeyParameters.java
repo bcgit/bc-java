@@ -41,6 +41,9 @@ public class ElGamalPrivateKeyParameters
     
     public int hashCode()
     {
-        return getX().hashCode();
+        ElGamalParameters params = getParameters();
+        BigInteger y = params.getG().modPow(x, params.getP());
+
+        return y.hashCode() ^ super.hashCode();
     }
 }

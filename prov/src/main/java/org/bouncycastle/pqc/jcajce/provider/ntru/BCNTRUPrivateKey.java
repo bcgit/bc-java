@@ -66,7 +66,8 @@ public class BCNTRUPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // NTRU private keys do not embed the public key.
+        return getAlgorithm().hashCode();
     }
 
     /**
