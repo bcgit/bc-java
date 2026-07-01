@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.params;
 
+import org.bouncycastle.crypto.kems.frodo.FrodoKEMEngine;
 import org.bouncycastle.util.Arrays;
 
 public class FrodoKEMPublicKeyParameters
@@ -10,6 +11,10 @@ public class FrodoKEMPublicKeyParameters
     public FrodoKEMPublicKeyParameters(FrodoKEMParameters params, byte[] publicKey)
     {
         super(false, params);
+        if (publicKey.length != FrodoKEMEngine.getInstance(params).getPublicKeySize())
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
         this.publicKey = Arrays.clone(publicKey);
     }
 
