@@ -24,6 +24,10 @@ public class XWingPublicKeyParameters
     {
         super(false);
 
+        // Reject a buffer too short to carry the trailing X25519 key before slicing:
+        // a shorter encoding would otherwise produce a negative-length range. The
+        // ML-KEM-768 portion length is then enforced by the MLKEMPublicKeyParameters
+        // constructor below.
         if (encoding.length <= X25519PublicKeyParameters.KEY_SIZE)
         {
             throw new IllegalArgumentException("'encoding' has invalid length");
