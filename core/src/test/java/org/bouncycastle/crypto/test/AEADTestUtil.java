@@ -117,7 +117,7 @@ public class AEADTestUtil
 
         // Check init resets data
         cipher.processBytes(pretext, 0, 100, output, 0);
-        cipher.init(encrypt, params);
+        resetForCheck(cipher, params, encrypt);
 
         try
         {
@@ -134,7 +134,7 @@ public class AEADTestUtil
 
         // Check init resets AD
         cipher.processAADBytes(pretext, 0, 100);
-        cipher.init(encrypt, params);
+        resetForCheck(cipher, params, encrypt);
 
         try
         {
@@ -184,11 +184,40 @@ public class AEADTestUtil
         }
     }
 
+    private static void resetForCheck(AEADCipher cipher, CipherParameters params, boolean encrypt)
+    {
+        // Re-initialising for encryption with the same key+nonce is rejected by the nonce-reuse
+        // guard (GCM-family modes), so exercise reset() on the encrypt path; the decrypt path keeps
+        // verifying that init() clears buffered data/AAD.
+        if (encrypt)
+        {
+            cipher.reset();
+        }
+        else
+        {
+            cipher.init(false, params);
+        }
+    }
+
     private static void crypt(AEADCipher cipher, byte[] plaintext, byte[] output)
         throws InvalidCipherTextException
     {
         int len = cipher.processBytes(plaintext, 0, plaintext.length, output, 0);
         cipher.doFinal(output, len);
+    }
+
+    private static AEADParameters varyNonce(AEADParameters params, int counter)
+    {
+        // Perturb the nonce so successive encryption re-inits never repeat one: the GCM-family
+        // nonce-reuse guard rejects a repeated key+nonce on init for encryption, and these
+        // size/buffer helpers do not depend on the nonce value (only on lengths and reset state).
+        // A non-zero counter guarantees the result differs from the supplied nonce.
+        byte[] nonce = Arrays.clone(params.getNonce());
+        for (int i = 0; i < nonce.length && i < 4; i++)
+        {
+            nonce[i] ^= (byte)(counter >>> (8 * i));
+        }
+        return new AEADParameters(params.getKey(), params.getMacSize(), nonce, params.getAssociatedText());
     }
 
     public static void testOutputSizes(Test test, AEADBlockCipher cipher, AEADParameters params)
@@ -220,7 +249,8 @@ public class AEADTestUtil
 
         for (int i = 0; i < plaintext.length; i++)
         {
-            cipher.init(true, params);
+            AEADParameters paramsI = varyNonce(params, i + 1);
+            cipher.init(true, paramsI);
             int expectedCTUpdateSize = cipher.getUpdateOutputSize(i);
             int expectedCTOutputSize = cipher.getOutputSize(i);
 
@@ -250,7 +280,7 @@ public class AEADTestUtil
                     String.valueOf(expectedCTOutputSize), String.valueOf(actualCTSize));
             }
 
-            cipher.init(false, params);
+            cipher.init(false, paramsI);
             int expectedPTUpdateSize = cipher.getUpdateOutputSize(actualCTSize);
             int expectedPTOutputSize = cipher.getOutputSize(actualCTSize);
 
@@ -434,11 +464,12 @@ public class AEADTestUtil
             // during decryption of ciphertext for doFinal to handle
             for (int i = 2; i < plaintext.length; i++)
             {
-                cipher.init(true, params);
+                AEADParameters paramsI = varyNonce(params, i);
+                cipher.init(true, paramsI);
                 int encrypted = cipher.processBytes(plaintext, 0, i, ciphertext, 0);
                 encrypted += cipher.doFinal(ciphertext, encrypted);
 
-                cipher.init(false, params);
+                cipher.init(false, paramsI);
                 cipher.processBytes(ciphertext, 0, encrypted - 1, plaintext, 0);
                 if (cipher.processByte(ciphertext[encrypted - 1], plaintext, 0) == 0)
                 {

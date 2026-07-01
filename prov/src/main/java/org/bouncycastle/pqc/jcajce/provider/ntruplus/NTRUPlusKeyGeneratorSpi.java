@@ -16,9 +16,9 @@ import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
-import org.bouncycastle.pqc.jcajce.spec.NTRUPlusParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 public class NTRUPlusKeyGeneratorSpi
     extends KeyGeneratorSpi
@@ -53,7 +53,7 @@ public class NTRUPlusKeyGeneratorSpi
             this.extSpec = null;
             if (ntruplusParameters != null)
             {
-                String canonicalAlgName = NTRUPlusParameterSpec.fromName(ntruplusParameters.getName()).getName();
+                String canonicalAlgName = Strings.toUpperCase(ntruplusParameters.getName());
                 if (!canonicalAlgName.equals(genSpec.getPublicKey().getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
@@ -66,7 +66,7 @@ public class NTRUPlusKeyGeneratorSpi
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
             if (ntruplusParameters != null)
             {
-                String canonicalAlgName = NTRUPlusParameterSpec.fromName(ntruplusParameters.getName()).getName();
+                String canonicalAlgName = Strings.toUpperCase(ntruplusParameters.getName());
                 if (!canonicalAlgName.equals(extSpec.getPrivateKey().getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);

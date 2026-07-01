@@ -20,7 +20,9 @@ import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
+import org.bouncycastle.jcajce.provider.asymmetric.util.PrivateKeyHashUtil;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.BigIntegers;
 
 public class JDKDSAPrivateKey
     implements DSAPrivateKey, PKCS12BagAttributeCarrier
@@ -120,19 +122,22 @@ public class JDKDSAPrivateKey
         {
             return false;
         }
-        
+
         DSAPrivateKey other = (DSAPrivateKey)o;
-        
-        return this.getX().equals(other.getX()) 
-            && this.getParams().getG().equals(other.getParams().getG()) 
-            && this.getParams().getP().equals(other.getParams().getP()) 
-            && this.getParams().getQ().equals(other.getParams().getQ());
+
+        int len = Math.max(
+            (getParams().getQ().bitLength() + 7) / 8,
+            (other.getParams().getQ().bitLength() + 7) / 8);
+
+        return this.getParams().getG().equals(other.getParams().getG())
+            && this.getParams().getP().equals(other.getParams().getP())
+            && this.getParams().getQ().equals(other.getParams().getQ())
+            && BigIntegers.areSecretValuesEqual(len, this.getX(), other.getX());
     }
 
     public int hashCode()
     {
-        return this.getX().hashCode() ^ this.getParams().getG().hashCode()
-                ^ this.getParams().getP().hashCode() ^ this.getParams().getQ().hashCode();
+        return PrivateKeyHashUtil.dsaHashCode(getParams(), getX());
     }
     
     public void setBagAttribute(

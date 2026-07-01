@@ -11,12 +11,14 @@ import java.util.Date;
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.Argon2Parameters;
@@ -112,6 +114,78 @@ public class Argon2S2KTest
         testEncryptAndDecryptMessageWithArgon2();
         checkArgon2MaxMemoryExpValue();
         checkArgon2MaxMemoryExpValueOnSecretKey();
+        checkArgon2MinMemoryExpFloor();
+    }
+
+    /**
+     * RFC 9106 sec. 3.1 requires the Argon2 memory size m to satisfy m &ge; 8*p,
+     * i.e. memorySizeExponent &ge; 3 + ceil(log2(p)) = 3 + bitLen(p - 1). The
+     * key-derivation bounds check in PGPUtil.makeKeyFromPassPhrase now enforces
+     * that floor (previously it only rejected memorySizeExponent &lt; 3).
+     * <p>
+     * The {@link S2K.Argon2Params} constructor blocks building a sub-floor
+     * specifier, so a v6 SKESK wire form with parallelism = 4 and
+     * memorySizeExponent = 4 (m = 16 KiB &lt; 8*p = 32 KiB) is crafted and
+     * parsed - the packet parser does not validate the floor - and the derived
+     * S2K is fed to the key-derivation path, which must reject it.
+     */
+    private void checkArgon2MinMemoryExpFloor()
+        throws Exception
+    {
+        byte[] body = v6SkeskBodyWithArgon2(1, 4, 4);
+        S2K s2k = new SymmetricKeyEncSessionPacket(
+            new BCPGInputStream(new ByteArrayInputStream(body))).getS2K();
+
+        BcPBEDataDecryptorFactory factory = new BcPBEDataDecryptorFactory(
+            TEST_MSG_PASSWORD.toCharArray(), new BcPGPDigestCalculatorProvider());
+
+        try
+        {
+            factory.makeKeyFromPassPhrase(SymmetricKeyAlgorithmTags.AES_256, s2k);
+            fail("memorySizeExponent below 3 + bitLen(parallelism - 1) should be rejected");
+        }
+        catch (PGPException e)
+        {
+            isEquals("memory size exponent out of range", e.getMessage());
+        }
+    }
+
+    /**
+     * Build the body of a v6 {@link SymmetricKeyEncSessionPacket} (the octets
+     * after the packet frame) carrying an Argon2 S2K with the given parameters.
+     * The surrounding SKESK fields are spec-shaped but arbitrary - only the
+     * parsed S2K is used.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-symmetric-key-enc">
+     *     RFC 9580 sec. 5.3 - Symmetric-Key Encrypted Session Key Packet</a>
+     */
+    private static byte[] v6SkeskBodyWithArgon2(int passes, int parallelism, int memSizeExp)
+    {
+        // OCB tag is 16 octets per RFC 9580 sec. 5.13.2.
+        final int ivLen = 15;
+        final int sessionKeyLen = 16;
+        final int authTagLen = 16;
+        final int s2kOctets = 1 + 16 + 3;
+        final int next5FieldsCount = 1 /* encAlgo */ + 1 /* aeadAlgo */ + 1 /* s2kCount */ + s2kOctets + ivLen;
+
+        byte[] body = new byte[1 /* version */ + 1 /* count */ + next5FieldsCount + sessionKeyLen + authTagLen];
+        int p = 0;
+        body[p++] = (byte)SymmetricKeyEncSessionPacket.VERSION_6;
+        body[p++] = (byte)next5FieldsCount;
+        body[p++] = (byte)SymmetricKeyAlgorithmTags.AES_256;
+        body[p++] = (byte)AEADAlgorithmTags.OCB;
+        body[p++] = (byte)s2kOctets;
+
+        // Argon2 S2K wire form
+        body[p++] = (byte)S2K.ARGON_2;
+        p += 16; // 16-octet salt - content irrelevant for the floor check
+        body[p++] = (byte)passes;
+        body[p++] = (byte)parallelism;
+        body[p++] = (byte)memSizeExp;
+
+        // IV + session key + auth tag stay zero; the floor check fires during
+        // key derivation, before any of that is consulted.
+        return body;
     }
 
     public void encodingTest()

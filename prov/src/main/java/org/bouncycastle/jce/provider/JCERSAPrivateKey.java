@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.BigIntegers;
 
 public class JCERSAPrivateKey
     implements RSAPrivateKey, PKCS12BagAttributeCarrier
@@ -94,18 +95,22 @@ public class JCERSAPrivateKey
 
         RSAPrivateKey key = (RSAPrivateKey)o;
 
+        int len = Math.max(
+            (getModulus().bitLength() + 7) / 8,
+            (key.getModulus().bitLength() + 7) / 8);
+
         return getModulus().equals(key.getModulus())
-            && getPrivateExponent().equals(key.getPrivateExponent());
+            && BigIntegers.areSecretValuesEqual(len, getPrivateExponent(), key.getPrivateExponent());
     }
 
     public int hashCode()
     {
-        return getModulus().hashCode() ^ getPrivateExponent().hashCode();
+        return getModulus().hashCode();
     }
 
     public void setBagAttribute(
         ASN1ObjectIdentifier oid,
-        ASN1Encodable        attribute)
+        ASN1Encodable attribute)
     {
         attrCarrier.setBagAttribute(oid, attribute);
     }
@@ -132,19 +137,19 @@ public class JCERSAPrivateKey
     }
 
     private void readObject(
-        ObjectInputStream   in)
+        ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {
         this.modulus = (BigInteger)in.readObject();
         this.attrCarrier = new PKCS12BagAttributeCarrierImpl();
-        
+
         attrCarrier.readObject(in);
 
         this.privateExponent = (BigInteger)in.readObject();
     }
 
     private void writeObject(
-        ObjectOutputStream  out)
+        ObjectOutputStream out)
         throws IOException
     {
         out.writeObject(modulus);

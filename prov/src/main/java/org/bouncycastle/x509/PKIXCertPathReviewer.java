@@ -1797,6 +1797,8 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             addError(cpre.getErrorMessage(),cpre.getIndex());
             validPolicyTree = null;
         }
+
+        policyTree = validPolicyTree;
     }
 
     private void checkCriticalExtensions()

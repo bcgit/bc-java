@@ -36,6 +36,11 @@ public class PbkdMacIntegrityCheck
 
     private PbkdMacIntegrityCheck(ASN1Sequence seq)
     {
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.macAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         this.pbkdAlgorithm = KeyDerivationFunc.getInstance(seq.getObjectAt(1));
         this.mac = ASN1OctetString.getInstance(seq.getObjectAt(2));

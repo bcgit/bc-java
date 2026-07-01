@@ -154,9 +154,9 @@ public class ECIESTest
 
         out1 = i1.processBlock(message, 0, message.length);
 
-        if (!areEqual(out1, (iv == null) ?
-                                  Hex.decode("b8a06ea5c2b9df28b58a0a90a734cde8c9c02903e5c220021fe4417410d1e53a32a71696")
-                                : Hex.decode("f246b0e26a2711992cac9c590d08e45c5e730b7c0f4218bb064e27b7dd7c8a3bd8bf01c3")))
+        if (!areEqual(out1, (iv == null)
+            ? Hex.decode("b8a06ea5c2b9df28b58a0a90a734cde8c9c02903e5c220021fe4417410d1e53a32a71696")
+            : Hex.decode("f246b0e26a2711992cac9c590d08e45c5e730b7c0f4218bb064e27b7dd7c8a3bd8bf01c3")))
         {
             fail("twofish cipher test failed on enc");
         }

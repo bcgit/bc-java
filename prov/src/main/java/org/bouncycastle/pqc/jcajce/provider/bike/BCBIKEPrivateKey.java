@@ -7,11 +7,11 @@ import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.BIKEKey;
 import org.bouncycastle.pqc.jcajce.spec.BIKEParameterSpec;
+import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -67,7 +67,8 @@ public class BCBIKEPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // BIKE private keys do not embed the public key; h is derived from secret h0/h1 via package-private engine code.
+        return getAlgorithm().hashCode();
     }
 
     /**

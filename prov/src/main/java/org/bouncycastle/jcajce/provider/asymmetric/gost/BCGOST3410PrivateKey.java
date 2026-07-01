@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.GOST3410PrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
+import org.bouncycastle.jcajce.provider.asymmetric.util.PrivateKeyHashUtil;
 import org.bouncycastle.jce.interfaces.GOST3410Params;
 import org.bouncycastle.jce.interfaces.GOST3410PrivateKey;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -179,10 +180,14 @@ public class BCGOST3410PrivateKey
 
         GOST3410PrivateKey other = (GOST3410PrivateKey)o;
 
-        return BigIntegers.constantTimeAreEqual(this.getX(), other.getX())
-            && this.getParameters().getPublicKeyParameters().equals(other.getParameters().getPublicKeyParameters())
+        int len = Math.max(
+            (getParameters().getPublicKeyParameters().getQ().bitLength() + 7) / 8,
+            (other.getParameters().getPublicKeyParameters().getQ().bitLength() + 7) / 8);
+
+        return this.getParameters().getPublicKeyParameters().equals(other.getParameters().getPublicKeyParameters())
             && compareObj(this.getParameters().getDigestParamSetOID(), other.getParameters().getDigestParamSetOID())
-            && compareObj(this.getParameters().getEncryptionParamSetOID(), other.getParameters().getEncryptionParamSetOID());
+            && compareObj(this.getParameters().getEncryptionParamSetOID(), other.getParameters().getEncryptionParamSetOID())
+            && BigIntegers.areSecretValuesEqual(len, this.getX(), other.getX());
     }
 
     private boolean compareObj(Object o1, Object o2)
@@ -202,7 +207,7 @@ public class BCGOST3410PrivateKey
 
     public int hashCode()
     {
-        return this.getX().hashCode() ^ gost3410Spec.hashCode();
+        return PrivateKeyHashUtil.gostHashCode(getParameters(), getX());
     }
 
     public String toString()

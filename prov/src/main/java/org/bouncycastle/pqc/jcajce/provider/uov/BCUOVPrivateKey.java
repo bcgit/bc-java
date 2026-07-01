@@ -64,7 +64,8 @@ public class BCUOVPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // UOV private keys require package-private engine routines to expand the public key from the seed.
+        return getAlgorithm().hashCode();
     }
 
     public final String getAlgorithm()
