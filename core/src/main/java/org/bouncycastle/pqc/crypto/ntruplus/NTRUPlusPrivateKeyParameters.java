@@ -10,6 +10,12 @@ public class NTRUPlusPrivateKeyParameters
     public NTRUPlusPrivateKeyParameters(NTRUPlusParameters params, byte[] sk)
     {
         super(true, params);
+
+        if (sk.length != params.getSecretKeyBytes())
+        {
+            throw new IllegalArgumentException("'sk' has invalid length");
+        }
+
         this.sk = Arrays.clone(sk);
     }
 

@@ -10,6 +10,12 @@ public class SPHINCSPublicKeyParameters
     public SPHINCSPublicKeyParameters(byte[] keyData)
     {
         super(false, null);
+
+        if (keyData.length != SPHINCS256Config.CRYPTO_PUBLICKEYBYTES)
+        {
+            throw new IllegalArgumentException("'keyData' has invalid length");
+        }
+
         this.keyData = Arrays.clone(keyData);
     }
 
@@ -17,6 +23,12 @@ public class SPHINCSPublicKeyParameters
     {
 
         super(false, treeDigest);
+
+        if (keyData.length != SPHINCS256Config.CRYPTO_PUBLICKEYBYTES)
+        {
+            throw new IllegalArgumentException("'keyData' has invalid length");
+        }
+
         this.keyData = Arrays.clone(keyData);
     }
 

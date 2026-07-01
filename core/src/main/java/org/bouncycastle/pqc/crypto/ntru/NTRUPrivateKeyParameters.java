@@ -13,6 +13,12 @@ public class NTRUPrivateKeyParameters
     public NTRUPrivateKeyParameters(NTRUParameters params, byte[] key)
     {
         super(true, params);
+
+        if (key.length != params.getPrivateKeyLength())
+        {
+            throw new IllegalArgumentException("'key' has invalid length");
+        }
+
         this.privateKey = Arrays.clone(key);
     }
 

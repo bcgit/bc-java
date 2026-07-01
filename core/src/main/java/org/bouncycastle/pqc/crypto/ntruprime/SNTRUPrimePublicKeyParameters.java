@@ -10,6 +10,12 @@ public class SNTRUPrimePublicKeyParameters
     public SNTRUPrimePublicKeyParameters(SNTRUPrimeParameters params, byte[] encH)
     {
         super(false, params);
+
+        if (encH.length != params.getPublicKeyBytes())
+        {
+            throw new IllegalArgumentException("'encH' has invalid length");
+        }
+
         this.encH = Arrays.clone(encH);
     }
 
