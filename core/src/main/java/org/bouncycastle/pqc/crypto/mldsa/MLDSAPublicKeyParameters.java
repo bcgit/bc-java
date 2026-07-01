@@ -22,7 +22,7 @@ public class MLDSAPublicKeyParameters
         super(false, params);
 
         MLDSAEngine engine = params.getEngine(null);
-        if (encoding.length != MLDSAEngine.SeedBytes + engine.getDilithiumK() * MLDSAEngine.DilithiumPolyT1PackedBytes)
+        if (encoding.length != engine.getCryptoPublicKeyBytes())
         {
             throw new IllegalArgumentException("'encoding' has invalid length");
         }
