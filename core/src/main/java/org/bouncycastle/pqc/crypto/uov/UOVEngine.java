@@ -5,6 +5,8 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.math.raw.GF16;
+import org.bouncycastle.math.raw.GF256AES;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -892,7 +894,7 @@ final class UOVEngine
                 }
                 int pivot = mat[aiOff + i] & 0xff;
                 r8 &= GF.isNonzero256(pivot);
-                int inv = GF.inv256(pivot);
+                int inv = GF256AES.inv(pivot);
                 GF.vecMulScalar256(mat, aiOff + iStart, inv, width - iStart);
                 for (int j = i + 1; j < height; j++)
                 {
@@ -931,7 +933,7 @@ final class UOVEngine
                 int c = constant[i] & 0xff;
                 for (int j = 0; j < i; j++)
                 {
-                    constant[j] ^= (byte)GF.mul256(column[j] & 0xff, c);
+                    constant[j] ^= (byte)GF256AES.mul(column[j] & 0xff, c);
                 }
             }
         }
@@ -976,10 +978,10 @@ final class UOVEngine
                 }
                 int pivot = mat[aiOff + i] & 0xf;
                 r8 &= GF.isNonzero16(pivot);
-                int inv = GF.inv16(pivot);
+                int inv = GF16.inv(pivot);
                 for (int kk = i; kk <= len; kk++)
                 {
-                    mat[aiOff + kk] = (byte)GF.mul16(mat[aiOff + kk] & 0xf, inv);
+                    mat[aiOff + kk] = (byte)GF16.mul(mat[aiOff + kk] & 0xf, inv);
                 }
                 for (int j = i + 1; j < height; j++)
                 {
@@ -987,14 +989,14 @@ final class UOVEngine
                     // No `if (scalar != 0)` guard: scalar is the leading
                     // coefficient of a secret-derived row, so branching on its
                     // zero-ness leaks one bit of timing per sub-diagonal row per
-                    // pivot. mul16 returns 0 for a zero scalar, so the
+                    // pivot. GF16.mul returns 0 for a zero scalar, so the
                     // unconditional madd is functionally identical. Matches the
                     // reference gf16mat_gauss_elim_row_echolen, which calls
                     // gf16v_madd unconditionally (src/ref/blas_matrix_ref.c).
                     int scalar = mat[ajOff + i] & 0xf;
                     for (int kk = i; kk <= len; kk++)
                     {
-                        mat[ajOff + kk] ^= (byte)GF.mul16(mat[aiOff + kk] & 0xf, scalar);
+                        mat[ajOff + kk] ^= (byte)GF16.mul(mat[aiOff + kk] & 0xf, scalar);
                     }
                 }
             }
@@ -1027,7 +1029,7 @@ final class UOVEngine
             {
                 int v = GF.getEle16(sqRowMatA, j * len + i);
                 int currentJ = GF.getEle16(constant, j);
-                GF.setEle16(constant, j, currentJ ^ GF.mul16(v, c));
+                GF.setEle16(constant, j, currentJ ^ GF16.mul(v, c));
             }
         }
     }

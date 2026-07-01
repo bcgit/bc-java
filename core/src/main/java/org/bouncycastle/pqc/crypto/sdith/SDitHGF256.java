@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.sdith;
 
-import org.bouncycastle.util.GF256;
+import org.bouncycastle.math.raw.GF256AES;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -24,7 +24,7 @@ final class SDitHGF256
         DEXP[0] = (byte)1;
         for (int i = 1; i < 255; ++i)
         {
-            acc = mulNaive(acc, GEN);
+            acc = GF256AES.mul(acc, GEN);
             DEXP[i] = (byte)acc;
         }
         DEXP[255] = 0;
@@ -36,25 +36,6 @@ final class SDitHGF256
 
     private SDitHGF256()
     {
-    }
-
-    /**
-     * Naive constant-time GF(256) multiplication, matching mul_gf256_naive.
-     */
-    static int mulNaive(int x, int y)
-    {
-        x &= 0xff;
-        y &= 0xff;
-        int r = 0;
-        for (int i = 0; i < 8; ++i)
-        {
-            r ^= ((-((y >>> i) & 1)) & (x << i));
-        }
-        for (int i = 15; i >= 8; --i)
-        {
-            r ^= ((-((r >>> i) & 1)) & (0x11b << (i - 8)));
-        }
-        return r & 0xff;
     }
 
     /**
@@ -77,7 +58,7 @@ final class SDitHGF256
      * Performs vz[16] += vx[m] * my[m][16] over GF(256); byte-identical to the
      * naive per-element form (gf256_vec_mat16cols_muladd_ref_ct) but accumulates
      * the two 8-byte halves in registers and multiplies via the word-parallel
-     * {@link GF256#mulFx8(int, long)} rather than per-element {@link #mulNaive}. The
+     * {@link GF256AES#mulFx8(int, long)} rather than per-element {@link GF256AES#mul(int, int)}. The
      * matrix is a flat byte array laid out row-major.
      */
     static void vecMat16ColsMulAdd(byte[] vz, int vzOff, byte[] vx, int vxOff, byte[] my, int myOff, int m)
@@ -88,8 +69,8 @@ final class SDitHGF256
         {
             int xi = vx[vxOff + i] & 0xff;
             int rowOff = myOff + i * 16;
-            z0 ^= GF256.mulFx8(xi, Pack.littleEndianToLong(my, rowOff));
-            z1 ^= GF256.mulFx8(xi, Pack.littleEndianToLong(my, rowOff + 8));
+            z0 ^= GF256AES.mulFx8(xi, Pack.littleEndianToLong(my, rowOff));
+            z1 ^= GF256AES.mulFx8(xi, Pack.littleEndianToLong(my, rowOff + 8));
         }
         Pack.longToLittleEndian(z0, vz, vzOff);
         Pack.longToLittleEndian(z1, vz, vzOff + 8);
@@ -99,7 +80,7 @@ final class SDitHGF256
      * Performs vz[N] += vx[m] * my[m][N] over GF(256); byte-identical to the
      * naive per-element form (gf256_vec_mat128cols_muladd_ref_ct, which
      * hard-codes N = 128) but processes each 8-column block in a register via
-     * the word-parallel {@link GF256#mulFx8(int, long)}, with a scalar tail for any
+     * the word-parallel {@link GF256AES#mulFx8(int, long)}, with a scalar tail for any
      * columns past the last full block. For SDitH-cat1 the syndrome length 116
      * is &lt; 128 and only one slice of width N is used; for higher categories
      * the matrix is sliced 128 columns at a time and this helper is invoked per
@@ -117,7 +98,7 @@ final class SDitHGF256
             long z = Pack.littleEndianToLong(vz, vzOff + b);
             for (int i = 0; i < m; ++i)
             {
-                z ^= GF256.mulFx8(vx[vxOff + i] & 0xff, Pack.littleEndianToLong(my, myOff + i * n + b));
+                z ^= GF256AES.mulFx8(vx[vxOff + i] & 0xff, Pack.littleEndianToLong(my, myOff + i * n + b));
             }
             Pack.longToLittleEndian(z, vz, vzOff + b);
         }
@@ -126,7 +107,7 @@ final class SDitHGF256
             int acc = vz[vzOff + b] & 0xff;
             for (int i = 0; i < m; ++i)
             {
-                acc ^= mulNaive(vx[vxOff + i] & 0xff, my[myOff + i * n + b] & 0xff);
+                acc ^= GF256AES.mul(vx[vxOff + i] & 0xff, my[myOff + i * n + b] & 0xff);
             }
             vz[vzOff + b] = (byte)acc;
         }

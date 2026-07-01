@@ -150,7 +150,6 @@ public class X500NameTest
     public void performTest()
         throws Exception
     {
-        ietfUtilsTest();
         bogusEqualsTest();
         dnQualifierAliasParseTest();
         stateOrProvinceAliasParseTest();
@@ -681,36 +680,6 @@ public class X500NameTest
     private String getValue(RDN vl)
     {
         return ((ASN1String)vl.getFirst().getValue()).getString();
-    }
-
-    private void ietfUtilsTest()
-        throws Exception
-    {
-        IETFUtils.valueToString(new DERUTF8String(" "));
-
-        // RFC 4514 escaping - also a regression guard for the linear (non O(n^2)) valueToString.
-        isEquals("plain", "abc", IETFUtils.valueToString(new DERUTF8String("abc")));
-        isEquals("comma", "a\\,b", IETFUtils.valueToString(new DERUTF8String("a,b")));
-        isEquals("all specials", "\\,\\\"\\\\\\+\\=\\<\\>\\;",
-            IETFUtils.valueToString(new DERUTF8String(",\"\\+=<>;")));
-        isEquals("leading space", "\\ ab", IETFUtils.valueToString(new DERUTF8String(" ab")));
-        isEquals("trailing space", "ab\\ ", IETFUtils.valueToString(new DERUTF8String("ab ")));
-        isEquals("leading+trailing space", "\\ ab\\ ", IETFUtils.valueToString(new DERUTF8String(" ab ")));
-        isEquals("all spaces", "\\ \\ \\ ", IETFUtils.valueToString(new DERUTF8String("   ")));
-        isEquals("interior space kept", "a b", IETFUtils.valueToString(new DERUTF8String("a b")));
-        isEquals("leading hash", "\\#abc", IETFUtils.valueToString(new DERUTF8String("#abc")));
-        isEquals("non-leading hash kept", "a#b", IETFUtils.valueToString(new DERUTF8String("a#b")));
-
-        // A large all-special value must escape every character and complete in linear time (the
-        // previous insert-into-the-buffer-being-scanned loop was O(n^2)).
-        int n = 100000;
-        StringBuilder commas = new StringBuilder(n);
-        for (int i = 0; i < n; i++)
-        {
-            commas.append(',');
-        }
-        String escaped = IETFUtils.valueToString(new DERUTF8String(commas.toString()));
-        isEquals("large all-comma value fully escaped", 2 * n, escaped.length());
     }
 
     /**

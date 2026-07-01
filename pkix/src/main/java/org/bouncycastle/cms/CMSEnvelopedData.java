@@ -88,7 +88,8 @@ public class CMSEnvelopedData
             //
             EncryptedContentInfo encInfo = envData.getEncryptedContentInfo();
             this.encAlg = encInfo.getContentEncryptionAlgorithm();
-            CMSReadable readable = new CMSProcessableByteArray(encInfo.getEncryptedContent().getOctets());
+            CMSReadable readable = new CMSProcessableByteArray(encInfo.getContentType(),
+                encInfo.getEncryptedContent().getOctets());
             CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(
                 this.encAlg, encInfo.getContentType(), readable);
 

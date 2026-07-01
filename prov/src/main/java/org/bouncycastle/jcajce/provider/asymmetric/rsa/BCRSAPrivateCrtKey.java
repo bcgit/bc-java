@@ -229,8 +229,7 @@ public class BCRSAPrivateCrtKey
     public int hashCode()
     {
         return this.getModulus().hashCode()
-               ^ this.getPublicExponent().hashCode()
-               ^ this.getPrivateExponent().hashCode();
+            + 37 * this.getPublicExponent().hashCode();
     }
 
     public boolean equals(Object o)
@@ -247,14 +246,24 @@ public class BCRSAPrivateCrtKey
 
         RSAPrivateCrtKey key = (RSAPrivateCrtKey)o;
 
+        int modLen = Math.max(
+            (getModulus().bitLength() + 7) / 8,
+            (key.getModulus().bitLength() + 7) / 8);
+        int pLen = Math.max(
+            (getPrimeP().bitLength() + 7) / 8,
+            (key.getPrimeP().bitLength() + 7) / 8);
+        int qLen = Math.max(
+            (getPrimeQ().bitLength() + 7) / 8,
+            (key.getPrimeQ().bitLength() + 7) / 8);
+
         return this.getModulus().equals(key.getModulus())
-         && this.getPublicExponent().equals(key.getPublicExponent())
-         && BigIntegers.constantTimeAreEqual(this.getPrivateExponent(), key.getPrivateExponent())
-         && BigIntegers.constantTimeAreEqual(this.getPrimeP(), key.getPrimeP())
-         && BigIntegers.constantTimeAreEqual(this.getPrimeQ(), key.getPrimeQ())
-         && BigIntegers.constantTimeAreEqual(this.getPrimeExponentP(), key.getPrimeExponentP())
-         && BigIntegers.constantTimeAreEqual(this.getPrimeExponentQ(), key.getPrimeExponentQ())
-         && BigIntegers.constantTimeAreEqual(this.getCrtCoefficient(), key.getCrtCoefficient());
+            && this.getPublicExponent().equals(key.getPublicExponent())
+            && (BigIntegers.areSecretValuesEqual(modLen, this.getPrivateExponent(), key.getPrivateExponent())
+            & BigIntegers.areSecretValuesEqual(pLen, this.getPrimeP(), key.getPrimeP())
+            & BigIntegers.areSecretValuesEqual(qLen, this.getPrimeQ(), key.getPrimeQ())
+            & BigIntegers.areSecretValuesEqual(pLen, this.getPrimeExponentP(), key.getPrimeExponentP())
+            & BigIntegers.areSecretValuesEqual(qLen, this.getPrimeExponentQ(), key.getPrimeExponentQ())
+            & BigIntegers.areSecretValuesEqual(pLen, this.getCrtCoefficient(), key.getCrtCoefficient()));
     }
 
     private void readObject(

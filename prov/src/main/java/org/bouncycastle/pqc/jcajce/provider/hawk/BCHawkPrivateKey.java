@@ -68,7 +68,8 @@ public class BCHawkPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // Hawk private keys do not embed the full public key and keygen is not exposed for reconstruction.
+        return getAlgorithm().hashCode();
     }
 
     /**

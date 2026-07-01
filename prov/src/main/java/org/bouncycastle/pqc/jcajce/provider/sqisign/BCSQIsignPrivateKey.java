@@ -58,7 +58,7 @@ public class BCSQIsignPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getParameterSpec().hashCode();
     }
 
     public final String getAlgorithm()
