@@ -73,6 +73,11 @@ public class CertificatePolicies
     private CertificatePolicies(
         ASN1Sequence  seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("sequence may not be empty");
+        }
+
         this.policyInformation = new PolicyInformation[seq.size()];
 
         for (int i = 0; i != seq.size(); i++)

@@ -48,6 +48,7 @@ public class RegressionTest
         new TargetInformationTest(),
         new SubjectKeyIdentifierTest(),
         new AuthorityKeyIdentifierTest(),
+        new EmptyExtensionSequenceTest(),
         new TBSCertListTest(),
         new TBSCertificateIssuerTest(),
         new AttributeCertificateInfoIssuerTest(),

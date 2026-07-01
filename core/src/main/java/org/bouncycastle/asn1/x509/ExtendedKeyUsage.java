@@ -87,6 +87,11 @@ public class ExtendedKeyUsage
     private ExtendedKeyUsage(
         ASN1Sequence  seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("sequence may not be empty");
+        }
+
         this.seq = seq;
 
         Enumeration e = seq.getObjects();
