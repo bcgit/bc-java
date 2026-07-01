@@ -61,6 +61,10 @@ public class OCBBlockCipher
     private byte[] Stretch = new byte[24];
     private byte[] OffsetMAIN_0 = new byte[16];
 
+    // Previous (nonce, key) seen on init(true, ...) - used only to reject nonce reuse for encryption.
+    private byte[] lastN = null;
+    private byte[] lastKey = null;
+
     /*
      * PER-ENCRYPTION/DECRYPTION
      */
@@ -167,6 +171,31 @@ public class OCBBlockCipher
         if (N.length > 15)
         {
             throw new IllegalArgumentException("IV must be no more than 15 bytes");
+        }
+
+        // RFC 7253 sec. 5.1 ("It is crucial that, as one encrypts, one does not repeat a nonce"),
+        // and the general AEAD rule of RFC 5116 sec. 2.1, require a distinct nonce per encryption
+        // under a given key; reuse collapses OCB's security (offset and keystream reuse, and per
+        // RFC 7253 makes forgery trivial). That obligation is the caller's, so this guard enforces
+        // it defensively, mirroring GCMBlockCipher. A null key parameter (explicit key re-use) with
+        // a repeated nonce is also caught. A fresh nonce or key, reset(), or init for decryption are
+        // all unaffected.
+        if (forEncryption && lastN != null && Arrays.areEqual(lastN, N))
+        {
+            if (keyParameter == null)
+            {
+                throw new IllegalArgumentException("cannot reuse nonce for OCB encryption");
+            }
+            if (Arrays.areEqual(lastKey, keyParameter.getKey()))
+            {
+                throw new IllegalArgumentException("cannot reuse nonce for OCB encryption");
+            }
+        }
+
+        lastN = N;
+        if (keyParameter != null)
+        {
+            lastKey = keyParameter.getKey();
         }
 
         /*

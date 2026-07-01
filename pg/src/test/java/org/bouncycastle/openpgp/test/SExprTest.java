@@ -183,6 +183,55 @@ public class SExprTest
         {
             isEquals(e.getMessage(), "invalid input stream at '\"'", e.getMessage());
         }
+
+        // a negative canonical length token must surface as a clean IOException,
+        // not an unchecked NegativeArraySizeException escaping the IOException-declared parse path
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("(-5:")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("invalid negative length in S-Expression", e.getMessage());
+        }
+
+        // a malformed hex block (non-hex characters) must surface as a clean IOException,
+        // not an unchecked DecoderException escaping the IOException-declared parse path
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("(1:n#zz#)")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("invalid hex data in S-Expression", e.getMessage());
+        }
+
+        // a malformed hex block (odd number of nibbles) must likewise surface as a clean IOException
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("(1:n#ABC#)")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("invalid hex data in S-Expression", e.getMessage());
+        }
+
+        // a canonical string that declares a huge length (here 64 MiB) but supplies no data must not
+        // drive a buffer allocation of the declared size before reading: the data is read incrementally
+        // so a truncated stream fails with a clean EOFException at the genuine end of input rather than
+        // an out-of-memory allocation from a few input bytes. See github #2338.
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("(67108864:)")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("premature end of stream", e.getMessage());
+        }
     }
 
     public void performTest()

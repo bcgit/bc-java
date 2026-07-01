@@ -1671,7 +1671,19 @@ public class PfxPduTest
 
         PKCS12PfxPdu pfx = new PKCS12PfxPdu(negIt);
 
-        assertFalse(pfx.isMacValid(new JcePKCS12MacCalculatorBuilderProvider().setProvider("BC"), passwd));
+        // The MacData carries a negative iteration count. The PKCS#12-PBE MAC key derivation now
+        // routes the wire-supplied count through PKCS12Util.validateIterationCount (as the keystore
+        // and PBMAC1 paths already did), so a negative count is rejected cleanly rather than driving
+        // a zero-round KDF that silently produces a weak MAC key.
+        try
+        {
+            pfx.isMacValid(new JcePKCS12MacCalculatorBuilderProvider().setProvider("BC"), passwd);
+            fail("negative iteration count not rejected");
+        }
+        catch (PKCSException e)
+        {
+            assertTrue(e.getMessage().endsWith("negative iteration count found"));
+        }
     }
 
     private void doPKCS5Test(byte[] keyStore)

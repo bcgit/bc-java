@@ -16,6 +16,11 @@ import org.bouncycastle.openpgp.PGPException;
 public interface PGPS2KCalculator
 {
     /**
+     * Return the algorithm type
+     */
+    int getType();
+
+    /**
      * Derive {@code keyLen} bytes from the supplied passphrase using the parameters carried by the given
      * {@link S2K#ARGON_2 Argon2} S2K specifier.
      *

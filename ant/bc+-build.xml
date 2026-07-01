@@ -328,6 +328,7 @@
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/pqc/**/AllTests*.java" />
                  <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
              </fileset>
         </copy>
@@ -516,6 +517,7 @@
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/pqc/**/AllTests*.java" />
                  <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="**/*.crl" />
                  <exclude name="**/*.key" />
@@ -979,6 +981,7 @@
              <fileset dir="${src.dir}" includes="**/util/io/pem/*Test.java" />
              <fileset dir="${src.dir}" includes="**/keybox/*Test.java" />
              <fileset dir="${src.dir}" includes="**/jce/provider/*Test.java" />
+             <fileset dir="${src.dir}" includes="**/est/*Test.java" />
              <fileset dir="${src.dir}" includes="**/test/*.java" />
              <fileset dir="${src.dir}" includes="**/test/*/*.java" />
              <fileset dir="${src.dir}" includes="**/*.asc" />

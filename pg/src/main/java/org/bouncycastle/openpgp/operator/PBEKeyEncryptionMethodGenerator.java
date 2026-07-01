@@ -87,7 +87,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
         int s2kCount)
     {
         this.passPhrase = passPhrase;
-        this.s2kDigestCalculator = s2kDigestCalculator;
+        this.s2kCalculator = new PGPUtil.HashBasedS2KCalculator(s2kDigestCalculator);
 
         if (s2kCount < 0 || s2kCount > 0xff)
         {
@@ -169,10 +169,10 @@ public abstract class PBEKeyEncryptionMethodGenerator
 
             random.nextBytes(iv);
 
-            s2k = new S2K(s2kDigestCalculator.getAlgorithm(), iv, s2kCount);
+            s2k = new S2K(s2kCalculator.getType(), iv, s2kCount);
         }
 
-        return PGPUtil.makeKeyFromPassPhrase(s2kDigestCalculator, s2kCalculator, encAlgorithm, s2k, passPhrase);
+        return PGPUtil.makeKeyFromPassPhrase(s2kCalculator, encAlgorithm, s2k, passPhrase);
     }
 
     /**

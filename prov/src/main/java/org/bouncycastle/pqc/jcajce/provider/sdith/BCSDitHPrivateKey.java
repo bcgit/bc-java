@@ -50,14 +50,19 @@ public class BCSDitHPrivateKey
         if (o instanceof BCSDitHPrivateKey)
         {
             BCSDitHPrivateKey otherKey = (BCSDitHPrivateKey)o;
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
         return false;
     }
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCSDitHPublicKey getPublicKey()
+    {
+        return new BCSDitHPublicKey(params.getPublicKeyParameters());
     }
 
     public final String getAlgorithm()

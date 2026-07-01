@@ -18,9 +18,9 @@ public class HQCParameterSpec
 
     static
     {
-        parameters.put("hqc128", hqc128);
-        parameters.put("hqc192", hqc192);
-        parameters.put("hqc256", hqc256);
+        parameters.put("hqc-128", hqc128);
+        parameters.put("hqc-192", hqc192);
+        parameters.put("hqc-256", hqc256);
     }
 
     private final String name;

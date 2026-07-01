@@ -85,7 +85,9 @@ public class Longs
         return Long.valueOf(value);
     }
 
-    /** @deprecated Use {@link Nat#xorTo64(int, long[], int, long[], int)} instead. */
+    /**
+     * @deprecated Use {@link Nat#xorTo64(int, long[], int, long[], int)} instead.
+     */
     public static void xorTo(int len, long[] x, int xOff, long[] z, int zOff)
     {
         Nat.xorTo64(len, x, xOff, z, zOff);

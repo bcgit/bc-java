@@ -1,7 +1,10 @@
 package org.bouncycastle.cert.path.test;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
@@ -9,7 +12,10 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509ContentVerifierProviderBuilder;
+import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ContentVerifierProviderBuilder;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.cert.path.CertPath;
 import org.bouncycastle.cert.path.CertPathValidation;
 import org.bouncycastle.cert.path.CertPathValidationContext;
@@ -279,14 +285,14 @@ public class CertPathValidationTest
 
         Store crls = new CollectionStore(crlList);
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), crls)});
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls)});
 
         if (!result.isValid())
         {
             fail("basic validation (2) not working");
         }
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), crls)});
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls)});
 
         if (result.isValid() || result.getUnhandledCriticalExtensionOIDs().size() != 1
             || !result.getUnhandledCriticalExtensionOIDs().contains(Extension.basicConstraints))
@@ -294,13 +300,33 @@ public class CertPathValidationTest
             fail("basic validation (3) not working");
         }
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new CRLValidation(rootCert.getSubject(), crls)});
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls)});
 
         if (result.isValid() || result.getUnhandledCriticalExtensionOIDs().size() != 2
             || !result.getUnhandledCriticalExtensionOIDs().contains(Extension.basicConstraints)
             || !result.getUnhandledCriticalExtensionOIDs().contains(Extension.keyUsage))
         {
             fail("basic validation (4) not working");
+        }
+
+        // forged CRL bearing the root issuer DN but signed by an attacker key must be rejected,
+        // not blindly trusted (CVE candidate ANT-2026-Y6VWVEHX).
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
+        kpg.initialize(2048);
+        KeyPair forgedKp = kpg.generateKeyPair();
+        ContentSigner forgedSigner = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BouncyCastleProvider.PROVIDER_NAME).build(forgedKp.getPrivate());
+        X509CRLHolder forgedRootCrl = new X509v2CRLBuilder(rootCert.getSubject(), new Date()).build(forgedSigner);
+
+        List forgedList = new ArrayList();
+        forgedList.add(forgedRootCrl);
+        forgedList.add(interCrl);
+        Store forgedCrls = new CollectionStore(forgedList);
+
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, forgedCrls)});
+
+        if (result.isValid())
+        {
+            fail("forged CRL accepted");
         }
 
         path = new CertPath(new X509CertificateHolder[] { interCert, finalCert });

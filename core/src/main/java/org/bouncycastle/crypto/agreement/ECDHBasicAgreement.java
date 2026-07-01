@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
+import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -31,8 +32,7 @@ public class ECDHBasicAgreement
 {
     private ECPrivateKeyParameters key;
 
-    public void init(
-        CipherParameters key)
+    public void init(CipherParameters key)
     {
         this.key = (ECPrivateKeyParameters)key;
 
@@ -44,25 +44,28 @@ public class ECDHBasicAgreement
         return key.getParameters().getCurve().getFieldElementEncodingLength();
     }
 
-    public BigInteger calculateAgreement(
-        CipherParameters pubKey)
+    public BigInteger calculateAgreement(CipherParameters pubKey)
     {
-        ECPublicKeyParameters pub = (ECPublicKeyParameters)pubKey;
-        ECDomainParameters params = key.getParameters();
-        if (!params.equals(pub.getParameters()))
+        return calculateAgreementFieldElement(key, (ECPublicKeyParameters)pubKey).toBigInteger();
+    }
+
+    static ECFieldElement calculateAgreementFieldElement(ECPrivateKeyParameters privateKey,
+        ECPublicKeyParameters publicKey)
+    {
+        ECDomainParameters params = privateKey.getParameters();
+        if (!params.equals(publicKey.getParameters()))
         {
             throw new IllegalStateException("ECDH public key has wrong domain parameters");
         }
 
-        BigInteger d = key.getD();
-
         // Always perform calculations on the exact curve specified by our private key's parameters
-        ECPoint Q = ECAlgorithms.cleanPoint(params.getCurve(), pub.getQ());
+        ECPoint Q = ECAlgorithms.cleanPoint(params.getCurve(), publicKey.getQ());
         if (Q.isInfinity())
         {
             throw new IllegalStateException("Infinity is not a valid public key for ECDH");
         }
 
+        BigInteger d = privateKey.getD();
         BigInteger h = params.getH();
         if (!h.equals(ECConstants.ONE))
         {
@@ -76,6 +79,6 @@ public class ECDHBasicAgreement
             throw new IllegalStateException("Infinity is not a valid agreement value for ECDH");
         }
 
-        return P.getAffineXCoord().toBigInteger();
+        return P.getAffineXCoord();
     }
 }

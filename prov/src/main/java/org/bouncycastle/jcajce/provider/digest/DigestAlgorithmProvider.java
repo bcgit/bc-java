@@ -46,4 +46,15 @@ abstract class DigestAlgorithmProvider
         provider.addAlgorithm("Alg.Alias.Mac." + oid, mainName);
         provider.addAlgorithm("Alg.Alias.KeyGenerator." + oid, mainName);
     }
+
+    protected void addKMACAlias(
+        ConfigurableProvider provider,
+        String algorithm,
+        ASN1ObjectIdentifier oid)
+    {
+        String mainName = "KMAC" + algorithm;
+
+        provider.addAlgorithm("Alg.Alias.Mac." + oid, mainName);
+        provider.addAlgorithm("Alg.Alias.KeyGenerator." + oid, mainName);
+    }
 }
