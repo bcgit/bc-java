@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.agreement.BasicRawAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHCRawAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -69,7 +70,7 @@ class DHKEM
         case HPKE.kem_P256_SHA256:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA256);
             domainParams = getDomainParameters("P-256");
-            rawAgreement = new BasicRawAgreement(new ECDHCBasicAgreement());
+            rawAgreement = new ECDHCRawAgreement();
             bitmask = (byte)0xff;
             Nsk = 32;
             Nsecret = 32;
@@ -82,7 +83,7 @@ class DHKEM
         case HPKE.kem_P384_SHA384:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA384);
             domainParams = getDomainParameters("P-384");
-            rawAgreement = new BasicRawAgreement(new ECDHCBasicAgreement());
+            rawAgreement = new ECDHCRawAgreement();
             bitmask = (byte)0xff;
             Nsk = 48;
             Nsecret = 48;
@@ -95,7 +96,7 @@ class DHKEM
         case HPKE.kem_P521_SHA512:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA512);
             domainParams = getDomainParameters("P-521");
-            rawAgreement = new BasicRawAgreement(new ECDHCBasicAgreement());
+            rawAgreement = new ECDHCRawAgreement();
             bitmask = 0x01;
             Nsk = 66;
             Nsecret = 64;

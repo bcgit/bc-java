@@ -1,6 +1,7 @@
 package org.bouncycastle.util.io;
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -156,8 +157,51 @@ public final class Streams
             }
             totalRead += numRead;
         }
-        
+
         return totalRead;
+    }
+
+    /**
+     * Read exactly {@code len} bytes from {@code inStr} and return them as a newly allocated array.
+     * <p>
+     * Unlike {@code new byte[len]} followed by {@link #readFully(InputStream, byte[])}, the returned
+     * array is grown incrementally as data arrives rather than allocated at the full declared length
+     * up front. A caller passing an untrusted (possibly hostile) length therefore cannot drive a large
+     * allocation from a short input - the allocation tracks the bytes the stream actually delivers, and
+     * a stream that ends before {@code len} bytes have been read fails with an {@link EOFException}.
+     *
+     * @param inStr the stream to read from.
+     * @param len   the exact number of bytes to read.
+     * @return a {@code byte[len]} containing the bytes read.
+     * @throws EOFException if the stream ends before {@code len} bytes are available.
+     * @throws IOException  on an underlying read error.
+     * @throws IllegalArgumentException if {@code len} is negative.
+     */
+    public static byte[] readLenBytesFully(InputStream inStr, int len)
+        throws IOException
+    {
+        if (len < 0)
+        {
+            throw new IllegalArgumentException("len cannot be negative");
+        }
+
+        int chunkSize = Math.min(len, BUFFER_SIZE);
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(chunkSize);
+        byte[] chunk = new byte[chunkSize];
+
+        int remaining = len;
+        while (remaining > 0)
+        {
+            int numRead = inStr.read(chunk, 0, Math.min(remaining, chunk.length));
+            if (numRead < 0)
+            {
+                throw new EOFException("premature end of stream");
+            }
+            buf.write(chunk, 0, numRead);
+            remaining -= numRead;
+        }
+
+        return buf.toByteArray();
     }
 
     public static void validateBufferArguments(byte[] buf, int off, int len)

@@ -2,6 +2,7 @@ package org.bouncycastle.bcpg.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Hashtable;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -55,6 +56,39 @@ public class ArmoredOutputStreamHeaderInjectionTest
         catch (IllegalArgumentException e)
         {
             // expected
+        }
+
+        // The deprecated setHeader(...) stores the value raw and emits it through the same
+        // writeHeaderEntry chokepoint as the Builder. A LF in the value used to inject a second
+        // parsed armor header; it must now be rejected when the header block is flushed on first
+        // write. This is the path finding #25's proof exercised.
+        try
+        {
+            ArmoredOutputStream injected = new ArmoredOutputStream(new ByteArrayOutputStream());
+            injected.setHeader("Comment", "hello\nInjected: smuggled-header");
+            injected.write(0x01);
+            fail("LF in deprecated setHeader value accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("unexpected message: " + e.getMessage(),
+                "armor header must not contain CR/LF".equals(e.getMessage()));
+        }
+
+        // The Hashtable constructor is the other raw, non-deprecated path through the chokepoint;
+        // a bare CR in a value must be rejected there too.
+        Hashtable<String, String> rawHeaders = new Hashtable<String, String>();
+        rawHeaders.put(ArmoredOutputStream.COMMENT_HDR, "hello\r-----END PGP MESSAGE-----");
+        try
+        {
+            ArmoredOutputStream injected = new ArmoredOutputStream(new ByteArrayOutputStream(), rawHeaders);
+            injected.write(0x01);
+            fail("CR in Hashtable-constructor header value accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("unexpected message: " + e.getMessage(),
+                "armor header must not contain CR/LF".equals(e.getMessage()));
         }
     }
 

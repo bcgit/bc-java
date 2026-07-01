@@ -7,6 +7,7 @@ import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
@@ -48,8 +49,11 @@ class PGPUtil
                 // authenticated. Clamp all three to conservative, property-overridable maxima so a single
                 // decrypt attempt cannot be driven into a huge allocation or unbounded CPU work. The clamp
                 // stays here (above the backend) so the .bc / .jcajce calculators cannot diverge on it.
-                // TODO: memory lower bound should really be 3 + log2(parallelism)
-                if (memorySizeExponent < 3 || memorySizeExponent > Properties.asInteger(MAX_MEMORY_EXP, 24))
+                // RFC 9580 sec. 3.7.1.4 + RFC 9106 sec. 3.1: memory size m = 2^memorySizeExponent
+                // KiB must satisfy m >= 8*p, i.e. memorySizeExponent >= 3 + ceil(log2(p)).
+                // For p >= 1 this is 3 + bitLen(p - 1).
+                if (memorySizeExponent < 3 + Integers.bitLength(s2k.getParallelism() - 1)
+                    || memorySizeExponent > Properties.asInteger(MAX_MEMORY_EXP, 24))
                 {
                     throw new PGPException("memory size exponent out of range");
                 }

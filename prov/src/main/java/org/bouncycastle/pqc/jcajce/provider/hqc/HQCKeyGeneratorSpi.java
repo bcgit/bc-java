@@ -16,9 +16,9 @@ import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
-import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 public class HQCKeyGeneratorSpi
     extends KeyGeneratorSpi
@@ -53,7 +53,7 @@ public class HQCKeyGeneratorSpi
             this.extSpec = null;
             if (hqcParameters != null)
             {
-                String canonicalAlgName = HQCParameterSpec.fromName(hqcParameters.getName()).getName();
+                String canonicalAlgName = Strings.toUpperCase(hqcParameters.getName());
                 if (!canonicalAlgName.equals(genSpec.getPublicKey().getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
@@ -66,7 +66,7 @@ public class HQCKeyGeneratorSpi
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
             if (hqcParameters != null)
             {
-                String canonicalAlgName = HQCParameterSpec.fromName(hqcParameters.getName()).getName();
+                String canonicalAlgName = Strings.toUpperCase(hqcParameters.getName());
                 if (!canonicalAlgName.equals(extSpec.getPrivateKey().getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);

@@ -44,6 +44,7 @@ import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.CTSBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.NISTCTSBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
@@ -68,23 +69,46 @@ public class CipherStreamTest
     private void testMode(Object cipher, CipherParameters params)
         throws Exception
     {
-        testWriteRead(cipher, params, false);
-        testWriteRead(cipher, params, true);
-        testReadWrite(cipher, params, false);
-        testReadWrite(cipher, params, true);
+        // Each sub-test gets a distinct nonce/IV: every sub-test re-initialises the same cipher
+        // instance for encryption, and the AEAD nonce-reuse guard rejects a repeated key+nonce on
+        // init for encryption. These round-trip / tamper tests do not depend on the nonce value, so
+        // varying it keeps the coverage while satisfying the guard (this is the "GCM-safe testMode"
+        // the previous TODO asked for, and is also correct for the non-AEAD modes exercised here).
+        testWriteRead(cipher, varyNonce(params, 1), false);
+        testWriteRead(cipher, varyNonce(params, 2), true);
+        testReadWrite(cipher, varyNonce(params, 3), false);
+        testReadWrite(cipher, varyNonce(params, 4), true);
 
         if (!(cipher instanceof CTSBlockCipher || cipher instanceof NISTCTSBlockCipher))
         {
-            testWriteReadEmpty(cipher, params, false);
-            testWriteReadEmpty(cipher, params, true);
+            testWriteReadEmpty(cipher, varyNonce(params, 5), false);
+            testWriteReadEmpty(cipher, varyNonce(params, 6), true);
         }
 
         if (cipher instanceof AEADBlockCipher)
         {
-            testTamperedRead((AEADBlockCipher)cipher, params);
-            testTruncatedRead((AEADBlockCipher)cipher, params);
-            testTamperedWrite((AEADBlockCipher)cipher, params);
+            testTamperedRead((AEADBlockCipher)cipher, varyNonce(params, 7));
+            testTruncatedRead((AEADBlockCipher)cipher, varyNonce(params, 8));
+            testTamperedWrite((AEADBlockCipher)cipher, varyNonce(params, 9));
         }
+    }
+
+    private static CipherParameters varyNonce(CipherParameters params, int counter)
+    {
+        // Perturb the IV so each sub-test uses a distinct nonce, defeating the AEAD nonce-reuse
+        // guard when the same instance is re-initialised for encryption. A non-zero counter
+        // guarantees the result differs from the supplied IV; the IV length is preserved.
+        if (params instanceof ParametersWithIV)
+        {
+            ParametersWithIV withIV = (ParametersWithIV)params;
+            byte[] iv = Arrays.clone(withIV.getIV());
+            for (int i = 0; i < iv.length && i < 4; i++)
+            {
+                iv[i] ^= (byte)(counter >>> (8 * i));
+            }
+            return new ParametersWithIV(withIV.getParameters(), iv);
+        }
+        return params;
     }
 
     private OutputStream createCipherOutputStream(OutputStream output, Object cipher)
@@ -551,8 +575,7 @@ public class CipherStreamTest
         if (blockSize == 16)
         {
             testMode(CCMBlockCipher.newInstance(cipher1), new ParametersWithIV(key, new byte[7]));
-            // TODO: need to have a GCM safe version of testMode.
-//            testMode(GCMBlockCipher.newInstance(cipher1), withIv);
+            testMode(GCMBlockCipher.newInstance(cipher1), withIv);
             testMode(new OCBBlockCipher(cipher1, cipher2), new ParametersWithIV(key, new byte[15]));
         }
     }

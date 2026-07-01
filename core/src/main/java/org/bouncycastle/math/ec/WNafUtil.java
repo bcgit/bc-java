@@ -507,8 +507,9 @@ public abstract class WNafUtil
                                     case ECCurve.COORD_JACOBIAN_MODIFIED:
                                     {
                                         iso = twiceP.getZCoord(0);
-                                        isoTwiceP = c.createPoint(twiceP.getXCoord().toBigInteger(), twiceP.getYCoord()
-                                            .toBigInteger());
+
+                                        // TODO Perhaps a method that replaces Z with one would be better
+                                        isoTwiceP = c.createRawPoint(twiceP.getXCoord(), twiceP.getYCoord());                                        
 
                                         ECFieldElement iso2 = iso.square(), iso3 = iso2.multiply(iso);
                                         last = last.scaleX(iso2).scaleY(iso3);

@@ -177,6 +177,16 @@ public class KeyBoxByteBufferTest
         });
     }
 
+    public void testU32Unsigned()
+        throws Exception
+    {
+        // u32() must read a full unsigned 32-bit value; bit 31 set must not sign-extend to a negative long.
+        isTrue("0xFFFFFFFF", KeyBoxByteBuffer.wrap(new byte[]{(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF}).u32() == 0xFFFFFFFFL);
+        isTrue("0x80000000", KeyBoxByteBuffer.wrap(new byte[]{(byte)0x80, 0, 0, 0}).u32() == 0x80000000L);
+        isTrue("0x7FFFFFFF", KeyBoxByteBuffer.wrap(new byte[]{(byte)0x7F, (byte)0xFF, (byte)0xFF, (byte)0xFF}).u32() == 0x7FFFFFFFL);
+        isTrue("0x00000100", KeyBoxByteBuffer.wrap(new byte[]{0, 0, 1, 0}).u32() == 0x100L);
+    }
+
     @Override
     public String getName()
     {
@@ -191,5 +201,6 @@ public class KeyBoxByteBufferTest
         testRangeReadPastEnd();
         testReadPastEnd();
         testExceptions();
+        testU32Unsigned();
     }
 }

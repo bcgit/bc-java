@@ -9,8 +9,8 @@ import org.bouncycastle.crypto.modes.CTRModeCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.math.raw.GF16;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.GF16;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 

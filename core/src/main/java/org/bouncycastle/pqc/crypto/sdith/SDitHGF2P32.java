@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.sdith;
 
+import org.bouncycastle.math.raw.GF256AES;
+
 /**
  * GF(2^32) arithmetic helpers for SDitH, port of the reference gf2p32.c.
  * <p>
@@ -43,11 +45,11 @@ final class SDitHGF2P32
         int xx1 = (x >>> 8) & 0xff;
         int yy0 = y & 0xff;
         int yy1 = (y >>> 8) & 0xff;
-        int a0 = SDitHGF256.mulNaive(xx0, yy0);
-        int a1 = SDitHGF256.mulNaive(xx0, yy1) ^ SDitHGF256.mulNaive(xx1, yy0);
-        int a2 = SDitHGF256.mulNaive(xx1, yy1);
+        int a0 = GF256AES.mul(xx0, yy0);
+        int a1 = GF256AES.mul(xx0, yy1) ^ GF256AES.mul(xx1, yy0);
+        int a2 = GF256AES.mul(xx1, yy1);
         a1 ^= a2;
-        a0 ^= SDitHGF256.mulNaive(IRRED_CST_GF2P16, a2);
+        a0 ^= GF256AES.mul(IRRED_CST_GF2P16, a2);
         return ((a1 & 0xff) << 8) | (a0 & 0xff);
     }
 

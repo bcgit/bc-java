@@ -194,6 +194,36 @@ public class CompositeSignaturesTest
         }
     }
 
+    /**
+     * A truncated composite-signature private key whose body is shorter than the 32-byte ML-DSA seed
+     * must surface as a checked IOException from generatePrivate(PrivateKeyInfo), not an unchecked
+     * IllegalArgumentException ("32 &gt; N") escaping out of Arrays.copyOfRange. Mirrors the compositekem
+     * sibling guard and the generatePublic-side split() guard exercised by
+     * testMalformedTruncatedCompositePublicKey.
+     */
+    public void testMalformedTruncatedCompositePrivateKey()
+        throws Exception
+    {
+        org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi keyFactorySpi =
+            new org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi();
+
+        // id_MLDSA44_ECDSA_P256_SHA256 expects a 32-byte ML-DSA seed followed by the traditional key;
+        // supply only a 16-byte raw octet body, shorter than the seed.
+        byte[] truncatedBody = new byte[16];
+        PrivateKeyInfo malformed = new PrivateKeyInfo(
+            new AlgorithmIdentifier(IANAObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256), new DEROctetString(truncatedBody));
+
+        try
+        {
+            keyFactorySpi.generatePrivate(malformed);
+            fail("expected IOException for truncated composite private key");
+        }
+        catch (java.io.IOException e)
+        {
+            TestCase.assertEquals("malformed composite private key: body shorter than the ML-DSA seed", e.getMessage());
+        }
+    }
+
     public void testTestVectors()
         throws Exception
     {
