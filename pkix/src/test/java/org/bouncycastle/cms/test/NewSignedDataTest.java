@@ -1077,12 +1077,11 @@ public class NewSignedDataTest
 
     /**
      * Parser robustness: a CMS ContentInfo whose content is tagged [APPLICATION 0]
-     * instead of context [0] makes the ASN.1 layer throw an IllegalStateException
-     * ("Expected CONTEXT tag but found APPLICATION") out of ContentInfo. An
-     * IllegalStateException is neither a ClassCastException nor an
-     * IllegalArgumentException, so before the parse hardening it escaped
-     * CMSSignedData(byte[])'s declared "throws CMSException" as a raw
-     * RuntimeException; it must now surface as a CMSException.
+     * instead of context [0] makes the ASN.1 layer throw an IllegalArgumentException
+     * ("Expected CONTEXT tag but found APPLICATION") out of ContentInfo. Before the
+     * parse hardening this escaped CMSSignedData(byte[])'s declared "throws CMSException"
+     * as a raw RuntimeException; it must now surface as a CMSException carrying the
+     * original ASN.1 exception as its cause.
      */
     public void testMalformedContentTagSurfacesAsCMSException()
         throws Exception
@@ -1101,8 +1100,8 @@ public class NewSignedDataTest
         }
         catch (CMSException e)
         {
-            assertTrue("expected the ASN.1 IllegalStateException to be wrapped as the cause, was "
-                + e.getCause(), e.getCause() instanceof IllegalStateException);
+            assertTrue("expected the ASN.1 exception to be wrapped as the cause, was "
+                + e.getCause(), e.getCause() instanceof IllegalArgumentException);
         }
     }
 
