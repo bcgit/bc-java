@@ -3,6 +3,7 @@ package org.bouncycastle.cms;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 public abstract class AbstractKeyAgreeRecipient
+    extends AbstractRecipient
     implements KeyAgreeRecipient
 {
     protected boolean isEC(ASN1ObjectIdentifier algorithmOID)

@@ -52,6 +52,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.crypto.util.OidCatalogue;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.GenericKey;
@@ -364,36 +365,21 @@ class CMSUtils
     {
         ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
 
-        if (CMSAlgorithm.AES128_CBC.equals(algorithm)
-            || CMSAlgorithm.AES192_CBC.equals(algorithm)
-            || CMSAlgorithm.AES256_CBC.equals(algorithm)
-            || CMSAlgorithm.CAMELLIA128_CBC.equals(algorithm)
-            || CMSAlgorithm.CAMELLIA192_CBC.equals(algorithm)
-            || CMSAlgorithm.CAMELLIA256_CBC.equals(algorithm)
-            || CMSAlgorithm.SEED_CBC.equals(algorithm)
-            || CMSAlgorithm.SM4_CBC.equals(algorithm))
+        if (OidCatalogue.isCBC128(algorithm))
         {
             // CBC with PKCS#7 padding, 16 octet blocks: always at least one pad octet.
             return inputLength + (16 - (inputLength % 16));
         }
-        if (CMSAlgorithm.DES_CBC.equals(algorithm)
-            || CMSAlgorithm.DES_EDE3_CBC.equals(algorithm)
-            || CMSAlgorithm.RC2_CBC.equals(algorithm)
-            || CMSAlgorithm.CAST5_CBC.equals(algorithm)
-            || CMSAlgorithm.IDEA_CBC.equals(algorithm))
+        if (OidCatalogue.isCBC64(algorithm))
         {
             // CBC with PKCS#7 padding, 8 octet blocks.
             return inputLength + (8 - (inputLength % 8));
         }
-        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
-            || CMSAlgorithm.AES192_GCM.equals(algorithm)
-            || CMSAlgorithm.AES256_GCM.equals(algorithm))
+        if (OidCatalogue.isGCM(algorithm))
         {
             return inputLength + GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
         }
-        if (CMSAlgorithm.AES128_CCM.equals(algorithm)
-            || CMSAlgorithm.AES192_CCM.equals(algorithm)
-            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        if (OidCatalogue.isCCM(algorithm))
         {
             return inputLength + CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
         }
@@ -499,12 +485,7 @@ class CMSUtils
     {
         ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
 
-        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
-            || CMSAlgorithm.AES192_GCM.equals(algorithm)
-            || CMSAlgorithm.AES256_GCM.equals(algorithm)
-            || CMSAlgorithm.AES128_CCM.equals(algorithm)
-            || CMSAlgorithm.AES192_CCM.equals(algorithm)
-            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        if (OidCatalogue.isAEAD(algorithm))
         {
             return inputLength;
         }
@@ -520,15 +501,11 @@ class CMSUtils
     {
         ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
 
-        if (CMSAlgorithm.AES128_GCM.equals(algorithm)
-            || CMSAlgorithm.AES192_GCM.equals(algorithm)
-            || CMSAlgorithm.AES256_GCM.equals(algorithm))
+        if (OidCatalogue.isGCM(algorithm))
         {
             return GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
         }
-        if (CMSAlgorithm.AES128_CCM.equals(algorithm)
-            || CMSAlgorithm.AES192_CCM.equals(algorithm)
-            || CMSAlgorithm.AES256_CCM.equals(algorithm))
+        if (OidCatalogue.isCCM(algorithm))
         {
             return CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
         }

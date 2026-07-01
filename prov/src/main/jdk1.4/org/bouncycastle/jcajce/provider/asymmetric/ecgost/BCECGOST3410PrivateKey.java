@@ -339,7 +339,7 @@ public class BCECGOST3410PrivateKey
 
     public int hashCode()
     {
-        return getD().hashCode() ^ engineGetSpec().hashCode();
+        return ECUtil.privateKeyHashCode(getD(), engineGetSpec());
     }
 
     private ASN1BitString getPublicKeyDetails(BCECGOST3410PublicKey pub)

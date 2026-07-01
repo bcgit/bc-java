@@ -94,9 +94,19 @@ public class PublicKeyRingBlob
         // User IDS.
         //
         ArrayList<UserID> userIds = new ArrayList<UserID>();
+        long totalUserIdLength = 0;
         for (int t = numberOfUserIDs - 1; t >= 0; t--)
         {
-            userIds.add(UserID.getInstance(buffer, base));
+            UserID userID = UserID.getInstance(buffer, base);
+            // Bound the cumulative user-ID data by the blob length: each entry copies an
+            // attacker-controlled slice of the blob, so an inflated user-ID count with each entry
+            // pointing at (almost) the whole blob would otherwise retain ~bufferSize^2 bytes.
+            totalUserIdLength += userID.getLengthOfUserId();
+            if (totalUserIdLength > length)
+            {
+                throw new IllegalStateException("userID data exceeds blob length");
+            }
+            userIds.add(userID);
         }
 
         int numberOfSignatures = buffer.u16();

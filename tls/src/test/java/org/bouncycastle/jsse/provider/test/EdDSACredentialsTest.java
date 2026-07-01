@@ -28,10 +28,6 @@ public class EdDSACredentialsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_12_ED25519 = 9050;
-    private static final int PORT_NO_12_ED448 = 9051;
-    private static final int PORT_NO_13_ED25519 = 9052;
-    private static final int PORT_NO_13_ED448 = 9053;
 
     static class EdDSAClient
         implements TestProtocolUtil.BlockingCallable
@@ -103,11 +99,8 @@ public class EdDSACredentialsTest
     static class EdDSAServer
         implements TestProtocolUtil.BlockingCallable
     {
-        private final int port;
         private final String protocol;
-        private final KeyStore serverStore;
-        private final char[] keyPass;
-        private final KeyStore trustStore;
+        private final SSLServerSocket sSock;
         private final CountDownLatch latch;
 
         EdDSAServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
@@ -116,36 +109,37 @@ public class EdDSACredentialsTest
             KeyStore trustStore = createKeyStore();
             trustStore.setCertificateEntry("client", trustAnchor);
 
-            this.port = port;
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            keyMgrFact.init(serverStore, keyPass);
+
+            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            trustMgrFact.init(trustStore);
+
+            SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+            serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
+                SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+            this.sSock = (SSLServerSocket)fact.createServerSocket(port);
+
+            SSLUtils.enableAll(sSock);
+            sSock.setNeedClientAuth(true);
+
             this.protocol = protocol;
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
-            this.trustStore = trustStore;
             this.latch = new CountDownLatch(1);
+        }
+
+        int getPort()
+        {
+            return sSock.getLocalPort();
         }
 
         public Exception call() throws Exception
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                keyMgrFact.init(serverStore, keyPass);
-
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                trustMgrFact.init(trustStore);
-
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-                serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-
-                SSLUtils.enableAll(sSock);
-                sSock.setNeedClientAuth(true);
-
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
@@ -178,25 +172,25 @@ public class EdDSACredentialsTest
 
     public void test12_Ed25519() throws Exception
     {
-        implTestEdDSACredentials(PORT_NO_12_ED25519, "TLSv1.2", TestUtils.generateEd25519KeyPair());
+        implTestEdDSACredentials("TLSv1.2", TestUtils.generateEd25519KeyPair());
     }
 
     public void test12_Ed448() throws Exception
     {
-        implTestEdDSACredentials(PORT_NO_12_ED448, "TLSv1.2", TestUtils.generateEd448KeyPair());
+        implTestEdDSACredentials("TLSv1.2", TestUtils.generateEd448KeyPair());
     }
 
     public void test13_Ed25519() throws Exception
     {
-        implTestEdDSACredentials(PORT_NO_13_ED25519, "TLSv1.3", TestUtils.generateEd25519KeyPair());
+        implTestEdDSACredentials("TLSv1.3", TestUtils.generateEd25519KeyPair());
     }
 
     public void test13_Ed448() throws Exception
     {
-        implTestEdDSACredentials(PORT_NO_13_ED448, "TLSv1.3", TestUtils.generateEd448KeyPair());
+        implTestEdDSACredentials("TLSv1.3", TestUtils.generateEd448KeyPair());
     }
 
-    private void implTestEdDSACredentials(int port, String protocol, KeyPair caKeyPair) throws Exception
+    private void implTestEdDSACredentials(String protocol, KeyPair caKeyPair) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
 
@@ -208,8 +202,9 @@ public class EdDSACredentialsTest
         KeyStore clientKs = createKeyStore();
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new EdDSAServer(port, protocol, serverKs, keyPass, caCert),
-            new EdDSAClient(port, protocol, clientKs, keyPass, caCert));
+        EdDSAServer server = new EdDSAServer(0, protocol, serverKs, keyPass, caCert);
+        TestProtocolUtil.runClientAndServer(server,
+            new EdDSAClient(server.getPort(), protocol, clientKs, keyPass, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException

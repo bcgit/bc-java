@@ -23,6 +23,8 @@ import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
+import org.bouncycastle.pqc.crypto.aimer.AIMerParameters;
+import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestParameters;
@@ -119,6 +121,9 @@ class Utils
 
     static final Map ntruPlusOids = new HashMap<ASN1ObjectIdentifier, NTRUPlusParameters>();
     static final Map ntruPlusParams = new HashMap<NTRUPlusParameters, ASN1ObjectIdentifier>();
+
+    static final Map aimerOids = new HashMap<ASN1ObjectIdentifier, AIMerParameters>();
+    static final Map aimerParams = new HashMap<AIMerParameters, ASN1ObjectIdentifier>();
 
     static final Map faestOids = new HashMap<ASN1ObjectIdentifier, FaestParameters>();
     static final Map faestParams = new HashMap<FaestParameters, ASN1ObjectIdentifier>();
@@ -615,6 +620,20 @@ class Utils
         ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_864, BCObjectIdentifiers.ntruplus864);
         ntruPlusOids.put(NTRUPlusParameters.ntruplus_kem_1152, BCObjectIdentifiers.ntruplus1152);
 
+        aimerParams.put(BCObjectIdentifiers.aimer_128f, AIMerParameters.aimer128f);
+        aimerParams.put(BCObjectIdentifiers.aimer_128s, AIMerParameters.aimer128s);
+        aimerParams.put(BCObjectIdentifiers.aimer_192f, AIMerParameters.aimer192f);
+        aimerParams.put(BCObjectIdentifiers.aimer_192s, AIMerParameters.aimer192s);
+        aimerParams.put(BCObjectIdentifiers.aimer_256f, AIMerParameters.aimer256f);
+        aimerParams.put(BCObjectIdentifiers.aimer_256s, AIMerParameters.aimer256s);
+
+        aimerOids.put(AIMerParameters.aimer128f, BCObjectIdentifiers.aimer_128f);
+        aimerOids.put(AIMerParameters.aimer128s, BCObjectIdentifiers.aimer_128s);
+        aimerOids.put(AIMerParameters.aimer192f, BCObjectIdentifiers.aimer_192f);
+        aimerOids.put(AIMerParameters.aimer192s, BCObjectIdentifiers.aimer_192s);
+        aimerOids.put(AIMerParameters.aimer256f, BCObjectIdentifiers.aimer_256f);
+        aimerOids.put(AIMerParameters.aimer256s, BCObjectIdentifiers.aimer_256s);
+
         faestOids.put(FaestParameters.faest_128s, BCObjectIdentifiers.faest_128s);
         faestOids.put(FaestParameters.faest_128f, BCObjectIdentifiers.faest_128f);
         faestOids.put(FaestParameters.faest_192s, BCObjectIdentifiers.faest_192s);
@@ -1103,6 +1122,16 @@ class Utils
     static ASN1ObjectIdentifier ntruPlusOidLookup(NTRUPlusParameters params)
     {
         return (ASN1ObjectIdentifier)ntruPlusOids.get(params);
+    }
+
+    static AIMerParameters aimerParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (AIMerParameters)aimerParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier aimerOidLookup(AIMerParameters params)
+    {
+        return (ASN1ObjectIdentifier)aimerOids.get(params);
     }
 
     public static ASN1ObjectIdentifier hawkOidLookup(HawkParameters params)

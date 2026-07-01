@@ -111,8 +111,14 @@ public class SExpression
                     try
                     {
                         int len = Integer.parseInt(Strings.fromByteArray(accumulator.toByteArray()));
-                        byte[] b = new byte[len];
-                        Streams.readFully(src, b);
+                        if (len < 0)
+                        {
+                            throw new IOException("invalid negative length in S-Expression");
+                        }
+                        // Read the declared length incrementally rather than pre-allocating
+                        // new byte[len]: a hostile length (up to Integer.MAX_VALUE) would otherwise
+                        // drive a large allocation from a few input bytes. See github #2338.
+                        byte[] b = Streams.readLenBytesFully(src, len);
                         if (expr.parseCanonical)
                         {
                             int size = expr.values.size();
@@ -178,7 +184,14 @@ public class SExpression
                         throw new IOException("invalid input stream at '#'");
                     }
                     consumeUntilSkipWhiteSpace(src, accumulator, '#');
-                    expr.addValue(Hex.decode(accumulator.toByteArray()));
+                    try
+                    {
+                        expr.addValue(Hex.decode(accumulator.toByteArray()));
+                    }
+                    catch (RuntimeException e)
+                    {
+                        throw new IOException("invalid hex data in S-Expression");
+                    }
                 }
                 else if (c == '"')
                 {

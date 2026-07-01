@@ -139,6 +139,11 @@ public class AttributeTable
         return v;
     }
 
+    public boolean hasAny(ASN1ObjectIdentifier oid)
+    {
+        return attributes.containsKey(oid);
+    }
+
     public int size()
     {
         int size = 0;

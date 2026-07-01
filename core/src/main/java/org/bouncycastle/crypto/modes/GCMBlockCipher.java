@@ -130,33 +130,42 @@ public class GCMBlockCipher
         this.macBlock = null;
         this.initialised = true;
 
-        KeyParameter keyParam;
+        KeyParameter keyParameter = null;
         byte[] newNonce = null;
 
         if (params instanceof AEADParameters)
         {
-            AEADParameters param = (AEADParameters)params;
+            AEADParameters aeadParameters = (AEADParameters)params;
 
-            newNonce = param.getNonce();
-            initialAssociatedText = param.getAssociatedText();
-
-            int macSizeBits = param.getMacSize();
+            int macSizeBits = aeadParameters.getMacSize();
             if (macSizeBits < 32 || macSizeBits > 128 || macSizeBits % 8 != 0)
             {
                 throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
             }
 
+            newNonce = aeadParameters.getNonce();
+            initialAssociatedText = aeadParameters.getAssociatedText();
             macSize = macSizeBits / 8;
-            keyParam = param.getKey();
+            keyParameter = aeadParameters.getKey();
         }
         else if (params instanceof ParametersWithIV)
         {
-            ParametersWithIV param = (ParametersWithIV)params;
+            ParametersWithIV withIV = (ParametersWithIV)params;
 
-            newNonce = param.getIV();
+            newNonce = withIV.getIV();
             initialAssociatedText  = null;
             macSize = 16;
-            keyParam = (KeyParameter)param.getParameters();
+
+            CipherParameters innerParameters = withIV.getParameters();
+            if (innerParameters != null)
+            {
+                if (!(innerParameters instanceof KeyParameter))
+                {
+                    throw new IllegalArgumentException("invalid parameters passed to GCM");
+                }
+
+                keyParameter = (KeyParameter)innerParameters;
+            }
         }
         else
         {
@@ -175,11 +184,11 @@ public class GCMBlockCipher
         {
             if (nonce != null && Arrays.areEqual(nonce, newNonce))
             {
-                if (keyParam == null)
+                if (keyParameter == null)
                 {
                     throw new IllegalArgumentException("cannot reuse nonce for GCM encryption");
                 }
-                if (lastKey != null && Arrays.areEqual(lastKey, keyParam.getKey()))
+                if (lastKey != null && Arrays.constantTimeAreEqual(lastKey, keyParameter.getKey()))
                 {
                     throw new IllegalArgumentException("cannot reuse nonce for GCM encryption");
                 }
@@ -187,18 +196,18 @@ public class GCMBlockCipher
         }
 
         nonce = newNonce;
-        if (keyParam != null)
+        if (keyParameter != null)
         {
-            lastKey = keyParam.getKey();
+            lastKey = keyParameter.getKey();
         }
 
         // TODO Restrict macSize to 16 if nonce length not 12?
 
         // Cipher always used in forward mode
         // if keyParam is null we're reusing the last key.
-        if (keyParam != null)
+        if (keyParameter != null)
         {
-            cipher.init(true, keyParam);
+            cipher.init(true, keyParameter);
 
             this.H = new byte[BLOCK_SIZE];
             cipher.processBlock(H, 0, H, 0);

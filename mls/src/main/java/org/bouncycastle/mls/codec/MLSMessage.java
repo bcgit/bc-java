@@ -72,8 +72,19 @@ public class MLSMessage
     public MLSMessage(MLSInputStream stream)
         throws IOException
     {
-        this.version = ProtocolVersion.values()[(short)stream.read(short.class)];
-        this.wireFormat = WireFormat.values()[(short)stream.read(short.class)];
+        int versionIndex = (short)stream.read(short.class);
+        if (versionIndex < 0 || versionIndex >= ProtocolVersion.values().length)
+        {
+            throw new IOException("invalid ProtocolVersion");
+        }
+        this.version = ProtocolVersion.values()[versionIndex];
+
+        int wireFormatIndex = (short)stream.read(short.class);
+        if (wireFormatIndex < 0 || wireFormatIndex >= WireFormat.values().length)
+        {
+            throw new IOException("invalid WireFormat");
+        }
+        this.wireFormat = WireFormat.values()[wireFormatIndex];
 
         switch (wireFormat)
         {
@@ -297,8 +308,20 @@ class FramedContentTBS
     public FramedContentTBS(MLSInputStream stream)
         throws IOException
     {
-        this.version = ProtocolVersion.values()[(short)stream.read(short.class)];
-        this.wireFormat = WireFormat.values()[(short)stream.read(short.class)];
+        int versionIndex = (short)stream.read(short.class);
+        if (versionIndex < 0 || versionIndex >= ProtocolVersion.values().length)
+        {
+            throw new IOException("invalid ProtocolVersion");
+        }
+        this.version = ProtocolVersion.values()[versionIndex];
+
+        int wireFormatIndex = (short)stream.read(short.class);
+        if (wireFormatIndex < 0 || wireFormatIndex >= WireFormat.values().length)
+        {
+            throw new IOException("invalid WireFormat");
+        }
+        this.wireFormat = WireFormat.values()[wireFormatIndex];
+
         this.content = (FramedContent)stream.read(FramedContent.class);
         switch (content.sender.senderType)
         {

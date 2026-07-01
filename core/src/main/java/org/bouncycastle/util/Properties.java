@@ -246,6 +246,27 @@ public class Properties
      */
     public static final String GCM_ALLOW_SHORT_TAGS = "org.bouncycastle.gcm.allow_short_tags";
 
+    /**
+     * Opt in to handling legacy version 0/1 BKS keystores. Those stores derive the HMAC integrity
+     * key at only the digest size in bits (a 16-bit key for SHA-1; CVE-2018-5382), which is
+     * brute-forceable offline, so by default the default {@code BKS} keystore type refuses to load
+     * them and only writes the current version 2 format. Set this property to read or create the
+     * weak legacy format (e.g. to migrate an old store); it also gates registration of the separate
+     * {@code BKS-V1} keystore type. Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String BKS_ENABLE_V1 = "org.bouncycastle.bks.enable_v1";
+
+    /**
+     * Upper bound on the PKCS#12-PBE iteration count honoured when loading a BKS keystore. The
+     * count drives the integrity-MAC key derivation in {@code BcKeyStoreSpi.engineLoad} (and the
+     * per-entry sealed-key decryption), and is read from the (not-yet-verified) keystore ahead of
+     * the HMAC integrity check, so an unbounded value is a pre-integrity CPU-exhaustion vector -
+     * the analogue of {@link #BCFKS_MAX_IT_COUNT} / {@link #PKCS12_MAX_IT_COUNT} for the BKS
+     * format (the sibling UBER store already caps its own count). Default 1048576 (1 << 20); the
+     * BKS writer uses ~1024-2047. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String BKS_MAX_IT_COUNT = "org.bouncycastle.bks.max_it_count";
+
     private Properties()
     {
     }

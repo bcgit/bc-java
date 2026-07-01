@@ -58,9 +58,14 @@ public class SecP384R1Curve extends ECCurve.AbstractFp
         return q;
     }
 
+    public int getFieldElementEncodingLength()
+    {
+        return 48;
+    }
+
     public int getFieldSize()
     {
-        return q.bitLength();
+        return 384;
     }
 
     public ECFieldElement fromBigInteger(BigInteger x)
@@ -70,7 +75,7 @@ public class SecP384R1Curve extends ECCurve.AbstractFp
 
     protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
     {
-        return new SecP384R1Point(this, x, y);
+        return new SecP384R1Point(this, x, y, SECP384R1_AFFINE_ZS);
     }
 
     protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
@@ -142,7 +147,7 @@ public class SecP384R1Curve extends ECCurve.AbstractFp
 
             private ECPoint createPoint(int[] x, int[] y)
             {
-                return createRawPoint(new SecP384R1FieldElement(x), new SecP384R1FieldElement(y), SECP384R1_AFFINE_ZS);
+                return createRawPoint(new SecP384R1FieldElement(x), new SecP384R1FieldElement(y));
             }
         };
     }

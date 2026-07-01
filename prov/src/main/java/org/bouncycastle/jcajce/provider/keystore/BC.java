@@ -19,7 +19,7 @@ public class BC
         {
             provider.addAlgorithm("KeyStore.BKS", PREFIX + "BcKeyStoreSpi$Std");
 
-            if (Properties.isOverrideSet("org.bouncycastle.bks.enable_v1"))
+            if (Properties.isOverrideSet(Properties.BKS_ENABLE_V1))
             {
                 provider.addAlgorithm("KeyStore.BKS-V1", PREFIX + "BcKeyStoreSpi$Version1");
             }

@@ -54,18 +54,6 @@ public class SLHDSACredentialsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_13_SLHDSA_SHA2_128F = 9070;
-    private static final int PORT_NO_13_SLHDSA_SHA2_192F = 9071;
-    private static final int PORT_NO_13_SLHDSA_SHA2_256F = 9072;
-    private static final int PORT_NO_13_SLHDSA_SHAKE_128F = 9073;
-    private static final int PORT_NO_13_SLHDSA_SHAKE_192F = 9074;
-    private static final int PORT_NO_13_SLHDSA_SHAKE_256F = 9075;
-//    private static final int PORT_NO_13_SLHDSA_SHA2_128S = 9080;
-//    private static final int PORT_NO_13_SLHDSA_SHA2_192S = 9081;
-//    private static final int PORT_NO_13_SLHDSA_SHA2_256S = 9082;
-//    private static final int PORT_NO_13_SLHDSA_SHAKE_128S = 9083;
-//    private static final int PORT_NO_13_SLHDSA_SHAKE_192S = 9084;
-//    private static final int PORT_NO_13_SLHDSA_SHAKE_256S = 9085;
 
     static class SLHDSAClient
         implements TestProtocolUtil.BlockingCallable
@@ -137,11 +125,8 @@ public class SLHDSACredentialsTest
     static class SLHDSAServer
         implements TestProtocolUtil.BlockingCallable
     {
-        private final int port;
         private final String protocol;
-        private final KeyStore serverStore;
-        private final char[] keyPass;
-        private final KeyStore trustStore;
+        private final SSLServerSocket sSock;
         private final CountDownLatch latch;
 
         SLHDSAServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
@@ -150,36 +135,37 @@ public class SLHDSACredentialsTest
             KeyStore trustStore = createKeyStore();
             trustStore.setCertificateEntry("client", trustAnchor);
 
-            this.port = port;
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            keyMgrFact.init(serverStore, keyPass);
+
+            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            trustMgrFact.init(trustStore);
+
+            SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+            serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
+                SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+            this.sSock = (SSLServerSocket)fact.createServerSocket(port);
+
+            SSLUtils.enableAll(sSock);
+            sSock.setNeedClientAuth(true);
+
             this.protocol = protocol;
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
-            this.trustStore = trustStore;
             this.latch = new CountDownLatch(1);
+        }
+
+        int getPort()
+        {
+            return sSock.getLocalPort();
         }
 
         public Exception call() throws Exception
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                keyMgrFact.init(serverStore, keyPass);
-
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                trustMgrFact.init(trustStore);
-
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-                serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-
-                SSLUtils.enableAll(sSock);
-                sSock.setNeedClientAuth(true);
-
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
@@ -212,37 +198,37 @@ public class SLHDSACredentialsTest
 
     public void test13_SLHDSA_SHA2_128F() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_128F, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-128F"));
     }
 
     public void test13_SLHDSA_SHA2_192F() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_192F, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-192F"));
     }
 
     public void test13_SLHDSA_SHA2_256F() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_256F, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-256F"));
     }
 
     public void test13_SLHDSA_SHAKE_128F() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_128F, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-128F"));
     }
 
     public void test13_SLHDSA_SHAKE_192F() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_192F, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-192F"));
     }
 
     public void test13_SLHDSA_SHAKE_256F() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_256F, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-256F"));
     }
 
@@ -250,42 +236,42 @@ public class SLHDSACredentialsTest
 /*
     public void test13_SLHDSA_SHA2_128S() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_128S, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-128S"));
     }
 
     public void test13_SLHDSA_SHA2_192S() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_192S, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-192S"));
     }
 
     public void test13_SLHDSA_SHA2_256S() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHA2_256S, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHA2-256S"));
     }
 
     public void test13_SLHDSA_SHAKE_128S() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_128S, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-128S"));
     }
 
     public void test13_SLHDSA_SHAKE_192S() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_192S, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-192S"));
     }
 
     public void test13_SLHDSA_SHAKE_256S() throws Exception
     {
-        implTestSLHDSACredentials(PORT_NO_13_SLHDSA_SHAKE_256S, "TLSv1.3",
+        implTestSLHDSACredentials("TLSv1.3",
             TestUtils.generateSLHDSAKeyPair("SLH-DSA-SHAKE-256S"));
     }
 */
 
-    private void implTestSLHDSACredentials(int port, String protocol, KeyPair caKeyPair) throws Exception
+    private void implTestSLHDSACredentials(String protocol, KeyPair caKeyPair) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
 
@@ -297,8 +283,9 @@ public class SLHDSACredentialsTest
         KeyStore clientKs = createKeyStore();
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new SLHDSAServer(port, protocol, serverKs, keyPass, caCert),
-            new SLHDSAClient(port, protocol, clientKs, keyPass, caCert));
+        SLHDSAServer server = new SLHDSAServer(0, protocol, serverKs, keyPass, caCert);
+        TestProtocolUtil.runClientAndServer(server,
+            new SLHDSAClient(server.getPort(), protocol, clientKs, keyPass, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException

@@ -84,6 +84,13 @@ public class PemWriter
             {
                 PemHeader hdr = (PemHeader)it.next();
 
+                // A CR or LF in a header name or value would inject extra header lines, or a blank
+                // line would terminate the header block early -- a PEM header injection. Reject it.
+                if (hasLineBreak(hdr.getName()) || hasLineBreak(hdr.getValue()))
+                {
+                    throw new IllegalArgumentException("PEM header must not contain CR/LF");
+                }
+
                 this.write(hdr.getName());
                 this.write(": ");
                 this.write(hdr.getValue());
@@ -134,5 +141,10 @@ public class PemWriter
     {
         this.write("-----END " + type + "-----");
         this.newLine();
+    }
+
+    private static boolean hasLineBreak(String s)
+    {
+        return s != null && (s.indexOf('\r') >= 0 || s.indexOf('\n') >= 0);
     }
 }

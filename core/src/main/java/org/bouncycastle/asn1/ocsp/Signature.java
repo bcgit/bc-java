@@ -38,6 +38,11 @@ public class Signature
     private Signature(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         signatureAlgorithm  = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         signature = (DERBitString)seq.getObjectAt(1);
 

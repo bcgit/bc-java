@@ -42,9 +42,6 @@ public class MLDSACredentialsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_13_MLDSA44 = 9060;
-    private static final int PORT_NO_13_MLDSA65 = 9061;
-    private static final int PORT_NO_13_MLDSA87 = 9062;
 
     static class MLDSAClient
         implements TestProtocolUtil.BlockingCallable
@@ -116,11 +113,8 @@ public class MLDSACredentialsTest
     static class MLDSAServer
         implements TestProtocolUtil.BlockingCallable
     {
-        private final int port;
         private final String protocol;
-        private final KeyStore serverStore;
-        private final char[] keyPass;
-        private final KeyStore trustStore;
+        private final SSLServerSocket sSock;
         private final CountDownLatch latch;
 
         MLDSAServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
@@ -129,36 +123,37 @@ public class MLDSACredentialsTest
             KeyStore trustStore = createKeyStore();
             trustStore.setCertificateEntry("client", trustAnchor);
 
-            this.port = port;
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            keyMgrFact.init(serverStore, keyPass);
+
+            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            trustMgrFact.init(trustStore);
+
+            SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+            serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
+                SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+            this.sSock = (SSLServerSocket)fact.createServerSocket(port);
+
+            SSLUtils.enableAll(sSock);
+            sSock.setNeedClientAuth(true);
+
             this.protocol = protocol;
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
-            this.trustStore = trustStore;
             this.latch = new CountDownLatch(1);
+        }
+
+        int getPort()
+        {
+            return sSock.getLocalPort();
         }
 
         public Exception call() throws Exception
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                keyMgrFact.init(serverStore, keyPass);
-
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                trustMgrFact.init(trustStore);
-
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-                serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-
-                SSLUtils.enableAll(sSock);
-                sSock.setNeedClientAuth(true);
-
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
@@ -191,20 +186,20 @@ public class MLDSACredentialsTest
 
     public void test13_MLDSA44() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA44, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-44"));
+        implTestMLDSACredentials("TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-44"));
     }
 
     public void test13_MLDSA65() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA65, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-65"));
+        implTestMLDSACredentials("TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-65"));
     }
 
     public void test13_MLDSA87() throws Exception
     {
-        implTestMLDSACredentials(PORT_NO_13_MLDSA87, "TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-87"));
+        implTestMLDSACredentials("TLSv1.3", TestUtils.generateMLDSAKeyPair("ML-DSA-87"));
     }
 
-    private void implTestMLDSACredentials(int port, String protocol, KeyPair caKeyPair) throws Exception
+    private void implTestMLDSACredentials(String protocol, KeyPair caKeyPair) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
 
@@ -216,8 +211,9 @@ public class MLDSACredentialsTest
         KeyStore clientKs = createKeyStore();
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new MLDSAServer(port, protocol, serverKs, keyPass, caCert),
-            new MLDSAClient(port, protocol, clientKs, keyPass, caCert));
+        MLDSAServer server = new MLDSAServer(0, protocol, serverKs, keyPass, caCert);
+        TestProtocolUtil.runClientAndServer(server,
+            new MLDSAClient(server.getPort(), protocol, clientKs, keyPass, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException

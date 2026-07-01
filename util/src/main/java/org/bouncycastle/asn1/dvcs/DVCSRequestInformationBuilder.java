@@ -62,9 +62,11 @@ public class DVCSRequestInformationBuilder
         this.version = initialInfo.getVersion();
         this.nonce = initialInfo.getNonce();
         this.requestTime = initialInfo.getRequestTime();
+        this.requester = initialInfo.getRequester();
         this.requestPolicy = initialInfo.getRequestPolicy();
         this.dvcs = initialInfo.getDVCS();
         this.dataLocations = initialInfo.getDataLocations();
+        this.extensions = initialInfo.getExtensions();
     }
 
     public DVCSRequestInformation build()
