@@ -97,9 +97,27 @@ public class CMSAuthenticatedData
         // read the authenticated content info
         //
         ContentInfo encInfo = authData.getEncapsulatedContentInfo();
+        ASN1Encodable eContent = encInfo.getContent();
+        if (eContent == null)
+        {
+            throw new CMSException("Missing content.");
+        }
+        ASN1OctetString encContent;
+        try
+        {
+            encContent = ASN1OctetString.getInstance(eContent);
+        }
+        catch (ClassCastException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
         CMSReadable readable = new CMSProcessableByteArray(
             encInfo.getContentType(),
-            ASN1OctetString.getInstance(encInfo.getContent()).getOctets());
+            encContent.getOctets());
 
         // RFC 6211 Validate Algorithm Protection attribute if present
         verifyAlgorithmProtectionAttribute();
@@ -138,9 +156,15 @@ public class CMSAuthenticatedData
     private AuthenticatedData getAuthenticatedData()
         throws CMSException
     {
+        ASN1Encodable content = contentInfo.getContent();
+        if (content == null)
+        {
+            throw new CMSException("Missing content.");
+        }
+
         try
         {
-            return AuthenticatedData.getInstance(contentInfo.getContent());
+            return AuthenticatedData.getInstance(content);
         }
         catch (ClassCastException e)
         {
