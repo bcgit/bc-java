@@ -33,6 +33,11 @@ public class RevokedInfo
     private RevokedInfo(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.revocationTime = ASN1GeneralizedTime.getInstance(seq.getObjectAt(0));
 
         if (seq.size() > 1)

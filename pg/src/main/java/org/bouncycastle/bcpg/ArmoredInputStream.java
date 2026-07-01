@@ -156,9 +156,9 @@ public class ArmoredInputStream
     int lookAhead = -1;
     boolean isEndOfStream;
 
-    private boolean validateAllowedHeaders = false;
-    private boolean csfRejectPrefixedDashes = true;
-    private List<String> allowedHeaders = defaultAllowedHeaders();
+    private final boolean validateAllowedHeaders;
+    private final boolean csfRejectPrefixedDashes;
+    private final List<String> allowedHeaders;
 
     /**
      * Create a stream for reading a PGP armoured message, parsing up to a header
@@ -189,6 +189,9 @@ public class ArmoredInputStream
         this.in = in;
         this.hasHeaders = hasHeaders;
         this.crc = new FastCRC24();
+        this.validateAllowedHeaders = false;
+        this.csfRejectPrefixedDashes = true;
+        this.allowedHeaders = defaultAllowedHeaders();
 
         if (hasHeaders)
         {
@@ -236,19 +239,27 @@ public class ArmoredInputStream
             return;
         }
 
-        outerloop:
         while (headerLines.hasNext())
         {
             String headerLine = (String)headerLines.next();
-            for (Iterator it = allowedHeaders.iterator(); it.hasNext(); )
+            if (rejectHeaderLine(allowedHeaders, headerLine))
             {
-                if (headerLine.startsWith((String)it.next() + ": "))
-                {
-                    continue outerloop;
-                }
+                throw new ArmoredInputException(
+                    "Illegal ASCII armor header line in clearsigned message encountered: " + headerLine);
             }
-            throw new ArmoredInputException("Illegal ASCII armor header line in clearsigned message encountered: " + headerLine);
         }
+    }
+
+    private static boolean rejectHeaderLine(List<String> allowedHeaders, String headerLine)
+    {
+        for (Iterator it = allowedHeaders.iterator(); it.hasNext();)
+        {
+            if (headerLine.startsWith((String)it.next() + ": "))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public int available()

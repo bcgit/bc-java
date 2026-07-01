@@ -334,6 +334,11 @@ public class GetInstanceTest
             ASN1Integer.ONE, ASN1Integer.ONE, ASN1Integer.ONE, ASN1Integer.ONE}));   // SignerInfo is 5..7
         checkBadSequenceSize("PbkdMacIntegrityCheck", new DERSequence(
             new ASN1ObjectIdentifier("1.2.3.4")));                      // PbkdMacIntegrityCheck is exactly 3
+        checkBadSequenceSize("RevokedInfo", new DERSequence());         // RevokedInfo is at least 1
+        checkBadSequenceSize("ocsp.Signature", new DERSequence(
+            new ASN1ObjectIdentifier("1.2.3.4")));                      // OCSP Signature is at least 2
+        checkBadSequenceSize("SingleResponse", new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.2.3.4"), new ASN1ObjectIdentifier("1.2.3.4")}));  // SingleResponse is at least 3
     }
 
     private void checkBadSequenceSize(String name, ASN1Sequence seq)
@@ -351,6 +356,18 @@ public class GetInstanceTest
             else if (name.equals("PbkdMacIntegrityCheck"))
             {
                 PbkdMacIntegrityCheck.getInstance(seq);
+            }
+            else if (name.equals("RevokedInfo"))
+            {
+                RevokedInfo.getInstance(seq);
+            }
+            else if (name.equals("ocsp.Signature"))
+            {
+                Signature.getInstance(seq);
+            }
+            else if (name.equals("SingleResponse"))
+            {
+                SingleResponse.getInstance(seq);
             }
             else
             {

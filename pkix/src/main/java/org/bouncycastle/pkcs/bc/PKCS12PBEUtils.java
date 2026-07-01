@@ -101,7 +101,7 @@ class PKCS12PBEUtils
     {
         PKCS12ParametersGenerator pGen = new PKCS12ParametersGenerator(digest);
 
-        pGen.init(PKCS12ParametersGenerator.PKCS12PasswordToBytes(password), pbeParams.getIV(), pbeParams.getIterations().intValue());
+        pGen.init(PKCS12ParametersGenerator.PKCS12PasswordToBytes(password), pbeParams.getIV(), PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
         final KeyParameter keyParam = (KeyParameter)pGen.generateDerivedMacParameters(digest.getDigestSize() * 8);
 
@@ -200,7 +200,7 @@ class PKCS12PBEUtils
     {
         PKCS12ParametersGenerator pGen = new PKCS12ParametersGenerator(digest);
 
-        pGen.init(PKCS12ParametersGenerator.PKCS12PasswordToBytes(password), pbeParams.getIV(), pbeParams.getIterations().intValue());
+        pGen.init(PKCS12ParametersGenerator.PKCS12PasswordToBytes(password), pbeParams.getIV(), PKCS12Util.validateIterationCount(pbeParams.getIterations()));
 
         CipherParameters params;
 
