@@ -104,7 +104,17 @@ public class XMSSSigner
     public boolean verifySignature(byte[] message, byte[] signature)
     {
         /* parse signature and public key */
-        XMSSSignature sig = new XMSSSignature.Builder(params).withSignature(signature).build();
+        XMSSSignature sig;
+        try
+        {
+            sig = new XMSSSignature.Builder(params).withSignature(signature).build();
+        }
+        catch (RuntimeException e)
+        {
+            // malformed/truncated signature: do not propagate ArrayIndexOutOfBoundsException
+            // (short header) or IllegalArgumentException (wrong length)
+            return false;
+        }
                 /* generate public key */
 
         int index = sig.getIndex();

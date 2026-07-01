@@ -47,6 +47,11 @@ class NewHope
 
     public static void sharedB(SecureRandom rand, byte[] sharedKey, byte[] send, byte[] received)
     {
+        if (received.length != SENDA_BYTES)
+        {
+            throw new IllegalArgumentException("'received' has invalid length");
+        }
+
         short[] pkA = new short[Params.N];
         byte[] seed = new byte[Params.SEED_BYTES];
         decodeA(pkA, seed, received);
@@ -92,6 +97,11 @@ class NewHope
 
     public static void sharedA(byte[] sharedKey, short[] sk, byte[] received)
     {
+        if (received.length != SENDB_BYTES)
+        {
+            throw new IllegalArgumentException("'received' has invalid length");
+        }
+
         short[] bp = new short[Params.N];
         short[] c = new short[Params.N];
         decodeB(bp, c, received);
