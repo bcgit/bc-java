@@ -16,6 +16,10 @@ public class NTRULPRimeKEMExtractor
     @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
+        if (encapsulation.length != getEncapsulationLength())
+        {
+            throw new IllegalArgumentException("encapsulation wrong length");
+        }
         NTRULPRimeParameters params = privateKey.getParameters();
 
         int p = params.getP();

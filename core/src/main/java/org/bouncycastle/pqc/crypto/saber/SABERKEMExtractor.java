@@ -21,6 +21,10 @@ public class SABERKEMExtractor
 
     public byte[] extractSecret(byte[] encapsulation)
     {
+        if (encapsulation.length != getEncapsulationLength())
+        {
+            throw new IllegalArgumentException("encapsulation wrong length");
+        }
         byte[] session_key = new byte[engine.getSessionKeySize()];
         engine.crypto_kem_dec(session_key, encapsulation, ((SABERPrivateKeyParameters)key).getPrivateKey());
         return session_key;

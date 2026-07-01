@@ -53,6 +53,8 @@ public class AllTests
         suite.addTestSuite(HAETAETest.class);
         suite.addTestSuite(SDitHTest.class);
         suite.addTestSuite(AIMerTest.class);
+        suite.addTestSuite(PublicKeyLengthValidationTest.class);
+        suite.addTestSuite(PqcMalformedInputTest.class);
 
         return new BCTestSetup(suite);
     }
