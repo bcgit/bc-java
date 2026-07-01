@@ -37,6 +37,11 @@ public class TimeStampResp
 
         Enumeration e = seq.getObjects();
 
+        if (!e.hasMoreElements())
+        {
+            throw new IllegalArgumentException("sequence too short to be a TimeStampResp");
+        }
+
         // status
         pkiStatusInfo = PKIStatusInfo.getInstance(e.nextElement());
 
