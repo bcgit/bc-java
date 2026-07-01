@@ -25,6 +25,10 @@ public class BIKEKEMExtractor
     @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
+        if (encapsulation.length != getEncapsulationLength())
+        {
+            throw new IllegalArgumentException("encapsulation wrong length");
+        }
         byte[] session_key = new byte[engine.getSessionKeySize()];
         BIKEPrivateKeyParameters secretKey = (BIKEPrivateKeyParameters)key;
 
