@@ -181,7 +181,7 @@ public class IESEngine
         int inLen)
         throws InvalidCipherTextException
     {
-        byte[] C = null, K = null, K1 = null, K2 = null;
+        byte[] C, K, K1, K2;
         int len;
 
         if (cipher == null)
@@ -221,16 +221,16 @@ public class IESEngine
             System.arraycopy(K, 0, K1, 0, K1.length);
             System.arraycopy(K, K1.length, K2, 0, K2.length);
 
-            // If iv provided use it to initialise the cipher
+            CipherParameters cp = new KeyParameter(K1);
+
+            // If IV provide use it to initialize the cipher
             if (IV != null)
             {
-                cipher.init(true, new ParametersWithIV(new KeyParameter(K1), IV));
+                cp = new ParametersWithIV(cp, IV);
             }
-            else
-            {
-                cipher.init(true, new KeyParameter(K1));    
-            }
-            
+
+            cipher.init(true, cp);
+
             C = new byte[cipher.getOutputSize(inLen)];
             len = cipher.processBytes(in, inOff, inLen, C, 0);
             len += cipher.doFinal(C, len);
@@ -250,7 +250,7 @@ public class IESEngine
         byte[] T = new byte[mac.getMacSize()];
 
         mac.init(new KeyParameter(K2));
-        mac.update(C, 0, C.length);
+        mac.update(C, 0, len);
         if (P2 != null)
         {
             mac.update(P2, 0, P2.length);
@@ -309,7 +309,7 @@ public class IESEngine
         }
         else
         {
-            // Block cipher mode.        
+            // Block cipher mode.
             K1 = new byte[((IESWithCipherParameters)param).getCipherKeySize() / 8];
             K2 = new byte[param.getMacKeySize() / 8];
             K = new byte[K1.length + K2.length];
@@ -320,7 +320,7 @@ public class IESEngine
 
             CipherParameters cp = new KeyParameter(K1);
 
-            // If IV provide use it to initialize the cipher
+            // If IV provided use it to initialize the cipher
             if (IV != null)
             {
                 cp = new ParametersWithIV(cp, IV);
@@ -371,6 +371,9 @@ public class IESEngine
         }
         else
         {
+            // MAC must be verified above before this doFinal: it removes padding (e.g. PKCS7), and a
+            // padding failure here is distinguishable from a MAC failure, which would be a CBC padding oracle.
+            // Only authenticated ciphertext reaches this point.
             len += cipher.doFinal(M, len);
 
             return Arrays.copyOfRange(M, 0, len);
@@ -418,12 +421,12 @@ public class IESEngine
             }
         }
 
-        // Compute the common value and convert to byte array. 
+        // Compute the common value and convert to byte array.
         agree.init(privParam);
         BigInteger z = agree.calculateAgreement(pubParam);
         byte[] Z = BigIntegers.asUnsignedByteArray(agree.getFieldSize(), z);
 
-        // Create input to KDF.  
+        // Create input to KDF.
         if (V.length != 0)
         {
             byte[] VZ = Arrays.concatenate(V, Z);

@@ -55,6 +55,11 @@ public class SingleResponse
     private SingleResponse(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.certID = CertID.getInstance(seq.getObjectAt(0));
         this.certStatus = CertStatus.getInstance(seq.getObjectAt(1));
         this.thisUpdate = ASN1GeneralizedTime.getInstance(seq.getObjectAt(2));

@@ -1027,6 +1027,22 @@ public class GetInstanceTest
         // OtherRevocationInfoFormat needs 2 mandatory fields (otherRevInfoFormat OID, otherRevInfo ANY).
         checkTooShort(OtherRevocationInfoFormat.class, new DERSequence(new ASN1Encodable[]{
             new ASN1ObjectIdentifier("1.1")}));
+
+        // Attribute needs 2 mandatory fields (attrType OID, attrValues SET OF).
+        checkTooShort(Attribute.class, new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.1")}));
+
+        // cmp.CertStatus needs 2 mandatory fields (certHash OCTET STRING, certReqId INTEGER).
+        checkTooShort(org.bouncycastle.asn1.cmp.CertStatus.class, new DERSequence(new ASN1Encodable[]{
+            new DEROctetString(new byte[1])}));
+
+        // RecipientEncryptedKey needs 2 mandatory fields (rid, encryptedKey).
+        checkTooShort(RecipientEncryptedKey.class, new DERSequence(new ASN1Encodable[]{
+            new DEROctetString(new byte[1])}));
+
+        // OtherRecipientInfo needs 2 mandatory fields (oriType OID, oriValue ANY).
+        checkTooShort(OtherRecipientInfo.class, new DERSequence(new ASN1Encodable[]{
+            new ASN1ObjectIdentifier("1.1")}));
     }
 
     private void checkTooShort(Class clazz, DERSequence tooShort)

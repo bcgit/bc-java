@@ -9,6 +9,7 @@ import java.security.Security;
 import org.bouncycastle.bcpg.ArmoredInputException;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -114,9 +115,11 @@ public class ArmoredInputStreamCSFRejectPrefixedDashTest
             bOut.write(aIn.read());
         }
 
+        String result = Strings.fromUTF8ByteArray(bOut.toByteArray());
+
         // The leading dash is no longer silently dropped - the bytes are surfaced verbatim,
         // so a signature check over the recovered text fails instead of spuriously passing.
-        isTrue("Malformed payload MUST be returned unaltered", bOut.toString().startsWith("-Xpayload"));
+        isTrue("Malformed payload MUST be returned unaltered", result.startsWith("-Xpayload"));
     }
 
     private void lenientStreamStillDetectsArmorBoundary()
@@ -157,9 +160,11 @@ public class ArmoredInputStreamCSFRejectPrefixedDashTest
             bOut.write(ch);
         }
 
+        String result = Strings.fromUTF8ByteArray(bOut.toByteArray());
+
         isTrue("clear-text section must stop at the armor boundary, not consume the signature",
-            !bOut.toString().contains("BEGIN PGP SIGNATURE"));
+            !result.contains("BEGIN PGP SIGNATURE"));
         isTrue("malformed lone-dash payload must be surfaced verbatim",
-            bOut.toString().startsWith("payload\n-\n"));
+            result.startsWith("payload\n-\n"));
     }
 }
