@@ -50,6 +50,7 @@ public class RegressionTest
         new PolicyURITest(),
         new ArmoredOutputStreamUTF8Test(),
         new UnrecognizableSubkeyParserTest(),
+        new PGPObjectFactorySecretSubkeyTest(),
         new IgnoreUnknownEncryptedSessionKeys(),
         new PGPEncryptedDataTest(),
         new PGPAeadTest(),
