@@ -221,9 +221,15 @@ public class CMSSignedData
     private SignedData getSignedData()
         throws CMSException
     {
+        ASN1Encodable content = contentInfo.getContent();
+        if (content == null)
+        {
+            throw new CMSException("Missing content.");
+        }
+
         try
         {
-            return SignedData.getInstance(contentInfo.getContent());
+            return SignedData.getInstance(content);
         }
         catch (ClassCastException e)
         {

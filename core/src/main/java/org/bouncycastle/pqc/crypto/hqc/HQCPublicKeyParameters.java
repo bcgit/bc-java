@@ -10,6 +10,12 @@ public class HQCPublicKeyParameters
     public HQCPublicKeyParameters(HQCParameters params, byte[] pk)
     {
         super(true, params);
+
+        if (pk.length != params.getPublicKeyBytes())
+        {
+            throw new IllegalArgumentException("'pk' has invalid length");
+        }
+
         this.pk = Arrays.clone(pk);
     }
 
