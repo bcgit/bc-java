@@ -256,6 +256,17 @@ public class Properties
      */
     public static final String BKS_ENABLE_V1 = "org.bouncycastle.bks.enable_v1";
 
+    /**
+     * Upper bound on the PKCS#12-PBE iteration count honoured when loading a BKS keystore. The
+     * count drives the integrity-MAC key derivation in {@code BcKeyStoreSpi.engineLoad} (and the
+     * per-entry sealed-key decryption), and is read from the (not-yet-verified) keystore ahead of
+     * the HMAC integrity check, so an unbounded value is a pre-integrity CPU-exhaustion vector -
+     * the analogue of {@link #BCFKS_MAX_IT_COUNT} / {@link #PKCS12_MAX_IT_COUNT} for the BKS
+     * format (the sibling UBER store already caps its own count). Default 1048576 (1 << 20); the
+     * BKS writer uses ~1024-2047. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String BKS_MAX_IT_COUNT = "org.bouncycastle.bks.max_it_count";
+
     private Properties()
     {
     }
