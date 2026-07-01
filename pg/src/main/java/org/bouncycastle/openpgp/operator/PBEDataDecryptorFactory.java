@@ -57,7 +57,11 @@ public abstract class PBEDataDecryptorFactory
     public byte[] makeKeyFromPassPhrase(int keyAlgorithm, S2K s2k)
         throws PGPException
     {
-        return PGPUtil.makeKeyFromPassPhrase(calculatorProvider, s2kCalculator, keyAlgorithm, s2k, passPhrase);
+        if (s2k.getType() == S2K.ARGON_2)
+        {
+            return PGPUtil.makeKeyFromPassPhrase(s2kCalculator, keyAlgorithm, s2k, passPhrase);
+        }
+        return PGPUtil.makeKeyFromPassPhrase(new PGPUtil.HashBasedS2KCalculator(calculatorProvider.get(s2k.getHashAlgorithm())), keyAlgorithm, s2k, passPhrase);
     }
 
     /**

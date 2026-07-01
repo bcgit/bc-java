@@ -70,6 +70,12 @@ public class NameConstraints
 
     private GeneralSubtree[] createArray(ASN1Sequence subtree)
     {
+        // GeneralSubtrees ::= SEQUENCE SIZE (1..MAX) OF GeneralSubtree (RFC 5280 sec. 4.2.1.10)
+        if (subtree.size() < 1)
+        {
+            throw new IllegalArgumentException("sequence may not be empty");
+        }
+
         GeneralSubtree[] ar = new GeneralSubtree[subtree.size()];
 
         for (int i = 0; i != ar.length; i++)

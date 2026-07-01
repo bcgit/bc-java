@@ -16,6 +16,7 @@ import io.grpc.stub.StreamObserver;
 import mls_client.MLSClientGrpc;
 import mls_client.MlsClient;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.LifeTime;
@@ -294,7 +295,7 @@ public class MLSClientImpl
     private Proposal proposalFromDescription(MlsCipherSuite suite, byte[] groupID, TreeKEMPublicKey tree, MlsClient.ProposalDescription desc)
         throws Exception
     {
-        SecureRandom random = new SecureRandom();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
         switch (desc.getProposalType().toStringUtf8())
         {
         case "add":
@@ -684,7 +685,7 @@ public class MLSClientImpl
         }
 
         byte[] leafSecret = new byte[suite.getKDF().getHashLength()];
-        SecureRandom random = new SecureRandom();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
         random.nextBytes(leafSecret);
 
         Group.GroupWithMessage gwm = Group.externalJoin(
@@ -1189,7 +1190,7 @@ public class MLSClientImpl
         boolean forcePath = request.getForcePath();
         boolean inlineTree = !request.getExternalTree();
 
-        SecureRandom random = new SecureRandom();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
         byte[] leafSecret = new byte[entry.group.getSuite().getKDF().getHashLength()];
         random.nextBytes(leafSecret);
         Group.GroupWithMessage gwm = entry.group.commit(
@@ -1413,7 +1414,7 @@ public class MLSClientImpl
             throw new Exception("Commit included among proposals");
         }
 
-        SecureRandom random = new SecureRandom();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
         byte[] leafSecret = new byte[entry.group.getSuite().getKDF().getHashLength()];
         random.nextBytes(leafSecret);
         Group.CommitOptions commitOptions = new Group.CommitOptions(new ArrayList<Proposal>(), inlineTree, forcePath, null);
@@ -1714,7 +1715,7 @@ public class MLSClientImpl
         MlsCipherSuite suite = entry.group.getSuite();
         KeyPackageWithSecrets kpSK = newKeyPackage(suite, identity);
         byte[] leafSecret = new byte[suite.getKDF().getHashLength()];
-        SecureRandom random = new SecureRandom();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
         random.nextBytes(leafSecret);
 
         Group.GroupWithMessage gwm = entry.group.createBranch(

@@ -1039,10 +1039,46 @@ public class NewSignedDataTest
         verifySignatures(s, null);
     }
 
+    public void testEmptySignersRejected()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        certList.add(_origCert);
+        Store certs = new JcaCertStore(certList);
+
+        // Degenerate / certs-only SignedData: certificates but no SignerInfos.
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(new CMSProcessableByteArray("attacker payload".getBytes()), true);
+        s = new CMSSignedData(s.getEncoded());
+
+        assertTrue("expected no signers", s.getSignerInfos().getSigners().isEmpty());
+
+        SignerInformationVerifierProvider vProv = new SignerInformationVerifierProvider()
+        {
+            public SignerInformationVerifier get(SignerId signerId)
+                throws OperatorCreationException
+            {
+                return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert);
+            }
+        };
+
+        try
+        {
+            s.verifySignatures(vProv);
+            fail("verifySignatures must reject a SignedData with no signers");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("no signers present in SignedData", e.getMessage());
+        }
+    }
+
     public void testEmptyContent()
         throws Exception
     {
-        
+
         try
         {
             new CMSSignedData(new byte[0]);
@@ -1454,11 +1490,11 @@ public class NewSignedDataTest
 
         SignerInfo sInew = new SignerInfo(sI.getSID(), new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.ripemd128, DERNull.INSTANCE), sI.getAuthenticatedAttributes(), sI.getDigestEncryptionAlgorithm(), sI.getEncryptedDigest(), sI.getUnauthenticatedAttributes());
 
-        verifySignatures(getCorruptedSignedData(sd, sInew), false, "CMS Algorithm Identifier Protection check failed for digestAlgorithm");
+        verifySignatures(getCorruptedSignedData(sd, sInew), false, "CMS Algorithm Protection check failed for digestAlgorithm");
 
         sInew = new SignerInfo(sI.getSID(), sI.getDigestAlgorithm(), sI.getAuthenticatedAttributes(), new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS), sI.getEncryptedDigest(), sI.getUnauthenticatedAttributes());
 
-        verifySignatures(getCorruptedSignedData(sd, sInew), false, "CMS Algorithm Identifier Protection check failed for signatureAlgorithm");
+        verifySignatures(getCorruptedSignedData(sd, sInew), false, "CMS Algorithm Protection check failed for signatureAlgorithm");
 
         // check equivalence
         AlgorithmIdentifier newAlgId = new AlgorithmIdentifier(sI.getDigestAlgorithm().getAlgorithm());

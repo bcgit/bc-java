@@ -65,6 +65,25 @@ import org.bouncycastle.x509.X509CertificatePair;
  */
 public class LDAPStoreHelper
 {
+    // RFC 2254 LDAP filter escaping table (mirrors the jdk1.4 X509LDAPCertStoreSpi). DN-derived
+    // values are escaped before being concatenated into a DirContext.search() filter, to prevent
+    // LDAP filter injection from a crafted certificate Subject/Issuer (CVE-2023-33201). The main-Java
+    // build applies this via LDAPUtils.parseDN, but this jdk1.4 overlay carries its own parseDN and
+    // was missed by that fix (the jdk14 Ant build overlays this file over the patched main-Java one).
+    private static final String[] FILTER_ESCAPE_TABLE = new String['\\' + 1];
+
+    static
+    {
+        for (char c = 0; c < FILTER_ESCAPE_TABLE.length; c++)
+        {
+            FILTER_ESCAPE_TABLE[c] = String.valueOf(c);
+        }
+        FILTER_ESCAPE_TABLE['*'] = "\\2a";
+        FILTER_ESCAPE_TABLE['('] = "\\28";
+        FILTER_ESCAPE_TABLE[')'] = "\\29";
+        FILTER_ESCAPE_TABLE['\\'] = "\\5c";
+        FILTER_ESCAPE_TABLE[0] = "\\00";
+    }
 
     // TODO: cache results
 
@@ -149,7 +168,37 @@ public class LDAPStoreHelper
         {
             temp = temp.substring(0, temp.length() - 1);
         }
-        return temp;
+        return filterEncode(temp);
+    }
+
+    private String filterEncode(String value)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        // make buffer roomy
+        StringBuffer encodedValue = new StringBuffer(value.length() * 2);
+
+        int length = value.length();
+
+        for (int i = 0; i < length; i++)
+        {
+            char c = value.charAt(i);
+
+            if (c < FILTER_ESCAPE_TABLE.length)
+            {
+                encodedValue.append(FILTER_ESCAPE_TABLE[c]);
+            }
+            else
+            {
+                // default: add the char
+                encodedValue.append(c);
+            }
+        }
+
+        return encodedValue.toString();
     }
 
     private Set createCerts(List list, X509CertStoreSelector xselector)
