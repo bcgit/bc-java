@@ -71,7 +71,7 @@ public class IvAlgorithmParameters
         //
         // check that we don't have a DER encoded octet string
         //
-        if ((params.length % 8) != 0
+        if (params.length >= 2 && (params.length % 8) != 0
             && params[0] == 0x04 && params[1] == params.length - 2)
         {
             ASN1OctetString oct = (ASN1OctetString)ASN1Primitive.fromByteArray(params);

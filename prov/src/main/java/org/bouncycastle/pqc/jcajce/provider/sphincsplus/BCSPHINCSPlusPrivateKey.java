@@ -7,13 +7,13 @@ import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusPrivateKey;
 import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusPublicKey;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
+import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 public class BCSPHINCSPlusPrivateKey
@@ -68,7 +68,7 @@ public class BCSPHINCSPlusPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
     }
 
     /**

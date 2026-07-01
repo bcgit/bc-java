@@ -155,7 +155,7 @@ public class EAXTest
 
         randomTests();
         AEADTestUtil.testReset(this, new EAXBlockCipher(AESEngine.newInstance()), new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));
-        AEADTestUtil.testTampering(this, eax, new AEADParameters(new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testTampering(this, new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testOutputSizes(this, new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
         AEADTestUtil.testBufferSizeChecks(this, new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(
@@ -209,9 +209,20 @@ public class EAXTest
         runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
         runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
 
-        // key reuse test
+        // Key reuse: re-initialising for encryption with the same key+nonce (here via a null key,
+        // i.e. key re-use) is now rejected (nonce reuse is catastrophic for EAX). Re-init for
+        // decryption with the reused key stays allowed.
         parameters = new AEADParameters(null, macSize, n, a);
-        encEax.init(true, parameters);
+        try
+        {
+            encEax.init(true, parameters);
+            fail("EAX nonce reuse not detected on re-init for encryption in test " + count);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong EAX nonce-reuse message: " + e.getMessage(),
+                "cannot reuse nonce for EAX encryption".equals(e.getMessage()));
+        }
         decEax.init(false, parameters);
 
         runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);

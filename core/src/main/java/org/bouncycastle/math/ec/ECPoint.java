@@ -482,32 +482,15 @@ public abstract class ECPoint
      */
     public byte[] getEncoded(boolean compressed)
     {
-        if (this.isInfinity())
+        if (isInfinity())
         {
             return new byte[1];
         }
 
-        ECPoint normed = normalize();
-
-        byte[] X = normed.getXCoord().getEncoded();
-
-        if (compressed)
-        {
-            byte[] PO = new byte[X.length + 1];
-            PO[0] = (byte)(normed.getCompressionYTilde() ? 0x03 : 0x02);
-            System.arraycopy(X, 0, PO, 1, X.length);
-            return PO;
-        }
-
-        byte[] Y = normed.getYCoord().getEncoded();
-
-        {
-            byte[] PO = new byte[X.length + Y.length + 1];
-            PO[0] = 0x04;
-            System.arraycopy(X, 0, PO, 1, X.length);
-            System.arraycopy(Y, 0, PO, X.length + 1, Y.length);
-            return PO;
-        }
+        int encodedLength = getEncodedLength(compressed);
+        byte[] buf = new byte[encodedLength];
+        encodeTo(compressed, buf, 0);
+        return buf;
     }
 
     public int getEncodedLength(boolean compressed)

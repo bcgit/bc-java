@@ -6,11 +6,13 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.EthereumIESEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
@@ -25,10 +27,12 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.IESParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -104,7 +108,7 @@ public class EthereumIESTest
 
         byte[] out1 = i1.processBlock(message, 0, message.length);
 
-        if (!areEqual(out1, Hex.decode("fb493cdaaa2938daaa2fbbf0886f3b9575c810db240eb9f4adb9089b")))
+        if (!areEqual(out1, Hex.decode("1cf75e9e93f8812e7f3da0ad3491b9690431f2b65260af65e9d7df17")))
         {
             fail("stream cipher test failed on enc");
         }
@@ -469,9 +473,101 @@ public class EthereumIESTest
         }
     }
 
+    // Regression for the static-key stream-mode MAC-key layout (the EthereumIESEngine sibling of the
+    // IESEngine fix): in static-static stream mode the MAC key must not be recoverable from the
+    // keystream. The legacy layout placed the keystream K1 before the MAC key K2, so a single
+    // known-plaintext leak of K1 (= M ^ C) also exposed the MAC key of any shorter message - letting
+    // an attacker forge a valid ciphertext+tag from one observation. With K2 now taken from a fixed
+    // prefix of the KDF output, that slice of the leaked keystream is no longer the MAC key, so the
+    // constructed forgery must be rejected. The Ethereum variant keys the HMAC with SHA-256(K2) and
+    // also absorbs the IV and commonMac - all public, so the forgery just replays them verbatim.
+    private void doForgeryTest()
+        throws Exception
+    {
+        BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
+
+        ECCurve.Fp curve = new ECCurve.Fp(
+            new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
+            new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
+            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16), // b
+            n, ECConstants.ONE);
+
+        ECDomainParameters params = new ECDomainParameters(curve,
+            curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")), n);
+
+        ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
+            new BigInteger("651056770906015076056810763456358567190100156695615665659"), params);
+        ECPublicKeyParameters pubKey = new ECPublicKeyParameters(
+            curve.decodePoint(Hex.decode("0262b12d60690cdcf330babab6e69763b471f994dd702d16a5")), params);
+
+        AsymmetricCipherKeyPair p1 = new AsymmetricCipherKeyPair(pubKey, priKey);
+        AsymmetricCipherKeyPair p2 = new AsymmetricCipherKeyPair(pubKey, priKey);
+
+        byte[] commonMac = Hex.decode("0262b12d60690cdcf330baba03188da80eb03090f67cbf2043a18800f4ff0a0262b12d60690cdcf330bab6e69763b471f994dd2d16a5fd82ff1012b6e69763b4");
+        byte[] iv = new byte[32];
+
+        int macKeyBytes = 8; // 64-bit MAC key
+        // no encoding vector, so the MAC is taken over (IV || ciphertext || commonMac) - keeps the forgery construction simple
+        CipherParameters param = new ParametersWithIV(new IESParameters(new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8 }, null, macKeyBytes * 8), iv);
+
+        // 1. attacker observes one known-plaintext ciphertext of length L (>= macKeyBytes)
+        byte[] knownPt = Hex.decode("000102030405060708090a0b0c0d0e0f10111213"); // L = 20
+        EthereumIESEngine enc = new EthereumIESEngine(new ECDHBasicAgreement(),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()), new HMac(new SHA1Digest()), commonMac);
+        enc.init(true, p1.getPrivate(), p2.getPublic(), param);
+        byte[] out = enc.processBlock(knownPt, 0, knownPt.length); // V absent in static-static mode: out = C || T
+
+        byte[] leaked = new byte[knownPt.length]; // recovered keystream = M ^ C over the L plaintext bytes
+        for (int i = 0; i != leaked.length; i++)
+        {
+            leaked[i] = (byte)(knownPt[i] ^ out[i]);
+        }
+
+        // 2. forge a shorter message, assuming the legacy keystream-then-MAC-key layout
+        int forgeLen = knownPt.length - macKeyBytes; // L'
+        byte[] forgedPt = Hex.decode("ffffffffffffffffffffffff"); // 12 bytes (= L')
+        byte[] forgedC = new byte[forgeLen];
+        for (int i = 0; i != forgeLen; i++)
+        {
+            forgedC[i] = (byte)(forgedPt[i] ^ leaked[i]); // K1' = leaked[0..L']
+        }
+
+        // K2' = leaked[L'..L'+macKeyBytes]; the Ethereum variant keys the HMAC with SHA-256(K2)
+        byte[] K2 = Arrays.copyOfRange(leaked, forgeLen, forgeLen + macKeyBytes);
+        Digest hash = SHA256Digest.newInstance();
+        byte[] K2hash = new byte[hash.getDigestSize()];
+        hash.update(K2, 0, K2.length);
+        hash.doFinal(K2hash, 0);
+
+        HMac hmac = new HMac(new SHA1Digest());
+        hmac.init(new KeyParameter(K2hash));
+        hmac.update(iv, 0, iv.length);               // IV is absorbed first (Ethereum change)
+        hmac.update(forgedC, 0, forgedC.length);
+        hmac.update(commonMac, 0, commonMac.length); // commonMac is appended (Ethereum change)
+        byte[] forgedTag = new byte[hmac.getMacSize()];
+        hmac.doFinal(forgedTag, 0);
+
+        byte[] forged = Arrays.concatenate(forgedC, forgedTag);
+
+        // 3. the recipient must reject the forgery
+        EthereumIESEngine dec = new EthereumIESEngine(new ECDHBasicAgreement(),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()), new HMac(new SHA1Digest()), commonMac);
+        dec.init(false, p2.getPrivate(), p1.getPublic(), param);
+        try
+        {
+            dec.processBlock(forged, 0, forged.length);
+            fail("static-key stream EthereumIES accepted a cross-message MAC forgery");
+        }
+        catch (InvalidCipherTextException expected)
+        {
+            // expected: K2 is a fixed prefix of the KDF output, not a recoverable slice of the keystream
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        doForgeryTest();
         doStaticTest(TWOFISH_IV);
         doShortTest(null);
 

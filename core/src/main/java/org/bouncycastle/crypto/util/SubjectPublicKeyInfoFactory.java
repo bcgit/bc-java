@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
+import org.bouncycastle.crypto.params.CMCEPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.FrodoKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
@@ -94,6 +95,14 @@ public class SubjectPublicKeyInfoFactory
             MLKEMPublicKeyParameters params = (MLKEMPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
+        }
+        else if (publicKey instanceof CMCEPublicKeyParameters)
+        {
+            CMCEPublicKeyParameters params = (CMCEPublicKeyParameters)publicKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.cmceOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }

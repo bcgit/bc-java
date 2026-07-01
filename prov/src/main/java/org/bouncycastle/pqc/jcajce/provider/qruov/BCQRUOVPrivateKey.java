@@ -57,7 +57,8 @@ public class BCQRUOVPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // QR-UOV private keys require package-private engine routines to expand the public key from seeds.
+        return getAlgorithm().hashCode();
     }
 
     public final String getAlgorithm()

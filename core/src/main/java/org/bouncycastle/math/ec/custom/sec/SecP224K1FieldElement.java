@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.raw.Nat224;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SecP224K1FieldElement extends ECFieldElement.AbstractFp
@@ -58,6 +59,19 @@ public class SecP224K1FieldElement extends ECFieldElement.AbstractFp
         return Nat224.toBigInteger(x);
     }
 
+    public void encodeTo(byte[] buf, int off)
+    {
+        for (int i = 6; i >= 0; --i)
+        {
+            Pack.intToBigEndian(x[i], buf, off + ((6 - i) << 2));
+        }
+    }
+
+    public int getEncodedLength()
+    {
+        return 28;
+    }
+
     public String getFieldName()
     {
         return "SecP224K1Field";
@@ -65,7 +79,7 @@ public class SecP224K1FieldElement extends ECFieldElement.AbstractFp
 
     public int getFieldSize()
     {
-        return Q.bitLength();
+        return 224;
     }
 
     public ECFieldElement add(ECFieldElement b)

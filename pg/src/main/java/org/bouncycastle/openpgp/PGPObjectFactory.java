@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.UnknownPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
@@ -179,7 +180,15 @@ public class PGPObjectFactory
         }
 
         int nextTag = in.nextPacketTag();
-        UnknownPacket unknownPacket = (UnknownPacket)in.readPacket();
+        Packet packet = in.readPacket();
+        if (!(packet instanceof UnknownPacket))
+        {
+            // A tag not handled by the switch above but decoded into a typed Packet by
+            // BCPGInputStream.readPacket() (e.g. SECRET_SUBKEY) would otherwise throw an
+            // unchecked ClassCastException here, escaping this method's throws IOException contract.
+            throw new IOException("unexpected packet in stream: " + packet);
+        }
+        UnknownPacket unknownPacket = (UnknownPacket)packet;
         if (throwForUnknownCriticalPackets && unknownPacket.isCritical())
         {
             // Leave the error message intact for backwards compatibility

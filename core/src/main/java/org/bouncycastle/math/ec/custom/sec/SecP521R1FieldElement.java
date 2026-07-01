@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SecP521R1FieldElement extends ECFieldElement.AbstractFp
@@ -54,6 +55,21 @@ public class SecP521R1FieldElement extends ECFieldElement.AbstractFp
         return Nat.toBigInteger(17, x);
     }
 
+    public void encodeTo(byte[] buf, int off)
+    {
+        Pack.intToBigEndian_Low(x[16], buf, off, 2);
+        off += 2;
+        for (int i = 15; i >= 0; --i)
+        {
+            Pack.intToBigEndian(x[i], buf, off + ((15 - i) << 2));
+        }
+    }
+
+    public int getEncodedLength()
+    {
+        return 66;
+    }
+
     public String getFieldName()
     {
         return "SecP521R1Field";
@@ -61,7 +77,7 @@ public class SecP521R1FieldElement extends ECFieldElement.AbstractFp
 
     public int getFieldSize()
     {
-        return Q.bitLength();
+        return 521;
     }
 
     public ECFieldElement add(ECFieldElement b)

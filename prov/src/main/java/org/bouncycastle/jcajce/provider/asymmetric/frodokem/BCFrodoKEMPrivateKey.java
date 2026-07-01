@@ -5,7 +5,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.crypto.kems.frodo.FrodoKEMEngine;
 import org.bouncycastle.crypto.params.FrodoKEMPrivateKeyParameters;
+import org.bouncycastle.crypto.params.FrodoKEMPublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jcajce.interfaces.FrodoKEMPrivateKey;
@@ -65,7 +67,15 @@ public class BCFrodoKEMPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCFrodoKEMPublicKey getPublicKey()
+    {
+        FrodoKEMEngine engine = FrodoKEMEngine.getInstance(params.getParameters());
+        int sBytes = params.getParameters().getSessionKeySize() / 8;
+        byte[] pk = Arrays.copyOfRange(params.getPrivateKey(), sBytes, sBytes + engine.getPublicKeySize());
+        return new BCFrodoKEMPublicKey(new FrodoKEMPublicKeyParameters(params.getParameters(), pk));
     }
 
     /**

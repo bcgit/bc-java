@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.snova;
 
-import org.bouncycastle.util.GF16;
+import org.bouncycastle.math.raw.GF16;
 
 class MapGroup1
 {

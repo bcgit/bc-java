@@ -9,6 +9,7 @@ class NTRUPlusEngine
     private static final short QINV = 12929;
     private static final short OMEGA = -886;
     private static final short RINV = -682;
+    private static final short R = -147;     // R mod q (reference NTRUPLUS_R); see finalizeWithAddition
     private static final short RSQ = 867;
     private static final short Q = 3457;
     private static final short Q_HALF = Q >> 1;
@@ -612,12 +613,17 @@ class NTRUPlusEngine
      */
     private void finalizeWithAddition(short[] r, int rPos, short[] c, int cPos, int blockSize)
     {
-        int rValue = 1 << 16; // NTRUPLUS_R = 2^16 = 65536
-
-        // Handle all coefficients
+        // Multiply the addend c[cPos] by R *reduced mod q* (the constant R = -147), exactly as the
+        // reference does (NTRUPLUS_R). Using the unreduced literal 2^16 here is congruent mod q -- so
+        // KAT output is unchanged -- but ~445x larger, so for a centred c[cPos] near +/-(q-1)/2 the
+        // term c[cPos] * 2^16 pushes |temp| past montgomery_reduce's valid input range (+/- q * 2^15).
+        // montgomery_reduce then returns a value outside (-Q, Q); poly_tobytes folds only a single +Q,
+        // so a result below -Q is packed incorrectly, corrupting that ciphertext coefficient and making
+        // roughly 0.2% of encapsulations fail to decapsulate. With R reduced, |temp| stays well inside
+        // the valid range and the result is always a correct in-range representative.
         for (int i = 0; i < blockSize; i++)
         {
-            int temp = c[cPos++] * rValue + (int)r[rPos] * RSQ;
+            int temp = c[cPos++] * R + (int)r[rPos] * RSQ;
             r[rPos++] = montgomery_reduce(temp);
         }
     }

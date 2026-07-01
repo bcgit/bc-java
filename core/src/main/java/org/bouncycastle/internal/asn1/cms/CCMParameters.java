@@ -106,7 +106,9 @@ public class CCMParameters
     private static int validateICVLen(int icvLen)
     {
         if (icvLen < 4 || icvLen > 16 || (icvLen & 1) != 0)
+        {
             throw new IllegalArgumentException("Invalid ICV length: " + icvLen);
+        }
 
         return icvLen;
     }    

@@ -1,5 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -16,16 +17,21 @@ class ProvSSLSession
     protected final TlsSession tlsSession;
     protected final SessionParameters sessionParameters;
     protected final JsseSessionParameters jsseSessionParameters;
+    protected final List<BCSNIServerName> requestedServerNames;
     protected final AtomicLong lastAccessedTime;
 
     ProvSSLSession(ProvSSLSessionContext sslSessionContext, ConcurrentHashMap<String, Object> valueMap, String peerHost,
-        int peerPort, long creationTime, TlsSession tlsSession, JsseSessionParameters jsseSessionParameters)
+        int peerPort, long creationTime, TlsSession tlsSession, JsseSessionParameters jsseSessionParameters,
+        List<BCSNIServerName> requestedServerNames)
     {
         super(sslSessionContext, valueMap, peerHost, peerPort, creationTime);
 
         this.tlsSession = tlsSession;
         this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
         this.jsseSessionParameters = jsseSessionParameters;
+        this.requestedServerNames = null == requestedServerNames
+            ? Collections.<BCSNIServerName>emptyList()
+            : requestedServerNames;
         this.lastAccessedTime = new AtomicLong(creationTime);
     }
 
@@ -104,7 +110,7 @@ class ProvSSLSession
     @Override
     public List<BCSNIServerName> getRequestedServerNames()
     {
-        throw new UnsupportedOperationException();
+        return requestedServerNames;
     }
 
     TlsSession getTlsSession()
@@ -128,8 +134,8 @@ class ProvSSLSession
 
     static final ProvSSLSession createDummySession()
     {
-        // NB: Allow session value binding on failed connections for SunJSSE compatibility 
+        // NB: Allow session value binding on failed connections for SunJSSE compatibility
         return new ProvSSLSession(null, createValueMap(), null, -1, getCurrentTime(), null,
-            new JsseSessionParameters(null, null));
+            new JsseSessionParameters(null, null), Collections.<BCSNIServerName>emptyList());
     }
 }

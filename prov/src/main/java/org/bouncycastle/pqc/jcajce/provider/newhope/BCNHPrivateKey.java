@@ -59,7 +59,8 @@ public class BCNHPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getSecData());
+        // NewHope public data cannot be derived from the secret polynomial alone.
+        return getAlgorithm().hashCode();
     }
 
     /**

@@ -143,13 +143,12 @@ public class SignerInfoGenerator
 
             AlgorithmIdentifier digestEncryptionAlgorithm = sigEncAlgFinder.findEncryptionAlgorithm(signer.getAlgorithmIdentifier());
 
-            AlgorithmIdentifier digestAlg = null;
-
+            AlgorithmIdentifier digestAlg;
             if (sAttrGen != null)
             {
                 digestAlg = digester.getAlgorithmIdentifier();
                 calculatedDigest = digester.getDigest();
-                Map parameters = getBaseParameters(contentType, digester.getAlgorithmIdentifier(), digestEncryptionAlgorithm, calculatedDigest);
+                Map parameters = getBaseParameters(contentType, digestAlg, digestEncryptionAlgorithm, calculatedDigest);
                 AttributeTable signed = sAttrGen.getAttributes(Collections.unmodifiableMap(parameters));
 
                 signedAttr = getAttributeSet(signed);

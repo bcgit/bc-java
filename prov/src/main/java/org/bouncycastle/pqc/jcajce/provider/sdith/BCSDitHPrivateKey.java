@@ -57,7 +57,12 @@ public class BCSDitHPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCSDitHPublicKey getPublicKey()
+    {
+        return new BCSDitHPublicKey(params.getPublicKeyParameters());
     }
 
     public final String getAlgorithm()
