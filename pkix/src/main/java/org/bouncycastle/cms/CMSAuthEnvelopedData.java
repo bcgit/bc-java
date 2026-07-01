@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
@@ -48,7 +49,25 @@ public class CMSAuthEnvelopedData
     {
         this.contentInfo = contentInfo;
 
-        AuthEnvelopedData authEnvData = AuthEnvelopedData.getInstance(contentInfo.getContent());
+        ASN1Encodable content = contentInfo.getContent();
+        if (content == null)
+        {
+            throw new CMSException("Missing content.");
+        }
+
+        AuthEnvelopedData authEnvData;
+        try
+        {
+            authEnvData = AuthEnvelopedData.getInstance(content);
+        }
+        catch (ClassCastException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
 
         if (authEnvData.getOriginatorInfo() != null)
         {
