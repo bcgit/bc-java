@@ -229,21 +229,36 @@ public class JcaPrivateKeyReader
             throw new PEMException("DER private key SEQUENCE too short");
         }
 
-        ASN1Encodable first = seq.getObjectAt(0);
-        if (first instanceof ASN1Integer)
+        // The shape guards above only constrain the outer SEQUENCE; the inner getInstance /
+        // EncryptedPrivateKeyInfo decode can still throw an unchecked exception (e.g.
+        // IllegalArgumentException, NoSuchElementException) on malformed inner content, so
+        // wrap them to honour the throws IOException contract of the public readKey methods.
+        try
         {
-            // PrivateKeyInfo is { version, AlgorithmIdentifier SEQUENCE, ... };
-            // an RSAPrivateKey (PKCS#1) is { version, modulus INTEGER, ... }.
-            if (seq.getObjectAt(1) instanceof ASN1Sequence)
+            ASN1Encodable first = seq.getObjectAt(0);
+            if (first instanceof ASN1Integer)
             {
-                return keyConverter.getPrivateKey(PrivateKeyInfo.getInstance(seq));
+                // PrivateKeyInfo is { version, AlgorithmIdentifier SEQUENCE, ... };
+                // an RSAPrivateKey (PKCS#1) is { version, modulus INTEGER, ... }.
+                if (seq.getObjectAt(1) instanceof ASN1Sequence)
+                {
+                    return keyConverter.getPrivateKey(PrivateKeyInfo.getInstance(seq));
+                }
+
+                return keyConverter.getPrivateKey(wrapPKCS1(RSAPrivateKey.getInstance(seq)));
             }
 
-            return keyConverter.getPrivateKey(wrapPKCS1(RSAPrivateKey.getInstance(seq)));
+            // EncryptedPrivateKeyInfo is { AlgorithmIdentifier SEQUENCE, encryptedData OCTET STRING }.
+            return decryptPKCS8(new PKCS8EncryptedPrivateKeyInfo(der));
         }
-
-        // EncryptedPrivateKeyInfo is { AlgorithmIdentifier SEQUENCE, encryptedData OCTET STRING }.
-        return decryptPKCS8(new PKCS8EncryptedPrivateKeyInfo(der));
+        catch (IOException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new PEMException("problem parsing private key: " + e.toString(), e);
+        }
     }
 
     private PrivateKey decryptPKCS8(PKCS8EncryptedPrivateKeyInfo encInfo)

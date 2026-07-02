@@ -71,6 +71,7 @@ public class AllTests
         suite.addTestSuite(MLKEMKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumTest.class);
+        suite.addTestSuite(DilithiumFactoryConsistencyTest.class);
         suite.addTestSuite(MLDSAKeyPairGeneratorTest.class);
         suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(BIKEKeyPairGeneratorTest.class);
@@ -88,6 +89,7 @@ public class AllTests
         suite.addTestSuite(MQOMTest.class);
         suite.addTestSuite(SQIsignTest.class);
         suite.addTestSuite(HawkTest.class);
+        suite.addTestSuite(ParameterSpecRoundTripTest.class);
         suite.addTestSuite(NTRUPlusTest.class);
         suite.addTestSuite(NTRUPlusKeyPairGeneratorTest.class);
 

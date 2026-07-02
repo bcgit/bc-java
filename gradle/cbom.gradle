@@ -1,0 +1,248 @@
+/*
+ * Generates a CycloneDX 1.6 CBOM (Cryptographic Bill of Materials) for the BC providers
+ * by introspecting the JCA service tables of BouncyCastleProvider / BouncyCastlePQCProvider
+ * in the freshly built bcprov jar.
+ *
+ * Applied from the root build.gradle:  apply from: 'gradle/cbom.gradle'
+ * Run:  ./gradlew generateCbom   ->  build/reports/cbom/bcprov-<vmrange>-<version>-cyclonedx.json
+ * (named for the bcprov GAV it describes, classifier per CycloneDX convention — the
+ * counterpart of the bc-<vmrange>-bom-<version>-cyclonedx.json SBOM from generateSbom)
+ *
+ * CBOM component model per https://cyclonedx.org/capabilities/cbom/ (spec 1.6):
+ * one "cryptographic-asset" component per algorithm, with cryptoProperties
+ * (assetType, algorithmProperties.primitive / cryptoFunctions, oid), and a
+ * "provides" dependency edge from the bcprov library component to every asset.
+ */
+import groovy.json.JsonOutput
+
+// SOURCE_DATE_EPOCH (seconds) for reproducible BOM timestamps: environment override first,
+// then the Source-Date-Epoch manifest attribute of the bccore sources jar (the git commit
+// time, stamped by core/build.gradle), then the newest jar entry time as a last resort
+// (Gradle 9 pins entry times to 1980-02-01, so the manifest attribute is the useful path).
+ext.sourceDateEpochFrom = { File jarFile ->
+    def sde = System.getenv('SOURCE_DATE_EPOCH')
+    if (sde != null)
+    {
+        return sde.toLong()
+    }
+    def jf = new java.util.jar.JarFile(jarFile)
+    try
+    {
+        def attr = jf.getManifest()?.getMainAttributes()?.getValue('Source-Date-Epoch')
+        if (attr != null)
+        {
+            return attr.toLong()
+        }
+        long max = 0
+        for (e in jf.entries())
+        {
+            max = Math.max(max, e.getTime())
+        }
+        return max.intdiv(1000L)
+    }
+    finally
+    {
+        jf.close()
+    }
+}
+
+ext.cbomClassify = { String type, String alg ->
+    def a = alg.toUpperCase()
+    def hasAny = { List words -> words.any { a.contains(it) } }
+
+    // returns [primitive, functions] or null to skip the service
+    switch (type)
+    {
+        case 'Cipher':
+            if (hasAny(['KEM', 'KYBER', 'MLKEM', 'ML-KEM', 'NTRU', 'BIKE', 'HQC', 'CMCE', 'MCELIECE', 'FRODO', 'SABER']))
+            {
+                return ['kem', ['encapsulate', 'decapsulate']]
+            }
+            if (hasAny(['RSA', 'ELGAMAL', 'IES', 'SM2']))
+            {
+                return ['pke', ['encrypt', 'decrypt']]
+            }
+            if (hasAny(['CHACHA', 'SALSA', 'RC4', 'HC128', 'HC256', 'VMPC', 'GRAIN', 'ZUC']))
+            {
+                return ['stream-cipher', ['encrypt', 'decrypt']]
+            }
+            if (hasAny(['GCM', 'CCM', 'EAX', 'OCB', 'ASCON']))
+            {
+                return ['ae', ['encrypt', 'decrypt', 'tag']]
+            }
+            return ['block-cipher', ['encrypt', 'decrypt']]
+        case 'Signature':
+            return ['signature', ['sign', 'verify']]
+        case 'MessageDigest':
+            return [hasAny(['SHAKE', 'XOF']) ? 'xof' : 'hash', ['digest']]
+        case 'Mac':
+            return ['mac', ['tag']]
+        case 'KeyAgreement':
+            return ['key-agree', ['keyderive']]
+        case 'KEM':
+            return ['kem', ['encapsulate', 'decapsulate']]
+        case 'SecureRandom':
+            return ['drbg', ['generate']]
+        case 'SecretKeyFactory':
+            // only the derivation-function entries; plain translation factories (e.g. "AES") are not crypto primitives
+            return hasAny(['PBKDF', 'PBE', 'SCRYPT', 'HKDF', 'KDF']) ? ['kdf', ['keyderive']] : null
+        case 'KeyGenerator':
+        case 'KeyPairGenerator':
+            // contributes a keygen function to the algorithm; primitive comes from the defining service type
+            return [null, ['keygen']]
+        default:
+            // KeyFactory / AlgorithmParameters / CertificateFactory / KeyStore / CertPath* are plumbing, not crypto assets
+            return null
+    }
+}
+
+tasks.register('generateCbom') {
+    group = 'reporting'
+    description = 'Generates a CycloneDX 1.6 CBOM for the BC provider algorithms'
+    dependsOn ':prov:jar', ':core:sourcesJar'
+
+    def provJar = project(':prov').tasks.named('jar')
+    def coreSourcesJar = project(':core').tasks.named('sourcesJar')
+    def outDir = layout.buildDirectory.dir('reports/cbom')
+    inputs.file(provJar.map { it.archiveFile })
+    inputs.file(coreSourcesJar.map { it.archiveFile })
+    outputs.dir(outDir)
+
+    doLast {
+        def jarFile = provJar.get().archiveFile.get().asFile
+        def loader = new URLClassLoader([jarFile.toURI().toURL()] as URL[], (ClassLoader) null)
+        // algName -> [primitive:, functions: Set, oids: Set, serviceTypes: Set, providers: Set]
+        def assets = new TreeMap<String, Map>(String.CASE_INSENSITIVE_ORDER)
+        def providerComponents = []
+
+        try
+        {
+            ['org.bouncycastle.jce.provider.BouncyCastleProvider',
+             'org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider'].each { cn ->
+                def prov = loader.loadClass(cn).getDeclaredConstructor().newInstance()
+                providerComponents << [name: prov.getName(), info: prov.getInfo()]
+
+                prov.getServices().each { svc ->
+                    def cls = cbomClassify(svc.getType(), svc.getAlgorithm())
+                    if (cls == null)
+                    {
+                        return
+                    }
+                    // normalise "OID.1.2.3"-style registrations onto the bare OID
+                    def algName = svc.getAlgorithm().startsWith('OID.') ? svc.getAlgorithm().substring(4) : svc.getAlgorithm()
+                    def asset = assets.computeIfAbsent(algName, {
+                        [name: algName, primitive: null,
+                         functions: new TreeSet(), oids: new TreeSet(), serviceTypes: new TreeSet(), providers: new TreeSet()]
+                    })
+                    if (asset.primitive == null && cls[0] != null)
+                    {
+                        asset.primitive = cls[0]
+                    }
+                    asset.functions.addAll(cls[1])
+                    asset.serviceTypes << svc.getType()
+                    asset.providers << prov.getName()
+                    if (algName ==~ /\d+(\.\d+)+/)
+                    {
+                        // service registered directly under its OID (no separate friendly-name alias)
+                        asset.oids << algName
+                    }
+                }
+
+                // OIDs come from the Alg.Alias.<Type>.[OID.]<oid> property entries
+                prov.keySet().each { k ->
+                    def m = (k =~ /^Alg\.Alias\.[A-Za-z]+\.(?:OID\.)?(\d+(?:\.\d+)+)$/)
+                    if (m.matches())
+                    {
+                        assets.get((String) prov.get(k))?.oids?.add(m.group(1))
+                    }
+                }
+            }
+        }
+        finally
+        {
+            loader.close()
+        }
+
+        // parameter-set names that only surface as KeyGenerator / KeyPairGenerator services
+        // (the Signature / Cipher service lives under the family name) — infer from the name
+        def fallbackPrimitive = { String name ->
+            def a = name.toUpperCase()
+            if (a =~ /MLKEM\d+-/)
+            {
+                return 'combiner'   // ML-KEM + ECDH/X25519/RSA hybrid KEMs
+            }
+            if (['SPHINCS', 'DSA', 'GOST3410', 'XMSS', 'LMS', 'FALCON', 'DILITHIUM', 'PICNIC'].any { a.contains(it) })
+            {
+                return 'signature'
+            }
+            if (a.contains('KEM'))
+            {
+                return 'kem'
+            }
+            if (a.contains('SIPHASH'))
+            {
+                return 'mac'
+            }
+            return 'unknown'
+        }
+
+        def libRef = "pkg:maven/org.bouncycastle/${jarFile.name.replaceAll(/-\d.*/, '')}@${project(':prov').version}"
+        def components = assets.values().collect { a ->
+            def props = [[name: 'bc:jcaServiceTypes', value: a.serviceTypes.join(',')],
+                         [name: 'bc:providers', value: a.providers.join(',')]]
+            if (a.oids.size() > 1)
+            {
+                props << [name: 'bc:additionalOids', value: a.oids.tail().join(',')]
+            }
+            def cryptoProps = [
+                assetType: 'algorithm',
+                algorithmProperties: [
+                    primitive: a.primitive ?: fallbackPrimitive(a.name),
+                    executionEnvironment: 'software-plain-ram',
+                    implementationPlatform: 'generic',
+                    certificationLevel: ['none'],
+                    cryptoFunctions: a.functions as List
+                ]
+            ]
+            if (!a.oids.isEmpty())
+            {
+                cryptoProps.oid = a.oids.first()
+            }
+            [type: 'cryptographic-asset',
+             'bom-ref': "crypto/algorithm/${a.name.toLowerCase().replaceAll(/[^a-z0-9.-]/, '-')}@BC",
+             name: a.name,
+             cryptoProperties: cryptoProps,
+             properties: props]
+        }
+
+        // reproducible per version: name-based (type 3) UUID over the purl, and a timestamp
+        // from sourceDateEpochFrom (env override -> bccore sources-jar manifest, i.e. the
+        // git commit time), so the same version always yields a byte-identical CBOM
+        def epoch = sourceDateEpochFrom(coreSourcesJar.get().archiveFile.get().asFile)
+        def bom = [
+            bomFormat: 'CycloneDX',
+            specVersion: '1.6',
+            serialNumber: "urn:uuid:${UUID.nameUUIDFromBytes(libRef.getBytes('UTF-8'))}".toString(),
+            version: 1,
+            metadata: [
+                timestamp: new Date(epoch * 1000L).format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone('UTC')),
+                component: [
+                    type: 'library',
+                    'bom-ref': libRef,
+                    group: 'org.bouncycastle',
+                    name: jarFile.name.replaceAll(/-\d.*/, ''),
+                    version: project(':prov').version.toString(),
+                    description: providerComponents.collect { it.info }.join('; '),
+                    purl: libRef
+                ]
+            ],
+            components: components,
+            dependencies: [[ref: libRef, provides: components.collect { it['bom-ref'] }]]
+        ]
+
+        def out = new File(outDir.get().asFile, "${jarFile.name.replaceAll(/-\d.*/, '')}-${project(':prov').version}-cyclonedx.json")
+        out.parentFile.mkdirs()
+        out.text = JsonOutput.prettyPrint(JsonOutput.toJson(bom))
+        println "CBOM written to ${out} (${components.size()} cryptographic assets)"
+    }
+}

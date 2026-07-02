@@ -324,9 +324,6 @@ public class DefaultDigestAlgorithmIdentifierFinder
         shake256oids.add(BCObjectIdentifiers.dilithium2);
         shake256oids.add(BCObjectIdentifiers.dilithium3);
         shake256oids.add(BCObjectIdentifiers.dilithium5);
-        shake256oids.add(BCObjectIdentifiers.dilithium2_aes);
-        shake256oids.add(BCObjectIdentifiers.dilithium3_aes);
-        shake256oids.add(BCObjectIdentifiers.dilithium5_aes);
 
         shake256oids.add(BCObjectIdentifiers.falcon_512);
         shake256oids.add(BCObjectIdentifiers.falcon_1024);

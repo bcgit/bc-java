@@ -371,6 +371,9 @@ public class IESEngine
         }
         else
         {
+            // MAC must be verified above before this doFinal: it removes padding (e.g. PKCS7), and a
+            // padding failure here is distinguishable from a MAC failure, which would be a CBC padding oracle.
+            // Only authenticated ciphertext reaches this point.
             len += cipher.doFinal(M, len);
 
             return Arrays.copyOfRange(M, 0, len);

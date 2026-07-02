@@ -30,7 +30,7 @@ public abstract class ASN1Util
         {
             String expected = getTagText(tagClass, tagNo);
             String found = getTagText(taggedObject);
-            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+            throw new IllegalArgumentException("Expected " + expected + " tag but found " + found);
         }
         return taggedObject;
     }
@@ -41,7 +41,7 @@ public abstract class ASN1Util
         {
             String expected = getTagText(tagClass, tagNo);
             String found = getTagText(taggedObjectParser);
-            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+            throw new IllegalArgumentException("Expected " + expected + " tag but found " + found);
         }
         return taggedObjectParser;
     }
@@ -52,7 +52,7 @@ public abstract class ASN1Util
         {
             String expected = getTagClassText(tagClass);
             String found = getTagClassText(taggedObject);
-            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+            throw new IllegalArgumentException("Expected " + expected + " tag but found " + found);
         }
         return taggedObject;
     }
@@ -63,7 +63,7 @@ public abstract class ASN1Util
         {
             String expected = getTagClassText(tagClass);
             String found = getTagClassText(taggedObjectParser);
-            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+            throw new IllegalArgumentException("Expected " + expected + " tag but found " + found);
         }
         return taggedObjectParser;
     }

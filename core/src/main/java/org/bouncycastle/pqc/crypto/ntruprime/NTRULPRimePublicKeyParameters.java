@@ -11,6 +11,12 @@ public class NTRULPRimePublicKeyParameters
     public NTRULPRimePublicKeyParameters(NTRULPRimeParameters params, byte[] encoding)
     {
         super(false, params);
+
+        if (encoding.length != params.getPublicKeyBytes())
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
+
         this.seed = Arrays.copyOfRange(encoding, 0, 32);
         this.roundEncA = Arrays.copyOfRange(encoding, seed.length, encoding.length);
     }

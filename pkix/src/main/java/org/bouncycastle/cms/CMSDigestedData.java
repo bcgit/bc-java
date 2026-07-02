@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -50,9 +51,15 @@ public class CMSDigestedData
     {
         this.contentInfo = contentInfo;
 
+        ASN1Encodable content = contentInfo.getContent();
+        if (content == null)
+        {
+            throw new CMSException("Missing content.");
+        }
+
         try
         {
-            this.digestedData = DigestedData.getInstance(contentInfo.getContent());
+            this.digestedData = DigestedData.getInstance(content);
         }
         catch (ClassCastException e)
         {
@@ -84,15 +91,9 @@ public class CMSDigestedData
         throws CMSException
     {
         ContentInfo     content = digestedData.getEncapContentInfo();
+        ASN1OctetString bytes = getEncapsulatedContent(content);
 
-        try
-        {
-            return new CMSProcessableByteArray(content.getContentType(), ((ASN1OctetString)content.getContent()).getOctets());
-        }
-        catch (Exception e)
-        {
-            throw new CMSException("exception reading digested stream.", e);
-        }
+        return new CMSProcessableByteArray(content.getContentType(), bytes.getOctets());
     }
 
     /**
@@ -115,14 +116,16 @@ public class CMSDigestedData
     public boolean verify(DigestCalculatorProvider calculatorProvider)
         throws CMSException
     {
+        ContentInfo     content = digestedData.getEncapContentInfo();
+        ASN1OctetString bytes = getEncapsulatedContent(content);
+
         try
         {
-            ContentInfo     content = digestedData.getEncapContentInfo();
             DigestCalculator calc = calculatorProvider.get(digestedData.getDigestAlgorithm());
 
             OutputStream dOut = calc.getOutputStream();
 
-            dOut.write(((ASN1OctetString)content.getContent()).getOctets());
+            dOut.write(bytes.getOctets());
 
             return Arrays.areEqual(digestedData.getDigest(), calc.getDigest());
         }
@@ -133,6 +136,29 @@ public class CMSDigestedData
         catch (IOException e)
         {
             throw new CMSException("unable process content: " + e.getMessage(), e);
+        }
+    }
+
+    private static ASN1OctetString getEncapsulatedContent(ContentInfo content)
+        throws CMSException
+    {
+        ASN1Encodable eContent = content.getContent();
+        if (eContent == null)
+        {
+            throw new CMSException("Missing content.");
+        }
+
+        try
+        {
+            return ASN1OctetString.getInstance(eContent);
+        }
+        catch (ClassCastException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
         }
     }
 }

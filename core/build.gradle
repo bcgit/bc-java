@@ -68,6 +68,12 @@ task sourcesJar(type: Jar) {
     archiveClassifier = 'sources'
     from sourceSets.main.allSource
     exclude("**/*.so")
+    // git commit time of HEAD — stable for a given version, unlike the entry times, which
+    // Gradle 9 archive reproducibility pins to 1980-02-01. Read back by generateCbom /
+    // generateSbom (gradle/cbom.gradle, gradle/sbom.gradle) as the SOURCE_DATE_EPOCH fallback.
+    manifest.attributes('Source-Date-Epoch': providers.exec {
+        commandLine 'git', 'log', '-1', '--format=%ct'
+    }.standardOutput.asText.get().trim())
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
