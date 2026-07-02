@@ -18,6 +18,14 @@ public class CMSEncryptedData
     {
         this.contentInfo = contentInfo;
 
+        // NOTE: unlike the sibling CMS container constructors (CMSSignedData, CMSEnvelopedData,
+        // CMSCompressedData, CMSDigestedData, CMSAuthEnvelopedData, CMSAuthenticatedData) this
+        // constructor is not declared to throw CMSException, so the inner EncryptedData.getInstance
+        // is left unguarded here: a malformed inner content surfaces as a raw IllegalArgumentException
+        // rather than CMSException("Malformed content.") / ("Missing content."). The only
+        // untrusted-bytes reach is PKCS12SafeBagFactory(ContentInfo, InputDecryptorProvider) (declared
+        // throws PKCSException), whose javadoc already declares IllegalArgumentException for the
+        // content-type check.
         this.encryptedData = EncryptedData.getInstance(contentInfo.getContent());
     }
 

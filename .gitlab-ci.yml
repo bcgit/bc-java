@@ -62,9 +62,9 @@ test-code:
 #    - "ecr_pull vm_base_intel latest"
 #    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/pub.sh\""
 
-spongycastle:
-  stage: "sync"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-  script:
-    - "syncpongy.sh"  
+# spongycastle:
+#   stage: "sync"
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "main"
+#   script:
+#     - "syncpongy.sh"  

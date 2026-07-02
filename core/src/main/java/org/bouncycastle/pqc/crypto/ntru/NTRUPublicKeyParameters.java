@@ -13,6 +13,12 @@ public class NTRUPublicKeyParameters
     public NTRUPublicKeyParameters(NTRUParameters params, byte[] key)
     {
         super(false, params);
+
+        if (key.length != params.getPublicKeyLength())
+        {
+            throw new IllegalArgumentException("'key' has invalid length");
+        }
+
         this.publicKey = Arrays.clone(key);
     }
 

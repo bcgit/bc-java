@@ -20,7 +20,7 @@ public class SignatureTarget
         boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.SIGNATURE_TARGET, critical, isLongLength, data);
+        super(SignatureSubpacketTags.SIGNATURE_TARGET, critical, isLongLength, verifyData(data));
     }
 
     public SignatureTarget(
@@ -30,6 +30,17 @@ public class SignatureTarget
         byte[]     hashData)
     {
         super(SignatureSubpacketTags.SIGNATURE_TARGET, critical, false, Arrays.concatenate(new byte[] { (byte)publicKeyAlgorithm, (byte)hashAlgorithm }, hashData));
+    }
+
+    // RFC 9580 5.2.3.33: the Signature Target body is 1 octet public-key algorithm, 1 octet
+    // hash algorithm, then N octets of hash; the two leading octets must be present.
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 2)
+        {
+            throw new IllegalArgumentException("Truncated signature target subpacket");
+        }
+        return data;
     }
 
     public int getPublicKeyAlgorithm()

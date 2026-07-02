@@ -3,6 +3,7 @@ package org.bouncycastle.cms;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -69,9 +70,15 @@ public class CMSEnvelopedData
     {
         this.contentInfo = contentInfo;
 
+        ASN1Encodable content = contentInfo.getContent();
+        if (content == null)
+        {
+            throw new CMSException("Missing content.");
+        }
+
         try
         {
-            EnvelopedData  envData = EnvelopedData.getInstance(contentInfo.getContent());
+            EnvelopedData  envData = EnvelopedData.getInstance(content);
 
             if (envData.getOriginatorInfo() != null)
             {

@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.test;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
@@ -20,6 +21,7 @@ import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -287,5 +289,72 @@ public class LMSTest
         lmsSigner.init(false, lmsPub);
 
         assertTrue(lmsSigner.verifySignature(msg, sig));
+    }
+
+    /**
+     * RFC 8554 / NIST SP 800-208: an attacker-supplied LMS signature carries the LM-OTS type code
+     * in its bytes. An out-of-table type code must be rejected with a clean parse failure, not an
+     * unchecked NullPointerException (a remote denial-of-service when verifying a malformed
+     * signature). See COVERAGE_BUGS_HANDOVER.md finding #17.
+     */
+    public void test_malformedSignatureUnknownLmOtsType()
+        throws Exception
+    {
+        AsymmetricCipherKeyPairGenerator kpGen = new LMSKeyPairGenerator();
+        kpGen.init(new LMSKeyGenerationParameters(
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4), new SecureRandom()));
+        LMSPublicKeyParameters pubKey = (LMSPublicKeyParameters)kpGen.generateKeyPair().getPublic();
+
+        // q (4 bytes) followed by an unknown LM-OTS type code (0x7FFFFFFF).
+        byte[] malformed = Hex.decode("000000007fffffff");
+
+        try
+        {
+            pubKey.generateLMSContext(malformed);
+            fail("malformed signature accepted");
+        }
+        catch (NullPointerException e)
+        {
+            fail("unknown LM-OTS type code threw NullPointerException instead of a clean parse failure");
+        }
+        catch (IllegalStateException e)
+        {
+            // expected: generateLMSContext wraps the parse IOException as an IllegalStateException.
+            assertTrue(e.getCause() instanceof IOException);
+        }
+    }
+
+    /**
+     * The companion of {@link #test_malformedSignatureUnknownLmOtsType()} for the LMS (tree) type
+     * code, which the parser reads after the LM-OTS signature. The LM-OTS portion below is
+     * well-formed (valid type, zero-filled C and y); only the trailing LMS type code is unknown.
+     */
+    public void test_malformedSignatureUnknownLmsType()
+        throws Exception
+    {
+        AsymmetricCipherKeyPairGenerator kpGen = new LMSKeyPairGenerator();
+        kpGen.init(new LMSKeyGenerationParameters(
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4), new SecureRandom()));
+        LMSPublicKeyParameters pubKey = (LMSPublicKeyParameters)kpGen.generateKeyPair().getPublic();
+
+        LMOtsParameters ots = LMOtsParameters.sha256_n32_w4;
+        int otsSigLen = 4 + ots.getN() + ots.getP() * ots.getN();    // LM-OTS type || C || y
+        byte[] malformed = new byte[4 + otsSigLen + 4];              // q || LM-OTS signature || LMS type
+        Pack.intToBigEndian(ots.getType(), malformed, 4);            // valid LM-OTS type
+        Pack.intToBigEndian(0x7FFFFFFF, malformed, 4 + otsSigLen);   // unknown LMS type
+
+        try
+        {
+            pubKey.generateLMSContext(malformed);
+            fail("malformed signature accepted");
+        }
+        catch (NullPointerException e)
+        {
+            fail("unknown LMS type code threw NullPointerException instead of a clean parse failure");
+        }
+        catch (IllegalStateException e)
+        {
+            assertTrue(e.getCause() instanceof IOException);
+        }
     }
 }

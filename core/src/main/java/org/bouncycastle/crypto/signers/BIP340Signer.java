@@ -207,7 +207,7 @@ public class BIP340Signer
     {
         BigInteger n = SECP256K1.getN();
 
-        // Step 1: d' = int(sk); fail if d' = 0 or d' >= n.
+        // Steps 1-2: d' = int(sk); fail if d' = 0 or d' >= n.
         BigInteger d = privateKey.getD();
         if (d.signum() <= 0 || d.compareTo(n) >= 0)
         {
@@ -216,7 +216,7 @@ public class BIP340Signer
 
         ECMultiplier mult = new FixedPointCombMultiplier();
 
-        // Steps 4-5: P = d' * G; d = d' if has_even_y(P) else n - d'.
+        // Steps 3-4: P = d' * G; d = d' if has_even_y(P) else n - d'.
         ECPoint P_pt = mult.multiply(SECP256K1.getG(), d).normalize();
         if (!hasEvenY(P_pt))
         {
@@ -224,7 +224,7 @@ public class BIP340Signer
         }
         byte[] pBytes = xBytes(P_pt);
 
-        // Steps 6-8: t = bytes(d) XOR H_aux(a); k' = int(H_nonce(t || bytes(P) || m)) mod n; fail if k' = 0.
+        // Steps 5-8: t = bytes(d) XOR H_aux(a); k' = int(H_nonce(t || bytes(P) || m)) mod n; fail if k' = 0.
         byte[] t = BigIntegers.asUnsignedByteArray(X_SIZE, d);
         Bytes.xorTo(X_SIZE, taggedHash(TAG_HASH_AUX, auxRand), t);
 

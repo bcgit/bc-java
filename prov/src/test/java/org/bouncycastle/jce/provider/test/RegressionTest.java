@@ -63,6 +63,7 @@ public class RegressionTest
         new KeyStoreTest(),
         new MacTest(),
         new MalformedKeyInfoTest(),
+        new MessageDigestUtilsTest(),
         new MQVTest(),
         new MultiCertStoreTest(),
         new NamedCurveTest(),

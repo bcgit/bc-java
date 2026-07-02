@@ -22,6 +22,19 @@ public class SABERParameterSpec
 
     private static Map parameters = new HashMap();
 
+    static
+    {
+        parameters.put("lightsaberkem128r3", lightsaberkem128r3);
+        parameters.put("saberkem128r3", saberkem128r3);
+        parameters.put("firesaberkem128r3", firesaberkem128r3);
+        parameters.put("lightsaberkem192r3", lightsaberkem192r3);
+        parameters.put("saberkem192r3", saberkem192r3);
+        parameters.put("firesaberkem192r3", firesaberkem192r3);
+        parameters.put("lightsaberkem256r3", lightsaberkem256r3);
+        parameters.put("saberkem256r3", saberkem256r3);
+        parameters.put("firesaberkem256r3", firesaberkem256r3);
+    }
+
     private final String name;
 
     private SABERParameterSpec(SABERParameters parameters)

@@ -261,44 +261,48 @@ public class PKIXNameConstraintsTest
             fail(e.getMessage());
         }
 
-        testNameConstraintBypasses();
+        testTrailingDotBypass();
+        testDirectoryNamePrefixBypass();
+        testUriHostExtractionBypass();
+        testIPv4MappedAddressBypass();
 
         testSGP22LegacySerialNumber();
         testSGP22NameConstraints();
     }
 
-    private void testNameConstraintBypasses()
-        throws Exception
+    /**
+     * RFC 1034 sec. 3.1 root-label trailing dot. A trailing '.' is legal in an rfc822Name, a dNSName
+     * (RFC 5280 sec. 4.2.1.6) and a uniformResourceIdentifier host, and must be canonicalized away
+     * uniformly across all three so it can't misalign the per-label compare and let a name escape an
+     * excluded subtree.
+     */
+    private void testTrailingDotBypass() throws Exception
     {
-        // An RFC 1034 root-label trailing dot must not let a host escape an excluded rfc822Name or
-        // URI subtree, matching the dNSName canonicalisation.
-        PKIXNameConstraintValidator emailV = new PKIXNameConstraintValidator();
-        emailV.addExcludedSubtree(new GeneralSubtree(new GeneralName(GeneralName.rfc822Name, "bank.com")));
-        try
-        {
-            emailV.checkExcluded(new GeneralName(GeneralName.rfc822Name, "ceo@bank.com."));
-            fail("trailing-dot email must be caught by the excluded bank.com subtree");
-        }
-        catch (PKIXNameConstraintValidatorException e)
-        {
-            // expected
-        }
+        // rfc822Name: a trailing dot on the mail host must not escape the excluded bank.com subtree.
+        isTrue("trailing-dot email must be caught by the excluded bank.com subtree",
+            isExcluded(emailName("bank.com"), emailName("ceo@bank.com.")));
 
-        PKIXNameConstraintValidator uriV = new PKIXNameConstraintValidator();
-        uriV.addExcludedSubtree(new GeneralSubtree(new GeneralName(GeneralName.uniformResourceIdentifier, "competitor.example")));
-        try
-        {
-            uriV.checkExcluded(new GeneralName(GeneralName.uniformResourceIdentifier, "https://competitor.example./"));
-            fail("trailing-dot URI host must be caught by the excluded competitor.example subtree");
-        }
-        catch (PKIXNameConstraintValidatorException e)
-        {
-            // expected
-        }
+        // dNSName: exact and subdomain forms, including a dot-prefixed constraint.
+        isTrue("exact host with a trailing dot must be caught",
+            isExcluded(dnsName("example.com"), dnsName("example.com.")));
+        isTrue("subdomain with a trailing dot must be caught",
+            isExcluded(dnsName("example.com"), dnsName("foo.example.com.")));
+        isTrue("subdomain with a trailing dot must be caught by a dot-prefixed constraint",
+            isExcluded(dnsName(".example.com"), dnsName("foo.example.com.")));
+        isTrue("a sibling domain must not be caught", !isExcluded(dnsName("example.com"), dnsName("notexample.com.")));
 
-        // A directoryName permitted constraint must match as an INITIAL PREFIX of the subject
-        // (RFC 5280 4.2.1.10), not as a subsequence at an arbitrary offset. Prepending an RDN ahead
-        // of the permitted sequence must not satisfy the constraint.
+        // uniformResourceIdentifier: the host trailing dot is stripped like the dNSName path.
+        isTrue("trailing-dot URI host must be caught by the excluded competitor.example subtree",
+            isExcluded(uriName("competitor.example"), uriName("https://competitor.example./")));
+    }
+
+    /**
+     * directoryName constraints must match as an INITIAL PREFIX of the subject (RFC 5280 sec.
+     * 4.2.1.10 / 7.1), not as a subsequence at an arbitrary offset. Prepending an RDN ahead of the
+     * permitted sequence must not satisfy the constraint.
+     */
+    private void testDirectoryNamePrefixBypass() throws Exception
+    {
         GeneralName permittedDN = new GeneralName(GeneralName.directoryName,
             new X500Name(RFC4519Style.INSTANCE, "ou=permittedSubtree1, o=Test Certificates 2011, c=US"));
         GeneralName prefixSubject = new GeneralName(GeneralName.directoryName,
@@ -311,24 +315,75 @@ public class PKIXNameConstraintsTest
             !isPermitted(permittedDN, prependedSubject));
     }
 
-    private GeneralName directoryName(String name)
+    /**
+     * uniformResourceIdentifier host-extraction edge cases (RFC 3986 sec. 3.2 authority). These
+     * exercise <c>ExtractHostFromURL</c> indirectly: a bracketed IPv6 literal (whose ':' separators
+     * must not be read as a port delimiter), userinfo stripping, and the path/query/fragment
+     * terminator being applied BEFORE the userinfo '@' so an '@' in the path or fragment can't be
+     * mistaken for a userinfo delimiter and swap in an attacker-chosen host.
+     */
+    private void testUriHostExtractionBypass() throws Exception
     {
-        return new GeneralName(GeneralName.directoryName, new X500Name(name));
+        // Bracketed IPv6 host: the ':' inside the literal must not truncate at a phantom port, however
+        // the port/userinfo are dressed up around it.
+        isTrue("bracketed IPv6 host with a port must be caught by the excluded 2001:db8::1 subtree",
+            isExcluded(uriName("2001:db8::1"), uriName("https://[2001:db8::1]:8443/x")));
+        isTrue("bracketed IPv6 host without a port must be caught",
+            isExcluded(uriName("2001:db8::1"), uriName("https://[2001:db8::1]/x")));
+        isTrue("bracketed IPv6 host behind userinfo must be caught",
+            isExcluded(uriName("2001:db8::1"), uriName("https://user:pw@[2001:db8::1]:8443/x")));
+
+        // An '@' after the path/query/fragment terminator must NOT be read as userinfo; otherwise the
+        // host would become the attacker-chosen authority after the '@' and escape the constraint.
+        isTrue("'@' in the query must not be treated as userinfo",
+            isExcluded(uriName("competitor.example"), uriName("https://competitor.example?u=x@evil.example")));
+        isTrue("'@' in the fragment must not be treated as userinfo",
+            isExcluded(uriName("competitor.example"), uriName("https://competitor.example#@evil.example")));
+
+        // A genuine userinfo '@' before the host is still stripped.
+        isTrue("userinfo before the host must be stripped",
+            isExcluded(uriName("host.example"), uriName("https://user@host.example/")));
+
+        // Sanity: an unrelated host is not caught (extraction isn't over-matching).
+        isTrue("an unrelated URI host must not be caught",
+            !isExcluded(uriName("competitor.example"), uriName("https://safe.example/")));
     }
 
-    private boolean isPermitted(GeneralName permitted, GeneralName subject)
+    /**
+     * IPv4-mapped IPv6 (RFC 4291 sec. 2.5.5.2, <c>::ffff:0:0/96</c>) iPAddress normalization. A SAN
+     * that encodes an IPv4 address in the 16-byte mapped form must not slip past an 8-byte IPv4
+     * constraint (or vice versa) via the address-family length mismatch; and a constraint whose mask
+     * is narrower than /96 is a genuine IPv6 range that must not be collapsed to IPv4.
+     */
+    public void testIPv4MappedAddressBypass() throws Exception
     {
-        PKIXNameConstraintValidator validator = new PKIXNameConstraintValidator();
-        validator.intersectPermittedSubtree(new GeneralSubtree(permitted));
-        try
-        {
-            validator.checkPermitted(subject);
-            return true;
-        }
-        catch (PKIXNameConstraintValidatorException e)
-        {
-            return false;
-        }
+        // 192.0.2.0/24 as an 8-byte IPv4 constraint (address || mask).
+        byte[] ipv4Cidr24 = bytes(new int[]{ 192, 0, 2, 0, 0xFF, 0xFF, 0xFF, 0x00 });
+
+        // The same /24 as a 32-byte IPv4-mapped IPv6 constraint (all-ones across the /96 prefix).
+        byte[] mappedCidr24 = bytes(new int[]{
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 192, 0, 2, 0,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 });
+
+        // mapped SAN vs IPv4 constraint: caught (16-byte SAN normalizes to 4-byte 192.0.2.5).
+        isTrue("IPv4-mapped SAN must be caught by the excluded IPv4 /24 constraint",
+            isExcluded(ipName(ipv4Cidr24), ipName(ipv4Mapped(192, 0, 2, 5))));
+
+        // IPv4 SAN vs mapped constraint: caught (32-byte constraint normalizes to the /24).
+        isTrue("IPv4 SAN must be caught by the excluded IPv4-mapped /24 constraint",
+            isExcluded(ipName(mappedCidr24), ipName(bytes(new int[]{ 192, 0, 2, 5 }))));
+
+        // Out-of-range mapped SAN must NOT be caught (normalization isn't over-matching).
+        isTrue("a mapped SAN outside the /24 must not be caught",
+            !isExcluded(ipName(ipv4Cidr24), ipName(ipv4Mapped(198, 51, 100, 5))));
+
+        // A mapped-address constraint with a mask narrower than /96 (here /64) is a genuine IPv6 range
+        // and must NOT be collapsed to IPv4, so an IPv4 SAN must not match it.
+        byte[] mappedNarrowMask = bytes(new int[]{
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 192, 0, 2, 0,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0 });
+        isTrue("an IPv6-range constraint (mask < /96) must not be collapsed to match an IPv4 SAN",
+            !isExcluded(ipName(mappedNarrowMask), ipName(bytes(new int[]{ 192, 0, 2, 5 }))));
     }
 
     /**
@@ -403,6 +458,77 @@ public class PKIXNameConstraintsTest
         {
             System.clearProperty(Properties.X509_SGP22_NAME_CONSTRAINTS);
         }
+    }
+
+    private static GeneralName directoryName(String name)
+    {
+        return new GeneralName(GeneralName.directoryName, new X500Name(name));
+    }
+
+    private static boolean isPermitted(GeneralName permitted, GeneralName subject)
+    {
+        PKIXNameConstraintValidator validator = new PKIXNameConstraintValidator();
+        validator.intersectPermittedSubtree(new GeneralSubtree(permitted));
+        try
+        {
+            validator.checkPermitted(subject);
+            return true;
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            return false;
+        }
+    }
+
+    private static boolean isExcluded(GeneralName excluded, GeneralName name)
+    {
+        PKIXNameConstraintValidator validator = new PKIXNameConstraintValidator();
+        validator.addExcludedSubtree(new GeneralSubtree(excluded));
+        try
+        {
+            validator.checkExcluded(name);
+            return false;
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            return true;
+        }
+    }
+
+    private static GeneralName uriName(String uri)
+    {
+        return new GeneralName(GeneralName.uniformResourceIdentifier, uri);
+    }
+
+    private static GeneralName dnsName(String dns)
+    {
+        return new GeneralName(GeneralName.dNSName, dns);
+    }
+
+    private static GeneralName emailName(String email)
+    {
+        return new GeneralName(GeneralName.rfc822Name, email);
+    }
+
+    private static GeneralName ipName(byte[] ip)
+    {
+        return new GeneralName(GeneralName.iPAddress, new DEROctetString(ip));
+    }
+
+    // ::ffff:a.b.c.d - a 16-byte IPv4-mapped IPv6 address (RFC 4291 sec. 2.5.5.2).
+    private static byte[] ipv4Mapped(int a, int b, int c, int d)
+    {
+        return bytes(new int[]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, a, b, c, d });
+    }
+
+    private static byte[] bytes(int[] values)
+    {
+        byte[] result = new byte[values.length];
+        for (int i = 0; i < values.length; i++)
+        {
+            result[i] = (byte)values[i];
+        }
+        return result;
     }
 
     /**

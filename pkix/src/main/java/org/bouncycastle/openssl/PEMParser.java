@@ -203,8 +203,11 @@ public class PEMParser
                     throw new PEMException(e.getMessage(), e);
                 }
             }
-            catch (IllegalArgumentException e)
+            catch (RuntimeException e)
             {
+                // includes DecoderException from a non-hex DEK-Info IV (a RuntimeException
+                // that is not an IllegalArgumentException), keeping the throws IOException
+                // contract intact rather than letting it escape readObject().
                 if (isEncrypted)
                 {
                     throw new PEMException("exception decoding - please check password and data.", e);
@@ -342,7 +345,14 @@ public class PEMParser
         public Object parseObject(PemObject obj)
             throws IOException
         {
-            return SubjectPublicKeyInfo.getInstance(obj.getContent());
+            try
+            {
+                return SubjectPublicKeyInfo.getInstance(obj.getContent());
+            }
+            catch (Exception e)
+            {
+                throw new PEMException("problem extracting key: " + e.toString(), e);
+            }
         }
     }
 
@@ -496,7 +506,18 @@ public class PEMParser
         public Object parseObject(PemObject obj)
             throws IOException
         {
-            return new X509AttributeCertificateHolder(obj.getContent());
+            try
+            {
+                return new X509AttributeCertificateHolder(obj.getContent());
+            }
+            catch (IOException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                throw new PEMException("problem parsing attribute cert: " + e.toString(), e);
+            }
         }
     }
 
