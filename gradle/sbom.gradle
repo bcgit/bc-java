@@ -1,0 +1,165 @@
+/*
+ * Generates a CycloneDX 1.6 SBOM (Software Bill of Materials) mirroring the published
+ * bc-<vmrange>-bom Maven BOM (see bom/build.gradle and e.g.
+ * https://repo1.maven.org/maven2/org/bouncycastle/bc-jdk18on-bom/): one library component
+ * per published module jar, with MD5 / SHA-1 / SHA-256 hashes (matching the Maven repo
+ * checksum files), declared external dependencies, and the inter-module dependency graph
+ * as it appears in the published poms.
+ *
+ * The published artifact set is read from the :bom project's platform constraints, so the
+ * two stay in lockstep automatically.
+ *
+ * Alongside the SBOM, the task copies in the bc-<vmrange>-bom .pom and .module (Gradle
+ * Module Metadata) files produced by the :bom project's own maven-publish generators, so
+ * the output directory holds the complete publishable set for the BOM GAV:
+ *
+ *   bc-<vmrange>-bom-<version>.pom
+ *   bc-<vmrange>-bom-<version>.module
+ *   bc-<vmrange>-bom-<version>-cyclonedx.json   (the SBOM, classifier per CycloneDX convention)
+ *
+ * Applied from the root build.gradle:  apply from: 'gradle/sbom.gradle'
+ * Run:  ./gradlew generateSbom   ->  build/reports/sbom/
+ */
+import groovy.json.JsonOutput
+import java.security.MessageDigest
+import org.gradle.api.artifacts.ProjectDependency
+
+ext.sbomPublishedProjects = { ->
+    project(':bom').configurations.getByName('api').dependencyConstraints.collect {
+        rootProject.project(":${it.name}")
+    }
+}
+
+tasks.register('generateSbom') {
+    group = 'reporting'
+    description = 'Generates a CycloneDX 1.6 SBOM mirroring the bc-<vmrange>-bom Maven BOM'
+
+    // resolved lazily (callable) — the :bom constraints don't exist until it is configured
+    dependsOn ':core:sourcesJar'
+    dependsOn { sbomPublishedProjects().collect { it.tasks.named('jar') } }
+    // the same generators maven-publish runs at publish time, so .pom/.module match an upload exactly
+    dependsOn ':bom:generatePomFileForMavenJavaPublication', ':bom:generateMetadataFileForMavenJavaPublication'
+
+    def outDir = layout.buildDirectory.dir('reports/sbom')
+    outputs.dir(outDir)
+
+    doLast {
+        def bcLicense = [license: [name: 'Bouncy Castle Licence', url: 'https://www.bouncycastle.org/licence.html']]
+        def hashesOf = { File f ->
+            ['MD5', 'SHA-1', 'SHA-256'].collect { alg ->
+                [alg: alg, content: MessageDigest.getInstance(alg).digest(f.bytes).encodeHex().toString()]
+            }
+        }
+        def purlOf = { group, name, version -> "pkg:maven/${group}/${name}@${version}".toString() }
+
+        def components = []
+        def externals = new TreeMap<String, Map>()
+        def depEdges = []
+        def projectPurl = [:]
+
+        // Maven coordinates come from each module's publication — the same place the
+        // published poms get them — not from the Gradle project group / jar base name
+        def mavenCoords = { p ->
+            def pub = p.extensions.getByName('publishing').publications.withType(org.gradle.api.publish.maven.MavenPublication).first()
+            [group: pub.groupId, name: pub.artifactId]
+        }
+
+        def published = sbomPublishedProjects()
+        published.each { p ->
+            def c = mavenCoords(p)
+            projectPurl[p.path] = purlOf(c.group, c.name, p.version)
+        }
+
+        published.each { p ->
+            def jarTask = p.tasks.named('jar').get()
+            def coords = mavenCoords(p)
+            def purl = projectPurl[p.path]
+            components << [
+                type: 'library',
+                'bom-ref': purl,
+                group: coords.group,
+                name: coords.name,
+                version: p.version.toString(),
+                licenses: [bcLicense],
+                hashes: hashesOf(jarTask.archiveFile.get().asFile),
+                purl: purl
+            ]
+
+            def dependsOnRefs = new TreeSet()
+            p.configurations.getByName('implementation').allDependencies.each { d ->
+                if (d instanceof ProjectDependency)
+                {
+                    // :core is bundled into bcprov rather than published — no edge for it
+                    if (projectPurl.containsKey(d.path))
+                    {
+                        dependsOnRefs << projectPurl[d.path]
+                    }
+                }
+                else if (d.group != null && d.version != null)
+                {
+                    def extPurl = purlOf(d.group, d.name, d.version)
+                    externals[extPurl] = [
+                        type: 'library',
+                        'bom-ref': extPurl,
+                        group: d.group,
+                        name: d.name,
+                        version: d.version,
+                        purl: extPurl
+                    ]
+                    dependsOnRefs << extPurl
+                }
+            }
+            depEdges << [ref: purl, dependsOn: dependsOnRefs as List]
+        }
+
+        components.addAll(externals.values())
+        components.sort { it['bom-ref'] }
+        depEdges.sort { it.ref }
+
+        def bomVersion = project(':bom').version.toString()
+        def bomRef = purlOf('org.bouncycastle', "bc-${vmrange}-bom", bomVersion) + '?type=pom'
+        def epoch = sourceDateEpochFrom(project(':core').tasks.named('sourcesJar').get().archiveFile.get().asFile)
+
+        def bom = [
+            bomFormat: 'CycloneDX',
+            specVersion: '1.6',
+            serialNumber: "urn:uuid:${UUID.nameUUIDFromBytes(bomRef.getBytes('UTF-8'))}".toString(),
+            version: 1,
+            metadata: [
+                timestamp: new Date(epoch * 1000L).format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone('UTC')),
+                component: [
+                    type: 'library',
+                    'bom-ref': bomRef,
+                    group: 'org.bouncycastle',
+                    name: "bc-${vmrange}-bom".toString(),
+                    version: bomVersion,
+                    description: 'This Bill of Materials POM can be used to ease dependency management when referencing multiple Bouncy Castle artifacts using Gradle or Maven.',
+                    licenses: [bcLicense],
+                    purl: bomRef,
+                    externalReferences: [
+                        [type: 'website', url: 'https://www.bouncycastle.org/download/bouncy-castle-java/'],
+                        [type: 'vcs', url: 'https://github.com/bcgit/bc-java'],
+                        [type: 'issue-tracker', url: 'https://github.com/bcgit/bc-java/issues']
+                    ]
+                ]
+            ],
+            components: components,
+            dependencies: [[ref: bomRef, dependsOn: published.collect { projectPurl[it.path] }.sort()]] + depEdges
+        ]
+
+        def dir = outDir.get().asFile
+        dir.mkdirs()
+        def baseName = "bc-${vmrange}-bom-${bomVersion}"
+
+        def sbomFile = new File(dir, "${baseName}-cyclonedx.json")
+        sbomFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(bom))
+
+        def bomProject = project(':bom')
+        def pomSrc = bomProject.tasks.getByName('generatePomFileForMavenJavaPublication').destination
+        def moduleSrc = bomProject.tasks.getByName('generateMetadataFileForMavenJavaPublication').outputFile.get().asFile
+        new File(dir, "${baseName}.pom").bytes = pomSrc.bytes
+        new File(dir, "${baseName}.module").bytes = moduleSrc.bytes
+
+        println "SBOM set written to ${dir}: ${baseName}{-cyclonedx.json (${components.size()} components), .pom, .module}"
+    }
+}
