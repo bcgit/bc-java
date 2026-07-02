@@ -1043,6 +1043,13 @@ public class GetInstanceTest
         // OtherRecipientInfo needs 2 mandatory fields (oriType OID, oriValue ANY).
         checkTooShort(OtherRecipientInfo.class, new DERSequence(new ASN1Encodable[]{
             new ASN1ObjectIdentifier("1.1")}));
+
+        // TimeStampResp needs 1 mandatory field (status PKIStatusInfo).
+        checkTooShort(TimeStampResp.class, new DERSequence());
+
+        // TimeStampReq needs 2 mandatory fields (version INTEGER, messageImprint MessageImprint).
+        checkTooShort(TimeStampReq.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ONE}));
     }
 
     private void checkTooShort(Class clazz, DERSequence tooShort)

@@ -51,6 +51,13 @@ public class FalconSigner
 
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // Reject a malformed/truncated signature before indexing it: a signature
+        // shorter than the header byte + nonce would otherwise throw
+        // ArrayIndexOutOfBoundsException / NegativeArraySizeException here.
+        if (signature.length < nist.NONCELEN + 1)
+        {
+            return false;
+        }
         if (signature[0] != (byte)(0x30 + nist.LOGN))
         {
             return false;

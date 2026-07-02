@@ -51,6 +51,7 @@ public class RegressionTest
         new TBSCertListTest(),
         new TBSCertificateIssuerTest(),
         new AttributeCertificateInfoIssuerTest(),
+        new ParseTest(),
         new ParsingTest(),
         new GeneralNameTest(),
         new NameConstraintsTest(),

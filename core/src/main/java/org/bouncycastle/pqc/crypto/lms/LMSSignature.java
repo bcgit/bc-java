@@ -36,7 +36,12 @@ class LMSSignature
         {
             int q = ((DataInputStream)src).readInt();
             LMOtsSignature otsSignature = LMOtsSignature.getInstance(src);
-            LMSigParameters type = LMSigParameters.getParametersForType(((DataInputStream)src).readInt());
+            int typeCode = ((DataInputStream)src).readInt();
+            LMSigParameters type = LMSigParameters.getParametersForType(typeCode);
+            if (type == null)
+            {
+                throw new IOException("unknown LMS type code: " + typeCode);
+            }
 
             byte[][] path = new byte[type.getH()][];
             for (int h = 0; h < path.length; h++)
