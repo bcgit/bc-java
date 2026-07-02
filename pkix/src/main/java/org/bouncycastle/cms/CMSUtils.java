@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1SetParser;
@@ -170,16 +171,56 @@ class CMSUtils
         byte[] input)
         throws CMSException
     {
-        // enforce limit checking as from a byte array
-        return readContentInfo(new ASN1InputStream(input));
+        try
+        {
+            ContentInfo info = ContentInfo.getInstance(ASN1Primitive.fromByteArray(input));
+            if (info == null)
+            {
+                throw new CMSException("No content found.");
+            }
+
+            return info;
+        }
+        catch (IOException e)
+        {
+            throw new CMSException("IOException reading content.", e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
     }
 
     static ContentInfo readContentInfo(
         InputStream input)
         throws CMSException
     {
-        // enforce some limit checking
-        return readContentInfo(new ASN1InputStream(input));
+        try
+        {
+            ContentInfo info = ContentInfo.getInstance(ASN1Primitive.fromStream(input));
+            if (info == null)
+            {
+                throw new CMSException("No content found.");
+            }
+
+            return info;
+        }
+        catch (IOException e)
+        {
+            throw new CMSException("IOException reading content.", e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
     }
 
     static ASN1Set convertToDlSet(Set<AlgorithmIdentifier> digestAlgs)
@@ -525,34 +566,6 @@ class CMSUtils
         }
 
         return octGen.getOctetOutputStream();
-    }
-
-    private static ContentInfo readContentInfo(
-        ASN1InputStream in)
-        throws CMSException
-    {
-        try
-        {
-            ContentInfo info = ContentInfo.getInstance(in.readObject());
-            if (info == null)
-            {
-                throw new CMSException("No content found.");
-            }
-
-            return info;
-        }
-        catch (IOException e)
-        {
-            throw new CMSException("IOException reading content.", e);
-        }
-        catch (ClassCastException e)
-        {
-            throw new CMSException("Malformed content.", e);
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new CMSException("Malformed content.", e);
-        }
     }
 
     public static byte[] streamToByteArray(
