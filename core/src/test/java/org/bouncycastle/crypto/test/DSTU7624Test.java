@@ -98,6 +98,75 @@ public class DSTU7624Test
         XTSModeTests();
         GCMModeTests();
         testOverlapping();
+        kccmKgcmNoUnverifiedPlaintextOnFailure();
+    }
+
+    private void kccmKgcmNoUnverifiedPlaintextOnFailure()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] iv = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] plaintext = Hex.decode("303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F");
+
+        // KCCM: plaintext is recovered into the output before the MAC is checked, so a tag failure
+        // must not leave it there.
+        {
+            AEADParameters params = new AEADParameters(new KeyParameter(key), 128, iv);
+            KCCMBlockCipher ccm = new KCCMBlockCipher(new DSTU7624Engine(128));
+            ccm.init(true, params);
+            byte[] ct = new byte[ccm.getOutputSize(plaintext.length)];
+            ccm.doFinal(ct, ccm.processBytes(plaintext, 0, plaintext.length, ct, 0));
+
+            ct[ct.length - 1] ^= 0x01;  // corrupt the (masked) MAC
+
+            ccm.init(false, params);
+            byte[] out = new byte[ct.length];
+            Arrays.fill(out, (byte)0x55);
+            try
+            {
+                ccm.doFinal(out, ccm.processBytes(ct, 0, ct.length, out, 0));
+                fail("tampered KCCM ciphertext must not verify");
+            }
+            catch (InvalidCipherTextException e)
+            {
+                checkNoUnverifiedPlaintext("KCCM", out, plaintext.length);
+            }
+        }
+
+        // KGCM
+        {
+            AEADParameters params = new AEADParameters(new KeyParameter(key), 128, iv);
+            KGCMBlockCipher gcm = new KGCMBlockCipher(new DSTU7624Engine(128));
+            gcm.init(true, params);
+            byte[] ct = new byte[gcm.getOutputSize(plaintext.length)];
+            gcm.doFinal(ct, gcm.processBytes(plaintext, 0, plaintext.length, ct, 0));
+
+            ct[ct.length - 1] ^= 0x01;  // corrupt the tag
+
+            gcm.init(false, params);
+            byte[] out = new byte[ct.length];
+            Arrays.fill(out, (byte)0x55);
+            try
+            {
+                gcm.doFinal(out, gcm.processBytes(ct, 0, ct.length, out, 0));
+                fail("tampered KGCM ciphertext must not verify");
+            }
+            catch (InvalidCipherTextException e)
+            {
+                checkNoUnverifiedPlaintext("KGCM", out, plaintext.length);
+            }
+        }
+    }
+
+    private void checkNoUnverifiedPlaintext(String name, byte[] out, int plaintextLen)
+    {
+        for (int i = 0; i != plaintextLen; i++)
+        {
+            if (out[i] != (byte)0x55)
+            {
+                fail(name + " left unverified plaintext in the output buffer on tag failure");
+            }
+        }
     }
 
     public static void main(
@@ -367,10 +436,10 @@ public class DSTU7624Test
         byte[] mac;
         byte[] encrypted = new byte[expectedEncrypted.length];
 
-        byte[] decrypted = new byte[encrypted.length];
-        byte[] expectedDecrypted = new byte[input.length + expectedMac.length];
-        System.arraycopy(input, 0, expectedDecrypted, 0, input.length);
-        System.arraycopy(expectedMac, 0, expectedDecrypted, input.length, expectedMac.length);
+        // decryption no longer appends the MAC to the recovered plaintext; the output is
+        // the plaintext only and the MAC is available via getMac() (standard AEAD contract).
+        byte[] decrypted = new byte[input.length];
+        byte[] expectedDecrypted = Arrays.clone(input);
         int len;
 
 
@@ -430,10 +499,8 @@ public class DSTU7624Test
         mac = new byte[expectedMac.length];
         encrypted = new byte[expectedEncrypted.length];
 
-        decrypted = new byte[encrypted.length];
-        expectedDecrypted = new byte[input.length + expectedMac.length];
-        System.arraycopy(input, 0, expectedDecrypted, 0, input.length);
-        System.arraycopy(expectedMac, 0, expectedDecrypted, input.length, expectedMac.length);
+        decrypted = new byte[input.length];
+        expectedDecrypted = Arrays.clone(input);
 
 
         param = new AEADParameters(new KeyParameter(key), 128, iv);
@@ -491,10 +558,8 @@ public class DSTU7624Test
         mac = new byte[expectedMac.length];
         encrypted = new byte[expectedEncrypted.length];
 
-        decrypted = new byte[encrypted.length];
-        expectedDecrypted = new byte[input.length + expectedMac.length];
-        System.arraycopy(input, 0, expectedDecrypted, 0, input.length);
-        System.arraycopy(expectedMac, 0, expectedDecrypted, input.length, expectedMac.length);
+        decrypted = new byte[input.length];
+        expectedDecrypted = Arrays.clone(input);
 
 
         param = new AEADParameters(new KeyParameter(key), 256, iv);
@@ -552,10 +617,8 @@ public class DSTU7624Test
         mac = new byte[expectedMac.length];
         encrypted = new byte[expectedEncrypted.length];
 
-        decrypted = new byte[encrypted.length];
-        expectedDecrypted = new byte[input.length + expectedMac.length];
-        System.arraycopy(input, 0, expectedDecrypted, 0, input.length);
-        System.arraycopy(expectedMac, 0, expectedDecrypted, input.length, expectedMac.length);
+        decrypted = new byte[input.length];
+        expectedDecrypted = Arrays.clone(input);
 
 
         param = new AEADParameters(new KeyParameter(key), 512, iv);
@@ -607,6 +670,7 @@ public class DSTU7624Test
 
         CCMModeLongMessageKeystreamTest();
         CCMModeNonceBindingTest();
+        KCCMNonceReuseTests();
     }
 
     /*
@@ -1688,6 +1752,56 @@ public class DSTU7624Test
     }
 
     private void kgcmEncryptBlock(KGCMBlockCipher cipher)
+        throws Exception
+    {
+        byte[] in = new byte[16];
+        byte[] out = new byte[cipher.getOutputSize(in.length)];
+        int len = cipher.processBytes(in, 0, in.length, out, 0);
+        cipher.doFinal(out, len);
+    }
+
+    /*
+     * Re-initialising for encryption with the same key and nonce is rejected (a repeated key+nonce
+     * is catastrophic for the CCM construction), matching GCMBlockCipher / KGCMBlockCipher.
+     * reset()-based reuse, a fresh nonce, and re-init for decryption are all still allowed.
+     */
+    private void KCCMNonceReuseTests()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] nonce = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] nonce2 = Hex.decode("202122232425262728292A2B2C2D2E2F");
+
+        KCCMBlockCipher c = new KCCMBlockCipher(new DSTU7624Engine(128));
+        c.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+        kccmEncryptBlock(c);
+
+        // reset()-based reuse must still work (it does not re-init)
+        c.reset();
+        kccmEncryptBlock(c);
+
+        // re-init for encryption with the same key+nonce must be rejected
+        try
+        {
+            c.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+            fail("KCCM nonce reuse not detected on re-init for encryption");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong KCCM nonce-reuse message: " + e.getMessage(),
+                "cannot reuse nonce for KCCM encryption".equals(e.getMessage()));
+        }
+
+        // a different nonce is fine
+        c.init(true, new AEADParameters(new KeyParameter(key), 128, nonce2));
+
+        // re-init for decryption with the same key+nonce is allowed (the guard is encrypt-only)
+        KCCMBlockCipher d = new KCCMBlockCipher(new DSTU7624Engine(128));
+        d.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+        d.init(false, new AEADParameters(new KeyParameter(key), 128, nonce));
+    }
+
+    private void kccmEncryptBlock(KCCMBlockCipher cipher)
         throws Exception
     {
         byte[] in = new byte[16];

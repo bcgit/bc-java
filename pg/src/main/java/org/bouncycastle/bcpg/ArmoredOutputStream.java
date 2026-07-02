@@ -30,6 +30,11 @@ public class ArmoredOutputStream
     public static final String HASH_HDR = "Hash";
     public static final String CHARSET_HDR = "Charset";
 
+    private static final String headerStart = "-----BEGIN PGP ";
+    private static final String headerTail = "-----";
+    private static final String footerStart = "-----END PGP ";
+    private static final String footerTail = "-----";
+
     public static final String DEFAULT_VERSION = "BCPG v1.85-SNAPSHOT";
     
     private static final byte[] encodingTable =
@@ -120,11 +125,6 @@ public class ArmoredOutputStream
     String nl = Strings.lineSeparator();
 
     String type;
-    String headerStart = "-----BEGIN PGP ";
-    String headerTail = "-----";
-    String footerStart = "-----END PGP ";
-    String footerTail = "-----";
-
     final Hashtable<String, List<String>> headers = new Hashtable<String, List<String>>();
 
     /**
@@ -363,10 +363,24 @@ public class ArmoredOutputStream
         String value)
         throws IOException
     {
+        // Single chokepoint for every header-setting path (deprecated setHeader/addHeader, the
+        // Hashtable constructor and the Builder). A CR or LF in a name or value would inject extra
+        // armor header lines, and a blank line would terminate the header block early with the rest
+        // parsed as base64 body -- an armor header injection. Reject it here so no path can forge it.
+        if (hasLineBreak(name) || hasLineBreak(value))
+        {
+            throw new IllegalArgumentException("armor header must not contain CR/LF");
+        }
+
         write(name);
         write(": ");
         write(value);
         write(nl);
+    }
+
+    private static boolean hasLineBreak(String s)
+    {
+        return s != null && (s.indexOf('\r') >= 0 || s.indexOf('\n') >= 0);
     }
 
     public void write(
@@ -621,8 +635,7 @@ public class ArmoredOutputStream
             {
                 comment = comment.substring(0, availableCommentCharsPerLine - 1) + '…';
             }
-            addComment(comment);
-            return this;
+            return addComment(comment);
         }
 
         public Builder addSplitMultilineComment(String comment)

@@ -113,11 +113,43 @@ public class AlgorithmParametersTest
         }
     }
 
+    private void shortIvInitTest()
+        throws Exception
+    {
+        // a 1-byte parameter array whose only byte is 0x04 used to leak an
+        // ArrayIndexOutOfBoundsException out of the DER-octet-string detection
+        // heuristic in IvAlgorithmParameters.engineInit(byte[]); it must now
+        // fall through to the raw-IV store like every other length does.
+        AlgorithmParameters alg = AlgorithmParameters.getInstance("AES", "BC");
+
+        alg.init(new byte[]{0x04});
+
+        IvParameterSpec spec = (IvParameterSpec)alg.getParameterSpec(IvParameterSpec.class);
+
+        if (!Arrays.areEqual(new byte[]{0x04}, spec.getIV()))
+        {
+            fail("short IV not stored as raw IV");
+        }
+
+        // also exercise the RAW format path, which routes through engineInit(byte[])
+        alg = AlgorithmParameters.getInstance("AES", "BC");
+
+        alg.init(new byte[]{0x04}, "RAW");
+
+        spec = (IvParameterSpec)alg.getParameterSpec(IvParameterSpec.class);
+
+        if (!Arrays.areEqual(new byte[]{0x04}, spec.getIV()))
+        {
+            fail("short IV not stored as raw IV (RAW format)");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
         basicTest("DSA", DSAParameterSpec.class, dsaParams);
         java21NullCheck();
+        shortIvInitTest();
 
         AlgorithmParameters al = AlgorithmParameters.getInstance("EC", "BC");
 

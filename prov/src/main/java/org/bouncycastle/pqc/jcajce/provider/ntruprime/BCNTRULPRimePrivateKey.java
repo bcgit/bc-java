@@ -8,6 +8,7 @@ import java.security.PrivateKey;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.NTRULPRimeKey;
@@ -58,7 +59,7 @@ public class BCNTRULPRimePrivateKey
         {
             BCNTRULPRimePrivateKey otherKey = (BCNTRULPRimePrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -66,7 +67,12 @@ public class BCNTRULPRimePrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCNTRULPRimePublicKey getPublicKey()
+    {
+        return new BCNTRULPRimePublicKey(new NTRULPRimePublicKeyParameters(params.getParameters(), params.getPk()));
     }
 
     /**

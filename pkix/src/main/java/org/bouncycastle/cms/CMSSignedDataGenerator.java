@@ -220,7 +220,9 @@ public class CMSSignedDataGenerator
     {
         digests.clear();
 
-        CMSTypedData content = new CMSProcessableByteArray(null, signer.getSignature());
+        ASN1ObjectIdentifier contentType = null;
+
+        CMSTypedData content = new CMSProcessableByteArray(contentType, signer.getSignature());
 
         ArrayList signerInformations = new ArrayList();
 
@@ -228,7 +230,7 @@ public class CMSSignedDataGenerator
         {
             SignerInformation _signer = (SignerInformation)it.next();
             SignerInfo signerInfo = _signer.toASN1Structure();
-            signerInformations.add(new SignerInformation(signerInfo, null, content, null));
+            signerInformations.add(new SignerInformation(signerInfo, contentType, content, null));
         }
 
         writeContentViaSignerGens(content, null);
@@ -236,8 +238,8 @@ public class CMSSignedDataGenerator
         for (Iterator it = signerGens.iterator(); it.hasNext(); )
         {
             SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
-            SignerInfo signerInfo = generateSignerInfo(signerGen, null);
-            signerInformations.add(new SignerInformation(signerInfo, null, content, null));
+            SignerInfo signerInfo = generateSignerInfo(signerGen, contentType);
+            signerInformations.add(new SignerInformation(signerInfo, contentType, content, null));
         }
 
         return new SignerInformationStore(signerInformations);

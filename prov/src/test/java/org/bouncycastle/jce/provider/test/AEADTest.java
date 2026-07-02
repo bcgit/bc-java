@@ -272,15 +272,22 @@ public class AEADTest extends SimpleTest
         SecretKeySpec key = new SecretKeySpec(K, "AES");
         SecureRandom random = new SecureRandom();
 
-        // GCMParameterSpec mapped to AEADParameters and overrides default MAC
-        // size
-        GCMParameterSpec spec = new GCMParameterSpec(128, N);
-
         for (int i = 900; i != 1024; i++)
         {
             byte[] message = new byte[i];
 
             random.nextBytes(message);
+
+            // GCMParameterSpec mapped to AEADParameters and overrides the default MAC size. The
+            // nonce is varied per iteration: re-initialising the same Cipher for encryption with a
+            // repeated key+nonce is rejected by the AEAD nonce-reuse guard, and this round-trip
+            // test does not depend on the nonce value.
+            byte[] n = Arrays.clone(N);
+            for (int b = 0; b < n.length && b < 4; b++)
+            {
+                n[b] ^= (byte)(i >>> (8 * b));
+            }
+            GCMParameterSpec spec = new GCMParameterSpec(128, n);
 
             eax.init(Cipher.ENCRYPT_MODE, key, spec);
 

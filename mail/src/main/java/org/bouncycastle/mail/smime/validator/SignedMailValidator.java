@@ -101,11 +101,19 @@ public class SignedMailValidator
      * <code>param</code> are used for the certificate path validation. The actual
      * {@link PKIXParameters} used for the certificate path validation are a copy of <code>param</code>
      * with the following changes:<br>
-     * - The validation date is changed to the signature time.<br>
+     * - If <code>param</code> has no validation date set, the validation date is changed to the
+     * signature time (the CMS signingTime attribute, or the current time if none is present).<br>
      * - A CertStore with certificates and CRLs from the mail message is added to the CertStores.<br>
      * <br>
      * In <code>param</code> it's also possible to add additional CertStores with intermediate
      * certificates and/or CRLs which then are also used for the validation.
+     * <br>
+     * <b>Security note:</b> the CMS signingTime attribute is asserted by the signer and, absent a
+     * trusted timestamp, is not authenticated. Using it as the validation date means certificate
+     * expiry and revocation are evaluated at a signer-chosen instant, so a signature back-dated to
+     * before a key's revocation or expiry would otherwise be accepted. A caller that requires a
+     * trusted validation instant should set it explicitly via {@link PKIXParameters#setDate}; a
+     * date set on <code>param</code> takes precedence over the signing time.
      *
      * @param message the signed {@link MimeMessage}.
      * @param param the parameters for the certificate path validation.
@@ -122,11 +130,19 @@ public class SignedMailValidator
      * <code>param</code> are used for the certificate path validation. The actual
      * {@link PKIXParameters} used for the certificate path validation are a copy of <code>param</code>
      * with the following changes:<br>
-     * - The validation date is changed to the signature time.<br>
+     * - If <code>param</code> has no validation date set, the validation date is changed to the
+     * signature time (the CMS signingTime attribute, or the current time if none is present).<br>
      * - A CertStore with certificates and CRLs from the mail message is added to the CertStores.<br>
      * <br>
      * In <code>param</code> it's also possible to add additional CertStores with intermediate
      * certificates and/or CRLs which then are also used for the validation.
+     * <br>
+     * <b>Security note:</b> the CMS signingTime attribute is asserted by the signer and, absent a
+     * trusted timestamp, is not authenticated. Using it as the validation date means certificate
+     * expiry and revocation are evaluated at a signer-chosen instant, so a signature back-dated to
+     * before a key's revocation or expiry would otherwise be accepted. A caller that requires a
+     * trusted validation instant should set it explicitly via {@link PKIXParameters#setDate}; a
+     * date set on <code>param</code> takes precedence over the signing time.
      *
      * @param message the signed {@link MimeMessage}.
      * @param param the parameters for the certificate path validation.
@@ -333,7 +349,14 @@ public class SignedMailValidator
                     errors.add(msg);
                 }
             }
-            usedParameters.setDate(signTime);
+            // The signingTime attribute is asserted by the signer and, absent a trusted timestamp, is
+            // unauthenticated, so a caller-supplied validation date takes precedence over it. This lets
+            // a caller pin a trusted instant (e.g. the current time) so that a signature back-dated with
+            // a since-revoked or expired key - whose revocation/expiry falls after the asserted signing
+            // time - is still rejected. When the caller supplies no date the signing time is used as
+            // before, validating the chain as of the (asserted) signing time.
+            Date validationDate = (pkixParam.getDate() != null) ? pkixParam.getDate() : signTime;
+            usedParameters.setDate(validationDate);
 
             try
             {

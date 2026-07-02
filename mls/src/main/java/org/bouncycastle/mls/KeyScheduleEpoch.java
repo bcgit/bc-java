@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.hpke.HPKEContext;
 import org.bouncycastle.crypto.hpke.HPKEContextWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -293,7 +294,7 @@ psk_secret (or 0) --> KDF.Extract
     public static KeyScheduleEpoch forCreator(MlsCipherSuite suite, byte[] groupContext)
         throws IOException, IllegalAccessException
     {
-        SecureRandom random = new SecureRandom();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
         byte[] initSecret = new byte[suite.getKDF().getHashLength()];
         random.nextBytes(initSecret);
 
@@ -306,7 +307,7 @@ psk_secret (or 0) --> KDF.Extract
     public static KeyScheduleEpoch forCreator(MlsCipherSuite suite)
         throws IOException, IllegalAccessException
     {
-        SecureRandom rng = new SecureRandom();
+        SecureRandom rng = CryptoServicesRegistrar.getSecureRandom();
         return forCreator(suite, rng);
     }
 

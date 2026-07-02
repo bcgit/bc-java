@@ -33,9 +33,9 @@ public class OriginatorInformation
     }
 
     /**
-     * Return the underlying ASN.1 object defining this SignerInformation object.
+     * Return the underlying ASN.1 object defining this OriginatorInformation object.
      *
-     * @return a OriginatorInfo.
+     * @return an OriginatorInfo.
      */
     public OriginatorInfo toASN1Structure()
     {

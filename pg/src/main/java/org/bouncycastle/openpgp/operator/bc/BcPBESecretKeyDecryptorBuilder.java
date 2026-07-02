@@ -18,7 +18,7 @@ public class BcPBESecretKeyDecryptorBuilder
 
     public PBESecretKeyDecryptor build(char[] passPhrase)
     {
-        return new PBESecretKeyDecryptor(passPhrase, calculatorProvider)
+        return new PBESecretKeyDecryptor(passPhrase, calculatorProvider, new BcPGPS2KCalculator())
         {
             public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
                 throws PGPException

@@ -62,4 +62,13 @@ public class PGPSessionKeyEncryptedData
 
         return encStream;
     }
+
+    // Decryption from an already-recovered session key (including PKESK/public-key via the high-level
+    // API): no multi-SKESK passphrase retry, so the CFB quick check is suppressed to avoid the
+    // Mister-Zuccherato oracle. Integrity is enforced by the SEIPD v1 MDC.
+    @Override
+    protected boolean isPublicKeyEncrypted()
+    {
+        return true;
+    }
 }

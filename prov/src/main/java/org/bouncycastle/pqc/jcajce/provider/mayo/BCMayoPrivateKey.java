@@ -59,7 +59,7 @@ public class BCMayoPrivateKey
         {
             BCMayoPrivateKey otherKey = (BCMayoPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -67,7 +67,8 @@ public class BCMayoPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // MAYO private keys store only the secret seed; public key expansion is not exposed outside the engine.
+        return getAlgorithm().hashCode();
     }
 
     /**

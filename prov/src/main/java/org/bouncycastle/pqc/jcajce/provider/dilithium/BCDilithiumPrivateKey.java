@@ -7,9 +7,7 @@ import java.io.ObjectOutputStream;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPublicKey;
 import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
@@ -69,7 +67,7 @@ public class BCDilithiumPrivateKey
         {
             BCDilithiumPrivateKey otherKey = (BCDilithiumPrivateKey)o;
 
-            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
+            return Arrays.constantTimeAreEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;
@@ -77,7 +75,7 @@ public class BCDilithiumPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(getEncoded());
+        return getPublicKey().hashCode();
     }
 
     /**

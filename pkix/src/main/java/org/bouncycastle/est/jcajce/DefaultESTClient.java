@@ -81,7 +81,17 @@ class DefaultESTClient
                 ESTRequestBuilder requestBuilder = new ESTRequestBuilder(response.getOriginalRequest());
                 if (loc.startsWith("http"))
                 {
-                    redirectingRequest = requestBuilder.withURL(new URL(loc)).build();
+                    URL original = response.getOriginalRequest().getURL();
+                    URL target = new URL(loc);
+                    // The rebuilt request carries the original request's headers (including any
+                    // Authorization) and body (e.g. the enrolment CSR). Following a redirect to a
+                    // different origin would replay those credentials/data to an attacker-chosen
+                    // host, so cross-origin redirects are refused; only same-origin ones are followed.
+                    if (!isSameOrigin(original, target))
+                    {
+                        throw new ESTException("refusing cross-origin redirect from " + original.getHost() + " to " + target.getHost());
+                    }
+                    redirectingRequest = requestBuilder.withURL(target).build();
                 }
                 else
                 {
@@ -100,6 +110,20 @@ class DefaultESTClient
         }
 
         return redirectingRequest;
+    }
+
+    private static boolean isSameOrigin(URL a, URL b)
+    {
+        if (!a.getProtocol().equalsIgnoreCase(b.getProtocol())
+            || !a.getHost().equalsIgnoreCase(b.getHost()))
+        {
+            return false;
+        }
+
+        int portA = a.getPort() == -1 ? a.getDefaultPort() : a.getPort();
+        int portB = b.getPort() == -1 ? b.getDefaultPort() : b.getPort();
+
+        return portA == portB;
     }
 
     public ESTResponse performRequest(ESTRequest c)

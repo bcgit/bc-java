@@ -30,6 +30,11 @@ import org.bouncycastle.util.Properties;
  * {@link Properties#JSSE_HOSTNAME_CHECK_CN_FALLBACK}. The gate must default OFF: a SAN-less
  * certificate is accepted by CN match only when the property is explicitly set to "true"
  * (CVD ANT-2026-TVZJ3Z43).
+ * <p>
+ * Also covers the HTTPS endpoint-identification wildcard policy: a wildcard in a dNSName SAN may
+ * match only the complete left-most label, consistent with SunJSSE
+ * (sun.security.util.HostnameChecker.matchLeftmostWildcard for TYPE_TLS) and RFC 6125 sec. 6.4.3 /
+ * RFC 9525 sec. 6.3. A wildcard in any other label (e.g. "foo.*.com", "*.*.com") must be rejected.
  */
 public class HostnameUtilTest
     extends TestCase
@@ -115,6 +120,64 @@ public class HostnameUtilTest
         {
             restore(saved);
         }
+    }
+
+    public void testHttpsRejectsNonLeftmostWildcardSan()
+        throws Exception
+    {
+        // A wildcard in a non-leftmost label ("foo.*.com") must not match "foo.evil.com": the
+        // HTTPS endpoint-ID dispatch must use leftmost-only matching, like SunJSSE TYPE_TLS.
+        X509Certificate cert = wildcardSanCert("foo.*.com");
+        try
+        {
+            ProvX509TrustManager.checkEndpointID("foo.evil.com", cert, "HTTPS");
+            fail("HTTPS endpoint ID matched a wildcard in a non-leftmost label (foo.*.com)");
+        }
+        catch (CertificateException e)
+        {
+            // expected
+        }
+    }
+
+    public void testHttpsRejectsWildcardInEveryLabelSan()
+        throws Exception
+    {
+        // The most egregious form: "*.*.com" would match any two-label .com host under all-labels
+        // matching. Leftmost-only matching must reject it.
+        X509Certificate cert = wildcardSanCert("*.*.com");
+        try
+        {
+            ProvX509TrustManager.checkEndpointID("login.bank.com", cert, "HTTPS");
+            fail("HTTPS endpoint ID matched a wildcard in every label (*.*.com)");
+        }
+        catch (CertificateException e)
+        {
+            // expected
+        }
+    }
+
+    public void testHttpsAcceptsLeftmostWildcardSan()
+        throws Exception
+    {
+        // Control: a normal complete-left-most-label wildcard must still match.
+        X509Certificate cert = wildcardSanCert("*.example.com");
+        ProvX509TrustManager.checkEndpointID("a.example.com", cert, "HTTPS");
+    }
+
+    public void testHttpsAcceptsExactSan()
+        throws Exception
+    {
+        // Control: an exact dNSName SAN must still match.
+        X509Certificate cert = wildcardSanCert("a.example.com");
+        ProvX509TrustManager.checkEndpointID("a.example.com", cert, "HTTPS");
+    }
+
+    private static X509Certificate wildcardSanCert(String sanDnsName)
+        throws Exception
+    {
+        // CN is deliberately non-matching: with a dNSName SAN present the CN is never consulted, so
+        // a pass or rejection here is determined solely by the SAN wildcard policy.
+        return buildCert(new X500Name("CN=irrelevant.example.org"), sanDnsName);
     }
 
     private static X509Certificate sanlessCnCert()

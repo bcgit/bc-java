@@ -99,7 +99,7 @@ public class JcePBEDataDecryptorFactoryBuilder
                 throw Exceptions.illegalStateException("digest calculator provider cannot be built with current helper", e);
             }
         }
-        return new PBEDataDecryptorFactory(passPhrase, calculatorProvider)
+        return new PBEDataDecryptorFactory(passPhrase, calculatorProvider, new JcePGPS2KCalculator(helper))
         {
             @Override
             public byte[] recoverSessionData(int keyAlgorithm, byte[] key, byte[] secKeyData)

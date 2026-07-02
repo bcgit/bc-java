@@ -54,6 +54,8 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
+import org.bouncycastle.crypto.params.CMCEParameters;
+import org.bouncycastle.crypto.params.CMCEPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.FrodoKEMParameters;
@@ -67,6 +69,7 @@ import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
@@ -151,6 +154,23 @@ public class PublicKeyFactory
         converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, new SLHDSAConverter());
+
+        converters.put(ISOIECObjectIdentifiers.mceliece460896, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece460896f, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece460896pc, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece460896pcf, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece6688128, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece6688128f, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece6688128pc, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece6688128pcf, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece6960119, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece6960119f, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece6960119pc, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece6960119pcf, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece8192128, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece8192128f, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece8192128pc, new CMCEConverter());
+        converters.put(ISOIECObjectIdentifiers.mceliece8192128pcf, new CMCEConverter());
     }
 
     /**
@@ -628,6 +648,19 @@ public class PublicKeyFactory
                 // we're a raw encoding
                 return new MLDSAPublicKeyParameters(mlDsaParams, publicKeyData.getOctets());
             }
+        }
+    }
+
+    static class CMCEConverter
+        extends PublicKeyFactory.SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            CMCEParameters parameters = Utils.cmceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            // we're a raw encoding
+            return new CMCEPublicKeyParameters(parameters, keyInfo.getPublicKeyData().getOctets());
         }
     }
 

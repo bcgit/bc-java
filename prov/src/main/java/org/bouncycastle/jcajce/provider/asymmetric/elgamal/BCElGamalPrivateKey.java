@@ -20,10 +20,12 @@ import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
+import org.bouncycastle.jcajce.provider.asymmetric.util.PrivateKeyHashUtil;
 import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalPrivateKeySpec;
+import org.bouncycastle.util.BigIntegers;
 
 public class BCElGamalPrivateKey
     implements ElGamalPrivateKey, DHPrivateKey, PKCS12BagAttributeCarrier
@@ -145,16 +147,17 @@ public class BCElGamalPrivateKey
 
         DHPrivateKey other = (DHPrivateKey)o;
 
-        return this.getX().equals(other.getX())
-            && this.getParams().getG().equals(other.getParams().getG())
+        int len = Math.max(dhPrivateKeyByteLength(getParams()), dhPrivateKeyByteLength(other.getParams()));
+
+        return this.getParams().getG().equals(other.getParams().getG())
             && this.getParams().getP().equals(other.getParams().getP())
-            && this.getParams().getL() == other.getParams().getL();
+            && this.getParams().getL() == other.getParams().getL()
+            && BigIntegers.areSecretValuesEqual(len, this.getX(), other.getX());
     }
 
     public int hashCode()
     {
-        return this.getX().hashCode() ^ this.getParams().getG().hashCode()
-                ^ this.getParams().getP().hashCode() ^ this.getParams().getL();
+        return PrivateKeyHashUtil.elGamalHashCode(getParameters(), getX());
     }
 
     private void readObject(
@@ -203,5 +206,16 @@ public class BCElGamalPrivateKey
     public void setFriendlyName(String friendlyName)
     {
         attrCarrier.setFriendlyName(friendlyName);
+    }
+
+    private static int dhPrivateKeyByteLength(DHParameterSpec params)
+    {
+        int l = params.getL();
+        if (l > 0)
+        {
+            return (l + 7) / 8;
+        }
+
+        return (params.getP().bitLength() + 7) / 8;
     }
 }

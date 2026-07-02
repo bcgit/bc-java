@@ -19,9 +19,12 @@ import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.agreement.DHUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHCRawAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCStagedAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCUnifiedAgreement;
+import org.bouncycastle.crypto.agreement.ECDHRawAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECMQVRawAgreement;
 import org.bouncycastle.crypto.agreement.ECVKOAgreement;
 import org.bouncycastle.crypto.agreement.MQVBasicAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
@@ -393,8 +396,11 @@ public class AsymmetricConstraintsTest
         ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECDHBasicAgreement());
         ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECDHCBasicAgreement());
         ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECDHCStagedAgreement());
+        ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECDHRawAgreement());
+        ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECDHCRawAgreement());
         ecAgreementTest(new ECDHUPublicParameters((ECPublicKeyParameters)kp.getPublic(), (ECPublicKeyParameters)kp.getPublic()), new ECDHUPrivateParameters((ECPrivateKeyParameters)kp.getPrivate(), (ECPrivateKeyParameters)kp.getPrivate()), new ECDHCUnifiedAgreement());
         ecAgreementTest(new MQVPublicParameters((ECPublicKeyParameters)kp.getPublic(), (ECPublicKeyParameters)kp.getPublic()), new MQVPrivateParameters((ECPrivateKeyParameters)kp.getPrivate(), (ECPrivateKeyParameters)kp.getPrivate()), new ECMQVBasicAgreement());
+        ecAgreementTest(new MQVPublicParameters((ECPublicKeyParameters)kp.getPublic(), (ECPublicKeyParameters)kp.getPublic()), new MQVPrivateParameters((ECPrivateKeyParameters)kp.getPrivate(), (ECPrivateKeyParameters)kp.getPrivate()), new ECMQVRawAgreement());
         ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECVKOAgreement(SHA256Digest.newInstance()));
 
         try
@@ -438,7 +444,33 @@ public class AsymmetricConstraintsTest
         }
     }
 
+    private void ecAgreementTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, RawAgreement agreement)
+    {
+        try
+        {
+            agreement.init(sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+    }
+
     private void ecAgreementTest(MQVPublicParameters pk, MQVPrivateParameters sk, ECMQVBasicAgreement agreement)
+    {
+        try
+        {
+            agreement.init(sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+    }
+
+    private void ecAgreementTest(MQVPublicParameters pk, MQVPrivateParameters sk, ECMQVRawAgreement agreement)
     {
         try
         {

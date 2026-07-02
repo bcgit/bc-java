@@ -50,14 +50,19 @@ public class BCMQOMPrivateKey
         if (o instanceof BCMQOMPrivateKey)
         {
             BCMQOMPrivateKey other = (BCMQOMPrivateKey)o;
-            return Arrays.areEqual(params.getEncoded(), other.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), other.params.getEncoded());
         }
         return false;
     }
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCMQOMPublicKey getPublicKey()
+    {
+        return new BCMQOMPublicKey(params.getPublicKeyParameters());
     }
 
     public final String getAlgorithm()

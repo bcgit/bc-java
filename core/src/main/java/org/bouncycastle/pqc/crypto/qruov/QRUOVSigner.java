@@ -85,6 +85,14 @@ public class QRUOVSigner
 
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // Reject a signature shorter than one parameter-set signature: the
+        // signature || message envelope must carry at least the signature, and
+        // a shorter buffer would throw ArrayIndexOutOfBoundsException in the
+        // arraycopy below.
+        if (signature.length < params.getSignatureBytes())
+        {
+            return false;
+        }
         int seedLen = params.getSeedLen();
         int saltLen = params.getSaltLen();
         int L = params.getL();

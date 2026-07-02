@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.bouncycastle.util.Exceptions;
@@ -30,11 +31,11 @@ public abstract class ASN1Primitive
     }
 
     /**
-     * Create a base ASN.1 object from a byte stream.
+     * Parse an ASN.1 (BER) encoding from a byte array. Checks there are no extra bytes following the encoding. 
      *
-     * @param data the byte stream to parse.
-     * @return the base ASN.1 object represented by the byte stream.
-     * @exception IOException if there is a problem parsing the data, or parsing the stream did not exhaust the available data.
+     * @param data the byte array to parse.
+     * @return the base ASN.1 object parsed from the byte array.
+     * @exception IOException if there is a problem parsing the data, or parsing did not exhaust the available data.
      */
     public static ASN1Primitive fromByteArray(byte[] data)
         throws IOException
@@ -51,6 +52,30 @@ public abstract class ASN1Primitive
             }
 
             return o;
+        }
+        catch (ClassCastException e)
+        {
+            throw Exceptions.ioException("cannot recognise object in stream", e);
+        }
+    }
+
+    /**
+     * Parse the first ASN.1 (BER) encoding from an {@link InputStream}.The stream is not closed by this method and may
+     * contain further data beyond the first ASN.1 encoding.
+     *
+     * @param data the stream to parse.
+     * @return the base ASN.1 object parsed from the stream.
+     * @exception IOException if there is a problem parsing the data.
+     */
+    public static ASN1Primitive fromStream(InputStream input)
+        throws IOException
+    {
+        ASN1InputStream aIn = new ASN1InputStream(input);
+
+        try
+        {
+            // NOTE: Leave open
+            return aIn.readObject();
         }
         catch (ClassCastException e)
         {

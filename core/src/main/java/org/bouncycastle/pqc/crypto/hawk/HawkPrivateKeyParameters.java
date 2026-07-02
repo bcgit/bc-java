@@ -15,6 +15,12 @@ public class HawkPrivateKeyParameters
     public HawkPrivateKeyParameters(HawkParameters params, byte[] input, int inOff, int len)
     {
         super(true, params);
+
+        if (len != params.getPrivateKeySize())
+        {
+            throw new IllegalArgumentException("'len' does not match private key size");
+        }
+
         this.priv = Arrays.copyOfRange(input, inOff, inOff + len);
     }
 

@@ -41,6 +41,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.BigIntegers;
 
 public class BCECGOST3410PrivateKey
     implements ECPrivateKey, org.bouncycastle.jce.interfaces.ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
@@ -483,12 +484,17 @@ public class BCECGOST3410PrivateKey
 
         BCECGOST3410PrivateKey other = (BCECGOST3410PrivateKey)o;
 
-        return getD().equals(other.getD()) && (engineGetSpec().equals(other.engineGetSpec()));
+        int len = Math.max(
+            (engineGetSpec().getN().bitLength() + 7) / 8,
+            (other.engineGetSpec().getN().bitLength() + 7) / 8);
+
+        return engineGetSpec().equals(other.engineGetSpec())
+            && BigIntegers.areSecretValuesEqual(len, getD(), other.getD());
     }
 
     public int hashCode()
     {
-        return getD().hashCode() ^ engineGetSpec().hashCode();
+        return ECUtil.privateKeyHashCode(getD(), engineGetSpec());
     }
 
     public String toString()

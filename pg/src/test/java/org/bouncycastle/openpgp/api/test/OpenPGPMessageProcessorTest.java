@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Date;
 import java.util.List;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
@@ -18,6 +19,10 @@ import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
 import org.bouncycastle.openpgp.api.MessageEncryptionMechanism;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
+import org.bouncycastle.openpgp.api.OpenPGPDefaultPolicy;
+import org.bouncycastle.openpgp.api.OpenPGPImplementation;
+import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
+import org.bouncycastle.openpgp.api.bc.BcOpenPGPImplementation;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPEncryptionNegotiator;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
@@ -52,6 +57,8 @@ public class OpenPGPMessageProcessorTest
         boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
 
         testVerificationOfSEIPD1MessageWithTamperedCiphertext(api);
+
+        policyRejectedInlineSignatureIsNotReported(api);
 
         roundtripUnarmoredPlaintextMessage(api);
         roundtripArmoredPlaintextMessage(api);
@@ -514,6 +521,43 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageInputStream.Result result = decIn.getResult();
         isEquals(key, result.getDecryptionKey().getCertificate());
         isNotNull(result.getSessionKey());
+    }
+
+    private void policyRejectedInlineSignatureIsNotReported(OpenPGPApi api)
+        throws IOException, PGPException
+    {
+        // Inline-sign normally.
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
+        OpenPGPKey aliceKey = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.ALICE_KEY);
+        gen.addSigningKey(aliceKey);
+        OutputStream signOut = gen.open(bOut);
+        signOut.write(PLAINTEXT);
+        signOut.close();
+
+        // Verify with a policy that rejects the document-signature hash. The one-pass signature must
+        // be rejected by sanitize() and skipped - not passed through to verify() and reported correct.
+        OpenPGPImplementation rejectingImpl = new BcOpenPGPImplementation();
+        rejectingImpl.setPolicy(new OpenPGPDefaultPolicy()
+        {
+            public boolean isAcceptableDocumentSignatureHashAlgorithm(int hashAlgorithmId, Date signatureCreationTime)
+            {
+                return false;
+            }
+        });
+        OpenPGPApi verifyApi = new BcOpenPGPApi(rejectingImpl);
+        OpenPGPCertificate aliceCert = verifyApi.readKeyOrCertificate().parseCertificate(OpenPGPTestKeys.ALICE_CERT);
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+        OpenPGPMessageProcessor processor = verifyApi.decryptAndOrVerifyMessage()
+            .addVerificationCertificate(aliceCert);
+        OpenPGPMessageInputStream verifIn = processor.process(bIn);
+        Streams.pipeAll(verifIn, new ByteArrayOutputStream());
+        verifIn.close();
+
+        List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = verifIn.getResult().getSignatures();
+        isTrue("a policy-rejected inline signature must not be reported as a verification result",
+            signatures.isEmpty());
     }
 
     private void inlineSignWithV4KeyAlice(OpenPGPApi api)

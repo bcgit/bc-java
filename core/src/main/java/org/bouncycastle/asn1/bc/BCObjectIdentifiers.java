@@ -972,4 +972,19 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier qruov5q31L3v324m114 = qruov.branch("10");
     ASN1ObjectIdentifier qruov5q31L10v1120m120 = qruov.branch("11");
     ASN1ObjectIdentifier qruov5q7L10v1490m190 = qruov.branch("12");
+
+    /**
+     * AIMer post-quantum digital signature scheme (KpqC Round 2 submission).
+     * Parent arc and the six parameter-set OIDs
+     * (aimer-128f/s, aimer-192f/s, aimer-256f/s).
+     * <p>
+     * bc-sig.16/17/18/19 are taken by SDitH/QR-UOV/Haetae/SQIsign; AIMer takes bc-sig.20.
+     */
+    ASN1ObjectIdentifier aimer = bc_sig.branch("20");
+    ASN1ObjectIdentifier aimer_128f = aimer.branch("1");
+    ASN1ObjectIdentifier aimer_128s = aimer.branch("2");
+    ASN1ObjectIdentifier aimer_192f = aimer.branch("3");
+    ASN1ObjectIdentifier aimer_192s = aimer.branch("4");
+    ASN1ObjectIdentifier aimer_256f = aimer.branch("5");
+    ASN1ObjectIdentifier aimer_256s = aimer.branch("6");
 }
