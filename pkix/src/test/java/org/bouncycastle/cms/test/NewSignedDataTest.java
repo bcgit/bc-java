@@ -520,8 +520,7 @@ public class NewSignedDataTest
       + "cnlwdG9wcm8ucnUxCzAJBgNVBAYTAlJVMRMwEQYDVQQKEwpDUllQVE8tUFJP"
       + "MR8wHQYDVQQDExZUZXN0IENlbnRlciBDUllQVE8tUFJPAgopoLG9AAIAArWe"
       + "MAoGBiqFAwICCQUAMAoGBiqFAwICEwUABED0Gs9zP9lSz/2/e3BUSpzCI3dx"
-      + "39gfl/pFVkx4p5N/GW5o4gHIST9OhDSmdxwpMSK+39YSRD4R0Ue0faOqWEsj"
-      + "AAAAAAAAAAAAAAAAAAAAAA==");
+      + "39gfl/pFVkx4p5N/GW5o4gHIST9OhDSmdxwpMSK+39YSRD4R0Ue0faOqWEsj");
 
     private static final byte[] noAttrEncData = Base64.decode(
        "MIIFjwYJKoZIhvcNAQcCoIIFgDCCBXwCAQExDTALBglghkgBZQMEAgEwgdAG"
