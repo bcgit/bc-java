@@ -841,9 +841,14 @@ public class PKIXNameConstraintValidator
     private static void checkPermittedEmail(Set permitted, String email)
         throws NameConstraintValidatorException
     {
-        if (permitted != null
-            && !(email.length() == 0 && permitted.size() == 0)
-            && !isEmailConstrained(permitted, email))
+        if (permitted == null || (email.length() == 0 && permitted.size() == 0))
+        {
+            return;
+        }
+
+        checkEmailNotAmbiguous(email);
+
+        if (!isEmailConstrained(permitted, email))
         {
             throw new NameConstraintValidatorException("Subject email address is not from a permitted subtree.");
         }
@@ -852,9 +857,33 @@ public class PKIXNameConstraintValidator
     private static void checkExcludedEmail(Set excluded, String email)
         throws NameConstraintValidatorException
     {
+        if (excluded.isEmpty())
+        {
+            return;
+        }
+
+        checkEmailNotAmbiguous(email);
+
         if (isEmailConstrained(excluded, email))
         {
             throw new NameConstraintValidatorException("Email address is from an excluded subtree.");
+        }
+    }
+
+    /**
+     * A tested rfc822Name must have exactly one '@': a quoted local part may legally contain '@'
+     * (RFC 5321 sec. 4.1.2), so a value with more than one is ambiguous and could be split into the
+     * wrong host, evading a constraint. Fail closed rather than guess. This applies to tested names
+     * only; a constraint is matched by whole-string equality, so its '@' positions are immaterial.
+     * Skipped when {@link Properties#X509_ALLOW_LENIENT_RFC822_NAME} opts back in to legacy parsing.
+     */
+    private static void checkEmailNotAmbiguous(String email)
+        throws NameConstraintValidatorException
+    {
+        if (email.indexOf('@') != email.lastIndexOf('@')
+            && !Properties.isOverrideSet(Properties.X509_ALLOW_LENIENT_RFC822_NAME))
+        {
+            throw new NameConstraintValidatorException("Subject email address is ambiguous (multiple '@').");
         }
     }
 
