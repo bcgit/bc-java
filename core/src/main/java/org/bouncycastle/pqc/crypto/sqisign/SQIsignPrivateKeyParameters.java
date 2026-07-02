@@ -12,6 +12,12 @@ public class SQIsignPrivateKeyParameters
     public SQIsignPrivateKeyParameters(SQIsignParameters parameters, byte[] privateKey)
     {
         super(true);
+
+        if (privateKey.length != parameters.getPrivateKeyLength())
+        {
+            throw new IllegalArgumentException("'privateKey' has invalid length");
+        }
+
         this.privateKey = Arrays.clone(privateKey);
         this.parameters = parameters;
     }

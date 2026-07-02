@@ -10,6 +10,12 @@ public class MayoPrivateKeyParameters
     public MayoPrivateKeyParameters(MayoParameters params, byte[] seed_sk)
     {
         super(true, params);
+
+        if (seed_sk.length != params.getCskBytes())
+        {
+            throw new IllegalArgumentException("'seed_sk' has invalid length");
+        }
+
         this.seed_sk = Arrays.clone(seed_sk);
     }
 

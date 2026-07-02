@@ -10,6 +10,12 @@ public class MayoPublicKeyParameters
     public MayoPublicKeyParameters(MayoParameters params, byte[] p)
     {
         super(false, params);
+
+        if (p.length != params.getCpkBytes())
+        {
+            throw new IllegalArgumentException("'p' has invalid length");
+        }
+
         this.p = Arrays.clone(p);
     }
 

@@ -11,6 +11,9 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -64,6 +67,7 @@ public class JcaPrivateKeyReaderTest
 
         doStreamAndByteEntryPoints(privKey);
         doFailureCases(privKey);
+        doMalformedDERCases();
         doIdentityBuilderEncryptedKey(pair);
     }
 
@@ -204,6 +208,45 @@ public class JcaPrivateKeyReaderTest
         catch (PEMException e)
         {
             // expected - PEM parse of 0x02... yields no PEM object, or a DER non-SEQUENCE.
+        }
+    }
+
+    private void doMalformedDERCases()
+        throws Exception
+    {
+        // DER that passes readDER's outer-shape guards (SEQUENCE, size >= 2, first element
+        // INTEGER) but whose inner content is structurally wrong, so the inner getInstance
+        // throws an unchecked exception. readKey() must surface that as a PEMException, never
+        // let it escape the throws IOException contract (finding #34).
+
+        // { INTEGER 0, SEQUENCE { INTEGER 1 } } routes to the PrivateKeyInfo.getInstance
+        // branch (second element is a SEQUENCE) -> IllegalArgumentException.
+        checkMalformedDER(new DERSequence(new ASN1Encodable[]{
+            new ASN1Integer(0), new DERSequence(new ASN1Integer(1)) }).getEncoded(),
+            "PrivateKeyInfo path");
+
+        // { INTEGER 0, INTEGER 1, INTEGER 2 } routes to the RSAPrivateKey.getInstance branch
+        // (second element is not a SEQUENCE) -> NoSuchElementException.
+        checkMalformedDER(new DERSequence(new ASN1Encodable[]{
+            new ASN1Integer(0), new ASN1Integer(1), new ASN1Integer(2) }).getEncoded(),
+            "RSAPrivateKey path");
+    }
+
+    private void checkMalformedDER(byte[] der, String label)
+        throws Exception
+    {
+        try
+        {
+            new JcaPrivateKeyReader().setProvider("BC").readKey(der);
+            fail("malformed DER not rejected: " + label);
+        }
+        catch (PEMException e)
+        {
+            // expected - the throws IOException contract is preserved
+        }
+        catch (RuntimeException e)
+        {
+            fail(label + " leaked " + e.getClass().getName() + ": " + e.getMessage());
         }
     }
 
