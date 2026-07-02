@@ -94,33 +94,43 @@ public class ChaCha20Poly1305
 
     public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
     {
-        KeyParameter initKeyParam;
+        KeyParameter keyParameter = null;
         byte[] initNonce;
         CipherParameters chacha20Params;
 
         if (params instanceof AEADParameters)
         {
-            AEADParameters aeadParams = (AEADParameters)params;
+            AEADParameters aeadParameters = (AEADParameters)params;
 
-            int macSizeBits = aeadParams.getMacSize();
-            if ((MAC_SIZE * 8) != macSizeBits)
+            int macSizeInBits = aeadParameters.getMacSize();
+            if ((MAC_SIZE * 8) != macSizeInBits)
             {
-                throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
+                throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeInBits);
             }
 
-            initKeyParam = aeadParams.getKey();
-            initNonce = aeadParams.getNonce();
-            chacha20Params = new ParametersWithIV(initKeyParam, initNonce);
+            keyParameter = aeadParameters.getKey();
+            initNonce = aeadParameters.getNonce();
+            chacha20Params = new ParametersWithIV(keyParameter, initNonce);
 
-            this.initialAAD = aeadParams.getAssociatedText();
+            this.initialAAD = aeadParameters.getAssociatedText();
         }
         else if (params instanceof ParametersWithIV)
         {
-            ParametersWithIV ivParams = (ParametersWithIV)params;
+            ParametersWithIV withIV = (ParametersWithIV)params;
 
-            initKeyParam = (KeyParameter)ivParams.getParameters();
-            initNonce = ivParams.getIV();
-            chacha20Params = ivParams;
+            CipherParameters innerParameters = withIV.getParameters();
+            if (innerParameters != null)
+            {
+                if (!(innerParameters instanceof KeyParameter))
+                {
+                    throw new IllegalArgumentException("invalid parameters passed to " + getAlgorithmName());
+                }
+
+                keyParameter = (KeyParameter)innerParameters;
+            }
+
+            initNonce = withIV.getIV();
+            chacha20Params = withIV;
 
             this.initialAAD = null;
         }
@@ -130,7 +140,7 @@ public class ChaCha20Poly1305
         }
 
         // Validate key
-        if (null == initKeyParam)
+        if (null == keyParameter)
         {
             if (State.UNINITIALIZED == state)
             {
@@ -139,7 +149,7 @@ public class ChaCha20Poly1305
         }
         else
         {
-            if (KEY_SIZE != initKeyParam.getKeyLength())
+            if (KEY_SIZE != keyParameter.getKeyLength())
             {
                 throw new IllegalArgumentException("Key must be 256 bits");
             }
@@ -154,15 +164,15 @@ public class ChaCha20Poly1305
         // Check for encryption with reused nonce
         if (State.UNINITIALIZED != state && forEncryption && Arrays.areEqual(nonce, initNonce))
         {
-            if (null == initKeyParam || Arrays.areEqual(key, initKeyParam.getKey()))
+            if (null == keyParameter || Arrays.areEqual(key, keyParameter.getKey()))
             {
                 throw new IllegalArgumentException("cannot reuse nonce for " + getAlgorithmName() + " encryption");
             }
         }
 
-        if (null != initKeyParam)
+        if (null != keyParameter)
         {
-            initKeyParam.copyTo(key, 0, KEY_SIZE);
+            keyParameter.copyTo(key, 0, KEY_SIZE);
         }
 
         System.arraycopy(initNonce, 0, nonce, 0, nonceSize);
@@ -495,7 +505,7 @@ public class ChaCha20Poly1305
         case State.ENC_FINAL:
             throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
         default:
-            throw new IllegalStateException();
+            throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
         }
     }
 
@@ -517,7 +527,7 @@ public class ChaCha20Poly1305
         case State.ENC_FINAL:
             throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
         default:
-            throw new IllegalStateException();
+            throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
         }
     }
 
@@ -616,7 +626,7 @@ public class ChaCha20Poly1305
             this.state = State.ENC_FINAL;
             return;
         default:
-            throw new IllegalStateException();
+            throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
         }
 
         if (resetCipher)

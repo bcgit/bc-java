@@ -76,7 +76,7 @@ public class BCMLKEMPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
     }
 
     /**

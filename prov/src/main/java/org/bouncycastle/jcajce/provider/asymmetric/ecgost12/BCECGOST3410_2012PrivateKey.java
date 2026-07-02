@@ -42,6 +42,7 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * Represent two kind of GOST34.10 2012 PrivateKeys: with 256 and 512 size
@@ -504,12 +505,17 @@ public class BCECGOST3410_2012PrivateKey
 
         BCECGOST3410_2012PrivateKey other = (BCECGOST3410_2012PrivateKey)o;
 
-        return getD().equals(other.getD()) && (engineGetSpec().equals(other.engineGetSpec()));
+        int len = Math.max(
+            (engineGetSpec().getN().bitLength() + 7) / 8,
+            (other.engineGetSpec().getN().bitLength() + 7) / 8);
+
+        return engineGetSpec().equals(other.engineGetSpec())
+            && BigIntegers.areSecretValuesEqual(len, getD(), other.getD());
     }
 
     public int hashCode()
     {
-        return getD().hashCode() ^ engineGetSpec().hashCode();
+        return ECUtil.privateKeyHashCode(getD(), engineGetSpec());
     }
 
     public String toString()

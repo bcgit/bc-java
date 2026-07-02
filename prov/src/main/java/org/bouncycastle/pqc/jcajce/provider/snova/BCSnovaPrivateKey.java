@@ -59,7 +59,7 @@ public class BCSnovaPrivateKey
         {
             BCSnovaPrivateKey otherKey = (BCSnovaPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -67,7 +67,8 @@ public class BCSnovaPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        // SNOVA private keys require package-private engine routines to expand the public key from seeds.
+        return getAlgorithm().hashCode();
     }
 
     /**

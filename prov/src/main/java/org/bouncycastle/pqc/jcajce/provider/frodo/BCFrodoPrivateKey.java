@@ -8,6 +8,7 @@ import java.security.PrivateKey;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.FrodoKey;
@@ -62,7 +63,7 @@ public class BCFrodoPrivateKey
         {
             BCFrodoPrivateKey otherKey = (BCFrodoPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -70,7 +71,35 @@ public class BCFrodoPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCFrodoPublicKey getPublicKey()
+    {
+        byte[] sk = params.getPrivateKey();
+        int sBytes = params.getParameters().getSessionKeySize() / 8;
+        int n = frodoN(params.getParameters());
+        int pkSize = sk.length - (sBytes << 1) - (n << 4);
+        byte[] pk = Arrays.copyOfRange(sk, sBytes, sBytes + pkSize);
+        return new BCFrodoPublicKey(new FrodoPublicKeyParameters(params.getParameters(), pk));
+    }
+
+    private static int frodoN(org.bouncycastle.pqc.crypto.frodo.FrodoParameters params)
+    {
+        String name = params.getName();
+        if (name.contains("640"))
+        {
+            return 640;
+        }
+        if (name.contains("976"))
+        {
+            return 976;
+        }
+        if (name.contains("1344"))
+        {
+            return 1344;
+        }
+        throw new IllegalStateException("unknown Frodo parameter set: " + name);
     }
 
     /**

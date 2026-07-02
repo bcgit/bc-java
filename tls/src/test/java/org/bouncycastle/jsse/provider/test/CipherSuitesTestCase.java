@@ -2,7 +2,6 @@ package org.bouncycastle.jsse.provider.test;
 
 import java.security.SecureRandom;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -60,19 +59,33 @@ public class CipherSuitesTestCase extends TestCase
             return;
         }
 
-        int port = PORT_NO.incrementAndGet();
-
         SSLContext clientContext = createClientContext();
         SSLContext serverContext = createServerContext();
 
-        runTestConnection(port, clientContext, serverContext);
-        runTestConnection(port, clientContext, serverContext);
+        // Bind a single OS-allocated (ephemeral) port and run both connections against it: the two
+        // sequential connections reuse the same contexts and the same host:port so that session
+        // resumption is still exercised. The server socket is opened once here, accepted on by each
+        // connection, and closed at the end.
+        SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+        SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(0);
+        sSock.setEnabledCipherSuites(new String[]{ config.cipherSuite });
+        sSock.setEnabledProtocols(new String[]{ config.protocol });
+
+        try
+        {
+            runTestConnection(sSock, clientContext);
+            runTestConnection(sSock, clientContext);
+        }
+        finally
+        {
+            sSock.close();
+        }
     }
 
-    private void runTestConnection(int port, SSLContext clientContext, SSLContext serverContext) throws Throwable
+    private void runTestConnection(SSLServerSocket sSock, SSLContext clientContext) throws Throwable
     {
-        SimpleClient client = new SimpleClient(clientContext, port, config);
-        SimpleServer server = new SimpleServer(serverContext, port, config);
+        SimpleClient client = new SimpleClient(clientContext, sSock.getLocalPort(), config);
+        SimpleServer server = new SimpleServer(sSock, config);
 
         TestProtocolUtil.runClientAndServer(server, client);
 
@@ -114,7 +127,6 @@ public class CipherSuitesTestCase extends TestCase
     }
 
     private static final String HOST = "localhost";
-    private static final AtomicInteger PORT_NO = new AtomicInteger(19000);
 
     static class SimpleClient
         implements TestProtocolUtil.BlockingCallable
@@ -180,16 +192,14 @@ public class CipherSuitesTestCase extends TestCase
     static class SimpleServer
         implements TestProtocolUtil.BlockingCallable
     {
-        private final SSLContext serverContext;
-        private final int port;
+        private final SSLServerSocket sSock;
         private final CipherSuitesTestConfig config;
         private final CountDownLatch latch;
         private byte[] tlsUnique = null;
 
-        SimpleServer(SSLContext serverContext, int port, CipherSuitesTestConfig config)
+        SimpleServer(SSLServerSocket sSock, CipherSuitesTestConfig config)
         {
-            this.serverContext = serverContext;
-            this.port = port;
+            this.sSock = sSock;
             this.config = config;
             this.latch = new CountDownLatch(1);
         }
@@ -198,12 +208,6 @@ public class CipherSuitesTestCase extends TestCase
         {
             try
             {
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-
-                sSock.setEnabledCipherSuites(new String[]{ config.cipherSuite });
-                sSock.setEnabledProtocols(new String[]{ config.protocol });
-
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
@@ -260,7 +264,7 @@ public class CipherSuitesTestCase extends TestCase
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
 
                 sslSock.close();
-                sSock.close();
+                // NB: sSock is shared across both connections and closed by runTest, not here.
             }
             finally
             {

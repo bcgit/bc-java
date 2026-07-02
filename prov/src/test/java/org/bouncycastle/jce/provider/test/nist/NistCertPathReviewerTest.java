@@ -8,6 +8,7 @@ import java.security.cert.CertStore;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXParameters;
+import java.security.cert.PolicyNode;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -18,6 +19,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -400,7 +402,27 @@ public class NistCertPathReviewerTest
         doAcceptingTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, nistTestPolicy2);
         doAcceptingTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, nistTestPolicy3);
     }
-    
+
+    public void testValidPolicyTreePopulated()
+        throws Exception
+    {
+        // Regression for getPolicyTree() always returning null (the policyTree field was
+        // never assigned the tree computed in checkPolicy()): an accepting policy-bearing
+        // chain must expose the populated valid-policy-tree (RFC 3280 6.1.5(g)), as the
+        // JDK's PKIXCertPathValidatorResult.getPolicyTree() does for the same chain.
+        String[] certList = new String[] { "PoliciesP123CACert", "AllCertificatesSamePoliciesTest13EE" };
+        String[] crlList = new String[] { TRUST_ANCHOR_ROOT_CRL, "PoliciesP123CACRL" };
+
+        PKIXCertPathReviewer reviewer = doTest(TRUST_ANCHOR_ROOT_CERTIFICATE, certList, crlList, nistTestPolicy1);
+
+        assertTrue("policy-bearing chain must validate", reviewer.isValidCertPath());
+
+        PolicyNode tree = reviewer.getPolicyTree();
+        assertNotNull("getPolicyTree() must return the computed valid policy tree", tree);
+        assertTrue("valid policy tree must contain " + NIST_TEST_POLICY_1,
+            containsPolicy(tree, NIST_TEST_POLICY_1));
+    }
+
     public void testAnyPolicyTest14()
         throws Exception
     {
@@ -481,6 +503,23 @@ public class NistCertPathReviewerTest
                 "Path processing failed on policy.");
     }
     
+    /** Depth-first search of the valid-policy-tree for a node bearing {@code oid}. */
+    private static boolean containsPolicy(PolicyNode node, String oid)
+    {
+        if (oid.equals(node.getValidPolicy()))
+        {
+            return true;
+        }
+        for (Iterator it = node.getChildren(); it.hasNext(); )
+        {
+            if (containsPolicy((PolicyNode)it.next(), oid))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void doAcceptingTest(
         String      trustAnchor,
         String[]    certs,

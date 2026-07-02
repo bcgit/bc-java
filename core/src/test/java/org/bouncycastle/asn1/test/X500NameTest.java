@@ -150,7 +150,6 @@ public class X500NameTest
     public void performTest()
         throws Exception
     {
-        ietfUtilsTest();
         bogusEqualsTest();
         dnQualifierAliasParseTest();
         stateOrProvinceAliasParseTest();
@@ -681,12 +680,6 @@ public class X500NameTest
     private String getValue(RDN vl)
     {
         return ((ASN1String)vl.getFirst().getValue()).getString();
-    }
-
-    private void ietfUtilsTest()
-        throws Exception
-    {
-        IETFUtils.valueToString(new DERUTF8String(" "));
     }
 
     /**

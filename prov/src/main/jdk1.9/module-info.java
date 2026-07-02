@@ -6,6 +6,7 @@ module org.bouncycastle.provider
 
     provides java.security.Provider with org.bouncycastle.jce.provider.BouncyCastleProvider, org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
+    opens org.bouncycastle.jcajce.provider.asymmetric.cmce to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.frodokem to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mldsa to java.base;
@@ -25,6 +26,7 @@ module org.bouncycastle.provider
     opens org.bouncycastle.pqc.jcajce.provider.sqisign to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.haetae to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.hawk to java.base;
+    opens org.bouncycastle.pqc.jcajce.provider.aimer to java.base;
 
     exports org.bouncycastle;
     exports org.bouncycastle.asn1;
@@ -63,6 +65,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.hpke;
     exports org.bouncycastle.crypto.io;
     exports org.bouncycastle.crypto.kems;
+    exports org.bouncycastle.crypto.kems.cmce;
     exports org.bouncycastle.crypto.kems.frodo;
     exports org.bouncycastle.crypto.kems.mlkem;
     exports org.bouncycastle.crypto.macs;
@@ -86,6 +89,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce;
     exports org.bouncycastle.jcajce.io;
     exports org.bouncycastle.jcajce.provider.asymmetric;
+    exports org.bouncycastle.jcajce.provider.asymmetric.cmce;
     exports org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
     exports org.bouncycastle.jcajce.provider.asymmetric.dh;
     exports org.bouncycastle.jcajce.provider.asymmetric.dsa;
@@ -164,6 +168,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.faest;
     exports org.bouncycastle.pqc.crypto.haetae;
     exports org.bouncycastle.pqc.crypto.hawk;
+    exports org.bouncycastle.pqc.crypto.aimer;
     exports org.bouncycastle.pqc.crypto.mqom;
     exports org.bouncycastle.pqc.crypto.qruov;
     exports org.bouncycastle.pqc.crypto.sdith;
@@ -171,6 +176,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.uov;
     exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
+    exports org.bouncycastle.pqc.crypto.xwing;
     exports org.bouncycastle.pqc.math.ntru;
     exports org.bouncycastle.pqc.math.ntru.parameters;
     exports org.bouncycastle.pqc.jcajce.interfaces;
@@ -197,6 +203,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.faest;
     exports org.bouncycastle.pqc.jcajce.provider.haetae;
     exports org.bouncycastle.pqc.jcajce.provider.hawk;
+    exports org.bouncycastle.pqc.jcajce.provider.aimer;
     exports org.bouncycastle.pqc.jcajce.provider.qruov;
     exports org.bouncycastle.pqc.jcajce.provider.sphincs;
     exports org.bouncycastle.pqc.jcajce.provider.sphincsplus;

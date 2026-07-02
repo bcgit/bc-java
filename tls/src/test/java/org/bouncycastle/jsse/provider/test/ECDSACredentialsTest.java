@@ -25,18 +25,6 @@ public class ECDSACredentialsTest
     extends TestCase
 {
     private static final String HOST = "localhost";
-    private static final int PORT_NO_12_brainpoolP256r1 = 9030;
-    private static final int PORT_NO_12_brainpoolP384r1 = 9031;
-    private static final int PORT_NO_12_brainpoolP512r1 = 9032;
-    private static final int PORT_NO_12_secp256r1 = 9033;
-    private static final int PORT_NO_12_secp384r1 = 9034;
-    private static final int PORT_NO_12_secp521r1 = 9035;
-    private static final int PORT_NO_13_brainpoolP256r1 = 9036;
-    private static final int PORT_NO_13_brainpoolP384r1 = 9037;
-    private static final int PORT_NO_13_brainpoolP512r1 = 9038;
-    private static final int PORT_NO_13_secp256r1 = 9039;
-    private static final int PORT_NO_13_secp384r1 = 9040;
-    private static final int PORT_NO_13_secp521r1 = 9041;
 
     private static final String PROPERTY_NAMED_GROUPS = "jdk.tls.namedGroups";
 
@@ -59,65 +47,65 @@ public class ECDSACredentialsTest
 
     public void test12_brainpoolP256r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_12_brainpoolP256r1, "TLSv1.2", NamedGroup.brainpoolP256r1);
+        implTestECDSACredentials("TLSv1.2", NamedGroup.brainpoolP256r1);
     }
 
     public void test12_brainpoolP384r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_12_brainpoolP384r1, "TLSv1.2", NamedGroup.brainpoolP384r1);
+        implTestECDSACredentials("TLSv1.2", NamedGroup.brainpoolP384r1);
     }
 
     public void test12_brainpoolP512r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_12_brainpoolP512r1, "TLSv1.2", NamedGroup.brainpoolP512r1);
+        implTestECDSACredentials("TLSv1.2", NamedGroup.brainpoolP512r1);
     }
 
     public void test12_secp256r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_12_secp256r1, "TLSv1.2", NamedGroup.secp256r1);
+        implTestECDSACredentials("TLSv1.2", NamedGroup.secp256r1);
     }
 
     public void test12_secp384r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_12_secp384r1, "TLSv1.2", NamedGroup.secp384r1);
+        implTestECDSACredentials("TLSv1.2", NamedGroup.secp384r1);
     }
 
     public void test12_secp521r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_12_secp521r1, "TLSv1.2", NamedGroup.secp521r1);
+        implTestECDSACredentials("TLSv1.2", NamedGroup.secp521r1);
     }
 
     public void test13_brainpoolP256r1tls13() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_13_brainpoolP256r1, "TLSv1.3", NamedGroup.brainpoolP256r1tls13);
+        implTestECDSACredentials("TLSv1.3", NamedGroup.brainpoolP256r1tls13);
     }
 
     public void test13_brainpoolP384r1tls13() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_13_brainpoolP384r1, "TLSv1.3", NamedGroup.brainpoolP384r1tls13);
+        implTestECDSACredentials("TLSv1.3", NamedGroup.brainpoolP384r1tls13);
     }
 
     public void test13_brainpoolP512r1tls13() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_13_brainpoolP512r1, "TLSv1.3", NamedGroup.brainpoolP512r1tls13);
+        implTestECDSACredentials("TLSv1.3", NamedGroup.brainpoolP512r1tls13);
     }
 
     public void test13_secp256r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_13_secp256r1, "TLSv1.3", NamedGroup.secp256r1);
+        implTestECDSACredentials("TLSv1.3", NamedGroup.secp256r1);
     }
 
     public void test13_secp384r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_13_secp384r1, "TLSv1.3", NamedGroup.secp384r1);
+        implTestECDSACredentials("TLSv1.3", NamedGroup.secp384r1);
     }
 
     public void test13_secp521r1() throws Exception
     {
-        implTestECDSACredentials(PORT_NO_13_secp521r1, "TLSv1.3", NamedGroup.secp521r1);
+        implTestECDSACredentials("TLSv1.3", NamedGroup.secp521r1);
     }
 
-    private void implTestECDSACredentials(int port, String protocol, int namedGroup) throws Exception
+    private void implTestECDSACredentials(String protocol, int namedGroup) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
 
@@ -131,8 +119,9 @@ public class ECDSACredentialsTest
         KeyStore clientKs = createKeyStore();
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new ECDSAServer(port, protocol, serverKs, keyPass, caCert),
-            new ECDSAClient(port, protocol, clientKs, keyPass, caCert));
+        ECDSAServer server = new ECDSAServer(0, protocol, serverKs, keyPass, caCert);
+        TestProtocolUtil.runClientAndServer(server,
+            new ECDSAClient(server.getPort(), protocol, clientKs, keyPass, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException
@@ -218,11 +207,8 @@ public class ECDSACredentialsTest
     static class ECDSAServer
         implements TestProtocolUtil.BlockingCallable
     {
-        private final int port;
         private final String protocol;
-        private final KeyStore serverStore;
-        private final char[] keyPass;
-        private final KeyStore trustStore;
+        private final SSLServerSocket sSock;
         private final CountDownLatch latch;
 
         ECDSAServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
@@ -231,36 +217,37 @@ public class ECDSACredentialsTest
             KeyStore trustStore = createKeyStore();
             trustStore.setCertificateEntry("client", trustAnchor);
 
-            this.port = port;
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            keyMgrFact.init(serverStore, keyPass);
+
+            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                ProviderUtils.PROVIDER_NAME_BCJSSE);
+            trustMgrFact.init(trustStore);
+
+            SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+            serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
+                SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+            this.sSock = (SSLServerSocket)fact.createServerSocket(port);
+
+            SSLUtils.enableAll(sSock);
+            sSock.setNeedClientAuth(true);
+
             this.protocol = protocol;
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
-            this.trustStore = trustStore;
             this.latch = new CountDownLatch(1);
+        }
+
+        int getPort()
+        {
+            return sSock.getLocalPort();
         }
 
         public Exception call() throws Exception
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                keyMgrFact.init(serverStore, keyPass);
-
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-                trustMgrFact.init(trustStore);
-
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-                serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-
-                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-
-                SSLUtils.enableAll(sSock);
-                sSock.setNeedClientAuth(true);
-
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();

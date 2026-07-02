@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -115,7 +116,7 @@ public class MessageProtectionTest
             case mls_private_message:
                 GroupKeySet keys = getKeys();
                 // TODO: get padding size
-                message.privateMessage = PrivateMessage.protect(authContent, suite, keys, sender_data_secret, 0);
+                message.privateMessage = PrivateMessage.protect(authContent, suite, keys, sender_data_secret, 0, CryptoServicesRegistrar.getSecureRandom());
                 break;
             case mls_welcome:
                 break;

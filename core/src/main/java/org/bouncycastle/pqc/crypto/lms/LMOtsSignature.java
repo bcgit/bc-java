@@ -34,7 +34,12 @@ class LMOtsSignature
         {
 
 
-            LMOtsParameters type = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
+            int typeCode = ((DataInputStream)src).readInt();
+            LMOtsParameters type = LMOtsParameters.getParametersForType(typeCode);
+            if (type == null)
+            {
+                throw new IOException("unknown LM-OTS type code: " + typeCode);
+            }
             byte[] C = new byte[type.getN()];
 
             ((DataInputStream)src).readFully(C);

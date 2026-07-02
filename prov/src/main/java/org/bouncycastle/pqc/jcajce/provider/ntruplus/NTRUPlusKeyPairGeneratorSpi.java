@@ -144,7 +144,7 @@ public class NTRUPlusKeyPairGeneratorSpi
     {
         public NTRUPlus1152()
         {
-            super(NTRUPlusParameters.ntruplus_kem_864);
+            super(NTRUPlusParameters.ntruplus_kem_1152);
         }
     }
 }

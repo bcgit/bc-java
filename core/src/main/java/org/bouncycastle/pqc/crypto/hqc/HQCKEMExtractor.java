@@ -22,6 +22,10 @@ public class HQCKEMExtractor
 
     public byte[] extractSecret(byte[] encapsulation)
     {
+        if (encapsulation.length != getEncapsulationLength())
+        {
+            throw new IllegalArgumentException("encapsulation wrong length");
+        }
         byte[] session_key = new byte[64];
         byte[] sk = privateKey.getPrivateKey();
 

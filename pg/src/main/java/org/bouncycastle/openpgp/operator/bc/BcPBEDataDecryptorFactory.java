@@ -29,7 +29,7 @@ public class BcPBEDataDecryptorFactory
      */
     public BcPBEDataDecryptorFactory(char[] pass, PGPDigestCalculatorProvider calculatorProvider)
     {
-        super(pass, calculatorProvider);
+        super(pass, calculatorProvider, new BcPGPS2KCalculator());
     }
 
     /**

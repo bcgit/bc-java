@@ -17,8 +17,7 @@ import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.agreement.BasicRawAgreement;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHRawAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -213,7 +212,7 @@ public class BcPublicKeyDataDecryptorFactory
             ECPublicKeyParameters ephPub = new ECPublicKeyParameters(ecParameters.getCurve().decodePoint(pEnc),
                 ecParameters);
 
-            secret = BcUtil.getSecret(new BasicRawAgreement(new ECDHBasicAgreement()), privKey, ephPub);
+            secret = BcUtil.getSecret(new ECDHRawAgreement(), privKey, ephPub);
         }
         hashAlgorithm = ecPubKey.getHashAlgorithm();
         symmetricKeyAlgorithm = ecPubKey.getSymmetricKeyAlgorithm();

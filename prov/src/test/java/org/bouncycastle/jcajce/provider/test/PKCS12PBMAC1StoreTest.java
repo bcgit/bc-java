@@ -280,9 +280,12 @@ public class PKCS12PBMAC1StoreTest
             ks.load(new ByteArrayInputStream(negIt), passwd);
             fail("no exception");
         }
-        catch (IllegalStateException e)
+        catch (IOException e)
         {
-            assertEquals("negative iteration count found", e.getMessage());
+            // a malformed (negative) MAC iteration count must surface inside
+            // KeyStore.load's declared IOException, not as a raw IllegalStateException
+            assertTrue(e.getCause() instanceof IllegalStateException);
+            assertEquals("negative iteration count found", e.getCause().getMessage());
         }
 
     }
