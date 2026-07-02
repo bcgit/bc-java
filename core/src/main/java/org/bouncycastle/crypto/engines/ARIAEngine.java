@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Bytes;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -143,7 +144,97 @@ public class ARIAEngine
 
     protected static final int BLOCK_SIZE = 16;
 
+    /*
+     * SWAR multiply-broadcast diffusion of RFC 5794's round transform A(SL(.)).
+     *
+     * A is a GF(2) (binary) involution, so A applied to a single substituted byte s at
+     * input position i is just s replicated at the 7 output positions of column i
+     * (zero elsewhere). That replication is exactly s * M[i] where M[i] is the column-i
+     * support mask packed with 0x01 bytes (s <= 255, so each byte product is s with no
+     * carry between bytes). The whole round is therefore the XOR over the 16 input
+     * bytes of (SB(byte_i) * M[i]) - no big T-tables, just the 1KB S-boxes plus 32 long
+     * constants, which keeps the working set in L1 (the full-16-byte T-table form was
+     * measured a net loss: its ~192KB of tables lose to cache pressure against the
+     * already-cheap XOR diffusion). HI = output bytes 0..7, LO = bytes 8..15. The masks
+     * are derived from the same A used by the (key-schedule) FO / FE, so this is
+     * byte-identical by construction.
+     */
+    private static final long[] M_HI = new long[16];
+    private static final long[] M_LO = new long[16];
+
+    static
+    {
+        for (int i = 0; i < 16; ++i)
+        {
+            byte[] u = new byte[BLOCK_SIZE];
+            u[i] = 1;
+            A(u);
+            M_HI[i] = Pack.bigEndianToLong(u, 0);
+            M_LO[i] = Pack.bigEndianToLong(u, 8);
+        }
+    }
+
+    // FO round: SL1 substitution (positions cycle SB1,SB2,SB3,SB4) then A, fused via the
+    // broadcast masks M. Returns one output long (called with M_HI then M_LO).
+    private static long applyFO(long sh, long sl, long[] M)
+    {
+        return (long)(SB1((byte)(sh >>> 56)) & 0xFF) * M[0]
+             ^ (long)(SB2((byte)(sh >>> 48)) & 0xFF) * M[1]
+             ^ (long)(SB3((byte)(sh >>> 40)) & 0xFF) * M[2]
+             ^ (long)(SB4((byte)(sh >>> 32)) & 0xFF) * M[3]
+             ^ (long)(SB1((byte)(sh >>> 24)) & 0xFF) * M[4]
+             ^ (long)(SB2((byte)(sh >>> 16)) & 0xFF) * M[5]
+             ^ (long)(SB3((byte)(sh >>>  8)) & 0xFF) * M[6]
+             ^ (long)(SB4((byte) sh        ) & 0xFF) * M[7]
+             ^ (long)(SB1((byte)(sl >>> 56)) & 0xFF) * M[8]
+             ^ (long)(SB2((byte)(sl >>> 48)) & 0xFF) * M[9]
+             ^ (long)(SB3((byte)(sl >>> 40)) & 0xFF) * M[10]
+             ^ (long)(SB4((byte)(sl >>> 32)) & 0xFF) * M[11]
+             ^ (long)(SB1((byte)(sl >>> 24)) & 0xFF) * M[12]
+             ^ (long)(SB2((byte)(sl >>> 16)) & 0xFF) * M[13]
+             ^ (long)(SB3((byte)(sl >>>  8)) & 0xFF) * M[14]
+             ^ (long)(SB4((byte) sl        ) & 0xFF) * M[15];
+    }
+
+    // FE round: SL2 substitution (positions cycle SB3,SB4,SB1,SB2) then A.
+    private static long applyFE(long sh, long sl, long[] M)
+    {
+        return (long)(SB3((byte)(sh >>> 56)) & 0xFF) * M[0]
+             ^ (long)(SB4((byte)(sh >>> 48)) & 0xFF) * M[1]
+             ^ (long)(SB1((byte)(sh >>> 40)) & 0xFF) * M[2]
+             ^ (long)(SB2((byte)(sh >>> 32)) & 0xFF) * M[3]
+             ^ (long)(SB3((byte)(sh >>> 24)) & 0xFF) * M[4]
+             ^ (long)(SB4((byte)(sh >>> 16)) & 0xFF) * M[5]
+             ^ (long)(SB1((byte)(sh >>>  8)) & 0xFF) * M[6]
+             ^ (long)(SB2((byte) sh        ) & 0xFF) * M[7]
+             ^ (long)(SB3((byte)(sl >>> 56)) & 0xFF) * M[8]
+             ^ (long)(SB4((byte)(sl >>> 48)) & 0xFF) * M[9]
+             ^ (long)(SB1((byte)(sl >>> 40)) & 0xFF) * M[10]
+             ^ (long)(SB2((byte)(sl >>> 32)) & 0xFF) * M[11]
+             ^ (long)(SB3((byte)(sl >>> 24)) & 0xFF) * M[12]
+             ^ (long)(SB4((byte)(sl >>> 16)) & 0xFF) * M[13]
+             ^ (long)(SB1((byte)(sl >>>  8)) & 0xFF) * M[14]
+             ^ (long)(SB2((byte) sl        ) & 0xFF) * M[15];
+    }
+
+    // Final round applies SL2 with no diffusion: each substituted byte stays at its own
+    // position. The SB pattern (SB3,SB4,SB1,SB2 cycling) is identical for both 8-byte
+    // halves, so one helper serves HI and LO.
+    private static long sl2Word(long w)
+    {
+        return ((long)(SB3((byte)(w >>> 56)) & 0xFF) << 56)
+             | ((long)(SB4((byte)(w >>> 48)) & 0xFF) << 48)
+             | ((long)(SB1((byte)(w >>> 40)) & 0xFF) << 40)
+             | ((long)(SB2((byte)(w >>> 32)) & 0xFF) << 32)
+             | ((long)(SB3((byte)(w >>> 24)) & 0xFF) << 24)
+             | ((long)(SB4((byte)(w >>> 16)) & 0xFF) << 16)
+             | ((long)(SB1((byte)(w >>>  8)) & 0xFF) << 8)
+             | ((long)(SB2((byte) w        ) & 0xFF));
+    }
+
     private byte[][] roundKeys;
+    private long[] rkHi;
+    private long[] rkLo;
     //private boolean forEncryption;
 
     boolean forEncryption;
@@ -162,6 +253,16 @@ public class ARIAEngine
 
         this.forEncryption = forEncryption;
         this.roundKeys = keySchedule(forEncryption, ((KeyParameter)params).getKey());
+
+        int n = roundKeys.length;
+        this.rkHi = new long[n];
+        this.rkLo = new long[n];
+        for (int r = 0; r < n; ++r)
+        {
+            rkHi[r] = Pack.bigEndianToLong(roundKeys[r], 0);
+            rkLo[r] = Pack.bigEndianToLong(roundKeys[r], 8);
+        }
+
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, Utils.getPurpose(forEncryption)));
     }
 
@@ -191,22 +292,46 @@ public class ARIAEngine
             throw new OutputLengthException("output buffer too short");
         }
 
-        byte[] z = new byte[BLOCK_SIZE];
-        System.arraycopy(in, inOff, z, 0, BLOCK_SIZE);
+        long[] kh = rkHi, kl = rkLo;
 
-        int i = 0, rounds = roundKeys.length - 3;
+        long hi = Pack.bigEndianToLong(in, inOff);
+        long lo = Pack.bigEndianToLong(in, inOff + 8);
+
+        int i = 0, rounds = kh.length - 3;
         while (i < rounds)
         {
-            FO(z, roundKeys[i++]);
-            FE(z, roundKeys[i++]);
+            // FO: add round key, then fused A(SL1(.))
+            long sh = hi ^ kh[i], sl = lo ^ kl[i];
+            hi = applyFO(sh, sl, M_HI);
+            lo = applyFO(sh, sl, M_LO);
+            ++i;
+
+            // FE: add round key, then fused A(SL2(.))
+            sh = hi ^ kh[i];
+            sl = lo ^ kl[i];
+            hi = applyFE(sh, sl, M_HI);
+            lo = applyFE(sh, sl, M_LO);
+            ++i;
         }
 
-        FO(z, roundKeys[i++]);
-        xor(z, roundKeys[i++]);
-        SL2(z);
-        xor(z, roundKeys[i]);
+        // Final FO
+        long sh = hi ^ kh[i], sl = lo ^ kl[i];
+        hi = applyFO(sh, sl, M_HI);
+        lo = applyFO(sh, sl, M_LO);
+        ++i;
 
-        System.arraycopy(z, 0, out, outOff, BLOCK_SIZE);
+        // Add round key, SL2 without A, add round key
+        sh = hi ^ kh[i];
+        sl = lo ^ kl[i];
+        hi = sl2Word(sh);
+        lo = sl2Word(sl);
+        ++i;
+
+        hi ^= kh[i];
+        lo ^= kl[i];
+
+        Pack.longToBigEndian(hi, out, outOff);
+        Pack.longToBigEndian(lo, out, outOff + 8);
 
         return BLOCK_SIZE;
     }
