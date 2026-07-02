@@ -71,10 +71,10 @@ Note: the ./ is required in front of the key file name to tell gpg to look local
 
 ## Building overview
 
-This project can now be built and tested with JDK25.
+Building the project requires JDK 25 or later to drive Gradle — make sure JAVA_HOME (or whatever JVM ```gradlew``` picks up) points at a JDK 25+ installation.
 
-If the build script detects BC_JDK8, BC_JDK11, BC_JDK17, BC_JDK21 it will add to the usual test task a dependency on test tasks 
-that specifically use the JVMs addressed by those environmental variables. The script relies on JAVA_HOME for picking up Java 25 if it is use.
+If the build script detects BC_JDK8, BC_JDK11, BC_JDK17, BC_JDK21, BC_JDK25 it will add to the usual test task a dependency on test tasks
+that specifically use the JVMs addressed by those environmental variables.
 
 To run the tests of the project as part of the build test data is needed. Our test data can be found at the [bc-test-data](https://github.com/bcgit/bc-test-data) repository. The tests locate the bc-test-data tree using, in order:
 
@@ -95,6 +95,7 @@ export BC_JDK8=/path/to/java8
 export BC_JDK11=/path/to/java11
 export BC_JDK17=/path/to/java17
 export BC_JDK21=/path/to/java21
+export BC_JDK25=/path/to/java25
 ```
 
 If your ```bc-test-data``` checkout is not a sibling of ```bc-java```, set ```BC_TEST_DATA_HOME``` (or pass ```-Dbc.test.data.home=...``` on the command line) so the tests can find it:
@@ -118,7 +119,7 @@ The project now uses ```gradlew``` which can be invoked for example:
 
 ```
 
-The gradle script will endeavour to verify their existence but not the correctness of their value.
+At startup the gradle script prints which of the BC_JDK environmental variables it found; it does not verify that their values point at working JDK installations.
 
 Each module's built jars are written to its own ```<module>/build/libs``` directory (e.g. ```prov/build/libs/bcprov-jdk18on-<version>.jar```). For convenience, a top-level ```copyJars``` task gathers the produced jars (main, sources and javadoc) for all published modules (```bccore```, ```bcutil```, ```bcprov```, ```bcpkix```, ```bcpg```, ```bctls```, ```bcmls```, ```bcmail```, ```bcjmail```) into a single ```dist``` directory at the project root:
 
@@ -132,6 +133,20 @@ A sibling ```copyMavenJars``` task produces the same set minus ```bccore``` (who
 ./gradlew copyMavenJars
 ```
 
+## SBOM and CBOM generation
+
+The build can produce CycloneDX 1.6 bills of materials describing the release artifacts:
+
+```
+./gradlew generateSbom     # -> build/reports/sbom/
+./gradlew generateCbom     # -> build/reports/cbom/
+```
+
+```generateSbom``` writes a Software Bill of Materials ([CycloneDX SBOM](https://cyclonedx.org/capabilities/sbom/)) mirroring the published ```bc-jdk18on-bom``` Maven BOM: one library component per published module jar, with MD5 / SHA-1 / SHA-256 hashes matching the Maven repository checksum files, the declared external dependencies, and the inter-module dependency graph as it appears in the published poms. Alongside the SBOM itself (```bc-jdk18on-bom-<version>-cyclonedx.json```) the task copies in the BOM's ```.pom``` and Gradle Module Metadata ```.module``` files, so the output directory holds the complete publishable set for the BOM artifact. The component set is read from the ```bom``` project's platform constraints, so the SBOM and the published Maven BOM stay in lockstep automatically.
+
+```generateCbom``` writes a Cryptographic Bill of Materials ([CycloneDX CBOM](https://cyclonedx.org/capabilities/cbom/)) for the freshly built ```bcprov``` jar by introspecting the JCA service tables of the ```BC``` (```BouncyCastleProvider```) and ```BCPQC``` (```BouncyCastlePQCProvider```) providers: one ```cryptographic-asset``` component per algorithm, carrying its primitive classification (block cipher, signature, KEM, hash, MAC, KDF, DRBG, ...), the crypto functions it provides, and its OID(s), plus a ```provides``` dependency edge from the ```bcprov``` library component to every asset. The output is ```build/reports/cbom/bcprov-jdk18on-<version>-cyclonedx.json```.
+
+Both BOMs are reproducible: the serial number is a name-based UUID derived from the artifact coordinates, and the timestamp is taken from the ```SOURCE_DATE_EPOCH``` environment variable when set, falling back to the git commit time recorded in the ```bccore``` sources jar manifest — so the same version yields byte-identical output.
 
 ## Multi-release jars and testing
 Some subprojects produce multi-release jars and these jars are can be tested on different jvm versions specifically.
@@ -142,9 +157,10 @@ export BC_JDK8=/path/to/java8
 export BC_JDK11=/path/to/java11
 export BC_JDK17=/path/to/java17
 export BC_JDK21=/path/to/java21
+export BC_JDK25=/path/to/java25
 ```
 
-If only a Java 25 JDK is present then the normal test task and test25 are run only.
+The version-specific test tasks (```test11```, ```test15```, ```test17```, ```test25```, ...) only run when the BC_JDK variable for the JVM they run on is set (```test15``` runs on the BC_JDK17 JVM); if none of the variables are defined only the normal test task is run, on the JVM driving Gradle.
 
 
 ## Code Organisation
