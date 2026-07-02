@@ -317,7 +317,7 @@ public class PKCS12KeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new RuntimeException("error creating key");
+            throw Exceptions.illegalStateException("error creating key", e);
         }
     }
 
