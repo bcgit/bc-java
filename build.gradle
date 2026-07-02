@@ -375,3 +375,6 @@ task copyMavenJars(type: Copy) {
 
 
 
+
+apply from: "gradle/cbom.gradle"
+apply from: "gradle/sbom.gradle"
