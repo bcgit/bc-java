@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.sdith;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.raw.GF256AES;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -204,7 +205,7 @@ public final class SDitHEngine
      */
     private int fieldByteMul(int a, int b)
     {
-        return isP251() ? SDitHP251.mulNaive(a, b) : SDitHGF256.mulNaive(a, b);
+        return isP251() ? SDitHP251.mulNaive(a, b) : GF256AES.mul(a, b);
     }
 
     /**

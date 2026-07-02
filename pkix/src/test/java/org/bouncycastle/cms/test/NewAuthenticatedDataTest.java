@@ -27,12 +27,16 @@ import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.GCMParameters;
+import org.bouncycastle.asn1.nist.KMACwithSHAKE128_params;
+import org.bouncycastle.asn1.nist.KMACwithSHAKE256_params;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSRuntimeException;
 import org.bouncycastle.cms.CMSAuthenticatedData;
 import org.bouncycastle.cms.CMSAuthenticatedDataGenerator;
 import org.bouncycastle.cms.CMSException;
@@ -52,6 +56,7 @@ import org.bouncycastle.cms.jcajce.JceKeyTransRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JcePasswordAuthenticatedRecipient;
 import org.bouncycastle.cms.jcajce.JcePasswordRecipientInfoGenerator;
+import org.bouncycastle.jcajce.spec.KMACParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -576,7 +581,7 @@ public class NewAuthenticatedDataTest
         }
         catch (CMSException e)
         {
-            Assert.assertEquals(e.getMessage(), "CMS Algorithm Identifier Protection check failed for digestAlgorithm");
+            Assert.assertEquals(e.getMessage(), "CMS Algorithm Protection check failed for digestAlgorithm");
         }
 
         AlgorithmIdentifier newDigAlgId = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
@@ -591,7 +596,7 @@ public class NewAuthenticatedDataTest
         }
         catch (CMSException e)
         {
-            Assert.assertEquals(e.getMessage(), "CMS Algorithm Identifier Protection check failed for macAlgorithm");
+            Assert.assertEquals(e.getMessage(), "CMS Algorithm Protection check failed for macAlgorithm");
         }
 
         try
@@ -603,7 +608,7 @@ public class NewAuthenticatedDataTest
         }
         catch (CMSException e)
         {
-            Assert.assertEquals(e.getMessage(), "CMS Algorithm Identifier Protection check failed for macAlgorithm");
+            Assert.assertEquals(e.getMessage(), "CMS Algorithm Protection check failed for macAlgorithm");
         }
     }
 
@@ -665,6 +670,64 @@ public class NewAuthenticatedDataTest
             assertTrue(Arrays.equals(data, recData));
             assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
         }
+    }
+
+    public void testTamperedContentIsRejected()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+        DigestCalculatorProvider calcProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        // generate with authenticated attributes (the messageDigest attribute path)
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build(),
+            calcProvider.get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)));
+
+        // AuthenticatedData authenticates but does not encrypt the content, so the plaintext is
+        // present in the encoding. Flip one content byte to simulate an in-transit substitution,
+        // leaving authAttrs and the MAC untouched.
+        byte[] encoded = ad.getEncoded();
+        int idx = indexOf(encoded, data);
+        assertTrue("content not located in encoding", idx >= 0);
+        encoded[idx] ^= 0x01;
+
+        CMSAuthenticatedData tampered = new CMSAuthenticatedData(encoded, calcProvider);
+        RecipientInformation recipient =
+            (RecipientInformation)tampered.getRecipientInfos().getRecipients().iterator().next();
+
+        // read the (tampered) content so the content digest is computed
+        recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        try
+        {
+            recipient.getMac();
+            fail("tampered AuthenticatedData content must not yield a valid MAC");
+        }
+        catch (CMSRuntimeException e)
+        {
+            // expected: the recovered content digest no longer matches the messageDigest attribute
+        }
+    }
+
+    private static int indexOf(byte[] haystack, byte[] needle)
+    {
+        for (int i = 0; i <= haystack.length - needle.length; i++)
+        {
+            int j = 0;
+            while (j < needle.length && haystack[i + j] == needle[j])
+            {
+                j++;
+            }
+            if (j == needle.length)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private void tryKeyTransWithDigest(ASN1ObjectIdentifier macAlg)
@@ -867,5 +930,99 @@ public class NewAuthenticatedDataTest
         {
             fail("no recipient found");
         }
+    }
+
+    public void testKMACwithSHAKE128Default()
+        throws Exception
+    {
+        runKMACwithSHAKERoundTrip(CMSAlgorithm.KMACwithSHAKE128, NISTObjectIdentifiers.id_KmacWithSHAKE128,
+            null, 32);
+    }
+
+    public void testKMACwithSHAKE256Default()
+        throws Exception
+    {
+        runKMACwithSHAKERoundTrip(CMSAlgorithm.KMACwithSHAKE256, NISTObjectIdentifiers.id_KmacWithSHAKE256,
+            null, 64);
+    }
+
+    public void testKMACwithSHAKE128CustomParams()
+        throws Exception
+    {
+        // RFC 8702 sec.3.4 - KMACwithSHAKE128-params: non-default output length and customization.
+        KMACParameterSpec spec = new KMACParameterSpec(384, "CMSExample".getBytes());
+        runKMACwithSHAKERoundTrip(CMSAlgorithm.KMACwithSHAKE128, NISTObjectIdentifiers.id_KmacWithSHAKE128,
+            spec, 48);
+    }
+
+    public void testKMACwithSHAKE256CustomParams()
+        throws Exception
+    {
+        KMACParameterSpec spec = new KMACParameterSpec(768, "ContextString".getBytes());
+        runKMACwithSHAKERoundTrip(CMSAlgorithm.KMACwithSHAKE256, NISTObjectIdentifiers.id_KmacWithSHAKE256,
+            spec, 96);
+    }
+
+    private void runKMACwithSHAKERoundTrip(ASN1ObjectIdentifier macOid, ASN1ObjectIdentifier expectedOid,
+        KMACParameterSpec spec, int expectedMacBytes)
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        SecretKey kek = CMSTestUtil.makeAESKey(128);
+        byte[] kekId = new byte[]{1, 2, 3, 4, 5};
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+        adGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(BC));
+
+        JceCMSMacCalculatorBuilder macBuilder = new JceCMSMacCalculatorBuilder(macOid).setProvider(BC);
+        if (spec != null)
+        {
+            AlgorithmParameters algParams = AlgorithmParameters.getInstance(macOid.getId(), BC);
+            algParams.init(spec);
+            macBuilder.setAlgorithmParameters(algParams);
+        }
+
+        CMSAuthenticatedData ad = adGen.generate(new CMSProcessableByteArray(data), macBuilder.build());
+
+        AlgorithmIdentifier macAlgId = ad.getMacAlgorithm();
+        assertEquals(expectedOid, macAlgId.getAlgorithm());
+
+        if (spec == null)
+        {
+            // RFC 8702 sec.3.4: when defaults are in effect, parameters MUST be absent.
+            assertNull("default KMACwithSHAKE parameters must be absent", macAlgId.getParameters());
+        }
+        else
+        {
+            assertNotNull("custom KMACwithSHAKE parameters must be present", macAlgId.getParameters());
+            if (macOid.equals(NISTObjectIdentifiers.id_KmacWithSHAKE128))
+            {
+                KMACwithSHAKE128_params parsed = KMACwithSHAKE128_params.getInstance(macAlgId.getParameters());
+                assertEquals(spec.getMacSizeInBits(), parsed.getOutputLength());
+                assertTrue(Arrays.equals(spec.getCustomizationString(), parsed.getCustomizationString()));
+            }
+            else
+            {
+                KMACwithSHAKE256_params parsed = KMACwithSHAKE256_params.getInstance(macAlgId.getParameters());
+                assertEquals(spec.getMacSizeInBits(), parsed.getOutputLength());
+                assertTrue(Arrays.equals(spec.getCustomizationString(), parsed.getCustomizationString()));
+            }
+        }
+
+        assertEquals("MAC output length mismatch", expectedMacBytes, ad.getMac().length);
+
+        // Re-parse from the encoded form and verify the recipient can pull the content back out.
+        CMSAuthenticatedData decoded = new CMSAuthenticatedData(ad.getEncoded());
+        RecipientInformationStore recipients = decoded.getRecipientInfos();
+        Collection c = recipients.getRecipients();
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+        RecipientInformation recipient = (RecipientInformation)it.next();
+        byte[] recData = recipient.getContent(new JceKEKAuthenticatedRecipient(kek).setProvider(BC));
+
+        assertTrue(Arrays.equals(data, recData));
+        assertTrue(Arrays.equals(decoded.getMac(), recipient.getMac()));
     }
 }

@@ -15,6 +15,12 @@ public class HawkPublicKeyParameters
     public HawkPublicKeyParameters(HawkParameters params, byte[] input, int inOff, int len)
     {
         super(false, params);
+
+        if (len != params.getPublicKeySize())
+        {
+            throw new IllegalArgumentException("'len' does not match public key size");
+        }
+
         this.pub = Arrays.copyOfRange(input, inOff, inOff + len);
     }
 

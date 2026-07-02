@@ -2,6 +2,8 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Objects;
+
 abstract class ASN1UniversalType
     extends ASN1Type
 {
@@ -21,7 +23,17 @@ abstract class ASN1UniversalType
             return primitive;
         }
 
-        throw new IllegalStateException("unexpected object: " + primitive.getClass().getName());
+        throw new IllegalArgumentException("unexpected object: " + Objects.getClassName(primitive));
+    }
+
+    final ASN1Primitive fromExplicit(ASN1Primitive primitive)
+    {
+        if (javaClass.isInstance(primitive))
+        {
+            return primitive;
+        }
+
+        throw new IllegalStateException("unexpected explicit encoding");
     }
 
     ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)

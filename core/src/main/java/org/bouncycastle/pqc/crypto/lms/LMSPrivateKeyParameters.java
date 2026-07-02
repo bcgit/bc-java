@@ -418,7 +418,7 @@ public class LMSPrivateKeyParameters
         {
             return false;
         }
-        if (!Arrays.areEqual(masterSecret, that.masterSecret))
+        if (!Arrays.constantTimeAreEqual(masterSecret, that.masterSecret))
         {
             return false;
         }
@@ -429,13 +429,7 @@ public class LMSPrivateKeyParameters
     @Override
     public int hashCode()
     {
-        int result = q;
-        result = 31 * result + Arrays.hashCode(I);
-        result = 31 * result + (parameters != null ? parameters.hashCode() : 0);
-        result = 31 * result + (otsParameters != null ? otsParameters.hashCode() : 0);
-        result = 31 * result + maxQ;
-        result = 31 * result + Arrays.hashCode(masterSecret);
-        return result;
+        return getPublicKey().hashCode();
     }
 
     public byte[] getEncoded()

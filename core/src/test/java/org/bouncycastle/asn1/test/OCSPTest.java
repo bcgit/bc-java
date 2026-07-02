@@ -3,7 +3,9 @@ package org.bouncycastle.asn1.test;
 import java.io.ByteArrayInputStream;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPRequest;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
@@ -159,22 +161,54 @@ public class OCSPTest
         }
     }
 
+    private TestResult truncatedResponseBytes()
+    {
+        try
+        {
+            // a ResponseBytes SEQUENCE with only one element (missing the mandatory response OCTET STRING)
+            DERSequence truncated = new DERSequence(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1.1"));
+
+            ResponseBytes.getInstance(truncated);
+
+            return new SimpleTestResult(false, getName() + ": truncated ResponseBytes accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (e.getMessage() != null && e.getMessage().startsWith("Bad sequence size"))
+            {
+                return new SimpleTestResult(true, getName() + ": Okay");
+            }
+
+            return new SimpleTestResult(false, getName() + ": truncated ResponseBytes wrong message - " + e.getMessage(), e);
+        }
+        catch (Exception e)
+        {
+            return new SimpleTestResult(false, getName() + ": truncated ResponseBytes wrong exception - " + e.toString(), e);
+        }
+    }
+
     public TestResult perform()
     {
         TestResult  res = unsignedRequest();
-        
+
         if (!res.isSuccessful())
         {
             return res;
         }
-        
+
         res = signedRequest();
         if (!res.isSuccessful())
         {
             return res;
         }
-        
-        return response();
+
+        res = response();
+        if (!res.isSuccessful())
+        {
+            return res;
+        }
+
+        return truncatedResponseBytes();
     }
 
     public String getName()

@@ -109,7 +109,7 @@ public class ECIESTest
 
         byte[]   out1 = i1.processBlock(message, 0, message.length);
 
-        if (!areEqual(out1, Hex.decode("468d89877e8238802403ec4cb6b329faeccfa6f3a730f2cdb3c0a8e8")))
+        if (!areEqual(out1, Hex.decode("609ae8fe2727572da30a1d04e3dd0530de24ee89e7313f6c400992a6")))
         {
             fail("stream cipher test failed on enc");
         }
@@ -154,9 +154,9 @@ public class ECIESTest
 
         out1 = i1.processBlock(message, 0, message.length);
 
-        if (!areEqual(out1, (iv == null) ?
-                                  Hex.decode("b8a06ea5c2b9df28b58a0a90a734cde8c9c02903e5c220021fe4417410d1e53a32a71696")
-                                : Hex.decode("f246b0e26a2711992cac9c590d08e45c5e730b7c0f4218bb064e27b7dd7c8a3bd8bf01c3")))
+        if (!areEqual(out1, (iv == null)
+            ? Hex.decode("b8a06ea5c2b9df28b58a0a90a734cde8c9c02903e5c220021fe4417410d1e53a32a71696")
+            : Hex.decode("f246b0e26a2711992cac9c590d08e45c5e730b7c0f4218bb064e27b7dd7c8a3bd8bf01c3")))
         {
             fail("twofish cipher test failed on enc");
         }
@@ -456,9 +456,85 @@ public class ECIESTest
         }
     }
 
+    // Regression for CVD ANT-2026-WZ2GJBGD: in static-key stream mode the MAC key must not be
+    // recoverable from the keystream. The legacy layout placed the keystream K1 before the MAC key
+    // K2, so a single known-plaintext leak of K1 (= M ^ C) also exposed the MAC key of any shorter
+    // message - letting an attacker forge a valid ciphertext+tag from one observation. With K2 now
+    // taken from a fixed prefix of the KDF output, that slice of the leaked keystream is no longer
+    // the MAC key, so the constructed forgery must be rejected.
+    private void doForgeryTest()
+        throws Exception
+    {
+        BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
+
+        ECCurve.Fp curve = new ECCurve.Fp(
+            new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
+            new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
+            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16), // b
+            n, ECConstants.ONE);
+
+        ECDomainParameters params = new ECDomainParameters(curve,
+                curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")), n);
+
+        ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
+            new BigInteger("651056770906015076056810763456358567190100156695615665659"), params);
+        ECPublicKeyParameters pubKey = new ECPublicKeyParameters(
+            curve.decodePoint(Hex.decode("0262b12d60690cdcf330babab6e69763b471f994dd702d16a5")), params);
+
+        AsymmetricCipherKeyPair p1 = new AsymmetricCipherKeyPair(pubKey, priKey);
+        AsymmetricCipherKeyPair p2 = new AsymmetricCipherKeyPair(pubKey, priKey);
+
+        int macKeyBytes = 8; // 64-bit MAC key
+        // no encoding vector, so the MAC is taken over the ciphertext only (keeps the forgery construction simple)
+        IESParameters param = new IESParameters(new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8 }, null, macKeyBytes * 8);
+
+        // 1. attacker observes one known-plaintext ciphertext of length L (>= macKeyBytes)
+        byte[] knownPt = Hex.decode("000102030405060708090a0b0c0d0e0f10111213"); // L = 20
+        IESEngine enc = new IESEngine(new ECDHBasicAgreement(), new KDF2BytesGenerator(new SHA1Digest()), new HMac(new SHA1Digest()));
+        enc.init(true, p1.getPrivate(), p2.getPublic(), param);
+        byte[] ct = enc.processBlock(knownPt, 0, knownPt.length);
+
+        byte[] leaked = new byte[knownPt.length]; // recovered keystream = M ^ C over the L plaintext bytes
+        for (int i = 0; i != leaked.length; i++)
+        {
+            leaked[i] = (byte)(knownPt[i] ^ ct[i]);
+        }
+
+        // 2. forge a shorter message, assuming the legacy keystream-then-MAC-key layout
+        int forgeLen = knownPt.length - macKeyBytes; // L'
+        byte[] forgedPt = Hex.decode("ffffffffffffffffffffffff"); // 12 bytes (= L')
+        byte[] forgedC = new byte[forgeLen];
+        for (int i = 0; i != forgeLen; i++)
+        {
+            forgedC[i] = (byte)(forgedPt[i] ^ leaked[i]); // K1' = leaked[0..L']
+        }
+
+        HMac hmac = new HMac(new SHA1Digest());
+        hmac.init(new KeyParameter(Arrays.copyOfRange(leaked, forgeLen, forgeLen + macKeyBytes))); // K2' = leaked[L'..]
+        hmac.update(forgedC, 0, forgedC.length);
+        byte[] forgedTag = new byte[hmac.getMacSize()];
+        hmac.doFinal(forgedTag, 0);
+
+        byte[] forged = Arrays.concatenate(forgedC, forgedTag);
+
+        // 3. the recipient must reject the forgery
+        IESEngine dec = new IESEngine(new ECDHBasicAgreement(), new KDF2BytesGenerator(new SHA1Digest()), new HMac(new SHA1Digest()));
+        dec.init(false, p2.getPrivate(), p1.getPublic(), param);
+        try
+        {
+            dec.processBlock(forged, 0, forged.length);
+            fail("static-key stream IES accepted a cross-message MAC forgery");
+        }
+        catch (InvalidCipherTextException expected)
+        {
+            // expected: K2 is a fixed prefix of the KDF output, not a recoverable slice of the keystream
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        doForgeryTest();
         doStaticTest(null);
         doStaticTest(TWOFISH_IV);
         doShortTest(null);

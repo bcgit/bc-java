@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.test;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
@@ -15,6 +16,7 @@ import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 
 public class HSSTest
@@ -202,5 +204,43 @@ public class HSSTest
         signer.init(false, kp.getPublic());
 
         assertTrue(signer.verifySignature(msg1, sig1));
+    }
+
+    /**
+     * RFC 8554 / NIST SP 800-208: HSSPublicKeyParameters.generateLMSContext is the public
+     * verify-prep reached from the JCA Signature.verify path and the lightweight HSS verify. A
+     * malformed HSS signature whose embedded LM-OTS type code is unknown must be rejected with a
+     * clean parse failure, not an unchecked NullPointerException (a remote denial-of-service). See
+     * COVERAGE_BUGS_HANDOVER.md finding #17.
+     */
+    public void testMalformedSignatureUnknownLmOtsType()
+        throws Exception
+    {
+        AsymmetricCipherKeyPairGenerator kpGen = new HSSKeyPairGenerator();
+        kpGen.init(new HSSKeyGenerationParameters(
+            new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)
+            }, new SecureRandom()));
+        HSSPublicKeyParameters pubKey = (HSSPublicKeyParameters)kpGen.generateKeyPair().getPublic();
+
+        // lminus (= L-1, so the level-count check passes) || q || unknown LM-OTS type code.
+        byte[] malformed = new byte[12];
+        Pack.intToBigEndian(pubKey.getL() - 1, malformed, 0);
+        Pack.intToBigEndian(0x7FFFFFFF, malformed, 8);
+
+        try
+        {
+            pubKey.generateLMSContext(malformed);
+            fail("malformed signature accepted");
+        }
+        catch (NullPointerException e)
+        {
+            fail("unknown LM-OTS type code threw NullPointerException instead of a clean parse failure");
+        }
+        catch (IllegalStateException e)
+        {
+            // expected: generateLMSContext wraps the parse IOException as an IllegalStateException.
+            assertTrue(e.getCause() instanceof IOException);
+        }
     }
 }

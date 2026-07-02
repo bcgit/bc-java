@@ -37,7 +37,7 @@ public class Features
      */
     public static final byte FEATURE_SEIPD_V2 = 0x08;
 
-    private static final byte[] featureToByteArray(byte feature)
+    private static byte[] featureToByteArray(byte feature)
     {
         byte[] data = new byte[1];
         data[0] = feature;
@@ -49,7 +49,7 @@ public class Features
         boolean isLongLength,
         byte[] data)
     {
-        super(SignatureSubpacketTags.FEATURES, critical, isLongLength, data);
+        super(SignatureSubpacketTags.FEATURES, critical, isLongLength, verifyData(data));
     }
 
     public Features(boolean critical, byte features)
@@ -60,6 +60,17 @@ public class Features
     public Features(boolean critical, int features)
     {
         super(SignatureSubpacketTags.FEATURES, critical, false, featureToByteArray((byte)features));
+    }
+
+    // RFC 9580 5.2.3.32: the Features body carries the feature flags; getFeatures() and
+    // supportsFeature() read the first octet (data[0]), so at least one octet is required.
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 1)
+        {
+            throw new IllegalArgumentException("Truncated Features subpacket");
+        }
+        return data;
     }
 
     public byte getFeatures()

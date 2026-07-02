@@ -8,6 +8,7 @@ import java.security.PrivateKey;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.haetae.HAETAEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.HaetaeKey;
@@ -68,7 +69,13 @@ public class BCHaetaePrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCHaetaePublicKey getPublicKey()
+    {
+        byte[] pk = Arrays.copyOfRange(params.getSeedSk(), 0, params.getParameters().getPublicKeyBytes());
+        return new BCHaetaePublicKey(new HAETAEPublicKeyParameters(params.getParameters(), pk));
     }
 
     /**

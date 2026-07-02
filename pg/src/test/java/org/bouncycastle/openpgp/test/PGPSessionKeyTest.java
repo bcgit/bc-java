@@ -17,6 +17,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
+import org.bouncycastle.openpgp.PGPDataValidationException;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
@@ -113,6 +114,47 @@ public class PGPSessionKeyTest
         testSessionKeyFromString();
 
         decryptMessageWithoutEskUsingSessionKey();
+
+        sessionKeyDecryptionSuppressesQuickCheckOracle();
+    }
+
+    private void sessionKeyDecryptionSuppressesQuickCheckOracle()
+        throws IOException, PGPException
+    {
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(Strings.toByteArray(PK_ENC_MESSAGE));
+        ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
+        PGPSessionKeyEncryptedData encryptedData = encryptedDataList.extractSessionKeyEncryptedData();
+
+        // Decrypt with a WRONG session key: the CFB "quick check" prefix will mismatch. On the
+        // session-key / public-key path (reached by the high-level API for PKESK messages) the quick
+        // check must NOT raise the early, distinguishable PGPDataValidationException("data check
+        // failed.") - that is the Mister-Zuccherato oracle. Integrity is left to the SEIPD v1 MDC.
+        byte[] wrongKey = Hex.decode(PK_ENC_SESSIONKEY);
+        wrongKey[0] ^= 0x01;
+        SessionKeyDataDecryptorFactory decryptorFactory =
+            new BcSessionKeyDataDecryptorFactory(new PGPSessionKey(PK_ENC_SESSIONKEY_ALG, wrongKey));
+
+        try
+        {
+            InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
+            // getDataStream must not have thrown the quick-check oracle. Reading the (garbage) stream
+            // may fail later (MDC / parse) - that is fine and not a distinguishable early signal.
+            try
+            {
+                Streams.drain(decrypted);
+                decrypted.close();
+            }
+            catch (Exception eLater)
+            {
+                // acceptable: a wrong key surfaces as a later failure, not an early quick-check throw
+            }
+        }
+        catch (PGPDataValidationException e)
+        {
+            fail("session-key decryption must not expose the CFB quick-check oracle (early data check)");
+        }
     }
 
     private void verifyPublicKeyDecryptionYieldsCorrectSessionData()

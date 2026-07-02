@@ -37,6 +37,8 @@ public class OERInputStream
     private static final int[] bitsR = new int[]{128, 64, 32, 16, 8, 4, 2, 1};
     protected PrintWriter debugOutput = null;
     private int maxByteAllocation = 1024 * 1024;
+    private int maxNestingDepth = 256;
+    private int decodeDepth = 0;
     protected PrintWriter debugStream = null;
 
 
@@ -94,8 +96,29 @@ public class OERInputStream
     public ASN1Object parse(Element element)
         throws IOException
     {
+        // Hard cap on recursion depth. The IEEE 1609.2 OER schema is cyclic (an Ieee1609Dot2Data can
+        // nest inside its own SignedData payload) and the CHOICE tag / optional-present bits are
+        // attacker-controlled, so without a bound a few KB of crafted input drives unbounded
+        // recursive-descent parsing into a StackOverflowError before any signature check. The depth
+        // is threaded into open-type sub-streams (parseOpenType) so the cycle through them counts too.
+        if (++decodeDepth > maxNestingDepth)
+        {
+            decodeDepth--;
+            throw new IOException("OER decoder exceeded maximum nesting depth of " + maxNestingDepth);
+        }
+        try
+        {
+            return parseInternal(element);
+        }
+        finally
+        {
+            decodeDepth--;
+        }
+    }
 
-
+    private ASN1Object parseInternal(Element element)
+        throws IOException
+    {
         switch (element.getBaseType())
         {
 
@@ -126,6 +149,14 @@ public class OERInputStream
             //
             int j = BigIntegers.fromUnsignedByteArray(lenEnc).intValue();
 
+            // Every OER seq-of element occupies at least one byte, so a declared count larger than the
+            // bytes left in the input is truncated or hostile. Bound it before the parse loop so a few
+            // count bytes (e.g. a long-form 7F FF FF FF) cannot drive ~2^31 parse iterations and object
+            // allocations before the per-element reads run out of input.
+            if (j < 0 || j > available())
+            {
+                throw new IOException("SEQUENCE OF length " + j + " out of range");
+            }
 
             debugPrint(element + ("(len = " + j + ")"));
 
@@ -341,7 +372,10 @@ public class OERInputStream
             if (bytesToRead != 0) // Fixed width
             {
                 data = allocateArray(Math.abs(bytesToRead));
-                Streams.readFully(this, data);
+                if (Streams.readFully(this, data) != data.length)
+                {
+                    throw new EOFException("could not read all of fixed-width integer");
+                }
 
                 if (bytesToRead < 0)
                 {
@@ -516,7 +550,11 @@ public class OERInputStream
         case EXTENSION:
 
             LengthInfo li = readLength();
-            byte[] value = new byte[li.intLength()];
+            // Route through allocateArray so the attacker-controlled open-type length is bounded by
+            // maxByteAllocation, like every other length-driven allocation in this decoder; a raw
+            // new byte[li.intLength()] here let a long-form length (e.g. 84 7F FF FF FF) drive an
+            // immediate OutOfMemoryError.
+            byte[] value = allocateArray(li.intLength());
             if (Streams.readFully(this, value) != li.intLength())
             {
                 throw new IOException("could not read all of count of open value in choice (...) ");
@@ -526,11 +564,14 @@ public class OERInputStream
             debugPrint("ext " + li.intLength() + " " + Hex.toHexString(value));
             return new DEROctetString(value);
         case BOOLEAN:
-            if (read() == 0)
+        {
+            int b = read();
+            if (b < 0)
             {
-                return ASN1Boolean.FALSE;
+                throw new EOFException("expecting boolean value");
             }
-            return ASN1Boolean.TRUE;
+            return b == 0 ? ASN1Boolean.FALSE : ASN1Boolean.TRUE;
+        }
         }
 
 
@@ -702,6 +743,10 @@ public class OERInputStream
         {
             ByteArrayInputStream bin = new ByteArrayInputStream(openTypeRaw);
             oerIn = new OERInputStream(bin);
+            // Carry the nesting budget across the open-type boundary so the Ieee1609Dot2Data/SignedData
+            // cycle (which recurses through parseOpenType) cannot reset the depth guard each level.
+            oerIn.maxNestingDepth = maxNestingDepth;
+            oerIn.decodeDepth = decodeDepth;
             return oerIn.parse(e);
         }
         finally

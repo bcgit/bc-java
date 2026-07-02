@@ -1,11 +1,17 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.MessageDigest;
 import java.security.Security;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -88,12 +94,57 @@ public class XOFTest
         isTrue("oops", Arrays.areEqual(Hex.decode("75358CF39E41494E949707927CEE0AF20A3FF553904C86B08F21CC414BCFD691589D27CF5E15369CBBFF8B9A4C2EB17800855D0235FF635DA82533EC6B759B69"), kMac.doFinal()));
     }
 
+    // A KMACwithSHAKEnnn-params (RFC 8702 sec.3.4) decoded from the wire is untrusted: the
+    // kMACOutputLength INTEGER can be out of int range, which ASN1Integer.intValueExact rejects
+    // with an ArithmeticException. AlgorithmParameters.init(byte[]) is a decode path declared
+    // throws IOException, so that RuntimeException must not be allowed to escape it (reachable
+    // from CMS AuthenticatedData parsing via EnvelopedDataHelper.createContentMac).
+    private void kmacParamsDecodeRobustnessTest()
+        throws Exception
+    {
+        checkRejectsMalformedParams(NISTObjectIdentifiers.id_KmacWithSHAKE128);
+        checkRejectsMalformedParams(NISTObjectIdentifiers.id_KmacWithSHAKE256);
+    }
+
+    private void checkRejectsMalformedParams(org.bouncycastle.asn1.ASN1ObjectIdentifier kmacOid)
+        throws Exception
+    {
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance(kmacOid.getId(), "BC");
+
+        // kMACOutputLength = 2^100 - well out of int range.
+        byte[] outOfRange = new DERSequence(new ASN1Integer(BigInteger.ONE.shiftLeft(100))).getEncoded();
+
+        try
+        {
+            algParams.init(outOfRange);
+            fail("out-of-int-range kMACOutputLength not rejected for " + kmacOid);
+        }
+        catch (IOException e)
+        {
+            // expected - decode contract honoured, RuntimeException did not escape.
+        }
+
+        // structurally malformed: an INTEGER where a SEQUENCE is expected.
+        byte[] notASequence = new ASN1Integer(42).getEncoded();
+
+        try
+        {
+            algParams.init(notASequence);
+            fail("non-SEQUENCE KMAC parameters not rejected for " + kmacOid);
+        }
+        catch (IOException e)
+        {
+            // expected.
+        }
+    }
+
     public void performTest()
         throws Exception
     {
         tupleHashTest();
         parallelHashTest();
         KMACTest();
+        kmacParamsDecodeRobustnessTest();
     }
 
     public static void main(String[] args)

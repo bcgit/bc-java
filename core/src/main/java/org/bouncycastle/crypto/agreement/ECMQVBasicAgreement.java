@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Properties;
 
@@ -21,8 +22,7 @@ public class ECMQVBasicAgreement
 {
     MQVPrivateParameters privParams;
 
-    public void init(
-        CipherParameters key)
+    public void init(CipherParameters key)
     {
         this.privParams = (MQVPrivateParameters)key;
 
@@ -36,35 +36,39 @@ public class ECMQVBasicAgreement
 
     public BigInteger calculateAgreement(CipherParameters pubKey)
     {
+        return calculateAgreementFieldElement(privParams, (MQVPublicParameters)pubKey).toBigInteger();
+    }
+
+    static ECFieldElement calculateAgreementFieldElement(MQVPrivateParameters privateParams,
+        MQVPublicParameters publicParams)
+    {
         if (Properties.isOverrideSet("org.bouncycastle.ec.disable_mqv"))
         {
             throw new IllegalStateException("ECMQV explicitly disabled");
         }
 
-        MQVPublicParameters pubParams = (MQVPublicParameters)pubKey;
-
-        ECPrivateKeyParameters staticPrivateKey = privParams.getStaticPrivateKey();
+        ECPrivateKeyParameters staticPrivateKey = privateParams.getStaticPrivateKey();
         ECDomainParameters parameters = staticPrivateKey.getParameters();
 
-        if (!parameters.equals(pubParams.getStaticPublicKey().getParameters()))
+        if (!parameters.equals(publicParams.getStaticPublicKey().getParameters()))
         {
             throw new IllegalStateException("ECMQV public key components have wrong domain parameters");
         }
 
         ECPoint agreement = calculateMqvAgreement(parameters, staticPrivateKey,
-            privParams.getEphemeralPrivateKey(), privParams.getEphemeralPublicKey(),
-            pubParams.getStaticPublicKey(), pubParams.getEphemeralPublicKey()).normalize();
+            privateParams.getEphemeralPrivateKey(), privateParams.getEphemeralPublicKey(),
+            publicParams.getStaticPublicKey(), publicParams.getEphemeralPublicKey()).normalize();
 
         if (agreement.isInfinity())
         {
             throw new IllegalStateException("Infinity is not a valid agreement value for MQV");
         }
 
-        return agreement.getAffineXCoord().toBigInteger();
+        return agreement.getAffineXCoord();
     }
 
     // The ECMQV Primitive as described in SEC-1, 3.4
-    private ECPoint calculateMqvAgreement(
+    private static ECPoint calculateMqvAgreement(
         ECDomainParameters      parameters,
         ECPrivateKeyParameters  d1U,
         ECPrivateKeyParameters  d2U,

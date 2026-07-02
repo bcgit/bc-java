@@ -31,7 +31,7 @@ public class TrustSignature
         boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.TRUST_SIG, critical, isLongLength, data);
+        super(SignatureSubpacketTags.TRUST_SIG, critical, isLongLength, verifyData(data));
     }
     
     public TrustSignature(
@@ -41,7 +41,18 @@ public class TrustSignature
     {
         super(SignatureSubpacketTags.TRUST_SIG, critical, false, intToByteArray(depth, trustAmount));
     }
-    
+
+    // RFC 9580 5.2.3.21: the Trust Signature body is 1 octet of depth followed by 1 octet
+    // of trust amount, so at least two octets are required.
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 2)
+        {
+            throw new IllegalArgumentException("Truncated trust signature subpacket");
+        }
+        return data;
+    }
+
     public int getDepth()
     {
         return data[0] & 0xff;

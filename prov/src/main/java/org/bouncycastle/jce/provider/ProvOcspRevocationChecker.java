@@ -310,6 +310,15 @@ class ProvOcspRevocationChecker
                                     }
                                 }
                             }
+
+                            // Reaching here means no SingleResponse was bound to this certificate's
+                            // CertID (any full match returns or throws above). A signed-but-unrelated
+                            // stapled response - e.g. a 'good' status for a different serial from the
+                            // same CA - must not be treated as evidence that THIS certificate is good;
+                            // fail recoverably so CRL fallback can run, matching the network-fetch
+                            // path's OcspCache.isCertIDFoundAndCurrent enforcement.
+                            throw new RecoverableCertPathValidatorException(
+                                "no OCSP response found for certificate", null, parameters.getCertPath(), parameters.getIndex());
                         }
                         catch (CertPathValidatorException e)
                         {

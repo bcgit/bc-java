@@ -520,8 +520,7 @@ public class NewSignedDataTest
       + "cnlwdG9wcm8ucnUxCzAJBgNVBAYTAlJVMRMwEQYDVQQKEwpDUllQVE8tUFJP"
       + "MR8wHQYDVQQDExZUZXN0IENlbnRlciBDUllQVE8tUFJPAgopoLG9AAIAArWe"
       + "MAoGBiqFAwICCQUAMAoGBiqFAwICEwUABED0Gs9zP9lSz/2/e3BUSpzCI3dx"
-      + "39gfl/pFVkx4p5N/GW5o4gHIST9OhDSmdxwpMSK+39YSRD4R0Ue0faOqWEsj"
-      + "AAAAAAAAAAAAAAAAAAAAAA==");
+      + "39gfl/pFVkx4p5N/GW5o4gHIST9OhDSmdxwpMSK+39YSRD4R0Ue0faOqWEsj");
 
     private static final byte[] noAttrEncData = Base64.decode(
        "MIIFjwYJKoZIhvcNAQcCoIIFgDCCBXwCAQExDTALBglghkgBZQMEAgEwgdAG"
@@ -1039,10 +1038,76 @@ public class NewSignedDataTest
         verifySignatures(s, null);
     }
 
+    public void testEmptySignersRejected()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        certList.add(_origCert);
+        Store certs = new JcaCertStore(certList);
+
+        // Degenerate / certs-only SignedData: certificates but no SignerInfos.
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(new CMSProcessableByteArray("attacker payload".getBytes()), true);
+        s = new CMSSignedData(s.getEncoded());
+
+        assertTrue("expected no signers", s.getSignerInfos().getSigners().isEmpty());
+
+        SignerInformationVerifierProvider vProv = new SignerInformationVerifierProvider()
+        {
+            public SignerInformationVerifier get(SignerId signerId)
+                throws OperatorCreationException
+            {
+                return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert);
+            }
+        };
+
+        try
+        {
+            s.verifySignatures(vProv);
+            fail("verifySignatures must reject a SignedData with no signers");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("no signers present in SignedData", e.getMessage());
+        }
+    }
+
+    /**
+     * Parser robustness: a CMS ContentInfo whose content is tagged [APPLICATION 0]
+     * instead of context [0] makes the ASN.1 layer throw an IllegalArgumentException
+     * ("Expected CONTEXT tag but found APPLICATION") out of ContentInfo. Before the
+     * parse hardening this escaped CMSSignedData(byte[])'s declared "throws CMSException"
+     * as a raw RuntimeException; it must now surface as a CMSException carrying the
+     * original ASN.1 exception as its cause.
+     */
+    public void testMalformedContentTagSurfacesAsCMSException()
+        throws Exception
+    {
+        // SEQUENCE { OBJECT IDENTIFIER 1.2.840.113549.1.7.2 (id-signedData),
+        //            [APPLICATION 0] { INTEGER 0 } }  -- content tagged 0x60, not context [0] 0xA0
+        byte[] malformed = new byte[]{
+            0x30, 0x10, 0x06, 0x09, 0x2a, (byte)0x86, 0x48, (byte)0x86,
+            (byte)0xf7, 0x0d, 0x01, 0x07, 0x02, 0x60, 0x03, 0x02, 0x01, 0x00
+        };
+
+        try
+        {
+            new CMSSignedData(malformed);
+            fail("malformed CMS content must not parse");
+        }
+        catch (CMSException e)
+        {
+            assertTrue("expected the ASN.1 exception to be wrapped as the cause, was "
+                + e.getCause(), e.getCause() instanceof IllegalArgumentException);
+        }
+    }
+
     public void testEmptyContent()
         throws Exception
     {
-        
+
         try
         {
             new CMSSignedData(new byte[0]);
@@ -1454,11 +1519,11 @@ public class NewSignedDataTest
 
         SignerInfo sInew = new SignerInfo(sI.getSID(), new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.ripemd128, DERNull.INSTANCE), sI.getAuthenticatedAttributes(), sI.getDigestEncryptionAlgorithm(), sI.getEncryptedDigest(), sI.getUnauthenticatedAttributes());
 
-        verifySignatures(getCorruptedSignedData(sd, sInew), false, "CMS Algorithm Identifier Protection check failed for digestAlgorithm");
+        verifySignatures(getCorruptedSignedData(sd, sInew), false, "CMS Algorithm Protection check failed for digestAlgorithm");
 
         sInew = new SignerInfo(sI.getSID(), sI.getDigestAlgorithm(), sI.getAuthenticatedAttributes(), new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS), sI.getEncryptedDigest(), sI.getUnauthenticatedAttributes());
 
-        verifySignatures(getCorruptedSignedData(sd, sInew), false, "CMS Algorithm Identifier Protection check failed for signatureAlgorithm");
+        verifySignatures(getCorruptedSignedData(sd, sInew), false, "CMS Algorithm Protection check failed for signatureAlgorithm");
 
         // check equivalence
         AlgorithmIdentifier newAlgId = new AlgorithmIdentifier(sI.getDigestAlgorithm().getAlgorithm());

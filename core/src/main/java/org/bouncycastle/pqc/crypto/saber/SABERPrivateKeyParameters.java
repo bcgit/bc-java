@@ -10,6 +10,12 @@ public class SABERPrivateKeyParameters
     public SABERPrivateKeyParameters(SABERParameters params, byte[] privateKey)
     {
         super(true, params);
+
+        if (privateKey.length != params.getEngine().getPrivateKeySize())
+        {
+            throw new IllegalArgumentException("'privateKey' has invalid length");
+        }
+
         this.privateKey = Arrays.clone(privateKey);
     }
 

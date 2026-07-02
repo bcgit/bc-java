@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
@@ -96,6 +97,44 @@ public class RSADigestSignerTest
         }
 
         checkStrictDigestInfoIssue2273(rsaPublic, rsaPrivate);
+        checkNoNullDigestInfoTailBytesChecked(rsaPublic, rsaPrivate);
+    }
+
+    /**
+     * A NULL-omitted DigestInfo whose hash matches the real message in every byte except the last
+     * two must NOT verify. The lenient (NULL-omitted) comparison once looped only hash.length times
+     * and skipped the final two hash bytes, so such a forgery was wrongly accepted.
+     */
+    private void checkNoNullDigestInfoTailBytesChecked(RSAKeyParameters rsaPublic, RSAPrivateCrtKeyParameters rsaPrivate)
+        throws Exception
+    {
+        byte[] msg = new byte[] { 1, 6, 3, 32, 7, 43, 2, 5, 7, 78, 4, 23 };
+
+        Digest digest = SHA256Digest.newInstance();
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.update(msg, 0, msg.length);
+        digest.doFinal(hash, 0);
+
+        // Flip the last two hash bytes - everything else (header, OID, leading hash bytes) is unchanged.
+        byte[] tampered = Arrays.clone(hash);
+        tampered[tampered.length - 1] ^= 0x01;
+        tampered[tampered.length - 2] ^= 0x80;
+
+        // Sign the tampered hash in the non-compliant no-NULL DigestInfo form.
+        DigestInfo loose = new DigestInfo(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256), tampered);
+        byte[] looseEnc = loose.getEncoded(ASN1Encoding.DER);
+
+        RSADigestSigner looseSigner = createPrehashSigner();
+        looseSigner.init(true, rsaPrivate);
+        looseSigner.update(looseEnc, 0, looseEnc.length);
+        byte[] forgedSig = looseSigner.generateSignature();
+
+        // Verifying against the real message must fail - the last two hash bytes differ.
+        RSADigestSigner verifier = new RSADigestSigner(SHA256Digest.newInstance(), NISTObjectIdentifiers.id_sha256);
+        verifier.init(false, rsaPublic);
+        verifier.update(msg, 0, msg.length);
+        isTrue("no-NULL DigestInfo with wrong final hash bytes must be rejected",
+            !verifier.verifySignature(forgedSig));
     }
 
     private void checkStrictDigestInfoIssue2273(RSAKeyParameters rsaPublic, RSAPrivateCrtKeyParameters rsaPrivate)

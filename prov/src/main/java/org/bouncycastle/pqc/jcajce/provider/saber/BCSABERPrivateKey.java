@@ -1,18 +1,20 @@
 package org.bouncycastle.pqc.jcajce.provider.saber;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.security.PrivateKey;
+
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.SABERKey;
 import org.bouncycastle.pqc.jcajce.spec.SABERParameterSpec;
 import org.bouncycastle.util.Arrays;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.security.PrivateKey;
 
 public class BCSABERPrivateKey
         implements PrivateKey, SABERKey
@@ -58,7 +60,7 @@ public class BCSABERPrivateKey
         {
             BCSABERPrivateKey otherKey = (BCSABERPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
         return false;
@@ -66,7 +68,28 @@ public class BCSABERPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return getPublicKey().hashCode();
+    }
+
+    private BCSABERPublicKey getPublicKey()
+    {
+        SABERParameters p = params.getParameters();
+        byte[] sk = params.getPrivateKey();
+        int pkOff = saberIndcpaSecretKeyBytes(p);
+        int pkSize = saberPublicKeyBytes(p);
+        byte[] pk = Arrays.copyOfRange(sk, pkOff, pkOff + pkSize);
+        return new BCSABERPublicKey(new SABERPublicKeyParameters(p, pk));
+    }
+
+    private static int saberIndcpaSecretKeyBytes(SABERParameters p)
+    {
+        int eq = p.getName().startsWith("u") ? 12 : 13;
+        return p.getL() * eq * 32;
+    }
+
+    private static int saberPublicKeyBytes(SABERParameters p)
+    {
+        return p.getL() * 320 + 32;
     }
 
     /**

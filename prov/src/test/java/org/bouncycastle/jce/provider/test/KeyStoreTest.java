@@ -30,6 +30,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -278,6 +279,35 @@ public class KeyStoreTest
         cert.verify(pubKey);
     }
 
+    // CVE-2018-5382: the default BKS keystore must refuse to load a legacy version 0/1 store
+    // (which derives a 16-bit, brute-forceable HMAC integrity key) unless the caller has explicitly
+    // opted in via org.bouncycastle.bks.enable_v1. The test harness sets that system property, so
+    // we override it off on this thread to exercise the default behaviour.
+    private void v1RejectedByDefaultTest()
+        throws Exception
+    {
+        Properties.setThreadOverride(Properties.BKS_ENABLE_V1, false);
+        try
+        {
+            KeyStore ks = KeyStore.getInstance("BKS", "BC");
+
+            ks.load(new ByteArrayInputStream(v1BKS), oldStorePass);
+
+            fail("default BKS loaded a version 1 store without " + Properties.BKS_ENABLE_V1);
+        }
+        catch (IOException e)
+        {
+            if (!e.getMessage().startsWith("BKS version 1 keystore not supported"))
+            {
+                fail("unexpected exception: " + e.getMessage());
+            }
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.BKS_ENABLE_V1);
+        }
+    }
+
     private void oldStoreTest()
         throws Exception
     {
@@ -433,9 +463,11 @@ public class KeyStoreTest
 
         ecStoreTest("BKS");
         oldStoreTest();
+        v1RejectedByDefaultTest();
         checkException();
         checkOversizedEntryRejected();
         checkLargeEntryStreamed();
+        checkOversizedIterationCountRejected();
     }
 
     /*
@@ -538,6 +570,59 @@ public class KeyStoreTest
         catch (OutOfMemoryError e)
         {
             fail("oversized " + type + " allocation caused OutOfMemoryError");
+        }
+    }
+
+    /*
+     * A crafted BKS stream declaring an enormous PBE iteration count must be rejected with an
+     * IOException up front, rather than running the integrity-MAC key derivation for that many
+     * rounds before the MAC is even checked (a pre-integrity CPU-exhaustion DoS). The count is
+     * consumed in the password/integrity branch of engineLoad ahead of the MAC comparison, so the
+     * cap has to fire there; this mirrors checkOversizedEntryRejected for the CPU- (rather than
+     * memory-) exhaustion vector. The cap is lowered via Properties.BKS_MAX_IT_COUNT so the test is
+     * deterministic and does not itself run a costly derivation.
+     */
+    private void checkOversizedIterationCountRejected()
+        throws Exception
+    {
+        String saved = System.getProperty(Properties.BKS_MAX_IT_COUNT);
+        System.setProperty(Properties.BKS_MAX_IT_COUNT, "100");
+        try
+        {
+            ByteArrayOutputStream itPoison = new ByteArrayOutputStream();
+            DataOutputStream d = new DataOutputStream(itPoison);
+            d.writeInt(2);                              // store version
+            d.writeInt(20);                             // salt length
+            d.write(new byte[20]);                      // salt
+            d.writeInt(100000);                         // poison iteration count, far above the cap
+
+            KeyStore ks = KeyStore.getInstance("BKS", "BC");
+            try
+            {
+                // a non-empty password selects the integrity branch, which derives the MAC key
+                // from the wire iteration count before the MAC is checked - the vulnerable path.
+                ks.load(new ByteArrayInputStream(itPoison.toByteArray()), "test".toCharArray());
+                fail("oversized BKS iteration count not rejected");
+            }
+            catch (IOException e)
+            {
+                // expected: the cap rejects the count before the PBKDF runs. The message names the
+                // iteration count, distinguishing this from the EOFException an uncapped load would
+                // only reach after the full derivation.
+                isTrue("iteration count not rejected up front: " + e.getMessage(),
+                    e.getMessage() != null && e.getMessage().indexOf("iteration count") >= 0);
+            }
+        }
+        finally
+        {
+            if (saved == null)
+            {
+                System.clearProperty(Properties.BKS_MAX_IT_COUNT);
+            }
+            else
+            {
+                System.setProperty(Properties.BKS_MAX_IT_COUNT, saved);
+            }
         }
     }
 

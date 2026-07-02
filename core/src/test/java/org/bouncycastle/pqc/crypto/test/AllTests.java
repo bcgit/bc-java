@@ -21,21 +21,11 @@ public class AllTests
 
         suite.addTestSuite(LMSTest.class);
         suite.addTestSuite(HSSTest.class);
-        suite.addTestSuite(XMSSMTPrivateKeyTest.class);
-        suite.addTestSuite(XMSSMTPublicKeyTest.class);
-        suite.addTestSuite(XMSSMTSignatureTest.class);
-        suite.addTestSuite(XMSSMTTest.class);
-        suite.addTestSuite(XMSSOidTest.class);
-        suite.addTestSuite(XMSSPrivateKeyTest.class);
-        suite.addTestSuite(XMSSPublicKeyTest.class);
-        suite.addTestSuite(XMSSReducedSignatureTest.class);
-        suite.addTestSuite(XMSSSignatureTest.class);
-        suite.addTestSuite(XMSSTest.class);
-        suite.addTestSuite(XMSSUtilTest.class);
-        suite.addTestSuite(XMSSPublicKeyParseTest.class);
+        // XMSS tests split out into AllTestsXMSS so they can run as a separate (parallel) fork.
 //        suite.addTestSuite(SphincsPlusTest.class);   -- now deprecated
-        suite.addTestSuite(CMCEVectorTest.class);
+        // CMCE (Classic McEliece) tests split out into AllTestsCMCE so they can run as a separate (parallel) fork.
 //        suite.addTestSuite(FrodoVectorTest.class);  -- now deprecated
+        suite.addTestSuite(FrodoVectorTest.class);
         suite.addTestSuite(FrodoKEMVectorTest.class);
         suite.addTestSuite(SABERVectorTest.class);
         suite.addTestSuite(NTRUTest.class);
@@ -50,19 +40,21 @@ public class AllTests
         suite.addTestSuite(HQCTest.class);
         suite.addTestSuite(XWingTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
-        suite.addTestSuite(SLHDSATest.class);
+        // SLHDSA tests split out into AllTestsSLHDSA so they can run as a separate (parallel) fork.
         suite.addTestSuite(MayoTest.class);
-        suite.addTestSuite(SnovaTest.class);
-        suite.addTestSuite(FaestKeyPairAndSignerTest.class);
-        suite.addTestSuite(FaestKatTest.class);
-        suite.addTestSuite(QRUOVTest.class);
-        suite.addTestSuite(HawkTest.class);
+        suite.addTestSuite(org.bouncycastle.pqc.crypto.mayo.MayoRetryTest.class);
+        // SNOVA tests split out into AllTestsSnova so they can run as a separate (parallel) fork.
+        // FAEST tests split out into AllTestsFaest so they can run as a separate (parallel) fork.
+        // QRUOV tests split out into AllTestsQRUOV so they can run as a separate (parallel) fork.
+        // Hawk tests split out into AllTestsHawk so they can run as a separate (parallel) fork.
         suite.addTestSuite(UOVTest.class);
-        suite.addTestSuite(MQOMTest.class);
-        suite.addTestSuite(MQOMKatTest.class);
+        // MQOM tests split out into AllTestsMQOM so they can run as a separate (parallel) fork.
         suite.addTestSuite(SQIsignTest.class);
         suite.addTestSuite(HAETAETest.class);
         suite.addTestSuite(SDitHTest.class);
+        suite.addTestSuite(AIMerTest.class);
+        suite.addTestSuite(PublicKeyLengthValidationTest.class);
+        suite.addTestSuite(PqcMalformedInputTest.class);
 
         return new BCTestSetup(suite);
     }

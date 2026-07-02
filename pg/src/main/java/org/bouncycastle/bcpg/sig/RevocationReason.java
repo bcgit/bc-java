@@ -17,7 +17,7 @@ public class RevocationReason extends SignatureSubpacket
 {
     public RevocationReason(boolean isCritical, boolean isLongLength, byte[] data)
     {
-        super(SignatureSubpacketTags.REVOCATION_REASON, isCritical, isLongLength, data);
+        super(SignatureSubpacketTags.REVOCATION_REASON, isCritical, isLongLength, verifyData(data));
     }
 
     public RevocationReason(boolean isCritical, byte reason, String description)
@@ -28,6 +28,17 @@ public class RevocationReason extends SignatureSubpacket
     private static byte[] createData(byte reason, String description)
     {
         return Arrays.prepend(Strings.toUTF8ByteArray(description), reason);
+    }
+
+    // RFC 9580 5.2.3.31: the Reason for Revocation body is 1 octet of revocation code
+    // followed by an optional reason string, so at least one octet is required.
+    private static byte[] verifyData(byte[] data)
+    {
+        if (data.length < 1)
+        {
+            throw new IllegalArgumentException("Truncated revocation reason subpacket");
+        }
+        return data;
     }
 
     public byte getRevocationReason()
