@@ -26,9 +26,11 @@ import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
+import org.bouncycastle.jcajce.provider.asymmetric.util.PrivateKeyHashUtil;
 import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jcajce.spec.DHExtendedPrivateKeySpec;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.BigIntegers;
 
 
 public class BCDHPrivateKey
@@ -213,16 +215,17 @@ public class BCDHPrivateKey
 
         DHPrivateKey other = (DHPrivateKey)o;
 
-        return this.getX().equals(other.getX())
-            && this.getParams().getG().equals(other.getParams().getG())
+        int len = Math.max(dhPrivateKeyByteLength(getParams()), dhPrivateKeyByteLength(other.getParams()));
+
+        return this.getParams().getG().equals(other.getParams().getG())
             && this.getParams().getP().equals(other.getParams().getP())
-            && this.getParams().getL() == other.getParams().getL();
+            && this.getParams().getL() == other.getParams().getL()
+            && BigIntegers.areSecretValuesEqual(len, this.getX(), other.getX());
     }
 
     public int hashCode()
     {
-        return this.getX().hashCode() ^ this.getParams().getG().hashCode()
-                ^ this.getParams().getP().hashCode() ^ this.getParams().getL();
+        return PrivateKeyHashUtil.dhHashCode(getParams(), getX());
     }
 
     public void setBagAttribute(
@@ -265,7 +268,7 @@ public class BCDHPrivateKey
     }
 
     private void writeObject(
-        ObjectOutputStream  out)
+        ObjectOutputStream out)
         throws IOException
     {
         out.defaultWriteObject();
@@ -273,5 +276,16 @@ public class BCDHPrivateKey
         out.writeObject(dhSpec.getP());
         out.writeObject(dhSpec.getG());
         out.writeInt(dhSpec.getL());
+    }
+
+    private static int dhPrivateKeyByteLength(DHParameterSpec params)
+    {
+        int l = params.getL();
+        if (l > 0)
+        {
+            return (l + 7) / 8;
+        }
+
+        return (params.getP().bitLength() + 7) / 8;
     }
 }

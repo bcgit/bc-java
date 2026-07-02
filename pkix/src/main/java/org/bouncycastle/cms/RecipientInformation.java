@@ -5,7 +5,12 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
@@ -16,6 +21,7 @@ public abstract class RecipientInformation
     protected AlgorithmIdentifier messageAlgorithm;
     protected CMSSecureReadable secureReadable;
     private byte[] resultMac;
+    private byte[] contentDigest;
     private RecipientOperator operator;
 
     RecipientInformation(
@@ -79,11 +85,16 @@ public abstract class RecipientInformation
      */
     public byte[] getContentDigest()
     {
-        if (secureReadable instanceof CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable)
+        // Cache the computed digest: the underlying DigestCalculator.getDigest() finalises (resets)
+        // the digest, so it must be read exactly once. getMac() now also needs this value (to bind
+        // the content to the MAC), so without caching a getMac() call would consume the digest and a
+        // later getContentDigest() would return the digest of an empty input.
+        if (contentDigest == null
+            && secureReadable instanceof CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable)
         {
-            return ((CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable)secureReadable).getDigest();
+            contentDigest = ((CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable)secureReadable).getDigest();
         }
-        return null;
+        return contentDigest;
     }
 
     /**
@@ -98,6 +109,14 @@ public abstract class RecipientInformation
         {
             if (operator.isMacBased() && secureReadable.hasAdditionalData())
             {
+                // RFC 5652 sec. 9.3: with authenticated attributes present the MAC is computed over the
+                // attributes, not the content, so the content is bound to the MAC only through the
+                // messageDigest authenticated attribute. Verify that the digest computed over the
+                // content just read matches that attribute before producing the MAC; otherwise an
+                // attacker could replace encapContentInfo.eContent while leaving authAttrs and the MAC
+                // untouched and a recipient comparing only getMac() values would accept the forgery.
+                checkContentDigestMatchesMessageDigestAttribute();
+
                 try
                 {
                     Streams.drain(operator.getInputStream(new ByteArrayInputStream(secureReadable.getAuthAttrSet().getEncoded(ASN1Encoding.DER))));
@@ -110,6 +129,27 @@ public abstract class RecipientInformation
             resultMac = operator.getMac();
         }
         return resultMac;
+    }
+
+    private void checkContentDigestMatchesMessageDigestAttribute()
+    {
+        byte[] contentDigest = getContentDigest();
+        if (contentDigest == null)
+        {
+            throw new CMSRuntimeException("unable to verify messageDigest attribute: content digest not available");
+        }
+
+        Attribute messageDigestAttr = new AttributeTable(secureReadable.getAuthAttrSet()).get(CMSAttributes.messageDigest);
+        if (messageDigestAttr == null || messageDigestAttr.getAttrValues().size() != 1)
+        {
+            throw new CMSRuntimeException("AuthenticatedData missing or malformed messageDigest authenticated attribute");
+        }
+
+        byte[] expectedDigest = ASN1OctetString.getInstance(messageDigestAttr.getAttrValues().getObjectAt(0)).getOctets();
+        if (!Arrays.constantTimeAreEqual(contentDigest, expectedDigest))
+        {
+            throw new CMSRuntimeException("content digest does not match messageDigest authenticated attribute");
+        }
     }
 
     /**

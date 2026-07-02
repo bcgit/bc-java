@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -46,6 +47,8 @@ public class KCCMBlockCipher
     private byte[] macBlock;
 
     private byte[] nonce;
+    // Previous key seen on init(true, ...) - used with nonce only to reject nonce reuse for encryption.
+    private byte[] lastKey;
 
     private byte[] G1;
     private byte[] buffer;
@@ -112,37 +115,77 @@ public class KCCMBlockCipher
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        CipherParameters cipherParameters;
+        KeyParameter keyParameter = null;
+        byte[] newNonce;
         if (params instanceof AEADParameters)
         {
-            AEADParameters parameters = (AEADParameters)params;
+            AEADParameters aeadParameters = (AEADParameters)params;
 
-            if (parameters.getMacSize() > MAX_MAC_BIT_LENGTH || parameters.getMacSize() < MIN_MAC_BIT_LENGTH || parameters.getMacSize() % 8 != 0)
+            int macSizeInBits = aeadParameters.getMacSize();
+            if (macSizeInBits > MAX_MAC_BIT_LENGTH || macSizeInBits < MIN_MAC_BIT_LENGTH || macSizeInBits % 8 != 0)
             {
                 throw new IllegalArgumentException("Invalid mac size specified");
             }
 
-            nonce = parameters.getNonce();
-            macSize = parameters.getMacSize() / BITS_IN_BYTE;
-            initialAssociatedText = parameters.getAssociatedText();
-            cipherParameters = parameters.getKey();
+            newNonce = aeadParameters.getNonce();
+            macSize = macSizeInBits / BITS_IN_BYTE;
+            initialAssociatedText = aeadParameters.getAssociatedText();
+            keyParameter = aeadParameters.getKey();
         }
         else if (params instanceof ParametersWithIV)
         {
-            nonce = ((ParametersWithIV)params).getIV();
+            ParametersWithIV withIV = (ParametersWithIV)params;
+
+            newNonce = withIV.getIV();
             macSize = engine.getBlockSize(); // use default blockSize for MAC if it is not specified
             initialAssociatedText = null;
-            cipherParameters = ((ParametersWithIV)params).getParameters();
+
+            CipherParameters innerParameters = withIV.getParameters();
+            if (innerParameters != null)
+            {
+                if (!(innerParameters instanceof KeyParameter))
+                {
+                    throw new IllegalArgumentException("invalid parameters passed to KCCM");
+                }
+
+                keyParameter = (KeyParameter)innerParameters;
+            }
         }
         else
         {
-            throw new IllegalArgumentException("Invalid parameters specified");
+            throw new IllegalArgumentException("invalid parameters passed to KCCM");
+        }
+
+        // RFC 5116 sec. 2.1 requires a distinct nonce per AEAD encryption under a given key; the
+        // DSTU 7624 CCM construction inherits this CCM rule (cf. NIST SP 800-38C), and reuse is
+        // catastrophic (CTR keystream reuse plus a forgeable CBC-MAC). That obligation is the
+        // caller's, so this guard enforces it defensively, mirroring KGCMBlockCipher /
+        // GCMBlockCipher. A fresh nonce or key, reset(), or init for decryption are all unaffected.
+        if (forEncryption)
+        {
+            if (nonce != null && Arrays.areEqual(nonce, newNonce))
+            {
+                if (keyParameter == null)
+                {
+                    throw new IllegalArgumentException("cannot reuse nonce for KCCM encryption");
+                }
+                if (lastKey != null && Arrays.constantTimeAreEqual(lastKey, keyParameter.getKey()))
+                {
+                    throw new IllegalArgumentException("cannot reuse nonce for KCCM encryption");
+                }
+            }
+        }
+
+        nonce = newNonce;
+        if (keyParameter != null)
+        {
+            lastKey = keyParameter.getKey();
         }
 
         this.mac = new byte[macSize];
         this.forEncryption = forEncryption;
 
-        engine.init(true, cipherParameters);
+        engine.init(true, keyParameter);
 
         reset();
     }
@@ -269,15 +312,16 @@ public class KCCMBlockCipher
         {
             throw new DataLengthException("input buffer too short");
         }
-        if (out.length - outOff < len)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
 
         processAssociatedText();
 
         if (forEncryption)
         {
+            if (out.length - outOff < len + macSize)
+            {
+                throw new OutputLengthException("output buffer too short");
+            }
+
             // Partial trailing block permitted: CalculateMac zero-pads it and the gamma
             // keystream is truncated below. See the interop caveat in the class javadoc (github #287).
             CalculateMac(in, inOff, len);
@@ -310,23 +354,36 @@ public class KCCMBlockCipher
         }
         else
         {
-            // A partial trailing data block is permitted: the gamma keystream is truncated for
-            // the trailing block and CalculateMac zero-pads it when recomputing the tag below.
-            // See the interop caveat in the class javadoc (github #287).
-            int outStart = outOff;
+            if (len < macSize)
+            {
+                throw new InvalidCipherTextException("data too short");
+            }
+
             int dataLen = len - macSize;
+
+            if (out.length - outOff < dataLen)
+            {
+                throw new OutputLengthException("output buffer too short");
+            }
 
             engine.processBlock(nonce, 0, s, 0);
 
-            // recover the plaintext payload (gamma/counter mode, trailing block truncated)
+            // Recover the plaintext into a private buffer and verify the MAC before writing any of it
+            // to the caller's output: on a tag failure the caller's buffer must not be left holding
+            // unverified gamma plaintext (matches CCMBlockCipher / GCMSIVBlockCipher). A partial
+            // trailing block is permitted: the gamma keystream is truncated for the trailing block
+            // and CalculateMac zero-pads it. See the interop caveat in the class javadoc (github #287).
+            byte[] plain = new byte[dataLen];
+            int plainOff = 0;
+            int inPos = inOff;
             int totalLength = dataLen;
             while (totalLength > 0)
             {
                 int blockLen = Math.min(totalLength, engine.getBlockSize());
-                ProcessBlock(in, inOff, blockLen, out, outOff);
+                ProcessBlock(in, inPos, blockLen, plain, plainOff);
                 totalLength -= blockLen;
-                inOff += blockLen;
-                outOff += blockLen;
+                inPos += blockLen;
+                plainOff += blockLen;
             }
 
             // recover the appended (masked) MAC using the next keystream block
@@ -334,27 +391,27 @@ public class KCCMBlockCipher
 
             engine.processBlock(s, 0, buffer, 0);
 
+            byte[] recoveredMac = new byte[macSize];
             for (int byteIndex = 0; byteIndex < macSize; byteIndex++)
             {
-                out[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ in[inOff + byteIndex]);
+                recoveredMac[byteIndex] = (byte)(buffer[byteIndex] ^ in[inPos + byteIndex]);
             }
-            outOff += macSize;
 
             // recompute the MAC over the recovered plaintext and compare
-            System.arraycopy(out, outOff - macSize, buffer, 0, macSize);
-
-            CalculateMac(out, outStart, dataLen);
+            CalculateMac(plain, 0, dataLen);
 
             System.arraycopy(macBlock, 0, mac, 0, macSize);
 
-            byte[] calculatedMac = new byte[macSize];
-
-            System.arraycopy(buffer, 0, calculatedMac, 0, macSize);
-
-            if (!Arrays.constantTimeAreEqual(mac, calculatedMac))
+            if (!Arrays.constantTimeAreEqual(mac, recoveredMac))
             {
+                Arrays.clear(plain);
                 throw new InvalidCipherTextException("mac check failed");
             }
+
+            // Only now (MAC verified) expose the recovered plaintext in the caller's output. The MAC
+            // is not written to the output - it is consumed for verification and is available via
+            // getMac() - matching the standard AEAD contract (CCMBlockCipher / GCMBlockCipher / KGCM).
+            System.arraycopy(plain, 0, out, outOff, dataLen);
 
             reset();
 
@@ -436,7 +493,14 @@ public class KCCMBlockCipher
 
     public int getOutputSize(int len)
     {
-        return len + macSize;
+        int totalData = len + data.size();
+
+        if (forEncryption)
+        {
+            return totalData + macSize;
+        }
+
+        return totalData < macSize ? 0 : totalData - macSize;
     }
 
     public void reset()

@@ -34,6 +34,11 @@ public class OtherRecipientInfo
     private OtherRecipientInfo(
         ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         oriType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
         oriValue = seq.getObjectAt(1);
     }

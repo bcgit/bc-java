@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -22,13 +23,13 @@ public class JCERSAPrivateCrtKey
     implements RSAPrivateCrtKey
 {
     static final long serialVersionUID = 7834723820638524718L;
-    
-    private BigInteger  publicExponent;
-    private BigInteger  primeP;
-    private BigInteger  primeQ;
-    private BigInteger  primeExponentP;
-    private BigInteger  primeExponentQ;
-    private BigInteger  crtCoefficient;
+
+    private BigInteger publicExponent;
+    private BigInteger primeP;
+    private BigInteger primeQ;
+    private BigInteger primeExponentP;
+    private BigInteger primeExponentQ;
+    private BigInteger crtCoefficient;
 
     /**
      * construct a private key from it's org.bouncycastle.crypto equivalent.
@@ -88,7 +89,7 @@ public class JCERSAPrivateCrtKey
      * construct an RSA key from a private key info object.
      */
     JCERSAPrivateCrtKey(
-        PrivateKeyInfo  info)
+        PrivateKeyInfo info)
         throws IOException
     {
         this(org.bouncycastle.asn1.pkcs.RSAPrivateKey.getInstance(info.parsePrivateKey()));
@@ -98,7 +99,7 @@ public class JCERSAPrivateCrtKey
      * construct an RSA key from a ASN.1 RSA private key object.
      */
     JCERSAPrivateCrtKey(
-        RSAPrivateKey  key)
+        RSAPrivateKey key)
     {
         this.modulus = key.getModulus();
         this.publicExponent = key.getPublicExponent();
@@ -194,8 +195,7 @@ public class JCERSAPrivateCrtKey
     public int hashCode()
     {
         return this.getModulus().hashCode()
-               ^ this.getPublicExponent().hashCode()
-               ^ this.getPrivateExponent().hashCode();
+            ^ this.getPublicExponent().hashCode();
     }
 
     public boolean equals(Object o)
@@ -212,20 +212,30 @@ public class JCERSAPrivateCrtKey
 
         RSAPrivateCrtKey key = (RSAPrivateCrtKey)o;
 
+        int modLen = Math.max(
+            (getModulus().bitLength() + 7) / 8,
+            (key.getModulus().bitLength() + 7) / 8);
+        int pLen = Math.max(
+            (getPrimeP().bitLength() + 7) / 8,
+            (key.getPrimeP().bitLength() + 7) / 8);
+        int qLen = Math.max(
+            (getPrimeQ().bitLength() + 7) / 8,
+            (key.getPrimeQ().bitLength() + 7) / 8);
+
         return this.getModulus().equals(key.getModulus())
-         && this.getPublicExponent().equals(key.getPublicExponent())
-         && this.getPrivateExponent().equals(key.getPrivateExponent())
-         && this.getPrimeP().equals(key.getPrimeP())
-         && this.getPrimeQ().equals(key.getPrimeQ())
-         && this.getPrimeExponentP().equals(key.getPrimeExponentP())
-         && this.getPrimeExponentQ().equals(key.getPrimeExponentQ())
-         && this.getCrtCoefficient().equals(key.getCrtCoefficient());
+            && this.getPublicExponent().equals(key.getPublicExponent())
+            && (BigIntegers.areSecretValuesEqual(modLen, this.getPrivateExponent(), key.getPrivateExponent())
+            & BigIntegers.areSecretValuesEqual(pLen, this.getPrimeP(), key.getPrimeP())
+            & BigIntegers.areSecretValuesEqual(qLen, this.getPrimeQ(), key.getPrimeQ())
+            & BigIntegers.areSecretValuesEqual(pLen, this.getPrimeExponentP(), key.getPrimeExponentP())
+            & BigIntegers.areSecretValuesEqual(qLen, this.getPrimeExponentQ(), key.getPrimeExponentQ())
+            & BigIntegers.areSecretValuesEqual(pLen, this.getCrtCoefficient(), key.getCrtCoefficient()));
     }
 
     public String toString()
     {
-        StringBuilder   buf = new StringBuilder();
-        String          nl = Strings.lineSeparator();
+        StringBuilder buf = new StringBuilder();
+        String nl = Strings.lineSeparator();
 
         buf.append("RSA Private CRT Key").append(nl);
         buf.append("            modulus: ").append(this.getModulus().toString(16)).append(nl);

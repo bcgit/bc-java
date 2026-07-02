@@ -1,7 +1,7 @@
 package org.bouncycastle.pqc.crypto.mqom;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
+import org.bouncycastle.math.raw.GF256AES;
 
 /**
  * ComputePAlpha / RecomputePAlpha (spec algorithms 6-9). Supports both
@@ -248,7 +248,7 @@ final class MQOMPiop
 
     private int extMult(int a, int b)
     {
-        return (extLog2 == 8) ? MQOMField.gf256Mult(a, b) : MQOMField.gf256to2Mult(a, b);
+        return (extLog2 == 8) ? GF256AES.mul(a, b) : MQOMField.gf256to2Mult(a, b);
     }
 
     private int extVectMult(byte[] a, int aOff, byte[] b, int bOff, int len)

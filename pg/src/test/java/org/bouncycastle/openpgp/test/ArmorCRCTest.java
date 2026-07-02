@@ -91,7 +91,9 @@ public class ArmorCRCTest
         litIn.close();
         armorIn.close();
 
-        isEquals("Hello, World!\n", bOut.toString());
+        String result = Strings.fromUTF8ByteArray(bOut.toByteArray());
+
+        isEquals("Hello, World!\n", result);
     }
 
     public static void main(String[] args)

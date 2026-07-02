@@ -38,13 +38,20 @@ public class HSSSigner
 
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // A malformed/truncated signature must not throw out of verify: the decode
+        // can fail with IOException (truncation) or a RuntimeException (out-of-range
+        // type fields surface as NullPointerException / NegativeArraySizeException).
         try
         {
             return HSS.verifySignature(pubKey, HSSSignature.getInstance(signature, pubKey.getL()), message);
         }
         catch (IOException e)
         {
-            throw Exceptions.illegalStateException("unable to decode signature", e);
+            return false;
+        }
+        catch (RuntimeException e)
+        {
+            return false;
         }
     }
 }

@@ -40,8 +40,14 @@ public class GeneralSubtree
     private ASN1Integer maximum;
 
     private GeneralSubtree(
-        ASN1Sequence seq) 
+        ASN1Sequence seq)
     {
+        // base (GeneralName) is mandatory; an empty sequence is malformed.
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("sequence may not be empty");
+        }
+
         base = GeneralName.getInstance(seq.getObjectAt(0));
 
         switch (seq.size()) 

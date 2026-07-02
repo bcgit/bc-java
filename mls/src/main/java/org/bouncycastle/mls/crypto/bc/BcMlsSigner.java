@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -73,7 +74,7 @@ public class BcMlsSigner
 
     public AsymmetricCipherKeyPair generateSignatureKeyPair()
     {
-        SecureRandom random = new SecureRandom();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
         switch (sigID)
         {
         case ecdsa_secp256r1_sha256:

@@ -47,8 +47,13 @@ def String deriveOSGIVersion(String prjVersion) {
 
 ext {
     bundle_version = deriveOSGIVersion(version.toString());
-}
 
+    // Number of parallel test forks: half the available processors (at least 1). Each test JVM is
+    // heavy (it re-runs the FIPS power-on self-tests on startup) and reserves a sizable heap, so
+    // half-the-cores leaves headroom for per-fork memory and the gradle daemon / OS. Shared here
+    // so every module's test tasks compute the same value.
+    calcTestForks = { -> Math.max(1, Runtime.getRuntime().availableProcessors().intdiv(2)) }
+}
 
 // this needs to go here, otherwise it can't find config
 apply plugin: 'io.spring.nohttp'
@@ -159,6 +164,13 @@ configure(allprojects.findAll {it.name != 'bom'}) {
             check('UnusedVariable', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('UseCorrectAssertInTests', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('VariableNameSameAsType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+        }
+
+        // Only run Error Prone over main sources; the test trees carry intentional patterns
+        // (duplicate branches, redundant control flow, etc.) that aren't worth the noise. Use the
+        // task's own name (it.name) - unqualified 'name' would resolve to the enclosing project.
+        if (it.name.toLowerCase().contains("test")) {
+            options.errorprone.enabled = false
         }
     }
 

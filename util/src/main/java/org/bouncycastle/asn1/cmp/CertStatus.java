@@ -35,6 +35,11 @@ public class CertStatus
 
     private CertStatus(ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
         this.certHash = ASN1OctetString.getInstance(seq.getObjectAt(0));
         this.certReqId = ASN1Integer.getInstance(seq.getObjectAt(1));
 

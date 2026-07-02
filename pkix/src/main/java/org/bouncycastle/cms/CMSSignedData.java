@@ -221,9 +221,15 @@ public class CMSSignedData
     private SignedData getSignedData()
         throws CMSException
     {
+        ASN1Encodable content = contentInfo.getContent();
+        if (content == null)
+        {
+            throw new CMSException("Missing content.");
+        }
+
         try
         {
-            return SignedData.getInstance(contentInfo.getContent());
+            return SignedData.getInstance(content);
         }
         catch (ClassCastException e)
         {
@@ -439,6 +445,16 @@ public class CMSSignedData
         throws CMSException
     {
         Collection signers = this.getSignerInfos().getSigners();
+
+        // Fail closed on a degenerate SignedData with no SignerInfos (RFC 5652 permits an empty
+        // signerInfos SET, e.g. a certs-only structure). Falling through the loop to "return true"
+        // would report vacuous success, so a caller using this as its authenticity check would accept
+        // unsigned, attacker-supplied content. Callers expecting a certs-only structure should use
+        // getCertificates() instead.
+        if (signers.isEmpty())
+        {
+            throw new CMSException("no signers present in SignedData");
+        }
 
         for (Iterator it = signers.iterator(); it.hasNext(); )
         {

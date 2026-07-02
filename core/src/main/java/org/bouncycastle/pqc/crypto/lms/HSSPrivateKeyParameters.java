@@ -346,7 +346,7 @@ public class HSSPrivateKeyParameters
             // I and seed are derived from this nodes parent and will change if the parent q, I, seed changes.
             //
             boolean seedEquals = org.bouncycastle.util.Arrays.areEqual(childI, keys[i].getI())
-                && org.bouncycastle.util.Arrays.areEqual(childSeed, keys[i].getMasterSecret());
+                && org.bouncycastle.util.Arrays.constantTimeAreEqual(childSeed, keys[i].getMasterSecret());
 
 
             if (!seedEquals)
@@ -498,13 +498,7 @@ public class HSSPrivateKeyParameters
     @Override
     public int hashCode()
     {
-        int result = l;
-        result = 31 * result + (isShard ? 1 : 0);
-        result = 31 * result + keys.hashCode();
-        result = 31 * result + sig.hashCode();
-        result = 31 * result + (int)(indexLimit ^ (indexLimit >>> 32));
-        result = 31 * result + (int)(index ^ (index >>> 32));
-        return result;
+        return getPublicKey().hashCode();
     }
 
     @Override

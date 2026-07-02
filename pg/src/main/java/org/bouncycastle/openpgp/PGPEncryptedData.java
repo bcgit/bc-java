@@ -276,7 +276,7 @@ public abstract class PGPEncryptedData
     }
 
     boolean processSymmetricEncIntegrityPacketDataStream(boolean withIntegrityPacket, PGPDataDecryptor dataDecryptor,
-        InputStream encIn)
+        InputStream encIn, boolean publicKeyEncrypted)
         throws IOException
     {
         encStream = dataDecryptor.getInputStream(encIn);
@@ -311,8 +311,19 @@ public abstract class PGPEncryptedData
             throw new EOFException("unexpected end of stream.");
         }
 
-        // Note: the oracle attack on "quick check" bytes is not deemed
-        // a security risk for PBE (see PGPPublicKeyEncryptedData)
+        // For a public-key / session-key decryption there is no multi-SKESK passphrase retry to
+        // drive, so the CFB "quick check" on the two repeated prefix bytes serves no purpose here and
+        // only re-creates the Mister-Zuccherato oracle (the reason PGPPublicKeyEncryptedData suppresses
+        // it). Consume the check bytes (done above) but do not signal a mismatch; for SEIPD v1 the MDC
+        // is the integrity check. This path is reached for PKESK session keys via the high-level API.
+        if (publicKeyEncrypted)
+        {
+            return false;
+        }
+
+        // Note: the oracle attack on "quick check" bytes is not deemed a security risk for PBE; the
+        // quick check is retained on the PBE path because its failure + stream reset is what lets the
+        // decryptor detect a wrong passphrase and rewind to try the next SKESK packet.
 
         boolean repeatCheckPassed = iv[iv.length - 2] == (byte)v1
             && iv[iv.length - 1] == (byte)v2;

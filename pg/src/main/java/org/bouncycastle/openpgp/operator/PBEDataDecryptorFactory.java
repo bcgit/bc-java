@@ -15,6 +15,7 @@ public abstract class PBEDataDecryptorFactory
 {
     private char[] passPhrase;
     private PGPDigestCalculatorProvider calculatorProvider;
+    private PGPS2KCalculator s2kCalculator;
 
     /**
      * Construct a PBE data decryptor factory.
@@ -24,8 +25,22 @@ public abstract class PBEDataDecryptorFactory
      */
     protected PBEDataDecryptorFactory(char[] passPhrase, PGPDigestCalculatorProvider calculatorProvider)
     {
+        this(passPhrase, calculatorProvider, null);
+    }
+
+    /**
+     * Construct a PBE data decryptor factory.
+     *
+     * @param passPhrase the pass phrase to generate decryption keys with.
+     * @param calculatorProvider the digest to use in hash-based key generation.
+     * @param s2kCalculator the calculator to use for memory-hard (Argon2) S2K key generation; may be
+     *                      null if Argon2 S2K specifiers are not expected.
+     */
+    protected PBEDataDecryptorFactory(char[] passPhrase, PGPDigestCalculatorProvider calculatorProvider, PGPS2KCalculator s2kCalculator)
+    {
         this.passPhrase = passPhrase;
         this.calculatorProvider = calculatorProvider;
+        this.s2kCalculator = s2kCalculator;
     }
 
     /**
@@ -42,7 +57,11 @@ public abstract class PBEDataDecryptorFactory
     public byte[] makeKeyFromPassPhrase(int keyAlgorithm, S2K s2k)
         throws PGPException
     {
-        return PGPUtil.makeKeyFromPassPhrase(calculatorProvider, keyAlgorithm, s2k, passPhrase);
+        if (s2k.getType() == S2K.ARGON_2)
+        {
+            return PGPUtil.makeKeyFromPassPhrase(s2kCalculator, keyAlgorithm, s2k, passPhrase);
+        }
+        return PGPUtil.makeKeyFromPassPhrase(new PGPUtil.HashBasedS2KCalculator(calculatorProvider.get(s2k.getHashAlgorithm())), keyAlgorithm, s2k, passPhrase);
     }
 
     /**

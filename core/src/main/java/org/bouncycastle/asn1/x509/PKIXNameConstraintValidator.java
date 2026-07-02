@@ -11,7 +11,9 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
@@ -316,60 +318,41 @@ public class PKIXNameConstraintValidator
 
     private static boolean withinDNSubtree(ASN1Sequence dns, ASN1Sequence subtree)
     {
-        if (subtree.size() < 1 || subtree.size() > dns.size())
+        // An empty subtree would be a prefix of every DN; treat it as "no match" instead, so an empty permitted
+        // base can't nullify the permittedSubtrees restriction.
+        if (subtree.size() < 1)
         {
             return false;
         }
 
+        // A prefix can't be longer than the DN.
+        if (subtree.size() > dns.size())
+        {
+            return false;
+        }
+
+        // Relaxed anywhere-match needed for GSMA SGP.22, gated behind a property.
         if (Properties.isOverrideSet(Properties.X509_SGP22_NAME_CONSTRAINTS))
         {
             return withinDNSubtreeSGP22(dns, subtree);
         }
 
-        int start = 0;
-        RDN subtreeRdnStart = RDN.getInstance(subtree.getObjectAt(0));
-        for (int j = 0; j < dns.size(); j++)
-        {
-            start = j;
-            RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
-            if (IETFUtils.rDNAreEqual(subtreeRdnStart, dnsRdn))
-            {
-                break;
-            }
-        }
-
-        if (subtree.size() > dns.size() - start)
-        {
-            return false;
-        }
+        // RFC 5280 4.2.1.10 / 7.1: a directoryName constraint is satisfied only when the constraint's RDNSequence
+        // is an initial prefix of the subject's. Match from index 0 only - searching for the constraint's first RDN
+        // at an arbitrary offset let an attacker prepend RDNs ahead of the permitted sequence (e.g. a subject
+        // C=FR,O=Attacker,C=US,O=TrustedOrg,CN=x being judged inside permitted subtree C=US,O=TrustedOrg) and still
+        // pass the permittedSubtrees check.
 
         for (int j = 0; j < subtree.size(); j++)
         {
             // both subtree and dns are a ASN.1 Name and the elements are a RDN
             RDN subtreeRdn = RDN.getInstance(subtree.getObjectAt(j));
-            RDN dnsRdn = RDN.getInstance(dns.getObjectAt(start + j));
+            RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
 
-            // check if types and values of all naming attributes are matching, other types which are not restricted are allowed, see https://tools.ietf.org/html/rfc5280#section-7.1
-            if (subtreeRdn.size() == dnsRdn.size())
-            {
-                // Two relative distinguished names
-                //   RDN1 and RDN2 match if they have the same number of naming attributes
-                //   and for each naming attribute in RDN1 there is a matching naming attribute in RDN2.
-                //   NOTE: this is checking the attributes in the same order, which might be not necessary, if this is a problem also IETFUtils.rDNAreEqual must be changed.
-                // use new RFC 5280 comparison, NOTE: this is now different from with RFC 3280, where only binary comparison is used
-                // obey RFC 5280 7.1
-                // NOTE: the GSMA SGP.22 serialNumber startsWith concession is gated behind
-                // Properties.X509_SGP22_NAME_CONSTRAINTS (see withinDNSubtreeSGP22); this path stays strict.
-                if (!subtreeRdn.getFirst().getType().equals(dnsRdn.getFirst().getType()))
-                {
-                    return false;
-                }
-                if (!IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn))
-                {
-                    return false;
-                }
-            }
-            else
+            // Obey RFC 5280 7.1. Two relative distinguished names RDN1 and RDN2 match if they have the same number
+            // of naming attributes and for each naming attribute in RDN1 there is a matching naming attribute in
+            // RDN2. NOTE: this is now different from the RFC 3280 version, where only binary comparison was used.
+            if (!IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn))
             {
                 return false;
             }
@@ -388,28 +371,36 @@ public class PKIXNameConstraintValidator
      */
     private static boolean withinDNSubtreeSGP22(ASN1Sequence dns, ASN1Sequence subtree)
     {
+        int count = dns.size();
+        RDN[] dnsRdns = new RDN[count];
+        for (int i = 0; i < count; ++i)
+        {
+            dnsRdns[i] = RDN.getInstance(dns.getObjectAt(i));
+        }
+
         for (int i = 0; i < subtree.size(); i++)
         {
             RDN subtreeRdn = RDN.getInstance(subtree.getObjectAt(i));
 
-            boolean matched = false;
-            for (int j = 0; j < dns.size(); j++)
-            {
-                RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
-                if (rdnMatchesSGP22(subtreeRdn, dnsRdn))
-                {
-                    matched = true;
-                    break;
-                }
-            }
-
-            if (!matched)
+            if (!rdnMatchesSGP22Any(subtreeRdn, dnsRdns))
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static boolean rdnMatchesSGP22Any(RDN subtreeRdn, RDN[] dnsRdns)
+    {
+        for (int i = 0; i < dnsRdns.length; ++i)
+        {
+            if (rdnMatchesSGP22(subtreeRdn, dnsRdns[i]))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean rdnMatchesSGP22(RDN subtreeRdn, RDN dnsRdn)
@@ -419,7 +410,10 @@ public class PKIXNameConstraintValidator
             return false;
         }
 
-        if (!subtreeRdn.getFirst().getType().equals(dnsRdn.getFirst().getType()))
+        AttributeTypeAndValue subtreeFirst = subtreeRdn.getFirst();
+        AttributeTypeAndValue dnsFirst = dnsRdn.getFirst();
+
+        if (!subtreeFirst.getType().equals(dnsFirst.getType()))
         {
             return false;
         }
@@ -427,7 +421,9 @@ public class PKIXNameConstraintValidator
         // special treatment of serialNumber for GSMA SGP.22 RSP specification
         if (subtreeRdn.size() == 1 && subtreeRdn.getFirst().getType().equals(RFC4519Style.serialNumber))
         {
-            return dnsRdn.getFirst().getValue().toString().startsWith(subtreeRdn.getFirst().getValue().toString());
+            String subtreeFirstValue = ASN1PrintableString.getInstance(subtreeFirst.getValue()).getString();
+            String dnsFirstValue = ASN1PrintableString.getInstance(dnsFirst.getValue()).getString();
+            return dnsFirstValue.startsWith(subtreeFirstValue);
         }
 
         return IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn);
@@ -1089,18 +1085,20 @@ public class PKIXNameConstraintValidator
     {
         int atPos = constraint.indexOf('@');
 
-        // a particular mailbox
+        // a particular mailbox. RFC 1034 root-label trailing dot: the dNSName path strips it (see
+        // isDNSConstrained); apply the same canonicalisation to the rfc822Name host so a trailing dot
+        // (e.g. "user@bank.com.") cannot slip a leaf past an excluded/permitted "bank.com" constraint.
         if (atPos > 0)
         {
-            return email.equalsIgnoreCase(constraint);
+            return stripTrailingDot(email).equalsIgnoreCase(stripTrailingDot(constraint));
         }
 
-        String sub = email.substring(email.indexOf('@') + 1);
+        String sub = stripTrailingDot(email.substring(email.indexOf('@') + 1));
 
         // "@domain" style
         if (atPos == 0)
         {
-            return sub.equalsIgnoreCase(constraint.substring(1));
+            return sub.equalsIgnoreCase(stripTrailingDot(constraint.substring(1)));
         }
 
         // address in sub domain
@@ -1110,7 +1108,7 @@ public class PKIXNameConstraintValidator
         }
 
         // on particular host
-        return sub.equalsIgnoreCase(constraint);
+        return sub.equalsIgnoreCase(stripTrailingDot(constraint));
     }
 
     private static boolean withinDomain(String testDomain, String domain)
@@ -1845,7 +1843,9 @@ public class PKIXNameConstraintValidator
 
     private static boolean isURIConstrained(String constraint, String uri)
     {
-        String host = extractHostFromURL(uri);
+        // Strip an RFC 1034 root-label trailing dot from the host, matching the dNSName path, so a
+        // URI host such as "competitor.example." cannot slip past a "competitor.example" constraint.
+        String host = stripTrailingDot(extractHostFromURL(uri));
 
         // in sub domain or domain
         if (constraint.startsWith("."))
@@ -1854,7 +1854,7 @@ public class PKIXNameConstraintValidator
         }
 
         // a host
-        return host.equalsIgnoreCase(constraint);
+        return host.equalsIgnoreCase(stripTrailingDot(constraint));
     }
 
     private static String extractHostFromURL(String url)

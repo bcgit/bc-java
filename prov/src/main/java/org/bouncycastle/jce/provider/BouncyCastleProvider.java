@@ -30,6 +30,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.provider.aimer.AIMerKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
@@ -103,7 +104,7 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] SYMMETRIC_GENERIC =
         {
-            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT", "HKDF"
+            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT", "ARGON2", "HKDF"
         };
 
     private static final String[] SYMMETRIC_MACS =
@@ -139,7 +140,7 @@ public final class BouncyCastleProvider extends Provider
     private static final String[] ASYMMETRIC_CIPHERS =
         {
             "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC", "LMS", "NTRU", "Falcon", "CONTEXT", "SLHDSA", "MLDSA", "MLKEM",
-            "FrodoKEM", "Dilithium", "SPHINCSPlus", "CompositeKEMs"
+            "CMCE", "FrodoKEM", "Dilithium", "SPHINCSPlus", "CompositeKEMs"
         };
 
     /*
@@ -609,6 +610,13 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.hawk256,  new HawkKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hawk512,  new HawkKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hawk1024, new HawkKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_128f, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_128s, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_192f, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_192s, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_256f, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.aimer_256s, new AIMerKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)

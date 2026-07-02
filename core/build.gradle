@@ -11,8 +11,12 @@ application {
 jar.archiveBaseName = "bccore-$vmrange"
 
 test {
+    minHeapSize = "512m"
+    maxHeapSize = "8192m"
+
+    maxParallelForks = rootProject.ext.calcTestForks();
     forkEvery = 1;
-    maxParallelForks = 8;
+
     jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 

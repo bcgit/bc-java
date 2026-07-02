@@ -1,6 +1,7 @@
 package org.bouncycastle.cms.jcajce;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
@@ -16,9 +17,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -53,6 +52,7 @@ import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.crypto.util.OidCatalogue;
 import org.bouncycastle.operator.AsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
@@ -60,14 +60,13 @@ import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceKTSKeyUnwrapper;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 public class EnvelopedDataHelper
 {
     protected static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
     private static final byte[] hkdfSalt = Strings.toByteArray("The Cryptographic Message Syntax");
-
-    private static final Set authEnvelopedAlgorithms = new HashSet();
 
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
     protected static final Map CIPHER_ALG_NAMES = new HashMap();
@@ -120,20 +119,15 @@ public class EnvelopedDataHelper
         MAC_ALG_NAMES.put(CMSAlgorithm.AES256_CBC,  "AESMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2Mac");
         MAC_ALG_NAMES.put(CMSAlgorithm.ChaCha20Poly1305, "ChaCha20Poly1305Mac");
+        // RFC 8702
+        MAC_ALG_NAMES.put(CMSAlgorithm.KMACwithSHAKE128, "KMAC128");
+        MAC_ALG_NAMES.put(CMSAlgorithm.KMACwithSHAKE256, "KMAC256");
 
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA1.getAlgorithmID(), "PBKDF2WITHHMACSHA1");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA224.getAlgorithmID(), "PBKDF2WITHHMACSHA224");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA256.getAlgorithmID(), "PBKDF2WITHHMACSHA256");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA384.getAlgorithmID(), "PBKDF2WITHHMACSHA384");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA512.getAlgorithmID(), "PBKDF2WITHHMACSHA512");
-
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_GCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES128_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES192_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.AES256_CCM);
-        authEnvelopedAlgorithms.add(CMSAlgorithm.ChaCha20Poly1305);
     }
 
     private static final short[] rc2Table = {
@@ -796,6 +790,18 @@ public class EnvelopedDataHelper
     {
         PBKDF2Params params = PBKDF2Params.getInstance(derivationAlgorithm.getParameters());
 
+        // The PBKDF2 iteration count comes from the keyDerivationAlgorithm of the PasswordRecipientInfo
+        // (RFC 5652 sec. 6.2.4; RFC 3211 sec. 2.1 mandates PBKDF2) and is both attacker-supplied and
+        // unauthenticated - EnvelopedData carries no integrity protection, so the KDF runs before anything
+        // is verified, and RFC 8018 App. A.2 permits iterationCount up to MAX on the wire. Bound it (default
+        // 10,000,000, the count RFC 8018 sec. 4.2 deems appropriate for especially critical keys) to cap CPU cost.
+        BigInteger iterationCount = params.getIterationCount();
+        long max = Properties.asInteger(Properties.PBE_MAX_ITERATION_COUNT, 10000000);
+        if (iterationCount.bitLength() > 31 || iterationCount.longValue() > max)
+        {
+            throw new CMSException("iteration count (" + iterationCount + ") greater than " + max);
+        }
+
         try
         {
             SecretKeyFactory keyFact;
@@ -809,7 +815,7 @@ public class EnvelopedDataHelper
                 keyFact = helper.createSecretKeyFactory((String)PBKDF2_ALG_NAMES.get(params.getPrf()));
             }
 
-            SecretKey key = keyFact.generateSecret(new PBEKeySpec(password, params.getSalt(), params.getIterationCount().intValue(), keySize));
+            SecretKey key = keyFact.generateSecret(new PBEKeySpec(password, params.getSalt(), iterationCount.intValue(), keySize));
 
             return key.getEncoded();
         }
@@ -821,7 +827,7 @@ public class EnvelopedDataHelper
 
     boolean isAuthEnveloped(ASN1ObjectIdentifier algorithm)
     {
-        return authEnvelopedAlgorithms.contains(algorithm);
+        return OidCatalogue.isAuthEnveloped(algorithm);
     }
 
     static interface JCECallback

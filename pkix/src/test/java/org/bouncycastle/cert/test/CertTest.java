@@ -52,6 +52,7 @@ import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -77,6 +78,8 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectAltPublicKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.Time;
+import org.bouncycastle.asn1.x509.V2TBSCertListGenerator;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -5595,6 +5598,86 @@ public class CertTest
         }
     }
 
+    // A malformed issuingDistributionPoint extension value must surface from the X509CRLHolder(byte[])
+    // constructor as the declared IOException, not as an IllegalArgumentException escaping the throws
+    // clause (parser robustness; found by fuzzing). X509CRLHolder.init eagerly parses the IDP value to
+    // decide isIndirect, so a non-DER extnValue trips the decode during construction. Also confirms a
+    // well-formed indirect CRL still round-trips through the same constructor with isIndirect honoured.
+    private void testMalformedIssuingDistributionPoint()
+        throws Exception
+    {
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", BC);
+
+        keyStore.load(new ByteArrayInputStream(testCAp12), "test".toCharArray());
+
+        X509Certificate certificate = (X509Certificate)keyStore.getCertificate("ca");
+        PrivateKey privateKey = (PrivateKey)keyStore.getKey("ca", null);
+
+        X500Name crlIssuer = X500Name.getInstance(certificate.getSubjectX500Principal().getEncoded());
+
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(privateKey);
+        AlgorithmIdentifier sigAlgId = signer.getAlgorithmIdentifier();
+
+        // Hand-build a structurally-valid CertificateList whose issuingDistributionPoint extnValue is
+        // non-DER: {0x30, 0x05} is a SEQUENCE claiming 5 content bytes with none present. (We cannot use
+        // X509v2CRLBuilder.build() here because build() itself constructs an X509CRLHolder, which would
+        // trip the very parse we are exercising.)
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.issuingDistributionPoint, true, new byte[]{0x30, 0x05});
+
+        V2TBSCertListGenerator tbsGen = new V2TBSCertListGenerator();
+        tbsGen.setSignature(sigAlgId);
+        tbsGen.setIssuer(crlIssuer);
+        tbsGen.setThisUpdate(new Time(new Date()));
+        tbsGen.setExtensions(extGen.generate());
+
+        ASN1EncodableVector clVec = new ASN1EncodableVector();
+        clVec.add(tbsGen.generateTBSCertList());
+        clVec.add(sigAlgId);
+        clVec.add(new DERBitString(new byte[]{0}));
+
+        byte[] badEncoding = new DERSequence(clVec).getEncoded();
+
+        try
+        {
+            new X509CRLHolder(badEncoding);
+            fail("malformed IssuingDistributionPoint extension not detected");
+        }
+        catch (IOException e)
+        {
+            // expected: a malformed IDP extension is reported through the constructor's throws IOException.
+        }
+        catch (IllegalArgumentException e)
+        {
+            fail("malformed IssuingDistributionPoint leaked IllegalArgumentException past throws IOException");
+        }
+
+        // A well-formed indirect CRL must still load through X509CRLHolder(byte[]) with isIndirect
+        // honoured: the entry's certificateIssuer (a name distinct from the CRL issuer) is applied only
+        // when the IssuingDistributionPoint marks the CRL indirect, so observing it confirms isIndirect
+        // parsed true after the byte[] round-trip.
+        GeneralNames indirectCA = new GeneralNames(new GeneralName(new X500Name("CN=Indirect CA,O=BC")));
+
+        X509v2CRLBuilder goodBuilder = new X509v2CRLBuilder(crlIssuer, new Date());
+        goodBuilder.addExtension(Extension.issuingDistributionPoint, true, new IssuingDistributionPoint(null, true, false));
+
+        ExtensionsGenerator entryExtGen = new ExtensionsGenerator();
+        entryExtGen.addExtension(Extension.certificateIssuer, true, indirectCA);
+        goodBuilder.addCRLEntry(BigInteger.valueOf(1), new Date(), entryExtGen.generate());
+
+        X509CRLHolder goodHolder = new X509CRLHolder(goodBuilder.build(signer).getEncoded());
+
+        X509CRLEntryHolder entry = goodHolder.getRevokedCertificate(BigInteger.valueOf(1));
+        if (entry == null)
+        {
+            fail("revoked entry not found in well-formed indirect CRL");
+        }
+        if (!indirectCA.equals(entry.getCertificateIssuer()))
+        {
+            fail("indirect CRL isIndirect not honoured after byte[] round-trip");
+        }
+    }
+
     private void zeroDataTest()
         throws Exception
     {
@@ -5817,6 +5900,7 @@ public class CertTest
         testIndirect();
         testIndirect2();
         testMalformedIndirect();
+        testMalformedIssuingDistributionPoint();
 
         checkCertificate(1, cert1);
         checkCertificate(2, cert2);

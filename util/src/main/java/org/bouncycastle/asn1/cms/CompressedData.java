@@ -39,6 +39,11 @@ public class CompressedData
     private CompressedData(
         ASN1Sequence seq)
     {
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("expected sequence size of 3");
+        }
+
         this.version = (ASN1Integer)seq.getObjectAt(0);
         this.compressionAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
         this.encapContentInfo = ContentInfo.getInstance(seq.getObjectAt(2));
