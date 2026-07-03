@@ -42,6 +42,22 @@ class X509CertificateObject
         throws CertificateParsingException
     {
         super(bcHelper, c, createBasicConstraints(c), createKeyUsage(c), createSigAlgName(c), createSigAlgParams(c));
+
+        // Reject a subject/issuer DN that decodes structurally (BC's lenient X500Name) but is
+        // semantically invalid for X500Principal, so a malformed name is caught here at
+        // generateCertificate() rather than leaking an unchecked IllegalArgumentException later
+        // from the lazy getIssuer/SubjectX500Principal() - e.g. through CertPathValidator.validate()
+        // -> findTrustAnchor, which reads the issuer before signature verification. Name parsing is
+        // cheap and the results are cached, so eager validation adds no material cost.
+        try
+        {
+            getIssuerX500Principal();
+            getSubjectX500Principal();
+        }
+        catch (RuntimeException e)
+        {
+            throw new CertificateParsingException("cannot parse subject/issuer name: " + e);
+        }
     }
 
     public void checkValidity(Date date) throws CertificateExpiredException, CertificateNotYetValidException

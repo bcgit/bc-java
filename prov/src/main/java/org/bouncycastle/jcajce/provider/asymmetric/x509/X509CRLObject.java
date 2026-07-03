@@ -24,6 +24,19 @@ class X509CRLObject
     X509CRLObject(JcaJceHelper bcHelper, CertificateList c) throws CRLException
     {
         super(bcHelper, c, createSigAlgName(c), createSigAlgParams(c), isIndirectCRL(c));
+
+        // Reject an issuer DN that decodes structurally (BC's lenient X500Name) but is semantically
+        // invalid for X500Principal, so a malformed name is caught here at generateCRL() rather than
+        // leaking an unchecked IllegalArgumentException later from the lazy getIssuerX500Principal()
+        // during CRL processing in CertPathValidator.validate().
+        try
+        {
+            getIssuerX500Principal();
+        }
+        catch (RuntimeException e)
+        {
+            throw new CRLException("cannot parse issuer name: " + e);
+        }
     }
 
     public byte[] getEncoded() throws CRLException
