@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -418,12 +419,23 @@ public class PKIXNameConstraintValidator
             return false;
         }
 
-        // special treatment of serialNumber for GSMA SGP.22 RSP specification
-        if (subtreeRdn.size() == 1 && subtreeRdn.getFirst().getType().equals(RFC4519Style.serialNumber))
+        // Special treatment of serialNumber for the GSMA SGP.22 RSP specification: the constraint's
+        // IIN is a prefix (EID digits 1 to 8) of the subject's EID. The subject side is held to the
+        // encoding SGP.22 explicitly mandates (the EID "as a decimal PrintableString"); the constraint
+        // side accepts any ASN.1 string form - X.520 binds serialNumber to PrintableString there too,
+        // but only by inheritance, and refusing a misencoded trust-side IIN would reject every leaf
+        // under that EUM (the historical code read it type-agnostically via toString). Anything else
+        // falls through to ordinary RDN equality below instead of throwing from an ASN.1 accessor.
+        if (subtreeRdn.size() == 1 && subtreeFirst.getType().equals(RFC4519Style.serialNumber))
         {
-            String subtreeFirstValue = ASN1PrintableString.getInstance(subtreeFirst.getValue()).getString();
-            String dnsFirstValue = ASN1PrintableString.getInstance(dnsFirst.getValue()).getString();
-            return dnsFirstValue.startsWith(subtreeFirstValue);
+            ASN1Encodable dnsFirstValue = dnsFirst.getValue();
+            ASN1Encodable subtreeFirstValue = subtreeFirst.getValue();
+
+            if (dnsFirstValue instanceof ASN1PrintableString && subtreeFirstValue instanceof ASN1String)
+            {
+                return ((ASN1PrintableString)dnsFirstValue).getString().startsWith(
+                    ((ASN1String)subtreeFirstValue).getString());
+            }
         }
 
         return IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn);
