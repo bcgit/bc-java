@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
@@ -507,6 +508,55 @@ public class PrivateKeyFactory
             catch (ClassNotFoundException e)
             {
                 throw Exceptions.ioException("ClassNotFoundException processing BDS state: " + e.getMessage(), e);
+            }
+        }
+        else if (algOID.equals(IANAObjectIdentifiers.id_alg_xmss_hashsig))
+        {
+            // RFC 9802 form used for the SP 800-208 sets: the private key octets are the 4-octet
+            // parameter-set OID followed by the raw XMSSPrivateKeyParameters encoding, recovered
+            // via lookupByOID so the full parameter set (including n) is restored.
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            if (keyEnc.length < 4)
+            {
+                throw new IOException("XMSS private key data too short");
+            }
+            int paramSet = Pack.bigEndianToInt(keyEnc, 0);
+            XMSSParameters xmssParams = XMSSParameters.lookupByOID(paramSet);
+            if (xmssParams == null)
+            {
+                throw new IOException("unknown XMSS private key OID: " + paramSet);
+            }
+            try
+            {
+                return new XMSSPrivateKeyParameters.Builder(xmssParams)
+                    .withPrivateKey(Arrays.copyOfRange(keyEnc, 4, keyEnc.length)).build();
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new IOException("malformed XMSS private key: " + e.getMessage());
+            }
+        }
+        else if (algOID.equals(IANAObjectIdentifiers.id_alg_xmssmt_hashsig))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            if (keyEnc.length < 4)
+            {
+                throw new IOException("XMSSMT private key data too short");
+            }
+            int paramSet = Pack.bigEndianToInt(keyEnc, 0);
+            XMSSMTParameters xmssmtParams = XMSSMTParameters.lookupByOID(paramSet);
+            if (xmssmtParams == null)
+            {
+                throw new IOException("unknown XMSSMT private key OID: " + paramSet);
+            }
+            try
+            {
+                return new XMSSMTPrivateKeyParameters.Builder(xmssmtParams)
+                    .withPrivateKey(Arrays.copyOfRange(keyEnc, 4, keyEnc.length)).build();
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new IOException("malformed XMSSMT private key: " + e.getMessage());
             }
         }
         else if (BCObjectIdentifiers.mayo1.equals(algOID)

@@ -888,6 +888,10 @@ class Utils
         {
             return new SHAKEDigest(256);
         }
+        if (oid.equals(NISTObjectIdentifiers.id_shake256_len))
+        {
+            return new SHAKEDigest(256);
+        }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);
     }

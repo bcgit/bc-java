@@ -1,7 +1,7 @@
 package org.bouncycastle.asn1.test;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestResult;
 

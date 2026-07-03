@@ -124,7 +124,7 @@ public final class XMSSMTParameters
      * @param digestOID Object identifier of digest to use.
      * @param n         Security parameter (digest output size in bytes), or -1 to derive from digest.
      */
-    private XMSSMTParameters(int height, int layers, ASN1ObjectIdentifier digestOID, int n)
+    public XMSSMTParameters(int height, int layers, ASN1ObjectIdentifier digestOID, int n)
     {
         super();
         this.height = height;
@@ -208,6 +208,18 @@ public final class XMSSMTParameters
     public ASN1ObjectIdentifier getTreeDigestOID()
     {
         return xmssParams.getTreeDigestOID();
+    }
+
+    /**
+     * Return the RFC 8391 / SP 800-208 parameter-set identifier for this parameter set (the 4-octet
+     * value carried at the start of an RFC 9802 encoded key), or 0 if these parameters do not
+     * correspond to a standard set (for example a non-standard tree height).
+     *
+     * @return the 4-octet parameter-set identifier, or 0 if none.
+     */
+    public int getParameterSetOID()
+    {
+        return (oid != null) ? oid.getOid() : 0;
     }
 
     /**

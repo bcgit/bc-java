@@ -28,6 +28,10 @@ class DigestUtil
         {
             return new SHAKEDigest(256);
         }
+        if (oid.equals(NISTObjectIdentifiers.id_shake256_len))
+        {
+            return new SHAKEDigest(256);
+        }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);
     }
@@ -49,6 +53,11 @@ class DigestUtil
         if (digest.equals("SHAKE256"))
         {
             return NISTObjectIdentifiers.id_shake256;
+        }
+        // lightweight tree-digest name for the SP 800-208 SHAKE256/256 and SHAKE256/192 sets
+        if (digest.equals("SHAKE256-LEN"))
+        {
+            return NISTObjectIdentifiers.id_shake256_len;
         }
 
         throw new IllegalArgumentException("unrecognized digest: " + digest);
@@ -83,6 +92,29 @@ class DigestUtil
         }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + treeDigest);
+    }
+
+    /**
+     * Tree-digest name including the security parameter, so the SP 800-208 sets are
+     * distinguished from their RFC 8391 siblings sharing the same digest OID:
+     * SHA-256/192 (n=24) shares id-sha256 with SHA-256/256 (n=32), and both SHAKE256/256
+     * (n=32) and SHAKE256/192 (n=24) use id-shake256-len.
+     *
+     * @param treeDigest the tree-digest OID.
+     * @param n          the security parameter (digest output size in bytes).
+     */
+    public static String getXMSSDigestName(ASN1ObjectIdentifier treeDigest, int n)
+    {
+        if (treeDigest.equals(NISTObjectIdentifiers.id_sha256))
+        {
+            return (n == 24) ? XMSSParameterSpec.SHA256_192 : XMSSParameterSpec.SHA256;
+        }
+        if (treeDigest.equals(NISTObjectIdentifiers.id_shake256_len))
+        {
+            return (n == 24) ? XMSSParameterSpec.SHAKE256_192 : XMSSParameterSpec.SHAKE256_256;
+        }
+
+        return getXMSSDigestName(treeDigest);
     }
 
     static class DoubleDigest
