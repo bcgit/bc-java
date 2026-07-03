@@ -208,6 +208,47 @@ public final class Arrays
         return 0L == d;
     }
 
+    /**
+     * A constant time equals comparison - does not terminate early if
+     * comparison fails. For best results always pass the expected value
+     * as the first parameter.
+     *
+     * @param expected first array
+     * @param supplied second array
+     * @return true if arrays equal, false otherwise.
+     */
+    public static boolean constantTimeAreEqual(
+        char[] expected,
+        char[] supplied)
+    {
+        if (expected == null || supplied == null)
+        {
+            return false;
+        }
+
+        if (expected == supplied)
+        {
+            return true;
+        }
+
+        int len = Math.min(expected.length, supplied.length);
+
+        int nonEqual = expected.length ^ supplied.length;
+
+        // do the char-wise comparison
+        for (int i = 0; i != len; i++)
+        {
+            nonEqual |= (expected[i] ^ supplied[i]);
+        }
+        // If supplied is longer than expected, iterate over rest of supplied with NOPs
+        for (int i = len; i < supplied.length; i++)
+        {
+            nonEqual |= ((byte)supplied[i] ^ (byte)~supplied[i]);
+        }
+
+        return nonEqual == 0;
+    }
+
     public static int compareUnsigned(byte[] a, byte[] b)
     {
         if (a == b)
@@ -721,6 +762,20 @@ public final class Arrays
         return result;
     }
 
+    public static String[] append(String[] a, String b)
+    {
+        if (a == null)
+        {
+            return new String[]{ b };
+        }
+
+        int length = a.length;
+        String[] result = new String[length + 1];
+        System.arraycopy(a, 0, result, 0, length);
+        result[length] = b;
+        return result;
+    }
+
     public static byte[] concatenate(byte[] a, byte[] b)
     {
         if (null == a)
@@ -1226,6 +1281,18 @@ public final class Arrays
             && bLen > 0
             && aOff - bOff < bLen
             && bOff - aOff < aLen;
+    }
+
+    public static void validateRange(byte[] buf, int from, int to)
+    {
+        if (buf == null)
+        {
+            throw new NullPointerException("'buf' cannot be null");
+        }
+        if ((from | (buf.length - from) | (to - from) | (buf.length - to)) < 0)
+        {
+            throw new IndexOutOfBoundsException("buf.length: " + buf.length + ", from: " + from + ", to: " + to);
+        }
     }
 
     public static void validateSegment(byte[] buf, int off, int len)

@@ -28,6 +28,8 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -40,6 +42,7 @@ import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -412,6 +415,43 @@ class RFC3280CertPathUtilities
 
     public static final String AUTHORITY_KEY_IDENTIFIER = Extension.authorityKeyIdentifier.getId();
 
+    /*
+     * Tracks CRL-signer candidates whose path is being validated further up the current
+     * thread's call stack, so the recursive engineBuild in processCRLF can't loop forever
+     * (github #2291). jdk1.4 variant: ThreadLocal.set(null) in place of remove() (Java 5).
+     */
+    private static final ThreadLocal crlSignersInProgress = new ThreadLocal();
+
+    private static boolean crlSignerInProgress(X509Certificate cert)
+    {
+        Set set = (Set)crlSignersInProgress.get();
+        return set != null && set.contains(cert);
+    }
+
+    private static void crlSignerEnter(X509Certificate cert)
+    {
+        Set set = (Set)crlSignersInProgress.get();
+        if (set == null)
+        {
+            set = new HashSet();
+            crlSignersInProgress.set(set);
+        }
+        set.add(cert);
+    }
+
+    private static void crlSignerExit(X509Certificate cert)
+    {
+        Set set = (Set)crlSignersInProgress.get();
+        if (set != null)
+        {
+            set.remove(cert);
+            if (set.isEmpty())
+            {
+                crlSignersInProgress.set(null);
+            }
+        }
+    }
+
     public static final String KEY_USAGE = Extension.keyUsage.getId();
 
     public static final String CRL_NUMBER = Extension.cRLNumber.getId();
@@ -464,6 +504,25 @@ class RFC3280CertPathUtilities
         {
             byte[] issuerPrincipal = PrincipalUtils.getIssuerPrincipal(crl).getEncoded();
             certSelector.setSubject(issuerPrincipal);
+
+            // RFC 5280 sec. 5.2.1: when the CRL has an authorityKeyIdentifier
+            // with a keyIdentifier field, narrow the candidate signer set by
+            // SubjectKeyIdentifier. With multiple trust anchors sharing the
+            // issuer DN this prevents O(N^depth) fan-out across distinct
+            // candidates (github #2291).
+            byte[] crlAkiExt = crl.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+            if (crlAkiExt != null)
+            {
+                AuthorityKeyIdentifier akid = AuthorityKeyIdentifier.getInstance(
+                    ASN1OctetString.getInstance(crlAkiExt).getOctets());
+                ASN1OctetString keyID = akid.getKeyIdentifierObject();
+                if (keyID != null)
+                {
+                    // X509CertSelector.setSubjectKeyIdentifier wants the DER
+                    // encoding of the OCTET STRING wrapping the keyId bytes.
+                    certSelector.setSubjectKeyIdentifier(keyID.getEncoded(ASN1Encoding.DER));
+                }
+            }
         }
         catch (IOException e)
         {
@@ -491,6 +550,7 @@ class RFC3280CertPathUtilities
 
         List validCerts = new ArrayList();
         List validKeys = new ArrayList();
+        AnnotatedException signerLastException = null;
 
         while (cert_it.hasNext())
         {
@@ -506,6 +566,21 @@ class RFC3280CertPathUtilities
                 validKeys.add(defaultCRLSignKey);
                 continue;
             }
+            /*
+             * Guard against infinite recursion when multiple candidate signers (often
+             * trust-anchor root CAs sharing a Subject DN) cause the recursive
+             * engineBuild call below to re-enter processCRLF for the same signer
+             * (github #2291). If we're already validating this cert further up the
+             * call stack, treat it as a trust anchor / self-signed root and short
+             * circuit, otherwise the iteration would loop forever.
+             */
+            if (crlSignerInProgress(signingCert))
+            {
+                validCerts.add(signingCert);
+                validKeys.add(signingCert.getPublicKey());
+                continue;
+            }
+            crlSignerEnter(signingCert);
             try
             {
                 CertPathBuilderSpi builder = new PKIXCertPathBuilderSpi(true);
@@ -541,16 +616,28 @@ class RFC3280CertPathUtilities
             }
             catch (CertPathBuilderException e)
             {
-                throw new AnnotatedException("CertPath for CRL signer failed to validate.", e);
+                // Candidate signer's path could not be built - skip and try the next
+                // candidate. The post-loop empty-check will surface a useful error if
+                // no valid signer is found at all.
+                signerLastException = new AnnotatedException("CertPath for CRL signer failed to validate.", e);
             }
             catch (CertPathValidatorException e)
             {
-                throw new AnnotatedException("Public key of issuer certificate of CRL could not be retrieved.", e);
+                signerLastException = new AnnotatedException("Public key of issuer certificate of CRL could not be retrieved.", e);
             }
             catch (Exception e)
             {
-                throw new AnnotatedException(e.getMessage());
+                signerLastException = new AnnotatedException(e.getMessage());
             }
+            finally
+            {
+                crlSignerExit(signingCert);
+            }
+        }
+
+        if (validCerts.isEmpty() && signerLastException != null)
+        {
+            throw signerLastException;
         }
 
         Set checkKeys = new HashSet();
@@ -1315,6 +1402,9 @@ class RFC3280CertPathUtilities
                     node.setCritical(true);
                 }
             }
+
+            CertPathValidatorUtilities.checkPolicyTreeSize(policyNodes);
+
             return _validPolicyTree;
         }
         return null;

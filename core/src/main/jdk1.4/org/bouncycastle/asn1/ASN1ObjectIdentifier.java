@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier.OidHandle;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Class representing the ASN.1 OBJECT IDENTIFIER type.
@@ -73,7 +74,7 @@ public class ASN1ObjectIdentifier
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct object identifier from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct object identifier from byte[]", e);
             }
         }
 

@@ -66,7 +66,16 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] SYMMETRIC_GENERIC =
     {
-        "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT"
+        "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT", "ARGON2", "HKDF"
+    };
+
+    /*
+     * Configurable kdfs
+     */
+    private static final String KDF_PACKAGE = "org.bouncycastle.jcajce.provider.kdf.";
+    private static final String[] KDFS =
+    {
+        "HKDF", "PBKDF2", "SCRYPT"
     };
 
     private static final String[] SYMMETRIC_MACS =
@@ -79,7 +88,7 @@ public final class BouncyCastleProvider extends Provider
         "AES", "ARC4", "ARIA", "Blowfish", "Camellia", "CAST5", "CAST6", "ChaCha", "DES", "DESede",
         "GOST28147", "Grainv1", "Grain128", "HC128", "HC256", "IDEA", "Noekeon", "RC2", "RC5",
         "RC6", "Rijndael", "Salsa20", "SEED", "Serpent", "Shacal2", "Skipjack", "SM4", "TEA", "Twofish", "Threefish",
-        "VMPC", "VMPCKSA3", "XTEA", "XSalsa20", "OpenSSLPBKDF", "DSTU7624", "GOST3412_2015", "Zuc"
+        "VMPC", "VMPCKSA3", "XTEA", "XSalsa20", "XChaCha", "OpenSSLPBKDF", "DSTU7624", "GOST3412_2015", "Zuc"
     };
 
      /*
@@ -164,6 +173,8 @@ public final class BouncyCastleProvider extends Provider
         loadAlgorithms(KEYSTORE_PACKAGE, KEYSTORES);
 
         loadAlgorithms(SECURE_RANDOM_PACKAGE, SECURE_RANDOMS);
+
+        loadAlgorithms(KDF_PACKAGE, KDFS);
 
         loadPQCKeys();  // so we can handle certificates containing them.
         //

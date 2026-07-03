@@ -105,12 +105,18 @@ public class JceAsymmetricKeyWrapper
         throws OperatorException
     {
         Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier(), extraMappings);
-        AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
+        AlgorithmParameters algParams = null;
 
         byte[] encryptedKeyBytes = null;
 
         try
         {
+            // in this case there are algorithm parameters, but they're not for key wrapping.
+            if (!this.getAlgorithmIdentifier().getAlgorithm().equals(OIWObjectIdentifiers.elGamalAlgorithm))
+            {
+                algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
+            }
+
             if (algParams != null)
             {
                 keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algParams, random);
@@ -142,7 +148,14 @@ public class JceAsymmetricKeyWrapper
         {
             try
             {
-                keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, random);
+                if (algParams != null)
+                {
+                    keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, algParams, random);
+                }
+                else
+                {
+                    keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, random);
+                }
                 encryptedKeyBytes = keyEncryptionCipher.doFinal(OperatorUtils.getJceKey(encryptionKey).getEncoded());
             }
             catch (InvalidKeyException e)

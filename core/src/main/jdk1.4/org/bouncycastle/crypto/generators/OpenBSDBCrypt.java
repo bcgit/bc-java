@@ -43,6 +43,8 @@ public class OpenBSDBCrypt
     static
     {
         // Presently just the Bcrypt versions.
+        allowedVersions.add("2");
+        allowedVersions.add("2x");
         allowedVersions.add("2a");
         allowedVersions.add("2y");
         allowedVersions.add("2b");

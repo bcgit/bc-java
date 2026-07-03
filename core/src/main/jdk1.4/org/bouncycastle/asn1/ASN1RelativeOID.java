@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Exceptions;
 
 public class ASN1RelativeOID
     extends ASN1Primitive
@@ -64,7 +65,7 @@ public class ASN1RelativeOID
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("failed to construct relative OID from byte[]: " + e.getMessage());
+                throw Exceptions.illegalArgumentException("failed to construct relative OID from byte[]", e);
             }
         }
 

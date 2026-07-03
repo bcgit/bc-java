@@ -10,7 +10,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 import org.bouncycastle.util.Strings;
 
@@ -364,10 +363,24 @@ public class ArmoredOutputStream
         String value)
         throws IOException
     {
+        // Single chokepoint for every header-setting path (deprecated setHeader/addHeader, the
+        // Hashtable constructor and the Builder). A CR or LF in a name or value would inject extra
+        // armor header lines, and a blank line would terminate the header block early with the rest
+        // parsed as base64 body -- an armor header injection. Reject it here so no path can forge it.
+        if (hasLineBreak(name) || hasLineBreak(value))
+        {
+            throw new IllegalArgumentException("armor header must not contain CR/LF");
+        }
+
         write(name);
         write(": ");
         write(value);
         write(nl);
+    }
+
+    private static boolean hasLineBreak(String s)
+    {
+        return s != null && (s.indexOf('\r') >= 0 || s.indexOf('\n') >= 0);
     }
 
     public void write(
@@ -613,6 +626,42 @@ public class ArmoredOutputStream
             return addHeader(COMMENT_HDR, comment);
         }
 
+        public Builder addEllipsizedComment(String comment)
+        {
+            int availableCommentCharsPerLine = 64 - (COMMENT_HDR.length() + 2); // ASCII armor width - header len
+            comment = comment.trim();
+
+            if (comment.length() > availableCommentCharsPerLine)
+            {
+                comment = comment.substring(0, availableCommentCharsPerLine - 1) + '\u2026';
+            }
+            return addComment(comment);
+        }
+
+        public Builder addSplitMultilineComment(String comment)
+        {
+            int availableCommentCharsPerLine = 64 - (COMMENT_HDR.length() + 2); // ASCII armor width - header len
+
+            comment = comment.trim();
+            String[] lines = comment.split("\n");
+            for (int i = 0; i != lines.length; i++)
+            {
+                String line = lines[i];
+                while (line.length() > availableCommentCharsPerLine)
+                {
+                        // split comment into multiple lines
+                    addComment(comment.substring(0, availableCommentCharsPerLine));
+                    line = line.substring(availableCommentCharsPerLine).trim();
+                }
+
+                if (line.length() != 0)
+                {
+                    addComment(line);
+                }
+            }
+            return this;
+        }
+
         /**
          * Set and replace the given header value with a single-line header.
          * If the value is <pre>null</pre>, this method will remove the header entirely.
@@ -630,13 +679,11 @@ public class ArmoredOutputStream
             else
             {
                 String trimmed = value.trim();
-                if (trimmed.indexOf("\n") >= 0)
+                if (trimmed.indexOf('\n') >= 0 || trimmed.indexOf('\r') >= 0)
                 {
                     throw new IllegalArgumentException("Armor header value for key " + key + " cannot contain newlines.");
                 }
-                List h = new ArrayList();
-                h.add(value);
-                this.headers.put(key, h);
+                this.headers.put(key, Collections.singletonList(value));
             }
             return this;
         }
@@ -662,16 +709,18 @@ public class ArmoredOutputStream
                 headers.put(key, values);
             }
 
-            // handle multi-line values
+            // handle multi-line values; split on CR, LF and CRLF so an embedded bare CR cannot
+            // survive into a single header line and forge structure for a lenient armor reader
             String trimmed = value.trim();
-            for (StringTokenizer sTok = new StringTokenizer(trimmed, "\n"); sTok.hasMoreTokens();)
+            String[] lines = trimmed.split("\r\n|\r|\n");
+            for (int i = 0; i != lines.length; i++)
             {
-                String line = sTok.nextToken().trim();
-                if (line.length() == 0)
+                String lineTrim = lines[i].trim();
+                if (lineTrim.length() == 0)
                 {
                     continue;
                 }
-                values.add(line);
+                values.add(lineTrim);
             }
             return this;
         }
@@ -694,16 +743,18 @@ public class ArmoredOutputStream
 
             List<String> values = new ArrayList<String>();
 
-            // handle multi-line values
+            // handle multi-line values; split on CR, LF and CRLF so an embedded bare CR cannot
+            // survive into a single header line and forge structure for a lenient armor reader
             String trimmed = value.trim();
-            for (StringTokenizer sTok = new StringTokenizer(trimmed, "\n"); sTok.hasMoreTokens();)
+            String[] lines = trimmed.split("\r\n|\r|\n");
+            for (int i = 0; i != lines.length; i++)
             {
-                String line = sTok.nextToken().trim();
-                if (line.length() == 0)
+                String lineTrim = lines[i].trim();
+                if (lineTrim.length() == 0)
                 {
                     continue;
                 }
-                values.add(line);
+                values.add(lineTrim);
             }
 
             headers.put(key, values);

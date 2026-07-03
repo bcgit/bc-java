@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.util.Exceptions;
 
 /**
  *  CertAnnContent ::= CMPCertificate
@@ -68,7 +69,7 @@ public class CertAnnContent
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException(e.getMessage());
+                throw Exceptions.illegalArgumentException(e.getMessage(), e);
             }
         }
 

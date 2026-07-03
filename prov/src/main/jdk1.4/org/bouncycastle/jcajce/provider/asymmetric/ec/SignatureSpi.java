@@ -25,6 +25,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSAEncoding;
 import org.bouncycastle.crypto.signers.ECDSASigner;
@@ -336,6 +337,89 @@ public class SignatureSpi
         public ecCVCDSA3_512()
         {
             super(DigestFactory.createSHA3_512(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDetDSA
+        extends SignatureSpi
+    {
+        public ecDetDSA()
+        {
+            super(DigestFactory.createSHA1(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA1())), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDetDSA224
+        extends SignatureSpi
+    {
+        public ecDetDSA224()
+        {
+            super(DigestFactory.createSHA224(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA224())), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDetDSA256
+        extends SignatureSpi
+    {
+        public ecDetDSA256()
+        {
+            super(DigestFactory.createSHA256(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA256())), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDetDSA384
+        extends SignatureSpi
+    {
+        public ecDetDSA384()
+        {
+            super(DigestFactory.createSHA384(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA384())), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDetDSA512
+        extends SignatureSpi
+    {
+        public ecDetDSA512()
+        {
+            super(DigestFactory.createSHA512(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA512())), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDSAShake128
+         extends SignatureSpi
+    {
+        public ecDSAShake128()
+        {
+            // RFC 8702 specifies deterministic DSA
+            super(new SHAKEDigest(128), new ECDSASigner(new HMacDSAKCalculator(new SHAKEDigest(128))), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDSAShake256
+        extends SignatureSpi
+    {
+        public ecDSAShake256()
+        {
+            // RFC 8702 specifies deterministic DSA
+            super(new SHAKEDigest(256), new ECDSASigner(new HMacDSAKCalculator(new SHAKEDigest(256))), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecCVCDSANone
+        extends SignatureSpi
+    {
+        public ecCVCDSANone()
+        {
+            super(new NullDigest(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecPlainDSARP160
+        extends SignatureSpi
+    {
+        public ecPlainDSARP160()
+        {
+            super(new RIPEMD160Digest(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
         }
     }
 }

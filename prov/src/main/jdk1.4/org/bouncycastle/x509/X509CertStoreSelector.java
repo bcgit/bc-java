@@ -68,6 +68,7 @@ public class X509CertStoreSelector
             cs.setNameConstraints(selector.getNameConstraints());
             cs.setPolicy(selector.getPolicy());
             cs.setSubjectPublicKeyAlgID(selector.getSubjectPublicKeyAlgID());
+            cs.setSubjectAlternativeNames(selector.getSubjectAlternativeNames());
             cs.setIssuer(selector.getIssuerAsBytes());
             cs.setSubject(selector.getSubjectAsBytes());
         }

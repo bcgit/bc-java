@@ -26,6 +26,7 @@ public class Properties
     // classes that reference them compile in the jdk1.4 build. Keep in step with base.
     public static final String PKCS12_IGNORE_USELESS_PASSWD = "org.bouncycastle.pkcs12.ignore_useless_passwd";
     public static final String PKCS12_MAX_IT_COUNT = "org.bouncycastle.pkcs12.max_it_count";
+    public static final String BKS_MAX_IT_COUNT = "org.bouncycastle.bks.max_it_count";
     public static final String X509_CRL_CACHE_TTL = "org.bouncycastle.x509.crl_cache_ttl";
     public static final String X509_ENABLE_CRLDP = "org.bouncycastle.x509.enableCRLDP";
     public static final String PKCS12_ALLOW_SUN_SECRET_KEYS = "org.bouncycastle.pkcs12.allow_sun_secret_keys";
@@ -252,6 +253,18 @@ public class Properties
                 return System.getProperty(propertyName);
             }
         });
+    }
+
+    public static String getPropertyValue(final String propertyName,  String defValue)
+    {
+        String rv = getPropertyValue(propertyName);
+
+        if (rv == null)
+        {
+            return defValue;
+        }
+
+        return rv;
     }
 
     private static boolean isSetFalse(String p)
