@@ -9,6 +9,7 @@ import javax.crypto.MacSpi;
 
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KMACParameterSpec;
 
 /**
@@ -73,7 +74,7 @@ abstract class KMacSpi
         }
         catch (IllegalArgumentException e)
         {
-            throw new InvalidKeyException(e.getMessage(), e);
+            throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
         }
     }
 

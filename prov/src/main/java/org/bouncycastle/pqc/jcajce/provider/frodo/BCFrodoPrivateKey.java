@@ -87,15 +87,15 @@ public class BCFrodoPrivateKey
     private static int frodoN(org.bouncycastle.pqc.crypto.frodo.FrodoParameters params)
     {
         String name = params.getName();
-        if (name.contains("640"))
+        if (name.indexOf("640") >= 0)
         {
             return 640;
         }
-        if (name.contains("976"))
+        if (name.indexOf("976") >= 0)
         {
             return 976;
         }
-        if (name.contains("1344"))
+        if (name.indexOf("1344") >= 0)
         {
             return 1344;
         }

@@ -42,6 +42,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
@@ -462,7 +463,7 @@ class OperatorHelper
                 }
                 catch (IOException e)
                 {
-                    throw new GeneralSecurityException("unable to process PSS parameters: " + e.getMessage(), e);
+                    throw SecurityExceptions.generalSecurityException("unable to process PSS parameters: " + e.getMessage(), e);
                 }
             }
         }

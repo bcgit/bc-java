@@ -83,7 +83,7 @@ public class CrlCacheTest
             }
             finally
             {
-                System.clearProperty(Properties.X509_CRL_CACHE_TTL);
+                System.getProperties().remove(Properties.X509_CRL_CACHE_TTL);
             }
         }
         finally

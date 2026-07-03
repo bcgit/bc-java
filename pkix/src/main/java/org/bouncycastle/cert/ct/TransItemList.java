@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * RFC 9162 (CT v2) {@code TransItemList}: the TLS-encoded structure carried
@@ -134,7 +135,7 @@ public class TransItemList
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage(), e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 }

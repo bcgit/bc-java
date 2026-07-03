@@ -14,7 +14,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAParameterSpec;
-import java.security.spec.ECGenParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import java.util.Date;
 
 import javax.crypto.KeyGenerator;
@@ -183,8 +183,18 @@ public class CMSTestUtil
             ecGostKpg = KeyPairGenerator.getInstance("ECGOST3410", "BC");
             ecGostKpg.initialize(ECGOST3410NamedCurveTable.getParameterSpec("GostR3410-2001-CryptoPro-A"), new SecureRandom());
 
-            ecGost2012_256Kpg = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
-            ecGost2012_256Kpg.initialize(new ECGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"), new SecureRandom());
+            try
+            {
+                ecGost2012_256Kpg = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
+                ecGost2012_256Kpg.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"), new SecureRandom());
+            }
+            catch (Exception e)
+            {
+                // GOST-2012 is absent from some distributions (e.g. the jdk1.4 build excludes
+                // ecgost12); leave the generator null rather than failing every CMS-based suite
+                // in the static initializer. Tests that need it dereference ecGost2012_256Kpg.
+                ecGost2012_256Kpg = null;
+            }
 
             ecDsaKpg = KeyPairGenerator.getInstance("ECDSA", "BC");
             ecDsaKpg.initialize(239, new SecureRandom());

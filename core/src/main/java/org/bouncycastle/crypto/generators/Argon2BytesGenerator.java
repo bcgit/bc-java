@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.generators;
 
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
@@ -748,16 +749,27 @@ public class Argon2BytesGenerator
     public static class FixedBlockPool
         implements BlockPool
     {
-        private final LinkedBlockingQueue<Block> blocks;
+        // a synchronized list rather than java.util.concurrent (Java 5+), so the
+        // class still compiles/runs on the legacy pre-1.5 distributions.
+        private final int maxBlocks;
+        private final List<Block> blocks;
 
         public FixedBlockPool(int maxBlocks)
         {
-            this.blocks = new LinkedBlockingQueue<Block>(maxBlocks);
+            this.maxBlocks = maxBlocks;
+            this.blocks = new ArrayList<Block>(maxBlocks);
         }
 
         public Block allocate()
         {
-            Block block = (Block)blocks.poll();
+            Block block = null;
+            synchronized (blocks)
+            {
+                if (!blocks.isEmpty())
+                {
+                    block = (Block)blocks.remove(blocks.size() - 1);
+                }
+            }
             if (block == null)
             {
                 return new Block();
@@ -771,7 +783,13 @@ public class Argon2BytesGenerator
         public void deallocate(Block block)
         {
             block.clear();
-            blocks.offer(block);
+            synchronized (blocks)
+            {
+                if (blocks.size() < maxBlocks)
+                {
+                    blocks.add(block);
+                }
+            }
         }
     }
 }

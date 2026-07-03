@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.pqc.jcajce.provider.mqom.MQOMKeyFactorySpi;
+import org.bouncycastle.util.Exceptions;
 
 public class MQOM
 {
@@ -75,7 +76,7 @@ public class MQOM
                 }
                 catch (Exception e)
                 {
-                    throw new IllegalStateException("missing BC OID for MQOM variant " + alias, e);
+                    throw Exceptions.illegalStateException("missing BC OID for MQOM variant " + alias, e);
                 }
 
                 addKeyFactoryAlgorithm(provider, alias, PREFIX + "MQOMKeyFactorySpi$" + suffix, oid, new MQOMKeyFactorySpi(oid));

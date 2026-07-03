@@ -261,7 +261,7 @@ public class Argon2S2KTest
         }
         finally
         {
-            System.clearProperty(Argon2Parameters.MAX_MEMORY_EXP);
+            System.getProperties().remove(Argon2Parameters.MAX_MEMORY_EXP);
         }
     }
 
@@ -302,7 +302,7 @@ public class Argon2S2KTest
         }
         finally
         {
-            System.clearProperty(Argon2Parameters.MAX_MEMORY_EXP);
+            System.getProperties().remove(Argon2Parameters.MAX_MEMORY_EXP);
         }
     }
 

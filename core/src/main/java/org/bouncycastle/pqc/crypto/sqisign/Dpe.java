@@ -30,6 +30,50 @@ final class Dpe
         this.exponent = other.exponent;
     }
 
+    // ---- floating-point helpers ---------------------------------------------
+
+    /**
+     * Unbiased binary exponent of {@code d} — equivalent to {@code getExponent(d)},
+     * which only exists from Java 6 and so can't be used from this class (it has to
+     * compile on the legacy pre-1.6 distributions).
+     */
+    private static int getExponent(double d)
+    {
+        return (int)((Double.doubleToLongBits(d) >>> 52) & 0x7FFL) - 1023;
+    }
+
+    /**
+     * {@code d * 2^n} — equivalent to {@code scalb(d, n)} (Java 6+, see
+     * {@link #getExponent(double)}). Scaling is applied in exactly-representable
+     * power-of-two chunks; a chunk multiply of a normal intermediate is exact, so
+     * for the normal-range values this class produces the result matches
+     * {@code Math.scalb}, including saturation to infinity and underflow to zero.
+     */
+    private static double scalb(double d, int n)
+    {
+        while (n > 0)
+        {
+            if (d == 0.0 || Double.isInfinite(d))
+            {
+                return d;
+            }
+            int s = n > 512 ? 512 : n;
+            d *= Double.longBitsToDouble((long)(s + 1023) << 52);
+            n -= s;
+        }
+        while (n < 0)
+        {
+            if (d == 0.0 || Double.isInfinite(d))
+            {
+                return d;
+            }
+            int s = n < -512 ? -512 : n;
+            d *= Double.longBitsToDouble((long)(s + 1023) << 52);
+            n -= s;
+        }
+        return d;
+    }
+
     // ---- assignment ---------------------------------------------------------
 
     /** Mirrors {@code dpe_set}. */
@@ -49,9 +93,9 @@ final class Dpe
         }
         else
         {
-            int e = Math.getExponent(d);
+            int e = getExponent(d);
             int shift = -(e + 1);
-            dst.mantissa = Math.scalb(d, shift);
+            dst.mantissa = scalb(d, shift);
             dst.exponent = -shift;
         }
     }
@@ -90,9 +134,9 @@ final class Dpe
         double m = top.doubleValue();
         // m ∈ [2^52, 2^53), normalise to [0.5, 1) and accumulate the
         // exponent offset.
-        int e = Math.getExponent(m);
+        int e = getExponent(m);
         int extraShift = -(e + 1);
-        dst.mantissa = Math.scalb(m, extraShift);
+        dst.mantissa = scalb(m, extraShift);
         dst.exponent = shift - extraShift;
         if (sign < 0)
         {
@@ -143,7 +187,7 @@ final class Dpe
             // Match C dpe_get_z: round half-away-from-zero (mirrors libc
             // round()), via floor/ceil + frac to avoid losing precision when
             // scaled is near the upper end of its representable range.
-            double scaled = Math.scalb(x.mantissa, x.exponent);
+            double scaled = scalb(x.mantissa, x.exponent);
             double rounded;
             if (scaled >= 0.0)
             {
@@ -163,7 +207,7 @@ final class Dpe
         // exponent >= 53: value is already an integer; compute via the C
         // reference's split form to avoid long saturation.
         // shifted = mantissa · 2^53 (an integer in [2^52, 2^53) by magnitude).
-        double shifted = Math.scalb(x.mantissa, 53);
+        double shifted = scalb(x.mantissa, 53);
         long top = (long)shifted;
         dst.v = BigInteger.valueOf(top).shiftLeft(x.exponent - 53);
     }
@@ -181,9 +225,9 @@ final class Dpe
         double m = a.mantissa * b.mantissa;
         int e = a.exponent + b.exponent;
         // m is in [0.25, 1) (since each factor is in [0.5,1)). Renormalise.
-        int eAdj = Math.getExponent(m);
+        int eAdj = getExponent(m);
         int shift = -(eAdj + 1);
-        dst.mantissa = Math.scalb(m, shift);
+        dst.mantissa = scalb(m, shift);
         dst.exponent = e - shift;
     }
 
@@ -210,7 +254,7 @@ final class Dpe
                 set(dst, a);
                 return;
             }
-            m = a.mantissa + Math.scalb(b.mantissa, -diff);
+            m = a.mantissa + scalb(b.mantissa, -diff);
             e = a.exponent;
         }
         else
@@ -221,7 +265,7 @@ final class Dpe
                 set(dst, b);
                 return;
             }
-            m = b.mantissa + Math.scalb(a.mantissa, -d);
+            m = b.mantissa + scalb(a.mantissa, -d);
             e = b.exponent;
         }
         if (m == 0.0)
@@ -230,9 +274,9 @@ final class Dpe
             dst.exponent = 0;
             return;
         }
-        int eAdj = Math.getExponent(m);
+        int eAdj = getExponent(m);
         int shift = -(eAdj + 1);
-        dst.mantissa = Math.scalb(m, shift);
+        dst.mantissa = scalb(m, shift);
         dst.exponent = e - shift;
     }
 
@@ -257,9 +301,9 @@ final class Dpe
         }
         double m = a.mantissa / b.mantissa;
         int e = a.exponent - b.exponent;
-        int eAdj = Math.getExponent(m);
+        int eAdj = getExponent(m);
         int shift = -(eAdj + 1);
-        dst.mantissa = Math.scalb(m, shift);
+        dst.mantissa = scalb(m, shift);
         dst.exponent = e - shift;
     }
 
@@ -290,7 +334,7 @@ final class Dpe
             dst.exponent = 0;
             return;
         }
-        double scaled = Math.scalb(a.mantissa, a.exponent);
+        double scaled = scalb(a.mantissa, a.exponent);
         // If scaled is way larger than long range, leave it as-is (integer already).
         if (a.exponent > 52)
         {
@@ -343,7 +387,7 @@ final class Dpe
         boolean negative = a.mantissa < 0;
         if (a.exponent != b.exponent)
         {
-            int eCmp = Integer.compare(a.exponent, b.exponent);
+            int eCmp = a.exponent < b.exponent ? -1 : 1;
             return negative ? -eCmp : eCmp;
         }
         return Double.compare(a.mantissa, b.mantissa);

@@ -427,7 +427,7 @@ public class PKIXNameConstraintsTest
         }
         finally
         {
-            System.clearProperty(Properties.X509_SGP22_NAME_CONSTRAINTS);
+            System.getProperties().remove(Properties.X509_SGP22_NAME_CONSTRAINTS);
         }
     }
 
@@ -456,7 +456,7 @@ public class PKIXNameConstraintsTest
         }
         finally
         {
-            System.clearProperty(Properties.X509_SGP22_NAME_CONSTRAINTS);
+            System.getProperties().remove(Properties.X509_SGP22_NAME_CONSTRAINTS);
         }
     }
 

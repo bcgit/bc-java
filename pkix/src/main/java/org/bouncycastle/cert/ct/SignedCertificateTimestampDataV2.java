@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * The SCT body carried inside an RFC 9162 (CT v2) {@link TransItem} whose
@@ -152,7 +153,7 @@ public class SignedCertificateTimestampDataV2
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage(), e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
         return out.toByteArray();
     }

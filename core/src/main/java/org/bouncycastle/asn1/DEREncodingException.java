@@ -27,6 +27,7 @@ public class DEREncodingException
      */
     public DEREncodingException(String message, Throwable cause)
     {
-        super(message, cause);
+        super(message);
+        initCause(cause);
     }
 }

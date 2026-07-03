@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * The method used to retrieve a related certificate, as defined by
@@ -95,7 +96,7 @@ public class CertDiscoveryMethod
             }
             catch (java.io.IOException e)
             {
-                throw new IllegalArgumentException("failed to parse CertDiscoveryMethod: " + e.getMessage(), e);
+                throw Exceptions.illegalArgumentException("failed to parse CertDiscoveryMethod: " + e.getMessage(), e);
             }
         }
         else

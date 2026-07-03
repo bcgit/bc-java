@@ -27,6 +27,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Helpers for upgrading a CAdES B-B signature to B-T by attaching an
@@ -168,12 +169,12 @@ public final class CAdESSignatureTimestampUtil
         AttributeTable unsigned = signer.getUnsignedAttributes();
         if (unsigned == null)
         {
-            return Collections.emptyList();
+            return Collections.EMPTY_LIST;
         }
         Attribute attr = unsigned.get(PKCSObjectIdentifiers.id_aa_signatureTimeStampToken);
         if (attr == null)
         {
-            return Collections.emptyList();
+            return Collections.EMPTY_LIST;
         }
         ASN1Set vals = attr.getAttrValues();
         List<TimeStampToken> out = new ArrayList<TimeStampToken>(vals.size());
@@ -260,7 +261,7 @@ public final class CAdESSignatureTimestampUtil
         {
             // TimeStampToken came back from a successful TSA round-trip;
             // getEncoded should not realistically fail.
-            throw new IllegalStateException(
+            throw Exceptions.illegalStateException(
                 "unable to encode TimeStampToken: " + e.getMessage(), e);
         }
 

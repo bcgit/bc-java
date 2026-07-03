@@ -3,7 +3,7 @@ package org.bouncycastle.openpgp.test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import org.bouncycastle.util.Strings;
 import java.security.Security;
 
 import org.bouncycastle.bcpg.ArmoredInputException;
@@ -70,7 +70,7 @@ public class ArmoredInputStreamCSFRejectPrefixedDashTest
     {
         ArmoredInputStream aIn = ArmoredInputStream.builder()
             .setRejectPrefixedDashesInCSFMessages(true)
-            .build(new ByteArrayInputStream(MALFORMED.getBytes(StandardCharsets.UTF_8)));
+            .build(new ByteArrayInputStream(Strings.toUTF8ByteArray(MALFORMED)));
 
         try
         {
@@ -89,7 +89,7 @@ public class ArmoredInputStreamCSFRejectPrefixedDashTest
         // The default builder (no explicit configuration) must reject too: rejecting the
         // malformed message is the secure default.
         ArmoredInputStream aIn = ArmoredInputStream.builder()
-            .build(new ByteArrayInputStream(MALFORMED.getBytes(StandardCharsets.UTF_8)));
+            .build(new ByteArrayInputStream(Strings.toUTF8ByteArray(MALFORMED)));
 
         try
         {
@@ -107,7 +107,7 @@ public class ArmoredInputStreamCSFRejectPrefixedDashTest
     {
         ArmoredInputStream aIn = ArmoredInputStream.builder()
             .setRejectPrefixedDashesInCSFMessages(false)
-            .build(new ByteArrayInputStream(MALFORMED.getBytes(StandardCharsets.UTF_8)));
+            .build(new ByteArrayInputStream(Strings.toUTF8ByteArray(MALFORMED)));
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         while (aIn.isClearText())
@@ -146,7 +146,7 @@ public class ArmoredInputStreamCSFRejectPrefixedDashTest
 
         ArmoredInputStream aIn = ArmoredInputStream.builder()
             .setRejectPrefixedDashesInCSFMessages(false)
-            .build(new ByteArrayInputStream(trailingDash.getBytes(StandardCharsets.UTF_8)));
+            .build(new ByteArrayInputStream(Strings.toUTF8ByteArray(trailingDash)));
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         int count = 0;
@@ -163,7 +163,7 @@ public class ArmoredInputStreamCSFRejectPrefixedDashTest
         String result = Strings.fromUTF8ByteArray(bOut.toByteArray());
 
         isTrue("clear-text section must stop at the armor boundary, not consume the signature",
-            !result.contains("BEGIN PGP SIGNATURE"));
+            result.indexOf("BEGIN PGP SIGNATURE") < 0);
         isTrue("malformed lone-dash payload must be surfaced verbatim",
             result.startsWith("payload\n-\n"));
     }

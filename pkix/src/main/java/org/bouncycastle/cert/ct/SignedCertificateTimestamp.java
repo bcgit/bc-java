@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * A single Signed Certificate Timestamp (SCT) in the RFC 6962 (CT v1) wire
@@ -192,7 +193,7 @@ public class SignedCertificateTimestamp
         catch (IOException e)
         {
             // ByteArrayOutputStream doesn't throw.
-            throw new IllegalStateException(e.getMessage(), e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
         return out.toByteArray();
     }

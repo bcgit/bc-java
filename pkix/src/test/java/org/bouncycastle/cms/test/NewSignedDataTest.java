@@ -871,8 +871,11 @@ public class NewSignedDataTest
             _signEcGostKP = CMSTestUtil.makeEcGostKeyPair();
             _signEcGostCert = CMSTestUtil.makeCertificate(_signEcGostKP, _signDN, _origKP, _origDN);
 
-            _signEcGost2012_256KP = CMSTestUtil.makeEcGost2012_256KeyPair();
-            _signEcGost2012_256Cert = CMSTestUtil.makeCertificate(_signEcGost2012_256KP, _signDN, _origKP, _origDN);
+            if (CMSTestUtil.ecGost2012_256Kpg != null)
+            {
+                _signEcGost2012_256KP = CMSTestUtil.makeEcGost2012_256KeyPair();
+                _signEcGost2012_256Cert = CMSTestUtil.makeCertificate(_signEcGost2012_256KP, _signDN, _origKP, _origDN);
+            }
 
             _signEd25519KP   = CMSTestUtil.makeEd25519KeyPair();
             _signEd25519Cert = CMSTestUtil.makeCertificate(_signEd25519KP, _signDN, _origKP, _origDN);
@@ -2338,6 +2341,12 @@ public class NewSignedDataTest
     public void testEcGost2012_256NoAttributesEncapsulatedViaParser()
         throws Exception
     {
+        if (_signEcGost2012_256Cert == null)
+        {
+            // GOST-2012 absent from this distribution (see CMSTestUtil static init).
+            return;
+        }
+
         List certList = new ArrayList();
         certList.add(_signEcGost2012_256Cert);
         Store certStore = new JcaCertStore(certList);

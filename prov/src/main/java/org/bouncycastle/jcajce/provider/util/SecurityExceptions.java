@@ -1,5 +1,8 @@
 package org.bouncycastle.jcajce.provider.util;
 
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.spec.InvalidKeySpecException;
 
@@ -18,6 +21,21 @@ public class SecurityExceptions
         // InvalidKeySpecException(String, Throwable) only exists from Java 5; initCause keeps the
         // legacy (Java 4) builds compiling, so do not "simplify" this to the two-arg constructor.
         return (InvalidKeySpecException)new InvalidKeySpecException(message).initCause(cause);
+    }
+
+    public static GeneralSecurityException generalSecurityException(String message, Throwable cause)
+    {
+        return (GeneralSecurityException)new GeneralSecurityException(message).initCause(cause);
+    }
+
+    public static InvalidKeyException invalidKeyException(String message, Throwable cause)
+    {
+        return (InvalidKeyException)new InvalidKeyException(message).initCause(cause);
+    }
+
+    public static SignatureException signatureException(String message, Throwable cause)
+    {
+        return (SignatureException)new SignatureException(message).initCause(cause);
     }
 
     public static UnrecoverableKeyException unrecoverableKeyException(String message, Throwable cause)

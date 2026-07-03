@@ -452,7 +452,7 @@ public class PKIXPolicyMappingTest
         {
             if (savedMax == null)
             {
-                System.clearProperty("org.bouncycastle.x509.max_policy_nodes");
+                System.getProperties().remove("org.bouncycastle.x509.max_policy_nodes");
             }
             else
             {

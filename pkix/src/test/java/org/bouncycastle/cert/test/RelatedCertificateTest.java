@@ -308,7 +308,7 @@ public class RelatedCertificateTest
         Date notBefore = new Date(System.currentTimeMillis() - 60000L);
         Date notAfter = new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000L);
         JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
-            name, BigInteger.valueOf(System.nanoTime() & 0x7fffffffL),
+            name, BigInteger.valueOf(System.currentTimeMillis() & 0x7fffffffL),
             notBefore, notAfter, name, kp.getPublic());
         ContentSigner signer = new JcaContentSignerBuilder("SHA256withECDSA")
             .setProvider(BC).build(kp.getPrivate());
