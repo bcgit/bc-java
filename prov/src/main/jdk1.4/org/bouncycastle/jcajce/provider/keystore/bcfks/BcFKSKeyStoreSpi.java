@@ -88,6 +88,7 @@ import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 class BcFKSKeyStoreSpi
@@ -783,6 +784,10 @@ class BcFKSKeyStoreSpi
         {
             ScryptParams params = ScryptParams.getInstance(pbkdAlgorithm.getParameters());
 
+            // The KDF cost parameters arrive in the not-yet-integrity-checked keystore, so bound
+            // them before the (memory/CPU intensive) derivation to avoid a pre-verification DoS.
+            validateScryptParams(params);
+
             return SCrypt.generate(Arrays.concatenate(encPassword, differentiator), params.getSalt(),
                 params.getCostParameter().intValue(), params.getBlockSize().intValue(),
                 params.getBlockSize().intValue(), params.getKeyLength().intValue());
@@ -791,11 +796,14 @@ class BcFKSKeyStoreSpi
         {
             PBKDF2Params pbkdf2Params = PBKDF2Params.getInstance(pbkdAlgorithm.getParameters());
 
+            // As above: bound the attacker-supplied iteration count before the derivation.
+            int iterationCount = validateIterationCount(pbkdf2Params.getIterationCount());
+
             if (pbkdf2Params.getPrf().getAlgorithm().equals(PKCSObjectIdentifiers.id_hmacWithSHA512))
             {
                 PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA512Digest());
 
-                pGen.init(Arrays.concatenate(encPassword, differentiator), pbkdf2Params.getSalt(), pbkdf2Params.getIterationCount().intValue());
+                pGen.init(Arrays.concatenate(encPassword, differentiator), pbkdf2Params.getSalt(), iterationCount);
 
                 keySizeInBytes = pbkdf2Params.getKeyLength().intValue();
 
@@ -805,7 +813,7 @@ class BcFKSKeyStoreSpi
             {
                 PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA3Digest(512));
 
-                pGen.init(Arrays.concatenate(encPassword, differentiator), pbkdf2Params.getSalt(), pbkdf2Params.getIterationCount().intValue());
+                pGen.init(Arrays.concatenate(encPassword, differentiator), pbkdf2Params.getSalt(), iterationCount);
 
                 keySizeInBytes = pbkdf2Params.getKeyLength().intValue();
 
@@ -820,6 +828,57 @@ class BcFKSKeyStoreSpi
         {
             throw new IOException("BCFKS KeyStore: unrecognized MAC PBKD.");
         }
+    }
+
+    // Hard sanity bound on the scrypt block size r. r is also passed as the parallelization
+    // parameter p here, so an oversized r is a CPU-exhaustion vector independent of total memory.
+    // The standard value is 8; anything beyond this is rejected as abusive.
+    private static final int MAX_SCRYPT_BLOCK_SIZE = 1024;
+
+    private static void validateScryptParams(ScryptParams params)
+        throws IOException
+    {
+        BigInteger n = params.getCostParameter();
+        BigInteger r = params.getBlockSize();
+
+        if (n == null || r == null
+            || n.signum() <= 0 || r.signum() <= 0
+            || n.bitLength() > 31 || r.bitLength() > 31)
+        {
+            throw new IOException("BCFKS KeyStore: invalid scrypt parameters");
+        }
+
+        long blockSize = r.longValue();
+        if (blockSize > MAX_SCRYPT_BLOCK_SIZE)
+        {
+            throw new IOException("BCFKS KeyStore: scrypt block size (" + blockSize + ") greater than " + MAX_SCRYPT_BLOCK_SIZE);
+        }
+
+        long maxMemory = Properties.asInteger(Properties.BCFKS_MAX_SCRYPT_MEMORY, 1 << 30);
+        long cost = n.longValue();
+        // Reject if the working memory ~128 * N * r would exceed the bound, computed so as not to
+        // overflow (128 * blockSize is small because blockSize is capped above).
+        if (cost > maxMemory / (128L * blockSize))
+        {
+            throw new IOException("BCFKS KeyStore: scrypt cost parameters require more than " + maxMemory + " bytes");
+        }
+    }
+
+    private static int validateIterationCount(BigInteger ic)
+        throws IOException
+    {
+        if (ic == null || ic.signum() < 0 || ic.bitLength() > 31)
+        {
+            throw new IOException("BCFKS KeyStore: invalid iteration count");
+        }
+
+        long max = Properties.asInteger(Properties.BCFKS_MAX_IT_COUNT, 5000000);
+        if (ic.longValue() > max)
+        {
+            throw new IOException("BCFKS KeyStore: iteration count (" + ic + ") greater than " + max);
+        }
+
+        return ic.intValue();
     }
 
     private void verifyMac(byte[] content, PbkdMacIntegrityCheck integrityCheck, char[] password)

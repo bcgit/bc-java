@@ -105,6 +105,14 @@ public class KeyFactorySpi
         {
             return new BCECGOST3410PrivateKey(keyInfo);
         }
+        else if (algOid.equals(CryptoProObjectIdentifiers.gostR3410_2001DH))
+        {
+            return new BCECGOST3410PrivateKey(keyInfo);
+        }
+        else if (algOid.equals(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH))
+        {
+            return new BCECGOST3410PrivateKey(keyInfo);
+        }
         else
         {
             throw new IOException("algorithm identifier " + algOid + " in key not recognised");
@@ -117,6 +125,14 @@ public class KeyFactorySpi
         ASN1ObjectIdentifier algOid = keyInfo.getAlgorithm().getAlgorithm();
 
         if (algOid.equals(CryptoProObjectIdentifiers.gostR3410_2001))
+        {
+            return new BCECGOST3410PublicKey(keyInfo);
+        }
+        else if (algOid.equals(CryptoProObjectIdentifiers.gostR3410_2001DH))
+        {
+            return new BCECGOST3410PublicKey(keyInfo);
+        }
+        else if (algOid.equals(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH))
         {
             return new BCECGOST3410PublicKey(keyInfo);
         }

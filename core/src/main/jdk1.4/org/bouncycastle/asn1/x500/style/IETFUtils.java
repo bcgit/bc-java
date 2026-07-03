@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.x500.style;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -15,11 +16,17 @@ import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.X500NameStyle;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class IETFUtils
 {
+    // NOTE (jdk1.4 overlay): this file is the current base IETFUtils minus the two legacy
+    // StringBuffer overloads of appendRDN / appendTypeAndValue. The 1.4 build rewrites
+    // StringBuilder to StringBuffer during source preprocessing, so keeping both overload
+    // families would collapse them into duplicate method definitions. Keep everything else
+    // in step with the base copy.
     private static String unescape(String elt)
     {
         if (elt.length() == 0)
@@ -33,7 +40,13 @@ public class IETFUtils
 
         boolean escaped = false;
         boolean quoted = false;
-        StringBuffer buf = new StringBuffer(elt.length());
+        StringBuilder buf = new StringBuilder(elt.length());
+        // Accumulator for a run of consecutive \HH escapes. Per RFC 4514 sec. 2.4
+        // a \HH escape produces a single octet, and the resulting octet sequence
+        // is the UTF-8 encoding of the character — so a run of pairs must be
+        // decoded as UTF-8 (RFC 5280 sec. 4.1.2.4), not one Java char per pair.
+        ByteArrayOutputStream hexBytes = new ByteArrayOutputStream();
+        int[] lastEscapedHolder = new int[]{ -1 };
         int start = 0;
 
         // if it's an escaped hash string and not an actual encoding in string form
@@ -48,8 +61,7 @@ public class IETFUtils
         }
 
         boolean nonWhiteSpaceEncountered = false;
-        int     lastEscaped = 0;
-        char    hex1 = 0;
+        int hex1 = -1;
 
         for (int i = start; i != elt.length(); i++)
         {
@@ -68,6 +80,8 @@ public class IETFUtils
                 }
                 else
                 {
+                    checkCompleteHexPair(hex1);
+                    flushHexBytes(buf, hexBytes, lastEscapedHolder);
                     buf.append(c);
                     escaped = false;
                 }
@@ -75,40 +89,72 @@ public class IETFUtils
             else if (c == '\\' && !(escaped || quoted))
             {
                 escaped = true;
-                lastEscaped = buf.length();
+                // In case hexBytes is not empty, lastEscapedHolder will get updated when hexBytes is flushed
+                lastEscapedHolder[0] = buf.length();
+            }
+            else if (c == ' ' && !escaped && !nonWhiteSpaceEncountered)
+            {
+                // Skip leading spaces
+            }
+            else if (escaped && isHexDigit(c))
+            {
+                int hexDigit = convertHex(c);
+                if (hex1 < 0)
+                {
+                    hex1 = hexDigit;
+                }
+                else
+                {
+                    hexBytes.write(hex1 * 16 + hexDigit);
+                    escaped = false;
+                    hex1 = -1;
+                }
             }
             else
             {
-                if (c == ' ' && !escaped && !nonWhiteSpaceEncountered)
-                {
-                    continue;
-                }
-                if (escaped && isHexDigit(c))
-                {
-                    if (hex1 != 0)
-                    {
-                        buf.append((char)(convertHex(hex1) * 16 + convertHex(c)));
-                        escaped = false;
-                        hex1 = 0;
-                        continue;
-                    }
-                    hex1 = c;
-                    continue;
-                }
+                // A '\' followed by a single hex digit and then a non-hex char is an
+                // incomplete hexpair (RFC 4514 sec. 2.4 requires two), not a literal.
+                checkCompleteHexPair(hex1);
+                flushHexBytes(buf, hexBytes, lastEscapedHolder);
                 buf.append(c);
                 escaped = false;
             }
         }
 
+        // A '\' followed by a single hex digit at end of input is likewise incomplete.
+        checkCompleteHexPair(hex1);
+
+        flushHexBytes(buf, hexBytes, lastEscapedHolder);
+
         if (buf.length() > 0)
         {
-            while (buf.charAt(buf.length() - 1) == ' ' && lastEscaped != (buf.length() - 1))
+            while (buf.charAt(buf.length() - 1) == ' ' && lastEscapedHolder[0] < buf.length() - 1)
             {
                 buf.setLength(buf.length() - 1);
             }
         }
 
         return buf.toString();
+    }
+
+    private static void flushHexBytes(StringBuilder buf, ByteArrayOutputStream hexBytes, int[] lastEscapedHolder)
+    {
+        if (hexBytes.size() == 0)
+        {
+            return;
+        }
+        String decoded = Strings.fromUTF8ByteArray(hexBytes.toByteArray());
+        hexBytes.reset();
+        buf.append(decoded);
+        lastEscapedHolder[0] = buf.length() - 1;
+    }
+
+    private static void checkCompleteHexPair(int hex1)
+    {
+        if (hex1 >= 0)
+        {
+            throw new IllegalArgumentException("invalid hex escape in directory string");
+        }
     }
 
     private static boolean isHexDigit(char c)
@@ -186,8 +232,12 @@ public class IETFUtils
     {
         X500NameTokenizer tokenizer = new X500NameTokenizer(token, '=');
 
-        String typeToken = nextToken(tokenizer, true);
-        String valueToken = nextToken(tokenizer, false);
+        String typeToken = tokenizer.nextToken();
+        if (typeToken == null || !tokenizer.hasMoreTokens())
+        {
+            throw new IllegalArgumentException("badly formatted directory string");
+        }
+        String valueToken = collectValueToken(tokenizer);
 
         ASN1ObjectIdentifier oid = builder.getStyle().attrNameToOID(typeToken.trim());
         String value = unescape(valueToken);
@@ -199,8 +249,12 @@ public class IETFUtils
     {
         X500NameTokenizer tokenizer = new X500NameTokenizer(token, '=');
 
-        String typeToken = nextToken(tokenizer, true);
-        String valueToken = nextToken(tokenizer, false);
+        String typeToken = tokenizer.nextToken();
+        if (typeToken == null || !tokenizer.hasMoreTokens())
+        {
+            throw new IllegalArgumentException("badly formatted directory string");
+        }
+        String valueToken = collectValueToken(tokenizer);
 
         ASN1ObjectIdentifier oid = style.attrNameToOID(typeToken.trim());
         String value = unescape(valueToken);
@@ -209,14 +263,14 @@ public class IETFUtils
         values.addElement(value);
     }
 
-    private static String nextToken(X500NameTokenizer tokenizer, boolean expectMoreTokens)
+    /**
+     * Consume the remaining input from an '='-separated tokenizer as the
+     * attributeValue. RFC 4514 sec. 3 allows unescaped '=' in stringchar, so
+     * only the FIRST '=' separates the attributeType from the attributeValue.
+     */
+    private static String collectValueToken(X500NameTokenizer tokenizer)
     {
-        String token = tokenizer.nextToken();
-        if (token == null || tokenizer.hasMoreTokens() != expectMoreTokens)
-        {
-            throw new IllegalArgumentException("badly formatted directory string");
-        }
-        return token;
+        return tokenizer.remaining();
     }
 
     private static String[] toValueArray(Vector values)
@@ -245,10 +299,10 @@ public class IETFUtils
 
     public static String[] findAttrNamesForOID(
         ASN1ObjectIdentifier oid,
-        Hashtable            lookup)
+        Hashtable lookup)
     {
         int count = 0;
-        for (Enumeration en = lookup.elements(); en.hasMoreElements();)
+        for (Enumeration en = lookup.elements(); en.hasMoreElements(); )
         {
             if (oid.equals(en.nextElement()))
             {
@@ -259,7 +313,7 @@ public class IETFUtils
         String[] aliases = new String[count];
         count = 0;
 
-        for (Enumeration en = lookup.keys(); en.hasMoreElements();)
+        for (Enumeration en = lookup.keys(); en.hasMoreElements(); )
         {
             String key = (String)en.nextElement();
             if (oid.equals(lookup.get(key)))
@@ -294,8 +348,8 @@ public class IETFUtils
     }
 
     public static ASN1Encodable valueFromHexString(
-        String  str,
-        int     off)
+        String str,
+        int off)
         throws IOException
     {
         byte[] data = new byte[(str.length() - off) / 2];
@@ -311,9 +365,9 @@ public class IETFUtils
     }
 
     public static void appendRDN(
-        StringBuffer          buf,
-        RDN                   rdn,
-        Hashtable             oidSymbols)
+        StringBuilder buf,
+        RDN rdn,
+        Hashtable oidSymbols)
     {
         if (rdn.isMultiValued())
         {
@@ -336,19 +390,20 @@ public class IETFUtils
         }
         else
         {
-            if (rdn.getFirst() != null)
+            AttributeTypeAndValue first = rdn.getFirst();
+            if (first != null)
             {
-                IETFUtils.appendTypeAndValue(buf, rdn.getFirst(), oidSymbols);
+                IETFUtils.appendTypeAndValue(buf, first, oidSymbols);
             }
         }
     }
 
     public static void appendTypeAndValue(
-        StringBuffer          buf,
+        StringBuilder buf,
         AttributeTypeAndValue typeAndValue,
-        Hashtable             oidSymbols)
+        Hashtable oidSymbols)
     {
-        String  sym = (String)oidSymbols.get(typeAndValue.getType());
+        String sym = (String)oidSymbols.get(typeAndValue.getType());
 
         if (sym != null)
         {
@@ -366,7 +421,7 @@ public class IETFUtils
 
     public static String valueToString(ASN1Encodable value)
     {
-        StringBuffer vBuf = new StringBuffer();
+        StringBuilder vBuf = new StringBuilder();
 
         if (value instanceof ASN1String && !(value instanceof ASN1UniversalString))
         {
@@ -392,59 +447,68 @@ public class IETFUtils
             }
         }
 
-        int end = vBuf.length();
+        // Escape in a single linear pass into a fresh builder. The previous implementation escaped by
+        // inserting a backslash into the buffer it was scanning (O(n) per insert), so a value of n
+        // RFC 4514 special characters - or n leading/trailing spaces - cost ~n^2/2 character moves: a
+        // CPU-exhaustion vector for an attacker-supplied large RDN reached via
+        // X500Name.toString()/equals()/hashCode(). Output is unchanged.
+        int len = vBuf.length();
+
+        // A leading "\#" (produced above when the value begins with '#') is emitted verbatim and the
+        // leading-space escaping is suppressed, matching the original phase ordering.
+        boolean hashPrefix = len >= 2 && vBuf.charAt(0) == '\\' && vBuf.charAt(1) == '#';
+
+        int firstNonSpace = 0;
+        while (firstNonSpace < len && vBuf.charAt(firstNonSpace) == ' ')
+        {
+            firstNonSpace++;
+        }
+        int lastNonSpace = len - 1;
+        while (lastNonSpace >= 0 && vBuf.charAt(lastNonSpace) == ' ')
+        {
+            lastNonSpace--;
+        }
+
+        StringBuilder out = new StringBuilder(len + 16);
         int index = 0;
-
-        if (vBuf.length() >= 2 && vBuf.charAt(0) == '\\' && vBuf.charAt(1) == '#')
+        if (hashPrefix)
         {
-            index += 2;
+            out.append("\\#");
+            index = 2;
         }
 
-        while (index != end)
+        for (; index < len; index++)
         {
-            switch (vBuf.charAt(index))
+            char c = vBuf.charAt(index);
+            boolean escape;
+            switch (c)
             {
-                case ',':
-                case '"':
-                case '\\':
-                case '+':
-                case '=':
-                case '<':
-                case '>':
-                case ';':
-                {
-                    vBuf.insert(index, "\\");
-                    index += 2;
-                    ++end;
-                    break;
-                }
-                default:
-                {
-                    ++index;
-                    break;
-                }
+            case ',':
+            case '"':
+            case '\\':
+            case '+':
+            case '=':
+            case '<':
+            case '>':
+            case ';':
+                escape = true;
+                break;
+            case ' ':
+                // leading spaces escaped only without a "\#" prefix; trailing spaces always escaped.
+                escape = (!hashPrefix && index < firstNonSpace) || index > lastNonSpace;
+                break;
+            default:
+                escape = false;
+                break;
             }
-        }
-
-        int start = 0;
-        if (vBuf.length() > 0)
-        {
-            while (vBuf.length() > start && vBuf.charAt(start) == ' ')
+            if (escape)
             {
-                vBuf.insert(start, "\\");
-                start += 2;
+                out.append('\\');
             }
+            out.append(c);
         }
 
-        int endBuf = vBuf.length() - 1;
-
-        while (endBuf >= start && vBuf.charAt(endBuf) == ' ')
-        {
-            vBuf.insert(endBuf, '\\');
-            endBuf--;
-        }
-
-        return vBuf.toString();
+        return out.toString();
     }
 
     public static String canonicalize(String s)
@@ -499,7 +563,7 @@ public class IETFUtils
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unknown encoding in name: " + e);
+            throw Exceptions.illegalStateException("unknown encoding in name", e);
         }
     }
 
@@ -511,7 +575,7 @@ public class IETFUtils
             return str;
         }
 
-        StringBuffer res = new StringBuffer();
+        StringBuilder res = new StringBuilder();
 
         char c1 = str.charAt(0);
         res.append(c1);

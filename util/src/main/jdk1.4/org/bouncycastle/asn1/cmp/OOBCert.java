@@ -6,9 +6,9 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * OOBCert ::= CMPCertificate
@@ -19,7 +19,7 @@ public class OOBCert
 
     public OOBCert(AttributeCertificate x509v2AttrCert)
     {
-        super(x509v2AttrCert);
+        super(1, x509v2AttrCert);
     }
 
     public OOBCert(int type, ASN1Object otherCert)
@@ -64,7 +64,7 @@ public class OOBCert
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException(e.getMessage());
+                throw Exceptions.illegalArgumentException(e.getMessage(), e);
             }
         }
 

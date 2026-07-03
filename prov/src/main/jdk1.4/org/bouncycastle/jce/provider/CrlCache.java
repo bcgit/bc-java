@@ -30,6 +30,7 @@ import javax.naming.directory.InitialDirContext;
 import org.bouncycastle.jcajce.PKIXCRLStore;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Iterable;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 
@@ -45,24 +46,36 @@ class CrlCache
     {
         PKIXCRLStore crlStore = null;
 
-        WeakReference markerRef = (WeakReference)cache.get(distributionPoint);
-        if (markerRef != null)
+        CacheEntry entry = (CacheEntry)cache.get(distributionPoint);
+        if (entry != null)
         {
-            crlStore = (PKIXCRLStore)markerRef.get();
+            crlStore = (PKIXCRLStore)entry.ref.get();
         }
 
         if (crlStore != null)
         {
             boolean isExpired = false;
-            for (Iterator it = crlStore.getMatches(null).iterator(); it.hasNext();)
-            {
-                X509CRL crl = (X509CRL)it.next();
 
-                Date nextUpdate = crl.getNextUpdate();
-                if (nextUpdate != null && nextUpdate.before(validDate))
+            // Optional caller-supplied TTL — never extends validity, only shortens it.
+            int ttlSeconds = Properties.asInteger(Properties.X509_CRL_CACHE_TTL, 0);
+            if (ttlSeconds > 0
+                && (System.currentTimeMillis() - entry.loadTimeMillis) > (long)ttlSeconds * 1000L)
+            {
+                isExpired = true;
+            }
+
+            if (!isExpired)
+            {
+                for (Iterator it = crlStore.getMatches(null).iterator(); it.hasNext();)
                 {
-                    isExpired = true;
-                    break;
+                    X509CRL crl = (X509CRL)it.next();
+
+                    Date nextUpdate = crl.getNextUpdate();
+                    if (nextUpdate != null && nextUpdate.before(validDate))
+                    {
+                        isExpired = true;
+                        break;
+                    }
                 }
             }
 
@@ -70,6 +83,10 @@ class CrlCache
             {
                 return crlStore;
             }
+
+            // Drop the stale entry now so a downstream fetch failure doesn't
+            // leave a known-expired CacheEntry in the map.
+            cache.remove(distributionPoint);
         }
 
         Collection crls;
@@ -86,9 +103,21 @@ class CrlCache
 
         LocalCRLStore localCRLStore = new LocalCRLStore(new CollectionStore<CRL>(crls));
 
-        cache.put(distributionPoint, new WeakReference<PKIXCRLStore>(localCRLStore));
+        cache.put(distributionPoint, new CacheEntry(localCRLStore));
 
         return localCRLStore;
+    }
+
+    private static final class CacheEntry
+    {
+        final WeakReference ref;
+        final long loadTimeMillis;
+
+        CacheEntry(PKIXCRLStore store)
+        {
+            this.ref = new WeakReference<PKIXCRLStore>(store);
+            this.loadTimeMillis = System.currentTimeMillis();
+        }
     }
 
     private static Collection getCrlsFromLDAP(CertificateFactory certFact, URI distributionPoint)

@@ -47,8 +47,11 @@ public class ECGOST
 
             provider.addAlgorithm("Alg.Alias.KeyAgreement." + CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH, "ECGOST3410");
             
-            provider.addAlgorithm("AlgorithmParameters.ECGOST3410", PREFIX + "AlgorithmParametersSpi");
-            provider.addAlgorithm("Alg.Alias.AlgorithmParameters.GOST-3410-2001", "ECGOST3410");
+            // No AlgorithmParameters.ECGOST3410 registration in the jdk1.4 build: JRE 1.4's
+            // sun.security.x509.AlgorithmId consults installed providers while parsing GOST
+            // certificates, and the ec.AlgorithmParametersSpi that base registers (github #646)
+            // cannot decode GostR3410 parameter sequences - an absent registration makes the
+            // Sun parser fall back gracefully instead of failing the certificate parse.
 
             addSignatureAlgorithm(provider, "GOST3411",
                     "ECGOST3410", PREFIX + "SignatureSpi",

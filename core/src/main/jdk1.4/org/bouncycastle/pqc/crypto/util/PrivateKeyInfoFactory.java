@@ -181,15 +181,15 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
 
-            byte[] seed = params.getSeed();
-            if (seed == null)
+            if (params.getPreferredFormat() == MLKEMPrivateKeyParameters.SEED_ONLY)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, new DERTaggedObject(false, 0, new DEROctetString(params.getSeed())), attributes);
+            }
+            else if (params.getPreferredFormat() == MLKEMPrivateKeyParameters.EXPANDED_KEY)
             {
                 return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
             }
-            else
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(seed), attributes);
-            }
+            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {

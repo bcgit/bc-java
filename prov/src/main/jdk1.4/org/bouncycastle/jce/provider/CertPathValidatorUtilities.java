@@ -459,6 +459,30 @@ class CertPathValidatorUtilities
         return validPolicyTree;
     }
 
+    /**
+     * Bound the size of the valid-policy-tree to guard against a crafted certificate chain whose
+     * policy mappings and anyPolicy expansion (RFC 5280 6.1.3/6.1.4) make the tree grow
+     * multiplicatively per certificate -- a denial of service of the class of CVE-2023-0464.
+     * Called once per certificate after that certificate's policy processing; the live node count
+     * across all depth levels must not exceed {@link Properties#X509_MAX_POLICY_NODES}.
+     */
+    static void checkPolicyTreeSize(List[] policyNodes)
+        throws CertPathValidatorException
+    {
+        int maxNodes = Properties.asInteger(Properties.X509_MAX_POLICY_NODES, 8192);
+
+        int total = 0;
+        for (int i = 0; i != policyNodes.length; i++)
+        {
+            total += policyNodes[i].size();
+            if (total > maxNodes)
+            {
+                throw new CertPathValidatorException(
+                    "certificate policy tree exceeds " + maxNodes + " nodes (org.bouncycastle.x509.max_policy_nodes)");
+            }
+        }
+    }
+
     static PKIXPolicyNode removePolicyNode(PKIXPolicyNode validPolicyTree, List[] policyNodes, PKIXPolicyNode node)
     {
         if (validPolicyTree == null)
