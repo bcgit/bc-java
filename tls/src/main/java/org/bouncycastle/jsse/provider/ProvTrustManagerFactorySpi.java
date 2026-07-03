@@ -4,10 +4,13 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchProviderException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertPathParameters;
 import java.security.cert.Certificate;
 import java.security.cert.PKIXParameters;
@@ -104,7 +107,7 @@ class ProvTrustManagerFactorySpi
             else
             {
                 LOG.config("Initializing default trust store from path: " + tsPath);
-                tsInput = new BufferedInputStream(new FileInputStream(tsPath));
+                tsInput = openTrustStoreInput(tsPath);
             }
 
             try
@@ -122,7 +125,7 @@ class ProvTrustManagerFactorySpi
         {
             if (null != tsInput)
             {
-                tsInput.close();
+                closeTrustStoreInput(tsInput);
             }
         }
 
@@ -224,6 +227,47 @@ class ProvTrustManagerFactorySpi
         if (certificate instanceof X509Certificate)
         {
             trustAnchors.add(new TrustAnchor((X509Certificate)certificate, null));
+        }
+    }
+
+    private static InputStream openTrustStoreInput(final String tsPath)
+        throws Exception
+    {
+        try
+        {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<InputStream>()
+            {
+                public InputStream run()
+                    throws Exception
+                {
+                    return new BufferedInputStream(new FileInputStream(tsPath));
+                }
+            });
+        }
+        catch (PrivilegedActionException e)
+        {
+            throw e.getException();
+        }
+    }
+
+    private static void closeTrustStoreInput(final InputStream tsInput)
+        throws Exception
+    {
+        try
+        {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>()
+            {
+                public Void run()
+                    throws Exception
+                {
+                    tsInput.close();
+                    return null;
+                }
+            });
+        }
+        catch (PrivilegedActionException e)
+        {
+            throw e.getException();
         }
     }
 
