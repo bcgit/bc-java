@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * One TLS-encoded item from an RFC 9162 (CT v2)
@@ -124,7 +125,7 @@ public class TransItem
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage(), e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
         return out.toByteArray();
     }

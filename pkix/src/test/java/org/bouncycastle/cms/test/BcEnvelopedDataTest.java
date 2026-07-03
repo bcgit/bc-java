@@ -857,8 +857,8 @@ public class BcEnvelopedDataTest
             catch (IllegalArgumentException e)
             {
                 if (e.getMessage() == null
-                    || !e.getMessage().contains("RFC 3211")
-                    || !e.getMessage().contains("CBC"))
+                    || e.getMessage().indexOf("RFC 3211") < 0
+                    || e.getMessage().indexOf("CBC") < 0)
                 {
                     fail("expected an RFC 3211 / CBC pointer in the rejection message, got: " + e.getMessage());
                 }

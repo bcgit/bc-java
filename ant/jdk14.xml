@@ -151,6 +151,7 @@
                 <exclude name="**/pqc/crypto/test/MQOMTest.java"/>
                 <exclude name="**/pqc/crypto/test/MQOMKatTest.java"/>
                 <exclude name="**/pqc/crypto/test/UOVTest.java"/>
+                <exclude name="**/pqc/crypto/test/PqcMalformedInputTest.java"/>
                 <exclude name="**/pqc/**/BitStringTest.java"/>
                 <exclude name="**/pqc/**/XMS*.java"/>
                 <exclude name="**/pqc/**/LMS*.java"/>
@@ -202,6 +203,7 @@
                 <exclude name="**/PKIXRevocationTest.java"/>
 		<exclude name="**/its/**/*.java"/>
                 <exclude name="**/CheckNameConstraintsTest.java"/>
+                <exclude name="**/cert/ocsp/test/OCSPExceptionalSignatureRejectionTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
 		<exclude name="**/MailGeneralTest.java"/>
@@ -210,11 +212,16 @@
                 <exclude name="**/NewSMIMEAuthEnvelopedTest.java"/>
 	    </fileset>
             <fileset dir="prov/src/test/java">
+                <!-- package-private provider tests: the test jar is unsigned, so classes in
+                     org.bouncycastle.jce.provider would clash with the signed provider jar -->
+                <exclude name="**/jce/provider/*.java"/>
                 <exclude name="**/jce/provider/test/JcajceParameterSpecTest.java"/>
                 <exclude name="**/AEADTest.java"/>
                 <exclude name="**/PQCDHTest.java"/>
                 <exclude name="**/ECEncodingTest.java"/>
                 <exclude name="**/jce/provider/test/ChaCha20Poly1305Test.java"/>
+                <exclude name="**/jce/provider/test/XChaCha20Poly1305Test.java"/>
+                <exclude name="**/jce/provider/test/PKCS12SecretKeyStoreTest.java"/>
                 <exclude name="**/DetDSATest.java"/>
                 <exclude name="**/ECDSA5Test.java"/>
                 <exclude name="**/CRL5Test.java"/>

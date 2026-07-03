@@ -38,6 +38,7 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Holding class for an X.509 CRL structure.
@@ -125,7 +126,7 @@ public class X509CRLHolder
         {
             // a CertificateList handed in directly is already a parsed structure; preserve the
             // historical unchecked-exception behaviour for a malformed embedded extension.
-            throw new IllegalArgumentException(e.getMessage(), e);
+            throw Exceptions.illegalArgumentException(e.getMessage(), e);
         }
     }
 

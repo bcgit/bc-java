@@ -617,7 +617,7 @@ public class KeyStoreTest
         {
             if (saved == null)
             {
-                System.clearProperty(Properties.BKS_MAX_IT_COUNT);
+                System.getProperties().remove(Properties.BKS_MAX_IT_COUNT);
             }
             else
             {

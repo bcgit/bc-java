@@ -400,7 +400,7 @@ public class CertPathValidatorTest
         }
         finally
         {
-            System.clearProperty(Properties.X509_SGP22_NAME_CONSTRAINTS);
+            System.getProperties().remove(Properties.X509_SGP22_NAME_CONSTRAINTS);
         }
     }
 

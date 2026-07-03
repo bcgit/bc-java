@@ -248,7 +248,7 @@ public class SignatureTest
         }
         finally
         {
-            System.clearProperty(Properties.PKCS1_STRICT_DIGESTINFO);
+            System.getProperties().remove(Properties.PKCS1_STRICT_DIGESTINFO);
         }
     }
 

@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.aimer;
 
-import java.util.Arrays;
+import org.bouncycastle.util.Arrays;
 
 /**
  * AIMER signature structure

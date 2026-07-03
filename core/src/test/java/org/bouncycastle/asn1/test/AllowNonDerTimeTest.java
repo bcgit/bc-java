@@ -84,7 +84,7 @@ public class AllowNonDerTimeTest
         }
         finally
         {
-            System.clearProperty(Properties.ASN1_ALLOW_NON_DER_TIME);
+            System.getProperties().remove(Properties.ASN1_ALLOW_NON_DER_TIME);
         }
 
         // property cleared: lenient pass-through again (and the override did not leak to other tests)
@@ -101,7 +101,7 @@ public class AllowNonDerTimeTest
         catch (IOException e)
         {
             isTrue("unexpected message rejecting " + label,
-                e.getMessage() != null && e.getMessage().contains("invalid GeneralizedTime format"));
+                e.getMessage() != null && e.getMessage().indexOf("invalid GeneralizedTime format") >= 0);
         }
     }
 
@@ -117,7 +117,7 @@ public class AllowNonDerTimeTest
             isTrue("expected DEREncodingException as cause for " + label,
                 e.getCause() instanceof DEREncodingException);
             isTrue("unexpected message rejecting " + label,
-                e.getMessage() != null && e.getMessage().contains("not in DER format"));
+                e.getMessage() != null && e.getMessage().indexOf("not in DER format") >= 0);
         }
     }
 

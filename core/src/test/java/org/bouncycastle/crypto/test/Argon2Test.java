@@ -443,13 +443,14 @@ public class Argon2Test
     private static class CountingBlockPool
         implements BlockPool
     {
-        private final java.util.ArrayDeque<Block> available = new java.util.ArrayDeque<Block>();
+        // LinkedList rather than ArrayDeque (Java 6+) so the test also compiles for the legacy builds
+        private final java.util.LinkedList<Block> available = new java.util.LinkedList<Block>();
         int fresh;
         int recycled;
 
         public Block allocate()
         {
-            Block b = (Block)available.pollLast();
+            Block b = available.isEmpty() ? null : (Block)available.removeLast();
             if (b == null)
             {
                 fresh++;

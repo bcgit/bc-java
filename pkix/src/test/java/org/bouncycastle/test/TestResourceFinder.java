@@ -39,7 +39,16 @@ public class TestResourceFinder
         String configuredSource = "-D" + DATA_HOME_PROPERTY;
         if (configured == null || configured.length() == 0)
         {
-            configured = System.getenv(DATA_HOME_ENV);
+            try
+            {
+                configured = System.getenv(DATA_HOME_ENV);
+            }
+            catch (Error e)
+            {
+                // JDK 1.4's System.getenv throws java.lang.Error unconditionally
+                // ("getenv no longer supported"); fall through to the walk-up search.
+                configured = null;
+            }
             configuredSource = "$" + DATA_HOME_ENV;
         }
         if (configured != null && configured.length() > 0)

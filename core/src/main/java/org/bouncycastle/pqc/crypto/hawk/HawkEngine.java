@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.hawk;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
@@ -1605,7 +1606,7 @@ class HawkEngine
 
     private static int lzcnt_nonzero(int x)
     {
-        return Integer.numberOfLeadingZeros(x);
+        return Integers.numberOfLeadingZeros(x);
     }
 
     private static int zint_co_reduce(int[] tmp, int a, int b, int len,
@@ -2548,7 +2549,7 @@ class HawkEngine
 
         // Get bit length of the top word (which has been sign-adjusted)
         // and return the result
-        return 31 * tk + 32 - Integer.numberOfLeadingZeros(t);
+        return 31 * tk + 32 - Integers.numberOfLeadingZeros(t);
     }
 
     static void fromLongArrayToByte32Array(int[] out, int outOff, long[] in)
