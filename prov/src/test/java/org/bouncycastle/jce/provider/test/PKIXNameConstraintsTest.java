@@ -265,6 +265,7 @@ public class PKIXNameConstraintsTest
         testDirectoryNamePrefixBypass();
         testUriHostExtractionBypass();
         testIPv4MappedAddressBypass();
+        testQuotedLocalPartEmailBypass();
 
         testSGP22LegacySerialNumber();
         testSGP22NameConstraints();
@@ -294,6 +295,58 @@ public class PKIXNameConstraintsTest
         // uniformResourceIdentifier: the host trailing dot is stripped like the dNSName path.
         isTrue("trailing-dot URI host must be caught by the excluded competitor.example subtree",
             isExcluded(uriName("competitor.example"), uriName("https://competitor.example./")));
+    }
+
+    /**
+     * A tested rfc822Name with more than one '@' is ambiguous - a quoted local part may legally contain
+     * '@' (RFC 5321 sec. 4.1.2), so the domain is after the LAST '@', not the first. Rather than split at
+     * the first '@' into a wrong host that could evade a constraint, such a name is rejected fail-closed
+     * when email constraints are present; with none, it is tolerated (strict-when-constrained).
+     */
+    private void testQuotedLocalPartEmailBypass() throws Exception
+    {
+        // A genuine evil.com mailbox with a quoted local part; a first-'@' split yields host b"@evil.com,
+        // which would slip past the excluded evil.com subtree.
+        isTrue("an ambiguous multi-'@' rfc822Name must be caught (fail-closed) by an excluded constraint",
+            isExcluded(emailName("evil.com"), emailName("\"a@b\"@evil.com")));
+
+        // The exact PoC vector from the feedback-crypto report: effective domain (after the last '@') is
+        // excluded.example.com, but a first-'@' split compared evil.com"@excluded.example.com and missed it.
+        isTrue("the reported quoted-local-part vector must be caught by the excluded subtree",
+            isExcluded(emailName("excluded.example.com"), emailName("\"user@evil.com\"@excluded.example.com")));
+
+        // Any multi-'@' tested name fails closed under a permitted constraint too.
+        isTrue("an ambiguous multi-'@' rfc822Name must not satisfy a permitted constraint",
+            !isPermitted(emailName("bank.com"), emailName("\"a@b\"@bank.com")));
+
+        // Strict-when-constrained: with no email constraints in play, the ambiguous name is tolerated.
+        try
+        {
+            PKIXNameConstraintValidator validator = new PKIXNameConstraintValidator();
+            validator.checkPermitted(emailName("\"a@b\"@evil.com"));
+            validator.checkExcluded(emailName("\"a@b\"@evil.com"));
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            fail("an ambiguous email must be tolerated when no email constraints are present");
+        }
+
+        // A normal single-'@' address is unaffected.
+        isTrue("a normal single-'@' address must not be affected",
+            !isExcluded(emailName("evil.com"), emailName("user@safe.com")));
+
+        // The safety valve restores the legacy lenient parsing: the ambiguous name is no longer rejected
+        // (it falls back to the first-'@' split and simply fails to match, as it did before the fix).
+        System.setProperty(Properties.X509_ALLOW_LENIENT_RFC822_NAME, "true");
+        try
+        {
+            isTrue("the lenient valve must disable the ambiguity rejection",
+                !isExcluded(emailName("evil.com"), emailName("\"a@b\"@evil.com")));
+        }
+        finally
+        {
+            System.clearProperty(Properties.X509_ALLOW_LENIENT_RFC822_NAME);
+        }
     }
 
     /**
