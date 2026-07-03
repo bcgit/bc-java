@@ -67,3 +67,5 @@ Besides the Gradle build there is a legacy Ant distribution, `jdk15to18`, driven
 Practical rule when touching reachable `src/main/java`: don't introduce Java 6/7/8 APIs. Route through the BC util wrappers that carry `jdk1.5` overlays (`Longs`/`Integers`/`BigIntegers`), use `Exceptions.ioException` not `new IOException(msg,cause)`, `Strings.toByteArray` not `getBytes(StandardCharsets…)`, `instanceof Destroyable` not `SecretKey.destroy()`, `System.arraycopy` not `java.util.Arrays.copyOf`, etc. This is the *runtime* sibling of the Java-4 *source* floor.
 
 Full workflow (build → **sign with `/home/dgh/bin/bcsign`, this machine only** → test), the complete API→fix table, the test-exclusion overlay mechanism, and the diagnostic for telling a real bug from a JRE-5 JIT defect (`-Xint`) are in the `build-jdk15to18` skill.
+
+There is an even stricter Java 1.4 distribution (`sh build1-4`) that compiles with a genuine 1.4 javac — post-1.4 APIs fail it at *compile* time, and it has its own overlay trees, source preprocessor, and signing flow: see `build-jdk14.md`.
