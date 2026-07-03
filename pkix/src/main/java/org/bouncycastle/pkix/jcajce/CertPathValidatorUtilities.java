@@ -646,7 +646,19 @@ class CertPathValidatorUtilities
                 return;
             }
 
-            X500Principal certIssuer = crl_entry.getCertificateIssuer();
+            X500Principal certIssuer;
+            try
+            {
+                certIssuer = crl_entry.getCertificateIssuer();
+            }
+            catch (RuntimeException e)
+            {
+                // getCertificateIssuer() builds a new X500Principal from the entry's certificateIssuer
+                // DN, which can throw an unchecked IllegalArgumentException on a name that decodes
+                // structurally but is semantically invalid. Fail closed with the checked contract type
+                // rather than let it escape (or swallow it to null, which would fail revocation open).
+                throw new AnnotatedException("CRL entry certificate issuer could not be parsed.", e);
+            }
 
             if (certIssuer == null)
             {
