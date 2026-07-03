@@ -29,7 +29,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -167,6 +167,48 @@ public class XMSSTest
         PublicKey legacyKey = kFact.generatePublic(new X509EncodedKeySpec(legacy.getEncoded()));
 
         assertEquals(kp.getPublic(), legacyKey);
+    }
+
+    public void testSP800208KeyGenAndRoundTrip()
+        throws Exception
+    {
+        String[] treeDigests = {
+            XMSSParameterSpec.SHA256_192, XMSSParameterSpec.SHAKE256_256, XMSSParameterSpec.SHAKE256_192};
+
+        for (int i = 0; i != treeDigests.length; i++)
+        {
+            String treeDigest = treeDigests[i];
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+            kpg.initialize(new XMSSParameterSpec(10, treeDigest), new SecureRandom());
+            KeyPair kp = kpg.generateKeyPair();
+
+            // private and public halves share the RFC 9802 algorithm OID
+            assertEquals(treeDigest, IANAObjectIdentifiers.id_alg_xmss_hashsig,
+                SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
+            assertEquals(treeDigest, IANAObjectIdentifiers.id_alg_xmss_hashsig,
+                PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded()).getPrivateKeyAlgorithm().getAlgorithm());
+
+            // getTreeDigest() reflects the specific SP 800-208 variant (n included)
+            assertEquals(treeDigest, ((XMSSKey)kp.getPublic()).getTreeDigest());
+            assertEquals(treeDigest, ((XMSSKey)kp.getPrivate()).getTreeDigest());
+
+            // KeyFactory round-trips both halves to equal keys
+            KeyFactory kFact = KeyFactory.getInstance("XMSS", "BCPQC");
+            PublicKey pubKey = kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+            PrivateKey privKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+            assertEquals(treeDigest, kp.getPublic(), pubKey);
+            assertEquals(treeDigest, kp.getPrivate(), privKey);
+
+            // the generated key signs and verifies
+            Signature xmssSig = Signature.getInstance("XMSS", "BCPQC");
+            xmssSig.initSign(kp.getPrivate());
+            xmssSig.update(msg, 0, msg.length);
+            byte[] s = xmssSig.sign();
+            xmssSig.initVerify(kp.getPublic());
+            xmssSig.update(msg, 0, msg.length);
+            assertTrue(treeDigest, xmssSig.verify(s));
+        }
     }
 
     public void testPublicKeyRecovery()

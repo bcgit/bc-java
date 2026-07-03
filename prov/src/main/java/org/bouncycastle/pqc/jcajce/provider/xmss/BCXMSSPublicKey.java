@@ -118,7 +118,7 @@ public class BCXMSSPublicKey
 
     public String getTreeDigest()
     {
-        return DigestUtil.getXMSSDigestName(treeDigest);
+        return DigestUtil.getXMSSDigestName(treeDigest, keyParams.getParameters().getTreeDigestSize());
     }
 
     private void readObject(

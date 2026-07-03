@@ -34,6 +34,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.asn1.bc;
     exports org.bouncycastle.asn1.cryptopro;
     exports org.bouncycastle.asn1.gm;
+    exports org.bouncycastle.asn1.iana;
     exports org.bouncycastle.asn1.nist;
     exports org.bouncycastle.asn1.ocsp;
     exports org.bouncycastle.asn1.pkcs;

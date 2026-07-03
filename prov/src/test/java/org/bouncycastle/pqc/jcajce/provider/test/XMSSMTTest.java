@@ -29,7 +29,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.internal.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -37,6 +37,11 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTKey;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
@@ -429,6 +434,48 @@ public class XMSSMTTest
         assertTrue(sig.verify(s));
     }
 
+    public void testSP800208KeyGenAndRoundTrip()
+        throws Exception
+    {
+        String[] treeDigests = {
+            XMSSMTParameterSpec.SHA256_192, XMSSMTParameterSpec.SHAKE256_256, XMSSMTParameterSpec.SHAKE256_192};
+
+        for (int i = 0; i != treeDigests.length; i++)
+        {
+            String treeDigest = treeDigests[i];
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+            kpg.initialize(new XMSSMTParameterSpec(20, 2, treeDigest), new SecureRandom());
+            KeyPair kp = kpg.generateKeyPair();
+
+            // private and public halves share the RFC 9802 algorithm OID
+            assertEquals(treeDigest, IANAObjectIdentifiers.id_alg_xmssmt_hashsig,
+                SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
+            assertEquals(treeDigest, IANAObjectIdentifiers.id_alg_xmssmt_hashsig,
+                PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded()).getPrivateKeyAlgorithm().getAlgorithm());
+
+            // getTreeDigest() reflects the specific SP 800-208 variant (n included)
+            assertEquals(treeDigest, ((XMSSMTKey)kp.getPublic()).getTreeDigest());
+            assertEquals(treeDigest, ((XMSSMTKey)kp.getPrivate()).getTreeDigest());
+
+            // KeyFactory round-trips both halves to equal keys
+            KeyFactory kFact = KeyFactory.getInstance("XMSSMT", "BCPQC");
+            PublicKey pubKey = kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+            PrivateKey privKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+            assertEquals(treeDigest, kp.getPublic(), pubKey);
+            assertEquals(treeDigest, kp.getPrivate(), privKey);
+
+            // the generated key signs and verifies
+            Signature sig = Signature.getInstance("XMSSMT", "BCPQC");
+            sig.initSign(kp.getPrivate());
+            sig.update(msg, 0, msg.length);
+            byte[] s = sig.sign();
+            sig.initVerify(kp.getPublic());
+            sig.update(msg, 0, msg.length);
+            assertTrue(treeDigest, sig.verify(s));
+        }
+    }
+
     public void testKeyRebuild()
         throws Exception
     {
@@ -451,14 +498,27 @@ public class XMSSMTTest
 
         XMSSMTPrivateKey pKey = (XMSSMTPrivateKey)kp.getPrivate();
 
-        PrivateKeyInfo pKeyInfo = PrivateKeyInfo.getInstance(pKey.getEncoded());
-
         KeyFactory keyFactory = KeyFactory.getInstance("XMSSMT", "BCPQC");
 
-        ASN1Sequence seq = ASN1Sequence.getInstance(pKeyInfo.parsePrivateKey());
+        // Reconstruct the legacy (pre-1.85) PQCObjectIdentifiers.xmss_mt encoding of the key, then
+        // drop the BDS state. This exercises both the retained legacy read path - confirming keys
+        // written by older releases still decode - and the no-BDS-state rebuild, which is only
+        // reachable through the legacy form (the current default id-alg-xmssmt-hashsig encoding
+        // always carries the BDS state inline).
+        XMSSMTPrivateKeyParameters lwParams = (XMSSMTPrivateKeyParameters)PrivateKeyFactory.createKey(pKey.getEncoded());
+        byte[] raw = lwParams.getEncoded();                 // index || skSeed || skPRF || pubSeed || root || bds
+        int headerLen = (20 + 7) / 8 + 4 * 32;              // indexSize + 4 * n  (n = 32 for SHA-256)
+        byte[] bdsState = Arrays.copyOfRange(raw, headerLen, raw.length);
+        org.bouncycastle.pqc.asn1.XMSSMTPrivateKey legacyKey = new org.bouncycastle.pqc.asn1.XMSSMTPrivateKey(
+            lwParams.getIndex(), lwParams.getSecretKeySeed(), lwParams.getSecretKeyPRF(),
+            lwParams.getPublicSeed(), lwParams.getRoot(), bdsState);
+        AlgorithmIdentifier legacyAlg = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss_mt,
+            new XMSSMTKeyParams(20, 4, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
+
+        ASN1Sequence seq = ASN1Sequence.getInstance(new PrivateKeyInfo(legacyAlg, legacyKey).parsePrivateKey());
 
         // create a new PrivateKeyInfo containing a key with no BDS state.
-        pKeyInfo = new PrivateKeyInfo(pKeyInfo.getPrivateKeyAlgorithm(),
+        PrivateKeyInfo pKeyInfo = new PrivateKeyInfo(legacyAlg,
             new DERSequence(new ASN1Encodable[]{seq.getObjectAt(0), seq.getObjectAt(1)}));
 
         XMSSMTPrivateKey privKey = (XMSSMTPrivateKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(pKeyInfo.getEncoded()));

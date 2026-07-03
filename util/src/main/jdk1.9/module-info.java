@@ -16,7 +16,6 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.ess;
     exports org.bouncycastle.asn1.est;
     exports org.bouncycastle.asn1.gnu;
-    exports org.bouncycastle.asn1.iana;
     exports org.bouncycastle.asn1.icao;
     exports org.bouncycastle.asn1.isara;
     exports org.bouncycastle.asn1.isismtt;

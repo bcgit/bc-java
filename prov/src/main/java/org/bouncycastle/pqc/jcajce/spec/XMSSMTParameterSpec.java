@@ -25,6 +25,21 @@ public class XMSSMTParameterSpec
      */
     public static final String SHAKE256 = "SHAKE256";
 
+    /**
+     * Use SHA-256/192 (SHA-256 truncated to 192 bits) for the tree generation function (SP 800-208).
+     */
+    public static final String SHA256_192 = "SHA256/192";
+
+    /**
+     * Use SHAKE256/256 (SHAKE256 with a 256-bit output) for the tree generation function (SP 800-208).
+     */
+    public static final String SHAKE256_256 = "SHAKE256/256";
+
+    /**
+     * Use SHAKE256/192 (SHAKE256 with a 192-bit output) for the tree generation function (SP 800-208).
+     */
+    public static final String SHAKE256_192 = "SHAKE256/192";
+
     public static final XMSSMTParameterSpec XMSSMT_SHA2_20d2_256 = new XMSSMTParameterSpec(20, 2, SHA256);
     public static final XMSSMTParameterSpec XMSSMT_SHA2_20d4_256 = new XMSSMTParameterSpec(20, 4, SHA256);
     public static final XMSSMTParameterSpec XMSSMT_SHA2_40d2_256 = new XMSSMTParameterSpec(40, 2, SHA256);
@@ -60,6 +75,34 @@ public class XMSSMTParameterSpec
     public static final XMSSMTParameterSpec XMSSMT_SHAKE_60d3_512 = new XMSSMTParameterSpec(60, 3, SHAKE256);
     public static final XMSSMTParameterSpec XMSSMT_SHAKE_60d6_512 = new XMSSMTParameterSpec(60, 6, SHAKE256);
     public static final XMSSMTParameterSpec XMSSMT_SHAKE_60d12_512 = new XMSSMTParameterSpec(60, 12, SHAKE256);
+
+    // SP 800-208 XMSS^MT parameters (SHA-256/192, SHAKE256/256, SHAKE256/192)
+    public static final XMSSMTParameterSpec XMSSMT_SHA2_20d2_192 = new XMSSMTParameterSpec(20, 2, SHA256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHA2_20d4_192 = new XMSSMTParameterSpec(20, 4, SHA256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHA2_40d2_192 = new XMSSMTParameterSpec(40, 2, SHA256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHA2_40d4_192 = new XMSSMTParameterSpec(40, 4, SHA256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHA2_40d8_192 = new XMSSMTParameterSpec(40, 8, SHA256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHA2_60d3_192 = new XMSSMTParameterSpec(60, 3, SHA256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHA2_60d6_192 = new XMSSMTParameterSpec(60, 6, SHA256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHA2_60d12_192 = new XMSSMTParameterSpec(60, 12, SHA256_192);
+
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_20d2_256 = new XMSSMTParameterSpec(20, 2, SHAKE256_256);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_20d4_256 = new XMSSMTParameterSpec(20, 4, SHAKE256_256);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_40d2_256 = new XMSSMTParameterSpec(40, 2, SHAKE256_256);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_40d4_256 = new XMSSMTParameterSpec(40, 4, SHAKE256_256);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_40d8_256 = new XMSSMTParameterSpec(40, 8, SHAKE256_256);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_60d3_256 = new XMSSMTParameterSpec(60, 3, SHAKE256_256);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_60d6_256 = new XMSSMTParameterSpec(60, 6, SHAKE256_256);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_60d12_256 = new XMSSMTParameterSpec(60, 12, SHAKE256_256);
+
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_20d2_192 = new XMSSMTParameterSpec(20, 2, SHAKE256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_20d4_192 = new XMSSMTParameterSpec(20, 4, SHAKE256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_40d2_192 = new XMSSMTParameterSpec(40, 2, SHAKE256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_40d4_192 = new XMSSMTParameterSpec(40, 4, SHAKE256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_40d8_192 = new XMSSMTParameterSpec(40, 8, SHAKE256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_60d3_192 = new XMSSMTParameterSpec(60, 3, SHAKE256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_60d6_192 = new XMSSMTParameterSpec(60, 6, SHAKE256_192);
+    public static final XMSSMTParameterSpec XMSSMT_SHAKE256_60d12_192 = new XMSSMTParameterSpec(60, 12, SHAKE256_192);
 
     private final int height;
     private final int layers;

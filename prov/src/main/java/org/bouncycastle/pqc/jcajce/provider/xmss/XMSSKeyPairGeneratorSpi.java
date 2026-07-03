@@ -73,6 +73,25 @@ public class XMSSKeyPairGeneratorSpi
             treeDigest = NISTObjectIdentifiers.id_shake256;
             param = new XMSSKeyGenerationParameters(new XMSSParameters(xmssParams.getHeight(), new SHAKEDigest(256)), random);
         }
+        else if (xmssParams.getTreeDigest().equals(XMSSParameterSpec.SHA256_192))
+        {
+            treeDigest = NISTObjectIdentifiers.id_sha256;
+            param = new XMSSKeyGenerationParameters(new XMSSParameters(xmssParams.getHeight(), NISTObjectIdentifiers.id_sha256, 24), random);
+        }
+        else if (xmssParams.getTreeDigest().equals(XMSSParameterSpec.SHAKE256_256))
+        {
+            treeDigest = NISTObjectIdentifiers.id_shake256_len;
+            param = new XMSSKeyGenerationParameters(new XMSSParameters(xmssParams.getHeight(), NISTObjectIdentifiers.id_shake256_len, 32), random);
+        }
+        else if (xmssParams.getTreeDigest().equals(XMSSParameterSpec.SHAKE256_192))
+        {
+            treeDigest = NISTObjectIdentifiers.id_shake256_len;
+            param = new XMSSKeyGenerationParameters(new XMSSParameters(xmssParams.getHeight(), NISTObjectIdentifiers.id_shake256_len, 24), random);
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("unknown tree digest: " + xmssParams.getTreeDigest());
+        }
 
         engine.init(param);
         initialised = true;
