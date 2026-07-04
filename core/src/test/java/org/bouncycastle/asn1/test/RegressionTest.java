@@ -70,7 +70,8 @@ public class RegressionTest
         new StreamLimitTest(),
         new ASN1GeneratorTest(),
         new LongDefiniteLengthParserTest(),
-        new DefiniteLengthAllocationTest()
+        new DefiniteLengthAllocationTest(),
+        new KeyPurposeIdTest()
     };
 
     public static void main(String[] args)
