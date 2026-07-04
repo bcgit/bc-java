@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class StreamLimitTest
     extends SimpleTest
 {
-    static final String MAX_LIMIT = "org.bouncycastle.asn1.max_limit";
+    static final String MAX_LIMIT = Properties.ASN1_MAX_LIMIT;
 
     public void performTest()
         throws Exception

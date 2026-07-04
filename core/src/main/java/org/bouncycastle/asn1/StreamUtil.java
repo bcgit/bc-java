@@ -10,9 +10,6 @@ import org.bouncycastle.util.Properties;
 
 class StreamUtil
 {
-    private static final String MAX_CONS_DEPTH = "org.bouncycastle.asn1.max_cons_depth";
-    private static final String MAX_LIMIT = "org.bouncycastle.asn1.max_limit";
-
     static void checkLength(int length, int limit) throws IOException
     {
         if (length > limit)
@@ -38,7 +35,7 @@ class StreamUtil
 
     static int findDepth()
     {
-        return Math.max(0, Properties.asInteger(MAX_CONS_DEPTH, 64));
+        return Math.max(0, Properties.asInteger(Properties.ASN1_MAX_CONS_DEPTH, 64));
     }
 
     /**
@@ -79,7 +76,7 @@ class StreamUtil
             }
         }
 
-        String limit = Properties.getPropertyValue(MAX_LIMIT);
+        String limit = Properties.getPropertyValue(Properties.ASN1_MAX_LIMIT);
         if (limit != null)
         {
             switch (limit.charAt(limit.length() - 1))

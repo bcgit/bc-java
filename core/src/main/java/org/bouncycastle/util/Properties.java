@@ -148,6 +148,21 @@ public class Properties
     public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
 
     /**
+     * Maximum depth of nested constructed ASN.1 objects the parser will descend before failing
+     * with "maximum nested construction level reached", guarding against stack exhaustion from
+     * deeply nested crafted input. Read as an integer; default 64.
+     */
+    public static final String ASN1_MAX_CONS_DEPTH = "org.bouncycastle.asn1.max_cons_depth";
+
+    /**
+     * Overrides the maximum length accepted for a single definite-length ASN.1 object read from a
+     * stream whose length is not otherwise known. The value is a byte count and may carry a trailing
+     * 'k', 'm' or 'g' multiplier (e.g. "16m"); when unset the limit falls back to the available heap
+     * size. Can also be set per stream via the ASN1InputStream(InputStream, int) constructor.
+     */
+    public static final String ASN1_MAX_LIMIT = "org.bouncycastle.asn1.max_limit";
+
+    /**
      * Upper bound (in bits) on the prime modulus p accepted when validating an imported
      * Diffie-Hellman public key. Validation performs a modular exponentiation / Legendre
      * computation whose cost is super-linear in the size of p, so an unbounded p taken from a
