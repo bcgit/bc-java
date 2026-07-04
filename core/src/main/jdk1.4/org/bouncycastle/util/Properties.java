@@ -37,6 +37,8 @@ public class Properties
     public static final String DRBG_ENTROPY_THREAD = "org.bouncycastle.drbg.entropy_thread";
     public static final String DRBG_GATHER_PAUSE_SECS = "org.bouncycastle.drbg.gather_pause_secs";
     public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
+    public static final String ASN1_MAX_CONS_DEPTH = "org.bouncycastle.asn1.max_cons_depth";
+    public static final String ASN1_MAX_LIMIT = "org.bouncycastle.asn1.max_limit";
     public static final String DH_MAX_SIZE = "org.bouncycastle.dh.max_size";
     public static final String DSA_MAX_SIZE = "org.bouncycastle.dsa.max_size";
     public static final String BCFKS_MAX_IT_COUNT = "org.bouncycastle.bcfks.max_it_count";
