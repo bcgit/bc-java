@@ -69,7 +69,8 @@ public class RegressionTest
         new IANAObjectIdentifierTest(),
         new StreamLimitTest(),
         new ASN1GeneratorTest(),
-        new LongDefiniteLengthParserTest()
+        new LongDefiniteLengthParserTest(),
+        new DefiniteLengthAllocationTest()
     };
 
     public static void main(String[] args)
