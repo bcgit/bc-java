@@ -185,23 +185,31 @@ public final class Streams
             throw new IllegalArgumentException("len cannot be negative");
         }
 
-        int chunkSize = Math.min(len, BUFFER_SIZE);
-        ByteArrayOutputStream buf = new ByteArrayOutputStream(chunkSize);
-        byte[] chunk = new byte[chunkSize];
-
-        int remaining = len;
-        while (remaining > 0)
+        // Start with a bounded buffer and grow it towards len (doubling) as bytes actually arrive,
+        // reading straight into the result rather than allocating new byte[len] up front. A hostile
+        // len therefore cannot drive a large allocation from a short input, and a small len still
+        // allocates its exact size once.
+        byte[] bytes = new byte[Math.min(len, BUFFER_SIZE)];
+        int count = 0;
+        while (count < len)
         {
-            int numRead = inStr.read(chunk, 0, Math.min(remaining, chunk.length));
+            if (count == bytes.length)
+            {
+                int expandedLength = (int)Math.min((long)len, 8L * bytes.length);
+                byte[] expanded = new byte[expandedLength];
+                System.arraycopy(bytes, 0, expanded, 0, count);
+                bytes = expanded;
+            }
+
+            int numRead = inStr.read(bytes, count, bytes.length - count);
             if (numRead < 0)
             {
                 throw new EOFException("premature end of stream");
             }
-            buf.write(chunk, 0, numRead);
-            remaining -= numRead;
+            count += numRead;
         }
 
-        return buf.toByteArray();
+        return bytes;
     }
 
     public static void validateBufferArguments(byte[] buf, int off, int len)
