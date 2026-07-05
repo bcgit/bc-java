@@ -74,6 +74,11 @@ public class BCXMSSPublicKey
         return keyParams;
     }
 
+    ASN1ObjectIdentifier getTreeDigestOID()
+    {
+        return treeDigest;
+    }
+
     public boolean equals(Object o)
     {
         if (o == this)

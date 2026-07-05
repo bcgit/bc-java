@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -476,6 +477,94 @@ public class XMSSMTTest
         }
     }
 
+    public void testSignerKeyDigestFamilyEnforcement()
+        throws Exception
+    {
+        KeyPairGenerator shaKpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+        shaKpg.initialize(new XMSSMTParameterSpec(4, 2, XMSSMTParameterSpec.SHA256), new SecureRandom());
+        KeyPair shaKp = shaKpg.generateKeyPair();
+
+        KeyPairGenerator shakeKpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+        shakeKpg.initialize(new XMSSMTParameterSpec(4, 2, XMSSMTParameterSpec.SHAKE256), new SecureRandom());
+        KeyPair shakeKp = shakeKpg.generateKeyPair();
+
+        // a SHA256 key handed to a SHAKE256-named signer is rejected on both init paths
+        Signature shakeSig = Signature.getInstance("XMSSMT-SHAKE256", "BCPQC");
+        try
+        {
+            shakeSig.initSign(shaKp.getPrivate());
+            fail("no exception on mismatched private key");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+        try
+        {
+            shakeSig.initVerify(shaKp.getPublic());
+            fail("no exception on mismatched public key");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+
+        // ...and the reverse (SHAKE256 key on a SHA256-named signer)
+        Signature shaSig = Signature.getInstance("XMSSMT-SHA256", "BCPQC");
+        try
+        {
+            shaSig.initSign(shakeKp.getPrivate());
+            fail("no exception on mismatched private key");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+
+        // a matching key is accepted and round-trips
+        shakeSig.initSign(shakeKp.getPrivate());
+        shakeSig.update(msg, 0, msg.length);
+        byte[] s = shakeSig.sign();
+        shakeSig.initVerify(shakeKp.getPublic());
+        shakeSig.update(msg, 0, msg.length);
+        assertTrue(shakeSig.verify(s));
+
+        // the generic "XMSSMT" signer is lenient - it accepts any key
+        Signature genericSig = Signature.getInstance("XMSSMT", "BCPQC");
+        genericSig.initSign(shaKp.getPrivate());
+        genericSig.update(msg, 0, msg.length);
+        byte[] gs = genericSig.sign();
+        genericSig.initVerify(shaKp.getPublic());
+        genericSig.update(msg, 0, msg.length);
+        assertTrue(genericSig.verify(gs));
+
+        // SP 800-208 SHAKE256/256 keys (tree digest id-shake256-len) are within the SHAKE256 family
+        KeyPairGenerator sp800Kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+        sp800Kpg.initialize(new XMSSMTParameterSpec(4, 2, XMSSMTParameterSpec.SHAKE256_256), new SecureRandom());
+        KeyPair sp800Kp = sp800Kpg.generateKeyPair();
+
+        Signature sp800Sig = Signature.getInstance("XMSSMT-SHAKE256", "BCPQC");
+        sp800Sig.initSign(sp800Kp.getPrivate());
+        sp800Sig.update(msg, 0, msg.length);
+        byte[] sp = sp800Sig.sign();
+        sp800Sig.initVerify(sp800Kp.getPublic());
+        sp800Sig.update(msg, 0, msg.length);
+        assertTrue(sp800Sig.verify(sp));
+
+        // and SHA-256/192 keys are within the SHA256 family
+        KeyPairGenerator sha192Kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+        sha192Kpg.initialize(new XMSSMTParameterSpec(4, 2, XMSSMTParameterSpec.SHA256_192), new SecureRandom());
+        KeyPair sha192Kp = sha192Kpg.generateKeyPair();
+
+        Signature sha192Sig = Signature.getInstance("XMSSMT-SHA256", "BCPQC");
+        sha192Sig.initSign(sha192Kp.getPrivate());
+        sha192Sig.update(msg, 0, msg.length);
+        byte[] sh = sha192Sig.sign();
+        sha192Sig.initVerify(sha192Kp.getPublic());
+        sha192Sig.update(msg, 0, msg.length);
+        assertTrue(sha192Sig.verify(sh));
+    }
+
     public void testKeyRebuild()
         throws Exception
     {
@@ -604,7 +693,7 @@ public class XMSSMTTest
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE128_512ph, BCObjectIdentifiers.xmss_mt_SHAKE128, "SHAKE128", new DoubleDigest(new SHAKEDigest(128)));
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHA512ph, BCObjectIdentifiers.xmss_mt_SHA512, "SHA512", new SHA512Digest());
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE256ph, BCObjectIdentifiers.xmss_mt_SHAKE256, "SHAKE256", new SHAKEDigest(256));
-        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE256_1024ph, BCObjectIdentifiers.xmss_mt_SHAKE256, "SHAKE128", new DoubleDigest(new SHAKEDigest(256)));
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE256_1024ph, BCObjectIdentifiers.xmss_mt_SHAKE256, "SHAKE256", new DoubleDigest(new SHAKEDigest(256)));
     }
 
     public void testExhaustion()

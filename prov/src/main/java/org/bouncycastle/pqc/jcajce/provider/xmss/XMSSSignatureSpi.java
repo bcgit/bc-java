@@ -9,6 +9,7 @@ import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
@@ -33,13 +34,20 @@ public class XMSSSignatureSpi
     private XMSSSigner signer;
     private SecureRandom random;
     private ASN1ObjectIdentifier treeDigest;
+    private ASN1ObjectIdentifier[] treeDigests;
 
     protected XMSSSignatureSpi(String sigName, Digest digest, XMSSSigner signer)
+    {
+        this(sigName, digest, signer, null);
+    }
+
+    protected XMSSSignatureSpi(String sigName, Digest digest, XMSSSigner signer, ASN1ObjectIdentifier[] treeDigests)
     {
         super(sigName);
 
         this.digest = digest;
         this.signer = signer;
+        this.treeDigests = treeDigests;
     }
 
     protected void engineInitVerify(PublicKey publicKey)
@@ -47,6 +55,8 @@ public class XMSSSignatureSpi
     {
         if (publicKey instanceof BCXMSSPublicKey)
         {
+            checkTreeDigest(((BCXMSSPublicKey)publicKey).getTreeDigestOID());
+
             CipherParameters param = ((BCXMSSPublicKey)publicKey).getKeyParams();
 
             treeDigest = null;
@@ -57,6 +67,30 @@ public class XMSSSignatureSpi
         {
             throw new InvalidKeyException("unknown public key passed to XMSS");
         }
+    }
+
+    // Only the tree-digest-named signers (XMSS-SHA256, XMSS-SHAKE256, ...) constrain the key: they
+    // supply a treeDigests allowlist and reject a key whose tree digest is outside it. SHAKE256-LEN
+    // (the SP 800-208 SHAKE256/256 and SHAKE256/192 sets) is part of the SHAKE256 family and
+    // SHA-256/192 shares id-sha256 with SHA-256/256, so both are accepted by their respective named
+    // signers. The generic "XMSS" signer and the "...withXMSS-..." prehash signers pass null (any
+    // key accepted) - for the prehash variants the leading digest names the message pre-hash, which
+    // is independent of the key's tree digest.
+    private void checkTreeDigest(ASN1ObjectIdentifier keyTreeDigest)
+        throws InvalidKeyException
+    {
+        if (treeDigests == null)
+        {
+            return;
+        }
+        for (int i = 0; i != treeDigests.length; i++)
+        {
+            if (treeDigests[i].equals(keyTreeDigest))
+            {
+                return;
+            }
+        }
+        throw new InvalidKeyException("key with tree digest " + keyTreeDigest + " not valid for " + getAlgorithm());
     }
 
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
@@ -71,6 +105,8 @@ public class XMSSSignatureSpi
     {
         if (privateKey instanceof BCXMSSPrivateKey)
         {
+            checkTreeDigest(((BCXMSSPrivateKey)privateKey).getTreeDigestOID());
+
             CipherParameters param = ((BCXMSSPrivateKey)privateKey).getKeyParams();
 
             treeDigest = ((BCXMSSPrivateKey)privateKey).getTreeDigestOID();
@@ -182,7 +218,7 @@ public class XMSSSignatureSpi
     {
         public withSha256()
         {
-            super("XMSS-SHA256", new NullDigest(), new XMSSSigner());
+            super("XMSS-SHA256", new NullDigest(), new XMSSSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_sha256 });
         }
     }
 
@@ -191,7 +227,7 @@ public class XMSSSignatureSpi
     {
         public withShake128()
         {
-            super("XMSS-SHAKE128", new NullDigest(), new XMSSSigner());
+            super("XMSS-SHAKE128", new NullDigest(), new XMSSSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_shake128 });
         }
     }
 
@@ -200,7 +236,7 @@ public class XMSSSignatureSpi
     {
         public withSha512()
         {
-            super("XMSS-SHA512", new NullDigest(), new XMSSSigner());
+            super("XMSS-SHA512", new NullDigest(), new XMSSSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_sha512 });
         }
     }
 
@@ -209,7 +245,7 @@ public class XMSSSignatureSpi
     {
         public withShake256()
         {
-            super("XMSS-SHAKE256", new NullDigest(), new XMSSSigner());
+            super("XMSS-SHAKE256", new NullDigest(), new XMSSSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_shake256, NISTObjectIdentifiers.id_shake256_len });
         }
     }
 
