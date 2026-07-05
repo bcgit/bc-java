@@ -95,6 +95,11 @@ public class BCXMSSMTPublicKey
         return keyParams;
     }
 
+    ASN1ObjectIdentifier getTreeDigestOID()
+    {
+        return treeDigest;
+    }
+
     public int getHeight()
     {
         return keyParams.getParameters().getHeight();
