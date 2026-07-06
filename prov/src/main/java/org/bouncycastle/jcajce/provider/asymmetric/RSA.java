@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyFactorySpi;
@@ -136,8 +135,8 @@ public class RSA
             addPSSSignature(provider, "SHA3-256", "MGF1", PREFIX + "PSSSignatureSpi$SHA3_256withRSA");
             addPSSSignature(provider, "SHA3-384", "MGF1", PREFIX + "PSSSignatureSpi$SHA3_384withRSA");
             addPSSSignature(provider, "SHA3-512", "MGF1", PREFIX + "PSSSignatureSpi$SHA3_512withRSA");
-            addPSSSignature(provider, "SHAKE128", PREFIX + "PSSSignatureSpi$SHAKE128WithRSAPSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128);
-            addPSSSignature(provider, "SHAKE256", PREFIX + "PSSSignatureSpi$SHAKE256WithRSAPSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256);
+            addPSSSignature(provider, "SHAKE128", PREFIX + "PSSSignatureSpi$SHAKE128WithRSAPSS", X509ObjectIdentifiers.id_rsassa_pss_shake128);
+            addPSSSignature(provider, "SHAKE256", PREFIX + "PSSSignatureSpi$SHAKE256WithRSAPSS", X509ObjectIdentifiers.id_rsassa_pss_shake256);
 
             addPSSSignature(provider, "SHA224", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA224withRSAandSHAKE128");
             addPSSSignature(provider, "SHA256", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA256withRSAandSHAKE128");
