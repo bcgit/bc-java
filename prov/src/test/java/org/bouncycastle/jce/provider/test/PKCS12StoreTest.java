@@ -60,7 +60,6 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -1626,40 +1625,6 @@ public class PKCS12StoreTest
         certs[0].verify(certs[0].getPublicKey());
     }
 
-    private void testSphincsPlusStore()
-        throws Exception
-    {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCS+", "BC");
-
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust);
-
-        KeyPair kp = kpg.generateKeyPair();
-
-        Certificate cert = TestUtils.createSelfSignedCert("CN=SphincsPlus Test", "SPHINCS+", kp);
-
-        KeyStore pkcs12 = KeyStore.getInstance("PKCS12", BC);
-
-        pkcs12.load(null, null);
-
-        pkcs12.setKeyEntry("test", kp.getPrivate(), new char[0], new Certificate[]{cert});
-
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        pkcs12.store(bOut, "hello".toCharArray());
-
-        pkcs12 = KeyStore.getInstance("PKCS12", BC);
-
-        pkcs12.load(new ByteArrayInputStream(bOut.toByteArray()), "hello".toCharArray());
-
-        Key key = pkcs12.getKey("test", new char[0]);
-
-        isEquals(key, kp.getPrivate());
-
-        Certificate[] certs = pkcs12.getCertificateChain("test");
-
-        certs[0].verify(certs[0].getPublicKey());
-    }
-
     public void testPKCS12StoreFriendlyName()
         throws Exception
     {
@@ -2840,7 +2805,6 @@ public class PKCS12StoreTest
         testDilithiumStore();
         testFalconStore();
         testNTRUStore();
-        testSphincsPlusStore();
         testRawKeyBagStore();
         testRawKeyBagNoAttributes();
         testAES256_AES128();

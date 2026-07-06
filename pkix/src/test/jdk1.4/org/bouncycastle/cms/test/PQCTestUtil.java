@@ -27,7 +27,6 @@ import org.bouncycastle.pqc.jcajce.interfaces.PicnicKey;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 
 public class PQCTestUtil
 {
@@ -37,16 +36,6 @@ public class PQCTestUtil
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SPHINCS256", "BCPQC");
 
         kpGen.initialize(new SPHINCS256KeyGenParameterSpec(), new SecureRandom());
-
-        return kpGen.generateKeyPair();
-    }
-
-    public static KeyPair makeSphincsPlusKeyPair()
-        throws Exception
-    {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
-
-        kpGen.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust, new SecureRandom());
 
         return kpGen.generateKeyPair();
     }
