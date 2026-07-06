@@ -41,6 +41,7 @@ public class ParameterSpecRoundTripTest
      */
     private static final String[] SPEC_CLASSES =
         {
+            "org.bouncycastle.pqc.jcajce.spec.AIMerParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.BIKEParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec",
