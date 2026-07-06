@@ -91,6 +91,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.io;
     exports org.bouncycastle.jcajce.provider.asymmetric;
     exports org.bouncycastle.jcajce.provider.asymmetric.cmce;
+    exports org.bouncycastle.jcajce.provider.asymmetric.compositekem;
     exports org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
     exports org.bouncycastle.jcajce.provider.asymmetric.dh;
     exports org.bouncycastle.jcajce.provider.asymmetric.dsa;
