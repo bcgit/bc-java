@@ -103,7 +103,7 @@ public class BCPGOutputStreamTest
         // The signing subkey + sigs use old format
         // The encryption subkey + sigs use new format again
         String encodedCert = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
-                "Version: BCPG v1.85-SNAPSHOT\n" +
+                "Version: BCPG v1.85\n" +
                 "\n" +
                 "xcTGBGYvuZUBDACyFv3LQiubgHM4eJUFnsLEei8/l4bGKdVx8hRu6N5rfcjZt3RM\n" +
                 "UGUi+HQDnRbUvJ5B/7qDB7Ia7bpRf7BrYmho5vqNtjpxUPs3Mct1TjqCm2yLC9zH\n" +
