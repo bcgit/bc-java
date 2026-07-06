@@ -4,7 +4,10 @@ import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.util.test.SimpleTest;
@@ -141,6 +144,22 @@ public class AttributeTableUnitTest
         if (vec.size() != 4)
         {
             fail("wrong vector size for multiple.");
+        }
+
+        // Attribute.getInstance must reject a structurally-valid SEQUENCE whose type element is not an
+        // OBJECT IDENTIFIER (here a tagged object) with IllegalArgumentException, rather than leak a
+        // ClassCastException from the (ASN1ObjectIdentifier) cast out of the getInstance contract.
+        ASN1EncodableVector badAttr = new ASN1EncodableVector();
+        badAttr.add(new DERTaggedObject(0, new DEROctetString(new byte[]{ 1, 2, 3 })));
+        badAttr.add(new DERSet());
+        try
+        {
+            Attribute.getInstance(new DERSequence(badAttr));
+            fail("Attribute.getInstance accepted a non-OID type element");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected - documented malformed reject
         }
     }
 
