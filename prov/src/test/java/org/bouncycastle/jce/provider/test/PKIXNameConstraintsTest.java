@@ -345,7 +345,7 @@ public class PKIXNameConstraintsTest
         }
         finally
         {
-            System.clearProperty(Properties.X509_ALLOW_LENIENT_RFC822_NAME);
+            System.getProperties().remove(Properties.X509_ALLOW_LENIENT_RFC822_NAME);
         }
     }
 

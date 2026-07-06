@@ -392,7 +392,6 @@
                  <exclude name="org/bouncycastle/asn1/ess/**" />
                  <exclude name="org/bouncycastle/asn1/est/**" />
                  <exclude name="org/bouncycastle/asn1/gnu/**" />
-                 <exclude name="org/bouncycastle/asn1/iana/**" />
                  <exclude name="org/bouncycastle/asn1/icao/**" />
                  <exclude name="org/bouncycastle/asn1/isara/**" />
                  <exclude name="org/bouncycastle/asn1/isismtt/**" />
