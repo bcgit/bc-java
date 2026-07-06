@@ -44,8 +44,6 @@ public class AllTests
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSMTTest.class);
         suite.addTestSuite(LMSTest.class);
-        suite.addTestSuite(SphincsPlusTest.class);
-        suite.addTestSuite(SphincsPlusKeyPairGeneratorTest.class);
         suite.addTestSuite(SLHDSAKeyPairGeneratorTest.class);
         suite.addTestSuite(SLHDSATest.class);
         suite.addTestSuite(PicnicTest.class);
@@ -65,13 +63,8 @@ public class AllTests
         suite.addTestSuite(NTRULPRimeKeyPairGeneratorTest.class);
         suite.addTestSuite(SNTRUPrimeTest.class);
         suite.addTestSuite(SNTRUPrimeKeyPairGeneratorTest.class);
-        suite.addTestSuite(KyberTest.class);
-        suite.addTestSuite(KyberKeyPairGeneratorTest.class);
         suite.addTestSuite(MLKEMTest.class);
         suite.addTestSuite(MLKEMKeyPairGeneratorTest.class);
-        suite.addTestSuite(DilithiumKeyPairGeneratorTest.class);
-        suite.addTestSuite(DilithiumTest.class);
-        suite.addTestSuite(DilithiumFactoryConsistencyTest.class);
         suite.addTestSuite(MLDSAKeyPairGeneratorTest.class);
         suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(BIKEKeyPairGeneratorTest.class);

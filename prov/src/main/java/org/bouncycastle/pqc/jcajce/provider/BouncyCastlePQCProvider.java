@@ -37,9 +37,9 @@ public class BouncyCastlePQCProvider
     private static final String ALGORITHM_PACKAGE = "org.bouncycastle.pqc.jcajce.provider.";
     private static final String[] ALGORITHMS =
         {
-            "SPHINCS", "LMS", "NH", "XMSS", "SPHINCSPlus",
-            "CMCE", "Frodo", "SABER", "Picnic", "NTRU", "Falcon", "Kyber",
-            "Dilithium", "NTRUPrime", "BIKE", "HQC", "Rainbow",
+            "SPHINCS", "LMS", "NH", "XMSS",
+            "CMCE", "Frodo", "SABER", "Picnic", "NTRU", "Falcon",
+            "NTRUPrime", "BIKE", "HQC", "Rainbow",
             "Mayo", "Snova",
             "NTRUPlus", "AIMer", "Faest", "QRUOV", "Haetae", "UOV", "MQOM", "SQIsign", "Hawk", "SDitH"
         };
