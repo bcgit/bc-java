@@ -4,10 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
@@ -15,6 +19,9 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.interfaces.MQOMKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.MQOMParameterSpec;
@@ -146,6 +153,52 @@ public class MQOMTest
         signer.initVerify(kp.getPublic());
         signer.update("different message".getBytes("UTF-8"));
         assertFalse(signer.verify(sig));
+    }
+
+    /**
+     * Verify that the BC provider's key-info-converter mechanism (populated by
+     * {@code BouncyCastleProvider.loadPQCKeys()}) recognises every MQOM OID
+     * and decodes encoded key infos to MQOM keys equal to the originals.
+     */
+    public void testBcProviderKeyInfoConverter()
+        throws Exception
+    {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        Field[] fields = MQOMParameterSpec.class.getDeclaredFields();
+        int checked = 0;
+
+        for (int i = 0; i != fields.length; i++)
+        {
+            Field f = fields[i];
+            if (Modifier.isStatic(f.getModifiers()) && Modifier.isPublic(f.getModifiers())
+                && f.getType() == MQOMParameterSpec.class)
+            {
+                MQOMParameterSpec spec = (MQOMParameterSpec)f.get(null);
+
+                KeyPair kp = newKeyPair(spec);
+
+                PublicKey decPub = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()));
+                PrivateKey decPriv = BouncyCastleProvider.getPrivateKey(PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded()));
+
+                assertNotNull(spec.getName() + ": BC provider returned null for SubjectPublicKeyInfo", decPub);
+                assertNotNull(spec.getName() + ": BC provider returned null for PrivateKeyInfo", decPriv);
+
+                assertTrue(spec.getName() + ": decoded public key is not an MQOMKey", decPub instanceof MQOMKey);
+                assertTrue(spec.getName() + ": decoded private key is not an MQOMKey", decPriv instanceof MQOMKey);
+
+                assertEquals(spec.getName() + ": public key equality", kp.getPublic(), decPub);
+                assertEquals(spec.getName() + ": private key equality", kp.getPrivate(), decPriv);
+
+                checked++;
+            }
+        }
+
+        // sanity: the reflection actually swept the full parameter-set family.
+        assertEquals("expected every MQOM parameter set to be covered", 36, checked);
     }
 
     private KeyPair newKeyPair(MQOMParameterSpec spec)
