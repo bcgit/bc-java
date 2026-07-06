@@ -211,11 +211,11 @@ used with the above modes.
 <tr><td><b>AESEngine</b></td><td>0 .. 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>AESWrapEngine</b></td><td>0 .. 256 </td><td>128 bit</td><td>Implements FIPS AES key wrapping</td></tr>
 <tr><td><b>AsconEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
-<tr><td><b>BlowfishEngine</b></td><td>0 .. 448 </b></td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>BlowfishEngine</b></td><td>0 .. 448 </td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>CamelliaEngine</b></td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>CamelliaWrapEngine</b></td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
-<tr><td><b>CAST5Engine</b></td><td>0 .. 128 </b></td><td>64 bit</td><td>&nbsp;</td></tr>
-<tr><td><b>CAST6Engine</b></td><td>0 .. 256 </b></td><td>128 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>CAST5Engine</b></td><td>0 .. 128 </td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>CAST6Engine</b></td><td>0 .. 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>DESEngine</b></td><td>64</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>DESedeEngine</b></td><td>128, 192</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>DESedeWrapEngine</b></td><td>128, 192</td><td>64 bit</td><td>Implements Draft IETF DESede key wrapping</td></tr>
@@ -415,6 +415,7 @@ The following password hashing schemes are supported:
 The IES cipher is based on the one described in IEEE P1363a (draft 10), for
 use with either traditional Diffie-Hellman or Elliptic Curve Diffie-Hellman.
 </p>
+<p>
 <b>Note:</b> At the moment this is still a draft, don't use it for anything
 that may be subject to long term storage, the key values produced may well
 change as the draft is finalised.
@@ -475,7 +476,6 @@ The second, post-quantum set use <b>EncapsulatedSecretGenerator</b> and <b>Encap
 </tbody>
 </table>
 
-</p>
 
 <h4>Signers</h4>
 <p>
@@ -707,13 +707,13 @@ Note: default key sizes are in bold.
 <tr><td>HC256</td><td>(256)</td><td>&nbsp;</td></tr>
 <tr><td>ChaCha</td><td><b>128</b>/256</td><td>64 bit IV</td></tr>
 <tr><td>Salsa20</td><td><b>128</b>/256</td><td>64 bit IV</td></tr>
-<tr><td>XSalsa20</td><td>256</td><td>182 bit IV</td></tr>
+<tr><td>XSalsa20</td><td>256</td><td>192 bit IV</td></tr>
 <tr><td>VMPC</td><td>128/6144<b>(128)</b></td><td>&nbsp;</td></tr>
-<tr><td>Grainv1</b></td><td>80</td><td>64 bit IV</td></tr>
-<tr><td>Grain128</b></td><td>128</td><td>96 bit IV</td></tr>
-<tr><td>Grain128AEAD</b></td><td>128</td><td>96 bit IV</td></tr>
-<tr><td>Zuc128</b></td><td>128</td><td>128 bit IV</td></tr>
-<tr><td>Zuc256</b></td><td>256</td><td>200 bit IV</td></tr>
+<tr><td>Grainv1</td><td>80</td><td>64 bit IV</td></tr>
+<tr><td>Grain128</td><td>128</td><td>96 bit IV</td></tr>
+<tr><td>Grain128AEAD</td><td>128</td><td>96 bit IV</td></tr>
+<tr><td>Zuc128</td><td>128</td><td>128 bit IV</td></tr>
+<tr><td>Zuc256</td><td>256</td><td>200 bit IV</td></tr>
 </table>
 
 <h4>Block Asymmetric</h4>
