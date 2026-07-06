@@ -149,7 +149,7 @@ public class PqcMalformedInputTest
     // #14: a malformed-length public-key encoding must be rejected at construction.
     public void testMalformedPublicKeyRejected()
     {
-        byte[] tooShort = new byte[1];
+        final byte[] tooShort = new byte[1];
 
         // Signature schemes.
         expectInvalidLength("ML-DSA (crypto.params)", new Runnable()
