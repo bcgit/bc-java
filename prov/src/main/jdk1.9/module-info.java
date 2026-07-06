@@ -87,7 +87,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.util;
     exports org.bouncycastle.i18n;
     exports org.bouncycastle.i18n.filter;
-    exports org.bouncycastle.iana;
     exports org.bouncycastle.jcajce;
     exports org.bouncycastle.jcajce.io;
     exports org.bouncycastle.jcajce.provider.asymmetric;
