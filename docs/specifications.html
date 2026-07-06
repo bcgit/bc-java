@@ -210,7 +210,10 @@ used with the above modes.
 <tr><th>Name</th><th>KeySizes (in bits) </th><th>Block Size</th><th>Notes</th></tr>
 <tr><td><b>AESEngine</b></td><td>0 .. 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>AESWrapEngine</b></td><td>0 .. 256 </td><td>128 bit</td><td>Implements FIPS AES key wrapping</td></tr>
+<tr><td><b>AESWrapPadEngine</b></td><td>0 .. 256 </td><td>128 bit</td><td>Implements RFC 5649 key wrapping with padding</td></tr>
 <tr><td><b>AsconEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
+<tr><td><b>ARIAEngine</b></td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>ARIAWrapEngine</b></td><td>128, 192, 256</td><td>128 bit</td><td>RFC 3394 style key wrapping</td></tr>
 <tr><td><b>BlowfishEngine</b></td><td>0 .. 448 </td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>CamelliaEngine</b></td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>CamelliaWrapEngine</b></td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
@@ -222,6 +225,7 @@ used with the above modes.
 <tr><td><b>DSTU7624Engine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 Block Cipher</td></tr>
 <tr><td><b>DSTU7624WrapEngine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 key wrapper</td></tr>
 <tr><td><b>ElephantEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
+<tr><td><b>GiftCofbEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
 <tr><td><b>GOST28147Engine</b></td><td>256</td><td>64 bit</td><td>Has a range of S-boxes</td></tr>
 <tr><td><b>GOST3412_2015Engine</b></td><td>256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>IDEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
@@ -234,6 +238,7 @@ used with the above modes.
 <tr><td><b>RC564Engine</b></td><td>0 .. 128 </td><td>128 bit</td><td>Uses a 64 bit word</td></tr>
 <tr><td><b>RC6Engine</b></td><td>0 .. 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>RijndaelEngine</b></td><td>0 .. 256 </td><td>128 bit, 160 bit, 192 bit, 224 bit, 256 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>RomulusEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
 <tr><td><b>SEEDEngine</b></td><td>128</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>SEEDWrapEngine</b></td><td>128</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>Shacal2Engine</b></td><td>512</td><td>256 bit</td><td>&nbsp;</td></tr>
@@ -272,10 +277,13 @@ used with the above modes.
 <tr><td><b>HC128Engine</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>HC256Engine</b></td><td>256</td><td>&nbsp;</td></tr>
 <tr><td><b>ChaChaEngine</b></td><td>128/256</td><td>64 bit IV</td></tr>
+<tr><td><b>ChaCha7539Engine</b></td><td>256</td><td>96 bit IV, the RFC 7539/8439 form of ChaCha20</td></tr>
 <tr><td><b>Salsa20Engine</b></td><td>128/256</td><td>64 bit IV</td></tr>
 <tr><td><b>XSalsa20Engine</b></td><td>256</td><td>192 bit IV</td></tr>
+<tr><td><b>XChaCha20Engine</b></td><td>256</td><td>192 bit IV</td></tr>
 <tr><td><b>ISAACEngine</b></td><td>32 .. 8192</td><td>&nbsp;</td></tr>
 <tr><td><b>VMPCEngine</b></td><td>8 .. 6144</td><td>&nbsp;</td></tr>
+<tr><td><b>VMPCKSA3Engine</b></td><td>8 .. 6144</td><td>&nbsp;</td></tr>
 <tr><td><b>Grainv1Engine</b></td><td>80</td><td>64 bit IV</td></tr>
 <tr><td><b>Grain128Engine</b></td><td>128</td><td>96 bit IV</td></tr>
 <tr><td><b>Zuc128Engine</b></td><td>128</td><td>128 bit IV</td></tr>
@@ -324,6 +332,10 @@ implementations
 <tr><td><b>AsconDigest</b></td><td>256</td><td></td></tr>
 <tr><td><b>AsconXof</b></td><td>XOF</td><td></td></tr>
 <tr><td><b>Blake2bDigest</b></td><td>224, 256, 384, 512</td><td></td></tr>
+<tr><td><b>Blake2bpDigest</b></td><td>512</td><td></td></tr>
+<tr><td><b>Blake2sDigest</b></td><td>128, 160, 224, 256</td><td></td></tr>
+<tr><td><b>Blake2spDigest</b></td><td>256</td><td></td></tr>
+<tr><td><b>Blake2xsDigest</b></td><td>XOF</td><td></td></tr>
 <tr><td><b>Blake3Digest</b></td><td>224, 256, 384, 512</td><td></td></tr>
 <tr><td><b>CSHAKEDigest</b></td><td>XOF</td><td>SP 800-185, based on SHAKE128/SHAKE256</td></tr>
 <tr><td><b>DSTU7564Digest</b></td><td>256, 384, 512</td><td></td></tr>
@@ -339,11 +351,13 @@ implementations
 <tr><td><b>RipeMD160Digest</b></td><td>160</td><td>enhanced version of RipeMD</td></tr>
 <tr><td><b>RipeMD256Digest</b></td><td>256</td><td>expanded version of RipeMD128</td></tr>
 <tr><td><b>RipeMD320Digest</b></td><td>320</td><td>expanded version of RipeMD160</td></tr>
+<tr><td><b>RomulusDigest</b></td><td>256</td><td></td></tr>
 <tr><td><b>SHA1Digest</b></td><td>160</td><td>&nbsp;</td></tr>
 <tr><td><b>SHA224Digest</b></td><td>224</td><td>FIPS 180-2</td></tr>
 <tr><td><b>SHA256Digest</b></td><td>256</td><td>FIPS 180-2</td></tr>
 <tr><td><b>SHA384Digest</b></td><td>384</td><td>FIPS 180-2</td></tr>
 <tr><td><b>SHA512Digest</b></td><td>512</td><td>FIPS 180-2</td></tr>
+<tr><td><b>SHA512tDigest</b></td><td>SHA-512/t, any multiple of 8 up to 376</td><td>FIPS 180-4</td></tr>
 <tr><td><b>SHA3Digest</b></td><td>224, 256, 384, 512</td><td></td></tr>
 <tr><td><b>SHAKEDigest</b></td><td>128, 256</td><td>cSHAKE primitive also supported.</td></tr>
 <tr><td><b>SkeinDigest</b></td><td>any byte length</td><td>256 bit, 512 bit and 1024 state sizes. Additional parameterisation using SkeinParameters.</td></tr>
@@ -368,12 +382,15 @@ implementations
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
+<tr><td><b>Blake3Mac</b></td><td>256 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>CBCBlockCipherMac</b></td><td>blocksize/2 unless specified</td><td>&nbsp;</td></tr>
 <tr><td><b>CFBBlockCipherMac</b></td><td>blocksize/2, in CFB 8 mode, unless specified</td><td>&nbsp;</td></tr>
 <tr><td><b>CMac</b></td><td>24 to cipher block size bits</td><td>Usable with block ciphers, NIST SP 800-38B.</td></tr>
 <tr><td><b>GMac</b></td><td>32 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D.</td></tr>
+<tr><td><b>KGMac</b></td><td>32 to 128 bits</td><td>GMac variant for use with KGCM mode ciphers (DSTU 7624)</td></tr>
 <tr><td><b>GOST28147Mac</b></td><td>32 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>ISO9797Alg3Mac</b></td><td>multiple of 8 bits up to underlying cipher size.</td><td>&nbsp;</td></tr>
+<tr><td><b>KMAC</b></td><td>arbitrary</td><td>NIST SP 800-185, based on SHAKE128/SHAKE256</td></tr>
 <tr><td><b>HMac</b></td><td>digest length</td><td>&nbsp;</td></tr>
 <tr><td><b>DSTU7564</b></td><td>256, 384, 512 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>DSTU7624</b></td><td>128, 256, 512 bits</td><td>&nbsp;</td></tr>
@@ -440,6 +457,13 @@ standard Diffie-Hellman key agreement and standard key agreement with
 co-factors.
 </p>
 <p>
+Agreement using the RFC 7748 Montgomery curve functions is provided by <b>X25519Agreement</b>
+and <b>X448Agreement</b>, MQV and unified-model variants are available for both Diffie-Hellman
+and EC, and SM2 key exchange is supported by <b>SM2KeyExchange</b>. Password-authenticated key
+establishment is provided by the J-PAKE, EC-J-PAKE, SRP-6a, and Owl protocols in subpackages
+of <b>org.bouncycastle.crypto.agreement</b>.
+</p>
+<p>
 The agreement APIs are in the <b>org.bouncycastle.crypto.agreement</b> package.
 Classes for generating Diffie-Hellman parameters can be found in the
 <b>org.bouncycastle.crypto.params</b> and <b>org.bouncycastle.crypto.generators</b> packages.
@@ -447,7 +471,7 @@ Classes for generating Diffie-Hellman parameters can be found in the
 
 <h4>Key Encapsulation Mechanisms</h4>
 <p>
-The first non-post-quantum set use the <b>EncapsulatedSecretGenerator</b> and <b>EncapsulatedSecretGenerator</b> interfaces.
+The first non-post-quantum set use the <b>EncapsulatedSecretGenerator</b> and <b>EncapsulatedSecretExtractor</b> interfaces.
 </p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <thead>
@@ -456,10 +480,11 @@ The first non-post-quantum set use the <b>EncapsulatedSecretGenerator</b> and <b
 <tbody>
 <tr><td><b>RSA</b></td><td>RSA-KEM from ISO 18033-2, implemented in <b>RSAKEMExtractor</b> and <b>RSAKEMGenerator</b></td></tr>
 <tr><td><b>ECIES</b></td><td>ECIES-KEM from ISO 18033-2, implemented in <b>ECIESKEMExtractor</b> and <b>ECIESKEMGenerator</b></td></tr>
+<tr><td><b>SAKKE</b></td><td>Sakai-Kasahara KEM from RFC 6508, implemented in <b>SAKKEKEMSGenerator</b> and <b>SAKKEKEMExtractor</b></td></tr>
 </tbody>
 </table>
 <p>
-The second, post-quantum set use <b>EncapsulatedSecretGenerator</b> and <b>EncapsulatedSecretGenerator</b>.
+The second, post-quantum set also use <b>EncapsulatedSecretGenerator</b> and <b>EncapsulatedSecretExtractor</b>.
 </p>
 
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
@@ -471,20 +496,31 @@ The second, post-quantum set use <b>EncapsulatedSecretGenerator</b> and <b>Encap
 <tr><td><b>HQC</b></td><td>128-256.</td><td><b>HQCKEMGenerator</b>, <b>HQCKEMExtractor</b></td><td>Round&nbsp;4</td></tr>
 <tr><td><b>ML-KEM</b></td><td>128-256.</td><td><b>MLKEMGenerator</b>, <b>MLKEMExtractor</b></td><td>Finalist</td></tr>
 <tr><td><b>NTRU</b></td><td>128-256.</td><td><b>NTRUKEMGenerator</b>, <b>NTRUKEMExtractor</b></td><td></td></tr>
+<tr><td><b>NTRU+</b></td><td>128-256.</td><td><b>NTRUPlusKEMGenerator</b>, <b>NTRUPlusKEMExtractor</b></td><td>KpqC competition</td></tr>
 <tr><td><b>NTRU Prime</b></td><td>128-256.</td><td><b>NTRULPRimeKEMGenerator</b>, <b>NTRULPRimeKEMExtractor</b> <br /> <b>SNTRUPrimeKEMGenerator</b>, <b>SNTRUPrimeKEMExtractor</b></td><td></td></tr>
 <tr><td><b>SABER</b></td><td>128-256.</td><td><b>SABERKEMGenerator</b>, <b>SABERKEMExtractor</b></td><td></td></tr>
+<tr><td><b>X-Wing</b></td><td>128.</td><td><b>XWingKEMGenerator</b>, <b>XWingKEMExtractor</b></td><td>Hybrid of X25519 and ML-KEM-768 (draft-connolly-cfrg-xwing-kem)</td></tr>
 </tbody>
 </table>
+<p>
+The standardised versions of Classic McEliece, FrodoKEM, and ML-KEM are implemented under
+<b>org.bouncycastle.crypto.kems</b>; the Classic McEliece implementation there covers the
+parameter sets standardised in ISO/IEC 18033-2:2006/Amd 2 (including the pc/pcf
+plaintext-confirmation variants).
+</p>
 
 
 <h4>Signers</h4>
 <p>
-DSA, ECDSA, ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, and RSA-PSS are supported by the <b>org.bouncycastle.crypto.signers</b>
+DSA, ECDSA, Ed25519 and Ed448 (RFC 8032), BIP-340 Schnorr, SM2, ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, RSA-PSS, and BLS12-381 signatures (draft-irtf-cfrg-bls-signature, with the scheme classes in <b>org.bouncycastle.crypto.bls</b>) are supported by the <b>org.bouncycastle.crypto.signers</b>
 package. Note: as these are light weight classes, if you need to use SHA1 or GOST-3411
 (as defined in the relevant standards) you'll also need to make use of the appropriate
 digest class in conjunction with these.
 Classes for generating DSA and ECDSA parameters can be found in the
 <b>org.bouncycastle.crypto.params</b> and <b>org.bouncycastle.crypto.generators</b> packages.
+Post-quantum signature algorithms (ML-DSA, SLH-DSA, LMS/HSS, XMSS/XMSS^MT, Falcon, Mayo, Snova,
+and the NIST additional-signatures round candidates) are provided under
+<b>org.bouncycastle.pqc.crypto</b>.
 <p>
 
 <h3>5.4 Elliptic Curve Transforms.</h3>
@@ -675,7 +711,9 @@ Note: default key sizes are in bold.
 <tr><td>DSTU7624Wrap</td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 key wrapper</td></tr>
 <tr><td>GCM</td><td>128, 192, 256<b>(192)</b></td><td>AEAD Mode Cipher</td><td>Galois/Counter Mode, as defined in NIST Special Publication SP 800-38D.</td></tr>
 <tr><td>GOST28147</td><td>256</td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td>GOST3412-2015</td><td>256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>IDEA</td><td>128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td>LEA</td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>Noekeon</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>RC2</td><td>0 .. 1024 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>RC5</td><td>0 .. 128 <b>(128)</b></td><td>64 bit</td><td>Uses a 32 bit word</td></tr>
@@ -685,6 +723,7 @@ Note: default key sizes are in bold.
 <tr><td>SEED</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>SEEDWrap</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>Serpent</td><td>128, 192, 256 <b>(256)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
+<tr><td>Shacal2</td><td>128 .. 512</td><td>256 bit</td><td>&nbsp;</td></tr>
 <tr><td>Skipjack</td><td>0 .. 128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>SM4</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>TEA</td><td>128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
@@ -706,9 +745,12 @@ Note: default key sizes are in bold.
 <tr><td>HC128</td><td>(128)</td><td>&nbsp;</td></tr>
 <tr><td>HC256</td><td>(256)</td><td>&nbsp;</td></tr>
 <tr><td>ChaCha</td><td><b>128</b>/256</td><td>64 bit IV</td></tr>
+<tr><td>ChaCha7539</td><td>256</td><td>96 bit IV, the RFC 7539/8439 form of ChaCha20</td></tr>
 <tr><td>Salsa20</td><td><b>128</b>/256</td><td>64 bit IV</td></tr>
 <tr><td>XSalsa20</td><td>256</td><td>192 bit IV</td></tr>
+<tr><td>XChaCha20</td><td>256</td><td>192 bit IV</td></tr>
 <tr><td>VMPC</td><td>128/6144<b>(128)</b></td><td>&nbsp;</td></tr>
+<tr><td>VMPC-KSA3</td><td>128/6144<b>(128)</b></td><td>&nbsp;</td></tr>
 <tr><td>Grainv1</td><td>80</td><td>64 bit IV</td></tr>
 <tr><td>Grain128</td><td>128</td><td>96 bit IV</td></tr>
 <tr><td>Grain128AEAD</td><td>128</td><td>96 bit IV</td></tr>
@@ -777,9 +819,16 @@ API, there are also additional JCE support classes for UserKeyingMaterial and MQ
 <tr><th>Name</th><th>ParameterSpec Class</th><th>Notes</th></tr>
 </thead>
 <tbody>
-<tr><td><b>CMCE</b></td><td>CMCEParameterSpec</td><td>Class McEliece (NIST Alternate Candidate)</td></tr>
+<tr><td><b>CMCE</b></td><td>CMCEParameterSpec</td><td>Classic McEliece; the BC provider implements the ISO/IEC 18033-2:2006/Amd 2 parameter sets, the BCPQC provider the NIST round-3 sets</td></tr>
 <tr><td><b>Frodo</b></td><td>FrodoParameterSpec</td><td>FrodoKEM (NIST Alternate Candidate)</td></tr>
-<tr><td><b>SABER</b></td><td>SABERParameterSpec</td><td>SABER (NIST Finalist)</td></tr>
+<tr><td><b>SABER</b></td><td>SABERParameterSpec</td><td>SABER (NIST Finalist, BCPQC)</td></tr>
+<tr><td><b>ML-KEM</b></td><td>MLKEMParameterSpec</td><td>FIPS 203 Module-Lattice KEM (BC provider)</td></tr>
+<tr><td><b>BIKE</b></td><td>BIKEParameterSpec</td><td>NIST Round 4 candidate (BCPQC)</td></tr>
+<tr><td><b>HQC</b></td><td>HQCParameterSpec</td><td>NIST Round 4 candidate (BCPQC)</td></tr>
+<tr><td><b>NTRU</b></td><td>NTRUParameterSpec</td><td>(BCPQC)</td></tr>
+<tr><td><b>NTRULPRime / SNTRUPrime</b></td><td>NTRULPRimeParameterSpec / SNTRUPrimeParameterSpec</td><td>NTRU Prime (BCPQC)</td></tr>
+<tr><td><b>NTRU+</b></td><td>NTRUPlusParameterSpec</td><td>KpqC competition (BCPQC)</td></tr>
+<tr><td><b>Composite ML-KEM</b></td><td>&nbsp;</td><td>ML-KEM-768/1024 combined with RSA-OAEP, ECDH, X25519 or X448 per draft-ietf-lamps-pq-composite-kem (BC provider)</td></tr>
 </tbody>
 </table>
 <p>
@@ -1009,6 +1058,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SM3withSM2</li>
 <li>LMS</li>
 <li>ML-DSA</li>
+<li>HASH-ML-DSA (pre-hash ML-DSA, also available as SHA512withMLDSA)</li>
 <li>Falcon</li>
 <li>Picnic</li>
 <li>SLH-DSA</li>
@@ -1082,6 +1132,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>BCrypt</li>
 <li>OpenBSDBcyrpt</li>
 <li>SCrypt</li>
+<li>Argon2 (as SecretKeyFactory "ARGON2", RFC 9106, parameters supplied via Argon2KeySpec)</li>
 <li>PKCS5S1, any Digest, any symmetric Cipher, ASCII </li>
 <li>PKCS5S2, any HMac, any symmetric Cipher, ASCII, UTF8</li>
 <li>PKCS12, any Digest, any symmetric Cipher, Unicode </li>
