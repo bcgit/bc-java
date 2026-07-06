@@ -315,6 +315,13 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 <li>The ASN.1 stream-safety limits are now publicly addressable: the maximum nested-construction depth and the maximum declared object length are controlled by the org.bouncycastle.asn1.max_cons_depth and org.bouncycastle.asn1.max_limit system properties, exposed as the Properties.ASN1_MAX_CONS_DEPTH and Properties.ASN1_MAX_LIMIT constants (values and defaults unchanged).</li>
 <li>The EST client's TLS channel authorizer (org.bouncycastle.est.jcajce) has been hardened in line with RFC 9525 (which obsoletes RFC 6125): a wildcard is accepted only when the single '*' is the complete content of the left-most label and it must match exactly one non-empty label, so partial wildcards ("f*o.example"), wildcards in inner labels, and wildcards spanning label boundaries or a known public suffix are rejected (issue #1495).</li>
 </ul>
+<h3>2.1.4 Security Fixes</h3>
+<ul>
+/ul>
+<h3>2.1.5 Additional Notes</h3>
+<ul>
+<li>The standardised PQC algorithms ML-KEM, ML-DSA, SLH-DSA, FrodoKEM, and CMCE have been repackaged under org.bouncycastle.crypto and the versions under org.bouncycastle.crypto.pqc have been deprecated. These deprecated versions will be removed in BC 1.86.</li>
+/ul>
 
 <a id="r1rv84"><h3>2.2.1 Version</h3></a>
 Release: 1.84<br/>
