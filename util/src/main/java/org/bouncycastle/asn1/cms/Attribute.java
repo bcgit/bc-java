@@ -72,8 +72,8 @@ public class Attribute
             throw new IllegalArgumentException("expected sequence size of 2");
         }
 
-        attrType = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        attrValues = (ASN1Set)seq.getObjectAt(1);
+        attrType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        attrValues = ASN1Set.getInstance(seq.getObjectAt(1));
     }
 
     public Attribute(
