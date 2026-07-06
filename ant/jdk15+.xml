@@ -32,6 +32,9 @@
             <fileset dir="core/src/main/javadoc" includes="**/*.html" />
             <fileset dir="core/src/test/java" includes="**/*.java" >
                 <exclude name="**/crypto/faest/*.java"/>
+                <exclude name="**/crypto/lms/*.java"/>
+                <exclude name="**/crypto/mayo/*.java"/>
+                <exclude name="**/crypto/sdith/*.java"/>
             </fileset>
             <fileset dir="core/src/test/javadoc" includes="**/*.html" />
             <fileset dir="core/src/test/resources" includes="**/*.*" />
