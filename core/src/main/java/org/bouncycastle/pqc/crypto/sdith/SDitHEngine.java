@@ -17,7 +17,7 @@ import org.bouncycastle.util.Pack;
  * extending the parameter-table lookups and precomputed-table arrays without
  * touching the algorithm flow.
  */
-public final class SDitHEngine
+final class SDitHEngine
 {
     private final SDitHParameters params;
     private final SecureRandom random;
