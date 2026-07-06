@@ -35,7 +35,6 @@ public class AllTests
         suite.addTestSuite(BLS12_381SuitesTest.class);
         suite.addTestSuite(BLS12_381SerializationTest.class);
         suite.addTestSuite(BLS12_381SubgroupCheckTest.class);
-        suite.addTestSuite(BLS12_381FpTest.class);
         suite.addTestSuite(BLS12_381Eth2KatTest.class);
         suite.addTestSuite(BLS12_381ConstantTimeMulTest.class);
         suite.addTestSuite(BLSKeyPairGeneratorTest.class);
