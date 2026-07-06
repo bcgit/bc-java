@@ -42,7 +42,9 @@ public class AllTests
         suite.addTestSuite(AllTests.SimpleTestTest.class);
         // SLHDSA tests split out into AllTestsSLHDSA so they can run as a separate (parallel) fork.
         suite.addTestSuite(MayoTest.class);
-        suite.addTestSuite(org.bouncycastle.pqc.crypto.mayo.MayoRetryTest.class);
+        // MayoRetryTest lives in the package-private org.bouncycastle.pqc.crypto.mayo package
+        // (it overrides MayoSigner.sampleSolution) and is run from that package's own AllTests,
+        // so the signed-jar legacy Ant builds can drop it without breaking this shared suite.
         // SNOVA tests split out into AllTestsSnova so they can run as a separate (parallel) fork.
         // FAEST tests split out into AllTestsFaest so they can run as a separate (parallel) fork.
         // QRUOV tests split out into AllTestsQRUOV so they can run as a separate (parallel) fork.
