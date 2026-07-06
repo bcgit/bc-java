@@ -23,7 +23,7 @@ import org.bouncycastle.util.Pack;
  * variant — the threshold engine delegates to
  * {@link SDitHEngine#generateIsdInstance(byte[])} for that part.
  */
-public final class SDitHThresholdEngine
+final class SDitHThresholdEngine
 {
     private final SDitHParameters params;
     private final SecureRandom random;
