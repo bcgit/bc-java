@@ -507,7 +507,10 @@ public class X509RevocationChecker
                 if (initial != null)
                 {
                      long period = System.currentTimeMillis() - initial.longValue();
-                     if (failHardMaxTime != -1 && failHardMaxTime < period)
+                     // "At maxTime any failures will be treated as hard" - use <= so the limit
+                     // is inclusive (a maxTime of 0 hard-fails the second failure regardless of
+                     // sub-millisecond timing, rather than only once a full millisecond elapses).
+                     if (failHardMaxTime != -1 && failHardMaxTime <= period)
                      {
                          throw e;
                      }
