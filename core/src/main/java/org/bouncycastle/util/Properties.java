@@ -294,17 +294,6 @@ public class Properties
      */
     public static final String BKS_MAX_IT_COUNT = "org.bouncycastle.bks.max_it_count";
 
-    /**
-     * When set to "true", {@code CMSSignedData.replaceSigners} / {@code addDigestAlgorithm}
-     * carry the original {@code SignedData} version over to the rebuilt structure verbatim
-     * instead of recomputing it. The default (unset / "false") recomputes the CMS version
-     * from the content, which is the correct behaviour per RFC 5652. The opt-in preserves a
-     * deliberately-set version for interop with producers that pin it - notably Microsoft
-     * Authenticode, whose signatures must stay at version 1 even though their non-{@code id-data}
-     * eContentType would otherwise compute to version 3. Relates to github #2344.
-     */
-    public static final String CMS_SIGNEDDATA_PRESERVE_VERSION = "org.bouncycastle.cms.signeddata.preserve_version";
-
     private Properties()
     {
     }

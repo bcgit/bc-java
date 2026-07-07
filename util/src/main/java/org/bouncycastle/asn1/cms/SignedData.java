@@ -120,12 +120,11 @@ public class SignedData
     }
 
     /**
-     * Construct a SignedData with an explicit, caller-supplied version rather than a
-     * recomputed one. This is for transforming an existing SignedData (e.g. replacing the
-     * signer set) where the original version must be carried over verbatim - recomputing it
-     * via {@link #calculateVersion} can change a value the producer set deliberately (for
-     * example Microsoft Authenticode signatures pin version 1 even though their eContentType
-     * is not id-data, which would otherwise compute to version 3).
+     * Construct a SignedData with an explicit, caller-supplied version rather than a recomputed
+     * one. This lets a producer pin a specific version for a profile that requires one - for
+     * example Microsoft Authenticode signatures pin version 1 even though their eContentType is
+     * not id-data, which {@link #calculateVersion} would otherwise map to version 3. The
+     * higher-level entry point is {@code CMSSignedData.asVersion(int)}.
      */
     public SignedData(
         ASN1Integer version,
