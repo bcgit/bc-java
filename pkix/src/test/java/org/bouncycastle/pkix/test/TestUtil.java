@@ -12,11 +12,15 @@ import java.util.Date;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
+import org.bouncycastle.asn1.x509.DistributionPoint;
+import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -131,10 +135,20 @@ public class TestUtil
 
         if (withDistPoint)
         {
+            // RFC 5280: CRLDistributionPoints ::= SEQUENCE SIZE (1..MAX) OF DistributionPoint,
+            // so the extension must carry at least one DistributionPoint. Point at the issuer's
+            // directory name; no CRL is published for it, so revocation checking finds none,
+            // which is exactly what the soft-fail path under test needs.
+            DistributionPoint dp = new DistributionPoint(
+                new DistributionPointName(new GeneralNames(
+                    new GeneralName(GeneralName.directoryName,
+                        X500Name.getInstance(issuer.getSubjectX500Principal().getEncoded())))),
+                null, null);
+
             v3CertGen.addExtension(
                 Extension.cRLDistributionPoints,
                 false,
-                new DERSequence());
+                new CRLDistPoint(new DistributionPoint[]{ dp }));
         }
 
         JcaContentSignerBuilder contentSignerBuilder = new JcaContentSignerBuilder("SHA256WithRSA").setProvider("BC");
