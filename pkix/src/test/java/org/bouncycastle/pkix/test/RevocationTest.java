@@ -463,16 +463,9 @@ public class RevocationTest
         PKIXCertPathValidatorResult result =
                 (PKIXCertPathValidatorResult)cpv.validate(cp, param);
 
-        try
-        {
-            Thread.sleep(1000);     // make sure some time elapses between first and second failure.
-        }
-        catch (Exception e)
-        {
-            Thread.currentThread().interrupt();
-        }
-
-        // should fail on the second attempt.
+        // The first failure is allowed (maxTime 0 permits one soft failure); the second must
+        // fail hard. With the inclusive (<=) hard-limit check this is deterministic and no
+        // longer depends on a millisecond elapsing between the two validate() calls.
         try
         {
             result =
