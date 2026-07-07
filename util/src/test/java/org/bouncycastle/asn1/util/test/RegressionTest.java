@@ -38,6 +38,7 @@ import org.bouncycastle.asn1.cmp.test.PKIFailureInfoTest;
 import org.bouncycastle.asn1.cmp.test.PollReqContentTest;
 import org.bouncycastle.asn1.cms.test.AttributeTableUnitTest;
 import org.bouncycastle.asn1.cms.test.CMSTest;
+import org.bouncycastle.asn1.cms.test.SignerInfoTest;
 import org.bouncycastle.asn1.crmf.test.DhSigStaticTest;
 import org.bouncycastle.asn1.crmf.test.PKIPublicationInfoTest;
 import org.bouncycastle.asn1.esf.test.CommitmentTypeIndicationUnitTest;
@@ -108,6 +109,7 @@ public class RegressionTest
         new PollReqContentTest(),
         new AttributeTableUnitTest(),
         new CMSTest(),
+        new SignerInfoTest(),
         new DhSigStaticTest(),
         new PKIPublicationInfoTest(),
         new CommitmentTypeIndicationUnitTest(),

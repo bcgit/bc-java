@@ -185,7 +185,7 @@ public class SignerInfo
     {
         Enumeration     e = seq.getObjects();
 
-        version = (ASN1Integer)e.nextElement();
+        version = ASN1Integer.getInstance(e.nextElement());
         sid = SignerIdentifier.getInstance(e.nextElement());
         digAlgorithm = AlgorithmIdentifier.getInstance(e.nextElement());
 
@@ -207,7 +207,7 @@ public class SignerInfo
 
         if (e.hasMoreElements())
         {
-            unauthenticatedAttributes = ASN1Set.getInstance((ASN1TaggedObject)e.nextElement(), false);
+            unauthenticatedAttributes = ASN1Set.getInstance(ASN1TaggedObject.getInstance(e.nextElement()), false);
         }
         else
         {
