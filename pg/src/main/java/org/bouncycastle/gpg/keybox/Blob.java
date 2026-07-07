@@ -48,31 +48,45 @@ public class Blob
 
         KeyBoxByteBuffer buffer = KeyBoxByteBuffer.wrap(source);
 
-        if (!buffer.hasRemaining())
+        for (;;)
         {
+            if (!buffer.hasRemaining())
+            {
+                return null;
+            }
+
+            int base = buffer.position();
+            long len = buffer.u32();
+            BlobType type = BlobType.fromByte(buffer.u8());
+            int version = buffer.u8();
+
+            switch (type)
+            {
+
+            case EMPTY_BLOB:
+                // An empty blob is a free/deleted slot occupying len bytes - it is NOT
+                // end-of-file, so skip past it and continue with the following blobs (a keybox
+                // written by gnupg can carry an empty blob between real ones); github #2343.
+                // The header just read is 6 bytes (u32 length + u8 type + u8 version). Guard
+                // against a malformed length that would fail to advance (spinning forever) or
+                // point beyond the buffer.
+                long next = base + len;
+                if (next <= buffer.position() || next > (buffer.position() + buffer.remaining()))
+                {
+                    return null;
+                }
+                buffer.position((int)next);
+                continue;
+            case FIRST_BLOB:
+                return FirstBlob.parseContent(base, len, type, version, buffer);
+            case X509_BLOB:
+                return CertificateBlob.parseContent(base, len, type, version, buffer, blobVerifier);
+            case OPEN_PGP_BLOB:
+                return PublicKeyRingBlob.parseContent(base, len, type, version, buffer, keyFingerPrintCalculator, blobVerifier);
+            }
+
             return null;
         }
-
-        int base = buffer.position();
-        long len = buffer.u32();
-        BlobType type = BlobType.fromByte(buffer.u8());
-        int version = buffer.u8();
-
-        switch (type)
-        {
-
-        case EMPTY_BLOB:
-            break;
-        case FIRST_BLOB:
-            return FirstBlob.parseContent(base, len, type, version, buffer);
-        case X509_BLOB:
-            return CertificateBlob.parseContent(base, len, type, version, buffer, blobVerifier);
-        case OPEN_PGP_BLOB:
-            return PublicKeyRingBlob.parseContent(base, len, type, version, buffer, keyFingerPrintCalculator, blobVerifier);
-        }
-
-        return null;
-
     }
 
 
