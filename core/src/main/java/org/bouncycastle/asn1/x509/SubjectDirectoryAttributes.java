@@ -72,6 +72,11 @@ public class SubjectDirectoryAttributes
      */
     private SubjectDirectoryAttributes(ASN1Sequence seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("sequence may not be empty");
+        }
+
         Enumeration e = seq.getObjects();
 
         while (e.hasMoreElements())

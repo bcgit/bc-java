@@ -55,6 +55,7 @@ public class RegressionTest
         new ParsingTest(),
         new GeneralNameTest(),
         new NameConstraintsTest(),
+        new EmptyExtensionSequenceTest(),
         new ObjectIdentifierTest(),
         new RFC4519Test(),
         new PolicyConstraintsTest(),

@@ -47,6 +47,11 @@ public class PolicyMappings
      */
     private PolicyMappings(ASN1Sequence seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("sequence may not be empty");
+        }
+
         this.seq = seq;
     }
 
