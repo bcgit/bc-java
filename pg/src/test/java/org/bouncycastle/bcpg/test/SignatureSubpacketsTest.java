@@ -7,6 +7,7 @@ import org.bouncycastle.bcpg.SignatureSubpacketInputStream;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.LibrePGPPreferredEncryptionModes;
+import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.RevocationKey;
 import org.bouncycastle.bcpg.sig.RevocationReason;
 import org.bouncycastle.bcpg.sig.SignatureTarget;
@@ -58,10 +59,11 @@ public class SignatureSubpacketsTest
     }
 
     /**
-     * The Features, TrustSignature, SignatureTarget, RevocationKey and RevocationReason
-     * subpackets index a fixed offset of their body from an accessor (e.g.
-     * {@link Features#getFeatures()} reads {@code data[0]}). A truncated body (empty, or a
-     * single octet for the two-octet subpackets) must therefore be rejected when the subpacket
+     * The Features, TrustSignature, SignatureTarget, RevocationKey, RevocationReason and
+     * NotationData subpackets index their body from an accessor (e.g.
+     * {@link Features#getFeatures()} reads {@code data[0]}, {@link NotationData#getNotationName()}
+     * copies {@code nameLength} octets from offset 8, where {@code nameLength} comes from the
+     * subpacket's own header). A truncated body must therefore be rejected when the subpacket
      * is parsed, with an {@link IllegalArgumentException}, rather than decoding cleanly and
      * throwing an {@link ArrayIndexOutOfBoundsException} later when an accessor is read. This
      * matches the existing IssuerFingerprint / IntendedRecipientFingerprint guards.
@@ -87,6 +89,15 @@ public class SignatureSubpacketsTest
         // getRevocationReason() reads data[0]
         isConstructionRejected("RevocationReason", new byte[0]);
 
+        // NotationData: header is flags[4] || nameLength[2] || valueLength[2] (8 octets);
+        // getNotationName() copies nameLength octets from offset 8 and getNotationValueBytes()
+        // copies valueLength octets from offset 8 + nameLength, so a body whose header declares
+        // more name/value data than it carries must be rejected, not decoded and later AIOOBE'd.
+        isConstructionRejected("NotationData", new byte[0]);                    // shorter than the 8-octet header
+        isConstructionRejected("NotationData", notationBody(4, 0, new byte[0])); // declares 4 name octets, none supplied
+        isConstructionRejected("NotationData", notationBody(0, 4, new byte[0])); // declares 4 value octets, none supplied
+        isConstructionRejected("NotationData", notationBody(2, 2, new byte[]{'a', 'b', 'c'})); // one value octet short
+
         // a body exactly at the minimum length must still be accepted, with working accessors
         testMinimalBodiesAccepted();
 
@@ -95,6 +106,7 @@ public class SignatureSubpacketsTest
         // rejects with a MalformedPacketException wrapping the constructor's exception.
         isWireDecodeRejected(SignatureSubpacketTags.FEATURES, 1);
         isWireDecodeRejected(SignatureSubpacketTags.TRUST_SIG, 2);
+        isWireDecodeRejected(SignatureSubpacketTags.NOTATION_DATA, notationBody(4, 0, new byte[0]));
     }
 
     private void isConstructionRejected(String name, byte[] body)
@@ -132,7 +144,23 @@ public class SignatureSubpacketsTest
         {
             return new RevocationReason(false, false, body);
         }
+        if (name.equals("NotationData"))
+        {
+            return new NotationData(false, false, body);
+        }
         throw new IllegalStateException("unknown subpacket: " + name);
+    }
+
+    private static byte[] notationBody(int nameLength, int valueLength, byte[] payload)
+    {
+        // flags[4] || nameLength[2] || valueLength[2] || payload
+        byte[] body = new byte[8 + payload.length];
+        body[4] = (byte)(nameLength >>> 8);
+        body[5] = (byte)nameLength;
+        body[6] = (byte)(valueLength >>> 8);
+        body[7] = (byte)valueLength;
+        System.arraycopy(payload, 0, body, 8, payload.length);
+        return body;
     }
 
     private void testMinimalBodiesAccepted()
@@ -158,17 +186,29 @@ public class SignatureSubpacketsTest
         RevocationReason revocationReason = new RevocationReason(false, false, new byte[]{3});
         isTrue("RevocationReason code mismatch", revocationReason.getRevocationReason() == 3);
         isTrue("RevocationReason description should be empty", revocationReason.getRevocationDescription().equals(""));
+
+        NotationData notationData = new NotationData(false, false, notationBody(2, 2, new byte[]{'a', 'b', 'c', 'd'}));
+        isTrue("NotationData name mismatch", notationData.getNotationName().equals("ab"));
+        isTrue("NotationData value mismatch", notationData.getNotationValue().equals("cd"));
     }
 
     private void isWireDecodeRejected(int type, int subpacketLength)
             throws IOException
     {
+        // a length-field-only body, all octets zero, too short for the subpacket's accessors
+        isWireDecodeRejected(type, new byte[subpacketLength - 1]);
+    }
+
+    private void isWireDecodeRejected(int type, byte[] body)
+            throws IOException
+    {
         // OpenPGP signature subpacket framing: a one-octet length field (< 192) covering the
-        // type octet plus body, the type octet, then (subpacketLength - 1) body octets (left
-        // zero here so the body is too short for the subpacket's accessors).
-        byte[] encoded = new byte[1 + subpacketLength];
-        encoded[0] = (byte)subpacketLength;
+        // type octet plus body, the type octet, then the body octets (too short for the
+        // subpacket's accessors).
+        byte[] encoded = new byte[2 + body.length];
+        encoded[0] = (byte)(1 + body.length);
         encoded[1] = (byte)type;
+        System.arraycopy(body, 0, encoded, 2, body.length);
 
         SignatureSubpacketInputStream sIn = new SignatureSubpacketInputStream(
                 new ByteArrayInputStream(encoded));
