@@ -16,6 +16,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
@@ -32,7 +33,6 @@ import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Encodable;
-import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Store;
 
 /**
@@ -248,6 +248,29 @@ public class CMSSignedData
     public int getVersion()
     {
         return signedData.getVersion().intValueExact();
+    }
+
+    /**
+     * Return a copy of this CMSSignedData with the SignedData version field forced to the given
+     * value, leaving every other field unchanged.
+     * <p>
+     * The version is normally recomputed from the content per RFC 5652 sec. 5.1 (for example, a
+     * non-id-data eContentType implies version 3), including by {@link #replaceSigners} and
+     * {@link #addDigestAlgorithm}. This method lets a producer pin a specific version for interop
+     * with profiles that require one - notably Microsoft Authenticode, whose signatures must carry
+     * version 1 even though their SPC_INDIRECT_DATA eContentType would otherwise compute to 3.
+     *
+     * @param version the CMSVersion value to set.
+     * @return a new CMSSignedData carrying the supplied version.
+     */
+    public CMSSignedData asVersion(int version)
+    {
+        SignedData current = this.signedData;
+        SignedData newContent = new SignedData(new ASN1Integer(version), current.getDigestAlgorithms(),
+            current.getEncapContentInfo(), current.getCertificates(), current.getCRLs(), current.getSignerInfos());
+
+        return new CMSSignedData(this.contentInfo.getContentType(), newContent, this.signedContent,
+            this.signerInfoStore);
     }
 
     /**
@@ -566,7 +589,7 @@ public class CMSSignedData
 
         SignedData oldContent = signedData.signedData;
 
-        SignedData newContent = createSignedData(oldContent, digestSet, oldContent.getEncapContentInfo(),
+        SignedData newContent = new SignedData(digestSet, oldContent.getEncapContentInfo(),
             oldContent.getCertificates(), oldContent.getCRLs(), oldContent.getSignerInfos());
 
         return new CMSSignedData(signedData.contentInfo.getContentType(), newContent, signedData.getSignedContent(),
@@ -633,28 +656,11 @@ public class CMSSignedData
 
         SignedData oldContent = signedData.signedData;
 
-        SignedData newContent = createSignedData(oldContent, digestSet, oldContent.getEncapContentInfo(),
+        SignedData newContent = new SignedData(digestSet, oldContent.getEncapContentInfo(),
             oldContent.getCertificates(), oldContent.getCRLs(), signerSet);
 
         return new CMSSignedData(signedData.contentInfo.getContentType(), newContent, signedData.getSignedContent(),
             signerInformationStore);
-    }
-
-    /**
-     * Rebuild a SignedData from an existing one, replacing the digest and/or signer sets. By
-     * default the CMS version is recomputed from the content (correct per RFC 5652); when
-     * {@link Properties#CMS_SIGNEDDATA_PRESERVE_VERSION} is set the original version is carried
-     * over verbatim, for interop with producers that pin it (e.g. Authenticode). See github #2344.
-     */
-    private static SignedData createSignedData(SignedData oldContent, ASN1Set digestSet, ContentInfo contentInfo,
-        ASN1Set certificates, ASN1Set crls, ASN1Set signerSet)
-    {
-        if (Properties.isOverrideSet(Properties.CMS_SIGNEDDATA_PRESERVE_VERSION))
-        {
-            return new SignedData(oldContent.getVersion(), digestSet, contentInfo, certificates, crls, signerSet);
-        }
-
-        return new SignedData(digestSet, contentInfo, certificates, crls, signerSet);
     }
 
     private static void compareAndReplaceAlgIds(AlgorithmIdentifier[] oldDigestAlgIds, AlgorithmIdentifier[] newDigestAlgIds)
