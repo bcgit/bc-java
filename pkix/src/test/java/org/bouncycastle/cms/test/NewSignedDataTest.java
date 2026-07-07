@@ -114,6 +114,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.CollectionStore;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
@@ -825,12 +826,71 @@ public class NewSignedDataTest
         junit.textui.TestRunner.run(NewSignedDataTest.class);
     }
 
-    public static Test suite() 
+    public static Test suite()
         throws Exception
     {
         init();
-        
+
         return new CMSTestSetup(new TestSuite(NewSignedDataTest.class));
+    }
+
+    public void testReplaceSignersPreservesVersion()
+        throws Exception
+    {
+        // Microsoft Authenticode signatures pin SignedData version 1 even though their
+        // eContentType (SPC_INDIRECT_DATA, not id-data) computes to version 3. By default
+        // replaceSigners / addDigestAlgorithm recompute the correct CMS version, but
+        // Properties.CMS_SIGNEDDATA_PRESERVE_VERSION opts in to carrying the original over.
+        // Regression test for github #2344.
+        ASN1ObjectIdentifier spcIndirectData = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.2.1.4");
+
+        List certList = new ArrayList();
+        certList.add(_origCert);
+        certList.add(_signCert);
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        DigestCalculatorProvider digProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        JcaSignerInfoGeneratorBuilder sigGenBuilder = new JcaSignerInfoGeneratorBuilder(digProvider);
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+        gen.addSignerInfoGenerator(sigGenBuilder.build(sha1Signer, _origCert));
+        gen.addCertificates(certs);
+
+        CMSSignedData generated = gen.generate(new CMSProcessableByteArray(spcIndirectData, "hello world".getBytes()), true);
+
+        // Rebuild the SignedData with the version forced to 1 (as Authenticode producers do),
+        // via raw ASN.1 so the fixture does not itself depend on the code path under test.
+        ASN1Sequence sdSeq = ASN1Sequence.getInstance(generated.toASN1Structure().getContent());
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new ASN1Integer(1));
+        for (int i = 1; i != sdSeq.size(); i++)
+        {
+            v.add(sdSeq.getObjectAt(i));
+        }
+        CMSSignedData authenticode = new CMSSignedData(
+            new ContentInfo(CMSObjectIdentifiers.signedData, new DLSequence(v)));
+
+        assertEquals("fixture must start at version 1", 1, authenticode.getVersion());
+
+        // Default: recompute the correct CMS version (3 for a non-id-data eContentType).
+        CMSSignedData recomputed = CMSSignedData.replaceSigners(authenticode, authenticode.getSignerInfos());
+        assertEquals("default replaceSigners must recompute the version", 3, recomputed.getVersion());
+
+        // Opt-in: preserve the original version verbatim.
+        System.setProperty(Properties.CMS_SIGNEDDATA_PRESERVE_VERSION, "true");
+        try
+        {
+            CMSSignedData preservedReplace = CMSSignedData.replaceSigners(authenticode, authenticode.getSignerInfos());
+            assertEquals("preserve flag must keep replaceSigners at version 1", 1, preservedReplace.getVersion());
+
+            CMSSignedData preservedAdd = CMSSignedData.addDigestAlgorithm(authenticode,
+                new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
+            assertEquals("preserve flag must keep addDigestAlgorithm at version 1", 1, preservedAdd.getVersion());
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.CMS_SIGNEDDATA_PRESERVE_VERSION);
+        }
     }
 
     public void setUp()

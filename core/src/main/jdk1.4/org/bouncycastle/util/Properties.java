@@ -27,6 +27,7 @@ public class Properties
     public static final String PKCS12_IGNORE_USELESS_PASSWD = "org.bouncycastle.pkcs12.ignore_useless_passwd";
     public static final String PKCS12_MAX_IT_COUNT = "org.bouncycastle.pkcs12.max_it_count";
     public static final String BKS_MAX_IT_COUNT = "org.bouncycastle.bks.max_it_count";
+    public static final String CMS_SIGNEDDATA_PRESERVE_VERSION = "org.bouncycastle.cms.signeddata.preserve_version";
     public static final String X509_CRL_CACHE_TTL = "org.bouncycastle.x509.crl_cache_ttl";
     public static final String X509_ENABLE_CRLDP = "org.bouncycastle.x509.enableCRLDP";
     public static final String PKCS12_ALLOW_SUN_SECRET_KEYS = "org.bouncycastle.pkcs12.allow_sun_secret_keys";
