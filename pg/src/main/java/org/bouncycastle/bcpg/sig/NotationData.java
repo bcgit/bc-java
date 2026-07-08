@@ -47,7 +47,7 @@ public class NotationData
         }
         int nameLength = (((data[HEADER_FLAG_LENGTH] & 0xff) << 8) + (data[HEADER_FLAG_LENGTH + 1] & 0xff));
         int valueLength = (((data[HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH] & 0xff) << 8) + (data[HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH + 1] & 0xff));
-        if (nameLength + valueLength + 4 > data.length)
+        if (nameLength + valueLength + HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH + HEADER_VALUE_LENGTH > data.length)
         {
             throw new IllegalArgumentException("Malformed notation data encoding.");
         }

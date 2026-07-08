@@ -7,6 +7,7 @@ import org.bouncycastle.bcpg.SignatureSubpacketInputStream;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.LibrePGPPreferredEncryptionModes;
+import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.RevocationKey;
 import org.bouncycastle.bcpg.sig.RevocationReason;
 import org.bouncycastle.bcpg.sig.SignatureTarget;
@@ -87,6 +88,16 @@ public class SignatureSubpacketsTest
         // getRevocationReason() reads data[0]
         isConstructionRejected("RevocationReason", new byte[0]);
 
+        // getNotationName()/getNotationValueBytes() index the 8-octet header (flags[4],
+        // nameLength[2], valueLength[2]) then the name and value, so a body shorter than
+        // 8 + nameLength + valueLength must be rejected. The guard previously counted only a
+        // 4-octet header, so a body that declared more name/value than it carried slipped past
+        // and overran later in an accessor (github #2346).
+        isConstructionRejected("NotationData", new byte[0]);            // shorter than the 8-octet header
+        isConstructionRejected("NotationData", new byte[7]);            // still shorter than the header
+        isConstructionRejected("NotationData", notationBody(2, 2, 0));  // header declares 4 body octets, none present
+        isConstructionRejected("NotationData", notationBody(1, 0, 0));  // header declares a 1-octet name, none present
+
         // a body exactly at the minimum length must still be accepted, with working accessors
         testMinimalBodiesAccepted();
 
@@ -95,6 +106,7 @@ public class SignatureSubpacketsTest
         // rejects with a MalformedPacketException wrapping the constructor's exception.
         isWireDecodeRejected(SignatureSubpacketTags.FEATURES, 1);
         isWireDecodeRejected(SignatureSubpacketTags.TRUST_SIG, 2);
+        isWireDecodeRejected(SignatureSubpacketTags.NOTATION_DATA, notationBody(2, 2, 0));
     }
 
     private void isConstructionRejected(String name, byte[] body)
@@ -132,7 +144,26 @@ public class SignatureSubpacketsTest
         {
             return new RevocationReason(false, false, body);
         }
+        if (name.equals("NotationData"))
+        {
+            return new NotationData(false, false, body);
+        }
         throw new IllegalStateException("unknown subpacket: " + name);
+    }
+
+    /**
+     * Build a raw NotationData body: the 8-octet header (4 flag octets, a 2-octet name length
+     * and a 2-octet value length) followed by {@code payloadLength} body octets. Passing a
+     * payloadLength smaller than {@code nameLength + valueLength} yields a truncated packet.
+     */
+    private byte[] notationBody(int nameLength, int valueLength, int payloadLength)
+    {
+        byte[] body = new byte[8 + payloadLength];
+        body[4] = (byte)(nameLength >>> 8);
+        body[5] = (byte)nameLength;
+        body[6] = (byte)(valueLength >>> 8);
+        body[7] = (byte)valueLength;
+        return body;
     }
 
     private void testMinimalBodiesAccepted()
@@ -158,6 +189,14 @@ public class SignatureSubpacketsTest
         RevocationReason revocationReason = new RevocationReason(false, false, new byte[]{3});
         isTrue("RevocationReason code mismatch", revocationReason.getRevocationReason() == 3);
         isTrue("RevocationReason description should be empty", revocationReason.getRevocationDescription().equals(""));
+
+        // a NotationData body exactly 8 + nameLength + valueLength long is accepted and its
+        // name/value accessors read back correctly. Here name = "x" (1 octet), value empty.
+        byte[] notation = notationBody(1, 0, 1);
+        notation[8] = (byte)'x';
+        NotationData notationData = new NotationData(false, false, notation);
+        isTrue("NotationData name mismatch", notationData.getNotationName().equals("x"));
+        isTrue("NotationData value should be empty", notationData.getNotationValueBytes().length == 0);
     }
 
     private void isWireDecodeRejected(int type, int subpacketLength)
@@ -169,6 +208,29 @@ public class SignatureSubpacketsTest
         byte[] encoded = new byte[1 + subpacketLength];
         encoded[0] = (byte)subpacketLength;
         encoded[1] = (byte)type;
+
+        SignatureSubpacketInputStream sIn = new SignatureSubpacketInputStream(
+                new ByteArrayInputStream(encoded));
+        try
+        {
+            sIn.readPacket();
+            fail("Wire decode accepted a truncated subpacket of type " + type);
+        }
+        catch (MalformedPacketException e)
+        {
+            // expected - the constructor's IllegalArgumentException surfaced at decode time
+        }
+    }
+
+    private void isWireDecodeRejected(int type, byte[] body)
+            throws IOException
+    {
+        // as above, but with a caller-supplied body (for subpackets like NotationData whose
+        // truncation depends on internal length fields rather than a fixed minimum length).
+        byte[] encoded = new byte[1 + 1 + body.length];
+        encoded[0] = (byte)(1 + body.length);
+        encoded[1] = (byte)type;
+        System.arraycopy(body, 0, encoded, 2, body.length);
 
         SignatureSubpacketInputStream sIn = new SignatureSubpacketInputStream(
                 new ByteArrayInputStream(encoded));
