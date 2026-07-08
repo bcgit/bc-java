@@ -160,14 +160,17 @@ public class SphincsPlusTest
                         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
                         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-                        // FIXME No OIDs for simple variants of SPHINCS+
-                        if (name.indexOf("-simple") < 0)
-                        {
-                            pubParams = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams));
-                            privParams = (SPHINCSPlusPrivateKeyParameters)PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo(privParams));
-                        }
+                        // OID encode/decode round-trip runs for all variants including "-simple":
+                        // the OIDs for the simple variants were wired correctly, so the former
+                        // FIXME guard was stale. The getParameters() assertions below catch any
+                        // future OID<->parameters mapping regression.
+                        pubParams = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(
+                            SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams));
+                        privParams = (SPHINCSPlusPrivateKeyParameters)PrivateKeyFactory.createKey(
+                            PrivateKeyInfoFactory.createPrivateKeyInfo(privParams));
+
+                        assertTrue(name + " " + count + ": public key parameters", parameters == pubParams.getParameters());
+                        assertTrue(name + " " + count + ": private key parameters", parameters == privParams.getParameters());
 
 //                            System.err.println(Hex.toHexString(pubParams.getEncoded()));
 //                            System.err.println(Hex.toHexString(Arrays.concatenate(pubParams.getParameters().getEncoded(), pk)));
