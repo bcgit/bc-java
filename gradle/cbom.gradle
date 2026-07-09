@@ -163,9 +163,47 @@ tasks.register('generateCbom') {
             loader.close()
         }
 
+        // OID-only registrations: KeyGenerator services registered directly under the OID
+        // with no friendly-name Cipher/Mac sibling, so cbomClassify never sees a primitive
+        // for them. Classified from the defining arc — GMObjectIdentifiers (SM4),
+        // KISAObjectIdentifiers (SEED wrap, RFC 4010), NSRIObjectIdentifiers (ARIA),
+        // UAObjectIdentifiers (DSTU7624), and the legacy "wrong AES" OIDs AES.Mappings
+        // preserves for backwards compatibility.
+        def oidOnlyPrimitives = [
+            '1.2.156.10197.1.104.8': 'ae',                // sms4_gcm
+            '1.2.156.10197.1.104.9': 'ae',                // sms4_ccm
+            '1.2.410.200004.7.1.1.1': 'block-cipher',     // id-npki-app-cmsSeed-wrap
+            '1.2.410.200046.1.1.34': 'ae',                // id_aria128_gcm
+            '1.2.410.200046.1.1.35': 'ae',                // id_aria192_gcm
+            '1.2.410.200046.1.1.36': 'ae',                // id_aria256_gcm
+            '1.2.410.200046.1.1.37': 'ae',                // id_aria128_ccm
+            '1.2.410.200046.1.1.38': 'ae',                // id_aria192_ccm
+            '1.2.410.200046.1.1.39': 'ae',                // id_aria256_ccm
+            '1.2.410.200046.1.1.40': 'block-cipher',      // id_aria128_kw
+            '1.2.410.200046.1.1.41': 'block-cipher',      // id_aria192_kw
+            '1.2.410.200046.1.1.42': 'block-cipher',      // id_aria256_kw
+            '1.2.410.200046.1.1.43': 'block-cipher',      // id_aria128_kwp
+            '1.2.410.200046.1.1.44': 'block-cipher',      // id_aria192_kwp
+            '1.2.410.200046.1.1.45': 'block-cipher',      // id_aria256_kwp
+            '1.2.804.2.1.1.1.1.1.3.7.1': 'mac',           // dstu7624gmac_128
+            '1.2.804.2.1.1.1.1.1.3.7.2': 'mac',           // dstu7624gmac_256
+            '1.2.804.2.1.1.1.1.1.3.7.3': 'mac',           // dstu7624gmac_512
+            '1.2.804.2.1.1.1.1.1.3.10.1': 'block-cipher', // dstu7624kw_128
+            '1.2.804.2.1.1.1.1.1.3.10.2': 'block-cipher', // dstu7624kw_256
+            '1.2.804.2.1.1.1.1.1.3.10.3': 'block-cipher', // dstu7624kw_512
+            '2.16.840.1.101.3.4.2': 'block-cipher',       // legacy wrong AES-128 OID
+            '2.16.840.1.101.3.4.22': 'block-cipher',      // legacy wrong AES-192 OID
+            '2.16.840.1.101.3.4.42': 'block-cipher'       // legacy wrong AES-256 OID
+        ]
+
         // parameter-set names that only surface as KeyGenerator / KeyPairGenerator services
         // (the Signature / Cipher service lives under the family name) — infer from the name
         def fallbackPrimitive = { String name ->
+            def oidPrim = oidOnlyPrimitives[name]
+            if (oidPrim != null)
+            {
+                return oidPrim
+            }
             def a = name.toUpperCase()
             if (a =~ /MLKEM\d+-/)
             {
@@ -182,6 +220,12 @@ tasks.register('generateCbom') {
             if (a.contains('SIPHASH'))
             {
                 return 'mac'
+            }
+            if (a == 'EC')
+            {
+                // generic EC keypairs — the consuming ECDSA / ECDH / ECIES services all
+                // register their own assets under their own names
+                return 'key-agree'
             }
             return 'unknown'
         }
