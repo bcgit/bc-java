@@ -95,6 +95,14 @@ public class SignatureSubpacketInputStream
             throw new EOFException("out of range data found in signature sub packet");
         }
 
+        // Absolute cap on the up-front allocation, mirroring UserAttributeSubpacketInputStream and the
+        // enclosing SignaturePacket area check: the limit-based guard above degrades when limit reports
+        // Integer.MAX_VALUE (a non-seekable stream), so bound the declared length here regardless.
+        if (bodyLen > SignaturePacket.MAX_SUBPACKET_LEN)
+        {
+            throw new EOFException("signature sub packet length (" + bodyLen + ") exceeds max limit (" + SignaturePacket.MAX_SUBPACKET_LEN + ")");
+        }
+
         byte[] data = new byte[bodyLen - 1];
 
         //
