@@ -331,6 +331,12 @@ public class PGPPublicKey
     /**
      * @return number of valid seconds from creation time - zero means no
      * expiry.
+     * <p>
+     * <b>Security note:</b> the returned value is taken from key/binding signatures
+     * that are <em>not</em> cryptographically verified by this class, so a tampered
+     * transferable key can misreport expiry. For trust decisions use
+     * {@link org.bouncycastle.openpgp.api.OpenPGPCertificate#getExpirationTime()},
+     * which derives expiry from a verified self-signature.
      */
     public long getValidSeconds()
     {
