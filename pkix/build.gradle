@@ -68,7 +68,7 @@ jar {
         from sourceSets.java9.output
     }
 
-    String packages = 'org.bouncycastle.{cert|cmc|cms|dvcs|eac|est|its|mime|mozilla|voms|operator|pkix|openssl|pkcs|tsp}.*'
+    String packages = 'org.bouncycastle.{cades|cert|cmc|cms|dvcs|eac|est|its|mime|mozilla|voms|operator|pkix|openssl|pkcs|tsp}.*'
 
     String v = "${rootProject.extensions.ext.bundle_version}"
 

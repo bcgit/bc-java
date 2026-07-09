@@ -4,6 +4,7 @@ module org.bouncycastle.pg
     requires org.bouncycastle.util;
     requires java.logging;
 
+    exports org.bouncycastle.apache.bzip2;
     exports org.bouncycastle.bcpg;
     exports org.bouncycastle.gpg;
     exports org.bouncycastle.openpgp;
@@ -14,7 +15,9 @@ module org.bouncycastle.pg
     exports org.bouncycastle.gpg.keybox.jcajce;
     exports org.bouncycastle.openpgp.api;
     exports org.bouncycastle.openpgp.api.bc;
+    exports org.bouncycastle.openpgp.api.exception;
     exports org.bouncycastle.openpgp.api.jcajce;
+    exports org.bouncycastle.openpgp.api.util;
     exports org.bouncycastle.openpgp.bc;
     exports org.bouncycastle.openpgp.jcajce;
     exports org.bouncycastle.openpgp.operator;

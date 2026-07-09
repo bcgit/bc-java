@@ -25,6 +25,7 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.kisa;
     exports org.bouncycastle.asn1.microsoft;
     exports org.bouncycastle.asn1.misc;
+    exports org.bouncycastle.asn1.mod;
     exports org.bouncycastle.asn1.mozilla;
     exports org.bouncycastle.asn1.nsri;
     exports org.bouncycastle.asn1.ntt;
@@ -33,6 +34,7 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.smime;
     exports org.bouncycastle.asn1.tsp;
     exports org.bouncycastle.oer;
+    exports org.bouncycastle.oer.its;
     exports org.bouncycastle.oer.its.etsi103097;
     exports org.bouncycastle.oer.its.etsi103097.extension;
     exports org.bouncycastle.oer.its.ieee1609dot2;
