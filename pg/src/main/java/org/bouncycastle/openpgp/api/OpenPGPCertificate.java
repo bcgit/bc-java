@@ -1680,7 +1680,32 @@ public class OpenPGPCertificate
          */
         public Date getKeyExpirationDateAt(Date evaluationTime)
         {
-            return getLatestSelfSignature(evaluationTime).getKeyExpirationTime();
+            // Derive key expiration only from a cryptographically valid self-signature /
+            // binding, not merely the most recent packet present: an attacker can append
+            // an unverified binding signature advertising "never expires" (KeyExpirationTime
+            // = 0), and selecting the latest *effective* chain without verifying it - as
+            // getLatestSelfSignature() does - would trust that packet.
+            OpenPGPSignatureChains effective = getSelfSignatureChains().getChainsAt(evaluationTime);
+            for (Iterator<OpenPGPSignatureChain> it = effective.chains.iterator(); it.hasNext(); )
+            {
+                OpenPGPSignatureChain chain = it.next();
+                if (!chain.isCertification())
+                {
+                    continue;
+                }
+                try
+                {
+                    if (chain.isValid())
+                    {
+                        return chain.getSignature().getKeyExpirationTime();
+                    }
+                }
+                catch (PGPSignatureException e)
+                {
+                    // signature could not be verified (e.g. missing issuer) - skip it
+                }
+            }
+            return null;
         }
 
         /**
