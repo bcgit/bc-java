@@ -324,11 +324,43 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 </ul>
 <h3>2.1.4 Security Fixes</h3>
 <ul>
-/ul>
+<li>CVE-2026-8763 - Name Constraints bypass via trailing dot in rfc822Name and URI.</li>
+<li>CVE-2026-12185 - BKS/UBER keystore allocates from untrusted lengths before integrity check.</li>
+<li>CVE-2026-12802 - CMS AuthEnvelopedData fails to enforce tag-length on decryption.</li>
+<li>CVE-2026-12803 - KCCMBlockCipher MAC does not bind nonce when AAD is absent (cross-nonce AEAD forgery).</li>
+<li>CVE-2026-12816 - IESEngine stream-mode MAC forgery via length-dependent KDF split.</li>
+<li>CVE-2026-12817 - OpenPGP AEAD decryption skips final tag on chunk-aligned data.</li>
+<li>CVE-2026-12852 - MLS wire decoder allocates attacker-declared opaque length before bounds check.</li>
+<li>CVE-2026-12860 - RSA PKCS#1 verification skips last two hash bytes in NULL-omitted path.</li>
+<li>CVE-2026-13506 - Lazy ASN.1 sequence forcing resets nesting-depth guard.</li>
+<li>CVE-2026-13586 - PKCS#12 MAC and bag-decryption KDF iteration-count bound (DoS).</li>
+<li>CVE-2026-14682 - Possible OOM from unbounded up-front allocation on a definite-length read.</li>
+<li>CVE-2026-15505 - PKCS#8 / PBES2 decryptors honour unbounded KDF cost from input.</li>
+<li>CVE-2026-58059 - Quadratic-time escaping when stringifying X.500 distinguished names.</li>
+<li>CVE-2026-58060 - HSS public-key level count unbounded, enabling huge allocation on verify.</li>
+<li>CVE-2026-58061 - CCM-family modes write plaintext to caller buffer before tag check.</li>
+<li>CVE-2026-58062 - Stapled OCSP response accepted without binding to the checked certificate.</li>
+<li>CVE-2026-58063 - BCFKS keystore load honours unbounded KDF cost from untrusted file.</li>
+<li>CVE-2026-59638 - JSSE hostname verifier CN-fallback enabled by default despite documented opt-in.</li>
+<li>CVE-2026-59639 - CMS verifySignatures returns true for SignedData with zero signers.</li>
+<li>CVE-2026-59640 - OpenPGP CFB quick-check oracle active on symmetric/session-key paths.</li>
+<li>CVE-2026-59641 - S/MIME validator trusts signer-asserted signingTime for path validation.</li>
+<li>CVE-2026-59642 - CMS AuthenticatedData content not bound to MAC when authAttrs present.</li>
+<li>CVE-2026-59643 - OpenPGP inline-signature policy failures silently ignored.</li>
+<li>CVE-2026-59644 - MLS hash-ratchet honours arbitrary 32-bit generation counter from sender.</li>
+<li>CVE-2026-59645 - OER parser recurses without depth limit on self-referential IEEE 1609.2 schema.</li>
+<li>CVE-2026-59646 - DTLS handshake reassembler allocates buffer from unchecked 24-bit length.</li>
+<li>CVE-2026-59647 - CRMF/CMP password-MAC honours unbounded iteration count.</li>
+<li>CVE-2026-59648 - OpenPGP Argon2 S2K honours attacker-chosen memory and passes.</li>
+<li>CVE-2026-59649 - OpenPGP user-attribute subpacket length bounded only by JVM max memory.</li>
+<li>CVE-2026-59650 - MTI/A0 DH agreement exponentiates unvalidated peer value.</li>
+<li>CVE-2026-59651 - BKS keystore accepts legacy version with 16-bit integrity MAC key.</li>
+<li>CVE-2026-59652 - LDAP filter injection in legacy jdk1.4 LDAPStoreHelper.</li>
+</ul>
 <h3>2.1.5 Additional Notes</h3>
 <ul>
 <li>The standardised PQC algorithms ML-KEM, ML-DSA, SLH-DSA, FrodoKEM, and CMCE have been repackaged under org.bouncycastle.crypto and the versions under org.bouncycastle.crypto.pqc have been deprecated. These deprecated versions will be removed in BC 1.86.</li>
-/ul>
+</ul>
 
 <a id="r1rv84"><h3>2.2.1 Version</h3></a>
 Release: 1.84<br/>
