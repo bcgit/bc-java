@@ -41,6 +41,16 @@ When you add a class, ask which case applies:
 
 Symmetrically, if you delete or merge away an entire package, remove its `exports` entry from both the `jdk1.9` and (where it exists) `ext-jdk1.9` descriptors. The compile-time signal that catches a missed entry — `module org.bouncycastle.provider does not export org.bouncycastle.crypto.foo` — only fires for modular downstream consumers, so a class-path-only test run won't surface it.
 
+## The OSGi `Export-Package` manifest is a *second*, silent place to wire a package
+
+Each Gradle module also ships as an OSGi bundle: `<module>/build.gradle` applies the `biz.aQute.bnd.builder` plugin and sets `Export-Package` / `Import-Package` manifest attributes from a `packages` brace-list string (e.g. `pkix/build.gradle`'s `org.bouncycastle.{cades|cert|cmc|cms|…|tsp}.*`, `util/build.gradle`'s `org.bouncycastle.asn1.{bsi|cmc|…|tsp}.*` plus a separate `org.bouncycastle.oer.*`). This is **independent of `module-info.java`** and easy to leave out of step:
+
+- **A new sub-package of an already-listed family** (e.g. `org.bouncycastle.cms.foo` under `…{…|cms|…}.*`) needs no change — the `.*` glob covers it.
+- **A new top-level family** (a brace-list token that isn't there yet) must be **added to the `packages` string** in that module's `build.gradle`, or it is silently absent from the OSGi bundle even though `module-info.java` exports it. This drift is invisible to a normal build — the only signal is inspecting the built jar's `META-INF/MANIFEST.MF` (or `jar --describe-module` vs the manifest). Real cases found this way: `cades` missing from `pkix`, `asn1.mod` from `util`.
+- **`prov` is the exception**: its list is the negative form `!org.bouncycastle.internal.*,org.bouncycastle.*;version=…`, i.e. export everything except `internal.*`, so a new `prov`/`core` package is auto-exported and needs no `build.gradle` edit (only a `module-info.java` one). The trade-off is that `prov` can *over*-export a package you meant to conceal unless you add it to the `!…` prefix (this is why `org.bouncycastle.apache.bzip2` is OSGi-exported but JPMS-concealed).
+
+So "add a package" is a three-file habit: `module-info.java` (both `jdk1.9` and `ext-jdk1.9` for prov), the module's `package-info.java`, and — for a new top-level family in a module other than `prov` — the `packages` brace-list in `build.gradle`. Removing a family means removing it from all three.
+
 ## Every new package ships a `package-info.java`
 
 When you introduce a new package, drop a `package-info.java` alongside the first class. A one-sentence Javadoc above the `package …;` declaration is enough — name what the package is for, point at the relevant RFC / spec / sibling package when it helps a reader orient. Mirror the style of the existing files (e.g. `pkix/.../cms/package-info.java`, `core/.../asn1/package-info.java`): brief, factual, no boilerplate. The package-info is what shows up in the generated Javadoc package list, so a missing one shows up as an unnamed bucket in the consumer-facing API docs.
