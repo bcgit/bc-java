@@ -98,6 +98,8 @@ public class SMIMEEnvelopedWriter
          */
         public Builder withHeader(String headerName, String headerValue)
         {
+            SMimeUtils.checkHeader(headerName, headerValue);
+
             this.headers.put(headerName, headerValue);
 
             return this;

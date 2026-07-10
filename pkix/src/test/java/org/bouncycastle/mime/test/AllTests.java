@@ -42,6 +42,7 @@ public class AllTests
         suite.addTestSuite(TestSMIMEEnveloped.class);
         suite.addTestSuite(TestSMIMESigned.class);
         suite.addTestSuite(TestSMIMESignEncrypt.class);
+        suite.addTestSuite(SMIMEWriterHeaderInjectionTest.class);
 
         return new MIMETestSetup(suite);
     }
