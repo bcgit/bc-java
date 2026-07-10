@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.io.Streams;
 
 /**
  * Base class for OpenPGP secret (primary) keys.
@@ -64,7 +63,17 @@ public class SecretKeyPacket
      * Users should migrate to AEAD with all due speed.
      */
     public static final int USAGE_AEAD = 0xfd;
-    
+
+    /**
+     * Externally-backed secret key material.
+     * S2K-usage octet indicating that the secret key material is stored externally, e.g. on a hardware device.
+     * The draft specification is an alternative to GnuPGs proprietary {@link S2K#GNU_DUMMY_S2K} mechanism.
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     */
+    public static final int USAGE_EXTERNAL = 0xfc;
+
     private PublicKeyPacket pubKeyPacket;
     private byte[] secKeyData;
     private int s2kUsage;
@@ -72,6 +81,7 @@ public class SecretKeyPacket
     private int aeadAlgorithm;
     private S2K s2k;
     private byte[] iv;
+    private byte[] externalKeyLocatorHint;
 
     /**
      * Parse a primary OpenPGP secret key packet from the given OpenPGP {@link BCPGInputStream}.
@@ -159,11 +169,17 @@ public class SecretKeyPacket
         s2kUsage = in.read();
 
         int conditionalParameterLength = -1;
-        if (version == PublicKeyPacket.LIBREPGP_5 || 
+        if (version == PublicKeyPacket.LIBREPGP_5 ||
            (version == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE))
         {
             // TODO: Use length to parse unknown parameters
             conditionalParameterLength = in.read();
+        }
+
+        if (s2kUsage == USAGE_EXTERNAL)
+        {
+            externalKeyLocatorHint = in.readAll();
+            return;
         }
 
         if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
@@ -224,7 +240,7 @@ public class SecretKeyPacket
                     if (encAlgorithm < 7)
                     {
                         iv = new byte[8];
-                    } 
+                    }
                     else
                     {
                         iv = new byte[16];
@@ -233,7 +249,7 @@ public class SecretKeyPacket
                 }
             }
         }
-        
+
         if (version == PublicKeyPacket.LIBREPGP_5)
         {
             long keyOctetCount = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
@@ -250,6 +266,40 @@ public class SecretKeyPacket
         {
             this.secKeyData = in.readAll();
         }
+    }
+
+    /**
+     * Create a SecretKeyPacket representing an external secret key ({@link #USAGE_EXTERNAL}).
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     * @param pubKeyPacket public key packet
+     * @param locatorHint optional external key locator hint
+     */
+    public SecretKeyPacket(
+            PublicKeyPacket pubKeyPacket,
+            byte[] locatorHint)
+    {
+        this(SECRET_KEY, pubKeyPacket, locatorHint);
+    }
+
+
+    /**
+     * Create a SecretKeyPacket representing an external secret key ({@link #USAGE_EXTERNAL}).
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     * @param keyTag key packet type
+     * @param pubKeyPacket public key packet
+     * @param locatorHint optional external key locator hint
+     */
+    protected SecretKeyPacket(
+            int keyTag,
+            PublicKeyPacket pubKeyPacket,
+            byte[] locatorHint)
+    {
+        this(keyTag, pubKeyPacket, 0, 0, USAGE_EXTERNAL, null, null, null);
+        this.externalKeyLocatorHint = locatorHint == null ? new byte[0] : Arrays.clone(locatorHint);
     }
 
     /**
@@ -446,6 +496,27 @@ public class SecretKeyPacket
     }
 
     /**
+     * If the key has external private key material (s2k usage {@link #USAGE_EXTERNAL}), return the locator hint data.
+     * If the locator hint is empty, it is referred to as "best effort".
+     * Otherwise, the first octet indicates the type of locator hint.
+     *
+     * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-02.html#name-openpgp-external-secret-key">
+     *     OpenPGP External Secret Key Locator Hint type registry</a>
+     * @return locator hints data
+     */
+    public byte[] getExternalKeyLocatorHint()
+    {
+        if (s2kUsage == USAGE_EXTERNAL)
+        {
+            return externalKeyLocatorHint;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    /**
      * Return the encoded packet content without packet frame.
      * @return encoded packet contents
      * @throws IOException
@@ -462,7 +533,7 @@ public class SecretKeyPacket
 
         // conditional parameters
         byte[] conditionalParameters = encodeConditionalParameters();
-        if (pubKeyPacket.getVersion() == PublicKeyPacket.LIBREPGP_5 || 
+        if (pubKeyPacket.getVersion() == PublicKeyPacket.LIBREPGP_5 ||
            (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE))
         {
             pOut.write(conditionalParameters.length);
@@ -495,6 +566,10 @@ public class SecretKeyPacket
     {
         ByteArrayOutputStream conditionalParameters = new ByteArrayOutputStream();
         boolean hasS2KSpecifier = s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD;
+        if (s2kUsage == USAGE_EXTERNAL)
+        {
+            return getExternalKeyLocatorHint();
+        }
 
         if (hasS2KSpecifier)
         {
