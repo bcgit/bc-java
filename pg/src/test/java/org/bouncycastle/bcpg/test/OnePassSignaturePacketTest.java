@@ -284,6 +284,46 @@ public class OnePassSignaturePacketTest
         }
     }
 
+    // PGPainless issue #33 / RFC 9580 sec. 4.2: a freshly generated v6 OPS packet must default to the
+    // new (OpenPGP) packet format, so that under the default ROUNDTRIP encoding it is not emitted with a
+    // Legacy header (which broke interop with strict RFC 9580 consumers). A v3 OPS packet retains the
+    // Legacy default, mirroring the v3/v6 split in SignaturePacket.
+    private void v6PacketDefaultsToNewFormat()
+            throws IOException
+    {
+        byte[] fingerprint = Hex.decode("CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9");
+        OnePassSignaturePacket v6 = new OnePassSignaturePacket(
+                PGPSignature.CANONICAL_TEXT_DOCUMENT,
+                HashAlgorithmTags.SHA512,
+                PublicKeyAlgorithmTags.EDDSA_LEGACY,
+                new byte[32],
+                fingerprint,
+                false);
+        isTrue("v6 OPS packet must prefer the new packet format", v6.hasNewPacketFormat());
+
+        // encode through the default (ROUNDTRIP) output stream - no explicit new-format request
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut);
+        v6.encode(pOut);
+        pOut.close();
+        isTrue("v6 OPS packet must be emitted with a new-format header (bit 6 set) by default",
+                (bOut.toByteArray()[0] & 0x40) != 0);
+
+        OnePassSignaturePacket v3 = new OnePassSignaturePacket(
+                PGPSignature.BINARY_DOCUMENT,
+                HashAlgorithmTags.SHA256,
+                PublicKeyAlgorithmTags.RSA_GENERAL,
+                123L,
+                false);
+        isTrue("v3 OPS packet retains the legacy packet-format default", !v3.hasNewPacketFormat());
+        ByteArrayOutputStream b3 = new ByteArrayOutputStream();
+        BCPGOutputStream p3 = new BCPGOutputStream(b3);
+        v3.encode(p3);
+        p3.close();
+        isTrue("v3 OPS packet is emitted with a legacy header (bit 6 clear) by default",
+                (b3.toByteArray()[0] & 0x40) == 0);
+    }
+
     @Override
     public String getName()
     {
@@ -300,6 +340,7 @@ public class OnePassSignaturePacketTest
         parsingOfPacketWithUnknownVersionFails();
         parsingOfPacketWithTruncatedFingerprintFails();
         roundtripV6PacketWithZeroLengthSalt();
+        v6PacketDefaultsToNewFormat();
     }
 
     public static void main(String[] args)
