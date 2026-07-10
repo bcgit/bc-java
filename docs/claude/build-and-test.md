@@ -50,7 +50,7 @@ If your bc-test-data checkout isn't a sibling of `bc-java`, add `-Dbc.test.data.
 
 Common gotchas:
 - `*/build/resources/main` directories are required — some tests pull resource files (e.g. `lowmcL1.bin.properties` for Picnic, GOST tables) that fail with cryptic `NullPointerException` if missing.
-- `prov/src/test/resources` and `core/src/test/resources` carry test fixtures referenced by `TestResourceFinder` and direct classpath lookups.
+- `prov/src/test/resources` and `core/src/test/resources` carry test fixtures referenced by `TestResourceFinder` and direct classpath lookups. Other modules have their own too — e.g. `pg/src/test/resources` holds the OpenPGP/keybox fixtures (`pgpdata/*.kbx` for `KeyBoxTest`), loaded via `getResourceAsStream`. Put `<module>/src/test/resources` on the classpath (not just `<module>/build/resources/test`, which is empty until `processTestResources` runs), or a test fails with a misleading NPE / "Cannot take get instance of null" from a null resource stream in a *different* sub-test than the one you changed.
 - IDE-built classes under `out/production/...` (IntelliJ) are NOT on the Gradle classpath — don't reference them, and beware that they can drift from Gradle's outputs.
 - After deleting or renaming a test method (e.g. when rolling back an edit), the stale `.class` file lingers under `<module>/build/classes/java/test/`. JUnit's `TestSuite.class` reflection-walk will still find and run the stale method, surfacing confusing `ClassNotFoundException` / `NoClassDefFoundError` for inner-class artifacts that were removed. Run `./gradlew :<module>:compileTestJava --rerun-tasks` (or `:<module>:clean`) after a rollback to flush.
 
