@@ -67,11 +67,13 @@ public class Blob
                 // An empty blob is a free/deleted slot occupying len bytes - it is NOT
                 // end-of-file, so skip past it and continue with the following blobs (a keybox
                 // written by gnupg can carry an empty blob between real ones); github #2343.
-                // The header just read is 6 bytes (u32 length + u8 type + u8 version). Guard
-                // against a malformed length that would fail to advance (spinning forever) or
-                // point beyond the buffer.
+                // The header just read is 6 bytes (u32 length + u8 type + u8 version), so a
+                // well-formed blob has next = base + len >= base + 6 = the current position. A
+                // header-only empty blob (len == 6) is legal and must be skipped; only a length
+                // that would move the position backwards (len < 6, failing to advance / spinning
+                // forever) or point beyond the buffer is malformed.
                 long next = base + len;
-                if (next <= buffer.position() || next > (buffer.position() + buffer.remaining()))
+                if (next < buffer.position() || next > (buffer.position() + buffer.remaining()))
                 {
                     return null;
                 }
