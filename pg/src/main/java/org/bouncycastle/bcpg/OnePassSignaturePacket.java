@@ -128,6 +128,14 @@ public class OnePassSignaturePacket
 
     /**
      * Create a version 6 {@link OnePassSignaturePacket}.
+     * <p>
+     * Version 6 packets are emitted using the new (OpenPGP) packet format, not the Legacy format:
+     * RFC 9580 sec. 4.2 says the Legacy packet format "SHOULD NOT be used to generate new data", and
+     * v6 artefacts are new data by definition. Emitting a v6 OPS packet with a Legacy header breaks
+     * interoperability with strict RFC 9580 consumers (PGPainless issue #33). This mirrors the v6
+     * {@link SignaturePacket} constructor, which likewise defaults to the new packet format. A caller
+     * that genuinely needs a Legacy header can still force it by encoding through a
+     * {@link BCPGOutputStream} opened with {@link PacketFormat#LEGACY}.
      *
      * @param sigType signature type
      * @param hashAlgorithm hash algorithm tag
@@ -145,7 +153,7 @@ public class OnePassSignaturePacket
             byte[] fingerprint,
             boolean isNested)
     {
-        super(ONE_PASS_SIGNATURE);
+        super(ONE_PASS_SIGNATURE, true);
 
         this.version = VERSION_6;
         this.sigType = sigType;
