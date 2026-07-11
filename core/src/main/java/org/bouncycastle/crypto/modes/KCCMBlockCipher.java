@@ -156,6 +156,14 @@ public class KCCMBlockCipher
             throw new IllegalArgumentException("invalid parameters passed to KCCM");
         }
 
+        // TODO Nonce length validation. Should it always be engineBlockSize?
+        if (newNonce.length < engine.getBlockSize())
+        {
+            byte[] tmp = new byte[engine.getBlockSize()];
+            System.arraycopy(newNonce, 0, tmp, 0, newNonce.length);
+            newNonce = tmp;
+        }
+
         // RFC 5116 sec. 2.1 requires a distinct nonce per AEAD encryption under a given key; the
         // DSTU 7624 CCM construction inherits this CCM rule (cf. NIST SP 800-38C), and reuse is
         // catastrophic (CTR keystream reuse plus a forgeable CBC-MAC). That obligation is the
