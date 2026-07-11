@@ -4,13 +4,23 @@
 
     <property file="ant/build.regexp"/>
 
+    <!-- Load release.* here (release.debug, release.suffix, ...) so target.prefix can react to
+         release.debug below; bc+-build.xml re-loads these harmlessly as Ant properties are immutable.
+         User overrides are read first so they win. -->
+    <property file="bc-build.user.properties"/>
+    <property file="bc-build.properties"/>
+
     <property name="bc.javac.source" value="1.4"/>
     <property name="bc.javac.target" value="1.4"/>
     <property name="build.dir" value="build"/>
     <property name="jdk.name" value="jdk1.4"/>
     <property name="src.dir" value="${build.dir}/${jdk.name}"/>
     <property name="artifacts.dir" value="${build.dir}/artifacts/${jdk.name}"/>
-    <property name="target.prefix" value="jdk14"/>
+    <!-- A debug build (release.debug=true, set in bc-build.properties / bc-build.user.properties)
+         labels its jars <module>-debug-jdk14-<version>; otherwise <module>-jdk14-<version>. -->
+    <condition property="target.prefix" value="debug-jdk14" else="jdk14">
+        <istrue value="${release.debug}"/>
+    </condition>
     <property name="javadoc.args" value="-breakiterator"/>
     <property name="junit.maxmemory" value="1536m" />
 
