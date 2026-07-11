@@ -35,6 +35,15 @@ public final class TrustAnchorIDs
     /** OID component for the landmark-groups arc (Section 8.2.1). */
     public static final int LANDMARK_GROUPS_ARC = 2;
 
+    /**
+     * Maximum length, in bytes, of a trust anchor ID's binary representation.
+     * A trust anchor ID is transmitted as {@code opaque TrustAnchorID<1..2^8-1>}
+     * (Section 4.1 of draft-ietf-tls-trust-anchor-ids) and Section 3 states its
+     * binary representation "MUST NOT exceed 255 bytes", so a valid trust anchor
+     * ID is 1..255 bytes.
+     */
+    public static final int MAX_ID_LENGTH = 255;
+
     private TrustAnchorIDs()
     {
     }
@@ -47,11 +56,13 @@ public final class TrustAnchorIDs
      */
     public static byte[] logId(byte[] caId, long logNumber)
     {
+        requireValidId(caId, "caId");
         if (logNumber < 1 || logNumber > 0xFFFFL)
         {
             throw new IllegalArgumentException("log_number out of range [1, 65535]: " + logNumber);
         }
-        return concat(caId, encodeComponent(LOGS_ARC), encodeComponent(logNumber));
+        return requireValidId(
+            concat(caId, encodeComponent(LOGS_ARC), encodeComponent(logNumber)), "log ID");
     }
 
     /**
@@ -103,6 +114,7 @@ public final class TrustAnchorIDs
      */
     public static byte[] landmarkId(byte[] caId, long logNumber, long landmarkNumber)
     {
+        requireValidId(caId, "caId");
         if (logNumber < 1 || logNumber > 0xFFFFL)
         {
             throw new IllegalArgumentException("log_number out of range: " + logNumber);
@@ -111,10 +123,10 @@ public final class TrustAnchorIDs
         {
             throw new IllegalArgumentException("landmark_number must be positive: " + landmarkNumber);
         }
-        return concat(caId,
+        return requireValidId(concat(caId,
             encodeComponent(LANDMARKS_ARC),
             encodeComponent(logNumber),
-            encodeComponent(landmarkNumber));
+            encodeComponent(landmarkNumber)), "landmark ID");
     }
 
     /**
@@ -129,6 +141,7 @@ public final class TrustAnchorIDs
      */
     public static byte[] landmarkGroupId(byte[] caId, long logNumber, long landmarkNumber)
     {
+        requireValidId(caId, "caId");
         if (logNumber < 1 || logNumber > 0xFFFFL)
         {
             throw new IllegalArgumentException("log_number out of range: " + logNumber);
@@ -137,10 +150,10 @@ public final class TrustAnchorIDs
         {
             throw new IllegalArgumentException("landmark_number must be positive: " + landmarkNumber);
         }
-        return concat(caId,
+        return requireValidId(concat(caId,
             encodeComponent(LANDMARK_GROUPS_ARC),
             encodeComponent(logNumber),
-            encodeComponent(landmarkNumber));
+            encodeComponent(landmarkNumber)), "landmark group ID");
     }
 
     /**
@@ -196,7 +209,7 @@ public final class TrustAnchorIDs
             // Encoding a RELATIVE-OID we just constructed in memory should not fail.
             throw Exceptions.illegalStateException("unable to encode RELATIVE-OID for " + dotted, e);
         }
-        return stripDerHeader(encoded);
+        return requireValidId(stripDerHeader(encoded), "trust anchor ID");
     }
 
     /**
@@ -232,6 +245,27 @@ public final class TrustAnchorIDs
             out[n - 1 - i] = (byte)b;
         }
         return out;
+    }
+
+    /**
+     * Enforces the {@code opaque TrustAnchorID<1..2^8-1>} length bound of
+     * Section 3 / Section 4.1 of draft-ietf-tls-trust-anchor-ids: a trust anchor
+     * ID's binary representation must be 1..{@link #MAX_ID_LENGTH} bytes.
+     *
+     * @return {@code id}, when valid, to allow chaining at a return site
+     */
+    private static byte[] requireValidId(byte[] id, String what)
+    {
+        if (id == null)
+        {
+            throw new NullPointerException(what + " cannot be null");
+        }
+        if (id.length < 1 || id.length > MAX_ID_LENGTH)
+        {
+            throw new IllegalArgumentException(what + " binary length must be 1.." + MAX_ID_LENGTH
+                + " bytes (draft-ietf-tls-trust-anchor-ids sec. 3), got " + id.length);
+        }
+        return id;
     }
 
     private static byte[] stripDerHeader(byte[] der)
