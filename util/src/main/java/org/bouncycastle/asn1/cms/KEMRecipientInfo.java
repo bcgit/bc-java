@@ -56,6 +56,10 @@ public class KEMRecipientInfo
         {
             throw new IllegalArgumentException("kekLength must be <= 65535");
         }
+        if (kekLength.intValueExact() < 1)
+        {
+            throw new IllegalArgumentException("kekLength must be >= 1");
+        }
         this.cmsVersion = ASN1Integer.ZERO;
         this.rid = rid;
         this.kem = kem;
@@ -89,6 +93,10 @@ public class KEMRecipientInfo
         }
 
         cmsVersion = ASN1Integer.getInstance(seq.getObjectAt(0));
+        if (!cmsVersion.hasValue(0))
+        {
+            throw new IllegalArgumentException("version must be 0");
+        }
         rid = RecipientIdentifier.getInstance(seq.getObjectAt(1));
         kem = AlgorithmIdentifier.getInstance(seq.getObjectAt(2));
         kemct = ASN1OctetString.getInstance(seq.getObjectAt(3));
@@ -98,6 +106,10 @@ public class KEMRecipientInfo
         if (kekLength.intValueExact() > 65535)
         {
             throw new IllegalArgumentException("kekLength must be <= 65535");
+        }
+        if (kekLength.intValueExact() < 1)
+        {
+            throw new IllegalArgumentException("kekLength must be >= 1");
         }
 
         int elt = 6;
