@@ -12,7 +12,6 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
@@ -26,7 +25,6 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -58,7 +56,6 @@ public class SignatureSpi
     private static final String ML_DSA_44 = "ML-DSA-44";
     private static final String ML_DSA_65 = "ML-DSA-65";
     private static final String ML_DSA_87 = "ML-DSA-87";
-    private final SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     private Key compositeKey;
 
     static
@@ -355,12 +352,9 @@ public class SignatureSpi
     protected byte[] engineSign()
         throws SignatureException
     {
-        byte[] r = new byte[32];
-        random.nextBytes(r); // Secure random generator
-
         if (preHashDigest != null)
         {
-            processPreHashedMessage(null);
+            processPreHashedMessage();
         }
 
         byte[] mldsaSig = this.componentSignatures[0].sign();
@@ -368,14 +362,13 @@ public class SignatureSpi
 
         // Concatenate: ML-DSA sig || Traditional sig
         byte[] compositeSig = new byte[mldsaSig.length + tradSig.length];
-        //System.arraycopy(r, 0, compositeSig, 0, 32);
         System.arraycopy(mldsaSig, 0, compositeSig, 0, mldsaSig.length);
         System.arraycopy(tradSig, 0, compositeSig, mldsaSig.length, tradSig.length);
 
         return compositeSig;
     }
 
-    private void processPreHashedMessage(byte[] r)
+    private void processPreHashedMessage()
         throws SignatureException
     {
         byte[] dig = new byte[baseDigest.getDigestSize()];
@@ -389,6 +382,8 @@ public class SignatureSpi
             throw new SignatureException(e.getMessage());
         }
 
+        // M' = Prefix || Label || len(ctx) || ctx || PH(M) per sec. 2.2 of
+        // draft-ietf-lamps-pq-composite-sigs (no randomizer).
         for (int i = 0; i < this.componentSignatures.length; i++)
         {
             Signature componentSig = this.componentSignatures[i];
@@ -405,21 +400,15 @@ public class SignatureSpi
                 componentSig.update((byte)ctx.length);
                 componentSig.update(ctx);
             }
-            if (r != null)
-            {
-                componentSig.update(r, 0, r.length);
-            }
             componentSig.update(dig, 0, dig.length);
         }
     }
 
     public static byte[][] splitCompositeSignature(byte[] compositeSignature, int mldsaSigLen)
     {
-        //byte[] r = new byte[32];
         byte[] mldsaSig = new byte[mldsaSigLen];
         byte[] tradSig = new byte[compositeSignature.length - mldsaSigLen];
 
-        //System.arraycopy(compositeSignature, 0, r, 0, 32);
         System.arraycopy(compositeSignature, 0, mldsaSig, 0, mldsaSigLen);
         System.arraycopy(compositeSignature, mldsaSigLen, tradSig, 0, tradSig.length);
 
@@ -459,7 +448,7 @@ public class SignatureSpi
 
         if (preHashDigest != null)
         {
-            processPreHashedMessage(null);
+            processPreHashedMessage();
         }
 
         // Currently all signatures try to verify even if, e.g., the first is invalid.
@@ -469,7 +458,6 @@ public class SignatureSpi
 
         for (int i = 0; i < this.componentSignatures.length; i++)
         {
-            //signatures[0] is 32-byte random number
             if (!this.componentSignatures[i].verify(signatures[i]))
             {
                 fail = true;
