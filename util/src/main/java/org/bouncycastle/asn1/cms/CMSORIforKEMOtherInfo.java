@@ -38,6 +38,10 @@ public class CMSORIforKEMOtherInfo
         {
             throw new IllegalArgumentException("kekLength must be <= 65535");
         }
+        if (kekLength < 1)
+        {
+            throw new IllegalArgumentException("kekLength must be >= 1");
+        }
         this.wrap = wrap;
         this.kekLength = kekLength;
         this.ukm = ukm;
