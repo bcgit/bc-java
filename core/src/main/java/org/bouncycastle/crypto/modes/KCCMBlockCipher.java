@@ -216,11 +216,6 @@ public class KCCMBlockCipher
 
         boolean hasAssocText = aadLen > 0;
 
-        if (hasAssocText && aadLen % engine.getBlockSize() != 0)
-        {
-            throw new IllegalArgumentException("padding not supported");
-        }
-
         // The G1 block binds the nonce, data length and MAC-size flag into the MAC and must be
         // processed unconditionally. DSTU 7624 carries the associated-data-present indicator as a flag
         // bit inside G1, so it is not a gate on computing G1: skipping G1 when no AAD is present leaves
@@ -271,9 +266,9 @@ public class KCCMBlockCipher
 
         int assocOff = 0;
         int authLen = aadLen;
-        while (authLen != 0)
+        while (authLen > 0)
         {
-            for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
+            for (int byteIndex = 0; byteIndex < engine.getBlockSize() && byteIndex < authLen - assocOff; byteIndex++)
             {
                 macBlock[byteIndex] ^= aad[byteIndex + assocOff];
             }
