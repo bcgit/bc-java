@@ -17,6 +17,7 @@ build/
 */build/
 dist/
 libs/*.jar
+/*.jar
 out/
 */out/
 .settings/
