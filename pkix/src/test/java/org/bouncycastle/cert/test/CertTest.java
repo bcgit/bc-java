@@ -4436,7 +4436,10 @@ public class CertTest
             // verify(PublicKey, Provider) is a JDK 8 overload; invoke it reflectively so this file
             // still compiles under the genuine javac 1.5 legacy build (the block is guarded off on
             // 1.5 at runtime anyway). All referenced types predate Java 5; only the method is newer.
-            java.lang.reflect.Method verifyWithProvider = cert.getClass().getMethod(
+            // Resolve the method through the public X509Certificate type, not cert.getClass(): the BC
+            // implementation class is package-private, so a Method obtained from it fails invoke() with
+            // IllegalAccessException even though the method itself is public.
+            java.lang.reflect.Method verifyWithProvider = X509Certificate.class.getMethod(
                 "verify", java.security.PublicKey.class, java.security.Provider.class);
             verifyWithProvider.invoke(cert, ecPub, new BouncyCastleProvider());      // ec key only
             verifyWithProvider.invoke(cert, lmsPub, new BouncyCastlePQCProvider());  // lms key only
@@ -4545,7 +4548,9 @@ public class CertTest
         {
             // verify(PublicKey, Provider) is a JDK 8 overload; invoke it reflectively so this file
             // still compiles under the genuine javac 1.5 legacy build (guarded off on 1.5 anyway).
-            cert.getClass().getMethod("verify", java.security.PublicKey.class, java.security.Provider.class)
+            // Resolve through the public X509Certificate type, not cert.getClass(): the BC cert impl
+            // class is package-private, so invoke() on its Method throws IllegalAccessException.
+            X509Certificate.class.getMethod("verify", java.security.PublicKey.class, java.security.Provider.class)
                 .invoke(cert, ecPub, new BouncyCastleProvider());      // ec key only
         }
 
