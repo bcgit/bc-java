@@ -55,7 +55,8 @@ public class MerkleTreeCertificateValidator
      * to the CA's published {@code MTCCertificationAuthority} extension and
      * enforces:</p>
      * <ul>
-     *   <li>The cert's serial number is at least {@code authorityInfo.getMinSerial()}
+     *   <li>The cert's serial number lies within the CA's authorized range
+     *       {@code [authorityInfo.getMinSerial(), authorityInfo.getMaxSerial()]}
      *       (Section 5.5 / 7.2).</li>
      *   <li>The {@code hashFunction} OID matches {@code authorityInfo.getLogHash()}
      *       (Section 7.1).</li>
@@ -409,6 +410,11 @@ public class MerkleTreeCertificateValidator
         {
             throw new SecurityException(
                 "Serial number " + serialBig + " is below CA minSerial " + authorityInfo.getMinSerial());
+        }
+        if (authorityInfo != null && serialBig.compareTo(authorityInfo.getMaxSerial()) > 0)
+        {
+            throw new SecurityException(
+                "Serial number " + serialBig + " is above CA maxSerial " + authorityInfo.getMaxSerial());
         }
         for (RevokedRange range : params.revokedRanges)
         {
