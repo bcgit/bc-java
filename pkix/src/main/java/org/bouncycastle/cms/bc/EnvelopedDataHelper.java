@@ -31,7 +31,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.AlgorithmIdentifierFactory;
 import org.bouncycastle.crypto.util.CipherFactory;
 import org.bouncycastle.crypto.util.CipherKeyGeneratorFactory;
-import org.bouncycastle.crypto.util.OidCatalogue;
+import org.bouncycastle.operator.OidCatalogue;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDigestProvider;
 
