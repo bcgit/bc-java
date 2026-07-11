@@ -133,6 +133,8 @@ public class SMIMESignedWriter
          */
         public Builder withHeader(String headerName, String headerValue)
         {
+            SMimeUtils.checkHeader(headerName, headerValue);
+
             this.extraHeaders.put(headerName, headerValue);
 
             return this;

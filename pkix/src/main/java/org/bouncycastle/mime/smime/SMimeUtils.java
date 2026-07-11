@@ -169,4 +169,17 @@ class SMimeUtils
             }
         };
     }
+
+    static void checkHeader(String name, String value)
+    {
+        if (hasLineSeparator(name) || hasLineSeparator(value))
+        {
+            throw new IllegalArgumentException("header name or value must not contain a line separator");
+        }
+    }
+
+    private static boolean hasLineSeparator(String s)
+    {
+        return s != null && (s.indexOf('\r') >= 0 || s.indexOf('\n') >= 0);
+    }
 }
