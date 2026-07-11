@@ -1159,7 +1159,7 @@ public class MerkleTreeCertificatesTest
         MTCCertificationAuthority matchingAuthority = new MTCCertificationAuthority(
             new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
-            BigInteger.ZERO);
+            BigIntegers.ZERO, MTCCertificationAuthority.MAX_SERIAL);
         MerkleTreeCertificateValidator.ValidationParams matching =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
@@ -1175,7 +1175,7 @@ public class MerkleTreeCertificatesTest
         final MTCCertificationAuthority mismatching = new MTCCertificationAuthority(
             new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384),
             new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
-            BigInteger.ZERO);
+            BigIntegers.ZERO, MTCCertificationAuthority.MAX_SERIAL);
         final MerkleTreeCertificateValidator.ValidationParams strict =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
@@ -1225,7 +1225,7 @@ public class MerkleTreeCertificatesTest
         final MTCCertificationAuthority strictMinSerial = new MTCCertificationAuthority(
             new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
-            serial.add(BigInteger.ONE));
+            serial.add(BigIntegers.ONE), MTCCertificationAuthority.MAX_SERIAL);
         final MerkleTreeCertificateValidator.ValidationParams tooHigh =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
@@ -1243,6 +1243,28 @@ public class MerkleTreeCertificatesTest
             }
         });
 
+        // maxSerial below the cert's serial — must be rejected.
+        final MTCCertificationAuthority strictMaxSerial = new MTCCertificationAuthority(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+            new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
+            BigIntegers.ZERO, serial.subtract(BigIntegers.ONE));
+        final MerkleTreeCertificateValidator.ValidationParams tooLow =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                cosigners,
+                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
+                0,
+                hashFunc,
+                strictMaxSerial);
+        testException("above CA maxSerial", "SecurityException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(cert, tooLow);
+            }
+        });
+
         // minSerial equal to the cert's serial — accepted (boundary).
         // (Validation will then fail on the cosignature requirement, but only
         // after the minSerial check; testing the minSerial gate in isolation
@@ -1253,7 +1275,7 @@ public class MerkleTreeCertificatesTest
         MTCCertificationAuthority openMinSerial = new MTCCertificationAuthority(
             new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
-            BigInteger.ZERO);
+            BigIntegers.ZERO, MTCCertificationAuthority.MAX_SERIAL);
         MerkleTreeCertificateValidator.ValidationParams permissive =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,

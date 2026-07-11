@@ -133,13 +133,14 @@ public class MTCCertAuth
     /**
      * Builds the {@link MTCCertificationAuthority} extension value that the
      * relying party needs to validate certs from this CA. Combines the CA's
-     * log hash and cosigner signature algorithm with the supplied minSerial.
+     * log hash and cosigner signature algorithm with the supplied serial range.
      *
-     * @param minSerial minimum allowed cert serial from this CA (Section 6.1)
+     * @param minSerial minimum allowed cert serial from this CA (Section 5.5 / 6.1)
+     * @param maxSerial maximum allowed cert serial from this CA (Section 5.5 / 6.1)
      */
-    public MTCCertificationAuthority authorityInfo(BigInteger minSerial)
+    public MTCCertificationAuthority authorityInfo(BigInteger minSerial, BigInteger maxSerial)
     {
         return new MTCCertificationAuthority(
-            hashFunc.getAlgorithmIdentifier().getAlgorithm(), sigAlgOid, minSerial);
+            hashFunc.getAlgorithmIdentifier().getAlgorithm(), sigAlgOid, minSerial, maxSerial);
     }
 }

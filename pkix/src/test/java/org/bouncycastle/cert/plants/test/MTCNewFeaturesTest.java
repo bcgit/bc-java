@@ -140,7 +140,8 @@ public class MTCNewFeaturesTest
         MTCCertificationAuthority info = new MTCCertificationAuthority(
             new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(new org.bouncycastle.asn1.ASN1ObjectIdentifier("1.2.840.10045.4.3.2")), // ecdsa-with-SHA256
-            BigInteger.valueOf(1L << 48));   // minSerial: first entry of log 1
+            BigInteger.valueOf(1L << 48),                // minSerial: first entry of log 1
+            BigInteger.valueOf((2L << 48) - 1));         // maxSerial: last entry of log 1
 
         X500Name externalIssuer = new X500Name("CN=External Trust Anchor");
         BigInteger serial = BigInteger.ONE;
@@ -167,6 +168,8 @@ public class MTCNewFeaturesTest
             "1.2.840.10045.4.3.2".equals(decoded.getSigAlg().getAlgorithm().getId()));
         isTrue("minSerial preserved",
             decoded.getMinSerial().equals(BigInteger.valueOf(1L << 48)));
+        isTrue("maxSerial preserved",
+            decoded.getMaxSerial().equals(BigInteger.valueOf((2L << 48) - 1)));
 
         // Required X.509 extensions.
         Extension keyUsageExt = cert.getExtensions().getExtension(Extension.keyUsage);
