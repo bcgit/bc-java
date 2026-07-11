@@ -23,7 +23,8 @@ public class RegressionTest
         new CertStoreTest(),
         new CertTest(),
         new CertUniqueIDTest(),
-        new ChaCha20Poly1305Test(),
+        // ChaCha20Poly1305Test / XChaCha20Poly1305Test use javax.crypto.Cipher.updateAAD (JDK 7+),
+        // absent on the JRE 5 runtime this distribution targets, so both are omitted here.
         new CipherStreamTest(),
         new CipherStreamTest2(),
         new CMacTest(),

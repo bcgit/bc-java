@@ -89,7 +89,7 @@ public class BouncyCastleProviderTest
 
         if (!errors.isEmpty())
         {
-            throw new AssertionError("Failed with the following errors:\n" + String.join("\n", errors));
+            throw new AssertionError("Failed with the following errors:\n" + join(errors));
         }
     }
 
@@ -123,7 +123,7 @@ public class BouncyCastleProviderTest
             }
     
             if (!errors.isEmpty()) {
-                throw new AssertionError("Failed with the following errors:\n" + String.join("\n", errors));
+                throw new AssertionError("Failed with the following errors:\n" + join(errors));
             }
         }
     */
@@ -171,5 +171,21 @@ public class BouncyCastleProviderTest
             e.printStackTrace(new PrintWriter(out));
             throw new AssertionError(String.format("Key [%s] contains class which failed on instance creation: %s %s\n%s", key, clazz.getName(), cause.getMessage(), out.toString()));
         }
+    }
+
+    // String.join(CharSequence, Iterable) is JDK 1.8+; hand-rolled here so this test compiles
+    // under the genuine javac 1.5 legacy build (String.format above is Java 5 and stays).
+    private static String join(java.util.List<String> lines)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i != lines.size(); i++)
+        {
+            if (i != 0)
+            {
+                sb.append('\n');
+            }
+            sb.append(lines.get(i));
+        }
+        return sb.toString();
     }
 }
