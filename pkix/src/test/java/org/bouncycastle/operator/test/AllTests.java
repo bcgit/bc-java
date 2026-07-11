@@ -9,7 +9,6 @@ import java.security.Signature;
 import java.security.spec.MGF1ParameterSpec;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
@@ -812,8 +811,13 @@ public class AllTests
 
         // Encrypt with a JCE AES-GCM cipher.
         Cipher encCipher = Cipher.getInstance(NISTObjectIdentifiers.id_aes256_GCM.getId(), BC);
-        encCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"),
-            new GCMParameterSpec(tagLenBits, nonce));
+        // GCMParameterSpec is JDK 1.7+; construct it reflectively so this file compiles under the
+        // genuine javac 1.5 legacy build (this method has already returned above on such a JRE via
+        // the Class.forName guard, so the reflective call only ever runs where the class exists).
+        java.security.spec.AlgorithmParameterSpec gcmSpec =
+            (java.security.spec.AlgorithmParameterSpec)Class.forName("javax.crypto.spec.GCMParameterSpec")
+                .getConstructor(int.class, byte[].class).newInstance(new Integer(tagLenBits), nonce);
+        encCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), gcmSpec);
         byte[] ciphertext = encCipher.doFinal(plaintext);
 
         // Hand the AlgorithmIdentifier(id-aes256-GCM, GCMParameters) to the builder.

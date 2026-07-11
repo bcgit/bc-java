@@ -4433,9 +4433,13 @@ public class CertTest
 
         if (System.getProperty("java.version").indexOf("1.5.") < 0)
         {
-            cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
-
-            cert.verify(lmsPub, new BouncyCastlePQCProvider());     // lms key only
+            // verify(PublicKey, Provider) is a JDK 8 overload; invoke it reflectively so this file
+            // still compiles under the genuine javac 1.5 legacy build (the block is guarded off on
+            // 1.5 at runtime anyway). All referenced types predate Java 5; only the method is newer.
+            java.lang.reflect.Method verifyWithProvider = cert.getClass().getMethod(
+                "verify", java.security.PublicKey.class, java.security.Provider.class);
+            verifyWithProvider.invoke(cert, ecPub, new BouncyCastleProvider());      // ec key only
+            verifyWithProvider.invoke(cert, lmsPub, new BouncyCastlePQCProvider());  // lms key only
         }
 
         //
@@ -4539,7 +4543,10 @@ public class CertTest
 
         if (System.getProperty("java.version").indexOf("1.5.") < 0)
         {
-            cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
+            // verify(PublicKey, Provider) is a JDK 8 overload; invoke it reflectively so this file
+            // still compiles under the genuine javac 1.5 legacy build (guarded off on 1.5 anyway).
+            cert.getClass().getMethod("verify", java.security.PublicKey.class, java.security.Provider.class)
+                .invoke(cert, ecPub, new BouncyCastleProvider());      // ec key only
         }
 
         //

@@ -56,6 +56,11 @@
                 <exclude name="**/jce/provider/*.java"/>
                 <!-- AEADTest references javax.crypto.spec.GCMParameterSpec (JDK 7+) directly -->
                 <exclude name="**/jce/provider/test/AEADTest.java"/>
+                <!-- ChaCha20Poly1305Test / XChaCha20Poly1305Test drive AEAD AAD through
+                     javax.crypto.Cipher.updateAAD (JDK 7+), which has no JRE 5 substitute; the
+                     jdk1.5 RegressionTest overlay drops ChaCha20Poly1305Test to match. -->
+                <exclude name="**/jce/provider/test/ChaCha20Poly1305Test.java"/>
+                <exclude name="**/jce/provider/test/XChaCha20Poly1305Test.java"/>
                 <!-- LEATest references javax.crypto.spec.GCMParameterSpec (JDK 7+) directly;
                      the jdk1.5 AllTests overlay drops it from the suite -->
                 <exclude name="**/jcajce/provider/test/LEATest.java"/>
@@ -70,6 +75,16 @@
             <fileset dir="tls/src/test/java" includes="**/*.java" >
                 <exclude name="**/tls/*.java"/>
                 <exclude name="**/jsse/provider/*.java"/>
+                <!-- These two JSSE tests use JDK 1.8+ types (SNIHostName, ExtendedSSLSession,
+                     SSLParameters SNI methods); the jdk1.5 jsse/provider AllTests overlay runs a
+                     curated 1.5-safe subset that does not reference them. -->
+                <exclude name="**/jsse/provider/test/BCJSSEClientTest.java"/>
+                <exclude name="**/jsse/provider/test/RequestedServerNamesTest.java"/>
+                <!-- TlsClientRawKeysTest / TlsServerRawKeysTest call InetAddress.getLoopbackAddress()
+                     (JDK 1.7+); they belong to no AllTests/RegressionTest suite (run standalone), so
+                     a plain exclude removes them from the compile with no coverage impact. -->
+                <exclude name="**/tls/test/TlsClientRawKeysTest.java"/>
+                <exclude name="**/tls/test/TlsServerRawKeysTest.java"/>
             </fileset>
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
@@ -79,6 +94,21 @@
                 <!-- est.jcajce tests reach the package-private DefaultESTClient; run from the test
                      jar in this build that cross-jar package access fails, so exclude them -->
                 <exclude name="**/est/jcajce/*.java"/>
+                <!-- Genuine post-1.5 API in test source (fails the real javac 1.5 test compile):
+                     PKIXRevocationTest / OCSPExceptionalSignatureRejectionTest use
+                     java.security.cert.PKIXRevocationChecker (JDK 1.8+); the jdk1.5 ocsp AllTests
+                     overlay already omits them from the suite. -->
+                <exclude name="**/cert/ocsp/test/PKIXRevocationTest.java"/>
+                <exclude name="**/cert/ocsp/test/OCSPExceptionalSignatureRejectionTest.java"/>
+                <!-- cert.plants (Merkle-tree certs) uses generic/varargs inference the 1.5 compiler
+                     cannot resolve; excluded wholesale as in ant/jdk14.xml. -->
+                <exclude name="**/cert/plants/**/*.java"/>
+                <!-- DefiniteLengthLargeDataTest uses PipedInputStream(out, int) (JDK 1.6+); it is
+                     referenced by no suite, so a plain exclude suffices. -->
+                <exclude name="**/cms/test/DefiniteLengthLargeDataTest.java"/>
+                <!-- ERSTest uses java.nio.file.Files (JDK 1.7+); the jdk1.5 tsp AllTests overlay
+                     drops it while retaining ERSTestdatenTest. -->
+                <exclude name="**/tsp/test/ERSTest.java"/>
             </fileset>
             <fileset dir="pkix/src/test/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
@@ -115,6 +145,16 @@
             <fileset dir="pg/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="pg/src/test/jdk1.5" includes="**/*.java" />
         </copy>
+
+        <!-- jdk15to18 has no full source preprocessor (unlike ant/jdk14.xml), but two annotations
+             are genuine javac 1.5 compile errors in the test tree: @Override on an interface-method
+             implementation ("method does not override a method from its superclass") and
+             @FunctionalInterface (a Java 8 type, "cannot find symbol"). Both are compile-time only,
+             so stripping them from the staged sources changes nothing at runtime. This mirrors the
+             @Override|@FunctionalInterface strip in ant/build.regexp used by ant/jdk14.xml. -->
+        <replaceregexp match="@Override|@FunctionalInterface" replace=" " flags="g" byline="true">
+            <fileset dir="${src.dir}" includes="**/*.java" />
+        </replaceregexp>
 
         <available classname="com.puppycrawl.tools.checkstyle.CheckStyleTask" property="checkstyle.on" />
     </target>
