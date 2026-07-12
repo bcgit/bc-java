@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.engines.DSTU7624WrapEngine;
@@ -99,6 +100,58 @@ public class DSTU7624Test
         GCMModeTests();
         testOverlapping();
         kccmKgcmNoUnverifiedPlaintextOnFailure();
+        kgcmReInitClearsAssociatedText();
+    }
+
+    private void kgcmReInitClearsAssociatedText()
+        throws Exception
+    {
+        // github PR #2349: init() applies AEADParameters.getAssociatedText() to the associatedText
+        // accumulator but did not first clear it, so a re-init carried the previous operation's AAD
+        // (left in the buffer by the prior doFinal's reset()) into the next tag. A re-initialised
+        // cipher must behave exactly like a freshly constructed one.
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] nonce1 = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] nonce2 = Hex.decode("202122232425262728292A2B2C2D2E2F");
+        byte[] aadA = Hex.decode("A0A1A2A3A4A5A6A7");
+        byte[] aadB = Hex.decode("B0B1B2B3B4B5B6B7");
+        byte[] pt = Hex.decode("303132333435363738393A3B3C3D3E3F");
+
+        // (1) AEADParameters branch: re-init with a different AAD must match a fresh cipher.
+        KGCMBlockCipher reused = new KGCMBlockCipher(new DSTU7624Engine(128));
+        kgcmEncrypt(reused, new AEADParameters(new KeyParameter(key), 128, nonce1, aadA), pt);
+        byte[] viaReuse = kgcmEncrypt(reused, new AEADParameters(new KeyParameter(key), 128, nonce2, aadB), pt);
+
+        byte[] viaFresh = kgcmEncrypt(new KGCMBlockCipher(new DSTU7624Engine(128)),
+            new AEADParameters(new KeyParameter(key), 128, nonce2, aadB), pt);
+
+        if (!Arrays.areEqual(viaReuse, viaFresh))
+        {
+            fail("KGCM re-init did not clear stale associated text (AEADParameters)");
+        }
+
+        // (2) ParametersWithIV branch: re-init with no AAD must match a fresh no-AAD cipher.
+        KGCMBlockCipher reused2 = new KGCMBlockCipher(new DSTU7624Engine(128));
+        kgcmEncrypt(reused2, new AEADParameters(new KeyParameter(key), 128, nonce1, aadA), pt);
+        byte[] viaReuse2 = kgcmEncrypt(reused2, new ParametersWithIV(new KeyParameter(key), nonce2), pt);
+
+        byte[] viaFresh2 = kgcmEncrypt(new KGCMBlockCipher(new DSTU7624Engine(128)),
+            new ParametersWithIV(new KeyParameter(key), nonce2), pt);
+
+        if (!Arrays.areEqual(viaReuse2, viaFresh2))
+        {
+            fail("KGCM re-init did not clear stale associated text (ParametersWithIV)");
+        }
+    }
+
+    private byte[] kgcmEncrypt(KGCMBlockCipher cipher, CipherParameters params, byte[] pt)
+        throws Exception
+    {
+        cipher.init(true, params);
+        byte[] out = new byte[cipher.getOutputSize(pt.length)];
+        int len = cipher.processBytes(pt, 0, pt.length, out, 0);
+        cipher.doFinal(out, len);
+        return out;
     }
 
     private void kccmKgcmNoUnverifiedPlaintextOnFailure()

@@ -99,6 +99,7 @@ public class KGCMBlockCipher
 
             newNonce = aeadParameters.getNonce();
             initialAssociatedText = aeadParameters.getAssociatedText();
+            associatedText.reset();
             macSize = macSizeInBits / 8;
             keyParameter = aeadParameters.getKey();
 
@@ -113,6 +114,7 @@ public class KGCMBlockCipher
 
             newNonce = withIV.getIV();
             initialAssociatedText = null;
+            associatedText.reset();
             macSize = blockSize; // Set default mac size
 
             CipherParameters innerParameters = withIV.getParameters();
