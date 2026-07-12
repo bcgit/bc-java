@@ -3,7 +3,7 @@
 set -e
 
 export script_loc=$( cd -- "$( dirname -- "$0" )" &> /dev/null && pwd )
-version=$(fgrep version "$script_loc/gradle.properties"  | sed -e "s/version=//")
+version=$(grep '^version=' "$script_loc/gradle.properties"  | sed -e "s/version=//")
 
 echo ""
 echo "Module dependency testing"
