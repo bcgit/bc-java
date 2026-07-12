@@ -178,12 +178,21 @@ configure(allprojects.findAll {it.name != 'bom'}) {
 }
 
 ext {
+    // A debug build (-Prelease.debug=true, or release.debug=true in gradle.properties -
+    // mirroring the Ant builds' bc-build.properties release.debug flag) labels every module's
+    // jars/artifacts <module>-debug-jdk18on-<version> (or <module>-debug-jdk15to18-<version> on a
+    // Java <= 8 daemon) and compiles with debug symbols. The default (release.debug=false) is
+    // unchanged: <module>-jdk18on-<version> with no debug info.
+    ext.releaseDebug = Boolean.parseBoolean(project.findProperty('release.debug')?.toString() ?: 'false')
+
     JavaVersion current = JavaVersion.current();
+    String range;
     if (current.compareTo(JavaVersion.VERSION_1_8) <= 0) {
-        ext.vmrange = 'jdk15to18'
+        range = 'jdk15to18'
     } else {
-        ext.vmrange = 'jdk18on'
+        range = 'jdk18on'
     }
+    ext.vmrange = releaseDebug ? 'debug-' + range : range
 
 }
 
@@ -288,7 +297,7 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.debug = false;
+        options.debug = releaseDebug;
     }
 
     tasks.withType(Test).configureEach {
