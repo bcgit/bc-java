@@ -133,6 +133,22 @@ A sibling ```copyMavenJars``` task produces the same set minus ```bccore``` (who
 ./gradlew copyMavenJars
 ```
 
+### Debug builds
+
+By default the jars are compiled without debug symbols and are named ```<module>-jdk18on-<version>``` (e.g. ```bcprov-jdk18on-<version>.jar```). Setting the ```release.debug``` project property to ```true``` produces a debug build instead: every module's jar, sources jar, javadoc jar and Maven artifactId are labelled ```<module>-debug-jdk18on-<version>``` (```<module>-debug-jdk15to18-<version>``` when Gradle is driven by a JDK 8 or earlier daemon), and the classes are compiled with full debug information (```-g```). This mirrors the ```release.debug``` flag the legacy Ant builds read from ```bc-build.properties```.
+
+The property is off by default (```release.debug=false``` in ```gradle.properties```). Enable it for a single invocation on the command line, applying to any build task:
+
+```
+# debug jars in each module's build/libs
+./gradlew -Prelease.debug=true clean build
+
+# or gather the full set of debug jars into dist/
+./gradlew -Prelease.debug=true clean copyJars
+```
+
+To make it the default for your working copy, set ```release.debug=true``` in ```gradle.properties``` (or in a personal ```gradle.properties``` under your Gradle home) rather than passing ```-P``` each time. Because the debug label is carried on the artifact names, a debug build's outputs will not overwrite a normal build's, and vice versa.
+
 ## SBOM and CBOM generation
 
 The build can produce CycloneDX 1.6 bills of materials describing the release artifacts:
