@@ -156,6 +156,14 @@ public class KCCMBlockCipher
             throw new IllegalArgumentException("invalid parameters passed to KCCM");
         }
 
+        // TODO Nonce length validation. Should it always be engineBlockSize?
+        if (newNonce.length < engine.getBlockSize())
+        {
+            byte[] tmp = new byte[engine.getBlockSize()];
+            System.arraycopy(newNonce, 0, tmp, 0, newNonce.length);
+            newNonce = tmp;
+        }
+
         // RFC 5116 sec. 2.1 requires a distinct nonce per AEAD encryption under a given key; the
         // DSTU 7624 CCM construction inherits this CCM rule (cf. NIST SP 800-38C), and reuse is
         // catastrophic (CTR keystream reuse plus a forgeable CBC-MAC). That obligation is the
@@ -216,11 +224,6 @@ public class KCCMBlockCipher
 
         boolean hasAssocText = aadLen > 0;
 
-        if (hasAssocText && aadLen % engine.getBlockSize() != 0)
-        {
-            throw new IllegalArgumentException("padding not supported");
-        }
-
         // The G1 block binds the nonce, data length and MAC-size flag into the MAC and must be
         // processed unconditionally. DSTU 7624 carries the associated-data-present indicator as a flag
         // bit inside G1, so it is not a gate on computing G1: skipping G1 when no AAD is present leaves
@@ -271,9 +274,11 @@ public class KCCMBlockCipher
 
         int assocOff = 0;
         int authLen = aadLen;
-        while (authLen != 0)
+        while (authLen > 0)
         {
-            for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
+            // authLen is the count of AAD bytes still to process (== aadLen - assocOff), so it is
+            // exactly the remaining-in-block bound; only the final block is shorter than blockSize.
+            for (int byteIndex = 0; byteIndex < engine.getBlockSize() && byteIndex < authLen; byteIndex++)
             {
                 macBlock[byteIndex] ^= aad[byteIndex + assocOff];
             }
