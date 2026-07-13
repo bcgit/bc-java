@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
-import java.util.Enumeration;
-
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -87,11 +86,9 @@ public class CertificatePair
                 + seq.size());
         }
 
-        Enumeration e = seq.getObjects();
-
-        while (e.hasMoreElements())
+        for (ASN1Encodable element : seq)
         {
-            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement());
+            ASN1TaggedObject o = ASN1TaggedObject.getInstance(element);
             if (o.getTagNo() == 0)
             {
                 forward = Certificate.getInstance(o, true);
