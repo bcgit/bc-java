@@ -205,6 +205,10 @@ public class BCPGInputStream
             boolean[] flags = new boolean[3];
             bodyLen = StreamUtil.readBodyLen(this, flags);
             partial = flags[StreamUtil.flag_partial];
+            if (partial && bodyLen < 512)
+            {
+                throw new IOException("First chunk of partial body MUST have a length of at least 512 octets.");
+            }
         }
         else
         {
