@@ -65,6 +65,11 @@
                 <exclude name="**/Xoodyak*.java"/>
                 <exclude name="**/Elephant*.java"/>
                 <exclude name="**/Sparkle*.java"/>
+                <!-- families added after the jdk1.3 tree was last synced (mirrors ant/jdk14.xml) -->
+                <exclude name="**/hash2curve/**/*.java"/>
+                <exclude name="**/crypto/bls/**/*.java"/>
+                <exclude name="**/BLS*.java"/>
+                <exclude name="**/Ascon*.java"/>
             </fileset>
             <fileset dir="util/src/main/java">
                 <exclude name="**/oer/**" />
@@ -118,6 +123,13 @@
                 <exclude name="**/provider/ProvOcspRevocationChecker.java"/>
                 <exclude name="**/jcajce/BCFKSLoadStoreParameter.java" />
                 <exclude name="**/jcajce/BCLoadStoreParameter.java" />
+                <!-- families added after the jdk1.3 tree was last synced (mirrors ant/jdk14.xml) -->
+                <exclude name="**/asymmetric/compositekem/*.java" />
+                <exclude name="**/CompositeKEMs.java" />
+                <exclude name="**/jcajce/PKCS12LoadStoreParameter.java" />
+                <exclude name="**/drbg/EntropyDaemon.java" />
+                <exclude name="**/drbg/EntropyGatherer.java" />
+                <exclude name="**/Ascon*.java" />
 		<exclude name="**/keystore/util/ParameterUtil.java" />
                 <exclude name="**/jcajce/spec/DSTU4145ParameterSpec.java" />
                 <exclude name="**/EntropyDaemon.java" />
@@ -331,6 +343,11 @@
             <fileset dir="jce/src" includes="**/*.java" />
         </copy>
 
+        <replaceregexp match="@Deprecated" replace=" " flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
         <replaceregexp match="${regexp}" replace=" " flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
