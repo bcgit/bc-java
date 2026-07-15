@@ -82,7 +82,6 @@ public class X500NameStyleExample
         String longCN = "This Is A Deliberately Very Long Common Name Used To Exceed Sixty Four Character";
 
         // sanity: exactly 80 characters
-        // -DM System.out.println
         System.out.println("CN length: " + longCN.length());
 
         String dirName = "CN=" + longCN + ",O=Example Org,C=AU";
@@ -92,19 +91,16 @@ public class X500NameStyleExample
         {
             X500Name rejected = new X500Name(BCStyle.INSTANCE, dirName);
 
-            // -DM System.out.println
             System.out.println("UNEXPECTED: default BCStyle accepted it: " + rejected);
         }
         catch (IllegalArgumentException e)
         {
-            // -DM System.out.println
             System.out.println("default BCStyle rejected long CN, as expected: " + e.getMessage());
         }
 
         // 2. The custom style parses the same string form successfully.
         X500Name name = new X500Name(LongCNStyle.INSTANCE, dirName);
 
-        // -DM System.out.println
         System.out.println("custom style parsed name: " + name);
 
         // 3. It round-trips through DER and reads back with any style, since the
@@ -117,9 +113,7 @@ public class X500NameStyleExample
             String decodedCN = IETFUtils.valueToString(
                 decoded.getRDNs(BCStyle.CN)[0].getFirst().getValue());
 
-            // -DM System.out.println
             System.out.println("re-decoded (default style): " + decoded);
-            // -DM System.out.println
             System.out.println("CN survived round-trip    : " + longCN.equals(decodedCN));
         }
         catch (Exception e)

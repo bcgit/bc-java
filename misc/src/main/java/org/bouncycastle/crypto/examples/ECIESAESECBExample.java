@@ -58,7 +58,6 @@ public class ECIESAESECBExample
     public static void main(String[] args)
         throws Exception
     {
-        // -DM 48 System.out.print
         SecureRandom random = new SecureRandom();
 
         // 1. Pick the curve. secp256k1 here matches the npm standard-ecies default;

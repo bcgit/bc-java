@@ -260,7 +260,6 @@ public class PublicKeyByteArrayHandler
     public static void main(String[] args)
         throws Exception
     {
-        // -DM 48 System.out.print
         Security.addProvider(new BouncyCastleProvider());
 
         char[] passPhrase = "demo-passphrase".toCharArray();

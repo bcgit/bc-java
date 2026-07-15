@@ -114,7 +114,7 @@ public class MerkleTreeCertificateJcaExample
         // Lift the MTCCertificationAuthority info from our identity bundle —
         // in production the relying party would parse it out of the CA
         // certificate's id-pe-mtcCertificationAuthority extension.
-        MTCCertificationAuthority authority = ca.authorityInfo(BigInteger.ZERO);
+        MTCCertificationAuthority authority = ca.authorityInfo(BigInteger.ZERO, MTCCertificationAuthority.MAX_SERIAL);
 
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(

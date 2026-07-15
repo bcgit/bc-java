@@ -51,7 +51,6 @@ public class HSSPrivateKeyInfoExample
         byte[] derBytes = pkInfo.getEncoded(ASN1Encoding.DER);
         System.out.println("PrivateKeyInfo OID         : " + pkInfo.getPrivateKeyAlgorithm().getAlgorithm());
         System.out.println("PrivateKeyInfo DER length  : " + derBytes.length + " bytes");
-        // -DM Hex.toHexString
         System.out.println("PrivateKeyInfo DER (head)  : "
             + Hex.toHexString(derBytes, 0, Math.min(derBytes.length, 32)) + "...");
 

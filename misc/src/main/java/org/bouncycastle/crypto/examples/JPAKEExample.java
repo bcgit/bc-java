@@ -27,7 +27,6 @@ public class JPAKEExample
 
     public static void main(String args[]) throws CryptoException
     {
-        // -DM 45 System.out.print
         /*
          * Initialization
          * 
@@ -172,7 +171,6 @@ public class JPAKEExample
         JPAKERound3Payload aliceRound3Payload = alice.createRound3PayloadToSend(aliceKeyingMaterial);
         JPAKERound3Payload bobRound3Payload = bob.createRound3PayloadToSend(bobKeyingMaterial);
 
-        // -DM 11grad System.out.println
         System.out.println("************ Round 3 **************");
         System.out.println("Alice sends to Bob: ");
         System.out.println("MacTag=" + aliceRound3Payload.getMacTag().toString(16));

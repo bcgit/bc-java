@@ -1,0 +1,35 @@
+// The misc module is the home for example / demo code (see docs/claude/architecture.md).
+// It is compiled by Gradle so the examples don't rot against the library APIs, but it is
+// deliberately NOT published to Maven and NOT bundled into the distribution jars - example
+// code must not become part of the shipped bc* API surface. Hence no publishing block and
+// no entry in the root build.gradle distModules list.
+
+jar.archiveBaseName = "bcmisc-$vmrange"
+
+dependencies {
+    implementation project(':prov')
+    implementation project(':util')
+    implementation project(':pkix')
+    implementation project(':pg')
+    implementation project(':mail')
+
+    implementation group: 'javax.mail', name: 'mail', version: '1.4'
+
+    // The example smoke tests (src/test) drive the S/MIME and OpenPGP examples
+    // via their main() methods; they need JUnit and the same javax.mail runtime
+    // as the examples themselves. PrintTestResult is carried as a per-module
+    // test copy under src/test (as every other module does).
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+}
+
+test {
+    // The S/MIME and OpenPGP example smoke tests write scratch files (id.p12,
+    // *.message, *.bpg, test.txt, ...) via relative paths in the working
+    // directory and read them back. Run them under build/ so this debris never
+    // lands in the (git-tracked) source tree. Every file they read is one they
+    // first create, so relocating the working directory is self-contained.
+    workingDir = layout.buildDirectory.dir("test-work").get().asFile
+    doFirst {
+        workingDir.mkdirs()
+    }
+}

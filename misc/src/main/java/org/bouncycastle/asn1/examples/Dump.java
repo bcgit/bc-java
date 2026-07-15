@@ -17,9 +17,7 @@ public class Dump
     {
         if (args.length < 1)
         {
-            // -DM System.out.println
             System.out.println("usage: Dump [-v] filename");
-            // -DM System.exit
             System.exit(1);
         }
 
@@ -40,7 +38,6 @@ public class Dump
             Object obj;
             while ((obj = bIn.readObject()) != null)
             {
-                // -DM System.out.println
                 System.out.println(ASN1Dump.dumpAsString(obj, verbose));
             }
         }
