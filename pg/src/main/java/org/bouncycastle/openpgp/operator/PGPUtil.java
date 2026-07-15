@@ -33,7 +33,6 @@ class PGPUtil
         throws PGPException
     {
         int keySize = getKeySize(algorithm);
-        int digAlg = s2kCalculator.getType();
 
         if (s2k != null)
         {
@@ -68,14 +67,14 @@ class PGPUtil
 
                 return s2kCalculator.makeKey(passPhrase, s2k, (keySize + 7) / 8);
             }
-            else if (s2k.getHashAlgorithm() != digAlg)
+            else if (s2k.getHashAlgorithm() != s2kCalculator.getType())
             {
                 throw new PGPException("s2k/digestCalculator mismatch");
             }
         }
         else
         {
-            if (HashAlgorithmTags.MD5 != digAlg)
+            if (HashAlgorithmTags.MD5 != s2kCalculator.getType())
             {
                 throw new PGPException("digestCalculator not for MD5");
             }
