@@ -48,6 +48,12 @@ public class HPKE
     public static final short kem_P521_SHA512 = 18;
     public static final short kem_X25519_SHA256 = 32;
     public static final short kem_X448_SHA512 = 33;
+    // draft-connolly-cfrg-hpke-mlkem
+    public static final short kem_ML_KEM_512 = 0x0040;
+    public static final short kem_ML_KEM_768 = 0x0041;
+    public static final short kem_ML_KEM_1024 = 0x0042;
+    // draft-connolly-cfrg-xwing-kem
+    public static final short kem_X_WING = 0x647a;
 
     // kdfs
     public static final short kdf_HKDF_SHA256 = 0x0001;
@@ -86,7 +92,7 @@ public class HPKE
         this.kdfId = kdfId;
         this.aeadId = aeadId;
         this.hkdf = new HKDF(kdfId);
-        this.kem = new DHKEM(kemId);
+        this.kem = createKEM(kemId);
         if (aeadId == aead_AES_GCM128)
         {
             Nk = 16;
@@ -117,6 +123,21 @@ public class HPKE
         }
 
         this.encSize = encSize;
+    }
+
+    private static KEM createKEM(short kemId)
+    {
+        switch (kemId)
+        {
+        case kem_ML_KEM_512:
+        case kem_ML_KEM_768:
+        case kem_ML_KEM_1024:
+            return new MLKEM(kemId);
+        case kem_X_WING:
+            return new XWingKEM();
+        default:
+            return new DHKEM(kemId);
+        }
     }
 
     public int getEncSize()
@@ -321,6 +342,17 @@ public class HPKE
     public HPKEContextWithEncapsulation setupBaseS(AsymmetricKeyParameter pkR, byte[] info, AsymmetricCipherKeyPair kpE)
     {
         byte[][] output = kem.Encap(pkR, kpE); // sharedSecret, enc
+        HPKEContext ctx = keySchedule(mode_base, output[0], info, default_psk, default_psk_id);
+
+        return new HPKEContextWithEncapsulation(ctx, output[1]);
+    }
+
+    // Variant of setupBaseS() where caller supplies the KEM's encapsulation randomness
+    // (the "ier" value of ML-KEM HPKE test vectors, or the "eseed" of X-Wing ones).
+    // This should only be used to validate test vectors.
+    public HPKEContextWithEncapsulation setupBaseS(AsymmetricKeyParameter pkR, byte[] info, byte[] ier)
+    {
+        byte[][] output = kem.Encap(pkR, ier); // sharedSecret, enc
         HPKEContext ctx = keySchedule(mode_base, output[0], info, default_psk, default_psk_id);
 
         return new HPKEContextWithEncapsulation(ctx, output[1]);
