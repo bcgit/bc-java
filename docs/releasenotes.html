@@ -23,6 +23,7 @@ Release: 1.86<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>The Ed25519 KeyFactory in the JDK 11+ and JDK 15+ multi-release overlays (META-INF/versions/11 and /15) had drifted from the base implementation on the OpenSSH key-spec path: it used the no-passphrase OpenSSHPrivateKeyUtil.parsePrivateKeyBlob overload, so a passphrase-encrypted openssh-key-v1 Ed25519 private key that KeyFactory.getInstance("Ed25519", "BC").generatePrivate(new OpenSSHPrivateKeySpec(blob, passphrase)) decoded correctly on JDK 8 failed on JDK 11 and later; it also let a raw RuntimeException escape on a malformed blob and threw IllegalStateException (JDK 11) instead of InvalidKeySpecException for a non-Ed25519 key. The overlays now match the base implementation (passphrase support, parse errors wrapped as InvalidKeySpecException). Relatedly, the OpenSSH wrong-key-type and decode-failure paths across the RSA, DSA, EC and Ed25519 KeyFactorySpi implementations now consistently raise InvalidKeySpecException (previously a mix of IllegalArgumentException / IllegalStateException) and wrap a malformed OpenSSH public key, and an incorrect "public key is not RSA private key" message on the RSA private path was corrected. The multi-release test tasks now exercise the OpenSSH key specs against the multi-release jar.</li>
 </ul>
 
 <a id="r1rv85"><h3>2.2.1 Version</h3></a>

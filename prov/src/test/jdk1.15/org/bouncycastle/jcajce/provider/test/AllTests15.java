@@ -19,6 +19,7 @@ public class AllTests15
     {
         TestSuite suite = new TestSuite("JDK15 Provider Tests");
         suite.addTestSuite(EdDSA15Test.class);
+        suite.addTestSuite(OpenSSHKeyFactoryMRTest.class);
         return suite;
     }
 

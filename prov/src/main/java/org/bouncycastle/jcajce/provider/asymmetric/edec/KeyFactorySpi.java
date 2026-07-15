@@ -223,13 +223,21 @@ public class KeyFactorySpi
         }
         else if (keySpec instanceof OpenSSHPublicKeySpec)
         {
-            CipherParameters parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+            CipherParameters parameters;
+            try
+            {
+                parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeySpecException("unable to decode OpenSSH public key: " + e.getMessage(), e);
+            }
             if (parameters instanceof Ed25519PublicKeyParameters)
             {
                 return new BCEdDSAPublicKey(new byte[0], ((Ed25519PublicKeyParameters)parameters).getEncoded());
             }
 
-            throw new IllegalStateException("openssh public key not Ed25519 public key");
+            throw new InvalidKeySpecException("openssh public key not Ed25519 public key");
         }
 
         return super.engineGeneratePublic(keySpec);
