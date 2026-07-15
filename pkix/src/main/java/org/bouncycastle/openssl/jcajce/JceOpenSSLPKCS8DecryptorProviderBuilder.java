@@ -200,10 +200,11 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
     {
         BigInteger n = params.getCostParameter();
         BigInteger r = params.getBlockSize();
+        BigInteger p = params.getParallelizationParameter();
 
-        if (n == null || r == null
-            || n.signum() <= 0 || r.signum() <= 0
-            || n.bitLength() > 31 || r.bitLength() > 31)
+        if (n == null || r == null || p == null
+            || n.signum() <= 0 || r.signum() <= 0 || p.signum() <= 0
+            || n.bitLength() > 31 || r.bitLength() > 31 || p.bitLength() > 31)
         {
             throw new IOException("invalid scrypt parameters");
         }
@@ -215,7 +216,13 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
         }
 
         long maxMemory = Properties.asInteger(Properties.PBE_MAX_SCRYPT_MEMORY, 1 << 30);
-        if (n.longValue() > maxMemory / (128L * blockSize))
+        // scrypt allocates ~128*r*N bytes (the V array) and ~128*r*p bytes (the B array), RFC 7914.
+        // The parallelization parameter p was previously unbounded, so a crafted key with small N
+        // and p near the engine's overflow ceiling (~2e6) allocated hundreds of MB past this budget.
+        // Bound N and p separately against the budget rather than their sum, so the original N-only
+        // limit is preserved exactly (a key with N at the boundary still loads) while p is bounded.
+        long maxCost = maxMemory / (128L * blockSize);
+        if (n.longValue() > maxCost || p.longValue() > maxCost)
         {
             throw new IOException("scrypt cost parameters require more than " + maxMemory + " bytes");
         }
