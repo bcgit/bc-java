@@ -310,7 +310,7 @@ public class PGPv6SignatureTest
     {
         // v6 signature made using SHA512 with 16 instead of 32 bytes of salt.
         String armoredSig = "-----BEGIN PGP SIGNATURE-----\n" +
-            "Version: BCPG v1.85\n" +
+            "Version: BCPG v1.86-SNAPSHOT\n" +
             "\n" +
             "wogGABsKAAAAKSKhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJBYJm\n" +
             "gXv9AAAAAGHvEIB9K2RLSK++vMVKnivhTgBBHon1f/feri7mJOAYfGm8vOzgbc/8\n" +
