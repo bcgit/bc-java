@@ -30,7 +30,7 @@ public class ArmoredOutputStream
     public static final String HASH_HDR = "Hash";
     public static final String CHARSET_HDR = "Charset";
 
-    public static final String DEFAULT_VERSION = "BCPG v1.85";
+    public static final String DEFAULT_VERSION = "BCPG v1.86-SNAPSHOT";
     
     private static final byte[] encodingTable =
         {
