@@ -38,7 +38,6 @@ import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.io.Streams;
 
 /**
  * ESTService provides unified access to an EST server which is defined as implementing
@@ -791,7 +790,30 @@ public class ESTService
                 // LimitedInputStream's "Stream closed before limit fully read"
                 // guard and obscure the actual 404 status with a useless wrapper
                 // exception (github #781).
-                Streams.drain(resp.getInputStream());
+                //
+                // Bound the drain by the declared Content-Length rather than reading to EOF: the
+                // counter stream has no Content-Length stop of its own (it only trips on an
+                // absoluteReadLimit, null unless withReadLimit was set), so a Content-Length body
+                // on a kept-alive HTTP/1.1 connection whose socket never signals EOF (and no
+                // SO_TIMEOUT) would make an EOF-seeking drain block forever. Stopping at the
+                // declared length both avoids the hang and reads to the end of the body so close()
+                // does not trip its content-length guard.
+                {
+                    Long bodyLength = resp.getContentLength();
+                    long toDrain = (bodyLength == null) ? 0L : bodyLength.longValue();
+                    InputStream drainIn = resp.getInputStream();
+                    byte[] drainBuf = new byte[1024];
+                    long drained = 0;
+                    while (drained < toDrain)
+                    {
+                        int rd = drainIn.read(drainBuf, 0, (int)Math.min(drainBuf.length, toDrain - drained));
+                        if (rd < 0)
+                        {
+                            break;
+                        }
+                        drained += rd;
+                    }
+                }
                 response = null;
                 break;
             default:
