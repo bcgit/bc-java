@@ -54,6 +54,12 @@ public class GOST28147WrapEngine
     public byte[] unwrap(byte[] input, int inOff, int inLen)
         throws InvalidCipherTextException
     {
+        // wrapped key is 32 octets of encrypted key material followed by the MAC
+        if (inLen < 32 + mac.getMacSize())
+        {
+            throw new InvalidCipherTextException("unwrap data too short");
+        }
+
         byte[] decKey = new byte[inLen - mac.getMacSize()];
 
         cipher.processBlock(input, inOff, decKey, 0);

@@ -153,6 +153,7 @@ public class RegressionTest
             new SM2EngineTest(),
             new SM2KeyExchangeTest(),
             new SM2SignerTest(),
+            new ShortWrapCipherTextTest(),
             new SM4Test(),
             new DSTU7624Test(),
             new DSTU7564Test(),
