@@ -37,27 +37,27 @@
 
         <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
             <property name="contains" value="(org\.bouncycastle\.util\.encoders\.)*Hex\.toHexString$"/>
-            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*|(org\.bouncycastle\.util\.encoders\.Hex)"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\..*\.examples\.).*|(org\.bouncycastle\.util\.encoders\.Hex)"/>
         </module>
 
         <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
             <property name="contains" value="(org\.bouncycastle\.util\.encoders\.)*Base64\.toBase64String"/>
-            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*| (org\.bouncycastle\.util\.encoders\.Base64)"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\..*\.examples\.).*|(org\.bouncycastle\.util\.encoders\.Base64)"/>
         </module>
 
         <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
             <property name="contains" value="(.*(out\.print$))|(.*(out\.print)(ln$|f$)+)"/>
-            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\..*\.examples\.).*"/>
         </module>
 
         <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
             <property name="contains" value="(.*(err\.print$))|(.*(err\.print)(ln$|f$)+)"/>
-            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\..*\.examples\.).*"/>
         </module>
 
         <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
             <property name="contains" value="(.*(System\.exit))"/>
-            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\..*\.examples\.).*"/>
         </module>
 
     </module>

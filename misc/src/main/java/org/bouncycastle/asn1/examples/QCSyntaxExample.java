@@ -50,9 +50,7 @@ public class QCSyntaxExample
     {
         if (args.length != 1)
         {
-            // -DM System.err.println
             System.err.println("Usage: QCSyntaxExample <cert-file>");
-            // -DM System.exit
             System.exit(1);
         }
 
@@ -61,14 +59,12 @@ public class QCSyntaxExample
         Extension qcExt = certificate.getExtension(Extension.qCStatements);
         if (qcExt == null)
         {
-            // -DM System.out.println
             System.out.println("Certificate carries no qCStatements extension ("
                 + Extension.qCStatements + ").");
             return;
         }
 
         ASN1Sequence statements = ASN1Sequence.getInstance(qcExt.getParsedValue());
-        // -DM System.out.println
         System.out.println("qCStatements (critical=" + qcExt.isCritical()
             + ", count=" + statements.size() + "):");
 
@@ -84,12 +80,10 @@ public class QCSyntaxExample
         ASN1ObjectIdentifier id = qcs.getStatementId();
         ASN1Encodable info = qcs.getStatementInfo();
 
-        // -DM System.out.println
         System.out.println("  [" + index + "] statementId = " + id);
 
         if (RFC3739QCObjectIdentifiers.id_qcs_pkixQCSyntax_v1.equals(id))
         {
-            // -DM System.out.println
             System.out.println("        (RFC 3039 / RFC 3739 v1 — no statementInfo expected"
                 + (info != null ? "; unexpected info present" : "") + ")");
         }
@@ -97,7 +91,6 @@ public class QCSyntaxExample
         {
             if (info == null)
             {
-                // -DM System.out.println
                 System.out.println("        (RFC 3739 v2 — statementInfo absent)");
                 return;
             }
@@ -108,28 +101,23 @@ public class QCSyntaxExample
 
             if (semId != null)
             {
-                // -DM System.out.println
                 System.out.println("        semanticsIdentifier = " + semId);
             }
             if (nras != null)
             {
                 for (int j = 0; j != nras.length; j++)
                 {
-                    // -DM System.out.println
                     System.out.println("        nameRegistrationAuthority[" + j + "] = " + nras[j]);
                 }
             }
             if (semId == null && nras == null)
             {
-                // -DM System.out.println
                 System.out.println("        (SemanticsInformation is empty)");
             }
         }
         else if (info != null)
         {
-            // -DM System.out.println
             System.out.println("        statementInfo =");
-            // -DM System.out.println
             System.out.println(ASN1Dump.dumpAsString(info, true));
         }
     }
