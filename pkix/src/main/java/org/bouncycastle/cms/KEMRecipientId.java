@@ -62,4 +62,21 @@ public class KEMRecipientId
 
         return super.match(obj);
     }
+
+    public boolean equals(
+        Object  o)
+    {
+        // Strict type check, mirroring KeyTransRecipientId / KeyAgreeRecipientId: without it this
+        // would inherit PKIXRecipientId.equals (which only checks instanceof PKIXRecipientId), so
+        // a KEMRecipientId could equal a KeyTrans/KeyAgree id sharing the same issuer+serial,
+        // making equality asymmetric across recipient-id kinds in a RecipientInformationStore.
+        if (!(o instanceof KEMRecipientId))
+        {
+            return false;
+        }
+
+        KEMRecipientId id = (KEMRecipientId)o;
+
+        return this.baseSelector.equals(id.baseSelector);
+    }
 }
