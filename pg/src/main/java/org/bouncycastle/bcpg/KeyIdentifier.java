@@ -202,7 +202,10 @@ public class KeyIdentifier
                 return true;
             }
 
-            return candidate.getKeyId() == identifier.getKeyId();
+            if (candidate.getKeyId() == identifier.getKeyId())
+            {
+                return true;
+            }
         }
         return false;
     }
