@@ -234,6 +234,46 @@ public class DSTU7624Test
         macOidTest(UAObjectIdentifiers.dstu7624gmac_256, "DSTU7624-256GMAC", 32);
 
         macOidTest(UAObjectIdentifiers.dstu7624gmac_512, "DSTU7624-512GMAC", 64);
+
+        ccmUpdateOutputSizeTest();
+    }
+
+    private void ccmUpdateOutputSizeTest()
+        throws Exception
+    {
+        // github #2354: KCCMBlockCipher.getUpdateOutputSize returned the input length rather than 0
+        // (KCCM buffers all input until doFinal), so the JCA layer under-sized the decrypt buffer and
+        // Cipher.update() threw ShortBufferException. Exercise the update()-then-doFinal() decrypt path.
+        byte[] data = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627");
+
+        IvParameterSpec ivSpec = new IvParameterSpec(new byte[16]);
+
+        KeyGenerator kg = KeyGenerator.getInstance("DSTU7624", "BC");
+        kg.init(256);
+        SecretKey key = kg.generateKey();
+
+        Cipher enc = Cipher.getInstance("DSTU7624-128/CCM/NoPadding", "BC");
+        enc.init(Cipher.ENCRYPT_MODE, key, ivSpec);
+        byte[] ct = enc.doFinal(data);
+
+        Cipher dec = Cipher.getInstance("DSTU7624-128/CCM/NoPadding", "BC");
+        dec.init(Cipher.DECRYPT_MODE, key, ivSpec);
+
+        // Decrypt through the caller-supplied-buffer update() variant, sized to the actual output
+        // (getOutputSize, i.e. ct.length - macSize). With the bug getUpdateOutputSize returned
+        // ct.length, so BaseBlockCipher's "outputOffset + getUpdateOutputSize(inputLen) > output.length"
+        // check threw ShortBufferException even though update() writes nothing (KCCM buffers until doFinal).
+        byte[] out = new byte[dec.getOutputSize(ct.length)];
+        int n = dec.update(ct, 0, ct.length, out, 0);
+        n += dec.doFinal(out, n);
+
+        byte[] recovered = new byte[n];
+        System.arraycopy(out, 0, recovered, 0, n);
+
+        if (!areEqual(data, recovered))
+        {
+            fail("failed DSTU7624-128/CCM update() decrypt round-trip (github #2354)");
+        }
     }
 
     protected void wrapOidTest(ASN1ObjectIdentifier oid, String name, int blockLength)

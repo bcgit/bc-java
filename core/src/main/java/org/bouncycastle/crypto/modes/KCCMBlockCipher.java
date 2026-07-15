@@ -493,7 +493,10 @@ public class KCCMBlockCipher
 
     public int getUpdateOutputSize(int len)
     {
-        return len;
+        // KCCM (like CCM/KGCM) buffers all input via processBytes and only produces output at
+        // doFinal, so an update call yields nothing; returning len made the JCA layer under-size
+        // the decrypt output buffer and throw ShortBufferException (github #2354).
+        return 0;
     }
 
     public int getOutputSize(int len)
