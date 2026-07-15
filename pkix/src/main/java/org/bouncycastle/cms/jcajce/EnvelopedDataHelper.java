@@ -797,7 +797,7 @@ public class EnvelopedDataHelper
         // 10,000,000, the count RFC 8018 sec. 4.2 deems appropriate for especially critical keys) to cap CPU cost.
         BigInteger iterationCount = params.getIterationCount();
         long max = Properties.asInteger(Properties.PBE_MAX_ITERATION_COUNT, 10000000);
-        if (iterationCount.bitLength() > 31 || iterationCount.longValue() > max)
+        if (iterationCount.signum() < 0 || iterationCount.bitLength() > 31 || iterationCount.longValue() > max)
         {
             throw new CMSException("iteration count (" + iterationCount + ") greater than " + max);
         }
