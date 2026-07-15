@@ -542,13 +542,27 @@ class CMSUtils
     {
         ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();
 
-        if (OidCatalogue.isGCM(algorithm))
+        try
         {
-            return GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+            if (OidCatalogue.isGCM(algorithm))
+            {
+                return GCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+            }
+            if (OidCatalogue.isCCM(algorithm))
+            {
+                return CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+            }
         }
-        if (OidCatalogue.isCCM(algorithm))
+        catch (RuntimeException e)
         {
-            return CCMParameters.getInstance(encAlgId.getParameters()).getIcvLen();
+            // encAlgId.getParameters() is attacker-controlled on the decrypt path. Absent params
+            // (getInstance(null) -> null -> getIcvLen NPE) or a too-short ICV (rejected by
+            // GCMParameters/CCMParameters' own validateICVLen) would otherwise let an unchecked
+            // exception escape the CMSException contract. Report a zero-length MAC so a recipient
+            // with a minimum-tag-size floor rejects the message as a CMSTagLengthException
+            // (fail-closed). On the generation path the parameters are well-formed, so this branch
+            // is not reached there.
+            return 0;
         }
 
         return -1;
