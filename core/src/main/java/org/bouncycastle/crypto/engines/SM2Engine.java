@@ -176,6 +176,11 @@ public class SM2Engine
     private byte[] decrypt(byte[] in, int inOff, int inLen)
         throws InvalidCipherTextException
     {
+        if (inLen < (curveLength * 2 + 1) + digest.getDigestSize())
+        {
+            throw new InvalidCipherTextException("ciphertext too short");
+        }
+
         byte[] c1 = new byte[curveLength * 2 + 1];
 
         System.arraycopy(in, inOff, c1, 0, c1.length);
