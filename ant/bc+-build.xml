@@ -803,7 +803,6 @@
                  <include name="org/bouncycastle/asn1/ess/**" />
                  <include name="org/bouncycastle/asn1/est/**" />
                  <include name="org/bouncycastle/asn1/gnu/**" />
-                 <include name="org/bouncycastle/asn1/iana/**" />
                  <include name="org/bouncycastle/asn1/icao/**" />
                  <include name="org/bouncycastle/asn1/isara/**" />
                  <include name="org/bouncycastle/asn1/isismtt/**" />
