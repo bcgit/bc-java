@@ -190,7 +190,15 @@ public class KeyFactorySpi
         }
         else if (keySpec instanceof OpenSSHPublicKeySpec)
         {
-            CipherParameters parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+            CipherParameters parameters;
+            try
+            {
+                parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeySpecException("unable to decode OpenSSH public key: " + e.getMessage(), e);
+            }
 
             if (parameters instanceof DSAPublicKeyParameters)
             {
@@ -201,7 +209,7 @@ public class KeyFactorySpi
                         ((DSAPublicKeyParameters)parameters).getParameters().getG()));
             }
 
-            throw new IllegalArgumentException("openssh public key is not dsa public key");
+            throw new InvalidKeySpecException("openssh public key is not dsa public key");
 
         }
 

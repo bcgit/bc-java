@@ -214,7 +214,7 @@ public class KeyFactorySpi
                 return new BCRSAPrivateCrtKey((RSAPrivateCrtKeyParameters)parameters);
             }
 
-            throw new InvalidKeySpecException("open SSH public key is not RSA private key");
+            throw new InvalidKeySpecException("openssh private key not RSA private key");
         }
 
         throw new InvalidKeySpecException("unknown KeySpec type: " + keySpec.getClass().getName());
@@ -237,14 +237,21 @@ public class KeyFactorySpi
         }
         else if (keySpec instanceof OpenSSHPublicKeySpec)
         {
-
-            CipherParameters parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+            CipherParameters parameters;
+            try
+            {
+                parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeySpecException("unable to decode OpenSSH public key: " + e.getMessage(), e);
+            }
             if (parameters instanceof RSAKeyParameters)
             {
                 return new BCRSAPublicKey((RSAKeyParameters)parameters);
             }
 
-            throw new InvalidKeySpecException("Open SSH public key is not RSA public key");
+            throw new InvalidKeySpecException("openssh public key not RSA public key");
 
         }
 

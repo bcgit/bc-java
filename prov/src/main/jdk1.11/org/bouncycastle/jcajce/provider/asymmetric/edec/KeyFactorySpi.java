@@ -32,10 +32,12 @@ import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class KeyFactorySpi
@@ -139,12 +141,23 @@ public class KeyFactorySpi
     {
         if (keySpec instanceof OpenSSHPrivateKeySpec)
         {
-            CipherParameters parameters = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(((OpenSSHPrivateKeySpec)keySpec).getEncoded());
+            OpenSSHPrivateKeySpec sshKeySpec = (OpenSSHPrivateKeySpec)keySpec;
+            char[] password = sshKeySpec.getPassword();
+            CipherParameters parameters;
+            try
+            {
+                parameters = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(
+                    sshKeySpec.getEncoded(), password == null ? null : Strings.toUTF8ByteArray(password));
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeySpecException("unable to decode OpenSSH private key: " + e.getMessage(), e);
+            }
             if (parameters instanceof Ed25519PrivateKeyParameters)
             {
                 return new BCEdDSAPrivateKey((Ed25519PrivateKeyParameters)parameters);
             }
-            throw new IllegalStateException("openssh private key not Ed25519 private key");
+            throw new InvalidKeySpecException("openssh private key not Ed25519 private key");
         }
 
         return super.engineGeneratePrivate(keySpec);
@@ -212,13 +225,21 @@ public class KeyFactorySpi
         }
         else if (keySpec instanceof OpenSSHPublicKeySpec)
         {
-            CipherParameters parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+            CipherParameters parameters;
+            try
+            {
+                parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeySpecException("unable to decode OpenSSH public key: " + e.getMessage(), e);
+            }
             if (parameters instanceof Ed25519PublicKeyParameters)
             {
                 return new BCEdDSAPublicKey(new byte[0], ((Ed25519PublicKeyParameters)parameters).getEncoded());
             }
 
-            throw new IllegalStateException("openssh public key not Ed25519 public key");
+            throw new InvalidKeySpecException("openssh public key not Ed25519 public key");
         }
 
         return super.engineGeneratePublic(keySpec);
