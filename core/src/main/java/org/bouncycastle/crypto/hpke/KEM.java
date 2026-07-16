@@ -9,9 +9,10 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
  * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-4">RFC 9180 &sect;4</a>.
  * <p>
  * Concrete subclass {@link DHKEM} implements the five DHKEM variants registered
- * by RFC 9180 (P-256/P-384/P-521/X25519/X448). External implementations &mdash;
- * e.g. post-quantum KEMs such as ML-KEM or the hybrid X25519+Kyber768 used by
- * MLS &mdash; can be plugged in by subclassing this class and passing the
+ * by RFC 9180 (P-256/P-384/P-521/X25519/X448); {@link MLKEM} and {@link XWingKEM}
+ * implement the post-quantum ML-KEM (draft-connolly-cfrg-hpke-mlkem) and hybrid
+ * X-Wing (draft-connolly-cfrg-xwing-kem) KEMs. Other external implementations
+ * can be plugged in by subclassing this class and passing the
  * instance to the {@code HPKE(mode, kemId, kdfId, aeadId, KEM, encSize)}
  * constructor; the framework only requires:
  * <ul>
@@ -40,6 +41,13 @@ public abstract class KEM
     abstract byte[][] Encap(AsymmetricKeyParameter recipientPublicKey);
     abstract byte[][] Encap(AsymmetricKeyParameter pkR, AsymmetricCipherKeyPair kpE);
     abstract byte[][] AuthEncap(AsymmetricKeyParameter pkR, AsymmetricCipherKeyPair kpS);
+
+    // Deterministic encapsulation from caller-supplied randomness (the "ier"/"eseed" value of
+    // ML-KEM / X-Wing HPKE test vectors). Only supported by KEMs without an ephemeral key pair.
+    byte[][] Encap(AsymmetricKeyParameter pkR, byte[] ier)
+    {
+        throw new UnsupportedOperationException("KEM does not support encapsulation from raw randomness");
+    }
 
     // Decapsulates the given encapsulated key using the recipient's key pair and returns the shared secret.
     abstract byte[] Decap(byte[] encapsulatedKey, AsymmetricCipherKeyPair recipientKeyPair);
