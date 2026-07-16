@@ -18,7 +18,11 @@
  *       {@code mode_auth_psk}.</li>
  *   <li><b>KEMs</b>: DHKEM(P-256, HKDF-SHA256), DHKEM(P-384, HKDF-SHA384),
  *       DHKEM(P-521, HKDF-SHA512), DHKEM(X25519, HKDF-SHA256),
- *       DHKEM(X448, HKDF-SHA512). External KEM implementations may be plugged
+ *       DHKEM(X448, HKDF-SHA512), plus the post-quantum KEMs ML-KEM-512/768/1024
+ *       (draft-connolly-cfrg-hpke-mlkem) and the X25519/ML-KEM-768 hybrid X-Wing
+ *       (draft-connolly-cfrg-xwing-kem). The post-quantum KEMs are not
+ *       authenticated KEMs, so they support {@code mode_base} and
+ *       {@code mode_psk} only. External KEM implementations may be plugged
  *       in via the {@link org.bouncycastle.crypto.hpke.KEM} abstract base and
  *       the {@code HPKE(mode, kemId, kdfId, aeadId, KEM, encSize)} constructor.</li>
  *   <li><b>KDFs</b>: HKDF-SHA256, HKDF-SHA384, HKDF-SHA512.</li>
