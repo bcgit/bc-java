@@ -1018,6 +1018,7 @@
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/mayo/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/est/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/gpg/keybox/AllTests.java" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/crypto/agreement/owl/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages_de.properties" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages.properties" />
 
