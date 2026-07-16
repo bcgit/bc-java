@@ -371,8 +371,8 @@
                  <exclude name="org/bouncycastle/**/AllTests.java" />
                  <exclude name="org/bouncycastle/test/*.java" />
                  <exclude name="org/bouncycastle/**/test/**" />
-                 <exclude name="org/bouncycastle/crypto/*/*Test.java" />
-                 <exclude name="org/bouncycastle/asn1/*/*Test.java" />
+                 <exclude name="org/bouncycastle/crypto/**/*Test.java" />
+                 <exclude name="org/bouncycastle/asn1/**/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Test.java" />
@@ -977,6 +977,7 @@
              <fileset dir="${src.dir}" includes="**/*AllTests.java" />
              <fileset dir="${src.dir}" includes="**/math/**/*Test.java" />
              <fileset dir="${src.dir}" includes="**/crypto/*/*Test.java" />
+             <fileset dir="${src.dir}" includes="**/crypto/agreement/owl/*Test.java" />
              <fileset dir="${src.dir}" includes="**/tsp/*UnitTest.java" />
              <fileset dir="${src.dir}" includes="**/utiltest/*Test.java" />
              <fileset dir="${src.dir}" includes="**/util/io/pem/*Test.java" />

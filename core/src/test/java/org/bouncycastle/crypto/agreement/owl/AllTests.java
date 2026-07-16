@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.agreement.owl.test;
+package org.bouncycastle.crypto.agreement.owl;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -16,13 +16,9 @@ public class AllTests
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Owl Engine Tests");
+        TestSuite suite = new TestSuite("Owl Util Tests");
 
-        suite.addTestSuite(OwlCurveTest.class);
-        suite.addTestSuite(OwlClientRegistrationTest.class);
-        suite.addTestSuite(OwlServerRegistrationTest.class);
-        suite.addTestSuite(OwlClientTest.class);
-        suite.addTestSuite(OwlServerTest.class);
+        suite.addTestSuite(OwlUtilTest.class);
 
         return new BCTestSetup(suite);
     }
