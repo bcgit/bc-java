@@ -111,3 +111,47 @@ distribution) get an `ant/jdk14.xml` exclude — but check the suite wiring firs
 without the reference or a jdk1.4 stub overlay of the test itself (see the
 `PKCS12PfxPduSecretKeyTest` overlay, which keeps the high-level-builder half and drops the
 JCE-keystore half).
+
+## jdk1.3 layers the jdk1.4 overlays — don't base a jdk1.3 overlay on `src/main/java`
+
+`ant/jdk13.xml` stages **base `src/main/java` → the `src/main/jdk1.4` overlay trees (overwrite)
+→ the `src/main/jdk1.3` overlays (overwrite) → preprocess** (see the `core/src/main/jdk1.4`,
+`prov/src/main/jdk1.4`, … `<fileset>`s copied in `jdk13.xml`). So the jdk1.3 build's effective
+source for a class is the jdk1.4 overlay when one exists, only then the jdk1.3 overlay. Two
+consequences:
+
+- **A file that compiles for jdk1.3 today may have no jdk1.3 overlay at all** — it's being served
+  by a jdk1.4 overlay that already removed the post-1.3 APIs. `jce/provider/BouncyCastleProvider`
+  is the worked example: base uses `java.util.concurrent.ConcurrentHashMap` (Java 5) and
+  `java.util.logging` (Java 1.4), but the **jdk1.4** overlay replaces both and carries no recent-PQC
+  references, so jdk1.3 compiles it fine with no jdk1.3 overlay.
+- **Therefore, when you need a new jdk1.3 overlay of a class, base it on the jdk1.4 overlay if one
+  exists, not on `src/main/java`.** Copying base re-introduces exactly the Java-5/1.4 APIs (and other
+  drift) the jdk1.4 overlay had already fixed, and your jdk1.3 overlay — copied last — wins, so the
+  build breaks on `ConcurrentHashMap`/`Logger`/etc. `find <module>/src/main/jdk1.4 -name <Class>.java`
+  before writing a jdk1.3 overlay.
+
+## Legacy Ant provider jars sweep in main-namespace tests (OSGi junit contamination)
+
+The shared `ant/bc+-build.xml` builds `bcprov` by copying `${src.dir}` into the provider tree with
+`*Test.java` **excludes** (around line 364), and builds `bctest` by copying test sources with
+`*Test.java` **includes** (around line 975). Both used **shallow** globs
+(`org/bouncycastle/crypto/*/*Test.java`, `.../asn1/*/*Test.java` — exactly one directory deep), so a
+unit test living **directly in a main-namespace package** to reach a package-private class
+(`org.bouncycastle.asn1.ASN1TimeFormatTest` for the package-private `ASN1TimeFormat`;
+`org.bouncycastle.crypto.agreement.owl.OwlUtilTest` for `OwlUtil`) is missed by the exclude and
+**swept into `bcprov`**. When such a test `extends junit.framework.TestCase`, bnd then emits
+`Import-Package: …,junit.framework;resolution:=optional` and a `uses:="junit.framework,…"` on the
+enclosing package's `Export-Package` — a production crypto bundle wrongly referencing junit. (The
+Gradle `-jdk18on` jars are unaffected: `src/main` vs `src/test` separation excludes these by
+construction. Verify with `unzip -p <jar> META-INF/MANIFEST.MF | grep junit` and
+`unzip -l <jar> | grep -E 'Test\.class$'`.)
+
+Fix pattern (all in `ant/bc+-build.xml`, so it corrects `bcprov` across jdk15to18 / jdk1.4 / jdk1.3
+at once): broaden the provider-copy excludes to any depth
+(`org/bouncycastle/{crypto,asn1}/**/*Test.java`); and because the bctest-copy **include** globs are
+shallow the same way, a main-namespace test then vanishes from *both* jars — add a targeted bctest
+include (e.g. `**/crypto/agreement/owl/*Test.java`) so it lands in `bctest` (where a
+same-package/same-classloader test keeps its package-private access to the class in `bcprov`).
+`org.bouncycastle.util.test.{SimpleTest,Test}` legitimately ship in `bcprov` and are not `junit`
+subclasses, so they are not the problem; only `*Test extends junit.framework.TestCase` is.
