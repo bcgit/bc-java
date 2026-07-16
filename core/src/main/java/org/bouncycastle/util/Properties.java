@@ -239,6 +239,21 @@ public class Properties
     public static final String X509_MAX_POLICY_NODES = "org.bouncycastle.x509.max_policy_nodes";
 
     /**
+     * Upper bound on the total number of nodes the PKIX certification-path builder visits while
+     * searching for a chain. The builder does a depth-first walk up the PKI graph, bounded per path
+     * by cycle detection and the caller's maxPathLength. Because candidate issuers are matched by
+     * subject name only, a certificate store containing many certificates that share a subject name
+     * without chaining to a trust anchor can make the search explore a large number of partial paths
+     * before it concludes no chain exists. This bound keeps that work predictable: the visited-node
+     * count is checked on entry to each build step and the build is aborted with a
+     * CertPathBuilderException once it exceeds the bound. This is a hardening measure and the
+     * builder-side companion to {@link #X509_MAX_POLICY_NODES}. The default (262144) is far above
+     * any legitimate build (a real build returns on the first path that chains to an anchor) and is
+     * configurable for unusual cross-certified meshes. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String X509_MAX_CERT_PATH_BUILD_NODES = "org.bouncycastle.x509.max_cert_path_build_nodes";
+
+    /**
      * Opt in to the relaxed directoryName name-constraint matching required by GSMA SGP.22 v2.5
      * (Remote SIM Provisioning), sections 4.5.2.1.0.2 / 4.5.2.1.0.3. When set, a permitted-subtree
      * RDN is satisfied by any matching subject RDN regardless of position, additional subject
