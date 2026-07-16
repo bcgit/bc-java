@@ -70,6 +70,17 @@
                 <exclude name="**/crypto/bls/**/*.java"/>
                 <exclude name="**/BLS*.java"/>
                 <exclude name="**/Ascon*.java"/>
+                <!-- PQC families excluded from the jdk1.3 distribution (dgh); core engines -->
+                <exclude name="**/pqc/crypto/sdith/**" />
+                <exclude name="**/pqc/crypto/faest/**" />
+                <exclude name="**/pqc/crypto/snova/**" />
+                <exclude name="**/pqc/crypto/qruov/**" />
+                <exclude name="**/pqc/crypto/hawk/**" />
+                <exclude name="**/pqc/crypto/mayo/**" />
+                <exclude name="**/pqc/crypto/aimer/**" />
+                <exclude name="**/pqc/crypto/mqom/**" />
+                <exclude name="**/pqc/crypto/uov/**" />
+                <exclude name="**/pqc/crypto/sqisign/**" />
             </fileset>
             <fileset dir="util/src/main/java">
                 <exclude name="**/oer/**" />
@@ -134,6 +145,47 @@
                 <exclude name="**/jcajce/spec/DSTU4145ParameterSpec.java" />
                 <exclude name="**/EntropyDaemon.java" />
                 <exclude name="**/EntropyGatherer.java" />
+                <!-- PQC families excluded from the jdk1.3 distribution (dgh); provider + spec + interface -->
+                <exclude name="**/pqc/jcajce/provider/sdith/**" />
+                <exclude name="**/pqc/jcajce/provider/faest/**" />
+                <exclude name="**/pqc/jcajce/provider/snova/**" />
+                <exclude name="**/pqc/jcajce/provider/qruov/**" />
+                <exclude name="**/pqc/jcajce/provider/hawk/**" />
+                <exclude name="**/pqc/jcajce/provider/mayo/**" />
+                <exclude name="**/pqc/jcajce/provider/aimer/**" />
+                <exclude name="**/pqc/jcajce/provider/mqom/**" />
+                <exclude name="**/pqc/jcajce/provider/uov/**" />
+                <exclude name="**/pqc/jcajce/provider/sqisign/**" />
+                <exclude name="**/pqc/jcajce/provider/SDitH.java" />
+                <exclude name="**/pqc/jcajce/provider/Faest.java" />
+                <exclude name="**/pqc/jcajce/provider/Snova.java" />
+                <exclude name="**/pqc/jcajce/provider/QRUOV.java" />
+                <exclude name="**/pqc/jcajce/provider/Hawk.java" />
+                <exclude name="**/pqc/jcajce/provider/Mayo.java" />
+                <exclude name="**/pqc/jcajce/provider/AIMer.java" />
+                <exclude name="**/pqc/jcajce/provider/MQOM.java" />
+                <exclude name="**/pqc/jcajce/provider/UOV.java" />
+                <exclude name="**/pqc/jcajce/provider/SQIsign.java" />
+                <exclude name="**/pqc/jcajce/spec/SDitHParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/FaestParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/SnovaParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/QRUOVParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/HawkParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/MayoParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/AIMerParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/MQOMParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/UOVParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/spec/SQIsignParameterSpec.java" />
+                <exclude name="**/pqc/jcajce/interfaces/SDitHKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/FaestKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/SnovaKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/QRUOVKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/HawkKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/MayoKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/AIMerKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/MQOMKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/UOVKey.java" />
+                <exclude name="**/pqc/jcajce/interfaces/SQIsignKey.java" />
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/JceAADStream.java"/>
@@ -211,6 +263,29 @@
                 <exclude name="**/Xoodyak*.java"/>
                 <exclude name="**/Sparkle*.java"/>
                 <exclude name="**/Xoodyak*.java"/>
+                <!-- PQC families excluded from the jdk1.3 distribution (dgh): test sources.
+                     Covers main-namespace test files (e.g. pqc/crypto/faest/Owf.java) that would
+                     otherwise be swept into bcprov, plus the .test-package family tests. -->
+                <exclude name="**/pqc/crypto/sdith/**" />
+                <exclude name="**/pqc/crypto/faest/**" />
+                <exclude name="**/pqc/crypto/snova/**" />
+                <exclude name="**/pqc/crypto/qruov/**" />
+                <exclude name="**/pqc/crypto/hawk/**" />
+                <exclude name="**/pqc/crypto/mayo/**" />
+                <exclude name="**/pqc/crypto/aimer/**" />
+                <exclude name="**/pqc/crypto/mqom/**" />
+                <exclude name="**/pqc/crypto/uov/**" />
+                <exclude name="**/pqc/crypto/sqisign/**" />
+                <exclude name="**/pqc/crypto/test/SDitH*.java" />
+                <exclude name="**/pqc/crypto/test/Faest*.java" />
+                <exclude name="**/pqc/crypto/test/Snova*.java" />
+                <exclude name="**/pqc/crypto/test/QRUOV*.java" />
+                <exclude name="**/pqc/crypto/test/Hawk*.java" />
+                <exclude name="**/pqc/crypto/test/Mayo*.java" />
+                <exclude name="**/pqc/crypto/test/AIMer*.java" />
+                <exclude name="**/pqc/crypto/test/MQOM*.java" />
+                <exclude name="**/pqc/crypto/test/UOV*.java" />
+                <exclude name="**/pqc/crypto/test/SQIsign*.java" />
             </fileset>
             <fileset dir="prov/src/test/java">
                 <exclude name="**/GOST3410KeyPairTest.java" />

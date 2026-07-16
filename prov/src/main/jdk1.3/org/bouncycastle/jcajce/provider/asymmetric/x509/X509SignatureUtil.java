@@ -77,9 +77,10 @@ class X509SignatureUtil
         {
             String sigAlgName = signature.getAlgorithm();
 
+            AlgorithmParameters sigParams;
             try
             {
-                AlgorithmParameters sigParams = AlgorithmParameters.getInstance(sigAlgName,
+                sigParams = AlgorithmParameters.getInstance(sigAlgName,
                     signature.getProvider().getName());
 
                 sigParams.init(params.toASN1Primitive().getEncoded());
