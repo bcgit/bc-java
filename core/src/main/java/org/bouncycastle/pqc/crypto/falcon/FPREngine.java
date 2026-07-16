@@ -2,10 +2,12 @@ package org.bouncycastle.pqc.crypto.falcon;
 
 class FPREngine
 {
-//    static final double[] inv_sigma;
-//    static final double[] sigma_min;
-//    static final double[] gm_tab;
-//    static final double[] p2_tab;
+    // Declared ahead of the static initialiser below: JLS2 (JDK 1.3 javac) forbids the
+    // static block assigning these before their textual declaration; later javac allows it.
+    static final double[] fpr_inv_sigma;
+    static final double[] fpr_sigma_min;
+    static final double[] fpr_gm_tab;
+    static final double[] fpr_p2_tab;
 
     static
     {
@@ -1111,8 +1113,6 @@ class FPREngine
     static final double fpr_q = 12289.0;
     static final double fpr_inverse_of_q = 1.0 / 12289.0;
     static final double fpr_inv_2sqrsigma0 = 0.150865048875372721532312163019;
-    static final double[] fpr_inv_sigma;
-    static final double[] fpr_sigma_min;
     static final double fpr_log2 = 0.69314718055994530941723212146;
     static final double fpr_inv_log2 = 1.4426950408889634073599246810;
     static final double fpr_bnorm_max = 16822.4121;
@@ -1128,8 +1128,6 @@ class FPREngine
     static final double fpr_ptwo63m1 = 9223372036854775807.0;
     static final double fpr_mtwo63m1 = -9223372036854775807.0;
     static final double fpr_ptwo63 = 9223372036854775808.0;
-    static final double[] fpr_gm_tab;
-    static final double[] fpr_p2_tab;
 
     static long fpr_rint(double x)
     {

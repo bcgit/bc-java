@@ -109,7 +109,7 @@ class X509CRLEntryObject extends X509CRLEntry
             }
             return null;
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             return null;
         }

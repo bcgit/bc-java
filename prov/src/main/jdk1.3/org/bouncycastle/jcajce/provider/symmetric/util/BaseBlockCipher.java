@@ -230,6 +230,74 @@ public class BaseBlockCipher
         this.ivLength = ivLength / 8;
     }
 
+    // keySizeInBits-carrying constructor variants, synced from base (all use 1.3-clean types).
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        BlockCipherProvider provider)
+    {
+        baseEngine = provider.get();
+        engineProvider = provider;
+        this.keySizeInBits = keySizeInBits;
+
+        cipher = new BufferedGenericBlockCipher(provider.get());
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        AEADBlockCipher engine)
+    {
+        this.keySizeInBits = keySizeInBits;
+        this.baseEngine = engine.getUnderlyingCipher();
+        if (engine.getAlgorithmName().indexOf("GCM") >= 0)
+        {
+            this.ivLength = 12;
+        }
+        else
+        {
+            this.ivLength = baseEngine.getBlockSize();
+        }
+        this.cipher = new AEADGenericBlockCipher(engine);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        AEADBlockCipher engine,
+        boolean fixedIv,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
+        this.baseEngine = engine.getUnderlyingCipher();
+        this.fixedIv = fixedIv;
+        this.ivLength = ivLength;
+        this.cipher = new AEADGenericBlockCipher(engine);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        org.bouncycastle.crypto.BlockCipher engine,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
+        baseEngine = engine;
+
+        this.fixedIv = true;
+        this.cipher = new BufferedGenericBlockCipher(engine);
+        this.ivLength = ivLength / 8;
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        BufferedBlockCipher engine,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
+        baseEngine = engine.getUnderlyingCipher();
+
+        this.cipher = new BufferedGenericBlockCipher(engine);
+        this.fixedIv = true;
+        this.ivLength = ivLength / 8;
+    }
+
     protected int engineGetBlockSize()
     {
         if (baseEngine == null)
