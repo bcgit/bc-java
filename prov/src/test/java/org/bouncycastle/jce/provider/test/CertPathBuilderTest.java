@@ -9,6 +9,7 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertStore;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
@@ -58,6 +59,7 @@ import org.bouncycastle.asn1.x509.V2TBSCertListGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class CertPathBuilderTest
@@ -357,6 +359,7 @@ public class CertPathBuilderTest
         eeOnlyInSelectorTest();
         multipleTrustAnchorsWithCRLTest();
         manyTrustAnchorsAkiNarrowingPerfTest();
+        builderNodeBudgetTest();
     }
 
     private static final String SHA256_RSA = "SHA256withRSA";
@@ -502,6 +505,121 @@ public class CertPathBuilderTest
         finally
         {
             exec.shutdownNow();
+        }
+    }
+
+    /**
+     * Hardening (companion to the github #2291 perf work): the builder's
+     * depth-first search matches candidate issuers by subject name only, so a
+     * certificate store full of self-issued certificates that all share one
+     * subject DN and never chain to the trust anchor is explored as a large
+     * number of partial paths before the build concludes no chain exists.
+     * Properties.X509_MAX_CERT_PATH_BUILD_NODES bounds that work. Here
+     * maxPathLength is left unbounded so only the node budget can stop the
+     * search, and the budget is forced low so the guard trips promptly; the
+     * build must fail with a CertPathBuilderException naming the property.
+     * (Without the guard this build explores millions of nodes before failing
+     * with the generic "Unable to find certificate chain".)
+     */
+    private void builderNodeBudgetTest()
+        throws Exception
+    {
+        final int decoyCount = 10;
+        final X500Name loopDN = new X500Name("CN=Loop");
+
+        List decoys = new ArrayList();
+        for (int i = 0; i < decoyCount; i++)
+        {
+            KeyPair pair = TestUtils.generateRSAKeyPair();
+            decoys.add(selfSignedV3CaCert(pair, loopDN, computeSki(pair.getPublic())));
+        }
+
+        // Trust anchor with an unrelated DN, so no path ever chains to it.
+        KeyPair rootPair = TestUtils.generateRSAKeyPair();
+        X509Certificate rootCert = selfSignedV3CaCert(
+            rootPair, new X500Name("CN=Unrelated Root"), computeSki(rootPair.getPublic()));
+
+        CertStore store = CertStore.getInstance("Collection",
+            new CollectionCertStoreParameters(decoys), "BC");
+
+        Set anchors = new HashSet();
+        anchors.add(new TrustAnchor(rootCert, null));
+
+        // Target selector matches every decoy by their shared subject DN.
+        X509CertSelector pathConstraints = new X509CertSelector();
+        pathConstraints.setSubject(loopDN.getEncoded());
+
+        final PKIXBuilderParameters buildParams = new PKIXBuilderParameters(anchors, pathConstraints);
+        buildParams.addCertStore(store);
+        buildParams.setDate(new Date());
+        buildParams.setRevocationEnabled(false);
+        buildParams.setMaxPathLength(-1);
+
+        String previous = System.getProperty(Properties.X509_MAX_CERT_PATH_BUILD_NODES);
+        System.setProperty(Properties.X509_MAX_CERT_PATH_BUILD_NODES, "2000");
+
+        // Wall-time bound: without the fix this search runs for many seconds
+        // before failing, so run it on a daemon thread we can abandon.
+        ExecutorService exec = Executors.newSingleThreadExecutor(new ThreadFactory()
+        {
+            public Thread newThread(Runnable r)
+            {
+                Thread t = new Thread(r, "CertPathBuilderTest-budget");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+        try
+        {
+            Future fut = exec.submit(new Callable()
+            {
+                public Object call()
+                    throws Exception
+                {
+                    CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+                    return builder.build(buildParams);
+                }
+            });
+
+            try
+            {
+                fut.get(20, TimeUnit.SECONDS);
+                fail("expected CertPathBuilderException: build should not have found a chain");
+            }
+            catch (TimeoutException e)
+            {
+                fut.cancel(true);
+                fail("CertPath build was not bounded by the node budget within 20s");
+            }
+            catch (ExecutionException e)
+            {
+                Throwable cause = e.getCause();
+                if (!(cause instanceof CertPathBuilderException))
+                {
+                    if (cause instanceof Exception)
+                    {
+                        throw (Exception)cause;
+                    }
+                    throw e;
+                }
+                String msg = cause.getMessage();
+                if (msg == null || msg.indexOf(Properties.X509_MAX_CERT_PATH_BUILD_NODES) < 0)
+                {
+                    fail("build aborted but not via the node-budget guard: " + msg);
+                }
+            }
+        }
+        finally
+        {
+            exec.shutdownNow();
+            if (previous == null)
+            {
+                System.getProperties().remove(Properties.X509_MAX_CERT_PATH_BUILD_NODES);
+            }
+            else
+            {
+                System.setProperty(Properties.X509_MAX_CERT_PATH_BUILD_NODES, previous);
+            }
         }
     }
 

@@ -47,6 +47,7 @@ public class Properties
     public static final String PBE_MAX_SCRYPT_MEMORY = "org.bouncycastle.pbe.max_scrypt_memory";
     public static final String PKMAC_MAX_ITERATION_COUNT = "org.bouncycastle.pkmac.max_iteration_count";
     public static final String X509_MAX_POLICY_NODES = "org.bouncycastle.x509.max_policy_nodes";
+    public static final String X509_MAX_CERT_PATH_BUILD_NODES = "org.bouncycastle.x509.max_cert_path_build_nodes";
     public static final String X509_ALLOW_LENIENT_RFC822_NAME = "org.bouncycastle.x509.allow_lenient_rfc822_name";
     public static final String GCM_ALLOW_SHORT_TAGS = "org.bouncycastle.gcm.allow_short_tags";
     public static final String BKS_ENABLE_V1 = "org.bouncycastle.bks.enable_v1";
