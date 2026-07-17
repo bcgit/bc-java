@@ -95,6 +95,14 @@ public class CMSEnvelopedData
             //
             EncryptedContentInfo encInfo = envData.getEncryptedContentInfo();
             this.encAlg = encInfo.getContentEncryptionAlgorithm();
+            // encryptedContent is [0] IMPLICIT OCTET STRING OPTIONAL; a message that omits it would
+            // otherwise NPE on getOctets() below - and the NPE would escape this ctor's declared
+            // throws CMSException (the catches only cover ClassCast/IllegalArgument). Report it as
+            // missing content, matching the CMS encapsulated-content "Missing content." handling.
+            if (encInfo.getEncryptedContent() == null)
+            {
+                throw new CMSException("Missing content.");
+            }
             CMSReadable readable = new CMSProcessableByteArray(encInfo.getContentType(),
                 encInfo.getEncryptedContent().getOctets());
             CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(

@@ -232,6 +232,14 @@ public class OpenSSHPrivateKeyUtil
      */
     public static AsymmetricKeyParameter parsePrivateKeyBlob(byte[] blob, byte[] passphrase)
     {
+        // The first byte selects the format (0x30 => legacy ASN.1, otherwise the openssh-key-v1 magic),
+        // so guard against an empty/null blob rather than letting blob[0] throw a raw
+        // ArrayIndexOutOfBoundsException / NullPointerException out of this parse entry point.
+        if (blob == null || blob.length == 0)
+        {
+            throw new IllegalArgumentException("blob is null or empty");
+        }
+
         AsymmetricKeyParameter result = null;
 
         if (blob[0] == 0x30)

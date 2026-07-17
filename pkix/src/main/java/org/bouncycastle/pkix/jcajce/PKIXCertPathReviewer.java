@@ -2256,7 +2256,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     if (reasonCode != null)
                     {
-                        reason = crlReasons[reasonCode.intValueExact()];
+                        // Bound the (attacker-controlled) reason code before indexing crlReasons: an
+                        // out-of-range or out-of-int value falls through to the crlReasons[7] "unknown"
+                        // below rather than throwing AIOOBE / ArithmeticException from intValueExact().
+                        BigInteger rc = reasonCode.getValue();
+                        if (rc.signum() >= 0 && rc.compareTo(BigInteger.valueOf(crlReasons.length)) < 0)
+                        {
+                            reason = crlReasons[rc.intValue()];
+                        }
                     }
                 }
 

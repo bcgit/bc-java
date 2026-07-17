@@ -63,7 +63,12 @@ public class CSRAttributesResponse
     {
         try
         {
-            return CsrAttrs.getInstance(ASN1Primitive.fromByteArray(responseEncoding));
+            ASN1Primitive obj = ASN1Primitive.fromByteArray(responseEncoding);
+            if (obj == null)
+            {
+                throw new IOException("no content found");
+            }
+            return CsrAttrs.getInstance(obj);
         }
         catch (Exception e)
         {
