@@ -6,6 +6,7 @@ import java.io.InputStream;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.cmp.PKIFreeText;
@@ -43,7 +44,12 @@ public class TimeStampResponse
     {
         try
         {
-            return TimeStampResp.getInstance(new ASN1InputStream(in).readObject());
+            ASN1Primitive obj = new ASN1InputStream(in).readObject();
+            if (obj == null)
+            {
+                throw new IOException("no ASN.1 object found in response");
+            }
+            return TimeStampResp.getInstance(obj);
         }
         catch (IllegalArgumentException e)
         {

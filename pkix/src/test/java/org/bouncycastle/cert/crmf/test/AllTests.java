@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.crmf.CRMFException;
+import org.bouncycastle.cert.crmf.CertificateRequestMessage;
 import org.bouncycastle.cert.crmf.EncryptedValueBuilder;
 import org.bouncycastle.cert.crmf.EncryptedValuePadder;
 import org.bouncycastle.cert.crmf.EncryptedValueParser;
@@ -384,6 +385,29 @@ public class AllTests
         TestCase.assertTrue(certReqMsg.isValidSigningKeyPOP(new JcaContentVerifierProviderBuilder().setProvider(BC).build(kp.getPublic()), new PKMACBuilder(new JcePKMACValuesCalculator().setProvider(BC)), "fred".toCharArray()));
 
         TestCase.assertEquals(kp.getPublic(), certReqMsg.getPublicKey());
+    }
+
+    public void testHasSigningKeyPOPWithPKMACIsTotal()
+        throws Exception
+    {
+        // hasSigningKeyProofOfPossessionWithPKMAC() is a predicate: it must answer false, not throw a
+        // NullPointerException, when the POP is absent (POP is OPTIONAL) or when a signing-key POP omits
+        // poposkInput (which is [0] OPTIONAL and, per RFC 4211, omitted for a direct-over-certReq POP).
+        CertTemplate template = new CertTemplateBuilder().build();
+        CertRequest certReq = new CertRequest(1, template, null);
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(
+            org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers.sha256WithRSAEncryption);
+
+        // no POP present
+        CertificateRequestMessage noPop = new CertificateRequestMessage(new CertReqMsg(certReq, null, null));
+        assertFalse(noPop.hasSigningKeyProofOfPossessionWithPKMAC());
+
+        // signing-key POP with no poposkInput (direct signature over certReq) => no PKMAC
+        POPOSigningKey popoSign = new POPOSigningKey(
+            null, sigAlg, new org.bouncycastle.asn1.DERBitString(new byte[]{1, 2, 3, 4}));
+        CertificateRequestMessage signPop = new CertificateRequestMessage(
+            new CertReqMsg(certReq, new ProofOfPossession(popoSign), null));
+        assertFalse(signPop.hasSigningKeyProofOfPossessionWithPKMAC());
     }
 
     public void testEncryptedValueWithKey()

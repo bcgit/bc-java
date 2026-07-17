@@ -30,7 +30,12 @@ public class PKCS12PfxPdu
     {
         try
         {
-            return Pfx.getInstance(ASN1Primitive.fromByteArray(pfxEncoding));
+            ASN1Primitive obj = ASN1Primitive.fromByteArray(pfxEncoding);
+            if (obj == null)
+            {
+                throw new PKCSIOException("malformed data: no content found");
+            }
+            return Pfx.getInstance(obj);
         }
         catch (ClassCastException e)
         {

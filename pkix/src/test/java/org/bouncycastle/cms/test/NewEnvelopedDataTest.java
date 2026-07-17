@@ -652,6 +652,28 @@ public class NewEnvelopedDataTest
         return new CMSTestSetup(new TestSuite(NewEnvelopedDataTest.class));
     }
 
+    public void testMissingEncryptedContent()
+        throws Exception
+    {
+        // EncryptedContentInfo.encryptedContent is [0] IMPLICIT OCTET STRING OPTIONAL. A message that
+        // omits it must be rejected with a typed CMSException, not a NullPointerException escaping the
+        // CMSEnvelopedData(ContentInfo) constructor's throws CMSException contract.
+        EncryptedContentInfo eci = new EncryptedContentInfo(
+            CMSObjectIdentifiers.data, new AlgorithmIdentifier(NISTObjectIdentifiers.id_aes128_CBC), null);
+        EnvelopedData envData = new EnvelopedData(null, new DERSet(), eci, (org.bouncycastle.asn1.ASN1Set)null);
+        ContentInfo ci = new ContentInfo(CMSObjectIdentifiers.envelopedData, envData);
+
+        try
+        {
+            new CMSEnvelopedData(ci);
+            fail("no exception on enveloped data with missing encrypted content");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("Missing content.", e.getMessage());
+        }
+    }
+
     public void testKeyTransAllowedContentAlgorithms()
         throws Exception
     {

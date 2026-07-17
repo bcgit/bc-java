@@ -394,6 +394,14 @@ public abstract class ECCurve
         ECPoint p = null;
         int expectedLength = getFieldElementEncodingLength();
 
+        if (encoded == null || encoded.length < 1)
+        {
+            // An empty (or null) encoding must be reported as a malformed encoding, not leak an
+            // ArrayIndexOutOfBoundsException out of the point decoder to every caller that decodes
+            // an untrusted point (EC key parse, ECDH/ECIES/TLS ephemeral points).
+            throw new IllegalArgumentException("Invalid point encoding: empty");
+        }
+
         byte type = encoded[0];
         switch (type)
         {

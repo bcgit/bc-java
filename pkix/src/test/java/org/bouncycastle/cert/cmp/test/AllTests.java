@@ -251,6 +251,22 @@ public class AllTests
         assertTrue(procMsg.verify(new PKMACBuilder(new JcePKMACValuesCalculator().setProvider(BC)), "TopSecret1234".toCharArray()));
     }
 
+    // Empty input parses to no ASN.1 object; GeneralPKIMessage(byte[]) must reject it with the
+    // declared IOException, not construct a null-wrapping object whose accessors then NPE.
+    public void testGeneralPKIMessageEmptyEncodingRejected()
+        throws Exception
+    {
+        try
+        {
+            new GeneralPKIMessage(new byte[0]);
+            fail("expected IOException for empty encoding");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+    }
+
     public void testSubsequentMessage()
         throws Exception
     {

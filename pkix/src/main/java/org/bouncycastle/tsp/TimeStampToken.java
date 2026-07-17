@@ -95,7 +95,18 @@ public class TimeStampToken
 
             this.tstInfo = new TimeStampTokenInfo(TSTInfo.getInstance(bOut.toByteArray()));
 
-            Attribute attr = tsaSignerInfo.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificate);
+            // A time-stamp token must carry the SigningCertificate(V2) as a *signed* attribute; a token
+            // whose SignerInfo has no signed attributes at all (getSignedAttributes() == null) has none,
+            // so reject it cleanly rather than NPE on the following .get(...) — a raw NullPointerException
+            // would escape this ctor's declared throws TSPException, IOException contract.
+            AttributeTable signedAttr = tsaSignerInfo.getSignedAttributes();
+
+            if (signedAttr == null)
+            {
+                throw new TSPValidationException("no signing certificate attribute found, time stamp invalid.");
+            }
+
+            Attribute attr = signedAttr.get(PKCSObjectIdentifiers.id_aa_signingCertificate);
 
             if (attr != null)
             {
@@ -115,7 +126,7 @@ public class TimeStampToken
             }
             else
             {
-                attr = tsaSignerInfo.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificateV2);
+                attr = signedAttr.get(PKCSObjectIdentifiers.id_aa_signingCertificateV2);
 
                 if (attr == null)
                 {

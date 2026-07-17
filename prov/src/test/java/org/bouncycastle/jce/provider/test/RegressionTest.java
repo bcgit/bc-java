@@ -31,6 +31,7 @@ public class RegressionTest
         new CipherStreamTest2(),
         new CMacTest(),
         new CRL5Test(),
+        new CrlReasonsMaskTest(),
         new DESedeTest(),
         new DetDSATest(),
         new DHIESTest(),

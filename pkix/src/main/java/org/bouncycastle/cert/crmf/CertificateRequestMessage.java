@@ -203,14 +203,18 @@ public class CertificateRequestMessage
     {
         ProofOfPossession pop = certReqMsg.getPop();
 
-        if (pop.getType() != popSigningKey)
+        // POP is OPTIONAL, and for a signing-key POP poposkInput is [0] OPTIONAL (RFC 4211: it MUST be
+        // omitted when the signature is over the certReq directly - the common case). This is a total
+        // predicate, so guard both nullable optionals and answer false rather than throwing NPE - the
+        // same guarding isValidSigningKeyPOP already applies to getPoposkInput().
+        if (pop == null || pop.getType() != popSigningKey)
         {
             return false;
         }
 
         POPOSigningKey popoSign = POPOSigningKey.getInstance(pop.getObject());
 
-        return popoSign.getPoposkInput().getPublicKeyMAC() != null;
+        return popoSign.getPoposkInput() != null && popoSign.getPoposkInput().getPublicKeyMAC() != null;
     }
 
     /**

@@ -393,9 +393,13 @@ class RFC3280CertPathUtilities
             return ReasonsMask.allReasons;
         }
         // (d) (2) and (d)(3)
+        // RFC 5280 6.3.3 (d)(3): when the IDP omits onlySomeReasons the interim mask is dp.reasons,
+        // i.e. the IDP contributes all-reasons to the intersection. Guard onlySomeReasons == null
+        // (not just idp == null) so a CRL whose IDP omits onlySomeReasons does not drive
+        // new ReasonsMask(null) -> NullPointerException.
         return (dp.getReasons() == null
             ? ReasonsMask.allReasons
-            : new ReasonsMask(dp.getReasons())).intersect(idp == null
+            : new ReasonsMask(dp.getReasons())).intersect(idp == null || idp.getOnlySomeReasons() == null
             ? ReasonsMask.allReasons
             : new ReasonsMask(idp.getOnlySomeReasons()));
 

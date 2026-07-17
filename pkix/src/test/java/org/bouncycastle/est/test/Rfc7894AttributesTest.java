@@ -190,6 +190,22 @@ public class Rfc7894AttributesTest
         assertTrue(resp.isAttribute(PKCSObjectIdentifiers.id_aa_estIdentityLinking));
     }
 
+    // Empty input parses to no ASN.1 object; CSRAttributesResponse(byte[]) must reject it with the
+    // declared ESTException, not leak a NullPointerException from the null CsrAttrs.
+    public void testEmptyResponseRejected()
+        throws Exception
+    {
+        try
+        {
+            new CSRAttributesResponse(new byte[0]);
+            fail("expected ESTException for empty response");
+        }
+        catch (org.bouncycastle.est.ESTException e)
+        {
+            // expected
+        }
+    }
+
     /**
      * Make sure the value classes accept a DirectoryString built from any of
      * the legal {@code DirectoryString} CHOICE branches that callers might

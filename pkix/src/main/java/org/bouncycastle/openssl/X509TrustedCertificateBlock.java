@@ -26,7 +26,12 @@ public class X509TrustedCertificateBlock
     {
         ASN1InputStream aIn = new ASN1InputStream(encoding);
 
-        this.certificateHolder = new X509CertificateHolder(aIn.readObject().getEncoded());
+        ASN1Object cert = aIn.readObject();
+        if (cert == null)
+        {
+            throw new IOException("no certificate found in trusted certificate block");
+        }
+        this.certificateHolder = new X509CertificateHolder(cert.getEncoded());
 
         ASN1Object tBlock = aIn.readObject();
 
