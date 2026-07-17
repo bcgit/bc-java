@@ -204,6 +204,15 @@
                 <exclude name="**/mime/**/*.java" />
                 <exclude name="**/est/**/*.java" />
                 <exclude name="**/its/**" />
+                <!-- parity with ant/jdk14.xml: files using Java 5+ constructs the 1.3/1.4 preprocessor can't convert -->
+                <exclude name="**/cades/CAdESLevel.java"/>
+                <exclude name="**/cades/CAdESLevelDetector.java"/>
+                <exclude name="**/cades/CAdESLongTermValuesUtil.java"/>
+                <exclude name="**/cades/CAdESArchiveTimestampUtil.java"/>
+                <exclude name="**/BcHssLmsContentSignerB*.java"/>
+                <exclude name="**/BcHssLmsContentVerifierProviderBuilder.java"/>
+                <exclude name="**/cert/plants/**/*.java"/>
+                <exclude name="**/cert/X509CertificateReviewer.java"/>
             </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/*.java" />
@@ -286,6 +295,12 @@
                 <exclude name="**/pqc/crypto/test/MQOM*.java" />
                 <exclude name="**/pqc/crypto/test/UOV*.java" />
                 <exclude name="**/pqc/crypto/test/SQIsign*.java" />
+                <!-- tests of excluded families / Java-1.4 APIs the 1.3 build can't compile -->
+                <exclude name="**/crypto/hash2curve/**" />
+                <exclude name="**/crypto/test/AsconTest.java" />
+                <exclude name="**/crypto/test/ECCSISignerTest.java" />
+                <exclude name="**/pqc/crypto/test/MLDSATest.java" />
+                <exclude name="**/pqc/crypto/test/PqcMalformedInputTest.java" />
             </fileset>
             <fileset dir="prov/src/test/java">
                 <exclude name="**/GOST3410KeyPairTest.java" />

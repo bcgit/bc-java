@@ -343,7 +343,12 @@
             fork="true"
             debug="${release.debug}">
             <classpath>
-                <path refid="project.classpath" /> 
+                <path refid="project.classpath" />
+                <!-- jdk1.3: the clean-room jce-jdk13 jar carries the javax.security.auth /
+                     javax.crypto backport that core (e.g. SecretWithEncapsulation) references. -->
+                <fileset dir="${artifacts.jars.dir}">
+                    <include name="**/*.jar" />
+                </fileset>
             </classpath>
         </javac>
     </target>
@@ -538,6 +543,7 @@
                  <exclude name="org/bouncycastle/util/utiltest/**" />
                  <exclude name="org/bouncycastle/mime/**" />
                  <exclude name="org/bouncycastle/mail/**" />
+                 <exclude name="org/bouncycastle/cades/**" />
                  <exclude name="org/bouncycastle/cms/**" />
                  <exclude name="org/bouncycastle/pkix/**" />
                  <exclude name="org/bouncycastle/dvcs/**" />
@@ -557,6 +563,8 @@
                  <exclude name="org/bouncycastle/voms/**" />
                  <exclude name="org/bouncycastle/tls/**" />
                  <exclude name="org/bouncycastle/jsse/**" />
+                 <exclude name="org/bouncycastle/**/CrlCacheTest.java" />
+                 <exclude name="org/bouncycastle/**/MultiValuedRDNEmailTest.java" />
                  <exclude name="org/apache/**/*.java" />
              </fileset>
              <fileset dir="${src.dir}" includes="org/bouncycastle/util/test/*.java" />
