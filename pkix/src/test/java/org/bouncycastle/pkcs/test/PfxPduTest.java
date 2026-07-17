@@ -1168,6 +1168,22 @@ public class PfxPduTest
         pkcs12.load(new ByteArrayInputStream(pfx.getEncoded()), passwd);
     }
 
+    // Empty input parses to no ASN.1 object; PKCS12PfxPdu(byte[]) must reject it with the declared
+    // IOException, not construct a null-wrapping object whose accessors then NPE.
+    public void testEmptyEncodingRejected()
+        throws Exception
+    {
+        try
+        {
+            new PKCS12PfxPdu(new byte[0]);
+            fail("expected IOException for empty encoding");
+        }
+        catch (java.io.IOException e)
+        {
+            // expected
+        }
+    }
+
     public void testPfxPduPBMac1PBKdf2()
         throws Exception
     {

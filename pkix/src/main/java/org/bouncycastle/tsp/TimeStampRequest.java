@@ -13,6 +13,7 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.tsp.MessageImprint;
 import org.bouncycastle.asn1.tsp.TimeStampReq;
@@ -50,7 +51,12 @@ public class TimeStampRequest
     {
         try
         {
-            return TimeStampReq.getInstance(new ASN1InputStream(in).readObject());
+            ASN1Primitive obj = new ASN1InputStream(in).readObject();
+            if (obj == null)
+            {
+                throw new IOException("no ASN.1 object found in request");
+            }
+            return TimeStampReq.getInstance(obj);
         }
         catch (ClassCastException e)
         {

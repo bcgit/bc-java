@@ -749,6 +749,34 @@ public class ECPointTest extends TestCase
         return z;
     }
 
+    /**
+     * decodePoint must reject an empty (or null) encoding with IllegalArgumentException, not leak an
+     * ArrayIndexOutOfBoundsException from the {@code encoded[0]} read. Reachable via any untrusted
+     * EC-point decode (EC key parse, ECDH / ECIES / TLS ephemeral points, ECIESKEMExtractor).
+     */
+    public void testDecodePointRejectsEmptyEncoding()
+    {
+        ECCurve curve = ECNamedCurveTable.getByName("secp256r1").getCurve();
+        try
+        {
+            curve.decodePoint(new byte[0]);
+            fail("empty point encoding not rejected");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected - an ArrayIndexOutOfBoundsException here is an unchecked leak
+        }
+        try
+        {
+            curve.decodePoint(null);
+            fail("null point encoding not rejected");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+    }
+
     public static Test suite()
     {
         return new TestSuite(ECPointTest.class);

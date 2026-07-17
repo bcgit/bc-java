@@ -38,7 +38,12 @@ public class SimplePKIResponse
     {
         try
         {
-            return ContentInfo.getInstance(ASN1Primitive.fromByteArray(responseEncoding));
+            ASN1Primitive obj = ASN1Primitive.fromByteArray(responseEncoding);
+            if (obj == null)
+            {
+                throw new IOException("no content found");
+            }
+            return ContentInfo.getInstance(obj);
         }
         catch (Exception e)
         {

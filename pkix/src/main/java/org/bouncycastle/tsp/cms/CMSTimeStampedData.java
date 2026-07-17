@@ -38,13 +38,32 @@ public class CMSTimeStampedData
     {
         try
         {
-            initialize(ContentInfo.getInstance(new ASN1InputStream(in).readObject()));
+            ContentInfo contentInfo = ContentInfo.getInstance(new ASN1InputStream(in).readObject());
+            if (contentInfo == null)
+            {
+                // An empty/truncated stream decodes to null; report it directly as the declared exception.
+                throw new IOException("No content found.");
+            }
+            initialize(contentInfo);
         }
         catch (ClassCastException e)
         {
+            // A malformed byte[] / InputStream surfaces from this multi-layer decode as one of three
+            // specific runtime types: ClassCastException (a wrong-type ASN.1 slot),
+            // IllegalArgumentException (the getInstance() malformed-input contract plus the null-content
+            // / size / Evidence guards in initialize(), asn1.cms.MetaData and TimeStampDataUtil), and
+            // IllegalStateException (the shared ASN.1 parse layer's wrong-context-tag signal from
+            // ASN1UniversalType.fromExplicit / fromImplicit*, which throw IllegalStateException by design
+            // for the parser and are deliberately left unchanged). Catch these specific types - as the
+            // recently added CMS byte[]/InputStream guards do - and convert to the declared IOException;
+            // a broad catch (RuntimeException) is intentionally avoided.
             throw Exceptions.ioException("Malformed content: " + e, e);
         }
         catch (IllegalArgumentException e)
+        {
+            throw Exceptions.ioException("Malformed content: " + e, e);
+        }
+        catch (IllegalStateException e)
         {
             throw Exceptions.ioException("Malformed content: " + e, e);
         }
@@ -58,11 +77,24 @@ public class CMSTimeStampedData
 
     private void initialize(ContentInfo contentInfo)
     {
+        // An empty/truncated stream decodes to a null ContentInfo (ASN1InputStream.readObject() -> null
+        // -> ContentInfo.getInstance(null) -> null); reject it here rather than dereferencing null below.
+        if (contentInfo == null)
+        {
+            throw new IllegalArgumentException("No content found.");
+        }
+
         this.contentInfo = contentInfo;
 
         if (CMSObjectIdentifiers.timestampedData.equals(contentInfo.getContentType()))
         {
             this.timeStampedData = TimeStampedData.getInstance(contentInfo.getContent());
+            // A ContentInfo carrying the timestampedData OID but no content yields a null here
+            // (TimeStampedData.getInstance(null) == null), which would NPE in TimeStampDataUtil.
+            if (this.timeStampedData == null)
+            {
+                throw new IllegalArgumentException("Malformed content - missing timestamped data");
+            }
         }
         else
         {

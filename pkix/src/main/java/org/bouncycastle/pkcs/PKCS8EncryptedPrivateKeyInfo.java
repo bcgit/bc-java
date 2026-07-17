@@ -23,7 +23,16 @@ public class PKCS8EncryptedPrivateKeyInfo
     {
         try
         {
-            return EncryptedPrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(pkcs8Encoding));
+            // fromByteArray() returns null on empty input and getInstance(null) returns null; without
+            // this guard the byte[] constructor would wrap a null and every accessor
+            // (getEncryptionAlgorithm/getEncryptedData/getEncoded/decryptPrivateKeyInfo) would then throw
+            // a NullPointerException rather than this declared IOException.
+            EncryptedPrivateKeyInfo info = EncryptedPrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(pkcs8Encoding));
+            if (info == null)
+            {
+                throw new PKCSIOException("malformed data: no encrypted private key info found");
+            }
+            return info;
         }
         catch (ClassCastException e)
         {

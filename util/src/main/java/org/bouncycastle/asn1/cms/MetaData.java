@@ -46,6 +46,12 @@ public class MetaData
 
     private MetaData(ASN1Sequence seq)
     {
+        int count = seq.size();
+        if (count < 1 || count > 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
+
         this.hashProtected = ASN1Boolean.getInstance(seq.getObjectAt(0));
 
         int index = 1;

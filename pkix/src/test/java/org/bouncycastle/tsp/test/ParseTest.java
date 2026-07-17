@@ -11,11 +11,18 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cmc.CMCException;
+import org.bouncycastle.cmc.SimplePKIResponse;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.est.CSRAttributesResponse;
+import org.bouncycastle.est.ESTException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.X509TrustedCertificateBlock;
 import org.bouncycastle.tsp.TSPAlgorithms;
+import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampResponse;
+import org.bouncycastle.tsp.cms.CMSTimeStampedData;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
@@ -365,7 +372,144 @@ public class ParseTest
     {
         Security.addProvider(new BouncyCastleProvider());
     }
-    
+
+    /**
+     * An empty / truncated stream - e.g. an empty or dropped TSA HTTP response - must surface as the
+     * declared IOException (TSPException for a response), never a bare NullPointerException escaping
+     * the throws contract. Reading an empty stream yields a null ASN.1 object, which was passed on to
+     * the value ctor and dereferenced.
+     */
+    public void testEmptyInputRejectedCleanly()
+    {
+        // TimeStampRequest - empty stream
+        try
+        {
+            new TimeStampRequest(new ByteArrayInputStream(new byte[0]));
+            fail("TimeStampRequest(InputStream) accepted empty input");
+        }
+        catch (IOException e)
+        {
+            // declared contract
+        }
+        catch (RuntimeException e)
+        {
+            fail("TimeStampRequest(InputStream) leaked " + e.getClass().getName() + " on empty input");
+        }
+
+        // TimeStampRequest - empty byte[]
+        try
+        {
+            new TimeStampRequest(new byte[0]);
+            fail("TimeStampRequest(byte[]) accepted empty input");
+        }
+        catch (IOException e)
+        {
+            // declared contract
+        }
+        catch (RuntimeException e)
+        {
+            fail("TimeStampRequest(byte[]) leaked " + e.getClass().getName() + " on empty input");
+        }
+
+        // TimeStampResponse - empty stream
+        try
+        {
+            new TimeStampResponse(new ByteArrayInputStream(new byte[0]));
+            fail("TimeStampResponse(InputStream) accepted empty input");
+        }
+        catch (IOException e)
+        {
+            // declared contract
+        }
+        catch (TSPException e)
+        {
+            // declared contract
+        }
+        catch (RuntimeException e)
+        {
+            fail("TimeStampResponse(InputStream) leaked " + e.getClass().getName() + " on empty input");
+        }
+
+        // TimeStampResponse - empty byte[]
+        try
+        {
+            new TimeStampResponse(new byte[0]);
+            fail("TimeStampResponse(byte[]) accepted empty input");
+        }
+        catch (IOException e)
+        {
+            // declared contract
+        }
+        catch (TSPException e)
+        {
+            // declared contract
+        }
+        catch (RuntimeException e)
+        {
+            fail("TimeStampResponse(byte[]) leaked " + e.getClass().getName() + " on empty input");
+        }
+
+        // CSRAttributesResponse (est) - empty byte[]
+        try
+        {
+            new CSRAttributesResponse(new byte[0]);
+            fail("CSRAttributesResponse accepted empty input");
+        }
+        catch (ESTException e)
+        {
+            // declared contract
+        }
+        catch (RuntimeException e)
+        {
+            fail("CSRAttributesResponse leaked " + e.getClass().getName() + " on empty input");
+        }
+
+        // X509TrustedCertificateBlock (openssl) - empty byte[]
+        try
+        {
+            new X509TrustedCertificateBlock(new byte[0]);
+            fail("X509TrustedCertificateBlock accepted empty input");
+        }
+        catch (IOException e)
+        {
+            // declared contract
+        }
+        catch (RuntimeException e)
+        {
+            fail("X509TrustedCertificateBlock leaked " + e.getClass().getName() + " on empty input");
+        }
+
+        // SimplePKIResponse (cmc) - empty byte[]
+        try
+        {
+            new SimplePKIResponse(new byte[0]);
+            fail("SimplePKIResponse accepted empty input");
+        }
+        catch (CMCException e)
+        {
+            // declared contract
+        }
+        catch (RuntimeException e)
+        {
+            fail("SimplePKIResponse leaked " + e.getClass().getName() + " on empty input");
+        }
+
+        // CMSTimeStampedData (tsp.cms) - empty byte[]
+        try
+        {
+            new CMSTimeStampedData(new byte[0]);
+            fail("CMSTimeStampedData accepted empty input");
+        }
+        catch (IOException e)
+        {
+            // declared contract
+        }
+        catch (RuntimeException e)
+        {
+            fail("CMSTimeStampedData leaked " + e.getClass().getName() + " on empty input");
+        }
+    }
+
     public void testParsing()
         throws Exception
     { 
