@@ -413,6 +413,18 @@ public class OpenSSHKeyParsingTests
     public void testFailures()
         throws Exception
     {
+        // An empty blob must be rejected with a typed exception, not an ArrayIndexOutOfBoundsException
+        // from the leading blob[0] format probe in parsePrivateKeyBlob.
+        try
+        {
+            OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(new byte[0]);
+            fail("empty blob should be rejected");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("empty blob rejection", e.getMessage(), "blob is null or empty");
+        }
+
         byte[] blob = new PemReader(new StringReader("-----BEGIN OPENSSH PRIVATE KEY-----\n" +
             "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n" +
             "QyNTUxOQAAACDOAmle1kHMtJYbdIXJYF3+Dpcr8779n51L0NyfCGLFhQAAAKBTr4PvU6+D\n" +

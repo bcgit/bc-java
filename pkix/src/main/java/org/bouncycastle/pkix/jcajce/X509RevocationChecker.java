@@ -840,7 +840,11 @@ public class X509RevocationChecker
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
             String message = "certificate [issuer=\"" + cert.getIssuerX500Principal() + "\",serialNumber="
                                            + cert.getSerialNumber() + ",subject=\"" + cert.getSubjectX500Principal() + "\"] revoked after " + df.format(certStatus.getRevocationDate());
-            message += ", reason: " + crlReasons[certStatus.getCertStatus()];
+            int certReason = certStatus.getCertStatus();
+            // The reason code is copied unvalidated from the (attacker-controlled) CRL entry, so an
+            // out-of-range value must not index the fixed crlReasons table out of bounds (AIOOBE).
+            message += ", reason: " + (certReason >= 0 && certReason < crlReasons.length
+                ? crlReasons[certReason] : "unknown (" + certReason + ")");
             throw new AnnotatedException(message);
         }
         if (!reasonsMask.isAllReasons() && certStatus.getCertStatus() == CertStatus.UNREVOKED)

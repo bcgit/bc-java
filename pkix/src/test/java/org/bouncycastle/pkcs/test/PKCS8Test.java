@@ -114,6 +114,23 @@ public class PKCS8Test
         assertEquals(modulus, k.getModulus());
     }
 
+    public void testMalformedEmptyEncoding()
+        throws Exception
+    {
+        // An empty encoding decodes to a null EncryptedPrivateKeyInfo; the byte[] constructor must
+        // reject it with a typed IOException, not wrap null and defer a NullPointerException to the
+        // accessors (getEncryptionAlgorithm/getEncryptedData/getEncoded/decryptPrivateKeyInfo).
+        try
+        {
+            new PKCS8EncryptedPrivateKeyInfo(new byte[0]);
+            fail("no exception on empty PKCS8EncryptedPrivateKeyInfo encoding");
+        }
+        catch (java.io.IOException e)
+        {
+            assertEquals("malformed data: no encrypted private key info found", e.getMessage());
+        }
+    }
+
     public void testGOST3411()
         throws Exception
     {

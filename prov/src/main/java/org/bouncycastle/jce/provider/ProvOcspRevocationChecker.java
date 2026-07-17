@@ -483,10 +483,15 @@ class ProvOcspRevocationChecker
                 if (nonce != null)
                 {
                     Extensions exts = basicResp.getTbsResponseData().getResponseExtensions();
+                    org.bouncycastle.asn1.x509.Extension ext = (exts == null)
+                        ? null : exts.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
 
-                    org.bouncycastle.asn1.x509.Extension ext = exts.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
-
-                    if (!Arrays.areEqual(nonce, ext.getExtnValue().getOctets()))
+                    // A caller-supplied nonce that the (validly signed) response does not echo back is a
+                    // nonce failure, not an internal error: reject cleanly rather than NPE on an absent
+                    // responseExtensions sequence or absent nonce extension (many responders omit it).
+                    // The NPE mattered because on the network-fetch path it escaped check() as a raw
+                    // unchecked exception rather than the documented CertPathValidatorException.
+                    if (ext == null || !Arrays.areEqual(nonce, ext.getExtnValue().getOctets()))
                     {
                         throw new CertPathValidatorException("nonce mismatch in OCSP response", null, parameters.getCertPath(), parameters.getIndex());
                     }

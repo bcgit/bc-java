@@ -32,6 +32,12 @@ class TimeStampDataUtil
         this.metaDataUtil = new MetaDataUtil(timeStampedData.getMetaData());
 
         Evidence evidence = timeStampedData.getTemporalEvidence();
+        if (evidence == null || evidence.getTstEvidence() == null)
+        {
+            // A malformed TimeStampedData whose Evidence is absent or is not the tstEvidence CHOICE would
+            // otherwise NPE here; report it as the documented malformed-input signal.
+            throw new IllegalArgumentException("malformed CMSTimeStampedData: no timestamp evidence");
+        }
         this.timeStamps = evidence.getTstEvidence().toTimeStampAndCRLArray();
     }
 
@@ -41,6 +47,12 @@ class TimeStampDataUtil
         this.metaDataUtil = new MetaDataUtil(timeStampedData.getMetaData());
 
         Evidence evidence = timeStampedData.getTemporalEvidence();
+        if (evidence == null || evidence.getTstEvidence() == null)
+        {
+            // A malformed TimeStampedData whose Evidence is absent or is not the tstEvidence CHOICE would
+            // otherwise NPE here; report it as the documented malformed-input signal.
+            throw new IllegalArgumentException("malformed CMSTimeStampedData: no timestamp evidence");
+        }
         this.timeStamps = evidence.getTstEvidence().toTimeStampAndCRLArray();
     }
 

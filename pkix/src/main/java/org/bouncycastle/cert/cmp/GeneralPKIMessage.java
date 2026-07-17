@@ -20,7 +20,12 @@ public class GeneralPKIMessage
     {
         try
         {
-            return PKIMessage.getInstance(ASN1Primitive.fromByteArray(encoding));
+            ASN1Primitive obj = ASN1Primitive.fromByteArray(encoding);
+            if (obj == null)
+            {
+                throw new CertIOException("malformed data: no content found");
+            }
+            return PKIMessage.getInstance(obj);
         }
         catch (ClassCastException e)
         {
