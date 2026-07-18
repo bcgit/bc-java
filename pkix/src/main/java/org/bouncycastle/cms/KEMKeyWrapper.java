@@ -18,4 +18,6 @@ public abstract class KEMKeyWrapper
     public abstract int getKekLength();
 
     public abstract AlgorithmIdentifier getWrapAlgorithmIdentifier();
+
+    public abstract byte[] getUkm();
 }
