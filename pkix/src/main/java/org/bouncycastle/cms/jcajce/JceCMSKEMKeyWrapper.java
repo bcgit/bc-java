@@ -43,6 +43,7 @@ class JceCMSKEMKeyWrapper
     private SecureRandom random;
     private AlgorithmIdentifier kdfAlgorithm = new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE));
     private byte[] encapsulation;
+    private byte[] ukm;
 
     public JceCMSKEMKeyWrapper(PublicKey publicKey, ASN1ObjectIdentifier symWrapAlg)
     {
@@ -70,6 +71,13 @@ class JceCMSKEMKeyWrapper
     public JceCMSKEMKeyWrapper setKDF(AlgorithmIdentifier kdfAlgorithm)
     {
         this.kdfAlgorithm = kdfAlgorithm;
+
+        return this;
+    }
+
+    public JceCMSKEMKeyWrapper setUKM(byte[] ukm)
+    {
+        this.ukm = Arrays.clone(ukm);
 
         return this;
     }
@@ -121,12 +129,17 @@ class JceCMSKEMKeyWrapper
         return symWrapAlgorithm;
     }
 
+    public byte[] getUkm()
+    {
+        return Arrays.clone(ukm);
+    }
+
     public byte[] generateWrappedKey(GenericKey encryptionKey)
         throws OperatorException
     {
         try
         {
-            byte[] oriInfoEnc = new CMSORIforKEMOtherInfo(symWrapAlgorithm, kekLength).getEncoded();
+            byte[] oriInfoEnc = new CMSORIforKEMOtherInfo(symWrapAlgorithm, kekLength, ukm).getEncoded();
 
             if (publicKey instanceof RSAPublicKey)
             {

@@ -54,8 +54,10 @@ public abstract class KEMRecipientInfoGenerator
             recipId = new RecipientIdentifier(new DEROctetString(subjectKeyIdentifier));
         }
 
+        byte[] ukm = wrapper.getUkm();
+
         return new RecipientInfo(new OtherRecipientInfo(CMSObjectIdentifiers.id_ori_kem,
-            new KEMRecipientInfo(recipId, wrapper.getAlgorithmIdentifier(), new DEROctetString(wrapper.getEncapsulation()), wrapper.getKdfAlgorithmIdentifier(), ASN1Integer.valueOf(wrapper.getKekLength()), null, wrapper.getWrapAlgorithmIdentifier(),
+            new KEMRecipientInfo(recipId, wrapper.getAlgorithmIdentifier(), new DEROctetString(wrapper.getEncapsulation()), wrapper.getKdfAlgorithmIdentifier(), ASN1Integer.valueOf(wrapper.getKekLength()), ukm != null ? new DEROctetString(ukm) : null, wrapper.getWrapAlgorithmIdentifier(),
             new DEROctetString(encryptedKeyBytes))));
     }
 }

@@ -54,6 +54,13 @@ public class JceKEMRecipientInfoGenerator
         return this;
     }
 
+    public JceKEMRecipientInfoGenerator setUserKeyingMaterial(byte[] userKeyingMaterial)
+    {
+        ((JceCMSKEMKeyWrapper)this.wrapper).setUKM(userKeyingMaterial);
+
+        return this;
+    }
+
     /**
      * Internally algorithm ids are converted into cipher names using a lookup table. For some providers
      * the standard lookup table won't work. Use this method to establish a specific mapping from an
