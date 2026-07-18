@@ -77,6 +77,7 @@ public class AllTests
         suite.addTestSuite(BcCertTest.class);
         suite.addTestSuite(BcPKCS10Test.class);
         suite.addTestSuite(PQCPKCS10Test.class);
+        suite.addTestSuite(PQCCertTest.class);
         suite.addTestSuite(X509CertificateReviewerTest.class);
         suite.addTestSuite(RelatedCertificateTest.class);
         suite.addTest(ConverterTest.suite());
