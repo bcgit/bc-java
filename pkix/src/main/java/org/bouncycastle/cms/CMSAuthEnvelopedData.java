@@ -32,18 +32,38 @@ public class CMSAuthEnvelopedData
     private byte[] mac;
     private ASN1Set unauthAttrs;
 
+    /**
+     * Create a CMSAuthEnvelopedData object from its encoding.
+     *
+     * @param authEnvData the complete encoding of the AuthEnvelopedData structure (a CMS ContentInfo).
+     *                    The array must hold the entire encoding and nothing extra - trailing bytes
+     *                    beyond the AuthEnvelopedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as an AuthEnvelopedData.
+     */
     public CMSAuthEnvelopedData(byte[] authEnvData)
         throws CMSException
     {
         this(CMSUtils.readContentInfo(authEnvData));
     }
 
+    /**
+     * Create a CMSAuthEnvelopedData object from a stream.
+     *
+     * @param authEnvData a stream positioned at the start of the AuthEnvelopedData encoding (a CMS ContentInfo).
+     * @throws CMSException if the encoding cannot be parsed as an AuthEnvelopedData.
+     */
     public CMSAuthEnvelopedData(InputStream authEnvData)
         throws CMSException
     {
         this(CMSUtils.readContentInfo(authEnvData));
     }
 
+    /**
+     * Create a CMSAuthEnvelopedData object from an already-parsed ContentInfo.
+     *
+     * @param contentInfo the ContentInfo carrying the AuthEnvelopedData.
+     * @throws CMSException if the ContentInfo does not hold a well-formed AuthEnvelopedData.
+     */
     public CMSAuthEnvelopedData(ContentInfo contentInfo)
         throws CMSException
     {

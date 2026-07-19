@@ -31,6 +31,14 @@ public class CMSDigestedData
     private ContentInfo  contentInfo;
     private DigestedData digestedData;
 
+    /**
+     * Create a CMSDigestedData object from its encoding.
+     *
+     * @param compressedData the complete encoding of the DigestedData structure (a CMS ContentInfo).
+     *                       The array must hold the entire encoding and nothing extra - trailing bytes
+     *                       beyond the DigestedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as a DigestedData.
+     */
     public CMSDigestedData(
         byte[] compressedData)
         throws CMSException
@@ -38,6 +46,12 @@ public class CMSDigestedData
         this(CMSUtils.readContentInfo(compressedData));
     }
 
+    /**
+     * Create a CMSDigestedData object from a stream.
+     *
+     * @param compressedData a stream positioned at the start of the DigestedData encoding (a CMS ContentInfo).
+     * @throws CMSException if the encoding cannot be parsed as a DigestedData.
+     */
     public CMSDigestedData(
         InputStream compressedData)
         throws CMSException
@@ -45,6 +59,12 @@ public class CMSDigestedData
         this(CMSUtils.readContentInfo(compressedData));
     }
 
+    /**
+     * Create a CMSDigestedData object from an already-parsed ContentInfo.
+     *
+     * @param contentInfo the ContentInfo carrying the DigestedData.
+     * @throws CMSException if the ContentInfo does not hold a well-formed DigestedData.
+     */
     public CMSDigestedData(
         ContentInfo contentInfo)
         throws CMSException

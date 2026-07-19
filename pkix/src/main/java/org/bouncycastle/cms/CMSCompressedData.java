@@ -26,20 +26,40 @@ public class CMSCompressedData
     ContentInfo                 contentInfo;
     CompressedData              comData;
 
+    /**
+     * Create a CMSCompressedData object from its encoding.
+     *
+     * @param compressedData the complete encoding of the CompressedData structure (a CMS ContentInfo).
+     *                       The array must hold the entire encoding and nothing extra - trailing bytes
+     *                       beyond the CompressedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as a CompressedData.
+     */
     public CMSCompressedData(
-        byte[]    compressedData) 
+        byte[]    compressedData)
         throws CMSException
     {
         this(CMSUtils.readContentInfo(compressedData));
     }
 
+    /**
+     * Create a CMSCompressedData object from a stream.
+     *
+     * @param compressedData a stream positioned at the start of the CompressedData encoding (a CMS ContentInfo).
+     * @throws CMSException if the encoding cannot be parsed as a CompressedData.
+     */
     public CMSCompressedData(
-        InputStream    compressedData) 
+        InputStream    compressedData)
         throws CMSException
     {
         this(CMSUtils.readContentInfo(compressedData));
     }
 
+    /**
+     * Create a CMSCompressedData object from an already-parsed ContentInfo.
+     *
+     * @param contentInfo the ContentInfo carrying the CompressedData.
+     * @throws CMSException if the ContentInfo does not hold a well-formed CompressedData.
+     */
     public CMSCompressedData(
         ContentInfo contentInfo)
         throws CMSException
