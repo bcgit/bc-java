@@ -318,7 +318,7 @@ public class MLKEMCipherSpi
         }
         catch (InvalidCipherTextException e)
         {
-            throw new InvalidKeyException("unable to extract KTS secret: " + e.getMessage());
+            throw SecurityExceptions.invalidKeyException("unable to extract KTS secret: " + e.getMessage(), e);
         }
         finally
         {

@@ -12,6 +12,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner;
 import org.bouncycastle.util.Strings;
@@ -54,7 +55,7 @@ public class SignatureSpi
             }
             catch (Exception e)
             {
-                throw new InvalidKeyException("unknown public key passed to Dilithium: " + e.getMessage(), e);
+                throw SecurityExceptions.invalidKeyException("unknown public key passed to Dilithium: " + e.getMessage(), e);
             }
         }
 

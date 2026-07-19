@@ -36,6 +36,7 @@ import org.bouncycastle.crypto.tls.TlsRsaKeyExchange;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.TLSRSAPremasterSecretParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -419,7 +420,7 @@ public class CipherSpi
         catch (InvalidAlgorithmParameterException e)
         {
             // this shouldn't happen
-            throw new InvalidKeyException("Eeeek! " + e.toString(), e);
+            throw SecurityExceptions.invalidKeyException("Eeeek! " + e.toString(), e);
         }
     }
 
