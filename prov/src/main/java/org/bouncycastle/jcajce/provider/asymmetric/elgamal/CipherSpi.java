@@ -35,6 +35,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jce.interfaces.ElGamalKey;
 import org.bouncycastle.util.Strings;
 
@@ -304,7 +305,7 @@ public class CipherSpi
         catch (InvalidAlgorithmParameterException e)
         {
             // this shouldn't happen
-            throw new InvalidKeyException("Eeeek! " + e.toString(), e);
+            throw SecurityExceptions.invalidKeyException("Eeeek! " + e.toString(), e);
         }
     }
 

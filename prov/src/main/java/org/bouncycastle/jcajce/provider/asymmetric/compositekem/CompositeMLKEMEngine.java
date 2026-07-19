@@ -53,6 +53,7 @@ import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -264,7 +265,7 @@ class CompositeMLKEMEngine
         }
         catch (Exception e)
         {
-            throw new InvalidKeyException("Traditional encapsulation failed: " + e.getMessage(), e);
+            throw SecurityExceptions.invalidKeyException("Traditional encapsulation failed: " + e.getMessage(), e);
         }
         finally
         {

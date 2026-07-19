@@ -319,7 +319,7 @@ class BIKECipherSpi
         }
         catch (InvalidCipherTextException e)
         {
-            throw new InvalidKeyException("unable to extract KTS secret: " + e.getMessage());
+            throw SecurityExceptions.invalidKeyException("unable to extract KTS secret: " + e.getMessage(), e);
         }
     }
 

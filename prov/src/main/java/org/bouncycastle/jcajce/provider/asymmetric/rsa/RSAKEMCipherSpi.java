@@ -25,6 +25,7 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.jcajce.provider.asymmetric.util.WrapUtil;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -294,7 +295,7 @@ public class RSAKEMCipherSpi
         }
         catch (InvalidCipherTextException ex)
         {
-            throw new InvalidKeyException("unable to extract KTS secret: " + ex.getMessage());
+            throw SecurityExceptions.invalidKeyException("unable to extract KTS secret: " + ex.getMessage(), ex);
         }
         finally
         {
