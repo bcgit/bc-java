@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.util;
 
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.spec.InvalidKeySpecException;
@@ -31,6 +32,11 @@ public class SecurityExceptions
     public static InvalidKeyException invalidKeyException(String message, Throwable cause)
     {
         return (InvalidKeyException)new InvalidKeyException(message).initCause(cause);
+    }
+
+    public static NoSuchAlgorithmException noSuchAlgorithmException(String message, Throwable cause)
+    {
+        return (NoSuchAlgorithmException)new NoSuchAlgorithmException(message).initCause(cause);
     }
 
     public static SignatureException signatureException(String message, Throwable cause)

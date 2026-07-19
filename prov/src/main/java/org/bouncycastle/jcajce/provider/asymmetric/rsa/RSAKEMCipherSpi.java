@@ -291,7 +291,7 @@ public class RSAKEMCipherSpi
         }
         catch (IllegalArgumentException ex)
         {
-            throw new NoSuchAlgorithmException("unable to extract KTS secret: " + ex.getMessage());
+            throw SecurityExceptions.noSuchAlgorithmException("unable to extract KTS secret: " + ex.getMessage(), ex);
         }
         catch (InvalidCipherTextException ex)
         {
