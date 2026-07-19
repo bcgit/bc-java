@@ -91,6 +91,7 @@ public class RegressionTest
         new PGPv6SignatureTest(),
         new PGPKeyPairGeneratorTest(),
         new PGPKeyRingGeneratorTest(),
+        new PGPShortEncSessionKeyTest(),
     };
 
     public static void main(String[] args)
