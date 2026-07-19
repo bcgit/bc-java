@@ -246,7 +246,7 @@ public class RSAKEMCipherSpi
         }
         catch (IllegalArgumentException ex)
         {
-            throw new IllegalBlockSizeException("unable to generate KTS secret: " + ex.getMessage());
+            throw SecurityExceptions.illegalBlockSizeException("unable to generate KTS secret: " + ex.getMessage(), ex);
         }
         finally
         {
