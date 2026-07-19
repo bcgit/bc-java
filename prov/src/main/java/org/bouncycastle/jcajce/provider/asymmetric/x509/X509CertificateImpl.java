@@ -59,6 +59,7 @@ import org.bouncycastle.internal.asn1.misc.VerisignCzagExtension;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -595,7 +596,7 @@ abstract class X509CertificateImpl
         catch (NoSuchProviderException e)
         {
             // can't happen, but just in case
-            throw new NoSuchAlgorithmException("provider issue: " + e.getMessage());
+            throw SecurityExceptions.noSuchAlgorithmException("provider issue: " + e.getMessage(), e);
         }
     }
 

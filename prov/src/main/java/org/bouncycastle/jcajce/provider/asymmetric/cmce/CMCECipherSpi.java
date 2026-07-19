@@ -298,7 +298,7 @@ public class CMCECipherSpi
         }
         catch (IllegalArgumentException e)
         {
-            throw new NoSuchAlgorithmException("unable to extract KTS secret: " + e.getMessage());
+            throw SecurityExceptions.noSuchAlgorithmException("unable to extract KTS secret: " + e.getMessage(), e);
         }
         catch (InvalidCipherTextException e)
         {

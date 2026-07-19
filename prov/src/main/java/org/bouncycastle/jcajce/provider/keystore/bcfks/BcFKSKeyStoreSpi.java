@@ -1204,7 +1204,7 @@ class BcFKSKeyStoreSpi
         }
         catch (NoSuchPaddingException e)
         {
-            throw new NoSuchAlgorithmException(e.toString());
+            throw SecurityExceptions.noSuchAlgorithmException(e.toString(), e);
         }
         catch (BadPaddingException e)
         {
