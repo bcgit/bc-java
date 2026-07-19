@@ -71,12 +71,12 @@ class CompositeMLKEMEngine
     private final ASN1ObjectIdentifier compositeOID;
     private final SecureRandom random;
 
-    public CompositeMLKEMEngine(ASN1ObjectIdentifier compositeOID)
+    CompositeMLKEMEngine(ASN1ObjectIdentifier compositeOID)
     {
         this(compositeOID, null);
     }
 
-    public CompositeMLKEMEngine(ASN1ObjectIdentifier compositeOID, SecureRandom random)
+    CompositeMLKEMEngine(ASN1ObjectIdentifier compositeOID, SecureRandom random)
     {
         if (!CompositeIndex.isCompositeKEMOID(compositeOID))
         {
@@ -84,6 +84,44 @@ class CompositeMLKEMEngine
         }
         this.compositeOID = compositeOID;
         this.random = random;
+    }
+
+    /**
+     * The length of a composite ciphertext (encapsulation) for this OID: the fixed ML-KEM ciphertext
+     * size plus the traditional component's ciphertext size, derived from the recipient private key.
+     * Used by the KEM CipherSpi to split the {@code encapsulation || wrappedKey} blob on unwrap.
+     */
+    int getEncapsulationLength(CompositePrivateKey privateKey)
+    {
+        int mlkemCTSize = CompositeIndex.getAlgorithmName(compositeOID).contains("768") ? 1088 : 1568;
+
+        return mlkemCTSize + getTraditionalCiphertextLength(privateKey.getPrivateKeys().get(1));
+    }
+
+    private int getTraditionalCiphertextLength(PrivateKey tradSK)
+    {
+        String tradAlg = CompositeIndex.getTraditionalAlgorithmName(compositeOID);
+
+        if ("RSA".equals(tradAlg))
+        {
+            return (((java.security.interfaces.RSAKey)tradSK).getModulus().bitLength() + 7) / 8;
+        }
+        if ("X25519".equals(tradAlg))
+        {
+            return 32;
+        }
+        if ("X448".equals(tradAlg))
+        {
+            return 56;
+        }
+        if ("ECDH".equals(tradAlg))
+        {
+            int fieldBytes = (((ECPrivateKey)tradSK).getParams().getCurve().getField().getFieldSize() + 7) / 8;
+
+            return 1 + 2 * fieldBytes;
+        }
+
+        throw new IllegalStateException("unknown composite traditional algorithm: " + tradAlg);
     }
 
     /**
@@ -122,7 +160,7 @@ class CompositeMLKEMEngine
     /**
      * Encap(pk) -> (ss, ct) as per Section 3.2.
      */
-    public SecretWithEncapsulation encapsulate(CompositePublicKey publicKey)
+    SecretWithEncapsulation encapsulate(CompositePublicKey publicKey)
         throws InvalidKeyException
     {
         List<PublicKey> compKeys = publicKey.getPublicKeys();
@@ -237,7 +275,7 @@ class CompositeMLKEMEngine
     /**
      * Decap(sk, ct) -> ss as per Section 3.3.
      */
-    public byte[] decapsulate(CompositePrivateKey privateKey, byte[] ciphertext)
+    byte[] decapsulate(CompositePrivateKey privateKey, byte[] ciphertext)
         throws InvalidKeyException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException,
         IOException, InvalidKeySpecException, IllegalBlockSizeException, BadPaddingException
     {

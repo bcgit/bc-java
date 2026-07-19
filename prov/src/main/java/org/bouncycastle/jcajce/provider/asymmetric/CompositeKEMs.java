@@ -49,6 +49,9 @@ public class CompositeKEMs
                 provider.addAlgorithm("KeyGenerator." + algorithmName, PREFIX + "CompositeKeyGeneratorSpi$" + className);
                 provider.addAlgorithm("Alg.Alias.KeyGenerator", oid, algorithmName);
 
+                provider.addAlgorithm("Cipher." + algorithmName, PREFIX + "CompositeKEMCipherSpi$Base");
+                provider.addAlgorithm("Alg.Alias.Cipher", oid, algorithmName);
+
                 provider.addKeyInfoConverter(oid, new KeyFactorySpi());
             }
         }

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -44,6 +45,20 @@ public class DefaultKemEncapsulationLengthProvider
         kemEncapsulationLengths.put(ISOIECObjectIdentifiers.efrodokem976_aes, Integers.valueOf(15744));
         kemEncapsulationLengths.put(ISOIECObjectIdentifiers.efrodokem1344_shake, Integers.valueOf(21632));
         kemEncapsulationLengths.put(ISOIECObjectIdentifiers.efrodokem1344_aes, Integers.valueOf(21632));
+
+        // Composite ML-KEM (draft-ietf-lamps-pq-composite-kem); ciphertext = ML-KEM ct || traditional ct
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_RSA2048_SHA3_256, Integers.valueOf(1344));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_RSA3072_SHA3_256, Integers.valueOf(1472));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_RSA4096_SHA3_256, Integers.valueOf(1600));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_X25519_SHA3_256, Integers.valueOf(1120));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P256_SHA3_256, Integers.valueOf(1153));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P384_SHA3_256, Integers.valueOf(1185));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_BP256_SHA3_256, Integers.valueOf(1153));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_RSA3072_SHA3_256, Integers.valueOf(1952));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P384_SHA3_256, Integers.valueOf(1665));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_BP384_SHA3_256, Integers.valueOf(1665));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_X448_SHA3_256, Integers.valueOf(1624));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P521_SHA3_256, Integers.valueOf(1701));
     }
 
     public int getEncapsulationLength(AlgorithmIdentifier kemAlgorithm)
