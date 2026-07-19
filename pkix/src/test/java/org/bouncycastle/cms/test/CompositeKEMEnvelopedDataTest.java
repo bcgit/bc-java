@@ -90,6 +90,7 @@ public class CompositeKEMEnvelopedDataTest
 
             assertEquals(NAMES[i] + ": KEM OID", OIDS[i], kem.getKem().getAlgorithm());
             assertEquals(NAMES[i] + ": KDF", PKCSObjectIdentifiers.id_alg_hkdf_with_sha256, kem.getKdf().getAlgorithm());
+            assertEquals(NAMES[i] + ": wrap", CMSAlgorithm.AES256_WRAP, kem.getWrap().getAlgorithm());
 
             RecipientInformationStore recipients = ed.getRecipientInfos();
             Collection c = recipients.getRecipients();
