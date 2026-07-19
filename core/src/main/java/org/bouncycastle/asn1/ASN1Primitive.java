@@ -63,7 +63,7 @@ public abstract class ASN1Primitive
      * Parse the first ASN.1 (BER) encoding from an {@link InputStream}.The stream is not closed by this method and may
      * contain further data beyond the first ASN.1 encoding.
      *
-     * @param data the stream to parse.
+     * @param input the stream to parse.
      * @return the base ASN.1 object parsed from the stream.
      * @exception IOException if there is a problem parsing the data.
      */
