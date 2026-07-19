@@ -88,6 +88,15 @@ public class CMSSignedData
         this.signerInfoStore = signerInfoStore;
     }
 
+    /**
+     * Create a CMSSignedData object from its encoding, the SignedData carrying its encapsulated
+     * (attached) content.
+     *
+     * @param sigBlock the complete encoding of the SignedData structure (a CMS ContentInfo). The
+     *                 array must hold the entire encoding and nothing extra - trailing bytes beyond
+     *                 the SignedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as a SignedData.
+     */
     public CMSSignedData(
         byte[] sigBlock)
         throws CMSException
@@ -95,6 +104,16 @@ public class CMSSignedData
         this(CMSUtils.readContentInfo(sigBlock));
     }
 
+    /**
+     * Create a CMSSignedData object for a detached signature, supplying the previously detached
+     * content separately.
+     *
+     * @param signedContent the content that was detached from the signature.
+     * @param sigBlock      the complete encoding of the SignedData structure (a CMS ContentInfo). The
+     *                      array must hold the entire encoding and nothing extra - trailing bytes
+     *                      beyond the SignedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as a SignedData.
+     */
     public CMSSignedData(
         CMSProcessable signedContent,
         byte[] sigBlock)
@@ -104,10 +123,13 @@ public class CMSSignedData
     }
 
     /**
-     * Content with detached signature, digests precomputed
+     * Create a CMSSignedData object for a detached signature, with the content digests precomputed.
      *
-     * @param hashes   a map of precomputed digests for content indexed by name of hash.
-     * @param sigBlock the signature object.
+     * @param hashes   a map of precomputed digests for the content, indexed by digest algorithm.
+     * @param sigBlock the complete encoding of the SignedData structure (a CMS ContentInfo). The
+     *                 array must hold the entire encoding and nothing extra - trailing bytes beyond
+     *                 the SignedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as a SignedData.
      */
     public CMSSignedData(
         Map hashes,
@@ -118,10 +140,12 @@ public class CMSSignedData
     }
 
     /**
-     * base constructor - content with detached signature.
+     * Create a CMSSignedData object for a detached signature, reading the signature from a stream
+     * and supplying the previously detached content separately.
      *
-     * @param signedContent the content that was signed.
-     * @param sigData       the signature object.
+     * @param signedContent the content that was detached from the signature.
+     * @param sigData       a stream positioned at the start of the SignedData encoding (a CMS ContentInfo).
+     * @throws CMSException if the encoding cannot be parsed as a SignedData.
      */
     public CMSSignedData(
         CMSProcessable signedContent,
@@ -132,7 +156,11 @@ public class CMSSignedData
     }
 
     /**
-     * base constructor - with encapsulated content
+     * Create a CMSSignedData object from a stream, the SignedData carrying its encapsulated
+     * (attached) content.
+     *
+     * @param sigData a stream positioned at the start of the SignedData encoding (a CMS ContentInfo).
+     * @throws CMSException if the encoding cannot be parsed as a SignedData.
      */
     public CMSSignedData(
         InputStream sigData)
@@ -141,6 +169,14 @@ public class CMSSignedData
         this(CMSUtils.readContentInfo(sigData));
     }
 
+    /**
+     * Create a CMSSignedData object for a detached signature from an already-parsed ContentInfo,
+     * supplying the previously detached content separately.
+     *
+     * @param signedContent the content that was detached from the signature.
+     * @param sigData        the ContentInfo carrying the SignedData.
+     * @throws CMSException if the ContentInfo does not hold a well-formed SignedData.
+     */
     public CMSSignedData(
         final CMSProcessable signedContent,
         ContentInfo sigData)
@@ -177,6 +213,14 @@ public class CMSSignedData
         this.hashes = null;
     }
 
+    /**
+     * Create a CMSSignedData object for a detached signature from an already-parsed ContentInfo,
+     * with the content digests precomputed.
+     *
+     * @param hashes  a map of precomputed digests for the content, indexed by digest algorithm.
+     * @param sigData the ContentInfo carrying the SignedData.
+     * @throws CMSException if the ContentInfo does not hold a well-formed SignedData.
+     */
     public CMSSignedData(
         Map hashes,
         ContentInfo sigData)
@@ -188,6 +232,13 @@ public class CMSSignedData
         this.signedContent = null;
     }
 
+    /**
+     * Create a CMSSignedData object from an already-parsed ContentInfo, the SignedData carrying its
+     * encapsulated content (if any).
+     *
+     * @param sigData the ContentInfo carrying the SignedData.
+     * @throws CMSException if the ContentInfo does not hold a well-formed SignedData.
+     */
     public CMSSignedData(
         ContentInfo sigData)
         throws CMSException

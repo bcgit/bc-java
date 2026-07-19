@@ -2,6 +2,7 @@ package org.bouncycastle.cms;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
@@ -14,6 +15,40 @@ public class CMSEncryptedData
     private ContentInfo contentInfo;
     private EncryptedData encryptedData;
 
+    /**
+     * Create a CMSEncryptedData object from its encoding.
+     *
+     * @param encryptedData the complete encoding of the EncryptedData structure (a CMS ContentInfo).
+     *                      The array must hold the entire encoding and nothing extra - trailing bytes
+     *                      beyond the EncryptedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as an EncryptedData.
+     */
+    public CMSEncryptedData(byte[] encryptedData)
+        throws CMSException
+    {
+        this(CMSUtils.readContentInfo(encryptedData));
+    }
+
+    /**
+     * Create a CMSEncryptedData object from a stream.
+     *
+     * @param encryptedData a stream positioned at the start of the EncryptedData encoding (a CMS ContentInfo).
+     * @throws CMSException if the encoding cannot be parsed as an EncryptedData.
+     */
+    public CMSEncryptedData(InputStream encryptedData)
+        throws CMSException
+    {
+        this(CMSUtils.readContentInfo(encryptedData));
+    }
+
+    /**
+     * Create a CMSEncryptedData object from an already-parsed ContentInfo.
+     * <p>
+     * Note: unlike the sibling CMS container constructors this one is not declared to throw
+     * CMSException; malformed inner content surfaces as an IllegalArgumentException.
+     *
+     * @param contentInfo the ContentInfo carrying the EncryptedData.
+     */
     public CMSEncryptedData(ContentInfo contentInfo)
     {
         this.contentInfo = contentInfo;

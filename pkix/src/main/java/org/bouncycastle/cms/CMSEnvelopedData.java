@@ -44,6 +44,14 @@ public class CMSEnvelopedData
     private ASN1Set                unprotectedAttributes;
     private OriginatorInformation  originatorInfo;
 
+    /**
+     * Create a CMSEnvelopedData object from its encoding.
+     *
+     * @param envelopedData the complete encoding of the EnvelopedData structure (a CMS ContentInfo).
+     *                      The array must hold the entire encoding and nothing extra - trailing bytes
+     *                      beyond the EnvelopedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as an EnvelopedData.
+     */
     public CMSEnvelopedData(
         byte[]    envelopedData)
         throws CMSException
@@ -51,6 +59,12 @@ public class CMSEnvelopedData
         this(CMSUtils.readContentInfo(envelopedData));
     }
 
+    /**
+     * Create a CMSEnvelopedData object from a stream.
+     *
+     * @param envelopedData a stream positioned at the start of the EnvelopedData encoding (a CMS ContentInfo).
+     * @throws CMSException if the encoding cannot be parsed as an EnvelopedData.
+     */
     public CMSEnvelopedData(
         InputStream    envelopedData)
         throws CMSException

@@ -37,6 +37,14 @@ public class CMSAuthenticatedData
     private AttributeTable authAttributeTable;
     private AttributeTable unauthAttributeTable;
 
+    /**
+     * Create a CMSAuthenticatedData object from its encoding.
+     *
+     * @param authData the complete encoding of the AuthenticatedData structure (a CMS ContentInfo).
+     *                 The array must hold the entire encoding and nothing extra - trailing bytes
+     *                 beyond the AuthenticatedData are not permitted.
+     * @throws CMSException if the encoding cannot be parsed as an AuthenticatedData.
+     */
     public CMSAuthenticatedData(
         byte[]    authData)
         throws CMSException
@@ -44,6 +52,15 @@ public class CMSAuthenticatedData
         this(CMSUtils.readContentInfo(authData));
     }
 
+    /**
+     * Create a CMSAuthenticatedData object from its encoding.
+     *
+     * @param authData the complete encoding of the AuthenticatedData structure (a CMS ContentInfo).
+     *                 The array must hold the entire encoding and nothing extra - trailing bytes
+     *                 beyond the AuthenticatedData are not permitted.
+     * @param digestCalculatorProvider provider for the digest calculators needed to verify the MAC.
+     * @throws CMSException if the encoding cannot be parsed as an AuthenticatedData.
+     */
     public CMSAuthenticatedData(
         byte[]    authData,
         DigestCalculatorProvider digestCalculatorProvider)
@@ -52,6 +69,12 @@ public class CMSAuthenticatedData
         this(CMSUtils.readContentInfo(authData), digestCalculatorProvider);
     }
 
+    /**
+     * Create a CMSAuthenticatedData object from a stream.
+     *
+     * @param authData a stream positioned at the start of the AuthenticatedData encoding (a CMS ContentInfo).
+     * @throws CMSException if the encoding cannot be parsed as an AuthenticatedData.
+     */
     public CMSAuthenticatedData(
         InputStream    authData)
         throws CMSException
@@ -59,6 +82,13 @@ public class CMSAuthenticatedData
         this(CMSUtils.readContentInfo(authData));
     }
 
+    /**
+     * Create a CMSAuthenticatedData object from a stream.
+     *
+     * @param authData a stream positioned at the start of the AuthenticatedData encoding (a CMS ContentInfo).
+     * @param digestCalculatorProvider provider for the digest calculators needed to verify the MAC.
+     * @throws CMSException if the encoding cannot be parsed as an AuthenticatedData.
+     */
     public CMSAuthenticatedData(
         InputStream    authData,
         DigestCalculatorProvider digestCalculatorProvider)
@@ -67,6 +97,12 @@ public class CMSAuthenticatedData
         this(CMSUtils.readContentInfo(authData), digestCalculatorProvider);
     }
 
+    /**
+     * Create a CMSAuthenticatedData object from an already-parsed ContentInfo.
+     *
+     * @param contentInfo the ContentInfo carrying the AuthenticatedData.
+     * @throws CMSException if the ContentInfo does not hold a well-formed AuthenticatedData.
+     */
     public CMSAuthenticatedData(
         ContentInfo contentInfo)
         throws CMSException
@@ -74,6 +110,13 @@ public class CMSAuthenticatedData
         this(contentInfo, null);
     }
 
+    /**
+     * Create a CMSAuthenticatedData object from an already-parsed ContentInfo.
+     *
+     * @param contentInfo the ContentInfo carrying the AuthenticatedData.
+     * @param digestCalculatorProvider provider for the digest calculators needed to verify the MAC.
+     * @throws CMSException if the ContentInfo does not hold a well-formed AuthenticatedData.
+     */
     public CMSAuthenticatedData(
         ContentInfo contentInfo,
         DigestCalculatorProvider digestCalculatorProvider)
