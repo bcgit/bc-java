@@ -3,7 +3,9 @@ package org.bouncycastle.tsp.ers;
 import org.bouncycastle.operator.DigestCalculator;
 
 /**
- * General interface for an ERSData data group object.
+ * General interface for a data object covered by an RFC 4998 Evidence Record -
+ * anything (a byte array, file, stream, or {@link ERSDataGroup}) that can produce
+ * the hash used as a leaf in the archive time-stamp's hash tree.
  */
 public interface ERSData
 {

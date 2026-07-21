@@ -45,6 +45,11 @@ public class TimeStampRequestGenerator
         this.digestAlgFinder = digestAlgFinder;
     }
 
+    /**
+     * Set the OID of the TSA policy the request asks the token to be issued under.
+     *
+     * @param reqPolicy the policy OID to request.
+     */
     public void setReqPolicy(ASN1ObjectIdentifier reqPolicy)
     {
         this.reqPolicy = reqPolicy;
@@ -59,11 +64,21 @@ public class TimeStampRequestGenerator
         setReqPolicy(new ASN1ObjectIdentifier(reqPolicy));
     }
 
+    /**
+     * Set the certReq field requesting the TSA to include its certificate(s) in the response.
+     *
+     * @param certReq true to ask the TSA to return its certificate(s), false otherwise.
+     */
     public void setCertReq(ASN1Boolean certReq)
     {
         this.certReq = certReq;
     }
 
+    /**
+     * Set the certReq field requesting the TSA to include its certificate(s) in the response.
+     *
+     * @param certReq true to ask the TSA to return its certificate(s), false otherwise.
+     */
     public void setCertReq(boolean certReq)
     {
         setCertReq(ASN1Boolean.getInstance(certReq));
@@ -130,21 +145,51 @@ public class TimeStampRequestGenerator
         return generate(new ASN1ObjectIdentifier(digestAlgorithmOID), digest, nonce);
     }
 
+    /**
+     * Generate a request for the given digest and algorithm OID.
+     *
+     * @param digestAlgorithm the OID of the algorithm used to produce the digest.
+     * @param digest the message imprint digest to be stamped.
+     * @return a TimeStampRequest.
+     */
     public TimeStampRequest generate(ASN1ObjectIdentifier digestAlgorithm, byte[] digest)
     {
         return generate(digestAlgorithm, digest, null);
     }
 
+    /**
+     * Generate a request for the given digest and algorithm OID, including a nonce.
+     *
+     * @param digestAlgorithm the OID of the algorithm used to produce the digest.
+     * @param digest the message imprint digest to be stamped.
+     * @param nonce a nonce to include in the request, allowing the response to be matched to it.
+     * @return a TimeStampRequest.
+     */
     public TimeStampRequest generate(ASN1ObjectIdentifier digestAlgorithm, byte[] digest, BigInteger nonce)
     {
         return generate(digestAlgFinder.find(digestAlgorithm), digest, nonce);
     }
 
+    /**
+     * Generate a request for the given digest and algorithm identifier.
+     *
+     * @param digestAlgorithmID the identifier of the algorithm used to produce the digest.
+     * @param digest the message imprint digest to be stamped.
+     * @return a TimeStampRequest.
+     */
     public TimeStampRequest generate(AlgorithmIdentifier digestAlgorithmID, byte[] digest)
     {
         return generate(digestAlgorithmID, digest, null);
     }
 
+    /**
+     * Generate a request for the given digest and algorithm identifier, including a nonce.
+     *
+     * @param digestAlgorithmID the identifier of the algorithm used to produce the digest.
+     * @param digest the message imprint digest to be stamped.
+     * @param nonce a nonce to include in the request, allowing the response to be matched to it.
+     * @return a TimeStampRequest.
+     */
     public TimeStampRequest generate(AlgorithmIdentifier digestAlgorithmID, byte[] digest, BigInteger nonce)
     {
         if (digestAlgorithmID == null)

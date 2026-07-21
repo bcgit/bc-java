@@ -36,6 +36,11 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
+/**
+ * Utility methods supporting the RFC 3161 time-stamp protocol implementation - extraction of
+ * signature time-stamps from a SignerInformation, validation of TSA certificates against the
+ * id-kp-timeStamping extended key usage requirement, and digest-length lookups.
+ */
 public class TSPUtil
 {
     private static List EMPTY_LIST = Collections.unmodifiableList(new ArrayList());

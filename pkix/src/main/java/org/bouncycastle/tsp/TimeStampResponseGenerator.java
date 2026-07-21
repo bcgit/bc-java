@@ -27,7 +27,7 @@ import org.bouncycastle.asn1.x509.Extensions;
  * Generator for RFC 3161 Time Stamp Responses.
  * <p>
  * New generate methods have been introduced to give people more control over what ends up in the message.
- * Unfortunately it turns out that in some cases fields like statusString must be left out otherwise a an
+ * Unfortunately it turns out that in some cases fields like statusString must be left out otherwise an
  * otherwise valid timestamp will be rejected.
  * </p>
  * If you're after the most control with generating a response use:
@@ -62,8 +62,9 @@ public class TimeStampResponseGenerator
     private Set                     acceptedExtensions;
 
     /**
+     * Create a response generator accepting the given algorithms.
      *
-     * @param tokenGenerator
+     * @param tokenGenerator the generator used to create the time-stamp tokens for granted responses.
      * @param acceptedAlgorithms a set of OIDs giving accepted algorithms.
      */
     public TimeStampResponseGenerator(
@@ -74,8 +75,9 @@ public class TimeStampResponseGenerator
     }
 
     /**
+     * Create a response generator accepting the given algorithms and policies.
      *
-     * @param tokenGenerator
+     * @param tokenGenerator the generator used to create the time-stamp tokens for granted responses.
      * @param acceptedAlgorithms a set of OIDs giving accepted algorithms.
      * @param acceptedPolicies if non-null a set of policies OIDs we are willing to sign under.
      */
@@ -88,8 +90,9 @@ public class TimeStampResponseGenerator
     }
 
     /**
+     * Create a response generator accepting the given algorithms, policies and extensions.
      *
-     * @param tokenGenerator
+     * @param tokenGenerator the generator used to create the time-stamp tokens for granted responses.
      * @param acceptedAlgorithms a set of OIDs giving accepted algorithms.
      * @param acceptedPolicies if non-null a set of policies OIDs we are willing to sign under.
      * @param acceptedExtensions if non-null a set of extensions OIDs we are willing to accept.

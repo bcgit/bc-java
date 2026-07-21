@@ -7,6 +7,11 @@ import org.bouncycastle.asn1.tsp.EvidenceRecord;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.tsp.TSPException;
 
+/**
+ * Generator for RFC 4998 Evidence Records. An EvidenceRecord wraps one or more
+ * archive time-stamps (as a single ArchiveTimeStampChain in an
+ * ArchiveTimeStampSequence) created by an {@link ERSArchiveTimeStampGenerator}.
+ */
 public class ERSEvidenceRecordGenerator
 {
     private final DigestCalculatorProvider digCalcProv;

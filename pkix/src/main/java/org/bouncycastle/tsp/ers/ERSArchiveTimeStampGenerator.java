@@ -22,7 +22,11 @@ import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Generator for RFC 4998 Archive Time Stamps.
+ * Generator for RFC 4998 ArchiveTimeStamps. Data objects (and data groups) are
+ * added, reduced to a single root hash via the Merkle hash tree built over their
+ * PartialHashtree leaves, and a time-stamp request for that root is produced; the
+ * returned time-stamp response is then turned into one or more
+ * {@link ERSArchiveTimeStamp}s carrying the reduced hash tree for each object.
  */
 public class ERSArchiveTimeStampGenerator
 {
@@ -37,11 +41,21 @@ public class ERSArchiveTimeStampGenerator
         this.digCalc = digCalc;
     }
 
+    /**
+     * Add a data object (or data group) to be covered by the archive time-stamp.
+     *
+     * @param dataObject the data object/group to add.
+     */
     public void addData(ERSData dataObject)
     {
         dataObjects.add(dataObject);
     }
 
+    /**
+     * Add a list of data objects (or data groups) to be covered by the archive time-stamp.
+     *
+     * @param dataObjects the data objects/groups to add.
+     */
     public void addAllData(List<ERSData> dataObjects)
     {
         this.dataObjects.addAll(dataObjects);
@@ -58,6 +72,15 @@ public class ERSArchiveTimeStampGenerator
         this.previousChainHash = digCalc.getDigest();
     }
 
+    /**
+     * Generate a time-stamp request for the root hash of the Merkle tree built over
+     * the data objects added so far.
+     *
+     * @param tspReqGenerator generator to use for building the request.
+     * @return a time-stamp request over the computed root hash.
+     * @throws TSPException on a time-stamp processing error.
+     * @throws IOException on an encoding error.
+     */
     public TimeStampRequest generateTimeStampRequest(TimeStampRequestGenerator tspReqGenerator)
         throws TSPException, IOException
     {
@@ -68,6 +91,15 @@ public class ERSArchiveTimeStampGenerator
         return tspReqGenerator.generate(digCalc.getAlgorithmIdentifier(), rootHash);
     }
 
+    /**
+     * Generate a time-stamp request for the root hash with the passed in nonce.
+     *
+     * @param tspReqGenerator generator to use for building the request.
+     * @param nonce nonce to include in the request.
+     * @return a time-stamp request over the computed root hash.
+     * @throws TSPException on a time-stamp processing error.
+     * @throws IOException on an encoding error.
+     */
     public TimeStampRequest generateTimeStampRequest(TimeStampRequestGenerator tspReqGenerator, BigInteger nonce)
         throws TSPException, IOException
     {
@@ -78,6 +110,16 @@ public class ERSArchiveTimeStampGenerator
         return tspReqGenerator.generate(digCalc.getAlgorithmIdentifier(), rootHash, nonce);
     }
 
+    /**
+     * Generate a single ArchiveTimeStamp from the passed in time-stamp response.
+     * The response's imprint must match the algorithm and root hash of the data
+     * added; this form requires exactly one data object (one reduced hash tree).
+     *
+     * @param tspResponse the response carrying the time-stamp over the root hash.
+     * @return the ArchiveTimeStamp covering the added data.
+     * @throws TSPException if the response has an error status or its imprint does not match.
+     * @throws ERSException if more than one reduced hash tree is present, or on a processing error.
+     */
     public ERSArchiveTimeStamp generateArchiveTimeStamp(TimeStampResponse tspResponse)
         throws TSPException, ERSException
     {
@@ -119,6 +161,16 @@ public class ERSArchiveTimeStampGenerator
         }
     }
 
+    /**
+     * Generate one ArchiveTimeStamp per added data object from the passed in
+     * time-stamp response, each carrying the reduced hash tree (the sibling path
+     * through the Merkle tree) needed to recover the time-stamped root for that object.
+     *
+     * @param tspResponse the response carrying the time-stamp over the root hash.
+     * @return a list of ArchiveTimeStamps, one per data object, in the order the data was added.
+     * @throws TSPException if the response has an error status or its imprint does not match.
+     * @throws ERSException on a processing error.
+     */
     public List<ERSArchiveTimeStamp> generateArchiveTimeStamps(TimeStampResponse tspResponse)
         throws TSPException, ERSException
     {

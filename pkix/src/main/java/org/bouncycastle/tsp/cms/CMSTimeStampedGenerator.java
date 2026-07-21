@@ -12,6 +12,12 @@ import org.bouncycastle.asn1.cms.MetaData;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.operator.DigestCalculator;
 
+/**
+ * Base class for the RFC 5544 TimeStampedData generators, holding the optional
+ * dataUri and MetaData that describe the document being bound to its temporal
+ * evidence. Subclasses ({@link CMSTimeStampedDataGenerator}) assemble these together
+ * with the initial time stamp token into a TimeStampedData structure.
+ */
 public class CMSTimeStampedGenerator
 {
     protected MetaData metaData;

@@ -1,5 +1,9 @@
 package org.bouncycastle.tsp;
 
+/**
+ * General checked exception for failures arising while processing RFC 3161 time-stamp
+ * protocol objects. Any underlying cause is available through {@link #getCause()}.
+ */
 public class TSPException
     extends Exception
 {

@@ -22,6 +22,17 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.bouncycastle.util.Exceptions;
 
+/**
+ * In-memory holder for an RFC 5544 TimeStampedData object - a document (or a URI
+ * referencing one) bound to the temporal evidence (a chain of RFC 3161 time stamp
+ * tokens) that proves it existed before a given point in time.
+ * <p>
+ * The wrapped {@link ContentInfo} must be of type id-ct-timestampedData; the
+ * encapsulated TimeStampedData carries the optional dataUri, MetaData and content
+ * along with the Evidence holding the time stamp chain. Use
+ * {@link CMSTimeStampedDataParser} for a streaming alternative.
+ * </p>
+ */
 public class CMSTimeStampedData
 {
     private TimeStampedData timeStampedData;
@@ -104,6 +115,15 @@ public class CMSTimeStampedData
         util = new TimeStampDataUtil(this.timeStampedData);
     }
 
+    /**
+     * Calculate the hash over the last time stamp element in the evidence chain, as
+     * required to obtain the next time stamp token that extends the chain (per RFC 5544
+     * each token is computed over its preceding element).
+     *
+     * @param calculator the digest calculator to use.
+     * @return the digest of the DER encoding of the most recent TimeStampAndCRL.
+     * @throws CMSException if the hash cannot be calculated.
+     */
     public byte[] calculateNextHash(DigestCalculator calculator)
         throws CMSException
     {
@@ -111,9 +131,14 @@ public class CMSTimeStampedData
     }
 
     /**
-     * Return a new timeStampedData object with the additional token attached.
+     * Return a new timeStampedData object with the additional token attached to the end
+     * of the evidence chain. The new token is expected to time stamp the previous chain
+     * element (see {@link #calculateNextHash}), extending the validity of the earlier
+     * tokens.
      *
-     * @throws CMSException
+     * @param token the time stamp token to append.
+     * @return a new CMSTimeStampedData carrying the extended evidence chain.
+     * @throws CMSException if the new structure cannot be built.
      */
     public CMSTimeStampedData addTimeStamp(TimeStampToken token)
         throws CMSException
@@ -128,6 +153,11 @@ public class CMSTimeStampedData
         return new CMSTimeStampedData(new ContentInfo(CMSObjectIdentifiers.timestampedData, new TimeStampedData(timeStampedData.getDataUriIA5(), timeStampedData.getMetaData(), timeStampedData.getContent(), new Evidence(new TimeStampTokenEvidence(newTimeStamps)))));
     }
 
+    /**
+     * Return the encapsulated content, if present.
+     *
+     * @return the content octets, or null if no content is carried (e.g. a dataUri is used instead).
+     */
     public byte[] getContent()
     {
         if (timeStampedData.getContent() != null)
@@ -138,6 +168,12 @@ public class CMSTimeStampedData
         return null;
     }
 
+    /**
+     * Return the dataUri referencing the time-stamped document, if present.
+     *
+     * @return the dataUri, or null if none was set.
+     * @throws URISyntaxException if the stored value is not a valid URI.
+     */
     public URI getDataUri()
         throws URISyntaxException
     {
@@ -166,6 +202,12 @@ public class CMSTimeStampedData
         return util.getOtherMetaData();
     }
 
+    /**
+     * Return the time stamp tokens making up the evidence chain, in order.
+     *
+     * @return an array of the time stamp tokens present in the message.
+     * @throws CMSException if a token cannot be parsed.
+     */
     public TimeStampToken[] getTimeStampTokens()
         throws CMSException
     {
@@ -229,6 +271,12 @@ public class CMSTimeStampedData
         util.validate(calculatorProvider, dataDigest, timeStampToken);
     }
 
+    /**
+     * Return the DER encoding of the underlying timestampedData ContentInfo.
+     *
+     * @return the encoded ContentInfo.
+     * @throws IOException if encoding fails.
+     */
     public byte[] getEncoded()
         throws IOException
     {

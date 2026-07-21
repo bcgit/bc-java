@@ -19,19 +19,51 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * Builder for an RFC 5544 TimeStampedData object. Given the initial RFC 3161 time
+ * stamp token (computed over the message imprint of the document, and the MetaData
+ * when it is hash-protected) plus the optional content set via the inherited
+ * {@link #setDataUri}/{@link #setMetaData} methods, it produces a
+ * {@link CMSTimeStampedData} whose evidence chain holds that one token.
+ */
 public class CMSTimeStampedDataGenerator
     extends CMSTimeStampedGenerator
 {
+    /**
+     * Generate a TimeStampedData with no encapsulated content (e.g. when the document
+     * is referenced via a dataUri).
+     *
+     * @param timeStamp the initial time stamp token.
+     * @return the generated CMSTimeStampedData.
+     * @throws CMSException if the structure cannot be built.
+     */
     public CMSTimeStampedData generate(TimeStampToken timeStamp) throws CMSException
     {
         return generate(timeStamp, (InputStream)null);
     }
 
+    /**
+     * Generate a TimeStampedData encapsulating the passed in content.
+     *
+     * @param timeStamp the initial time stamp token.
+     * @param content the document content to encapsulate.
+     * @return the generated CMSTimeStampedData.
+     * @throws CMSException if the structure cannot be built.
+     */
     public CMSTimeStampedData generate(TimeStampToken timeStamp, byte[] content) throws CMSException
     {
         return generate(timeStamp, new ByteArrayInputStream(content));
     }
 
+    /**
+     * Generate a TimeStampedData encapsulating the content drained from the passed in
+     * stream.
+     *
+     * @param timeStamp the initial time stamp token.
+     * @param content a stream over the document content to encapsulate, or null for none.
+     * @return the generated CMSTimeStampedData.
+     * @throws CMSException if the content cannot be read or the structure cannot be built.
+     */
     public CMSTimeStampedData generate(TimeStampToken timeStamp, InputStream content)
         throws CMSException
     {

@@ -10,7 +10,7 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * Generic class for processing an InputStream of data RFC 4998 ERS.
+ * Generic class for processing an InputStream (or File) of data for RFC 4998 ERS.
  */
 public class ERSInputStreamData
     extends ERSCachingData
