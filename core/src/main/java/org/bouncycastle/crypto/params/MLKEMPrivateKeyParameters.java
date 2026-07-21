@@ -1,10 +1,13 @@
 package org.bouncycastle.crypto.params;
 
+import javax.security.auth.Destroyable;
+
 import org.bouncycastle.crypto.kems.mlkem.MLKEMEngine;
 import org.bouncycastle.util.Arrays;
 
 public class MLKEMPrivateKeyParameters
     extends MLKEMKeyParameters
+    implements Destroyable
 {
     public static final int BOTH = 0;
     public static final int SEED_ONLY = 1;
@@ -18,6 +21,8 @@ public class MLKEMPrivateKeyParameters
     final byte[] seed;
 
     private final int prefFormat;
+
+    private volatile boolean destroyed;
 
     public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] s, byte[] hpk, byte[] nonce, byte[] t, byte[] rho)
     {
@@ -153,22 +158,22 @@ public class MLKEMPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(new byte[][]{s, t, rho, hpk, nonce});
+        return cloneWithCheck(Arrays.concatenate(new byte[][]{s, t, rho, hpk, nonce}));
     }
 
     public byte[] getHPK()
     {
-        return Arrays.clone(hpk);
+        return cloneWithCheck(hpk);
     }
 
     public byte[] getNonce()
     {
-        return Arrays.clone(nonce);
+        return cloneWithCheck(nonce);
     }
 
     public byte[] getPublicKey()
     {
-        return MLKEMPublicKeyParameters.getEncoded(t, rho);
+        return cloneWithCheck(MLKEMPublicKeyParameters.getEncoded(t, rho));
     }
 
     public MLKEMPublicKeyParameters getPublicKeyParameters()
@@ -178,21 +183,58 @@ public class MLKEMPrivateKeyParameters
 
     public byte[] getRho()
     {
-        return Arrays.clone(rho);
+        return cloneWithCheck(rho);
     }
 
     public byte[] getS()
     {
-        return Arrays.clone(s);
+        return cloneWithCheck(s);
     }
 
     public byte[] getT()
     {
-        return Arrays.clone(t);
+        return cloneWithCheck(t);
     }
 
     public byte[] getSeed()
     {
-        return Arrays.clone(seed);
+        return cloneWithCheck(seed);
+    }
+
+    /**
+     * Zeroize the secret key material held by this object.
+     * <p>
+     * Note: the internal arrays may be shared with other parameter objects derived from this one
+     * (for example via {@link #withPreferredFormat(int)}); destroying them here invalidates those
+     * objects too.
+     */
+    public synchronized void destroy()
+    {
+        if (!destroyed)
+        {
+            destroyed = true;
+            Arrays.clear(s);
+            Arrays.clear(hpk);
+            Arrays.clear(nonce);
+            Arrays.clear(t);
+            Arrays.clear(rho);
+            Arrays.clear(seed);
+        }
+    }
+
+    public boolean isDestroyed()
+    {
+        return destroyed;
+    }
+
+    private byte[] cloneWithCheck(byte[] fieldValue)
+    {
+        byte[] rv = Arrays.clone(fieldValue);
+        if (destroyed)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
+        return rv;
     }
 }
