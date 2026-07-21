@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jcajce.interfaces.FrodoKEMPrivateKey;
 import org.bouncycastle.jcajce.spec.FrodoKEMParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 public class BCFrodoKEMPrivateKey
     implements FrodoKEMPrivateKey
@@ -110,6 +111,22 @@ public class BCFrodoKEMPrivateKey
         return FrodoKEMParameterSpec.fromName(params.getParameters().getName());
     }
 
+    /**
+     * Destroy this key, zeroizing the secret key material it holds.
+     * <p>
+     * After destruction {@link #isDestroyed()} returns true and {@link #getEncoded()} throws
+     * {@link IllegalStateException}.
+     */
+    public synchronized void destroy()
+    {
+        params.destroy();
+    }
+
+    public boolean isDestroyed()
+    {
+        return params.isDestroyed();
+    }
+
     FrodoKEMPrivateKeyParameters getKeyParams()
     {
         return params;
@@ -132,6 +149,13 @@ public class BCFrodoKEMPrivateKey
     {
         out.defaultWriteObject();
 
-        out.writeObject(this.getEncoded());
+        try
+        {
+            out.writeObject(this.getEncoded());
+        }
+        catch (IllegalStateException e)
+        {
+            throw Exceptions.ioException(e.getMessage(), e);
+        }
     }
 }

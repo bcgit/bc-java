@@ -15,6 +15,7 @@ import org.bouncycastle.jcajce.interfaces.SLHDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPublicKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Fingerprint;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -84,7 +85,6 @@ public class BCSLHDSAPrivateKey
 
     public byte[] getEncoded()
     {
-
         try
         {
             PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
@@ -132,6 +132,22 @@ public class BCSLHDSAPrivateKey
         return buf.toString();
     }
 
+    /**
+     * Destroy this key, zeroizing the secret key material it holds.
+     * <p>
+     * After destruction {@link #isDestroyed()} returns true and {@link #getEncoded()} throws
+     * {@link IllegalStateException}.
+     */
+    public synchronized void destroy()
+    {
+        params.destroy();
+    }
+
+    public boolean isDestroyed()
+    {
+        return params.isDestroyed();
+    }
+
     SLHDSAPrivateKeyParameters getKeyParams()
     {
         return params;
@@ -154,6 +170,13 @@ public class BCSLHDSAPrivateKey
     {
         out.defaultWriteObject();
 
-        out.writeObject(this.getEncoded());
+        try
+        {
+            out.writeObject(this.getEncoded());
+        }
+        catch (IllegalStateException e)
+        {
+            throw Exceptions.ioException(e.getMessage(), e);
+        }
     }
 }
