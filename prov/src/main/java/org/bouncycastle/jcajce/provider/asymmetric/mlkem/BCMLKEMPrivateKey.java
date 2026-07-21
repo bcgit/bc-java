@@ -15,6 +15,7 @@ import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Fingerprint;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -167,6 +168,26 @@ public class BCMLKEMPrivateKey
         return buf.toString();
     }
 
+    /**
+     * Destroy this key, zeroizing the secret key material it holds.
+     * <p>
+     * After destruction {@link #isDestroyed()} returns true and the secret-bearing accessors
+     * (such as {@link #getEncoded()}, {@link #getPrivateData()} and {@link #getSeed()}) throw
+     * {@link IllegalStateException}. As the underlying parameter arrays may be shared with keys
+     * derived from this one, destruction invalidates those references too.
+     */
+    public synchronized void destroy()
+    {
+        params.destroy();
+        Arrays.clear(priorEncoding);
+        priorEncoding = null;
+    }
+
+    public boolean isDestroyed()
+    {
+        return params.isDestroyed();
+    }
+
     MLKEMPrivateKeyParameters getKeyParams()
     {
         return params;
@@ -189,6 +210,13 @@ public class BCMLKEMPrivateKey
     {
         out.defaultWriteObject();
 
-        out.writeObject(this.getEncoded());
+        try
+        {
+            out.writeObject(this.getEncoded());
+        }
+        catch (IllegalStateException e)
+        {
+            throw Exceptions.ioException(e.getMessage(), e);
+        }
     }
 }

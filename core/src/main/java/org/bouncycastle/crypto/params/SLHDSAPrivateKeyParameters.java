@@ -1,12 +1,17 @@
 package org.bouncycastle.crypto.params;
 
+import javax.security.auth.Destroyable;
+
 import org.bouncycastle.util.Arrays;
 
 public class SLHDSAPrivateKeyParameters
     extends SLHDSAKeyParameters
+    implements Destroyable
 {
     final SK sk;
     final PK pk;
+
+    private volatile boolean destroyed;
 
     public SLHDSAPrivateKeyParameters(SLHDSAParameters parameters, byte[] skpkEncoded)
     {
@@ -36,37 +41,68 @@ public class SLHDSAPrivateKeyParameters
 
     public byte[] getSeed()
     {
-        return Arrays.clone(sk.seed);
+        return cloneWithCheck(sk.seed);
     }
 
     public byte[] getPrf()
     {
-        return Arrays.clone(sk.prf);
+        return cloneWithCheck(sk.prf);
     }
 
     public byte[] getPublicSeed()
     {
-        return Arrays.clone(pk.seed);
+        return cloneWithCheck(pk.seed);
     }
 
     public byte[] getRoot()
     {
-        return Arrays.clone(pk.root);
+        return cloneWithCheck(pk.root);
     }
 
     public byte[] getPublicKey()
     {
-        return Arrays.concatenate(pk.seed, pk.root);
+        return cloneWithCheck(Arrays.concatenate(pk.seed, pk.root));
     }
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(new byte[][]{sk.seed, sk.prf, pk.seed, pk.root});
+        return cloneWithCheck(Arrays.concatenate(new byte[][]{sk.seed, sk.prf, pk.seed, pk.root}));
     }
 
     public byte[] getEncodedPublicKey()
     {
-        return Arrays.concatenate(pk.seed, pk.root);
+        return cloneWithCheck(Arrays.concatenate(pk.seed, pk.root));
+    }
+
+    /**
+     * Zeroize the secret key material held by this object.
+     */
+    public synchronized void destroy()
+    {
+        if (!destroyed)
+        {
+            destroyed = true;
+            Arrays.clear(sk.seed);
+            Arrays.clear(sk.prf);
+            Arrays.clear(pk.seed);
+            Arrays.clear(pk.root);
+        }
+    }
+
+    public boolean isDestroyed()
+    {
+        return destroyed;
+    }
+
+    private byte[] cloneWithCheck(byte[] fieldValue)
+    {
+        byte[] rv = Arrays.clone(fieldValue);
+        if (destroyed)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
+        return rv;
     }
 
     private class PK
