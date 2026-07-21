@@ -6,7 +6,7 @@ import java.io.IOException;
  * Secret key of type {@link PublicKeyAlgorithmTags#Ed25519}.
  * This type was introduced with RFC9580 and can be used with v4, v6 keys.
  * Note however, that legacy implementations might not understand this key type yet.
- * For a key type compatible with legacy v4 implementations, see {@link EdDSAPublicBCPGKey} with
+ * For a key type compatible with legacy v4 implementations, see {@link EdSecretBCPGKey} with
  * {@link PublicKeyAlgorithmTags#EDDSA_LEGACY}.
  *
  * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-algorithm-specific-part-for-ed2">
