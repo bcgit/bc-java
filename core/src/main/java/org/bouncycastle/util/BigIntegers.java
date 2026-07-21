@@ -168,22 +168,46 @@ public final class BigIntegers
 
     public static byte byteValueExact(BigInteger x)
     {
-        return x.byteValueExact();
+        // don't use BigInteger.byteValueExact - not available on Android below API level 33
+        if (x.bitLength() > 7)
+        {
+            throw new ArithmeticException("BigInteger out of byte range");
+        }
+
+        return x.byteValue();
     }
 
     public static short shortValueExact(BigInteger x)
     {
-        return x.shortValueExact();
+        // don't use BigInteger.shortValueExact - not available on Android below API level 33
+        if (x.bitLength() > 15)
+        {
+            throw new ArithmeticException("BigInteger out of short range");
+        }
+
+        return x.shortValue();
     }
 
     public static int intValueExact(BigInteger x)
     {
-        return x.intValueExact();
+        // don't use BigInteger.intValueExact - not available on Android below API level 33
+        if (x.bitLength() > 31)
+        {
+            throw new ArithmeticException("BigInteger out of int range");
+        }
+
+        return x.intValue();
     }
 
     public static long longValueExact(BigInteger x)
     {
-        return x.longValueExact();
+        // don't use BigInteger.longValueExact - not available on Android below API level 33
+        if (x.bitLength() > 63)
+        {
+            throw new ArithmeticException("BigInteger out of long range");
+        }
+
+        return x.longValue();
     }
 
     /**

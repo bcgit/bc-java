@@ -87,4 +87,100 @@ public class BigIntegersTest
             // ignore
         }
     }
+
+    public void testByteValueExact()
+    {
+        Assert.assertEquals(Byte.MAX_VALUE, BigIntegers.byteValueExact(BigInteger.valueOf(Byte.MAX_VALUE)));
+        Assert.assertEquals(Byte.MIN_VALUE, BigIntegers.byteValueExact(BigInteger.valueOf(Byte.MIN_VALUE)));
+        Assert.assertEquals((byte)0, BigIntegers.byteValueExact(BigInteger.ZERO));
+
+        expectByteValueError(BigInteger.valueOf(Byte.MAX_VALUE + 1));
+        expectByteValueError(BigInteger.valueOf(Byte.MIN_VALUE - 1));
+    }
+
+    public void testShortValueExact()
+    {
+        Assert.assertEquals(Short.MAX_VALUE, BigIntegers.shortValueExact(BigInteger.valueOf(Short.MAX_VALUE)));
+        Assert.assertEquals(Short.MIN_VALUE, BigIntegers.shortValueExact(BigInteger.valueOf(Short.MIN_VALUE)));
+        Assert.assertEquals((short)0, BigIntegers.shortValueExact(BigInteger.ZERO));
+
+        expectShortValueError(BigInteger.valueOf(Short.MAX_VALUE + 1));
+        expectShortValueError(BigInteger.valueOf(Short.MIN_VALUE - 1));
+    }
+
+    public void testIntValueExact()
+    {
+        Assert.assertEquals(Integer.MAX_VALUE, BigIntegers.intValueExact(BigInteger.valueOf(Integer.MAX_VALUE)));
+        Assert.assertEquals(Integer.MIN_VALUE, BigIntegers.intValueExact(BigInteger.valueOf(Integer.MIN_VALUE)));
+        Assert.assertEquals(0, BigIntegers.intValueExact(BigInteger.ZERO));
+
+        expectIntValueError(BigInteger.valueOf(Integer.MAX_VALUE + 1L));
+        expectIntValueError(BigInteger.valueOf(Integer.MIN_VALUE - 1L));
+    }
+
+    public void testLongValueExact()
+    {
+        Assert.assertEquals(Long.MAX_VALUE, BigIntegers.longValueExact(BigInteger.valueOf(Long.MAX_VALUE)));
+        Assert.assertEquals(Long.MIN_VALUE, BigIntegers.longValueExact(BigInteger.valueOf(Long.MIN_VALUE)));
+        Assert.assertEquals(0L, BigIntegers.longValueExact(BigInteger.ZERO));
+
+        expectLongValueError(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE));
+        expectLongValueError(BigInteger.valueOf(Long.MIN_VALUE).subtract(BigInteger.ONE));
+    }
+
+    private void expectByteValueError(BigInteger x)
+    {
+        try
+        {
+            BigIntegers.byteValueExact(x);
+
+            fail("no exception thrown");
+        }
+        catch (ArithmeticException e)
+        {
+            // ignore
+        }
+    }
+
+    private void expectShortValueError(BigInteger x)
+    {
+        try
+        {
+            BigIntegers.shortValueExact(x);
+
+            fail("no exception thrown");
+        }
+        catch (ArithmeticException e)
+        {
+            // ignore
+        }
+    }
+
+    private void expectIntValueError(BigInteger x)
+    {
+        try
+        {
+            BigIntegers.intValueExact(x);
+
+            fail("no exception thrown");
+        }
+        catch (ArithmeticException e)
+        {
+            // ignore
+        }
+    }
+
+    private void expectLongValueError(BigInteger x)
+    {
+        try
+        {
+            BigIntegers.longValueExact(x);
+
+            fail("no exception thrown");
+        }
+        catch (ArithmeticException e)
+        {
+            // ignore
+        }
+    }
 }
