@@ -1,9 +1,9 @@
 package org.bouncycastle.tsp.ers;
 
 /**
- * Exception thrown if an Archive TimeStamp according to RFC4998 fails to containsHashValue.
- * <p>
- * @see <a href="https://tools.ietf.org/html/rfc4998">RFC4998</a>
+ * Exception thrown when validation of an RFC 4998 ArchiveTimeStamp fails -
+ * for example when the expected data hash is not present in the reduced
+ * hash tree, or the recovered root hash does not match the time-stamp imprint.
  */
 public class ArchiveTimeStampValidationException
     extends ERSException

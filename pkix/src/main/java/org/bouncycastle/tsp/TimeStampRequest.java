@@ -71,6 +71,11 @@ public class TimeStampRequest
     private TimeStampReq req;
     private Extensions extensions;
 
+    /**
+     * Create a TimeStampRequest from the passed in ASN.1 structure.
+     *
+     * @param req the ASN.1 TimeStampReq the request is based on.
+     */
     public TimeStampRequest(TimeStampReq req)
     {
         this.req = req;
@@ -101,36 +106,57 @@ public class TimeStampRequest
         this(parseTimeStampReq(in));
     }
 
+    /**
+     * @return the underlying ASN.1 TimeStampReq structure.
+     */
     public TimeStampReq toASN1Structure()
     {
         return req;
     }
 
+    /**
+     * @return the version of the request (1 for RFC 3161).
+     */
     public int getVersion()
     {
         return req.getVersion().intValueExact();
     }
 
+    /**
+     * @return the message imprint (hash algorithm plus digest) to be stamped.
+     */
     public MessageImprint getMessageImprint()
     {
         return req.getMessageImprint();
     }
 
+    /**
+     * @return the OID of the hash algorithm used for the message imprint.
+     */
     public ASN1ObjectIdentifier getMessageImprintAlgOID()
     {
         return req.getMessageImprint().getHashAlgorithm().getAlgorithm();
     }
 
+    /**
+     * @return the algorithm identifier of the hash used for the message imprint.
+     */
     public AlgorithmIdentifier getMessageImprintAlgID()
     {
         return req.getMessageImprint().getHashAlgorithm();
     }
 
+    /**
+     * @return the digest value to be stamped.
+     */
     public byte[] getMessageImprintDigest()
     {
         return req.getMessageImprint().getHashedMessage();
     }
 
+    /**
+     * @return the OID of the TSA policy the requester asks the token to be issued under, null if not set.
+     */
     public ASN1ObjectIdentifier getReqPolicy()
     {
         if (req.getReqPolicy() != null)
@@ -143,6 +169,9 @@ public class TimeStampRequest
         }
     }
 
+    /**
+     * @return the nonce included in the request, null if there is none.
+     */
     public BigInteger getNonce()
     {
         if (req.getNonce() != null)
@@ -155,6 +184,10 @@ public class TimeStampRequest
         }
     }
 
+    /**
+     * @return true if the requester asked the TSA to include its certificate(s) in the response,
+     *         false if absent (the RFC 3161 default).
+     */
     public boolean getCertReq()
     {
         if (req.getCertReq() != null)
@@ -224,7 +257,7 @@ public class TimeStampRequest
 
    /**
     * return the ASN.1 encoded representation of this object.
-    * @return the default ASN,1 byte encoding for the object.
+    * @return the default ASN.1 byte encoding for the object.
     */
     public byte[] getEncoded() throws IOException
     {
@@ -236,11 +269,20 @@ public class TimeStampRequest
         return extensions;
     }
 
+    /**
+     * @return true if the request carries any extensions, false otherwise.
+     */
     public boolean hasExtensions()
     {
         return extensions != null;
     }
 
+    /**
+     * Return the extension with the passed in OID.
+     *
+     * @param oid the OID of the extension of interest.
+     * @return the extension, null if not present.
+     */
     public Extension getExtension(ASN1ObjectIdentifier oid)
     {
         if (extensions != null)
@@ -251,6 +293,9 @@ public class TimeStampRequest
         return null;
     }
 
+    /**
+     * @return a list of the OIDs of the extensions present, in order, empty if there are none.
+     */
     public List getExtensionOIDs()
     {
         return TSPUtil.getExtensionOIDs(extensions);

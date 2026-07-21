@@ -20,6 +20,19 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * Streaming parser for an RFC 5544 TimeStampedData object. It exposes the dataUri,
+ * MetaData and (streamed) content of the time-stamped document together with the
+ * Evidence chain of RFC 3161 time stamp tokens, reading from the supplied stream
+ * lazily rather than buffering the whole structure as {@link CMSTimeStampedData} does.
+ * <p>
+ * The encapsulated content is drained from {@link #getContent()} before the trailing
+ * evidence block can be parsed; the methods that need the time stamps
+ * ({@link #getTimeStampTokens()}, {@link #getMessageImprintDigestCalculator}, the
+ * {@code validate} methods) drain it automatically. The supplied InputStream is closed
+ * only when {@link #close()} (inherited from {@link CMSContentInfoParser}) is invoked.
+ * </p>
+ */
 public class CMSTimeStampedDataParser
     extends CMSContentInfoParser
 {
@@ -60,12 +73,27 @@ public class CMSTimeStampedDataParser
         }
     }
 
+    /**
+     * Calculate the hash over the last time stamp element in the evidence chain, as
+     * required to obtain the next time stamp token that extends the chain (per RFC 5544
+     * each token is computed over its preceding element).
+     *
+     * @param calculator the digest calculator to use.
+     * @return the digest of the DER encoding of the most recent TimeStampAndCRL.
+     * @throws CMSException if the hash cannot be calculated.
+     */
     public byte[] calculateNextHash(DigestCalculator calculator)
         throws CMSException
     {
         return util.calculateNextHash(calculator);
     }
 
+    /**
+     * Return a stream over the encapsulated content, if present. The stream must be
+     * drained before the trailing evidence block can be parsed.
+     *
+     * @return an InputStream over the content octets, or null if no content is carried.
+     */
     public InputStream getContent()
     {
         if (timeStampedData.getContent() != null)
@@ -76,6 +104,12 @@ public class CMSTimeStampedDataParser
         return null;
     }
 
+    /**
+     * Return the dataUri referencing the time-stamped document, if present.
+     *
+     * @return the dataUri, or null if none was set.
+     * @throws URISyntaxException if the stored value is not a valid URI.
+     */
     public URI getDataUri()
         throws URISyntaxException
     {
@@ -141,6 +175,13 @@ public class CMSTimeStampedDataParser
         return util.getMessageImprintDigestCalculator(calculatorProvider);
     }
 
+    /**
+     * Return the time stamp tokens making up the evidence chain, in order. The
+     * encapsulated content is drained first if it has not already been read.
+     *
+     * @return an array of the time stamp tokens present in the message.
+     * @throws CMSException if the evidence block cannot be parsed.
+     */
     public TimeStampToken[] getTimeStampTokens()
         throws CMSException
     {

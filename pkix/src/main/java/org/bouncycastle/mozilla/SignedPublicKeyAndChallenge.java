@@ -44,11 +44,22 @@ public class SignedPublicKeyAndChallenge
 {
     protected final org.bouncycastle.asn1.mozilla.SignedPublicKeyAndChallenge          spkacSeq;
 
+    /**
+     * Parse a SignedPublicKeyAndChallenge from its DER encoding.
+     *
+     * @param bytes the encoded SPKAC bytes (as produced by a Mozilla {@code <keygen>}
+     *              submission).
+     */
     public SignedPublicKeyAndChallenge(byte[] bytes)
     {
         spkacSeq = org.bouncycastle.asn1.mozilla.SignedPublicKeyAndChallenge.getInstance(bytes);
     }
 
+    /**
+     * Wrap an existing parsed SignedPublicKeyAndChallenge ASN.1 structure.
+     *
+     * @param struct the underlying ASN.1 structure.
+     */
     protected SignedPublicKeyAndChallenge(org.bouncycastle.asn1.mozilla.SignedPublicKeyAndChallenge struct)
     {
         this.spkacSeq = struct;
@@ -72,11 +83,23 @@ public class SignedPublicKeyAndChallenge
         return spkacSeq.toASN1Primitive();
     }
 
+    /**
+     * Return the inner PublicKeyAndChallenge structure (subject public key plus challenge string).
+     */
     public PublicKeyAndChallenge getPublicKeyAndChallenge()
     {
         return spkacSeq.getPublicKeyAndChallenge();
     }
 
+    /**
+     * Verify the signature on this SPKAC against the contained public key.
+     *
+     * @param verifierProvider a provider able to verify the signature algorithm declared
+     *                         by the SPKAC.
+     * @return {@code true} if the signature is valid, {@code false} otherwise.
+     * @throws OperatorCreationException if no verifier can be created for the signature algorithm.
+     * @throws IOException on a problem encoding the data to be verified.
+     */
     public boolean isSignatureValid(ContentVerifierProvider verifierProvider)
         throws OperatorCreationException, IOException
     {
@@ -129,11 +152,17 @@ public class SignedPublicKeyAndChallenge
         }
     }
 
+    /**
+     * Return the SubjectPublicKeyInfo carried by this SPKAC.
+     */
     public SubjectPublicKeyInfo getSubjectPublicKeyInfo()
     {
         return spkacSeq.getPublicKeyAndChallenge().getSubjectPublicKeyInfo();
     }
 
+    /**
+     * Return the challenge string the public key has been bound to.
+     */
     public String getChallenge()
     {
         return spkacSeq.getPublicKeyAndChallenge().getChallenge().getString();
@@ -167,6 +196,12 @@ public class SignedPublicKeyAndChallenge
         }
     }
 
+    /**
+     * Return the default (DER) encoding of this SPKAC.
+     *
+     * @return the encoded bytes.
+     * @throws IOException if encoding fails.
+     */
     public byte[] getEncoded()
         throws IOException
     {

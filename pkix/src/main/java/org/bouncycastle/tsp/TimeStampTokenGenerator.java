@@ -52,8 +52,14 @@ import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 
 /**
- * Currently the class supports ESSCertID by if a digest calculator based on SHA1 is passed in, otherwise it uses
- * ESSCertIDv2. In the event you need to pass both types, you will need to override the SignedAttributeGenerator
+ * Generator for the RFC 3161 time-stamp token (the {@code SignedData} carried as the
+ * {@code timeStampToken} of a time-stamp response) over a {@link TimeStampRequest}.
+ * <p>
+ * The signing certificate is bound into the token through a signing-certificate signed attribute. If a digest
+ * calculator based on SHA-1 is passed in the class supports the original {@code id-aa-signingCertificate}
+ * attribute (carrying an ESSCertID), otherwise it uses the {@code id-aa-signingCertificateV2} attribute
+ * (carrying an ESSCertIDv2) introduced for RFC 3161 by RFC 5816. In the event you need to pass both types,
+ * you will need to override the SignedAttributeGenerator
  * for the SignerInfoGeneratorBuilder you are using. For the default for ESSCertIDv2 the code will look something
  * like the following:
  * <pre>
@@ -260,6 +266,7 @@ public class TimeStampTokenGenerator
     }
 
     /**
+     * Add the store of CRLs to be included with the generated TimeStampToken.
      *
      * @param crlStore a Store containing X509CRLHolder objects.
      */
@@ -270,6 +277,7 @@ public class TimeStampTokenGenerator
     }
 
     /**
+     * Add the store of attribute certificates to be included with the generated TimeStampToken.
      *
      * @param attrStore a Store containing X509AttributeCertificate objects.
      */
@@ -313,26 +321,52 @@ public class TimeStampTokenGenerator
         this.locale = locale;
     }
 
+    /**
+     * Set the seconds component of the accuracy with which the genTime is reported (RFC 3161 Accuracy).
+     *
+     * @param accuracySeconds whole-seconds accuracy, ignored if not greater than zero.
+     */
     public void setAccuracySeconds(int accuracySeconds)
     {
         this.accuracySeconds = accuracySeconds;
     }
 
+    /**
+     * Set the milliseconds component of the accuracy with which the genTime is reported (RFC 3161 Accuracy).
+     *
+     * @param accuracyMillis milliseconds accuracy (1..999), ignored if not greater than zero.
+     */
     public void setAccuracyMillis(int accuracyMillis)
     {
         this.accuracyMillis = accuracyMillis;
     }
 
+    /**
+     * Set the microseconds component of the accuracy with which the genTime is reported (RFC 3161 Accuracy).
+     *
+     * @param accuracyMicros microseconds accuracy (1..999), ignored if not greater than zero.
+     */
     public void setAccuracyMicros(int accuracyMicros)
     {
         this.accuracyMicros = accuracyMicros;
     }
 
+    /**
+     * Set the ordering field of the generated TSTInfo. When true the genTime can always be ordered with
+     * respect to the genTime of other tokens from the same TSA regardless of accuracy (RFC 3161 2.4.2).
+     *
+     * @param ordering true if every token from this TSA is orderable, false (the default) otherwise.
+     */
     public void setOrdering(boolean ordering)
     {
         this.ordering = ordering;
     }
 
+    /**
+     * Set the optional tsa field naming the authority producing the token (RFC 3161 TSTInfo).
+     *
+     * @param tsa a GeneralName identifying the TSA.
+     */
     public void setTSA(GeneralName tsa)
     {
         this.tsa = tsa;

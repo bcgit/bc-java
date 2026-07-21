@@ -8,7 +8,10 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.Arrays;
 
 /**
- * An ERSData object that caches hash calculations.
+ * Base {@link ERSData} implementation that caches calculated hashes, keyed by
+ * digest algorithm and previous-chain hash, so the (potentially expensive) hash
+ * of a data object is computed only once per combination. Subclasses supply the
+ * actual hash in {@link #calculateHash(DigestCalculator, byte[])}.
  */
 public abstract class ERSCachingData
     implements ERSData
@@ -16,10 +19,12 @@ public abstract class ERSCachingData
     private Map<CacheIndex, byte[]> preCalcs = new HashMap<CacheIndex, byte[]>();
 
     /**
-     * Generates a hash for the whole DataGroup.
+     * Return the hash for this data object, computing it (via the subclass)
+     * on first request and returning the cached value thereafter.
      *
-     * @param digestCalculator the {@link DigestCalculator} to use for computing the hash
-     * @return a hash that is representative of the whole DataGroup
+     * @param digestCalculator the {@link DigestCalculator} to use for computing the hash.
+     * @param previousChainHash hash from an earlier chain to fold in, or null.
+     * @return the calculated hash for this data object.
      */
     public byte[] getHash(DigestCalculator digestCalculator, byte[] previousChainHash)
     {
@@ -36,6 +41,14 @@ public abstract class ERSCachingData
         return hash;
     }
 
+    /**
+     * Compute the hash for this data object. Implemented by subclasses; the result
+     * is cached by {@link #getHash(DigestCalculator, byte[])}.
+     *
+     * @param digestCalculator the digest calculator to use.
+     * @param previousChainHash hash from an earlier chain to fold in, or null.
+     * @return the calculated hash.
+     */
     protected abstract byte[] calculateHash(DigestCalculator digestCalculator, byte[] previousChainHash);
 
     private static class CacheIndex

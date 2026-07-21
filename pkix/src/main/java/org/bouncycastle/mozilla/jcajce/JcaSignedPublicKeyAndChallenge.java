@@ -43,21 +43,47 @@ public class JcaSignedPublicKeyAndChallenge
         this.helper = helper;
     }
 
+    /**
+     * Parse a SignedPublicKeyAndChallenge from its DER encoding.
+     *
+     * @param bytes the encoded SPKAC bytes.
+     */
     public JcaSignedPublicKeyAndChallenge(byte[] bytes)
     {
         super(bytes);
     }
 
+    /**
+     * Return a new holder that pins {@link KeyFactory} lookups to the named JCE provider.
+     *
+     * @param providerName the name of the JCE provider to use.
+     * @return a new JcaSignedPublicKeyAndChallenge bound to {@code providerName}.
+     */
     public JcaSignedPublicKeyAndChallenge setProvider(String providerName)
     {
         return new JcaSignedPublicKeyAndChallenge(this.spkacSeq, new NamedJcaJceHelper(providerName));
     }
 
+    /**
+     * Return a new holder that pins {@link KeyFactory} lookups to the supplied JCE provider.
+     *
+     * @param provider the JCE provider to use.
+     * @return a new JcaSignedPublicKeyAndChallenge bound to {@code provider}.
+     */
     public JcaSignedPublicKeyAndChallenge setProvider(Provider provider)
     {
         return new JcaSignedPublicKeyAndChallenge(this.spkacSeq, new ProviderJcaJceHelper(provider));
     }
 
+    /**
+     * Return the public key carried by the SPKAC as a JCA {@link PublicKey}, decoded via the
+     * provider configured by {@link #setProvider}.
+     *
+     * @return the decoded public key.
+     * @throws NoSuchAlgorithmException if no KeyFactory matches the SPKI algorithm.
+     * @throws NoSuchProviderException  if the named provider is not registered.
+     * @throws InvalidKeyException      if the SPKI cannot be decoded into a usable key.
+     */
     public PublicKey getPublicKey()
         throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException
     {

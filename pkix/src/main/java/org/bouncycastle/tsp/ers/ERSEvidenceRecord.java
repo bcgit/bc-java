@@ -34,7 +34,13 @@ import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * RFC 4998 Evidence Record.
+ * Carrier for an RFC 4998 EvidenceRecord - the ArchiveTimeStampSequence of
+ * ArchiveTimeStampChains that provides long-term, renewable proof of existence
+ * for one or more data objects. The first time-stamp of the first chain is the
+ * "primary" archive time-stamp that fixes the original data; subsequent
+ * time-stamps within a chain provide time-stamp renewal, and additional chains
+ * provide hash-tree renewal when a digest algorithm weakens. This class exposes
+ * presence validation and the renewal operations.
  */
 public class ERSEvidenceRecord
 {
@@ -46,18 +52,41 @@ public class ERSEvidenceRecord
     private final DigestCalculator digCalc;
     private final ArchiveTimeStamp primaryArchiveTimeStamp;
 
+    /**
+     * Create an evidence record by reading and parsing an encoded EvidenceRecord.
+     *
+     * @param ersIn stream to read the encoded evidence record from.
+     * @param digestCalculatorProvider provider for the digest calculators needed to process the record.
+     */
     public ERSEvidenceRecord(InputStream ersIn, DigestCalculatorProvider digestCalculatorProvider)
         throws TSPException, ERSException, IOException
     {
         this(EvidenceRecord.getInstance(Streams.readAll(ersIn)), digestCalculatorProvider);
     }
 
+    /**
+     * Create an evidence record from an encoded EvidenceRecord.
+     *
+     * @param evidenceRecord the DER encoded evidence record.
+     * @param digestCalculatorProvider provider for the digest calculators needed to process the record.
+     */
     public ERSEvidenceRecord(byte[] evidenceRecord, DigestCalculatorProvider digestCalculatorProvider)
         throws TSPException, ERSException
     {
         this(EvidenceRecord.getInstance(evidenceRecord), digestCalculatorProvider);
     }
 
+    /**
+     * Create an evidence record from a parsed EvidenceRecord structure. The chains
+     * are validated on construction (RFC 4998 Section 5.3) - each chain must contain
+     * at least one time-stamp, use a consistent digest algorithm, and each successive
+     * time-stamp must cover the previous one.
+     *
+     * @param evidenceRecord the parsed evidence record.
+     * @param digestCalculatorProvider provider for the digest calculators needed to process the record.
+     * @throws ERSException if the sequence/chain structure is invalid or a renewal is malformed.
+     * @throws TSPException on a time-stamp processing error.
+     */
     public ERSEvidenceRecord(EvidenceRecord evidenceRecord, DigestCalculatorProvider digestCalculatorProvider)
         throws TSPException, ERSException
     {
@@ -233,7 +262,9 @@ public class ERSEvidenceRecord
      * Return true if the hash of data appears in the primary archive time stamp for the current chain.
      *
      * @param data the data of interest.
-     * @return
+     * @param date date at which the data is supposed to be valid.
+     * @return true if the data is present and the time-stamp is not in the future relative to date, false otherwise.
+     * @throws ERSException if an error occurs processing the record.
      */
     public boolean isContaining(ERSData data, Date date)
         throws ERSException
@@ -308,6 +339,11 @@ public class ERSEvidenceRecord
         lastArchiveTimeStamp.validate(verifier);
     }
 
+    /**
+     * Return the underlying ASN.1 EvidenceRecord structure.
+     *
+     * @return the EvidenceRecord this object wraps.
+     */
     public EvidenceRecord toASN1Structure()
     {
         return evidenceRecord;
@@ -322,12 +358,32 @@ public class ERSEvidenceRecord
         return evidenceRecord.getEncoded();
     }
 
+    /**
+     * Generate a time-stamp renewal request (RFC 4998 timestamp renewal) over the
+     * existing time-stamps in the current chain, for use when the time-stamp or its
+     * signature algorithm weakens. The resulting time-stamp, once obtained, is added
+     * to the current chain via {@link #renewTimeStamp(TimeStampResponse)}.
+     *
+     * @param tspReqGen generator to use for building the time-stamp request.
+     * @return a time-stamp request over the current chain's time-stamps.
+     * @throws TSPException on a time-stamp processing error.
+     * @throws ERSException on an error building the request.
+     */
     public TimeStampRequest generateTimeStampRenewalRequest(TimeStampRequestGenerator tspReqGen)
         throws TSPException, ERSException
     {
         return generateTimeStampRenewalRequest(tspReqGen, null);
     }
 
+    /**
+     * Generate a time-stamp renewal request with the passed in nonce.
+     *
+     * @param tspReqGen generator to use for building the time-stamp request.
+     * @param nonce nonce to include in the request, or null.
+     * @return a time-stamp request over the current chain's time-stamps.
+     * @throws ERSException on an error building the request.
+     * @throws TSPException on a time-stamp processing error.
+     */
     public TimeStampRequest generateTimeStampRenewalRequest(TimeStampRequestGenerator tspReqGen, BigInteger nonce)
         throws ERSException, TSPException
     {
@@ -343,6 +399,16 @@ public class ERSEvidenceRecord
         }
     }
 
+    /**
+     * Apply a time-stamp renewal: append the time-stamp from the passed in response
+     * (obtained for a {@link #generateTimeStampRenewalRequest(TimeStampRequestGenerator)})
+     * as a new ArchiveTimeStamp on the current chain, returning the updated record.
+     *
+     * @param tspResp the response carrying the renewal time-stamp.
+     * @return a new ERSEvidenceRecord with the renewal time-stamp added to the current chain.
+     * @throws ERSException if the response cannot be processed.
+     * @throws TSPException on a time-stamp processing error.
+     */
     public ERSEvidenceRecord renewTimeStamp(TimeStampResponse tspResp)
         throws ERSException, TSPException
     {
@@ -401,12 +467,39 @@ public class ERSEvidenceRecord
         return atsGen;
     }
 
+    /**
+     * Generate a hash renewal request (RFC 4998 hash-tree renewal) for use when the
+     * digest algorithm itself weakens. A new digest is taken (with the supplied
+     * calculator) over the data re-hashed together with the existing
+     * ArchiveTimeStampSequence; the resulting time-stamp starts a new chain via
+     * {@link #renewHash(DigestCalculator, ERSData, TimeStampResponse)}.
+     *
+     * @param digCalc digest calculator for the new (stronger) algorithm.
+     * @param data the data object/group being carried forward; must already be present in the record.
+     * @param tspReqGen generator to use for building the time-stamp request.
+     * @return a time-stamp request over the re-hashed data and existing sequence.
+     * @throws ERSException if the data is not present in the record.
+     * @throws TSPException on a time-stamp processing error.
+     * @throws IOException on an encoding error.
+     */
     public TimeStampRequest generateHashRenewalRequest(DigestCalculator digCalc, ERSData data, TimeStampRequestGenerator tspReqGen)
         throws ERSException, TSPException, IOException
     {
         return generateHashRenewalRequest(digCalc, data, tspReqGen, null);
     }
 
+    /**
+     * Generate a hash renewal request with the passed in nonce.
+     *
+     * @param digCalc digest calculator for the new (stronger) algorithm.
+     * @param data the data object/group being carried forward; must already be present in the record.
+     * @param tspReqGen generator to use for building the time-stamp request.
+     * @param nonce nonce to include in the request, or null.
+     * @return a time-stamp request over the re-hashed data and existing sequence.
+     * @throws ERSException if the data is not present in the record.
+     * @throws TSPException on a time-stamp processing error.
+     * @throws IOException on an encoding error.
+     */
     public TimeStampRequest generateHashRenewalRequest(DigestCalculator digCalc, ERSData data, TimeStampRequestGenerator tspReqGen, BigInteger nonce)
         throws ERSException, TSPException, IOException
     {
@@ -429,6 +522,19 @@ public class ERSEvidenceRecord
         return atsGen.generateTimeStampRequest(tspReqGen, nonce);
     }
 
+    /**
+     * Apply a hash-tree renewal: append a new ArchiveTimeStampChain built from the
+     * renewal time-stamp (obtained for a
+     * {@link #generateHashRenewalRequest(DigestCalculator, ERSData, TimeStampRequestGenerator)})
+     * to the ArchiveTimeStampSequence, returning the updated record.
+     *
+     * @param digCalc digest calculator for the new algorithm.
+     * @param data the data object/group being carried forward; must already be present in the record.
+     * @param tspResp the response carrying the renewal time-stamp.
+     * @return a new ERSEvidenceRecord with a new chain added to the sequence.
+     * @throws ERSException if the data is not present or the response cannot be processed.
+     * @throws TSPException on a time-stamp processing error.
+     */
     public ERSEvidenceRecord renewHash(DigestCalculator digCalc, ERSData data, TimeStampResponse tspResp)
         throws ERSException, TSPException
     {

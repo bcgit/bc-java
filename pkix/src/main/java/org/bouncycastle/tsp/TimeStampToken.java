@@ -34,7 +34,10 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 
 /**
- * Carrier class for a TimeStampToken.
+ * Carrier class for an RFC 3161 time-stamp token - the {@code SignedData} (CMS) structure, with
+ * content type id-ct-TSTInfo, signed by the TSA. Provides access to the embedded
+ * {@link TimeStampTokenInfo} and the means to verify the token against the signing certificate
+ * (see {@link #validate(SignerInformationVerifier)}).
  */
 public class TimeStampToken
 {
@@ -154,36 +157,57 @@ public class TimeStampToken
         }
     }
 
+    /**
+     * @return the parsed TSTInfo carried by this token.
+     */
     public TimeStampTokenInfo getTimeStampInfo()
     {
         return tstInfo;
     }
 
+    /**
+     * @return the identifier of the signer (the TSA) of this token.
+     */
     public SignerId getSID()
     {
         return tsaSignerInfo.getSID();
     }
-    
+
+    /**
+     * @return the table of signed (authenticated) attributes on the token.
+     */
     public AttributeTable getSignedAttributes()
     {
         return tsaSignerInfo.getSignedAttributes();
     }
 
+    /**
+     * @return the table of unsigned attributes on the token, null if there are none.
+     */
     public AttributeTable getUnsignedAttributes()
     {
         return tsaSignerInfo.getUnsignedAttributes();
     }
 
+    /**
+     * @return a Store of the X.509 certificates carried by the token.
+     */
     public Store<X509CertificateHolder> getCertificates()
     {
         return tsToken.getCertificates();
     }
 
+    /**
+     * @return a Store of the CRLs carried by the token.
+     */
     public Store<X509CRLHolder> getCRLs()
     {
         return tsToken.getCRLs();
     }
 
+    /**
+     * @return a Store of the X.509 attribute certificates carried by the token.
+     */
     public Store<X509AttributeCertificateHolder> getAttributeCertificates()
     {
         return tsToken.getAttributeCertificates();

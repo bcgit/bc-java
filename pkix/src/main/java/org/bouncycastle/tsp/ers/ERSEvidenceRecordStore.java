@@ -20,6 +20,14 @@ import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
 
+/**
+ * A {@link Store} of {@link ERSEvidenceRecord}s indexed by the data-object hashes
+ * found in the leaf (first) PartialHashtree of each record's initial
+ * ArchiveTimeStamp. Records can be looked up by the data they cover using an
+ * {@link ERSEvidenceRecordSelector}; for a data group both the individual member
+ * hashes and the group hash are indexed, and where a record covers a single object
+ * directly the time-stamp imprint is used as the key.
+ */
 public class ERSEvidenceRecordStore
     implements Store<ERSEvidenceRecord>
 {

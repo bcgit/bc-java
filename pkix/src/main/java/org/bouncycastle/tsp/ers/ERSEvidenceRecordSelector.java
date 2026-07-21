@@ -4,6 +4,11 @@ import java.util.Date;
 
 import org.bouncycastle.util.Selector;
 
+/**
+ * Selector matching the {@link ERSEvidenceRecord}s that contain, and validate the
+ * presence of, a given data object/group at a particular date. Used to query an
+ * {@link ERSEvidenceRecordStore}.
+ */
 public class ERSEvidenceRecordSelector
     implements Selector<ERSEvidenceRecord>
 {
