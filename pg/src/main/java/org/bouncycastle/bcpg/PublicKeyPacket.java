@@ -4,8 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
-import org.bouncycastle.util.Pack;
-
 /**
  * Base class for OpenPGP public (primary) keys.
  * The public key packet holds the public parameters of an OpenPGP key pair.
@@ -85,23 +83,6 @@ public class PublicKeyPacket
         throws IOException
     {
         this(PUBLIC_KEY, in, newPacketFormat);
-    }
-
-    /**
-     * Parse a {@link PublicKeyPacket} or {@link PublicSubkeyPacket} from an OpenPGP {@link BCPGInputStream}.
-     * If <pre>keyTag</pre> is {@link #PUBLIC_KEY}, the packet is a primary key.
-     * If instead it is {@link #PUBLIC_SUBKEY}, it is a subkey packet.
-     * The packet format is remembered as {@link PacketFormat#LEGACY}.
-     * @param keyTag packet type ID
-     * @param in packet input stream
-     * @throws IOException
-     */
-    PublicKeyPacket(
-            int keyTag,
-            BCPGInputStream in)
-            throws IOException
-    {
-        this(keyTag, in, false);
     }
 
     /**
@@ -378,21 +359,14 @@ public class PublicKeyPacket
 
     public static long getKeyID(PublicKeyPacket publicPk, byte[] fingerprint)
     {
-        if (publicPk.version <= PublicKeyPacket.VERSION_3)
+        int version = publicPk.version;
+        if (version <= PublicKeyPacket.VERSION_3)
         {
             RSAPublicBCPGKey rK = (RSAPublicBCPGKey)publicPk.key;
 
             return rK.getModulus().longValue();
         }
-        else if (publicPk.version == PublicKeyPacket.VERSION_4)
-        {
-            return Pack.bigEndianToLong(fingerprint, fingerprint.length - 8);
-        }
-        else if (publicPk.version == PublicKeyPacket.LIBREPGP_5 || publicPk.version == PublicKeyPacket.VERSION_6)
-        {
-            return Pack.bigEndianToLong(fingerprint, 0);
-        }
 
-        return 0;
+        return FingerprintUtil.keyIdFromFingerprint(version, fingerprint);
     }
 }

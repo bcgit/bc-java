@@ -55,19 +55,7 @@ public class IssuerFingerprint
 
     public long getKeyID()
     {
-        if (getKeyVersion() == PublicKeyPacket.VERSION_4)
-        {
-            return FingerprintUtil.keyIdFromV4Fingerprint(getFingerprint());
-        }
-        if (getKeyVersion() == PublicKeyPacket.LIBREPGP_5)
-        {
-            return FingerprintUtil.keyIdFromLibrePgpFingerprint(getFingerprint());
-        }
-        if (getKeyVersion() == PublicKeyPacket.VERSION_6)
-        {
-            return FingerprintUtil.keyIdFromV6Fingerprint(getFingerprint());
-        }
-        return 0;
+        return FingerprintUtil.keyIdFromFingerprint(getKeyVersion(), getFingerprint());
     }
 
     public KeyIdentifier getKeyIdentifier()
