@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.io.Streams;
 
 /**
  * Base class for OpenPGP secret (primary) keys.
@@ -83,7 +82,7 @@ public class SecretKeyPacket
             BCPGInputStream in)
             throws IOException
     {
-        this(SECRET_KEY, in);
+        this(in, false);
     }
 
     /**
@@ -100,24 +99,6 @@ public class SecretKeyPacket
         throws IOException
     {
         this(SECRET_KEY, in, newPacketFormat);
-    }
-
-    /**
-     * Parse a {@link SecretKeyPacket} or {@link SecretSubkeyPacket} from the given OpenPGP {@link BCPGInputStream}.
-     * The return type depends on the <pre>keyTag</pre>:
-     * {@link PacketTags#SECRET_KEY} means the result is a {@link SecretKeyPacket}.
-     * {@link PacketTags#SECRET_SUBKEY} results in a {@link SecretSubkeyPacket}.
-     * The packet format will be remembered as {@link PacketFormat#LEGACY}.
-     * @param keyTag packet type ID
-     * @param in packet input stream
-     * @throws IOException
-     */
-    SecretKeyPacket(
-            int keyTag,
-            BCPGInputStream in)
-            throws IOException
-    {
-        this(keyTag, in, false);
     }
 
     /**
@@ -219,7 +200,7 @@ public class SecretKeyPacket
                 && s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
             if (!(isGNUDummyNoPrivateKey))
             {
-                if (s2kUsage != USAGE_NONE && iv == null)
+                if (s2kUsage != USAGE_NONE)
                 {
                     if (encAlgorithm < 7)
                     {
@@ -229,7 +210,7 @@ public class SecretKeyPacket
                     {
                         iv = new byte[16];
                     }
-                    in.readFully(iv, 0, iv.length);
+                    in.readFully(iv);
                 }
             }
         }

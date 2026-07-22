@@ -3,7 +3,6 @@ package org.bouncycastle.bcpg.test;
 import org.bouncycastle.bcpg.FingerprintUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
 
 public class FingerprintUtilTest
     extends AbstractPacketTest

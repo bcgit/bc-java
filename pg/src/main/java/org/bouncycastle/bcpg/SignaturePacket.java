@@ -8,7 +8,6 @@ import java.util.Vector;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
-import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
