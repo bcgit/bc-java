@@ -10,6 +10,8 @@ import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.EllipticCurve;
 import java.util.Enumeration;
 
+import javax.security.auth.Destroyable;
+
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -36,9 +38,11 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 public class BCECPrivateKey
-    implements ECPrivateKey, org.bouncycastle.jce.interfaces.ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder, BCKey
+    implements ECPrivateKey, org.bouncycastle.jce.interfaces.ECPrivateKey, Destroyable, PKCS12BagAttributeCarrier, ECPointEncoder, BCKey
 {
     static final long serialVersionUID = 994553197664784084L;
 
@@ -55,6 +59,8 @@ public class BCECPrivateKey
     private transient ECPrivateKeyParameters baseKey;
     private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
+    private transient volatile boolean destroyed;
+    private transient int destroyedHashCode;
 
     protected BCECPrivateKey()
     {
@@ -264,8 +270,13 @@ public class BCECPrivateKey
      *
      * @return a PKCS8 representation of the key.
      */
-    public byte[] getEncoded()
+    public synchronized byte[] getEncoded()
     {
+        if (destroyed)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         if (encoding == null)
         {
             PrivateKeyInfo info = getPrivateKeyInfo();
@@ -288,8 +299,13 @@ public class BCECPrivateKey
         return Arrays.clone(encoding);
     }
 
-    private PrivateKeyInfo getPrivateKeyInfo()
+    private synchronized PrivateKeyInfo getPrivateKeyInfo()
     {
+        if (destroyed)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         if (privateKeyInfo == null)
         {
             X962Parameters params = ECUtils.getDomainParametersFromName(ecSpec, withCompression);
@@ -360,12 +376,21 @@ public class BCECPrivateKey
 
     public BigInteger getS()
     {
-        return d;
+        BigInteger value = d;
+
+        // the null check catches a destroy() in progress whose flag write is not yet visible;
+        // as BigInteger is immutable a non-null snapshot is always the intact pre-destroy value.
+        if (destroyed || value == null)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
+        return value;
     }
 
     public BigInteger getD()
     {
-        return d;
+        return getS();
     }
 
     public void setBagAttribute(
@@ -403,42 +428,112 @@ public class BCECPrivateKey
 
     public boolean equals(Object o)
     {
-        if (o instanceof ECPrivateKey)
+        if (o == this)
         {
-            ECPrivateKey other = (ECPrivateKey)o;
-
-            PrivateKeyInfo info = this.getPrivateKeyInfo();
-            PrivateKeyInfo otherInfo = (other instanceof BCECPrivateKey) ? ((BCECPrivateKey)other).getPrivateKeyInfo() : PrivateKeyInfo.getInstance(other.getEncoded());
-
-            if (info == null || otherInfo == null)
-            {
-                return false;
-            }
-
-            try
-            {
-                boolean algEquals = Arrays.constantTimeAreEqual(info.getPrivateKeyAlgorithm().getEncoded(), otherInfo.getPrivateKeyAlgorithm().getEncoded());
-                boolean keyEquals = Arrays.constantTimeAreEqual(this.getS().toByteArray(), other.getS().toByteArray());
-
-                return algEquals & keyEquals;
-            }
-            catch (IOException e)
-            {
-                return false;
-            }
+            return true;
         }
 
-        return false;
+        if (!(o instanceof ECPrivateKey))
+        {
+            return false;
+        }
+
+        ECPrivateKey other = (ECPrivateKey)o;
+
+        // a destroyed key no longer exposes its value, so it is only equal to itself.
+        if (isDestroyed() || ((o instanceof Destroyable) && ((Destroyable)o).isDestroyed()))
+        {
+            return false;
+        }
+
+        PrivateKeyInfo info = this.getPrivateKeyInfo();
+        PrivateKeyInfo otherInfo = (other instanceof BCECPrivateKey) ? ((BCECPrivateKey)other).getPrivateKeyInfo() : PrivateKeyInfo.getInstance(other.getEncoded());
+
+        if (info == null || otherInfo == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            boolean algEquals = Arrays.constantTimeAreEqual(info.getPrivateKeyAlgorithm().getEncoded(), otherInfo.getPrivateKeyAlgorithm().getEncoded());
+            boolean keyEquals = Arrays.constantTimeAreEqual(this.getS().toByteArray(), other.getS().toByteArray());
+
+            return algEquals & keyEquals;
+        }
+        catch (IOException e)
+        {
+            return false;
+        }
     }
 
-    public int hashCode()
+    public synchronized int hashCode()
     {
-        return ECUtil.privateKeyHashCode(getD(), engineGetSpec());
+        BigInteger value = d;
+
+        if (value == null)
+        {
+            return destroyedHashCode;
+        }
+
+        return ECUtil.privateKeyHashCode(value, engineGetSpec());
     }
 
     public String toString()
     {
-        return ECUtil.privateKeyToString("EC", d, engineGetSpec());
+        BigInteger value = d;
+
+        if (value == null)
+        {
+            return "EC Private Key [DESTROYED]" + Strings.lineSeparator();
+        }
+
+        return ECUtil.privateKeyToString("EC", value, engineGetSpec());
+    }
+
+    /**
+     * Destroy this key, clearing the key material it holds.
+     * <p>
+     * The private value is held as a {@link BigInteger}, which is immutable and so cannot be
+     * zeroized in place - destruction drops the internal references so the values become
+     * unreachable (cleared on garbage collection); the cached PKCS#8 encoding is zeroized. The
+     * underlying {@link ECPrivateKeyParameters} object is destroyed as well, so keys sharing it
+     * are invalidated too. After destruction {@link #isDestroyed()} returns true, the
+     * secret-bearing accessors ({@link #getEncoded()}, {@link #getS()} and {@link #getD()})
+     * throw {@link IllegalStateException}, and the key can no longer be serialized;
+     * {@link #hashCode()} retains its pre-destruction value.
+     */
+    public synchronized void destroy()
+    {
+        if (!destroyed)
+        {
+            // freeze the hash before the private value is dropped, so hash containers holding
+            // this key keep working.
+            try
+            {
+                this.destroyedHashCode = hashCode();
+            }
+            catch (RuntimeException e)
+            {
+                this.destroyedHashCode = -1;
+            }
+
+            this.destroyed = true;
+            this.d = null;
+            this.privateKeyInfo = null;
+            Arrays.clear(encoding);
+            this.encoding = null;
+
+            if (baseKey != null)
+            {
+                baseKey.destroy();
+            }
+        }
+    }
+
+    public boolean isDestroyed()
+    {
+        return destroyed;
     }
 
     private ASN1BitString getPublicKeyDetails(BCECPublicKey pub)
@@ -476,7 +571,14 @@ public class BCECPrivateKey
     {
         out.defaultWriteObject();
 
-        out.writeObject(this.getEncoded());
+        try
+        {
+            out.writeObject(this.getEncoded());
+        }
+        catch (IllegalStateException e)
+        {
+            throw Exceptions.ioException(e.getMessage(), e);
+        }
     }
 
     private static ECPrivateKeyParameters convertToBaseKey(BCECPrivateKey key)
