@@ -41,7 +41,7 @@ public class OCBEncryptedDataPacketTest
         AEADEncDataPacket p = (AEADEncDataPacket) pIn.readPacket();
         isTrue("Packet length encoding format mismatch", p.hasNewPacketFormat());
         isEquals("Packet version mismatch", 1, p.getVersion());
-        isEquals("Symmetric algorithm mitmatch", SymmetricKeyAlgorithmTags.AES_256, p.getAlgorithm());
+        isEquals("Symmetric algorithm mismatch", SymmetricKeyAlgorithmTags.AES_256, p.getAlgorithm());
         isEquals("AEAD encryption algorithm mismatch", AEADAlgorithmTags.OCB, p.getAEADAlgorithm());
         isEquals("Chunk size mismatch", 16, p.getChunkSize());
         isEncodingEqual("IV mismatch", Hex.decode("C265FF63A61ED8AF00FA43866BE8EB"), p.getIV());
@@ -79,7 +79,7 @@ public class OCBEncryptedDataPacketTest
         try
         {
             new AEADEncDataPacket(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB, 20, new byte[16]);
-            fail("Expected IllegalArgument - chunkSize out of range");
+            fail("Expected IllegalArgumentException - chunkSize out of range");
         }
         catch (IllegalArgumentException e)
         {

@@ -86,7 +86,7 @@ public class UnknownPacketTest
             throws IOException
     {
         int tag = 44;
-        String encodedCriticalPacket = "ec0e4f70656e50475020726f636b7321"; // Tag 36
+        String encodedCriticalPacket = "ec0e4f70656e50475020726f636b7321"; // Tag 44
         ByteArrayInputStream in = new ByteArrayInputStream(Hex.decode(encodedCriticalPacket));
 
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(in);
