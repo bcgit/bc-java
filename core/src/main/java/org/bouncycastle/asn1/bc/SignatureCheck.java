@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -48,17 +47,32 @@ public class SignatureCheck
 
     private SignatureCheck(ASN1Sequence seq)
     {
-        this.signatureAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
-        int index = 1;
-        if (seq.getObjectAt(1) instanceof ASN1TaggedObject)
+        int count = seq.size(), pos = 0;
+        if (count < 2 || count > 3)
         {
-            this.certificates = ASN1Sequence.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index++)).getBaseUniversal(true, BERTags.SEQUENCE));
+            throw new IllegalArgumentException("Bad sequence size: " + count);
         }
-        else
+
+        this.signatureAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(pos++));
+
+        ASN1Sequence certificates = null;
+        if (pos < count)
         {
-            this.certificates = null;
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
+            {
+                pos++;
+                certificates = ASN1Sequence.getTagged(tag0, true);
+            }
         }
-        this.signatureValue = ASN1BitString.getInstance(seq.getObjectAt(index));
+        this.certificates = certificates;
+
+        this.signatureValue = ASN1BitString.getInstance(seq.getObjectAt(pos++));
+
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("Unexpected elements in sequence");
+        }
     }
 
     public static SignatureCheck getInstance(Object o)
