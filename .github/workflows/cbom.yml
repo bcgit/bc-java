@@ -1,0 +1,24 @@
+name: CBOM Generation (IBM PQCA)
+on:
+  workflow_dispatch:
+
+jobs:
+  cbom-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create CBOM
+        uses: cbomkit/cbomkit-action@v2.1.1
+        id: cbom
+        env:
+          CBOMKIT_LANGUAGES: java
+
+      - name: Upload CBOM Artifact
+        uses: actions/upload-artifact@v4
+        with: 
+          name: "CBOM-Output"
+          path: ${{ steps.cbom.outputs.pattern }}
