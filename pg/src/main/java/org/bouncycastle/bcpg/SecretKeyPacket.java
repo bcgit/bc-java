@@ -318,7 +318,7 @@ public class SecretKeyPacket
      * Note: <pre>secKeyData</pre> needs to be prepared by applying encryption/checksum beforehand.
      * @param pubKeyPacket pubkey packet corresponding to this secret key packet.
      * @param encAlgorithm algorithm id of the symmetric key algorithm that was used to encrypt the secret key material
-     * @param aeadAlgorithm AEAD algorithm scheme used to protect the secret key material with
+     * @param aeadAlgorithm AEAD algorithm scheme used to protect the secret key material
      * @param s2kUsage octet indicating how the secret key material was encrypted
      * @param s2k s2k identifier for deriving a key from a passphrase
      * @param iv IV that was used to encrypt the secret key material
