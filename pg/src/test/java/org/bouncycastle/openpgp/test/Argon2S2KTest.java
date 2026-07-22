@@ -326,14 +326,12 @@ public class Argon2S2KTest
         ByteArrayOutputStream decryptedOut = new ByteArrayOutputStream();
         Streams.pipeAll(decryptedIn, decryptedOut);
 
-        String decryptedString = decryptedOut.toString();
-        return decryptedString;
+        return Strings.fromByteArray(decryptedOut.toByteArray());
     }
 
-    public String encryptMessageSymmetricallyWithArgon2(String plaintext, String password)
+    private String encryptMessageSymmetricallyWithArgon2(String plaintext, String password)
         throws PGPException, IOException
     {
-
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
             new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256));
         encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(password.toCharArray(), S2K.Argon2Params.universallyRecommendedParameters()));
@@ -350,7 +348,6 @@ public class Argon2S2KTest
         encOut.close();
         armorOut.close();
 
-        String encrypted = out.toString();
-        return encrypted;
+        return Strings.fromByteArray(out.toByteArray());
     }
 }
