@@ -21,6 +21,7 @@ import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -28,6 +29,9 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
+import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
@@ -56,6 +60,7 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
@@ -3272,6 +3277,26 @@ public class PGPKeyRingTest
         isEquals("key ring length mismatch", length1, length2);
     }
 
+    /**
+     * Regression: hasRevocation() on a top-level key whose algorithm is an encryption algorithm (making
+     * isMasterKey false, with subSigs == null) must not throw NullPointerException.
+     */
+    private void testHasRevocationOnEncryptionAlgorithmPrimary()
+        throws Exception
+    {
+        X25519KeyPairGenerator gen = new X25519KeyPairGenerator();
+        gen.init(new X25519KeyGenerationParameters(null));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+
+        PGPKeyPair pgpMasterKey = new BcPGPKeyPair(PublicKeyPacket.VERSION_4, PublicKeyAlgorithmTags.ECDH, kp, new Date());
+
+        PGPPublicKey key = pgpMasterKey.getPublicKey();
+
+        // Precondition: this is exactly the case that previously hit the null subSigs branch.
+        isTrue(!key.isMasterKey());
+        isTrue(!key.hasRevocation());
+    }
+
     private void testEdDsaRing()
         throws Exception
     {
@@ -3635,6 +3660,7 @@ public class PGPKeyRingTest
             shouldStripPreserveTrustPackets();
             testNullEncryption();
             testDirectSigDatedKey();
+            testHasRevocationOnEncryptionAlgorithmPrimary();
             testEdDsaRing();
             testCurve25519Ring();
             testShouldProduceSubkeys();
