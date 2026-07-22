@@ -171,7 +171,7 @@ public class Argon2Test
     private void checkArgon2MaxMemoryExpValue()
         throws Exception
     {
-        System.setProperty("org.bouncycastle.argon2.max_memory_exp", "10");
+        System.setProperty(Argon2Parameters.MAX_MEMORY_EXP, "10");
 
         byte[] salt = new byte[16];
         new SecureRandom().nextBytes(salt);
@@ -208,7 +208,7 @@ public class Argon2Test
             isEquals("memory out of range", e.getMessage());
         }
 
-        System.setProperty("org.bouncycastle.argon2.max_memory_exp", "30");
+        System.getProperties().remove(Argon2Parameters.MAX_MEMORY_EXP);
     }
 
     private void swap(byte[] buf, int i, int j)
