@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
 
+import javax.security.auth.Destroyable;
+
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.math.Primes;
 import org.bouncycastle.util.BigIntegers;
@@ -9,6 +11,7 @@ import org.bouncycastle.util.Properties;
 
 public class RSAKeyParameters
     extends AsymmetricKeyParameter
+    implements Destroyable
 {
     public static BigInteger validateModulus(BigInteger modulus)
     {
@@ -19,6 +22,8 @@ public class RSAKeyParameters
 
     private BigInteger modulus;
     private BigInteger exponent;
+
+    private volatile boolean destroyed;
 
     public RSAKeyParameters(boolean isPrivate, BigInteger modulus, BigInteger exponent)
     {
@@ -102,6 +107,44 @@ public class RSAKeyParameters
 
     public BigInteger getExponent()
     {
-        return exponent;
+        return valueWithCheck(exponent);
+    }
+
+    BigInteger valueWithCheck(BigInteger value)
+    {
+        // the null check catches a destroy() in progress whose flag write is not yet visible;
+        // as BigInteger is immutable a non-null snapshot is always the intact pre-destroy value.
+        if (destroyed || value == null)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
+        return value;
+    }
+
+    /**
+     * Destroy this object, dropping its reference to the exponent. The (public) modulus is
+     * retained.
+     * <p>
+     * As {@link BigInteger} is immutable the exponent cannot be zeroized in place; destruction
+     * drops the internal reference so the value becomes unreachable (cleared on garbage
+     * collection). After destruction {@link #getExponent()} throws
+     * {@link IllegalStateException}.
+     * <p>
+     * This type also backs RSA public keys; destroying one of those drops the (non-secret)
+     * public exponent, which is harmless but renders the key unusable.
+     */
+    public synchronized void destroy()
+    {
+        if (!destroyed)
+        {
+            destroyed = true;
+            this.exponent = null;
+        }
+    }
+
+    public boolean isDestroyed()
+    {
+        return destroyed;
     }
 }

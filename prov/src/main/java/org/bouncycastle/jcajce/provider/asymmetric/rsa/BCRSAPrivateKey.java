@@ -8,6 +8,8 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.Enumeration;
 
+import javax.security.auth.Destroyable;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -21,7 +23,7 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 public class BCRSAPrivateKey
-    implements RSAPrivateKey, PKCS12BagAttributeCarrier, BCKey
+    implements RSAPrivateKey, Destroyable, PKCS12BagAttributeCarrier, BCKey
 {
     static final long serialVersionUID = 5110188922551353628L;
 
@@ -34,6 +36,8 @@ public class BCRSAPrivateKey
     protected transient AlgorithmIdentifier algorithmIdentifier = BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER;
     protected transient RSAKeyParameters rsaPrivateKey;
     protected transient PKCS12BagAttributeCarrierImpl   attrCarrier = new PKCS12BagAttributeCarrierImpl();
+
+    private transient volatile boolean destroyed;
 
     BCRSAPrivateKey(
         RSAKeyParameters key)
@@ -88,7 +92,19 @@ public class BCRSAPrivateKey
 
     public BigInteger getPrivateExponent()
     {
-        return privateExponent;
+        return valueWithCheck(privateExponent);
+    }
+
+    BigInteger valueWithCheck(BigInteger value)
+    {
+        // the null check catches a destroy() in progress whose flag write is not yet visible;
+        // as BigInteger is immutable a non-null snapshot is always the intact pre-destroy value.
+        if (destroyed || value == null)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
+        return value;
     }
 
     public String getAlgorithm()
@@ -112,22 +128,33 @@ public class BCRSAPrivateKey
 
     public byte[] getEncoded()
     {
+        if (destroyed)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         return KeyUtil.getEncodedPrivateKeyInfo(algorithmIdentifier, new org.bouncycastle.asn1.pkcs.RSAPrivateKey(getModulus(), ZERO, getPrivateExponent(), ZERO, ZERO, ZERO, ZERO, ZERO));
     }
 
     public boolean equals(Object o)
     {
-        if (!(o instanceof RSAPrivateKey))
-        {
-            return false;
-        }
-
         if (o == this)
         {
             return true;
         }
 
+        if (!(o instanceof RSAPrivateKey))
+        {
+            return false;
+        }
+
         RSAPrivateKey key = (RSAPrivateKey)o;
+
+        // a destroyed key no longer exposes its value, so it is only equal to itself.
+        if (isDestroyed() || ((o instanceof Destroyable) && ((Destroyable)o).isDestroyed()))
+        {
+            return false;
+        }
 
         int len = Math.max(
             (getModulus().bitLength() + 7) / 8,
@@ -140,6 +167,37 @@ public class BCRSAPrivateKey
     public int hashCode()
     {
         return getModulus().hashCode();
+    }
+
+    /**
+     * Destroy this key, clearing the key material it holds.
+     * <p>
+     * The values are held as {@link BigInteger}s, which are immutable and so cannot be zeroized
+     * in place - destruction drops the internal references so the values become unreachable
+     * (cleared on garbage collection). The (public) modulus is retained, so {@link #hashCode()}
+     * and {@link #getModulus()} remain stable across destruction. The underlying
+     * {@link RSAKeyParameters} object is destroyed as well, so keys sharing it are invalidated
+     * too. After destruction {@link #isDestroyed()} returns true, {@link #getEncoded()} and
+     * {@link #getPrivateExponent()} throw {@link IllegalStateException}, and the key can no
+     * longer be serialized.
+     */
+    public synchronized void destroy()
+    {
+        if (!destroyed)
+        {
+            destroyed = true;
+            this.privateExponent = null;
+
+            if (rsaPrivateKey != null)
+            {
+                rsaPrivateKey.destroy();
+            }
+        }
+    }
+
+    public boolean isDestroyed()
+    {
+        return destroyed;
     }
 
     public void setBagAttribute(
@@ -186,10 +244,17 @@ public class BCRSAPrivateKey
         this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
     }
 
-    private void writeObject(
+    private synchronized void writeObject(
         ObjectOutputStream  out)
         throws IOException
     {
+        // the private values are serialized directly by defaultWriteObject, so a destroyed key
+        // cannot be written; IOException, not IllegalStateException, as declared by the contract.
+        if (destroyed)
+        {
+            throw new IOException("key destroyed");
+        }
+
         out.defaultWriteObject();
     }
 

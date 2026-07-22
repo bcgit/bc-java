@@ -7,6 +7,8 @@ import java.math.BigInteger;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.RSAPrivateCrtKeySpec;
 
+import javax.security.auth.Destroyable;
+
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -163,6 +165,11 @@ public class BCRSAPrivateCrtKey
      */
     public byte[] getEncoded()
     {
+        if (isDestroyed())
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         return KeyUtil.getEncodedPrivateKeyInfo(algorithmIdentifier, new RSAPrivateKey(getModulus(), getPublicExponent(), getPrivateExponent(), getPrimeP(), getPrimeQ(), getPrimeExponentP(), getPrimeExponentQ(), getCrtCoefficient()));
     }
 
@@ -183,7 +190,7 @@ public class BCRSAPrivateCrtKey
      */
     public BigInteger getPrimeP()
     {
-        return primeP;
+        return valueWithCheck(primeP);
     }
 
     /**
@@ -193,7 +200,7 @@ public class BCRSAPrivateCrtKey
      */
     public BigInteger getPrimeQ()
     {
-        return primeQ;
+        return valueWithCheck(primeQ);
     }
 
     /**
@@ -203,7 +210,7 @@ public class BCRSAPrivateCrtKey
      */
     public BigInteger getPrimeExponentP()
     {
-        return primeExponentP;
+        return valueWithCheck(primeExponentP);
     }
 
     /**
@@ -213,7 +220,7 @@ public class BCRSAPrivateCrtKey
      */
     public BigInteger getPrimeExponentQ()
     {
-        return primeExponentQ;
+        return valueWithCheck(primeExponentQ);
     }
 
     /**
@@ -223,7 +230,25 @@ public class BCRSAPrivateCrtKey
      */
     public BigInteger getCrtCoefficient()
     {
-        return crtCoefficient;
+        return valueWithCheck(crtCoefficient);
+    }
+
+    /**
+     * Destroy this key, clearing the key material it holds.
+     * <p>
+     * The CRT factors and exponents are dropped along with the inherited private exponent; the
+     * (public) modulus and public exponent are retained, so {@link #hashCode()} remains stable
+     * across destruction. See {@link BCRSAPrivateKey#destroy()} for the full contract.
+     */
+    public synchronized void destroy()
+    {
+        super.destroy();
+
+        this.primeP = null;
+        this.primeQ = null;
+        this.primeExponentP = null;
+        this.primeExponentQ = null;
+        this.crtCoefficient = null;
     }
 
     public int hashCode()
@@ -245,6 +270,12 @@ public class BCRSAPrivateCrtKey
         }
 
         RSAPrivateCrtKey key = (RSAPrivateCrtKey)o;
+
+        // a destroyed key no longer exposes its value, so it is only equal to itself.
+        if (isDestroyed() || ((o instanceof Destroyable) && ((Destroyable)o).isDestroyed()))
+        {
+            return false;
+        }
 
         int modLen = Math.max(
             (getModulus().bitLength() + 7) / 8,
@@ -273,16 +304,25 @@ public class BCRSAPrivateCrtKey
         in.defaultReadObject();
 
         this.attrCarrier = new PKCS12BagAttributeCarrierImpl();
-        this.rsaPrivateKey = new RSAPrivateCrtKeyParameters(this.getModulus(),
-                                        this.getPublicExponent(), this.getPrivateExponent(),
-                                        this.getPrimeP(), this.getPrimeQ(),
-                                        this.getPrimeExponentP(), this.getPrimeExponentQ(), this.getCrtCoefficient());
+        // rebuild from the fields, not the accessors - a corrupted stream must not surface as
+        // the accessors' IllegalStateException from within a throws IOException method.
+        this.rsaPrivateKey = new RSAPrivateCrtKeyParameters(this.modulus,
+                                        this.publicExponent, this.privateExponent,
+                                        this.primeP, this.primeQ,
+                                        this.primeExponentP, this.primeExponentQ, this.crtCoefficient);
     }
 
-    private void writeObject(
+    private synchronized void writeObject(
         ObjectOutputStream out)
         throws IOException
     {
+        // the private values are serialized directly by defaultWriteObject, so a destroyed key
+        // cannot be written; IOException, not IllegalStateException, as declared by the contract.
+        if (isDestroyed())
+        {
+            throw new IOException("key destroyed");
+        }
+
         out.defaultWriteObject();
     }
 

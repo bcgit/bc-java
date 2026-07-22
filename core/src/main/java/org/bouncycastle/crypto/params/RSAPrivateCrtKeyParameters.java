@@ -56,26 +56,46 @@ public class RSAPrivateCrtKeyParameters
 
     public BigInteger getP()
     {
-        return p;
+        return valueWithCheck(p);
     }
 
     public BigInteger getQ()
     {
-        return q;
+        return valueWithCheck(q);
     }
 
     public BigInteger getDP()
     {
-        return dP;
+        return valueWithCheck(dP);
     }
 
     public BigInteger getDQ()
     {
-        return dQ;
+        return valueWithCheck(dQ);
     }
 
     public BigInteger getQInv()
     {
-        return qInv;
+        return valueWithCheck(qInv);
+    }
+
+    /**
+     * Destroy this object, dropping its references to the CRT factors and exponents along with
+     * the inherited private exponent. The (public) modulus and public exponent are retained.
+     * <p>
+     * As {@link BigInteger} is immutable the values cannot be zeroized in place; destruction
+     * drops the internal references so the values become unreachable (cleared on garbage
+     * collection). After destruction the secret-bearing accessors throw
+     * {@link IllegalStateException}.
+     */
+    public synchronized void destroy()
+    {
+        super.destroy();
+
+        this.p = null;
+        this.q = null;
+        this.dP = null;
+        this.dQ = null;
+        this.qInv = null;
     }
 }
