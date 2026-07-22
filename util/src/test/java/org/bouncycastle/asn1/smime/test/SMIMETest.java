@@ -26,6 +26,14 @@ public class SMIMETest
         byte[]  a,
         byte[]  b)
     {
+        if (a == b)
+        {
+            return true;
+        }
+        if (null == a || null == b)
+        {
+            return false;
+        }
         if (a.length != b.length)
         {
             return false;
