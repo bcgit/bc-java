@@ -1,7 +1,12 @@
 /*
- * Generates a CycloneDX 1.6 CBOM (Cryptographic Bill of Materials) for the BC providers
- * by introspecting the JCA service tables of BouncyCastleProvider / BouncyCastlePQCProvider
- * in the freshly built bcprov jar.
+ * Generates a CycloneDX 1.6 CBOM (Cryptographic Bill of Materials) for the bcprov jar:
+ * the JCA service tables of BouncyCastleProvider / BouncyCastlePQCProvider are
+ * introspected for everything reachable through the JCA, and the public lightweight
+ * API (org.bouncycastle.crypto.**, bundled in the same jar) is swept for algorithms
+ * that ship with no JCA registration at all (J-PAKE, SRP-6a, OWL, HPKE, BLS12-381,
+ * the SP800-90A DRBGs, KDF1/KDF2, ...). Every asset carries a bc:api property:
+ * "jca" for provider-registered algorithms, "lightweight" for algorithms reachable
+ * only through the lightweight API.
  *
  * Applied from the root build.gradle:  apply from: 'gradle/cbom.gradle'
  * Run:  ./gradlew generateCbom   ->  build/reports/cbom/bcprov-<vmrange>-<version>-cyclonedx.json
@@ -96,9 +101,211 @@ ext.cbomClassify = { String type, String alg ->
     }
 }
 
+/*
+ * Sweep the public lightweight API (org.bouncycastle.crypto.**) bundled in the bcprov
+ * jar for algorithm assets that have no JCA registration. The inventory is derived
+ * from the jar itself so it cannot drift from what ships:
+ *
+ *  - public concrete implementations of the core primitive interfaces become
+ *    candidate assets. Interfaces that carry getAlgorithmName() (ciphers, digests,
+ *    MACs) are named by instantiating the class through its no-arg constructor —
+ *    classes without one (HMac(Digest), CMac(BlockCipher), ...) are generic
+ *    constructions over another primitive, not standalone algorithms, and are
+ *    skipped by that same test. The remaining interfaces (signers, agreements,
+ *    KDFs, KEMs, DRBGs) are named from the class name.
+ *  - protocol-level constructions that define no core primitive interface
+ *    (the PAKEs, HPKE, BLS12-381, the password KDFs) come from a small explicit
+ *    table, guarded by the presence of their classes in the jar so a removed
+ *    package cannot leave a stale asset.
+ *  - package-private classes are invisible to the sweep by construction: internal
+ *    engines are not API and do not become assets.
+ *
+ * A candidate is dropped when the JCA-derived asset set already covers it: exact
+ * name match (against canonical names and Alg.Alias names, '-'/'_'/'/'/'.'-insensitive),
+ * or a JCA parameterisation of the same family (KMAC covers KMAC128/KMAC256).
+ * Survivors are exactly the algorithms reachable only through the lightweight API,
+ * and are tagged bc:api=lightweight with their defining classes in bc:classes.
+ */
+ext.sweepLightweightApi = { File jarFile, URLClassLoader loader, TreeMap assets, Set jcaAliasNames ->
+    def cryptoPrefix = 'org/bouncycastle/crypto/'
+    // mode / padding / encoding wrappers, plumbing and parameter classes are not algorithm assets
+    def excludedSubpackages = ['modes/', 'paddings/', 'encodings/', 'io/', 'params/', 'util/', 'constraints/']
+    // interface -> [primitive, functions, namedViaGetAlgorithmName]; ordered, first match wins
+    def primitiveInterfaces = [
+        [loader.loadClass('org.bouncycastle.crypto.modes.AEADCipher'), 'ae', ['decrypt', 'encrypt', 'tag'], true],
+        [loader.loadClass('org.bouncycastle.crypto.Xof'), 'xof', ['digest'], true],
+        [loader.loadClass('org.bouncycastle.crypto.Digest'), 'hash', ['digest'], true],
+        [loader.loadClass('org.bouncycastle.crypto.StreamCipher'), 'stream-cipher', ['decrypt', 'encrypt'], true],
+        [loader.loadClass('org.bouncycastle.crypto.BlockCipher'), 'block-cipher', ['decrypt', 'encrypt'], true],
+        [loader.loadClass('org.bouncycastle.crypto.Mac'), 'mac', ['tag'], true],
+        [loader.loadClass('org.bouncycastle.crypto.Signer'), 'signature', ['sign', 'verify'], false],
+        [loader.loadClass('org.bouncycastle.crypto.DSA'), 'signature', ['sign', 'verify'], false],
+        [loader.loadClass('org.bouncycastle.crypto.BasicAgreement'), 'key-agree', ['keyderive'], false],
+        [loader.loadClass('org.bouncycastle.crypto.RawAgreement'), 'key-agree', ['keyderive'], false],
+        [loader.loadClass('org.bouncycastle.crypto.DerivationFunction'), 'kdf', ['keyderive'], false],
+        [loader.loadClass('org.bouncycastle.crypto.EncapsulatedSecretGenerator'), 'kem', ['decapsulate', 'encapsulate'], false],
+        [loader.loadClass('org.bouncycastle.crypto.AsymmetricBlockCipher'), 'pke', ['decrypt', 'encrypt'], false],
+        [loader.loadClass('org.bouncycastle.crypto.prng.drbg.SP80090DRBG'), 'drbg', ['generate'], false],
+        [loader.loadClass('org.bouncycastle.crypto.Committer'), 'other', ['other'], false]
+    ]
+    // protocol-level constructions with no core primitive interface, guarded by jar presence
+    def protocolAssets = [
+        ['org/bouncycastle/crypto/agreement/jpake/', 'J-PAKE', 'key-agree', ['keyderive']],
+        ['org/bouncycastle/crypto/agreement/ecjpake/', 'EC J-PAKE', 'key-agree', ['keyderive']],
+        ['org/bouncycastle/crypto/agreement/srp/', 'SRP-6a', 'key-agree', ['keyderive']],
+        ['org/bouncycastle/crypto/agreement/owl/', 'OWL', 'key-agree', ['keyderive']],
+        ['org/bouncycastle/crypto/agreement/SM2KeyExchange', 'SM2 Key Exchange', 'key-agree', ['keyderive']],
+        ['org/bouncycastle/crypto/hpke/', 'HPKE', 'pke', ['decapsulate', 'decrypt', 'encapsulate', 'encrypt']],
+        ['org/bouncycastle/crypto/bls/', 'BLS12-381', 'signature', ['sign', 'verify']],
+        ['org/bouncycastle/crypto/generators/Argon2BytesGenerator', 'Argon2', 'kdf', ['keyderive']],
+        ['org/bouncycastle/crypto/generators/BCrypt', 'bcrypt', 'kdf', ['keyderive']],
+        ['org/bouncycastle/crypto/generators/SCrypt', 'scrypt', 'kdf', ['keyderive']]
+    ]
+    // wrapper / transform classes that pass the interface test but are not standalone
+    // algorithms — NullEngine / NullDigest are identity plumbing, RSABlindingEngine is a
+    // transform, GenericSigner / BasicRawAgreement / BaseKDFBytesGenerator are generic
+    // constructions, and Zuc128Mac is the JCA Mac.ZUC-128 under a name the
+    // normalisation cannot bridge
+    def skipClasses = ['NullEngine', 'NullDigest', 'RSABlindingEngine', 'GenericSigner',
+                       'BasicRawAgreement', 'BaseKDFBytesGenerator', 'Zuc128Mac'] as Set
+    // class-name-derived names that would otherwise be wrong or unrecognisable
+    def renames = [
+        'RSABlinded': 'RSA',
+        'PSS': 'RSASSA-PSS',
+        'X931': 'X9.31',
+        'ISO9796d2': 'ISO 9796-2',
+        'ISO9796d2PSS': 'ISO 9796-2 PSS',
+        'BLS': 'BLS12-381',
+        'RSAKEM': 'RSA-KEM',
+        'ECIESKEM': 'ECIES-KEM',
+        'SAKKEKEMS': 'SAKKE',
+        'CMCEKEM': 'CMCE',
+        'HashSP800': 'SP800-90A Hash DRBG',
+        'HMacSP800': 'SP800-90A HMAC DRBG',
+        'CTRSP800': 'SP800-90A CTR DRBG',
+        'DualECSP800': 'SP800-90A Dual EC DRBG',
+        'Hash': 'Hash Commitment',
+        'GeneralHash': 'Hash Commitment'
+    ]
+    def nameSuffixes = ['BasicAgreement', 'RawAgreement', 'StagedAgreement', 'UnifiedAgreement', 'Agreement',
+                        'BytesGenerator', 'SecretGenerator', 'Generator', 'DigestSigner', 'Signer', 'Engine',
+                        'DRBG', 'Committer']
+
+    def entries = []
+    def jf = new java.util.jar.JarFile(jarFile)
+    try
+    {
+        for (e in jf.entries())
+        {
+            def n = e.getName()
+            if (n.startsWith(cryptoPrefix) && n.endsWith('.class'))
+            {
+                entries << n
+            }
+        }
+    }
+    finally
+    {
+        jf.close()
+    }
+    entries.sort()
+
+    // name (normalised) cover set from the JCA-derived assets and their aliases
+    def norm = { String s -> s.toUpperCase().replaceAll(/[-_\/. ]/, '') }
+    def jcaNames = new HashSet<String>()
+    assets.keySet().each { jcaNames << norm(it) }
+    jcaAliasNames.each { jcaNames << norm(it) }
+    def coveredByJca = { String name ->
+        def n = norm(name)
+        if (jcaNames.contains(n))
+        {
+            return true
+        }
+        // a JCA parameterisation of the family: KMAC covers KMAC128, KMAC256, ...
+        jcaNames.any { it.startsWith(n) && it.length() > n.length() && Character.isDigit(it.charAt(n.length())) }
+    }
+
+    def addAsset = { String name, String primitive, List functions, String cls ->
+        if (coveredByJca(name))
+        {
+            return
+        }
+        def asset = assets.computeIfAbsent(name, {
+            [name: name, primitive: primitive,
+             functions: new TreeSet(), oids: new TreeSet(), serviceTypes: new TreeSet(), providers: new TreeSet(), classes: new TreeSet()]
+        })
+        asset.functions.addAll(functions)
+        asset.classes << cls
+    }
+
+    entries.each { entry ->
+        def rel = entry.substring(cryptoPrefix.length())
+        if (entry.contains('$') || excludedSubpackages.any { rel.startsWith(it) })
+        {
+            return
+        }
+        def cn = entry.substring(0, entry.length() - 6).replace('/', '.')
+        def cls
+        try
+        {
+            cls = Class.forName(cn, false, loader)
+        }
+        catch (Throwable t)
+        {
+            return
+        }
+        def mods = cls.getModifiers()
+        if (!java.lang.reflect.Modifier.isPublic(mods) || java.lang.reflect.Modifier.isAbstract(mods)
+            || cls.isInterface() || cls.isEnum() || skipClasses.contains(cls.getSimpleName()))
+        {
+            return
+        }
+        def match = primitiveInterfaces.find { it[0].isAssignableFrom(cls) }
+        if (match == null)
+        {
+            return
+        }
+        def name
+        if (match[3])
+        {
+            try
+            {
+                def inst = cls.getDeclaredConstructor().newInstance()
+                name = (String) match[0].getMethod('getAlgorithmName').invoke(inst)
+            }
+            catch (Throwable t)
+            {
+                // no no-arg constructor: a generic construction over another primitive, not an asset
+                return
+            }
+        }
+        else
+        {
+            name = cls.getSimpleName()
+            for (s in nameSuffixes)
+            {
+                if (name.endsWith(s) && name.length() > s.length())
+                {
+                    name = name.substring(0, name.length() - s.length())
+                    break
+                }
+            }
+            name = renames.getOrDefault(name, name)
+        }
+        addAsset(name, match[1], match[2], cn)
+    }
+
+    protocolAssets.each { pa ->
+        if (entries.any { it.startsWith(pa[0]) })
+        {
+            addAsset(pa[1], pa[2], pa[3], pa[0].replace('/', '.').with { it.endsWith('.') ? it.substring(0, it.length() - 1) + '.*' : it })
+        }
+    }
+}
+
 tasks.register('generateCbom') {
     group = 'reporting'
-    description = 'Generates a CycloneDX 1.6 CBOM for the BC provider algorithms'
+    description = 'Generates a CycloneDX 1.6 CBOM for the BC provider algorithms and lightweight API'
     dependsOn ':prov:jar', ':core:sourcesJar'
 
     def provJar = project(':prov').tasks.named('jar')
@@ -111,9 +318,12 @@ tasks.register('generateCbom') {
     doLast {
         def jarFile = provJar.get().archiveFile.get().asFile
         def loader = new URLClassLoader([jarFile.toURI().toURL()] as URL[], (ClassLoader) null)
-        // algName -> [primitive:, functions: Set, oids: Set, serviceTypes: Set, providers: Set]
+        // algName -> [primitive:, functions: Set, oids: Set, serviceTypes: Set, providers: Set, classes: Set]
         def assets = new TreeMap<String, Map>(String.CASE_INSENSITIVE_ORDER)
         def providerComponents = []
+        // every friendly-name Alg.Alias target, for deduplicating the lightweight sweep
+        // against JCA algorithms whose canonical name differs (e.g. RC4Engine vs "ARC4")
+        def jcaAliasNames = new HashSet<String>()
 
         try
         {
@@ -132,7 +342,7 @@ tasks.register('generateCbom') {
                     def algName = svc.getAlgorithm().startsWith('OID.') ? svc.getAlgorithm().substring(4) : svc.getAlgorithm()
                     def asset = assets.computeIfAbsent(algName, {
                         [name: algName, primitive: null,
-                         functions: new TreeSet(), oids: new TreeSet(), serviceTypes: new TreeSet(), providers: new TreeSet()]
+                         functions: new TreeSet(), oids: new TreeSet(), serviceTypes: new TreeSet(), providers: new TreeSet(), classes: new TreeSet()]
                     })
                     if (asset.primitive == null && cls[0] != null)
                     {
@@ -155,8 +365,18 @@ tasks.register('generateCbom') {
                     {
                         assets.get((String) prov.get(k))?.oids?.add(m.group(1))
                     }
+                    else
+                    {
+                        def ma = (k =~ /^Alg\.Alias\.[A-Za-z]+\.(.+)$/)
+                        if (ma.matches())
+                        {
+                            jcaAliasNames << ma.group(1)
+                        }
+                    }
                 }
             }
+
+            sweepLightweightApi(jarFile, loader, assets, jcaAliasNames)
         }
         finally
         {
@@ -232,8 +452,21 @@ tasks.register('generateCbom') {
 
         def libRef = "pkg:maven/org.bouncycastle/${jarFile.name.replaceAll(/-\d.*/, '')}@${project(':prov').version}"
         def components = assets.values().collect { a ->
-            def props = [[name: 'bc:jcaServiceTypes', value: a.serviceTypes.join(',')],
-                         [name: 'bc:providers', value: a.providers.join(',')]]
+            // bc:api records how the asset is reachable: through the JCA providers, or only
+            // through the public lightweight API (org.bouncycastle.crypto.**) in the same jar
+            def props = [[name: 'bc:api', value: a.providers.isEmpty() ? 'lightweight' : 'jca']]
+            if (!a.serviceTypes.isEmpty())
+            {
+                props << [name: 'bc:jcaServiceTypes', value: a.serviceTypes.join(',')]
+            }
+            if (!a.providers.isEmpty())
+            {
+                props << [name: 'bc:providers', value: a.providers.join(',')]
+            }
+            if (!a.classes.isEmpty())
+            {
+                props << [name: 'bc:classes', value: a.classes.join(',')]
+            }
             if (a.oids.size() > 1)
             {
                 props << [name: 'bc:additionalOids', value: a.oids.tail().join(',')]
