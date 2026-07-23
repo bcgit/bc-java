@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
@@ -131,11 +130,11 @@ public class BCMLKEMPrivateKey
             byte[] seed = params.getSeed();
             if (seed != null)
             {
-                return new BCMLKEMPrivateKey(this.params.withPreferredFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
+                return new BCMLKEMPrivateKey(this.params.withPreferredFormat(MLKEMPrivateKeyParameters.SEED_ONLY));
             }
         }
 
-        return new BCMLKEMPrivateKey(this.params.withPreferredFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
+        return new BCMLKEMPrivateKey(this.params.withPreferredFormat(MLKEMPrivateKeyParameters.EXPANDED_KEY));
     }
 
     public MLKEMParameterSpec getParameterSpec()
