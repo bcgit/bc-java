@@ -107,12 +107,19 @@ ext.cbomClassify = { String type, String alg ->
  * from the jar itself so it cannot drift from what ships:
  *
  *  - public concrete implementations of the core primitive interfaces become
- *    candidate assets. Interfaces that carry getAlgorithmName() (ciphers, digests,
- *    MACs) are named by instantiating the class through its no-arg constructor —
- *    classes without one (HMac(Digest), CMac(BlockCipher), ...) are generic
- *    constructions over another primitive, not standalone algorithms, and are
- *    skipped by that same test. The remaining interfaces (signers, agreements,
- *    KDFs, KEMs, DRBGs) are named from the class name.
+ *    candidate assets. A class is a generic construction over another primitive —
+ *    not a standalone algorithm — exactly when one of its public constructors
+ *    takes a core primitive (HMac(Digest), CMac(BlockCipher), ...); those are
+ *    skipped, as are classes with no public constructor at all (extension points
+ *    and factory-only plumbing). Interfaces that carry getAlgorithmName()
+ *    (ciphers, digests, MACs) are named by instantiating the class: through its
+ *    no-arg constructor, or once per constant of a single-parameter constructor
+ *    taking an enum or constants-class (the NIST LWC engines —
+ *    ISAPEngine(IsapType), RomulusEngine(RomulusParameters), ... — yield one
+ *    asset per named variant). Classes with neither constructor shape
+ *    (CSHAKEDigest(int,N,S), ThreefishEngine(int), ...) and the remaining
+ *    interfaces (signers, agreements, KDFs, KEMs, DRBGs) are named from the
+ *    class name.
  *  - protocol-level constructions that define no core primitive interface
  *    (the PAKEs, HPKE, BLS12-381, the password KDFs) come from a small explicit
  *    table, guarded by the presence of their classes in the jar so a removed
@@ -185,11 +192,12 @@ ext.sweepLightweightApi = { File jarFile, URLClassLoader loader, TreeMap assets,
         'CTRSP800': 'SP800-90A CTR DRBG',
         'DualECSP800': 'SP800-90A Dual EC DRBG',
         'Hash': 'Hash Commitment',
-        'GeneralHash': 'Hash Commitment'
+        'GeneralHash': 'Hash Commitment',
+        'SHA512t': 'SHA-512/t'
     ]
     def nameSuffixes = ['BasicAgreement', 'RawAgreement', 'StagedAgreement', 'UnifiedAgreement', 'Agreement',
                         'BytesGenerator', 'SecretGenerator', 'Generator', 'DigestSigner', 'Signer', 'Engine',
-                        'DRBG', 'Committer']
+                        'DRBG', 'Committer', 'Digest', 'Mac']
 
     def entries = []
     def jf = new java.util.jar.JarFile(jarFile)
@@ -265,34 +273,81 @@ ext.sweepLightweightApi = { File jarFile, URLClassLoader loader, TreeMap assets,
         {
             return
         }
-        def name
+        // no public constructor at all (Prehash, the Zuc*CoreEngine extension points):
+        // not directly constructible, so not an algorithm entry point in its own right
+        def ctors = cls.getConstructors()
+        if (ctors.length == 0)
+        {
+            return
+        }
+        def classDerivedName = {
+            def n = cls.getSimpleName()
+            for (s in nameSuffixes)
+            {
+                if (n.endsWith(s) && n.length() > s.length())
+                {
+                    n = n.substring(0, n.length() - s.length())
+                    break
+                }
+            }
+            renames.getOrDefault(n, n)
+        }
+        def names = new LinkedHashSet()
         if (match[3])
         {
+            def noArg = ctors.find { it.getParameterTypes().length == 0 }
+            if (noArg == null)
+            {
+                // no no-arg constructor. A public constructor taking another core primitive
+                // marks a generic construction (HMac(Digest), CMac(BlockCipher), ...) — not a
+                // standalone algorithm. Own-type parameters are copy constructors
+                // (SHA256Digest(SHA256Digest), CSHAKEDigest(CSHAKEDigest)) and don't count.
+                if (ctors.any { c -> c.getParameterTypes().any { p -> p != cls && primitiveInterfaces.any { it[0].isAssignableFrom(p) } } })
+                {
+                    return
+                }
+            }
             try
             {
-                def inst = cls.getDeclaredConstructor().newInstance()
-                name = (String) match[0].getMethod('getAlgorithmName').invoke(inst)
+                if (noArg != null)
+                {
+                    names << (String) match[0].getMethod('getAlgorithmName').invoke(noArg.newInstance())
+                }
+                else
+                {
+                    // standalone algorithm parameterised by an enum or a constants-class —
+                    // the NIST LWC engines (ISAPEngine(IsapType), RomulusEngine(RomulusParameters), ...):
+                    // one asset per named variant, enumerated from the parameter type's public
+                    // static fields of its own type (enum constants are exactly that shape too)
+                    def variantsOf = { Class p ->
+                        p.getFields().findAll { java.lang.reflect.Modifier.isStatic(it.getModifiers()) && it.getType() == p }
+                    }
+                    def paramCtor = ctors.find { it.getParameterTypes().length == 1 && !variantsOf(it.getParameterTypes()[0]).isEmpty() }
+                    if (paramCtor != null)
+                    {
+                        for (v in variantsOf(paramCtor.getParameterTypes()[0]))
+                        {
+                            names << (String) match[0].getMethod('getAlgorithmName').invoke(paramCtor.newInstance(v.get(null)))
+                        }
+                    }
+                }
             }
             catch (Throwable t)
             {
-                // no no-arg constructor: a generic construction over another primitive, not an asset
                 return
+            }
+            if (names.isEmpty())
+            {
+                // standalone but not reflectively instantiable (CSHAKEDigest(int, N, S),
+                // ThreefishEngine(int), ...): name from the class
+                names << classDerivedName()
             }
         }
         else
         {
-            name = cls.getSimpleName()
-            for (s in nameSuffixes)
-            {
-                if (name.endsWith(s) && name.length() > s.length())
-                {
-                    name = name.substring(0, name.length() - s.length())
-                    break
-                }
-            }
-            name = renames.getOrDefault(name, name)
+            names << classDerivedName()
         }
-        addAsset(name, match[1], match[2], cn)
+        names.each { addAsset((String) it, match[1], match[2], cn) }
     }
 
     protocolAssets.each { pa ->
