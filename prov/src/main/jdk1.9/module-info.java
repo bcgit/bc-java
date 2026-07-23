@@ -12,6 +12,7 @@ module org.bouncycastle.provider
     opens org.bouncycastle.jcajce.provider.asymmetric.mldsa to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mlkem to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.slhdsa to java.base;
+    opens org.bouncycastle.jcajce.provider.asymmetric.sm9 to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.mqom to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.uov to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
@@ -112,6 +113,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.asymmetric.mlkem;
     exports org.bouncycastle.jcajce.provider.asymmetric.rsa;
     exports org.bouncycastle.jcajce.provider.asymmetric.slhdsa;
+    exports org.bouncycastle.jcajce.provider.asymmetric.sm9;
     exports org.bouncycastle.jcajce.provider.asymmetric.util;
     exports org.bouncycastle.jcajce.provider.asymmetric.x509;
     exports org.bouncycastle.jcajce.provider.config;
@@ -147,6 +149,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.math.ec.endo;
     exports org.bouncycastle.math.ec.rfc7748;
     exports org.bouncycastle.math.ec.rfc8032;
+    exports org.bouncycastle.math.ec.sm9;
     exports org.bouncycastle.math.ec.tools;
     exports org.bouncycastle.math.field;
     exports org.bouncycastle.math.raw;
