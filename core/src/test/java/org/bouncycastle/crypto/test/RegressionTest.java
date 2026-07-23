@@ -15,6 +15,7 @@ public class RegressionTest
             new DESTest(),
             new DESedeTest(),
             new ModeTest(),
+            new SICPositionTest(),
             new PaddingTest(),
             new DHTest(),
             new ElGamalTest(),
