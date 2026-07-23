@@ -13,9 +13,10 @@ import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.KeyGenerator;
 
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
+import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
-import org.bouncycastle.jcajce.spec.SM9UserKeyParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -28,11 +29,12 @@ import org.bouncycastle.util.encoders.Hex;
  * <p>
  * SM9 is identity-based: a trusted Key Generation Centre (KGC) holds a master key pair and derives
  * each user's key pair from the user's identity - so there are no certificates, and a sender needs
- * only the published master public key plus the recipient's identity. Both generations go through
- * {@code KeyPairGenerator.SM9-ENC}: uninitialised it produces a fresh master key pair; initialised
- * with an {@link SM9UserKeyParameterSpec} (master private key + identity) it produces that user's
- * key pair - a deterministic, KGC-side derivation. The model carries inherent key escrow (the KGC
- * can derive every user's key), so the KGC must be trusted accordingly.
+ * only the published master public key plus the recipient's identity. The master key pair comes from
+ * {@code KeyPairGenerator.SM9-ENC}; a user's key pair is then derived from the master private key via
+ * {@link SM9EncMasterPrivateKey#generateUserKeyPair(byte[])} - a deterministic, KGC-side derivation -
+ * while a sender forms the recipient's public key from the master public key alone via
+ * {@link SM9EncMasterPublicKey#getUserPublicKey(byte[])}. The model carries inherent key escrow
+ * (the KGC can derive every user's key), so the KGC must be trusted accordingly.
  * <p>
  * The requested key length (the {@link KEMGenerateSpec}'s key size) is produced directly by SM9's own
  * GM/T 0044.4 KDF; the spec's generic KDF fields are not applied, as an external KDF on top would break
@@ -51,15 +53,17 @@ public class SM9Example
         kpGen.initialize(256, random);
         KeyPair master = kpGen.generateKeyPair();
 
-        // 2. KGC: generate Bob's key pair from his identity - the same KeyPairGenerator,
-        //    re-initialised with the master private key + identity (deterministic).
+        // 2. KGC: generate Bob's key pair from his identity - derived from the master
+        //    private key (deterministic).
         byte[] bobId = Strings.toByteArray("Bob");
-        kpGen.initialize(new SM9UserKeyParameterSpec(master.getPrivate(), bobId));
-        KeyPair bob = kpGen.generateKeyPair();
+        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobId);
 
-        // 3. Sender: encapsulate a 128-bit AES key to Bob's public key.
+        // 3. Sender: derive Bob's public key from the published master public key and
+        //    his identity - no certificate or KGC interaction needed - and encapsulate
+        //    a 128-bit AES key to it.
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobId);
         KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
-        encapsulator.init(new KEMGenerateSpec(bob.getPublic(), "AES", 128), random);
+        encapsulator.init(new KEMGenerateSpec(bobPublic, "AES", 128), random);
         SecretKeyWithEncapsulation encapsulated = (SecretKeyWithEncapsulation)encapsulator.generateKey();
 
         byte[] sharedSecret = encapsulated.getEncoded();

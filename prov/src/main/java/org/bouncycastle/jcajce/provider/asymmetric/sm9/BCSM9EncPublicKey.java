@@ -26,7 +26,7 @@ public class BCSM9EncPublicKey
 
     private final transient SM9EncPublicKeyParameters keyParams;
 
-    public BCSM9EncPublicKey(BCSM9EncMasterPublicKey masterPublicKey, byte[] identity)
+    BCSM9EncPublicKey(BCSM9EncMasterPublicKey masterPublicKey, byte[] identity)
     {
         if (masterPublicKey == null)
         {
@@ -35,7 +35,7 @@ public class BCSM9EncPublicKey
         this.keyParams = new SM9EncPublicKeyParameters(masterPublicKey.getKeyParameters(), identity);
     }
 
-    public SM9EncPublicKeyParameters getKeyParameters()
+    SM9EncPublicKeyParameters getKeyParameters()
     {
         return keyParams;
     }
