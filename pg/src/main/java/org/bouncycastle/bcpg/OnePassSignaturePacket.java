@@ -48,7 +48,7 @@ public class OnePassSignaturePacket
             BCPGInputStream    in)
             throws IOException
     {
-        this(in, false);
+        this(in, true);
     }
 
     OnePassSignaturePacket(
