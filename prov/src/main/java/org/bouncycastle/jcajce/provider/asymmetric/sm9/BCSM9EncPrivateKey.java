@@ -28,12 +28,12 @@ public class BCSM9EncPrivateKey
 
     private final transient SM9EncPrivateKeyParameters keyParams;
 
-    public BCSM9EncPrivateKey(SM9EncPrivateKeyParameters keyParams)
+    BCSM9EncPrivateKey(SM9EncPrivateKeyParameters keyParams)
     {
         this.keyParams = keyParams;
     }
 
-    public SM9EncPrivateKeyParameters getKeyParameters()
+    SM9EncPrivateKeyParameters getKeyParameters()
     {
         return keyParams;
     }

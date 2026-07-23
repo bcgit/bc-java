@@ -16,13 +16,10 @@ import javax.crypto.KeyGenerator;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
-import org.bouncycastle.jcajce.provider.asymmetric.sm9.BCSM9EncMasterPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.sm9.BCSM9EncMasterPublicKey;
-import org.bouncycastle.jcajce.provider.asymmetric.sm9.BCSM9EncPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.sm9.BCSM9EncPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
+import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
-import org.bouncycastle.jcajce.spec.SM9UserKeyParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
@@ -50,13 +47,25 @@ public class SM9KEMTest
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SM9-ENC", "BC");
         kpGen.initialize(256, random);
         KeyPair masterPair = kpGen.generateKeyPair();
-        BCSM9EncMasterPublicKey masterPub = (BCSM9EncMasterPublicKey)masterPair.getPublic();
-        BCSM9EncMasterPrivateKey masterPriv = (BCSM9EncMasterPrivateKey)masterPair.getPrivate();
+        isTrue("master public key implements SM9EncMasterPublicKey",
+            masterPair.getPublic() instanceof SM9EncMasterPublicKey);
+        isTrue("master private key implements SM9EncMasterPrivateKey",
+            masterPair.getPrivate() instanceof SM9EncMasterPrivateKey);
+        SM9EncMasterPublicKey masterPub = (SM9EncMasterPublicKey)masterPair.getPublic();
+        SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)masterPair.getPrivate();
 
-        BCSM9EncPrivateKey bobKey = masterPriv.extractPrivateKey(bob);
-        BCSM9EncPublicKey bobRecipient = new BCSM9EncPublicKey(masterPub, bob);
+        // KGC side: the user key pair from the master private key; sender side: the
+        // recipient public key from the published master public key + identity. The
+        // derivations are deterministic and their public halves must agree.
+        KeyPair bobPair = masterPriv.generateUserKeyPair(bob);
+        PublicKey bobRecipient = masterPub.getUserPublicKey(bob);
+        isTrue("getUserPublicKey agrees with the generated user public key",
+            Arrays.areEqual(bobRecipient.getEncoded(), bobPair.getPublic().getEncoded()));
+        isTrue("user key derivation is deterministic",
+            Arrays.areEqual(bobPair.getPrivate().getEncoded(),
+                masterPriv.generateUserKeyPair(bob).getPrivate().getEncoded()));
 
-        // encapsulate / decapsulate round-trip
+        // encapsulate (to the sender-derived public key) / decapsulate round-trip
         KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
         encapsulator.init(new KEMGenerateSpec(bobRecipient, "AES", 128), random);
         SecretKeyWithEncapsulation encapsulated = (SecretKeyWithEncapsulation)encapsulator.generateKey();
@@ -65,49 +74,27 @@ public class SM9KEMTest
         isTrue("SM9-KEM key algorithm", "AES".equals(encapsulated.getAlgorithm()));
 
         KeyGenerator decapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
-        decapsulator.init(new KEMExtractSpec(bobKey, encapsulated.getEncapsulation(), "AES", 128));
+        decapsulator.init(new KEMExtractSpec(bobPair.getPrivate(), encapsulated.getEncapsulation(), "AES", 128));
         SecretKeyWithEncapsulation decapsulated = (SecretKeyWithEncapsulation)decapsulator.generateKey();
 
         isTrue("SM9-KEM decapsulation recovers the shared key",
             Arrays.constantTimeAreEqual(encapsulated.getEncoded(), decapsulated.getEncoded()));
 
         // a different identity must not recover the same key
-        BCSM9EncPrivateKey eveKey = masterPriv.extractPrivateKey("Eve".getBytes("US-ASCII"));
+        PrivateKey eveKey = masterPriv.generateUserKeyPair("Eve".getBytes("US-ASCII")).getPrivate();
         KeyGenerator wrongId = KeyGenerator.getInstance("SM9-KEM", "BC");
         wrongId.init(new KEMExtractSpec(eveKey, encapsulated.getEncapsulation(), "AES", 128));
         SecretKeyWithEncapsulation eveSecret = (SecretKeyWithEncapsulation)wrongId.generateKey();
         isTrue("SM9-KEM wrong identity does not recover the key",
             !Arrays.constantTimeAreEqual(encapsulated.getEncoded(), eveSecret.getEncoded()));
 
-        // user key pairs are generated through the same KeyPairGenerator, initialised
-        // with the master private key + identity (deterministic KGC derivation)
-        kpGen.initialize(new SM9UserKeyParameterSpec(masterPriv, bob));
-        KeyPair bobPair = kpGen.generateKeyPair();
-
-        KeyGenerator toGenerated = KeyGenerator.getInstance("SM9-KEM", "BC");
-        toGenerated.init(new KEMGenerateSpec(bobPair.getPublic(), "AES", 128), random);
-        SecretKeyWithEncapsulation encToGenerated = (SecretKeyWithEncapsulation)toGenerated.generateKey();
-
-        KeyGenerator withGenerated = KeyGenerator.getInstance("SM9-KEM", "BC");
-        withGenerated.init(new KEMExtractSpec(bobPair.getPrivate(), encToGenerated.getEncapsulation(), "AES", 128));
-        isTrue("SM9-KEM generated user pair round-trip",
-            Arrays.constantTimeAreEqual(encToGenerated.getEncoded(),
-                withGenerated.generateKey().getEncoded()));
-
-        // ... and agrees with the extractPrivateKey-derived key
-        KeyGenerator withExtracted = KeyGenerator.getInstance("SM9-KEM", "BC");
-        withExtracted.init(new KEMExtractSpec(bobKey, encToGenerated.getEncapsulation(), "AES", 128));
-        isTrue("SM9-KEM generated pair agrees with extractPrivateKey",
-            Arrays.constantTimeAreEqual(encToGenerated.getEncoded(),
-                withExtracted.generateKey().getEncoded()));
-
-        // SPI guards: user-key generation rejects a foreign spec
+        // SPI guards: SM9-ENC generates master pairs only, no AlgorithmParameterSpec
         try
         {
             KeyPairGenerator.getInstance("SM9-ENC", "BC").initialize(new AlgorithmParameterSpec()
             {
             });
-            fail("SM9-ENC accepted a foreign AlgorithmParameterSpec");
+            fail("SM9-ENC accepted an AlgorithmParameterSpec");
         }
         catch (InvalidAlgorithmParameterException e)
         {
