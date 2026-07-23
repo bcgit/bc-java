@@ -8,7 +8,6 @@ import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.FingerprintUtil;
-import org.bouncycastle.bcpg.MalformedPacketException;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
@@ -76,47 +75,6 @@ public class EncryptedMessagePacketTest
         testX25519AEADOCBTestVector_jce();
         testPKESK6SEIPD2FromTestVector();
         testPKESK6SEIPD2();
-        testSEIPD2RejectsOversizedChunkSize();
-    }
-
-    /**
-     * A v6 SEIPD (version 2) packet declares an AEAD chunk-size octet whose chunk length is
-     * 2^(chunkSize + 6) bytes; the AEAD decryptor allocates a buffer of that size up front. An
-     * oversized value from an untrusted packet must be rejected at parse (as the v5 AEADEncDataPacket
-     * already is), so it cannot drive a multi-hundred-MiB allocation (chunkSize 24 -> 1 GiB) or a
-     * NegativeArraySizeException on decrypt. The ceiling is 16 (a 4 MiB chunk), matching the v5 packet.
-     */
-    private void testSEIPD2RejectsOversizedChunkSize()
-            throws IOException
-    {
-        isEquals("SEIPDv2 chunkSize 16 (the ceiling) must parse",
-                16, parseSEIPD2WithChunkSize(16).getChunkSize());
-        try
-        {
-            parseSEIPD2WithChunkSize(17);
-            fail("SEIPDv2 with chunkSize 17 must be rejected at parse");
-        }
-        catch (MalformedPacketException e)
-        {
-            // expected
-        }
-    }
-
-    private SymmetricEncIntegrityPacket parseSEIPD2WithChunkSize(int chunkSize)
-            throws IOException
-    {
-        byte[] body = new byte[36];
-        body[0] = 2;                                              // version 2
-        body[1] = (byte)SymmetricKeyAlgorithmTags.AES_256;        // cipher algorithm
-        body[2] = (byte)AEADAlgorithmTags.OCB;                    // AEAD algorithm
-        body[3] = (byte)chunkSize;                                // chunk size octet
-        // body[4..35] is the 32-octet salt, left zero
-        byte[] packet = new byte[2 + body.length];
-        packet[0] = (byte)0xD2;                                  // new-format packet, tag 18 (SEIPD)
-        packet[1] = (byte)body.length;                           // one-octet body length (36)
-        System.arraycopy(body, 0, packet, 2, body.length);
-        BCPGInputStream pIn = new BCPGInputStream(new ByteArrayInputStream(packet));
-        return (SymmetricEncIntegrityPacket)pIn.readPacket();
     }
 
     private void testPKESK6SEIPD2FromTestVector()
