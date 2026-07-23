@@ -210,7 +210,9 @@ class OcspCache
         }
         catch (IOException e)
         {
-            throw new CertPathValidatorException("configuration error: " + e.getMessage(),
+            // an unreachable or failing responder must surface as recoverable so
+            // ProvRevocationChecker can fall back to CRL-based checking.
+            throw new RecoverableCertPathValidatorException("unable to get OCSP response from " + ocspUrl + ": " + e.getMessage(),
                      e, parameters.getCertPath(), parameters.getIndex());
         }
     }
