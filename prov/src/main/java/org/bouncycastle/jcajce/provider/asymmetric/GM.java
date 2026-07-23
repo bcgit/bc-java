@@ -12,6 +12,8 @@ public class GM
 {
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".ec.";
 
+    private static final String SM9_PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".sm9.";
+
     private static final Map<String, String> generalSm2Attributes = new HashMap<String, String>();
 
     static
@@ -79,6 +81,12 @@ public class GM
             provider.addAlgorithm("Alg.Alias.Cipher." + GMObjectIdentifiers.sm2encrypt_with_sha384, "SM2WITHSHA384");
             provider.addAlgorithm("Cipher.SM2WITHSHA512", PREFIX + "GMCipherSpi$SM2withSha512");
             provider.addAlgorithm("Alg.Alias.Cipher." + GMObjectIdentifiers.sm2encrypt_with_sha512, "SM2WITHSHA512");
+
+            // SM9 identity-based key encapsulation (GM/T 0044.4).
+            provider.addAlgorithm("KeyPairGenerator.SM9-ENC", SM9_PREFIX + "KeyPairGeneratorSpi");
+            provider.addAlgorithm("KeyGenerator.SM9-KEM", SM9_PREFIX + "SM9KEMKeyGeneratorSpi");
+            provider.addAlgorithm("KeyFactory.SM9", SM9_PREFIX + "KeyFactorySpi");
+            provider.addAlgorithm("Alg.Alias.KeyFactory." + GMObjectIdentifiers.sm9encrypt, "SM9");
         }
     }
 }
