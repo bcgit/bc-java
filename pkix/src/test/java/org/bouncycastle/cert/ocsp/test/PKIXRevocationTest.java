@@ -13,10 +13,13 @@ import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertStore;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXParameters;
 import java.security.cert.PKIXRevocationChecker;
 import java.security.cert.TrustAnchor;
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,8 +37,10 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509v2CRLBuilder;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.BasicOCSPRespBuilder;
 import org.bouncycastle.cert.ocsp.CertificateID;
@@ -372,6 +377,65 @@ public class PKIXRevocationTest
         cpv.validate(certPath, param);
 
         Security.setProperty("ocsp.enable", prevOcspEnable == null ? "false" : prevOcspEnable);
+
+        // OCSP responder unreachable: the connection failure must surface as a recoverable
+        // failure so the checker falls back to CRL-based checking (github #2372). A freshly
+        // allocated, immediately closed local port gives a deterministic connect failure
+        // with no DNS or external network dependency.
+        responderSocket = new ServerSocket(0);
+        URI deadResponder = new URI("http://localhost:" + responderSocket.getLocalPort() + "/");
+        responderSocket.close();
+
+        JcaX509v2CRLBuilder crlGen = new JcaX509v2CRLBuilder(ca.getSubjectX500Principal(), new Date(System.currentTimeMillis() - 50000));
+
+        crlGen.setNextUpdate(new Date(System.currentTimeMillis() + 50000));
+
+        X509CRL crl = new JcaX509CRLConverter().setProvider(BC).getCRL(
+            crlGen.build(new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(caKp.getPrivate())));
+
+        cpv = CertPathValidator.getInstance("PKIX", BC);
+
+        rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+
+        rv.setOcspResponder(deadResponder);
+        rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.ONLY_END_ENTITY));
+
+        param = new PKIXParameters(trust);
+
+        param.addCertPathChecker(rv);
+        param.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(Collections.singleton(crl)), BC));
+
+        cpv.validate(certPath, param);
+
+        // the same unreachable responder with NO_FALLBACK: the failure must still be
+        // reported as a validation failure rather than falling back to the CRL.
+        cpv = CertPathValidator.getInstance("PKIX", BC);
+
+        rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+
+        rv.setOcspResponder(deadResponder);
+
+        Set noFallback = new HashSet();
+        noFallback.add(PKIXRevocationChecker.Option.ONLY_END_ENTITY);
+        noFallback.add(PKIXRevocationChecker.Option.NO_FALLBACK);
+
+        rv.setOptions(noFallback);
+
+        param = new PKIXParameters(trust);
+
+        param.addCertPathChecker(rv);
+        param.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(Collections.singleton(crl)), BC));
+
+        try
+        {
+            cpv.validate(certPath, param);
+            fail("no exception - unreachable OCSP responder with NO_FALLBACK");
+        }
+        catch (CertPathValidatorException e)
+        {
+            isEquals(0, e.getIndex());
+            isTrue(e.getMessage().startsWith("unable to get OCSP response"));
+        }
 
         // ocspCertChainTest() and dispPointCertChainTest() are live-network integration checks: they
         // validate static GlobalSign certificates (ee.pem / ca.pem / ta.pem) against the real
