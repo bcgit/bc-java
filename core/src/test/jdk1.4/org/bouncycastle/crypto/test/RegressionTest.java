@@ -129,6 +129,7 @@ public class RegressionTest
         new CipherStreamTest(),
         new BlockCipherResetTest(),
         new StreamCipherResetTest(),
+        new SICPositionTest(),
         new SM3DigestTest()
     };
 

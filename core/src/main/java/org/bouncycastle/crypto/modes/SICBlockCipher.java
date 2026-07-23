@@ -312,7 +312,7 @@ public class SICBlockCipher
 
             if (gap >= 0)
             {
-                byteCount = 0;
+                byteCount = gap;
             }
             else
             {
@@ -350,26 +350,32 @@ public class SICBlockCipher
 
     public long getPosition()
     {
+        // big-endian subtraction of the initial counter (the IV, zero-padded on the
+        // right) from the current counter, carrying the borrow explicitly across
+        // every byte - applying the borrow as a raw byte decrement drops it when the
+        // decremented byte wraps 0x00 -> 0xFF (an increment that carried across
+        // consecutive 0xFF IV bytes), and byte 0 needs the subtraction too for
+        // block sizes where it lands in the 8 bytes read below.
         byte[] res = new byte[counter.length];
+        int borrow = 0;
 
-        System.arraycopy(counter, 0, res, 0, res.length);
-
-        for (int i = res.length - 1; i >= 1; i--)
+        for (int i = res.length - 1; i >= 0; i--)
         {
-            int v;
+            int v = (counter[i] & 0xff) - borrow;
+
             if (i < IV.length)
             {
-                v = (res[i] & 0xff) - (IV[i] & 0xff);
-            }
-            else
-            {
-                v = (res[i] & 0xff);
+                v -= (IV[i] & 0xff);
             }
 
             if (v < 0)
             {
-               res[i - 1]--;
-               v += 256;
+                v += 256;
+                borrow = 1;
+            }
+            else
+            {
+                borrow = 0;
             }
 
             res[i] = (byte)v;
