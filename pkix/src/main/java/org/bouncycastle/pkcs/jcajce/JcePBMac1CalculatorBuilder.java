@@ -26,6 +26,7 @@ import org.bouncycastle.operator.MacAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Properties;
 
 /**
  * A builder for RFC 8018 PBE based MAC calculators.
@@ -188,6 +189,11 @@ public class JcePBMac1CalculatorBuilder
             {
                 salt = pbeParams.getSalt();
                 iterationCount = BigIntegers.intValueExact(pbeParams.getIterationCount());
+                int maxIT = Properties.asInteger(Properties.PBE_MAX_ITERATION_COUNT, 10000000);
+                if (iterationCount > maxIT)
+                {
+                    throw new OperatorCreationException("iteration count (" + iterationCount + ") greater than " + maxIT);
+                }
                 keySize = BigIntegers.intValueExact(pbeParams.getKeyLength()) * 8;
                 prf = pbeParams.getPrf();
             }

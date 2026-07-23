@@ -53,4 +53,24 @@ public class PBETest
         assertTrue(prf.equals(actualPrf));
     }
 
+    // A PBMAC1 protection algorithm whose PBKDF2 iteration count exceeds PBE_MAX_ITERATION_COUNT
+    // (default 10_000_000) must be rejected by the JCE PBMAC1 builder before running the KDF, not spin
+    // PBKDF2 on the attacker-supplied count - a pre-auth CPU DoS on PKCS#12 PFX / CMP PBMAC1 verify.
+    public void testPbmac1IterationCountCapped() throws Exception {
+        AlgorithmIdentifier prf = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256, null);
+        AlgorithmIdentifier protectionAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBMAC1,
+            new PBMAC1Params(
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params("salt".getBytes(), 10000001, 32, prf)),
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256, null)
+            )
+        );
+        try {
+            new JcePBMac1CalculatorProviderBuilder().setProvider(new BouncyCastleProvider())
+                .build().get(protectionAlgorithm, "foobar123".toCharArray());
+            fail("PBMAC1 iteration count above the cap should be rejected");
+        } catch (OperatorCreationException e) {
+            assertTrue(e.getMessage().contains("iteration count"));
+        }
+    }
+
 }
