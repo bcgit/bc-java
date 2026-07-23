@@ -502,6 +502,13 @@ tasks.register('generateCbom') {
                 // register their own assets under their own names
                 return 'key-agree'
             }
+            if (a.startsWith('SM9'))
+            {
+                // SM9 (GM/T 0044) identity-based crypto: the SM9-ENC master keypair exists
+                // to serve the SM9-KEM encapsulation (Part 4), which registers its own
+                // asset — revisit if an SM9 PKE cipher or SM9 signature is added
+                return 'kem'
+            }
             return 'unknown'
         }
 
