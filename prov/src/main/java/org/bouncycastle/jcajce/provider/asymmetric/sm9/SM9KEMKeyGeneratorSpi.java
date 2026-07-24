@@ -30,8 +30,9 @@ import org.bouncycastle.util.Arrays;
  * The requested key length (the spec's {@code keySizeInBits}) drives SM9's own
  * GM/T 0044.4 KDF, which produces the shared key directly; the spec's generic KDF
  * fields are therefore not applied (an external KDF on top would break interoperability
- * with other GM/T 0044.4 implementations). {@code engineGenerateKey} returns a
- * {@link SecretKeyWithEncapsulation}.
+ * with other GM/T 0044.4 implementations - callers who want one anyway can layer it via
+ * the {@code javax.crypto.KEM} API, {@code KEM.SM9-KEM}, with a KTSParameterSpec KDF).
+ * {@code engineGenerateKey} returns a {@link SecretKeyWithEncapsulation}.
  */
 public class SM9KEMKeyGeneratorSpi
     extends KeyGeneratorSpi
