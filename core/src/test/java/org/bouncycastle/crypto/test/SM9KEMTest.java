@@ -87,6 +87,28 @@ public class SM9KEMTest
         SM9EncPrivateKeyParameters userKey = master.generatePrivateKey(id);
         SM9KEMExtractor extractor = new SM9KEMExtractor(userKey, klen);
         isTrue("SM9 KEM decapsulation", Arrays.areEqual(extractor.extractSecret(enc.getEncapsulation()), hex(v, "K")));
+
+        // a non-positive key length must be rejected at construction: the KDF would
+        // produce no output and the all-zero retry loop would never terminate (the
+        // same shape as the SM9Engine empty-message stream-mode loop)
+        try
+        {
+            new SM9KEMGenerator(0, new TestRandomBigInteger(256, hex(v, "r")));
+            fail("SM9KEMGenerator accepted keyLenBits = 0");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("keyLenBits must be positive".equals(e.getMessage()));
+        }
+        try
+        {
+            new SM9KEMExtractor(userKey, -8);
+            fail("SM9KEMExtractor accepted negative keyLenBits");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("keyLenBits must be positive".equals(e.getMessage()));
+        }
     }
 
     public static void main(String[] args)
