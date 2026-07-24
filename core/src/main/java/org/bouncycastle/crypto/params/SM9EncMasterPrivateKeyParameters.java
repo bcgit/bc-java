@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
 
+import javax.security.auth.Destroyable;
+
 import org.bouncycastle.crypto.digests.SM9Sm3;
 import org.bouncycastle.math.ec.sm9.SM9Curve;
 import org.bouncycastle.math.ec.sm9.SM9G2Point;
@@ -15,6 +17,7 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class SM9EncMasterPrivateKeyParameters
     extends AsymmetricKeyParameter
+    implements Destroyable
 {
     /**
      * The encryption private-key generation function identifier hid, fixed to
@@ -29,7 +32,8 @@ public class SM9EncMasterPrivateKeyParameters
      */
     public static final byte HID_EXCHANGE = (byte)0x02;
 
-    private final BigInteger ke;
+    private BigInteger ke;
+    private volatile boolean destroyed;
     private final SM9EncMasterPublicKeyParameters publicParams;
 
     public SM9EncMasterPrivateKeyParameters(BigInteger ke)
@@ -54,7 +58,7 @@ public class SM9EncMasterPrivateKeyParameters
 
     BigInteger getKe()
     {
-        return ke;
+        return checkedKe();
     }
 
     /**
@@ -62,7 +66,7 @@ public class SM9EncMasterPrivateKeyParameters
      */
     public byte[] getEncoded()
     {
-        return BigIntegers.asUnsignedByteArray(32, ke);
+        return BigIntegers.asUnsignedByteArray(32, checkedKe());
     }
 
     public static SM9EncMasterPrivateKeyParameters fromEncoded(byte[] enc)
@@ -86,6 +90,7 @@ public class SM9EncMasterPrivateKeyParameters
      */
     public SM9EncPrivateKeyParameters generatePrivateKey(byte[] id, byte hid)
     {
+        BigInteger ke = checkedKe();
         BigInteger n = SM9Curve.N;
         BigInteger t1 = SM9Sm3.h1(Arrays.append(id, hid), n).add(ke).mod(n);
         if (t1.signum() == 0)
@@ -95,5 +100,39 @@ public class SM9EncMasterPrivateKeyParameters
         BigInteger t2 = ke.multiply(t1.modInverse(n)).mod(n);
         SM9G2Point de = SM9Curve.P2.multiply(t2);
         return new SM9EncPrivateKeyParameters(de, publicParams, Arrays.clone(id));
+    }
+
+    /**
+     * Destroy this object, dropping its reference to the master secret ke.
+     * <p>
+     * As {@link BigInteger} is immutable the secret value cannot be zeroized in place;
+     * destruction drops the reference and marks the key destroyed, after which
+     * {@link #getEncoded()} and {@link #generatePrivateKey(byte[])} throw
+     * {@link IllegalStateException}. The public key parameters remain available.
+     */
+    public synchronized void destroy()
+    {
+        if (!destroyed)
+        {
+            destroyed = true;
+            ke = null;
+        }
+    }
+
+    public boolean isDestroyed()
+    {
+        return destroyed;
+    }
+
+    private BigInteger checkedKe()
+    {
+        // the null check catches a destroy() in progress whose flag write is not yet visible;
+        // as BigInteger is immutable a non-null snapshot is always the intact pre-destroy value.
+        BigInteger value = this.ke;
+        if (destroyed || value == null)
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+        return value;
     }
 }
