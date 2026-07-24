@@ -1,12 +1,15 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -23,7 +26,6 @@ import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
-import org.bouncycastle.jcajce.spec.SM9ParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -51,6 +53,7 @@ public class SM9CipherTest
         KeyPair masterPair = kpGen.generateKeyPair();
         SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)masterPair.getPrivate();
         PrivateKey bobKey = masterPriv.generateUserKeyPair(bob).getPrivate();
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)masterPair.getPublic()).getUserPublicKey(bob);
 
         // KeyFactory round-trip of the encryption master public key
         KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
@@ -58,9 +61,9 @@ public class SM9CipherTest
         isTrue("SM9 KeyFactory enc master public round-trip",
             Arrays.areEqual(pub2.getEncoded(), masterPair.getPublic().getEncoded()));
 
-        // default (SM4) mode round-trip
+        // default (SM4) mode round-trip - encryption takes the recipient's public key
         Cipher enc = Cipher.getInstance("SM9", "BC");
-        enc.init(Cipher.ENCRYPT_MODE, masterPair.getPublic(), new SM9ParameterSpec(bob));
+        enc.init(Cipher.ENCRYPT_MODE, bobPublic);
         byte[] ct = enc.doFinal(plaintext);
         Cipher dec = Cipher.getInstance("SM9", "BC");
         dec.init(Cipher.DECRYPT_MODE, bobKey);
@@ -68,11 +71,35 @@ public class SM9CipherTest
 
         // KDF stream mode round-trip
         Cipher encX = Cipher.getInstance("SM9/XOR/NoPadding", "BC");
-        encX.init(Cipher.ENCRYPT_MODE, masterPair.getPublic(), new SM9ParameterSpec(bob));
+        encX.init(Cipher.ENCRYPT_MODE, bobPublic);
         byte[] ctX = encX.doFinal(plaintext);
         Cipher decX = Cipher.getInstance("SM9", "BC");
         decX.init(Cipher.DECRYPT_MODE, bobKey);
         isTrue("SM9 Cipher stream-mode round-trip", Arrays.areEqual(decX.doFinal(ctX), plaintext));
+
+        // guards: a master public key is not a recipient key, and no spec is accepted
+        try
+        {
+            Cipher bad = Cipher.getInstance("SM9", "BC");
+            bad.init(Cipher.ENCRYPT_MODE, masterPair.getPublic());
+            fail("SM9 encryption accepted a master public key");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+        try
+        {
+            Cipher bad = Cipher.getInstance("SM9", "BC");
+            bad.init(Cipher.ENCRYPT_MODE, bobPublic, new AlgorithmParameterSpec()
+            {
+            });
+            fail("SM9 encryption accepted an AlgorithmParameterSpec");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            // expected
+        }
 
         // decrypt the official GM/T 0044.5 Annex D (stream) ciphertext through the provider.
         // The KAT master key is reconstructed from its known scalar through the public
@@ -95,10 +122,10 @@ public class SM9CipherTest
         isTrue("SM9 Cipher decrypts GM/T 0044.5 KAT ciphertext",
             Arrays.areEqual(katDec.doFinal(katCt), "Chinese IBE standard".getBytes("US-ASCII")));
 
-        // SM9 KEM (GM/T 0044.4) through KeyGenerator.SM9-KEM
-        PublicKey bobRecipient = ((SM9EncMasterPublicKey)masterPair.getPublic()).getUserPublicKey(bob);
+        // SM9 KEM (GM/T 0044.4) through KeyGenerator.SM9-KEM - the same recipient
+        // public key the cipher encrypts to
         KeyGenerator kemGen = KeyGenerator.getInstance("SM9-KEM", "BC");
-        kemGen.init(new KEMGenerateSpec(bobRecipient, "AES", 128));
+        kemGen.init(new KEMGenerateSpec(bobPublic, "AES", 128));
         SecretKeyWithEncapsulation kemEnc = (SecretKeyWithEncapsulation)kemGen.generateKey();
 
         KeyGenerator kemExt = KeyGenerator.getInstance("SM9-KEM", "BC");

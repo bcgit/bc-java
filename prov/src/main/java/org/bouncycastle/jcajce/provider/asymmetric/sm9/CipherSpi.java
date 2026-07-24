@@ -24,16 +24,17 @@ import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncPublicKeyParameters;
 import org.bouncycastle.crypto.engines.SM9Engine;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
-import org.bouncycastle.jcajce.spec.SM9ParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
  * JCA {@link javax.crypto.Cipher} for SM9 public-key encryption (GM/T 0044.4).
  * <p>
- * Encrypt with a {@link BCSM9EncMasterPublicKey} plus the recipient identity in
- * an {@link SM9ParameterSpec}; decrypt with a {@link BCSM9EncPrivateKey}. The
- * ciphertext is a DER {@link SM9Cipher} whose {@code enType} records the
+ * Encrypt with the recipient's public key, formed from the published master public key
+ * and the recipient's identity via
+ * {@link org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey#getUserPublicKey(byte[])}
+ * (the same recipient key the SM9-KEM encapsulates to); decrypt with the recipient's
+ * private key. The ciphertext is a DER {@link SM9Cipher} whose {@code enType} records the
  * data-encapsulation mode, so decryption selects the mode automatically. The
  * default encryption mode is SM4/ECB/PKCS#7 ({@code enType} = 1); call
  * {@code setMode("XOR")} for the KDF stream mode.
@@ -124,16 +125,17 @@ public class CipherSpi
 
         if (opmode == Cipher.ENCRYPT_MODE)
         {
-            if (!(key instanceof BCSM9EncMasterPublicKey))
+            if (params != null)
             {
-                throw new InvalidKeyException("SM9 encryption requires an SM9 encryption master public key");
+                throw new InvalidAlgorithmParameterException(
+                    "SM9 encryption takes no AlgorithmParameterSpec; encrypt to the recipient's public key from SM9EncMasterPublicKey.getUserPublicKey()");
             }
-            if (!(params instanceof SM9ParameterSpec))
+            if (!(key instanceof BCSM9EncPublicKey))
             {
-                throw new InvalidAlgorithmParameterException("SM9 encryption requires the recipient identity in an SM9ParameterSpec");
+                throw new InvalidKeyException(
+                    "SM9 encryption requires the recipient's public key from SM9EncMasterPublicKey.getUserPublicKey()");
             }
-            recipient = new SM9EncPublicKeyParameters(
-                ((BCSM9EncMasterPublicKey)key).getKeyParameters(), ((SM9ParameterSpec)params).getId());
+            recipient = ((BCSM9EncPublicKey)key).getKeyParameters();
         }
         else if (opmode == Cipher.DECRYPT_MODE)
         {
@@ -154,7 +156,7 @@ public class CipherSpi
     {
         if (params != null)
         {
-            throw new InvalidAlgorithmParameterException("AlgorithmParameters not supported for SM9; use SM9ParameterSpec");
+            throw new InvalidAlgorithmParameterException("AlgorithmParameters not supported for SM9");
         }
         engineInit(opmode, key, (AlgorithmParameterSpec)null, random);
     }
