@@ -83,8 +83,10 @@ public class GM
             provider.addAlgorithm("Cipher.SM2WITHSHA512", PREFIX + "GMCipherSpi$SM2withSha512");
             provider.addAlgorithm("Alg.Alias.Cipher." + GMObjectIdentifiers.sm2encrypt_with_sha512, "SM2WITHSHA512");
 
-            // SM9 identity-based key encapsulation (GM/T 0044.4).
+            // SM9 identity-based encryption and key encapsulation (GM/T 0044.4).
             provider.addAlgorithm("KeyPairGenerator.SM9-ENC", SM9_PREFIX + "KeyPairGeneratorSpi");
+            provider.addAlgorithm("Cipher.SM9", SM9_PREFIX + "CipherSpi");
+            provider.addAlgorithm("Alg.Alias.Cipher." + GMObjectIdentifiers.sm9encrypt, "SM9");
             provider.addAlgorithm("KeyGenerator.SM9-KEM", SM9_PREFIX + "SM9KEMKeyGeneratorSpi");
             provider.addAlgorithm("KeyFactory.SM9", SM9_PREFIX + "KeyFactorySpi");
             provider.addAlgorithm("Alg.Alias.KeyFactory." + GMObjectIdentifiers.sm9encrypt, "SM9");
