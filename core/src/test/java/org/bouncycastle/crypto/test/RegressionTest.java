@@ -156,6 +156,7 @@ public class RegressionTest
             new SM2SignerTest(),
             new SM4Test(),
             new SM9KEMTest(),
+            new SM9SignerTest(),
             new DSTU7624Test(),
             new DSTU7564Test(),
             new IsoTrailerTest(),

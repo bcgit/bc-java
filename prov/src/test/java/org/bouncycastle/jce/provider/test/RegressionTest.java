@@ -102,6 +102,7 @@ public class RegressionTest
         new SM4Test(),
         new SM9KEMTest(),
         new SM9CipherTest(),
+        new SM9SignatureTest(),
         new ThreefishTest(),
         new TLSKDFTest(),
         new WrapTest(),
