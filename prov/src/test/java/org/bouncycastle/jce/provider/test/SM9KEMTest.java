@@ -1,5 +1,8 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -13,6 +16,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.KeyGenerator;
+import javax.security.auth.Destroyable;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
@@ -132,6 +136,92 @@ public class SM9KEMTest
         {
             // expected
         }
+
+        destroyTest(random);
+    }
+
+    private void destroyTest(SecureRandom random)
+        throws Exception
+    {
+        byte[] bob = "Bob".getBytes("US-ASCII");
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SM9-ENC", "BC");
+        kpGen.initialize(256, random);
+        KeyPair masterPair = kpGen.generateKeyPair();
+        SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)masterPair.getPrivate();
+        SM9EncMasterPublicKey masterPub = (SM9EncMasterPublicKey)masterPair.getPublic();
+
+        KeyPair bobPair = masterPriv.generateUserKeyPair(bob);
+
+        // destroying the user private key stops decapsulation and encoding
+        KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        encapsulator.init(new KEMGenerateSpec(masterPub.getUserPublicKey(bob), "AES", 128), random);
+        SecretKeyWithEncapsulation encapsulated = (SecretKeyWithEncapsulation)encapsulator.generateKey();
+
+        isTrue("user key not destroyed yet", !((Destroyable)bobPair.getPrivate()).isDestroyed());
+        ((Destroyable)bobPair.getPrivate()).destroy();
+        isTrue("user key destroyed", ((Destroyable)bobPair.getPrivate()).isDestroyed());
+
+        try
+        {
+            bobPair.getPrivate().getEncoded();
+            fail("destroyed user key still encodes");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("key destroyed".equals(e.getMessage()));
+        }
+
+        KeyGenerator decapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        decapsulator.init(new KEMExtractSpec(bobPair.getPrivate(), encapsulated.getEncapsulation(), "AES", 128));
+        try
+        {
+            decapsulator.generateKey();
+            fail("destroyed user key still decapsulates");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("key destroyed".equals(e.getMessage()));
+        }
+
+        // destroying the master private key stops key generation and encoding; the
+        // published master public key (and so the sender side) is unaffected
+        isTrue("master key not destroyed yet", !masterPriv.isDestroyed());
+        masterPriv.destroy();
+        isTrue("master key destroyed", masterPriv.isDestroyed());
+
+        try
+        {
+            masterPriv.generateUserKeyPair(bob);
+            fail("destroyed master key still generates user keys");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("key destroyed".equals(e.getMessage()));
+        }
+
+        try
+        {
+            masterPriv.getEncoded();
+            fail("destroyed master key still encodes");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("key destroyed".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(masterPriv);
+            fail("destroyed master key still serializes");
+        }
+        catch (NotSerializableException e)
+        {
+            // expected
+        }
+
+        isTrue("sender side unaffected by master destroy",
+            masterPub.getUserPublicKey(bob) != null);
     }
 
     public static void main(String[] args)

@@ -81,10 +81,25 @@ public class BCSM9EncPrivateKey
         return Arrays.hashCode(keyParams.getMasterPublicKey().getEncoded());
     }
 
+    /**
+     * Destroy the underlying private point de (and the carried identity). After
+     * destruction {@link #isDestroyed()} returns true, {@link #getEncoded()} throws
+     * {@link IllegalStateException} and the key can no longer decapsulate/decrypt.
+     */
+    public synchronized void destroy()
+    {
+        keyParams.destroy();
+    }
+
+    public boolean isDestroyed()
+    {
+        return keyParams.isDestroyed();
+    }
+
     private Object writeReplace()
         throws java.io.ObjectStreamException
     {
         throw new java.io.NotSerializableException(
-            "SM9 user identity keys are not serializable standalone; re-derive from the master key via extractPrivateKey");
+            "SM9 user identity keys are not serializable standalone; re-derive from the master key via generateUserKeyPair");
     }
 }

@@ -1,6 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectStreamException;
 import java.security.KeyPair;
 
 import org.bouncycastle.util.Arrays;
@@ -100,8 +102,29 @@ public class BCSM9EncMasterPrivateKey
         return Arrays.hashCode(keyParams.getPublicKeyParameters().getEncoded());
     }
 
-    private Object writeReplace()
+    /**
+     * Destroy the underlying master secret ke. After destruction {@link #isDestroyed()}
+     * returns true and the secret-bearing operations ({@link #getEncoded()},
+     * {@link #generateUserKeyPair(byte[])}) throw {@link IllegalStateException};
+     * user key pairs already generated are unaffected.
+     */
+    public synchronized void destroy()
     {
+        keyParams.destroy();
+    }
+
+    public boolean isDestroyed()
+    {
+        return keyParams.isDestroyed();
+    }
+
+    private Object writeReplace()
+        throws ObjectStreamException
+    {
+        if (keyParams.isDestroyed())
+        {
+            throw new NotSerializableException("key destroyed");
+        }
         return new SM9KeyProxy(true, getEncoded());
     }
 }
