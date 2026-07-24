@@ -269,6 +269,7 @@
                 <exclude name="**/tls/test/TlsRawKeysProtocolTest.java"/>
                 <exclude name="**/tls/test/DTLSRawKeysProtocolTest.java"/>
                 <exclude name="**/tls/test/JcaTlsRawKeysProtocolTest.java"/>
+                <exclude name="**/tls/crypto/test/JcaTlsRSAPSSAltProviderTest.java"/>
                 <exclude name="**/tls/AllTests.java"/>
                 <exclude name="**/CertChainUtil.java"/>
                 <exclude name="**/TlsTestUtils.java"/>

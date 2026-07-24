@@ -7,6 +7,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+// NOTE: jdk1.4 overlay - omits JcaTlsRSAPSSAltProviderTest (excluded in ant/jdk14.xml): the jdk1.4
+// JcaTlsCrypto overlay deliberately drops the PKCS#11/SunMSCAPI PSS signature-name fallbacks.
 public class AllTests
     extends TestCase
 {
@@ -23,7 +25,6 @@ public class AllTests
 
         suite.addTestSuite(BcTlsCryptoTest.class);
         suite.addTestSuite(JcaTlsCryptoTest.class);
-        suite.addTestSuite(JcaTlsRSAPSSAltProviderTest.class);
 
         return new BCTestSetup(suite);
     }
