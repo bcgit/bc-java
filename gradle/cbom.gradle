@@ -63,7 +63,7 @@ ext.cbomClassify = { String type, String alg ->
             {
                 return ['kem', ['encapsulate', 'decapsulate']]
             }
-            if (hasAny(['RSA', 'ELGAMAL', 'IES', 'SM2']))
+            if (hasAny(['RSA', 'ELGAMAL', 'IES', 'SM2', 'SM9']))
             {
                 return ['pke', ['encrypt', 'decrypt']]
             }
@@ -504,9 +504,9 @@ tasks.register('generateCbom') {
             }
             if (a.startsWith('SM9'))
             {
-                // SM9 (GM/T 0044) identity-based crypto: the SM9-ENC master keypair exists
-                // to serve the SM9-KEM encapsulation (Part 4), which registers its own
-                // asset — revisit if an SM9 PKE cipher or SM9 signature is added
+                // SM9 (GM/T 0044) identity-based crypto: the SM9-ENC master keypair
+                // serves the SM9-KEM encapsulation and the Cipher.SM9 encryption (Part 4),
+                // each of which registers its own asset — revisit if SM9 signing is added
                 return 'kem'
             }
             return 'unknown'

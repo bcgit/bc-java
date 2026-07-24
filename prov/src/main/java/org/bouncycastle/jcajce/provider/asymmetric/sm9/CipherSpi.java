@@ -20,6 +20,7 @@ import javax.crypto.ShortBufferException;
 import org.bouncycastle.asn1.gm.SM9Cipher;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncPublicKeyParameters;
 import org.bouncycastle.crypto.engines.SM9Engine;
@@ -44,11 +45,10 @@ import org.bouncycastle.util.Strings;
 public class CipherSpi
     extends javax.crypto.CipherSpi
 {
-    private final SM9Engine engine = new SM9Engine();
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private int state = -1;
-    private int mode = SM9Engine.MODE_SM4;
+    private SM9Engine.Mode mode = SM9Engine.Mode.SM4;
     private SM9EncPublicKeyParameters recipient;
     private SM9EncPrivateKeyParameters userKey;
     private SecureRandom random;
@@ -59,11 +59,11 @@ public class CipherSpi
         String m = modeName == null ? "" : Strings.toUpperCase(modeName);
         if (m.equals("SM4") || m.equals("ECB") || m.equals(""))
         {
-            mode = SM9Engine.MODE_SM4;
+            mode = SM9Engine.Mode.SM4;
         }
         else if (m.equals("XOR") || m.equals("STREAM") || m.equals("KDF"))
         {
-            mode = SM9Engine.MODE_STREAM;
+            mode = SM9Engine.Mode.STREAM;
         }
         else
         {
@@ -190,25 +190,32 @@ public class CipherSpi
         {
             if (state == Cipher.ENCRYPT_MODE)
             {
-                byte[] raw = engine.encrypt(mode, recipient, data, random);   // C1(64) || C3(32) || C2
+                SM9Engine engine = new SM9Engine(mode);
+                engine.init(true, new ParametersWithRandom(recipient, random));
+                byte[] raw = engine.processBlock(data, 0, data.length);   // C1(64) || C3(32) || C2
                 byte[] c1 = new byte[65];
                 c1[0] = 0x04;
                 System.arraycopy(raw, 0, c1, 1, 64);
                 byte[] c3 = Arrays.copyOfRange(raw, 64, 96);
                 byte[] c2 = Arrays.copyOfRange(raw, 96, raw.length);
-                return new SM9Cipher(mode, c1, c3, c2).getEncoded();
+                int enType = (mode == SM9Engine.Mode.SM4) ? SM9Cipher.EN_TYPE_SM4 : SM9Cipher.EN_TYPE_STREAM;
+                return new SM9Cipher(enType, c1, c3, c2).getEncoded();
             }
             else
             {
                 SM9Cipher c = SM9Cipher.getInstance(data);
                 byte[] c1 = c.getC1();   // 0x04 || x || y
                 byte[] raw = Arrays.concatenate(Arrays.copyOfRange(c1, 1, 65), c.getC3(), c.getC2());
-                return engine.decrypt(c.getEnType(), userKey, raw);
+                SM9Engine engine = new SM9Engine(
+                    (c.getEnType() == SM9Cipher.EN_TYPE_SM4) ? SM9Engine.Mode.SM4 : SM9Engine.Mode.STREAM);
+                engine.init(false, userKey);
+                return engine.processBlock(raw, 0, raw.length);
             }
         }
         catch (InvalidCipherTextException e)
         {
-            throw SecurityExceptions.badPaddingException("SM9 decryption failed: " + e.getMessage(), e);
+            throw SecurityExceptions.badPaddingException(
+                (state == Cipher.ENCRYPT_MODE ? "SM9 encryption failed: " : "SM9 decryption failed: ") + e.getMessage(), e);
         }
         catch (IOException e)
         {

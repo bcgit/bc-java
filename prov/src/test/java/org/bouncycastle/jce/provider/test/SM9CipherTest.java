@@ -13,6 +13,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 
@@ -76,6 +77,44 @@ public class SM9CipherTest
         Cipher decX = Cipher.getInstance("SM9", "BC");
         decX.init(Cipher.DECRYPT_MODE, bobKey);
         isTrue("SM9 Cipher stream-mode round-trip", Arrays.areEqual(decX.doFinal(ctX), plaintext));
+
+        // empty plaintext: SM4 mode round-trips (one padding block); the stream mode
+        // has no K1 for an empty message and must reject it rather than loop retrying
+        Cipher encEmpty = Cipher.getInstance("SM9", "BC");
+        encEmpty.init(Cipher.ENCRYPT_MODE, bobPublic);
+        byte[] ctEmpty = encEmpty.doFinal(new byte[0]);
+        Cipher decEmpty = Cipher.getInstance("SM9", "BC");
+        decEmpty.init(Cipher.DECRYPT_MODE, bobKey);
+        isTrue("SM9 Cipher SM4-mode empty plaintext round-trip", decEmpty.doFinal(ctEmpty).length == 0);
+
+        try
+        {
+            Cipher encXEmpty = Cipher.getInstance("SM9/XOR/NoPadding", "BC");
+            encXEmpty.init(Cipher.ENCRYPT_MODE, bobPublic);
+            encXEmpty.doFinal(new byte[0]);
+            fail("SM9 stream mode encrypted an empty plaintext");
+        }
+        catch (BadPaddingException e)
+        {
+            // expected - no K1 to derive for an empty message
+        }
+
+        // a tampered C3 (MAC) must be rejected
+        SM9Cipher parsed = SM9Cipher.getInstance(ct);
+        byte[] brokenC3 = Arrays.clone(parsed.getC3());
+        brokenC3[0] ^= 1;
+        byte[] tampered = new SM9Cipher(parsed.getEnType(), parsed.getC1(), brokenC3, parsed.getC2()).getEncoded();
+        try
+        {
+            Cipher decBad = Cipher.getInstance("SM9", "BC");
+            decBad.init(Cipher.DECRYPT_MODE, bobKey);
+            decBad.doFinal(tampered);
+            fail("SM9 decryption accepted a tampered C3");
+        }
+        catch (BadPaddingException e)
+        {
+            // expected - MAC check failed
+        }
 
         // guards: a master public key is not a recipient key, and no spec is accepted
         try
