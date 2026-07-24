@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
+import org.bouncycastle.jcajce.util.SpiUtil;
 
 public class GM
 {
@@ -87,6 +88,11 @@ public class GM
             provider.addAlgorithm("KeyGenerator.SM9-KEM", SM9_PREFIX + "SM9KEMKeyGeneratorSpi");
             provider.addAlgorithm("KeyFactory.SM9", SM9_PREFIX + "KeyFactorySpi");
             provider.addAlgorithm("Alg.Alias.KeyFactory." + GMObjectIdentifiers.sm9encrypt, "SM9");
+
+            if (SpiUtil.hasKEM())
+            {
+                provider.addAlgorithm("KEM.SM9-KEM", SM9_PREFIX + "SM9KEMSpi");
+            }
         }
     }
 }

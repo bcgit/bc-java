@@ -20,6 +20,7 @@ public class AllTests17
         suite.addTestSuite(MLKEM17Test.class);
         suite.addTestSuite(NTRUKEM17Test.class);
         suite.addTestSuite(SNTRUPrimeKEM17Test.class);
+        suite.addTestSuite(org.bouncycastle.jce.provider.test.SM9KEM17Test.class);
         return suite;
     }
 }
