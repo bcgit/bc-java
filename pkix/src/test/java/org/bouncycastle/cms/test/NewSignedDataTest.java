@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -2166,6 +2168,49 @@ public class NewSignedDataTest
 
         assertEquals(NISTObjectIdentifiers.id_shake256, si.toASN1Structure().getDigestAlgorithm().getAlgorithm());
         assertEquals(si.toASN1Structure().getEncoded(ASN1Encoding.DER).length, predicted);
+    }
+
+    /**
+     * The id-shake256-len parameter is what makes the length knowable, so a missing or malformed
+     * parameter must yield -1 ("fall back to indefinite-length") rather than a wrong length that
+     * would be committed to a DL header before the body is written.
+     */
+    public void testMalformedShake256LenGivesNoPrediction()
+        throws Exception
+    {
+        assertEquals(64, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512))));
+
+        // absent parameter - the length is simply unknown
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len)));
+        // not an integer at all
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, DERNull.INSTANCE)));
+        // zero, negative, and not a whole number of octets
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(0))));
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(-512))));
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(7))));
+        // beyond int range - intValueExact must not silently truncate
+        assertEquals(-1, invokeGetDigestOutputLength(new AlgorithmIdentifier(
+            NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(new BigInteger("18446744073709551616")))));
+    }
+
+    /**
+     * CMSUtils is package-private to org.bouncycastle.cms, so reach it reflectively rather than
+     * adding public API for a test.
+     */
+    private int invokeGetDigestOutputLength(AlgorithmIdentifier digAlgId)
+        throws Exception
+    {
+        Class cmsUtils = Class.forName("org.bouncycastle.cms.CMSUtils");
+        Method m = cmsUtils.getDeclaredMethod("getDigestOutputLength", AlgorithmIdentifier.class);
+        m.setAccessible(true);
+
+        return ((Integer)m.invoke(null, new Object[]{digAlgId})).intValue();
     }
 
     public void testEd25519WithNoAttr()
