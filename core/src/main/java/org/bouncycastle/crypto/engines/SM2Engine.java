@@ -176,12 +176,16 @@ public class SM2Engine
     private byte[] decrypt(byte[] in, int inOff, int inLen)
         throws InvalidCipherTextException
     {
-        if (inLen < (curveLength * 2 + 1) + digest.getDigestSize())
+        // The SM2 ciphertext is C1 (an encoded point, curveLength*2+1 bytes) || C3 (a digest) || C2;
+        // reject an input too short to hold C1 and C3 rather than over-read C1 (AIOOBE) or underflow the
+        // C2 length (NegativeArraySizeException) past the declared throws InvalidCipherTextException.
+        int c1Len = curveLength * 2 + 1;
+        if (inLen < c1Len + digest.getDigestSize())
         {
-            throw new InvalidCipherTextException("ciphertext too short");
+            throw new InvalidCipherTextException("data too short");
         }
 
-        byte[] c1 = new byte[curveLength * 2 + 1];
+        byte[] c1 = new byte[c1Len];
 
         System.arraycopy(in, inOff, c1, 0, c1.length);
 

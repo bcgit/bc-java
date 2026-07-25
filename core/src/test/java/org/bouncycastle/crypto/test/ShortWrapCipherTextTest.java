@@ -66,7 +66,7 @@ public class ShortWrapCipherTextTest
         }
         catch (InvalidCipherTextException e)
         {
-            isEquals("ciphertext too short", e.getMessage());
+            isEquals("data too short", e.getMessage());
         }
     }
 
