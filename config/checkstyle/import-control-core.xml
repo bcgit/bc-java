@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<!DOCTYPE import-control PUBLIC
+        "-//Checkstyle//DTD ImportControl Configuration 1.4//EN"
+        "https://checkstyle.org/dtds/import_control_1_4.dtd">
+
+<!--
+    core is the lightweight API and must not lean on the JCA/JCE. The allowed JDK security
+    surface is exactly: java.security.SecureRandom, javax.security.auth.Destroyable,
+    javax.security.auth.DestroyFailedException - and no javax.crypto, ever. The per-file
+    allowances below are the vetted security-manager/configuration plumbing exceptions;
+    don't extend them without dgh signing off. Scoped to core/src/main/java by the
+    ImportControl module's path property in checkstyle.xml.
+-->
+<import-control pkg="org.bouncycastle" strategyOnMismatch="allowed">
+
+    <allow class="java.security.SecureRandom"/>
+    <allow class="javax.security.auth.Destroyable"/>
+    <allow class="javax.security.auth.DestroyFailedException"/>
+    <disallow pkg="java.security"/>
+    <disallow pkg="javax"/>
+
+    <subpackage name="crypto">
+        <!-- is a java.security.Permission -->
+        <file name="CryptoServicesPermission">
+            <allow class="java.security.Permission"/>
+        </file>
+        <!-- SecurityManager checks on the constraint / default-SecureRandom setters -->
+        <file name="CryptoServicesRegistrar">
+            <allow class="java.security.AccessController"/>
+            <allow class="java.security.Permission"/>
+            <allow class="java.security.PrivilegedAction"/>
+        </file>
+    </subpackage>
+
+    <subpackage name="util">
+        <!-- reads the org.bouncycastle.* flags from java.security.Security properties -->
+        <file name="Properties">
+            <allow class="java.security.AccessControlException"/>
+            <allow class="java.security.AccessController"/>
+            <allow class="java.security.PrivilegedAction"/>
+            <allow class="java.security.Security"/>
+        </file>
+        <!-- doPrivileged read of line.separator -->
+        <file name="Strings">
+            <allow class="java.security.AccessController"/>
+            <allow class="java.security.PrivilegedAction"/>
+        </file>
+        <subpackage name="test">
+            <!-- DummyProvider for the SecureRandom(spi, provider) super constructor -->
+            <file name="FixedSecureRandom">
+                <allow class="java.security.Provider"/>
+            </file>
+        </subpackage>
+    </subpackage>
+
+</import-control>
