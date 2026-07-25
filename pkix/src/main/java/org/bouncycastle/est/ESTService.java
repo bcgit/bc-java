@@ -756,6 +756,10 @@ public class ESTService
         ESTResponse resp = null;
         CSRAttributesResponse response = null;
         Exception finalThrowable = null;
+        // Set once the HTTP status alone determines the result and the body is irrelevant
+        // (RFC 7030 sec. 4.5: 204 / 404). A failure while tidying up the connection must not
+        // then be promoted into the caller's result and mask the real status (github #781).
+        boolean outcomeFinal = false;
         URL url = null;
         try
         {
@@ -783,38 +787,18 @@ public class ESTService
                 break;
             case 204:
             case 404:
-                // RFC 7030 sec. 4.5: a 204 has no body and a 404 SHOULD be empty.
-                // Some servers nevertheless attach an error body (e.g. a JSON
-                // message) to a 404. Drain whatever is there so the subsequent
-                // resp.close() in the finally block doesn't trip the
-                // LimitedInputStream's "Stream closed before limit fully read"
-                // guard and obscure the actual 404 status with a useless wrapper
-                // exception (github #781).
+                // RFC 7030 sec. 4.5: a 204 has no body and a 404 SHOULD be empty. Some servers
+                // nevertheless attach an error body (e.g. a JSON message) to a 404. Drain it so the
+                // resp.close() in the finally block does not trip one of the counter stream's guards
+                // and obscure the actual status with a useless wrapper exception (github #781).
                 //
-                // Bound the drain by the declared Content-Length rather than reading to EOF: the
-                // counter stream has no Content-Length stop of its own (it only trips on an
-                // absoluteReadLimit, null unless withReadLimit was set), so a Content-Length body
-                // on a kept-alive HTTP/1.1 connection whose socket never signals EOF (and no
-                // SO_TIMEOUT) would make an EOF-seeking drain block forever. Stopping at the
-                // declared length both avoids the hang and reads to the end of the body so close()
-                // does not trip its content-length guard.
-                {
-                    Long bodyLength = resp.getContentLength();
-                    long toDrain = (bodyLength == null) ? 0L : bodyLength.longValue();
-                    InputStream drainIn = resp.getInputStream();
-                    byte[] drainBuf = new byte[1024];
-                    long drained = 0;
-                    while (drained < toDrain)
-                    {
-                        int rd = drainIn.read(drainBuf, 0, (int)Math.min(drainBuf.length, toDrain - drained));
-                        if (rd < 0)
-                        {
-                            break;
-                        }
-                        drained += rd;
-                    }
-                }
+                // The drain is never EOF-seeking: the counter stream has no Content-Length stop of
+                // its own, so on a kept-alive HTTP/1.1 connection whose socket never signals EOF
+                // (and no SO_TIMEOUT by default) reading until EOF would hang the calling thread.
+                drainErrorBody(resp);
                 response = null;
+                // The status alone is the answer now - see outcomeFinal above.
+                outcomeFinal = true;
                 break;
             default:
                 throw new ESTException(
@@ -844,7 +828,13 @@ public class ESTService
                 }
                 catch (Exception ex)
                 {
-                    finalThrowable = ex;
+                    // Only a close() failure that could still change the answer is promoted; for a
+                    // 204/404 the result is already settled, so swallowing it here is what stops a
+                    // tidy-up problem masking the real status.
+                    if (!outcomeFinal)
+                    {
+                        finalThrowable = ex;
+                    }
                 }
             }
         }
@@ -859,6 +849,44 @@ public class ESTService
         }
 
         return new CSRRequestResponse(response, resp.getSource());
+    }
+
+    /**
+     * Drain a 204/404 error body so the following close() does not trip the counter stream's
+     * "Stream closed before limit fully read" check. Reads exactly the declared Content-Length and
+     * never seeks EOF: the counter stream has no Content-Length stop of its own, so on a kept-alive
+     * HTTP/1.1 connection whose socket never signals EOF (and no SO_TIMEOUT by default) reading
+     * until EOF would hang the calling thread.
+     * <p>
+     * A response with no Content-Length is deliberately left alone. The only way to reach here
+     * without one is a chunked body - anything else is rejected earlier by ESTResponse - and for
+     * chunked ESTResponse has already normalised its content length to zero, which makes that check
+     * inert ({@code 0 - 1 > read} is false for any read). Its other check, on bytes still in the
+     * pipe, cannot be satisfied from here: the counter stream does not override available(), so a
+     * drain sees zero while close() consults the underlying stream. That mismatch is why the
+     * caller marks the outcome final instead of trying to drain its way to a quiet close.
+     */
+    private static void drainErrorBody(ESTResponse resp)
+        throws IOException
+    {
+        Long bodyLength = resp.getContentLength();
+        if (bodyLength == null)
+        {
+            return;
+        }
+
+        InputStream in = resp.getInputStream();
+        byte[] buf = new byte[1024];
+        long remaining = bodyLength.longValue();
+        while (remaining > 0)
+        {
+            int rd = in.read(buf, 0, (int)Math.min(buf.length, remaining));
+            if (rd < 0)
+            {
+                break;
+            }
+            remaining -= rd;
+        }
     }
 
     private String annotateRequest(byte[] data)
