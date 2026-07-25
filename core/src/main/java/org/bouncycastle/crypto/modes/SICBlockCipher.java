@@ -12,6 +12,11 @@ import org.bouncycastle.util.Pack;
 /**
  * Implements the Segmented Integer Counter (SIC) mode on top of a simple
  * block cipher. This mode is also known as CTR mode.
+ * <p>
+ * With an IV shorter than the block size, the counter occupies the remaining low bytes and
+ * running past its range throws an IllegalStateException. With a full-block IV the whole block
+ * is the counter; the advance since init is bounded at 2^64 blocks (the widest range
+ * getPosition()/skip arithmetic can represent), past which the same exception is thrown.
  */
 public class SICBlockCipher
     extends StreamBlockCipher
@@ -19,11 +24,23 @@ public class SICBlockCipher
 {
     private final BlockCipher     cipher;
     private final int             blockSize;
+    // where the low 8-byte counter lane starts; 0 for block sizes of 8 or less
+    private final int             laneOff;
 
     private byte[]          IV;
     private byte[]          counter;
     private byte[]          counterOut;
     private int             byteCount;
+
+    private boolean         fullBlockIV;
+    // full-block IV, block size over 8: counter[laneOff - 1] != guardByte proves the advance since init is below 2^64 blocks
+    private byte            guardByte;
+    // full-block IV, block size of 8 or less: advance since init in blocks mod 2^64, resynced on skip/seekTo
+    private long            used;
+    // full-block IV only: the advance since init has been seen to be out of range
+    private boolean         overflow;
+    // scratch for populateDelta in the range checks
+    private byte[]          delta;
 
     /**
      * Return a new SIC/CTR mode cipher based on the passed in base cipher
@@ -48,9 +65,11 @@ public class SICBlockCipher
 
         this.cipher = c;
         this.blockSize = cipher.getBlockSize();
+        this.laneOff = (blockSize > 8) ? blockSize - 8 : 0;
         this.IV = new byte[blockSize];
         this.counter = new byte[blockSize];
         this.counterOut = new byte[blockSize];
+        this.delta = new byte[blockSize];
         this.byteCount = 0;
     }
 
@@ -74,6 +93,12 @@ public class SICBlockCipher
             if (blockSize - IV.length > maxCounterSize)
             {
                 throw new IllegalArgumentException("CTR/SIC mode requires IV of at least: " + (blockSize - maxCounterSize) + " bytes.");
+            }
+
+            this.fullBlockIV = (IV.length == blockSize);
+            if (fullBlockIV && laneOff > 0)
+            {
+                this.guardByte = (byte)(IV[laneOff - 1] + 1);
             }
 
             // if null it's an IV changed only.
@@ -117,6 +142,8 @@ public class SICBlockCipher
         {
             throw new OutputLengthException("output buffer too short");
         }
+
+        checkLastIncrement();
 
         cipher.processBlock(counter, 0, counterOut, 0);
         for (int i = 0; i < blockSize; ++i)
@@ -190,7 +217,6 @@ public class SICBlockCipher
 
     private void checkCounter()
     {
-        // if the IV is the same as the blocksize we assume the user knows what they are doing
         if (IV.length < blockSize)
         {
             for (int i = IV.length - 1; i >= 0; i--)
@@ -201,17 +227,44 @@ public class SICBlockCipher
                 }
             }
         }
+        else
+        {
+            // full-block IV: the authoritative bound of the advance since init at 2^64 blocks, run per skip/seekTo
+            if (overflow || populateDelta(delta))
+            {
+                overflow = true;
+                throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
+            }
+            if (laneOff == 0)
+            {
+                // no upper lane to watch per block - resync the block accumulator instead
+                used = Pack.bigEndianToLong(delta, delta.length - 8);
+            }
+        }
     }
 
     private void checkLastIncrement()
     {
-        // if the IV is the same as the blocksize we assume the user knows what they are doing
         if (IV.length < blockSize)
         {
             if (counter[IV.length - 1] != IV[IV.length - 1])
             {
                 throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
             }
+        }
+        else if (laneOff > 0)
+        {
+            // full-block IV: on a guard byte match the full-width delta separates the legal terminal window from 2^64 blocks reached
+            if (overflow || (counter[laneOff - 1] == guardByte && populateDelta(delta)))
+            {
+                overflow = true;
+                throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
+            }
+        }
+        else if (overflow)
+        {
+            // full-block IV on a block size of 8 or less: the block accumulator came around
+            throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
         }
     }
 
@@ -225,63 +278,73 @@ public class SICBlockCipher
                 break;
             }
         }
-    }
 
-    private void incrementCounterAt(int pos)
-    {
-        int i = counter.length - pos;
-        while (--i >= 0)
+        if (laneOff == 0 && ++used == 0 && fullBlockIV)
         {
-            if (++counter[i] != 0)
-            {
-                break;
-            }
+            // the advance since init has come around to 2^64 blocks - see checkLastIncrement
+            overflow = true;
         }
     }
 
-    private void incrementCounter(int offSet)
+    // single big-endian addition of a 64-bit block count into the counter, modular like incrementCounter
+    private void addToCounter(long numBlocks)
     {
-        byte old = counter[counter.length - 1];
-        counter[counter.length - 1] += (byte) offSet;
-        if ((old & 0xff) + offSet > 255)
+        int carry = 0;
+        for (int i = counter.length - 1; i >= 0; i--)
         {
-            incrementCounterAt(1);
+            int pos = counter.length - 1 - i;
+            int sum = (counter[i] & 0xff) + carry;
+            if (pos < 8)
+            {
+                sum += (int)(numBlocks >>> (8 * pos)) & 0xff;
+            }
+            counter[i] = (byte)sum;
+            carry = sum >>> 8;
         }
     }
 
-    private void decrementCounterAt(int pos)
+    // single big-endian subtraction of a 64-bit block count from the counter, modular like addToCounter
+    private void subtractFromCounter(long numBlocks)
     {
-        int i = counter.length - pos;
-        while (--i >= 0)
+        int borrow = 0;
+        for (int i = counter.length - 1; i >= 0; i--)
         {
-            if (--counter[i] != -1)
+            int pos = counter.length - 1 - i;
+            int v = (counter[i] & 0xff) - borrow;
+            if (pos < 8)
             {
-                return;
+                v -= (int)(numBlocks >>> (8 * pos)) & 0xff;
             }
+            if (v < 0)
+            {
+                v += 256;
+                borrow = 1;
+            }
+            else
+            {
+                borrow = 0;
+            }
+            counter[i] = (byte)v;
         }
     }
 
     private void adjustCounter(long n)
     {
+        // split moves at the extremes of the long range in two: the (n + byteCount) / (-n - byteCount) arithmetic below overflows on them
+        if (n == Long.MIN_VALUE || n > Long.MAX_VALUE - blockSize)
+        {
+            long half = n / 2;
+
+            adjustCounter(half);
+            adjustCounter(n - half);
+            return;
+        }
+
         if (n >= 0)
         {
             long numBlocks = (n + byteCount) / blockSize;
 
-            long rem = numBlocks;
-            if (rem > 255)
-            {
-                for (int i = 5; i >= 1; i--)
-                {
-                    long diff = 1L << (8 * i);
-                    while (rem >= diff)
-                    {
-                        incrementCounterAt(i);
-                        rem -= diff;
-                    }
-                }
-            }
-
-            incrementCounter((int)rem);
+            addToCounter(numBlocks);
 
             byteCount = (int)((n + byteCount) - (blockSize * numBlocks));
         }
@@ -289,24 +352,7 @@ public class SICBlockCipher
         {
             long numBlocks = (-n - byteCount) / blockSize;
 
-            long rem = numBlocks;
-            if (rem > 255)
-            {
-                for (int i = 5; i >= 1; i--)
-                {
-                    long diff = 1L << (8 * i);
-                    while (rem > diff)
-                    {
-                        decrementCounterAt(i);
-                        rem -= diff;
-                    }
-                }
-            }
-
-            for (long i = 0; i != rem; i++)
-            {
-                decrementCounterAt(0);
-            }
+            subtractFromCounter(numBlocks);
 
             int gap = (int)(byteCount + n + (blockSize * numBlocks));
 
@@ -316,8 +362,8 @@ public class SICBlockCipher
             }
             else
             {
-                decrementCounterAt(0);
-                byteCount =  blockSize + gap;
+                subtractFromCounter(1);
+                byteCount = blockSize + gap;
             }
         }
     }
@@ -328,6 +374,8 @@ public class SICBlockCipher
         System.arraycopy(IV, 0, counter, 0, IV.length);
         cipher.reset();
         this.byteCount = 0;
+        this.used = 0;
+        this.overflow = false;
     }
 
     public long skip(long numberOfBytes)
@@ -348,15 +396,16 @@ public class SICBlockCipher
         return skip(position);
     }
 
-    public long getPosition()
+    /**
+     * Big-endian modular subtraction of the initial counter (the IV, zero-padded on the right) from
+     * the current counter into res, carrying the borrow explicitly across every byte - a raw byte
+     * decrement drops the borrow when the decremented byte wraps 0x00 -&gt; 0xFF.
+     *
+     * @return true when the difference has a non-zero byte above the low 8 - the counter has
+     *         advanced 2^64 or more blocks since init, or moved below its starting value.
+     */
+    private boolean populateDelta(byte[] res)
     {
-        // big-endian subtraction of the initial counter (the IV, zero-padded on the
-        // right) from the current counter, carrying the borrow explicitly across
-        // every byte - applying the borrow as a raw byte decrement drops it when the
-        // decremented byte wraps 0x00 -> 0xFF (an increment that carried across
-        // consecutive 0xFF IV bytes), and byte 0 needs the subtraction too for
-        // block sizes where it lands in the 8 bytes read below.
-        byte[] res = new byte[counter.length];
         int borrow = 0;
 
         for (int i = res.length - 1; i >= 0; i--)
@@ -381,6 +430,21 @@ public class SICBlockCipher
             res[i] = (byte)v;
         }
 
-        return Pack.bigEndianToLong(res, res.length - 8) * blockSize + byteCount;
+        for (int i = 0; i != laneOff; i++)
+        {
+            if (res[i] != 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public long getPosition()
+    {
+        populateDelta(delta);
+
+        return Pack.bigEndianToLong(delta, delta.length - 8) * blockSize + byteCount;
     }
 }
