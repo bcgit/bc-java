@@ -54,6 +54,14 @@ public class GOST28147WrapEngine
     public byte[] unwrap(byte[] input, int inOff, int inLen)
         throws InvalidCipherTextException
     {
+        // unwrap decrypts four fixed 8-byte blocks (32 bytes) of key material and reads a trailing MAC;
+        // reject an input too short for that rather than underflow decKey (NegativeArraySizeException)
+        // or over-read the MAC (AIOOBE) past the declared throws InvalidCipherTextException.
+        if (inLen < 32 + mac.getMacSize())
+        {
+            throw new InvalidCipherTextException("unwrap data too short");
+        }
+
         byte[] decKey = new byte[inLen - mac.getMacSize()];
 
         cipher.processBlock(input, inOff, decKey, 0);
