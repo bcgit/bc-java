@@ -60,6 +60,8 @@ The repo's working norm for any defect-fix patch is: write the test that reprodu
 
 When the fix is in `core/`, remember to recompile `prov` too (the `core`-into-`prov` trap below) so the test JVM picks up the updated bytecode rather than a stale `prov/build/classes` shadow.
 
+When the fix *introduces the API the test compiles against* (new public setters, a new class), stashing the whole patch just breaks the test compile — it proves the API is new, not that the test catches the bug. Stash or temporarily remove only the enforcement (the check lines inside the method), recompile the main tree, and confirm the negative cases fail on the original symptom before restoring. The `JceKTSKeyTransRecipient` constraint port (`915e7f3ffb`) is the worked example.
+
 ## The legacy jdk15to18 (Java 5) build has a *runtime* floor Gradle can't see
 
 Besides the Gradle build there is a legacy Ant distribution, `jdk15to18`, driven by `sh build1-5to1-8` (→ `ant/jdk15+.xml`). It is **1.5-bytecode compiled on JDK 8 and run on a genuine JRE 5**. Because the compile uses JDK 8's libraries (no `bootclasspath`), Gradle (`--release 8`) and the Ant build both happily accept Java 6/7/8 APIs — but those then throw `NoSuchMethodError`/`NoClassDefFoundError` at **runtime on JRE 5**. So a change that is perfectly Gradle-clean can still break the legacy jar.
