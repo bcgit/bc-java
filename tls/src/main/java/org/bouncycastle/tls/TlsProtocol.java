@@ -2283,4 +2283,14 @@ public abstract class TlsProtocol
 
         TlsUtils.writeOpaque24(supp_data, output);
     }
+
+    /**
+     * Returns the name of the negotiated group for a TLS 1.3 connection. Other TLS versions will always return "UNKNOWN".
+     * @return the name of the negotiated group
+     */
+    public String getNegotiatedGroup()
+    {
+        final int negotiatedGroup = getContext().getSecurityParameters().getNegotiatedGroup();
+        return NamedGroup.getName(negotiatedGroup);
+    }
 }

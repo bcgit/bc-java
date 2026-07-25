@@ -415,6 +415,12 @@ class ProvSSLEngine
         SSLParametersUtil.setParameters(this.sslParameters, parameters);
     }
 
+    @Override
+    public String getNegotiatedGroup()
+    {
+        return protocol.getNegotiatedGroup();
+    }
+
     // An SSLEngine method from JDK 6
     public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
