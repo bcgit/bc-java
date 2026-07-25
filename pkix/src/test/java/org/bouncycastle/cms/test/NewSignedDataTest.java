@@ -2116,6 +2116,58 @@ public class NewSignedDataTest
         encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
     }
 
+    /*
+     * Ed448 signatures are fixed-length (114 octets), so a SignerInfo's encoded length is
+     * predictable in both RFC 8419 configurations: sec. 3.1 (signed attributes present,
+     * digestAlgorithm id-shake256-len with parameter 512 - the parameter-carried output length
+     * the prediction has to understand) and sec. 3.2 (no signed attributes, digestAlgorithm
+     * id-shake256). The signed-attributes case previously returned -1 because the digest-length
+     * lookup did not know id-shake256-len.
+     */
+    public void testEd448PredictedEncodedLength()
+        throws Exception
+    {
+        CMSTypedData msg = new CMSProcessableByteArray("Hello, world!".getBytes());
+
+        // signed attributes present (the default) - RFC 8419 sec. 3.1
+        ContentSigner signer = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(_signEd448KP.getPrivate());
+        SignerInfoGenerator siGen = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(signer, _signEd448Cert);
+
+        long predicted = siGen.getPredictedEncodedLength(CMSObjectIdentifiers.data);
+
+        assertTrue("no prediction for Ed448 with signed attributes", predicted >= 0);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        gen.addSignerInfoGenerator(siGen);
+
+        CMSSignedData s = gen.generate(msg, true);
+        SignerInformation si = (SignerInformation)s.getSignerInfos().getSigners().iterator().next();
+
+        assertEquals(NISTObjectIdentifiers.id_shake256_len, si.toASN1Structure().getDigestAlgorithm().getAlgorithm());
+        assertEquals(si.toASN1Structure().getEncoded(ASN1Encoding.DER).length, predicted);
+
+        // no signed attributes - RFC 8419 sec. 3.2
+        signer = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(_signEd448KP.getPrivate());
+        siGen = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).setDirectSignature(true).build(signer, _signEd448Cert);
+
+        predicted = siGen.getPredictedEncodedLength(CMSObjectIdentifiers.data);
+
+        assertTrue("no prediction for Ed448 without signed attributes", predicted >= 0);
+
+        gen = new CMSSignedDataGenerator();
+
+        gen.addSignerInfoGenerator(siGen);
+
+        s = gen.generate(msg, true);
+        si = (SignerInformation)s.getSignerInfos().getSigners().iterator().next();
+
+        assertEquals(NISTObjectIdentifiers.id_shake256, si.toASN1Structure().getDigestAlgorithm().getAlgorithm());
+        assertEquals(si.toASN1Structure().getEncoded(ASN1Encoding.DER).length, predicted);
+    }
+
     public void testEd25519WithNoAttr()
         throws Exception
     {
