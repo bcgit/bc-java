@@ -245,6 +245,11 @@ public class RC2WrapEngine
                     + engine.getBlockSize());
         }
 
+        if (inLen < 2 * engine.getBlockSize())
+        {
+            throw new InvalidCipherTextException("unwrap data too short");
+        }
+
         /*
          * // Check if the length of the cipher text is reasonable given the key //
          * type. It must be 40 bytes for a 168 bit key and either 32, 40, or //
