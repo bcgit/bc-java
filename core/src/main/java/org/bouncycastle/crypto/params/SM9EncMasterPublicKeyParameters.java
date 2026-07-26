@@ -31,6 +31,17 @@ public class SM9EncMasterPublicKeyParameters
     }
 
     /**
+     * The encryption public key of the user identified by {@code id}: the recipient key
+     * a sender encapsulates to (or encrypts to), formed from this master public key and
+     * the identity (GM/T 0044.4). It is derived from the published master public key
+     * alone, so any sender can construct it without KGC interaction.
+     */
+    public SM9EncPublicKeyParameters getUserPublicKey(byte[] id)
+    {
+        return new SM9EncPublicKeyParameters(this, id);
+    }
+
+    /**
      * Q = [H1(id||hid, N)]P1 + P_pub-e, the recipient's public key point in G1,
      * using the encryption hid (0x03).
      */
