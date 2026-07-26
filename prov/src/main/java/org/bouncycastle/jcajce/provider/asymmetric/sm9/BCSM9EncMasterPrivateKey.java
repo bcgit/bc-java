@@ -36,11 +36,6 @@ public class BCSM9EncMasterPrivateKey
         this.keyParams = keyParams;
     }
 
-    private BCSM9EncMasterPublicKey getMasterPublicKey()
-    {
-        return new BCSM9EncMasterPublicKey(keyParams.getPublicKeyParameters());
-    }
-
     /**
      * Derive the decryption private key of the user identified by {@code id};
      * {@link #generateUserKeyPair(byte[])} returns the user's full key pair.
@@ -56,7 +51,9 @@ public class BCSM9EncMasterPrivateKey
      */
     public KeyPair generateUserKeyPair(byte[] id)
     {
-        return new KeyPair(new BCSM9EncPublicKey(getMasterPublicKey(), id), extractPrivateKey(id));
+        return new KeyPair(
+            new BCSM9EncPublicKey(keyParams.getPublicKeyParameters().getUserPublicKey(id)),
+            extractPrivateKey(id));
     }
 
     public String getAlgorithm()
