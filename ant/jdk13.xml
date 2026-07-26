@@ -15,6 +15,16 @@
     <property name="javadoc.args" value="-protected" />
     <property name="junit.maxmemory" value="1536m" />
 
+    <!-- bc-build.properties' mail.jar.home/activation.jar.home point at the repo-bundled
+         javax.mail-1.4.7.jar/activation-1.1.1.jar, both Java 1.4 class files (major version 48),
+         which is fine for the jdk1.4/jdk15to18 legacy builds but rejected outright by real 1.3
+         javac (needs major version <= 47). Overriding them here to the 1.3-appropriate jars the
+         build-jdk13-docker container mounts (JavaMail 1.3.1 / JAF 1.0.2, both major version 45)
+         wins over bc-build.properties' values since Ant properties are first-set. -->
+    <property environment="env" />
+    <property name="mail.jar.home" value="${env.JAVA_MAIL_HOME}/mail.jar" />
+    <property name="activation.jar.home" value="${env.JAVA_ACTIVATION_HOME}/activation.jar" />
+
     <target name="init">
         <mkdir dir="${src.dir}" />
         <mkdir dir="${artifacts.dir}" />
@@ -217,6 +227,14 @@
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/*.java" />
                 <exclude name="**/keybox/**/*.java" />
+                <!-- org.bouncycastle.openpgp.api uses enhanced-for loops and an enum
+                     (EncryptedDataPacketType) throughout, Java 5+ constructs the preprocessor
+                     cannot rewrite, spanning thousands of lines across ~49 files. Mirrors the
+                     ant/jdk14.xml exclude of the same package (jdk13.xml had never been synced
+                     with it); nothing outside this package depends on it structurally
+                     (PGPPublicKey.java's only reference is a Javadoc {@link}). -->
+                <exclude name="**/api/*.java"/>
+                <exclude name="**/api/**/*.java"/>
             </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java" />
@@ -301,6 +319,25 @@
                 <exclude name="**/crypto/test/ECCSISignerTest.java" />
                 <exclude name="**/pqc/crypto/test/MLDSATest.java" />
                 <exclude name="**/pqc/crypto/test/PqcMalformedInputTest.java" />
+                <!-- synced from ant/jdk14.xml's core/src/test/java fileset -->
+                <exclude name="**/i18n/**/*.java" />
+                <exclude name="**/pqc/rainbow/*.java" />
+                <exclude name="**/pqc/gemss/*.java" />
+                <exclude name="**/pqc/math/**/*.java" />
+                <exclude name="**/pqc/**/HRSS*.java" />
+                <exclude name="**/pqc/**/HPS*.java" />
+                <exclude name="**/pqc/**/PolynomialTest.java" />
+                <exclude name="**/pqc/crypto/test/AllTestsCMCE.java" />
+                <exclude name="**/pqc/crypto/test/AllTestsFaest.java" />
+                <exclude name="**/pqc/crypto/test/AllTestsHawk.java" />
+                <exclude name="**/pqc/crypto/test/AllTestsMQOM.java" />
+                <exclude name="**/pqc/crypto/test/AllTestsQRUOV.java" />
+                <exclude name="**/pqc/crypto/test/AllTestsSLHDSA.java" />
+                <exclude name="**/pqc/crypto/test/AllTestsSnova.java" />
+                <exclude name="**/pqc/crypto/test/AllTestsXMSS.java" />
+                <exclude name="**/crypto/test/AllTestsSlow.java" />
+                <exclude name="**/crypto/test/AllTestsOpenBSDBCrypt.java" />
+                <exclude name="**/crypto/test/AllTestsArgon.java" />
             </fileset>
             <fileset dir="prov/src/test/java">
                 <exclude name="**/GOST3410KeyPairTest.java" />
@@ -351,6 +388,24 @@
                 <exclude name="**/jce/provider/test/AEADTest.java" />
                 <exclude name="**/jce/provider/test/ECEncodingTest.java" />
                 <exclude name="**/jce/provider/test/CertLocaleTest.java" />
+                <!-- synced from ant/jdk14.xml's prov/src/test/java fileset -->
+                <exclude name="**/jce/provider/test/JcajceParameterSpecTest.java" />
+                <exclude name="**/jce/provider/test/XChaCha20Poly1305Test.java" />
+                <exclude name="**/jce/provider/test/PKCS12SecretKeyStoreTest.java" />
+                <exclude name="**/jce/provider/test/SM9KEMTest.java" />
+                <exclude name="**/X509StoreTest.java" />
+                <exclude name="**/pem/AllTests.java" />
+                <exclude name="**/jce/**/DSTU*.java" />
+                <exclude name="**/PQCDHTest.java" />
+                <!-- test files using java.net.URI / getCause() / Java 1.4+ crypto spec APIs -->
+                <exclude name="**/jce/provider/CrlCacheTest.java" />
+                <exclude name="**/jce/provider/MultiValuedRDNEmailTest.java" />
+                <exclude name="**/jce/provider/test/CrlReasonsMaskTest.java" />
+                <exclude name="**/jce/provider/test/DHIESTest.java" />
+                <exclude name="**/jce/provider/test/ECIESTest.java" />
+                <exclude name="**/jce/provider/test/PBETest.java" />
+                <exclude name="**/jce/provider/test/SM9SignatureTest.java" />
+                <exclude name="**/jce/provider/test/XIESTest.java" />
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/pkix/jcajce/*.java"/>
@@ -372,12 +427,45 @@
                 <exclude name="**/bouncycastle/cms/test/GOSTR3410_2012_256CmsSignVerifyDetached.java"/>
                 <exclude name="**/bouncycastle/cert/test/GOSTR3410_2012_256GenerateCertificate.java"/>
                 <exclude name="**/its/**" />
+                <!-- parity with ant/jdk14.xml: the cades main-source excludes above (CAdESLevel*,
+                     CAdESLongTermValuesUtil, CAdESArchiveTimestampUtil) leave org.bouncycastle.cades
+                     unable to compile at all, so these tests (and the AllTests that would reference
+                     them, itself unreferenced from anywhere else) cannot compile either -->
+                <exclude name="**/cades/test/CAdESTTest.java"/>
+                <exclude name="**/cades/test/CAdESLTTest.java"/>
+                <exclude name="**/cades/test/CAdESLTATest.java"/>
+                <exclude name="**/cades/test/AllTests.java"/>
+                <!-- synced from ant/jdk14.xml's pkix/src/test/java fileset: jdk13.xml had never
+                     picked up these, all test files using post-1.3/1.4 JDK APIs -->
+                <exclude name="**/tsp/test/ERSTest.java"/>
+                <exclude name="**/pkix/test/PKIXCertPathReviewerPolicyTreeTest.java"/>
+                <exclude name="**/cms/test/NewSignedDataStreamTest.java"/>
+                <exclude name="**/cms/test/DefiniteLengthLargeDataTest.java"/>
+                <exclude name="**/cert/ocsp/test/AllTests.java"/>
+                <exclude name="**/cert/plants/**/*.java"/>
+                <exclude name="**/cert/test/X509CertificateReviewerTest.java"/>
+                <exclude name="**/pkix/test/QcStatementReviewerTest.java"/>
+                <exclude name="**/cert/ocsp/test/OCSPExceptionalSignatureRejectionTest.java"/>
+                <exclude name="**/cert/ocsp/test/PKIXOcspRevocationCheckerTest.java"/>
+                <exclude name="**/pkcs/test/PBETest.java"/>
+                <exclude name="**/pkix/test/PKIXCertPathReviewerCrlReasonTest.java"/>
+                <!-- test files using X500Principal / getIssuerX500Principal / getCause() / Java
+                     1.4+ CertPath APIs (java.security.cert.TrustAnchor, CollectionCertStoreParameters) -->
+                <exclude name="**/cert/test/PQCCertTest.java"/>
+                <exclude name="**/cert/test/PQCPKCS10Test.java"/>
+                <exclude name="**/cms/test/NewAuthEnvelopedDataStreamTest.java"/>
+                <exclude name="**/cms/test/NewSignedDataTest.java"/>
+                <exclude name="**/pkcs/test/PKCS12UtilTest.java"/>
+                <exclude name="**/pkix/test/IDPRelativeNameTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/MailGeneralTest.java" />
                 <exclude name="**/SignedMailValidatorTest.java" />
                 <exclude name="**/DummyCertPathReviewer.java" />
 		<exclude name="**/JournalingSecureRandomEncryptTest.java"/>
+                <exclude name="**/mail/smime/test/NewSMIMEAuthEnvelopedTest.java"/>
+                <exclude name="**/mail/smime/test/NewSMIMESignedTest.java"/>
+                <exclude name="**/mail/smime/test/PipedStreamThreadStuckTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/resources" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
@@ -404,22 +492,43 @@
             </fileset>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="util/src/main/jdk1.4" includes="**/*.java" />
-            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java">
+                <!-- the pg/src/main/jdk1.5 overlay is written for the jdk15to18 (Java 5) floor and
+                     is itself not 1.3/1.4-clean (e.g. OpenPGPDefaultPolicy.java uses enhanced-for);
+                     openpgp.api is excluded from these legacy distributions entirely, see the
+                     pg/src/main/java fileset exclude above (mirrors ant/jdk14.xml's identical
+                     exclude on this same jdk1.5 fileset). -->
+                <exclude name="**/api/**/*.java"/>
+            </fileset>
             <fileset dir="core/src/test/jdk1.4" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java" />
+        </copy>
+        <!-- kept as a separate, later copy task (not just another fileset in the one above): when
+             the jdk1.4 and jdk1.3 overlays of the SAME file (e.g. ArmoredOutputStream.java) were
+             both filesets of one copy task, the jdk1.3 version was not reliably ending up as the
+             final staged content. Splitting into sequential tasks (matching how core/prov/pkix
+             stage their own jdk1.4-then-jdk1.3 overlays further below) makes the jdk1.3 copy
+             unambiguously the later, winning write. -->
+        <copy todir="${src.dir}" overwrite="true">
             <fileset dir="pg/src/main/jdk1.3" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" >
                 <exclude name="**/NistCertPathReviewerTest.java" />
+                <!-- jdk1.4 overlay reintroduces ECIESTest, which the base fileset above already
+                     excludes for jdk1.3 (getCause(), post-1.3 API) -->
+                <exclude name="**/jce/provider/test/ECIESTest.java" />
             </fileset>
             <fileset dir="pkix/src/test/jdk1.4" includes="**/*.java" >
                 <exclude name="**/mime/test/*.java" />
             </fileset>
             <fileset dir="mail/src/test/jdk1.4" includes="**/*.java" >
                 <exclude name="**/SignedMailValidatorTest.java" />
+                <!-- jdk1.4 overlay reintroduces PipedStreamThreadStuckTest, which the base
+                     fileset above already excludes for jdk1.3 (javax.mail.util.ByteArrayDataSource) -->
+                <exclude name="**/PipedStreamThreadStuckTest.java" />
             </fileset>
         </copy>
         <copy todir="${src.dir}" overwrite="true">
@@ -429,6 +538,7 @@
             <fileset dir="core/src/test/jdk1.3" includes="**/*.java" />
             <fileset dir="prov/src/test/jdk1.3" includes="**/*.java" />
             <fileset dir="pkix/src/test/jdk1.3" includes="**/*.java" />
+            <fileset dir="mail/src/test/jdk1.3" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}">
             <fileset dir="jce/src" includes="**/*.java" />
