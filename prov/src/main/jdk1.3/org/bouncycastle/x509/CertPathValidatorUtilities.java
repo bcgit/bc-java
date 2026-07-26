@@ -1,5 +1,6 @@
 package org.bouncycastle.x509;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -7,27 +8,20 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.cert.CRLException;
-import org.bouncycastle.jce.cert.CertPath;
-import org.bouncycastle.jce.cert.CertPathValidatorException;
-import org.bouncycastle.jce.cert.CertStore;
-import org.bouncycastle.jce.cert.CertStoreException;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertStore;
+import java.security.cert.CertStoreException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateParsingException;
-import org.bouncycastle.jce.cert.PKIXParameters;
-import org.bouncycastle.jce.cert.PolicyQualifierInfo;
-import org.bouncycastle.jce.cert.TrustAnchor;
+import java.security.cert.CertificateException;
+import java.security.cert.PKIXParameters;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
-import org.bouncycastle.jce.cert.X509CRLSelector;
-import org.bouncycastle.jce.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -36,54 +30,51 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+// NOTE: jdk1.3 overlay, regenerated from the jdk1.4 overlay. PolicyQualifierInfo is part of the
+// java.security.cert CertPath API added in Java 1.4 and is absent on JDK 1.3; the jdk1.3
+// preprocessor does not auto-rewrite this class name (see
+// docs/jdk13-certpath-overlay-sync-plan.md), so it is imported from the org.bouncycastle.jce.cert
+// backport instead. javax.security.auth.x500.X500Principal is also a Java 1.4 API absent on 1.3:
+// getEncodedIssuerPrincipal()/getSubjectPrincipal()/getIssuerPrincipal()/getCertStatus() go through
+// the pre-existing x509.PrincipalUtils/X509Principal overlays instead, returning X500Name rather
+// than X500Principal (org.bouncycastle.x509.PKIXCertPathReviewer, the only caller of these methods
+// that assumed an X500Principal return type, is excluded from the jdk1.3 distribution entirely --
+// see ant/jdk13.xml's prov/src/main/java fileset).
+import org.bouncycastle.jce.cert.PolicyQualifierInfo;
+
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
-import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.internal.asn1.isismtt.ISISMTTObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
-import org.bouncycastle.asn1.x509.CertificateList;
-import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
-import org.bouncycastle.asn1.x509.DistributionPoint;
-import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
+import org.bouncycastle.asn1.x509.PKIXCRLValidator;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jcajce.PKIXCRLStore;
-import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
-import org.bouncycastle.jcajce.PKIXCertStore;
+import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
-import org.bouncycastle.jcajce.PKIXExtendedParameters;
-import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
-import org.bouncycastle.jce.provider.X509CRLObject;
-import org.bouncycastle.jce.provider.X509CRLEntryObject;
+import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.AnnotatedException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.provider.PKIXPolicyNode;
+import org.bouncycastle.jce.provider.X509CRLEntryObject;
+import org.bouncycastle.jcajce.PKIXPolicyNode;
+import org.bouncycastle.jcajce.PKIXPolicyTreeUtil;
+import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
-import org.bouncycastle.x509.X509AttributeCertificate;
 
 class CertPathValidatorUtilities
 {
-    protected static final PKIXCRLUtil CRL_UTIL = new PKIXCRLUtil();
-
     protected static final String CERTIFICATE_POLICIES = Extension.certificatePolicies.getId();
     protected static final String BASIC_CONSTRAINTS = Extension.basicConstraints.getId();
     protected static final String POLICY_MAPPINGS = Extension.policyMappings.getId();
@@ -94,14 +85,13 @@ class CertPathValidatorUtilities
     protected static final String ISSUING_DISTRIBUTION_POINT = Extension.issuingDistributionPoint.getId();
     protected static final String DELTA_CRL_INDICATOR = Extension.deltaCRLIndicator.getId();
     protected static final String POLICY_CONSTRAINTS = Extension.policyConstraints.getId();
-    protected static final String FRESHEST_CRL = Extension.freshestCRL.getId();
-    protected static final String CRL_DISTRIBUTION_POINTS = Extension.cRLDistributionPoints.getId();
-    protected static final String AUTHORITY_KEY_IDENTIFIER = Extension.authorityKeyIdentifier.getId();
-
-    protected static final String ANY_POLICY = "2.5.29.32.0";
-
+//    protected static final String FRESHEST_CRL = Extension.freshestCRL.getId();
+//    protected static final String CRL_DISTRIBUTION_POINTS = Extension.cRLDistributionPoints.getId();
+//    protected static final String AUTHORITY_KEY_IDENTIFIER = Extension.authorityKeyIdentifier.getId();
     protected static final String CRL_NUMBER = Extension.cRLNumber.getId();
     protected static final String REASON_CODE = Extension.reasonCode.getId();
+
+    protected static final String ANY_POLICY = "2.5.29.32.0";
 
     /*
     * key usage bits
@@ -125,168 +115,27 @@ class CertPathValidatorUtilities
     };
 
     /**
-     * Search the given Set of TrustAnchor's for one that is the
-     * issuer of the given X509 certificate. Uses the default provider
-     * for signature verification.
+     * Returns the issuer of an attribute certificate or certificate.
      *
-     * @param cert         the X509 certificate
-     * @param trustAnchors a Set of TrustAnchor's
-     * @return the <code>TrustAnchor</code> object if found or
-     *         <code>null</code> if not.
-     * @throws AnnotatedException if a TrustAnchor was found but the signature verification
-     * on the given certificate has thrown an exception.
+     * @param cert The attribute certificate or certificate.
+     * @return The issuer as an {@link X500Name}.
      */
-    protected static TrustAnchor findTrustAnchor(
-        X509Certificate cert,
-        Set trustAnchors)
-        throws AnnotatedException
+    protected static X500Name getEncodedIssuerPrincipal(
+        Object cert)
     {
-        return findTrustAnchor(cert, trustAnchors, null);
+        return PrincipalUtils.getEncodedIssuerPrincipal(cert);
     }
 
-    /**
-     * Search the given Set of TrustAnchor's for one that is the
-     * issuer of the given X509 certificate. Uses the specified
-     * provider for signature verification, or the default provider
-     * if null.
-     *
-     * @param cert         the X509 certificate
-     * @param trustAnchors a Set of TrustAnchor's
-     * @param sigProvider  the provider to use for signature verification
-     * @return the <code>TrustAnchor</code> object if found or
-     *         <code>null</code> if not.
-     * @throws AnnotatedException if a TrustAnchor was found but the signature verification
-     * on the given certificate has thrown an exception.
-     */
-    protected static TrustAnchor findTrustAnchor(
-        X509Certificate cert,
-        Set trustAnchors,
-        String sigProvider)
-        throws AnnotatedException
+    protected static Date getValidityDate(PKIXParameters paramsPKIX, Date currentDate)
     {
-        TrustAnchor trust = null;
-        PublicKey trustPublicKey = null;
-        Exception invalidKeyEx = null;
+        Date validityDate = paramsPKIX.getDate();
 
-        X509CertSelector certSelectX509 = new X509CertSelector();
-        X500Name certIssuer = PrincipalUtils.getEncodedIssuerPrincipal(cert);
-
-        try
-        {
-            certSelectX509.setSubject(certIssuer.getEncoded());
-        }
-        catch (IOException ex)
-        {
-            throw new AnnotatedException("Cannot set subject search criteria for trust anchor.", ex);
-        }
-
-        Iterator iter = trustAnchors.iterator();
-        while (iter.hasNext() && trust == null)
-        {
-            trust = (TrustAnchor)iter.next();
-            if (trust.getTrustedCert() != null)
-            {
-                if (certSelectX509.match(trust.getTrustedCert()))
-                {
-                    trustPublicKey = trust.getTrustedCert().getPublicKey();
-                }
-                else
-                {
-                    trust = null;
-                }
-            }
-            else if (trust.getCAName() != null
-                && trust.getCAPublicKey() != null)
-            {
-                try
-                {
-                    X500Name caName = PrincipalUtils.getCA(trust);
-                    if (certIssuer.equals(caName))
-                    {
-                        trustPublicKey = trust.getCAPublicKey();
-                    }
-                    else
-                    {
-                        trust = null;
-                    }
-                }
-                catch (IllegalArgumentException ex)
-                {
-                    trust = null;
-                }
-            }
-            else
-            {
-                trust = null;
-            }
-
-            if (trustPublicKey != null)
-            {
-                try
-                {
-                    verifyX509Certificate(cert, trustPublicKey, sigProvider);
-                }
-                catch (Exception ex)
-                {
-                    invalidKeyEx = ex;
-                    trust = null;
-                    trustPublicKey = null;
-                }
-            }
-        }
-
-        if (trust == null && invalidKeyEx != null)
-        {
-            throw new AnnotatedException("TrustAnchor found but certificate validation failed.", invalidKeyEx);
-        }
-
-        return trust;
+        return null == validityDate ? currentDate : validityDate;
     }
 
-    static List<PKIXCertStore> getAdditionalStoresFromAltNames(
-        byte[] issuerAlternativeName,
-        Map<GeneralName, PKIXCertStore> altNameCertStoreMap)
-        throws CertificateParsingException
+    protected static X500Name getSubjectPrincipal(X509Certificate cert)
     {
-        // if in the IssuerAltName extension an URI
-        // is given, add an additional X.509 store
-        if (issuerAlternativeName != null)
-        {
-            GeneralNames issuerAltName = GeneralNames.getInstance(ASN1OctetString.getInstance(issuerAlternativeName).getOctets());
-
-            GeneralName[] names = issuerAltName.getNames();
-            List  stores = new ArrayList();
-
-            for (int i = 0; i != names.length; i++)
-            {
-                GeneralName altName = names[i];
-
-                PKIXCertStore altStore = (PKIXCertStore)altNameCertStoreMap.get(altName);
-
-                if (altStore != null)
-                {
-                    stores.add(altStore);
-                }
-            }
-
-            return stores;
-        }
-        else
-        {
-            return Collections.EMPTY_LIST;
-        }
-    }
-
-    protected static Date getValidDate(PKIXExtendedParameters paramsPKIX)
-    {
-        Date validDate = paramsPKIX.getDate();
-
-        if (validDate == null)
-        {
-            validDate = new Date();
-        }
-
-        return validDate;
+        return PrincipalUtils.getSubjectPrincipal(cert);
     }
 
     protected static boolean isSelfIssued(X509Certificate cert)
@@ -335,6 +184,11 @@ class CertPathValidatorUtilities
         }
     }
 
+    protected static X500Name getIssuerPrincipal(X509CRL crl)
+    {
+        return PrincipalUtils.getIssuerPrincipal(crl);
+    }
+
     protected static AlgorithmIdentifier getAlgorithmIdentifier(
         PublicKey key)
         throws CertPathValidatorException
@@ -345,11 +199,11 @@ class CertPathValidatorUtilities
 
             SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(aIn.readObject());
 
-            return info.getAlgorithm();
+            return info.getAlgorithmId();
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Subject public key cannot be decoded.", e);
+            throw SecurityExceptions.certPathValidatorException("Subject public key cannot be decoded.", e);
         }
     }
 
@@ -358,7 +212,7 @@ class CertPathValidatorUtilities
 
     //
     // policy checking
-    // 
+    //
 
     protected static final Set getQualifierSet(ASN1Sequence qualifiers)
         throws CertPathValidatorException
@@ -385,7 +239,7 @@ class CertPathValidatorUtilities
             }
             catch (IOException ex)
             {
-                throw new ExtCertPathValidatorException("Policy qualifier info cannot be decoded.", ex);
+                throw SecurityExceptions.certPathValidatorException("Policy qualifier info cannot be decoded.", ex);
             }
 
             bOut.reset();
@@ -394,243 +248,32 @@ class CertPathValidatorUtilities
         return pq;
     }
 
-    protected static PKIXPolicyNode removePolicyNode(
-        PKIXPolicyNode validPolicyTree,
-        List[] policyNodes,
+    protected static PKIXPolicyNode removePolicyNode(PKIXPolicyNode validPolicyTree, List[] policyNodes,
         PKIXPolicyNode _node)
     {
-        PKIXPolicyNode _parent = (PKIXPolicyNode)_node.getParent();
-
-        if (validPolicyTree == null)
-        {
-            return null;
-        }
-
-        if (_parent == null)
-        {
-            for (int j = 0; j < policyNodes.length; j++)
-            {
-                policyNodes[j] = new ArrayList();
-            }
-
-            return null;
-        }
-        else
-        {
-            _parent.removeChild(_node);
-            removePolicyNodeRecurse(policyNodes, _node);
-
-            return validPolicyTree;
-        }
+        return PKIXPolicyTreeUtil.removePolicyNode(validPolicyTree, policyNodes, _node);
     }
 
-    private static void removePolicyNodeRecurse(
-        List[] policyNodes,
-        PKIXPolicyNode _node)
+    protected static boolean processCertD1i(int index, List[] policyNodes, ASN1ObjectIdentifier pOid, Set pq)
     {
-        policyNodes[_node.getDepth()].remove(_node);
-
-        if (_node.hasChildren())
-        {
-            Iterator _iter = _node.getChildren();
-            while (_iter.hasNext())
-            {
-                PKIXPolicyNode _child = (PKIXPolicyNode)_iter.next();
-                removePolicyNodeRecurse(policyNodes, _child);
-            }
-        }
+        return PKIXPolicyTreeUtil.processCertD1i(index, policyNodes, pOid, pq);
     }
 
-
-    protected static boolean processCertD1i(
-        int index,
-        List[] policyNodes,
-        ASN1ObjectIdentifier pOid,
-        Set pq)
+    protected static void processCertD1ii(int index, List[] policyNodes, ASN1ObjectIdentifier _poid, Set _pq)
     {
-        List policyNodeVec = policyNodes[index - 1];
-
-        for (int j = 0; j < policyNodeVec.size(); j++)
-        {
-            PKIXPolicyNode node = (PKIXPolicyNode)policyNodeVec.get(j);
-            Set expectedPolicies = node.getExpectedPolicies();
-
-            if (expectedPolicies.contains(pOid.getId()))
-            {
-                Set childExpectedPolicies = new HashSet();
-                childExpectedPolicies.add(pOid.getId());
-
-                PKIXPolicyNode child = new PKIXPolicyNode(new ArrayList(),
-                    index,
-                    childExpectedPolicies,
-                    node,
-                    pq,
-                    pOid.getId(),
-                    false);
-                node.addChild(child);
-                policyNodes[index].add(child);
-
-                return true;
-            }
-        }
-
-        return false;
+        PKIXPolicyTreeUtil.processCertD1ii(index, policyNodes, _poid, _pq);
     }
 
-    protected static void processCertD1ii(
-        int index,
-        List[] policyNodes,
-        ASN1ObjectIdentifier _poid,
-        Set _pq)
-    {
-        List policyNodeVec = policyNodes[index - 1];
-
-        for (int j = 0; j < policyNodeVec.size(); j++)
-        {
-            PKIXPolicyNode _node = (PKIXPolicyNode)policyNodeVec.get(j);
-
-            if (ANY_POLICY.equals(_node.getValidPolicy()))
-            {
-                Set _childExpectedPolicies = new HashSet();
-                _childExpectedPolicies.add(_poid.getId());
-
-                PKIXPolicyNode _child = new PKIXPolicyNode(new ArrayList(),
-                    index,
-                    _childExpectedPolicies,
-                    _node,
-                    _pq,
-                    _poid.getId(),
-                    false);
-                _node.addChild(_child);
-                policyNodes[index].add(_child);
-                return;
-            }
-        }
-    }
-
-    protected static void prepareNextCertB1(
-        int i,
-        List[] policyNodes,
-        String id_p,
-        Map m_idp,
-        X509Certificate cert
-    )
+    protected static void prepareNextCertB1(int i, List[] policyNodes, String id_p, Map m_idp, X509Certificate cert)
         throws AnnotatedException, CertPathValidatorException
     {
-        boolean idp_found = false;
-        Iterator nodes_i = policyNodes[i].iterator();
-        while (nodes_i.hasNext())
-        {
-            PKIXPolicyNode node = (PKIXPolicyNode)nodes_i.next();
-            if (node.getValidPolicy().equals(id_p))
-            {
-                idp_found = true;
-                node.setExpectedPolicies((Set)m_idp.get(id_p));
-                break;
-            }
-        }
-
-        if (!idp_found)
-        {
-            nodes_i = policyNodes[i].iterator();
-            while (nodes_i.hasNext())
-            {
-                PKIXPolicyNode node = (PKIXPolicyNode)nodes_i.next();
-                if (ANY_POLICY.equals(node.getValidPolicy()))
-                {
-                    Set pq = null;
-                    ASN1Sequence policies = null;
-                    try
-                    {
-                        policies = DERSequence.getInstance(getExtensionValue(cert, CERTIFICATE_POLICIES));
-                    }
-                    catch (Exception e)
-                    {
-                        throw new AnnotatedException("Certificate policies cannot be decoded.", e);
-                    }
-                    Enumeration e = policies.getObjects();
-                    while (e.hasMoreElements())
-                    {
-                        PolicyInformation pinfo = null;
-
-                        try
-                        {
-                            pinfo = PolicyInformation.getInstance(e.nextElement());
-                        }
-                        catch (Exception ex)
-                        {
-                            throw new AnnotatedException("Policy information cannot be decoded.", ex);
-                        }
-                        if (ANY_POLICY.equals(pinfo.getPolicyIdentifier().getId()))
-                        {
-                            try
-                            {
-                                pq = getQualifierSet(pinfo.getPolicyQualifiers());
-                            }
-                            catch (CertPathValidatorException ex)
-                            {
-                                throw new ExtCertPathValidatorException(
-                                    "Policy qualifier info set could not be built.", ex);
-                            }
-                            break;
-                        }
-                    }
-                    boolean ci = false;
-                    if (cert.getCriticalExtensionOIDs() != null)
-                    {
-                        ci = cert.getCriticalExtensionOIDs().contains(CERTIFICATE_POLICIES);
-                    }
-
-                    PKIXPolicyNode p_node = (PKIXPolicyNode)node.getParent();
-                    if (ANY_POLICY.equals(p_node.getValidPolicy()))
-                    {
-                        PKIXPolicyNode c_node = new PKIXPolicyNode(
-                            new ArrayList(), i,
-                            (Set)m_idp.get(id_p),
-                            p_node, pq, id_p, ci);
-                        p_node.addChild(c_node);
-                        policyNodes[i].add(c_node);
-                    }
-                    break;
-                }
-            }
-        }
+        PKIXPolicyTreeUtil.prepareNextCertB1(i, policyNodes, id_p, m_idp, cert);
     }
 
-    protected static PKIXPolicyNode prepareNextCertB2(
-        int i,
-        List[] policyNodes,
-        String id_p,
+    protected static PKIXPolicyNode prepareNextCertB2(int i, List[] policyNodes, String id_p,
         PKIXPolicyNode validPolicyTree)
     {
-        Iterator nodes_i = policyNodes[i].iterator();
-        while (nodes_i.hasNext())
-        {
-            PKIXPolicyNode node = (PKIXPolicyNode)nodes_i.next();
-            if (node.getValidPolicy().equals(id_p))
-            {
-                PKIXPolicyNode p_node = (PKIXPolicyNode)node.getParent();
-                p_node.removeChild(node);
-                nodes_i.remove();
-                for (int k = (i - 1); k >= 0; k--)
-                {
-                    List nodes = policyNodes[k];
-                    for (int l = 0; l < nodes.size(); l++)
-                    {
-                        PKIXPolicyNode node2 = (PKIXPolicyNode)nodes.get(l);
-                        if (!node2.hasChildren())
-                        {
-                            validPolicyTree = removePolicyNode(validPolicyTree, policyNodes, node2);
-                            if (validPolicyTree == null)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return validPolicyTree;
+        return PKIXPolicyTreeUtil.prepareNextCertB2(i, policyNodes, id_p, validPolicyTree);
     }
 
     protected static boolean isAnyPolicy(
@@ -645,11 +288,83 @@ class CertPathValidatorUtilities
      *
      * @param certSelect a {@link Selector} object that will be used to select
      *                   the certificates
-     * @param certStores a List containing only {@link Store} objects. These
+     * @param certStores a List containing only {@link X509Store} objects. These
      *                   are used to search for certificates.
-     * @return a Collection of all found {@link X509Certificate}
+     * @return a Collection of all found {@link X509Certificate} or
+     *         {@link org.bouncycastle.x509.X509AttributeCertificate} objects.
      *         May be empty but never <code>null</code>.
      */
+    protected static Collection findCertificates(X509CertStoreSelector certSelect,
+                                                 List certStores)
+        throws AnnotatedException
+    {
+        Set certs = new HashSet();
+        Iterator iter = certStores.iterator();
+        org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory certFact = new org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory();
+
+        while (iter.hasNext())
+        {
+            Object obj = iter.next();
+
+            if (obj instanceof Store)
+            {
+                Store certStore = (Store)obj;
+                try
+                {
+                    for (Iterator it = certStore.getMatches(certSelect).iterator(); it.hasNext();)
+                    {
+                        Object cert = it.next();
+
+                        if (cert instanceof Encodable)
+                        {
+                            certs.add(certFact.engineGenerateCertificate(new ByteArrayInputStream(((Encodable)cert).getEncoded())));
+                        }
+                        else if (cert instanceof Certificate)
+                        {
+                             certs.add(cert);
+                        }
+                        else
+                        {
+                            throw new AnnotatedException(
+                                    "Unknown object found in certificate store.");
+                        }
+                    }
+                }
+                catch (StoreException e)
+                {
+                    throw new AnnotatedException(
+                            "Problem while picking certificates from X.509 store.", e);
+                }
+                catch (IOException e)
+                {
+                    throw new AnnotatedException(
+                            "Problem while extracting certificates from X.509 store.", e);
+                }
+                catch (CertificateException e)
+                {
+                    throw new AnnotatedException(
+                            "Problem while extracting certificates from X.509 store.", e);
+                }
+            }
+            else
+            {
+                CertStore certStore = (CertStore)obj;
+
+                try
+                {
+                    certs.addAll(certStore.getCertificates(certSelect));
+                }
+                catch (CertStoreException e)
+                {
+                    throw new AnnotatedException(
+                        "Problem while picking certificates from certificate store.",
+                        e);
+                }
+            }
+        }
+        return certs;
+    }
+
     protected static Collection findCertificates(PKIXCertStoreSelector certSelect,
                                                  List certStores)
         throws AnnotatedException
@@ -693,180 +408,45 @@ class CertPathValidatorUtilities
         return certs;
     }
 
-    static List getAdditionalStoresFromCRLDistributionPoint(CRLDistPoint crldp, Map namedCRLStoreMap)
+    protected static Collection findCertificates(X509AttributeCertStoreSelector certSelect,
+                                                 List certStores)
         throws AnnotatedException
     {
-        if (crldp != null)
+        Set certs = new HashSet();
+        Iterator iter = certStores.iterator();
+
+        while (iter.hasNext())
         {
-            DistributionPoint dps[] = null;
-            try
-            {
-                dps = crldp.getDistributionPoints();
-            }
-            catch (Exception e)
-            {
-                throw new AnnotatedException(
-                    "Distribution points could not be read.", e);
-            }
-            List stores = new ArrayList();
+            Object obj = iter.next();
 
-            for (int i = 0; i < dps.length; i++)
+            if (obj instanceof X509Store)
             {
-                DistributionPointName dpn = dps[i].getDistributionPoint();
-                // look for URIs in fullName
-                if (dpn != null)
+                X509Store certStore = (X509Store)obj;
+                try
                 {
-                    if (dpn.getType() == DistributionPointName.FULL_NAME)
-                    {
-                        GeneralName[] genNames = GeneralNames.getInstance(
-                            dpn.getName()).getNames();
-
-                        for (int j = 0; j < genNames.length; j++)
-                        {
-                            PKIXCRLStore store = (PKIXCRLStore)namedCRLStoreMap.get(genNames[i]);
-                            if (store != null)
-                            {
-                                stores.add(store);
-                            }
-                        }
-                    }
+                    certs.addAll(certStore.getMatches(certSelect));
                 }
-            }
-
-            return stores;
-        }
-        else
-        {
-            return Collections.EMPTY_LIST;
-        }
-    }
-
-    /**
-     * Add the CRL issuers from the cRLIssuer field of the distribution point or
-     * from the certificate if not given to the issuer criterion of the
-     * <code>selector</code>.
-     * <p>
-     * The <code>issuerPrincipals</code> are a collection with a single
-     * <code>X500Name</code> for <code>X509Certificate</code>s.
-     * </p>
-     * @param dp               The distribution point.
-     * @param issuerPrincipals The issuers of the certificate or attribute
-     *                         certificate which contains the distribution point.
-     * @param selector         The CRL selector.
-     * @throws AnnotatedException if an exception occurs while processing.
-     * @throws ClassCastException if <code>issuerPrincipals</code> does not
-     * contain only <code>X500Name</code>s.
-     */
-    protected static void getCRLIssuersFromDistributionPoint(
-        DistributionPoint dp,
-        Collection issuerPrincipals,
-        X509CRLSelector selector)
-        throws AnnotatedException
-    {
-        List issuers = new ArrayList();
-        // indirect CRL
-        if (dp.getCRLIssuer() != null)
-        {
-            GeneralName genNames[] = dp.getCRLIssuer().getNames();
-            // look for a DN
-            for (int j = 0; j < genNames.length; j++)
-            {
-                if (genNames[j].getTagNo() == GeneralName.directoryName)
+                catch (StoreException e)
                 {
-                    try
-                    {
-                        issuers.add(X500Name.getInstance(genNames[j].getName()
-                            .toASN1Primitive().getEncoded()));
-                    }
-                    catch (IOException e)
-                    {
-                        throw new AnnotatedException(
-                            "CRL issuer information from distribution point cannot be decoded.",
-                            e);
-                    }
+                    throw new AnnotatedException(
+                            "Problem while picking certificates from X.509 store.", e);
                 }
             }
         }
-        else
-        {
-            /*
-             * certificate issuer is CRL issuer, distributionPoint field MUST be
-             * present.
-             */
-            if (dp.getDistributionPoint() == null)
-            {
-                throw new AnnotatedException(
-                    "CRL issuer is omitted from distribution point but no distributionPoint field present.");
-            }
-            // add and check issuer principals
-            for (Iterator it = issuerPrincipals.iterator(); it.hasNext(); )
-            {
-                issuers.add(it.next());
-            }
-        }
-        // TODO: is not found although this should correctly add the rel name. selector of Sun is buggy here or PKI test case is invalid
-        // distributionPoint
-//        if (dp.getDistributionPoint() != null)
-//        {
-//            // look for nameRelativeToCRLIssuer
-//            if (dp.getDistributionPoint().getType() == DistributionPointName.NAME_RELATIVE_TO_CRL_ISSUER)
-//            {
-//                // append fragment to issuer, only one
-//                // issuer can be there, if this is given
-//                if (issuers.size() != 1)
-//                {
-//                    throw new AnnotatedException(
-//                        "nameRelativeToCRLIssuer field is given but more than one CRL issuer is given.");
-//                }
-//                ASN1Encodable relName = dp.getDistributionPoint().getName();
-//                Iterator it = issuers.iterator();
-//                List issuersTemp = new ArrayList(issuers.size());
-//                while (it.hasNext())
-//                {
-//                    Enumeration e = null;
-//                    try
-//                    {
-//                        e = ASN1Sequence.getInstance(
-//                            new ASN1InputStream(((X500Principal) it.next())
-//                                .getEncoded()).readObject()).getObjects();
-//                    }
-//                    catch (IOException ex)
-//                    {
-//                        throw new AnnotatedException(
-//                            "Cannot decode CRL issuer information.", ex);
-//                    }
-//                    ASN1EncodableVector v = new ASN1EncodableVector();
-//                    while (e.hasMoreElements())
-//                    {
-//                        v.add((ASN1Encodable) e.nextElement());
-//                    }
-//                    v.add(relName);
-//                    issuersTemp.add(new X500Principal(new DERSequence(v)
-//                        .getDEREncoded()));
-//                }
-//                issuers.clear();
-//                issuers.addAll(issuersTemp);
-//            }
-//        }
-        Iterator it = issuers.iterator();
-        while (it.hasNext())
-        {
-            try
-            {
-                selector.addIssuerName(((X500Name)it.next()).getEncoded());
-            }
-            catch (IOException ex)
-            {
-                throw new AnnotatedException(
-                    "Cannot decode CRL issuer information.", ex);
-            }
-        }
+        return certs;
     }
 
     private static BigInteger getSerialNumber(
         Object cert)
     {
-        return ((X509Certificate)cert).getSerialNumber();
+        if (cert instanceof X509Certificate)
+        {
+            return ((X509Certificate)cert).getSerialNumber();
+        }
+        else
+        {
+            return ((X509AttributeCertificate)cert).getSerialNumber();
+        }
     }
 
     protected static void getCertStatus(
@@ -881,7 +461,7 @@ class CertPathValidatorUtilities
         boolean isIndirect;
         try
         {
-            isIndirect = X509CRLObject.isIndirectCRL(crl);
+            isIndirect = isIndirectCRL(crl);
         }
         catch (CRLException exception)
         {
@@ -890,18 +470,6 @@ class CertPathValidatorUtilities
 
         if (isIndirect)
         {
-            if (!(crl instanceof X509CRLObject))
-            {
-                try
-                {
-                    crl = new X509CRLObject(CertificateList.getInstance(crl.getEncoded()));
-                }
-                catch (CRLException exception)
-                {
-                    throw new AnnotatedException("Failed to recode indirect CRL.", exception);
-                }
-            }
-
             crl_entry = crl.getRevokedCertificate(getSerialNumber(cert));
 
             if (crl_entry == null)
@@ -909,19 +477,43 @@ class CertPathValidatorUtilities
                 return;
             }
 
-            X500Name certIssuer = X500Name.getInstance(((X509CRLEntryObject)crl_entry).getCertificateIssuer().getEncoded());
-
-            if (certIssuer == null)
+            X509Principal certificateIssuer;
+            try
             {
-                certIssuer = PrincipalUtils.getIssuerPrincipal(crl);
+                certificateIssuer = ((X509CRLEntryObject)crl_entry).getCertificateIssuer();
+            }
+            catch (RuntimeException e)
+            {
+                // getCertificateIssuer() builds a new X509Principal from the entry's certificateIssuer
+                // DN, which can throw an unchecked IllegalArgumentException on a name that decodes
+                // structurally but is semantically invalid. Fail closed with the checked contract type
+                // rather than let it escape (or swallow it to null, which would fail revocation open).
+                throw new AnnotatedException("CRL entry certificate issuer could not be parsed.", e);
             }
 
-            if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(certIssuer))
+            X500Name certIssuer;
+            if (certificateIssuer == null)
+            {
+                certIssuer = getIssuerPrincipal(crl);
+            }
+            else
+            {
+                try
+                {
+                    certIssuer = X500Name.getInstance(certificateIssuer.getEncoded());
+                }
+                catch (Exception e)
+                {
+                    throw new AnnotatedException("CRL entry certificate issuer could not be parsed.", e);
+                }
+            }
+
+            if (!getEncodedIssuerPrincipal(cert).equals(certIssuer))
             {
                 return;
             }
         }
-        else if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(PrincipalUtils.getIssuerPrincipal(crl)))
+        else if (!getEncodedIssuerPrincipal(cert).equals(getIssuerPrincipal(crl)))
         {
             return;  // not for our issuer, ignore
         }
@@ -953,226 +545,17 @@ class CertPathValidatorUtilities
             }
         }
 
-        // for reason keyCompromise, caCompromise, aACompromise or
-        // unspecified
-        if (!(validDate.getTime() < crl_entry.getRevocationDate().getTime())
-            || reasonCode == null
-            || reasonCode.getValue().intValue() == 0
-            || reasonCode.getValue().intValue() == 1
-            || reasonCode.getValue().intValue() == 2
-            || reasonCode.getValue().intValue() == 8)
-        {
+        int reasonCodeValue = (null == reasonCode)
+            ?   CRLReason.unspecified
+            :   reasonCode.intValueExact();
 
-            // (i) or (j) (1)
-            if (reasonCode != null)
-            {
-                certStatus.setCertStatus(reasonCode.getValue().intValue());
-            }
-            // (i) or (j) (2)
-            else
-            {
-                certStatus.setCertStatus(CRLReason.unspecified);
-            }
+        // for reason keyCompromise, caCompromise, aACompromise or unspecified
+        if (PKIXCRLValidator.isRevocationEffective(validDate, crl_entry.getRevocationDate(), reasonCodeValue))
+        {
+            // (i) or (j)
+            certStatus.setCertStatus(reasonCodeValue);
             certStatus.setRevocationDate(crl_entry.getRevocationDate());
         }
-    }
-
-    /**
-     * Fetches delta CRLs according to RFC 3280 section 5.2.4.
-     *
-     * @param validityDate The date for which the delta CRLs must be valid.
-     * @param completeCRL The complete CRL the delta CRL is for.
-     * @return A <code>Set</code> of <code>X509CRL</code>s with delta CRLs.
-     * @throws AnnotatedException if an exception occurs while picking the delta
-     * CRLs.
-     */
-    protected static Set getDeltaCRLs(Date validityDate,
-                                      X509CRL completeCRL, List<CertStore> certStores, List<PKIXCRLStore> pkixCrlStores)
-        throws AnnotatedException
-    {
-        X509CRLSelector baseDeltaSelect = new X509CRLSelector();
-        // 5.2.4 (a)
-        try
-        {
-            baseDeltaSelect.addIssuerName(PrincipalUtils.getIssuerPrincipal(completeCRL).getEncoded());
-        }
-        catch (IOException e)
-        {
-            throw new AnnotatedException("Cannot extract issuer from CRL.", e);
-        }
-
-        BigInteger completeCRLNumber = null;
-        try
-        {
-            ASN1Primitive derObject = getExtensionValue(completeCRL, CRL_NUMBER);
-            if (derObject != null)
-            {
-                completeCRLNumber = ASN1Integer.getInstance(derObject).getPositiveValue();
-            }
-        }
-        catch (Exception e)
-        {
-            throw new AnnotatedException(
-                "CRL number extension could not be extracted from CRL.", e);
-        }
-
-        // 5.2.4 (b)
-        byte[] idp = null;
-        try
-        {
-            idp = completeCRL.getExtensionValue(ISSUING_DISTRIBUTION_POINT);
-        }
-        catch (Exception e)
-        {
-            throw new AnnotatedException(
-                "Issuing distribution point extension value could not be read.",
-                e);
-        }
-
-        // 5.2.4 (d)
-
-        baseDeltaSelect.setMinCRLNumber(completeCRLNumber == null ? null : completeCRLNumber
-            .add(BigInteger.valueOf(1)));
-
-        PKIXCRLStoreSelector.Builder selBuilder = new PKIXCRLStoreSelector.Builder(baseDeltaSelect);
-
-        selBuilder.setIssuingDistributionPoint(idp);
-        selBuilder.setIssuingDistributionPointEnabled(true);
-
-        // 5.2.4 (c)
-        selBuilder.setMaxBaseCRLNumber(completeCRLNumber);
-
-        PKIXCRLStoreSelector deltaSelect = selBuilder.build();
-
-        // find delta CRLs
-        Set temp = CRL_UTIL.findCRLs(deltaSelect, validityDate, certStores, pkixCrlStores);
-
-        Set result = new HashSet();
-
-        for (Iterator it = temp.iterator(); it.hasNext(); )
-        {
-            X509CRL crl = (X509CRL)it.next();
-
-            if (isDeltaCRL(crl))
-            {
-                result.add(crl);
-            }
-        }
-
-        return result;
-    }
-
-    private static boolean isDeltaCRL(X509CRL crl)
-    {
-        Set critical = crl.getCriticalExtensionOIDs();
-
-        if (critical == null)
-        {
-            return false;
-        }
-
-        return critical.contains(DELTA_CRL_INDICATOR);
-    }
-
-    /**
-     * Fetches complete CRLs according to RFC 3280.
-     *
-     * @param dp          The distribution point for which the complete CRL
-     * @param cert        The <code>X509Certificate</code> for
-     *                    which the CRL should be searched.
-     * @param currentDate The date for which the delta CRLs must be valid.
-     * @param paramsPKIX  The extended PKIX parameters.
-     * @return A <code>Set</code> of <code>X509CRL</code>s with complete
-     *         CRLs.
-     * @throws AnnotatedException if an exception occurs while picking the CRLs
-     * or no CRLs are found.
-     */
-    protected static Set getCompleteCRLs(DistributionPoint dp, Object cert,
-                                         Date currentDate, PKIXExtendedParameters paramsPKIX)
-        throws AnnotatedException
-    {
-        X509CRLSelector baseCrlSelect = new X509CRLSelector();
-
-        try
-        {
-            Set issuers = new HashSet();
-
-            issuers.add(PrincipalUtils.getEncodedIssuerPrincipal(cert));
-
-            getCRLIssuersFromDistributionPoint(dp, issuers, baseCrlSelect);
-        }
-        catch (AnnotatedException e)
-        {
-            throw new AnnotatedException(
-                "Could not get issuer information from distribution point.", e);
-        }
-
-        if (cert instanceof X509Certificate)
-        {
-            baseCrlSelect.setCertificateChecking((X509Certificate)cert);
-        }
-
-        PKIXCRLStoreSelector crlSelect = new PKIXCRLStoreSelector.Builder(baseCrlSelect).setCompleteCRLEnabled(true).build();
-
-        Date validityDate = currentDate;
-
-        if (paramsPKIX.getDate() != null)
-        {
-            validityDate = paramsPKIX.getDate();
-        }
-
-        Set crls = CRL_UTIL.findCRLs(crlSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
-
-        checkCRLsNotEmpty(crls, cert);
-
-        return crls;
-    }
-
-    protected static Date getValidCertDateFromValidityModel(PKIXExtendedParameters paramsPKIX, CertPath certPath,
-        int index) throws AnnotatedException
-    {
-        if (PKIXExtendedParameters.CHAIN_VALIDITY_MODEL != paramsPKIX.getValidityModel() || index <= 0)
-        {
-            // use given signing/encryption/... time (or current date)
-            return getValidDate(paramsPKIX);
-        }
-
-        X509Certificate issuedCert = (X509Certificate)certPath.getCertificates().get(index - 1);
-
-        if (index - 1 == 0)
-        {
-            // use time when cert was issued, if available
-            ASN1GeneralizedTime dateOfCertgen = null;
-            try
-            {
-                byte[] extBytes = issuedCert.getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
-                if (extBytes != null)
-                {
-                    dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
-                }
-            }
-            catch (IOException e)
-            {
-                throw new AnnotatedException("Date of cert gen extension could not be read.");
-            }
-            catch (IllegalArgumentException e)
-            {
-                throw new AnnotatedException("Date of cert gen extension could not be read.");
-            }
-            if (dateOfCertgen != null)
-            {
-                try
-                {
-                    return dateOfCertgen.getDate();
-                }
-                catch (ParseException e)
-                {
-                    throw new AnnotatedException("Date from date of cert gen extension could not be parsed.", e);
-                }
-            }
-        }
-
-        return issuedCert.getNotBefore();
     }
 
     /**
@@ -1194,9 +577,9 @@ class CertPathValidatorUtilities
      *              which should be extended with DSA parameters.
      * @return The public key of the certificate in list position
      *         <code>index</code> extended with DSA parameters if applicable.
-     * @throws AnnotatedException if DSA parameters cannot be inherited.
+     * @throws CertPathValidatorException if DSA parameters cannot be inherited.
      */
-    protected static PublicKey getNextWorkingKey(List certs, int index, JcaJceHelper helper)
+    protected static PublicKey getNextWorkingKey(List certs, int index)
         throws CertPathValidatorException
     {
         Certificate cert = (Certificate)certs.get(index);
@@ -1229,7 +612,7 @@ class CertPathValidatorUtilities
                 dsaPubKey.getY(), dsaParams.getP(), dsaParams.getQ(), dsaParams.getG());
             try
             {
-                KeyFactory keyFactory = helper.createKeyFactory("DSA");
+                KeyFactory keyFactory = KeyFactory.getInstance("DSA", BouncyCastleProvider.PROVIDER_NAME);
                 return keyFactory.generatePublic(dsaPubKeySpec);
             }
             catch (Exception exception)
@@ -1238,80 +621,6 @@ class CertPathValidatorUtilities
             }
         }
         throw new CertPathValidatorException("DSA parameters cannot be inherited from previous certificate.");
-    }
-
-    /**
-     * Find the issuer certificates of a given certificate.
-     *
-     * @param cert       The certificate for which an issuer should be found.
-     * @return A <code>Collection</code> object containing the issuer
-     *         <code>X509Certificate</code>s. Never <code>null</code>.
-     * @throws AnnotatedException if an error occurs.
-     */
-    static Collection findIssuerCerts(
-        X509Certificate cert,
-        List<CertStore> certStores,
-        List<PKIXCertStore> pkixCertStores)
-        throws AnnotatedException
-    {
-        X509CertSelector selector = new X509CertSelector();
-
-        try
-        {
-            selector.setSubject(PrincipalUtils.getIssuerPrincipal(cert).getEncoded());
-        }
-        catch (IOException e)
-        {
-            throw new AnnotatedException(
-                           "Subject criteria for certificate selector to find issuer certificate could not be set.", e);
-        }
-
-        try
-        {
-            byte[] akiExtensionValue = cert.getExtensionValue(AUTHORITY_KEY_IDENTIFIER);
-            if (akiExtensionValue != null)
-            {
-                ASN1OctetString aki = ASN1OctetString.getInstance(akiExtensionValue);
-                byte[] authorityKeyIdentifier = AuthorityKeyIdentifier.getInstance(aki.getOctets()).getKeyIdentifier();
-                if (authorityKeyIdentifier != null)
-                {
-                    selector.setSubjectKeyIdentifier(new DEROctetString(authorityKeyIdentifier).getEncoded());
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            // authority key identifier could not be retrieved from target cert, just search without it
-        }
-
-        PKIXCertStoreSelector certSelect = new PKIXCertStoreSelector.Builder(selector).build();
-        Set certs = new HashSet();
-
-        Iterator iter;
-
-        try
-        {
-            List matches = new ArrayList();
-
-            matches.addAll(findCertificates(certSelect, certStores));
-            matches.addAll(findCertificates(certSelect, pkixCertStores));
-
-            iter = matches.iterator();
-        }
-        catch (AnnotatedException e)
-        {
-            throw new AnnotatedException("Issuer certificate cannot be searched.", e);
-        }
-
-        X509Certificate issuer = null;
-        while (iter.hasNext())
-        {
-            issuer = (X509Certificate)iter.next();
-            // issuer cannot be verified because possible DSA inheritance
-            // parameters are missing
-            certs.add(issuer);
-        }
-        return certs;
     }
 
     protected static void verifyX509Certificate(X509Certificate cert, PublicKey publicKey,
@@ -1328,23 +637,19 @@ class CertPathValidatorUtilities
         }
     }
 
-    static void checkCRLsNotEmpty(Set crls, Object cert)
-        throws AnnotatedException
+    static boolean isIndirectCRL(X509CRL crl)
+        throws CRLException
     {
-        if (crls.isEmpty())
+        try
         {
-            if (cert instanceof X509AttributeCertificate)
-            {
-                X509AttributeCertificate aCert = (X509AttributeCertificate)cert;
-
-                throw new AnnotatedException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"");
-            }
-            else
-            {
-                X509Certificate xCert = (X509Certificate)cert;
-
-                throw new AnnotatedException("No CRLs found for issuer \"" + RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal(xCert)) + "\"");
-            }
+            byte[] idp = crl.getExtensionValue(ISSUING_DISTRIBUTION_POINT);
+            return idp != null
+                && IssuingDistributionPoint.getInstance(ASN1OctetString.getInstance(idp).getOctets()).isIndirectCRL();
+        }
+        catch (Exception e)
+        {
+            throw new CRLException(
+                    "Exception reading IssuingDistributionPoint: " + e);
         }
     }
 }

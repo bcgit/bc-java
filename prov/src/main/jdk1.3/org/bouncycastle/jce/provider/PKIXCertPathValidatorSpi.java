@@ -25,10 +25,19 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.PKIXPolicyNode;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
+
+// NOTE: jdk1.3 overlay. Explicitly imports org.bouncycastle.jcajce.PKIXPolicyNode (mirroring base)
+// rather than relying on the same-package org.bouncycastle.jce.provider.PKIXPolicyNode compat
+// class, which predates the RFC 5280 policy-tree consolidation into jcajce.PKIXPolicyNode /
+// PKIXPolicyTreeUtil and is no longer type-compatible with RFC3280CertPathUtilities' return types
+// (see docs/jdk13-certpath-overlay-sync-plan.md). That compat class overlay is now unused and has
+// been deleted. Also mirrors base's deprecated-jce.exception migration: throws use the
+// org.bouncycastle.jce.cert.CertPathValidatorException backport's 4-arg constructor directly
+// instead of the now-unused org.bouncycastle.jce.exception.ExtCertPathValidatorException.
 
 /**
  * CertPathValidatorSpi implementation for X.509 Certificate validation � la RFC
@@ -239,7 +248,7 @@ public class PKIXCertPathValidatorSpi
         }
         catch (IllegalArgumentException ex)
         {
-            throw new ExtCertPathValidatorException("Subject of trust anchor could not be (re)encoded.", ex, certPath,
+            throw new CertPathValidatorException("Subject of trust anchor could not be (re)encoded.", ex, certPath,
                     -1);
         }
 
@@ -250,7 +259,7 @@ public class PKIXCertPathValidatorSpi
         }
         catch (CertPathValidatorException e)
         {
-            throw new ExtCertPathValidatorException(
+            throw new CertPathValidatorException(
                     "Algorithm identifier of public key of trust anchor could not be read.", e, certPath, -1);
         }
 
@@ -266,7 +275,7 @@ public class PKIXCertPathValidatorSpi
         if (paramsPKIX.getTargetConstraints() != null
                 && !paramsPKIX.getTargetConstraints().match((X509Certificate) certs.get(0)))
         {
-            throw new ExtCertPathValidatorException(
+            throw new CertPathValidatorException(
                     "Target certificate in certification path does not match targetConstraints.", null, certPath, 0);
         }
 
