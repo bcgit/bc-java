@@ -81,7 +81,7 @@ public class BCFrodoKEMPublicKey
 
     public byte[] getPublicData()
     {
-        return params.getPublicKey();
+        return params.getEncoded();
     }
 
     public byte[] getEncoded()
@@ -112,7 +112,7 @@ public class BCFrodoKEMPublicKey
     {
         StringBuilder buf = new StringBuilder();
         String nl = Strings.lineSeparator();
-        byte[] keyBytes = params.getPublicKey();
+        byte[] keyBytes = params.getEncoded();
 
         // -DM Hex.toHexString
         buf.append(getAlgorithm())

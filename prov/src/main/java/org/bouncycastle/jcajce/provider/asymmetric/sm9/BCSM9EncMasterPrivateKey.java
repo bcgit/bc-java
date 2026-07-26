@@ -68,6 +68,11 @@ public class BCSM9EncMasterPrivateKey
 
     public byte[] getEncoded()
     {
+        if (keyParams.isDestroyed())
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         try
         {
             PrivateKeyInfo info = new PrivateKeyInfo(
