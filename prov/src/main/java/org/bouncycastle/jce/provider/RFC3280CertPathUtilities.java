@@ -64,7 +64,6 @@ import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Properties;
 
 class RFC3280CertPathUtilities
@@ -715,7 +714,7 @@ class RFC3280CertPathUtilities
         }
         catch (AnnotatedException ex)
         {
-            throw new ExtCertPathValidatorException("Policy mappings extension could not be decoded.", ex, certPath,
+            throw new CertPathValidatorException("Policy mappings extension could not be decoded.", ex, certPath,
                 index);
         }
 
@@ -801,7 +800,7 @@ class RFC3280CertPathUtilities
                 }
                 catch (AnnotatedException e)
                 {
-                    throw new ExtCertPathValidatorException(
+                    throw new CertPathValidatorException(
                         "Certificate policies extension could not be decoded.", e, certPath, index);
                 }
 
@@ -829,7 +828,7 @@ class RFC3280CertPathUtilities
                         }
                         catch (CertPathValidatorException ex)
                         {
-                            throw new ExtCertPathValidatorException("Policy qualifier info set could not be decoded.",
+                            throw new CertPathValidatorException("Policy qualifier info set could not be decoded.",
                                 ex, certPath, index);
                         }
                         break;
@@ -869,7 +868,7 @@ class RFC3280CertPathUtilities
         }
         catch (AnnotatedException ex)
         {
-            throw new ExtCertPathValidatorException("Policy mappings extension could not be decoded.", ex, certPath,
+            throw new CertPathValidatorException("Policy mappings extension could not be decoded.", ex, certPath,
                 index);
         }
         if (pm != null)
@@ -889,7 +888,7 @@ class RFC3280CertPathUtilities
                 }
                 catch (Exception e)
                 {
-                    throw new ExtCertPathValidatorException("Policy mappings extension contents could not be decoded.",
+                    throw new CertPathValidatorException("Policy mappings extension contents could not be decoded.",
                         e, certPath, index);
                 }
 
@@ -918,7 +917,7 @@ class RFC3280CertPathUtilities
         //
         if (explicitPolicy <= 0 && validPolicyTree == null)
         {
-            throw new ExtCertPathValidatorException("No valid policy tree found when one expected.", null, certPath,
+            throw new CertPathValidatorException("No valid policy tree found when one expected.", null, certPath,
                 index);
         }
     }
@@ -941,7 +940,7 @@ class RFC3280CertPathUtilities
         }
         catch (AnnotatedException e)
         {
-            throw new ExtCertPathValidatorException("Could not read certificate policies extension from certificate.",
+            throw new CertPathValidatorException("Could not read certificate policies extension from certificate.",
                 e, certPath, index);
         }
         if (certPolicies == null)
@@ -1084,7 +1083,7 @@ class RFC3280CertPathUtilities
         }
         catch (AnnotatedException e)
         {
-            throw new ExtCertPathValidatorException("Could not read certificate policies extension from certificate.",
+            throw new CertPathValidatorException("Could not read certificate policies extension from certificate.",
                 e, certPath, index);
         }
         if (certPolicies != null && validPolicyTree != null)
@@ -1111,7 +1110,7 @@ class RFC3280CertPathUtilities
                     }
                     catch (CertPathValidatorException ex)
                     {
-                        throw new ExtCertPathValidatorException("Policy qualifier info set could not be built.", ex,
+                        throw new CertPathValidatorException("Policy qualifier info set could not be built.", ex,
                             certPath, index);
                     }
 
@@ -1259,7 +1258,7 @@ class RFC3280CertPathUtilities
             }
             catch (GeneralSecurityException e)
             {
-                throw new ExtCertPathValidatorException("Could not validate certificate signature.", e, certPath, index);
+                throw new CertPathValidatorException("Could not validate certificate signature.", e, certPath, index);
             }
         }
 
@@ -1270,7 +1269,7 @@ class RFC3280CertPathUtilities
         }
         catch (AnnotatedException e)
         {
-            throw new ExtCertPathValidatorException("Could not validate time of certificate.", e, certPath, index);
+            throw new CertPathValidatorException("Could not validate time of certificate.", e, certPath, index);
         }
 
         // (a) (2)
@@ -1281,11 +1280,11 @@ class RFC3280CertPathUtilities
         }
         catch (CertificateExpiredException e)
         {
-            throw new ExtCertPathValidatorException("Could not validate certificate: " + e.getMessage(), e, certPath, index);
+            throw new CertPathValidatorException("Could not validate certificate: " + e.getMessage(), e, certPath, index);
         }
         catch (CertificateNotYetValidException e)
         {
-            throw new ExtCertPathValidatorException("Could not validate certificate: " + e.getMessage(), e, certPath, index);
+            throw new CertPathValidatorException("Could not validate certificate: " + e.getMessage(), e, certPath, index);
         }
 
         //
@@ -1305,7 +1304,7 @@ class RFC3280CertPathUtilities
         X500Name issuer = PrincipalUtils.getIssuerPrincipal(cert);
         if (!issuer.equals(workingIssuerName))
         {
-            throw new ExtCertPathValidatorException("IssuerName(" + issuer + ") does not match SubjectName("
+            throw new CertPathValidatorException("IssuerName(" + issuer + ") does not match SubjectName("
                 + workingIssuerName + ") of signing certificate.", null, certPath, index);
         }
     }
@@ -1328,7 +1327,7 @@ class RFC3280CertPathUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Policy constraints extension cannot be decoded.", e, certPath,
+            throw new CertPathValidatorException("Policy constraints extension cannot be decoded.", e, certPath,
                 index);
         }
 
@@ -1355,7 +1354,7 @@ class RFC3280CertPathUtilities
                 }
                 catch (IllegalArgumentException e)
                 {
-                    throw new ExtCertPathValidatorException("Policy constraints extension contents cannot be decoded.",
+                    throw new CertPathValidatorException("Policy constraints extension contents cannot be decoded.",
                         e, certPath, index);
                 }
             }
@@ -1381,7 +1380,7 @@ class RFC3280CertPathUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Policy constraints extension cannot be decoded.", e, certPath,
+            throw new CertPathValidatorException("Policy constraints extension cannot be decoded.", e, certPath,
                 index);
         }
 
@@ -1408,7 +1407,7 @@ class RFC3280CertPathUtilities
                 }
                 catch (IllegalArgumentException e)
                 {
-                    throw new ExtCertPathValidatorException("Policy constraints extension contents cannot be decoded.",
+                    throw new CertPathValidatorException("Policy constraints extension contents cannot be decoded.",
                         e, certPath, index);
                 }
             }
@@ -1438,7 +1437,7 @@ class RFC3280CertPathUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Name constraints extension could not be decoded.", e, certPath,
+            throw new CertPathValidatorException("Name constraints extension could not be decoded.", e, certPath,
                 index);
         }
 
@@ -1459,7 +1458,7 @@ class RFC3280CertPathUtilities
             }
             catch (Exception ex)
             {
-                throw new ExtCertPathValidatorException(
+                throw new CertPathValidatorException(
                     "Permitted subtrees could not be built from name constraints extension.", ex, certPath, index);
             }
         }
@@ -1479,7 +1478,7 @@ class RFC3280CertPathUtilities
             }
             catch (Exception ex)
             {
-                throw new ExtCertPathValidatorException(
+                throw new CertPathValidatorException(
                     "Excluded subtrees could not be built from name constraints extension.", ex, certPath, index);
             }
         }
@@ -1832,7 +1831,7 @@ class RFC3280CertPathUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Inhibit any-policy extension cannot be decoded.", e, certPath,
+            throw new CertPathValidatorException("Inhibit any-policy extension cannot be decoded.", e, certPath,
                 index);
         }
 
@@ -1865,7 +1864,7 @@ class RFC3280CertPathUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Basic constraints extension cannot be decoded.", e, certPath, index);
+            throw new CertPathValidatorException("Basic constraints extension cannot be decoded.", e, certPath, index);
         }
         if (bc == null)
         {
@@ -1892,7 +1891,7 @@ class RFC3280CertPathUtilities
         {
             if (maxPathLength <= 0)
             {
-                throw new ExtCertPathValidatorException("Max path length not greater than zero", null, certPath, index);
+                throw new CertPathValidatorException("Max path length not greater than zero", null, certPath, index);
             }
 
             return maxPathLength - 1;
@@ -1916,7 +1915,7 @@ class RFC3280CertPathUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Basic constraints extension cannot be decoded.", e, certPath,
+            throw new CertPathValidatorException("Basic constraints extension cannot be decoded.", e, certPath,
                 index);
         }
         if (bc != null && bc.isCA())  // if there is a path len constraint and we're not a CA, ignore it! (yes, it happens).
@@ -1945,7 +1944,7 @@ class RFC3280CertPathUtilities
 
         if (keyUsage != null && (keyUsage.length <= KEY_CERT_SIGN || !keyUsage[KEY_CERT_SIGN]))
         {
-            throw new ExtCertPathValidatorException(
+            throw new CertPathValidatorException(
                 "Issuer certificate keyusage extension is critical and does not permit key signing.", null,
                 certPath, index);
         }
@@ -1979,7 +1978,7 @@ class RFC3280CertPathUtilities
         }
         if (!criticalExtensions.isEmpty())
         {
-            throw new ExtCertPathValidatorException(getUnsupportedCriticalExtensionMessage(criticalExtensions), null,
+            throw new CertPathValidatorException(getUnsupportedCriticalExtensionMessage(criticalExtensions), null,
                 certPath, index);
         }
     }
@@ -2101,7 +2100,7 @@ class RFC3280CertPathUtilities
         }
         catch (AnnotatedException e)
         {
-            throw new ExtCertPathValidatorException("Policy constraints could not be decoded.", e, certPath, index);
+            throw new CertPathValidatorException("Policy constraints could not be decoded.", e, certPath, index);
         }
         if (pc != null)
         {
@@ -2119,7 +2118,7 @@ class RFC3280CertPathUtilities
                         }
                         catch (Exception e)
                         {
-                            throw new ExtCertPathValidatorException(
+                            throw new CertPathValidatorException(
                                 "Policy constraints requireExplicitPolicy field could not be decoded.", e, certPath,
                                 index);
                         }
@@ -2153,7 +2152,7 @@ class RFC3280CertPathUtilities
             }
             catch (CertPathValidatorException e)
             {
-                throw new ExtCertPathValidatorException(e.getMessage(), e, certPath, index);
+                throw new CertPathValidatorException(e.getMessage(), e, certPath, index);
             }
             catch (Exception e)
             {
@@ -2163,7 +2162,7 @@ class RFC3280CertPathUtilities
 
         if (!criticalExtensions.isEmpty())
         {
-            throw new ExtCertPathValidatorException(getUnsupportedCriticalExtensionMessage(criticalExtensions), null,
+            throw new CertPathValidatorException(getUnsupportedCriticalExtensionMessage(criticalExtensions), null,
                 certPath, index);
         }
     }
@@ -2191,7 +2190,7 @@ class RFC3280CertPathUtilities
         {
             if (paramsPKIX.isExplicitPolicyRequired())
             {
-                throw new ExtCertPathValidatorException("Explicit policy requested but none available.", null,
+                throw new CertPathValidatorException("Explicit policy requested but none available.", null,
                     certPath, index);
             }
             intersection = null;
@@ -2202,7 +2201,7 @@ class RFC3280CertPathUtilities
             {
                 if (acceptablePolicies.isEmpty())
                 {
-                    throw new ExtCertPathValidatorException("Explicit policy requested but none available.", null,
+                    throw new CertPathValidatorException("Explicit policy requested but none available.", null,
                         certPath, index);
                 }
 
