@@ -33,6 +33,7 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -51,7 +52,6 @@ import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.jce.provider.AnnotatedException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jcajce.PKIXPolicyNode;
@@ -198,7 +198,7 @@ class CertPathValidatorUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Subject public key cannot be decoded.", e);
+            throw SecurityExceptions.certPathValidatorException("Subject public key cannot be decoded.", e);
         }
     }
 
@@ -234,7 +234,7 @@ class CertPathValidatorUtilities
             }
             catch (IOException ex)
             {
-                throw new ExtCertPathValidatorException("Policy qualifier info cannot be decoded.", ex);
+                throw SecurityExceptions.certPathValidatorException("Policy qualifier info cannot be decoded.", ex);
             }
 
             bOut.reset();

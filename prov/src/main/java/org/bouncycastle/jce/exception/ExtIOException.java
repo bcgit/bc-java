@@ -2,6 +2,7 @@ package org.bouncycastle.jce.exception;
 
 import java.io.IOException;
 
+@Deprecated
 public class ExtIOException
     extends IOException
     implements ExtException

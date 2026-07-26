@@ -8,7 +8,12 @@ package org.bouncycastle.jce.exception;
  * exception. This interface must be implemented by all exceptions to accomplish
  * this additional functionality.
  * 
+ *
+ * @deprecated obsolete pre-1.4 cause-chaining shim; use the org.bouncycastle.jcajce.provider.util.SecurityExceptions
+ * factories (certPathValidatorException / certPathBuilderException / certificateEncodingException) or the
+ * standard java.security.cert exceptions directly.
  */
+@Deprecated
 public interface ExtException
 {
 

@@ -42,6 +42,7 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -75,8 +76,6 @@ import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.PKIXPolicyNode;
 import org.bouncycastle.jcajce.PKIXPolicyTreeUtil;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
@@ -138,7 +137,7 @@ class CertPathValidatorUtilities
         }
         catch (AnnotatedException e)
         {
-            throw new ExtCertPathBuilderException("Error finding target certificate.", e);
+            throw SecurityExceptions.certPathBuilderException("Error finding target certificate.", e);
         }
 
         if (!targets.isEmpty())
@@ -372,7 +371,7 @@ class CertPathValidatorUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Subject public key cannot be decoded.", e);
+            throw SecurityExceptions.certPathValidatorException("Subject public key cannot be decoded.", e);
         }
     }
 
@@ -407,7 +406,7 @@ class CertPathValidatorUtilities
             }
             catch (IOException ex)
             {
-                throw new ExtCertPathValidatorException("Policy qualifier info cannot be decoded.", ex);
+                throw SecurityExceptions.certPathValidatorException("Policy qualifier info cannot be decoded.", ex);
             }
 
             bOut.reset();

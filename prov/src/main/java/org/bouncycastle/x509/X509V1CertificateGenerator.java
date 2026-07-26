@@ -18,6 +18,7 @@ import java.util.Iterator;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -302,7 +303,7 @@ public class X509V1CertificateGenerator
         }
         catch (IOException e)
         {
-            throw new ExtCertificateEncodingException("exception encoding TBS cert", e);
+            throw SecurityExceptions.certificateEncodingException("exception encoding TBS cert", e);
         }
 
         return generateJcaObject(tbsCert, signature);
@@ -341,7 +342,7 @@ public class X509V1CertificateGenerator
         }
         catch (IOException e)
         {
-            throw new ExtCertificateEncodingException("exception encoding TBS cert", e);
+            throw SecurityExceptions.certificateEncodingException("exception encoding TBS cert", e);
         }
 
         return generateJcaObject(tbsCert, signature);
@@ -363,7 +364,7 @@ public class X509V1CertificateGenerator
         }
         catch (Exception e)
         {
-            throw new ExtCertificateEncodingException("exception producing certificate object", e);
+            throw SecurityExceptions.certificateEncodingException("exception producing certificate object", e);
         }
     }
 
