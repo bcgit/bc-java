@@ -25,11 +25,6 @@ public class SM9EncMasterPublicKeyParameters
         this.pPube = pPube;
     }
 
-    ECPoint getPointG1()
-    {
-        return pPube;
-    }
-
     /**
      * The encryption public key of the user identified by {@code id}: the recipient key
      * a sender encapsulates to (or encrypts to), formed from this master public key and

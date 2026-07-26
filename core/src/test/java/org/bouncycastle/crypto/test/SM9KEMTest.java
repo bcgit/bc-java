@@ -84,7 +84,7 @@ public class SM9KEMTest
         isTrue("SM9 KEM encapsulation C",
             Arrays.areEqual(enc.getEncapsulation(), Arrays.concatenate(hex(v, "C_x"), hex(v, "C_y"))));
 
-        SM9EncPrivateKeyParameters userKey = master.generatePrivateKey(id);
+        SM9EncPrivateKeyParameters userKey = master.generateUserKey(id);
         SM9KEMExtractor extractor = new SM9KEMExtractor(userKey, klen);
         isTrue("SM9 KEM decapsulation", Arrays.areEqual(extractor.extractSecret(enc.getEncapsulation()), hex(v, "K")));
 

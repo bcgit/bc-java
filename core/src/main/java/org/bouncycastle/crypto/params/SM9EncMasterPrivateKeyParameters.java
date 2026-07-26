@@ -56,11 +56,6 @@ public class SM9EncMasterPrivateKeyParameters
         return publicParams;
     }
 
-    BigInteger getKe()
-    {
-        return checkedKe();
-    }
-
     /**
      * The master private key ke as a 32-byte big-endian scalar.
      */
@@ -79,16 +74,16 @@ public class SM9EncMasterPrivateKeyParameters
      * identified by {@code id} (GM/T 0044.4-2016): t1 = H1(id||hid, N) + ke;
      * if t1 = 0 the master key must be regenerated; otherwise t2 = ke*t1^-1.
      */
-    public SM9EncPrivateKeyParameters generatePrivateKey(byte[] id)
+    public SM9EncPrivateKeyParameters generateUserKey(byte[] id)
     {
-        return generatePrivateKey(id, HID);
+        return generateUserKey(id, HID);
     }
 
     /**
      * Derive a private key with an explicit hid (0x03 for encryption/KEM, 0x02
      * for key exchange).
      */
-    public SM9EncPrivateKeyParameters generatePrivateKey(byte[] id, byte hid)
+    public SM9EncPrivateKeyParameters generateUserKey(byte[] id, byte hid)
     {
         BigInteger ke = checkedKe();
         BigInteger n = SM9Curve.N;
@@ -107,7 +102,7 @@ public class SM9EncMasterPrivateKeyParameters
      * <p>
      * As {@link BigInteger} is immutable the secret value cannot be zeroized in place;
      * destruction drops the reference and marks the key destroyed, after which
-     * {@link #getEncoded()} and {@link #generatePrivateKey(byte[])} throw
+     * {@link #getEncoded()} and {@link #generateUserKey(byte[])} throw
      * {@link IllegalStateException}. The public key parameters remain available.
      */
     public synchronized void destroy()
