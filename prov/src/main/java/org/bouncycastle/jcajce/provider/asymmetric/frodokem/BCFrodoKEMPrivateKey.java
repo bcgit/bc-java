@@ -89,6 +89,11 @@ public class BCFrodoKEMPrivateKey
 
     public byte[] getEncoded()
     {
+        if (params.isDestroyed())
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         try
         {
             PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params);

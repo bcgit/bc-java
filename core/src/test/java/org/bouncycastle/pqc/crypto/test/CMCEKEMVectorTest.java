@@ -97,14 +97,14 @@ public class CMCEKEMVectorTest
 
             CMCEPublicKeyParameters pub2 = (CMCEPublicKeyParameters)PublicKeyFactory.createKey(spki);
             assertEquals(params[i], pub2.getParameters());
-            assertTrue(Arrays.areEqual(pub.getPublicKey(), pub2.getPublicKey()));
+            assertTrue(Arrays.areEqual(pub.getEncoded(), pub2.getEncoded()));
 
             PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(priv);
             assertEquals(oids[i], pki.getPrivateKeyAlgorithm().getAlgorithm());
 
             CMCEPrivateKeyParameters priv2 = (CMCEPrivateKeyParameters)PrivateKeyFactory.createKey(pki);
             assertEquals(params[i], priv2.getParameters());
-            assertTrue(Arrays.areEqual(priv.getPrivateKey(), priv2.getPrivateKey()));
+            assertTrue(Arrays.areEqual(priv.getEncoded(), priv2.getEncoded()));
         }
     }
 
@@ -127,12 +127,12 @@ public class CMCEKEMVectorTest
 
             public byte[] getPublicKeyEncoded(AsymmetricKeyParameter pubParams)
             {
-                return ((CMCEPublicKeyParameters)pubParams).getPublicKey();
+                return ((CMCEPublicKeyParameters)pubParams).getEncoded();
             }
 
             public byte[] getPrivateKeyEncoded(AsymmetricKeyParameter privParams)
             {
-                return ((CMCEPrivateKeyParameters)privParams).getPrivateKey();
+                return ((CMCEPrivateKeyParameters)privParams).getEncoded();
             }
 
             public EncapsulatedSecretGenerator getKEMGenerator(SecureRandom random)
