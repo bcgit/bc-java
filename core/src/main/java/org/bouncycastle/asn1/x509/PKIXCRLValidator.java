@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.x509;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -327,6 +328,27 @@ public class PKIXCRLValidator
             throw new CRLValidatorException(
                 "Delta CRL authority key identifier does not match complete CRL authority key identifier.");
         }
+    }
+
+    /**
+     * RFC 5280 sec. 6.3.3 (i)/(j): whether a CRL entry's revocation takes effect for the
+     * validation date - it does when the date is not before the entry's revocation date, and
+     * additionally, whatever the dates, for the unspecified, keyCompromise, cACompromise and
+     * aACompromise reasons.
+     *
+     * @param validDate      the date validation is being performed for.
+     * @param revocationDate the CRL entry's revocation date.
+     * @param reasonCodeValue the entry's {@link CRLReason} code, {@link CRLReason#unspecified} if absent.
+     * @return true if the certificate is to be treated as revoked at validDate.
+     */
+    public static boolean isRevocationEffective(Date validDate, Date revocationDate,
+        int reasonCodeValue)
+    {
+        return !(validDate.getTime() < revocationDate.getTime())
+            || reasonCodeValue == CRLReason.unspecified
+            || reasonCodeValue == CRLReason.keyCompromise
+            || reasonCodeValue == CRLReason.cACompromise
+            || reasonCodeValue == CRLReason.aACompromise;
     }
 
     /**
