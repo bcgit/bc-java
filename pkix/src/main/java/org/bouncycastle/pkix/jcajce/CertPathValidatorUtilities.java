@@ -47,6 +47,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
+import org.bouncycastle.asn1.x509.PKIXCRLValidator;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
@@ -707,11 +708,7 @@ class CertPathValidatorUtilities
             :   reasonCode.intValueExact();
 
         // for reason keyCompromise, caCompromise, aACompromise or unspecified
-        if (!(validDate.getTime() < crl_entry.getRevocationDate().getTime())
-            || reasonCodeValue == CRLReason.unspecified
-            || reasonCodeValue == CRLReason.keyCompromise
-            || reasonCodeValue == CRLReason.cACompromise
-            || reasonCodeValue == CRLReason.aACompromise)
+        if (PKIXCRLValidator.isRevocationEffective(validDate, crl_entry.getRevocationDate(), reasonCodeValue))
         {
             // (i) or (j)
             certStatus.setCertStatus(reasonCodeValue);
