@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -2114,6 +2116,101 @@ public class NewSignedDataTest
         detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
 
         encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
+    }
+
+    /*
+     * Ed448 signatures are fixed-length (114 octets), so a SignerInfo's encoded length is
+     * predictable in both RFC 8419 configurations: sec. 3.1 (signed attributes present,
+     * digestAlgorithm id-shake256-len with parameter 512 - the parameter-carried output length
+     * the prediction has to understand) and sec. 3.2 (no signed attributes, digestAlgorithm
+     * id-shake256). The signed-attributes case previously returned -1 because the digest-length
+     * lookup did not know id-shake256-len.
+     */
+    public void testEd448PredictedEncodedLength()
+        throws Exception
+    {
+        CMSTypedData msg = new CMSProcessableByteArray("Hello, world!".getBytes());
+
+        // signed attributes present (the default) - RFC 8419 sec. 3.1
+        ContentSigner signer = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(_signEd448KP.getPrivate());
+        SignerInfoGenerator siGen = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(signer, _signEd448Cert);
+
+        long predicted = siGen.getPredictedEncodedLength(CMSObjectIdentifiers.data);
+
+        assertTrue("no prediction for Ed448 with signed attributes", predicted >= 0);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        gen.addSignerInfoGenerator(siGen);
+
+        CMSSignedData s = gen.generate(msg, true);
+        SignerInformation si = (SignerInformation)s.getSignerInfos().getSigners().iterator().next();
+
+        assertEquals(NISTObjectIdentifiers.id_shake256_len, si.toASN1Structure().getDigestAlgorithm().getAlgorithm());
+        assertEquals(si.toASN1Structure().getEncoded(ASN1Encoding.DER).length, predicted);
+
+        // no signed attributes - RFC 8419 sec. 3.2
+        signer = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(_signEd448KP.getPrivate());
+        siGen = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).setDirectSignature(true).build(signer, _signEd448Cert);
+
+        predicted = siGen.getPredictedEncodedLength(CMSObjectIdentifiers.data);
+
+        assertTrue("no prediction for Ed448 without signed attributes", predicted >= 0);
+
+        gen = new CMSSignedDataGenerator();
+
+        gen.addSignerInfoGenerator(siGen);
+
+        s = gen.generate(msg, true);
+        si = (SignerInformation)s.getSignerInfos().getSigners().iterator().next();
+
+        assertEquals(NISTObjectIdentifiers.id_shake256, si.toASN1Structure().getDigestAlgorithm().getAlgorithm());
+        assertEquals(si.toASN1Structure().getEncoded(ASN1Encoding.DER).length, predicted);
+    }
+
+    /**
+     * The id-shake256-len parameter is what makes the length knowable, so a missing or malformed
+     * parameter must yield -1 ("fall back to indefinite-length") rather than a wrong length that
+     * would be committed to a DL header before the body is written.
+     */
+    public void testMalformedShake256LenGivesNoPrediction()
+        throws Exception
+    {
+        assertEquals(64, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512))));
+
+        // absent parameter - the length is simply unknown
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len)));
+        // not an integer at all
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, DERNull.INSTANCE)));
+        // zero, negative, and not a whole number of octets
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(0))));
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(-512))));
+        assertEquals(-1, invokeGetDigestOutputLength(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(7))));
+        // beyond int range - intValueExact must not silently truncate
+        assertEquals(-1, invokeGetDigestOutputLength(new AlgorithmIdentifier(
+            NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(new BigInteger("18446744073709551616")))));
+    }
+
+    /**
+     * CMSUtils is package-private to org.bouncycastle.cms, so reach it reflectively rather than
+     * adding public API for a test.
+     */
+    private int invokeGetDigestOutputLength(AlgorithmIdentifier digAlgId)
+        throws Exception
+    {
+        Class cmsUtils = Class.forName("org.bouncycastle.cms.CMSUtils");
+        Method m = cmsUtils.getDeclaredMethod("getDigestOutputLength", AlgorithmIdentifier.class);
+        m.setAccessible(true);
+
+        return ((Integer)m.invoke(null, new Object[]{digAlgId})).intValue();
     }
 
     public void testEd25519WithNoAttr()

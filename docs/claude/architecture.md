@@ -135,3 +135,33 @@ Practical implications when adding code:
 - A top-level class that does need to expose a JCA-friendly or lightweight-friendly factory method should ship the factory in its `.jcajce` or `.bc` peer instead of pulling JCA/lightweight imports into the top package.
 
 The rule applies uniformly to `pkix` (`cms`, `cades`, `tsp`, `cert`, `operator`, ...), `pg`, `mail`/`jmail`, `tls`, and `mls`. When adding a new package under any of these modules, decide on the split up-front: if any class needs `java.security` / `javax.crypto` beyond `SecureRandom`, the package should be a `.jcajce` subpackage; if any class needs `org.bouncycastle.crypto.*`, the package should be a `.bc` subpackage. A JCA-free, lightweight-free top-level parent is usually still appropriate to host the operator interfaces both flavours adapt to.
+
+## `core` keeps the JDK security API out: SecureRandom + Destroyable only
+
+`core/src/main/java` is the lightweight API — it must not lean on the JCA/JCE. The allowed JDK
+security surface is exactly:
+
+- **`java.security`**: `SecureRandom` only.
+- **`javax.security`**: `javax.security.auth.Destroyable` and `javax.security.auth.DestroyFailedException` only (the `Destroyable` contract on secret-bearing key parameters and `SecretWithEncapsulation`).
+- **`javax.crypto`**: nothing, ever.
+
+No JCA crypto-operation or spec class (`MessageDigest`, `Signature`, `Cipher`, `KeyFactory`,
+`java.security.cert.*`, `java.security.spec.*`, ...) belongs in `core` — that's what the `prov`
+`*Spi` layer is for. Audited 2026-07: the tree conforms, with five files of non-crypto
+security-manager/configuration plumbing as the vetted exception set — `CryptoServicesPermission`
+(is a `java.security.Permission`), `CryptoServicesRegistrar` (`AccessController`/`PrivilegedAction`/`Permission`
+checks), `util/Properties` (those plus `java.security.Security` for the security-property fallback),
+`util/Strings` (`doPrivileged` for `line.separator`), and `util/test/FixedSecureRandom`
+(`java.security.Provider` for the `SecureRandom(spi, provider)` super constructor). Don't add to
+that list without dgh signing off.
+
+The rule is **machine-enforced**: an `ImportControl` module in `config/checkstyle/checkstyle.xml`
+applies `config/checkstyle/import-control-core.xml` to `core/src/main/java` (path-scoped, so the
+`prov` checkstyle task — whose srcDirs include core — applies it to the core sources only). A new
+disallowed import fails `:core:checkstyleMain` / CI with `Disallowed import - <class>.
+[ImportControl]`; a newly-vetted exception means editing the import-control file's per-file `allow`
+list. Checkstyle only covers imports — a fully-qualified `java.security.Foo` in a method body would
+slip past, so keep an eye out in review. (The jdk1.1/jdk1.2 overlay trees legitimately *contain*
+`java/security/...` source files — those are the clean-room backport classes those legacy
+distributions ship, not references. The legacy Ant builds use their own `checkstyle/bc-checks.xml`
+outside this repo, so they don't run this check.)

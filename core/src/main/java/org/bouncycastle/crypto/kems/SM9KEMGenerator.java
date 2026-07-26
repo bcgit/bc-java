@@ -31,6 +31,12 @@ public class SM9KEMGenerator
 
     public SM9KEMGenerator(int keyLenBits, SecureRandom random)
     {
+        if (keyLenBits <= 0)
+        {
+            // a non-positive length gives the KDF nothing to produce, so the
+            // all-zero retry check would hold vacuously and never terminate
+            throw new IllegalArgumentException("keyLenBits must be positive");
+        }
         this.keyLenBits = keyLenBits;
         this.random = random;
     }

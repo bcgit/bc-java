@@ -102,6 +102,28 @@ The streaming classes under `pkix/src/main/java/org/bouncycastle/cms/CMS*{Parser
 
 When updating CMS class-level javadoc, verify by tracing rather than paraphrasing aspirational behaviour: between Aug–Dec 2025 the `CMSAuthEnvelopedDataParser` doc claimed the constructor "fully drains and closes" the InputStream and that "plaintext content is buffered in memory" — both were wrong (the constructor reads ~84% of the input, no buffering happens), and the doc was corrected as part of github #2133. The model `<b>Stream handling note:</b>` blocks added across the package under that issue are the template to follow.
 
+## Every CMS recipient extends `AbstractRecipient` and checks before it unwraps
+
+All recipient implementations in `org.bouncycastle.cms` (Jce and Bc, every family — key transport,
+key agreement, KEK, password, KEM, KTS) extend `org.bouncycastle.cms.AbstractRecipient` and enforce
+its two caller-configurable constraints at the **top** of `extractSecretKey`, before any unwrapping:
+`isContentAlgorithmAllowed(algOid)` (throw `CMSAlgorithmNotAllowedException` when it returns false)
+and `checkTagSize(algId)` (throws `CMSTagLengthException`). Both act on the content-encryption
+`AlgorithmIdentifier` the not-yet-authenticated message names — the point is to refuse before the
+sender's algorithm choice does any work. A new recipient class must follow the same shape and expose
+the fluent `setAllowedContentAlgorithms` / `setMinimumTagSize` setters with javadoc mirrored from
+`JceKeyTransRecipient`. `JceKTSKeyTransRecipient` was the one that slipped through (fixed
+`915e7f3ffb`), which shows how the gap presents: nothing fails, the caller's hardening just silently
+doesn't cover that recipient type.
+
+Related invariant: `CMSUtils.getAEADMacLength` returns `-1` only for a non-AEAD algorithm ("check
+does not apply") and `0` for an AEAD algorithm with absent/unusable parameters (fail-closed — the
+`catch (RuntimeException) { return 0; }` branch). Regressing that branch to a negative value would
+make `checkTagSize` skip the floor for a message that simply omits its parameters. Constraint tests
+mirror `testKeyTransAllowedContentAlgorithms` (pkix `NewEnvelopedDataTest`) and
+`testKeyTransMinimumTagSize` (pkix `AuthEnvelopedDataTest`); note the KTS recipient has no
+AuthEnveloped variant, so its tag test drives GCM through `EnvelopedData`, which BC accepts.
+
 ## Operator OutputStream close discipline
 
 When writing data to a `ContentSigner.getOutputStream()` (or the symmetric `ContentVerifier.getOutputStream()`), **always call `close()` on the returned stream before calling `getSignature()` / `verify(...)`**. Many implementations finalise digest / signature state inside `close()` — feeding bytes without closing can produce truncated input, missing trailing-block computations, or a downstream JCA `Signature.SignatureException`. The canonical pattern (see `X509v3CertificateBuilder.generateSig`):

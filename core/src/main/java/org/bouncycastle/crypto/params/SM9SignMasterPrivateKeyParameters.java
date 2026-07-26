@@ -49,11 +49,6 @@ public class SM9SignMasterPrivateKeyParameters
         return publicParams;
     }
 
-    BigInteger getKs()
-    {
-        return checkedKs();
-    }
-
     /**
      * The master private key ks as a 32-byte big-endian scalar.
      */
@@ -72,7 +67,7 @@ public class SM9SignMasterPrivateKeyParameters
      * (GM/T 0044.2-2016, 5.3): t1 = H1(id||hid, N) + ks; if t1 = 0 the master
      * key must be regenerated; otherwise t2 = ks*t1^-1 and ds = [t2]P1.
      */
-    public SM9SignPrivateKeyParameters generatePrivateKey(byte[] id)
+    public SM9SignPrivateKeyParameters generateUserKey(byte[] id)
     {
         BigInteger ks = checkedKs();
         BigInteger n = SM9Curve.N;
@@ -92,7 +87,7 @@ public class SM9SignMasterPrivateKeyParameters
      * <p>
      * As {@link BigInteger} is immutable the secret value cannot be zeroized in place;
      * destruction drops the reference and marks the key destroyed, after which
-     * {@link #getEncoded()} and {@link #generatePrivateKey(byte[])} throw
+     * {@link #getEncoded()} and {@link #generateUserKey(byte[])} throw
      * {@link IllegalStateException}. The public key parameters remain available.
      */
     public synchronized void destroy()
