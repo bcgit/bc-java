@@ -42,7 +42,7 @@ public class BCSM9EncMasterPrivateKey
      */
     private BCSM9EncPrivateKey extractPrivateKey(byte[] id)
     {
-        return new BCSM9EncPrivateKey(keyParams.generatePrivateKey(id));
+        return new BCSM9EncPrivateKey(keyParams.generateUserKey(id));
     }
 
     /**

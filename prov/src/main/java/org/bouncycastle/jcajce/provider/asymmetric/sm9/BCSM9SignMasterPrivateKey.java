@@ -43,7 +43,7 @@ public class BCSM9SignMasterPrivateKey
 
     private BCSM9SignPrivateKey extractPrivateKey(byte[] id)
     {
-        return new BCSM9SignPrivateKey(keyParams.generatePrivateKey(id));
+        return new BCSM9SignPrivateKey(keyParams.generateUserKey(id));
     }
 
     /**
