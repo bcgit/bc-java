@@ -25,9 +25,15 @@ public class SM9EncMasterPublicKeyParameters
         this.pPube = pPube;
     }
 
-    ECPoint getPointG1()
+    /**
+     * The encryption public key of the user identified by {@code id}: the recipient key
+     * a sender encapsulates to (or encrypts to), formed from this master public key and
+     * the identity (GM/T 0044.4). It is derived from the published master public key
+     * alone, so any sender can construct it without KGC interaction.
+     */
+    public SM9EncPublicKeyParameters getUserPublicKey(byte[] id)
     {
-        return pPube;
+        return new SM9EncPublicKeyParameters(this, id);
     }
 
     /**

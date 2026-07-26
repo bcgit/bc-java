@@ -330,12 +330,9 @@ class RFC3280CertPathUtilities
         }
     }
 
-    protected static ReasonsMask processCRLD(
-        X509CRL crl,
-        DistributionPoint dp)
-        throws AnnotatedException
+    protected static ReasonsMask processCRLD(X509CRL crl, DistributionPoint dp) throws AnnotatedException
     {
-        IssuingDistributionPoint idp = null;
+        IssuingDistributionPoint idp;
         try
         {
             idp = IssuingDistributionPoint.getInstance(RevocationUtilities.getExtensionValue(crl,
@@ -345,23 +342,22 @@ class RFC3280CertPathUtilities
         {
             throw new AnnotatedException("Issuing distribution point extension could not be decoded.", e);
         }
-        // (d) (1)
-        if (idp != null && idp.getOnlySomeReasons() != null && dp.getReasons() != null)
-        {
-            return new ReasonsMask(dp.getReasons()).intersect(new ReasonsMask(idp.getOnlySomeReasons()));
-        }
-        // (d) (4)
-        if ((idp == null || idp.getOnlySomeReasons() == null) && dp.getReasons() == null)
-        {
-            return ReasonsMask.allReasons;
-        }
-        // (d) (2) and (d)(3)
-        return (dp.getReasons() == null
-            ? ReasonsMask.allReasons
-            : new ReasonsMask(dp.getReasons())).intersect(idp == null
-            ? ReasonsMask.allReasons
-            : new ReasonsMask(idp.getOnlySomeReasons()));
 
+        // (d) (1..4) Intersect the IPD and DP reasons; absent reasons are interpreted as AllReasons
+
+        int idpFlags = ReasonsMask.ALL_REASONS;
+        if (idp != null && idp.getOnlySomeReasons() != null)
+        {
+            idpFlags = idp.getOnlySomeReasons().intValue();
+        }
+
+        int dpFlags = ReasonsMask.ALL_REASONS;
+        if (dp.getReasons() != null)
+        {
+            dpFlags = dp.getReasons().intValue();
+        }
+
+        return new ReasonsMask(idpFlags & dpFlags);
     }
 
 
@@ -834,7 +830,7 @@ class RFC3280CertPathUtilities
      * @param defaultCRLSignKey  The public key of the issuer certificate
      *                           <code>defaultCRLSignCert</code>.
      * @param certStatus         The current certificate revocation status.
-     * @param reasonMask         The reasons mask which is already checked.
+     * @param reasonsMask         The reasons mask which is already checked.
      * @param certPathCerts      The certificates of the certification path.
      * @throws AnnotatedException if the certificate is revoked or the status cannot be checked
      *                            or some error occurs.
@@ -848,7 +844,7 @@ class RFC3280CertPathUtilities
         X509Certificate defaultCRLSignCert,
         PublicKey defaultCRLSignKey,
         CertStatus certStatus,
-        ReasonsMask reasonMask,
+        ReasonsMask reasonsMask,
         List certPathCerts,
         JcaJceHelper helper)
         throws AnnotatedException, CRLNotFoundException
@@ -871,7 +867,7 @@ class RFC3280CertPathUtilities
         AnnotatedException lastException = null;
         Iterator crl_iter = crls.iterator();
 
-        while (crl_iter.hasNext() && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonMask.isAllReasons())
+        while (crl_iter.hasNext() && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons())
         {
             try
             {
@@ -889,13 +885,14 @@ class RFC3280CertPathUtilities
                  * can update it. If this CRL does not contain new reasons it
                  * must be ignored.
                  */
-                if (!interimReasonsMask.hasNewReasons(reasonMask))
+                if (!reasonsMask.hasNewReasons(interimReasonsMask))
                 {
                     continue;
                 }
 
                 // (f)
                 Set keys = processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey, paramsPKIX, certPathCerts, helper);
+
                 // (g)
                 PublicKey key = processCRLG(crl, keys);
 
@@ -962,7 +959,7 @@ class RFC3280CertPathUtilities
                 }
 
                 // update reasons mask
-                reasonMask.addReasons(interimReasonsMask);
+                reasonsMask.addReasons(interimReasonsMask);
 
                 validCrlFound = true;
             }

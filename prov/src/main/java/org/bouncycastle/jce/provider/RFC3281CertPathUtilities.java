@@ -558,7 +558,7 @@ class RFC3281CertPathUtilities
      *            The date when the certificate revocation status should be checked.
      * @param issuerCert
      *            Certificate to check if it is revoked.
-     * @param reasonMask
+     * @param reasonsMask
      *            The reasons mask which is already checked.
      * @param certPathCerts
      *            The certificates of the certification path to be checked.
@@ -568,7 +568,7 @@ class RFC3281CertPathUtilities
      */
     private static void checkCRL(DistributionPoint dp, X509AttributeCertificate attrCert,
         PKIXExtendedParameters paramsPKIX, Date currentDate, Date validityDate, X509Certificate issuerCert, CertStatus certStatus,
-        ReasonsMask reasonMask, List certPathCerts, JcaJceHelper helper)
+        ReasonsMask reasonsMask, List certPathCerts, JcaJceHelper helper)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
         /*
@@ -605,7 +605,7 @@ class RFC3281CertPathUtilities
 
         while (crl_iter.hasNext()
             && certStatus.getCertStatus() == CertStatus.UNREVOKED
-            && !reasonMask.isAllReasons())
+            && !reasonsMask.isAllReasons())
         {
             try
             {
@@ -623,13 +623,14 @@ class RFC3281CertPathUtilities
                  * can update it. If this CRL does not contain new reasons it
                  * must be ignored.
                  */
-                if (!interimReasonsMask.hasNewReasons(reasonMask))
+                if (!reasonsMask.hasNewReasons(interimReasonsMask))
                 {
                     continue;
                 }
 
                 // (f)
                 Set keys = RFC3280CertPathUtilities.processCRLF(crl, attrCert, null, null, paramsPKIX, certPathCerts, helper);
+
                 // (g)
                 PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
 
@@ -696,7 +697,7 @@ class RFC3281CertPathUtilities
                 }
 
                 // update reasons mask
-                reasonMask.addReasons(interimReasonsMask);
+                reasonsMask.addReasons(interimReasonsMask);
 
                 validCrlFound = true;
             }

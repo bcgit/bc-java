@@ -22,6 +22,11 @@ public class SM9KEMExtractor
 
     public SM9KEMExtractor(SM9EncPrivateKeyParameters key, int keyLenBits)
     {
+        if (keyLenBits <= 0)
+        {
+            // match SM9KEMGenerator: a non-positive length has no KDF output
+            throw new IllegalArgumentException("keyLenBits must be positive");
+        }
         this.key = key;
         this.keyLenBits = keyLenBits;
     }

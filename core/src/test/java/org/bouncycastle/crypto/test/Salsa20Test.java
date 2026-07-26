@@ -156,6 +156,7 @@ public class Salsa20Test
                   set6v1_0, set6v1_65472, set6v1_65536);
         reinitBug();
         skipTest();
+        skipExtremesTest();
     }
 
     private void salsa20Test1(int rounds, CipherParameters params, String v0, String v192, String v256, String v448)
@@ -276,6 +277,49 @@ public class Salsa20Test
         }
 
         return true;
+    }
+
+    // skip(Long.MIN_VALUE): -numberOfBytes overflows back to itself, which used to make the
+    // skip a silent no-op that still returned as if it had moved 2^63 bytes back
+    private void skipExtremesTest()
+    {
+        CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("0053A6F94C9FF24598EB3E91E4378ADD3083D6297CCF2275C81B6EC11467BA0D")), Hex.decode("0D74DB42A91077DE"));
+        Salsa20Engine engine = new Salsa20Engine();
+
+        engine.init(true, params);
+
+        byte[] reference = new byte[64];
+        engine.processBytes(new byte[64], 0, 64, reference, 0);
+
+        // from a low position the move must reduce the counter past zero, not vanish
+        try
+        {
+            engine.skip(Long.MIN_VALUE);
+            fail("skip(Long.MIN_VALUE) from a low position did not throw");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message: " + e.getMessage(), "attempt to reduce counter past zero.".equals(e.getMessage()));
+        }
+
+        // a legitimate skip(Long.MIN_VALUE): forward to exactly 2^63, then back to zero
+        engine.init(true, params);
+        engine.skip(Long.MAX_VALUE);
+        engine.skip(1);
+        engine.skip(Long.MIN_VALUE);
+
+        if (engine.getPosition() != 0)
+        {
+            fail("extreme round trip landed at " + engine.getPosition());
+        }
+
+        byte[] fragment = new byte[64];
+        engine.processBytes(new byte[64], 0, 64, fragment, 0);
+
+        if (!areEqual(fragment, reference))
+        {
+            fail("keystream after extreme round trip mismatch");
+        }
     }
 
     private void skipTest()

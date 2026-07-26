@@ -38,6 +38,7 @@ public class AllTests
         suite.addTestSuite(HostNameAuthorizerMatchTest.class);
         suite.addTestSuite(TestHostNameAuthorizer.class);
         suite.addTestSuite(ESTResponseTest.class);
+        suite.addTestSuite(ESTServiceDrainTest.class);
         suite.addTestSuite(Rfc7894AttributesTest.class);
         // HttpUtilTest lives in the package-private org.bouncycastle.est package (it exercises
         // HttpUtil.splitCSL) and is run from that package's own AllTests, so the signed-jar
