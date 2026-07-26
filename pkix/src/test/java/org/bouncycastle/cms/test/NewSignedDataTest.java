@@ -2207,7 +2207,7 @@ public class NewSignedDataTest
         throws Exception
     {
         Class cmsUtils = Class.forName("org.bouncycastle.cms.CMSUtils");
-        Method m = cmsUtils.getDeclaredMethod("getDigestOutputLength", AlgorithmIdentifier.class);
+        Method m = cmsUtils.getDeclaredMethod("getDigestOutputLength", new Class[]{AlgorithmIdentifier.class});
         m.setAccessible(true);
 
         return ((Integer)m.invoke(null, new Object[]{digAlgId})).intValue();
