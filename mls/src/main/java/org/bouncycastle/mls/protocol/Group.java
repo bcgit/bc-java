@@ -1934,7 +1934,8 @@ public class Group
         // We mark self-removes invalid here even though a resync Commit will
         // sometimes cause them.  This is OK because this method is only called from
         // the normal proposal list validation method, not the external commit one.
-        boolean in_tree = (remove.removed.value() < tree.getSize().leafCount()) && tree.hasLeaf(remove.removed);
+        // Compared as unsigned, matching GroupKeySet.SecretTree.hasLeaf: leaf_index is a wire uint32.
+        boolean in_tree = (Integer.toUnsignedLong(remove.removed.value()) < tree.getSize().leafCount()) && tree.hasLeaf(remove.removed);
         boolean not_me = remove.removed.value() != index.value();
         return in_tree && not_me;
     }

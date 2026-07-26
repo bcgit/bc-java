@@ -176,7 +176,9 @@ public class GroupKeySet
 
         protected boolean hasLeaf(LeafIndex sender)
         {
-            return sender.value() < treeSize.leafCount();
+            // Compare unsigned: a signed leaf_index (uint32 on the wire) with the top bit set would
+            // otherwise widen to a negative long and always satisfy this bound.
+            return Integer.toUnsignedLong(sender.value()) < treeSize.leafCount();
         }
 
         public Secret get(LeafIndex leaf)
