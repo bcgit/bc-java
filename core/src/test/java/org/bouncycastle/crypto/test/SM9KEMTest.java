@@ -76,7 +76,7 @@ public class SM9KEMTest
         int klen = Integer.parseInt((String)v.get("klen_bits"));
 
         SM9EncMasterPrivateKeyParameters master = new SM9EncMasterPrivateKeyParameters(ke);
-        SM9EncPublicKeyParameters recipient = new SM9EncPublicKeyParameters(master.getPublicKeyParameters(), id);
+        SM9EncPublicKeyParameters recipient = master.getPublicKeyParameters().getUserPublicKey(id);
 
         SM9KEMGenerator gen = new SM9KEMGenerator(klen, new TestRandomBigInteger(256, hex(v, "r")));
         SecretWithEncapsulation enc = gen.generateEncapsulated(recipient);
