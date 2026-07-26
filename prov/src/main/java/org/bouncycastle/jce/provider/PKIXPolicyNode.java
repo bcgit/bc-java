@@ -131,7 +131,6 @@ public class PKIXPolicyNode
         return _buf.toString();
     }
 
-    // TODO[api] Maybe remove this, the 'clone' loses its parent
     public Object clone()
     {
         return copy();
@@ -159,8 +158,9 @@ public class PKIXPolicyNode
         _iter = children.iterator();
         while (_iter.hasNext())
         {
-            PKIXPolicyNode child = (PKIXPolicyNode)_iter.next();
-            copy.addChild(child.copy());
+            PKIXPolicyNode child = ((PKIXPolicyNode)_iter.next()).copy();
+            child.setParent(copy);
+            copy.addChild(child);
         }
 
         return copy;
