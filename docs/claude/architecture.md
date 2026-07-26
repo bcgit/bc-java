@@ -136,6 +136,25 @@ Practical implications when adding code:
 
 The rule applies uniformly to `pkix` (`cms`, `cades`, `tsp`, `cert`, `operator`, ...), `pg`, `mail`/`jmail`, `tls`, and `mls`. When adding a new package under any of these modules, decide on the split up-front: if any class needs `java.security` / `javax.crypto` beyond `SecureRandom`, the package should be a `.jcajce` subpackage; if any class needs `org.bouncycastle.crypto.*`, the package should be a `.bc` subpackage. A JCA-free, lightweight-free top-level parent is usually still appropriate to host the operator interfaces both flavours adapt to.
 
+## Shared prov/pkix cert-path logic goes in `asn1.x509` as a public pure-ASN.1 validator
+
+The cert-path stacks — prov's `jce/provider` validator, prov's legacy `org.bouncycastle.x509` API,
+and pkix's `pkix/jcajce` revocation checker — cannot share package-private code: prov cannot see
+pkix, and `org.bouncycastle.internal.*` is JPMS-concealed and OSGi-excluded, so it is invisible to
+the pkix module/bundle (the same constraint behind the dual-located OID tables). The established
+pattern when the same RFC 5280 rule logic is needed in more than one stack: extract a **public,
+pure-ASN.1 engine class into core's `org.bouncycastle.asn1.x509`** (visible everywhere via the
+core-into-prov bundling, no module-info/OSGi edits needed) with a **public checked exception**,
+and keep thin per-module wrappers that do the JCA extraction and rethrow as their local
+`AnnotatedException` with the message text preserved verbatim (messages are test contract). Keep
+the wrappers' extraction *lazy* where the original was — expose `requiresX(...)` predicates from
+the engine rather than letting a wrapper eagerly compute a value whose failure path the original
+only reached conditionally. Worked examples: `PKIXNameConstraintValidator` /
+`NameConstraintValidatorException` (RFC 5280 sec. 6.1.4) and `PKIXCRLValidator` /
+`CRLValidatorException` (sec. 6.3.3 CRL scope rules, `222b3af2b7`). JCA-bound duplication
+(CertPathBuilder plumbing, `Signature`/CRL verification, store selectors) does **not** fit this
+pattern — sharing it would mean minting new public JCA API in prov, a different trade-off.
+
 ## `core` keeps the JDK security API out: SecureRandom + Destroyable only
 
 `core/src/main/java` is the lightweight API — it must not lean on the JCA/JCE. The allowed JDK
