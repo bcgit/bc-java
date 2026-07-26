@@ -94,6 +94,8 @@
                 <!-- est.jcajce tests reach the package-private DefaultESTClient; run from the test
                      jar in this build that cross-jar package access fails, so exclude them -->
                 <exclude name="**/est/jcajce/*.java"/>
+                <!-- pkix.jcajce tests reach the package-private ReasonsMask - same problem -->
+                <exclude name="**/pkix/jcajce/*.java"/>
                 <!-- Genuine post-1.5 API in test source (fails the real javac 1.5 test compile):
                      PKIXRevocationTest / OCSPExceptionalSignatureRejectionTest use
                      java.security.cert.PKIXRevocationChecker (JDK 1.8+); the jdk1.5 ocsp AllTests

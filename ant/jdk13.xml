@@ -353,6 +353,7 @@
                 <exclude name="**/jce/provider/test/CertLocaleTest.java" />
             </fileset>
             <fileset dir="pkix/src/test/java">
+                <exclude name="**/pkix/jcajce/*.java"/>
                 <exclude name="**/CheckNameConstraintsTest.java"/>
                 <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/SunProviderTest.java" />

@@ -192,6 +192,7 @@
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
+                <exclude name="**/pkix/jcajce/*.java"/>
                 <exclude name="**/tsp/test/ERSTest.java"/>
                 <exclude name="**/cades/test/CAdESTTest.java"/>
                 <exclude name="**/cades/test/CAdESLTTest.java"/>
