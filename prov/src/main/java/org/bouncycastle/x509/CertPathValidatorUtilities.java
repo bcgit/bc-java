@@ -54,7 +54,8 @@ import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.jce.provider.AnnotatedException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.provider.PKIXPolicyNode;
+import org.bouncycastle.jcajce.PKIXPolicyNode;
+import org.bouncycastle.jcajce.PKIXPolicyTreeUtil;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
@@ -242,243 +243,32 @@ class CertPathValidatorUtilities
         return pq;
     }
 
-    protected static PKIXPolicyNode removePolicyNode(
-        PKIXPolicyNode validPolicyTree,
-        List[] policyNodes,
+    protected static PKIXPolicyNode removePolicyNode(PKIXPolicyNode validPolicyTree, List[] policyNodes,
         PKIXPolicyNode _node)
     {
-        PKIXPolicyNode _parent = (PKIXPolicyNode)_node.getParent();
-
-        if (validPolicyTree == null)
-        {
-            return null;
-        }
-
-        if (_parent == null)
-        {
-            for (int j = 0; j < policyNodes.length; j++)
-            {
-                policyNodes[j] = new ArrayList();
-            }
-
-            return null;
-        }
-        else
-        {
-            _parent.removeChild(_node);
-            removePolicyNodeRecurse(policyNodes, _node);
-
-            return validPolicyTree;
-        }
+        return PKIXPolicyTreeUtil.removePolicyNode(validPolicyTree, policyNodes, _node);
     }
 
-    private static void removePolicyNodeRecurse(
-        List[] policyNodes,
-        PKIXPolicyNode _node)
+    protected static boolean processCertD1i(int index, List[] policyNodes, ASN1ObjectIdentifier pOid, Set pq)
     {
-        policyNodes[_node.getDepth()].remove(_node);
-
-        if (_node.hasChildren())
-        {
-            Iterator _iter = _node.getChildren();
-            while (_iter.hasNext())
-            {
-                PKIXPolicyNode _child = (PKIXPolicyNode)_iter.next();
-                removePolicyNodeRecurse(policyNodes, _child);
-            }
-        }
+        return PKIXPolicyTreeUtil.processCertD1i(index, policyNodes, pOid, pq);
     }
 
-
-    protected static boolean processCertD1i(
-        int index,
-        List[] policyNodes,
-        ASN1ObjectIdentifier pOid,
-        Set pq)
+    protected static void processCertD1ii(int index, List[] policyNodes, ASN1ObjectIdentifier _poid, Set _pq)
     {
-        List policyNodeVec = policyNodes[index - 1];
-
-        for (int j = 0; j < policyNodeVec.size(); j++)
-        {
-            PKIXPolicyNode node = (PKIXPolicyNode)policyNodeVec.get(j);
-            Set expectedPolicies = node.getExpectedPolicies();
-
-            if (expectedPolicies.contains(pOid.getId()))
-            {
-                Set childExpectedPolicies = new HashSet();
-                childExpectedPolicies.add(pOid.getId());
-
-                PKIXPolicyNode child = new PKIXPolicyNode(new ArrayList(),
-                    index,
-                    childExpectedPolicies,
-                    node,
-                    pq,
-                    pOid.getId(),
-                    false);
-                node.addChild(child);
-                policyNodes[index].add(child);
-
-                return true;
-            }
-        }
-
-        return false;
+        PKIXPolicyTreeUtil.processCertD1ii(index, policyNodes, _poid, _pq);
     }
 
-    protected static void processCertD1ii(
-        int index,
-        List[] policyNodes,
-        ASN1ObjectIdentifier _poid,
-        Set _pq)
-    {
-        List policyNodeVec = policyNodes[index - 1];
-
-        for (int j = 0; j < policyNodeVec.size(); j++)
-        {
-            PKIXPolicyNode _node = (PKIXPolicyNode)policyNodeVec.get(j);
-
-            if (ANY_POLICY.equals(_node.getValidPolicy()))
-            {
-                Set _childExpectedPolicies = new HashSet();
-                _childExpectedPolicies.add(_poid.getId());
-
-                PKIXPolicyNode _child = new PKIXPolicyNode(new ArrayList(),
-                    index,
-                    _childExpectedPolicies,
-                    _node,
-                    _pq,
-                    _poid.getId(),
-                    false);
-                _node.addChild(_child);
-                policyNodes[index].add(_child);
-                return;
-            }
-        }
-    }
-
-    protected static void prepareNextCertB1(
-        int i,
-        List[] policyNodes,
-        String id_p,
-        Map m_idp,
-        X509Certificate cert
-    )
+    protected static void prepareNextCertB1(int i, List[] policyNodes, String id_p, Map m_idp, X509Certificate cert)
         throws AnnotatedException, CertPathValidatorException
     {
-        boolean idp_found = false;
-        Iterator nodes_i = policyNodes[i].iterator();
-        while (nodes_i.hasNext())
-        {
-            PKIXPolicyNode node = (PKIXPolicyNode)nodes_i.next();
-            if (node.getValidPolicy().equals(id_p))
-            {
-                idp_found = true;
-                node.setExpectedPolicies((Set)m_idp.get(id_p));
-                break;
-            }
-        }
-
-        if (!idp_found)
-        {
-            nodes_i = policyNodes[i].iterator();
-            while (nodes_i.hasNext())
-            {
-                PKIXPolicyNode node = (PKIXPolicyNode)nodes_i.next();
-                if (ANY_POLICY.equals(node.getValidPolicy()))
-                {
-                    Set pq = null;
-                    ASN1Sequence policies = null;
-                    try
-                    {
-                        policies = DERSequence.getInstance(getExtensionValue(cert, CERTIFICATE_POLICIES));
-                    }
-                    catch (Exception e)
-                    {
-                        throw new AnnotatedException("Certificate policies cannot be decoded.", e);
-                    }
-                    Enumeration e = policies.getObjects();
-                    while (e.hasMoreElements())
-                    {
-                        PolicyInformation pinfo = null;
-
-                        try
-                        {
-                            pinfo = PolicyInformation.getInstance(e.nextElement());
-                        }
-                        catch (Exception ex)
-                        {
-                            throw new AnnotatedException("Policy information cannot be decoded.", ex);
-                        }
-                        if (ANY_POLICY.equals(pinfo.getPolicyIdentifier().getId()))
-                        {
-                            try
-                            {
-                                pq = getQualifierSet(pinfo.getPolicyQualifiers());
-                            }
-                            catch (CertPathValidatorException ex)
-                            {
-                                throw new ExtCertPathValidatorException(
-                                    "Policy qualifier info set could not be built.", ex);
-                            }
-                            break;
-                        }
-                    }
-                    boolean ci = false;
-                    if (cert.getCriticalExtensionOIDs() != null)
-                    {
-                        ci = cert.getCriticalExtensionOIDs().contains(CERTIFICATE_POLICIES);
-                    }
-
-                    PKIXPolicyNode p_node = (PKIXPolicyNode)node.getParent();
-                    if (ANY_POLICY.equals(p_node.getValidPolicy()))
-                    {
-                        PKIXPolicyNode c_node = new PKIXPolicyNode(
-                            new ArrayList(), i,
-                            (Set)m_idp.get(id_p),
-                            p_node, pq, id_p, ci);
-                        p_node.addChild(c_node);
-                        policyNodes[i].add(c_node);
-                    }
-                    break;
-                }
-            }
-        }
+        PKIXPolicyTreeUtil.prepareNextCertB1(i, policyNodes, id_p, m_idp, cert);
     }
 
-    protected static PKIXPolicyNode prepareNextCertB2(
-        int i,
-        List[] policyNodes,
-        String id_p,
+    protected static PKIXPolicyNode prepareNextCertB2(int i, List[] policyNodes, String id_p,
         PKIXPolicyNode validPolicyTree)
     {
-        Iterator nodes_i = policyNodes[i].iterator();
-        while (nodes_i.hasNext())
-        {
-            PKIXPolicyNode node = (PKIXPolicyNode)nodes_i.next();
-            if (node.getValidPolicy().equals(id_p))
-            {
-                PKIXPolicyNode p_node = (PKIXPolicyNode)node.getParent();
-                p_node.removeChild(node);
-                nodes_i.remove();
-                for (int k = (i - 1); k >= 0; k--)
-                {
-                    List nodes = policyNodes[k];
-                    for (int l = 0; l < nodes.size(); l++)
-                    {
-                        PKIXPolicyNode node2 = (PKIXPolicyNode)nodes.get(l);
-                        if (!node2.hasChildren())
-                        {
-                            validPolicyTree = removePolicyNode(validPolicyTree, policyNodes, node2);
-                            if (validPolicyTree == null)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return validPolicyTree;
+        return PKIXPolicyTreeUtil.prepareNextCertB2(i, policyNodes, id_p, validPolicyTree);
     }
 
     protected static boolean isAnyPolicy(

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.bouncycastle.jcajce.PKIXPolicyNode;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
