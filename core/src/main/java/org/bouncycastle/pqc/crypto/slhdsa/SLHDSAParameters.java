@@ -52,6 +52,29 @@ public class SLHDSAParameters
     public static final SLHDSAParameters shake_256s = new SLHDSAParameters(
         "shake-256s", new Shake256EngineProvider(32, 16, 8, 14, 22, 64), TYPE_PURE);
 
+    // SHA2-128-24
+    public static final SLHDSAParameters sha2_128_24 = new SLHDSAParameters(
+        "sha2-128-24", new Sha2EngineProvider(16, 4, 1, 24, 6, 22), TYPE_PURE);
+    
+    // SHAKE-128-24
+    public static final SLHDSAParameters shake_128_24 = new SLHDSAParameters(
+        "shake-128-24", new Shake256EngineProvider(16, 4, 1, 24, 6, 22), TYPE_PURE);
+    
+    // SHA2-192-24
+    public static final SLHDSAParameters sha2_192_24 = new SLHDSAParameters(
+        "sha2-192-24", new Sha2EngineProvider(24, 8, 1, 25, 9, 21), TYPE_PURE);
+    
+    // SHAKE-192-24
+    public static final SLHDSAParameters shake_192_24 = new SLHDSAParameters(
+        "shake-192-24", new Shake256EngineProvider(24, 8, 1, 25, 9, 21), TYPE_PURE);
+    
+    // SHA2-256-24
+    public static final SLHDSAParameters sha2_256_24 = new SLHDSAParameters(
+        "sha2-256-24", new Sha2EngineProvider(32, 4, 1, 25, 12, 21), TYPE_PURE);
+    
+    // SHAKE-256-24
+    public static final SLHDSAParameters shake_256_24 = new SLHDSAParameters(
+        "shake-256-24", new Shake256EngineProvider(32, 4, 1, 25, 12, 21), TYPE_PURE);
 
     // "Pre-hash" SLH-DSA Parameters
     // SHA-2
