@@ -1912,10 +1912,14 @@ public class TlsUtils
         securityParameters.trafficSecretClient = deriveSecret(securityParameters, phaseSecret, clientLabel,
             transcriptHash);
 
+        KeyLog.log13Secret(context, clientLabel, securityParameters.trafficSecretClient);
+
         if (null != serverLabel)
         {
             securityParameters.trafficSecretServer = deriveSecret(securityParameters, phaseSecret, serverLabel,
                 transcriptHash);
+
+            KeyLog.log13Secret(context, serverLabel, securityParameters.trafficSecretServer);
         }
 
         // TODO[tls13] Early data (client->server only)
@@ -1934,6 +1938,8 @@ public class TlsUtils
 
         securityParameters.exporterMasterSecret = deriveSecret(securityParameters, phaseSecret, "exp master",
             serverFinishedTranscriptHash);
+
+        KeyLog.log13Secret(context, "exp master", securityParameters.exporterMasterSecret);
     }
 
     static void establish13PhaseEarly(TlsContext context, byte[] clientHelloTranscriptHash, RecordStream recordStream)
@@ -1953,6 +1959,8 @@ public class TlsUtils
 
         securityParameters.earlyExporterMasterSecret = deriveSecret(securityParameters, phaseSecret, "e exp master",
             clientHelloTranscriptHash);
+
+        KeyLog.log13Secret(context, "e exp master", securityParameters.earlyExporterMasterSecret);
     }
 
     static void establish13PhaseHandshake(TlsContext context, byte[] serverHelloTranscriptHash,
@@ -4685,6 +4693,13 @@ public class TlsUtils
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+
+        /*
+         * Every (D)TLS 1.2-and-earlier handshake, full or resumed, passes through here exactly once
+         * with the master secret established, which is what RFC 9850 2.2 reports. TLS 1.3 arrives
+         * here too, from establish13TrafficSecrets, and is discarded on the other side.
+         */
+        KeyLog.logMasterSecret(context);
 
         return context.getCrypto().createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
