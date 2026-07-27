@@ -321,7 +321,7 @@ public class BcKeyStoreSpi
             }
             else
             {
-                throw new RuntimeException("forget something!");
+                throw new UnrecoverableKeyException("BKS entry stored as byte data cannot be recovered as a key");
                 // TODO
                 // if we get to here key was saved as byte data, which
                 // according to the docs means it must be a private key
