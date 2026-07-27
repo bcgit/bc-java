@@ -65,6 +65,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD
 <li>SM2Engine.decrypt and the GOST28147, DSTU7624, DESede and RC2 key-wrap engines sized their output as new byte[inLen - overhead] without first checking the ciphertext was at least that overhead, so a short attacker-supplied ciphertext or wrapped key threw NegativeArraySizeException / ArrayIndexOutOfBoundsException instead of the declared InvalidCipherTextException. The engines now reject an under-length input with InvalidCipherTextException, matching the guard the IES, RFC 3394 and RFC 5649 engines already have.</li>
 </ul>
 
+<h3>2.1.4 Additional Notes</h3>
+<ul>
+<li>ML-DSA signature verification (org.bouncycastle.crypto.signers.MLDSASigner / HashMLDSASigner, and the corresponding JCA Signature.MLDSA* / Signature.HashMLDSA* algorithms) returns false uniformly for a cryptographically wrong signature and for one that is structurally malformed per FIPS 204 Algorithm 8 (wrong length, an out-of-order or duplicate hint index, or a hint weight exceeding the parameter set's omega) - the two cases are not distinguished, and neither ever raises SignatureException for a decode failure. This differs from some other providers, including the JDK's own SUN ML-DSA implementation, which throws SignatureException for a decode failure and reserves false for a well-formed-but-wrong signature; code relying on Signature.verify() to distinguish "malformed" from "wrong" cannot rely on that distinction against the BC provider. This is documented behaviour, not a defect (github #2367).</li>
+</ul>
+
 <a id="r1rv85"><h3>2.2.1 Version</h3></a>
 Release: 1.85, 1.85.1<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, July 12th
