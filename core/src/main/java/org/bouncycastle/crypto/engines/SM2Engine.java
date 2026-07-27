@@ -74,25 +74,30 @@ public class SM2Engine
     {
         this.forEncryption = forEncryption;
 
+        SecureRandom providedRandom = null;
+        if (param instanceof ParametersWithRandom)
+        {
+            ParametersWithRandom withRandom = (ParametersWithRandom)param;
+            providedRandom = withRandom.getRandom();
+            param = withRandom.getParameters();
+        }
+
+        ecKey = (ECKeyParameters)param;
+        ecParams = ecKey.getParameters();
+
         if (forEncryption)
         {
-            ParametersWithRandom rParam = (ParametersWithRandom)param;
-
-            ecKey = (ECKeyParameters)rParam.getParameters();
-            ecParams = ecKey.getParameters();
+            random = CryptoServicesRegistrar.getSecureRandom(providedRandom);
 
             ECPoint s = ((ECPublicKeyParameters)ecKey).getQ().multiply(ecParams.getH());
             if (s.isInfinity())
             {
                 throw new IllegalArgumentException("invalid key: [h]Q at infinity");
             }
-
-            random = rParam.getRandom();
         }
         else
         {
-            ecKey = (ECKeyParameters)param;
-            ecParams = ecKey.getParameters();
+            random = null;
         }
 
         curveLength = ecParams.getCurve().getFieldElementEncodingLength();
@@ -140,21 +145,20 @@ public class SM2Engine
 
         ECMultiplier multiplier = createBasePointMultiplier();
 
-        byte[] c1;
+        BigInteger k;
         ECPoint kPB;
         do
         {
-            BigInteger k = nextK();
-
-            ECPoint c1P = multiplier.multiply(ecParams.getG(), k).normalize();
-
-            c1 = c1P.getEncoded(false);
-
+            k = nextK();
             kPB = ((ECPublicKeyParameters)ecKey).getQ().multiply(k).normalize();
 
             kdf(digest, kPB, c2);
         }
         while (notEncrypted(c2, in, inOff));
+
+        ECPoint c1P = multiplier.multiply(ecParams.getG(), k).normalize();
+
+        byte[] c1 = c1P.getEncoded(false);
 
         byte[] c3 = new byte[digest.getDigestSize()];
 
@@ -319,8 +323,7 @@ public class SM2Engine
 
     private void addFieldElement(Digest digest, ECFieldElement v)
     {
-        byte[] p = BigIntegers.asUnsignedByteArray(curveLength, v.toBigInteger());
-
+        byte[] p = v.getEncoded();
         digest.update(p, 0, p.length);
     }
 }
