@@ -54,9 +54,19 @@ public class PasswordRecipientInfo
     private PasswordRecipientInfo(
         ASN1Sequence seq)
     {
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("expected sequence size of 3");
+        }
+
         version = (ASN1Integer)seq.getObjectAt(0);
         if (seq.getObjectAt(1) instanceof ASN1TaggedObject)
         {
+            if (seq.size() < 4)
+            {
+                throw new IllegalArgumentException("expected sequence size of 4");
+            }
+
             keyDerivationAlgorithm = AlgorithmIdentifier.getInstance((ASN1TaggedObject)seq.getObjectAt(1), false);
             keyEncryptionAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(2));
             encryptedKey = (ASN1OctetString)seq.getObjectAt(3);

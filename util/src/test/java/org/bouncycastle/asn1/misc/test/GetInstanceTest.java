@@ -1052,6 +1052,38 @@ public class GetInstanceTest
             ASN1Integer.ONE}));
     }
 
+    public void testTooShortSequenceRejectedRecipientInfos()
+    {
+        // Fixed-arity CMS/CRMF/CMP SEQUENCE types with mandatory positional
+        // fields must reject a too-short encoding with a clean
+        // IllegalArgumentException rather than leaking an
+        // ArrayIndexOutOfBoundsException from positional getObjectAt,
+        // mirroring the sibling guards checked above (e.g. KeyTransRecipientInfo).
+
+        AlgorithmIdentifier algId = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1"));
+
+        // KEKRecipientInfo needs 4 mandatory fields (version, kekid, keyEncryptionAlgorithm, encryptedKey).
+        checkTooShort(KEKRecipientInfo.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, new KEKIdentifier(new byte[1], null, null), algId}));
+
+        // PasswordRecipientInfo needs at least 3 fields (version, keyEncryptionAlgorithm, encryptedKey) ...
+        checkTooShort(PasswordRecipientInfo.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, algId}));
+
+        // ... and 4 when the optional [0] keyDerivationAlgorithm is present.
+        checkTooShort(PasswordRecipientInfo.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ZERO, new DERTaggedObject(false, 0, algId), algId}));
+
+        // CertRequest needs 2 mandatory fields (certReqId, certTemplate); controls is OPTIONAL.
+        checkTooShort(CertRequest.class, new DERSequence(new ASN1Encodable[]{
+            ASN1Integer.ONE}));
+
+        // RevAnnContent needs 4 mandatory fields (status, certId, willBeRevokedAt, badSinceDate); crlDetails is OPTIONAL.
+        checkTooShort(RevAnnContent.class, new DERSequence(new ASN1Encodable[]{
+            PKIStatus.granted, new CertId(new GeneralName(new X500Name("CN=Test")), BigInteger.ONE),
+            new ASN1GeneralizedTime(new Date())}));
+    }
+
     private void checkTooShort(Class clazz, DERSequence tooShort)
     {
         try

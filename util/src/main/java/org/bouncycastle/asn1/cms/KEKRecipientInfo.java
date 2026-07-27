@@ -45,6 +45,11 @@ public class KEKRecipientInfo
     public KEKRecipientInfo(
         ASN1Sequence seq)
     {
+        if (seq.size() < 4)
+        {
+            throw new IllegalArgumentException("expected sequence size of 4");
+        }
+
         version = (ASN1Integer)seq.getObjectAt(0);
         kekid = KEKIdentifier.getInstance(seq.getObjectAt(1));
         keyEncryptionAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(2));
