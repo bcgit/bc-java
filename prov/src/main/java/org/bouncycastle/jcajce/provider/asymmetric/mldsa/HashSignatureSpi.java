@@ -14,6 +14,16 @@ import org.bouncycastle.crypto.signers.HashMLDSASigner;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 
+/**
+ * JCA Signature SPI for the pre-hash ("ExtHash") ML-DSA (FIPS 204) variants.
+ * <p>
+ * As with the plain {@link SignatureSpi}, a structurally malformed signature (wrong length, or a
+ * FIPS 204 Algorithm 8 hint-decode failure) and a well-formed-but-cryptographically-wrong
+ * signature both make {@code engineVerify(byte[])} return <code>false</code>; only an invalid
+ * caller-supplied external-digest length throws {@link java.security.SignatureException}. See
+ * <a href="https://github.com/bcgit/bc-java/issues/2367">github #2367</a>.
+ * </p>
+ */
 public class HashSignatureSpi
     extends BaseDeterministicOrRandomSignature
 {
