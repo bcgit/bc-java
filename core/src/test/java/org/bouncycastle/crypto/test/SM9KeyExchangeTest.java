@@ -77,8 +77,8 @@ public class SM9KeyExchangeTest
         byte hid = SM9EncMasterPrivateKeyParameters.HID_EXCHANGE;
 
         SM9EncMasterPrivateKeyParameters master = new SM9EncMasterPrivateKeyParameters(ke);
-        SM9EncPrivateKeyParameters deA = master.generatePrivateKey(idA, hid);
-        SM9EncPrivateKeyParameters deB = master.generatePrivateKey(idB, hid);
+        SM9EncPrivateKeyParameters deA = master.generateUserKey(idA, hid);
+        SM9EncPrivateKeyParameters deB = master.generateUserKey(idB, hid);
 
         SM9KeyExchange a = new SM9KeyExchange(deA, idB, true);
         SM9KeyExchange b = new SM9KeyExchange(deB, idA, false);

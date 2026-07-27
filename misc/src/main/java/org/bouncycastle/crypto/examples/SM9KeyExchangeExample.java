@@ -45,8 +45,8 @@ public class SM9KeyExchangeExample
         byte[] aliceId = Strings.toByteArray("Alice");
         byte[] bobId = Strings.toByteArray("Bob");
         byte hid = SM9EncMasterPrivateKeyParameters.HID_EXCHANGE;
-        SM9EncPrivateKeyParameters aliceKey = masterPriv.generatePrivateKey(aliceId, hid);
-        SM9EncPrivateKeyParameters bobKey = masterPriv.generatePrivateKey(bobId, hid);
+        SM9EncPrivateKeyParameters aliceKey = masterPriv.generateUserKey(aliceId, hid);
+        SM9EncPrivateKeyParameters bobKey = masterPriv.generateUserKey(bobId, hid);
 
         // 2. Each party: construct the exchange with its own key, the peer's identity
         //    and its role, and generate an ephemeral value.
