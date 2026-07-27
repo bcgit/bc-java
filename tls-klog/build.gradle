@@ -163,9 +163,15 @@ compileJava25Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
 // run again: they exercise code this build shares with tls unchanged, and :tls:test already covers
 // it. Replacing the include patterns (the root build sets "AllTest*" for every module) leaves just
 // the key-log suite, which is the only thing this module actually adds.
+// KeyLog resolves its sink once per JVM, so the rejection test needs one where that has not
+// happened yet. forkEvery = 1 (set for every module by the root build) gives each of these two
+// classes its own JVM, which is why the rejection test is listed separately rather than folded
+// into the suite above.
 test {
     filter {
-        setIncludePatterns("org.bouncycastle.tls.keylog.test.AllTests")
+        setIncludePatterns(
+            "org.bouncycastle.tls.keylog.test.AllTests",
+            "org.bouncycastle.tls.KeyLogRejectsNonSinkTest")
     }
 }
 

@@ -7,7 +7,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.impl.TlsSecretExporter;
 import org.bouncycastle.tls.keylog.TlsKeyLog;
 import org.bouncycastle.tls.keylog.TlsKeyLogLabel;
 import org.bouncycastle.util.Arrays;
@@ -17,10 +16,10 @@ import org.bouncycastle.util.Arrays;
  * <p>
  * This class replaces the no-op of the same name in the standard <code>bctls</code> build, and is
  * the only difference between the two: the seam calls in {@link TlsUtils} are the same in both, and
- * in <code>bctls</code> they go nowhere. Here they end up at a
- * {@link TlsKeyLog} named by the <code>org.bouncycastle.tls.keylog.class</code> security property,
- * which is resolved once and, if the property is unset, is never resolved to anything &mdash; so
- * even this build discloses nothing until an administrator asks it to.
+ * in <code>bctls</code> they go nowhere. Here they end up at a {@link TlsKeyLog} named by the
+ * <code>org.bouncycastle.tls.keylog.class</code> security property. Choosing to run this jar is
+ * what makes a JVM capable of disclosing its own TLS secrets; the property only selects where they
+ * go, and if it is unset nothing is loaded and nothing is disclosed.
  * <p>
  * All of the RFC's vocabulary lives here rather than in {@link TlsUtils}: the seam reports secrets
  * in the key schedule's own terms and this class decides which of them RFC 9850 names, what it
@@ -29,9 +28,8 @@ import org.bouncycastle.util.Arrays;
 abstract class KeyLog
 {
     /**
-     * Security property naming the {@link TlsKeyLog} implementation to report secrets to. Read with
-     * {@link Security#getProperty(String)}, deliberately not as a system property; see
-     * {@link TlsKeyLog} for why.
+     * Security property naming the {@link TlsKeyLog} implementation to report secrets to. See
+     * {@link TlsKeyLog} for what it does and does not guarantee.
      */
     static final String KEY_LOG_CLASS_PROPERTY = "org.bouncycastle.tls.keylog.class";
 
@@ -62,7 +60,7 @@ abstract class KeyLog
             return;
         }
 
-        log(TlsKeyLogLabel.CLIENT_RANDOM, securityParameters, securityParameters.getMasterSecret());
+        log(context, TlsKeyLogLabel.CLIENT_RANDOM, securityParameters, securityParameters.getMasterSecret());
     }
 
     static void log13Secret(TlsContext context, String label, TlsSecret secret)
@@ -78,7 +76,7 @@ abstract class KeyLog
             return;
         }
 
-        log(keyLogLabel, context.getSecurityParametersHandshake(), secret);
+        log(context, keyLogLabel, context.getSecurityParametersHandshake(), secret);
     }
 
     /**
@@ -120,7 +118,7 @@ abstract class KeyLog
         return null;
     }
 
-    private static void log(String label, SecurityParameters securityParameters, TlsSecret secret)
+    private static void log(TlsContext context, String label, SecurityParameters securityParameters, TlsSecret secret)
     {
         if (null == securityParameters || null == secret)
         {
@@ -133,10 +131,9 @@ abstract class KeyLog
             return;
         }
 
-        byte[] secretBytes = TlsSecretExporter.exportSecret(secret);
+        byte[] secretBytes = copySecret(context, secret);
         if (null == secretBytes)
         {
-            LOG.warning("Unable to read the secret for key log label " + label);
             return;
         }
 
@@ -154,6 +151,28 @@ abstract class KeyLog
         }
     }
 
+    /**
+     * Take a copy of a secret's bytes, leaving the secret itself intact.
+     * <p>
+     * {@link TlsSecret#extract()} would hand over the live secret's data and leave it dead, so the
+     * crypto layer's own copier is used to duplicate it first and the throwaway duplicate is the
+     * one extracted. That keeps this to the public {@link org.bouncycastle.tls.crypto.TlsCrypto}
+     * API: no part of this build has to widen the crypto layer to read a secret.
+     */
+    private static byte[] copySecret(TlsContext context, TlsSecret secret)
+    {
+        try
+        {
+            return context.getCrypto().adoptSecret(secret).extract();
+        }
+        catch (RuntimeException e)
+        {
+            // A TlsSecret whose implementation keeps its value out of reach, or one already spent.
+            LOG.log(Level.WARNING, "Unable to read a secret for the key log", e);
+            return null;
+        }
+    }
+
     private static TlsKeyLog createKeyLog()
     {
         String className = getSecurityProperty(KEY_LOG_CLASS_PROPERTY);
@@ -164,7 +183,21 @@ abstract class KeyLog
 
         try
         {
-            TlsKeyLog instance = (TlsKeyLog)loadClass(className).newInstance();
+            Class clazz = loadClass(className);
+
+            /*
+             * Settle the type before the class is initialised or constructed - loadClass is asked
+             * not to initialise for exactly this reason. The property picks a sink; naming anything
+             * else must not be a way to get its static initialiser and constructor run.
+             */
+            if (!TlsKeyLog.class.isAssignableFrom(clazz))
+            {
+                LOG.severe("The class named by the " + KEY_LOG_CLASS_PROPERTY + " security property ("
+                    + className + ") is not a " + TlsKeyLog.class.getName() + "; TLS key logging is disabled");
+                return null;
+            }
+
+            TlsKeyLog instance = (TlsKeyLog)clazz.newInstance();
 
             /*
              * Say so, loudly and once. A JVM that is handing out the keys to its own TLS traffic
@@ -188,11 +221,11 @@ abstract class KeyLog
         /*
          * The implementation is the application's, so prefer whichever loader can see it: ours if
          * it is alongside this jar, the context loader if this jar sits in a container's shared
-         * libraries and the implementation does not.
+         * libraries and the implementation does not. Neither is asked to initialise the class.
          */
         try
         {
-            return Class.forName(className, true, KeyLog.class.getClassLoader());
+            return Class.forName(className, false, KeyLog.class.getClassLoader());
         }
         catch (ClassNotFoundException e)
         {
