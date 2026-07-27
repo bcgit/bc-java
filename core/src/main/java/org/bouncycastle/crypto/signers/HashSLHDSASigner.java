@@ -139,6 +139,11 @@ public class HashSLHDSASigner
 
     public byte[] generateSignature() throws CryptoException, DataLengthException
     {
+        if (privKey == null)
+        {
+            throw new IllegalStateException("HashSLHDSASigner not initialised for signature generation.");
+        }
+
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
@@ -156,6 +161,11 @@ public class HashSLHDSASigner
 
     public boolean verifySignature(byte[] signature)
     {
+        if (pubKey == null)
+        {
+            throw new IllegalStateException("HashSLHDSASigner not initialised for verification");
+        }
+
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 

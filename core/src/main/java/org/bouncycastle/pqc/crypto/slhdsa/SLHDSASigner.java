@@ -99,6 +99,11 @@ public class SLHDSASigner
 
     public byte[] generateSignature(byte[] message)
     {
+        if (privKey == null)
+        {
+            throw new IllegalStateException("SLHDSASigner not initialised for signature generation.");
+        }
+
         if (random != null)
         {
             random.nextBytes(optRand);
@@ -114,6 +119,11 @@ public class SLHDSASigner
     // Equivalent to slh_verify_internal from specs
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        if (pubKey == null)
+        {
+            throw new IllegalStateException("SLHDSASigner not initialised for verification");
+        }
+
         return SLHDSAEngine.internalVerifySignature(pubKey, msgPrefix, message, signature);
     }
 
