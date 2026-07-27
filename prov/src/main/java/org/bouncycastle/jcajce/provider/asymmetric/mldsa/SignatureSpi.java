@@ -21,6 +21,21 @@ import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 
+/**
+ * JCA Signature SPI for ML-DSA (FIPS 204) and its context/pre-hash variants.
+ * <p>
+ * {@link #engineVerify(byte[])} returns <code>false</code> for a signature that is
+ * cryptographically wrong <em>and</em> for one that is structurally malformed per FIPS 204
+ * Algorithm 8 (wrong length, an out-of-order or duplicate hint index, or a hint weight exceeding
+ * the parameter set's omega) - the two cases are not distinguished. This differs from some other
+ * providers (e.g. the JDK's own SUN ML-DSA implementation), which throw
+ * {@link java.security.SignatureException} for a decode failure and reserve <code>false</code>
+ * for a well-formed-but-wrong signature; see
+ * <a href="https://github.com/bcgit/bc-java/issues/2367">github #2367</a>. Code that needs to
+ * distinguish "malformed" from "wrong" cannot rely on {@link java.security.Signature#verify(byte[])}
+ * alone against this provider.
+ * </p>
+ */
 public class SignatureSpi
     extends BaseDeterministicOrRandomSignature
 {

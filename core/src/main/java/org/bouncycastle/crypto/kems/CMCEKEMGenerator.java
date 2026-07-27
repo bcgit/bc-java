@@ -27,7 +27,7 @@ public class CMCEKEMGenerator
         CMCEEngine engine = CMCEEngine.getInstance(key.getParameters());
         byte[] cipher_text = new byte[engine.getCipherTextSize()];
         byte[] sessionKey = new byte[engine.getSessionKeySize()];
-        engine.kem_enc(cipher_text, sessionKey, key.getPublicKey(), sr);
+        engine.kem_enc(cipher_text, sessionKey, key.getEncoded(), sr);
         return new SecretWithEncapsulationImpl(sessionKey, cipher_text);
     }
 }

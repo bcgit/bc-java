@@ -120,8 +120,8 @@ public class FrodoKEMVectorTest
                         FrodoKEMPrivateKeyParameters privParams = (FrodoKEMPrivateKeyParameters)PrivateKeyFactory.createKey(
                             PrivateKeyInfoFactory.createPrivateKeyInfo((FrodoKEMPrivateKeyParameters)kp.getPrivate()));
 
-                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getPublicKey()));
-                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
+                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
+                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
 
                         // kem_enc
                         FrodoKEMGenerator frodoEncCipher = new FrodoKEMGenerator(random);

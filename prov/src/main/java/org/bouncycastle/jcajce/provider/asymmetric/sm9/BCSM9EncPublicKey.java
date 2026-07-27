@@ -26,13 +26,9 @@ public class BCSM9EncPublicKey
 
     private final transient SM9EncPublicKeyParameters keyParams;
 
-    BCSM9EncPublicKey(BCSM9EncMasterPublicKey masterPublicKey, byte[] identity)
+    BCSM9EncPublicKey(SM9EncPublicKeyParameters keyParams)
     {
-        if (masterPublicKey == null)
-        {
-            throw new NullPointerException("masterPublicKey cannot be null");
-        }
-        this.keyParams = new SM9EncPublicKeyParameters(masterPublicKey.getKeyParameters(), identity);
+        this.keyParams = keyParams;
     }
 
     SM9EncPublicKeyParameters getKeyParameters()

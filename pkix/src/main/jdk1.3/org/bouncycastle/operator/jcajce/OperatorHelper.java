@@ -226,14 +226,27 @@ class OperatorHelper
         }
     }
 
-    Cipher createAsymmetricWrapper(ASN1ObjectIdentifier algorithm, Map extraAlgNames)
+    // NOTE: jdk1.3 overlay. Base's signature is createAsymmetricWrapper(AlgorithmIdentifier, Map)
+    // -- retargeted here from the old ASN1ObjectIdentifier-only form to match callers. The base
+    // method also derives an OAEP-parameter-aware cipher name (RSAESOAEPparams / oaepParamsMap)
+    // and an SM2 C1C3C2 mapping; neither is ported here, matching this overlay's pre-existing,
+    // simpler oid-to-cipher-name table (see docs/jdk13-certpath-overlay-sync-plan.md's sibling
+    // "build-lw" follow-up for the general shape of this sweep).
+    Cipher createAsymmetricWrapper(AlgorithmIdentifier algorithmID, Map extraAlgNames)
         throws OperatorCreationException
     {
+        if (algorithmID == null)
+        {
+            throw new NullPointerException("'algorithmID' cannot be null");
+        }
+
+        ASN1ObjectIdentifier algorithm = algorithmID.getAlgorithm();
+
         try
         {
             String cipherName = null;
 
-            if (!extraAlgNames.isEmpty())
+            if (extraAlgNames != null && !extraAlgNames.isEmpty())
             {
                 cipherName = (String)extraAlgNames.get(algorithm);
             }

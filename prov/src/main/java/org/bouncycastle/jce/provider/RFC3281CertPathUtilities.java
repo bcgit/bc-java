@@ -27,6 +27,7 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -43,7 +44,6 @@ import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.x509.PKIXAttrCertChecker;
 import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509CertStoreSelector;
@@ -80,12 +80,12 @@ class RFC3281CertPathUtilities
             }
             catch (AnnotatedException e)
             {
-                throw new ExtCertPathValidatorException(
+                throw SecurityExceptions.certPathValidatorException(
                     "Target information extension could not be read.", e);
             }
             catch (IllegalArgumentException e)
             {
-                throw new ExtCertPathValidatorException(
+                throw SecurityExceptions.certPathValidatorException(
                     "Target information extension could not be read.", e);
             }
         }
@@ -189,7 +189,7 @@ class RFC3281CertPathUtilities
             }
             catch (Exception e)
             {
-                throw new ExtCertPathValidatorException("Distribution points could not be read.", e);
+                throw SecurityExceptions.certPathValidatorException("Distribution points could not be read.", e);
             }
 
             if (dps != null)
@@ -249,7 +249,7 @@ class RFC3281CertPathUtilities
 
         if (!validCrlFound)
         {
-            throw new ExtCertPathValidatorException("No valid CRL found.", lastException);
+            throw SecurityExceptions.certPathValidatorException("No valid CRL found.", lastException);
         }
         if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
         {
@@ -304,12 +304,12 @@ class RFC3281CertPathUtilities
         }
         catch (CertificateExpiredException e)
         {
-            throw new ExtCertPathValidatorException(
+            throw SecurityExceptions.certPathValidatorException(
                 "Attribute certificate is not valid.", e);
         }
         catch (CertificateNotYetValidException e)
         {
-            throw new ExtCertPathValidatorException(
+            throw SecurityExceptions.certPathValidatorException(
                 "Attribute certificate is not valid.", e);
         }
     }
@@ -363,12 +363,12 @@ class RFC3281CertPathUtilities
         }
         catch (NoSuchProviderException e)
         {
-            throw new ExtCertPathValidatorException(
+            throw SecurityExceptions.certPathValidatorException(
                 "Support class could not be created.", e);
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new ExtCertPathValidatorException(
+            throw SecurityExceptions.certPathValidatorException(
                 "Support class could not be created.", e);
         }
         try
@@ -377,7 +377,7 @@ class RFC3281CertPathUtilities
         }
         catch (CertPathValidatorException e)
         {
-            throw new ExtCertPathValidatorException(
+            throw SecurityExceptions.certPathValidatorException(
                 "Certification path for issuer certificate of attribute certificate could not be validated.",
                 e);
         }
@@ -399,7 +399,7 @@ class RFC3281CertPathUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException(
+            throw SecurityExceptions.certPathValidatorException(
                 "Attribute certificate signature could not be verified.", e);
         }
     }
@@ -447,13 +447,13 @@ class RFC3281CertPathUtilities
                 }
                 catch (AnnotatedException e)
                 {
-                    throw new ExtCertPathValidatorException(
+                    throw SecurityExceptions.certPathValidatorException(
                         "Public key certificate for attribute certificate cannot be searched.",
                         e);
                 }
                 catch (IOException e)
                 {
-                    throw new ExtCertPathValidatorException(
+                    throw SecurityExceptions.certPathValidatorException(
                         "Unable to encode X500 principal.", e);
                 }
             }
@@ -481,13 +481,13 @@ class RFC3281CertPathUtilities
                 }
                 catch (AnnotatedException e)
                 {
-                    throw new ExtCertPathValidatorException(
+                    throw SecurityExceptions.certPathValidatorException(
                         "Public key certificate for attribute certificate cannot be searched.",
                         e);
                 }
                 catch (IOException e)
                 {
-                    throw new ExtCertPathValidatorException(
+                    throw SecurityExceptions.certPathValidatorException(
                         "Unable to encode X500 principal.", e);
                 }
             }
@@ -513,12 +513,12 @@ class RFC3281CertPathUtilities
             }
             catch (NoSuchProviderException e)
             {
-                throw new ExtCertPathValidatorException(
+                throw SecurityExceptions.certPathValidatorException(
                     "Support class could not be created.", e);
             }
             catch (NoSuchAlgorithmException e)
             {
-                throw new ExtCertPathValidatorException(
+                throw SecurityExceptions.certPathValidatorException(
                     "Support class could not be created.", e);
             }
             try
@@ -527,7 +527,7 @@ class RFC3281CertPathUtilities
             }
             catch (CertPathBuilderException e)
             {
-                lastException = new ExtCertPathValidatorException(
+                lastException = SecurityExceptions.certPathValidatorException(
                     "Certification path for public key certificate of attribute certificate could not be built.",
                     e);
             }
@@ -558,7 +558,7 @@ class RFC3281CertPathUtilities
      *            The date when the certificate revocation status should be checked.
      * @param issuerCert
      *            Certificate to check if it is revoked.
-     * @param reasonMask
+     * @param reasonsMask
      *            The reasons mask which is already checked.
      * @param certPathCerts
      *            The certificates of the certification path to be checked.
@@ -568,7 +568,7 @@ class RFC3281CertPathUtilities
      */
     private static void checkCRL(DistributionPoint dp, X509AttributeCertificate attrCert,
         PKIXExtendedParameters paramsPKIX, Date currentDate, Date validityDate, X509Certificate issuerCert, CertStatus certStatus,
-        ReasonsMask reasonMask, List certPathCerts, JcaJceHelper helper)
+        ReasonsMask reasonsMask, List certPathCerts, JcaJceHelper helper)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
         /*
@@ -605,7 +605,7 @@ class RFC3281CertPathUtilities
 
         while (crl_iter.hasNext()
             && certStatus.getCertStatus() == CertStatus.UNREVOKED
-            && !reasonMask.isAllReasons())
+            && !reasonsMask.isAllReasons())
         {
             try
             {
@@ -623,13 +623,14 @@ class RFC3281CertPathUtilities
                  * can update it. If this CRL does not contain new reasons it
                  * must be ignored.
                  */
-                if (!interimReasonsMask.hasNewReasons(reasonMask))
+                if (!reasonsMask.hasNewReasons(interimReasonsMask))
                 {
                     continue;
                 }
 
                 // (f)
                 Set keys = RFC3280CertPathUtilities.processCRLF(crl, attrCert, null, null, paramsPKIX, certPathCerts, helper);
+
                 // (g)
                 PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
 
@@ -696,7 +697,7 @@ class RFC3281CertPathUtilities
                 }
 
                 // update reasons mask
-                reasonMask.addReasons(interimReasonsMask);
+                reasonsMask.addReasons(interimReasonsMask);
 
                 validCrlFound = true;
             }

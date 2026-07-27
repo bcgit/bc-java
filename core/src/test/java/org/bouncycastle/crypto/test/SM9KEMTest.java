@@ -76,7 +76,7 @@ public class SM9KEMTest
         int klen = Integer.parseInt((String)v.get("klen_bits"));
 
         SM9EncMasterPrivateKeyParameters master = new SM9EncMasterPrivateKeyParameters(ke);
-        SM9EncPublicKeyParameters recipient = new SM9EncPublicKeyParameters(master.getPublicKeyParameters(), id);
+        SM9EncPublicKeyParameters recipient = master.getPublicKeyParameters().getUserPublicKey(id);
 
         SM9KEMGenerator gen = new SM9KEMGenerator(klen, new TestRandomBigInteger(256, hex(v, "r")));
         SecretWithEncapsulation enc = gen.generateEncapsulated(recipient);
@@ -84,7 +84,7 @@ public class SM9KEMTest
         isTrue("SM9 KEM encapsulation C",
             Arrays.areEqual(enc.getEncapsulation(), Arrays.concatenate(hex(v, "C_x"), hex(v, "C_y"))));
 
-        SM9EncPrivateKeyParameters userKey = master.generatePrivateKey(id);
+        SM9EncPrivateKeyParameters userKey = master.generateUserKey(id);
         SM9KEMExtractor extractor = new SM9KEMExtractor(userKey, klen);
         isTrue("SM9 KEM decapsulation", Arrays.areEqual(extractor.extractSecret(enc.getEncapsulation()), hex(v, "K")));
 

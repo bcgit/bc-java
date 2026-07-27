@@ -78,7 +78,7 @@ public class SM9SignerTest
         byte[] msg = hex(v, "M");
 
         SM9SignMasterPrivateKeyParameters master = new SM9SignMasterPrivateKeyParameters(ks);
-        SM9SignPrivateKeyParameters userKey = master.generatePrivateKey(id);
+        SM9SignPrivateKeyParameters userKey = master.generateUserKey(id);
 
         SM9Signer signer = new SM9Signer();
         signer.init(true, new ParametersWithRandom(userKey, new TestRandomBigInteger(256, hex(v, "r"))));

@@ -2,6 +2,7 @@ package org.bouncycastle.jce.exception;
 
 import java.security.cert.CertificateEncodingException;
 
+@Deprecated
 public class ExtCertificateEncodingException
     extends CertificateEncodingException
     implements ExtException

@@ -1,10 +1,7 @@
 package org.bouncycastle.jce.provider;
 
-import org.bouncycastle.jce.exception.ExtException;
-
 public class AnnotatedException
     extends Exception
-    implements ExtException
 {
     private Throwable _underlyingException;
 

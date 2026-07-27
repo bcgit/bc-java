@@ -42,6 +42,7 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -62,6 +63,7 @@ import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.PKIXCRLValidator;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.isismtt.ISISMTTObjectIdentifiers;
 import org.bouncycastle.jcajce.PKIXCRLStore;
@@ -71,9 +73,9 @@ import org.bouncycastle.jcajce.PKIXCertStore;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.PKIXPolicyNode;
+import org.bouncycastle.jcajce.PKIXPolicyTreeUtil;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
@@ -135,7 +137,7 @@ class CertPathValidatorUtilities
         }
         catch (AnnotatedException e)
         {
-            throw new ExtCertPathBuilderException("Error finding target certificate.", e);
+            throw SecurityExceptions.certPathBuilderException("Error finding target certificate.", e);
         }
 
         if (!targets.isEmpty())
@@ -369,7 +371,7 @@ class CertPathValidatorUtilities
         }
         catch (Exception e)
         {
-            throw new ExtCertPathValidatorException("Subject public key cannot be decoded.", e);
+            throw SecurityExceptions.certPathValidatorException("Subject public key cannot be decoded.", e);
         }
     }
 
@@ -404,7 +406,7 @@ class CertPathValidatorUtilities
             }
             catch (IOException ex)
             {
-                throw new ExtCertPathValidatorException("Policy qualifier info cannot be decoded.", ex);
+                throw SecurityExceptions.certPathValidatorException("Policy qualifier info cannot be decoded.", ex);
             }
 
             bOut.reset();
@@ -476,96 +478,17 @@ class CertPathValidatorUtilities
 
     static PKIXPolicyNode removePolicyNode(PKIXPolicyNode validPolicyTree, List[] policyNodes, PKIXPolicyNode node)
     {
-        if (validPolicyTree == null)
-        {
-            return null;
-        }
-
-        PKIXPolicyNode parent = (PKIXPolicyNode)node.getParent();
-        if (parent == null)
-        {
-            for (int j = 0; j < policyNodes.length; j++)
-            {
-                policyNodes[j].clear();
-            }
-
-            return null;
-        }
-
-        parent.removeChild(node);
-        removePolicyNodeRecurse(policyNodes, node);
-
-        return validPolicyTree;
+        return PKIXPolicyTreeUtil.removePolicyNode(validPolicyTree, policyNodes, node);
     }
 
-    private static void removePolicyNodeRecurse(
-        List[] policyNodes,
-        PKIXPolicyNode _node)
+    protected static boolean processCertD1i(int index, List[] policyNodes, ASN1ObjectIdentifier pOid, Set pq)
     {
-        policyNodes[_node.getDepth()].remove(_node);
-
-        if (_node.hasChildren())
-        {
-            Iterator _iter = _node.getChildren();
-            while (_iter.hasNext())
-            {
-                PKIXPolicyNode _child = (PKIXPolicyNode)_iter.next();
-                removePolicyNodeRecurse(policyNodes, _child);
-            }
-        }
-    }
-
-
-    protected static boolean processCertD1i(
-        int index,
-        List[] policyNodes,
-        ASN1ObjectIdentifier pOid,
-        Set pq)
-    {
-        List policyNodeVec = policyNodes[index - 1];
-
-        for (int j = 0; j < policyNodeVec.size(); j++)
-        {
-            PKIXPolicyNode node = (PKIXPolicyNode)policyNodeVec.get(j);
-            Set expectedPolicies = node.getExpectedPolicies();
-
-            if (expectedPolicies.contains(pOid.getId()))
-            {
-                Set childExpectedPolicies = new HashSet();
-                childExpectedPolicies.add(pOid.getId());
-
-                PKIXPolicyNode child = new PKIXPolicyNode(new ArrayList(),
-                    index,
-                    childExpectedPolicies,
-                    node,
-                    pq,
-                    pOid.getId(),
-                    false);
-                node.addChild(child);
-                policyNodes[index].add(child);
-
-                return true;
-            }
-        }
-
-        return false;
+        return PKIXPolicyTreeUtil.processCertD1i(index, policyNodes, pOid, pq);
     }
 
     static void processCertD1ii(int index, List[] policyNodes, ASN1ObjectIdentifier _poid, Set _pq)
     {
-        PKIXPolicyNode anyPolicyNode = findValidPolicy(policyNodes[index - 1].iterator(), ANY_POLICY);
-        if (anyPolicyNode != null)
-        {
-            String policy = _poid.getId();
-
-            Set _childExpectedPolicies = new HashSet();
-            _childExpectedPolicies.add(policy);
-
-            PKIXPolicyNode _child = new PKIXPolicyNode(new ArrayList(), index, _childExpectedPolicies, anyPolicyNode,
-                _pq, policy, false);
-            anyPolicyNode.addChild(_child);
-            policyNodes[index].add(_child);
-        }
+        PKIXPolicyTreeUtil.processCertD1ii(index, policyNodes, _poid, _pq);
     }
 
     protected static boolean isAnyPolicy(
@@ -971,11 +894,7 @@ class CertPathValidatorUtilities
             :   reasonCode.intValueExact();
 
         // for reason keyCompromise, caCompromise, aACompromise or unspecified
-        if (!(validDate.getTime() < crl_entry.getRevocationDate().getTime())
-            || reasonCodeValue == CRLReason.unspecified
-            || reasonCodeValue == CRLReason.keyCompromise
-            || reasonCodeValue == CRLReason.cACompromise
-            || reasonCodeValue == CRLReason.aACompromise)
+        if (PKIXCRLValidator.isRevocationEffective(validDate, crl_entry.getRevocationDate(), reasonCodeValue))
         {
             // (i) or (j)
             certStatus.setCertStatus(reasonCodeValue);

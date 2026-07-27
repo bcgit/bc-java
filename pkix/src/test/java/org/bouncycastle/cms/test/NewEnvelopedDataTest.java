@@ -78,10 +78,12 @@ import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
+import org.bouncycastle.cms.CMSTagLengthException;
 import org.bouncycastle.cms.CMSTypedData;
 import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.cms.KEMRecipientInformation;
 import org.bouncycastle.cms.KeyAgreeRecipientInformation;
+import org.bouncycastle.cms.KeyTransRecipientId;
 import org.bouncycastle.cms.KeyTransRecipientInformation;
 import org.bouncycastle.cms.OriginatorInfoGenerator;
 import org.bouncycastle.cms.OriginatorInformation;
@@ -100,6 +102,8 @@ import org.bouncycastle.cms.jcajce.JceKEKEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKEKRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceKEMEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKEMRecipientInfoGenerator;
+import org.bouncycastle.cms.jcajce.JceKTSKeyTransEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKTSKeyTransRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceKeyAgreeEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientId;
 import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientInfoGenerator;
@@ -108,6 +112,7 @@ import org.bouncycastle.cms.jcajce.JceKeyTransRecipientId;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JcePasswordEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JcePasswordRecipientInfoGenerator;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
@@ -741,6 +746,90 @@ public class NewEnvelopedDataTest
             fail("content recovered under a disallowed content-encryption algorithm");
         }
         catch (CMSAlgorithmNotAllowedException e)
+        {
+            // expected
+        }
+    }
+
+    public void testKTSKeyTransAllowedContentAlgorithms()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKTSKeyTransRecipientInfoGenerator(_reciCert, "AES", 128).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).setProvider(BC).build());
+
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+        KeyTransRecipientId rid = (KeyTransRecipientId)recipient.getRID();
+
+        // with no constraint configured, recovery proceeds as it always has
+        byte[] recData = recipient.getContent(new JceKTSKeyTransEnvelopedRecipient(_reciKP.getPrivate(), rid).setProvider(BC));
+
+        assertTrue(Arrays.equals(data, recData));
+
+        // when the content-encryption algorithm is in the allowed set, recovery proceeds as normal
+        recData = recipient.getContent(new JceKTSKeyTransEnvelopedRecipient(_reciKP.getPrivate(), rid).setProvider(BC)
+            .setAllowedContentAlgorithms(Collections.singleton(CMSAlgorithm.AES256_CBC)));
+
+        assertTrue(Arrays.equals(data, recData));
+
+        // when the actual content-encryption algorithm is not in the allowed set, recovery is refused
+        try
+        {
+            recipient.getContent(new JceKTSKeyTransEnvelopedRecipient(_reciKP.getPrivate(), rid).setProvider(BC)
+                .setAllowedContentAlgorithms(Collections.singleton(CMSAlgorithm.AES128_CBC)));
+
+            fail("content recovered under a disallowed content-encryption algorithm");
+        }
+        catch (CMSAlgorithmNotAllowedException e)
+        {
+            // expected
+        }
+    }
+
+    public void testKTSKeyTransMinimumTagSize()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        // a 96-bit (12-octet) GCM tag - valid under RFC 5084, but below a 128-bit floor
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance("GCM", BC);
+        algParams.init(new AEADParameterSpec(new byte[12], 96));
+
+        OutputEncryptor enc = new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM)
+            .setProvider(BC).setAlgorithmParameters(algParams).build();
+
+        assertEquals(12, GCMParameters.getInstance(enc.getAlgorithmIdentifier().getParameters()).getIcvLen());
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKTSKeyTransRecipientInfoGenerator(_reciCert, "AES", 128).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(new CMSProcessableByteArray(data), enc);
+
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+        KeyTransRecipientId rid = (KeyTransRecipientId)recipient.getRID();
+
+        // a minimum at or below the actual tag size recovers as normal
+        byte[] recData = recipient.getContent(new JceKTSKeyTransEnvelopedRecipient(_reciKP.getPrivate(), rid).setProvider(BC)
+            .setMinimumTagSize(96));
+
+        assertTrue(Arrays.equals(data, recData));
+
+        // a minimum above the actual tag size is refused with CMSTagLengthException
+        try
+        {
+            recipient.getContent(new JceKTSKeyTransEnvelopedRecipient(_reciKP.getPrivate(), rid).setProvider(BC)
+                .setMinimumTagSize(128));
+
+            fail("content recovered under a tag shorter than the configured minimum");
+        }
+        catch (CMSTagLengthException e)
         {
             // expected
         }

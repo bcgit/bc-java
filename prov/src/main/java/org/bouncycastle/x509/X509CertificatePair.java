@@ -5,6 +5,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -89,11 +90,11 @@ public class X509CertificatePair
         }
         catch (IllegalArgumentException e)
         {
-            throw new ExtCertificateEncodingException(e.toString(), e);
+            throw SecurityExceptions.certificateEncodingException(e.toString(), e);
         }
         catch (IOException e)
         {
-            throw new ExtCertificateEncodingException(e.toString(), e);
+            throw SecurityExceptions.certificateEncodingException(e.toString(), e);
         }
     }
 

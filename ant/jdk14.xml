@@ -192,6 +192,7 @@
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
+                <exclude name="**/pkix/jcajce/*.java"/>
                 <exclude name="**/tsp/test/ERSTest.java"/>
                 <exclude name="**/cades/test/CAdESTTest.java"/>
                 <exclude name="**/cades/test/CAdESLTTest.java"/>
@@ -214,6 +215,9 @@
 		<exclude name="**/its/**/*.java"/>
                 <exclude name="**/CheckNameConstraintsTest.java"/>
                 <exclude name="**/cert/ocsp/test/OCSPExceptionalSignatureRejectionTest.java"/>
+                <exclude name="**/cert/ocsp/test/PKIXOcspRevocationCheckerTest.java"/>
+                <exclude name="**/pkcs/test/PBETest.java"/>
+                <exclude name="**/pkix/test/PKIXCertPathReviewerCrlReasonTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
 		<exclude name="**/MailGeneralTest.java"/>
@@ -253,6 +257,9 @@
 		<exclude name="**/jce/provider/test/nist/PKITSTest.java"/>
 		<exclude name="**/jce/provider/test/nist/NistCertPathTest2.java"/>
                 <exclude name="**/jce/provider/test/JceTestUtil.java"/>
+                <!-- relies on java.security.PrivateKey extending Destroyable, only true on very
+                     recent JDKs; not present on the real JRE 1.4 this test tree runs against -->
+                <exclude name="**/jce/provider/test/SM9KEMTest.java"/>
                 <exclude name="**/SIKE*.java"/>
 		<exclude name="**/CertLocaleTest.java"/>
             </fileset>

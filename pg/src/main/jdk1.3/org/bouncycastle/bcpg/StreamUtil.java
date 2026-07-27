@@ -93,13 +93,27 @@ class StreamUtil
     static void writeTime(BCPGOutputStream pOut, long time)
         throws IOException
     {
-        StreamUtil.write4OctetLength(pOut, (int)time);
+        StreamUtil.writeSeconds(pOut, time / 1000);
     }
 
     static long readTime(BCPGInputStream in)
         throws IOException
     {
-        return (long)read4OctetLength(in) * 1000L;
+        return readSeconds(in) * 1000L;
+    }
+
+    // NOTE: jdk1.3 overlay addition -- brought up to date with base, which added these two methods
+    // (masking readSeconds to unsigned 32-bit) independently of any 1.3-specific concern.
+    static void writeSeconds(BCPGOutputStream pOut, long time)
+        throws IOException
+    {
+        StreamUtil.write4OctetLength(pOut, (int)time);
+    }
+
+    static long readSeconds(BCPGInputStream in)
+        throws IOException
+    {
+        return ((long)read4OctetLength(in)) & 0xFFFFFFFFL;
     }
 
     static void write2OctetLength(OutputStream pOut, int len)

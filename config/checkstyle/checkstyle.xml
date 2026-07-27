@@ -35,6 +35,14 @@
             <property name="option" value="alone"/>
         </module>
 
+        <!-- core stays off the JCA/JCE: SecureRandom + Destroyable only. The vetted
+             per-file exceptions live in the import-control file; path-scoped so the
+             prov task (whose srcDirs include core) applies it to core sources only. -->
+        <module name="ImportControl">
+            <property name="file" value="${config_loc}/import-control-core.xml"/>
+            <property name="path" value=".*[\\/]core[\\/]src[\\/]main[\\/]java[\\/].*"/>
+        </module>
+
         <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
             <property name="contains" value="(org\.bouncycastle\.util\.encoders\.)*Hex\.toHexString$"/>
             <property name="ignorePackages" value="(org\.bouncycastle\..*\.examples\.).*|(org\.bouncycastle\.util\.encoders\.Hex)"/>
