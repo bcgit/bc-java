@@ -316,11 +316,15 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 }
 
 
-test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test17', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test17', ':pkix:test', 'pg:test', ':tls:test', ':tls-klog:test', 'mls:test', 'mail:test', 'jmail:test'])
 
 // Aggregate all published jars (main, sources, javadoc) into a top-level dist/
 // directory so consumers have a single place to pick up the build outputs.
-def distModules = ['core', 'util', 'prov', 'pkix', 'pg', 'tls', 'mls', 'mail', 'jmail']
+// bctls-klog is a drop-in replacement for bctls rather than an addition to it (same module name,
+// same packages), so it ships alongside the others here but is deliberately absent from the BOM:
+// resolving both onto one class path would be a duplicate-class mess, and the choice between them
+// is one a consumer has to make deliberately. See tls-klog/build.gradle.
+def distModules = ['core', 'util', 'prov', 'pkix', 'pg', 'tls', 'tls-klog', 'mls', 'mail', 'jmail']
 
 distModules.each { evaluationDependsOn(":$it") }
 
