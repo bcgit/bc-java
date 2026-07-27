@@ -24,6 +24,7 @@ JDK_HOST=${JDK_HOST:-$(readlink -f /opt/jdk1.3.1)}
 ANT_HOST=${ANT_HOST:-/opt/apache-ant-1.6.5}
 MAIL_HOST=${MAIL_HOST:-/opt/javamail-1.3.1}
 JAF_HOST=${JAF_HOST:-/opt/jaf-1.0.2}
+BC_TEST_DATA=${BC_TEST_DATA:-$(dirname "$BC_JAVA")/bc-test-data}
 IMAGE=${IMAGE:-bc-jdk13:etch}
 
 # ORO impl for ant's <replaceregexp> (JDK 1.3 has no java.util.regex). Not
@@ -37,14 +38,51 @@ if [ -z "$ORO_JAR" ]; then
     done
 fi
 
+# Real JDK 1.3.1 predates JAXP (added in J2SE 1.4): its rt.jar has no
+# org.w3c.dom / javax.xml.transform at all. ant's own JVM needs a TrAX Xalan
+# for the "test" target's <junitreport> XSLT step (else
+# TransformerFactoryConfigurationError: Provider
+# org.apache.xalan.processor.TransformerFactoryImpl not found) -- mounted here
+# via ANT_ARGS="-lib /opt/extralib" below, same mechanism as ORO_JAR. The
+# forked-JVM <junit> classpath still needs its own xercesImpl/xml-apis copy
+# (for the XML result formatter's org.w3c.dom.Node) dropped into
+# build/artifacts/jdk1.3/jars/ alongside the built module jars -- see the
+# "Iterating fast" section of this skill's README.
+if [ -z "$XALAN_JAR" ]; then
+    for c in /home/dgh/.m2/repository/xalan/xalan/2.7.2/xalan-2.7.2.jar \
+             /home/dgh/.m2/repository/xalan/xalan/2.7.1/xalan-2.7.1.jar; do
+        [ -e "$c" ] && { XALAN_JAR=$c; break; }
+    done
+fi
+if [ -z "$SERIALIZER_JAR" ]; then
+    for c in /home/dgh/.m2/repository/xalan/serializer/2.7.2/serializer-2.7.2.jar \
+             /home/dgh/.m2/repository/xalan/serializer/2.7.1/serializer-2.7.1.jar; do
+        [ -e "$c" ] && { SERIALIZER_JAR=$c; break; }
+    done
+fi
+
 for p in "$BC_JAVA/build1-3" "$JDK_HOST/bin/.java_wrapper" "$ANT_HOST/bin/ant" \
          "$MAIL_HOST/mail.jar" "$JAF_HOST/activation.jar" "$ORO_JAR" \
+         "$XALAN_JAR" "$SERIALIZER_JAR" \
          "$SCRIPT_DIR/Dockerfile" "$SCRIPT_DIR/jvm.cfg"; do
     [ -n "$p" ] && [ -e "$p" ] || {
-        echo "ERROR: missing required path: ${p:-<ORO_JAR unset: set ORO_JAR=/path/to/oro-2.0.x.jar>}" >&2
+        echo "ERROR: missing required path: ${p:-<unset: set ORO_JAR/XALAN_JAR/SERIALIZER_JAR explicitly>}" >&2
         exit 1
     }
 done
+
+# bc-test-data is optional -- most SimpleTest/JUnit fixtures need it, but its
+# absence should degrade (FileNotFoundException per test) rather than block
+# the build. TestResourceFinder's walk-up starts from the forked <junit>'s
+# cwd ("${build.dir}/${target.prefix}" = /work/build/jdk13) and climbs one
+# path segment at a time; /work/bc-test-data is the candidate it actually
+# reaches (its final, root-level candidate collapses to a relative path
+# against the JVM's real cwd due to a File("", child) edge case, so mounting
+# at the container's true "/" does not work).
+BC_TEST_DATA_MOUNT=""
+if [ -n "$BC_TEST_DATA" ] && [ -d "$BC_TEST_DATA" ]; then
+    BC_TEST_DATA_MOUNT="-v $BC_TEST_DATA:/work/bc-test-data:ro"
+fi
 
 # --- build the (tiny) image once ---------------------------------------------
 if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
@@ -84,6 +122,9 @@ exec docker run --rm $TTY --platform linux/386 \
     -v "$SCRIPT_DIR/jvm.cfg":/opt/jdk1.3.1/jre/lib/jvm.cfg:ro \
     -v "$ANT_HOST":/opt/ant:ro \
     -v "$ORO_JAR":/opt/extralib/oro.jar:ro \
+    -v "$XALAN_JAR":/opt/extralib/xalan.jar:ro \
+    -v "$SERIALIZER_JAR":/opt/extralib/serializer.jar:ro \
     -v "$MAIL_HOST":/opt/javamail-1.3.1:ro \
     -v "$JAF_HOST":/opt/jaf-1.0.2:ro \
+    $BC_TEST_DATA_MOUNT \
     "$IMAGE" /bin/sh -c "$RUNCMD"

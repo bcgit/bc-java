@@ -89,6 +89,11 @@ public class BCMLKEMPrivateKey
 
     public byte[] getEncoded()
     {
+        if (params.isDestroyed())
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         try
         {
             if (priorEncoding != null)

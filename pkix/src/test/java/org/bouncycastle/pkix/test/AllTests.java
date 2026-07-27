@@ -18,7 +18,7 @@ public class AllTests
     
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("PKCS Tests");
+        TestSuite suite = new TestSuite("PKIX Tests");
         
         suite.addTestSuite(CheckerTest.class);
         suite.addTestSuite(RevocationTest.class);
@@ -26,6 +26,7 @@ public class AllTests
         suite.addTestSuite(IDPRelativeNameTest.class);
         suite.addTestSuite(QcStatementReviewerTest.class);
         suite.addTestSuite(PKIXCertPathReviewerPolicyTreeTest.class);
+        suite.addTestSuite(PKIXCertPathReviewerCrlReasonTest.class);
 
         return new BCTestSetup(suite);
     }

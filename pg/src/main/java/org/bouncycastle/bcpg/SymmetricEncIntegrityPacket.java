@@ -52,6 +52,15 @@ public class SymmetricEncIntegrityPacket
             cipherAlgorithm = in.read();
             aeadAlgorithm = in.read();
             chunkSize = in.read();
+            // RFC 9580 sec. 5.13.2: the chunk size octet encodes a chunk length of
+            // 2^(chunkSize + 6) bytes, which the AEAD decryptor allocates up front. Cap it at the
+            // same ceiling as the v5 AEADEncDataPacket (16 -> 4 MiB) so an oversized value from an
+            // untrusted packet cannot drive a multi-hundred-MiB allocation (chunkSize 24 -> 1 GiB) or,
+            // once the (int) cast wraps negative, a NegativeArraySizeException, on decrypt.
+            if (chunkSize < 0 || chunkSize > 16)
+            {
+                throw new MalformedPacketException("chunkSize out of range");
+            }
             salt = new byte[32];
             if (in.read(salt) != salt.length)
             {

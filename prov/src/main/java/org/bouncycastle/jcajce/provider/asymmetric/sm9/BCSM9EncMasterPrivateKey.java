@@ -36,18 +36,13 @@ public class BCSM9EncMasterPrivateKey
         this.keyParams = keyParams;
     }
 
-    private BCSM9EncMasterPublicKey getMasterPublicKey()
-    {
-        return new BCSM9EncMasterPublicKey(keyParams.getPublicKeyParameters());
-    }
-
     /**
      * Derive the decryption private key of the user identified by {@code id};
      * {@link #generateUserKeyPair(byte[])} returns the user's full key pair.
      */
     private BCSM9EncPrivateKey extractPrivateKey(byte[] id)
     {
-        return new BCSM9EncPrivateKey(keyParams.generatePrivateKey(id));
+        return new BCSM9EncPrivateKey(keyParams.generateUserKey(id));
     }
 
     /**
@@ -56,7 +51,9 @@ public class BCSM9EncMasterPrivateKey
      */
     public KeyPair generateUserKeyPair(byte[] id)
     {
-        return new KeyPair(new BCSM9EncPublicKey(getMasterPublicKey(), id), extractPrivateKey(id));
+        return new KeyPair(
+            new BCSM9EncPublicKey(keyParams.getPublicKeyParameters().getUserPublicKey(id)),
+            extractPrivateKey(id));
     }
 
     public String getAlgorithm()
@@ -71,6 +68,11 @@ public class BCSM9EncMasterPrivateKey
 
     public byte[] getEncoded()
     {
+        if (keyParams.isDestroyed())
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         try
         {
             PrivateKeyInfo info = new PrivateKeyInfo(

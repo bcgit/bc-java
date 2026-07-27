@@ -43,7 +43,7 @@ public class BCSM9SignMasterPrivateKey
 
     private BCSM9SignPrivateKey extractPrivateKey(byte[] id)
     {
-        return new BCSM9SignPrivateKey(keyParams.generatePrivateKey(id));
+        return new BCSM9SignPrivateKey(keyParams.generateUserKey(id));
     }
 
     /**
@@ -69,6 +69,11 @@ public class BCSM9SignMasterPrivateKey
 
     public byte[] getEncoded()
     {
+        if (keyParams.isDestroyed())
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         try
         {
             PrivateKeyInfo info = new PrivateKeyInfo(

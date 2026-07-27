@@ -21,6 +21,17 @@ import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
 import org.bouncycastle.pqc.crypto.DigestUtils;
 import org.bouncycastle.util.Exceptions;
 
+/**
+ * Pre-hash ("HashML-DSA" / "ExtHash") ML-DSA (FIPS 204) signer/verifier.
+ * <p>
+ * As with {@link MLDSASigner}, {@link #verifySignature(byte[])} (and the externally-hashed
+ * {@link #verifySignature(byte[], byte[])}) return <code>false</code> both for a
+ * cryptographically wrong signature and for one that is structurally malformed per FIPS 204
+ * Algorithm 8; only an incorrectly sized externally-supplied hash (the {@code hash} argument to
+ * the two-argument overload) throws {@link IllegalArgumentException}. See
+ * <a href="https://github.com/bcgit/bc-java/issues/2367">github #2367</a>.
+ * </p>
+ */
 public class HashMLDSASigner
     implements Signer
 {

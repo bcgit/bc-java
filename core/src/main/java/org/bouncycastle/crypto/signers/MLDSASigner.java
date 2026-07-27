@@ -14,6 +14,19 @@ import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
 
+/**
+ * ML-DSA (FIPS 204) signer/verifier.
+ * <p>
+ * {@link #verifySignature(byte[])} (and {@link #verifyMuSignature(byte[], byte[])}) return
+ * <code>false</code> uniformly for a cryptographically wrong signature and for one that is
+ * structurally malformed per FIPS 204 Algorithm 8 (wrong length, an out-of-order or duplicate
+ * hint index, or a hint weight exceeding the parameter set's omega) - the two cases are not
+ * distinguished, and neither ever throws for a decode failure. This differs from some other
+ * implementations (e.g. the JDK's own SUN ML-DSA provider), which signal a decode failure
+ * separately from a cryptographic mismatch; see
+ * <a href="https://github.com/bcgit/bc-java/issues/2367">github #2367</a>.
+ * </p>
+ */
 public class MLDSASigner
     implements Signer
 {

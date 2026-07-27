@@ -21,13 +21,14 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("CMS tests");
 
+        // NOTE: jdk1.3 overlay. NewSignedDataTest / NewSignedDataStreamTest are excluded from the
+        // jdk1.3 build (java.security.cert.X509Certificate.getIssuerX500Principal() etc., Java
+        // 1.4 APIs, ant/jdk13.xml).
         suite.addTest(NewCompressedDataTest.suite());
-        suite.addTest(NewSignedDataTest.suite());
         suite.addTest(NewEnvelopedDataTest.suite());
         suite.addTest(NewAuthenticatedDataTest.suite());
         suite.addTest(NewAuthenticatedDataStreamTest.suite());
         suite.addTest(NewCompressedDataStreamTest.suite());
-        suite.addTest(NewSignedDataStreamTest.suite());
         suite.addTest(NewEnvelopedDataStreamTest.suite());
 
         suite.addTest(MiscDataStreamTest.suite());

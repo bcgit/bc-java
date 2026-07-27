@@ -12,34 +12,27 @@ import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
+import org.bouncycastle.asn1.x509.CRLValidatorException;
 import org.bouncycastle.asn1.x509.DistributionPoint;
-import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
+import org.bouncycastle.asn1.x509.PKIXCRLValidator;
 import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
 
 class RFC3280CertPathUtilities
@@ -91,165 +84,67 @@ class RFC3280CertPathUtilities
         {
             throw new AnnotatedException("Issuing distribution point extension could not be decoded.", e);
         }
-        // (b) (2) (i)
-        // distribution point name is present
-        if (idp != null)
-        {
-            if (idp.getDistributionPoint() != null)
-            {
-                // make list of names
-                DistributionPointName dpName = IssuingDistributionPoint.getInstance(idp).getDistributionPoint();
-                List names = new ArrayList();
 
-                if (dpName.getType() == DistributionPointName.FULL_NAME)
-                {
-                    GeneralName[] genNames = GeneralNames.getInstance(dpName.getName()).getNames();
-                    for (int j = 0; j < genNames.length; j++)
-                    {
-                        names.add(genNames[j]);
-                    }
-                }
-                if (dpName.getType() == DistributionPointName.NAME_RELATIVE_TO_CRL_ISSUER)
-                {
-                    ASN1EncodableVector vec = new ASN1EncodableVector();
-                    try
-                    {
-                        Enumeration e = ASN1Sequence.getInstance(crl.getIssuerX500Principal().getEncoded()).getObjects();
-                        while (e.hasMoreElements())
-                        {
-                            vec.add((ASN1Encodable)e.nextElement());
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new AnnotatedException("Could not read CRL issuer.", e);
-                    }
-                    vec.add(dpName.getName());
-                    names.add(new GeneralName(X500Name.getInstance(new DERSequence(vec))));
-                }
-                boolean matches = false;
-                // verify that one of the names in the IDP matches one
-                // of the names in the DP.
-                if (dp.getDistributionPoint() != null)
-                {
-                    dpName = dp.getDistributionPoint();
-                    GeneralName[] genNames = null;
-                    if (dpName.getType() == DistributionPointName.FULL_NAME)
-                    {
-                        genNames = GeneralNames.getInstance(dpName.getName()).getNames();
-                    }
-                    if (dpName.getType() == DistributionPointName.NAME_RELATIVE_TO_CRL_ISSUER)
-                    {
-                        if (dp.getCRLIssuer() != null)
-                        {
-                            genNames = dp.getCRLIssuer().getNames();
-                        }
-                        else
-                        {
-                            genNames = new GeneralName[1];
-                            try
-                            {
-                                genNames[0] = new GeneralName(X500Name.getInstance(((X509Certificate)cert).getIssuerX500Principal().getEncoded()));
-                            }
-                            catch (Exception e)
-                            {
-                                throw new AnnotatedException("Could not read certificate issuer.", e);
-                            }
-                        }
-                        for (int j = 0; j < genNames.length; j++)
-                        {
-                            Enumeration e = ASN1Sequence.getInstance(genNames[j].getName().toASN1Primitive()).getObjects();
-                            ASN1EncodableVector vec = new ASN1EncodableVector();
-                            while (e.hasMoreElements())
-                            {
-                                vec.add((ASN1Encodable)e.nextElement());
-                            }
-                            vec.add(dpName.getName());
-                            genNames[j] = new GeneralName(X500Name.getInstance(new DERSequence(vec)));
-                        }
-                    }
-                    if (genNames != null)
-                    {
-                        for (int j = 0; j < genNames.length; j++)
-                        {
-                            if (names.contains(genNames[j]))
-                            {
-                                matches = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!matches)
-                    {
-                        // github #800: include the conflicting names so operators
-                        // can see which CRL was returned for which cert DP.
-                        throw new AnnotatedException(
-                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point."
-                                + " cert DP names: " + java.util.Arrays.asList(genNames)
-                                + "; CRL IDP names: " + names);
-                    }
-                }
-                // verify that one of the names in
-                // the IDP matches one of the names in the cRLIssuer field of
-                // the DP
-                else
-                {
-                    if (dp.getCRLIssuer() == null)
-                    {
-                        throw new AnnotatedException("Either the cRLIssuer or the distributionPoint field must "
-                            + "be contained in DistributionPoint.");
-                    }
-                    GeneralName[] genNames = dp.getCRLIssuer().getNames();
-                    for (int j = 0; j < genNames.length; j++)
-                    {
-                        if (names.contains(genNames[j]))
-                        {
-                            matches = true;
-                            break;
-                        }
-                    }
-                    if (!matches)
-                    {
-                        // github #800: include the conflicting names so operators
-                        // can see which CRL was returned for which cert cRLIssuer.
-                        throw new AnnotatedException(
-                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point."
-                                + " cert cRLIssuer names: " + java.util.Arrays.asList(genNames)
-                                + "; CRL IDP names: " + names);
-                    }
-                }
-            }
-            BasicConstraints bc;
+        if (idp == null)
+        {
+            return;
+        }
+
+        X500Name crlIssuer = null;
+        if (PKIXCRLValidator.requiresCRLIssuer(idp))
+        {
             try
             {
-                bc = BasicConstraints.getInstance(RevocationUtilities.getExtensionValue((X509Extension)cert,
-                    Extension.basicConstraints));
+                crlIssuer = X500Name.getInstance(crl.getIssuerX500Principal().getEncoded());
             }
             catch (Exception e)
             {
-                throw new AnnotatedException("Basic constraints extension could not be decoded.", e);
+                throw new AnnotatedException("Could not read CRL issuer.", e);
             }
+        }
 
-            if (cert instanceof X509Certificate)
+        X500Name certIssuer = null;
+        if (PKIXCRLValidator.requiresCertificateIssuer(idp, dp))
+        {
+            try
             {
-                // (b) (2) (ii)
-                if (idp.onlyContainsUserCerts() && (bc != null && bc.isCA()))
-                {
-                    throw new AnnotatedException("CA Cert CRL only contains user certificates.");
-                }
-
-                // (b) (2) (iii)
-                if (idp.onlyContainsCACerts() && (bc == null || !bc.isCA()))
-                {
-                    throw new AnnotatedException("End CRL only contains CA certificates.");
-                }
+                certIssuer = X500Name.getInstance(((X509Certificate)cert).getIssuerX500Principal().getEncoded());
             }
-
-            // (b) (2) (iv)
-            if (idp.onlyContainsAttributeCerts())
+            catch (Exception e)
             {
-                throw new AnnotatedException("onlyContainsAttributeCerts boolean is asserted.");
+                throw new AnnotatedException("Could not read certificate issuer.", e);
             }
+        }
+
+        try
+        {
+            // (b) (2) (i)
+            PKIXCRLValidator.checkDistributionPointName(idp, dp, crlIssuer, certIssuer);
+        }
+        catch (CRLValidatorException e)
+        {
+            throw new AnnotatedException(e.getMessage(), e);
+        }
+
+        BasicConstraints bc;
+        try
+        {
+            bc = BasicConstraints.getInstance(RevocationUtilities.getExtensionValue((X509Extension)cert,
+                Extension.basicConstraints));
+        }
+        catch (Exception e)
+        {
+            throw new AnnotatedException("Basic constraints extension could not be decoded.", e);
+        }
+
+        try
+        {
+            // (b) (2) (ii) - (iv)
+            PKIXCRLValidator.checkOnlyContains(idp, bc, cert instanceof X509Certificate);
+        }
+        catch (CRLValidatorException e)
+        {
+            throw new AnnotatedException(e.getMessage(), e);
         }
     }
 
@@ -281,61 +176,31 @@ class RFC3280CertPathUtilities
                 isIndirect = true;
             }
         }
-        byte[] issuerBytes;
+        byte[] issuerBytes = crl.getIssuerX500Principal().getEncoded();
 
-            issuerBytes = crl.getIssuerX500Principal().getEncoded();
-
-
-        boolean matchIssuer = false;
         if (dp.getCRLIssuer() != null)
         {
-            GeneralName genNames[] = dp.getCRLIssuer().getNames();
-            for (int j = 0; j < genNames.length; j++)
+            try
             {
-                if (genNames[j].getTagNo() == GeneralName.directoryName)
-                {
-                    try
-                    {
-                        if (Arrays.areEqual(genNames[j].getName().toASN1Primitive().getEncoded(), issuerBytes))
-                        {
-                            matchIssuer = true;
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        throw new AnnotatedException(
-                            "CRL issuer information from distribution point cannot be decoded.", e);
-                    }
-                }
+                PKIXCRLValidator.checkCRLIssuer(dp, issuerBytes, isIndirect);
             }
-            if (matchIssuer && !isIndirect)
+            catch (CRLValidatorException e)
             {
-                throw new AnnotatedException("Distribution point contains cRLIssuer field but CRL is not indirect.");
-            }
-            if (!matchIssuer)
-            {
-                throw new AnnotatedException("CRL issuer of CRL does not match CRL issuer of distribution point.");
+                throw new AnnotatedException(e.getMessage(), e);
             }
         }
         else
         {
-            if (crl.getIssuerX500Principal().equals(((X509Certificate)cert).getIssuerX500Principal()))
+            if (!crl.getIssuerX500Principal().equals(((X509Certificate)cert).getIssuerX500Principal()))
             {
-                matchIssuer = true;
+                throw new AnnotatedException("Cannot find matching CRL issuer for certificate.");
             }
-        }
-        if (!matchIssuer)
-        {
-            throw new AnnotatedException("Cannot find matching CRL issuer for certificate.");
         }
     }
 
-    protected static ReasonsMask processCRLD(
-        X509CRL crl,
-        DistributionPoint dp)
-        throws AnnotatedException
+    protected static ReasonsMask processCRLD(X509CRL crl, DistributionPoint dp) throws AnnotatedException
     {
-        IssuingDistributionPoint idp = null;
+        IssuingDistributionPoint idp;
         try
         {
             idp = IssuingDistributionPoint.getInstance(RevocationUtilities.getExtensionValue(crl,
@@ -345,23 +210,9 @@ class RFC3280CertPathUtilities
         {
             throw new AnnotatedException("Issuing distribution point extension could not be decoded.", e);
         }
-        // (d) (1)
-        if (idp != null && idp.getOnlySomeReasons() != null && dp.getReasons() != null)
-        {
-            return new ReasonsMask(dp.getReasons()).intersect(new ReasonsMask(idp.getOnlySomeReasons()));
-        }
-        // (d) (4)
-        if ((idp == null || idp.getOnlySomeReasons() == null) && dp.getReasons() == null)
-        {
-            return ReasonsMask.allReasons;
-        }
-        // (d) (2) and (d)(3)
-        return (dp.getReasons() == null
-            ? ReasonsMask.allReasons
-            : new ReasonsMask(dp.getReasons())).intersect(idp == null
-            ? ReasonsMask.allReasons
-            : new ReasonsMask(idp.getOnlySomeReasons()));
 
+        // (d) (1..4) Intersect the IDP and DP reasons; absent reasons are interpreted as AllReasons
+        return new ReasonsMask(PKIXCRLValidator.intersectReasons(idp, dp));
     }
 
 
@@ -743,25 +594,13 @@ class RFC3280CertPathUtilities
                 "Issuing distribution point extension from delta CRL could not be decoded.", e);
         }
 
-        boolean match = false;
-        if (completeidp == null)
+        try
         {
-            if (deltaidp == null)
-            {
-                match = true;
-            }
+            PKIXCRLValidator.checkDeltaIssuingDistributionPoint(completeidp, deltaidp);
         }
-        else
+        catch (CRLValidatorException e)
         {
-            if (completeidp.equals(deltaidp))
-            {
-                match = true;
-            }
-        }
-        if (!match)
-        {
-            throw new AnnotatedException(
-                "Issuing distribution point extension from delta CRL and complete CRL does not match.");
+            throw new AnnotatedException(e.getMessage(), e);
         }
 
         // (c) (3)
@@ -789,20 +628,13 @@ class RFC3280CertPathUtilities
                 "Authority key identifier extension could not be extracted from delta CRL.", e);
         }
 
-        if (completeKeyIdentifier == null)
+        try
         {
-            throw new AnnotatedException("CRL authority key identifier is null.");
+            PKIXCRLValidator.checkDeltaAuthorityKeyIdentifiers(completeKeyIdentifier, deltaKeyIdentifier);
         }
-
-        if (deltaKeyIdentifier == null)
+        catch (CRLValidatorException e)
         {
-            throw new AnnotatedException("Delta CRL authority key identifier is null.");
-        }
-
-        if (!completeKeyIdentifier.equals(deltaKeyIdentifier))
-        {
-            throw new AnnotatedException(
-                "Delta CRL authority key identifier does not match complete CRL authority key identifier.");
+            throw new AnnotatedException(e.getMessage(), e);
         }
     }
 
@@ -834,7 +666,7 @@ class RFC3280CertPathUtilities
      * @param defaultCRLSignKey  The public key of the issuer certificate
      *                           <code>defaultCRLSignCert</code>.
      * @param certStatus         The current certificate revocation status.
-     * @param reasonMask         The reasons mask which is already checked.
+     * @param reasonsMask         The reasons mask which is already checked.
      * @param certPathCerts      The certificates of the certification path.
      * @throws AnnotatedException if the certificate is revoked or the status cannot be checked
      *                            or some error occurs.
@@ -848,7 +680,7 @@ class RFC3280CertPathUtilities
         X509Certificate defaultCRLSignCert,
         PublicKey defaultCRLSignKey,
         CertStatus certStatus,
-        ReasonsMask reasonMask,
+        ReasonsMask reasonsMask,
         List certPathCerts,
         JcaJceHelper helper)
         throws AnnotatedException, CRLNotFoundException
@@ -871,7 +703,7 @@ class RFC3280CertPathUtilities
         AnnotatedException lastException = null;
         Iterator crl_iter = crls.iterator();
 
-        while (crl_iter.hasNext() && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonMask.isAllReasons())
+        while (crl_iter.hasNext() && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons())
         {
             try
             {
@@ -889,13 +721,14 @@ class RFC3280CertPathUtilities
                  * can update it. If this CRL does not contain new reasons it
                  * must be ignored.
                  */
-                if (!interimReasonsMask.hasNewReasons(reasonMask))
+                if (!reasonsMask.hasNewReasons(interimReasonsMask))
                 {
                     continue;
                 }
 
                 // (f)
                 Set keys = processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey, paramsPKIX, certPathCerts, helper);
+
                 // (g)
                 PublicKey key = processCRLG(crl, keys);
 
@@ -962,7 +795,7 @@ class RFC3280CertPathUtilities
                 }
 
                 // update reasons mask
-                reasonMask.addReasons(interimReasonsMask);
+                reasonsMask.addReasons(interimReasonsMask);
 
                 validCrlFound = true;
             }

@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -497,6 +498,31 @@ class CMSUtils
             || NISTObjectIdentifiers.id_shake256.equals(algorithm))
         {
             return 64;
+        }
+        if (NISTObjectIdentifiers.id_shake256_len.equals(algorithm))
+        {
+            // id-shake256-len carries its output length in bits as the algorithm parameter -
+            // the form RFC 8419 sec. 3.1 mandates for Ed448 SignedData with signed attributes
+            // (with the parameter containing 512).
+            ASN1Encodable params = digAlgId.getParameters();
+            if (params == null)
+            {
+                return -1;
+            }
+            try
+            {
+                int lengthInBits = ASN1Integer.getInstance(params).intValueExact();
+                if (lengthInBits <= 0 || (lengthInBits & 7) != 0)
+                {
+                    return -1;
+                }
+                return lengthInBits / 8;
+            }
+            catch (RuntimeException e)
+            {
+                // parameters not a positive integer in range - no prediction
+                return -1;
+            }
         }
         if (NISTObjectIdentifiers.id_sha224.equals(algorithm)
             || NISTObjectIdentifiers.id_sha512_224.equals(algorithm)

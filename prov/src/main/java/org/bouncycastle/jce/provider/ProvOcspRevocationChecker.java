@@ -64,7 +64,6 @@ import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
 
@@ -281,7 +280,7 @@ class ProvOcspRevocationChecker
                                     ASN1GeneralizedTime nextUp = resp.getNextUpdate();
                                     if (nextUp != null && parameters.getValidDate().after(nextUp.getDate()))
                                     {
-                                        throw new ExtCertPathValidatorException("OCSP response expired");
+                                        throw new CertPathValidatorException("OCSP response expired");
                                     }
                                     if (certID == null || !isEqualAlgId(certID.getHashAlgorithm(), resp.getCertID().getHashAlgorithm()))
                                     {
