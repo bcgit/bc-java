@@ -1805,7 +1805,12 @@ class RFC3280CertPathUtilities
         }
         if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
         {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+            // jdk1.3 delta: base uses "...HH:mm:ss Z", but real JDK 1.3.1's SimpleDateFormat
+            // rejects the 'Z' pattern letter ("Illegal pattern character 'Z'"). The formatter is
+            // pinned to UTC immediately below, so 'Z' would always render "+0000" regardless of
+            // the date; a literal reproduces that byte-for-byte (message text is asserted exactly
+            // by NistCertPathTest.testInvalidNegativeSerialNumberTest15) without needing 'Z'.
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss '+0000'");
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
             String message = "Certificate revocation after " + df.format(certStatus.getRevocationDate());
             message += ", reason: " + crlReasons[certStatus.getCertStatus()];

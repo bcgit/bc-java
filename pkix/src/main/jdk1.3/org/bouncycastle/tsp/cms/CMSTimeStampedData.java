@@ -3,8 +3,8 @@ package org.bouncycastle.tsp.cms;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERIA5String;
@@ -20,7 +20,22 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.tsp.TimeStampToken;
+import org.bouncycastle.util.Exceptions;
 
+/**
+ * In-memory holder for an RFC 5544 TimeStampedData object - a document (or a URI
+ * referencing one) bound to the temporal evidence (a chain of RFC 3161 time stamp
+ * tokens) that proves it existed before a given point in time.
+ * <p>
+ * The wrapped {@link ContentInfo} must be of type id-ct-timestampedData; the
+ * encapsulated TimeStampedData carries the optional dataUri, MetaData and content
+ * along with the Evidence holding the time stamp chain. Use
+ * {@link CMSTimeStampedDataParser} for a streaming alternative.
+ * </p>
+ */
+// NOTE: jdk1.3 overlay. java.net.URI/URISyntaxException are Java 5 APIs; getDataUri() uses
+// java.net.URL/MalformedURLException instead, backed by the deprecated-but-still-present
+// TimeStampedData.getDataUri()/DERIA5String rather than getDataUriIA5()/ASN1IA5String.
 public class CMSTimeStampedData
 {
     private TimeStampedData timeStampedData;
@@ -37,15 +52,34 @@ public class CMSTimeStampedData
     {
         try
         {
-            initialize(ContentInfo.getInstance(new ASN1InputStream(in).readObject()));
+            ContentInfo contentInfo = ContentInfo.getInstance(new ASN1InputStream(in).readObject());
+            if (contentInfo == null)
+            {
+                // An empty/truncated stream decodes to null; report it directly as the declared exception.
+                throw new IOException("No content found.");
+            }
+            initialize(contentInfo);
         }
         catch (ClassCastException e)
         {
-            throw new IOException("Malformed content: " + e);
+            // A malformed byte[] / InputStream surfaces from this multi-layer decode as one of three
+            // specific runtime types: ClassCastException (a wrong-type ASN.1 slot),
+            // IllegalArgumentException (the getInstance() malformed-input contract plus the null-content
+            // / size / Evidence guards in initialize(), asn1.cms.MetaData and TimeStampDataUtil), and
+            // IllegalStateException (the shared ASN.1 parse layer's wrong-context-tag signal from
+            // ASN1UniversalType.fromExplicit / fromImplicit*, which throw IllegalStateException by design
+            // for the parser and are deliberately left unchanged). Catch these specific types - as the
+            // recently added CMS byte[]/InputStream guards do - and convert to the declared IOException;
+            // a broad catch (RuntimeException) is intentionally avoided.
+            throw Exceptions.ioException("Malformed content: " + e, e);
         }
         catch (IllegalArgumentException e)
         {
-            throw new IOException("Malformed content: " + e);
+            throw Exceptions.ioException("Malformed content: " + e, e);
+        }
+        catch (IllegalStateException e)
+        {
+            throw Exceptions.ioException("Malformed content: " + e, e);
         }
     }
 
@@ -57,11 +91,24 @@ public class CMSTimeStampedData
 
     private void initialize(ContentInfo contentInfo)
     {
+        // An empty/truncated stream decodes to a null ContentInfo (ASN1InputStream.readObject() -> null
+        // -> ContentInfo.getInstance(null) -> null); reject it here rather than dereferencing null below.
+        if (contentInfo == null)
+        {
+            throw new IllegalArgumentException("No content found.");
+        }
+
         this.contentInfo = contentInfo;
 
         if (CMSObjectIdentifiers.timestampedData.equals(contentInfo.getContentType()))
         {
             this.timeStampedData = TimeStampedData.getInstance(contentInfo.getContent());
+            // A ContentInfo carrying the timestampedData OID but no content yields a null here
+            // (TimeStampedData.getInstance(null) == null), which would NPE in TimeStampDataUtil.
+            if (this.timeStampedData == null)
+            {
+                throw new IllegalArgumentException("Malformed content - missing timestamped data");
+            }
         }
         else
         {
@@ -71,6 +118,15 @@ public class CMSTimeStampedData
         util = new TimeStampDataUtil(this.timeStampedData);
     }
 
+    /**
+     * Calculate the hash over the last time stamp element in the evidence chain, as
+     * required to obtain the next time stamp token that extends the chain (per RFC 5544
+     * each token is computed over its preceding element).
+     *
+     * @param calculator the digest calculator to use.
+     * @return the digest of the DER encoding of the most recent TimeStampAndCRL.
+     * @throws CMSException if the hash cannot be calculated.
+     */
     public byte[] calculateNextHash(DigestCalculator calculator)
         throws CMSException
     {
@@ -78,9 +134,14 @@ public class CMSTimeStampedData
     }
 
     /**
-     * Return a new timeStampedData object with the additional token attached.
+     * Return a new timeStampedData object with the additional token attached to the end
+     * of the evidence chain. The new token is expected to time stamp the previous chain
+     * element (see {@link #calculateNextHash}), extending the validity of the earlier
+     * tokens.
      *
-     * @throws CMSException
+     * @param token the time stamp token to append.
+     * @return a new CMSTimeStampedData carrying the extended evidence chain.
+     * @throws CMSException if the new structure cannot be built.
      */
     public CMSTimeStampedData addTimeStamp(TimeStampToken token)
         throws CMSException
@@ -95,6 +156,11 @@ public class CMSTimeStampedData
         return new CMSTimeStampedData(new ContentInfo(CMSObjectIdentifiers.timestampedData, new TimeStampedData(timeStampedData.getDataUri(), timeStampedData.getMetaData(), timeStampedData.getContent(), new Evidence(new TimeStampTokenEvidence(newTimeStamps)))));
     }
 
+    /**
+     * Return the encapsulated content, if present.
+     *
+     * @return the content octets, or null if no content is carried (e.g. a dataUri is used instead).
+     */
     public byte[] getContent()
     {
         if (timeStampedData.getContent() != null)
@@ -105,6 +171,12 @@ public class CMSTimeStampedData
         return null;
     }
 
+    /**
+     * Return the dataUri referencing the time-stamped document, if present.
+     *
+     * @return the dataUri, or null if none was set.
+     * @throws MalformedURLException if the stored value is not a valid URL.
+     */
     public URL getDataUri()
         throws MalformedURLException
     {
@@ -133,6 +205,12 @@ public class CMSTimeStampedData
         return util.getOtherMetaData();
     }
 
+    /**
+     * Return the time stamp tokens making up the evidence chain, in order.
+     *
+     * @return an array of the time stamp tokens present in the message.
+     * @throws CMSException if a token cannot be parsed.
+     */
     public TimeStampToken[] getTimeStampTokens()
         throws CMSException
     {
@@ -196,6 +274,12 @@ public class CMSTimeStampedData
         util.validate(calculatorProvider, dataDigest, timeStampToken);
     }
 
+    /**
+     * Return the DER encoding of the underlying timestampedData ContentInfo.
+     *
+     * @return the encoded ContentInfo.
+     * @throws IOException if encoding fails.
+     */
     public byte[] getEncoded()
         throws IOException
     {
