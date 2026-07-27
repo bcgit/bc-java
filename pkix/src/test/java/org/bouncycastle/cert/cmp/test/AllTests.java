@@ -457,7 +457,8 @@ public class AllTests
     public void testComposite()
         throws Exception
     {
-        if (System.getProperty("java.version").indexOf("1.4.") >= 0)
+        if (System.getProperty("java.version").indexOf("1.4.") >= 0
+            || System.getProperty("java.version").indexOf("1.3.") >= 0)
         {
             return;
         }

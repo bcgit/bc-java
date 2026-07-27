@@ -1012,12 +1012,20 @@ public class X509CertSelector implements CertSelector
      * @exception IOException
      *                if a parsing error occurs
      * @exception UnsupportedOperationException
-     *                because this method is not supported
+     *                if bytes is non-null (setting an actual name constraints
+     *                check is not supported by this backport)
      * @see #getNameConstraints()
      */
     public void setNameConstraints(byte[] bytes) throws IOException
     {
-        throw new UnsupportedOperationException();
+        // getNameConstraints() always returns null (this backport never implemented
+        // name-constraint storage), and PKIXCertStoreSelector.SelectorClone copies a source
+        // selector via setNameConstraints(source.getNameConstraints()) - so a null here is a
+        // legitimate "no constraints to copy", not a caller trying to configure real ones.
+        if (bytes != null)
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
@@ -1715,14 +1723,16 @@ public class X509CertSelector implements CertSelector
      *         <code>null</code> if no name constraints check will be
      *         performed.
      * 
-     * @exception UnsupportedOperationException
-     *                because this method is not supported
-     * 
      * @see #setNameConstraints
      */
     public byte[] getNameConstraints()
     {
-        throw new UnsupportedOperationException();
+        // setNameConstraints(byte[]) unconditionally throws UnsupportedOperationException (this
+        // backport never implemented name-constraint storage), so no caller can ever have set a
+        // value here - returning null (the documented "no name constraints check" value) rather
+        // than throwing lets PKIXCertStoreSelector.SelectorClone (jcajce) construct a clone
+        // without every candidate-certificate lookup failing outright.
+        return null;
     }
 
     /**
