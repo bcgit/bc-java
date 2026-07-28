@@ -44,7 +44,10 @@ public class ECElGamalDecryptor
         }
 
         ECCurve curve = key.getParameters().getCurve();
-        ECPoint tmp = ECAlgorithms.cleanPoint(curve, pair.getX()).multiply(key.getD());
+        // the ciphertext point is externally supplied and d is the long-term private key:
+        // constant-time, not the curve's default wNAF multiplier
+        ECPoint tmp = ECAlgorithms.multiplySecret(
+            ECAlgorithms.cleanPoint(curve, pair.getX()), key.getD(), key.getParameters().getN());
 
         return ECAlgorithms.cleanPoint(curve, pair.getY()).subtract(tmp).normalize();
     }

@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECMultiplier;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
@@ -125,7 +126,8 @@ public class ECIESKEMGenerator
 
         ECPoint[] ghTilde = new ECPoint[]{
             basePointMultiplier.multiply(ecParams.getG(), r),
-            ecPubKey.getQ().multiply(rPrime)
+            // rPrime derives from the secret ephemeral r: constant-time multiplier
+            ECAlgorithms.multiplySecret(ecPubKey.getQ(), rPrime, n)
         };
 
         // NOTE: More efficient than normalizing each individually

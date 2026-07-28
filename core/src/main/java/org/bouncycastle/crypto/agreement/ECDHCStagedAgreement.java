@@ -64,7 +64,8 @@ public class ECDHCStagedAgreement
             throw new IllegalStateException("Infinity is not a valid public key for ECDHC");
         }
 
-        ECPoint P = pubPoint.multiply(hd).normalize();
+        // hd derives from the private key: constant-time, not the curve's default wNAF multiplier
+        ECPoint P = ECAlgorithms.multiplySecret(pubPoint, hd, params.getN()).normalize();
 
         if (P.isInfinity())
         {

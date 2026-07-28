@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -109,7 +110,8 @@ public class ECIESKEMExtractor
             xHat = xHat.multiply(ecParams.getHInv()).mod(n);
         }
 
-        ECPoint hTilde = gHat.multiply(xHat).normalize();
+        // xHat derives from the private key: constant-time multiplier
+        ECPoint hTilde = ECAlgorithms.multiplySecret(gHat, xHat, n).normalize();
 
         // Implicit rejection: an infinity hTilde (e.g. a 0x00 encapsulation,
         // or a low-order ephemeral) yields an all-zero key rather than

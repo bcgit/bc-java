@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECMultiplier;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
@@ -150,7 +151,9 @@ public class SM2Engine
         do
         {
             k = nextK();
-            kPB = ((ECPublicKeyParameters)ecKey).getQ().multiply(k).normalize();
+            // k is a secret ephemeral: constant-time multiplier
+            kPB = ECAlgorithms.multiplySecret(((ECPublicKeyParameters)ecKey).getQ(), k,
+                ecParams.getN()).normalize();
 
             kdf(digest, kPB, c2);
         }
@@ -201,7 +204,9 @@ public class SM2Engine
             throw new InvalidCipherTextException("[h]C1 at infinity");
         }
 
-        c1P = c1P.multiply(((ECPrivateKeyParameters)ecKey).getD()).normalize();
+        // C1 comes from the ciphertext and d is the private key: constant-time multiplier
+        c1P = ECAlgorithms.multiplySecret(c1P, ((ECPrivateKeyParameters)ecKey).getD(),
+            ecParams.getN()).normalize();
 
         int digestSize = this.digest.getDigestSize();
         byte[] c2 = new byte[inLen - c1.length - digestSize];

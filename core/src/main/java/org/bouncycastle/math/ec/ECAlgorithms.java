@@ -210,6 +210,44 @@ public class ECAlgorithms
         return k.signum() < 0 ? q.negate() : q;
     }
 
+    /**
+     * Multiply a point by a scalar that must not be leaked - a private key, or any value derived
+     * from one - without exposing the scalar through control flow or memory-access pattern.
+     * <p>
+     * {@link ECPoint#multiply(BigInteger)} uses the curve's configured multiplier, which for most
+     * curves is a windowed-NAF implementation whose timing depends on the scalar; it is the right
+     * choice for a public scalar (verification, for instance) but not for a secret one. Use this
+     * method wherever the scalar is secret and the point is supplied by a peer.
+     * <p>
+     * The result is the same point {@link ECPoint#multiply(BigInteger)} would return; only the
+     * timing profile differs. See {@link ECConstantTimeMultiplier} for what is and is not covered.
+     *
+     * @param p the point to multiply, typically a peer's public key; must lie in the subgroup
+     *          whose order is the curve's.
+     * @param k the secret scalar; must be less than the curve order.
+     * @return <code>kP</code>.
+     */
+    public static ECPoint multiplySecret(ECPoint p, BigInteger k)
+    {
+        return new ECConstantTimeMultiplier().multiply(p, k);
+    }
+
+    /**
+     * As {@link #multiplySecret(ECPoint, BigInteger)}, with the group order supplied rather than
+     * taken from the curve. Prefer this form wherever the order is to hand - domain parameters
+     * always carry it, whereas {@link ECCurve#getOrder()} is null for a curve built without one.
+     *
+     * @param p the point to multiply, typically a peer's public key; must lie in the subgroup of
+     *          order {@code order}.
+     * @param k the secret scalar; must be less than {@code order}.
+     * @param order the group order; must be odd, as every standard EC group order is.
+     * @return <code>kP</code>.
+     */
+    public static ECPoint multiplySecret(ECPoint p, BigInteger k, BigInteger order)
+    {
+        return new ECConstantTimeMultiplier(order).multiply(p, k);
+    }
+
     public static ECPoint validatePoint(ECPoint p)
     {
         if (!p.isValid())

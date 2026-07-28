@@ -85,19 +85,10 @@ public class SAKKEKEMSGenerator
         BigInteger r = hashToIntegerRange(Arrays.concatenate(ssv.toByteArray(), b.toByteArray()), q, digest);
 
 
-        // 3. Compute R_(b,S) = [r]([b]P + Z_S)
-        ECPoint R_bS;
-
-        BigInteger order = curve.getOrder();
-        if (order == null)
-        {
-            R_bS = P.multiply(b).add(Z).multiply(r).normalize();
-        }
-        else
-        {
-            BigInteger a = b.multiply(r).mod(order);
-            R_bS = ECAlgorithms.sumOfTwoMultiplies(P, a, Z, r).normalize();
-        }
+        // 3. Compute R_(b,S) = [r]([b]P + Z_S). Only r is secret (it derives from the SSV being
+        // encapsulated), so [b]P runs on the default multiplier and the r multiplication is
+        // constant-time; q is the order of the subgroup P and Z generate.
+        ECPoint R_bS = ECAlgorithms.multiplySecret(P.multiply(b).add(Z), r, q).normalize();
 
         // 4. Compute H = SSV XOR HashToIntegerRange( g^r, 2^n )
         BigInteger pointX = BigInteger.ONE;

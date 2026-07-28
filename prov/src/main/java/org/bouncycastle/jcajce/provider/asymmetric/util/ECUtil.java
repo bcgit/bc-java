@@ -448,6 +448,8 @@ public class ECUtil
             return 0;
         }
 
-        return spec.getG().multiply(d).normalize().hashCode() ^ spec.hashCode();
+        // d is the private scalar, so use the cache-safe fixed-point comb, not the
+        // curve's default wNAF multiplier
+        return new FixedPointCombMultiplier().multiply(spec.getG(), d).normalize().hashCode() ^ spec.hashCode();
     }
 }

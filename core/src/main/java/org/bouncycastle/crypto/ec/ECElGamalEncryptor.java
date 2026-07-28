@@ -73,7 +73,9 @@ public class ECElGamalEncryptor
 
         ECPoint[] gamma_phi = new ECPoint[]{
             basePointMultiplier.multiply(ec.getG(), k),
-            key.getQ().multiply(k).add(ECAlgorithms.cleanPoint(ec.getCurve(), point))
+            // k is the secret encryption randomness: constant-time multiplier
+            ECAlgorithms.multiplySecret(key.getQ(), k, ec.getN())
+                .add(ECAlgorithms.cleanPoint(ec.getCurve(), point))
         };
 
         ec.getCurve().normalizeAll(gamma_phi);

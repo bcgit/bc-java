@@ -171,7 +171,16 @@ public class SM2KeyExchange
         BigInteger k1 = ecParams.getH().multiply(tA).mod(ecParams.getN());
         BigInteger k2 = k1.multiply(x2).mod(ecParams.getN());
 
-        return ECAlgorithms.sumOfTwoMultiplies(p1, k1, p2, k2).normalize();
+        /*
+         * Both scalars derive from tA, which derives from the private keys, so
+         * ECAlgorithms.sumOfTwoMultiplies (interleaved wNAF) cannot be used here - its timing
+         * depends on them. Two constant-time multiplications and an addition instead; that gives
+         * up Shamir's trick, so this is roughly twice the point arithmetic it was.
+         */
+        ECPoint u1 = ECAlgorithms.multiplySecret(p1, k1, ecParams.getN());
+        ECPoint u2 = ECAlgorithms.multiplySecret(p2, k2, ecParams.getN());
+
+        return u1.add(u2).normalize();
     }
 
     private byte[] kdf(ECPoint u, byte[] za, byte[] zb, int klen)

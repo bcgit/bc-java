@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
@@ -84,7 +85,9 @@ public class ECCSIKeyGenerationParameters
         this.id = Arrays.clone(id);
         this.n = q.bitLength();
         this.ksak = BigIntegers.createRandomBigInteger(n, random).mod(q);
-        this.kpak = G.multiply(ksak).normalize();
+        // the KSAK is the KMS master secret, so use the cache-safe fixed-point comb,
+        // not the curve's default wNAF multiplier
+        this.kpak = new FixedPointCombMultiplier().multiply(G, ksak).normalize();
     }
 
     /**

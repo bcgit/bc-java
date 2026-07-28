@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
@@ -57,7 +58,10 @@ class OwlUtil
         ECPoint g,
         BigInteger x)
     {
-        return g.multiply(x);
+        // x is a private value - a round 1 secret, or at registration t = H(username||password):
+        // constant-time, not the curve's default wNAF multiplier (the curve carries its order -
+        // OwlCurve requires it)
+        return ECAlgorithms.multiplySecret(g, x);
     }
 
     /**
@@ -128,8 +132,9 @@ class OwlUtil
         ECPoint gA,
         BigInteger x2pi)
     {
-        // alpha = Galpha^(x*pi)
-        return gA.multiply(x2pi);
+        // alpha = Galpha^(x*pi); x2pi combines a private value with the password-derived pi:
+        // constant-time
+        return ECAlgorithms.multiplySecret(gA, x2pi);
     }
 
     /**
@@ -203,7 +208,8 @@ class OwlUtil
 
         /* Generate a random v from [1, n-1], and compute V = G*v */
         BigInteger v = BigIntegers.createRandomInRange(BigInteger.ONE, n.subtract(BigInteger.ONE), random);
-        ECPoint V = generator.multiply(v);
+        // v blinds x in the proof, so it is as secret as x itself: constant-time
+        ECPoint V = ECAlgorithms.multiplySecret(generator, v, n);
         BigInteger h = calculateHashForZeroknowledgeProof(generator, V, X, userID, digest); // h
         // r = v-x*h mod n   
 
@@ -430,7 +436,9 @@ class OwlUtil
         BigInteger x2pi,
         ECPoint B)
     {
-        return B.subtract(gx4.multiply(x2pi)).multiply(x2);        
+        // both scalars are secret - x2pi combines a private value with the password-derived pi,
+        // and x2 is private - so both multiplications are constant-time
+        return ECAlgorithms.multiplySecret(B.subtract(ECAlgorithms.multiplySecret(gx4, x2pi)), x2);
     }
 
     /**

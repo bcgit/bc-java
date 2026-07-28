@@ -73,7 +73,8 @@ public class ECDHBasicAgreement
             Q = ECAlgorithms.referenceMultiply(Q, h);
         }
 
-        ECPoint P = Q.multiply(d).normalize();
+        // d is the private key: constant-time, not the curve's default wNAF multiplier
+        ECPoint P = ECAlgorithms.multiplySecret(Q, d, params.getN()).normalize();
         if (P.isInfinity())
         {
             throw new IllegalStateException("Infinity is not a valid agreement value for ECDH");

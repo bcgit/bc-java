@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ECCSIPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECCSIPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -190,10 +191,12 @@ public class ECCSISigner
             ECCSIPrivateKeyParameters parameters = (ECCSIPrivateKeyParameters)param;
             pvt = parameters.getPublicKeyParameters().getPVT();
             j = BigIntegers.createRandomBigInteger(q.bitLength(), random);
-            ECPoint J = G.multiply(j).normalize();
+            // j is the per-signature nonce and SSK the long-term secret signing key:
+            // constant-time, not the curve's default wNAF multiplier
+            ECPoint J = ECAlgorithms.multiplySecret(G, j, q).normalize();
             r = J.getAffineXCoord().toBigInteger().mod(q);
 
-            kpak_computed = G.multiply(parameters.getSSK());
+            kpak_computed = ECAlgorithms.multiplySecret(G, parameters.getSSK(), q);
         }
         else
         {

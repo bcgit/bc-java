@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
@@ -77,7 +78,9 @@ public class ECJPAKEUtil
         ECPoint g,
         BigInteger x)
     {
-        return g.multiply(x);
+        // x is a round 1 private value: constant-time, not the curve's default wNAF multiplier
+        // (the curve carries its order - ECJPAKECurve requires it)
+        return ECAlgorithms.multiplySecret(g, x);
     }
 
     /**
@@ -112,8 +115,8 @@ public class ECJPAKEUtil
         ECPoint gA,
         BigInteger x2s)
     {
-        // A = ga^(x*s)
-        return gA.multiply(x2s);
+        // A = ga^(x*s); x2s derives from the private x2 and the password: constant-time
+        return ECAlgorithms.multiplySecret(gA, x2s);
     }
 
     /**
@@ -132,7 +135,8 @@ public class ECJPAKEUtil
 
         /* Generate a random v from [1, n-1], and compute V = G*v */
         BigInteger v = BigIntegers.createRandomInRange(BigInteger.ONE, n.subtract(BigInteger.ONE), random);
-        ECPoint V = generator.multiply(v);
+        // v blinds x in the proof, so it is as secret as x itself: constant-time
+        ECPoint V = ECAlgorithms.multiplySecret(generator, v, n);
         BigInteger h = calculateHashForZeroKnowledgeProof(generator, V, X, userID, digest); // h
         // r = v-x*h mod n   
 
@@ -328,7 +332,10 @@ public class ECJPAKEUtil
         BigInteger s,
         ECPoint B)
     {
-        ECPoint k = ((B.subtract(gx4.multiply(x2.multiply(s).mod(n)))).multiply(x2));
+        // both scalars are secret - x2*s combines a private value with the password, and x2 is
+        // private - so both multiplications are constant-time
+        ECPoint k = ECAlgorithms.multiplySecret(
+            B.subtract(ECAlgorithms.multiplySecret(gx4, x2.multiply(s).mod(n), n)), x2, n);
         k = k.normalize();
 
         return k.getAffineXCoord().toBigInteger();

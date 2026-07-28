@@ -98,7 +98,15 @@ public class ECMQVBasicAgreement
 
         BigInteger hs = parameters.getH().multiply(s).mod(n);
 
-        return ECAlgorithms.sumOfTwoMultiplies(
-            q1v, Q2VBar.multiply(hs).mod(n), q2v, hs);
+        /*
+         * Both scalars derive from s, which derives from the private keys, so
+         * ECAlgorithms.sumOfTwoMultiplies (interleaved wNAF) cannot be used here - its timing
+         * depends on them. Two constant-time multiplications and an addition instead; that gives
+         * up Shamir's trick, so this is roughly twice the point arithmetic it was.
+         */
+        ECPoint p1 = ECAlgorithms.multiplySecret(q1v, Q2VBar.multiply(hs).mod(n), n);
+        ECPoint p2 = ECAlgorithms.multiplySecret(q2v, hs, n);
+
+        return p1.add(p2);
     }
 }

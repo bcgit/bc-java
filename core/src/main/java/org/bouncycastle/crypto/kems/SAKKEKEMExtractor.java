@@ -57,7 +57,9 @@ public class SAKKEKEMExtractor
         this.p = publicKey.getPrime();
         this.Z_S = publicKey.getZ();
         this.identifier = publicKey.getIdentifier();
-        this.K_bs = P.multiply(this.identifier.add(privateKey.getMasterSecret()).modInverse(q)).normalize();
+        // the scalar derives from the master secret: constant-time, not the default wNAF multiplier
+        this.K_bs = ECAlgorithms.multiplySecret(P,
+            this.identifier.add(privateKey.getMasterSecret()).modInverse(q), q).normalize();
         this.n = publicKey.getN();
 
         this.digest = publicKey.getDigest();
@@ -93,19 +95,10 @@ public class SAKKEKEMExtractor
         BigInteger b = identifier;
         BigInteger r = SAKKEKEMSGenerator.hashToIntegerRange(Arrays.concatenate(ssv.toByteArray(), b.toByteArray()), q, digest);
 
-        // Step 5: Validate R_bS
-        ECPoint Test;
-
-        BigInteger order = curve.getOrder();
-        if (order == null)
-        {
-            Test = P.multiply(b).add(Z_S).multiply(r);
-        }
-        else
-        {
-            BigInteger a = b.multiply(r).mod(order);
-            Test = ECAlgorithms.sumOfTwoMultiplies(P, a, Z_S, r);
-        }
+        // Step 5: Validate R_bS = [r]([b]P + Z_S). Only r is secret (it derives from the
+        // decapsulated SSV), so [b]P runs on the default multiplier and the r multiplication
+        // is constant-time; q is the order of the subgroup P and Z_S generate.
+        ECPoint Test = ECAlgorithms.multiplySecret(P.multiply(b).add(Z_S), r, q);
 
         Test = Test.subtract(R_bS);
 

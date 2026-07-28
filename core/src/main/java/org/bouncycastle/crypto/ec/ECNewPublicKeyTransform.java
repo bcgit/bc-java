@@ -75,7 +75,9 @@ public class ECNewPublicKeyTransform
 
         ECPoint[] gamma_phi = new ECPoint[]{
             basePointMultiplier.multiply(ec.getG(), k),
-            key.getQ().multiply(k).add(ECAlgorithms.cleanPoint(ec.getCurve(), cipherText.getY()))
+            // k is the secret re-encryption randomness: constant-time multiplier
+            ECAlgorithms.multiplySecret(key.getQ(), k, n)
+                .add(ECAlgorithms.cleanPoint(ec.getCurve(), cipherText.getY()))
         };
 
         ec.getCurve().normalizeAll(gamma_phi);

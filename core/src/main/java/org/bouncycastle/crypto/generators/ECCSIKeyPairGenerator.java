@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.params.ECCSIKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECCSIPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECCSIPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -59,8 +60,9 @@ public class ECCSIKeyPairGenerator
         ECPoint kpak = parameters.getKPAK();
         // 1) Choose v, a random (ephemeral) non-zero element of F_q;
         BigInteger v = BigIntegers.createRandomBigInteger(256, random).mod(q);
-        // 2) Compute PVT = [v]G
-        ECPoint pvt = G.multiply(v).normalize();
+        // 2) Compute PVT = [v]G; v is secret (the SSK derives from it), so use the
+        // cache-safe fixed-point comb, not the curve's default wNAF multiplier
+        ECPoint pvt = new FixedPointCombMultiplier().multiply(G, v).normalize();
 
         // 3) Compute a hash value HS = hash( G || KPAK || ID || PVT ), an N-octet integer;
         byte[] tmp = G.getEncoded(false);

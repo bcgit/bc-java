@@ -25,6 +25,7 @@ public class AllTests
         TestSuite suite = new TestSuite("EC Math tests");
 
         suite.addTestSuite(ECAlgorithmsTest.class);
+        suite.addTestSuite(ECConstantTimeMultiplierTest.class);
         suite.addTestSuite(ECPointTest.class);
         suite.addTestSuite(FixedPointTest.class);
 

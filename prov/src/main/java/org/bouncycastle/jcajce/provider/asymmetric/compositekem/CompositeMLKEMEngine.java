@@ -58,6 +58,7 @@ import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 import org.bouncycastle.util.Arrays;
 
@@ -435,7 +436,9 @@ class CompositeMLKEMEngine
                 X962Parameters params = X962Parameters.getInstance(algId.getParameters());
                 ECDomainParameters domainParams = ECUtil.getDomainParameters(BouncyCastleProvider.CONFIGURATION, params);
                 ECPrivateKeyParameters ecParams = new ECPrivateKeyParameters(ecKey.getKey(), domainParams);
-                ECPoint q = domainParams.getG().multiply(ecParams.getD()).normalize();
+                // d is the private scalar, so use the cache-safe fixed-point comb, not the
+                // curve's default wNAF multiplier
+                ECPoint q = new FixedPointCombMultiplier().multiply(domainParams.getG(), ecParams.getD()).normalize();
                 rawPub = q.getEncoded(false);
             }
             else
