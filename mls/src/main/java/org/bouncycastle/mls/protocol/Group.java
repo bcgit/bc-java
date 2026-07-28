@@ -1934,10 +1934,21 @@ public class Group
         // We mark self-removes invalid here even though a resync Commit will
         // sometimes cause them.  This is OK because this method is only called from
         // the normal proposal list validation method, not the external commit one.
-        // Compared as unsigned, matching GroupKeySet.SecretTree.hasLeaf: leaf_index is a wire uint32.
-        boolean in_tree = (Integer.toUnsignedLong(remove.removed.value()) < tree.getSize().leafCount()) && tree.hasLeaf(remove.removed);
+        boolean in_tree = removedIsInTree(remove);
         boolean not_me = remove.removed.value() != index.value();
         return in_tree && not_me;
+    }
+
+    /**
+     * The removed leaf lies in the tree. Shared by the normal and external-commit proposal
+     * validation: the external one cannot use {@link #validateRemove}, which also rejects
+     * self-removes, but needs the same bound. Compared as unsigned (leaf_index is a wire uint32),
+     * and before tree.hasLeaf, which throws rather than returning false outside the tree.
+     */
+    private boolean removedIsInTree(Proposal.Remove remove)
+    {
+        return (Integer.toUnsignedLong(remove.removed.value()) < tree.getSize().leafCount())
+            && tree.hasLeaf(remove.removed);
     }
 
     private boolean validateKeyPackage(KeyPackage keyPackage)
@@ -2320,6 +2331,9 @@ public class Group
                 break;
             case REMOVE:
                 removeCount++;
+                // An external commit does not run validateProposal, so bound the removed index
+                // here: applyRemove would otherwise be handed the raw wire value.
+                noDisallowed = noDisallowed && removedIsInTree(cached.proposal.getRemove());
                 break;
             case PSK:
                 noDisallowed = noDisallowed && validatePSK(cached.proposal.getPreSharedKey());
