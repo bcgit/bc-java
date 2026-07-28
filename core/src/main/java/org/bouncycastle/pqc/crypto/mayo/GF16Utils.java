@@ -18,7 +18,7 @@ class GF16Utils
      * @param mVecLimbs the number of limbs in the vector
      * @param in        the input long array containing the vector; the vector starts at index inOffset
      * @param inOffset  the starting index in 'in'
-     * @param b         the GF(16) element (0–255) to multiply by
+     * @param b         the GF(16) element (0-255) to multiply by
      * @param acc       the accumulator long array; the target vector starts at index accOffset
      * @param accOffset the starting index in 'acc'
      */
@@ -41,17 +41,17 @@ class GF16Utils
 
 
     /**
-     * Performs the multiplication and accumulation of a block of an upper‐triangular matrix
+     * Performs the multiplication and accumulation of a block of an upper-triangular matrix
      * times a second matrix.
      *
      * @param mVecLimbs number of limbs per m-vector.
-     * @param bsMat     the “basis” matrix (as a flat long[] array); each entry occupies mVecLimbs elements.
-     * @param mat       the second matrix (as a flat byte[] array) stored row‐major,
+     * @param bsMat     the "basis" matrix (as a flat long[] array); each entry occupies mVecLimbs elements.
+     * @param mat       the second matrix (as a flat byte[] array) stored row-major,
      *                  with dimensions (bsMatCols x matCols).
      * @param acc       the accumulator (as a flat long[] array) with dimensions (bsMatRows x matCols);
-     *                  each “entry” is an m‐vector (length mVecLimbs).
-     * @param bsMatRows number of rows in the bsMat (the “triangular” matrix’s row count).
-     * @param matCols   number of columns in the matrix “mat.”
+     *                  each "entry" is an m-vector (length mVecLimbs).
+     * @param bsMatRows number of rows in the bsMat (the "triangular" matrix's row count).
+     * @param matCols   number of columns in the matrix "mat."
      */
     static void mulAddMUpperTriangularMatXMat(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc, int accOff,
                                               int bsMatRows, int matCols)
@@ -82,8 +82,8 @@ class GF16Utils
      *                  Its logical dimensions: (matRows x bsMatCols).
      * @param acc       the accumulator (as a flat long[] array) with dimensions (matCols x bsMatCols);
      *                  each entry is an m-vector.
-     * @param matRows   number of rows in the matrix “mat.”
-     * @param matCols   number of columns in “mat.”
+     * @param matRows   number of rows in the matrix "mat."
+     * @param matCols   number of columns in "mat."
      */
     static void mulAddMatTransXMMat(int mVecLimbs, byte[] mat, long[] bsMat, int bsMatOff, long[] acc,
                                     int matRows, int matCols)
@@ -103,7 +103,7 @@ class GF16Utils
     }
 
     /**
-     * Multiplies a matrix (given as a byte array) with a bit‐sliced matrix (given as a long array)
+     * Multiplies a matrix (given as a byte array) with a bit-sliced matrix (given as a long array)
      * and accumulates the result into the acc array.
      *
      * <p>
@@ -114,7 +114,7 @@ class GF16Utils
      *
      * @param mVecLimbs the number of limbs (elements) in each vector
      * @param mat       the matrix as a byte array with dimensions [matRows x matCols]
-     * @param bsMat     the bit‐sliced matrix as a long array
+     * @param bsMat     the bit-sliced matrix as a long array
      * @param acc       the accumulator array (long[]) where results are accumulated
      * @param matRows   the number of rows in the matrix
      * @param matCols   the number of columns in the matrix
@@ -159,17 +159,17 @@ class GF16Utils
      * and adds the result to the accumulator.
      *
      * <p>
-     * For each row {@code r} in the bit‑sliced matrix and for each column {@code c} (starting from
-     * {@code triangular * r}) in the bit‑sliced matrix, this method iterates over all rows {@code k}
+     * For each row {@code r} in the bit-sliced matrix and for each column {@code c} (starting from
+     * {@code triangular * r}) in the bit-sliced matrix, this method iterates over all rows {@code k}
      * of the single matrix, and for each element, it multiplies the vector (from {@code bsMat})
      * by the scalar (from {@code mat}) and adds the result to the corresponding vector in {@code acc}.
      * </p>
      *
      * @param mVecLimbs the number of limbs (elements) in each vector.
-     * @param bsMat     the bit‑sliced matrix stored as a long array.
+     * @param bsMat     the bit-sliced matrix stored as a long array.
      * @param mat       the matrix stored as a byte array.
      * @param acc       the accumulator array where the results are added.
-     * @param bsMatRows the number of rows in the bit‑sliced matrix.
+     * @param bsMatRows the number of rows in the bit-sliced matrix.
      * @param matRows   the number of rows in the matrix.
      */
     static void mulAddMUpperTriangularMatXMatTrans(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc, int bsMatRows, int matRows)
