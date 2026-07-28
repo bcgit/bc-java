@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 
 public class Version
     extends ASN1Object
@@ -39,7 +38,7 @@ public class Version
 
     public static Version getInstance(Object o)
     {
-        if (o instanceof UINT8)
+        if (o instanceof Version)
         {
             return (Version)o;
         }
