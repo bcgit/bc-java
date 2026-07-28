@@ -36,21 +36,43 @@ public abstract class Polynomial
     }
 
     // defined in poly_mod.c
+    //
+    // NOTE: this runs on secret data - the secret key polynomials f and g during key
+    // generation, the message polynomials r and m during encapsulation, and the recovered
+    // coefficients during decapsulation - so it must not divide. Folding by 255, then 15, then
+    // 3 preserves the residue mod 3 (3 divides both 255 and 15, and 4 = 1 mod 3) and leaves a
+    // value of at most 5, which one masked conditional subtraction reduces to 0..2. This is the
+    // reference implementation's division-free mod3; do not "simplify" it back to a % 3, which
+    // compiles to an integer division whose latency depends on the secret operand.
     static short mod3(short a)
     {
-        return (short)((a & 0xffff) % 3);
+        int r = a & 0xffff;
+        r = (r >>> 8) + (r & 0xff);
+        r = (r >>> 4) + (r & 0x0f);
+        r = (r >>> 2) + (r & 0x03);
+        r = (r >>> 2) + (r & 0x03);
+
+        int t = r - 3;
+        int c = t >> 31;
+
+        return (short)((c & r) ^ (~c & t));
     }
 
     // defined in poly_s3_inv.c
     static byte mod3(byte a)
     {
-        return (byte)((a & 0xff) % 3);
+        return (byte)mod3((short)(a & 0xff));
     }
 
     // defined in poly.h
+    //
+    // NOTE: q is always a power of two (NTRUParameterSet.q() returns 1 << logQ) and every call
+    // site passes a value already masked to 16 bits, so masking is exactly x % q for the inputs
+    // that occur here - and, unlike a division by a variable divisor, it cannot leak the secret
+    // dividend through its latency. This matches the reference MODQ(X) ((X) & (NTRU_Q-1)).
     static int modQ(int x, int q)
     {
-        return x % q;
+        return x & (q - 1);
     }
 
 
