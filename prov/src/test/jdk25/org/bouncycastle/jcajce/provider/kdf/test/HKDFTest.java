@@ -68,13 +68,60 @@ public class HKDFTest
             fail("HKDF failed generator test");
         }
 
-        //TODO: make test for derived keys
-//        kdfHkdf.deriveKey("AES", hkdfParams);
-
         //TODO: do we want users to initialize the digest?
         //KDF kdf = KDF.getInstance("HKDF", "BC");
         //kdf.init(new KDFParameter(new SHA1Digest()));
         //kdf.deriveData(hkdfParams);
+    }
+
+    public void testDeriveKey()
+            throws Exception
+    {
+        setUp();
+        KDF kdfHkdf = KDF.getInstance("HKDF-SHA256", "BC");
+
+        byte[] ikm = Hex.decode("c702e7d0a9e064b09ba55245fb733cf3");
+        byte[] salt = Strings.toByteArray("The Cryptographic Message Syntax");
+        byte[] info = Hex.decode("301b0609608648016503040106300e040c5c79058ba2f43447639d29e2");
+        byte[] okm = Hex.decode("2124ffb29fac4e0fbbc7d5d87492bff3");
+
+        HKDFParameterSpec.ExtractThenExpand hkdfParams1 = HKDFParameterSpec.ofExtract().addIKM(ikm)
+                .addSalt(salt).thenExpand(info, okm.length);
+
+        SecretKey key = kdfHkdf.deriveKey("AES", hkdfParams1);
+
+        assertEquals("AES", key.getAlgorithm());
+        assertEquals("RAW", key.getFormat());
+
+        if (!areEqual(key.getEncoded(), okm))
+        {
+            fail("HKDF deriveKey failed extract-then-expand test");
+        }
+
+        if (!areEqual(key.getEncoded(), kdfHkdf.deriveData(hkdfParams1)))
+        {
+            fail("HKDF deriveKey disagrees with deriveData for extract-then-expand");
+        }
+
+        // Extract Only
+        okm = Hex.decode("4d757351dc7a354f041aacd288c8957e341ac8903ba8b4debde8e856f1b58e31");
+
+        HKDFParameterSpec.Extract hkdfParams2 = HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(salt).extractOnly();
+
+        key = kdfHkdf.deriveKey("AES", hkdfParams2);
+
+        assertEquals("AES", key.getAlgorithm());
+        assertEquals("RAW", key.getFormat());
+
+        if (!areEqual(key.getEncoded(), okm))
+        {
+            fail("HKDF deriveKey failed extract-only test");
+        }
+
+        if (!areEqual(key.getEncoded(), kdfHkdf.deriveData(hkdfParams2)))
+        {
+            fail("HKDF deriveKey disagrees with deriveData for extract-only");
+        }
     }
 
     private boolean doComparison(String algorithm, byte[] ikm, byte[] salt, byte[] info)

@@ -46,6 +46,11 @@ public class RevAnnContent
 
     private RevAnnContent(ASN1Sequence seq)
     {
+        if (seq.size() < 4)
+        {
+            throw new IllegalArgumentException("expected sequence size of 4");
+        }
+
         status = PKIStatus.getInstance(seq.getObjectAt(0));
         certId = CertId.getInstance(seq.getObjectAt(1));
         willBeRevokedAt = ASN1GeneralizedTime.getInstance(seq.getObjectAt(2));

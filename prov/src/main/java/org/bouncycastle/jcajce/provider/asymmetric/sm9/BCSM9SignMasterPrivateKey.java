@@ -69,6 +69,11 @@ public class BCSM9SignMasterPrivateKey
 
     public byte[] getEncoded()
     {
+        if (keyParams.isDestroyed())
+        {
+            throw new IllegalStateException("key destroyed");
+        }
+
         try
         {
             PrivateKeyInfo info = new PrivateKeyInfo(

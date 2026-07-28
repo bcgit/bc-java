@@ -31,6 +31,7 @@ public class AllTests
 
         suite.addTestSuite(CrlCacheTest.class);
         suite.addTestSuite(MultiValuedRDNEmailTest.class);
+        suite.addTestSuite(ReasonsMaskTest.class);
 
         return new BCTestSetup(suite);
     }

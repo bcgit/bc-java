@@ -14,6 +14,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -448,6 +449,39 @@ public class KeyStoreTest
         }
     }
 
+    /*
+     * A key entry stored as raw byte data (KeyStore.setKeyEntry(String, byte[], Certificate[]) -
+     * the SECRET entry type) cannot currently be recovered as a Key: decoding the byte data as an
+     * EncryptedPrivateKeyInfo is not implemented. getKey() must surface that as the
+     * UnrecoverableKeyException declared by KeyStoreSpi.engineGetKey, not as an unchecked
+     * RuntimeException.
+     */
+    private void checkByteDataEntryUnrecoverable(String storeName)
+        throws Exception
+    {
+        KeyStore ks = KeyStore.getInstance(storeName, "BC");
+
+        ks.load(null, null);
+
+        ks.setKeyEntry("bytes", new byte[16], null);
+
+        char[][] passwords = { null, new char[0], "hello".toCharArray() };
+
+        for (int p = 0; p != passwords.length; p++)
+        {
+            try
+            {
+                ks.getKey("bytes", passwords[p]);
+                fail(storeName + " byte-data entry unexpectedly recovered as a key");
+            }
+            catch (UnrecoverableKeyException e)
+            {
+                isTrue("wrong message: " + e.getMessage(),
+                    "BKS entry stored as byte data cannot be recovered as a key".equals(e.getMessage()));
+            }
+        }
+    }
+
     public String getName()
     {
         return "KeyStore";
@@ -465,6 +499,8 @@ public class KeyStoreTest
         oldStoreTest();
         v1RejectedByDefaultTest();
         checkException();
+        checkByteDataEntryUnrecoverable("BKS");
+        checkByteDataEntryUnrecoverable("UBER");
         checkOversizedEntryRejected();
         checkLargeEntryStreamed();
         checkOversizedIterationCountRejected();

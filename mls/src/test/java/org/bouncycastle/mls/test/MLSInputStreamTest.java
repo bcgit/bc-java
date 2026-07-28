@@ -4,8 +4,10 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSMessage;
+import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -129,5 +131,15 @@ public class MLSInputStreamTest
         {
             assertTrue(e.getMessage().indexOf("invalid WireFormat") >= 0);
         }
+    }
+
+    // leaf_index is a uint32 on the wire; a value with the top bit set must still decode (see
+    // GroupKeySetTest for the actual security fix, in the unsigned comparison, not here).
+    public void testLargeLeafIndexRoundTrips()
+        throws Exception
+    {
+        LeafIndex leaf = (LeafIndex)MLSInputStream.decode(Hex.decode("ffffffff"), LeafIndex.class);
+        assertEquals(-1, leaf.value());
+        assertTrue(Arrays.areEqual(Hex.decode("ffffffff"), MLSOutputStream.encode(leaf)));
     }
 }
