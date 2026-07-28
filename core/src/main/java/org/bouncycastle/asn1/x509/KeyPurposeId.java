@@ -137,6 +137,30 @@ public class KeyPurposeId
     public static final KeyPurposeId id_kp_documentSigning = new KeyPurposeId(id_kp.branch("36"));
 
     /**
+     * RFC 9509 sec. 3 - signing the JWT Claims Set of a Client Credentials Assertion (CCA)
+     * using JWS, for 5G Network Function service consumers.
+     * <p>
+     * id-kp-jwt OBJECT IDENTIFIER ::= { id-kp 37 }
+     */
+    public static final KeyPurposeId id_kp_jwt = new KeyPurposeId(id_kp.branch("37"));
+
+    /**
+     * RFC 9509 sec. 3 - encrypting JSON objects in HTTP messages between 5G Security Edge
+     * Protection Proxies (SEPPs) using JWE.
+     * <p>
+     * id-kp-httpContentEncrypt OBJECT IDENTIFIER ::= { id-kp 38 }
+     */
+    public static final KeyPurposeId id_kp_httpContentEncrypt = new KeyPurposeId(id_kp.branch("38"));
+
+    /**
+     * RFC 9509 sec. 3 - signing OAuth 2.0 access tokens for service authorization using JWS,
+     * as issued by a 5G Network Repository Function (NRF).
+     * <p>
+     * id-kp-oauthAccessTokenSigning OBJECT IDENTIFIER ::= { id-kp 39 }
+     */
+    public static final KeyPurposeId id_kp_oauthAccessTokenSigning = new KeyPurposeId(id_kp.branch("39"));
+
+    /**
      * RFC 9734 sec. 3 - proving the identity of an Instant Messaging (IM) client,
      * whose IM URI (RFC 3860) or XMPP URI (RFC 6121) appears in the subjectAltName.
      * <p>
