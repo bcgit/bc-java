@@ -3694,8 +3694,8 @@ public class NistCertPathTest2
      * <p>
      * In this test, the intermediate certificate includes a nameConstraints extension that specifies a
      * single permitted subtree. The end entity certificate includes a subjectAltName extension with a
-     * dNSName that falls outside that subtree. The permitted subtree is “testcertificates.gov” and the
-     * subjectAltName is “mytestcertificates.gov”.
+     * dNSName that falls outside that subtree. The permitted subtree is "testcertificates.gov" and the
+     * subjectAltName is "mytestcertificates.gov".
      */
     public void test4_13_38()
         throws Exception

@@ -235,7 +235,7 @@ public abstract class TlsRsaKeyExchange
         // m = h * q + mQ
         m = h.multiply(q).add(mQ);
 
-        // defence against Arjen Lenstra’s CRT attack
+        // defence against Arjen Lenstra's CRT attack
         BigInteger check = m.modPow(e, crtKey.getModulus()); 
         if (!check.equals(input))
         {

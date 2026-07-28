@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.DERSequence;
 /**
  * X.509 Section 9.8.2.
  * <br/>
- * This public-key certificate extension, when present, shall contain the subject’s alternative public key information
+ * This public-key certificate extension, when present, shall contain the subject's alternative public key information
  * <pre>
  * subjectAltPublicKeyInfo EXTENSION ::= {
  *      SYNTAX SubjectAltPublicKeyInfo

@@ -211,7 +211,7 @@ class RSACoreEngine
 
                 if (e != null)
                 {
-                    // defence against Arjen Lenstra’s CRT attack
+                    // defence against Arjen Lenstra's CRT attack
                     BigInteger check = m.modPow(e, crtKey.getModulus());
                     if (!check.equals(input))
                     {

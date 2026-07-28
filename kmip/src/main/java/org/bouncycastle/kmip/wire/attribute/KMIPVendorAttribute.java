@@ -6,10 +6,10 @@ package org.bouncycastle.kmip.wire.attribute;
  * Vendor Identification and Attribute Name are text strings used to identify the attribute, while Attribute Value
  * varies depending on the specific attribute.
  * <p>
- * Vendor Attributes created by the client with Vendor Identification “x” are not created (provided during
+ * Vendor Attributes created by the client with Vendor Identification "x" are not created (provided during
  * object creation), set, added, adjusted, modified or deleted by the server.
  * <p>
- * Vendor Attributes created by the server with Vendor Identification “y” are not created (provided during
+ * Vendor Attributes created by the server with Vendor Identification "y" are not created (provided during
  * object creation), set, added, adjusted, modified or deleted by the client.
  */
 public class KMIPVendorAttribute
