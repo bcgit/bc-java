@@ -63,12 +63,12 @@ public class CrlReasonsMaskTest
         DistributionPoint dp = new DistributionPoint(null, new ReasonFlags(ReasonFlags.keyCompromise), null);
 
         Method processCRLD = Class.forName("org.bouncycastle.jce.provider.RFC3280CertPathUtilities")
-            .getDeclaredMethod("processCRLD", X509CRL.class, DistributionPoint.class);
+            .getDeclaredMethod("processCRLD", new Class[]{X509CRL.class, DistributionPoint.class});
         processCRLD.setAccessible(true);
 
         try
         {
-            Object mask = processCRLD.invoke(null, crl, dp);
+            Object mask = processCRLD.invoke(null, new Object[]{crl, dp});
             if (mask == null)
             {
                 fail("processCRLD returned null reasons mask");

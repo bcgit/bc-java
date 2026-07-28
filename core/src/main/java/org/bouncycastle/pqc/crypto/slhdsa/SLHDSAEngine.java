@@ -477,8 +477,6 @@ public abstract class SLHDSAEngine
     public static boolean internalVerifySignature(SLHDSAPublicKeyParameters pubKey, byte[] msgPrefix, byte[] msg,
         byte[] signature)
     {
-        // TODO Check init via pubKey != null
-
         //# Input: Message M, signature SIG, public key PK
         //# Output: Boolean
 
@@ -524,8 +522,6 @@ public abstract class SLHDSAEngine
     public static byte[] internalGenerateSignature(SLHDSAPrivateKeyParameters privKey, byte[] msgPrefix, byte[] msg,
         byte[] optRand)
     {
-        // TODO Check init via privKey != null
-
         SLHDSAEngine engine = privKey.getParameters().getEngine();
         engine.init(privKey.pk.seed);
 

@@ -76,6 +76,55 @@ public class MLKEMTest
         }
     }
 
+    // A private key encoding must be exactly the 64 byte (d, z) seed or the exact FIPS 203 expanded
+    // dk length (1632/2400/3168) - mirroring the length check MLKEMPublicKeyParameters already has.
+    public void testPrivateKeyRejectsMalformedLength()
+    {
+        MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
+        kpGen.init(new MLKEMKeyGenerationParameters(RANDOM, MLKEMParameters.ml_kem_512));
+        byte[] dk = ((MLKEMPrivateKeyParameters)kpGen.generateKeyPair().getPrivate()).getEncoded();
+
+        // one byte short, within the trailing implicit-rejection secret z: previously constructed
+        // silently with a zero-truncated z (the hash check only covers the embedded public key).
+        checkMalformedPrivateKey(Arrays.copyOfRange(dk, 0, dk.length - 1));
+        // one byte long: previously accepted with the trailing byte silently dropped.
+        checkMalformedPrivateKey(Arrays.copyOfRange(dk, 0, dk.length + 1));
+        // truncated before the s/t/rho/hpk field boundaries: previously crashed with an unchecked
+        // IndexOutOfBoundsException from a negative-length arraycopy.
+        checkMalformedPrivateKey(Arrays.copyOfRange(dk, 0, 33));
+        // neither the (d, z) seed length nor the expanded key length.
+        checkMalformedPrivateKey(new byte[63]);
+        checkMalformedPrivateKey(new byte[65]);
+
+        // exact-length encodings still construct.
+        new MLKEMPrivateKeyParameters(MLKEMParameters.ml_kem_512, dk);
+        new MLKEMPrivateKeyParameters(MLKEMParameters.ml_kem_512, new byte[64]);
+    }
+
+    private static void checkMalformedPrivateKey(byte[] encoding)
+    {
+        try
+        {
+            new MLKEMPrivateKeyParameters(MLKEMParameters.ml_kem_512, encoding);
+            fail("no exception for private key encoding of length " + encoding.length + " (crypto.params)");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("'encoding' has invalid length", e.getMessage());
+        }
+
+        try
+        {
+            new org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters(
+                org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters.ml_kem_512, encoding);
+            fail("no exception for private key encoding of length " + encoding.length + " (pqc.crypto.mlkem)");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("'encoding' has invalid length", e.getMessage());
+        }
+    }
+
     public void testInputs()
         throws Exception
     {

@@ -26,6 +26,7 @@ public class AllTests
         suite.addTestSuite(IDPRelativeNameTest.class);
         suite.addTestSuite(QcStatementReviewerTest.class);
         suite.addTestSuite(PKIXCertPathReviewerPolicyTreeTest.class);
+        suite.addTestSuite(PKIXCertPathReviewerCrlReasonTest.class);
 
         return new BCTestSetup(suite);
     }

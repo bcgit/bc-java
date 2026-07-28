@@ -3,6 +3,7 @@ package org.bouncycastle.jce.exception;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidatorException;
 
+@Deprecated
 public class ExtCertPathValidatorException
     extends CertPathValidatorException
     implements ExtException

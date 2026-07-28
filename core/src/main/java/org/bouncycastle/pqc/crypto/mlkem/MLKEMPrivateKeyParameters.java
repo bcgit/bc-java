@@ -52,6 +52,13 @@ public class MLKEMPrivateKeyParameters
         super(true, params);
 
         MLKEMEngine eng = params.getEngine();
+
+        if (encoding.length != MLKEMEngine.SeedBytes &&
+            encoding.length != eng.getIndCpaSecretKeyBytes() + eng.getIndCpaPublicKeyBytes() + 2 * MLKEMEngine.SymBytes)
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
+
         if (encoding.length == MLKEMEngine.SeedBytes)
         {
             byte[][] keyData = eng.generateKemKeyPairInternal(

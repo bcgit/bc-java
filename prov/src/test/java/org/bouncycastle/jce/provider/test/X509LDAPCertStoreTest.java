@@ -11,7 +11,7 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldif.LDIFException;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
-import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
+import java.security.cert.CertPathBuilderException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.test.SimpleTest;
@@ -193,9 +193,9 @@ public class X509LDAPCertStoreTest
             CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
             PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(pkixParams);
         }
-        catch (ExtCertPathBuilderException exception)
+        catch (CertPathBuilderException exception)
         {
-            //expected to fail with ExtCertPathBuilderException: Error finding target certificate.
+            //expected to fail with CertPathBuilderException: Error finding target certificate.
         }
     }
 

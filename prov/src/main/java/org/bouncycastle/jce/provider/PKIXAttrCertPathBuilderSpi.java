@@ -25,11 +25,11 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
-import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
@@ -110,7 +110,7 @@ public class PKIXAttrCertPathBuilderSpi
         }
         catch (AnnotatedException e)
         {
-            throw new ExtCertPathBuilderException("Error finding target attribute certificate.", e);
+            throw SecurityExceptions.certPathBuilderException("Error finding target attribute certificate.", e);
         }
 
         if (targets.isEmpty())
@@ -144,13 +144,13 @@ public class PKIXAttrCertPathBuilderSpi
                 }
                 catch (AnnotatedException e)
                 {
-                    throw new ExtCertPathBuilderException(
+                    throw SecurityExceptions.certPathBuilderException(
                         "Public key certificate for attribute certificate cannot be searched.",
                         e);
                 }
                 catch (IOException e)
                 {
-                    throw new ExtCertPathBuilderException(
+                    throw SecurityExceptions.certPathBuilderException(
                         "cannot encode X500Principal.",
                         e);
                 }
@@ -169,7 +169,7 @@ public class PKIXAttrCertPathBuilderSpi
 
         if (result == null && certPathException != null)
         {
-            throw new ExtCertPathBuilderException(
+            throw SecurityExceptions.certPathBuilderException(
                                     "Possible certificate chain could not be validated.",
                                     certPathException);
         }

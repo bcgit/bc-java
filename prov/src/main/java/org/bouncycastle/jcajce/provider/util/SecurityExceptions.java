@@ -5,6 +5,9 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateEncodingException;
 import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.BadPaddingException;
@@ -57,5 +60,22 @@ public class SecurityExceptions
     public static BadPaddingException badPaddingException(String message, Throwable cause)
     {
         return (BadPaddingException)new BadPaddingException(message).initCause(cause);
+    }
+
+    public static CertPathValidatorException certPathValidatorException(String message, Throwable cause)
+    {
+        // CertPathValidatorException(String, Throwable) only exists from Java 5; initCause keeps the
+        // legacy (Java 4) builds compiling, so do not "simplify" this to the two-arg constructor.
+        return (CertPathValidatorException)new CertPathValidatorException(message).initCause(cause);
+    }
+
+    public static CertPathBuilderException certPathBuilderException(String message, Throwable cause)
+    {
+        return (CertPathBuilderException)new CertPathBuilderException(message).initCause(cause);
+    }
+
+    public static CertificateEncodingException certificateEncodingException(String message, Throwable cause)
+    {
+        return (CertificateEncodingException)new CertificateEncodingException(message).initCause(cause);
     }
 }
