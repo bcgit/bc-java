@@ -62,7 +62,7 @@ public class OEROptional
 
         if (defined)
         {
-            if (value.getClass().isInstance(type))
+            if (type.isInstance(value))
             {
                 return type.cast(value);
             }
