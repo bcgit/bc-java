@@ -191,8 +191,20 @@ class NTRUSampling
         return r;
     }
 
+    // NOTE: this reduces the bytes of SHAKE(rmSeed) into the ternary message polynomials r and m
+    // during encapsulation, and the secret key polynomials f and g during key generation, so it
+    // must not divide. Same division-free fold-and-select as the reference mod3 (see
+    // org.bouncycastle.pqc.math.ntru.Polynomial.mod3); do not replace it with a % 3.
     private static int mod3(int a)
     {
-        return a % 3;
+        int r = (a >>> 8) + (a & 0xff);
+        r = (r >>> 4) + (r & 0x0f);
+        r = (r >>> 2) + (r & 0x03);
+        r = (r >>> 2) + (r & 0x03);
+
+        int t = r - 3;
+        int c = t >> 31;
+
+        return (c & r) ^ (~c & t);
     }
 }
