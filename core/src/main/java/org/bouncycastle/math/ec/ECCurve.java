@@ -861,7 +861,7 @@ public abstract class ECCurve
 
         private static FiniteField buildField(int m, int k1, int k2, int k3)
         {
-            if (m > Properties.asInteger("org.bouncycastle.ec.max_f2m_field_size", 1142))  // twice 571
+            if (m > Properties.asInteger(Properties.EC_MAX_F2M_FIELD_SIZE, 1142))  // twice 571
             {
                 throw new IllegalArgumentException("field size out of range: " + m);
             }
