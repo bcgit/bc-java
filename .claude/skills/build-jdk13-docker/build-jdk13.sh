@@ -39,15 +39,20 @@ if [ -z "$ORO_JAR" ]; then
 fi
 
 # Real JDK 1.3.1 predates JAXP (added in J2SE 1.4): its rt.jar has no
-# org.w3c.dom / javax.xml.transform at all. ant's own JVM needs a TrAX Xalan
-# for the "test" target's <junitreport> XSLT step (else
-# TransformerFactoryConfigurationError: Provider
-# org.apache.xalan.processor.TransformerFactoryImpl not found) -- mounted here
-# via ANT_ARGS="-lib /opt/extralib" below, same mechanism as ORO_JAR. The
-# forked-JVM <junit> classpath still needs its own xercesImpl/xml-apis copy
-# (for the XML result formatter's org.w3c.dom.Node) dropped into
-# build/artifacts/jdk1.3/jars/ alongside the built module jars -- see the
-# "Iterating fast" section of this skill's README.
+# org.w3c.dom / javax.xml.transform at all. Two separate classpaths need a
+# JAXP/TrAX implementation as a result:
+#   * ant's OWN JVM, for the "test" target's <junitreport> XSLT step (else
+#     TransformerFactoryConfigurationError: Provider
+#     org.apache.xalan.processor.TransformerFactoryImpl not found) -- fixed by
+#     mounting xalan/serializer into /opt/extralib, picked up automatically via
+#     ANT_ARGS="-lib /opt/extralib" below (same mechanism as ORO_JAR).
+#   * the forked <junit> test JVM, whose classpath is built independently by
+#     ant/bc+-build.xml from build/artifacts/jdk1.3/jars/*.jar (NOT ant's own
+#     -lib classpath) -- for the XML result formatter's org.w3c.dom.Node, else
+#     every test suite fails with NoClassDefFoundError. Fixed by copying
+#     xercesImpl/xml-apis into that jars/ directory as part of the "test" run
+#     below (build/ is gitignored and gets wiped by `rm -rf build`, so this
+#     cannot be a one-off manual copy -- it has to happen every run).
 if [ -z "$XALAN_JAR" ]; then
     for c in /home/dgh/.m2/repository/xalan/xalan/2.7.2/xalan-2.7.2.jar \
              /home/dgh/.m2/repository/xalan/xalan/2.7.1/xalan-2.7.1.jar; do
@@ -60,13 +65,25 @@ if [ -z "$SERIALIZER_JAR" ]; then
         [ -e "$c" ] && { SERIALIZER_JAR=$c; break; }
     done
 fi
+if [ -z "$XERCES_JAR" ]; then
+    for c in /home/dgh/.m2/repository/xerces/xercesImpl/2.8.1/xercesImpl-2.8.1.jar \
+             /home/dgh/.m2/repository/xerces/xercesImpl/2.9.1/xercesImpl-2.9.1.jar; do
+        [ -e "$c" ] && { XERCES_JAR=$c; break; }
+    done
+fi
+if [ -z "$XML_APIS_JAR" ]; then
+    for c in /home/dgh/.m2/repository/xml-apis/xml-apis/1.3.04/xml-apis-1.3.04.jar \
+             /home/dgh/.m2/repository/xml-apis/xml-apis/1.4.01/xml-apis-1.4.01.jar; do
+        [ -e "$c" ] && { XML_APIS_JAR=$c; break; }
+    done
+fi
 
 for p in "$BC_JAVA/build1-3" "$JDK_HOST/bin/.java_wrapper" "$ANT_HOST/bin/ant" \
          "$MAIL_HOST/mail.jar" "$JAF_HOST/activation.jar" "$ORO_JAR" \
-         "$XALAN_JAR" "$SERIALIZER_JAR" \
+         "$XALAN_JAR" "$SERIALIZER_JAR" "$XERCES_JAR" "$XML_APIS_JAR" \
          "$SCRIPT_DIR/Dockerfile" "$SCRIPT_DIR/jvm.cfg"; do
     [ -n "$p" ] && [ -e "$p" ] || {
-        echo "ERROR: missing required path: ${p:-<unset: set ORO_JAR/XALAN_JAR/SERIALIZER_JAR explicitly>}" >&2
+        echo "ERROR: missing required path: ${p:-<unset: set ORO_JAR/XALAN_JAR/SERIALIZER_JAR/XERCES_JAR/XML_APIS_JAR explicitly>}" >&2
         exit 1
     }
 done
@@ -99,6 +116,14 @@ else
     # them, and hardcodes JDKPATH=/opt/jdk1.3.1 -- so we mount the JDK there and
     # export the two homes. ANT_HOME is auto-detected by the ant script.
     RUNCMD="cd /work && exec sh build1-3 $*"
+    if [ "$1" = "test" ]; then
+        # See the XERCES_JAR/XML_APIS_JAR note above: the forked <junit> JVM's
+        # classpath is every jar in build/artifacts/jdk1.3/jars/, so dropping
+        # a JAXP/DOM impl there (that directory must already exist from a
+        # prior plain build -- build-test only depends on init, not on build)
+        # is how it gets one. Idempotent and silent if the dir is missing.
+        RUNCMD="cd /work && mkdir -p build/artifacts/jdk1.3/jars && cp /opt/extralib/xercesImpl.jar /opt/extralib/xml-apis.jar build/artifacts/jdk1.3/jars/ && $RUNCMD"
+    fi
     TTY=""
 fi
 
@@ -124,6 +149,8 @@ exec docker run --rm $TTY --platform linux/386 \
     -v "$ORO_JAR":/opt/extralib/oro.jar:ro \
     -v "$XALAN_JAR":/opt/extralib/xalan.jar:ro \
     -v "$SERIALIZER_JAR":/opt/extralib/serializer.jar:ro \
+    -v "$XERCES_JAR":/opt/extralib/xercesImpl.jar:ro \
+    -v "$XML_APIS_JAR":/opt/extralib/xml-apis.jar:ro \
     -v "$MAIL_HOST":/opt/javamail-1.3.1:ro \
     -v "$JAF_HOST":/opt/jaf-1.0.2:ro \
     $BC_TEST_DATA_MOUNT \

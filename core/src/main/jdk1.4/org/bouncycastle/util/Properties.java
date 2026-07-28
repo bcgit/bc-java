@@ -58,6 +58,13 @@ public class Properties
      */
     public static final String X509_SGP22_NAME_CONSTRAINTS = "org.bouncycastle.x509.sgp22_name_constraints";
 
+    /**
+     * Upper bound on the field size m accepted when building a characteristic-2 (F2m) elliptic curve;
+     * an unbounded m from explicit EC parameters is an import-time CPU-exhaustion vector
+     * (CVE-2024-29857). Default 1142 (twice 571).
+     */
+    public static final String EC_MAX_F2M_FIELD_SIZE = "org.bouncycastle.ec.max_f2m_field_size";
+
     private Properties()
     {
     }

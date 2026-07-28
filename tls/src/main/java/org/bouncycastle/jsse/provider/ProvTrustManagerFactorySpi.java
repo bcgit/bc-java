@@ -1,16 +1,11 @@
 package org.bouncycastle.jsse.provider;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
-import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchProviderException;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertPathParameters;
 import java.security.cert.Certificate;
 import java.security.cert.PKIXParameters;
@@ -55,7 +50,7 @@ class ProvTrustManagerFactorySpi
         }
         else if (null != tsPathProp)
         {
-            if (new File(tsPathProp).exists())
+            if (FileUtils.exists(tsPathProp))
             {
                 tsPath = tsPathProp;
             }
@@ -66,7 +61,7 @@ class ProvTrustManagerFactorySpi
             if (null != javaHome)
             {
                 String jsseCacertsPath = javaHome + "/lib/security/jssecacerts".replace("/", File.separator);
-                if (new File(jsseCacertsPath).exists())
+                if (FileUtils.exists(jsseCacertsPath))
                 {
                     if (defaultCacertsToJKS)
                     {
@@ -77,7 +72,7 @@ class ProvTrustManagerFactorySpi
                 else
                 {
                     String cacertsPath = javaHome + "/lib/security/cacerts".replace("/", File.separator);
-                    if (new File(cacertsPath).exists())
+                    if (FileUtils.exists(cacertsPath))
                     {
                         if (defaultCacertsToJKS)
                         {
@@ -107,7 +102,7 @@ class ProvTrustManagerFactorySpi
             else
             {
                 LOG.config("Initializing default trust store from path: " + tsPath);
-                tsInput = openTrustStoreInput(tsPath);
+                tsInput = FileUtils.openBufferedInputStream(tsPath);
             }
 
             try
@@ -125,7 +120,7 @@ class ProvTrustManagerFactorySpi
         {
             if (null != tsInput)
             {
-                closeTrustStoreInput(tsInput);
+                FileUtils.closeInputStream(tsInput);
             }
         }
 
@@ -227,47 +222,6 @@ class ProvTrustManagerFactorySpi
         if (certificate instanceof X509Certificate)
         {
             trustAnchors.add(new TrustAnchor((X509Certificate)certificate, null));
-        }
-    }
-
-    private static InputStream openTrustStoreInput(final String tsPath)
-        throws Exception
-    {
-        try
-        {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<InputStream>()
-            {
-                public InputStream run()
-                    throws Exception
-                {
-                    return new BufferedInputStream(new FileInputStream(tsPath));
-                }
-            });
-        }
-        catch (PrivilegedActionException e)
-        {
-            throw e.getException();
-        }
-    }
-
-    private static void closeTrustStoreInput(final InputStream tsInput)
-        throws Exception
-    {
-        try
-        {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>()
-            {
-                public Void run()
-                    throws Exception
-                {
-                    tsInput.close();
-                    return null;
-                }
-            });
-        }
-        catch (PrivilegedActionException e)
-        {
-            throw e.getException();
         }
     }
 

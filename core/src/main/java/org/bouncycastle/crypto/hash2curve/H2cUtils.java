@@ -10,7 +10,7 @@ import org.bouncycastle.util.Arrays;
  * <p>
  * This implementation follows the straight-line, branch-free algorithmic structure required by RFC
  * 9380, ensuring that all code paths perform the same sequence of mathematical operations
- * regardless of input values. However, it relies on Java’s BigInteger arithmetic and standard JVM
+ * regardless of input values. However, it relies on Java's BigInteger arithmetic and standard JVM
  * execution characteristics, neither of which provides strict guarantees of constant-time behavior
  * at the microarchitectural level. Operations such as modular exponentiation, multiplication,
  * inversion, and even conditional value selection (cmov) may execute in variable time depending on

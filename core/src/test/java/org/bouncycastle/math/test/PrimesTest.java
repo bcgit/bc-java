@@ -99,6 +99,15 @@ public class PrimesTest extends TestCase
 
     public void testSTRandomPrime()
     {
+        // This test's own pass/fail oracle is java.math.BigInteger.isProbablePrime() (via isPrime()
+        // below), and real JDK 1.3.1's isProbablePrime() returns false negatives for 256-bit primes
+        // (confirmed directly: the well-known NIST P-256 field prime reports as non-prime) -
+        // unrelated to Primes.generateSTRandomPrime, and not something this test can work around.
+        if (System.getProperty("java.version").indexOf("1.3.") >= 0)
+        {
+            return;
+        }
+
         Digest[] digests = new Digest[]{ new SHA1Digest(), new SHA256Digest() };
         for (int digestIndex = 0; digestIndex < digests.length; ++digestIndex)
         {

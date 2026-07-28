@@ -309,6 +309,16 @@ public class Properties
      */
     public static final String BKS_MAX_IT_COUNT = "org.bouncycastle.bks.max_it_count";
 
+    /**
+     * Upper bound on the field size m accepted when building a characteristic-2 (F2m) elliptic curve.
+     * The field polynomial is evaluated when the curve is constructed, and the cost grows with m, so
+     * an unbounded value taken from a certificate's or key's explicit EC parameters is an import-time
+     * CPU-exhaustion vector (CVE-2024-29857). Default 1142 (twice the 571 of the largest standardised
+     * binary curve, B-571/K-571); a larger m is rejected with an {@code IllegalArgumentException}.
+     * Read via {@link #asInteger(String, int)}.
+     */
+    public static final String EC_MAX_F2M_FIELD_SIZE = "org.bouncycastle.ec.max_f2m_field_size";
+
     private Properties()
     {
     }

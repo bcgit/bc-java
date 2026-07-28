@@ -192,7 +192,7 @@ public class Extension
     public static final ASN1ObjectIdentifier expiredCertsOnCRL = new ASN1ObjectIdentifier("2.5.29.60").intern();
 
     /**
-     * the subject’s alternative public key information
+     * the subject's alternative public key information
      */
     public static final ASN1ObjectIdentifier subjectAltPublicKeyInfo = new ASN1ObjectIdentifier("2.5.29.72").intern();
 

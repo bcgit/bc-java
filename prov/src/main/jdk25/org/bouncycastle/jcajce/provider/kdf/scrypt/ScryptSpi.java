@@ -15,7 +15,7 @@ import org.bouncycastle.jcajce.spec.ScryptParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Example KDFSpi that delegates to Bouncy Castle’s SCrypt implementation.
+ * Example KDFSpi that delegates to Bouncy Castle's SCrypt implementation.
  */
 public class ScryptSpi
     extends KDFSpi

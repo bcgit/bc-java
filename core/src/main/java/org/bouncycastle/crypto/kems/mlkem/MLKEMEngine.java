@@ -243,7 +243,7 @@ public class MLKEMEngine
 
         int fail = constantTimeZeroOnEqual(cipherText, cmp);
 
-        // if ciphertexts do not match, “implicitly reject”
+        // if ciphertexts do not match, "implicitly reject"
         {
             byte[] implicit_rejection = new byte[SharedSecretBytes];
 
