@@ -666,16 +666,17 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 7th April.
 <h3>2.10.2 Defects Fixed</h3>
 <ul>
 <li>Issues with a dangling weak reference causing intermittent NullPointerExceptions in the OcspCache have been fixed.</li>
-<li>Issues with non-constant time RSA operations in TLS handshakes have been fixed.</li>
-<li>Issue with Ed25519, Ed448 signature verification causing intermittent infinite loop have been fixed.</li>
-<li>Issues with non-constant time ML-KEM implementation ("Kyber Slash") have been fixed.</li>
+<li>Issues with non-constant time RSA operations in TLS handshakes have been fixed (CVE-2024-30171).</li>
+<li>Issue with Ed25519, Ed448 signature verification causing intermittent infinite loop have been fixed (CVE-2024-30172).</li>
+<li>Issues with non-constant time ML-KEM implementation ("Kyber Slash") have been fixed (CVE-2024-14041).</li>
+<li>Importing an EC certificate or key with specially crafted F2m parameters could cause high CPU usage during parameter evaluation. The F2m field size is now bounded, defaulting to 1142 bits (twice 571) and configurable using the org.bouncycastle.ec.max_f2m_field_size system property (CVE-2024-29857).</li>
 <li>Align ML-KEM input validation with FIPS 203 IPD requirements.</li>
 <li>Make PEM parsing more forgiving of whitespace to align with RFC 7468 - Textual Encodings of PKIX, PKCS, and CMS Structures.</li>
 <li>Fix CCM length checks with large nonce sizes (n=12, n=13).</li>
 <li>EAC: Fixed the CertificateBody ASN.1 type to support an optional Certification Authority Reference in a Certificate Request.</li>
 <li>ASN.1: ObjectIdentifier (also Relative OID) parsing has been optimized and the contents octets for both types are now limited to 4096 bytes.</li>
 <li>BCJSSE: Fixed a missing null check on the result of PrivateKey.getEncoded(), which could cause issues for HSM RSA keys.</li>
-<li>BCJSSE: When endpoint identification is enabled and an SSL socket is not created with an explicit hostname (as happens with HttpsURLConnection), hostname verification could be performed against a DNS-resolved IP address. This has been fixed.</li>
+<li>BCJSSE: When endpoint identification is enabled and an SSL socket is not created with an explicit hostname (as happens with HttpsURLConnection), hostname verification could be performed against a DNS-resolved IP address. This has been fixed (CVE-2024-34447).</li>
 <li>The missing module import of java.logging to the provider module has been added.</li>
 <li>GOST ASN.1 public key alg parameters are now compliant with <a href="https://datatracker.ietf.org/doc/rfc9215/">RFC 9215</a>.</li>
 <li>An off-by-one error in the encoding for EccP256CurvePoint for ITS has been fixed.</li>
@@ -716,6 +717,7 @@ property is explicitly set to true.</li>
 Release 1.78 deals with the following CVEs:
 </p>
 <ul>
+<li>CVE-2024-14041 - Possible timing based leakage of the private key in ML-KEM (Kyber) decapsulation due to non-constant time division in the ciphertext compression functions ("KyberSlash").</li>
 <li>CVE-2024-29857 - Importing an EC certificate with specially crafted F2m parameters can cause high CPU usage during parameter evaluation.</li>
 <li>CVE-2024-30171 - Possible timing based leakage in RSA based handshakes due to exception processing eliminated.</li>
 <li>CVE-2024-30172 - Crafted signature and public key can be used to trigger an infinite loop in the Ed25519 verification code.</li>
