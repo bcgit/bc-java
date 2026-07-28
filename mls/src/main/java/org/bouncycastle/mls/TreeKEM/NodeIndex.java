@@ -23,7 +23,10 @@ public class NodeIndex
 
     public NodeIndex(LeafIndex leaf)
     {
-        value = 2 * leaf.value();
+        // Unsigned, in long arithmetic: the leaf index is a wire uint32 held in a signed int, and
+        // an int multiply wraps at 2^30 to a negative node index that then passes the bound checks
+        // in directPath and TreeKEMPublicKey.nodeAt (2^31 wrapped to node 0, aliasing a real leaf).
+        value = 2L * (leaf.value() & 0xFFFFFFFFL);
     }
 
 

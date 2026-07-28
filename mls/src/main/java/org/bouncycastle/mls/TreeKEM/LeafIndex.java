@@ -79,6 +79,12 @@ public class LeafIndex
 
         NodeIndex n = new NodeIndex(this);
         NodeIndex r = NodeIndex.root(size);
+        // Repeated parent() steps from outside the tree never meet the root, so the loop below
+        // would run until the heap is exhausted; NodeIndex.directPath checks the same bound.
+        if (n.value() >= size.width())
+        {
+            throw new IllegalArgumentException("Request for direct path outside of tree");
+        }
         if (n.equals(r))
         {
             return d;
@@ -104,6 +110,8 @@ public class LeafIndex
     public LeafIndex(MLSInputStream stream)
         throws IOException
     {
+        // NOTE: every uint32 must round-trip here (the RFC 9420 "messages" vector requires it),
+        // so the range is enforced where the index is used, not by rejecting it at decode.
         value = (int)stream.read(int.class);
     }
 
