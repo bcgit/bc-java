@@ -240,42 +240,65 @@ class HQCEngine
         return r + ((r >> 31) & n);
     }
 
+    /**
+     * Rejection-sample {@code weight} distinct positions in [0, n) into {@code support}.
+     * <p>
+     * NOTE: this runs on secret data at both of its call sites - it samples the secret key
+     * supports x and y in {@link #genKeyPair}, and re-expands y from the long-term secret key
+     * seed on every {@link #decaps}, where the same seed produces the same draw sequence every
+     * time and so any timing variation is a fixed, repeatedly measurable function of the private
+     * key. Everything within a batch of candidates is therefore branch-free and fixed-count: all
+     * {@code weight} candidates are examined even once enough have been accepted, the duplicate
+     * scan visits every slot with no early exit, and an accepted candidate is written by masking
+     * across all slots rather than by indexing with the secret running count. Do not "optimise"
+     * any of that back into a break, a continue, or a {@code support[count]} store.
+     * <p>
+     * The candidate stream is squeezed in fixed 3*weight byte batches and any tail is discarded,
+     * exactly as before, because two of these calls share one generator in
+     * {@link #genKeyPair} - consuming a different number of bytes would change the generated key.
+     * A batch is only re-squeezed when it failed to yield {@code weight} accepted positions, so
+     * the number of batches remains data-dependent; that residual (a second squeeze is needed
+     * with probability roughly 0.15 to 0.3 depending on the parameter set) is inherent to the
+     * specified sampler and cannot be removed without diverging from the algorithm's byte
+     * consumption, and therefore from its output.
+     */
     private void generateRandomSupport(int[] support, int weight, Shake256RandomGenerator random)
     {
         int randomBytesSize = 3 * weight;
         byte[] randBytes = new byte[randomBytesSize];
-        int j = randomBytesSize;
 
         int count = 0;
         while (count < weight)
         {
-            if (j == randomBytesSize)
-            {
-                random.xofGetBytes(randBytes, randomBytesSize);
-                j = 0;
-            }
-            int candidate = ((randBytes[j++] & 0xFF) << 16) | ((randBytes[j++] & 0xFF) << 8) | randBytes[j++] & 0xFF;
-            if (candidate >= rejectionThreshold)
-            {
-                continue;
-            }
+            random.xofGetBytes(randBytes, randomBytesSize);
 
-            candidate = barrettReduce(candidate);
-            boolean duplicate = false;
-            for (int k = 0; k < count; k++)
+            for (int i = 0, off = 0; i < weight; ++i, off += 3)
             {
-                if (support[k] == candidate)
+                int candidate = ((randBytes[off] & 0xFF) << 16)
+                    | ((randBytes[off + 1] & 0xFF) << 8)
+                    | (randBytes[off + 2] & 0xFF);
+
+                // in range for an unbiased reduction, and a position is still wanted
+                int accept = ((candidate - rejectionThreshold) >> 31) & ((count - weight) >> 31);
+                int reduced = barrettReduce(candidate);
+
+                // drop a repeat: every slot is compared, the not-yet-filled ones counting as
+                // non-matching, so neither the trip count nor the exit depends on the values
+                for (int t = 0; t < weight; ++t)
                 {
-                    duplicate = true;
-                    break;
+                    int live = (t - count) >> 31;
+                    accept &= cdiff(reduced, support[t]) | ~live;
                 }
-            }
-            if (duplicate)
-            {
-                continue;
-            }
 
-            support[count++] = candidate;
+                // store at index count without using count as an index
+                for (int t = 0; t < weight; ++t)
+                {
+                    int hit = accept & ~cdiff(t, count);
+                    support[t] = (support[t] & ~hit) | (reduced & hit);
+                }
+
+                count -= accept; // accept is 0 or -1
+            }
         }
     }
 
