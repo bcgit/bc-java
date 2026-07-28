@@ -56,6 +56,15 @@ public class MLDSAPrivateKeyParameters
         super(true, params);
 
         MLDSAEngine eng = MLDSAEngine.getInstance(params, null);
+
+        int expandedKeyLength = 2 * MLDSAEngine.SeedBytes + MLDSAEngine.TrBytes
+            + (eng.getDilithiumL() + eng.getDilithiumK()) * eng.getDilithiumPolyEtaPackedBytes()
+            + eng.getDilithiumK() * MLDSAEngine.DilithiumPolyT0PackedBytes;
+        if (encoding.length != MLDSAEngine.SeedBytes && encoding.length != expandedKeyLength)
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
+
         if (encoding.length == MLDSAEngine.SeedBytes)
         {
             byte[][] keyDetails = eng.generateKeyPairInternal(encoding);

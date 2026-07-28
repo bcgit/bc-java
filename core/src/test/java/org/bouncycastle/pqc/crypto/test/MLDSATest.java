@@ -728,6 +728,56 @@ public class MLDSATest
         rejectionUpStreamTest(MLDSAParameters.ml_dsa_87, "dilithium_rejection_vectors_87.h");
     }
 
+    public void testPrivateKeyRejectsMalformedLength()
+    {
+        // mirrors the public key length check pinned in PublicKeyLengthValidationTest - the only
+        // valid lengths for the byte[] encoding are the 32 byte seed and the exact expanded key size.
+        MLDSAParameters[] paramSets = new MLDSAParameters[]{
+            MLDSAParameters.ml_dsa_44, MLDSAParameters.ml_dsa_65, MLDSAParameters.ml_dsa_87 };
+        org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters[] pqcParamSets = new org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters[]{
+            org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters.ml_dsa_44,
+            org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters.ml_dsa_65,
+            org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters.ml_dsa_87 };
+        int[] expandedKeyLengths = new int[]{ 2560, 4032, 4896 };
+
+        for (int i = 0; i != paramSets.length; i++)
+        {
+            int expandedKeyLength = expandedKeyLengths[i];
+
+            // valid lengths still construct: 32 byte seed and exact expanded key
+            new MLDSAPrivateKeyParameters(paramSets[i], new byte[32]);
+            new MLDSAPrivateKeyParameters(paramSets[i], new byte[expandedKeyLength]);
+            new org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters(pqcParamSets[i], new byte[32]);
+            new org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters(pqcParamSets[i], new byte[expandedKeyLength]);
+
+            int[] badLengths = new int[]{
+                0, 31, 33, expandedKeyLength - 1, expandedKeyLength + 1, 32 + expandedKeyLength };
+            for (int j = 0; j != badLengths.length; j++)
+            {
+                byte[] bad = new byte[badLengths[j]];
+                try
+                {
+                    new MLDSAPrivateKeyParameters(paramSets[i], bad);
+                    fail("no exception for private key encoding of length " + badLengths[j]);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    assertEquals("'encoding' has invalid length", e.getMessage());
+                }
+
+                try
+                {
+                    new org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters(pqcParamSets[i], bad);
+                    fail("no exception for private key encoding of length " + badLengths[j]);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    assertEquals("'encoding' has invalid length", e.getMessage());
+                }
+            }
+        }
+    }
+
     private interface RejectionOperation
     {
         byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)

@@ -12,17 +12,21 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.generators.SLHDSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.HashSLHDSASigner;
 import org.bouncycastle.crypto.signers.SLHDSASigner;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -569,6 +573,129 @@ public class SLHDSATest
         signer.init(true, privParams);
         byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
         assertTrue(Arrays.areEqual(sigGenerated, signature));
+    }
+
+    public void testUninitialisedSignerThrowsIllegalStateException()
+        throws Exception
+    {
+        byte[] pk = Hex.decode("1A05A42FE300E87B16AEE116CB2E236358E2C3E62632C9DE03D08A535A0EB7E7");
+        byte[] sk = Hex.decode("2F896D61D9CD9038CA303394FADAA22A24AC5EC1D86A989CA2196C3C8632419C1A05A42FE300E87B16AEE116CB2E236358E2C3E62632C9DE03D08A535A0EB7E7");
+
+        checkInitGuards(new SLHDSASigner(), "SLHDSASigner",
+            new SLHDSAPublicKeyParameters(SLHDSAParameters.sha2_128s, pk),
+            new SLHDSAPrivateKeyParameters(SLHDSAParameters.sha2_128s, sk));
+
+        checkInitGuards(new HashSLHDSASigner(), "HashSLHDSASigner",
+            new SLHDSAPublicKeyParameters(SLHDSAParameters.sha2_128s, pk),
+            new SLHDSAPrivateKeyParameters(SLHDSAParameters.sha2_128s, sk));
+
+        checkInitGuards(new org.bouncycastle.pqc.crypto.slhdsa.SLHDSASigner(), "SLHDSASigner",
+            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters(
+                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, pk),
+            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters(
+                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, sk));
+
+        checkInitGuards(new org.bouncycastle.pqc.crypto.slhdsa.HashSLHDSASigner(), "HashSLHDSASigner",
+            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters(
+                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, pk),
+            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters(
+                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, sk));
+    }
+
+    private static void checkInitGuards(MessageSigner signer, String name, CipherParameters pub, CipherParameters priv)
+    {
+        byte[] msg = new byte[17];
+        byte[] sig = new byte[100];
+
+        try
+        {
+            signer.generateSignature(msg);
+            fail(name + ": uninitialised generateSignature must throw");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(name + " not initialised for signature generation.", e.getMessage());
+        }
+
+        try
+        {
+            signer.verifySignature(msg, sig);
+            fail(name + ": uninitialised verifySignature must throw");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(name + " not initialised for verification", e.getMessage());
+        }
+
+        signer.init(false, pub);
+        try
+        {
+            signer.generateSignature(msg);
+            fail(name + ": generateSignature after verification init must throw");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(name + " not initialised for signature generation.", e.getMessage());
+        }
+
+        signer.init(true, priv);
+        try
+        {
+            signer.verifySignature(msg, sig);
+            fail(name + ": verifySignature after signing init must throw");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(name + " not initialised for verification", e.getMessage());
+        }
+    }
+
+    private static void checkInitGuards(Signer signer, String name, CipherParameters pub, CipherParameters priv)
+        throws Exception
+    {
+        byte[] sig = new byte[100];
+
+        try
+        {
+            signer.generateSignature();
+            fail(name + ": uninitialised generateSignature must throw");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(name + " not initialised for signature generation.", e.getMessage());
+        }
+
+        try
+        {
+            signer.verifySignature(sig);
+            fail(name + ": uninitialised verifySignature must throw");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(name + " not initialised for verification", e.getMessage());
+        }
+
+        signer.init(false, pub);
+        try
+        {
+            signer.generateSignature();
+            fail(name + ": generateSignature after verification init must throw");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(name + " not initialised for signature generation.", e.getMessage());
+        }
+
+        signer.init(true, priv);
+        try
+        {
+            signer.verifySignature(sig);
+            fail(name + ": verifySignature after signing init must throw");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(name + " not initialised for verification", e.getMessage());
+        }
     }
 
     private static class InternalSLHDSASigner
