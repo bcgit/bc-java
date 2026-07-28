@@ -1,0 +1,35 @@
+package org.bouncycastle.smartcard.yubikey;
+
+import org.bouncycastle.smartcard.OpenPGPSmartCardManager;
+import org.bouncycastle.smartcard.card.CardException;
+import org.bouncycastle.smartcard.test.SmartCardTestProperties;
+
+public class YubikeyTestInstanceProvider
+{
+
+    public static OpenPGPSmartCardManager prepareOneYubikeySmartCardManager(SmartCardTestProperties testProperties)
+            throws YubikeySetupException, CardException
+    {
+        if (testProperties.getSerialNumber() == null)
+        {
+            throw new YubikeySetupException("Missing yubikey.properties file.");
+        }
+
+        YubikeySmartCardBackend backend = YubikeySmartCardBackend.createInstance()
+                .addAllowedCardSerial(testProperties.getSerialNumber());
+        if (backend.listSmartCards().isEmpty())
+        {
+            throw new YubikeySetupException("No allowed Yubikey devices present. Did you add your device serial number to the yubikey.properties file?");
+        }
+        return new OpenPGPSmartCardManager()
+                .addBackend(backend);
+    }
+
+    public static class YubikeySetupException extends Exception
+    {
+        public YubikeySetupException(String message)
+        {
+            super(message);
+        }
+    }
+}

@@ -6,6 +6,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.smartcard.simulator.SimulatorTests;
+import org.bouncycastle.smartcard.yubikey.YubikeyTests;
 import org.bouncycastle.test.PrintTestResult;
 
 import java.security.Security;
@@ -24,6 +25,7 @@ public class AllTests
         TestSuite suite = new TestSuite("OpenPGP SmartCard Tests");
 
         suite.addTestSuite(SimulatorTests.class);
+        suite.addTestSuite(YubikeyTests.class);
 
         return new BCTestSetup(suite);
     }
