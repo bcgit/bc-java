@@ -1,8 +1,5 @@
 package org.bouncycastle.jsse.provider;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
@@ -41,7 +38,7 @@ class ProvKeyManagerFactorySpi
         }
         else if (null != ksPathProp)
         {
-            if (new File(ksPathProp).exists())
+            if (FileUtils.exists(ksPathProp))
             {
                 ksPath = ksPathProp;
             }
@@ -65,7 +62,7 @@ class ProvKeyManagerFactorySpi
             else
             {
                 LOG.config("Initializing default key store from path: " + ksPath);
-                ksInput = new BufferedInputStream(new FileInputStream(ksPath));
+                ksInput = FileUtils.openBufferedInputStream(ksPath);
             }
 
             try
@@ -83,7 +80,7 @@ class ProvKeyManagerFactorySpi
         {
             if (null != ksInput)
             {
-                ksInput.close();
+                FileUtils.closeInputStream(ksInput);
             }
         }
 
