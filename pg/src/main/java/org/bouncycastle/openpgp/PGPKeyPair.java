@@ -79,8 +79,16 @@ public class PGPKeyPair
             pub.getAlgorithm(),
             pub.getCreationTime(),
             pub.getPublicKeyPacket().getKey());
+
+        PGPPrivateKey privateKey = null;
+        if (priv != null)
+        {
+            // reconstruct private key using public subkey packet
+            privateKey = new PGPPrivateKey(pub.getKeyID(), pubSubPkt, priv.getPrivateKeyDataPacket());
+        }
+
         return new PGPKeyPair(
             new PGPPublicKey(pubSubPkt, fingerPrintCalculator),
-            new PGPPrivateKey(pub.getKeyID(), pubSubPkt, priv.getPrivateKeyDataPacket()));
+            privateKey);
     }
 }
