@@ -60,7 +60,7 @@ public class ECCSIKeyGenerationParameters
     private final ECPoint kpak;
 
     /**
-     * The bit length used for key generation (typically the bit length of the curve's parameter A).
+     * The bit length used for key generation: the bit length of the curve order.
      */
     private final int n;
 
@@ -75,12 +75,14 @@ public class ECCSIKeyGenerationParameters
      */
     public ECCSIKeyGenerationParameters(SecureRandom random, X9ECParameters params, Digest digest, byte[] id)
     {
-        super(random, params.getCurve().getA().bitLength());
+        // the KSAK is a random secret in [1, q-1] (RFC 6507 sec. 4.2), so the bit length is the
+        // order's - the curve coefficient a's, used previously, is 0 on a Koblitz curve
+        super(random, params.getCurve().getOrder().bitLength());
         this.q = params.getCurve().getOrder();
         this.G = params.getG();
         this.digest = digest;
         this.id = Arrays.clone(id);
-        this.n = params.getCurve().getA().bitLength();
+        this.n = q.bitLength();
         this.ksak = BigIntegers.createRandomBigInteger(n, random).mod(q);
         this.kpak = G.multiply(ksak).normalize();
     }
