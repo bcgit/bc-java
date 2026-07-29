@@ -1,7 +1,10 @@
 package org.bouncycastle.asn1.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1T61String;
@@ -143,6 +146,51 @@ public class StringTest
 
         checkString(new DERUniversalString(shortBytes), new DERUniversalString(longBytes));
 
+        checkBMPStringHostileLength();
+    }
+
+    /**
+     * A BMPString whose declared length is far larger than the data behind it must fail on the
+     * truncated content, not on the way to allocating for the declared length. BMPString was the
+     * last primitive sizing a buffer from the header before reading any content (the github #2338
+     * class): it did new char[declaredLength / 2] up front, so eight bytes bought an allocation of
+     * whatever the parser's length bound allowed - and an OutOfMemoryError is an Error, so it
+     * bypasses the IOException contract this API declares.
+     * <p>
+     * The declared length is sized against the heap so that the old eager allocation cannot
+     * succeed, while staying under the parser's own bound (StreamUtil.findLimit, which for a
+     * stream of unknown size is the max heap) so the length is not rejected before BMPString is
+     * reached. It must also be even, or the malformed-encoding check would fire first. Reading
+     * through DefiniteLengthInputStream.toByteArray now grows the buffer as bytes arrive, so this
+     * returns promptly with the truncation error.
+     */
+    private void checkBMPStringHostileLength()
+        throws IOException
+    {
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        int limit = maxMemory > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)maxMemory;
+        int declared = (limit - 1024) & ~1;
+
+        byte[] header = new byte[]{
+            0x1E, (byte)0x84,
+            (byte)(declared >>> 24), (byte)(declared >>> 16), (byte)(declared >>> 8), (byte)declared,
+            0x00, 0x41
+        };
+
+        try
+        {
+            // wrapped so the stream's size cannot be discovered - i.e. read off a socket, where
+            // the declared length is all the parser has to go on
+            new ASN1InputStream(new FilterInputStream(new ByteArrayInputStream(header))
+            {
+            }).readObject();
+
+            fail("hostile BMPString length not rejected");
+        }
+        catch (IOException e)
+        {
+            // expected: the content runs out long before the declared length
+        }
     }
 
     private void checkString(ASN1String shortString, ASN1String longString)
