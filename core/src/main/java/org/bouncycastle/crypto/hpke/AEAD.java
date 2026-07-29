@@ -28,7 +28,7 @@ public class AEAD
     private final short aeadId;
     private final byte[] key;
     private final byte[] baseNonce;
-    private long seq = 0; // todo throw exception if overflow
+    private long seq = 0;
 
     private AEADCipher cipher;
 
@@ -87,10 +87,24 @@ public class AEAD
 
     private byte[] computeNonce()
     {
-        byte[] seq_bytes = Pack.longToBigEndian(seq++);
+        byte[] seq_bytes = Pack.longToBigEndian(seq);
         byte[] nonce = Arrays.clone(baseNonce);
         Bytes.xorTo(8, seq_bytes, 0, nonce, nonce.length - 8);
         return nonce;
+    }
+
+    /**
+     * RFC 9180 sec. 5.2 IncrementSeq. The counter is folded into the nonce as 64 bits, so -1 is
+     * the last usable value; wrapping past it would repeat a nonce under the same key, and the
+     * RFC requires the message limit be reported instead.
+     */
+    private void incrementSeq()
+    {
+        if (seq == -1L)
+        {
+            throw new IllegalStateException("HPKE message limit reached");
+        }
+        seq++;
     }
 
     private byte[] process(boolean forEncryption, byte[] aad, byte[] buf, int off, int len)
@@ -120,6 +134,13 @@ public class AEAD
             // Existing AEAD modes should return exact value for getOutputSize.
             throw new IllegalStateException();
         }
+
+        // RFC 9180 sec. 5.2: the sequence number advances only once the operation has succeeded.
+        // Advancing it while computing the nonce meant a ciphertext rejected by doFinal still
+        // moved the receiver's counter on, so one forged message desynchronised the context from
+        // the sender permanently - every subsequent genuine message then failed to open.
+        incrementSeq();
+
         return output;
     }
 }

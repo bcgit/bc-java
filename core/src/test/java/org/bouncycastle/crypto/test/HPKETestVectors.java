@@ -124,6 +124,82 @@ public class HPKETestVectors
 
     }
 
+    /**
+     * RFC 9180 sec. 5.2 advances the sequence number only after a successful Seal/Open. The
+     * receiving context used to advance it while computing the nonce, so a ciphertext rejected by
+     * the tag check still moved the counter on and left the receiver permanently out of step with
+     * the sender: every subsequent genuine message then failed to open. This is a receiver-side
+     * denial of service on a multi-shot context, not a nonce reuse - the counter only ever moved
+     * forwards - and the one-shot HPKE.seal/HPKE.open pair is unaffected because each call gets a
+     * fresh context.
+     */
+    public void testOpenFailureDoesNotAdvanceSequence()
+            throws Exception
+    {
+        HPKE hpke = new HPKE(HPKE.mode_base, (short)16, (short)1, (short)1);
+
+        AsymmetricCipherKeyPair receiver = hpke.generatePrivateKey();
+
+        HPKEContextWithEncapsulation ctxS = hpke.setupBaseS(receiver.getPublic(), "info".getBytes());
+        HPKEContext ctxR = hpke.setupBaseR(ctxS.getEncapsulation(), receiver, "info".getBytes());
+
+        byte[] aad = Hex.decode("0011223344556677");
+        byte[] first = "first message".getBytes();
+        byte[] second = "second message".getBytes();
+
+        byte[] ct1 = ctxS.seal(aad, first);
+        byte[] ct2 = ctxS.seal(aad, second);
+
+        assertTrue(Arrays.areEqual(first, ctxR.open(aad, ct1)));
+
+        // a forged ciphertext at the receiver's current sequence number
+        byte[] forged = Arrays.clone(ct2);
+        forged[forged.length - 1] ^= 0x01;
+        try
+        {
+            ctxR.open(aad, forged);
+            fail("forged ciphertext accepted");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            // expected
+        }
+
+        // the genuine message for that same sequence number must still open
+        assertTrue("receiver desynchronised by a rejected ciphertext",
+            Arrays.areEqual(second, ctxR.open(aad, ct2)));
+    }
+
+    /**
+     * The sender side has the same contract: a failed seal must not consume a sequence number.
+     * Export-only suites cannot seal at all, so the rejection happens before any counter movement
+     * and the context stays usable for its exports.
+     */
+    public void testSealOnExportOnlyLeavesContextUsable()
+            throws Exception
+    {
+        HPKE hpke = new HPKE(HPKE.mode_base, (short)16, (short)1, HPKE.aead_EXPORT_ONLY);
+
+        AsymmetricCipherKeyPair receiver = hpke.generatePrivateKey();
+        HPKEContextWithEncapsulation ctxS = hpke.setupBaseS(receiver.getPublic(), "info".getBytes());
+
+        for (int i = 0; i != 2; i++)
+        {
+            try
+            {
+                ctxS.seal(new byte[0], "nope".getBytes());
+                fail("export-only context sealed a message");
+            }
+            catch (IllegalStateException e)
+            {
+                assertEquals("Export only mode, cannot be used to seal/open", e.getMessage());
+            }
+        }
+
+        HPKEContext ctxR = hpke.setupBaseR(ctxS.getEncapsulation(), receiver, "info".getBytes());
+        assertTrue(Arrays.areEqual(ctxS.export("context".getBytes(), 32), ctxR.export("context".getBytes(), 32)));
+    }
+
     public void testBasePairwise()
             throws Exception
     {
