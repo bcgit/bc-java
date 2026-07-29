@@ -501,8 +501,20 @@ public abstract class ASN1Set
             return;
         }
 
+        /*
+         * Encode each element once and carry the encodings alongside the elements. Re-deriving an
+         * encoding inside the shift loop below made the sort cost O(N^2) encodings rather than
+         * O(N^2) comparisons over N encodings. (The base tree sorts with java.util.Arrays.sort,
+         * which CLDC does not provide, so this tree keeps the insertion sort.)
+         */
+        byte[][] bs = new byte[count][];
+        for (int i = 0; i < count; ++i)
+        {
+            bs[i] = getDEREncoded(t[i]);
+        }
+
         ASN1Encodable eh = t[0], ei = t[1];
-        byte[] bh = getDEREncoded(eh), bi = getDEREncoded(ei);;
+        byte[] bh = bs[0], bi = bs[1];
 
         if (lessThanOrEqual(bi, bh))
         {
@@ -513,11 +525,11 @@ public abstract class ASN1Set
         for (int i = 2; i < count; ++i)
         {
             ASN1Encodable e2 = t[i];
-            byte[] b2 = getDEREncoded(e2);
+            byte[] b2 = bs[i];
 
             if (lessThanOrEqual(bi, b2))
             {
-                t[i - 2] = eh;
+                t[i - 2] = eh; bs[i - 2] = bh;
                 eh = ei; bh = bi;
                 ei = e2; bi = b2;
                 continue;
@@ -525,7 +537,7 @@ public abstract class ASN1Set
 
             if (lessThanOrEqual(bh, b2))
             {
-                t[i - 2] = eh;
+                t[i - 2] = eh; bs[i - 2] = bh;
                 eh = e2; bh = b2;
                 continue;
             }
@@ -534,20 +546,20 @@ public abstract class ASN1Set
             while (--j > 0)
             {
                 ASN1Encodable e1 = t[j - 1];
-                byte[] b1 = getDEREncoded(e1);
+                byte[] b1 = bs[j - 1];
 
                 if (lessThanOrEqual(b1, b2))
                 {
                     break;
                 }
 
-                t[j] = e1;
+                t[j] = e1; bs[j] = b1;
             }
 
-            t[j] = e2;
+            t[j] = e2; bs[j] = b2;
         }
 
-        t[count - 2] = eh;
-        t[count - 1] = ei;
+        t[count - 2] = eh; bs[count - 2] = bh;
+        t[count - 1] = ei; bs[count - 1] = bi;
     }
 }
