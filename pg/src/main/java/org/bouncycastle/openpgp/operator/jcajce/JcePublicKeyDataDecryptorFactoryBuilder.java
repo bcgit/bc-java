@@ -130,6 +130,11 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
         return new AbstractPublicKeyDataDecryptorFactory()
         {
+            @Override
+            protected PublicKeyCryptoCallback getCryptoCallback() {
+                return null;
+            }
+
             final int expectedPayLoadSize = getExpectedPayloadSize(privKey);
 
             @Override
@@ -173,6 +178,11 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
         return new AbstractPublicKeyDataDecryptorFactory()
         {
+            @Override
+            protected PublicKeyCryptoCallback getCryptoCallback() {
+                return null;
+            }
+
             @Override
             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData, int pkeskVersion)
                 throws PGPException

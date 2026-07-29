@@ -395,7 +395,7 @@ public class OpenPGPKey
         private void sanitizeProtectionMode()
             throws PGPException
         {
-            if (!isLocked())
+            if (!isLocked() || getPGPSecretKey().isExternalKey())
             {
                 return;
             }

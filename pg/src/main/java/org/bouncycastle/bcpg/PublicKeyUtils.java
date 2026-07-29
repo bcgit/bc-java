@@ -1,5 +1,8 @@
 package org.bouncycastle.bcpg;
 
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPUtil;
+
 /**
  * Utility methods related to OpenPGP public key algorithms.
  */
@@ -51,5 +54,26 @@ public class PublicKeyUtils
         default:
             return false;
         }
+    }
+
+    /**
+     * Return true, if the passed in {@link PGPPublicKey} is based on X25519, either the legacy variant via
+     * {@link PublicKeyAlgorithmTags#ECDH} or the more modern {@link PublicKeyAlgorithmTags#X25519}.
+     *
+     * @param key component key
+     * @return true if key is X25519 key
+     */
+    public static boolean isX25519Key(PGPPublicKey key)
+    {
+        if (key.getAlgorithm() == PublicKeyAlgorithmTags.X25519)
+        {
+            return true;
+        }
+        if (key.getAlgorithm() != PublicKeyAlgorithmTags.ECDH)
+        {
+            return false;
+        }
+        ECPublicBCPGKey ecKey = (ECPublicBCPGKey) key.getPublicKeyPacket().getKey();
+        return "Curve25519".equals(PGPUtil.getCurveName(ecKey.getCurveOID()));
     }
 }

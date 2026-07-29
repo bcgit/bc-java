@@ -1,0 +1,66 @@
+
+plugins {
+    id "biz.aQute.bnd.builder" version "7.1.0"
+}
+
+dependencies {
+    implementation project(':core')
+    implementation project(':prov')
+    implementation project(':util')
+    implementation project(':pg')
+
+    implementation group: 'com.yubico.yubikit', name: 'openpgp', version: '3.1.0'
+    implementation group: 'com.yubico.yubikit', name: 'desktop', version: '3.1.0'
+
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+}
+/*
+evaluationDependsOn(":core")
+evaluationDependsOn(":prov")
+evaluationDependsOn(":util")
+evaluationDependsOn(":pg")
+ */
+jar.archiveBaseName = "bcpgsc-$vmrange"
+
+task sourcesJar(type: Jar) {
+
+    archiveBaseName = jar.archiveBaseName
+    archiveClassifier = 'sources'
+}
+
+jar {
+    from sourceSets.main.output
+}
+
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveBaseName = jar.archiveBaseName
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+test {
+    forkEvery = 1;
+    maxParallelForks = 8;
+    maxHeapSize = "3g";
+    jvmArgs = ['-Dtest.java.version.prefix=any']
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcpgsc-$vmrange"
+            from components.java
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+    }
+}

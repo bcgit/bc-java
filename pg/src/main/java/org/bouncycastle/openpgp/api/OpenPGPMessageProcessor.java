@@ -23,6 +23,7 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactoryProvider;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 import org.bouncycastle.util.Arrays;
 
@@ -124,6 +125,20 @@ public class OpenPGPMessageProcessor
     public OpenPGPMessageProcessor addDecryptionKeyPassphrase(char[] passphrase)
     {
         configuration.keyPassphraseProvider.addPassphrase(passphrase);
+        return this;
+    }
+
+    /**
+     * Add a {@link PublicKeyDataDecryptorFactoryProvider} to add support for custom data decryption schemes.
+     * This method can be used to implement support for message decryption using hardware tokens and smart cards.
+     *
+     * @param provider provider
+     * @return this
+     */
+    public OpenPGPMessageProcessor addPublicKeyDataDecryptorFactoryProvider(
+            PublicKeyDataDecryptorFactoryProvider provider)
+    {
+        configuration.decryptorFactoryProviders.add(provider);
         return this;
     }
 
@@ -362,17 +377,42 @@ public class OpenPGPMessageProcessor
                     throw new PGPException("Key is not an encryption key and can therefore not decrypt.");
                 }
 
-                char[] keyPassphrase = configuration.keyPassphraseProvider.getKeyPassword(decryptionKey);
-                PGPKeyPair unlockedKey = decryptionKey.unlock(keyPassphrase).getKeyPair();
-                if (unlockedKey == null)
-                {
-                    throw new KeyPassphraseException(decryptionKey, new PGPException("Cannot unlock secret key."));
-                }
+                PGPSessionKey decryptedSessionKey = null;
 
-                // Decrypt the message session key using the private key
-                PublicKeyDataDecryptorFactory pkDecryptorFactory =
-                    implementation.publicKeyDataDecryptorFactory(unlockedKey.getPrivateKey());
-                PGPSessionKey decryptedSessionKey = pkesk.getSessionKey(pkDecryptorFactory);
+                // TODO: Right now, we only query the custom decryptorFactoryProviders for external secret keys
+                //  Maybe we want to query them always, before trying the built-in PublicKeyDataDecryptorFactories.
+                //  That would allow custom data decryptor factory support also for non-external keys.
+                //  Also: Currently we only support external-keys for non-anonymous messages.
+                if (decryptionKey.getPGPSecretKey().isExternalKey())
+                {
+                    // Try custom PublicKeyDataDecryptorFactoryProviders (e.g. SmartCards)
+                    for (PublicKeyDataDecryptorFactoryProvider provider : configuration.decryptorFactoryProviders) {
+                        PublicKeyDataDecryptorFactory pkDecryptorFactory = provider.providePublicKeyDataDecryptorFactory(decryptionKey, configuration.keyPassphraseProvider);
+                        if (pkDecryptorFactory == null) {
+                            continue;
+                        }
+                        decryptedSessionKey = pkesk.getSessionKey(pkDecryptorFactory);
+                        break;
+                    }
+                    if (decryptedSessionKey == null)
+                    {
+                        throw new PGPException("Cannot decrypt session key with external key.");
+                    }
+                }
+                else
+                {
+                    char[] keyPassphrase = configuration.keyPassphraseProvider.getKeyPassword(decryptionKey);
+                    PGPKeyPair unlockedKey = decryptionKey.unlock(keyPassphrase).getKeyPair();
+                    if (unlockedKey == null)
+                    {
+                        throw new KeyPassphraseException(decryptionKey, new PGPException("Cannot unlock secret key."));
+                    }
+
+                    // Decrypt the message session key using the private key
+                    PublicKeyDataDecryptorFactory pkDecryptorFactory =
+                            implementation.publicKeyDataDecryptorFactory(unlockedKey.getPrivateKey());
+                    decryptedSessionKey = pkesk.getSessionKey(pkDecryptorFactory);
+                }
 
                 // Decrypt the message using the decrypted session key
                 SessionKeyDataDecryptorFactory skDecryptorFactory =
@@ -575,6 +615,7 @@ public class OpenPGPMessageProcessor
         private final OpenPGPKeyMaterialPool.OpenPGPCertificatePool certificatePool;
         private final OpenPGPKeyMaterialPool.OpenPGPKeyPool keyPool;
         private final KeyPassphraseProvider.DefaultKeyPassphraseProvider keyPassphraseProvider;
+        private final List<PublicKeyDataDecryptorFactoryProvider> decryptorFactoryProviders = new ArrayList<>();
         public final List messagePassphrases = new ArrayList();
         private MissingMessagePassphraseCallback missingMessagePassphraseCallback;
         private PGPExceptionCallback exceptionCallback = null;
