@@ -220,6 +220,7 @@
                 <exclude name="**/cert/ocsp/test/PKIXOcspRevocationCheckerTest.java"/>
                 <exclude name="**/pkcs/test/PBETest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlReasonTest.java"/>
+                <exclude name="**/cert/c509/**/*.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
 		<exclude name="**/MailGeneralTest.java"/>

@@ -459,6 +459,7 @@
                 <exclude name="**/cms/test/NewSignedDataTest.java"/>
                 <exclude name="**/pkcs/test/PKCS12UtilTest.java"/>
                 <exclude name="**/pkix/test/IDPRelativeNameTest.java"/>
+                <exclude name="**/cert/c509/**/*.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/MailGeneralTest.java" />
