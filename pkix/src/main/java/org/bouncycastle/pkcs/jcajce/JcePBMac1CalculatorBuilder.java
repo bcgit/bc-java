@@ -25,6 +25,7 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.MacAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.util.PKCS12Util;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Properties;
 
@@ -194,7 +195,7 @@ public class JcePBMac1CalculatorBuilder
                 {
                     throw new OperatorCreationException("iteration count (" + iterationCount + ") greater than " + maxIT);
                 }
-                keySize = BigIntegers.intValueExact(pbeParams.getKeyLength()) * 8;
+                keySize = PKCS12Util.validateKeyLength(pbeParams.getKeyLength()) * 8;
                 prf = pbeParams.getPrf();
             }
             
