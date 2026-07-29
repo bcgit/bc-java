@@ -95,6 +95,7 @@
             <fileset dir="util/src/main/java">
                 <exclude name="**/oer/**" />
                 <exclude name="**/its/**" />
+                <exclude name="**/cbor/**" />
             </fileset>
             <fileset dir="prov/src/main/java">
                 <exclude name="**/BCFKSStoreParameter.java" />
@@ -213,6 +214,7 @@
                 <exclude name="**/pkix/util/**.java" />
                 <exclude name="**/mime/**/*.java" />
                 <exclude name="**/est/**/*.java" />
+                <exclude name="**/cert/c509/**/*.java" />
                 <exclude name="**/its/**" />
                 <!-- parity with ant/jdk14.xml: files using Java 5+ constructs the 1.3/1.4 preprocessor can't convert -->
                 <exclude name="**/cades/CAdESLevel.java"/>

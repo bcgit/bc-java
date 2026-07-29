@@ -19,6 +19,9 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.voms;
     exports org.bouncycastle.cert;
     exports org.bouncycastle.cert.bc;
+    exports org.bouncycastle.cert.c509;
+    exports org.bouncycastle.cert.c509.bc;
+    exports org.bouncycastle.cert.c509.jcajce;
     exports org.bouncycastle.cert.cmp;
     exports org.bouncycastle.cert.crmf;
     exports org.bouncycastle.cert.crmf.bc;

@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.x509;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 
 /**
  * The KeyPurposeId object.
@@ -99,6 +100,18 @@ public class KeyPurposeId
      */
     public static final KeyPurposeId id_kp_ipsecIKE = new KeyPurposeId(id_kp.branch("17"));
     /**
+     * RFC 6187 sec. 2.2.2 - authenticating an SSH client.
+     * <p>
+     * id-kp-secureShellClient OBJECT IDENTIFIER ::= { id-kp 21 }
+     */
+    public static final KeyPurposeId id_kp_secureShellClient = new KeyPurposeId(id_kp.branch("21"));
+    /**
+     * RFC 6187 sec. 2.2.2 - authenticating an SSH server.
+     * <p>
+     * id-kp-secureShellServer OBJECT IDENTIFIER ::= { id-kp 22 }
+     */
+    public static final KeyPurposeId id_kp_secureShellServer = new KeyPurposeId(id_kp.branch("22"));
+    /**
      * { id-kp 18 }
      */
     public static final KeyPurposeId id_kp_capwapAC = new KeyPurposeId(id_kp.branch("18"));
@@ -121,6 +134,14 @@ public class KeyPurposeId
      *          security(5) mechanisms(5) pkix(7) kp(3) 28 }
      */
     public static final KeyPurposeId id_kp_cmcRA = new KeyPurposeId(id_kp.branch("28"));
+    /**
+     * RFC 6402 sec. 2.10 - a CMC key archival server.
+     * <p>
+     * id-kp-cmcArchive OBJECT IDENTIFIER ::= {
+     *          iso(1) identified-organization(3) dod(6) internet(1)
+     *          security(5) mechanisms(5) pkix(7) kp(3) 29 }
+     */
+    public static final KeyPurposeId id_kp_cmcArchive = new KeyPurposeId(id_kp.branch("29"));
 
     /**
      * id-kp-cmKGA OBJECT IDENTIFIER ::= {
@@ -129,6 +150,12 @@ public class KeyPurposeId
      */
     public static final KeyPurposeId id_kp_cmKGA = new KeyPurposeId(id_kp.branch("32"));
 
+    /**
+     * RFC 9174 sec. 4.4.1 - Delay-Tolerant Networking bundle security (TCPCLv4).
+     * <p>
+     * id-kp-bundleSecurity OBJECT IDENTIFIER ::= { id-kp 35 }
+     */
+    public static final KeyPurposeId id_kp_bundleSecurity = new KeyPurposeId(id_kp.branch("35"));
     /**
      * RFC 9336 sec. 3.1 - signing documents (e.g. PDF, XML, JSON) for human consumption.
      * <p>
@@ -222,6 +249,33 @@ public class KeyPurposeId
      * Netscape Server Gated Crypto (nsSGC) see https://www.alvestrand.no/objectid/2.16.840.1.113730.4.1.html
      */
     public static final KeyPurposeId id_kp_nsSGC = new KeyPurposeId(new ASN1ObjectIdentifier("2.16.840.1.113730.4.1"));
+
+
+
+    //
+    // kerberos PKINIT key purpose ids
+    //
+    /**
+     * RFC 4556 sec. 3.2.2 - the extended key usage a KDC may require in a client's
+     * certificate for PKINIT.
+     * <pre>
+     * id-pkinit-KPClientAuth OBJECT IDENTIFIER ::=
+     *     { iso(1) org(3) dod(6) internet(1) security(5) kerberosv5(2)
+     *       pkinit(3) keyPurposeClientAuth(4) }
+     * </pre>
+     */
+    public static final KeyPurposeId id_kp_pkinitClientAuth = new KeyPurposeId(IANAObjectIdentifiers.id_pkinit.branch("4"));
+
+    /**
+     * RFC 4556 sec. 3.2.4 - the extended key usage a client requires in the KDC's
+     * certificate for PKINIT.
+     * <pre>
+     * id-pkinit-KPKdc OBJECT IDENTIFIER ::=
+     *     { iso(1) org(3) dod(6) internet(1) security(5) kerberosv5(2)
+     *       pkinit(3) keyPurposeKdc(5) }
+     * </pre>
+     */
+    public static final KeyPurposeId id_kp_pkinitKdc = new KeyPurposeId(IANAObjectIdentifiers.id_pkinit.branch("5"));
 
 
     private ASN1ObjectIdentifier id;

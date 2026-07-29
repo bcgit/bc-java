@@ -33,6 +33,8 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.rosstandart;
     exports org.bouncycastle.asn1.smime;
     exports org.bouncycastle.asn1.tsp;
+    exports org.bouncycastle.cbor;
+    exports org.bouncycastle.cbor.c509;
     exports org.bouncycastle.oer;
     exports org.bouncycastle.oer.its;
     exports org.bouncycastle.oer.its.etsi103097;

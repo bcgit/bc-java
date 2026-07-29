@@ -20,6 +20,8 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.cbor.c509.C509CertificationRequestTemplate;
+import org.bouncycastle.cbor.c509.C509MediaTypes;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.CMCException;
@@ -38,6 +40,7 @@ import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * ESTService provides unified access to an EST server which is defined as implementing
@@ -51,6 +54,12 @@ public class ESTService
     protected static final String FULLCMC = "/fullcmc";
     protected static final String SERVERGEN = "/serverkeygen";
     protected static final String CSRATTRS = "/csrattrs";
+
+    /**
+     * Upper bound on the size of a C509 certification request template response -
+     * generous for a structure that lists attribute types and short prescribed values.
+     */
+    private static final int MAX_C509_TEMPLATE_SIZE = 1024 * 1024;
 
     protected static final Set<String> illegalParts = new HashSet<String>();
 
@@ -849,6 +858,122 @@ public class ESTService
         }
 
         return new CSRRequestResponse(response, resp.getSource());
+    }
+
+    /**
+     * Request the C509 certification request template for this client (Section 4.4 of
+     * draft-ietf-cose-cbor-encoded-cert-20): a GET of /csrattrs asking for the
+     * application/cose-c509-crtemplate+cbor media type. A server with a template for
+     * this client returns it with that content type; as with the RFC 7030 form, a 204
+     * or 404 means no template is available. A 200 carrying any other content type
+     * (for example a legacy RFC 7030 csrattrs answer from a server that does not
+     * support C509) is reported as an ESTException - use {@link #getCSRAttributes()}
+     * against such a server.
+     *
+     * @return an object carrying the template, or the absence of one.
+     */
+    public C509CSRTemplateResponse getC509CertificationRequestTemplate()
+        throws ESTException
+    {
+        if (!clientProvider.isTrusted())
+        {
+            throw new IllegalStateException("No trust anchors.");
+        }
+
+        ESTResponse resp = null;
+        C509CertificationRequestTemplate template = null;
+        Exception finalThrowable = null;
+        // Set once the HTTP status alone determines the result and the body is irrelevant
+        // (RFC 7030 sec. 4.5: 204 / 404) - see getCSRAttributes().
+        boolean outcomeFinal = false;
+        URL url = null;
+        try
+        {
+            url = new URL(server + CSRATTRS);
+
+            ESTClient client = clientProvider.makeClient();
+            ESTRequest req = new ESTRequestBuilder("GET", url).withClient(client)
+                .setHeader("Accept", C509MediaTypes.CERTIFICATION_REQUEST_TEMPLATE).build();
+            resp = client.doRequest(req);
+
+            switch (resp.getStatusCode())
+            {
+            case 200:
+                try
+                {
+                    String contentType = resp.getHeaderOrEmpty("Content-Type");
+                    if (!contentType.equals(C509MediaTypes.CERTIFICATION_REQUEST_TEMPLATE)
+                        && !contentType.startsWith(C509MediaTypes.CERTIFICATION_REQUEST_TEMPLATE + ";"))
+                    {
+                        throw new ESTException("Response did not carry "
+                            + C509MediaTypes.CERTIFICATION_REQUEST_TEMPLATE + ": " + contentType, null,
+                            resp.getStatusCode(), resp.getInputStream());
+                    }
+                    // a template is a small structure; the read is bounded regardless of
+                    // what content length the server declares
+                    byte[] encoding = Streams.readAllLimited(resp.getInputStream(), MAX_C509_TEMPLATE_SIZE);
+                    template = C509CertificationRequestTemplate.getInstance(encoding);
+                }
+                catch (Throwable ex)
+                {
+                    throw new ESTException("Decoding C509 CSR template: " + url.toString() + " " + ex.getMessage(),
+                        ex, resp.getStatusCode(), resp.getInputStream());
+                }
+
+                break;
+            case 204:
+            case 404:
+                // as in getCSRAttributes(): drain any error body a server wrongly attached,
+                // and make the status the final answer (github #781)
+                drainErrorBody(resp);
+                template = null;
+                outcomeFinal = true;
+                break;
+            default:
+                throw new ESTException(
+                    "CSR Template request: " + req.getURL().toString(), null,
+                    resp.getStatusCode(), resp.getInputStream());
+            }
+        }
+        catch (Throwable t)
+        {
+            if (t instanceof ESTException)
+            {
+                throw (ESTException)t;
+            }
+            else
+            {
+                throw new ESTException(t.getMessage(), t);
+            }
+        }
+        finally
+        {
+            if (resp != null)
+            {
+                try
+                {
+                    resp.close();
+                }
+                catch (Exception ex)
+                {
+                    if (!outcomeFinal)
+                    {
+                        finalThrowable = ex;
+                    }
+                }
+            }
+        }
+
+        if (finalThrowable != null)
+        {
+            if (finalThrowable instanceof ESTException)
+            {
+                throw (ESTException)finalThrowable;
+            }
+            throw new ESTException(finalThrowable.getMessage(), finalThrowable, resp.getStatusCode(), null);
+        }
+
+        return new C509CSRTemplateResponse(template, resp.getSource());
     }
 
     /**

@@ -425,6 +425,7 @@
                  <exclude name="org/bouncycastle/gpg/**" />
                  <exclude name="org/bouncycastle/its/**" />
                  <exclude name="org/bouncycastle/oer/**" />
+                 <exclude name="org/bouncycastle/cbor/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
                  <exclude name="org/bouncycastle/mozilla/**" />
@@ -827,6 +828,7 @@
                  <include name="org/bouncycastle/asn1/smime/**" />
                  <include name="org/bouncycastle/asn1/tsp/**" />
                  <include name="org/bouncycastle/oer/**" />
+                 <include name="org/bouncycastle/cbor/**" />
              </fileset>
         </copy>
 
@@ -1313,8 +1315,11 @@
                 <package name="org.bouncycastle.asn1.*" />
                 <package name="org.bouncycastle.oer" />
                 <package name="org.bouncycastle.oer.*" />
+                <package name="org.bouncycastle.cbor" />
+                <package name="org.bouncycastle.cbor.c509" />
                 <group title="Extra ASN.1 Packages" packages="org.bouncycastle.asn1*" />
                 <group title="Extra ASN.1 Packages (OER)" packages="org.bouncycastle.oer*" />
+                <group title="CBOR and C509 Packages" packages="org.bouncycastle.cbor*" />
             </docElements>
         </compile-doc>
 

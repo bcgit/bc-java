@@ -32,6 +32,11 @@ public interface IANAObjectIdentifiers
     //
 
 
+    /** Kerberos V5; 1.3.6.1.5.2 */
+    ASN1ObjectIdentifier    kerberosv5           = security.branch("2");
+    /** PKINIT, RFC 4556 sec. 3.2.2; 1.3.6.1.5.2.3 */
+    ASN1ObjectIdentifier    id_pkinit            = kerberosv5.branch("3");
+
     /** IANA security mechanisms; 1.3.6.1.5.5 */
     ASN1ObjectIdentifier    security_mechanisms  = security.branch("5");
     /** IANA security nametypes;  1.3.6.1.5.6 */
