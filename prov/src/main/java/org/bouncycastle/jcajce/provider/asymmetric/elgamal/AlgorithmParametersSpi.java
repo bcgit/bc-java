@@ -98,11 +98,7 @@ public class AlgorithmParametersSpi
 
             currentSpec = new ElGamalParameterSpec(elP.getP(), elP.getG());
         }
-        catch (ClassCastException e)
-        {
-            throw Exceptions.ioException("Not a valid ElGamal Parameter encoding.", e);
-        }
-        catch (ArrayIndexOutOfBoundsException e)
+        catch (RuntimeException e)
         {
             throw Exceptions.ioException("Not a valid ElGamal Parameter encoding.", e);
         }

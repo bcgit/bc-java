@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
+import org.bouncycastle.util.Exceptions;
 
 public abstract class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -87,13 +88,9 @@ public abstract class AlgorithmParametersSpi
 
                 throw new IOException("Operation not supported");
             }
-            catch (ClassCastException e)
+            catch (RuntimeException e)
             {
-                throw new IOException("Not a valid OAEP Parameter encoding.");
-            }
-            catch (ArrayIndexOutOfBoundsException e)
-            {
-                throw new IOException("Not a valid OAEP Parameter encoding.");
+                throw Exceptions.ioException("Not a valid OAEP Parameter encoding.", e);
             }
         }
     
@@ -186,13 +183,9 @@ public abstract class AlgorithmParametersSpi
                 currentSpec = new PSSParamSpec(
                                        pssP.getSaltLength().intValue(), hashName);
             }
-            catch (ClassCastException e)
+            catch (RuntimeException e)
             {
-                throw new IOException("Not a valid PSS Parameter encoding.");
-            }
-            catch (ArrayIndexOutOfBoundsException e)
-            {
-                throw new IOException("Not a valid PSS Parameter encoding.");
+                throw Exceptions.ioException("Not a valid PSS Parameter encoding.", e);
             }
         }
     

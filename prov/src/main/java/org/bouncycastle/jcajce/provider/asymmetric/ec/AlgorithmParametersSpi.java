@@ -19,6 +19,7 @@ import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Exceptions;
 
 public class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -82,22 +83,29 @@ public class AlgorithmParametersSpi
     {
         if (isASN1FormatString(format))
         {
-            X962Parameters params = X962Parameters.getInstance(bytes);
-
-            ECCurve curve = EC5Util.getCurve(BouncyCastleProvider.CONFIGURATION, params);
-
-            if (params.isNamedCurve())
+            try
             {
-                ASN1ObjectIdentifier curveId = ASN1ObjectIdentifier.getInstance(params.getParameters());
+                X962Parameters params = X962Parameters.getInstance(bytes);
 
-                curveName = ECNamedCurveTable.getName(curveId);
-                if (curveName == null)
+                ECCurve curve = EC5Util.getCurve(BouncyCastleProvider.CONFIGURATION, params);
+
+                if (params.isNamedCurve())
                 {
-                    curveName = curveId.getId();
-                }
-            }
+                    ASN1ObjectIdentifier curveId = ASN1ObjectIdentifier.getInstance(params.getParameters());
 
-            ecParameterSpec = EC5Util.convertToSpec(params, curve);
+                    curveName = ECNamedCurveTable.getName(curveId);
+                    if (curveName == null)
+                    {
+                        curveName = curveId.getId();
+                    }
+                }
+
+                ecParameterSpec = EC5Util.convertToSpec(params, curve);
+            }
+            catch (RuntimeException e)
+            {
+                throw Exceptions.ioException("Not a valid EC Parameter encoding.", e);
+            }
         }
         else
         {

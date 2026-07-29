@@ -105,11 +105,7 @@ public class AlgorithmParametersSpi
             this.currentSpec = GOST3410ParameterSpec.fromPublicKeyAlg(
                 GOST3410PublicKeyAlgParameters.getInstance(seq));
         }
-        catch (ClassCastException e)
-        {
-            throw Exceptions.ioException("Not a valid GOST3410 Parameter encoding.", e);
-        }
-        catch (ArrayIndexOutOfBoundsException e)
+        catch (RuntimeException e)
         {
             throw Exceptions.ioException("Not a valid GOST3410 Parameter encoding.", e);
         }

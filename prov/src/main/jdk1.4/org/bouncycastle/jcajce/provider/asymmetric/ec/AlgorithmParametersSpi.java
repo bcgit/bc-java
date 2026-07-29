@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Exceptions;
 
 public class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -61,20 +62,27 @@ public class AlgorithmParametersSpi
     {
         if (isASN1FormatString(format))
         {
-            X962Parameters params = X962Parameters.getInstance(bytes);
-
-            if (params.isNamedCurve())
+            try
             {
-                curveName = ECNamedCurveTable.getName(ASN1ObjectIdentifier.getInstance(params.getParameters()));
-                X9ECParameters curveParams = ECNamedCurveTable.getByName(curveName);
+                X962Parameters params = X962Parameters.getInstance(bytes);
 
-                ecParameterSpec = new ECNamedCurveParameterSpec(curveName, curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH(), curveParams.getSeed());
-                return;
+                if (params.isNamedCurve())
+                {
+                    curveName = ECNamedCurveTable.getName(ASN1ObjectIdentifier.getInstance(params.getParameters()));
+                    X9ECParameters curveParams = ECNamedCurveTable.getByName(curveName);
+
+                    ecParameterSpec = new ECNamedCurveParameterSpec(curveName, curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH(), curveParams.getSeed());
+                    return;
+                }
+
+                X9ECParameters curveParams = X9ECParameters.getInstance(params.getParameters());
+
+                ecParameterSpec = new ECParameterSpec(curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH(), curveParams.getSeed());
             }
-
-            X9ECParameters curveParams = X9ECParameters.getInstance(params.getParameters());
-
-            ecParameterSpec = new ECParameterSpec(curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH(), curveParams.getSeed());
+            catch (RuntimeException e)
+            {
+                throw Exceptions.ioException("Not a valid EC Parameter encoding.", e);
+            }
         }
         else
         {

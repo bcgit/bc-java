@@ -133,11 +133,7 @@ public abstract class AlgorithmParametersSpi
                                        new MGF1ParameterSpec(MessageDigestUtils.getDigestName(AlgorithmIdentifier.getInstance(oaepP.getMaskGenAlgorithm().getParameters()).getAlgorithm())),
                                        new PSource.PSpecified(ASN1OctetString.getInstance(oaepP.getPSourceAlgorithm().getParameters()).getOctets()));
             }
-            catch (ClassCastException e)
-            {
-                throw Exceptions.ioException("Not a valid OAEP Parameter encoding.", e);
-            }
-            catch (ArrayIndexOutOfBoundsException e)
+            catch (RuntimeException e)
             {
                 throw Exceptions.ioException("Not a valid OAEP Parameter encoding.", e);
             }
@@ -280,11 +276,7 @@ public abstract class AlgorithmParametersSpi
                     throw new IOException("unknown mask generation function: " + pssP.getMaskGenAlgorithm().getAlgorithm());
                 }
             }
-            catch (ClassCastException e)
-            {
-                throw Exceptions.ioException("Not a valid PSS Parameter encoding.", e);
-            }
-            catch (ArrayIndexOutOfBoundsException e)
+            catch (RuntimeException e)
             {
                 throw Exceptions.ioException("Not a valid PSS Parameter encoding.", e);
             }

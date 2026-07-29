@@ -39,6 +39,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.GcmSpecUtil;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
+import org.bouncycastle.util.Exceptions;
 
 public final class ARIA
 {
@@ -350,7 +351,14 @@ public final class ARIA
         protected void engineInit(byte[] params)
             throws IOException
         {
-            gcmParams = GCMParameters.getInstance(params);
+            try
+            {
+                gcmParams = GCMParameters.getInstance(params);
+            }
+            catch (RuntimeException e)
+            {
+                throw Exceptions.ioException("Not a valid GCM Parameter encoding.", e);
+            }
         }
 
         protected void engineInit(byte[] params, String format)
@@ -361,7 +369,7 @@ public final class ARIA
                 throw new IOException("unknown format specified");
             }
 
-            gcmParams = GCMParameters.getInstance(params);
+            engineInit(params);
         }
 
         protected byte[] engineGetEncoded()
@@ -435,7 +443,14 @@ public final class ARIA
         protected void engineInit(byte[] params)
             throws IOException
         {
-            ccmParams = CCMParameters.getInstance(params);
+            try
+            {
+                ccmParams = CCMParameters.getInstance(params);
+            }
+            catch (RuntimeException e)
+            {
+                throw Exceptions.ioException("Not a valid CCM Parameter encoding.", e);
+            }
         }
 
         protected void engineInit(byte[] params, String format)
@@ -446,7 +461,7 @@ public final class ARIA
                 throw new IOException("unknown format specified");
             }
 
-            ccmParams = CCMParameters.getInstance(params);
+            engineInit(params);
         }
 
         protected byte[] engineGetEncoded()

@@ -5,6 +5,7 @@ import java.security.AlgorithmParameters;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * General JCA/JCE utility methods.
@@ -59,7 +60,14 @@ public class AlgorithmParametersUtils
         }
         catch (Exception ex)
         {
-            params.init(sParams.toASN1Primitive().getEncoded());
+            try
+            {
+                params.init(sParams.toASN1Primitive().getEncoded());
+            }
+            catch (RuntimeException e)
+            {
+                throw Exceptions.ioException("unable to load parameters: " + e.getMessage(), e);
+            }
         }
     }
 }

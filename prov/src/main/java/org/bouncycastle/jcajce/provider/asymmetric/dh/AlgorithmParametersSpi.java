@@ -111,11 +111,7 @@ public class AlgorithmParametersSpi
                     currentSpec = new DHParameterSpec(dhP.getP(), dhP.getG());
                 }
             }
-            catch (ClassCastException e)
-            {
-                throw Exceptions.ioException("Not a valid DH Parameter encoding.", e);
-            }
-            catch (ArrayIndexOutOfBoundsException e)
+            catch (RuntimeException e)
             {
                 throw Exceptions.ioException("Not a valid DH Parameter encoding.", e);
             }

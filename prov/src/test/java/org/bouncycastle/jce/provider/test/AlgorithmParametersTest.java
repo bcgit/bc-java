@@ -11,7 +11,17 @@ import java.security.spec.InvalidParameterSpecException;
 
 import javax.crypto.spec.IvParameterSpec;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
+import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -144,12 +154,78 @@ public class AlgorithmParametersTest
         }
     }
 
+    private void expectMalformedIOException(String algorithm, byte[] malformedEncoding)
+        throws Exception
+    {
+        AlgorithmParameters alg = AlgorithmParameters.getInstance(algorithm, "BC");
+
+        try
+        {
+            alg.init(malformedEncoding);
+            fail(algorithm + ": malformed parameter encoding not detected");
+        }
+        catch (IOException e)
+        {
+            // expected: AlgorithmParameters.init(byte[]) is contracted to throw IOException,
+            // not the RuntimeException the underlying ASN.1 decode used to leak.
+        }
+    }
+
+    private void malformedParameterEncodingTest()
+        throws Exception
+    {
+        // A well-formed ASN.1 object of the wrong top-level type (a bare INTEGER) is not a
+        // legal encoding for any of these algorithms; every one of these decoders used to
+        // leak an IllegalArgumentException from its ASN1Sequence.getInstance(...) dispatch
+        // instead of the IOException AlgorithmParameters.init(byte[]) is contracted to throw.
+        byte[] bareInteger = new ASN1Integer(5).getEncoded();
+
+        expectMalformedIOException("EC", bareInteger);
+        expectMalformedIOException("DSA", bareInteger);
+        expectMalformedIOException("DH", bareInteger);
+        expectMalformedIOException("ELGAMAL", bareInteger);
+        expectMalformedIOException("GCM", bareInteger);
+        expectMalformedIOException("CCM", bareInteger);
+        expectMalformedIOException("SM4-GCM", bareInteger);
+
+        // RSA OAEP/PSS: an AlgorithmIdentifier with no nested parameters is a legal encoding
+        // of an AlgorithmIdentifier in isolation (parameters are OPTIONAL), but the decoder
+        // assumes maskGenAlgorithm always carries a nested digest AlgorithmIdentifier and
+        // used to let the resulting NullPointerException escape.
+        AlgorithmIdentifier hashAlgorithm = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
+        AlgorithmIdentifier bareMGF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1);
+        AlgorithmIdentifier pSourceAlgorithm = new AlgorithmIdentifier(
+            PKCSObjectIdentifiers.id_pSpecified, new DEROctetString(new byte[0]));
+
+        expectMalformedIOException("OAEP",
+            new RSAESOAEPparams(hashAlgorithm, bareMGF, pSourceAlgorithm).getEncoded());
+        expectMalformedIOException("PSS",
+            new RSASSAPSSparams(hashAlgorithm, bareMGF, new ASN1Integer(20), new ASN1Integer(1)).getEncoded());
+
+        // GOST3410: a 1-element SEQUENCE whose element is not an OBJECT IDENTIFIER used to
+        // let the IllegalArgumentException from ASN1ObjectIdentifier.getInstance escape.
+        ASN1EncodableVector gostV = new ASN1EncodableVector();
+        gostV.add(DERNull.INSTANCE);
+        expectMalformedIOException("GOST3410", new DERSequence(gostV).getEncoded());
+
+        // IES: an outer SEQUENCE carrying only the [keySize, nonce] inner SEQUENCE, with no
+        // top-level macKeySize INTEGER, used to let the NullPointerException from
+        // macKeySize.intValue() escape.
+        ASN1EncodableVector inner = new ASN1EncodableVector();
+        inner.add(new ASN1Integer(128));
+        inner.add(new DEROctetString(new byte[12]));
+        ASN1EncodableVector iesV = new ASN1EncodableVector();
+        iesV.add(new DERSequence(inner));
+        expectMalformedIOException("IES", new DERSequence(iesV).getEncoded());
+    }
+
     public void performTest()
         throws Exception
     {
         basicTest("DSA", DSAParameterSpec.class, dsaParams);
         java21NullCheck();
         shortIvInitTest();
+        malformedParameterEncodingTest();
 
         AlgorithmParameters al = AlgorithmParameters.getInstance("EC", "BC");
 

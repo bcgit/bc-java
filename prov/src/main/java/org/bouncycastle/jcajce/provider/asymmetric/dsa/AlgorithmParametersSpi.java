@@ -100,11 +100,7 @@ public class AlgorithmParametersSpi
 
             currentSpec = new DSAParameterSpec(dsaP.getP(), dsaP.getQ(), dsaP.getG());
         }
-        catch (ClassCastException e)
-        {
-            throw Exceptions.ioException("Not a valid DSA Parameter encoding.", e);
-        }
-        catch (ArrayIndexOutOfBoundsException e)
+        catch (RuntimeException e)
         {
             throw Exceptions.ioException("Not a valid DSA Parameter encoding.", e);
         }

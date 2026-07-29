@@ -180,11 +180,7 @@ public class AlgorithmParametersSpi
                                         derivationV, encodingV, macKeySize.intValue(), -1, null, pointCompression);
             }
         }
-        catch (ClassCastException e)
-        {
-            throw Exceptions.ioException("Not a valid IES Parameter encoding.", e);
-        }
-        catch (ArrayIndexOutOfBoundsException e)
+        catch (RuntimeException e)
         {
             throw Exceptions.ioException("Not a valid IES Parameter encoding.", e);
         }

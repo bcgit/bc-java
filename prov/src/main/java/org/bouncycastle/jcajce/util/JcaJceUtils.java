@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * General JCA/JCE utility methods.
@@ -65,7 +66,14 @@ public class JcaJceUtils
         }
         catch (Exception ex)
         {
-            params.init(sParams.toASN1Primitive().getEncoded());
+            try
+            {
+                params.init(sParams.toASN1Primitive().getEncoded());
+            }
+            catch (RuntimeException e)
+            {
+                throw Exceptions.ioException("unable to load parameters: " + e.getMessage(), e);
+            }
         }
     }
 
