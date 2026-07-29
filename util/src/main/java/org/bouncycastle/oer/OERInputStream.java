@@ -280,14 +280,7 @@ public class OERInputStream
                         // have a definition for need to be consumed and discarded.
                         if ((rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
                         {
-                            // skip.
-                            int len = readLength().intLength();
-                            while (--len >= 0)
-                            {
-                                in.read();
-                            }
-
-
+                            skipUnknownExtension(readLength().intLength());
                         }
                     }
                     else
@@ -582,6 +575,41 @@ public class OERInputStream
     {
         debugPrint(child + ("Absent"));
         return OEROptional.ABSENT;
+    }
+
+    /**
+     * Discard the body of an extension this decoder has no definition for.
+     * <p>
+     * The length is taken from the encoding and bounded only by 2^31-1. Consuming it one
+     * {@code in.read()} at a time discarded the -1 that signals end of stream, so a declared
+     * length with nothing behind it spun for as long as the length said - and with a single
+     * presence bit set the parse then <em>returned normally</em>, so nothing recorded that it had
+     * happened. Each known extension is parsed from its own bounded stream, so the slots are
+     * independently exhaustible and the cost scales with the number of them.
+     * <p>
+     * Consume in bounded chunks and fail at the real end of input instead. The length itself is
+     * not capped at {@code maxByteAllocation}: nothing is allocated from it, and an unknown
+     * extension may legitimately be larger than the decoder's allocation ceiling - it just has to
+     * actually be present in the stream.
+     */
+    private void skipUnknownExtension(int len)
+        throws IOException
+    {
+        if (len < 0)
+        {
+            throw new IOException("unknown extension length is negative: " + len);
+        }
+
+        byte[] buf = new byte[Math.min(len, 4096)];
+        while (len > 0)
+        {
+            int read = in.read(buf, 0, Math.min(len, buf.length));
+            if (read < 0)
+            {
+                throw new EOFException("unknown extension truncated, " + len + " bytes not delivered");
+            }
+            len -= read;
+        }
     }
 
     private byte[] allocateArray(int requiredSize)
