@@ -58,7 +58,13 @@ class LMSSignature
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
-                return getInstance(in);
+                LMSSignature signature = getInstance(in);
+                if (in.available() != 0)
+                {
+                    // trailing data after the signature would allow a malleable re-encoding
+                    throw new IOException("unexpected data found after LMS signature");
+                }
+                return signature;
             }
             finally
             {

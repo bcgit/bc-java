@@ -115,6 +115,15 @@ public class DANETest
         {
             fail("certificate usage 128 should not be valid");
         }
+
+        // a record shorter than the three flag bytes (or null) must not validate, and must not throw
+        if (DANEEntry.isValidCertificate(null)
+            || DANEEntry.isValidCertificate(new byte[0])
+            || DANEEntry.isValidCertificate(new byte[]{ 0 })
+            || DANEEntry.isValidCertificate(new byte[]{ 0, 0 }))
+        {
+            fail("a record shorter than the flag bytes should not be valid");
+        }
     }
 
     public void performTest()

@@ -177,6 +177,12 @@ public class ISO9796d2Signer
     {
         byte[]      block = cipher.processBlock(signature, 0, signature.length);
 
+        // a recovered block shorter than the header/trailer bytes read below is malformed
+        if (block.length < 2)
+        {
+            throw new InvalidCipherTextException("malformed signature");
+        }
+
         if (((block[0] & 0xC0) ^ 0x40) != 0)
         {
             throw new InvalidCipherTextException("malformed signature");
@@ -440,6 +446,12 @@ public class ISO9796d2Signer
 
             preSig = null;
             preBlock = null;
+        }
+
+        // a recovered block shorter than the header/trailer bytes read below is malformed
+        if (block.length < 2)
+        {
+            return returnFalse(block);
         }
 
         if (((block[0] & 0xC0) ^ 0x40) != 0)

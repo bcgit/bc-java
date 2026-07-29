@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.RIPEMD128Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -1000,6 +1001,37 @@ public class ISO9796Test
         }
     }
 
+    // guards ISO9796d2Signer against an out-of-bounds read on a malformed/short recovered block
+    private void doMalformedSignatureTest()
+        throws Exception
+    {
+        RSAKeyParameters pub = new RSAKeyParameters(false, mod1, pub1);
+        int modLen = (mod1.bitLength() + 7) / 8;
+
+        byte[][] malformed = { new byte[0], new byte[1], new byte[modLen], new byte[modLen + 1] };
+        for (int i = 0; i != malformed.length; i++)
+        {
+            ISO9796d2Signer verifier = new ISO9796d2Signer(new RSAEngine(), new SHA1Digest(), true);
+            verifier.init(false, pub);
+            if (verifier.verifySignature(malformed[i]))
+            {
+                fail("ISO9796d2Signer accepted a malformed signature of length " + malformed[i].length);
+            }
+        }
+
+        ISO9796d2Signer recoverer = new ISO9796d2Signer(new RSAEngine(), new SHA1Digest(), true);
+        recoverer.init(false, pub);
+        try
+        {
+            recoverer.updateWithRecoveredMessage(new byte[modLen]);
+            fail("ISO9796d2Signer.updateWithRecoveredMessage accepted a malformed signature");
+        }
+        catch (InvalidCipherTextException expected)
+        {
+            // expected
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -1018,6 +1050,7 @@ public class ISO9796Test
         doTest13();
         doShortPartialTest();
         doFullMessageTest();
+        doMalformedSignatureTest();
     }
 
     public static void main(

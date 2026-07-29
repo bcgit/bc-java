@@ -15,6 +15,10 @@ public class AIMerPrivateKeyParameters
     public AIMerPrivateKeyParameters(AIMerParameters params, byte[] keyData)
     {
         super(true, params);
+        if (keyData.length != params.getSecretKeyBytes())
+        {
+            throw new IllegalArgumentException("'keyData' has invalid length");
+        }
         this.keyData = Arrays.clone(keyData);
     }
 

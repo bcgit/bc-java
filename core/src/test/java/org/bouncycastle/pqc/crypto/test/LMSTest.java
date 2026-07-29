@@ -9,7 +9,10 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
+import org.bouncycastle.pqc.crypto.lms.HSSKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.lms.HSSKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.HSSSigner;
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyPairGenerator;
@@ -181,6 +184,53 @@ public class LMSTest
         lmsSigner.init(false, pup);
 
         assertFalse(lmsSigner.verifySignature(msg, sig));
+    }
+
+    // a valid LMS/HSS signature with appended trailing bytes must not verify (signature malleability)
+    public void test_shouldRejectTrailingBytesAndMalformedSignature()
+        throws Exception
+    {
+        SecureRandom rnd = new SecureRandom();
+        byte[] msg = Strings.toByteArray("the message that was signed");
+
+        LMSKeyPairGenerator lmsKpg = new LMSKeyPairGenerator();
+        lmsKpg.init(new LMSKeyGenerationParameters(
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4), rnd));
+        AsymmetricCipherKeyPair lmsKp = lmsKpg.generateKeyPair();
+
+        LMSSigner lmsSigner = new LMSSigner();
+        lmsSigner.init(true, lmsKp.getPrivate());
+        byte[] lmsSig = lmsSigner.generateSignature(msg);
+
+        LMSSigner lmsVerifier = new LMSSigner();
+        lmsVerifier.init(false, lmsKp.getPublic());
+        assertTrue("pristine LMS signature should verify", lmsVerifier.verifySignature(msg, lmsSig));
+
+        assertFalse("LMS signature with trailing bytes must be rejected (malleability)",
+            lmsVerifier.verifySignature(msg, Arrays.copyOf(lmsSig, lmsSig.length + 16)));
+        assertFalse("LMS signature with a single trailing byte must be rejected",
+            lmsVerifier.verifySignature(msg, Arrays.copyOf(lmsSig, lmsSig.length + 1)));
+        assertFalse("empty signature must be rejected", lmsVerifier.verifySignature(msg, new byte[0]));
+        assertFalse("truncated signature must be rejected",
+            lmsVerifier.verifySignature(msg, Arrays.copyOf(lmsSig, lmsSig.length / 2)));
+        assertFalse("all-zero signature must be rejected",
+            lmsVerifier.verifySignature(msg, new byte[lmsSig.length]));
+
+        HSSKeyPairGenerator hssKpg = new HSSKeyPairGenerator();
+        hssKpg.init(new HSSKeyGenerationParameters(new LMSParameters[]{
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)}, rnd));
+        AsymmetricCipherKeyPair hssKp = hssKpg.generateKeyPair();
+
+        HSSSigner hssSigner = new HSSSigner();
+        hssSigner.init(true, hssKp.getPrivate());
+        byte[] hssSig = hssSigner.generateSignature(msg);
+
+        HSSSigner hssVerifier = new HSSSigner();
+        hssVerifier.init(false, hssKp.getPublic());
+        assertTrue("pristine HSS signature should verify", hssVerifier.verifySignature(msg, hssSig));
+        assertFalse("HSS signature with trailing bytes must be rejected",
+            hssVerifier.verifySignature(msg, Arrays.copyOf(hssSig, hssSig.length + 16)));
     }
 
     public void test_should_verify_sha256_n24_w1()
