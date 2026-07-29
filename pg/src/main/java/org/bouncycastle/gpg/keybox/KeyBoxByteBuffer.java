@@ -70,7 +70,10 @@ class KeyBoxByteBuffer
 
     public byte[] rangeOf(int start, int end)
     {
-        if (end - start < 0 || start < 0)
+        // end is checked on its own: end - start overflows to a positive value when end is
+        // sufficiently negative (start = 1, end = Integer.MIN_VALUE wraps to Integer.MAX_VALUE),
+        // which cleared this guard and the limit check below and reached new byte[end - start].
+        if (end < 0 || end - start < 0 || start < 0)
         {
             throw new IllegalArgumentException("invalid range " + start + ":" + end);
         }

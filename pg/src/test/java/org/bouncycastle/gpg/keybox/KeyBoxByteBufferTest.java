@@ -78,6 +78,18 @@ public class KeyBoxByteBufferTest
 
         }
 
+        // A negative end large enough that end - start overflows to a positive value. The case
+        // above passes on the subtraction alone (-3 - 1 does not wrap), so it did not cover this.
+        try
+        {
+            buf.rangeOf(1, Integer.MIN_VALUE);
+            fail("End is negative and end - start overflows");
+        }
+        catch (IllegalArgumentException ilex)
+        {
+
+        }
+
         try
         {
             buf.rangeOf(4, 3);
