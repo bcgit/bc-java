@@ -297,7 +297,7 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.debug = releaseDebug;
+        options.debug = true;
     }
 
     tasks.withType(Test).configureEach {
