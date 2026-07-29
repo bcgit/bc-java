@@ -58,6 +58,12 @@ public class BCCMCEPrivateKey
         {
             BCCMCEPrivateKey otherKey = (BCCMCEPrivateKey)o;
 
+            // a destroyed key no longer exposes its value, so it is only equal to itself.
+            if (isDestroyed() || otherKey.isDestroyed())
+            {
+                return false;
+            }
+
             return Arrays.constantTimeAreEqual(this.getEncoded(), otherKey.getEncoded());
         }
 

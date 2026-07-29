@@ -64,6 +64,12 @@ public class BCSLHDSAPrivateKey
         {
             BCSLHDSAPrivateKey otherKey = (BCSLHDSAPrivateKey)o;
 
+            // a destroyed key no longer exposes its value, so it is only equal to itself.
+            if (isDestroyed() || otherKey.isDestroyed())
+            {
+                return false;
+            }
+
             return Arrays.constantTimeAreEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
 
