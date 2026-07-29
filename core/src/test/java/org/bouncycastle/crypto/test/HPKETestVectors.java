@@ -125,6 +125,84 @@ public class HPKETestVectors
     }
 
     /**
+     * The one-shot secret export pair (RFC 9180 sec. 5.3), which had no caller anywhere in the
+     * tree and so no coverage at all: {@link HPKE#sendExport} sets up a sender context and returns
+     * the encapsulation alongside the exported secret, and {@link HPKE#receiveExport} rebuilds the
+     * matching context from that encapsulation and must produce the same bytes. Both dispatch on
+     * the mode the HPKE instance was built with, so all four are exercised here - the psk and
+     * auth arguments are only consulted by the modes that need them.
+     */
+    public void testSendReceiveExportPairwise()
+            throws Exception
+    {
+        byte[] info = "info".getBytes();
+        byte[] exporterContext = "exporter context".getBytes();
+        byte[] psk = Hex.decode("0247fd33b913760fa1fa51e1892d9f307fbe65eb171e8132c2af18555a738b82");
+        byte[] pskId = Hex.decode("456e6e796e20447572696e206172616e204d6f726961");
+
+        byte[] modes = {HPKE.mode_base, HPKE.mode_psk, HPKE.mode_auth, HPKE.mode_auth_psk};
+
+        for (int i = 0; i != modes.length; i++)
+        {
+            byte mode = modes[i];
+            HPKE hpke = new HPKE(mode, HPKE.kem_P256_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128);
+
+            AsymmetricCipherKeyPair receiver = hpke.generatePrivateKey();
+            AsymmetricCipherKeyPair sender = hpke.generatePrivateKey();
+
+            boolean withPsk = (mode == HPKE.mode_psk || mode == HPKE.mode_auth_psk);
+            boolean withAuth = (mode == HPKE.mode_auth || mode == HPKE.mode_auth_psk);
+
+            byte[] usePsk = withPsk ? psk : null;
+            byte[] usePskId = withPsk ? pskId : null;
+            AsymmetricCipherKeyPair useSenderKey = withAuth ? sender : null;
+            AsymmetricKeyParameter useSenderPub = withAuth ? sender.getPublic() : null;
+
+            byte[][] output = hpke.sendExport(receiver.getPublic(), info, exporterContext, 64,
+                usePsk, usePskId, useSenderKey);
+
+            byte[] enc = output[0];
+            byte[] exported = output[1];
+
+            assertEquals("wrong encapsulation length for mode " + mode, hpke.getEncSize(), enc.length);
+            assertEquals("wrong exported secret length for mode " + mode, 64, exported.length);
+
+            byte[] received = hpke.receiveExport(enc, receiver, info, exporterContext, 64,
+                usePsk, usePskId, useSenderPub);
+
+            assertTrue("exported secrets differ for mode " + mode, Arrays.areEqual(exported, received));
+
+            // the exporter context separates secrets drawn from the same exchange
+            byte[] other = hpke.receiveExport(enc, receiver, info, "other context".getBytes(), 64,
+                usePsk, usePskId, useSenderPub);
+
+            assertFalse("exporter context did not separate the secrets for mode " + mode,
+                Arrays.areEqual(exported, other));
+        }
+    }
+
+    /**
+     * Export is the whole point of the export-only suite, which has no cipher to seal with, so the
+     * one-shot export pair has to work there.
+     */
+    public void testSendReceiveExportOnlySuite()
+            throws Exception
+    {
+        HPKE hpke = new HPKE(HPKE.mode_base, HPKE.kem_P256_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_EXPORT_ONLY);
+
+        AsymmetricCipherKeyPair receiver = hpke.generatePrivateKey();
+
+        byte[] info = "info".getBytes();
+        byte[] exporterContext = "exporter context".getBytes();
+
+        byte[][] output = hpke.sendExport(receiver.getPublic(), info, exporterContext, 32, null, null, null);
+
+        byte[] received = hpke.receiveExport(output[0], receiver, info, exporterContext, 32, null, null, null);
+
+        assertTrue("export-only secrets differ", Arrays.areEqual(output[1], received));
+    }
+
+    /**
      * RFC 9180 sec. 5.2 advances the sequence number only after a successful Seal/Open. The
      * receiving context used to advance it while computing the nonce, so a ciphertext rejected by
      * the tag check still moved the counter on and left the receiver permanently out of step with
