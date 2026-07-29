@@ -12,8 +12,8 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.params.SM9SignMasterPrivateKeyParameters;
-import org.bouncycastle.jcajce.interfaces.SM9SignMasterPrivateKey;
+import org.bouncycastle.crypto.params.SM9SigMasterPrivateKeyParameters;
+import org.bouncycastle.jcajce.interfaces.SM9SigMasterPrivateKey;
 
 /**
  * JCA wrapper for an SM9 signature master private key (ks), held by the KGC.
@@ -24,37 +24,37 @@ import org.bouncycastle.jcajce.interfaces.SM9SignMasterPrivateKey;
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
  * lightweight key-parameter class's {@code getEncoded()}.
  */
-public class BCSM9SignMasterPrivateKey
-    implements SM9SignMasterPrivateKey
+public class BCSM9SigMasterPrivateKey
+    implements SM9SigMasterPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
-    private final transient SM9SignMasterPrivateKeyParameters keyParams;
+    private final transient SM9SigMasterPrivateKeyParameters keyParams;
 
-    BCSM9SignMasterPrivateKey(SM9SignMasterPrivateKeyParameters keyParams)
+    BCSM9SigMasterPrivateKey(SM9SigMasterPrivateKeyParameters keyParams)
     {
         this.keyParams = keyParams;
     }
 
-    SM9SignMasterPrivateKeyParameters getKeyParameters()
+    SM9SigMasterPrivateKeyParameters getKeyParameters()
     {
         return keyParams;
     }
 
-    private BCSM9SignPrivateKey extractPrivateKey(byte[] id)
+    private BCSM9SigPrivateKey extractPrivateKey(byte[] identity)
     {
-        return new BCSM9SignPrivateKey(keyParams.generateUserKey(id));
+        return new BCSM9SigPrivateKey(keyParams.generateUserKey(identity));
     }
 
     /**
-     * Generate the key pair of the user identified by {@code id}: the private key
+     * Generate the key pair of the user identified by {@code identity}: the private key
      * that signs and the public key a verifier checks against (a KGC operation,
      * hid = 0x01).
      */
-    public KeyPair generateUserKeyPair(byte[] id)
+    public KeyPair generateUserKeyPair(byte[] identity)
     {
         return new KeyPair(
-            new BCSM9SignPublicKey(keyParams.getPublicKeyParameters(), id), extractPrivateKey(id));
+            new BCSM9SigPublicKey(keyParams.getPublicKeyParameters(), identity), extractPrivateKey(identity));
     }
 
     public String getAlgorithm()
@@ -92,11 +92,11 @@ public class BCSM9SignMasterPrivateKey
         {
             return true;
         }
-        if (!(o instanceof BCSM9SignMasterPrivateKey))
+        if (!(o instanceof BCSM9SigMasterPrivateKey))
         {
             return false;
         }
-        return Arrays.constantTimeAreEqual(getEncoded(), ((BCSM9SignMasterPrivateKey)o).getEncoded());
+        return Arrays.constantTimeAreEqual(getEncoded(), ((BCSM9SigMasterPrivateKey)o).getEncoded());
     }
 
     public int hashCode()

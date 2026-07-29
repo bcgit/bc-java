@@ -16,15 +16,15 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.params.SM9SignPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigPrivateKeyParameters;
 import org.bouncycastle.crypto.signers.SM9Signer;
 
 /**
  * JCA {@code SM9} signature (GM/T 0044.2). Sign with the private key from
- * {@link org.bouncycastle.jcajce.interfaces.SM9SignMasterPrivateKey#generateUserKeyPair(byte[])};
+ * {@link org.bouncycastle.jcajce.interfaces.SM9SigMasterPrivateKey#generateUserKeyPair(byte[])};
  * verify with the signer's public key, formed from the published master public key and
  * the signer's identity via
- * {@link org.bouncycastle.jcajce.interfaces.SM9SignMasterPublicKey#getUserPublicKey(byte[])}.
+ * {@link org.bouncycastle.jcajce.interfaces.SM9SigMasterPublicKey#getUserPublicKey(byte[])}.
  * No {@code AlgorithmParameterSpec} is required - the identity travels in the keys.
  */
 public class SignatureSpi
@@ -33,20 +33,20 @@ public class SignatureSpi
     private final SM9Signer signer = new SM9Signer();
 
     private boolean forSigning;
-    private SM9SignPrivateKeyParameters signKey;
-    private BCSM9SignPublicKey verifyKey;
+    private SM9SigPrivateKeyParameters signKey;
+    private BCSM9SigPublicKey verifyKey;
     private boolean initialised;
 
     protected void engineInitSign(PrivateKey privateKey)
         throws InvalidKeyException
     {
-        if (!(privateKey instanceof BCSM9SignPrivateKey))
+        if (!(privateKey instanceof BCSM9SigPrivateKey))
         {
             throw new InvalidKeyException(
-                "SM9 signing requires the user private key from SM9SignMasterPrivateKey.generateUserKeyPair()");
+                "SM9 signing requires the user private key from SM9SigMasterPrivateKey.generateUserKeyPair()");
         }
         forSigning = true;
-        signKey = ((BCSM9SignPrivateKey)privateKey).getKeyParameters();
+        signKey = ((BCSM9SigPrivateKey)privateKey).getKeyParameters();
         verifyKey = null;
         initialised = false;
     }
@@ -54,13 +54,13 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        if (!(publicKey instanceof BCSM9SignPublicKey))
+        if (!(publicKey instanceof BCSM9SigPublicKey))
         {
             throw new InvalidKeyException(
-                "SM9 verification requires the signer's public key from SM9SignMasterPublicKey.getUserPublicKey()");
+                "SM9 verification requires the signer's public key from SM9SigMasterPublicKey.getUserPublicKey()");
         }
         forSigning = false;
-        verifyKey = (BCSM9SignPublicKey)publicKey;
+        verifyKey = (BCSM9SigPublicKey)publicKey;
         signKey = null;
         initialised = false;
     }
@@ -69,7 +69,7 @@ public class SignatureSpi
         throws InvalidAlgorithmParameterException
     {
         throw new InvalidAlgorithmParameterException(
-            "SM9 takes no AlgorithmParameterSpec; the signer's identity travels in the key from SM9SignMasterPublicKey.getUserPublicKey()");
+            "SM9 takes no AlgorithmParameterSpec; the signer's identity travels in the key from SM9SigMasterPublicKey.getUserPublicKey()");
     }
 
     private void ensureInitialised()

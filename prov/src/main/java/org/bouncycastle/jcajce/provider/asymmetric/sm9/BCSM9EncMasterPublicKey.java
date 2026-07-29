@@ -38,9 +38,9 @@ public class BCSM9EncMasterPublicKey
         return keyParams;
     }
 
-    public PublicKey getUserPublicKey(byte[] id)
+    public PublicKey getUserPublicKey(byte[] identity)
     {
-        return new BCSM9EncPublicKey(keyParams.getUserPublicKey(id));
+        return new BCSM9EncPublicKey(keyParams.getUserPublicKey(identity));
     }
     
     public String getAlgorithm()

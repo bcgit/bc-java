@@ -4,10 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.params.SM9SignMasterPrivateKeyParameters;
-import org.bouncycastle.crypto.params.SM9SignMasterPublicKeyParameters;
-import org.bouncycastle.crypto.params.SM9SignPrivateKeyParameters;
-import org.bouncycastle.crypto.digests.SM9Sm3;
+import org.bouncycastle.crypto.params.SM9SigMasterPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigMasterPublicKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigPrivateKeyParameters;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -26,9 +26,9 @@ import org.bouncycastle.util.BigIntegers;
 /**
  * The SM9 identity-based digital signature algorithm (GM/T 0044.2-2016).
  * <p>
- * For signing, initialise with an {@link SM9SignPrivateKeyParameters} (optionally
+ * For signing, initialise with an {@link SM9SigPrivateKeyParameters} (optionally
  * wrapped in {@link ParametersWithRandom}). For verifying, initialise with an
- * {@link SM9SignMasterPublicKeyParameters} wrapped in a {@link ParametersWithID}
+ * {@link SM9SigMasterPublicKeyParameters} wrapped in a {@link ParametersWithID}
  * carrying the signer's identity.
  * <p>
  * The produced signature is encoded as h (32 bytes, big-endian) followed by the
@@ -41,8 +41,8 @@ public class SM9Signer
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private boolean forSigning;
-    private SM9SignPrivateKeyParameters signKey;
-    private SM9SignMasterPublicKeyParameters verifyKey;
+    private SM9SigPrivateKeyParameters signKey;
+    private SM9SigMasterPublicKeyParameters verifyKey;
     private byte[] identity;
     private Fp12 g;   // cached e(P1, P_pub-s)
 
@@ -67,13 +67,13 @@ public class SM9Signer
                 base = ((ParametersWithRandom)base).getParameters();
             }
 
-            signKey = (SM9SignPrivateKeyParameters)base;
+            signKey = (SM9SigPrivateKeyParameters)base;
             verifyKey = signKey.getMasterPublicKey();
             kCalculator.init(SM9Curve.N, CryptoServicesRegistrar.getSecureRandom(random));
         }
         else
         {
-            verifyKey = (SM9SignMasterPublicKeyParameters)base;
+            verifyKey = (SM9SigMasterPublicKeyParameters)base;
             if (identity == null)
             {
                 throw new IllegalArgumentException("SM9 verification requires the signer identity (ParametersWithID)");
@@ -147,7 +147,7 @@ public class SM9Signer
             }
 
             Fp12 t = g.pow(h);                                                        // B4: t = g^h
-            BigInteger h1 = SM9Sm3.h1(Arrays.append(identity, SM9SignMasterPrivateKeyParameters.HID), n);  // B5
+            BigInteger h1 = SM9Sm3.h1(Arrays.append(identity, SM9SigMasterPrivateKeyParameters.HID), n);  // B5
             SM9G2Point p = SM9Curve.P2.multiply(h1).add(verifyKey.getPointG2());      // B6: P = [h1]P2 + P_pub-s
             Fp12 u = SM9Pairing.pairing(s, p);                                        // B7: u = e(S, P)
             Fp12 w = u.multiply(t);                                                   // B8: w' = u * t

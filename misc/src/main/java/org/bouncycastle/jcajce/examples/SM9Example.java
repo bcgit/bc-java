@@ -12,6 +12,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.KeyGenerator;
 
+import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
@@ -31,7 +32,7 @@ import org.bouncycastle.util.encoders.Hex;
  * each user's key pair from the user's identity - so there are no certificates, and a sender needs
  * only the published master public key plus the recipient's identity. The master key pair comes from
  * {@code KeyPairGenerator.SM9-ENC}; a user's key pair is then derived from the master private key via
- * {@link SM9EncMasterPrivateKey#generateUserKeyPair(byte[])} - a deterministic, KGC-side derivation -
+ * {@link SM9EncMasterPrivateKey#generateUserKeyPair(byte[], byte)} - a deterministic, KGC-side derivation -
  * while a sender forms the recipient's public key from the master public key alone via
  * {@link SM9EncMasterPublicKey#getUserPublicKey(byte[])}. The model carries inherent key escrow
  * (the KGC can derive every user's key), so the KGC must be trusted accordingly.
@@ -55,13 +56,14 @@ public class SM9Example
 
         // 2. KGC: generate Bob's key pair from his identity - derived from the master
         //    private key (deterministic).
-        byte[] bobId = Strings.toByteArray("Bob");
-        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobId);
+        byte[] bobIdentity = Strings.toByteArray("Bob");
+        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobIdentity,
+            SM9EncMasterPrivateKeyParameters.HID);
 
         // 3. Sender: derive Bob's public key from the published master public key and
         //    his identity - no certificate or KGC interaction needed - and encapsulate
         //    a 128-bit AES key to it.
-        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobId);
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobIdentity);
         KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
         encapsulator.init(new KEMGenerateSpec(bobPublic, "AES", 128), random);
         SecretKeyWithEncapsulation encapsulated = (SecretKeyWithEncapsulation)encapsulator.generateKey();

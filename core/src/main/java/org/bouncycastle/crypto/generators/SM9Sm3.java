@@ -1,7 +1,8 @@
-package org.bouncycastle.crypto.digests;
+package org.bouncycastle.crypto.generators;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.util.Arrays;
 
 /**

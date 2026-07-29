@@ -21,8 +21,9 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.jcajce.interfaces.SM9SignMasterPrivateKey;
-import org.bouncycastle.jcajce.interfaces.SM9SignMasterPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9SigMasterPrivateKey;
+import org.bouncycastle.jcajce.interfaces.SM9SigMasterPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9SigUserKeyGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -44,16 +45,22 @@ public class SM9SignatureTest
     public void performTest()
         throws Exception
     {
-        byte[] idAlice = "Alice".getBytes("US-ASCII");
+        byte[] identityAlice = "Alice".getBytes("US-ASCII");
         byte[] message = "Chinese IBS standard".getBytes("US-ASCII");
 
         // 1. generate a master key pair, derive Alice's key pair, sign and verify -
         //    the verifier forms Alice's public key from the master public key + identity
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SM9-SIGN", "BC");
         KeyPair masterPair = kpGen.generateKeyPair();
-        SM9SignMasterPrivateKey masterPriv = (SM9SignMasterPrivateKey)masterPair.getPrivate();
-        SM9SignMasterPublicKey masterPub = (SM9SignMasterPublicKey)masterPair.getPublic();
-        KeyPair alice = masterPriv.generateUserKeyPair(idAlice);
+        SM9SigMasterPrivateKey masterPriv = (SM9SigMasterPrivateKey)masterPair.getPrivate();
+        SM9SigMasterPublicKey masterPub = (SM9SigMasterPublicKey)masterPair.getPublic();
+        KeyPair alice = masterPriv.generateUserKeyPair(identityAlice);
+
+        // the KGC extraction is also reachable through the capability interface
+        SM9SigUserKeyGenerator kgc = masterPriv;
+        isTrue("SM9SigUserKeyGenerator derives the same user key",
+            Arrays.areEqual(alice.getPrivate().getEncoded(),
+                kgc.generateUserKeyPair(identityAlice).getPrivate().getEncoded()));
 
         Signature signer = Signature.getInstance("SM9", "BC");
         signer.initSign(alice.getPrivate());
@@ -61,19 +68,19 @@ public class SM9SignatureTest
         byte[] sig = signer.sign();
 
         Signature verifier = Signature.getInstance("SM9", "BC");
-        verifier.initVerify(masterPub.getUserPublicKey(idAlice));
+        verifier.initVerify(masterPub.getUserPublicKey(identityAlice));
         verifier.update(message);
         isTrue("SM9 JCE sign/verify round-trip", verifier.verify(sig));
 
         // the KGC-generated public half and the verifier-derived key are the same key
         isTrue("SM9 user public key halves agree",
-            alice.getPublic().equals(masterPub.getUserPublicKey(idAlice)));
+            alice.getPublic().equals(masterPub.getUserPublicKey(identityAlice)));
 
         // 2. verifying against the wrong identity must fail
-        Signature wrongId = Signature.getInstance("SM9", "BC");
-        wrongId.initVerify(masterPub.getUserPublicKey("Bob".getBytes("US-ASCII")));
-        wrongId.update(message);
-        isTrue("SM9 JCE rejects wrong identity", !wrongId.verify(sig));
+        Signature wrongIdentity = Signature.getInstance("SM9", "BC");
+        wrongIdentity.initVerify(masterPub.getUserPublicKey("Bob".getBytes("US-ASCII")));
+        wrongIdentity.update(message);
+        isTrue("SM9 JCE rejects wrong identity", !wrongIdentity.verify(sig));
 
         // 3. a zero-length message signs and verifies (the signer's l = 0 retry is a
         //    scalar test, so - unlike the SM9 stream cipher's K1 check - an empty
@@ -83,7 +90,7 @@ public class SM9SignatureTest
         byte[] emptySig = emptySigner.sign();
 
         Signature emptyVerifier = Signature.getInstance("SM9", "BC");
-        emptyVerifier.initVerify(masterPub.getUserPublicKey(idAlice));
+        emptyVerifier.initVerify(masterPub.getUserPublicKey(identityAlice));
         isTrue("SM9 JCE zero-length message round-trip", emptyVerifier.verify(emptySig));
 
         // 4. verify the official GM/T 0044.5 Annex A signature through the provider;
@@ -94,9 +101,9 @@ public class SM9SignatureTest
             new java.math.BigInteger("000130E78459D78545CB54C587E02CF480CE0B66340F319F348A1D5B1F2DC5F4", 16));
         PrivateKeyInfo katPkcs8 = new PrivateKeyInfo(
             new AlgorithmIdentifier(GMObjectIdentifiers.sm9sign), new DEROctetString(katScalar));
-        SM9SignMasterPrivateKey katMaster = (SM9SignMasterPrivateKey)kf.generatePrivate(
+        SM9SigMasterPrivateKey katMaster = (SM9SigMasterPrivateKey)kf.generatePrivate(
             new PKCS8EncodedKeySpec(katPkcs8.getEncoded()));
-        PublicKey katAlice = katMaster.generateUserKeyPair(idAlice).getPublic();
+        PublicKey katAlice = katMaster.generateUserKeyPair(identityAlice).getPublic();
         byte[] katSig = new SM9Signature(
             Hex.decode("823C4B21E4BD2DFE1ED92C606653E996668563152FC33F55D7BFBB9BD9705ADB"),  // h
             Hex.decode("04"                                                                    // uncompressed S
@@ -131,7 +138,7 @@ public class SM9SignatureTest
         try
         {
             Signature bad = Signature.getInstance("SM9", "BC");
-            bad.initVerify(masterPub.getUserPublicKey(idAlice));
+            bad.initVerify(masterPub.getUserPublicKey(identityAlice));
             bad.setParameter(new java.security.spec.AlgorithmParameterSpec()
             {
             });
@@ -143,14 +150,14 @@ public class SM9SignatureTest
         }
 
         // 7. the sign private keys honour the Destroyable contract
-        destroyTest(masterPair, idAlice, message);
+        destroyTest(masterPair, identityAlice, message);
     }
 
-    private void destroyTest(KeyPair masterPair, byte[] idAlice, byte[] message)
+    private void destroyTest(KeyPair masterPair, byte[] identityAlice, byte[] message)
         throws Exception
     {
-        SM9SignMasterPrivateKey masterPriv = (SM9SignMasterPrivateKey)masterPair.getPrivate();
-        KeyPair alice = masterPriv.generateUserKeyPair(idAlice);
+        SM9SigMasterPrivateKey masterPriv = (SM9SigMasterPrivateKey)masterPair.getPrivate();
+        KeyPair alice = masterPriv.generateUserKeyPair(identityAlice);
         PrivateKey aliceKey = alice.getPrivate();
 
         // destroying the user signing key stops signing and encoding
@@ -192,7 +199,7 @@ public class SM9SignatureTest
 
         try
         {
-            masterPriv.generateUserKeyPair(idAlice);
+            masterPriv.generateUserKeyPair(identityAlice);
             fail("destroyed sign master key still generates user keys");
         }
         catch (IllegalStateException e)

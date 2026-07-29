@@ -16,8 +16,8 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncMasterPublicKeyParameters;
-import org.bouncycastle.crypto.params.SM9SignMasterPrivateKeyParameters;
-import org.bouncycastle.crypto.params.SM9SignMasterPublicKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigMasterPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigMasterPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
 /**
@@ -28,7 +28,7 @@ import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
  * <p>
  * A user's identity-based key is <b>not</b> decodable in isolation - it additionally needs
  * the master public key and the identity - so derive it from the master private key via
- * {@code generateUserKeyPair(id)} instead.
+ * the master key's {@code generateUserKeyPair} method instead.
  */
 public class KeyFactorySpi
     extends java.security.KeyFactorySpi
@@ -46,8 +46,8 @@ public class KeyFactorySpi
             ASN1ObjectIdentifier oid = info.getAlgorithm().getAlgorithm();
             if (GMObjectIdentifiers.sm9sign.equals(oid))
             {
-                return new BCSM9SignMasterPublicKey(
-                    SM9SignMasterPublicKeyParameters.fromEncoded(info.getPublicKeyData().getOctets()));
+                return new BCSM9SigMasterPublicKey(
+                    SM9SigMasterPublicKeyParameters.fromEncoded(info.getPublicKeyData().getOctets()));
             }
             if (GMObjectIdentifiers.sm9encrypt.equals(oid))
             {
@@ -82,7 +82,7 @@ public class KeyFactorySpi
             }
             if (GMObjectIdentifiers.sm9sign.equals(oid))
             {
-                return new BCSM9SignMasterPrivateKey(SM9SignMasterPrivateKeyParameters.fromEncoded(data));
+                return new BCSM9SigMasterPrivateKey(SM9SigMasterPrivateKeyParameters.fromEncoded(data));
             }
             if (GMObjectIdentifiers.sm9encrypt.equals(oid))
             {
@@ -130,9 +130,9 @@ public class KeyFactorySpi
 
     private static boolean isSM9(Key key)
     {
-        return key instanceof BCSM9SignMasterPublicKey
-            || key instanceof BCSM9SignMasterPrivateKey
-            || key instanceof BCSM9SignPrivateKey
+        return key instanceof BCSM9SigMasterPublicKey
+            || key instanceof BCSM9SigMasterPrivateKey
+            || key instanceof BCSM9SigPrivateKey
             || key instanceof BCSM9EncMasterPublicKey
             || key instanceof BCSM9EncMasterPrivateKey
             || key instanceof BCSM9EncPrivateKey;

@@ -6,8 +6,8 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 
-import org.bouncycastle.jcajce.interfaces.SM9SignMasterPrivateKey;
-import org.bouncycastle.jcajce.interfaces.SM9SignMasterPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9SigMasterPrivateKey;
+import org.bouncycastle.jcajce.interfaces.SM9SigMasterPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -21,15 +21,15 @@ import org.bouncycastle.util.encoders.Hex;
  * key pair and derives each user's key pair from the user's identity - so there are no
  * certificates, and a verifier forms the signer's public key from the published master
  * public key and the signer's identity alone, via
- * {@link SM9SignMasterPublicKey#getUserPublicKey(byte[])}. The master key pair comes from
+ * {@link SM9SigMasterPublicKey#getUserPublicKey(byte[])}. The master key pair comes from
  * {@code KeyPairGenerator.SM9-SIGN}; a user's key pair is derived from the master private
- * key via {@link SM9SignMasterPrivateKey#generateUserKeyPair(byte[])} (the KGC
+ * key via {@link SM9SigMasterPrivateKey#generateUserKeyPair(byte[])} (the KGC
  * key-extraction operation). The model carries inherent key escrow (the KGC can derive
  * every user's key), so the KGC must be trusted accordingly.
  * <p>
  * The signature is the GM/T 0080-2020 SM9Signature structure (DER: h, S).
  */
-public class SM9SignExample
+public class SM9SigExample
 {
     public static void main(String[] args)
         throws Exception
@@ -44,8 +44,8 @@ public class SM9SignExample
 
         // 2. KGC: derive Alice's key pair from her identity (deterministic); Alice signs
         //    with the private half.
-        byte[] aliceId = Strings.toByteArray("Alice");
-        KeyPair alice = ((SM9SignMasterPrivateKey)master.getPrivate()).generateUserKeyPair(aliceId);
+        byte[] aliceIdentity = Strings.toByteArray("Alice");
+        KeyPair alice = ((SM9SigMasterPrivateKey)master.getPrivate()).generateUserKeyPair(aliceIdentity);
 
         byte[] message = Strings.toByteArray("Chinese IBS standard");
 
@@ -57,7 +57,7 @@ public class SM9SignExample
         // 3. Verifier: form Alice's public key from the published master public key and
         //    her identity - no certificate or KGC interaction needed - and verify.
         Signature verifier = Signature.getInstance("SM9", "BC");
-        verifier.initVerify(((SM9SignMasterPublicKey)master.getPublic()).getUserPublicKey(aliceId));
+        verifier.initVerify(((SM9SigMasterPublicKey)master.getPublic()).getUserPublicKey(aliceIdentity));
         verifier.update(message);
         if (!verifier.verify(signature))
         {

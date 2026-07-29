@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.engines.SM9Engine;
 import org.bouncycastle.crypto.kems.SM9KEMExtractor;
 import org.bouncycastle.crypto.kems.SM9KEMGenerator;
 import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
@@ -72,11 +73,11 @@ public class SM9KEMTest
     {
         Map v = loadVectors("sm9_kem.txt");
         BigInteger ke = new BigInteger((String)v.get("ke"), 16);
-        byte[] id = hex(v, "IDB");
+        byte[] identity = hex(v, "IDB");
         int klen = Integer.parseInt((String)v.get("klen_bits"));
 
         SM9EncMasterPrivateKeyParameters master = new SM9EncMasterPrivateKeyParameters(ke);
-        SM9EncPublicKeyParameters recipient = master.getPublicKeyParameters().getUserPublicKey(id);
+        SM9EncPublicKeyParameters recipient = master.getPublicKeyParameters().getUserPublicKey(identity);
 
         SM9KEMGenerator gen = new SM9KEMGenerator(klen, new TestRandomBigInteger(256, hex(v, "r")));
         SecretWithEncapsulation enc = gen.generateEncapsulated(recipient);
@@ -84,9 +85,32 @@ public class SM9KEMTest
         isTrue("SM9 KEM encapsulation C",
             Arrays.areEqual(enc.getEncapsulation(), Arrays.concatenate(hex(v, "C_x"), hex(v, "C_y"))));
 
-        SM9EncPrivateKeyParameters userKey = master.generateUserKey(id);
+        SM9EncPrivateKeyParameters userKey = master.generateUserKey(identity, SM9EncMasterPrivateKeyParameters.HID);
         SM9KEMExtractor extractor = new SM9KEMExtractor(userKey, klen);
         isTrue("SM9 KEM decapsulation", Arrays.areEqual(extractor.extractSecret(enc.getEncapsulation()), hex(v, "K")));
+
+        // a key-exchange user key must not decapsulate - the two usages are kept
+        // on separate keys so an exchange peer never gains a pairing oracle on a
+        // key that also decrypts
+        SM9EncPrivateKeyParameters exchangeKey = master.generateExchangeKey(identity);
+        try
+        {
+            new SM9KEMExtractor(exchangeKey, klen);
+            fail("SM9KEMExtractor accepted a key-exchange user key");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("SM9 KEM decapsulation requires an encryption user key, not a key-exchange key".equals(e.getMessage()));
+        }
+        try
+        {
+            new SM9Engine().init(false, exchangeKey);
+            fail("SM9Engine accepted a key-exchange user key for decryption");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("SM9 decryption requires an encryption user key, not a key-exchange key".equals(e.getMessage()));
+        }
 
         // a non-positive key length must be rejected at construction: the KDF would
         // produce no output and the all-zero retry loop would never terminate (the

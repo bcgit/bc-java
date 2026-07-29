@@ -17,8 +17,9 @@ import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 
 /**
  * JCA wrapper for an SM9 encryption master private key (ke), held by the KGC.
- * Use {@link #generateUserKeyPair(byte[])} (a KGC operation, hid = 0x03) to derive
- * a user's key pair, or {@link #extractPrivateKey(byte[])} for the private half alone.
+ * Use {@link #generateUserKeyPair(byte[], byte)} (a KGC operation) to derive a
+ * user's key pair under the KGC's published hid - 0x03 for KEM / public-key
+ * encryption, 0x02 for key exchange.
  * <p>
  * The JCA {@code getEncoded()} is a PKCS#8 PrivateKeyInfo under the GM algorithm OID
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
@@ -37,23 +38,15 @@ public class BCSM9EncMasterPrivateKey
     }
 
     /**
-     * Derive the decryption private key of the user identified by {@code id};
-     * {@link #generateUserKeyPair(byte[])} returns the user's full key pair.
+     * Generate the key pair of the user identified by {@code identity} under the given
+     * hid (a KGC operation): for hid = 0x03 the public key to encapsulate to and
+     * the private key that decapsulates, for hid = 0x02 the key-exchange pair.
      */
-    private BCSM9EncPrivateKey extractPrivateKey(byte[] id)
-    {
-        return new BCSM9EncPrivateKey(keyParams.generateUserKey(id));
-    }
-
-    /**
-     * Generate the key pair of the user identified by {@code id}: the public key to
-     * encapsulate to and the private key that decapsulates (a KGC operation, hid = 0x03).
-     */
-    public KeyPair generateUserKeyPair(byte[] id)
+    public KeyPair generateUserKeyPair(byte[] identity, byte hid)
     {
         return new KeyPair(
-            new BCSM9EncPublicKey(keyParams.getPublicKeyParameters().getUserPublicKey(id)),
-            extractPrivateKey(id));
+            new BCSM9EncPublicKey(keyParams.getPublicKeyParameters().getUserPublicKey(identity, hid)),
+            new BCSM9EncPrivateKey(keyParams.generateUserKey(identity, hid)));
     }
 
     public String getAlgorithm()
@@ -107,7 +100,7 @@ public class BCSM9EncMasterPrivateKey
     /**
      * Destroy the underlying master secret ke. After destruction {@link #isDestroyed()}
      * returns true and the secret-bearing operations ({@link #getEncoded()},
-     * {@link #generateUserKeyPair(byte[])}) throw {@link IllegalStateException};
+     * {@link #generateUserKeyPair(byte[], byte)}) throw {@link IllegalStateException};
      * user key pairs already generated are unaffected.
      */
     public synchronized void destroy()

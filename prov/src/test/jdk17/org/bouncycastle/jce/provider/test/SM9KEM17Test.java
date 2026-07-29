@@ -14,6 +14,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import junit.framework.TestCase;
+import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
@@ -44,11 +45,11 @@ public class SM9KEM17Test
         KeyPairGenerator g = KeyPairGenerator.getInstance("SM9-ENC", "BC");
         KeyPair master = g.generateKeyPair();
 
-        byte[] bobId = Strings.toByteArray("Bob");
-        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobId);
+        byte[] bobIdentity = Strings.toByteArray("Bob");
+        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobIdentity, SM9EncMasterPrivateKeyParameters.HID);
 
         // Sender side - the recipient public key comes from the published master public key
-        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobId);
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobIdentity);
 
         KEM kemS = KEM.getInstance("SM9-KEM", "BC");
         KTSParameterSpec ktsSpec = null;
@@ -74,9 +75,9 @@ public class SM9KEM17Test
         KeyPairGenerator g = KeyPairGenerator.getInstance("SM9-ENC", "BC");
         KeyPair master = g.generateKeyPair();
 
-        byte[] bobId = Strings.toByteArray("Bob");
-        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobId);
-        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobId);
+        byte[] bobIdentity = Strings.toByteArray("Bob");
+        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobIdentity, SM9EncMasterPrivateKeyParameters.HID);
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobIdentity);
 
         // KEM API, no KDF: the secret is SM9's own GM/T 0044.4 KDF output
         KTSParameterSpec noKdf = new KTSParameterSpec.Builder("AES", 128).withNoKdf().build();
@@ -98,9 +99,9 @@ public class SM9KEM17Test
         KeyPairGenerator g = KeyPairGenerator.getInstance("SM9-ENC", "BC");
         KeyPair master = g.generateKeyPair();
 
-        byte[] bobId = Strings.toByteArray("Bob");
-        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobId);
-        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobId);
+        byte[] bobIdentity = Strings.toByteArray("Bob");
+        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobIdentity, SM9EncMasterPrivateKeyParameters.HID);
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobIdentity);
 
         // default KTSParameterSpec carries a KDF (KDF3/SHA-256) - layered over SM9's output
         KTSParameterSpec withKdf = new KTSParameterSpec.Builder("AES", 128).build();
@@ -138,8 +139,8 @@ public class SM9KEM17Test
         }
 
         // only KTSParameterSpec is understood
-        byte[] bobId = Strings.toByteArray("Bob");
-        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobId);
+        byte[] bobIdentity = Strings.toByteArray("Bob");
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobIdentity);
         try
         {
             kem.newEncapsulator(bobPublic, new AlgorithmParameterSpec()

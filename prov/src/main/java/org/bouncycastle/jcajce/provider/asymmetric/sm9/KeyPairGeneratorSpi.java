@@ -9,18 +9,18 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.generators.SM9EncMasterKeyPairGenerator;
-import org.bouncycastle.crypto.generators.SM9SignMasterKeyPairGenerator;
+import org.bouncycastle.crypto.generators.SM9SigMasterKeyPairGenerator;
 import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncMasterPublicKeyParameters;
-import org.bouncycastle.crypto.params.SM9SignMasterPrivateKeyParameters;
-import org.bouncycastle.crypto.params.SM9SignMasterPublicKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigMasterPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigMasterPublicKeyParameters;
 
 /**
  * Generator for SM9 encryption <b>master</b> key pairs (GM/T 0044.4), registered as
  * {@code KeyPairGenerator.SM9-ENC}: the KGC's randomly-generated root of the scheme.
  * A <b>user's</b> key pair is not generated here - it is derived from the master
  * private key via
- * {@link org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey#generateUserKeyPair(byte[])},
+ * {@link org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey#generateUserKeyPair(byte[], byte)},
  * the deterministic KGC operation (hid = 0x03) identity-based schemes call key extraction.
  */
 public class KeyPairGeneratorSpi
@@ -45,7 +45,7 @@ public class KeyPairGeneratorSpi
         throws InvalidAlgorithmParameterException
     {
         throw new InvalidAlgorithmParameterException(
-            "SM9-ENC master key generation takes no AlgorithmParameterSpec; user key pairs come from SM9EncMasterPrivateKey.generateUserKeyPair()");
+            "SM9-ENC master key generation takes no AlgorithmParameterSpec; user key pairs come from SM9EncMasterPrivateKey.generateUserKeyPair(identity, hid)");
     }
 
     public KeyPair generateKeyPair()
@@ -66,13 +66,13 @@ public class KeyPairGeneratorSpi
      * Generator for the SM9 signature master key pair (GM/T 0044.2), registered as
      * {@code KeyPairGenerator.SM9-SIGN}. A user's signing key pair is derived from
      * the master private key via
-     * {@link org.bouncycastle.jcajce.interfaces.SM9SignMasterPrivateKey#generateUserKeyPair(byte[])},
+     * {@link org.bouncycastle.jcajce.interfaces.SM9SigMasterPrivateKey#generateUserKeyPair(byte[])},
      * the deterministic KGC operation (hid = 0x01).
      */
     public static class Sign
         extends java.security.KeyPairGenerator
     {
-        private final SM9SignMasterKeyPairGenerator engine = new SM9SignMasterKeyPairGenerator();
+        private final SM9SigMasterKeyPairGenerator engine = new SM9SigMasterKeyPairGenerator();
         private SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
         private boolean initialised = false;
 
@@ -91,7 +91,7 @@ public class KeyPairGeneratorSpi
             throws InvalidAlgorithmParameterException
         {
             throw new InvalidAlgorithmParameterException(
-                "SM9-SIGN master key generation takes no AlgorithmParameterSpec; user key pairs come from SM9SignMasterPrivateKey.generateUserKeyPair()");
+                "SM9-SIGN master key generation takes no AlgorithmParameterSpec; user key pairs come from SM9SigMasterPrivateKey.generateUserKeyPair()");
         }
 
         public KeyPair generateKeyPair()
@@ -104,8 +104,8 @@ public class KeyPairGeneratorSpi
 
             AsymmetricCipherKeyPair pair = engine.generateKeyPair();
             return new KeyPair(
-                new BCSM9SignMasterPublicKey((SM9SignMasterPublicKeyParameters)pair.getPublic()),
-                new BCSM9SignMasterPrivateKey((SM9SignMasterPrivateKeyParameters)pair.getPrivate()));
+                new BCSM9SigMasterPublicKey((SM9SigMasterPublicKeyParameters)pair.getPublic()),
+                new BCSM9SigMasterPrivateKey((SM9SigMasterPrivateKeyParameters)pair.getPrivate()));
         }
     }
 }

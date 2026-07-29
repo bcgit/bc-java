@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import javax.security.auth.Destroyable;
 
-import org.bouncycastle.crypto.digests.SM9Sm3;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.sm9.SM9Curve;
 import org.bouncycastle.util.Arrays;
@@ -15,9 +15,9 @@ import org.bouncycastle.util.BigIntegers;
  * Generation Center (KGC); derives the master public key P_pub-s = [ks]P2 and
  * users' signature private keys from their identities.
  */
-public class SM9SignMasterPrivateKeyParameters
+public class SM9SigMasterPrivateKeyParameters
     extends AsymmetricKeyParameter
-    implements Destroyable
+    implements Destroyable, SM9SigUserKeyParametersGenerator
 {
     /**
      * The signature private-key generation function identifier hid, fixed to
@@ -27,9 +27,9 @@ public class SM9SignMasterPrivateKeyParameters
 
     private BigInteger ks;
     private volatile boolean destroyed;
-    private final SM9SignMasterPublicKeyParameters publicParams;
+    private final SM9SigMasterPublicKeyParameters publicParams;
 
-    public SM9SignMasterPrivateKeyParameters(BigInteger ks)
+    public SM9SigMasterPrivateKeyParameters(BigInteger ks)
     {
         super(true);
         if (ks == null)
@@ -41,10 +41,10 @@ public class SM9SignMasterPrivateKeyParameters
             throw new IllegalArgumentException("ks must be in [1, N-1]");
         }
         this.ks = ks;
-        this.publicParams = new SM9SignMasterPublicKeyParameters(SM9Curve.P2.multiply(ks));
+        this.publicParams = new SM9SigMasterPublicKeyParameters(SM9Curve.P2.multiply(ks));
     }
 
-    public SM9SignMasterPublicKeyParameters getPublicKeyParameters()
+    public SM9SigMasterPublicKeyParameters getPublicKeyParameters()
     {
         return publicParams;
     }
@@ -57,21 +57,21 @@ public class SM9SignMasterPrivateKeyParameters
         return BigIntegers.asUnsignedByteArray(32, checkedKs());
     }
 
-    public static SM9SignMasterPrivateKeyParameters fromEncoded(byte[] enc)
+    public static SM9SigMasterPrivateKeyParameters fromEncoded(byte[] enc)
     {
-        return new SM9SignMasterPrivateKeyParameters(new BigInteger(1, enc));
+        return new SM9SigMasterPrivateKeyParameters(new BigInteger(1, enc));
     }
 
     /**
-     * Derive the signature private key for the user identified by {@code id}
-     * (GM/T 0044.2-2016, 5.3): t1 = H1(id||hid, N) + ks; if t1 = 0 the master
+     * Derive the signature private key for the user identified by {@code identity}
+     * (GM/T 0044.2-2016, 5.3): t1 = H1(identity||hid, N) + ks; if t1 = 0 the master
      * key must be regenerated; otherwise t2 = ks*t1^-1 and ds = [t2]P1.
      */
-    public SM9SignPrivateKeyParameters generateUserKey(byte[] id)
+    public SM9SigPrivateKeyParameters generateUserKey(byte[] identity)
     {
         BigInteger ks = checkedKs();
         BigInteger n = SM9Curve.N;
-        byte[] z = Arrays.append(id, HID);
+        byte[] z = Arrays.append(identity, HID);
         BigInteger t1 = SM9Sm3.h1(z, n).add(ks).mod(n);
         if (t1.signum() == 0)
         {
@@ -79,7 +79,7 @@ public class SM9SignMasterPrivateKeyParameters
         }
         BigInteger t2 = ks.multiply(t1.modInverse(n)).mod(n);
         ECPoint ds = SM9Curve.multiplySecure(SM9Curve.P1, t2).normalize();
-        return new SM9SignPrivateKeyParameters(ds, publicParams);
+        return new SM9SigPrivateKeyParameters(ds, publicParams);
     }
 
     /**

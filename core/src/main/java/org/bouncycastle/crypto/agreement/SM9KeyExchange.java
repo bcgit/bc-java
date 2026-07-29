@@ -4,8 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.digests.SM9Sm3;
-import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SM3Digest;
@@ -20,8 +19,8 @@ import org.bouncycastle.util.BigIntegers;
 /**
  * The SM9 key exchange protocol (GM/T 0044.3-2016).
  * <p>
- * Usage per party: construct with your own key-exchange private key (derived with
- * hid = 0x02), the peer's identity, and whether you are the initiator (user A) or
+ * Usage per party: construct with your own key-exchange private key (derived under
+ * the KGC's published hid), the peer's identity, and whether you are the initiator (user A) or
  * responder (user B). Call {@link #generateEphemeral} to produce your R value,
  * exchange R values, then call {@link #calculateKey} with the peer's R to obtain
  * the shared key. The optional key-confirmation tags are then available via
@@ -41,13 +40,20 @@ public class SM9KeyExchange
     private Fp12 g1;
     private Fp12 g2;
     private Fp12 g3;
-    private byte[] idA;
-    private byte[] idB;
+    private byte[] identityA;
+    private byte[] identityB;
     private byte[] raBytes;
     private byte[] rbBytes;
 
     public SM9KeyExchange(SM9EncPrivateKeyParameters key, byte[] peerIdentity, boolean initiator)
     {
+        if (!key.isExchangeKey())
+        {
+            // the exchange pairs de with a peer-supplied point; a key that also
+            // decapsulates would hand the peer a pairing oracle on de
+            throw new IllegalArgumentException(
+                "SM9 key exchange requires a key-exchange user key from generateExchangeKey");
+        }
         this.key = key;
         this.peerIdentity = peerIdentity;
         this.initiator = initiator;
@@ -55,12 +61,13 @@ public class SM9KeyExchange
 
     /**
      * Generate this party's ephemeral value R = [r]Q_peer (a G1 point) and retain
-     * the ephemeral scalar r. Q_peer = [H1(peerId||0x02, N)]P1 + P_pub-e.
+     * the ephemeral scalar r. Q_peer = [H1(peerIdentity||hid, N)]P1 + P_pub-e, using the
+     * hid this party's own key was derived under - both parties' keys come from
+     * the same KGC, which publishes the hid it chose.
      */
     public ECPoint generateEphemeral(SecureRandom random)
     {
-        ECPoint qPeer = key.getMasterPublicKey().recipientPoint(
-            peerIdentity, SM9EncMasterPrivateKeyParameters.HID_EXCHANGE);
+        ECPoint qPeer = key.getMasterPublicKey().recipientPoint(peerIdentity, key.getHid());
         SecureRandom rand = CryptoServicesRegistrar.getSecureRandom(random);
         ephemeralScalar = BigIntegers.createRandomInRange(
             ECConstants.ONE, SM9Curve.N.subtract(ECConstants.ONE), rand);
@@ -106,16 +113,16 @@ public class SM9KeyExchange
             g3 = g1.powSecure(r);
         }
 
-        idA = initiator ? key.getIdentity() : peerIdentity;
-        idB = initiator ? peerIdentity : key.getIdentity();
+        identityA = initiator ? key.getIdentity() : peerIdentity;
+        identityB = initiator ? peerIdentity : key.getIdentity();
         ECPoint ra = initiator ? ephemeralPoint : peerR;
         ECPoint rb = initiator ? peerR : ephemeralPoint;
         raBytes = SM9Curve.g1ToBytes(ra);
         rbBytes = SM9Curve.g1ToBytes(rb);
 
         ByteArrayOutputStream z = new ByteArrayOutputStream();
-        write(z, idA);
-        write(z, idB);
+        write(z, identityA);
+        write(z, identityB);
         write(z, raBytes);
         write(z, rbBytes);
         write(z, SM9Pairing.toBytes(g1));
@@ -159,8 +166,8 @@ public class SM9KeyExchange
         SM3Digest sm3 = new SM3Digest();
         update(sm3, SM9Pairing.toBytes(g2));
         update(sm3, SM9Pairing.toBytes(g3));
-        update(sm3, idA);
-        update(sm3, idB);
+        update(sm3, identityA);
+        update(sm3, identityB);
         update(sm3, raBytes);
         update(sm3, rbBytes);
         byte[] inner = new byte[32];

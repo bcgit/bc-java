@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SM3Digest;
-import org.bouncycastle.crypto.digests.SM9Sm3;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.crypto.paddings.PKCS7Padding;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -114,7 +114,15 @@ public class SM9Engine
             {
                 throw new IllegalArgumentException("SM9 decryption requires an SM9EncPrivateKeyParameters user key");
             }
-            this.userKey = (SM9EncPrivateKeyParameters)param;
+            SM9EncPrivateKeyParameters userKey = (SM9EncPrivateKeyParameters)param;
+            if (userKey.isExchangeKey())
+            {
+                // keep the exchange and decryption usages on separate keys - a shared
+                // key would give any exchange peer a pairing oracle on de
+                throw new IllegalArgumentException(
+                    "SM9 decryption requires an encryption user key, not a key-exchange key");
+            }
+            this.userKey = userKey;
             this.recipient = null;
             this.random = null;
         }
@@ -168,8 +176,8 @@ public class SM9Engine
         }
 
         SM9EncMasterPublicKeyParameters master = recipient.getMasterPublicKey();
-        byte[] id = recipient.getIdentity();
-        ECPoint qb = master.recipientPoint(id);
+        byte[] identity = recipient.getIdentity();
+        ECPoint qb = master.recipientPoint(identity, recipient.getHid());
         Fp12 g = master.pairingWithP2();
         BigInteger n = SM9Curve.N;
 
@@ -181,7 +189,7 @@ public class SM9Engine
             ECPoint c1 = SM9Curve.multiplySecure(qb, r).normalize();
             Fp12 w = g.powSecure(r);
             byte[] c1b = SM9Curve.g1ToBytes(c1);
-            byte[] k = SM9Sm3.kdf(Arrays.concatenate(c1b, SM9Pairing.toBytes(w), id), (k1Len + K2_LEN) * 8);
+            byte[] k = SM9Sm3.kdf(Arrays.concatenate(c1b, SM9Pairing.toBytes(w), identity), (k1Len + K2_LEN) * 8);
             byte[] k1 = Arrays.copyOfRange(k, 0, k1Len);
             if (Arrays.areAllZeroes(k1, 0, k1Len))
             {

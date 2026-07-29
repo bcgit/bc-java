@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.gm.SM9Cipher;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
@@ -53,7 +54,7 @@ public class SM9CipherTest
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SM9-ENC", "BC");
         KeyPair masterPair = kpGen.generateKeyPair();
         SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)masterPair.getPrivate();
-        PrivateKey bobKey = masterPriv.generateUserKeyPair(bob).getPrivate();
+        PrivateKey bobKey = masterPriv.generateUserKeyPair(bob, SM9EncMasterPrivateKeyParameters.HID).getPrivate();
         PublicKey bobPublic = ((SM9EncMasterPublicKey)masterPair.getPublic()).getUserPublicKey(bob);
 
         // KeyFactory round-trip of the encryption master public key
@@ -149,7 +150,7 @@ public class SM9CipherTest
             new AlgorithmIdentifier(GMObjectIdentifiers.sm9encrypt), new DEROctetString(katScalar));
         SM9EncMasterPrivateKey katMaster = (SM9EncMasterPrivateKey)kf.generatePrivate(
             new PKCS8EncodedKeySpec(katPkcs8.getEncoded()));
-        PrivateKey katBob = katMaster.generateUserKeyPair(bob).getPrivate();
+        PrivateKey katBob = katMaster.generateUserKeyPair(bob, SM9EncMasterPrivateKeyParameters.HID).getPrivate();
         byte[] c1 = Arrays.concatenate(new byte[]{0x04},
             Hex.decode("2445471164490618E1EE20528FF1D545B0F14C8BCAA44544F03DAB5DAC07D8FF"),
             Hex.decode("42FFCA97D57CDDC05EA405F2E586FEB3A6930715532B8000759F13059ED59AC0"));
@@ -174,7 +175,7 @@ public class SM9CipherTest
             kemEnc.getEncoded().length == 16 && Arrays.areEqual(kemEnc.getEncoded(), kemDec.getEncoded()));
 
         // a different recipient identity must not recover the same key
-        PrivateKey mallory = masterPriv.generateUserKeyPair("Mallory".getBytes("US-ASCII")).getPrivate();
+        PrivateKey mallory = masterPriv.generateUserKeyPair("Mallory".getBytes("US-ASCII"), SM9EncMasterPrivateKeyParameters.HID).getPrivate();
         KeyGenerator kemBad = KeyGenerator.getInstance("SM9-KEM", "BC");
         kemBad.init(new KEMExtractSpec(mallory, kemEnc.getEncapsulation(), "AES", 128));
         isTrue("SM9-KEM wrong identity yields a different key",

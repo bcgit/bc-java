@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.kems;
 
 import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
-import org.bouncycastle.crypto.digests.SM9Sm3;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.sm9.Fp12;
@@ -26,6 +26,13 @@ public class SM9KEMExtractor
         {
             // match SM9KEMGenerator: a non-positive length has no KDF output
             throw new IllegalArgumentException("keyLenBits must be positive");
+        }
+        if (key.isExchangeKey())
+        {
+            // keep the exchange and KEM usages on separate keys - a shared key
+            // would give any exchange peer a pairing oracle on de
+            throw new IllegalArgumentException(
+                "SM9 KEM decapsulation requires an encryption user key, not a key-exchange key");
         }
         this.key = key;
         this.keyLenBits = keyLenBits;

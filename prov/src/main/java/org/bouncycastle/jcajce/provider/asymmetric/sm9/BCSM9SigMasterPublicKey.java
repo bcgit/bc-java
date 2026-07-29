@@ -9,8 +9,8 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.SM9SignMasterPublicKeyParameters;
-import org.bouncycastle.jcajce.interfaces.SM9SignMasterPublicKey;
+import org.bouncycastle.crypto.params.SM9SigMasterPublicKeyParameters;
+import org.bouncycastle.jcajce.interfaces.SM9SigMasterPublicKey;
 
 /**
  * JCA wrapper for an SM9 signature master public key (P_pub-s, a point of G2).
@@ -21,26 +21,26 @@ import org.bouncycastle.jcajce.interfaces.SM9SignMasterPublicKey;
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
  * lightweight key-parameter class's {@code getEncoded()}.
  */
-public class BCSM9SignMasterPublicKey
-    implements SM9SignMasterPublicKey
+public class BCSM9SigMasterPublicKey
+    implements SM9SigMasterPublicKey
 {
     private static final long serialVersionUID = 1L;
 
-    private final transient SM9SignMasterPublicKeyParameters keyParams;
+    private final transient SM9SigMasterPublicKeyParameters keyParams;
 
-    BCSM9SignMasterPublicKey(SM9SignMasterPublicKeyParameters keyParams)
+    BCSM9SigMasterPublicKey(SM9SigMasterPublicKeyParameters keyParams)
     {
         this.keyParams = keyParams;
     }
 
-    SM9SignMasterPublicKeyParameters getKeyParameters()
+    SM9SigMasterPublicKeyParameters getKeyParameters()
     {
         return keyParams;
     }
 
-    public PublicKey getUserPublicKey(byte[] id)
+    public PublicKey getUserPublicKey(byte[] identity)
     {
-        return new BCSM9SignPublicKey(keyParams, id);
+        return new BCSM9SigPublicKey(keyParams, identity);
     }
 
     public String getAlgorithm()
@@ -73,11 +73,11 @@ public class BCSM9SignMasterPublicKey
         {
             return true;
         }
-        if (!(o instanceof BCSM9SignMasterPublicKey))
+        if (!(o instanceof BCSM9SigMasterPublicKey))
         {
             return false;
         }
-        return Arrays.areEqual(getEncoded(), ((BCSM9SignMasterPublicKey)o).getEncoded());
+        return Arrays.areEqual(getEncoded(), ((BCSM9SigMasterPublicKey)o).getEncoded());
     }
 
     public int hashCode()

@@ -8,6 +8,7 @@ import java.security.Security;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -27,7 +28,7 @@ import org.bouncycastle.util.encoders.Hex;
  * {@link SM9EncMasterPublicKey#getUserPublicKey(byte[])} - the same recipient key the
  * SM9-KEM encapsulates to. The master key pair comes from {@code KeyPairGenerator.SM9-ENC};
  * a user's key pair is derived from the master private key via
- * {@link SM9EncMasterPrivateKey#generateUserKeyPair(byte[])} (the KGC key-extraction
+ * {@link SM9EncMasterPrivateKey#generateUserKeyPair(byte[], byte)} (the KGC key-extraction
  * operation). The model carries inherent key escrow (the KGC can derive every user's key),
  * so the KGC must be trusted accordingly.
  * <p>
@@ -51,15 +52,16 @@ public class SM9CipherExample
 
         // 2. KGC: derive Bob's key pair from his identity (deterministic); Bob decrypts with
         //    the private half.
-        byte[] bobId = Strings.toByteArray("Bob");
-        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobId);
+        byte[] bobIdentity = Strings.toByteArray("Bob");
+        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobIdentity,
+            SM9EncMasterPrivateKeyParameters.HID);
 
         byte[] message = Strings.toByteArray("Chinese IBE standard");
 
         // 3. Sender: form Bob's public key from the published master public key and his
         //    identity - no certificate or KGC interaction needed - and encrypt to it
         //    (default SM4 mode).
-        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobId);
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobIdentity);
         Cipher encrypt = Cipher.getInstance("SM9", "BC");
         encrypt.init(Cipher.ENCRYPT_MODE, bobPublic, random);
         byte[] ciphertext = encrypt.doFinal(message);

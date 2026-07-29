@@ -15,8 +15,14 @@ public class SM9EncPublicKeyParameters
 {
     private final SM9EncMasterPublicKeyParameters masterPublicKey;
     private final byte[] identity;
+    private final byte hid;
 
     SM9EncPublicKeyParameters(SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity)
+    {
+        this(masterPublicKey, identity, SM9EncMasterPrivateKeyParameters.HID);
+    }
+
+    SM9EncPublicKeyParameters(SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
     {
         super(false);
         if (identity == null)
@@ -25,6 +31,7 @@ public class SM9EncPublicKeyParameters
         }
         this.masterPublicKey = masterPublicKey;
         this.identity = Arrays.clone(identity);
+        this.hid = hid;
     }
 
     public SM9EncMasterPublicKeyParameters getMasterPublicKey()
@@ -35,5 +42,15 @@ public class SM9EncPublicKeyParameters
     public byte[] getIdentity()
     {
         return Arrays.clone(identity);
+    }
+
+    /**
+     * The private-key generation function identifier hid this public key's Q
+     * point is formed under - the KGC's published choice, {@code 0x03} for a
+     * KEM / encryption recipient key.
+     */
+    public byte getHid()
+    {
+        return hid;
     }
 }

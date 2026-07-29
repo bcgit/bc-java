@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.crypto.digests.SM9Sm3;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.sm9.Fp12;
 import org.bouncycastle.math.ec.sm9.SM9Curve;
@@ -26,18 +26,30 @@ public class SM9EncMasterPublicKeyParameters
     }
 
     /**
-     * The encryption public key of the user identified by {@code id}: the recipient key
+     * The encryption public key of the user identified by {@code identity}: the recipient key
      * a sender encapsulates to (or encrypts to), formed from this master public key and
-     * the identity (GM/T 0044.4). It is derived from the published master public key
-     * alone, so any sender can construct it without KGC interaction.
+     * the identity under the encryption hid 0x03 (GM/T 0044.4). It is derived from the
+     * published master public key alone, so any sender can construct it without KGC
+     * interaction.
      */
-    public SM9EncPublicKeyParameters getUserPublicKey(byte[] id)
+    public SM9EncPublicKeyParameters getUserPublicKey(byte[] identity)
     {
-        return new SM9EncPublicKeyParameters(this, id);
+        return new SM9EncPublicKeyParameters(this, identity);
     }
 
     /**
-     * Q = [H1(id||hid, N)]P1 + P_pub-e, the recipient's public key point in G1,
+     * The public key of the user identified by {@code identity} under an explicit hid
+     * ({@code 0x03} encryption/KEM, {@code 0x02} key exchange) - use when the
+     * KGC's published hid differs from the encryption default.
+     */
+    public SM9EncPublicKeyParameters getUserPublicKey(byte[] identity, byte hid)
+    {
+        SM9EncMasterPrivateKeyParameters.checkHid(hid);
+        return new SM9EncPublicKeyParameters(this, identity, hid);
+    }
+
+    /**
+     * Q = [H1(identity||hid, N)]P1 + P_pub-e, the recipient's public key point in G1,
      * using the encryption hid (0x03).
      */
     public ECPoint recipientPoint(byte[] identity)
@@ -46,7 +58,7 @@ public class SM9EncMasterPublicKeyParameters
     }
 
     /**
-     * Q = [H1(id||hid, N)]P1 + P_pub-e for an explicit hid (0x03 encryption,
+     * Q = [H1(identity||hid, N)]P1 + P_pub-e for an explicit hid (0x03 encryption,
      * 0x02 key exchange).
      */
     public ECPoint recipientPoint(byte[] identity, byte hid)

@@ -11,15 +11,15 @@ import org.bouncycastle.math.ec.sm9.SM9Curve;
  * key and the user's identity. Carries a reference to the master public key,
  * which the signer needs to compute g = e(P1, P_pub-s).
  */
-public class SM9SignPrivateKeyParameters
+public class SM9SigPrivateKeyParameters
     extends AsymmetricKeyParameter
     implements Destroyable
 {
     private ECPoint ds;
     private volatile boolean destroyed;
-    private final SM9SignMasterPublicKeyParameters masterPublicKey;
+    private final SM9SigMasterPublicKeyParameters masterPublicKey;
 
-    SM9SignPrivateKeyParameters(ECPoint ds, SM9SignMasterPublicKeyParameters masterPublicKey)
+    SM9SigPrivateKeyParameters(ECPoint ds, SM9SigMasterPublicKeyParameters masterPublicKey)
     {
         super(true);
         this.ds = ds;
@@ -31,7 +31,7 @@ public class SM9SignPrivateKeyParameters
         return checkedDs();
     }
 
-    public SM9SignMasterPublicKeyParameters getMasterPublicKey()
+    public SM9SigMasterPublicKeyParameters getMasterPublicKey()
     {
         return masterPublicKey;
     }
@@ -46,9 +46,9 @@ public class SM9SignPrivateKeyParameters
         return checkedDs().getEncoded(false);
     }
 
-    public static SM9SignPrivateKeyParameters fromEncoded(byte[] enc, SM9SignMasterPublicKeyParameters masterPublicKey)
+    public static SM9SigPrivateKeyParameters fromEncoded(byte[] enc, SM9SigMasterPublicKeyParameters masterPublicKey)
     {
-        return new SM9SignPrivateKeyParameters(SM9Curve.G1.decodePoint(enc), masterPublicKey);
+        return new SM9SigPrivateKeyParameters(SM9Curve.G1.decodePoint(enc), masterPublicKey);
     }
 
     /**

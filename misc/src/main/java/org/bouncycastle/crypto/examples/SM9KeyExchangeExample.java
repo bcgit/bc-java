@@ -21,8 +21,8 @@ import org.bouncycastle.util.encoders.Hex;
  * key confirmation, which the lightweight {@link SM9KeyExchange} models directly.
  * <p>
  * SM9 is identity-based: a trusted Key Generation Centre (KGC) holds the encryption
- * master key pair (the key exchange reuses it with hid = 0x02) and derives each party's
- * exchange key from its identity. Each party constructs an {@link SM9KeyExchange} with
+ * master key pair (the key exchange reuses it under its own hid) and derives each party's
+ * exchange key from its identity with {@code generateExchangeKey}. Each party constructs an {@link SM9KeyExchange} with
  * its own key, the peer's identity and its role, generates an ephemeral value R, and -
  * after swapping R values - computes the shared key; the optional confirmation tags
  * S_B / S_A prove to each side that the other derived the same key. Received tags must be
@@ -36,22 +36,21 @@ public class SM9KeyExchangeExample
         SecureRandom random = new SecureRandom();
 
         // 1. KGC: generate the SM9 encryption master key pair and derive each party's
-        //    key-exchange private key (hid = 0x02) from its identity.
+        //    key-exchange private key from its identity.
         SM9EncMasterKeyPairGenerator kpGen = new SM9EncMasterKeyPairGenerator();
         kpGen.init(new KeyGenerationParameters(random, 256));
         AsymmetricCipherKeyPair master = kpGen.generateKeyPair();
         SM9EncMasterPrivateKeyParameters masterPriv = (SM9EncMasterPrivateKeyParameters)master.getPrivate();
 
-        byte[] aliceId = Strings.toByteArray("Alice");
-        byte[] bobId = Strings.toByteArray("Bob");
-        byte hid = SM9EncMasterPrivateKeyParameters.HID_EXCHANGE;
-        SM9EncPrivateKeyParameters aliceKey = masterPriv.generateUserKey(aliceId, hid);
-        SM9EncPrivateKeyParameters bobKey = masterPriv.generateUserKey(bobId, hid);
+        byte[] aliceIdentity = Strings.toByteArray("Alice");
+        byte[] bobIdentity = Strings.toByteArray("Bob");
+        SM9EncPrivateKeyParameters aliceKey = masterPriv.generateExchangeKey(aliceIdentity);
+        SM9EncPrivateKeyParameters bobKey = masterPriv.generateExchangeKey(bobIdentity);
 
         // 2. Each party: construct the exchange with its own key, the peer's identity
         //    and its role, and generate an ephemeral value.
-        SM9KeyExchange alice = new SM9KeyExchange(aliceKey, bobId, true);     // initiator
-        SM9KeyExchange bob = new SM9KeyExchange(bobKey, aliceId, false);      // responder
+        SM9KeyExchange alice = new SM9KeyExchange(aliceKey, bobIdentity, true);     // initiator
+        SM9KeyExchange bob = new SM9KeyExchange(bobKey, aliceIdentity, false);      // responder
         ECPoint ra = alice.generateEphemeral(random);
         ECPoint rb = bob.generateEphemeral(random);
 

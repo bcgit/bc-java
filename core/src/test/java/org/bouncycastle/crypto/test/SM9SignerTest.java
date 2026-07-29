@@ -9,8 +9,9 @@ import java.util.Map;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.params.SM9SignMasterPrivateKeyParameters;
-import org.bouncycastle.crypto.params.SM9SignPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigMasterPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigUserKeyParametersGenerator;
 import org.bouncycastle.crypto.signers.SM9Signer;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
@@ -74,11 +75,13 @@ public class SM9SignerTest
     {
         Map v = loadVectors("sm9_signature.txt");
         BigInteger ks = new BigInteger((String)v.get("ks"), 16);
-        byte[] id = hex(v, "IDA");
+        byte[] identity = hex(v, "IDA");
         byte[] msg = hex(v, "M");
 
-        SM9SignMasterPrivateKeyParameters master = new SM9SignMasterPrivateKeyParameters(ks);
-        SM9SignPrivateKeyParameters userKey = master.generateUserKey(id);
+        SM9SigMasterPrivateKeyParameters master = new SM9SigMasterPrivateKeyParameters(ks);
+        // derive through the KGC extraction interface (hid = 0x01 applied internally)
+        SM9SigUserKeyParametersGenerator kgc = master;
+        SM9SigPrivateKeyParameters userKey = kgc.generateUserKey(identity);
 
         SM9Signer signer = new SM9Signer();
         signer.init(true, new ParametersWithRandom(userKey, new TestRandomBigInteger(256, hex(v, "r"))));
@@ -92,12 +95,12 @@ public class SM9SignerTest
         isTrue("SM9 signature Sy", Arrays.areEqual(Arrays.copyOfRange(sig, 65, 97), hex(v, "Sy")));
 
         SM9Signer verifier = new SM9Signer();
-        verifier.init(false, new ParametersWithID(master.getPublicKeyParameters(), id));
+        verifier.init(false, new ParametersWithID(master.getPublicKeyParameters(), identity));
         verifier.update(msg, 0, msg.length);
         isTrue("SM9 signature verify", verifier.verifySignature(sig));
 
         SM9Signer tampered = new SM9Signer();
-        tampered.init(false, new ParametersWithID(master.getPublicKeyParameters(), id));
+        tampered.init(false, new ParametersWithID(master.getPublicKeyParameters(), identity));
         byte[] bad = Arrays.clone(msg);
         bad[0] ^= 0x01;
         tampered.update(bad, 0, bad.length);
@@ -110,11 +113,11 @@ public class SM9SignerTest
         byte[] emptySig = emptySigner.generateSignature();
 
         SM9Signer emptyVerifier = new SM9Signer();
-        emptyVerifier.init(false, new ParametersWithID(master.getPublicKeyParameters(), id));
+        emptyVerifier.init(false, new ParametersWithID(master.getPublicKeyParameters(), identity));
         isTrue("SM9 zero-length message verifies", emptyVerifier.verifySignature(emptySig));
 
         SM9Signer emptyWrong = new SM9Signer();
-        emptyWrong.init(false, new ParametersWithID(master.getPublicKeyParameters(), id));
+        emptyWrong.init(false, new ParametersWithID(master.getPublicKeyParameters(), identity));
         emptyWrong.update((byte)0x00);
         isTrue("SM9 zero-length signature does not verify a non-empty message",
             !emptyWrong.verifySignature(emptySig));

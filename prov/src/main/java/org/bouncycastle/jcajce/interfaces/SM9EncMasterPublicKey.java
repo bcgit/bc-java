@@ -10,13 +10,13 @@ public interface SM9EncMasterPublicKey
     extends PublicKey
 {
     /**
-     * Return the public key of the user identified by {@code id}: the key a sender
+     * Return the public key of the user identified by {@code identity}: the key a sender
      * encapsulates to. It is derived from the master public key and the identity
      * alone, so any sender holding the published master public key can construct
      * it - no certificate or KGC interaction is needed.
      *
-     * @param id the user's identity.
+     * @param identity the user's identity.
      * @return the user's public key.
      */
-    PublicKey getUserPublicKey(byte[] id);
+    PublicKey getUserPublicKey(byte[] identity);
 }

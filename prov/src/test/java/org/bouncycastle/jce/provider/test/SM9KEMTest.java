@@ -19,9 +19,11 @@ import javax.crypto.KeyGenerator;
 import javax.security.auth.Destroyable;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9EncUserKeyGenerator;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -61,13 +63,19 @@ public class SM9KEMTest
         // KGC side: the user key pair from the master private key; sender side: the
         // recipient public key from the published master public key + identity. The
         // derivations are deterministic and their public halves must agree.
-        KeyPair bobPair = masterPriv.generateUserKeyPair(bob);
+        KeyPair bobPair = masterPriv.generateUserKeyPair(bob, SM9EncMasterPrivateKeyParameters.HID);
         PublicKey bobRecipient = masterPub.getUserPublicKey(bob);
         isTrue("getUserPublicKey agrees with the generated user public key",
             Arrays.areEqual(bobRecipient.getEncoded(), bobPair.getPublic().getEncoded()));
         isTrue("user key derivation is deterministic",
             Arrays.areEqual(bobPair.getPrivate().getEncoded(),
-                masterPriv.generateUserKeyPair(bob).getPrivate().getEncoded()));
+                masterPriv.generateUserKeyPair(bob, SM9EncMasterPrivateKeyParameters.HID).getPrivate().getEncoded()));
+
+        // the KGC extraction is also reachable through the capability interface
+        SM9EncUserKeyGenerator kgc = masterPriv;
+        isTrue("SM9EncUserKeyGenerator derives the same user key",
+            Arrays.areEqual(bobPair.getPrivate().getEncoded(),
+                kgc.generateUserKeyPair(bob, SM9EncMasterPrivateKeyParameters.HID).getPrivate().getEncoded()));
 
         // encapsulate (to the sender-derived public key) / decapsulate round-trip
         KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
@@ -85,10 +93,10 @@ public class SM9KEMTest
             Arrays.constantTimeAreEqual(encapsulated.getEncoded(), decapsulated.getEncoded()));
 
         // a different identity must not recover the same key
-        PrivateKey eveKey = masterPriv.generateUserKeyPair("Eve".getBytes("US-ASCII")).getPrivate();
-        KeyGenerator wrongId = KeyGenerator.getInstance("SM9-KEM", "BC");
-        wrongId.init(new KEMExtractSpec(eveKey, encapsulated.getEncapsulation(), "AES", 128));
-        SecretKeyWithEncapsulation eveSecret = (SecretKeyWithEncapsulation)wrongId.generateKey();
+        PrivateKey eveKey = masterPriv.generateUserKeyPair("Eve".getBytes("US-ASCII"), SM9EncMasterPrivateKeyParameters.HID).getPrivate();
+        KeyGenerator wrongIdentity = KeyGenerator.getInstance("SM9-KEM", "BC");
+        wrongIdentity.init(new KEMExtractSpec(eveKey, encapsulated.getEncapsulation(), "AES", 128));
+        SecretKeyWithEncapsulation eveSecret = (SecretKeyWithEncapsulation)wrongIdentity.generateKey();
         isTrue("SM9-KEM wrong identity does not recover the key",
             !Arrays.constantTimeAreEqual(encapsulated.getEncoded(), eveSecret.getEncoded()));
 
@@ -151,7 +159,7 @@ public class SM9KEMTest
         SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)masterPair.getPrivate();
         SM9EncMasterPublicKey masterPub = (SM9EncMasterPublicKey)masterPair.getPublic();
 
-        KeyPair bobPair = masterPriv.generateUserKeyPair(bob);
+        KeyPair bobPair = masterPriv.generateUserKeyPair(bob, SM9EncMasterPrivateKeyParameters.HID);
 
         // destroying the user private key stops decapsulation and encoding
         KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
@@ -192,7 +200,7 @@ public class SM9KEMTest
 
         try
         {
-            masterPriv.generateUserKeyPair(bob);
+            masterPriv.generateUserKeyPair(bob, SM9EncMasterPrivateKeyParameters.HID);
             fail("destroyed master key still generates user keys");
         }
         catch (IllegalStateException e)

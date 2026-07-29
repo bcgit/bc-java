@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.params.SM9SignPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9SigPrivateKeyParameters;
 
 /**
  * JCA wrapper for a user's SM9 signature private key (ds_A, a point of G1),
@@ -20,19 +20,19 @@ import org.bouncycastle.crypto.params.SM9SignPrivateKeyParameters;
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
  * lightweight key-parameter class's {@code getEncoded()}.
  */
-public class BCSM9SignPrivateKey
+public class BCSM9SigPrivateKey
     implements PrivateKey
 {
     private static final long serialVersionUID = 1L;
 
-    private final transient SM9SignPrivateKeyParameters keyParams;
+    private final transient SM9SigPrivateKeyParameters keyParams;
 
-    BCSM9SignPrivateKey(SM9SignPrivateKeyParameters keyParams)
+    BCSM9SigPrivateKey(SM9SigPrivateKeyParameters keyParams)
     {
         this.keyParams = keyParams;
     }
 
-    SM9SignPrivateKeyParameters getKeyParameters()
+    SM9SigPrivateKeyParameters getKeyParameters()
     {
         return keyParams;
     }
@@ -72,11 +72,11 @@ public class BCSM9SignPrivateKey
         {
             return true;
         }
-        if (!(o instanceof BCSM9SignPrivateKey))
+        if (!(o instanceof BCSM9SigPrivateKey))
         {
             return false;
         }
-        return Arrays.constantTimeAreEqual(getEncoded(), ((BCSM9SignPrivateKey)o).getEncoded());
+        return Arrays.constantTimeAreEqual(getEncoded(), ((BCSM9SigPrivateKey)o).getEncoded());
     }
 
     public int hashCode()

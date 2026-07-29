@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import javax.security.auth.Destroyable;
 
-import org.bouncycastle.crypto.digests.SM9Sm3;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.math.ec.sm9.SM9Curve;
 import org.bouncycastle.math.ec.sm9.SM9G2Point;
 import org.bouncycastle.util.Arrays;
@@ -17,18 +17,44 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class SM9EncMasterPrivateKeyParameters
     extends AsymmetricKeyParameter
-    implements Destroyable
+    implements Destroyable, SM9EncUserKeyParametersGenerator
 {
     /**
-     * The encryption private-key generation function identifier hid, fixed to
-     * 0x03 for SM9 (GM/T 0044.4-2016, Annex C/D).
+     * The encryption private-key generation function identifier hid, 0x03 - the
+     * value used by the GM/T 0044.5-2016 Annex C/D worked examples (and, note,
+     * by the official English edition's Annex B key exchange example).
+     * <p>
+     * hid is not fixed by the standard: GM/T 0044.3-2016 defines it as the
+     * "identifier of the encryption private key generating function, denoted by
+     * one byte", which the KGC chooses and publishes. These constants are the
+     * two identifier values the published GM/T 0044 examples use, and the only
+     * values {@link #generateUserKey(byte[], byte)} accepts.
      */
     public static final byte HID = (byte)0x03;
 
     /**
-     * The key-exchange private-key generation function identifier hid, 0x02
-     * (GM/T 0044.3-2016). Key exchange reuses the encryption master key with
-     * this hid.
+     * The key-exchange private-key generation function identifier hid, 0x02, as
+     * used by the Chinese edition of the GM/T 0044.5-2016 Annex B worked example
+     * (the official English edition of the same annex chose 0x03 - see the hid
+     * note on {@link #HID}; the KGC's published choice governs).
+     * <p>
+     * Key exchange runs on the encryption master key: a single master key may
+     * serve both key exchange and KEM / public-key encryption. That sharing is
+     * the design of GM/T 0044, not a caller-side shortcut - GM/T 0044.3-2016 6.1
+     * names the protocol's own inputs as the encryption public key P_pub-e and
+     * the encryption private key de. The hid is folded into the derivation
+     * (t1 = H1(identity || hid, N) + ke, see {@link #generateUserKey(byte[], byte)}),
+     * so when the KGC publishes distinct hids for the two functions the user
+     * keys obtained under them are as independent as keys for two different
+     * identities. If the two collide on one master key, a user's exchange key
+     * and decryption key are the identical G2 point - and since the exchange
+     * pairs that point with a peer-supplied value, any peer would gain the
+     * pairing oracle on de that the KEM's security argument assumes away. The
+     * API therefore derives the two usages as distinct key objects
+     * ({@link #generateUserKey(byte[], byte)} vs
+     * {@link #generateExchangeKey(byte[])}) which the consumers mutually
+     * reject; a KGC whose lifecycles differ should prefer separate master keys
+     * outright, as the GM/T 0044.5 worked examples themselves do.
      */
     public static final byte HID_EXCHANGE = (byte)0x02;
 
@@ -70,31 +96,61 @@ public class SM9EncMasterPrivateKeyParameters
     }
 
     /**
-     * Derive the encryption private key de = [t2]P2 (a G2 point) for the user
-     * identified by {@code id} (GM/T 0044.4-2016): t1 = H1(id||hid, N) + ke;
-     * if t1 = 0 the master key must be regenerated; otherwise t2 = ke*t1^-1.
+     * Derive the KEM / decryption private key de = [t2]P2 (a G2 point) for the
+     * user identified by {@code identity} under the given hid (GM/T 0044.4-2016):
+     * t1 = H1(identity||hid, N) + ke; if t1 = 0 the master key must be regenerated;
+     * otherwise t2 = ke*t1^-1. The derived key records the hid it was formed
+     * under. For a key-exchange user key use
+     * {@link #generateExchangeKey(byte[])} - the two usages are kept on
+     * separate keys and the consumers enforce it.
      */
-    public SM9EncPrivateKeyParameters generateUserKey(byte[] id)
+    public SM9EncPrivateKeyParameters generateUserKey(byte[] identity, byte hid)
     {
-        return generateUserKey(id, HID);
+        return generateKey(identity, hid, false);
     }
 
     /**
-     * Derive a private key with an explicit hid (0x03 for encryption/KEM, 0x02
-     * for key exchange).
+     * Derive the key-exchange private key of the user identified by {@code identity}
+     * (GM/T 0044.3-2016), under {@link #HID_EXCHANGE} - the hid the standard's
+     * Chinese-edition worked example publishes for the exchange.
      */
-    public SM9EncPrivateKeyParameters generateUserKey(byte[] id, byte hid)
+    public SM9EncPrivateKeyParameters generateExchangeKey(byte[] identity)
     {
+        return generateKey(identity, HID_EXCHANGE, true);
+    }
+
+    /**
+     * Derive the key-exchange private key of the user identified by {@code identity}
+     * under an explicit hid, for a KGC whose published exchange hid is not
+     * {@link #HID_EXCHANGE} (the official English edition's Annex B example
+     * runs the exchange under 0x03, on its own master key).
+     */
+    public SM9EncPrivateKeyParameters generateExchangeKey(byte[] identity, byte hid)
+    {
+        return generateKey(identity, hid, true);
+    }
+
+    private SM9EncPrivateKeyParameters generateKey(byte[] identity, byte hid, boolean exchangeKey)
+    {
+        checkHid(hid);
         BigInteger ke = checkedKe();
         BigInteger n = SM9Curve.N;
-        BigInteger t1 = SM9Sm3.h1(Arrays.append(id, hid), n).add(ke).mod(n);
+        BigInteger t1 = SM9Sm3.h1(Arrays.append(identity, hid), n).add(ke).mod(n);
         if (t1.signum() == 0)
         {
             throw new IllegalStateException("SM9 encryption master key must be regenerated for this identity");
         }
         BigInteger t2 = ke.multiply(t1.modInverse(n)).mod(n);
         SM9G2Point de = SM9Curve.P2.multiply(t2);
-        return new SM9EncPrivateKeyParameters(de, publicParams, Arrays.clone(id));
+        return new SM9EncPrivateKeyParameters(de, publicParams, Arrays.clone(identity), hid, exchangeKey);
+    }
+
+    static void checkHid(byte hid)
+    {
+        if (hid != HID && hid != HID_EXCHANGE)
+        {
+            throw new IllegalArgumentException("hid must be HID (0x03) or HID_EXCHANGE (0x02)");
+        }
     }
 
     /**
@@ -102,7 +158,7 @@ public class SM9EncMasterPrivateKeyParameters
      * <p>
      * As {@link BigInteger} is immutable the secret value cannot be zeroized in place;
      * destruction drops the reference and marks the key destroyed, after which
-     * {@link #getEncoded()} and {@link #generateUserKey(byte[])} throw
+     * {@link #getEncoded()} and {@link #generateUserKey(byte[], byte)} throw
      * {@link IllegalStateException}. The public key parameters remain available.
      */
     public synchronized void destroy()

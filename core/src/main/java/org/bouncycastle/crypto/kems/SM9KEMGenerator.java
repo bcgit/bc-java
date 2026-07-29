@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.params.SM9EncMasterPublicKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncPublicKeyParameters;
-import org.bouncycastle.crypto.digests.SM9Sm3;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
@@ -45,9 +45,9 @@ public class SM9KEMGenerator
     {
         SM9EncPublicKeyParameters rk = (SM9EncPublicKeyParameters)recipientKey;
         SM9EncMasterPublicKeyParameters master = rk.getMasterPublicKey();
-        byte[] id = rk.getIdentity();
+        byte[] identity = rk.getIdentity();
 
-        ECPoint qb = master.recipientPoint(id);
+        ECPoint qb = master.recipientPoint(identity, rk.getHid());
         Fp12 g = master.pairingWithP2();
         SecureRandom rand = CryptoServicesRegistrar.getSecureRandom(random);
         BigInteger n = SM9Curve.N;
@@ -60,7 +60,7 @@ public class SM9KEMGenerator
             ECPoint c = SM9Curve.multiplySecure(qb, r).normalize();   // C = [r]Q_B
             Fp12 w = g.powSecure(r);
             encap = SM9Curve.g1ToBytes(c);
-            key = SM9Sm3.kdf(Arrays.concatenate(encap, SM9Pairing.toBytes(w), id), keyLenBits);
+            key = SM9Sm3.kdf(Arrays.concatenate(encap, SM9Pairing.toBytes(w), identity), keyLenBits);
         }
         while (Arrays.areAllZeroes(key, 0, key.length));
 
