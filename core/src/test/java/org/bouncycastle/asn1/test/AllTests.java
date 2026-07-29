@@ -36,6 +36,7 @@ public class AllTests
 
         suite.addTestSuite(AllTests.class);
         suite.addTestSuite(GetInstanceTest.class);
+        suite.addTestSuite(SetSortEncodingCountTest.class);
         suite.addTestSuite(ASN1SequenceParserTest.class);
 
         return new BCTestSetup(suite);
