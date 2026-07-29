@@ -54,6 +54,7 @@
             </fileset>
             <fileset dir="util/src/main/java">
                 <exclude name="**/oer/**/*.java"/>
+                <exclude name="**/cbor/**/*.java"/>
             </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/**/*.java"/>
@@ -69,6 +70,7 @@
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/jcajce/*.java"/>
                 <exclude name="**/cert/plants/**/*.java"/>
+                <exclude name="**/cert/c509/**/*.java"/>
                 <exclude name="**/cert/X509CertificateReviewer.java"/>
                 <exclude name="**/cades/CAdESLevel.java"/>
                 <exclude name="**/cades/CAdESLevelDetector.java"/>
