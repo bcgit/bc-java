@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -183,6 +184,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDH elliptic curve encryption key over the NIST p-256 curve.
+     * <pre>NIST P-256</pre> is equivalent to <pre>prime256v1</pre> and <pre>secp256r1</pre>.
      *
      * @return NIST p-256 ECDSA encryption key pair
      * @throws PGPException if the key pair cannot be generated
@@ -198,6 +200,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDH elliptic curve encryption key over the NIST p-384 curve.
+     * <pre>NIST P-384</pre> is equivalent to <pre>secp384r1</pre>.
      *
      * @return NIST p-384 ECDSA encryption key pair
      * @throws PGPException if the key pair cannot be generated
@@ -213,6 +216,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDH elliptic curve encryption key over the NIST p-521 curve.
+     * <pre>NIST P-521</pre> is equivalent to <pre>secp521r1</pre>.
      *
      * @return NIST p-521 ECDSA encryption key pair
      * @throws PGPException if the key pair cannot be generated
@@ -227,7 +231,53 @@ public abstract class PGPKeyPairGenerator
     }
 
     /**
+     * Generate an ECDH elliptic curve encryption key over the brainpoolP256r1 curve.
+     *
+     * @return BrainpoolP256r1 ECDH encryption key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-ecc-curves-for-openpgp">
+     *     RFC9580 - ECC Curves for OpenPGP</a>
+     */
+    public PGPKeyPair generateBrainpoolP256r1ECDHKeyPair()
+            throws PGPException
+    {
+        return generateECDHKeyPair(TeleTrusTObjectIdentifiers.brainpoolP256r1);
+    }
+
+    /**
+     * Generate an ECDH elliptic curve encryption key over the brainpoolP384r1 curve.
+     *
+     * @return BrainpoolP384r1 ECDH encryption key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-ecc-curves-for-openpgp">
+     *     RFC9580 - ECC Curves for OpenPGP</a>
+     */
+    public PGPKeyPair generateBrainpoolP384r1ECDHKeyPair()
+            throws PGPException
+    {
+        return generateECDHKeyPair(TeleTrusTObjectIdentifiers.brainpoolP384r1);
+    }
+
+    /**
+     * Generate an ECDH elliptic curve encryption key over the brainpoolP512r1 curve.
+     *
+     * @return BrainpoolP512r1 ECDH encryption key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-ecc-curves-for-openpgp">
+     *     RFC9580 - ECC Curves for OpenPGP</a>
+     */
+    public PGPKeyPair generateBrainpoolP512r1ECDHKeyPair()
+            throws PGPException
+    {
+        return generateECDHKeyPair(TeleTrusTObjectIdentifiers.brainpoolP512r1);
+    }
+
+    /**
      * Generate an ECDSA elliptic curve signing key over the NIST p-256 curve.
+     * <pre>NIST P-256</pre> is equivalent to <pre>prime256v1</pre> and <pre>secp256r1</pre>.
      *
      * @return NIST p-256 ECDSA signing key pair
      * @throws PGPException if the key pair cannot be generated
@@ -243,6 +293,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDSA elliptic curve signing key over the NIST p-384 curve.
+     * <pre>NIST P-384</pre> is equivalent to <pre>secp384r1</pre>.
      *
      * @return NIST p-384 ECDSA signing key pair
      * @throws PGPException if the key pair cannot be generated
@@ -258,6 +309,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDSA elliptic curve signing key over the NIST p-521 curve.
+     * <pre>NIST P-521</pre> is equivalent to <pre>secp521r1</pre>.
      *
      * @return NIST p-521 ECDSA signing key pair
      * @throws PGPException if the key pair cannot be generated
@@ -269,6 +321,51 @@ public abstract class PGPKeyPairGenerator
         throws PGPException
     {
         return generateECDSAKeyPair(SECObjectIdentifiers.secp521r1);
+    }
+
+    /**
+     * Generate an ECDSA elliptic curve signing key over the brainpoolP256r1 curve.
+     *
+     * @return BrainpoolP256r1 ECDSA signing key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-ecc-curves-for-openpgp">
+     *     RFC9580 - ECC Curves for OpenPGP</a>
+     */
+    public PGPKeyPair generateBrainpoolP256r1ECDSAKeyPair()
+            throws PGPException
+    {
+        return generateECDSAKeyPair(TeleTrusTObjectIdentifiers.brainpoolP256r1);
+    }
+
+    /**
+     * Generate an ECDSA elliptic curve signing key over the brainpoolP384r1 curve.
+     *
+     * @return BrainpoolP384r1 ECDSA signing key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-ecc-curves-for-openpgp">
+     *     RFC9580 - ECC Curves for OpenPGP</a>
+     */
+    public PGPKeyPair generateBrainpoolP384r1ECDSAKeyPair()
+            throws PGPException
+    {
+        return generateECDSAKeyPair(TeleTrusTObjectIdentifiers.brainpoolP384r1);
+    }
+
+    /**
+     * Generate an ECDSA elliptic curve signing key over the brainpoolP512r1 curve.
+     *
+     * @return BrainpoolP512r1 ECDSA signing key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-ecc-curves-for-openpgp">
+     *     RFC9580 - ECC Curves for OpenPGP</a>
+     */
+    public PGPKeyPair generateBrainpoolP512r1ECDSAKeyPair()
+            throws PGPException
+    {
+        return generateECDSAKeyPair(TeleTrusTObjectIdentifiers.brainpoolP512r1);
     }
 
     /**

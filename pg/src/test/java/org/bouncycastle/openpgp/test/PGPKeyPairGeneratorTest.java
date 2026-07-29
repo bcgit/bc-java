@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -92,6 +93,25 @@ public class PGPKeyPairGeneratorTest
 
         testGenerateV4P521ECDSAKey(factory);
         testGenerateV6P521ECDSAKey(factory);
+
+        // Brainpool
+        testGenerateV4BrainpoolP256r1ECDHKey(factory);
+        testGenerateV6BrainpoolP256r1ECDHKey(factory);
+
+        testGenerateV4BrainpoolP256r1ECDSAKey(factory);
+        testGenerateV6BrainpoolP256r1ECDSAKey(factory);
+
+        testGenerateV4BrainpoolP384r1ECDHKey(factory);
+        testGenerateV6BrainpoolP384r1ECDHKey(factory);
+
+        testGenerateV4BrainpoolP384r1ECDSAKey(factory);
+        testGenerateV6BrainpoolP384r1ECDSAKey(factory);
+
+        testGenerateV4BrainpoolP512r1ECDHKey(factory);
+        testGenerateV6BrainpoolP512r1ECDHKey(factory);
+
+        testGenerateV4BrainpoolP512r1ECDSAKey(factory);
+        testGenerateV6BrainpoolP512r1ECDSAKey(factory);
     }
 
     private void testGenerateV4RsaKey(Factory factory)
@@ -552,6 +572,222 @@ public class PGPKeyPairGeneratorTest
                 kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDSA);
         ECDSAPublicBCPGKey k = (ECDSAPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
         isEquals(SECObjectIdentifiers.secp521r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV4BrainpoolP256r1ECDHKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP256r1ECDHKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDH);
+        ECDHPublicBCPGKey k = (ECDHPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP256r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV6BrainpoolP256r1ECDHKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP256r1ECDHKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDH);
+        ECDHPublicBCPGKey k = (ECDHPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP256r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV4BrainpoolP256r1ECDSAKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP256r1ECDSAKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDSA);
+        ECDSAPublicBCPGKey k = (ECDSAPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP256r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV6BrainpoolP256r1ECDSAKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP256r1ECDSAKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDSA);
+        ECDSAPublicBCPGKey k = (ECDSAPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP256r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV4BrainpoolP384r1ECDHKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP384r1ECDHKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDH);
+        ECDHPublicBCPGKey k = (ECDHPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP384r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV6BrainpoolP384r1ECDHKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP384r1ECDHKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDH);
+        ECDHPublicBCPGKey k = (ECDHPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP384r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV4BrainpoolP384r1ECDSAKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP384r1ECDSAKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDSA);
+        ECDSAPublicBCPGKey k = (ECDSAPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP384r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV6BrainpoolP384r1ECDSAKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP384r1ECDSAKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDSA);
+        ECDSAPublicBCPGKey k = (ECDSAPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP384r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV4BrainpoolP512r1ECDHKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP512r1ECDHKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDH);
+        ECDHPublicBCPGKey k = (ECDHPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP512r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV6BrainpoolP512r1ECDHKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP512r1ECDHKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDH);
+        ECDHPublicBCPGKey k = (ECDHPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP512r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV4BrainpoolP512r1ECDSAKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP512r1ECDSAKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDSA);
+        ECDSAPublicBCPGKey k = (ECDSAPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP512r1, k.getCurveOID());
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getCreationTime(), creationTime);
+    }
+
+    private void testGenerateV6BrainpoolP512r1ECDSAKey(Factory factory)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
+
+        PGPKeyPair kp = gen.generateBrainpoolP512r1ECDSAKeyPair();
+
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
+                kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDSA);
+        ECDSAPublicBCPGKey k = (ECDSAPublicBCPGKey) kp.getPublicKey().getPublicKeyPacket().getKey();
+        isEquals(TeleTrusTObjectIdentifiers.brainpoolP512r1, k.getCurveOID());
         isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
                 kp.getPublicKey().getCreationTime(), creationTime);
     }
