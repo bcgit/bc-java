@@ -30,7 +30,9 @@ public class PGPSecretKeyParser
         int c = inputStream.read();
         inputStream.reset();
 
-        return c != '(';
+        // -1 is end of input, not an extended expression: treating it as one sent an empty stream
+        // into the header loop below, which has no exit until it reads a "Key" header.
+        return c != -1 && c != '(';
     }
 
     private static int lastIndexOfWhitespace(String str)
@@ -50,7 +52,13 @@ public class PGPSecretKeyParser
         return -1;
     }
 
-    private static void consumeUntil(InputStream src, char item, ByteArrayOutputStream accumulator)
+    /**
+     * @return true if the delimiter was found, false if the stream ended first. The caller has to
+     *         be able to tell the two apart: the header loop in {@link #parse} exits only on a
+     *         "Key" header, so on a truncated stream it would otherwise spin forever accumulating
+     *         nothing.
+     */
+    private static boolean consumeUntil(InputStream src, char item, ByteArrayOutputStream accumulator)
         throws IOException
     {
         accumulator.reset();
@@ -59,10 +67,12 @@ public class PGPSecretKeyParser
         {
             if (c == item)
             {
-                return;
+                return true;
             }
             accumulator.write(c);
         }
+
+        return false;
     }
 
 
@@ -81,7 +91,10 @@ public class PGPSecretKeyParser
 
             for (; ; )
             {
-                consumeUntil(src, ':', accumulator);
+                if (!consumeUntil(src, ':', accumulator))
+                {
+                    throw new IOException("end of input before the Key header of an extended key expression");
+                }
                 String hunk = Strings.fromByteArray(accumulator.toByteArray()).trim();
                 int ws = lastIndexOfWhitespace(hunk);
                 if (ws == -1)

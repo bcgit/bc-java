@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Security;
 
@@ -621,7 +622,47 @@ public class ExSExprTest
         testProtectedRSA();
         testShadowedRSA();
         testParseSecretKeyExtendedBridge();
+        testTruncatedExtendedHeadersTerminate();
 
+    }
+
+    /*
+     * A truncated extended key expression must fail rather than hang. The header loop in
+     * PGPSecretKeyParser.parse exits only on a "Key" header, and consumeUntil used to return void,
+     * so it could not tell the ':' delimiter from end-of-input and spun forever accumulating
+     * nothing. An empty stream was the cheapest trigger of all: isExtendedSExpression read -1 and
+     * reported "extended", handing the loop a stream with nothing in it.
+     */
+    public void testTruncatedExtendedHeadersTerminate()
+        throws Exception
+    {
+        // empty input is canonical-or-nothing, never "extended"
+        isTrue("empty input must not be reported as an extended expression",
+            !PGPSecretKeyParser.isExtendedSExpression(new ByteArrayInputStream(new byte[0])));
+
+        // the zero-byte case: this used to hang, so simply reaching the next line is the
+        // assertion. It now takes the canonical branch, which accepts it as it always has.
+        PGPSecretKeyParser.parse(new ByteArrayInputStream(new byte[0]), 100);
+
+        // headers that start an extended expression but stop before the Key header
+        byte[][] truncated = {
+            Strings.toByteArray("Created"),
+            Strings.toByteArray("Created: 20250101T000000\nDescr"),
+        };
+
+        for (int i = 0; i != truncated.length; i++)
+        {
+            try
+            {
+                PGPSecretKeyParser.parse(new ByteArrayInputStream(truncated[i]), 100);
+                fail("expected truncated extended key expression " + i + " to be rejected");
+            }
+            catch (IOException e)
+            {
+                isEquals("end of input before the Key header of an extended key expression",
+                    e.getMessage());
+            }
+        }
     }
 
     /*
