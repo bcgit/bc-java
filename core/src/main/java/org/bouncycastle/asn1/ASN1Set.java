@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -461,43 +462,6 @@ public abstract class ASN1Set
         }
     }
 
-    /**
-     * return true if a <= b (arrays are assumed padded with zeros).
-     */
-    private static boolean lessThanOrEqual(byte[] a, byte[] b)
-    {
-//        assert a.length >= 2 && b.length >= 2;
-
-        /*
-         * NOTE: Set elements in DER encodings are ordered first according to their tags (class and
-         * number); the CONSTRUCTED bit is not part of the tag.
-         * 
-         * For SET-OF, this is unimportant. All elements have the same tag and DER requires them to
-         * either all be in constructed form or all in primitive form, according to that tag. The
-         * elements are effectively ordered according to their content octets.
-         * 
-         * For SET, the elements will have distinct tags, and each will be in constructed or
-         * primitive form accordingly. Failing to ignore the CONSTRUCTED bit could therefore lead to
-         * ordering inversions.
-         */
-        int a0 = a[0] & (~BERTags.CONSTRUCTED & 0xff);
-        int b0 = b[0] & (~BERTags.CONSTRUCTED & 0xff);
-        if (a0 != b0)
-        {
-            return a0 < b0;
-        }
-
-        int last = Math.min(a.length, b.length) - 1;
-        for (int i = 1; i < last; ++i)
-        {
-            if (a[i] != b[i])
-            {
-                return (a[i] & 0xFF) < (b[i] & 0xFF);
-            }
-        }
-        return (a[last] & 0xFF) <= (b[last] & 0xFF);
-    }
-
     private static void sort(ASN1Encodable[] t)
     {
         int count = t.length;
@@ -507,68 +471,98 @@ public abstract class ASN1Set
         }
 
         /*
-         * Encode each element once and carry the encodings alongside the elements. The insertion
-         * loop below shifts already-placed elements repeatedly, and re-deriving b1 inside that
-         * loop made the sort cost O(N^2) *encodings* rather than O(N^2) comparisons over N
-         * encodings: on a large SET arriving from the wire that is seconds to minutes of CPU,
-         * reached from toDERObject()/getEncoded(DER) and equals(). The encodings together amount
-         * to the SET's own contents, which the caller is already holding.
+         * Encode each element once, then order the encodings.
+         *
+         * This was an insertion sort that re-derived an element's encoding every time it was
+         * shifted, so ordering N elements cost O(N^2) encodings - on input already in descending
+         * order, that sort's worst case, a large SET took seconds to minutes of CPU to re-encode,
+         * reached from toDERObject()/getEncoded(DER) and equals(). Encoding once and sorting is
+         * O(N log N) comparisons over N encodings.
+         *
+         * The sort is stable, so elements whose encodings compare equal keep their relative order,
+         * as they did under the insertion sort. The encodings are all held at once; together they
+         * amount to the SET's own contents, which the caller is already holding.
          */
-        byte[][] bs = new byte[count][];
+        SortedElement[] sorted = new SortedElement[count];
         for (int i = 0; i < count; ++i)
         {
-            bs[i] = getDEREncoded(t[i]);
+            sorted[i] = new SortedElement(t[i], getDEREncoded(t[i]));
         }
 
-        ASN1Encodable eh = t[0], ei = t[1];
-        byte[] bh = bs[0], bi = bs[1];
+        Arrays.sort(sorted, SortedElement.COMPARATOR);
 
-        if (lessThanOrEqual(bi, bh))
+        for (int i = 0; i < count; ++i)
         {
-            ASN1Encodable et = ei; ei = eh; eh = et;
-            byte[] bt = bi; bi = bh; bh = bt;
+            t[i] = sorted[i].element;
         }
+    }
 
-        for (int i = 2; i < count; ++i)
+    /**
+     * An element paired with the DER encoding the sort orders it by, so that the encoding is
+     * derived once and travels with its element.
+     */
+    private static class SortedElement
+    {
+        static final Comparator COMPARATOR = new Comparator()
         {
-            // t[i] is untouched at this point - the writes below only ever reach lower indices -
-            // so bs[i] is still this element's encoding.
-            ASN1Encodable e2 = t[i];
-            byte[] b2 = bs[i];
-
-            if (lessThanOrEqual(bi, b2))
+            public int compare(Object a, Object b)
             {
-                t[i - 2] = eh; bs[i - 2] = bh;
-                eh = ei; bh = bi;
-                ei = e2; bi = b2;
-                continue;
+                return compareEncodings(((SortedElement)a).encoding, ((SortedElement)b).encoding);
             }
+        };
 
-            if (lessThanOrEqual(bh, b2))
-            {
-                t[i - 2] = eh; bs[i - 2] = bh;
-                eh = e2; bh = b2;
-                continue;
-            }
+        final ASN1Encodable element;
+        final byte[] encoding;
 
-            int j = i - 1;
-            while (--j > 0)
-            {
-                ASN1Encodable e1 = t[j - 1];
-                byte[] b1 = bs[j - 1];
+        SortedElement(ASN1Encodable element, byte[] encoding)
+        {
+            this.element = element;
+            this.encoding = encoding;
+        }
+    }
 
-                if (lessThanOrEqual(b1, b2))
-                {
-                    break;
-                }
+    /**
+     * Order two DER encodings: negative, zero or positive as the first sorts before, with, or
+     * after the second.
+     * <p>
+     * Comparison stops at the last octet the two encodings have in common, which is what the
+     * previous implementation did; two encodings equal up to that point order equally and the
+     * stable sort then leaves them as they were. For definite-length DER sharing a tag the length
+     * octets differ before the content does, so one encoding cannot be a strict prefix of another.
+     */
+    private static int compareEncodings(byte[] a, byte[] b)
+    {
+//        assert a.length >= 2 && b.length >= 2;
 
-                t[j] = e1; bs[j] = b1;
-            }
-
-            t[j] = e2; bs[j] = b2;
+        /*
+         * NOTE: Set elements in DER encodings are ordered first according to their tags (class and
+         * number); the CONSTRUCTED bit is not part of the tag.
+         *
+         * For SET-OF, this is unimportant. All elements have the same tag and DER requires them to
+         * either all be in constructed form or all in primitive form, according to that tag. The
+         * elements are effectively ordered according to their content octets.
+         *
+         * For SET, the elements will have distinct tags, and each will be in constructed or
+         * primitive form accordingly. Failing to ignore the CONSTRUCTED bit could therefore lead to
+         * ordering inversions.
+         */
+        int a0 = a[0] & (~BERTags.CONSTRUCTED & 0xff);
+        int b0 = b[0] & (~BERTags.CONSTRUCTED & 0xff);
+        if (a0 != b0)
+        {
+            return a0 < b0 ? -1 : 1;
         }
 
-        t[count - 2] = eh; bs[count - 2] = bh;
-        t[count - 1] = ei; bs[count - 1] = bi;
+        int last = Math.min(a.length, b.length) - 1;
+        for (int i = 1; i < last; ++i)
+        {
+            if (a[i] != b[i])
+            {
+                return (a[i] & 0xFF) < (b[i] & 0xFF) ? -1 : 1;
+            }
+        }
+
+        int aLast = a[last] & 0xFF, bLast = b[last] & 0xFF;
+        return aLast < bLast ? -1 : (aLast > bLast ? 1 : 0);
     }
 }

@@ -1,6 +1,7 @@
 package org.bouncycastle.util;
 
 import java.math.BigInteger;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
 
 /**
@@ -11,6 +12,21 @@ public final class Arrays
     private Arrays()
     {
         // static class, hide constructor
+    }
+
+    /**
+     * Sort an array using the given comparator, delegating to {@code java.util.Arrays.sort}.
+     * <p>
+     * Wrapped here for the same reason as the other BC platform wrappers: it gives the legacy
+     * distributions one place to substitute an implementation if their runtime lacks it. The sort
+     * is stable, so elements that compare equal keep their relative order.
+     *
+     * @param a the array to sort, in place.
+     * @param c the comparator determining the order.
+     */
+    public static void sort(Object[] a, Comparator c)
+    {
+        java.util.Arrays.sort(a, c);
     }
 
     public static boolean areAllZeroes(byte[] buf, int off, int len)
