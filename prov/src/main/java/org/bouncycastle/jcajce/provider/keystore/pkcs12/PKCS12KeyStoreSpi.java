@@ -789,7 +789,7 @@ public class PKCS12KeyStoreSpi
     {
         PBEKeySpec pbeSpec = new PBEKeySpec(password, pbeParams.getSalt(),
             PKCS12Util.validateIterationCount(pbeParams.getIterationCount()),
-            BigIntegers.intValueExact(pbeParams.getKeyLength()) * 8);
+            PKCS12Util.validateKeyLength(pbeParams.getKeyLength()) * 8);
         byte[] out;
 
         try
@@ -2284,7 +2284,7 @@ public class PKCS12KeyStoreSpi
                     pbkdf2Params.getSalt(),
                     PKCS12Util.validateIterationCount(pbkdf2Params.getIterationCount()));
 
-                CipherParameters key = generator.generateDerivedParameters(BigIntegers.intValueExact(pbkdf2Params.getKeyLength()) * 8);
+                CipherParameters key = generator.generateDerivedParameters(PKCS12Util.validateKeyLength(pbkdf2Params.getKeyLength()) * 8);
 
                 Arrays.clear(generator.getPassword());
 

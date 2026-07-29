@@ -314,6 +314,27 @@ class PKCS12Util
         return content;
     }
 
+    // A PBMAC1 MAC key is 20-64 bytes; anything beyond this is rejected as abusive.
+    private static final BigInteger MAX_KEY_LENGTH = BigInteger.valueOf(1024);
+
+    static int validateKeyLength(BigInteger keyLength)
+    {
+        // As with the iteration count: this arrives in a PFX whose MAC has not been checked yet
+        // and sizes the PBKDF2 output, so bound it before deriving. It is also multiplied by 8 at
+        // the call sites, which overflows to a negative bit count for a large enough value.
+        if (keyLength == null || keyLength.signum() <= 0)
+        {
+            throw new IllegalStateException("keyLength must be positive");
+        }
+
+        if (keyLength.compareTo(MAX_KEY_LENGTH) > 0)
+        {
+            throw new IllegalStateException("keyLength " + keyLength + " greater than " + MAX_KEY_LENGTH);
+        }
+
+        return BigIntegers.intValueExact(keyLength);
+    }
+
     static int validateIterationCount(BigInteger ic)
     {
         if (ic.signum() < 0)

@@ -2292,7 +2292,7 @@ public class PKCS12PBMAC1KeyStoreSpi
                     pbkdf2Params.getSalt(),
                     PKCS12Util.validateIterationCount(pbkdf2Params.getIterationCount()));
 
-                CipherParameters key = generator.generateDerivedParameters(BigIntegers.intValueExact(pbkdf2Params.getKeyLength()) * 8);
+                CipherParameters key = generator.generateDerivedParameters(PKCS12Util.validateKeyLength(pbkdf2Params.getKeyLength()) * 8);
 
                 Arrays.clear(generator.getPassword());
 
