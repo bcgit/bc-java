@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
 import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -687,6 +688,63 @@ public class OpenSSHKeyParsingTests
 
     }
 
+    /**
+     * The bcrypt round count is read from the key's own kdfoptions and drives the KDF before
+     * anything about the key has been verified, so it has to be bounded: a round costs several
+     * milliseconds and the wire format allows up to 2^31-1 of them, which is CPU-months from a
+     * key file of a few hundred bytes. This is the OpenSSH member of the *_MAX_IT_COUNT family
+     * and the only one that had no cap at all.
+     * <p>
+     * The fixture below is a normal ssh-keygen key at its default of 16 rounds, so the cap is
+     * lowered under it rather than a hostile key being hand-built - the same approach as
+     * BCFKSStoreTest.shouldRejectExcessiveMacKdfCost.
+     */
+    public void testEncryptedKeyRoundsBounded()
+        throws Exception
+    {
+        String pem =
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABD4XaoKXH\n" +
+            "N9dMM5dz+nRBC6AAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIHs3/Bh5SIn8aexd\n" +
+            "42KtdGV83J4+sckvemTmsG0u6uOyAAAAkBLLK8FUZ0ErL2dC/3fDEz+MdA6MMVZv0Q83OJ\n" +
+            "5AbQ0WvN0wLo6lARyiiZm2L4Z3rO5XGkY+BpDrNUI1iKNd39VdgyBLX+u0dbJ/EI5ZXMYs\n" +
+            "j5iVU+CD0fJc7KrToTDvblDoS3jeW9yXrLdnV5Mi25gdQLojq8x3px2Dv+HoqT3vTuAivl\n" +
+            "ISNUnmozjANHauJg==\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n";
+
+        byte[] blob = new PemReader(new StringReader(pem)).readPemObject().getContent();
+        byte[] passphrase = Strings.toByteArray("Test1234!");
+
+        String old = System.getProperty(Properties.OPENSSH_MAX_ROUNDS);
+        System.setProperty(Properties.OPENSSH_MAX_ROUNDS, "8");
+        try
+        {
+            OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(blob, passphrase);
+            fail("bcrypt round count above the configured cap accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("unexpected message: " + e.getMessage(),
+                e.getMessage().indexOf("bcrypt rounds (16) greater than 8") >= 0);
+        }
+        finally
+        {
+            if (old == null)
+            {
+                System.getProperties().remove(Properties.OPENSSH_MAX_ROUNDS);
+            }
+            else
+            {
+                System.setProperty(Properties.OPENSSH_MAX_ROUNDS, old);
+            }
+        }
+
+        // the compatibility assertion: under the default cap the same key still decrypts
+        isEquals("key no longer parses under the default cap",
+            "0ad120d52190b5a6edf251e51e9eedf70acc46b3643d72c9ae952021afc1af68",
+            keyMaterial(OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(blob, passphrase)));
+    }
+
     private void checkEncryptedKey(String cipher, String pem, String expectedHex)
         throws Exception
     {
@@ -753,6 +811,7 @@ public class OpenSSHKeyParsingTests
         testFido2Keys();
         testECDSAEncodeOpenSSHFormat();
         testEncryptedKeys();
+        testEncryptedKeyRoundsBounded();
     }
 
     /**

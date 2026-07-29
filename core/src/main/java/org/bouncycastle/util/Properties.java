@@ -310,6 +310,19 @@ public class Properties
     public static final String BKS_MAX_IT_COUNT = "org.bouncycastle.bks.max_it_count";
 
     /**
+     * Upper bound on the bcrypt round count honoured when decrypting an encrypted OpenSSH v1
+     * private key. The count is read from the key's kdfoptions, which arrive unauthenticated, and
+     * drives the KDF before anything about the key has been verified, so an unbounded value is a
+     * pre-integrity CPU-exhaustion vector - the OpenSSH analogue of {@link #BCFKS_MAX_IT_COUNT} /
+     * {@link #PKCS12_MAX_IT_COUNT}. A round costs several milliseconds, so the 2^31-1 the wire
+     * format allows is worth CPU-months from a key file of a few hundred bytes. Reached only when
+     * a passphrase is supplied, i.e. on the key-import path. Default 1048576 (1 << 20); ssh-keygen
+     * defaults to 16 and its -a option is rarely taken far beyond a few hundred. Read via
+     * {@link #asInteger(String, int)}.
+     */
+    public static final String OPENSSH_MAX_ROUNDS = "org.bouncycastle.openssh.max_rounds";
+
+    /**
      * Upper bound on the field size m accepted when building a characteristic-2 (F2m) elliptic curve.
      * The field polynomial is evaluated when the curve is constructed, and the cost grows with m, so
      * an unbounded value taken from a certificate's or key's explicit EC parameters is an import-time

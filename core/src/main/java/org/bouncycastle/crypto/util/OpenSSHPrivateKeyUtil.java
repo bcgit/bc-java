@@ -46,6 +46,7 @@ import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -478,6 +479,15 @@ public class OpenSSHPrivateKeyUtil
         if (rounds <= 0)
         {
             throw new IllegalArgumentException("illegal bcrypt rounds: " + rounds);
+        }
+
+        // The round count comes from the key's own kdfoptions and drives the KDF before anything
+        // about the key has been verified, so bound it: a round costs several milliseconds, and
+        // the wire format allows up to 2^31-1 of them from a file of a few hundred bytes.
+        int maxRounds = Properties.asInteger(Properties.OPENSSH_MAX_ROUNDS, 1 << 20);
+        if (rounds > maxRounds)
+        {
+            throw new IllegalArgumentException("bcrypt rounds (" + rounds + ") greater than " + maxRounds);
         }
 
         // The encrypted private section is the full ciphertext, padded to the cipher block size.
