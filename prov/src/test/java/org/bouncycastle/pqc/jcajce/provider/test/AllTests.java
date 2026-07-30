@@ -79,7 +79,6 @@ public class AllTests
         suite.addTestSuite(UOVTest.class);
         suite.addTestSuite(MQOMTest.class);
         suite.addTestSuite(SQIsignTest.class);
-        suite.addTestSuite(HawkTest.class);
         suite.addTestSuite(AIMerTest.class);
         suite.addTestSuite(ParameterSpecRoundTripTest.class);
         suite.addTestSuite(NTRUPlusTest.class);

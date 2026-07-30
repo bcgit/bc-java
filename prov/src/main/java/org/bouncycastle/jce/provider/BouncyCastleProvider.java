@@ -36,7 +36,6 @@ import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.faest.FaestKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.qruov.QRUOVKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.haetae.HaetaeKeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.hawk.HawkKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
@@ -551,9 +550,6 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.sqisign_lvl3, new SQIsignKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.sqisign_lvl5, new SQIsignKeyFactorySpi());
 
-        addKeyInfoConverter(BCObjectIdentifiers.hawk256,  new HawkKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.hawk512,  new HawkKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.hawk1024, new HawkKeyFactorySpi());
 
         addKeyInfoConverter(BCObjectIdentifiers.aimer_128f, new AIMerKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.aimer_128s, new AIMerKeyFactorySpi());

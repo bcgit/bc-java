@@ -161,7 +161,6 @@
                 <exclude name="**/pqc/jcajce/provider/faest/**" />
                 <exclude name="**/pqc/jcajce/provider/snova/**" />
                 <exclude name="**/pqc/jcajce/provider/qruov/**" />
-                <exclude name="**/pqc/jcajce/provider/hawk/**" />
                 <exclude name="**/pqc/jcajce/provider/mayo/**" />
                 <exclude name="**/pqc/jcajce/provider/aimer/**" />
                 <exclude name="**/pqc/jcajce/provider/mqom/**" />
