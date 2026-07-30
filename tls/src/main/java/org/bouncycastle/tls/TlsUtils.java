@@ -943,16 +943,19 @@ public class TlsUtils
         {
             return EMPTY_BYTES;
         }
-        byte[] buf = new byte[length];
-        int read = Streams.readFully(input, buf);
-        if (read == 0)
+
+        // one byte read on its own tells "stream is empty" (null) from "stream truncated" (EOF)
+        int first = input.read();
+        if (first < 0)
         {
             return null;
         }
-        if (read != length)
-        {
-            throw new EOFException();
-        }
+
+        byte[] rest = Streams.readLenBytesFully(input, length - 1);
+
+        byte[] buf = new byte[length];
+        buf[0] = (byte)first;
+        System.arraycopy(rest, 0, buf, 1, rest.length);
         return buf;
     }
 
@@ -963,12 +966,9 @@ public class TlsUtils
         {
             return EMPTY_BYTES;
         }
-        byte[] buf = new byte[length];
-        if (length != Streams.readFully(input, buf))
-        {
-            throw new EOFException();
-        }
-        return buf;
+
+        // length comes from the wire: grow the buffer as bytes arrive rather than sizing it up front
+        return Streams.readLenBytesFully(input, length);
     }
 
     public static void readFully(byte[] buf, InputStream input)
