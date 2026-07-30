@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Strings;
 
@@ -19,7 +20,7 @@ public class Headers
 {
     private final Map<String, List> headers = new TreeMap<String, List>(String.CASE_INSENSITIVE_ORDER);
     private final List<String> headersAsPresented;
-    private final String contentTransferEncoding;
+    private String contentTransferEncoding;
 
     private String boundary;
     private boolean multipart;
@@ -53,14 +54,79 @@ public class Headers
      */
     public Headers(String contentType, String defaultContentTransferEncoding)
     {
-        String header = "Content-Type: " + contentType;
         headersAsPresented = new ArrayList<String>();
-        headersAsPresented.add(header);
+        headersAsPresented.add("Content-Type: " + contentType);
 
+        initUnchecked(defaultContentTransferEncoding);
+    }
 
-        this.put("Content-Type", contentType);
+    public Headers(InputStream source, String defaultContentTransferEncoding)
+        throws IOException
+    {
+        this.headersAsPresented = parseHeaders(source);
+
+        init(defaultContentTransferEncoding);
+    }
+
+    public Headers(List<String> headerLines, String defaultContentTransferEncoding)
+    {
+        this.headersAsPresented = headerLines;
+
+        initUnchecked(defaultContentTransferEncoding);
+    }
+
+    /**
+     * These two constructors cannot add a checked exception to their signatures, so malformed input
+     * reaches their callers as an IllegalArgumentException carrying the same message and the
+     * IOException as its cause. The stream constructor above, which the S/MIME parsers use, reports
+     * it as the IOException it declares.
+     */
+    private void initUnchecked(String defaultContentTransferEncoding)
+    {
+        try
+        {
+            init(defaultContentTransferEncoding);
+        }
+        catch (IOException e)
+        {
+            throw Exceptions.illegalArgumentException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Single copy of the header split and Content-Type interpretation for all three constructors -
+     * it was duplicated between two of them, and they had drifted: the boundary handling below was
+     * corrected for an unquoted value in one copy and not the other.
+     */
+    private void init(String defaultContentTransferEncoding)
+        throws IOException
+    {
+        String header = "";
+        for (Iterator it = headersAsPresented.iterator(); it.hasNext();)
+        {
+            String line = (String)it.next();
+            if (line.startsWith(" ") || line.startsWith("\t"))
+            {
+                header = header + line.trim();
+            }
+            else
+            {
+                if (header.length() != 0)
+                {
+                    putHeader(header);
+                }
+                header = line;
+            }
+        }
+
+        // pick up last header line
+        if (header.trim().length() != 0)
+        {
+            putHeader(header);
+        }
 
         String contentTypeHeader = (this.getValues("Content-Type") == null) ? "text/plain" : this.getValues("Content-Type")[0];
+
         int parameterIndex = contentTypeHeader.indexOf(';');
         if (parameterIndex < 0)
         {
@@ -78,15 +144,7 @@ public class Headers
         if (contentType.indexOf("multipart") >= 0)    // JVM compatibility
         {
             multipart = true;
-            String bound = (String)contentTypeParameters.get("boundary");
-            if (bound.startsWith("\"") && bound.endsWith("\""))
-            {
-                boundary = bound.substring(1, bound.length() - 1); // quoted-string
-            }
-            else
-            {
-                boundary = bound;
-            }
+            boundary = parseBoundary((String)contentTypeParameters.get("boundary"));
         }
         else
         {
@@ -95,67 +153,39 @@ public class Headers
         }
     }
 
-    public Headers(InputStream source, String defaultContentTransferEncoding)
+    private void putHeader(String header)
         throws IOException
     {
-        this(parseHeaders(source), defaultContentTransferEncoding);
+        int colonIndex = header.indexOf(':');
+        if (colonIndex < 0)
+        {
+            // substring(0, -1) otherwise, which is not a diagnosis of anything
+            throw new IOException("header line has no ':' delimiter");
+        }
+
+        this.put(header.substring(0, colonIndex).trim(), header.substring(colonIndex + 1).trim());
     }
 
-    public Headers(List<String> headerLines, String defaultContentTransferEncoding)
+    private static String parseBoundary(String bound)
+        throws IOException
     {
-        this.headersAsPresented = headerLines;
-
-        String header = "";
-        for (Iterator it = headerLines.iterator(); it.hasNext();)
+        if (bound == null)
         {
-            String line = (String)it.next();
-            if (line.startsWith(" ") || line.startsWith("\t"))
-            {
-                header = header + line.trim();
-            }
-            else
-            {
-                if (header.length() != 0)
-                {
-                    this.put(header.substring(0, header.indexOf(':')).trim(), header.substring(header.indexOf(':') + 1).trim());
-                }
-                header = line;
-            }
+            throw new IOException("no boundary parameter for multipart content type");
         }
 
-        // pick up last header line
-        if (header.trim().length() != 0)
+        // RFC 2046 sec. 5.1.1 allows the boundary either as a quoted-string or bare, and the
+        // length test keeps a lone quote character from being read as both delimiters
+        String boundary = bound.length() > 1 && bound.startsWith("\"") && bound.endsWith("\"")
+            ? bound.substring(1, bound.length() - 1)
+            : bound;
+
+        if (boundary.length() == 0)
         {
-            this.put(header.substring(0, header.indexOf(':')).trim(), header.substring(header.indexOf(':') + 1).trim());
+            throw new IOException("empty boundary parameter for multipart content type");
         }
 
-        String contentTypeHeader = (this.getValues("Content-Type") == null) ? "text/plain" : this.getValues("Content-Type")[0];
-
-        int parameterIndex = contentTypeHeader.indexOf(';');
-        if (parameterIndex < 0)
-        {
-            contentType = contentTypeHeader;
-            contentTypeParameters = Collections.EMPTY_MAP;
-        }
-        else
-        {
-            contentType = contentTypeHeader.substring(0, parameterIndex);
-            contentTypeParameters = createContentTypeParameters(contentTypeHeader.substring(parameterIndex + 1).trim());
-        }
-
-        contentTransferEncoding = this.getValues("Content-Transfer-Encoding") == null ? defaultContentTransferEncoding : this.getValues("Content-Transfer-Encoding")[0];
-
-        if (contentType.indexOf("multipart") >= 0)
-        {
-            multipart = true;
-            String bound = (String)contentTypeParameters.get("boundary");
-            boundary = bound.substring(1, bound.length() - 1); // quoted-string
-        }
-        else
-        {
-            boundary = null;
-            multipart = false;
-        }
+        return boundary;
     }
 
     /**
@@ -174,6 +204,7 @@ public class Headers
      * @return a list of ContentType parameters - empty if none present.
      */
     private Map<String, String> createContentTypeParameters(String contentTypeParameters)
+        throws IOException
     {
         String[] parameterSplit = contentTypeParameters.split(";");
         Map<String, String> rv = new LinkedHashMap<String, String>();
@@ -185,7 +216,7 @@ public class Headers
             int eqIndex = parameter.indexOf('=');
             if (eqIndex < 0)
             {
-                throw new IllegalArgumentException("malformed Content-Type header");
+                throw new IOException("malformed Content-Type header");
             }
 
             rv.put(parameter.substring(0, eqIndex).trim(), parameter.substring(eqIndex + 1).trim());

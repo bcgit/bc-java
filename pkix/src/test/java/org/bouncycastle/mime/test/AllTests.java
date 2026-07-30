@@ -35,6 +35,7 @@ public class AllTests
         TestSuite suite = new TestSuite("MIME tests");
 
         suite.addTestSuite(Base64TransferEncodingTest.class);
+        suite.addTestSuite(HeadersTest.class);
         suite.addTestSuite(MimeParserTest.class);
         suite.addTestSuite(MultipartParserTest.class);
         suite.addTestSuite(QuotedPrintableTest.class);
