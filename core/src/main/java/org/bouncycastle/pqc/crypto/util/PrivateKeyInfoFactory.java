@@ -61,7 +61,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
@@ -158,15 +157,6 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
-        }
-        else if (privateKey instanceof PicnicPrivateKeyParameters)
-        {
-            PicnicPrivateKeyParameters params = (PicnicPrivateKeyParameters)privateKey;
-
-            byte[] encoding = params.getEncoded();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.picnicOidLookup(params.getParameters()));
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }
         else if (privateKey instanceof CMCEPrivateKeyParameters)
         {

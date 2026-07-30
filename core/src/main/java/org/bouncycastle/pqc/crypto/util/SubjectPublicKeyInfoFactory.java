@@ -47,7 +47,6 @@ import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
-import org.bouncycastle.pqc.legacy.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPublicKeyParameters;
 
@@ -184,15 +183,6 @@ public class SubjectPublicKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.saberOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(new DEROctetString(encoding)));
-        }
-        else if (publicKey instanceof PicnicPublicKeyParameters)
-        {
-            PicnicPublicKeyParameters params = (PicnicPublicKeyParameters)publicKey;
-
-            byte[] encoding = params.getEncoded();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.picnicOidLookup(params.getParameters()));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (publicKey instanceof NTRUPublicKeyParameters)
         {

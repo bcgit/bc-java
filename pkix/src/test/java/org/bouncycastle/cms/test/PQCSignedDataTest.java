@@ -90,8 +90,6 @@ public class PQCSignedDataTest
     private static X509Certificate _origLmsCert;
     private static KeyPair _origFalconKP;
     private static X509Certificate _origFalconCert;
-    private static KeyPair _origPicnicKP;
-    private static X509Certificate _origPicnicCert;
     private static KeyPair _origMlDsaKP;
     private static X509Certificate _origMlDsaCert;
     private static KeyPair _origSlhDsaKP;
@@ -104,8 +102,6 @@ public class PQCSignedDataTest
     private static X509Certificate _signLmsCert;
     private static KeyPair _signFalconKP;
     private static X509Certificate _signFalconCert;
-    private static KeyPair _signPicnicKP;
-    private static X509Certificate _signPicnicCert;
     private static KeyPair _signMlDsaKP;
     private static X509Certificate _signMlDsaCert;
     private static KeyPair _signSlhDsaKP;
@@ -184,11 +180,7 @@ public class PQCSignedDataTest
             _signFalconKP = PQCTestUtil.makeFalconKeyPair();
             _signFalconCert = PQCTestUtil.makeCertificate(_signFalconKP, _signDN, _origFalconKP, _origDN);
 
-            _origPicnicKP = PQCTestUtil.makePicnicKeyPair();
-            _origPicnicCert = PQCTestUtil.makeCertificate(_origPicnicKP, _origDN, _origPicnicKP, _origDN);
 
-            _signPicnicKP = PQCTestUtil.makePicnicKeyPair();
-            _signPicnicCert = PQCTestUtil.makeCertificate(_signPicnicKP, _signDN, _origPicnicKP, _origDN);
 
             _origMlDsaKP = PQCTestUtil.makeMlDsaKeyPair();
             _origMlDsaCert = PQCTestUtil.makeCertificate(_origMlDsaKP, _origDN, _origMlDsaKP, _origDN);
@@ -541,30 +533,6 @@ public class PQCSignedDataTest
         SignerInfo sigInfo = new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("LMS", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)).setProvider(BC).build(_origLmsKP.getPrivate()), _origLmsCert).generate(PKCSObjectIdentifiers.data);
 
         assertEquals(sigInfo.getDigestAlgorithm(), new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
-    }
-
-    public void testPicnicEncapsulated()
-        throws Exception
-    {
-        List certList = new ArrayList();
-        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
-
-        certList.add(_origPicnicCert);
-        certList.add(_signPicnicCert);
-
-        Store certs = new JcaCertStore(certList);
-
-        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
-
-        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
-
-        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("PICNIC").setProvider(BCPQC).build(_origPicnicKP.getPrivate()), _origPicnicCert));
-
-        gen.addCertificates(certs);
-
-        CMSSignedData s = gen.generate(msg, true);
-
-        checkSignature(s, gen);
     }
 
     public void testMLDSAEncapsulated()

@@ -26,7 +26,6 @@ import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
@@ -94,15 +93,6 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, params.getPublicKey());
-        }
-        else if (privateKey instanceof PicnicPrivateKeyParameters)
-        {
-            PicnicPrivateKeyParameters params = (PicnicPrivateKeyParameters)privateKey;
-
-            byte[] encoding = params.getEncoded();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.picnicOidLookup(params.getParameters()));
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }
         else if (privateKey instanceof CMCEPrivateKeyParameters)
         {

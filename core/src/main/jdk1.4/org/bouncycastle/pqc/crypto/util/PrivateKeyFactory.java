@@ -48,8 +48,6 @@ import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.picnic.PicnicParameters;
-import org.bouncycastle.pqc.legacy.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
@@ -150,13 +148,6 @@ public class PrivateKeyFactory
             ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
 
             return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
-        }
-        else if (algOID.on(BCObjectIdentifiers.picnic))
-        {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            PicnicParameters pParams = Utils.picnicParamsLookup(algOID);
-
-            return new PicnicPrivateKeyParameters(pParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_mceliece))
         {

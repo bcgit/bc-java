@@ -253,7 +253,6 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/FrodoVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/SABERVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/test/SNTRU*
-    rm -rf org/bouncycastle/pqc/crypto/test/Picnic*
     rm -rf org/bouncycastle/pqc/crypto/test/Crystals*
     rm -rf org/bouncycastle/pqc/crypto/test/HQC*
     rm -rf org/bouncycastle/pqc/crypto/test/Falcon*

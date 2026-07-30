@@ -92,8 +92,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.picnic.PicnicParameters;
-import org.bouncycastle.pqc.legacy.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.legacy.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusParameters;
@@ -206,13 +204,6 @@ public class PrivateKeyFactory
             ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
 
             return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
-        }
-        else if (algOID.on(BCObjectIdentifiers.picnic))
-        {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            PicnicParameters pParams = Utils.picnicParamsLookup(algOID);
-
-            return new PicnicPrivateKeyParameters(pParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_mceliece))
         {

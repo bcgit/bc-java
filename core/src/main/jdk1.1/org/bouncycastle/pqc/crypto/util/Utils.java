@@ -22,7 +22,6 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
-import org.bouncycastle.pqc.legacy.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
@@ -38,9 +37,6 @@ class Utils
 
 
     static final Map categories = new HashMap();
-
-    static final Map picnicOids = new HashMap();
-    static final Map picnicParams = new HashMap();
 
 
     static final Map saberOids = new HashMap();
@@ -110,7 +106,6 @@ class Utils
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128f_r3, CMCEParameters.mceliece8192128fr3);
 
 
-
         saberOids.put(SABERParameters.lightsaberkem128r3, BCObjectIdentifiers.lightsaberkem128r3);
         saberOids.put(SABERParameters.saberkem128r3, BCObjectIdentifiers.saberkem128r3);
         saberOids.put(SABERParameters.firesaberkem128r3, BCObjectIdentifiers.firesaberkem128r3);
@@ -149,31 +144,6 @@ class Utils
         saberParams.put(BCObjectIdentifiers.usaberkem90sr3, SABERParameters.usaberkem90sr3);
         saberParams.put(BCObjectIdentifiers.ufiresaberkem90sr3, SABERParameters.ufiresaberkem90sr3);
 
-        picnicOids.put(PicnicParameters.picnicl1fs, BCObjectIdentifiers.picnicl1fs);
-        picnicOids.put(PicnicParameters.picnicl1ur, BCObjectIdentifiers.picnicl1ur);
-        picnicOids.put(PicnicParameters.picnicl3fs, BCObjectIdentifiers.picnicl3fs);
-        picnicOids.put(PicnicParameters.picnicl3ur, BCObjectIdentifiers.picnicl3ur);
-        picnicOids.put(PicnicParameters.picnicl5fs, BCObjectIdentifiers.picnicl5fs);
-        picnicOids.put(PicnicParameters.picnicl5ur, BCObjectIdentifiers.picnicl5ur);
-        picnicOids.put(PicnicParameters.picnic3l1, BCObjectIdentifiers.picnic3l1);
-        picnicOids.put(PicnicParameters.picnic3l3, BCObjectIdentifiers.picnic3l3);
-        picnicOids.put(PicnicParameters.picnic3l5, BCObjectIdentifiers.picnic3l5);
-        picnicOids.put(PicnicParameters.picnicl1full, BCObjectIdentifiers.picnicl1full);
-        picnicOids.put(PicnicParameters.picnicl3full, BCObjectIdentifiers.picnicl3full);
-        picnicOids.put(PicnicParameters.picnicl5full, BCObjectIdentifiers.picnicl5full);
-
-        picnicParams.put(BCObjectIdentifiers.picnicl1fs, PicnicParameters.picnicl1fs);
-        picnicParams.put(BCObjectIdentifiers.picnicl1ur, PicnicParameters.picnicl1ur);
-        picnicParams.put(BCObjectIdentifiers.picnicl3fs, PicnicParameters.picnicl3fs);
-        picnicParams.put(BCObjectIdentifiers.picnicl3ur, PicnicParameters.picnicl3ur);
-        picnicParams.put(BCObjectIdentifiers.picnicl5fs, PicnicParameters.picnicl5fs);
-        picnicParams.put(BCObjectIdentifiers.picnicl5ur, PicnicParameters.picnicl5ur);
-        picnicParams.put(BCObjectIdentifiers.picnic3l1, PicnicParameters.picnic3l1);
-        picnicParams.put(BCObjectIdentifiers.picnic3l3, PicnicParameters.picnic3l3);
-        picnicParams.put(BCObjectIdentifiers.picnic3l5, PicnicParameters.picnic3l5);
-        picnicParams.put(BCObjectIdentifiers.picnicl1full, PicnicParameters.picnicl1full);
-        picnicParams.put(BCObjectIdentifiers.picnicl3full, PicnicParameters.picnicl3full);
-        picnicParams.put(BCObjectIdentifiers.picnicl5full, PicnicParameters.picnicl5full);
 
         falconOids.put(FalconParameters.falcon_512, BCObjectIdentifiers.falcon_512);
         falconOids.put(FalconParameters.falcon_1024, BCObjectIdentifiers.falcon_1024);
@@ -416,16 +386,6 @@ class Utils
     static SABERParameters saberParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SABERParameters)saberParams.get(oid);
-    }
-
-    static ASN1ObjectIdentifier picnicOidLookup(PicnicParameters params)
-    {
-        return (ASN1ObjectIdentifier)picnicOids.get(params);
-    }
-
-    static PicnicParameters picnicParamsLookup(ASN1ObjectIdentifier oid)
-    {
-        return (PicnicParameters)picnicParams.get(oid);
     }
 
     static ASN1ObjectIdentifier falconOidLookup(FalconParameters params)

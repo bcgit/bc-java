@@ -111,7 +111,6 @@ then
         rm -rf src/org/bouncycastle/pqc/crypto/lms
         rm -rf src/org/bouncycastle/pqc/crypto/test
         rm -rf src/org/bouncycastle/pqc/crypto/sike
-        rm -rf src/org/bouncycastle/pqc/crypto/picnic
         rm -rf src/org/bouncycastle/pqc/crypto/rainbow
         rm -rf src/org/bouncycastle/pqc/crypto/gemss
         rm src/org/bouncycastle/pqc/crypto/legacy/qtesla/QTeslaKeyEncodingTests.java
