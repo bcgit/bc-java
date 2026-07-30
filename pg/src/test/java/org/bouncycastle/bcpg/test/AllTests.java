@@ -29,6 +29,7 @@ public class AllTests
             new SignatureSubpacketsTest(),
             new TimeEncodingTest(),
             new ArmoredOutputStreamHeaderInjectionTest(),
+            new ArmoredInputStreamCrcTest(),
             new UserAttributeSubpacketInputStreamTest(),
             new UnknownPublicKeyPacketTest(),
             new UnknownSecretKeyPacketTest(),

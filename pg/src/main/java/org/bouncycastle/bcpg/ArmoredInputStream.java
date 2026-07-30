@@ -550,6 +550,15 @@ public class ArmoredInputStream
 
                 if (c == '=')            // crc reached
                 {
+                    // RFC 9580 6.2: the checksum appears once, immediately before the armor tail.
+                    // A second one is malformed, and because the running crc is not reset between
+                    // lines the same four characters keep matching - and each match recursed into
+                    // read() below, so repeating one line drove the stack down until it overflowed.
+                    if (crcFound)
+                    {
+                        throw new ArmoredInputException("multiple crc values found in armored message");
+                    }
+
                     bufPtr = decode(readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
                     if (bufPtr != 0)
                     {
