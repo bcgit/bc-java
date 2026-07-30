@@ -68,9 +68,15 @@ public abstract class AbstractX500NameStyle
             }
             else
             {
-                AttributeTypeAndValue first = rdns[i].getFirst(); 
-                hashCodeValue ^= first.getType().hashCode();
-                hashCodeValue ^= calcHashCode(first.getValue());
+                // an RDN decoded from an empty SET has no first element - areEqual below and
+                // IETFUtils.appendRDN both guard for that, this was the one copy of the check
+                // that did not, so hashCode() was the only one of the three that threw
+                AttributeTypeAndValue first = rdns[i].getFirst();
+                if (first != null)
+                {
+                    hashCodeValue ^= first.getType().hashCode();
+                    hashCodeValue ^= calcHashCode(first.getValue());
+                }
             }
         }
 
