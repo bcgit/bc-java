@@ -14,6 +14,13 @@ public class LMSSigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
+         // clear both first: a re-init only assigned the key for the mode being set, so a signer
+         // initialised for verification kept the private key from an earlier signing init and would
+         // still sign with it - and vice versa. Clearing up front also means an init that fails the
+         // check below leaves the signer unusable rather than holding the previous key.
+         this.privKey = null;
+         this.pubKey = null;
+
          if (forSigning)
          {
              if (param instanceof HSSPrivateKeyParameters)
@@ -56,6 +63,11 @@ public class LMSSigner
 
     public byte[] generateSignature(byte[] message)
     {
+        if (privKey == null)
+        {
+            throw new IllegalStateException("LMSSigner not initialised for signature generation");
+        }
+
         try
         {
             return LMS.generateSign(privKey, message).getEncoded();
@@ -68,6 +80,13 @@ public class LMSSigner
 
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // checked before the catch-all below so a missing init is reported rather than
+        // being folded into "signature did not verify"
+        if (pubKey == null)
+        {
+            throw new IllegalStateException("LMSSigner not initialised for verification");
+        }
+
         // A malformed/truncated signature must not throw out of verify: the decode
         // can fail with IOException (truncation) or a RuntimeException (out-of-range
         // type fields surface as NullPointerException / NegativeArraySizeException).

@@ -137,6 +137,11 @@ public class LMSTest
 
         assertTrue(signer.verifySignature(msg2, sig));
 
+        // the shard's two usages are now spent. Re-init for signing to assert that: this used to
+        // reach generateSignature on a signer left in verify mode, working only because init did
+        // not clear the private key from the previous signing init.
+        signer.init(true, privKey);
+
         try
         {
             sig = signer.generateSignature(msg2);
@@ -355,6 +360,83 @@ public class LMSTest
         catch (IllegalStateException e)
         {
             assertTrue(e.getCause() instanceof IOException);
+        }
+    }
+
+    /**
+     * init() used to assign only the key for the mode being set, leaving the other one from a
+     * previous init in place: a signer initialised for verification still held the private key and
+     * would sign with it, and one initialised for signing still held the public key and would
+     * verify. Both keys are now cleared on every init, so using the signer in the mode it was not
+     * initialised for is reported rather than silently working off the stale key.
+     */
+    public void testReInitClearsTheOtherKey()
+        throws Exception
+    {
+        AsymmetricCipherKeyPairGenerator kpGen = new LMSKeyPairGenerator();
+
+        kpGen.init(new LMSKeyGenerationParameters(
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4), new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        byte[] msg = Hex.decode("54686520706f77657273206e6f742064656c65676174656420746f2074686520");
+
+        LMSSigner signer = new LMSSigner();
+
+        signer.init(true, kp.getPrivate());
+
+        byte[] sig = signer.generateSignature(msg);
+
+        // signing key must not survive an init for verification
+        signer.init(false, kp.getPublic());
+
+        assertTrue(signer.verifySignature(msg, sig));
+
+        try
+        {
+            signer.generateSignature(msg);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("LMSSigner not initialised for signature generation", e.getMessage());
+        }
+
+        // and the verification key must not survive an init for signing
+        signer.init(true, kp.getPrivate());
+
+        try
+        {
+            signer.verifySignature(msg, sig);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("LMSSigner not initialised for verification", e.getMessage());
+        }
+
+        // a fresh signer is unusable in either mode until initialised
+        LMSSigner fresh = new LMSSigner();
+
+        try
+        {
+            fresh.generateSignature(msg);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("LMSSigner not initialised for signature generation", e.getMessage());
+        }
+
+        try
+        {
+            fresh.verifySignature(msg, sig);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("LMSSigner not initialised for verification", e.getMessage());
         }
     }
 }
