@@ -1,6 +1,7 @@
 package org.bouncycastle.util.io;
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -57,6 +58,48 @@ public final class Streams
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         pipeAllLimited(inStr, limit, buf);
         return buf.toByteArray();
+    }
+
+    /**
+     * Read exactly len bytes from inStr, growing the destination buffer as the bytes actually arrive
+     * rather than allocating byte[len] up front, so a large declared len cannot drive a large
+     * allocation from a short input.
+     *
+     * @param inStr the stream to read from.
+     * @param len   the exact number of bytes to read.
+     * @return a byte[len] containing the bytes read.
+     * @throws EOFException if the stream ends before len bytes are available.
+     * @throws IOException in case of underlying IOException.
+     */
+    public static byte[] readLenBytesFully(InputStream inStr, int len)
+        throws IOException
+    {
+        if (len < 0)
+        {
+            throw new IllegalArgumentException("len cannot be negative");
+        }
+
+        byte[] bytes = new byte[Math.min(len, BUFFER_SIZE)];
+        int count = 0;
+        while (count < len)
+        {
+            if (count == bytes.length)
+            {
+                int expandedLength = (int)Math.min((long)len, 8L * bytes.length);
+                byte[] expanded = new byte[expandedLength];
+                System.arraycopy(bytes, 0, expanded, 0, count);
+                bytes = expanded;
+            }
+
+            int numRead = inStr.read(bytes, count, bytes.length - count);
+            if (numRead < 0)
+            {
+                throw new EOFException("premature end of stream");
+            }
+            count += numRead;
+        }
+
+        return bytes;
     }
 
     /**
