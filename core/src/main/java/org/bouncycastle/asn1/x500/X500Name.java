@@ -250,9 +250,11 @@ public class X500Name
             return hashCodeValue;
         }
 
-        isHashCodeCalculated = true;
-
+        // set only once the value is in hand: marking it calculated first meant a style that threw
+        // left every later call returning 0, turning one loud failure into a silent collision source
         hashCodeValue = style.calculateHashCode(this);
+
+        isHashCodeCalculated = true;
 
         return hashCodeValue;
     }

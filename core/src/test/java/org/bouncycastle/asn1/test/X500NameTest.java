@@ -151,6 +151,7 @@ public class X500NameTest
         throws Exception
     {
         bogusEqualsTest();
+        emptyRDNHashCodeTest();
         dnQualifierAliasParseTest();
         stateOrProvinceAliasParseTest();
         hexEscapedUTF8ParseTest();
@@ -803,6 +804,42 @@ public class X500NameTest
         {
             Locale.setDefault(defaultLocale);
         }
+    }
+
+    /**
+     * An RDN decoded from an empty SET has no first element. equals() (AbstractX500NameStyle.areEqual)
+     * and toString() (IETFUtils.appendRDN) both guard for that; calculateHashCode was the one copy of
+     * the check that did not, so hashCode() alone threw a NullPointerException on a name any peer can
+     * encode. X500Name.hashCode() also marked the value calculated before computing it, so once the
+     * NPE had escaped every later call quietly returned 0 - one loud failure becoming a silent source
+     * of hash collisions.
+     */
+    private void emptyRDNHashCodeTest()
+        throws Exception
+    {
+        ASN1EncodableVector rdnSeq = new ASN1EncodableVector();
+        rdnSeq.add(new DERSet());
+
+        X500Name emptyRDN = X500Name.getInstance(new DERSequence(rdnSeq).getEncoded());
+
+        isTrue("one rdn", emptyRDN.getRDNs().length == 1);
+        isTrue("rdn is empty", emptyRDN.getRDNs()[0].size() == 0);
+
+        // the three must agree that the empty RDN contributes nothing rather than one of them throwing
+        isTrue("hashCode", 0 == emptyRDN.hashCode());
+        isTrue("hashCode is stable", emptyRDN.hashCode() == emptyRDN.hashCode());
+        isTrue("equals self", emptyRDN.equals(emptyRDN));
+        isTrue("toString", "".equals(emptyRDN.toString()));
+
+        // and an empty RDN alongside a populated one leaves the populated one's contribution intact
+        ASN1EncodableVector mixedSeq = new ASN1EncodableVector();
+        mixedSeq.add(new DERSet());
+        mixedSeq.add(new DERSet(new RDN(BCStyle.CN, new DERUTF8String("Test")).getFirst()));
+
+        X500Name mixed = X500Name.getInstance(new DERSequence(mixedSeq).getEncoded());
+        X500Name cnOnly = new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, "Test").build();
+
+        isTrue("mixed hashCode", mixed.hashCode() == cnOnly.hashCode());
     }
 
     private void bogusEqualsTest()
