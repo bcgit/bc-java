@@ -41,6 +41,7 @@ public class AllTests
         suite.addTestSuite(TestBuilders.class);
         suite.addTestSuite(OERExtensionTest.class);
         suite.addTestSuite(OERInputStreamLimitTest.class);
+        suite.addTestSuite(OERInputStreamMalformedTest.class);
 
         return new BCTestSetup(suite);
     }
