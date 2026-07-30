@@ -21,6 +21,7 @@ public class AllTests
         TestSuite suite = new TestSuite("TLS tests");
 
         suite.addTestSuite(CheckTlsFeaturesExtensionTest.class);
+        suite.addTestSuite(DTLSReassemblerTest.class);
 
         return new BCTestSetup(suite);
     }
