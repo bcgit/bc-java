@@ -13,8 +13,13 @@ import org.bouncycastle.crypto.params.SM9SigMasterPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9SigPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9SigUserKeyParametersGenerator;
 import org.bouncycastle.crypto.signers.SM9Signer;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.sm9.Fp12;
+import org.bouncycastle.math.ec.sm9.SM9Curve;
+import org.bouncycastle.math.ec.sm9.SM9Pairing;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
@@ -83,6 +88,12 @@ public class SM9SignerTest
         SM9SigUserKeyParametersGenerator kgc = master;
         SM9SigPrivateKeyParameters userKey = kgc.generateUserKey(identity);
 
+        // the domain parameters, generators, derived keys and pairing values the
+        // standard prints alongside the signature itself (GM/T 0044.5-2016 Annex A)
+        checkDomainParameters(v);
+        checkKeyDerivation(v, master, userKey);
+        checkPairingValues(v, master);
+
         SM9Signer signer = new SM9Signer();
         signer.init(true, new ParametersWithRandom(userKey, new TestRandomBigInteger(256, hex(v, "r"))));
         signer.update(msg, 0, msg.length);
@@ -121,6 +132,70 @@ public class SM9SignerTest
         emptyWrong.update((byte)0x00);
         isTrue("SM9 zero-length signature does not verify a non-empty message",
             !emptyWrong.verifySignature(emptySig));
+    }
+
+    /**
+     * The curve order and the two group generators printed by the standard.
+     */
+    private void checkDomainParameters(Map v)
+    {
+        isTrue("SM9 curve order N", Arrays.areEqual(f32(SM9Curve.N), hex(v, "N")));
+
+        ECPoint p1 = SM9Curve.P1.normalize();
+        isTrue("SM9 generator P1.x",
+            Arrays.areEqual(f32(p1.getAffineXCoord().toBigInteger()), hex(v, "P1x")));
+        isTrue("SM9 generator P1.y",
+            Arrays.areEqual(f32(p1.getAffineYCoord().toBigInteger()), hex(v, "P1y")));
+
+        // G2 points serialize as 0x04 || x_hi || x_lo || y_hi || y_lo, each F_p2
+        // coordinate high-dimension (u-coefficient) first
+        isTrue("SM9 generator P2", Arrays.areEqual(SM9Curve.P2.getEncoded(),
+            g2(v, "P2x_hi", "P2x_lo", "P2y_hi", "P2y_lo")));
+    }
+
+    /**
+     * The KGC derivation chain: the signature master public key P_pub-s = [ks]P2
+     * and the user's signing key ds_A = [t2]P1.
+     */
+    private void checkKeyDerivation(Map v, SM9SigMasterPrivateKeyParameters master,
+                                    SM9SigPrivateKeyParameters userKey)
+    {
+        isTrue("SM9 master public key Ppub-s", Arrays.areEqual(
+            master.getPublicKeyParameters().getEncoded(),
+            g2(v, "Ppubsx_hi", "Ppubsx_lo", "Ppubsy_hi", "Ppubsy_lo")));
+
+        ECPoint ds = userKey.getPrivatePoint().normalize();
+        isTrue("SM9 user signing key dsA.x",
+            Arrays.areEqual(f32(ds.getAffineXCoord().toBigInteger()), hex(v, "dsAx")));
+        isTrue("SM9 user signing key dsA.y",
+            Arrays.areEqual(f32(ds.getAffineYCoord().toBigInteger()), hex(v, "dsAy")));
+    }
+
+    /**
+     * The R-ate pairing itself, against the two G_T values the standard prints:
+     * g = e(P1, P_pub-s) and w = g^r. Without these the pairing is only checked
+     * indirectly, through the signature components.
+     */
+    private void checkPairingValues(Map v, SM9SigMasterPrivateKeyParameters master)
+    {
+        Fp12 g = SM9Pairing.pairing(SM9Curve.P1, master.getPublicKeyParameters().getPointG2());
+        isTrue("SM9 pairing g = e(P1, Ppub-s)",
+            Arrays.areEqual(SM9Pairing.toBytes(g), hex(v, "g_GT")));
+
+        Fp12 w = g.pow(new BigInteger((String)v.get("r"), 16));
+        isTrue("SM9 pairing w = g^r", Arrays.areEqual(SM9Pairing.toBytes(w), hex(v, "w_GT")));
+    }
+
+    private byte[] g2(Map v, String xHi, String xLo, String yHi, String yLo)
+    {
+        return Arrays.concatenate(
+            Arrays.concatenate(new byte[]{0x04}, hex(v, xHi), hex(v, xLo)),
+            Arrays.concatenate(hex(v, yHi), hex(v, yLo)));
+    }
+
+    private static byte[] f32(BigInteger v)
+    {
+        return BigIntegers.asUnsignedByteArray(32, v);
     }
 
     public static void main(String[] args)

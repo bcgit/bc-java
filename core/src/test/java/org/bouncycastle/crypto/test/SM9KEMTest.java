@@ -79,6 +79,18 @@ public class SM9KEMTest
         SM9EncMasterPrivateKeyParameters master = new SM9EncMasterPrivateKeyParameters(ke);
         SM9EncPublicKeyParameters recipient = master.getPublicKeyParameters().getUserPublicKey(identity);
 
+        // the master public key and the KGC-derived user key the standard prints
+        // alongside the encapsulation (P_pub-e = [ke]P1 in G1, de_B = [t2]P2 in G2)
+        isTrue("SM9 KEM master public key Ppub-e", Arrays.areEqual(
+            master.getPublicKeyParameters().getEncoded(),
+            Arrays.concatenate(new byte[]{0x04}, hex(v, "Ppube_x"), hex(v, "Ppube_y"))));
+        isTrue("SM9 KEM user key deB", Arrays.areEqual(
+            master.generateUserKey(identity, SM9EncMasterPrivateKeyParameters.HID)
+                .getPrivatePoint().getEncoded(),
+            Arrays.concatenate(
+                Arrays.concatenate(new byte[]{0x04}, hex(v, "deB_x_hi"), hex(v, "deB_x_lo")),
+                Arrays.concatenate(hex(v, "deB_y_hi"), hex(v, "deB_y_lo")))));
+
         SM9KEMGenerator gen = new SM9KEMGenerator(klen, new TestRandomBigInteger(256, hex(v, "r")));
         SecretWithEncapsulation enc = gen.generateEncapsulated(recipient);
         isTrue("SM9 KEM key K", Arrays.areEqual(enc.getSecret(), hex(v, "K")));

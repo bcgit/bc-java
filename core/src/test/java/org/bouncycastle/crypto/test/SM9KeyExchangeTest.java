@@ -11,9 +11,9 @@ import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncUserKeyParametersGenerator;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.sm9.SM9Curve;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
@@ -24,9 +24,9 @@ import org.bouncycastle.util.test.TestRandomBigInteger;
  * edition's example (hid = 0x02, crypto/sm9/sm9_keyexchange.txt) and the
  * official English edition's example (hid = 0x03,
  * crypto/sm9/sm9_keyexchange_hid03.txt); the hid is the KGC's published
- * choice, taken from the vector file. For each, both parties' ephemeral
- * values, the shared key and the key-confirmation tags S_A / S_B are
- * reproduced byte-for-byte.
+ * choice, taken from the vector file. For each, the master public key, both
+ * KGC-derived user keys, both parties' ephemeral values, the shared key and the
+ * key-confirmation tags S_A / S_B are reproduced byte-for-byte.
  */
 public class SM9KeyExchangeTest
     extends SimpleTest
@@ -97,13 +97,24 @@ public class SM9KeyExchangeTest
         isTrue(fileName + " deA records its hid", deA.getHid() == hid);
         isTrue(fileName + " deA is an exchange key", deA.isExchangeKey());
 
+        // the master public key and both KGC-derived user keys the standard prints
+        isTrue(fileName + " master public key Ppub-e", Arrays.areEqual(
+            master.getPublicKeyParameters().getEncoded(),
+            Arrays.concatenate(new byte[]{0x04}, hex(v, "Ppube_x"), hex(v, "Ppube_y"))));
+        isTrue(fileName + " user key deA", Arrays.areEqual(
+            deA.getPrivatePoint().getEncoded(), g2(v, "deA_x_hi", "deA_x_lo", "deA_y_hi", "deA_y_lo")));
+        isTrue(fileName + " user key deB", Arrays.areEqual(
+            deB.getPrivatePoint().getEncoded(), g2(v, "deB_x_hi", "deB_x_lo", "deB_y_hi", "deB_y_lo")));
+
         SM9KeyExchange a = new SM9KeyExchange(deA, identityB, true);
         SM9KeyExchange b = new SM9KeyExchange(deB, identityA, false);
         ECPoint ra = a.generateEphemeral(new TestRandomBigInteger(256, hex(v, "rA")));
         ECPoint rb = b.generateEphemeral(new TestRandomBigInteger(256, hex(v, "rB")));
 
-        isTrue(fileName + " RA", Arrays.areEqual(xCoord(ra), hex(v, "RA_x")));
-        isTrue(fileName + " RB", Arrays.areEqual(xCoord(rb), hex(v, "RB_x")));
+        isTrue(fileName + " RA", Arrays.areEqual(SM9Curve.g1ToBytes(ra),
+            Arrays.concatenate(hex(v, "RA_x"), hex(v, "RA_y"))));
+        isTrue(fileName + " RB", Arrays.areEqual(SM9Curve.g1ToBytes(rb),
+            Arrays.concatenate(hex(v, "RB_x"), hex(v, "RB_y"))));
 
         byte[] skA = a.calculateKey(klen, rb);
         byte[] skB = b.calculateKey(klen, ra);
@@ -177,9 +188,11 @@ public class SM9KeyExchangeTest
         }
     }
 
-    private static byte[] xCoord(ECPoint p)
+    private byte[] g2(Map v, String xHi, String xLo, String yHi, String yLo)
     {
-        return BigIntegers.asUnsignedByteArray(32, p.normalize().getAffineXCoord().toBigInteger());
+        return Arrays.concatenate(
+            Arrays.concatenate(new byte[]{0x04}, hex(v, xHi), hex(v, xLo)),
+            Arrays.concatenate(hex(v, yHi), hex(v, yLo)));
     }
 
     public static void main(String[] args)

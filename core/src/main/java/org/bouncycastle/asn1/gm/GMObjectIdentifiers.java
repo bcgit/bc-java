@@ -106,4 +106,22 @@ public interface GMObjectIdentifiers
     ASN1ObjectIdentifier sm2_pkcs7_signedAndEnvelopedData = sm2_pkcs7.branch("4");
     ASN1ObjectIdentifier sm2_pkcs7_encryptedData = sm2_pkcs7.branch("5");
     ASN1ObjectIdentifier sm2_pkcs7_keyAgreementInfoData = sm2_pkcs7.branch("6");
+
+    // GM/T 0081-2020 SM9 encryption and signature message syntax content types, clause 5 table 1.
+    // Base arc 1.2.156.10197.6.1.4.4 - the SM9 sibling of the GM/T 0010-2012 SM2 arc above, with
+    // the same six content types in the same order. The structures they identify are modelled on
+    // PKCS#7 but are not interchangeable with it: GM/T 0081 SignedData keeps the PKCS#7 field
+    // order and tags while replacing certificates [0] / crls [1] with ibcSysParamsPublishInfos [0]
+    // / irls [1], so org.bouncycastle.asn1.pkcs.SignedData parses it and silently mislabels those
+    // two sets. The mismatch only bites one level down, in SignerInfo, which identifies the signer
+    // by an identity-based Identifier rather than an IssuerAndSerialNumber and carries an
+    // SM9Signature SEQUENCE where PKCS#7 has an EncryptedDigest OCTET STRING.
+    ASN1ObjectIdentifier sm9_pkcs7 = new ASN1ObjectIdentifier("1.2.156.10197.6.1.4.4");
+    ASN1ObjectIdentifier sm9_pkcs7_data = sm9_pkcs7.branch("1");
+    ASN1ObjectIdentifier sm9_pkcs7_signedData = sm9_pkcs7.branch("2");
+    ASN1ObjectIdentifier sm9_pkcs7_envelopedData = sm9_pkcs7.branch("3");
+    ASN1ObjectIdentifier sm9_pkcs7_signedAndEnvelopedData = sm9_pkcs7.branch("4");
+    ASN1ObjectIdentifier sm9_pkcs7_encryptedData = sm9_pkcs7.branch("5");
+    // GM/T 0081 names this object keyAgreementInfo; the SM2 constant above carries a Data suffix.
+    ASN1ObjectIdentifier sm9_pkcs7_keyAgreementInfo = sm9_pkcs7.branch("6");
 }
