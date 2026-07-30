@@ -64,7 +64,7 @@ public class multipart_signed
         {
             try
             {
-                outputBodyPart(os, obj);
+                outputBodyPart(os, obj, 0);
             }
             catch (MessagingException ex)
             {
@@ -109,9 +109,16 @@ public class multipart_signed
      */
     private void outputBodyPart(
         OutputStream out,
-        Object bodyPart)
+        Object bodyPart,
+        int depth)
         throws MessagingException, IOException
     {
+        // second, independent recursion over the same sender-controlled nesting as SMIMEUtil's
+        if (depth > SMIMEUtil.getMaxDepth())
+        {
+            throw new MessagingException("maximum multipart nesting depth reached");
+        }
+
         if (bodyPart instanceof Multipart)
         {
             Multipart mp = (Multipart)bodyPart;
@@ -123,7 +130,7 @@ public class multipart_signed
             for (int i = 0; i < mp.getCount(); i++)
             {
                 lOut.writeln(boundary);
-                outputBodyPart(out, mp.getBodyPart(i));
+                outputBodyPart(out, mp.getBodyPart(i), depth + 1);
                 lOut.writeln();       // CRLF terminator
             }
 
@@ -155,7 +162,7 @@ public class multipart_signed
 
                 outputPreamble(lOut, mimePart, boundary);
 
-                outputBodyPart(out, mp);
+                outputBodyPart(out, mp, depth + 1);
                 return;
             }
         }

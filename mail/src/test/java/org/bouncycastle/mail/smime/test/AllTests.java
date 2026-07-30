@@ -55,6 +55,7 @@ public class AllTests
         suite.addTestSuite(SignedMailValidatorTest.class);
         suite.addTestSuite(SMIMECompressedTest.class);
         suite.addTestSuite(SMIMEMiscTest.class);
+        suite.addTestSuite(SMIMENestedMultipartTest.class);
         suite.addTestSuite(SMIMEToolkitTest.class);
         suite.addTestSuite(PipedStreamThreadStuckTest.class);
 

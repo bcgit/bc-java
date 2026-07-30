@@ -65,6 +65,7 @@ public class Properties
      * (CVE-2024-29857). Default 1142 (twice 571).
      */
     public static final String EC_MAX_F2M_FIELD_SIZE = "org.bouncycastle.ec.max_f2m_field_size";
+    public static final String MIME_MAX_DEPTH = "org.bouncycastle.mime.max_depth";
 
     private Properties()
     {

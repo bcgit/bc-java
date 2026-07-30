@@ -26,12 +26,26 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 public class SMIMEUtil
 {
     private static final String MULTIPART = "multipart";
     private static final int BUF_SIZE = 32760;
+
+    /**
+     * Depth of nested multipart content the canonicalisers will descend, from
+     * {@link Properties#MIME_MAX_DEPTH} - the MIME analogue of the ASN.1 codec's nesting cap.
+     * Public so the multipart/signed content handler, in a sub-package, applies the same bound
+     * to its own recursion over the same content rather than carrying a second default.
+     *
+     * @return the maximum nesting depth, never negative.
+     */
+    public static int getMaxDepth()
+    {
+        return Math.max(0, Properties.asInteger(Properties.MIME_MAX_DEPTH, 64));
+    }
 
     public static boolean isMultipartContent(Part part)
         throws MessagingException
@@ -396,6 +410,24 @@ public class SMIMEUtil
         String defaultContentTransferEncoding)
         throws MessagingException, IOException
     {
+        outputBodyPart(out, topLevel, bodyPart, defaultContentTransferEncoding, 0);
+    }
+
+    private static void outputBodyPart(
+        OutputStream out,
+        boolean topLevel,
+        BodyPart bodyPart,
+        String defaultContentTransferEncoding,
+        int depth)
+        throws MessagingException, IOException
+    {
+        // the signed half of an inbound multipart/signed is sender-controlled and each nesting level
+        // costs a stack frame here plus the frames JavaMail spends resolving the part
+        if (depth > getMaxDepth())
+        {
+            throw new MessagingException("maximum multipart nesting depth reached");
+        }
+
         if (bodyPart instanceof MimeBodyPart)
         {
             MimeBodyPart mimePart = (MimeBodyPart)bodyPart;
@@ -412,7 +444,7 @@ public class SMIMEUtil
                 {
                     lOut.writeln(boundary);
                     BodyPart part = mp.getBodyPart(i);
-                    outputBodyPart(out, false, part, defaultContentTransferEncoding);
+                    outputBodyPart(out, false, part, defaultContentTransferEncoding, depth + 1);
                     if (!isMultipartContent(part))
                     {
                         lOut.writeln();       // CRLF terminator needed

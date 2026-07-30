@@ -332,6 +332,17 @@ public class Properties
      */
     public static final String EC_MAX_F2M_FIELD_SIZE = "org.bouncycastle.ec.max_f2m_field_size";
 
+    /**
+     * Maximum depth of nested {@code multipart/*} content the S/MIME canonicalisers will descend
+     * before failing, the MIME analogue of {@link #ASN1_MAX_CONS_DEPTH}. Each level of nesting in
+     * the signed half of an inbound {@code multipart/signed} costs a stack frame in
+     * {@code SMIMEUtil.outputBodyPart} plus the frames JavaMail spends resolving the part, so an
+     * unbounded depth turns a few hundred KB of crafted mail into a {@code StackOverflowError}.
+     * RFC 8551 sec. 3.1 requires an agent to receive nested S/MIME but does not require unbounded
+     * depth. Default 64; real mail nests two or three deep. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String MIME_MAX_DEPTH = "org.bouncycastle.mime.max_depth";
+
     private Properties()
     {
     }
