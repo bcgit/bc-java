@@ -16,6 +16,10 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSSignature;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.pqc.crypto.xmss.XMSSKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.xmss.XMSSKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.xmss.XMSSSigner;
 
 /**
  * Test cases for XMSS class.
@@ -610,5 +614,93 @@ public class XMSSTest
         byte[] sig2 = xmss.sign(msg);
 
         assertEquals(true, Arrays.areEqual(sig1, sig2));
+    }
+
+    /**
+     * init() assigned only the key for the mode being set. generateSignature already refused to run
+     * unless initialised for signing, but verifySignature had no such check, so a signer re-inited
+     * for signing still verified against the public key left over from an earlier verification init
+     * - and returned true. The public key is now cleared on a signing init and verifySignature
+     * reports the wrong mode.
+     * <p>
+     * The private key is deliberately NOT cleared on a verification init: getUpdatedPrivateKey()
+     * synchronizes on it, so clearing it would turn the legitimate sign, verify, then collect the
+     * advanced state sequence into a NullPointerException. That sequence is asserted below.
+     */
+    public void testReInitClearsThePublicKey()
+        throws Exception
+    {
+        XMSSKeyPairGenerator kpGen = new XMSSKeyPairGenerator();
+
+        kpGen.init(new XMSSKeyGenerationParameters(new XMSSParameters(4, new SHA256Digest()), new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        byte[] msg = Hex.decode("54686520706f77657273206e6f742064656c65676174656420746f2074686520");
+
+        XMSSSigner signer = new XMSSSigner();
+
+        signer.init(false, kp.getPublic());
+        signer.init(true, kp.getPrivate());
+
+        byte[] sig = signer.generateSignature(msg);
+
+        // the public key from the first init must not still be here
+        try
+        {
+            signer.verifySignature(msg, sig);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signer not initialized for verification", e.getMessage());
+        }
+
+        // and the state contract still holds across a verification init
+        signer.init(false, kp.getPublic());
+
+        assertTrue(signer.verifySignature(msg, sig));
+
+        signer.init(true, kp.getPrivate());
+        signer.generateSignature(msg);
+        signer.init(false, kp.getPublic());
+
+        assertNotNull(signer.getUpdatedPrivateKey());
+
+        // the signing direction was already guarded; assert it stays that way
+        signer.init(false, kp.getPublic());
+
+        try
+        {
+            signer.generateSignature(msg);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signer not initialized for signature generation", e.getMessage());
+        }
+
+        // a signer that was never initialised at all reports that rather than returning false
+        XMSSSigner fresh = new XMSSSigner();
+
+        try
+        {
+            fresh.verifySignature(msg, sig);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signer not initialized for verification", e.getMessage());
+        }
+
+        try
+        {
+            fresh.generateSignature(msg);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signer not initialized for signature generation", e.getMessage());
+        }
     }
 }

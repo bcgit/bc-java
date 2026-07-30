@@ -26,6 +26,11 @@ public class XMSSSigner
             hasGenerated = false;
             privateKey = (XMSSPrivateKeyParameters)param;
             params = privateKey.getParameters();
+            // the public key from a previous verification init must not stay behind, or this signer
+            // still verifies against it. The private key is deliberately NOT cleared on a
+            // verification init: getUpdatedPrivateKey() synchronizes on it, and sign then verify
+            // then collect the advanced state is a legitimate sequence.
+            publicKey = null;
         }
         else
         {
@@ -103,6 +108,14 @@ public class XMSSSigner
 
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // covers both a signer initialised for signing and one never initialised at all: the latter
+        // used to fall through and report the absent public key as "signature did not verify",
+        // because the NullPointerException it caused was swallowed by the malformed-signature catch
+        if (initSign || publicKey == null)
+        {
+            throw new IllegalStateException("signer not initialized for verification");
+        }
+
         /* parse signature and public key */
         XMSSSignature sig;
         try

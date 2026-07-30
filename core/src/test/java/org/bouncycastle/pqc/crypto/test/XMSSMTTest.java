@@ -17825,4 +17825,85 @@ public class XMSSMTTest
         msg[0] ^= 0xff;
         assertEquals(false, signer.verifySignature(msg, signature));
     }
+
+    /**
+     * As XMSSTest.testReInitClearsThePublicKey: verifySignature had no mode check, so a signer
+     * re-inited for signing still verified against the public key from an earlier verification init.
+     * The private key is deliberately left in place on a verification init so getUpdatedPrivateKey()
+     * keeps working, which is asserted here too.
+     */
+    public void testReInitClearsThePublicKey()
+        throws Exception
+    {
+        XMSSMTKeyPairGenerator kpGen = new XMSSMTKeyPairGenerator();
+
+        kpGen.init(new XMSSMTKeyGenerationParameters(
+            new XMSSMTParameters(4, 2, new SHA256Digest()), new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        byte[] msg = Hex.decode("54686520706f77657273206e6f742064656c65676174656420746f2074686520");
+
+        XMSSMTSigner signer = new XMSSMTSigner();
+
+        signer.init(false, kp.getPublic());
+        signer.init(true, kp.getPrivate());
+
+        byte[] sig = signer.generateSignature(msg);
+
+        try
+        {
+            signer.verifySignature(msg, sig);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signer not initialized for verification", e.getMessage());
+        }
+
+        signer.init(false, kp.getPublic());
+
+        assertTrue(signer.verifySignature(msg, sig));
+
+        signer.init(true, kp.getPrivate());
+        signer.generateSignature(msg);
+        signer.init(false, kp.getPublic());
+
+        assertNotNull(signer.getUpdatedPrivateKey());
+
+        signer.init(false, kp.getPublic());
+
+        try
+        {
+            signer.generateSignature(msg);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signer not initialized for signature generation", e.getMessage());
+        }
+
+        // a signer that was never initialised at all reports that rather than returning false
+        XMSSMTSigner fresh = new XMSSMTSigner();
+
+        try
+        {
+            fresh.verifySignature(msg, sig);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signer not initialized for verification", e.getMessage());
+        }
+
+        try
+        {
+            fresh.generateSignature(msg);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signer not initialized for signature generation", e.getMessage());
+        }
+    }
 }
