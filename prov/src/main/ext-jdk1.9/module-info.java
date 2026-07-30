@@ -161,7 +161,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.mldsa;
     exports org.bouncycastle.pqc.crypto.mlkem;
     exports org.bouncycastle.pqc.crypto.falcon;
-    exports org.bouncycastle.pqc.crypto.frodo;
     exports org.bouncycastle.pqc.crypto.hqc;
     exports org.bouncycastle.pqc.crypto.lms;
     exports org.bouncycastle.pqc.crypto.mayo;
@@ -196,7 +195,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.cmce;
     exports org.bouncycastle.pqc.jcajce.provider.dilithium;
     exports org.bouncycastle.pqc.jcajce.provider.falcon;
-    exports org.bouncycastle.pqc.jcajce.provider.frodo;
     exports org.bouncycastle.pqc.jcajce.provider.hqc;
     exports org.bouncycastle.pqc.jcajce.provider.kyber;
     exports org.bouncycastle.pqc.jcajce.provider.lms;

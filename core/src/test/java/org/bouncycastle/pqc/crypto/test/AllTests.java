@@ -24,8 +24,6 @@ public class AllTests
         // XMSS tests split out into AllTestsXMSS so they can run as a separate (parallel) fork.
 //        suite.addTestSuite(SphincsPlusTest.class);   -- now deprecated
         // CMCE (Classic McEliece) tests split out into AllTestsCMCE so they can run as a separate (parallel) fork.
-//        suite.addTestSuite(FrodoVectorTest.class);  -- now deprecated
-        suite.addTestSuite(FrodoVectorTest.class);
         suite.addTestSuite(FrodoKEMVectorTest.class);
         suite.addTestSuite(SABERVectorTest.class);
         suite.addTestSuite(NTRUTest.class);

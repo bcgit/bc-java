@@ -4,7 +4,6 @@ import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.pqc.jcajce.spec.SNTRUPrimeParameterSpec;
 
 /**
@@ -22,7 +21,6 @@ public class SNTRUPrimeKeyPairGeneratorTest
         throws Exception
     {
         kf = KeyFactory.getInstance("SNTRUPrime", "BCPQC");
-        kf = KeyFactory.getInstance(BCObjectIdentifiers.pqc_kem_frodo.getId(), "BCPQC");
     }
 
     public void testKeyPairEncoding()

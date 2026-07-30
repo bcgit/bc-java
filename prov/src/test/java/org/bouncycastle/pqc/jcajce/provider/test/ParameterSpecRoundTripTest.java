@@ -47,7 +47,6 @@ public class ParameterSpecRoundTripTest
             "org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.FaestParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec",
-            "org.bouncycastle.pqc.jcajce.spec.FrodoParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.HaetaeParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.HawkParameterSpec",

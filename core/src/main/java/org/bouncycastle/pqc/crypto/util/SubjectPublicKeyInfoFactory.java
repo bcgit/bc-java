@@ -25,7 +25,6 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParamete
 import org.bouncycastle.pqc.crypto.faest.FaestPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qruov.QRUOVPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hawk.HawkPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
@@ -175,16 +174,6 @@ public class SubjectPublicKeyInfoFactory
                     Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
                 return new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSMTPublicKey(keyParams.getPublicSeed(), keyParams.getRoot()));
             }
-        }
-        else if (publicKey instanceof FrodoPublicKeyParameters)
-        {
-            FrodoPublicKeyParameters params = (FrodoPublicKeyParameters)publicKey;
-
-            byte[] encoding = params.getEncoded();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.frodoOidLookup(params.getParameters()));
-
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (publicKey instanceof SABERPublicKeyParameters)
         {

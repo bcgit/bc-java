@@ -25,7 +25,6 @@ import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
-import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
@@ -49,8 +48,6 @@ class Utils
     static final Map picnicOids = new HashMap();
     static final Map picnicParams = new HashMap();
 
-    static final Map frodoOids = new HashMap();
-    static final Map frodoParams = new HashMap();
 
     static final Map saberOids = new HashMap();
     static final Map saberParams = new HashMap();
@@ -121,19 +118,7 @@ class Utils
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128_r3, CMCEParameters.mceliece8192128r3);
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128f_r3, CMCEParameters.mceliece8192128fr3);
 
-        frodoOids.put(FrodoParameters.frodokem640aes, BCObjectIdentifiers.frodokem640aes);
-        frodoOids.put(FrodoParameters.frodokem640shake, BCObjectIdentifiers.frodokem640shake);
-        frodoOids.put(FrodoParameters.frodokem976aes, BCObjectIdentifiers.frodokem976aes);
-        frodoOids.put(FrodoParameters.frodokem976shake, BCObjectIdentifiers.frodokem976shake);
-        frodoOids.put(FrodoParameters.frodokem1344aes, BCObjectIdentifiers.frodokem1344aes);
-        frodoOids.put(FrodoParameters.frodokem1344shake, BCObjectIdentifiers.frodokem1344shake);
 
-        frodoParams.put(BCObjectIdentifiers.frodokem640aes, FrodoParameters.frodokem640aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem640shake, FrodoParameters.frodokem640shake);
-        frodoParams.put(BCObjectIdentifiers.frodokem976aes, FrodoParameters.frodokem976aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem976shake, FrodoParameters.frodokem976shake);
-        frodoParams.put(BCObjectIdentifiers.frodokem1344aes, FrodoParameters.frodokem1344aes);
-        frodoParams.put(BCObjectIdentifiers.frodokem1344shake, FrodoParameters.frodokem1344shake);
 
         saberOids.put(SABERParameters.lightsaberkem128r3, BCObjectIdentifiers.lightsaberkem128r3);
         saberOids.put(SABERParameters.saberkem128r3, BCObjectIdentifiers.saberkem128r3);
@@ -582,16 +567,6 @@ class Utils
     static CMCEParameters mcElieceParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (CMCEParameters)mcElieceParams.get(oid);
-    }
-
-    static ASN1ObjectIdentifier frodoOidLookup(FrodoParameters params)
-    {
-        return (ASN1ObjectIdentifier)frodoOids.get(params);
-    }
-
-    static FrodoParameters frodoParamsLookup(ASN1ObjectIdentifier oid)
-    {
-        return (FrodoParameters)frodoParams.get(oid);
     }
 
     static ASN1ObjectIdentifier saberOidLookup(SABERParameters params)

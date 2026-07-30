@@ -33,8 +33,6 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParamet
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
-import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
@@ -166,13 +164,6 @@ public class PrivateKeyFactory
             CMCEParameters spParams = Utils.mcElieceParamsLookup(algOID);
 
             return new CMCEPrivateKeyParameters(spParams, cmceKey.getDelta(), cmceKey.getC(), cmceKey.getG(), cmceKey.getAlpha(), cmceKey.getS());
-        }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_frodo))
-        {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            FrodoParameters spParams = Utils.frodoParamsLookup(algOID);
-
-            return new FrodoPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_saber))
         {

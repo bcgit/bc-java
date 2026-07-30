@@ -23,7 +23,6 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
@@ -133,16 +132,6 @@ public class PrivateKeyInfoFactory
             CMCEPublicKey cmcePub = new CMCEPublicKey(params.reconstructPublicKey());
             CMCEPrivateKey cmcePriv = new CMCEPrivateKey(0, params.getDelta(), params.getC(), params.getG(), params.getAlpha(), params.getS(), cmcePub);
             return new PrivateKeyInfo(algorithmIdentifier, cmcePriv, attributes);
-        }
-        else if (privateKey instanceof FrodoPrivateKeyParameters)
-        {
-            FrodoPrivateKeyParameters params = (FrodoPrivateKeyParameters)privateKey;
-
-            byte[] encoding = params.getEncoded();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.frodoOidLookup(params.getParameters()));
-
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }
         else if (privateKey instanceof SABERPrivateKeyParameters)
         {

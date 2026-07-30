@@ -25,7 +25,6 @@ import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
-import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
@@ -38,8 +37,6 @@ class Utils
     static final AlgorithmIdentifier SPHINCS_SHA3_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256);
     static final AlgorithmIdentifier SPHINCS_SHA512_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256);
 
-    static final Map frodoOids = new HashMap();
-    static final Map frodoParams = new HashMap();
 
     static final Map saberOids = new HashMap();
     static final Map saberParams = new HashMap();
@@ -415,16 +412,6 @@ class Utils
     static org.bouncycastle.crypto.params.CMCEParameters cmceParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (org.bouncycastle.crypto.params.CMCEParameters)cmceParams.get(oid);
-    }
-
-    static ASN1ObjectIdentifier frodoOidLookup(FrodoParameters params)
-    {
-        return (ASN1ObjectIdentifier)frodoOids.get(params);
-    }
-
-    static FrodoParameters frodoParamsLookup(ASN1ObjectIdentifier oid)
-    {
-        return (FrodoParameters)frodoParams.get(oid);
     }
 
     static ASN1ObjectIdentifier saberOidLookup(SABERParameters params)

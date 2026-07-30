@@ -45,8 +45,6 @@ import org.bouncycastle.pqc.crypto.qruov.QRUOVParameters;
 import org.bouncycastle.pqc.crypto.qruov.QRUOVPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
-import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hawk.HawkParameters;
@@ -164,12 +162,6 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.mceliece6960119f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece8192128_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece8192128f_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.frodokem640aes, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem640shake, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem976aes, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem976shake, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem1344aes, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem1344shake, new FrodoConverter());
         converters.put(BCObjectIdentifiers.lightsaberkem128r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.saberkem128r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.firesaberkem128r3, new SABERConverter());
@@ -739,20 +731,6 @@ public class PublicKeyFactory
             SABERParameters saberParams = Utils.saberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new SABERPublicKeyParameters(saberParams, keyEnc);
-        }
-    }
-
-    private static class FrodoConverter
-        extends SubjectPublicKeyInfoConverter
-    {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
-        {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
-
-            FrodoParameters fParams = Utils.frodoParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
-
-            return new FrodoPublicKeyParameters(fParams, keyEnc);
         }
     }
 
