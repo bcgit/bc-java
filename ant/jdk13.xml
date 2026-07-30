@@ -85,7 +85,7 @@
                 <exclude name="**/pqc/crypto/faest/**" />
                 <exclude name="**/pqc/crypto/snova/**" />
                 <exclude name="**/pqc/crypto/qruov/**" />
-                <exclude name="**/pqc/crypto/hawk/**" />
+                <exclude name="**/pqc/legacy/hawk/**" />
                 <exclude name="**/pqc/crypto/mayo/**" />
                 <exclude name="**/pqc/crypto/aimer/**" />
                 <exclude name="**/pqc/crypto/mqom/**" />
@@ -298,7 +298,7 @@
                 <exclude name="**/pqc/crypto/faest/**" />
                 <exclude name="**/pqc/crypto/snova/**" />
                 <exclude name="**/pqc/crypto/qruov/**" />
-                <exclude name="**/pqc/crypto/hawk/**" />
+                <exclude name="**/pqc/legacy/hawk/**" />
                 <exclude name="**/pqc/crypto/mayo/**" />
                 <exclude name="**/pqc/crypto/aimer/**" />
                 <exclude name="**/pqc/crypto/mqom/**" />

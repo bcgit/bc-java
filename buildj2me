@@ -385,12 +385,9 @@ q
     org.bouncycastle.pqc.crypto \
     org.bouncycastle.pqc.crypto.cmce \
     org.bouncycastle.pqc.crypto.ntruprime \
-    org.bouncycastle.pqc.crypto.crystals.kyber \
-    org.bouncycastle.pqc.crypto.crystals.dilithium \
+    org.bouncycastle.pqc.legacy.crystals.dilithium \
     org.bouncycastle.pqc.crypto.falcon \
-    org.bouncycastle.pqc.legacy.crypto.rainbow \
-    org.bouncycastle.pqc.legacy.crypto.mceliece \
-    org.bouncycastle.pqc.legacy.crypto.gmss \
+    org.bouncycastle.pqc.legacy.rainbow \
     org.bouncycastle.util \
     org.bouncycastle.util.encoders \
     org.bouncycastle.util.test > /dev/null \
