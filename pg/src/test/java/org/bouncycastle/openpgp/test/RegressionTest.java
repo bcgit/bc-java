@@ -9,6 +9,7 @@ import org.bouncycastle.util.test.Test;
 public class RegressionTest
 {
     public static Test[] tests = {
+        new PGPPadTest(),
         new BcPGPKeyRingTest(),
         new PGPKeyRingTest(),
         new BcPGPRSATest(),

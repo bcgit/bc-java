@@ -43,6 +43,13 @@ public class PGPPad
         throws PGPException
     {
         int paddedLength = encoded.length;
+        if (paddedLength < 8)
+        {
+            // otherwise encoded[-1] below; the checks further down already require a positive
+            // multiple of eight, they just cannot be reached for an empty input
+            throw new PGPException("bad padding found in session data");
+        }
+
         byte padByte = encoded[paddedLength - 1];
         int padCount = padByte & 0xFF;
         int length = paddedLength - padCount;
@@ -57,6 +64,9 @@ public class PGPPad
 
         diff |= paddedLength & 7;
         diff |= (40 - paddedLength) >> 31;
+        // a pad count past the end makes every mask above -1, so a uniform buffer passes the
+        // consistency check and reaches new byte[negative]; fold it in rather than testing it
+        diff |= length >> 31;
 
         if (diff != 0)
         {
