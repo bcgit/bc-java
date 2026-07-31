@@ -212,28 +212,37 @@ final class Faest
     }
 
     /** True iff bits {@code start..lambda} of {@code chall3} are all zero — the
-     *  proof-of-work grind condition (faest-ref {@code check_challenge_3}). */
+     *  proof-of-work grind condition (faest-ref {@code check_challenge_3}).
+     *  Constant-time: OR-folds every bit in the range and tests once at the end,
+     *  rather than early-returning on the first set bit. During the sign-time
+     *  grind loop the candidate {@code chall3} is secret-derived; the accepted
+     *  iteration count is published via the signature counter anyway, but
+     *  avoiding the per-bit branch keeps timing of the rejected candidates from
+     *  leaking which high bit fired the rejection. */
     private static boolean checkChallenge3(byte[] chall3, int start, int lambda)
     {
+        int acc = 0;
         for (int b = start; b < lambda; b++)
         {
-            if (((chall3[b >> 3] >>> (b & 7)) & 1) != 0)
-            {
-                return false;
-            }
+            acc |= (chall3[b >> 3] >>> (b & 7)) & 1;
         }
-        return true;
+        return acc == 0;
     }
 
     /** Decode chall_3 into tau indices, each k or k-1 bits long. Returns null if
      *  any index exceeds the corresponding {@code Ni}. faest-ref:
-     *  {@code decode_all_chall_3}. */
+     *  {@code decode_all_chall_3}.
+     *  <p>
+     *  Constant-time: walks the full index list and OR-accumulates an
+     *  out-of-range flag; only the final return distinguishes valid from
+     *  invalid, so the per-byte timing of the decoded indices doesn't leak. */
     private static int[] decodeAllChall3(byte[] chall3, FaestParameters params)
     {
         int tau = params.getTau();
         int tau1 = params.getTau1();
         int k = params.getK();
         int[] out = new int[tau];
+        int oob = 0;
         for (int i = 0; i < tau; i++)
         {
             int lo, hi;
@@ -253,13 +262,10 @@ final class Faest
                 v |= ((chall3[j >> 3] >>> (j & 7)) & 1) << (j - lo);
             }
             int ni = BAVC.maxNodeIndex(i, tau1, k);
-            if (v >= ni)
-            {
-                return null;
-            }
+            oob |= (ni - 1 - v) >>> 31;
             out[i] = v;
         }
-        return out;
+        return oob != 0 ? null : out;
     }
 
     /**
