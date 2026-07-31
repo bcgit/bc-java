@@ -8,7 +8,6 @@ import java.security.Security;
 
 import javax.crypto.Cipher;
 
-import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -54,7 +53,7 @@ public class SM9CipherExample
         //    the private half.
         byte[] bobIdentity = Strings.toByteArray("Bob");
         KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobIdentity,
-            SM9EncMasterPrivateKeyParameters.HID);
+            SM9EncMasterPublicKey.HID);
 
         byte[] message = Strings.toByteArray("Chinese IBE standard");
 

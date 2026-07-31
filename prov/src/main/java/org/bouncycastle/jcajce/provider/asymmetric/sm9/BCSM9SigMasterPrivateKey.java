@@ -24,7 +24,7 @@ import org.bouncycastle.jcajce.interfaces.SM9SigMasterPrivateKey;
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
  * lightweight key-parameter class's {@code getEncoded()}.
  */
-public class BCSM9SigMasterPrivateKey
+class BCSM9SigMasterPrivateKey
     implements SM9SigMasterPrivateKey
 {
     private static final long serialVersionUID = 1L;

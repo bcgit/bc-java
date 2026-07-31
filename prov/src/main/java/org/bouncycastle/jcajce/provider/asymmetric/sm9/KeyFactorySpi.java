@@ -137,4 +137,5 @@ public class KeyFactorySpi
             || key instanceof BCSM9EncMasterPrivateKey
             || key instanceof BCSM9EncPrivateKey;
     }
+
 }

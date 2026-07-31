@@ -91,6 +91,8 @@ public class GM
             provider.addAlgorithm("Cipher.SM9", SM9_PREFIX + "CipherSpi");
             provider.addAlgorithm("Alg.Alias.Cipher." + GMObjectIdentifiers.sm9encrypt, "SM9");
             provider.addAlgorithm("KeyGenerator.SM9-KEM", SM9_PREFIX + "SM9KEMKeyGeneratorSpi");
+            provider.addAlgorithm("KeyAgreement.SM9", SM9_PREFIX + "KeyAgreementSpi");
+            provider.addAlgorithm("Alg.Alias.KeyAgreement." + GMObjectIdentifiers.sm9keyagreement, "SM9");
             provider.addAlgorithm("KeyFactory.SM9", SM9_PREFIX + "KeyFactorySpi");
             provider.addAlgorithm("Alg.Alias.KeyFactory." + GMObjectIdentifiers.sm9sign, "SM9");
             provider.addAlgorithm("Alg.Alias.KeyFactory." + GMObjectIdentifiers.sm9encrypt, "SM9");
