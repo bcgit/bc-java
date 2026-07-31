@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPrivateKeyParameters;
 import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
 import org.bouncycastle.pqc.asn1.CMCEPublicKey;
@@ -361,6 +362,13 @@ public class PrivateKeyInfoFactory
         {
             AIMerPrivateKeyParameters params = (AIMerPrivateKeyParameters)privateKey;
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.aimerOidLookup(params.getParameters()));
+            byte[] encoding = params.getEncoded();
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+        }
+        else if (privateKey instanceof SmaugTPrivateKeyParameters)
+        {
+            SmaugTPrivateKeyParameters params = (SmaugTPrivateKeyParameters)privateKey;
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.smaugTOidLookup(params.getParameters()));
             byte[] encoding = params.getEncoded();
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }

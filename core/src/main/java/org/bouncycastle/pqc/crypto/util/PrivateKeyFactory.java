@@ -70,6 +70,8 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTParameters;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
@@ -579,6 +581,12 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             AIMerParameters aimerParams = Utils.aimerParamsLookup(algOID);
             return new AIMerPrivateKeyParameters(aimerParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_smaugt))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            SmaugTParameters smaugTParams = Utils.smaugTParamsLookup(algOID);
+            return new SmaugTPrivateKeyParameters(smaugTParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.faest))
         {

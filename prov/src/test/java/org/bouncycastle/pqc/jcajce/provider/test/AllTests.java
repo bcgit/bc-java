@@ -80,6 +80,7 @@ public class AllTests
         suite.addTestSuite(ParameterSpecRoundTripTest.class);
         suite.addTestSuite(NTRUPlusTest.class);
         suite.addTestSuite(NTRUPlusKeyPairGeneratorTest.class);
+        suite.addTestSuite(SmaugTTest.class);
 
         return new BCTestSetup(suite);
     }

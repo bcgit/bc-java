@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPublicKeyParameters;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
@@ -293,6 +294,13 @@ public class SubjectPublicKeyInfoFactory
             AIMerPublicKeyParameters params = (AIMerPublicKeyParameters)publicKey;
             byte[] encoding = params.getEncoded();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.aimerOidLookup(params.getParameters()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof SmaugTPublicKeyParameters)
+        {
+            SmaugTPublicKeyParameters params = (SmaugTPublicKeyParameters)publicKey;
+            byte[] encoding = params.getEncoded();
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.smaugTOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (publicKey instanceof HawkPublicKeyParameters)

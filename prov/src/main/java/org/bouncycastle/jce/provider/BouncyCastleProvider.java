@@ -36,6 +36,7 @@ import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.faest.FaestKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.qruov.QRUOVKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.haetae.HaetaeKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.smaugt.SmaugTKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
@@ -555,6 +556,10 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.aimer_192s, new AIMerKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.aimer_256f, new AIMerKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.aimer_256s, new AIMerKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode1, new SmaugTKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode3, new SmaugTKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode5, new SmaugTKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.smaugt_modet, new SmaugTKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)
