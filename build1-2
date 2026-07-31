@@ -94,11 +94,9 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/FrodoVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/SABERVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/NTRUKAT*
-    rm -rf org/bouncycastle/pqc/crypto/*/Rainbow*
     rm -rf org/bouncycastle/pqc/crypto/*/GeMSS*
     rm -rf org/bouncycastle/pqc/legacy/crypto/test/*
     rm org/bouncycastle/pqc/jcajce/spec/LMS*
-    rm org/bouncycastle/pqc/jcajce/*/Rainbow*
     rm -rf org/bouncycastle/crypto/constraints/Logging*
     rm -rf org/bouncycastle/crypto/*/test
     rm -rf org/bouncycastle/crypto/*/IndexGenerator*
@@ -195,7 +193,6 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/JDKPKCS12StoreParameter.java
     rm -rf org/bouncycastle/jcajce/BC*LoadStore*.java
     rm -rf org/bouncycastle/jcajce/spec/DSTU4145*.java
-    rm -rf org/bouncycastle/jcajce/spec/Rainbow*.java
     rm -rf org/bouncycastle/jcajce/provider/config/PKCS12StoreParameter.java
     rm -rf org/bouncycastle/jcajce/provider/test/PrivateConstructorTest.java
     rm -rf org/bouncycastle/jcajce/provider/test/ECAlgorithmParametersTest.java
@@ -224,10 +221,8 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/test/QT*.java
     rm -rf org/bouncycastle/pqc/crypto/test/SphincsPlusTest.java
     rm -rf org/bouncycastle/pqc/crypto/qtesla/QT*Tests.java
-    rm -rf org/bouncycastle/pqc/crypto/rainbow/*
     rm -rf org/bouncycastle/pqc/crypto/gemss/*
     rm -rf org/bouncycastle/pqc/jcajce/provider/test
-    rm -rf org/bouncycastle/pqc/jcajce/provider/rainbow
     rm -rf org/bouncycastle/pqc/jcajce/provider/gemss
     rm -rf org/bouncycastle/pqc/jcajce/provider/Rain*
     rm -rf org/bouncycastle/pqc/jcajce/provider/GeM*

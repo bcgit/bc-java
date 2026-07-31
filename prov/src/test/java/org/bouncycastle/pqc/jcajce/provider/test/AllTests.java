@@ -30,7 +30,6 @@ public class AllTests
         }
 
         suite.addTestSuite(Sphincs256Test.class);
-//        suite.addTestSuite(RainbowSignatureTest.class);
 //        suite.addTestSuite(McElieceFujisakiCipherTest.class);
 //        suite.addTestSuite(McElieceKobaraImaiCipherTest.class);
 //        suite.addTestSuite(McEliecePointchevalCipherTest.class);
@@ -46,8 +45,6 @@ public class AllTests
         suite.addTestSuite(LMSTest.class);
         suite.addTestSuite(SLHDSAKeyPairGeneratorTest.class);
         suite.addTestSuite(SLHDSATest.class);
-        suite.addTestSuite(PicnicTest.class);
-        suite.addTestSuite(PicnicKeyPairGeneratorTest.class);
         suite.addTestSuite(CMCEKeyPairGeneratorTest.class);
         suite.addTestSuite(CMCEKEMTest.class);
         suite.addTestSuite(FrodoKEMTest.class);

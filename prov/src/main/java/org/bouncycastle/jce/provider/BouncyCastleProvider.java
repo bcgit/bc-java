@@ -43,7 +43,6 @@ import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mayo.MayoKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mqom.MQOMKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sdith.SDitHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.snova.SnovaKeyFactorySpi;
@@ -383,7 +382,6 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(IsaraObjectIdentifiers.id_alg_xmssmt, new XMSSMTKeyFactorySpi());
         addKeyInfoConverter(IANAObjectIdentifiers.id_alg_xmssmt_hashsig, new XMSSMTKeyFactorySpi());
         addKeyInfoConverter(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.picnic_key, new PicnicKeyFactorySpi());
 
         addKeyInfoConverter(BCObjectIdentifiers.old_falcon_512, new FalconKeyFactorySpi(BCObjectIdentifiers.old_falcon_512));
         addKeyInfoConverter(BCObjectIdentifiers.old_falcon_1024, new FalconKeyFactorySpi(BCObjectIdentifiers.old_falcon_1024));
@@ -652,10 +650,6 @@ public final class BouncyCastleProvider extends Provider
     {
         try
         {
-            if (publicKeyInfo.getAlgorithm().getAlgorithm().on(BCObjectIdentifiers.picnic_key))
-            {
-                return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
-            }
             AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
 
             if (converter == null)

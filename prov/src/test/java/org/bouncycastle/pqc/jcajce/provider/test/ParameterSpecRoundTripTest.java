@@ -53,7 +53,6 @@ public class ParameterSpecRoundTripTest
             "org.bouncycastle.pqc.jcajce.spec.MayoParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.NTRULPRimeParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec",
-            "org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.QRUOVParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.SABERParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.SDitHParameterSpec",

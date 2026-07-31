@@ -253,12 +253,10 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/FrodoVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/SABERVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/test/SNTRU*
-    rm -rf org/bouncycastle/pqc/crypto/test/Picnic*
     rm -rf org/bouncycastle/pqc/crypto/test/Crystals*
     rm -rf org/bouncycastle/pqc/crypto/test/HQC*
     rm -rf org/bouncycastle/pqc/crypto/test/Falcon*
     rm -rf org/bouncycastle/pqc/crypto/test/BIKE*
-    rm -rf org/bouncycastle/pqc/crypto/test/Rainbow*
     rm -rf org/bouncycastle/pqc/crypto/test/GeMSS*
     rm -rf org/bouncycastle/pqc/crypto/test/MLKEM*
     rm -rf org/bouncycastle/pqc/crypto/test/MLDSA*
@@ -266,7 +264,6 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/SIKE*
     rm -rf org/bouncycastle/pqc/crypto/sike
     rm -rf org/bouncycastle/pqc/legacy/crypto/sike
-    rm -rf org/bouncycastle/pqc/crypto/rainbow
     rm -rf org/bouncycastle/pqc/crypto/gemss
     rm -rf org/bouncycastle/asn1/test/MiscTest.java
     rm org/bouncycastle/pkix/SubjectPublicKeyInfoChecker.java
@@ -291,7 +288,6 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/est/test
     rm -rf org/bouncycastle/dvcs/test
     rm -rf org/bouncycastle/pqc/crypto/gemss
-    rm -rf org/bouncycastle/pqc/crypto/rainbow
     rm org/bouncycastle/crypto/*/Xoo*.java
     rm org/bouncycastle/crypto/*/Photon*.java
     rm org/bouncycastle/crypto/*/ISAP*.java

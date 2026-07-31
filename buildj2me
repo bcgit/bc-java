@@ -111,8 +111,6 @@ then
         rm -rf src/org/bouncycastle/pqc/crypto/lms
         rm -rf src/org/bouncycastle/pqc/crypto/test
         rm -rf src/org/bouncycastle/pqc/crypto/sike
-        rm -rf src/org/bouncycastle/pqc/crypto/picnic
-        rm -rf src/org/bouncycastle/pqc/crypto/rainbow
         rm -rf src/org/bouncycastle/pqc/crypto/gemss
         rm src/org/bouncycastle/pqc/crypto/legacy/qtesla/QTeslaKeyEncodingTests.java
         rm -rf src/org/bouncycastle/gpg/keybox
@@ -387,7 +385,6 @@ q
     org.bouncycastle.pqc.crypto.ntruprime \
     org.bouncycastle.pqc.legacy.crystals.dilithium \
     org.bouncycastle.pqc.crypto.falcon \
-    org.bouncycastle.pqc.legacy.rainbow \
     org.bouncycastle.util \
     org.bouncycastle.util.encoders \
     org.bouncycastle.util.test > /dev/null \

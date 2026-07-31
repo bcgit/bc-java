@@ -38,8 +38,8 @@ public class BouncyCastlePQCProvider
     private static final String[] ALGORITHMS =
         {
             "SPHINCS", "LMS", "NH", "XMSS",
-            "CMCE", "SABER", "Picnic", "NTRU", "Falcon",
-            "NTRUPrime", "BIKE", "HQC", "Rainbow",
+            "CMCE", "SABER", "NTRU", "Falcon",
+            "NTRUPrime", "BIKE", "HQC",
             "Mayo", "Snova",
             "NTRUPlus", "AIMer", "Faest", "QRUOV", "Haetae", "UOV", "MQOM", "SQIsign", "SDitH",
             "SmaugT"

@@ -167,8 +167,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.ntru;
     exports org.bouncycastle.pqc.crypto.ntruplus;
     exports org.bouncycastle.pqc.crypto.ntruprime;
-    exports org.bouncycastle.pqc.legacy.picnic;
-    exports org.bouncycastle.pqc.legacy.rainbow;
     exports org.bouncycastle.pqc.crypto.saber;
     exports org.bouncycastle.pqc.crypto.smaugt;
     exports org.bouncycastle.pqc.crypto.sphincs;
@@ -202,7 +200,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.ntruplus;
     exports org.bouncycastle.pqc.jcajce.provider.ntruprime;
     exports org.bouncycastle.pqc.jcajce.provider.newhope;
-    exports org.bouncycastle.pqc.jcajce.provider.picnic;
     exports org.bouncycastle.pqc.jcajce.provider.saber;
     exports org.bouncycastle.pqc.jcajce.provider.mqom;
     exports org.bouncycastle.pqc.jcajce.provider.uov;

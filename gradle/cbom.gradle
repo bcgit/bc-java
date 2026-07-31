@@ -484,7 +484,7 @@ tasks.register('generateCbom') {
             {
                 return 'combiner'   // ML-KEM + ECDH/X25519/RSA hybrid KEMs
             }
-            if (['SPHINCS', 'DSA', 'GOST3410', 'XMSS', 'LMS', 'FALCON', 'DILITHIUM', 'PICNIC'].any { a.contains(it) })
+            if (['SPHINCS', 'DSA', 'GOST3410', 'XMSS', 'LMS', 'FALCON', 'DILITHIUM'].any { a.contains(it) })
             {
                 return 'signature'
             }
