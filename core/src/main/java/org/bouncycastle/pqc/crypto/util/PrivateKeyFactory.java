@@ -92,8 +92,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.rainbow.RainbowParameters;
-import org.bouncycastle.pqc.legacy.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
@@ -414,13 +412,6 @@ public class PrivateKeyFactory
             HQCParameters hqcParams = Utils.hqcParamsLookup(algOID);
 
             return new HQCPrivateKeyParameters(hqcParams, keyEnc);
-        }
-        else if (algOID.on(BCObjectIdentifiers.rainbow))
-        {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            RainbowParameters rainbowParams = Utils.rainbowParamsLookup(algOID);
-
-            return new RainbowPrivateKeyParameters(rainbowParams, keyEnc);
         }
         else if (algOID.equals(PQCObjectIdentifiers.xmss))
         {

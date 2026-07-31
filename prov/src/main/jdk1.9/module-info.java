@@ -166,7 +166,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.ntru;
     exports org.bouncycastle.pqc.crypto.ntruplus;
     exports org.bouncycastle.pqc.crypto.ntruprime;
-    exports org.bouncycastle.pqc.legacy.rainbow;
     exports org.bouncycastle.pqc.crypto.saber;
     exports org.bouncycastle.pqc.crypto.sphincs;
     exports org.bouncycastle.pqc.legacy.sphincsplus;

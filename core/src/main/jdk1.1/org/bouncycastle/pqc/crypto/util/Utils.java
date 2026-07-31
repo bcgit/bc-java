@@ -69,8 +69,6 @@ class Utils
     static final Map hqcOids = new HashMap();
     static final Map hqcParams = new HashMap();
 
-    static final Map rainbowOids = new HashMap();
-    static final Map rainbowParams = new HashMap();
 
     static final Map mlkemOids = new HashMap<ASN1ObjectIdentifier, MLKEMParameters>();
     static final Map mlkemParams = new HashMap<MLKEMParameters, ASN1ObjectIdentifier>();

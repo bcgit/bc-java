@@ -39,7 +39,7 @@ public class BouncyCastlePQCProvider
         {
             "SPHINCS", "LMS", "NH", "XMSS",
             "CMCE", "SABER", "NTRU", "Falcon",
-            "NTRUPrime", "BIKE", "HQC", "Rainbow",
+            "NTRUPrime", "BIKE", "HQC",
             "Mayo", "Snova",
             "NTRUPlus", "AIMer", "Faest", "QRUOV", "Haetae", "UOV", "MQOM", "SQIsign", "SDitH"
         };

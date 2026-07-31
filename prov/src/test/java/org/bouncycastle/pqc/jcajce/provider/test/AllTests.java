@@ -30,7 +30,6 @@ public class AllTests
         }
 
         suite.addTestSuite(Sphincs256Test.class);
-//        suite.addTestSuite(RainbowSignatureTest.class);
 //        suite.addTestSuite(McElieceFujisakiCipherTest.class);
 //        suite.addTestSuite(McElieceKobaraImaiCipherTest.class);
 //        suite.addTestSuite(McEliecePointchevalCipherTest.class);

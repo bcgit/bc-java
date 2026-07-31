@@ -68,8 +68,6 @@
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
                 <exclude name="**/COMPOSITE.java"/>
                 <exclude name="**/gemss/*.java"/>
-                <exclude name="**/rainbow/*.java"/>
-                <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/PhotonBeetle*.java"/>
                 <exclude name="**/ISAP*.java"/>
                 <exclude name="**/Xoodyak*.java"/>
@@ -112,8 +110,6 @@
                 <exclude name="**/CompositeSignatures.java" />
                 <exclude name="**/EC5*.java" />
                 <exclude name="**/SIKE*.java" />
-                <exclude name="**/Rainbow*.java" />
-                <exclude name="**/rainbow/*.java" />
                 <exclude name="**/GeMSS*.java" />
                 <exclude name="**/gemss/*.java" />
                 <exclude name="**/CertPathReviewer*.java" />
@@ -248,7 +244,6 @@
                 <exclude name="**/nist/NistCertPathTest.java" />
                 <exclude name="**/nist/NistCertPathReviewerTest.java" />
                 <exclude name="**/Elephant*.java" />
-                <exclude name="**/Rainbow*.java" />
                 <exclude name="**/GeMSS*.java" />
                 <exclude name="**/CRL5Test.java" />
                 <exclude name="**/DetDSA*.java" />
@@ -322,7 +317,6 @@
                 <exclude name="**/pqc/crypto/test/PqcMalformedInputTest.java" />
                 <!-- synced from ant/jdk14.xml's core/src/test/java fileset -->
                 <exclude name="**/i18n/**/*.java" />
-                <exclude name="**/pqc/rainbow/*.java" />
                 <exclude name="**/pqc/gemss/*.java" />
                 <exclude name="**/pqc/math/**/*.java" />
                 <exclude name="**/pqc/**/HRSS*.java" />
@@ -365,7 +359,6 @@
                 <exclude name="**/LMS*.java" />
                 <exclude name="**/HSS*.java" />
                 <exclude name="**/SIKE*.java" />
-                <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/GeMSS*.java"/>
                 <exclude name="**/crypto/engines/test/BitStringTest.java" />
                 <exclude name="**/crypto/engines/test/AllTests.java" />

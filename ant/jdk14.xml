@@ -44,8 +44,6 @@
                 <exclude name="**/crypto/generators/BLSKeyPairGenerator.java"/>
                 <exclude name="**/crypto/params/BLSPublicKeyParameters.java"/>
                 <exclude name="**/crypto/params/BLSPrivateKeyParameters.java"/>
-                <exclude name="**/rainbow/*.java"/>
-                <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/PhotonBeetle*.java"/>
                 <exclude name="**/ISAPEngine*.java"/>
                 <exclude name="**/Xoodyak*.java"/>
@@ -109,8 +107,6 @@
                 <exclude name="**/CompositeSign*.java"/>
                 <exclude name="**/COMPOSITE*.java"/>
                 <exclude name="**/CompositeKEMs.java"/>
-                <exclude name="**/rainbow/*.java"/>
-                <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/XMS*.java"/>
                 <exclude name="**/LMS*.java"/>
                 <exclude name="**/IndexGenerator.java"/>
@@ -132,7 +128,6 @@
                 <exclude name="**/hash2curve/**/*.java"/>
                 <exclude name="**/cavp/*.java"/>
                 <exclude name="**/i18n/**/*.java"/>
-                <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/GeMSS*.java"/>
                 <exclude name="**/KDFFeed*.java"/>
                 <exclude name="**/KDFDoublePipeline*.java"/>
@@ -143,7 +138,6 @@
                 <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/pqc/legacy/**/*.java"/>
                 <exclude name="**/pqc/math/**/*.java"/>
-                <exclude name="**/pqc/rainbow/*.java"/>
                 <exclude name="**/pqc/gemss/*.java"/>
                 <exclude name="**/pqc/crypto/faest/**/*.java"/>
                 <exclude name="**/pqc/crypto/test/AllTestsXMSS.java"/>

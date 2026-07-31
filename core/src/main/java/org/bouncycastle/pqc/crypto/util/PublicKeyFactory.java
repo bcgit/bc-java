@@ -83,8 +83,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
-import org.bouncycastle.pqc.legacy.rainbow.RainbowParameters;
-import org.bouncycastle.pqc.legacy.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
@@ -221,12 +219,6 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.hqc128, new HQCConverter());
         converters.put(BCObjectIdentifiers.hqc192, new HQCConverter());
         converters.put(BCObjectIdentifiers.hqc256, new HQCConverter());
-        converters.put(BCObjectIdentifiers.rainbow_III_classic, new RainbowConverter());
-        converters.put(BCObjectIdentifiers.rainbow_III_circumzenithal, new RainbowConverter());
-        converters.put(BCObjectIdentifiers.rainbow_III_compressed, new RainbowConverter());
-        converters.put(BCObjectIdentifiers.rainbow_V_classic, new RainbowConverter());
-        converters.put(BCObjectIdentifiers.rainbow_V_circumzenithal, new RainbowConverter());
-        converters.put(BCObjectIdentifiers.rainbow_V_compressed, new RainbowConverter());
 
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SLHDSAConverter());
@@ -981,20 +973,6 @@ public class PublicKeyFactory
 
                 return new SLHDSAPublicKeyParameters(spParams, keyEnc);
             }
-        }
-    }
-
-    private static class RainbowConverter
-        extends SubjectPublicKeyInfoConverter
-    {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
-        {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
-
-            RainbowParameters rainbowParams = Utils.rainbowParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
-
-            return new RainbowPublicKeyParameters(rainbowParams, keyEnc);
         }
     }
 
