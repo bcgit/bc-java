@@ -80,7 +80,7 @@ public abstract class PGPKeyPairGenerator
     /**
      * Generate a RSA key pair with the given bit-strength.
      * It is recommended to use at least 2048 bits or more.
-     * The key will be generated over the default exponent <pre>65537</pre>.
+     * The key will be generated over the default exponent {@code 65537}.
      * RSA keys are deprecated for OpenPGP v6.
      *
      * @param bitStrength strength of the key pair in bits
@@ -98,7 +98,7 @@ public abstract class PGPKeyPairGenerator
      * It is recommended to use at least 2048 bits or more.
      * RSA keys are deprecated for OpenPGP v6.
      *
-     * @param exponent    RSA exponent <pre>e</pre>
+     * @param exponent    RSA exponent {@code e}
      * @param bitStrength strength of the key pair in bits
      * @return rsa key pair
      * @throws PGPException if the key pair cannot be generated
@@ -184,7 +184,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDH elliptic curve encryption key over the NIST p-256 curve.
-     * <pre>NIST P-256</pre> is equivalent to <pre>prime256v1</pre> and <pre>secp256r1</pre>.
+     * {@code NIST P-256} is equivalent to {@code prime256v1} and {@code secp256r1}.
      *
      * @return NIST p-256 ECDSA encryption key pair
      * @throws PGPException if the key pair cannot be generated
@@ -200,7 +200,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDH elliptic curve encryption key over the NIST p-384 curve.
-     * <pre>NIST P-384</pre> is equivalent to <pre>secp384r1</pre>.
+     * {@code NIST P-384} is equivalent to {@code secp384r1}.
      *
      * @return NIST p-384 ECDSA encryption key pair
      * @throws PGPException if the key pair cannot be generated
@@ -216,7 +216,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDH elliptic curve encryption key over the NIST p-521 curve.
-     * <pre>NIST P-521</pre> is equivalent to <pre>secp521r1</pre>.
+     * {@code NIST P-521} is equivalent to {@code secp521r1}.
      *
      * @return NIST p-521 ECDSA encryption key pair
      * @throws PGPException if the key pair cannot be generated
@@ -277,7 +277,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDSA elliptic curve signing key over the NIST p-256 curve.
-     * <pre>NIST P-256</pre> is equivalent to <pre>prime256v1</pre> and <pre>secp256r1</pre>.
+     * {@code NIST P-256} is equivalent to {@code prime256v1} and {@code secp256r1}.
      *
      * @return NIST p-256 ECDSA signing key pair
      * @throws PGPException if the key pair cannot be generated
@@ -293,7 +293,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDSA elliptic curve signing key over the NIST p-384 curve.
-     * <pre>NIST P-384</pre> is equivalent to <pre>secp384r1</pre>.
+     * {@code NIST P-384} is equivalent to {@code secp384r1}.
      *
      * @return NIST p-384 ECDSA signing key pair
      * @throws PGPException if the key pair cannot be generated
@@ -309,7 +309,7 @@ public abstract class PGPKeyPairGenerator
 
     /**
      * Generate an ECDSA elliptic curve signing key over the NIST p-521 curve.
-     * <pre>NIST P-521</pre> is equivalent to <pre>secp521r1</pre>.
+     * {@code NIST P-521} is equivalent to {@code secp521r1}.
      *
      * @return NIST p-521 ECDSA signing key pair
      * @throws PGPException if the key pair cannot be generated
