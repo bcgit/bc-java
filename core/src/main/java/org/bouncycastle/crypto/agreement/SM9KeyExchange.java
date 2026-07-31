@@ -75,6 +75,7 @@ public class SM9KeyExchange
         return ephemeralPoint;
     }
 
+
     /**
      * Compute the shared key of {@code klenBits} bits from the peer's ephemeral
      * value {@code peerR}. Must be called after {@link #generateEphemeral}.

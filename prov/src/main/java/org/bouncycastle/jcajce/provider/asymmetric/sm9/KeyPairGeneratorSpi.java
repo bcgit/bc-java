@@ -108,4 +108,5 @@ public class KeyPairGeneratorSpi
                 new BCSM9SigMasterPrivateKey((SM9SigMasterPrivateKeyParameters)pair.getPrivate()));
         }
     }
+
 }

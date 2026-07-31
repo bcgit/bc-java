@@ -21,7 +21,7 @@ import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
  * lightweight key-parameter class's {@code getEncoded()}.
  */
-public class BCSM9EncPrivateKey
+class BCSM9EncPrivateKey
     implements PrivateKey
 {
     private static final long serialVersionUID = 1L;

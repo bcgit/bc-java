@@ -25,7 +25,7 @@ import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
  * lightweight key-parameter class's {@code getEncoded()}.
  */
-public class BCSM9EncMasterPrivateKey
+class BCSM9EncMasterPrivateKey
     implements SM9EncMasterPrivateKey
 {
     private static final long serialVersionUID = 1L;
@@ -47,6 +47,30 @@ public class BCSM9EncMasterPrivateKey
         return new KeyPair(
             new BCSM9EncPublicKey(keyParams.getPublicKeyParameters().getUserPublicKey(identity, hid)),
             new BCSM9EncPrivateKey(keyParams.generateUserKey(identity, hid)));
+    }
+
+    /**
+     * Generate the key-exchange key pair of the user identified by {@code identity}
+     * (a KGC operation), under hid 0x02 - see
+     * {@link #generateExchangeKeyPair(byte[], byte)} for a KGC whose published
+     * exchange hid differs.
+     */
+    public KeyPair generateExchangeKeyPair(byte[] identity)
+    {
+        return generateExchangeKeyPair(identity, SM9EncMasterPrivateKeyParameters.HID_EXCHANGE);
+    }
+
+    /**
+     * Generate the key-exchange key pair of the user identified by {@code identity}
+     * under the given hid (a KGC operation). The private half initialises
+     * {@code KeyAgreement.SM9}; exchange keys and KEM/decryption keys are distinct
+     * objects and the consumers mutually reject them.
+     */
+    public KeyPair generateExchangeKeyPair(byte[] identity, byte hid)
+    {
+        return new KeyPair(
+            new BCSM9EncPublicKey(keyParams.getPublicKeyParameters().getUserPublicKey(identity, hid)),
+            new BCSM9EncPrivateKey(keyParams.generateExchangeKey(identity, hid)));
     }
 
     public String getAlgorithm()

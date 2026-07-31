@@ -18,7 +18,7 @@ import org.bouncycastle.util.Arrays;
  * it is not serializable on its own - persist the master public key and the identity
  * separately and reconstruct it.
  */
-public class BCSM9SigPublicKey
+class BCSM9SigPublicKey
     implements PublicKey
 {
     private static final long serialVersionUID = 1L;

@@ -12,7 +12,6 @@ import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.KeyGenerator;
 
-import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
@@ -58,7 +57,7 @@ public class SM9Example
         //    private key (deterministic).
         byte[] bobIdentity = Strings.toByteArray("Bob");
         KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobIdentity,
-            SM9EncMasterPrivateKeyParameters.HID);
+            SM9EncMasterPublicKey.HID);
 
         // 3. Sender: derive Bob's public key from the published master public key and
         //    his identity - no certificate or KGC interaction needed - and encapsulate

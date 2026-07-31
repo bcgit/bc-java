@@ -98,7 +98,9 @@ public class SM9EncPrivateKeyParameters
     }
 
     /**
-     * Rebuild a KEM / decryption user key from its bare point encoding.
+     * Rebuild a KEM / decryption user key from its bare point encoding. There is
+     * deliberately no key-exchange counterpart: nothing needs one yet, and an
+     * exchange user key is obtained from the master key's derivation instead.
      */
     public static SM9EncPrivateKeyParameters fromEncoded(
         byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
@@ -107,15 +109,6 @@ public class SM9EncPrivateKeyParameters
         return new SM9EncPrivateKeyParameters(SM9G2Point.decode(enc), masterPublicKey, Arrays.clone(identity), hid, false);
     }
 
-    /**
-     * Rebuild a key-exchange user key from its bare point encoding.
-     */
-    public static SM9EncPrivateKeyParameters fromEncodedExchangeKey(
-        byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
-    {
-        SM9EncMasterPrivateKeyParameters.checkHid(hid);
-        return new SM9EncPrivateKeyParameters(SM9G2Point.decode(enc), masterPublicKey, Arrays.clone(identity), hid, true);
-    }
 
     /**
      * Destroy this object, dropping its reference to the private point de and

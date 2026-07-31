@@ -101,6 +101,7 @@ public class RegressionTest
         new SM2SignatureTest(),
         new SM4Test(),
         new SM9KEMTest(),
+        new SM9KeyAgreementTest(),
         new SM9CipherTest(),
         new SM9EncodingTest(),
         new SM9SignatureTest(),
