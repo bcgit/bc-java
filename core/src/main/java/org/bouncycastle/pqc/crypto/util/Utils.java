@@ -37,6 +37,7 @@ import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
@@ -121,6 +122,8 @@ class Utils
 
     static final Map aimerOids = new HashMap<ASN1ObjectIdentifier, AIMerParameters>();
     static final Map aimerParams = new HashMap<AIMerParameters, ASN1ObjectIdentifier>();
+    static final Map smaugTOids = new HashMap<ASN1ObjectIdentifier, SmaugTParameters>();
+    static final Map smaugTParams = new HashMap<SmaugTParameters, ASN1ObjectIdentifier>();
 
     static final Map faestOids = new HashMap<ASN1ObjectIdentifier, FaestParameters>();
     static final Map faestParams = new HashMap<FaestParameters, ASN1ObjectIdentifier>();
@@ -618,6 +621,15 @@ class Utils
         aimerOids.put(AIMerParameters.aimer192s, BCObjectIdentifiers.aimer_192s);
         aimerOids.put(AIMerParameters.aimer256f, BCObjectIdentifiers.aimer_256f);
         aimerOids.put(AIMerParameters.aimer256s, BCObjectIdentifiers.aimer_256s);
+        smaugTParams.put(BCObjectIdentifiers.smaugt_mode1, SmaugTParameters.smaugt_mode1);
+        smaugTParams.put(BCObjectIdentifiers.smaugt_mode3, SmaugTParameters.smaugt_mode3);
+        smaugTParams.put(BCObjectIdentifiers.smaugt_mode5, SmaugTParameters.smaugt_mode5);
+        smaugTParams.put(BCObjectIdentifiers.smaugt_modet, SmaugTParameters.smaugt_modet);
+
+        smaugTOids.put(SmaugTParameters.smaugt_mode1, BCObjectIdentifiers.smaugt_mode1);
+        smaugTOids.put(SmaugTParameters.smaugt_mode3, BCObjectIdentifiers.smaugt_mode3);
+        smaugTOids.put(SmaugTParameters.smaugt_mode5, BCObjectIdentifiers.smaugt_mode5);
+        smaugTOids.put(SmaugTParameters.smaugt_modet, BCObjectIdentifiers.smaugt_modet);
 
         faestOids.put(FaestParameters.faest_128s, BCObjectIdentifiers.faest_128s);
         faestOids.put(FaestParameters.faest_128f, BCObjectIdentifiers.faest_128f);
@@ -1123,6 +1135,16 @@ class Utils
         return (HawkParameters)hawkParams.get(oid);
     }
 
+
+    static SmaugTParameters smaugTParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SmaugTParameters)smaugTParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier smaugTOidLookup(SmaugTParameters params)
+    {
+        return (ASN1ObjectIdentifier)smaugTOids.get(params);
+    }
 
     static ASN1ObjectIdentifier faestOidLookup(FaestParameters params)
     {

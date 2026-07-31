@@ -296,6 +296,7 @@ class TestUtils
                         String count = (String)buf.get("count");
                         if (sampler != null && sampler.skipTest(count))
                         {
+                            buf.clear();
                             continue;
                         }
                         System.out.println("test case: " + count);

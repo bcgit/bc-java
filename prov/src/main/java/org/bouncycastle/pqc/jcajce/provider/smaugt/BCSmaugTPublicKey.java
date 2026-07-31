@@ -1,0 +1,117 @@
+package org.bouncycastle.pqc.jcajce.provider.smaugt;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.security.PublicKey;
+
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.pqc.jcajce.interfaces.SmaugTKey;
+import org.bouncycastle.pqc.jcajce.spec.SmaugTParameterSpec;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
+
+public class BCSmaugTPublicKey
+    implements PublicKey, SmaugTKey
+{
+    private static final long serialVersionUID = 1L;
+
+    private transient SmaugTPublicKeyParameters params;
+
+    public BCSmaugTPublicKey(
+        SmaugTPublicKeyParameters params)
+    {
+        this.params = params;
+    }
+
+    public BCSmaugTPublicKey(SubjectPublicKeyInfo keyInfo)
+        throws IOException
+    {
+        init(keyInfo);
+    }
+
+    private void init(SubjectPublicKeyInfo keyInfo)
+        throws IOException
+    {
+        this.params = (SmaugTPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+    }
+
+    public boolean equals(Object o)
+    {
+        if (o == this)
+        {
+            return true;
+        }
+
+        if (o instanceof BCSmaugTPublicKey)
+        {
+            BCSmaugTPublicKey otherKey = (BCSmaugTPublicKey)o;
+
+            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+        }
+
+        return false;
+    }
+
+    public int hashCode()
+    {
+        return Arrays.hashCode(params.getEncoded());
+    }
+
+    public final String getAlgorithm()
+    {
+        return Strings.toUpperCase(params.getParameters().getName());
+    }
+
+    public byte[] getEncoded()
+    {
+        try
+        {
+            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
+
+            return pki.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+    }
+
+    public String getFormat()
+    {
+        return "X.509";
+    }
+
+    public SmaugTParameterSpec getParameterSpec()
+    {
+        return SmaugTParameterSpec.fromName(params.getParameters().getName());
+    }
+
+    SmaugTPublicKeyParameters getKeyParams()
+    {
+        return params;
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        byte[] enc = (byte[])in.readObject();
+
+        init(SubjectPublicKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
+    }
+}
