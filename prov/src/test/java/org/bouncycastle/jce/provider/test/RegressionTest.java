@@ -60,6 +60,7 @@ public class RegressionTest
         new IESTest(),
         new ImplicitlyCaTest(),
         new KeccakTest(),
+        new KeyAgreementKeySizeTest(),
         new Argon2KeyFactoryTest(),
         new KeyStoreTest(),
         new MacTest(),
