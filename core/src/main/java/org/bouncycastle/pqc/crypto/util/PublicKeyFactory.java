@@ -64,6 +64,8 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTParameters;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
@@ -331,6 +333,10 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.hawk256, new HawkConverter());
         converters.put(BCObjectIdentifiers.hawk512, new HawkConverter());
         converters.put(BCObjectIdentifiers.hawk1024, new HawkConverter());
+        converters.put(BCObjectIdentifiers.smaugt_mode1, new SmaugTConverter());
+        converters.put(BCObjectIdentifiers.smaugt_mode3, new SmaugTConverter());
+        converters.put(BCObjectIdentifiers.smaugt_mode5, new SmaugTConverter());
+        converters.put(BCObjectIdentifiers.smaugt_modet, new SmaugTConverter());
 
         converters.put(BCObjectIdentifiers.faest_128s, new FaestConverter());
         converters.put(BCObjectIdentifiers.faest_128f, new FaestConverter());
@@ -1182,6 +1188,20 @@ public class PublicKeyFactory
         {
             SDitHParameters params = Utils.sdithParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
             return new SDitHPublicKeyParameters(params, keyInfo.getPublicKeyData().getOctets());
+        }
+    }
+
+    private static class SmaugTConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            SmaugTParameters smaugTParams = Utils.smaugTParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new SmaugTPublicKeyParameters(smaugTParams, keyEnc);
         }
     }
 }

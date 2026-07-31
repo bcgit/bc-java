@@ -987,4 +987,13 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier aimer_192s = aimer.branch("4");
     ASN1ObjectIdentifier aimer_256f = aimer.branch("5");
     ASN1ObjectIdentifier aimer_256s = aimer.branch("6");
+
+    /**
+     * SMAUG-T
+     * */
+    ASN1ObjectIdentifier pqc_kem_smaugt = bc_kem.branch("11");
+    ASN1ObjectIdentifier smaugt_mode1 = pqc_kem_smaugt.branch("1");
+    ASN1ObjectIdentifier smaugt_mode3 = pqc_kem_smaugt.branch("2");
+    ASN1ObjectIdentifier smaugt_mode5 = pqc_kem_smaugt.branch("3");
+    ASN1ObjectIdentifier smaugt_modet = pqc_kem_smaugt.branch("4");
 }
