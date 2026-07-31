@@ -257,6 +257,28 @@ final class BAVC
      * if the number of co-path seeds needed exceeds {@code T_open} &mdash; the
      * caller is expected to retry with a different challenge in that case.
      * faest-ref: {@code bavc_open}, bavc.c:205.
+     * <p>
+     * <b>Constant-time note.</b> This method is deliberately <i>not</i> oblivious to
+     * {@code iDelta} (the hidden leaf index &Delta;): it branches on &Delta; via
+     * {@link #posInTree}, uses &Delta;-derived write indices in {@link #ptrSetBit},
+     * climbs a &Delta;-dependent number of ancestors, returns early on a
+     * &Delta;-derived node count, and reads {@code vc.com} at a &Delta;-scaled offset.
+     * That is safe here rather than a key-timing channel, because &Delta; is
+     * <i>public in the finished signature</i>: it is
+     * {@code decodeAllChall3(chall_3)}, {@code chall_3} is itself a field of the
+     * signature, and the {@code decom} returned here encodes &Delta;'s co-path
+     * directly. So the access pattern reveals only a value any verifier can already
+     * read off the signature. Note also what is <i>not</i> touched: this method never
+     * reads the hidden seed {@code sd[}&Delta;{@code ]}, and neither the witness nor
+     * the private key influences its control flow &mdash; those surfaces are
+     * constant-time by design (computed S-box, masked field operations,
+     * data-oblivious constraint prover).
+     * <p>
+     * The same applies to the verify-side {@code reconstruct} path below, where
+     * &Delta; is public by construction. Making this method &Delta;-oblivious would be
+     * defence-in-depth only, and is worthwhile solely under a strict "no
+     * secret-dependent memory access, even on values that become public in
+     * hindsight" policy. Tracked as audit finding F20 (LOW).
      */
     static byte[] open(Commitment vc, int[] iDelta, FaestParameters params)
     {
