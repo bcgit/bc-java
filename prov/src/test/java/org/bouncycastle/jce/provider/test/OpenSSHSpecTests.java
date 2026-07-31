@@ -19,6 +19,20 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
 
+/**
+ * Tests for the JCA OpenSSHPublicKeySpec / OpenSSHPrivateKeySpec key specifications.
+ * <p>
+ * NOT-A-SECRET: openssh test vector. Every private key in this file is a deliberately published
+ * test fixture. Each was generated for this test suite with no passphrase and has never protected
+ * anything; they exist so the parser can be exercised against real ssh-keygen output. Automated
+ * secret scanners flag them, and that is a false positive - there is nothing here to rotate or
+ * report.
+ * <p>
+ * All of them carry the comment "bc-test-vector". A new vector should be generated the same way,
+ * with ssh-keygen -C bc-test-vector, so that no user name or host name of whoever produced it is
+ * carried in the key's comment field, where it is invisible in the source but recoverable by
+ * anyone who decodes the blob (github #2376).
+ */
 public class OpenSSHSpecTests
     extends SimpleTest
 {
@@ -74,30 +88,30 @@ public class OpenSSHSpecTests
         String rsa2048Key =
             "-----BEGIN OPENSSH PRIVATE KEY-----\n"
           + "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn\n"
-          + "NhAAAAAwEAAQAAAQEArxWa1zW+Uf0lUrYoL1yqgTYUT1TfUkfojrhguPB1s/1AEMj8sueu\n"
-          + "YDtLozZW/GB+KwO+nzC48CmqsCbCEOqalmdRIQCCQIBs776c0KLnhqzHCmj0Q+6gM0KvUG\n"
-          + "z8elzJ8LZuTj5xGRDvFxli4yl2M119X7K2JMci18N95rszioxDECSWg2Arvd25kMKBK5MA\n"
-          + "qJjosvxr46soRmxiAHeGzinoLXgpLh9axwySpJ0WVGPl079ZtaYs/XpSoh9HXqCgwnsVy9\n"
-          + "JscWbmtaAktjMw2zTfOvmFs9PVJXtXQRzP4nvtT6myK/7v8tPeg8yLnAot9erklHcUOEyb\n"
-          + "1LsOrk68+QAAA8j/Xs/E/17PxAAAAAdzc2gtcnNhAAABAQCvFZrXNb5R/SVStigvXKqBNh\n"
-          + "RPVN9SR+iOuGC48HWz/UAQyPyy565gO0ujNlb8YH4rA76fMLjwKaqwJsIQ6pqWZ1EhAIJA\n"
-          + "gGzvvpzQoueGrMcKaPRD7qAzQq9QbPx6XMnwtm5OPnEZEO8XGWLjKXYzXX1fsrYkxyLXw3\n"
-          + "3muzOKjEMQJJaDYCu93bmQwoErkwComOiy/GvjqyhGbGIAd4bOKegteCkuH1rHDJKknRZU\n"
-          + "Y+XTv1m1piz9elKiH0deoKDCexXL0mxxZua1oCS2MzDbNN86+YWz09Ule1dBHM/ie+1Pqb\n"
-          + "Ir/u/y096DzIucCi316uSUdxQ4TJvUuw6uTrz5AAAAAwEAAQAAAQBPpNBO3Y+51CHKQjp9\n"
-          + "cPXO2T7b54u+7h8H7S9ycU/ZlHY0LHlnGKTl+ZMqp2liXLKH9qgb2hoGha2ze64D6/RuPo\n"
-          + "lVLdoSZVkopdjHv5L6XFYekierTz1olAkT2L/xGYxzB0meJiFkeaOJKm8lTpMKQpjpk23v\n"
-          + "xPZAmBkJgFatyueHaVWGYp0KzUDpdMcS97R6CWCGrYlAUP3F1meC9+Sb3d94qxeqLZsgEn\n"
-          + "PYJs1Q7fyL4jYBYm9/pA9O5RLKMQwqY7Qln7l2XTyhavZCIxTmAa6lEf32yB3+EoQR+YEz\n"
-          + "eCXXSClbMcnnx83jYyV5uNxN27VJAlgeN7J2ZyJTLlKRAAAAgAUnKuxYaYezMWyBShwR4N\n"
-          + "eVAW8vT3CBxsMR/v3u6XmLTzjq4r0gKCxofnnj972uK0LvyTZ21/00MSl0KaAjJySl2hLj\n"
-          + "BNQA3TcDXnLEc5KcsKZdDhuWkHGmaoajDp/okfQd6CxuKaBKG/OFdbYqVgOOVeACUUWxT4\n"
-          + "NN4e3CxTWQAAAAgQDV3vzDCQanGAXMKZSxfHUU63Tmh+2NcB1I6Sb0/CwpBgLH1y0CTB9r\n"
-          + "c8TLSs6HoHx1lfzOp6Yj7BQ9CWHS94Mi+RYBF+SpaMLoZKqCU4Q3UWiHiOyPnMaohAdvRE\n"
-          + "gJkaY2OAkFaaCI31rwBrs6b5U/ErtRTUZNJEI7OCi6wDBfBwAAAIEA0ZKyuUW5+VFcTyuR\n"
-          + "1G0ky5uihtJryFCjA2fzu7tgobm0gsIgSDClp9TdMh5CDyJo0R9fQnH8Lki0Ku+jgc4X+a\n"
-          + "/XMw47d1iL7Hdu9NAJsplezKD5Unso4xJRXhLnXUT5FT8lSgwE+9xUBuILKUmZQa20ejKM\n"
-          + "20U6szOxEEclA/8AAAAObWFya0BiYXJuYWNsZXMBAgMEBQ==\n"
+          + "NhAAAAAwEAAQAAAQEAn/cyGwU5fpQyeNtMOvdawJu4TOKSjo8werfS9ZID43mLzCspbV3t\n"
+          + "fhQfOgPLByUzBMqjKJO2kuX2NBe9MfARdYLcxyMuF7CTraozZmjkyVVRYkMn+P9SqHSMYx\n"
+          + "YXjzqGxkqNWIcJI6FkIsXI0yIYXbpweFZd7PdolOilt6KbFQuW2jdbMthPJW6xG63+c1v/\n"
+          + "r9go0hCw5U5IV7B2nUzcjIoKa8EiO3CKCzyLTf2kf32N+IUxzkJqv8YJc8jUC5tRvY5Utw\n"
+          + "RGpO+7++oTuqctngmymJWuk3RKga//BoY3dsldyHC0uqXi4oEkdW/Pujzx5D4g1JBvVIuU\n"
+          + "YnQaNh6HVwAAA8hYJQiMWCUIjAAAAAdzc2gtcnNhAAABAQCf9zIbBTl+lDJ420w691rAm7\n"
+          + "hM4pKOjzB6t9L1kgPjeYvMKyltXe1+FB86A8sHJTMEyqMok7aS5fY0F70x8BF1gtzHIy4X\n"
+          + "sJOtqjNmaOTJVVFiQyf4/1KodIxjFhePOobGSo1YhwkjoWQixcjTIhhdunB4Vl3s92iU6K\n"
+          + "W3opsVC5baN1sy2E8lbrEbrf5zW/+v2CjSELDlTkhXsHadTNyMigprwSI7cIoLPItN/aR/\n"
+          + "fY34hTHOQmq/xglzyNQLm1G9jlS3BEak77v76hO6py2eCbKYla6TdEqBr/8Ghjd2yV3IcL\n"
+          + "S6peLigSR1b8+6PPHkPiDUkG9Ui5RidBo2HodXAAAAAwEAAQAAAQATt2ElSXCRCcJqzlod\n"
+          + "Tng7aItqa+a1IYWlKoZwSXinOfJMI5Rt7CIl5GRblIoarbAVysVvbpLAlQ19KuE2iCjEEM\n"
+          + "bA2LTeq0ntzB5HuhgGOg4s4VV08ECyOKNGYeZc0Kbkm93DZ+ltddVPdTdP0VJVgxxHs3Ai\n"
+          + "O/Ws8jvdYB0N68zFvW7L+0raTTw/82yoZ0nLwZ292r2TQJRImyl5J08T4gY7d8RfpctjCq\n"
+          + "abhBIqkEQ+C6wt87xXdX2bJdW+tGclVIKQCi6lh4apDsYNU5+a6IU4Ao8cz6LkuLhVjxtl\n"
+          + "+wZ+KrUANZFKqx+CYpjkkFKFzBGVkzkRhPu9WLXQBLOpAAAAgQCdohE82wtc8ZzgTPW1sB\n"
+          + "9QyO2/mt/JcFoyqjg1jWKWehO4yg30WsnUqmSdzyYbL7bMudxhgErhPXTa8nVSWqcmn2EW\n"
+          + "iM7IAvgj2CarnSEak2iWWQDu+2VJw9IbXV8CnnuegGKOX8WhWRDz1YB4MRHsaIXmZVh1S4\n"
+          + "FsrMYFaZB9qQAAAIEA17zGUZmxDSkdFLgSPGJgOWMUcy1r5XY0mi7BYsPpcgHRPoXsXgxQ\n"
+          + "6zJtNfo9bK6CAa4ugLDK0345QY9pMQlXERRuWPrmlWgU+AWBhPXrGjMOWbiMf+tuHkkGAh\n"
+          + "Aph/a3lta3DU6vWsdjK7sz8HWwEinuolUfu+TgDoR7zX0vfx0AAACBAL3R0+aIjedj4D2U\n"
+          + "tczpGw8mBf59Jn9qNv1CD/YJrwxAS2QUSsW+t1Hp6Xgu9Khjc2dpaQ5CmkjdPQ0sIdReTp\n"
+          + "bJpvQqAFg5HrUyUHUdnDd3hytuw5UAEBHymA8fr3edBdXSrnjLXt43kEpsu3IwMm6Pr845\n"
+          + "0X1wzy3bjAtUIBIDAAAADmJjLXRlc3QtdmVjdG9yAQIDBA==\n"
           + "-----END OPENSSH PRIVATE KEY-----\n";
 
         rcPrivateSpec = new OpenSSHPrivateKeySpec(new PemReader(new StringReader(rsa2048Key)).readPemObject().getContent());
@@ -190,13 +204,13 @@ public class OpenSSHSpecTests
     public void testED25519()
         throws Exception
     {
-        byte[] rawPub = Base64.decode("AAAAC3NzaC1lZDI1NTE5AAAAIM4CaV7WQcy0lht0hclgXf4Olyvzvv2fnUvQ3J8IYsWF");
+        byte[] rawPub = Base64.decode("AAAAC3NzaC1lZDI1NTE5AAAAIM8WklYS64PF4pjk1kvRPno981YfTRHc/KabXnvvPznQ");
         byte[] rawPriv = new PemReader(new StringReader("-----BEGIN OPENSSH PRIVATE KEY-----\n" +
             "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n" +
-            "QyNTUxOQAAACDOAmle1kHMtJYbdIXJYF3+Dpcr8779n51L0NyfCGLFhQAAAKBTr4PvU6+D\n" +
-            "7wAAAAtzc2gtZWQyNTUxOQAAACDOAmle1kHMtJYbdIXJYF3+Dpcr8779n51L0NyfCGLFhQ\n" +
-            "AAAED4BTHeR3YD7CFQqusztfL5K+YSD4mRGLBwb7jHiXxIJM4CaV7WQcy0lht0hclgXf4O\n" +
-            "lyvzvv2fnUvQ3J8IYsWFAAAAG21lZ2Fud29vZHNAdHljaGUtMzI2NS5sb2NhbAEC\n" +
+            "QyNTUxOQAAACAW/E58SrX5iFoBlW0IlOiBr4bMdh38iLW4PvTcP/nSmQAAAJiV4ge7leIH\n" +
+            "uwAAAAtzc2gtZWQyNTUxOQAAACAW/E58SrX5iFoBlW0IlOiBr4bMdh38iLW4PvTcP/nSmQ\n" +
+            "AAAEC9KTOf3gXejV2hit9BMuunVsPUZwadjoe9Jzw5ZV6Gvxb8TnxKtfmIWgGVbQiU6IGv\n" +
+            "hsx2HfyItbg+9Nw/+dKZAAAADmJjLXRlc3QtdmVjdG9yAQIDBAUGBw==\n" +
             "-----END OPENSSH PRIVATE KEY-----\n")).readPemObject().getContent();
 
         OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(rawPub);
@@ -221,8 +235,8 @@ public class OpenSSHSpecTests
 
         // EdEc private keys include a random check int, so we check around it.
         byte[] enc = edDsaPrivateKeySpec.getEncoded();
-        byte[] base = Hex.decode("6f70656e7373682d6b65792d763100000000046e6f6e65000000046e6f6e650000000000000001000000330000000b7373682d6564323535313900000020ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c58500000088");
-        byte[] tail = Hex.decode("0000000b7373682d6564323535313900000020ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c58500000040f80531de477603ec2150aaeb33b5f2f92be6120f899118b0706fb8c7897c4824ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c585000000000102030405");
+        byte[] base = Hex.decode("6f70656e7373682d6b65792d763100000000046e6f6e65000000046e6f6e650000000000000001000000330000000b7373682d656432353531390000002016fc4e7c4ab5f9885a01956d0894e881af86cc761dfc88b5b83ef4dc3ff9d29900000088");
+        byte[] tail = Hex.decode("0000000b7373682d656432353531390000002016fc4e7c4ab5f9885a01956d0894e881af86cc761dfc88b5b83ef4dc3ff9d29900000040bd29339fde05de8d5da18adf4132eba756c3d467069d8e87bd273c39655e86bf16fc4e7c4ab5f9885a01956d0894e881af86cc761dfc88b5b83ef4dc3ff9d299000000000102030405");
         isTrue("EDPrivate key base not same", Arrays.areEqual(base, Arrays.copyOfRange(enc, 0, base.length)));
         isTrue("EDPrivate key tail not same", Arrays.areEqual(tail, Arrays.copyOfRange(enc, base.length + 8, enc.length)));
 
