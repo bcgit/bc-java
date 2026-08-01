@@ -242,6 +242,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         byte[] pEnc;
         byte[] keyEnc;
 
+        checkRange(2, enc);
         pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
         checkRange(2 + pLen + 1, enc);
 
