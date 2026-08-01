@@ -23,6 +23,7 @@ Release: 1.85.2<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2026, TBD.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>Constructing BouncyCastleProvider built the AlgorithmParameters.EC SupportedCurves attribute by calling ECNamedCurveTable.getParameterSpec for every registered curve and discarding the result, forcing every lazy curve holder in the table and making provider construction markedly slower than in earlier releases. The attribute is now built with a presence check that does not materialise the parameters (github #2382).</li>
 <li>KCCMBlockCipher (DSTU7624-128/256/512 CCM mode) returned the input length rather than 0 from getUpdateOutputSize(int), but like CCMBlockCipher/KGCMBlockCipher it buffers all input until doFinal and produces no output on an update. Through the JCA layer this made Cipher.update(input, inOff, inLen, output, outOff) reject a correctly sized output buffer with ShortBufferException when decrypting (github #2354).</li>
 <li>The PKIX CertPathBuilder matched candidate issuers by subject name only during its depth-first search, so a CertStore containing many self-issued certificates sharing one subject name and never chaining to a trust anchor could be explored as a large number of partial paths. The builder now bounds the nodes visited per build, configurable via org.bouncycastle.x509.max_cert_path_build_nodes (default 262144).</li>
 <li>BigIntegers value-exact range checks are open-coded again: BigInteger.intValueExact and friends are missing on Android below API level 33 (github #2369).</li>

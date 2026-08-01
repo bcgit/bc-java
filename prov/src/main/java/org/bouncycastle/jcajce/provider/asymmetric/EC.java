@@ -18,7 +18,6 @@ import org.bouncycastle.internal.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.util.Properties;
 
 public class EC
@@ -39,8 +38,10 @@ public class EC
         while (names.hasMoreElements())
         {
             String name = (String)names.nextElement();
-            ECNamedCurveParameterSpec spec = org.bouncycastle.jce.ECNamedCurveTable.getParameterSpec(name);
-            if (spec == null)
+            // only the name and OID are needed below, so check the curve is present without
+            // materialising its parameters - getParameterSpec forces every lazy holder in the
+            // table, which is the bulk of the cost of constructing the provider
+            if (ECNamedCurveTable.getByNameLazy(name) == null)
             {
                 continue;
             }
