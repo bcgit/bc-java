@@ -28,9 +28,6 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -42,7 +39,7 @@ import org.bouncycastle.openpgp.operator.RFC6637Utils;
 public class JcePublicKeyKeyEncryptionMethodGenerator
     extends PublicKeyKeyEncryptionMethodGenerator
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private SecureRandom random;
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
     private JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaPGPDigestCalculatorProviderBuilder();
@@ -59,7 +56,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
     public JcePublicKeyKeyEncryptionMethodGenerator setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         keyConverter.setProvider(provider);
 
@@ -68,7 +65,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
     public JcePublicKeyKeyEncryptionMethodGenerator setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         keyConverter.setProvider(providerName);
 

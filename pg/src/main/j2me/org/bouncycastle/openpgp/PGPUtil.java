@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.Integers;
 
@@ -131,41 +131,14 @@ public class PGPUtil
         SecureRandom    random) 
         throws PGPException
     {
-        int        keySize = 0;
-        
-        switch (algorithm)
+        int        keySize;
+
+        try
         {
-        case SymmetricKeyAlgorithmTags.TRIPLE_DES:
-            keySize = 192;
-            break;
-        case SymmetricKeyAlgorithmTags.IDEA:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.CAST5:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.BLOWFISH:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.SAFER:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.DES:
-            keySize = 64;
-            break;
-        case SymmetricKeyAlgorithmTags.AES_128:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.AES_192:
-            keySize = 192;
-            break;
-        case SymmetricKeyAlgorithmTags.AES_256:
-            keySize = 256;
-            break;
-        case SymmetricKeyAlgorithmTags.TWOFISH:
-            keySize = 256;
-            break;
-        default:
+            keySize = SymmetricKeyUtils.getKeyLengthInBits(algorithm);
+        }
+        catch (IllegalArgumentException e)
+        {
             throw new PGPException("unknown symmetric algorithm: " + algorithm);
         }
         
