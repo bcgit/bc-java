@@ -140,6 +140,82 @@ public class HKDFTest
         return Arrays.areEqual(kdfSecret, factSecret.getEncoded());
     }
 
+    /**
+     * Regression for the HKDF thread-safety fix: both the SecretKeyFactory (HKDF.HKDFBase) and the
+     * KDF SPI (HKDFSpi) used to hold one HKDFBytesGenerator, whose digest carries mutable state, so a
+     * shared instance raced between concurrent derivations. Each now builds a generator from a copy of
+     * the template digest. Plain Thread/join and a synchronized counter, matching the TLS12 KDF test.
+     */
+    public void testConcurrentSharedInstances()
+            throws Exception
+    {
+        setUp();
+        byte[] ikm = Hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
+        byte[] salt = Hex.decode("000102030405060708090a0b0c");
+        byte[] info = Hex.decode("f0f1f2f3f4f5f6f7f8f9");
+
+        final SecretKeyFactory kFact = SecretKeyFactory.getInstance("HKDF-SHA256", "BC");
+        final org.bouncycastle.jcajce.spec.HKDFParameterSpec bcSpec =
+                new org.bouncycastle.jcajce.spec.HKDFParameterSpec(ikm, salt, info, 42);
+        final KDF kdf = KDF.getInstance("HKDF-SHA256", (KDFParameters)null, "BC");
+        final HKDFParameterSpec jdkSpec = HKDFParameterSpec.ofExtract()
+                .addIKM(ikm).addSalt(salt).thenExpand(info, 42);
+
+        final byte[] expectedFactory = kFact.generateSecret(bcSpec).getEncoded();
+        final byte[] expectedKdf = kdf.deriveData(jdkSpec);
+
+        final int threads = 6, iters = 1000;
+        final int[] failures = new int[1];
+        final Object startLock = new Object();
+        final boolean[] go = new boolean[1];
+
+        Thread[] ts = new Thread[threads];
+        for (int i = 0; i != threads; i++)
+        {
+            ts[i] = new Thread(new Runnable()
+            {
+                public void run()
+                {
+                    synchronized (startLock)
+                    {
+                        while (!go[0])
+                        {
+                            try { startLock.wait(); } catch (InterruptedException e) { return; }
+                        }
+                    }
+                    for (int j = 0; j != iters; j++)
+                    {
+                        try
+                        {
+                            if (!areEqual(expectedFactory, kFact.generateSecret(bcSpec).getEncoded())
+                                    || !areEqual(expectedKdf, kdf.deriveData(jdkSpec)))
+                            {
+                                synchronized (failures) { failures[0]++; }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            synchronized (failures) { failures[0]++; }
+                        }
+                    }
+                }
+            });
+            ts[i].start();
+        }
+        synchronized (startLock)
+        {
+            go[0] = true;
+            startLock.notifyAll();
+        }
+        for (int i = 0; i != threads; i++)
+        {
+            ts[i].join();
+        }
+
+        assertEquals("HKDF shared-instance concurrency produced " + failures[0] + " wrong/failed results",
+                0, failures[0]);
+    }
+
     public void testSecretKeyFactoryComparison()
             throws Exception
     {
