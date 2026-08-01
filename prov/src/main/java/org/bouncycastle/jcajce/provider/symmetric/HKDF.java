@@ -21,6 +21,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.spec.HKDFParameterSpec;
+import org.bouncycastle.util.Memoable;
 
 public class HKDF
 {
@@ -33,14 +34,14 @@ public class HKDF
             extends BaseSecretKeyFactory
     {
         protected String algName;
-        protected HKDFBytesGenerator hkdf;
+        protected final Digest digest;
 
 
         public HKDFBase(String algName, Digest digest, ASN1ObjectIdentifier oid)
         {
             super(algName, oid);
             this.algName = algName;
-            this.hkdf = new HKDFBytesGenerator(digest);
+            this.digest = digest;
         }
 
         @Override
@@ -54,6 +55,11 @@ public class HKDF
 
             HKDFParameterSpec spec = (HKDFParameterSpec) keySpec;
             int derivedDataLength = spec.getOutputLength();
+
+            // Use a fresh generator (and digest copy) per call: a SecretKeyFactory instance may be
+            // shared across threads, and HKDFBytesGenerator/Digest hold mutable state that would
+            // otherwise race between concurrent engineGenerateSecret() invocations.
+            HKDFBytesGenerator hkdf = new HKDFBytesGenerator((Digest)((Memoable)digest).copy());
             hkdf.init(new HKDFParameters(spec.getIKM(), spec.getSalt(), spec.getInfo()));
 
             byte[] derivedData = new byte[derivedDataLength];
