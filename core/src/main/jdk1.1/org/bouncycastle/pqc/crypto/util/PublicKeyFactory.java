@@ -304,7 +304,13 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            MLKEMParameters mlkemParameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            ASN1ObjectIdentifier algOID = keyInfo.getAlgorithm().getAlgorithm();
+            MLKEMParameters mlkemParameters = Utils.mlkemParamsLookup(algOID);
+
+            if (mlkemParameters == null)
+            {
+                throw new IOException("algorithm identifier in public key not recognised: " + algOID);
+            }
 
             // we're a raw encoding
             return new MLKEMPublicKeyParameters(mlkemParameters, keyInfo.getPublicKeyData().getOctets());

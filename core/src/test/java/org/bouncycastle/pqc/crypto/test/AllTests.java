@@ -55,6 +55,7 @@ public class AllTests
         suite.addTestSuite(AIMerTest.class);
         suite.addTestSuite(PublicKeyLengthValidationTest.class);
         suite.addTestSuite(PqcMalformedInputTest.class);
+        suite.addTestSuite(PqcUnmappedAlgorithmOidTest.class);
         suite.addTestSuite(SmaugTTest.class);
 
         return new BCTestSetup(suite);
