@@ -199,11 +199,16 @@ public class Properties
     public static final String BCFKS_MAX_SCRYPT_MEMORY = "org.bouncycastle.bcfks.max_scrypt_memory";
 
     /**
-     * Upper bound on the PBKDF2 iteration count honoured when decrypting a PBES2-protected
-     * PKCS#8 / PEM private key. The key-derivation parameters travel inside the (unauthenticated)
-     * encrypted-key container, so an unbounded count makes decrypting attacker-supplied key
-     * material a CPU-exhaustion vector. Default 10,000,000, generous enough for deliberately
-     * strong settings. Read via {@link #asInteger(String, int)}.
+     * Upper bound on the PBKDF2 iteration count honoured when BC takes that count from an
+     * untrusted encoding: decrypting a PBES2-protected PKCS#8 / PEM private key or PKCS#12
+     * bag, verifying an RFC 9579 PBMAC1, unwrapping a CMS password recipient, and the raw JCA
+     * PBKDF2 provider (both the {@code SecretKeyFactory} derivation and the
+     * {@code AlgorithmParameters} parse a {@code Cipher} performs for PBES2). In each case the
+     * key-derivation parameters travel inside an unauthenticated container, so an unbounded
+     * count makes processing attacker-supplied material a CPU-exhaustion vector. Default
+     * 10,000,000 - the count RFC 8018 sec. 4.2 names as possibly appropriate for especially
+     * critical keys, so generous enough for deliberately strong settings. Read via
+     * {@link #asInteger(String, int)}.
      */
     public static final String PBE_MAX_ITERATION_COUNT = "org.bouncycastle.pbe.max_iteration_count";
 
