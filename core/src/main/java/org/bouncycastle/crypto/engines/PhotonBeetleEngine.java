@@ -51,6 +51,51 @@ public class PhotonBeetleEngine
 
     private static final byte[] sbox = {12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 1, 2};
 
+    // Precomputed GF(2^4) multiplication table (with the field reduction folded in), indexed
+    // [(x << 4) | y] = x (x) y. The MixColumn step multiplies fixed matrix nibbles by state
+    // nibbles; the reference recomputed each product via bit-decomposition + a two-step reduction
+    // (32 ops per entry, 64 entries x 12 rounds). One table lookup replaces that. Byte-identical:
+    // field reduction is linear over XOR, so XOR-ing reduced products equals reducing the XOR of
+    // the carryless products the reference accumulated.
+    private static final byte[] GF4_MUL = new byte[256];
+
+    // Precomputed MixColumn per-column spread table: PHOTON_COL[(k << 4) | v] packs the contribution
+    // of state nibble value v at row k into a 32-bit column, where nibble i (bits [4i, 4i+4)) holds
+    // MixColMatrix[i][k] (x) v in GF(2^4). A MixColumn output column j is then the XOR over k of
+    // PHOTON_COL[k][in[k][j]] - 8 table lookups + 7 XORs, vs the reference's 64 GF products per
+    // column. Byte-identical: nibbles occupy disjoint bit-fields so the packed XOR equals the
+    // per-nibble GF(2^4) sum the column would compute element-wise.
+    private static final int[] PHOTON_COL = new int[8 * 16];
+
+    static
+    {
+        for (int x = 0; x < 16; x++)
+        {
+            for (int b = 0; b < 16; b++)
+            {
+                int sum = x * (b & 1) ^ x * (b & 2) ^ x * (b & 4) ^ x * (b & 8);
+                int t0 = sum >>> 4;
+                sum = (sum & 15) ^ t0 ^ (t0 << 1);
+                int t1 = sum >>> 4;
+                sum = (sum & 15) ^ t1 ^ (t1 << 1);
+                GF4_MUL[(x << 4) | b] = (byte)sum;
+            }
+        }
+        for (int k = 0; k < D; k++)
+        {
+            for (int v = 0; v < 16; v++)
+            {
+                int packed = 0;
+                for (int i = 0; i < D; i++)
+                {
+                    int prod = GF4_MUL[((MixColMatrix[i][k] & 0xF) << 4) | v] & 0xF;
+                    packed |= prod << (i << 2);
+                }
+                PHOTON_COL[(k << 4) | v] = packed;
+            }
+        }
+    }
+
     public PhotonBeetleEngine(PhotonBeetleParameters pbp)
     {
         KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
@@ -178,13 +223,13 @@ public class PhotonBeetleEngine
     private static void photonPermutation(byte[] state)
     {
         int i, j, k;
-        int dq = 3;
-        int dr = 7;
-        int DSquare = 64;
-        byte[][] state_2d = new byte[D][D];
-        for (i = 0; i < DSquare; i++)
+        // Flattened 8x8 nibble state: cell (row, col) at s2[(row << 3) + col]. Single byte[64]
+        // instead of byte[8][8] - removes the per-call inner-array allocations and 2D pointer-chase.
+        byte[] s2 = new byte[64];
+        byte[] tmp8 = new byte[D];
+        for (i = 0; i < 64; i++)
         {
-            state_2d[i >>> dq][i & dr] = (byte)(((state[i >> 1] & 0xFF) >>> (4 * (i & 1))) & 0xf);
+            s2[i] = (byte)(((state[i >> 1] & 0xFF) >>> ((i & 1) << 2)) & 0xf);
         }
         int ROUND = 12;
         for (int round = 0; round < ROUND; round++)
@@ -192,57 +237,40 @@ public class PhotonBeetleEngine
             //AddKey
             for (i = 0; i < D; i++)
             {
-                state_2d[i][0] ^= RC[i][round];
+                s2[i << 3] ^= RC[i][round];
             }
             //SubCell
-            for (i = 0; i < D; i++)
+            for (i = 0; i < 64; i++)
             {
-                for (j = 0; j < D; j++)
-                {
-                    state_2d[i][j] = sbox[state_2d[i][j]];
-                }
+                s2[i] = sbox[s2[i]];
             }
-            //ShiftRow
+            //ShiftRow (row i rotated left by i)
             for (i = 1; i < D; i++)
             {
-                System.arraycopy(state_2d[i], 0, state, 0, D);
-                System.arraycopy(state, i, state_2d[i], 0, D - i);
-                System.arraycopy(state, 0, state_2d[i], D - i, i);
+                int base = i << 3;
+                System.arraycopy(s2, base, tmp8, 0, D);
+                for (int c = 0; c < D; c++)
+                {
+                    s2[base + c] = tmp8[(c + i) & 7];
+                }
             }
-            //MixColumn
+            //MixColumn (per-column spread table: outCol = XOR over rows k of PHOTON_COL[k][in[k][j]])
             for (j = 0; j < D; j++)
             {
-                for (i = 0; i < D; i++)
+                int col = 0;
+                for (k = 0; k < D; k++)
                 {
-                    int sum = 0;
-
-                    for (k = 0; k < D; k++)
-                    {
-                        int x = MixColMatrix[i][k], b = state_2d[k][j];
-
-                        sum ^= x * (b & 1);
-                        sum ^= x * (b & 2);
-                        sum ^= x * (b & 4);
-                        sum ^= x * (b & 8);
-                    }
-
-                    int t0 = sum >>> 4;
-                    sum = (sum & 15) ^ t0 ^ (t0 << 1);
-
-                    int t1 = sum >>> 4;
-                    sum = (sum & 15) ^ t1 ^ (t1 << 1);
-
-                    state[i] = (byte)sum;
+                    col ^= PHOTON_COL[(k << 4) | (s2[(k << 3) + j] & 0xF)];
                 }
                 for (i = 0; i < D; i++)
                 {
-                    state_2d[i][j] = state[i];
+                    s2[(i << 3) + j] = (byte)((col >>> (i << 2)) & 0xF);
                 }
             }
         }
-        for (i = 0; i < DSquare; i += 2)
+        for (i = 0; i < 64; i += 2)
         {
-            state[i >>> 1] = (byte)(((state_2d[i >>> dq][i & dr] & 0xf)) | ((state_2d[i >>> dq][(i + 1) & dr] & 0xf) << 4));
+            state[i >>> 1] = (byte)((s2[i] & 0xf) | ((s2[i + 1] & 0xf) << 4));
         }
     }
 

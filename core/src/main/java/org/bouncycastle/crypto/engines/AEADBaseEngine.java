@@ -14,6 +14,40 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Common base for the NIST Lightweight-Cryptography AEAD engines (AsconAEAD128, Sparkle, Xoodyak,
+ * Romulus, GIFT-COFB, PhotonBeetle, Elephant, ISAP, Grain-128AEAD).
+ * <p>
+ * The AEAD usage rules below, from
+ * <a href="https://www.rfc-editor.org/rfc/rfc9771.html">RFC 9771 (Properties of AEAD Algorithms)</a>
+ * and
+ * <a href="https://datatracker.ietf.org/doc/draft-irtf-cfrg-aead-limits/">draft-irtf-cfrg-aead-limits
+ * (Usage Limits on AEAD Algorithms)</a>, are <b>not</b> all enforced by this base; the gaps below are
+ * intentionally left to the caller (or to a future enhancement) and are flagged with TODO:
+ * </p>
+ * <ul>
+ * <li><b>Nonce uniqueness</b> (RFC 9771 sec. 3, MUST): a nonce MUST never repeat under a given key.
+ *     None of these modes is nonce-misuse resistant (none is an SIV mode), so reuse breaks both
+ *     confidentiality and integrity. This base neither tracks nor can detect a repeated nonce.
+ *     TODO: nonce uniqueness is the calling application's responsibility; not enforced here.</li>
+ * <li><b>Per-key usage limits</b> (aead-limits sec. 5/6): both the confidentiality limit (q &mdash;
+ *     bytes/messages protected) and the integrity limit (v &mdash; failed decryptions / forgery
+ *     attempts, which scales <i>down</i> with the authentication-tag length) are bounded per key, and
+ *     a key SHOULD be retired (rekeyed) before either limit is reached. Only {@link AsconAEAD128}
+ *     enforces these (mandated by NIST SP 800-232, via {@link DataLimitCounter} and
+ *     {@link DecryptionFailureCounter}). TODO: the other subclasses do not bound per-key usage or
+ *     count forgery attempts; their specifications do not mandate it, so today an application that
+ *     needs these limits must track them externally.</li>
+ * <li><b>Release of unverified plaintext</b> (RUP, RFC 9771 sec. 4.3.10): streaming decryption returns
+ *     plaintext from {@link #processBytes} <em>before</em> {@link #doFinal} verifies the tag. These
+ *     modes do not provide RUP integrity, so a caller MUST treat decrypted output as unverified until
+ *     {@code doFinal} returns without throwing. TODO: not documented on the individual engines.</li>
+ * <li><b>Optional properties not provided</b> (RFC 9771 sec. 4.3): these modes are not key- or
+ *     context-committing (sec. 4.3.2 / 4.3.3); apart from ISAP's leakage resistance they carry no
+ *     additional RFC 9771 property. An application requiring commitment or nonce-misuse resistance must
+ *     select a suitable construction itself. TODO: no committing-AEAD wrapper is offered.</li>
+ * </ul>
+ */
 abstract class AEADBaseEngine
     implements AEADCipher
 {
@@ -669,6 +703,7 @@ abstract class AEADBaseEngine
         implements DataOperator
     {
         //TODO: shift index instead of arraycopy
+        private final byte[] singleByte = new byte[1];
         private int len;
 
         public int processByte(byte input, byte[] output, int outOff)
@@ -677,7 +712,8 @@ abstract class AEADBaseEngine
             if (forEncryption)
             {
                 this.len = 1;
-                processBufferEncrypt(new byte[]{input}, 0, output, outOff);
+                singleByte[0] = input;
+                processBufferEncrypt(singleByte, 0, output, outOff);
                 return 1;
             }
             else
@@ -782,6 +818,13 @@ abstract class AEADBaseEngine
         }
     }
 
+    /**
+     * Enforces the AEAD integrity limit (v) of draft-irtf-cfrg-aead-limits sec. 5/6: it bounds the
+     * number of failed decryptions (forgery attempts) permitted under one key, with the bound derived
+     * from the authentication-tag length (a shorter tag lowers the limit). Reset only on key change.
+     * TODO: currently wired only by {@link AsconAEAD128} (NIST SP 800-232); the other AEADBaseEngine
+     * subclasses neither count nor bound forgery attempts.
+     */
     protected static class DecryptionFailureCounter
     {
         private int n;
@@ -867,6 +910,13 @@ abstract class AEADBaseEngine
         }
     }
 
+    /**
+     * Enforces the AEAD confidentiality / data limit (q) of draft-irtf-cfrg-aead-limits sec. 5/6: it
+     * bounds the total bytes processed under one key (nonce + AAD + message), throwing once 2^n is
+     * exceeded. Reset only on key change.
+     * TODO: currently wired only by {@link AsconAEAD128} (NIST SP 800-232); the other AEADBaseEngine
+     * subclasses do not bound per-key data volume.
+     */
     protected static class DataLimitCounter
     {
         //if the maximum exceed Long.MAX_VALUE, Improve DecryptionFailureCounter and use it instead
